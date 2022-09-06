@@ -66,6 +66,10 @@ class Maps():
             npcs_ptr = self.rom.get_bytes(npcs_ptr_address, self.rom.SHORT_PTR_SIZE)
             self.maps[map_index]["npcs_ptr"] = npcs_ptr[0] | (npcs_ptr[1] << 8)
 
+            #####grab map warp-ability flag
+            self.maps[map_index]["warpable"] = map_property.warpable
+            #####grab map warp-ability flag
+
     def set_entrance_event(self, map_id, event_address):
         self.maps[map_id]["entrance_event_address"] = event_address
 
@@ -186,9 +190,11 @@ class Maps():
         compressed = compress(decompressed)
         self.rom.set_bytes(tilemaps_start + tilemap_addr, compressed)
 
-    def mod(self, characters):
+    def mod(self, characters, doors):
         self.npcs.mod(characters)
         self.chests.mod()
+        self.events.mod(doors)
+        self.exits.mod(doors)
 
         self._fix_imperial_camp_boxes()
 

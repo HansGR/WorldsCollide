@@ -3,6 +3,7 @@ import data.spells as spells
 import data.characters as characters
 import data.items as items
 import data.metamorph_groups as metamorph_groups
+import data.doors as doors
 import data.maps as maps
 import data.enemies as enemies
 import data.swdtechs as swdtechs
@@ -33,8 +34,11 @@ class Data:
         self.metamorph_groups = metamorph_groups.MetamorphGroups(rom)
         self.metamorph_groups.mod()
 
+        self.doors = doors.Doors(args)
+        self.doors.mod()
+
         self.maps = maps.Maps(rom, args, self.items)
-        self.maps.mod(self.characters)
+        self.maps.mod(self.characters, self.doors)
 
         self.enemies = enemies.Enemies(rom, args)
         self.enemies.mod(self.maps)
