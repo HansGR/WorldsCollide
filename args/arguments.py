@@ -9,7 +9,7 @@ class Arguments:
             "espers", "natural_magic",
             "starting_gold_items", "items", "shops", "chests",
             "graphics",
-            "coliseum", "auction_house", "challenges", "bug_fixes", "misc",
+            "coliseum", "auction_house", "challenges", "bug_fixes", "misc", "doors"
         ]
         self.group_modules = {}
         for group in self.groups:

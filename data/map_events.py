@@ -1,10 +1,12 @@
 from data.map_event import MapEvent
 from data.event_exit_info import event_exit_info
 from event.event import *
+import time
 
 class MapEvents():
     EVENT_COUNT = 1164
     DATA_START_ADDR = 0x040342
+    BASE_OFFSET = 0xA0000
 
     def __init__(self, rom):
         self.rom = rom
@@ -33,7 +35,7 @@ class MapEvents():
     def mod(self, doors):
         # Perform Event modification for one-way entrances
         # For the connection "Event1" --> "Event2":
-        for m in doors.map:
+        for m in doors.map[1]:
             if m[0] in event_exit_info.keys():
                 # Reserve the code regions for (Event1) and (Event2)
                 exit_info = event_exit_info[m[0]]
@@ -50,14 +52,24 @@ class MapEvents():
                 # Write a new Event1a = Event1[0:split1] + Event2[split2:]
                 src = self.rom.get_bytes(exit_address, exit_split)
                 src.extend(self.rom.get_bytes(entr_address + entr_split, entr_length - entr_split))
-                #space = Reserve(exit_address, exit_address + exit_length, "Umaro trapdoor initial memory", field.NOP())
+
+                # print('Writing: ', m[0], ' --> ', m[1],
+                #       ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
+                #       '\n\tbitstring: ', [hex(s)[2:] for s in src])
+
                 space = Write(Bank.CC, src, "Umaro trapdoor replaced memory")
                 new_event_address = space.start_address
 
                 # Update the MapEvent.event_address = Address(Event1a)
-                self.events[self.event_address_index[exit_address]].event_address = new_event_address
+                self.events[self.event_address_index[exit_address - self.BASE_OFFSET]].event_address = new_event_address - self.BASE_OFFSET
                 # Event2 will be updated when the initiating door for Event2 is mapped
                 #   e.g. Event2a = Event2[0:split2] + Event3[split3:]; & so on.
+
+                # free previous event data space
+                #Free(exit_address, exit_address + exit_length - 1)
+
+                # print('\n\tnew memory address: ', hex(new_event_address))
+                #time.sleep(10)
 
     def get_event(self, search_start, search_end, x, y):
         for event in self.events[search_start:search_end + 1]:

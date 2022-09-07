@@ -7,6 +7,7 @@ def main():
 
     from data.data import Data
     data = Data(memory.rom, args)
+    data.doors.print()
 
     from event.events import Events
     events = Events(memory.rom, args, data)
@@ -22,6 +23,9 @@ def main():
 
     from bug_fixes import BugFixes
     bug_fixes = BugFixes()
+
+    #from memory.space import Space
+    #print(Space.heaps)
 
     data.write()
     memory.write()

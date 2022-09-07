@@ -58,7 +58,7 @@ class MapExits():
     def mod(self, doors):
         ### exit rando (2-way doors only)
         # For all doors in map, we want to find the exit and change where it leads to
-        for m in doors.map:
+        for m in doors.map[0]:
             # Figure out whether exits are short or long
             if self.exit_type[m[0]] == 'short':
                 exitA = self.short_exits[m[0]]  # Exit A = short exit

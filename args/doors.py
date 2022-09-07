@@ -13,14 +13,14 @@ def process(args):
 def flags(args):
     flags = ""
 
-    if args.doors_umaro:
+    if args.door_randomize_umaro:
         flags += " -dru"
 
     return flags
 
 def options(args):
     return [
-        ("Doors Randomize Umaro", args.doors_umaro),
+        ("Randomize Umaro's Cave", args.door_randomize_umaro),
     ]
 
 def menu(args):

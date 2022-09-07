@@ -9,5 +9,5 @@ event_exit_info = {
     2007 : [int('0cd8f6',16), 34, 23, 'Umaro Cave 2nd Room east trapdoor'],
     2008 : [int('0cd8f6',16), 34, 23, 'Umaro Cave 2nd Room east trapdoor ***duplicate***'],
     2009 : [int('0c3839',16), 50, 0 , 'Umaro Cave Boss Room trapdoor to Narshe'],
-    2010 : [int('0c37fe',16), 59, 43, 'Narshe Peak WoR entrance to Umaros Cave']
+    2010 : [int('0c37e7',16), 82, 66, 'Narshe Peak WoR entrance to Umaros Cave']
     }

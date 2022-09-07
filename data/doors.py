@@ -1,7 +1,7 @@
 from openpyxl import load_workbook
 from random import randrange
 
-DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
+DOORDATAFILE = 'C:/Users/HRIN/Documents/GitHub/ZoneMixer/LocationRandomizer-WC.xlsm'
 ROOM_SETS = {
     'Umaro': [309, 310, 311, '312a', '312b', '312c', 313, '33a']
 }
@@ -16,6 +16,7 @@ class Doors():
         self.door_rooms = {}
         self.door_descr = {}
         self.door_maps = {}
+        self.door_types = {}
         self.rooms = []
         self.room_doors = {}
         self.room_counts = {}
@@ -25,11 +26,9 @@ class Doors():
         self.map = []
 
         # Read in the doors to be randomized.  For now, force Umaro's cave
-        if self.args.doors_umaro:
+        if self.args.door_randomize_umaro:
+            #print('\n\n\tHello2\n\n')
             self.read(DOORDATAFILE, ROOM_SETS['Umaro'])
-
-        # Modify connections
-        self.mod()
 
     def read(self, filename, whichRooms=[]):
         # Read in the door data from outside source
@@ -38,7 +37,7 @@ class Doors():
 
         for r in ws.iter_rows(3):
             this_ID = r[0].value
-            this_parentMap = r[1].value
+            this_parentMap = r[1].value  # Instead of this: in maps() use maps.get_short_exit_count, etc. to create a dictionary maps.door_map[d] = mapID
             # this_X = r[2].value
             # this_Y = r[3].value
             # this_destMap = r[4].value
@@ -70,13 +69,14 @@ class Doors():
                         # Check if it's connected to an entrance (i.e. forced destination)
                         # or an exit (i.e. force shared destination)
                         forced_type = \
-                        [i for i in range(3) if this_forced in self.room_doors[self.door_rooms[this_forced]][i]][0]
+                            [i for i in range(3) if this_forced in self.room_doors[self.door_rooms[this_forced]][i]][0]
                         if forced_type == 1:
                             # do not add a unique exit
                             addExit = False
 
                 self.doors.append(this_ID)
                 self.door_rooms[this_ID] = this_roomID
+                self.door_types[this_ID] = this_type
                 self.door_descr[this_ID] = this_name
                 self.door_maps[this_ID] = this_parentMap
                 if this_roomID not in self.rooms:
@@ -93,7 +93,9 @@ class Doors():
                     entr_roomID = r[40].value  # NOTE: NEED TO ADD THIS FIELD (Col AO)!!!
                     self.doors.append(entr_ID)
                     self.door_rooms[entr_ID] = entr_roomID
+                    self.door_types[entr_ID] = 2
                     self.door_descr[entr_ID] = this_name + ' DESTINATION'
+                    self.door_maps[entr_ID] = r[4].value  # We don't actually need to know this ever.
                     if entr_roomID not in self.rooms:
                         self.rooms.append(entr_roomID)
                         # initialize room info
@@ -109,8 +111,7 @@ class Doors():
 
         map2 = self.map_oneways(zones, zone_counts)
 
-        self.map = [m for m in map1]
-        self.map.extend(map2)
+        self.map = [map1, map2]
 
     def map_doors(self):
         # Generate list of valid (i.e. 2-way) doors & reverse door-->room lookup
@@ -125,7 +126,7 @@ class Doors():
             for d in self.room_doors[zones[zi][0]][0]:
                 door_zones[d] = zi
 
-        doors = [d for d in self.doors]
+        doors = [d for d in self.doors if self.door_types[d] == 0]
         to_force = [d for d in self.forcing.keys() if d in doors]
         map = []
         # Connect all valid doors, creating zones in the process
@@ -426,3 +427,22 @@ class Doors():
                         break
 
         return map
+
+    def print(self):
+        # Print state of the Doors object
+        print('Doors:')
+        for d in self.doors:
+            print('\t', d, ': Room = ', self.door_rooms[d], ', Map = ', self.door_maps[d], '. ', self.door_descr[d])
+        print('Rooms:')
+        for r in self.rooms:
+            print('\t', r, ': door count = ', self.room_counts[r], '\n\t\tdoors: ', self.room_doors[r][0],
+                  '\n\t\tone-way exits: ', self.room_doors[r][1], '\n\t\t one-way entrances: ', self.room_doors[r][2])
+        print('Forced connections:')
+        for d in self.forcing.keys():
+            print('\t', d, ' --> ', self.forcing[d])
+        if len(self.map) > 0:
+            print('Map:')
+            for m in self.map[0]:
+                print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
+            for m in self.map[1]:
+                print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
