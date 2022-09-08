@@ -24,8 +24,8 @@ def main():
     from bug_fixes import BugFixes
     bug_fixes = BugFixes()
 
-    #from memory.space import Space
-    #print(Space.heaps)
+    from memory.space import Space
+    print(Space.heaps)
 
     data.write()
     memory.write()
