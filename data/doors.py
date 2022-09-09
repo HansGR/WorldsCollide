@@ -423,8 +423,10 @@ class Doors():
                     zone1 = nob_zones[nob]
                 else:
                     if len(nobs) > 0:
-                        print('ERROR: invalid situation encountered!')
-                        break
+                        print(zones, zone_counts)
+                        print(map)
+                        print(available)
+                        raise Exception('ERROR: remaining exits cannot be reached!')
 
         return map
 

@@ -1,5 +1,5 @@
 from data.map_event import MapEvent
-from data.event_exit_info import event_exit_info, exit_event_patch
+from data.event_exit_info import event_exit_info, exit_event_patch, exit_event_address_patch
 from event.event import *
 import time
 
@@ -52,19 +52,26 @@ class MapEvents():
                 # Write a new Event1a = Event1[0:split1] + Event2[split2:]
                 src = self.rom.get_bytes(exit_address, exit_split)  # First half of event
                 src_end = self.rom.get_bytes(entr_address + entr_split, entr_length - entr_split)
+
+                # Perform common event patches
                 if exit_info[3] and not entr_info[3]:
                     # Character is hidden during the transition and not unhidden later.
                     # Add a "Show object 31" line after map transition ("0x41 0x31", two bytes) after the 6A or 6B
-                    src.extend(src_end[:6] + [0x41, 0x31] + src_end[6:])
+                    src.extend(src_end[:5] + [0x41, 0x31] + src_end[5:])
                 else:
                     src.extend(src_end)
 
-                space = Allocate(Bank.CC, len(src), "Umaro trapdoor replaced memory")
+                # Check for other event patches & implement if found
+                if m[0] in exit_event_patch.keys():
+                    src = exit_event_patch[m[0]](src)
+
+                # Allocate space
+                space = Allocate(Bank.CC, len(src), "Exit Event Randomize: " + str(m[0]) + " --> " + str(m[1]))
                 new_event_address = space.start_address
 
-                # Check for event patches & implement if found
-                if m[0] in exit_event_patch.keys():
-                    src = exit_event_patch[m[0]](src, new_event_address)
+                # Check for event address patches & implement if found
+                if m[0] in exit_event_address_patch.keys():
+                    src = exit_event_address_patch[m[0]](src, new_event_address)
 
                 space.write(src)
 
@@ -73,12 +80,16 @@ class MapEvents():
                 # (Event2 will be updated when the initiating door for Event2 is mapped)
 
                 # free previous event data space
-                #Free(exit_address, exit_address + exit_length - 1)
+                do_free = False
+                if do_free:
+                    Free(exit_address, exit_address + exit_length - 1)
 
                 print('Writing: ', m[0], ' --> ', m[1],
                       ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
                       '\n\tbitstring: ', [hex(s)[2:] for s in src])
                 print('\n\tnew memory address: ', hex(new_event_address))
+                if do_free:
+                    print('\n\tFreed addresses: ', hex(exit_address), hex(exit_address + exit_length - 1))
 
     def get_event(self, search_start, search_end, x, y):
         for event in self.events[search_start:search_end + 1]:
