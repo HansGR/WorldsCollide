@@ -24,13 +24,12 @@ class ShortMapExit():
         self.y = data[1]
         self.dest_map = data[2] | (data[3] & 0x01) << 8
         ### mod for exit details
-        #print(str(data[2]) + " | " + str(data[3]))
         self.refreshparentmap = (data[3] & 0x02) >> 1
         self.enterlowZlevel = (data[3] & 0x04) >> 2
         self.displaylocationname = (data[3] & 0x08) >> 3
-        self.facing = (data[3] & 0x30) >> 4  #0 = north, 1 = east, 2 = south, 3 = west
+        self.facing = (data[3] & 0x30) >> 4  # 0 = north, 1 = east, 2 = south, 3 = west
         ### mod for exit details
-        #self.unknown = data[3] & 0xfe  ##this is wrong now that we are using more than the first bit
+        # self.unknown = data[3] & 0xFE  #original
         self.unknown = data[3] & 0xC0
         self.dest_x = data[4]
         self.dest_y = data[5]
@@ -43,8 +42,11 @@ class ShortMapExit():
         data[2] = self.dest_map & 0xff
         data[3] = ((self.dest_map & 0x100) >> 8) | self.unknown
         # mod for exit rando
+        data[3] |= self.refreshparentmap << 1
+        data[3] |= self.enterlowZlevel << 2
+        data[3] |= self.displaylocationname << 3
         data[3] |= self.facing << 4
-        #print(str(data[2]) + " | " + str(data[3]))
+
         # mod for exit rando
         data[4] = self.dest_x
         data[5] = self.dest_y
@@ -86,22 +88,22 @@ class LongMapExit():
         ### mod for exit rando
 
     def from_data(self, data):
-        assert(len(data) == self.DATA_SIZE)
+        assert (len(data) == self.DATA_SIZE)
 
         self.x = data[0]
         self.y = data[1]
-        self.size = data[2] & 0x7f  #tile length
-        self.direction = data[2] & 0x80 # 0 = horizontal, 128 = vertical
+        self.size = data[2] & 0x7f  # tile length
+        self.direction = data[2] & 0x80  # 0 = horizontal, 128 = vertical
         self.dest_map = data[3] | (data[4] & 0x01) << 8
+
         ### mod for exit details
-        #print(str(data[3]) + " | " + str(data[4]))
         self.refreshparentmap = (data[4] & 0x02) >> 1
         self.enterlowZlevel = (data[4] & 0x04) >> 2
         self.displaylocationname = (data[4] & 0x08) >> 3
-        self.facing = (data[4] & 0x30) >> 4  #0 = north, 1 = east, 2 = south, 3 = west
+        self.facing = (data[4] & 0x30) >> 4  # 0 = north, 1 = east, 2 = south, 3 = west
         ### mod for exit details
-        #self.unknown = data[3] & 0xfe  ##this is wrong now that we are using more than the first bit
-        self.unknown = data[3] & 0xC0
+        # self.unknown = data[4] & 0xFE  #original
+        self.unknown = data[4] & 0xC0
         self.dest_x = data[5]
         self.dest_y = data[6]
 
@@ -112,11 +114,14 @@ class LongMapExit():
         data[1] = self.y
         data[2] = self.size | self.direction
         data[3] = self.dest_map & 0xff
+        # mod for exit rando
         data[4] = ((self.dest_map & 0x100) >> 8) | self.unknown
-        # mod for exit rando
+        data[4] |= self.refreshparentmap << 1
+        data[4] |= self.enterlowZlevel << 2
+        data[4] |= self.displaylocationname << 3
         data[4] |= self.facing << 4
-        #print(str(data[3]) + " | " + str(data[4]))
         # mod for exit rando
+
         data[5] = self.dest_x
         data[6] = self.dest_y
 

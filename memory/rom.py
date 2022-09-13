@@ -4,8 +4,8 @@ class ROM():
 
     def __init__(self, file_name):
         from valid_rom_file import valid_rom_file
-        #if not valid_rom_file(file_name):
-        #    raise ValueError("Invalid ROM File")
+        if not valid_rom_file(file_name):
+            raise ValueError("Invalid ROM File")
 
         with open(file_name, "rb") as rom_file:
             self.data = list(rom_file.read())
