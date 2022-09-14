@@ -1,7 +1,7 @@
 from openpyxl import load_workbook
 from random import randrange
 
-DOORDATAFILE = 'C:/Users/HRIN/Documents/GitHub/ZoneMixer/LocationRandomizer-WC.xlsm'
+DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
 ROOM_SETS = {
     'Umaro': [309, 310, 311, '312a', '312b', '312c', 313, '33a']
 }

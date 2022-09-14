@@ -17,10 +17,17 @@ BASE_OFFSET = 0xA0000
 # ERROR: patches that change the length must happen BEFORE allocation; patches that depend on addresses must happen AFTER allocation!!!
 exit_event_patch = {
     # Jump into Umaro's Cave: force load Umaro's music (new music?) at end of event
-    2010 : lambda src: src[:-1] + [0xf0, 0x30] + src[-1:]
+    # In original event at: CC/3836
+    2010 : lambda src, src_end: [src, src_end[:-1] + [0xf0, 0x30] + src_end[-1:]]
+
 }
 
-exit_event_address_patch = {
+entrance_event_patch = {
+    # Jump back to Narshe from Umaro's cave: force "clear $1EB9 bit 4" (song override) before transition
+    3009 : lambda src, src_end: [src[:-1] + [0xd3, 0xcc] + src[-1:], src_end]
+}
+
+event_address_patch = {
     # Jump into Umaro's Cave: update branched event addresses
     2010 : lambda src, addr: src[:10] +
                              [(23 + addr) % 0x100, ((23 + addr) >> 8) % 0x100, ((23 + addr - BASE_OFFSET) >> 16) % 0x100,

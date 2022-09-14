@@ -1,5 +1,5 @@
 from data.map_event import MapEvent
-from data.event_exit_info import event_exit_info, exit_event_patch, exit_event_address_patch
+from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch
 from event.event import *
 import time
 
@@ -57,21 +57,24 @@ class MapEvents():
                 if exit_info[3] and not entr_info[3]:
                     # Character is hidden during the transition and not unhidden later.
                     # Add a "Show object 31" line after map transition ("0x41 0x31", two bytes) after the 6A or 6B
-                    src.extend(src_end[:5] + [0x41, 0x31] + src_end[5:])
-                else:
-                    src.extend(src_end)
+                    src_end = src_end[:5] + [0x41, 0x31] + src_end[5:]
 
                 # Check for other event patches & implement if found
                 if m[0] in exit_event_patch.keys():
-                    src = exit_event_patch[m[0]](src)
+                    [src, src_end] = exit_event_patch[m[0]](src, src_end)
+                if m[1] in entrance_event_patch.keys():
+                    [src, src_end] = entrance_event_patch[m[1]](src, src_end)
+
+                # Combine events
+                src.extend(src_end)
 
                 # Allocate space
                 space = Allocate(Bank.CC, len(src), "Exit Event Randomize: " + str(m[0]) + " --> " + str(m[1]))
                 new_event_address = space.start_address
 
                 # Check for event address patches & implement if found
-                if m[0] in exit_event_address_patch.keys():
-                    src = exit_event_address_patch[m[0]](src, new_event_address)
+                if m[0] in event_address_patch.keys():
+                    src = event_address_patch[m[0]](src, new_event_address)
 
                 space.write(src)
 
