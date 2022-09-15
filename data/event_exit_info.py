@@ -16,13 +16,18 @@ BASE_OFFSET = 0xA0000
 
 # ERROR: patches that change the length must happen BEFORE allocation; patches that depend on addresses must happen AFTER allocation!!!
 exit_event_patch = {
-    # Jump into Umaro's Cave: force load Umaro's music (new music?) at end of event
+    # Jump into Umaro's Cave:
+    #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
+    #   - force load Umaro's music [0xf0, 0x30] just before return (src_end[-1])
     # In original event at: CC/3836
-    2010 : lambda src, src_end: [src, src_end[:-1] + [0xf0, 0x30] + src_end[-1:]]
+    2010 : lambda src, src_end: [ src, src_end[:5] + [0xf4, 0xba] + src_end[5:-1] + [0xf0, 0x30] + src_end[-1:] ]
 
 }
 
 entrance_event_patch = {
+    # Jump from Narshe into Umaro's cave: Remove extra falling sound effect (src_end[5:6])
+    3010: lambda src, src_end: [ src, src_end[:5] + src_end[7:] ],
+
     # Jump back to Narshe from Umaro's cave: force "clear $1EB9 bit 4" (song override) before transition
     3009 : lambda src, src_end: [src[:-1] + [0xd3, 0xcc] + src[-1:], src_end]
 }
