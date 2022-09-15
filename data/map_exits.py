@@ -55,10 +55,10 @@ class MapExits():
             exit_data_start = self.LONG_DATA_START_ADDR + exit_index * LongMapExit.DATA_SIZE
             self.rom.set_bytes(exit_data_start, exit_data)
 
-    def mod(self, doors):
+    def mod(self, door_mapping, exit_maps):
         ### exit rando (2-way doors only)
         # For all doors in map, we want to find the exit and change where it leads to
-        for m in doors.map[0]:
+        for m in door_mapping:
             # Figure out whether exits are short or long
             if self.exit_type[m[0]] == 'short':
                 exitA = self.short_exits[m[0]]  # Exit A = short exit
@@ -73,12 +73,12 @@ class MapExits():
             exitA.dest_x = exitB.x
             exitA.dest_y = exitB.y
             exitA.facing = exitB.facing
-            exitA.dest_map = doors.door_maps[exitB.index]
+            exitA.dest_map = exit_maps[exitB.index]  # doors.door_maps[exitB.index]
 
             exitB.dest_x = exitA.x
             exitB.dest_y = exitA.y
             exitB.facing = exitA.direction
-            exitB.dest_map = doors.door_maps[exitA.index]
+            exitB.dest_map = exit_maps[exitA.index]  # doors.door_maps[exitA.index]
         ### One-way doors are connected in map_events.mod()
 
     def print_short_exit_range(self, start, count):

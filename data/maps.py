@@ -5,6 +5,8 @@ from data.npc import NPC
 
 from data.chests import Chests
 
+import data.doors as doors
+
 import data.map_events as events
 from data.map_event import MapEvent
 
@@ -34,6 +36,8 @@ class Maps():
         self.exits = exits.MapExits(rom)
         self.world_map_event_modifications = world_map_event_modifications.WorldMapEventModifications(rom)
         self.read()
+
+        self.doors = doors.Doors(args)
 
     def read(self):
         self.maps = []
@@ -69,6 +73,24 @@ class Maps():
             #####grab map warp-ability flag
             self.maps[map_index]["warpable"] = map_property.warpable
             #####grab map warp-ability flag
+
+        ### Populate the dictionary for parent map given door ID
+        self.exit_maps = {}
+        counter = 0
+        for m in range(len(self.maps)-1):
+            num_short = self.get_short_exit_count(m)
+            for i in range(num_short):
+                self.exit_maps[i+counter] = m
+            counter += num_short
+        for m in range(len(self.maps)-1):
+            num_long = self.get_long_exit_count(m)
+            for i in range(num_long):
+                self.exit_maps[i + counter] = m
+            counter += num_long
+        ### Do we also need this for event exits?
+        # No: doors directly re-write destinations; event exits just mash code together, so preserving map info.
+        # For event exits, we just need what rooms they are in (which is metadata, not in the ROM).
+
 
     def set_entrance_event(self, map_id, event_address):
         self.maps[map_id]["entrance_event_address"] = event_address
@@ -190,11 +212,12 @@ class Maps():
         compressed = compress(decompressed)
         self.rom.set_bytes(tilemaps_start + tilemap_addr, compressed)
 
-    def mod(self, characters, doors):
+    def mod(self, characters):
         self.npcs.mod(characters)
         self.chests.mod()
-        self.events.mod(doors)
-        self.exits.mod(doors)
+        self.doors.mod()
+        self.events.mod(self.doors)
+        self.exits.mod(self.doors.map[0], self.exit_maps)
 
         self._fix_imperial_camp_boxes()
 

@@ -15,7 +15,7 @@ class Doors():
         self.doors = []
         self.door_rooms = {}
         self.door_descr = {}
-        self.door_maps = {}
+        # self.door_maps = {}
         self.door_types = {}
         self.rooms = []
         self.room_doors = {}
@@ -38,7 +38,7 @@ class Doors():
 
         for r in ws.iter_rows(3):
             this_ID = r[0].value
-            this_parentMap = r[1].value  # Instead of this: in maps() use maps.get_short_exit_count, etc. to create a dictionary maps.door_map[d] = mapID
+            # this_parentMap = r[1].value  # Instead of this: in maps() use maps.get_short_exit_count, etc. to create a dictionary maps.door_map[d] = mapID
             # this_X = r[2].value
             # this_Y = r[3].value
             # this_destMap = r[4].value
@@ -79,7 +79,7 @@ class Doors():
                 self.door_rooms[this_ID] = this_roomID
                 self.door_types[this_ID] = this_type
                 self.door_descr[this_ID] = this_name
-                self.door_maps[this_ID] = this_parentMap
+                # self.door_maps[this_ID] = this_parentMap
                 if this_roomID not in self.rooms:
                     self.rooms.append(this_roomID)
                     # initialize room info
@@ -96,7 +96,7 @@ class Doors():
                     self.door_rooms[entr_ID] = entr_roomID
                     self.door_types[entr_ID] = 2
                     self.door_descr[entr_ID] = this_name + ' DESTINATION'
-                    self.door_maps[entr_ID] = r[4].value  # We don't actually need to know this ever.
+                    # self.door_maps[entr_ID] = r[4].value  # We don't actually need to know this ever.
                     if entr_roomID not in self.rooms:
                         self.rooms.append(entr_roomID)
                         # initialize room info
@@ -626,7 +626,7 @@ class Doors():
         # Print state of the Doors object
         print('Doors:')
         for d in self.doors:
-            print('\t', d, ': Room = ', self.door_rooms[d], ', Map = ', self.door_maps[d], '. ', self.door_descr[d])
+            print('\t', d, ': Room = ', self.door_rooms[d], '. ', self.door_descr[d])  # ', Map = ', self.door_maps[d],
         print('Rooms:')
         for r in self.rooms:
             print('\t', r, ': door count = ', self.room_counts[r], '\n\t\tdoors: ', self.room_doors[r][0],
