@@ -20,6 +20,7 @@ room_data = {
     19 : [ [113, 114], [ ], [ ] ], #Narshe Northern Mines 2nd/3rd Floor Outside WoB
     20 : [ [115, 1139], [ ], [ ] ], #Narshe Northern Mines 3rd Floor Outside WoB
     21 : [ [1137, 1138], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoB
+    '21a' : [ [1138], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoB ORIGIN
     22 : [ [1140, 1141], [ ], [ ] ], #Snow Battlefield WoB
     23 : [ [1142], [ ], [ ] ], #Narshe Peak WoB
     24 : [ [116, 117], [ ], [ ] ], #Narshe Weapon Shop
@@ -38,6 +39,7 @@ room_data = {
     37 : [ [145, 146], [ ], [ ] ], #Narshe Northern Mines 2nd/3rd Floor Outside WoR
     38 : [ [147, 1147], [ ], [ ] ], #Narshe Northern Mines 3rd Floor Outside WoR
     39 : [ [1145, 1146], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoR
+    '39a' : [ [1146], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoR
     40 : [ [1148, 1149], [ ], [ ] ], #Snow Battlefield WoR
     41 : [ [1150], [ ], [ ] ], #Narshe Peak WoR
     42 : [ [148, 149], [ ], [ ] ], #Narshe Northern Mines 1F Side/East Room WoR

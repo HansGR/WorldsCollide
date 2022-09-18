@@ -217,7 +217,7 @@ class Maps():
         self.chests.mod()
         self.doors.mod()
         self.events.mod(self.doors)
-        self.exits.mod(self.doors.map[0], self.exit_maps)
+        self.exits.mod(self.doors.map[0])
 
         self._fix_imperial_camp_boxes()
 

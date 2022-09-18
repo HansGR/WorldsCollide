@@ -1,11 +1,13 @@
 from openpyxl import load_workbook
 from random import randrange
 from data.rooms import room_data, forced_connections
-from data.map_exit_extra import exit_data  # for door descriptions
+from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
 # DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
 ROOM_SETS = {
-    'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, '368a']  # for use with rooms.room_data[roomID] = doors
+    'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, '368a'],
+    'UpperNarshe_WoB': [19, 20, '21a', 22, 23, 53, 54, 55, 59, 60],
+    'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47]
 }
 
 
@@ -27,12 +29,24 @@ class Doors():
         self.zone_counts = []
         self.map = []
 
+        self.match_WOB_WOR = False
         self.verbose = True
 
-        # Read in the doors to be randomized.  For now, force Umaro's cave
-        if self.args.door_randomize_umaro:
-            self.read([ROOM_SETS['Umaro']])
-            #self.read_xls(DOORDATAFILE, ROOM_SETS['Umaro'])
+        # Read in the doors to be randomized.
+        room_sets = []
+        if self.args.door_randomize_umaro:  # -dru
+            room_sets.append(ROOM_SETS['Umaro'])
+
+        if self.args.door_randomize_upper_narshe:  # -drun
+            room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
+            self.match_WOB_WOR = True
+        else:
+            if self.args.door_randomize_upper_narshe_wob:  # -drunb
+                room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
+            if self.args.door_randomize_upper_narshe_wor:  # -drunr
+                room_sets.append(ROOM_SETS['UpperNarshe_WoR'])
+
+        self.read(room_sets)
 
     def read(self, whichRooms=[]):
         # Collect & organize data on rooms and doors
@@ -50,9 +64,12 @@ class Doors():
                         self.door_types[d] = i
                         self.door_rooms[d] = room
                         if i < 2:
-                            self.door_descr[d] = exit_data[d][4]
+                            self.door_descr[d] = exit_data[d][1]
+                            if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
+                                # Also grab the description for the matching WOR door
+                                self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
                         else:
-                            self.door_descr[d] = exit_data[d-1000][4] + " DESTINATION"
+                            self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
 
             for d in self.doors[-1]:
                 if d in forced_connections.keys():
@@ -62,6 +79,14 @@ class Doors():
         # Create list of randomized connections
         # Connect rooms together to produce zones
         map1 = self.map_doors()
+        if self.match_WOB_WOR:
+            # Make the WOR map match the WOB map in relevant areas
+            if self.verbose:
+                print('Mapping WoR to match WoB ...')
+            d = [m for m in map1 if m[0] in doors_WOB_WOR.keys()]
+            map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
+
+
         flag = True
         failures = 0
         while flag:
@@ -75,9 +100,11 @@ class Doors():
                     raise Exception('Major Error: something is seriously wrong.')
         self.map = [map1, map2]
 
+
     def map_doors(self):
         # Generate list of valid (i.e. 2-way) doors & reverse door-->room lookup
         map = []
+        error_ctr = 0
         for a in range(len(self.rooms)):
             zones = []
             zone_counts = []
@@ -97,7 +124,6 @@ class Doors():
                 print('Mapping area', a, ':', len(doors), ' doors... ')
                 counter = 1
             # Connect all valid doors, creating zones in the process
-            error_ctr = 0
             while len(doors) > 0:
                 if self.verbose:
                     print('\n[', counter, '] Zone state: ')
@@ -133,12 +159,16 @@ class Doors():
                     doors.remove(door1)  # clean up
                     zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
 
-                    # Construct a list of valid zone connections:  Any zone that is not [1, 0, 0]; [1, 1, 0]; [1, 0, 1]
-                    valid_zone2 = [zi for zi in range(len(zones)) if
-                                   zone_counts[zi] != [1, 0, 0] and
-                                   zone_counts[zi] != [1, 1, 0] and
-                                   zone_counts[zi] != [1, 0, 1]]
-                    valid = [d for d in doors if door_zones[d] in valid_zone2]
+                    if len(doors) == 1:
+                        # Case if there are only two dead-end zones left: connect them.
+                        valid = [d for d in doors]
+                    else:
+                        # Construct a list of valid zone connections:  Any zone that is not [1, 0, 0]; [1, 1, 0]; [1, 0, 1]
+                        valid_zone2 = [zi for zi in range(len(zones)) if
+                                       zone_counts[zi] != [1, 0, 0] and
+                                       zone_counts[zi] != [1, 1, 0] and
+                                       zone_counts[zi] != [1, 0, 1]]
+                        valid = [d for d in doors if door_zones[d] in valid_zone2]
                     if self.verbose:
                         print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (dead end):')
 
@@ -263,7 +293,7 @@ class Doors():
                         print('ERROR: no valid doors!')
                         doors.append(door1)
                         error_ctr += 1
-                        if error_ctr > 5:
+                        if error_ctr > 3:
                             raise Exception('ERROR: too many errors.')
                 else:
                     door2 = valid.pop(randrange(len(valid)))
