@@ -12,6 +12,8 @@ def parse(parser):
                        help="Randomize the doors in Upper Narshe WoB")
     doors.add_argument("-drunr", "--door-randomize-upper-narshe-wor", action="store_true",
                        help="Randomize the doors in Upper Narshe WoR")
+    doors.add_argument("-drem", "--door-randomize-esper-mountain", action="store_true",
+                       help="Randomize the doors in Esper Mountain")
 
 def process(args):
     pass
@@ -31,6 +33,9 @@ def flags(args):
         if args.door_randomize_upper_narshe_wor:
             flags += " -drunr"
 
+    if args.door_randomize_esper_mountain:
+        flags += " -drem"
+
     return flags
 
 def options(args):
@@ -47,6 +52,7 @@ def options(args):
     return [
         ("Umaro's Cave", args.door_randomize_umaro),
         ("Upper Narshe", un_state),
+        ("Esper Mountain", args.door_randomize_esper_mountain),
     ]
 
 def menu(args):

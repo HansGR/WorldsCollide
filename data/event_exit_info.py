@@ -9,7 +9,13 @@ event_exit_info = {
     2007 : [int('0cd8f6',16), 34, 24, True, 'Umaro Cave 2nd Room east trapdoor'],
     2008 : [int('0cd8f6',16), 34, 24, True, 'Umaro Cave 2nd Room east trapdoor ***duplicate***'],
     2009 : [int('0c3839',16), 50, 1 , False, 'Umaro Cave Boss Room trapdoor to Narshe'],
-    2010 : [int('0c37e7',16), 82, 67, True, 'Narshe Peak WoR entrance to Umaros Cave']
+    2010 : [int('0c37e7',16), 82, 67, True, 'Narshe Peak WoR entrance to Umaros Cave'],
+    2011 : [int('0bee80',16), 15, 0 , False, 'Esper Mtn 2nd Room bridge jump west'],   # forced connection, no mod
+    2012 : [int('0bee71',16), 15, 0 , False, 'Esper Mtn 2nd Room bridge jump middle'], # forced connection, no mod
+    2013 : [int('0bee62',16), 15, 0 , False, 'Esper Mtn 2nd Room bridge jump east'],    # forced connection, no mod
+    2014 : [int('0bee8f',16), 47, 30, False, 'Esper Mtn Pit Room South trapdoor'],
+    2015 : [int('0beebe',16), 46, 30, False, 'Esper Mtn Pit Room North trapdoor'],  # no "38 (Hold screen)" after transition
+    2016 : [int('0beeec',16), 47, 30, False, 'Esper Mtn Pit Room East trapdoor']
     }
 
 BASE_OFFSET = 0xA0000
@@ -20,8 +26,13 @@ exit_event_patch = {
     #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
     #   - force load Umaro's music [0xf0, 0x30] just before return (src_end[-1])
     # In original event at: CC/3836
-    2010 : lambda src, src_end: [ src, src_end[:5] + [0xf4, 0xba] + src_end[5:-1] + [0xf0, 0x30] + src_end[-1:] ]
+    2010 : lambda src, src_end: [ src, src_end[:5] + [0xf4, 0xba] + src_end[5:-1] + [0xf0, 0x30] + src_end[-1:] ],
 
+    # Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
+    # e.g. "CB/EE8F: C0    If ($1E80($097) [$1E92, bit 7] is clear), branch to $CA5EB3 (simply returns)
+    2014 : lambda src, src_end: [ src[6:], src_end ],
+    2015 : lambda src, src_end: [ src[6:], src_end ],
+    2016 : lambda src, src_end: [ src[6:], src_end ]
 }
 
 entrance_event_patch = {

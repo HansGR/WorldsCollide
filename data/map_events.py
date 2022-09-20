@@ -78,6 +78,11 @@ class MapEvents():
 
                 space.write(src)
 
+                # print('Writing: ', m[0], ' --> ', m[1],
+                #       ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
+                #       '\n\tbitstring: ', [hex(s)[2:] for s in src])
+                # print('\n\tnew memory address: ', hex(new_event_address))
+
                 # Update the MapEvent.event_address = Address(Event1a)
                 self.events[self.event_address_index[exit_address - self.BASE_OFFSET]].event_address = new_event_address - self.BASE_OFFSET
                 # (Event2 will be updated when the initiating door for Event2 is mapped)
@@ -87,10 +92,6 @@ class MapEvents():
                 if do_free:
                     Free(exit_address, exit_address + exit_length - 1)
 
-                print('Writing: ', m[0], ' --> ', m[1],
-                      ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
-                      '\n\tbitstring: ', [hex(s)[2:] for s in src])
-                print('\n\tnew memory address: ', hex(new_event_address))
                 if do_free:
                     print('\n\tFreed addresses: ', hex(exit_address), hex(exit_address + exit_length - 1))
 

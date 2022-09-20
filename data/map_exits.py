@@ -1,5 +1,6 @@
 from data.map_exit import ShortMapExit, LongMapExit
 from data.map_exit_extra import exit_data as exit_data_orig
+from data.map_exit_extra import exit_data_patch
 
 class MapExits():
     SHORT_EXIT_COUNT = 0x469
@@ -16,6 +17,15 @@ class MapExits():
         self.exit_type = {}
 
         self.read()
+
+        # f = open('exit_original_info.txt','w')
+        # f.write('# exit_ID: [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
+        # for li in self.exit_original_data.keys():
+        #     write_string = str(li)
+        #     write_string += ': '+str(self.exit_original_data[li])
+        #     write_string += '. '+str(self.exit_raw_data[li])+'\n'
+        #     f.write(write_string)
+        # f.close()
 
     def read(self):
         global_counter = 0
@@ -70,11 +80,25 @@ class MapExits():
 
     def mod(self, door_mapping):
         ### exit rando (2-way doors only)
+        # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
+        # This could be done globally in Exits.read().
+        # But to be conservative & make minimal changes to the ROM, for now we will do it here, only for affected doors.
+        for m in door_mapping:
+            for d in m:
+                if d in exit_data_patch.keys():
+                    self.exit_original_data[d] = exit_data_patch[d](self.exit_original_data[d])
+
         # For all doors in map, we want to find the exit and change where it leads to
         for m in door_mapping:
             # Figure out whether exits are short or long
             exitA = self.get_exit_from_ID(m[0])
             exitB = self.get_exit_from_ID(m[1])
+
+            # print(m[0], ' --> ', m[1], ':')
+            # print('\tBefore: exitA')
+            # exitA.print()
+            # print('\tBefore: exitB')
+            # exitB.print()
 
             # Attach exits:
             # Copy original properties of exitB_pair to exitA & vice versa.
@@ -83,7 +107,27 @@ class MapExits():
             self.copy_exit_info(exitA, exitB_pairID)
             self.copy_exit_info(exitB, exitA_pairID)
 
+            # print('\texitB pair:', exitB_pairID, ': ', self.exit_original_data[exitB_pairID])
+            # print('\texitA pair:', exitA_pairID, ': ', self.exit_original_data[exitA_pairID], '\n')
+            # print('\tAfter: exitA')
+            # exitA.print()
+            # print('\tAfter: exitB')
+            # exitB.print()
+
         ### One-way doors are connected in map_events.mod()
+
+        ### NOTES:
+        # There are two ways to think about connecting world-map exits:
+        #   (a) make all exits that would go to the world map instead go to some randomly selected exit
+        #       --> Note this is also needed for some multi-short-exit "doors", see e.g. Esper Mountain
+        #   (b) allowing any exit to connect to any other exit.
+        #       This makes e.g. Cid's House a "hub" (5 doors) instead of a "hallway" (2 doors)
+        # To make these two modes work:
+        #   (a) needs a way to define that [list of exits] should all be connected to the same place,
+        #       (plus a special treatment for SF WoB east side, probably just making it its own room).
+        #       --> This is now implemented using rooms.shared_events[doorID] = [list of doorIDs with shared connection]
+        #   (b) needs additional patching to make some long exits behave in a sensible way, since in vanilla they would
+        #       put you at the vanilla entrance, which is a different long exit.
 
     def get_exit_from_ID(self, exitID):
         if self.exit_type[exitID] == 'short':
@@ -100,7 +144,7 @@ class MapExits():
         mod_exit.dest_x = pair_info[0]
         mod_exit.dest_y = pair_info[1]
         mod_exit.dest_map = pair_info[2]
-        mod_exit.refreshparentmap = pair_info[3]
+        # mod_exit.refreshparentmap = pair_info[3]  # do not want to copy refresh parent map!  Messes up warp stones.
         mod_exit.enterlowZlevel = pair_info[4]
         mod_exit.displaylocationname = pair_info[5]
         mod_exit.facing = pair_info[6]

@@ -1,13 +1,14 @@
 from openpyxl import load_workbook
 from random import randrange
-from data.rooms import room_data, forced_connections
+from data.rooms import room_data, forced_connections, shared_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
 # DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, '368a'],
     'UpperNarshe_WoB': [19, 20, '21a', 22, 23, 53, 54, 55, 59, 60],
-    'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47]
+    'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47],
+    'EsperMountain': ['487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501]
 }
 
 
@@ -46,6 +47,9 @@ class Doors():
             if self.args.door_randomize_upper_narshe_wor:  # -drunr
                 room_sets.append(ROOM_SETS['UpperNarshe_WoR'])
 
+        if self.args.door_randomize_esper_mountain:  # -drem
+            room_sets.append(ROOM_SETS['EsperMountain'])
+
         self.read(room_sets)
 
     def read(self, whichRooms=[]):
@@ -65,6 +69,9 @@ class Doors():
                         self.door_rooms[d] = room
                         if i < 2:
                             self.door_descr[d] = exit_data[d][1]
+                            if d in shared_exits.keys():
+                                for sd in shared_exits[d]:
+                                    self.door_descr[sd] = exit_data[sd][1]
                             if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
                                 # Also grab the description for the matching WOR door
                                 self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
@@ -163,11 +170,11 @@ class Doors():
                         # Case if there are only two dead-end zones left: connect them.
                         valid = [d for d in doors]
                     else:
-                        # Construct a list of valid zone connections:  Any zone that is not [1, 0, 0]; [1, 1, 0]; [1, 0, 1]
+                        # Construct a list of valid zone connections:  Any zone that is not [1, 0, 0]; [1, n, 0]; [1, 0, n]
                         valid_zone2 = [zi for zi in range(len(zones)) if
                                        zone_counts[zi] != [1, 0, 0] and
-                                       zone_counts[zi] != [1, 1, 0] and
-                                       zone_counts[zi] != [1, 0, 1]]
+                                       not (zone_counts[zi][0] == 1 and zone_counts[zi][1] == 0) and
+                                       not (zone_counts[zi][0] == 1 and zone_counts[zi][2] == 0)]
                         valid = [d for d in doors if door_zones[d] in valid_zone2]
                     if self.verbose:
                         print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (dead end):')
@@ -339,6 +346,17 @@ class Doors():
                 print('Area',a,'Final zones: ')
                 for z in range(len(self.zones[a])):
                     print(z,': ', self.zones[a][z], ', ', self.zone_counts[a][z])
+
+        # Append shared doors to the map
+        for m in map:
+            if m[0] in shared_exits.keys():
+                for se in shared_exits[m[0]]:
+                    # Send shared exits to the same destination
+                    map.append([se, m[1]])
+            if m[1] in shared_exits.keys():
+                for se in shared_exits[m[1]]:
+                    # Send shared exits to the same destination
+                    map.append([m[0], se])
 
         return map
 

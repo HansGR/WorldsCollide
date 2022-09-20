@@ -493,20 +493,25 @@ room_data = {
     485 : [ [1029], [ ], [ ] ], #Fanatic's Tower 3rd Floor Treasure Room
     486 : [ [1030], [ ], [ ] ], #Fanatic's Tower 4th Floor Treasure Room
     487 : [ [1031], [ ], [ ] ], #Fanatic's Tower 1st Floor Secret Room
+
+    '487a' : [ [44], [], [] ],  # <VIRTUAL> World map entrance to Esper Mountain
     488 : [ [1032, 1033], [ ], [ ] ], #Esper Mountain 3 Statues Room
     489 : [ [1034, 1035, 1036], [ ], [ ] ], #Esper Mountain Outside Bridge Room
+    '489a' : [ [1034, 1036], [ ], [ ] ], #Esper Mountain Outside Bridge Room (shared destinations: 1034: [1035])
     490 : [ [1037], [ ], [ ] ], #Esper Mountain Outside East Treasure Room
     491 : [ [1038, 1039, 1040, 1041], [ ], [ ] ], #Esper Mountain Outside Path to Final Room
+    '491a' : [ [1038, 1040], [ ], [ ] ], #Esper Mountain Outside Path to Final Room (shared: 1038: [1039], 1040: [1041])
     492 : [ [1042, 1043], [ ], [ ] ], #Esper Mountain Outside Statue Path
     493 : [ [1044], [ ], [ ] ], #Esper Mountain Outside West Treasure Room
     494 : [ [1045], [ ], [ ] ], #Esper Mountain Outside Northwest Treasure Room
     495 : [ [1046, 1047, 1048, 1049], [ ], [ ] ], #Esper Mountain Inside First Room
-    496 : [ [1050, 1051], [ ], [ ] ], #Esper Mountain Inside Second Room South Section
-    497 : [ [1052], [ ], [ ] ], #Esper Mountain Falling Pit Room
-    498 : [ [1053, 1054], [ ], [ ] ], #Esper Mountain Inside Second Room West Section
-    499 : [ [1055], [ ], [ ] ], #Esper Mountain Inside Second Room East Section
-    500 : [ [1056], [ ], [ ] ], #Esper Mountain Inside Second Room North Section
+    496 : [ [1050, 1051], [ ], [3011, 3012, 3013] ], #Esper Mountain Inside Second Room South Section (with bridge jump entrances)
+    497 : [ [1052], [2014, 2015, 2016], [ ] ], #Esper Mountain Falling Pit Room
+    498 : [ [1053, 1054], [2011], [3015] ], #Esper Mountain Inside Second Room West Section
+    499 : [ [1055], [2013], [3016] ], #Esper Mountain Inside Second Room East Section
+    500 : [ [1056], [2012], [3014] ], #Esper Mountain Inside Second Room North Section
     501 : [ [1057], [ ], [ ] ], #Esper Mountain Inside Second Room Dead End
+
     502 : [ [1058], [ ], [ ] ], #Imperial Base
     503 : [ [1061, 1062], [ ], [ ] ], #Imperial Base House
     504 : [ [1063], [ ], [ ] ], #Imperial Base House Basement
@@ -550,5 +555,16 @@ forced_connections = {
     2005 : [2006],   # Umaro's cave room 2: east trapdoor (shared exit)
     2006 : [2005],   # Umaro's cave room 2: east trapdoor (shared exit)
     2007 : [2008],   # Umaro's cave room 2: west trapdoor (shared exit)
-    2008 : [2007]   # Umaro's cave room 2: west trapdoor (shared exit)
+    2008 : [2007],   # Umaro's cave room 2: west trapdoor (shared exit)
+    2011 : [3011],   # Esper Mountain Inside 2nd Room: North-to-South bridge jump West
+    2012 : [3012],   #      North-to-South bridge jump Mid
+    2013 : [3013]    #      North-to-South bridge jump East
+}
+
+# Lists of doors that have a shared destination. key_doorID : [doorIDs that share destination]
+# Note that only key_doorID should be in a room.  If the shared exit(s) was randomized this will take priority
+shared_exits = {
+    1034 : [1035],  # Esper Mountain outside bridge, left door
+    1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door
+    1040 : [1041]   # Esper Mountain Outside Path to Final Room West Door
 }
