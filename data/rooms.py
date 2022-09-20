@@ -37,11 +37,13 @@ room_data = {
     35 : [ [139, 143], [ ], [ ] ], #Narshe Outside Behind Arvis to Mines WoR
     36 : [ [141, 142], [ ], [ ] ], #Narshe South Caves Secret Passage Outside WoR
     37 : [ [145, 146], [ ], [ ] ], #Narshe Northern Mines 2nd/3rd Floor Outside WoR
+    '37a' : [ [145, 146], [ ], [3009] ], #Narshe Northern Mines 2nd/3rd Floor Outside WoR incl. exit from Umaro's cave
     38 : [ [147, 1147], [ ], [ ] ], #Narshe Northern Mines 3rd Floor Outside WoR
     39 : [ [1145, 1146], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoR
-    '39a' : [ [1146], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoR
+    '39a' : [ [1146], [ ], [ ] ], #Narshe Northern Mines 1st Floor Outside WoR ORIGIN
     40 : [ [1148, 1149], [ ], [ ] ], #Snow Battlefield WoR
     41 : [ [1150], [ ], [ ] ], #Narshe Peak WoR
+    '41a' : [ [1150], [2010], [] ], # Narshe Peak WoR incl. entrance to Umaro's cave
     42 : [ [148, 149], [ ], [ ] ], #Narshe Northern Mines 1F Side/East Room WoR
     43 : [ [150, 151], [ ], [ ] ], #Narshe Northern Mines 2F Inside WoR
     44 : [ [152, 153], [ ], [ ] ], #Narshe Northern Mines 3F Inside WoR

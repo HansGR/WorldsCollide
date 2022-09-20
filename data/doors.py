@@ -8,7 +8,12 @@ ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, '368a'],
     'UpperNarshe_WoB': [19, 20, '21a', 22, 23, 53, 54, 55, 59, 60],
     'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47],
-    'EsperMountain': ['487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501]
+    'EsperMountain': ['487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501],
+    'All': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
+            19, 20, '21a', 22, 23, 53, 54, 55, 59, 60,  # Upper Narshe WoB
+            '37a', 38, '39a', 40, '41a', 42, 43, 44, 46, 47,  # Upper Narshe WoR
+            '487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501  # Esper Mountain
+            ]
 }
 
 
@@ -35,20 +40,25 @@ class Doors():
 
         # Read in the doors to be randomized.
         room_sets = []
-        if self.args.door_randomize_umaro:  # -dru
-            room_sets.append(ROOM_SETS['Umaro'])
-
-        if self.args.door_randomize_upper_narshe:  # -drun
-            room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
-            self.match_WOB_WOR = True
+        if self.args.door_randomize_all:  # -dra
+            # Prioritize randomizing all doors
+            room_sets.append(ROOM_SETS['All'])
         else:
-            if self.args.door_randomize_upper_narshe_wob:  # -drunb
-                room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
-            if self.args.door_randomize_upper_narshe_wor:  # -drunr
-                room_sets.append(ROOM_SETS['UpperNarshe_WoR'])
+            # Randomize separately
+            if self.args.door_randomize_umaro:  # -dru
+                room_sets.append(ROOM_SETS['Umaro'])
 
-        if self.args.door_randomize_esper_mountain:  # -drem
-            room_sets.append(ROOM_SETS['EsperMountain'])
+            if self.args.door_randomize_upper_narshe:  # -drun
+                room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
+                self.match_WOB_WOR = True
+            else:
+                if self.args.door_randomize_upper_narshe_wob:  # -drunb
+                    room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
+                if self.args.door_randomize_upper_narshe_wor:  # -drunr
+                    room_sets.append(ROOM_SETS['UpperNarshe_WoR'])
+
+            if self.args.door_randomize_esper_mountain:  # -drem
+                room_sets.append(ROOM_SETS['EsperMountain'])
 
         self.read(room_sets)
 

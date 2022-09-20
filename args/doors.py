@@ -14,6 +14,9 @@ def parse(parser):
                        help="Randomize the doors in Upper Narshe WoR")
     doors.add_argument("-drem", "--door-randomize-esper-mountain", action="store_true",
                        help="Randomize the doors in Esper Mountain")
+    doors.add_argument("-dra", "--door-randomize-all", action = "store_true",
+                         help = "Randomize all currently-implemented doors")
+
 
 def process(args):
     pass
@@ -36,24 +39,32 @@ def flags(args):
     if args.door_randomize_esper_mountain:
         flags += " -drem"
 
+    if args.door_randomize_all:
+        flags += " -dra"
+
     return flags
 
 def options(args):
 
-    un_state = args.door_randomize_upper_narshe
-    if not un_state:
-        if args.door_randomize_upper_narshe_wob and not args.door_randomize_upper_narshe_wor:
-            un_state = 'WoB'
-        elif not args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
-            un_state = 'WoR'
-        elif args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
-            un_state = 'WoB+WoR'
+    if args.door_randomize_all:
+        return [
+            ("Randomize All", args.door_randomize_all),
+        ]
+    else:
+        un_state = args.door_randomize_upper_narshe
+        if not un_state:
+            if args.door_randomize_upper_narshe_wob and not args.door_randomize_upper_narshe_wor:
+                un_state = 'WoB'
+            elif not args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
+                un_state = 'WoR'
+            elif args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
+                un_state = 'WoB+WoR'
 
-    return [
-        ("Umaro's Cave", args.door_randomize_umaro),
-        ("Upper Narshe", un_state),
-        ("Esper Mountain", args.door_randomize_esper_mountain),
-    ]
+        return [
+            ("Umaro's Cave", args.door_randomize_umaro),
+            ("Upper Narshe", un_state),
+            ("Esper Mountain", args.door_randomize_esper_mountain),
+        ]
 
 def menu(args):
     return (name(), options(args))
