@@ -1,22 +1,29 @@
-#event exit information:  Event_ID:  [original address, event bit length, split point, is chararacter hidden, description]
+#event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description]
+#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
+#   None = not implemented
 event_exit_info = {
-    2001 : [int('0cd8d4',16), 34, 24, True, 'Umaro Cave 1st Room trapdoor top'],
-    2002 : [int('0cd8b2',16), 34, 24, True, 'Umaro Cave 1st Room trapdoor left'],
-    2003 : [int('0cd93a',16), 45, 35, True, 'Umaro Cave Switch Room trapdoor to 2nd Room'],
-    2004 : [int('0cd967',16), 45, 35, True, 'Umaro Cave Switch Room trapdoor to Boss Room'],
-    2005 : [int('0cd918',16), 34, 24, True, 'Umaro Cave 2nd Room west trapdoor'],
-    2006 : [int('0cd918',16), 34, 24, True, 'Umaro Cave 2nd Room west trapdoor ***duplicate***'],
-    2007 : [int('0cd8f6',16), 34, 24, True, 'Umaro Cave 2nd Room east trapdoor'],
-    2008 : [int('0cd8f6',16), 34, 24, True, 'Umaro Cave 2nd Room east trapdoor ***duplicate***'],
-    2009 : [int('0c3839',16), 50, 1 , False, 'Umaro Cave Boss Room trapdoor to Narshe'],
-    2010 : [int('0c37e7',16), 82, 67, True, 'Narshe Peak WoR entrance to Umaros Cave'],
-    2011 : [int('0bee80',16), 15, 0 , False, 'Esper Mtn 2nd Room bridge jump west'],   # forced connection, no mod
-    2012 : [int('0bee71',16), 15, 0 , False, 'Esper Mtn 2nd Room bridge jump middle'], # forced connection, no mod
-    2013 : [int('0bee62',16), 15, 0 , False, 'Esper Mtn 2nd Room bridge jump east'],    # forced connection, no mod
-    2014 : [int('0bee8f',16), 47, 30, False, 'Esper Mtn Pit Room South trapdoor'],
-    2015 : [int('0beebe',16), 46, 30, False, 'Esper Mtn Pit Room North trapdoor'],  # no "38 (Hold screen)" after transition
-    2016 : [int('0beeec',16), 47, 30, False, 'Esper Mtn Pit Room East trapdoor']
+    2001 : [int('0cd8d4',16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor top'],
+    2002 : [int('0cd8b2',16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor left'],
+    2003 : [int('0cd93a',16), 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to 2nd Room'],
+    2004 : [int('0cd967',16), 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to Boss Room'],
+    2005 : [int('0cd918',16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor'],
+    2006 : [int('0cd918',16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***'],
+    2007 : [int('0cd8f6',16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor'],
+    2008 : [int('0cd8f6',16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***'],
+    2009 : [int('0c3839',16), 50, 1 , [False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe'],
+    2010 : [int('0c37e7',16), 82, 67, [True, True, True], 'Narshe Peak WoR entrance to Umaros Cave'],
+    2011 : [int('0bee80',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump west'],   # forced connection, no mod
+    2012 : [int('0bee71',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump middle'], # forced connection, no mod
+    2013 : [int('0bee62',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump east'],    # forced connection, no mod
+    2014 : [int('0bee8f',16), 47, 30, [False, False, True], 'Esper Mtn Pit Room South trapdoor'],
+    2015 : [int('0beebe',16), 46, 30, [False, False, True], 'Esper Mtn Pit Room North trapdoor'],  # no "38 (Hold screen)" after transition
+    2016 : [int('0beeec',16), 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor']
     }
+# Notes:
+#   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
+#       pair after the transition, so it technically does not need to be patched in for entrances.  It also doesn't need
+#       to be patched in for exits, so the value shouldn't be "True" either.  If there were a value for which both
+#       "i" and "not i" were false, I would use it here.
 
 BASE_OFFSET = 0xA0000
 
@@ -26,6 +33,7 @@ exit_event_patch = {
     #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
     #   - force load Umaro's music [0xf0, 0x30] just before return (src_end[-1])
     # In original event at: CC/3836
+    # NOTE you only really want to force load this music if it's in Umaro's Cave...
     2010 : lambda src, src_end: [ src, src_end[:5] + [0xf4, 0xba] + src_end[5:-1] + [0xf0, 0x30] + src_end[-1:] ],
 
     # Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
@@ -36,11 +44,16 @@ exit_event_patch = {
 }
 
 entrance_event_patch = {
+    # Jump back to Narshe from Umaro's cave: force "clear $1EB9 bit 4" (song override) before transition
+    # Now handled in map_events.mod() with common patches
+    #3009: lambda src, src_end: [src[:-1] + [0xd3, 0xcc] + src[-1:], src_end],
+
     # Jump from Narshe into Umaro's cave: Remove extra falling sound effect (src_end[5:6])
     3010: lambda src, src_end: [ src, src_end[:5] + src_end[7:] ],
 
-    # Jump back to Narshe from Umaro's cave: force "clear $1EB9 bit 4" (song override) before transition
-    3009 : lambda src, src_end: [src[:-1] + [0xd3, 0xcc] + src[-1:], src_end]
+    # Jump into Esper Mountain room 2, North trapdoor: patch in "hold screen" (0x38) after map transition
+    # The other trapdoors have this, maybe it's just a typo?
+    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ]
 }
 
 event_address_patch = {

@@ -42,22 +42,39 @@ class MapEvents():
                 exit_address = exit_info[0]
                 exit_length = exit_info[1]
                 exit_split = exit_info[2]
+                exit_state = exit_info[3]
 
                 # Right now the convention is that vanilla one-way entrance ID = (vanilla one-way exit ID + 1000)
                 entr_info = event_exit_info[m[1] - 1000]
                 entr_address = entr_info[0]
                 entr_length = entr_info[1]
                 entr_split = entr_info[2]
+                entr_state = entr_info[3]
 
                 # Write a new Event1a = Event1[0:split1] + Event2[split2:]
                 src = self.rom.get_bytes(exit_address, exit_split)  # First half of event
                 src_end = self.rom.get_bytes(entr_address + entr_split, entr_length - entr_split)
 
                 # Perform common event patches
-                if exit_info[3] and not entr_info[3]:
-                    # Character is hidden during the transition and not unhidden later.
-                    # Add a "Show object 31" line after map transition ("0x41 0x31", two bytes) after the 6A or 6B
-                    src_end = src_end[:5] + [0x41, 0x31] + src_end[5:]
+                if exit_state != entr_state:
+                    ex_patch = []
+                    en_patch = []
+                    if exit_state[0] and not entr_state[0]:
+                        # Character is hidden during the transition and not unhidden later.
+                        # Add a "Show object 31" line ("0x41 0x31", two bytes)
+                        en_patch += [0x41, 0x31]
+                    if exit_state[1] and not entr_state[1]:
+                        # Song override bit is on in the exit but not cleared in the entrance.
+                        # Add a "clear $1EB9 bit 4" (song override) before transition
+                        ex_patch += [0xd3, 0xcc]
+                    if exit_state[2] and not entr_state[2]:
+                        # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
+                        # Add a "0x39 Free Screen" before transition
+                        ex_patch += [0x39]
+                    # Add patched lines before map transition
+                    src = src[:-1] + ex_patch + src[-1:]
+                    # Add patched lines after map transition
+                    src_end = src_end[:5] + en_patch + src_end[5:]
 
                 # Check for other event patches & implement if found
                 if m[0] in exit_event_patch.keys():
