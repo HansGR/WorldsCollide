@@ -67,6 +67,10 @@ class MapExits():
                                                        new_exit.displaylocationname, new_exit.facing,
                                                        new_exit.unknown]
 
+        # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
+        for e in exit_data_patch.keys():
+            self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
+
     def write(self):
         for exit_index, exit in enumerate(self.short_exits):
             exit_data = exit.to_data()
@@ -80,14 +84,6 @@ class MapExits():
 
     def mod(self, door_mapping):
         ### exit rando (2-way doors only)
-        # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
-        # This could be done globally in Exits.read().
-        # But to be conservative & make minimal changes to the ROM, for now we will do it here, only for affected doors.
-        for m in door_mapping:
-            for d in m:
-                if d in exit_data_patch.keys():
-                    self.exit_original_data[d] = exit_data_patch[d](self.exit_original_data[d])
-
         # For all doors in map, we want to find the exit and change where it leads to
         for m in door_mapping:
             # Figure out whether exits are short or long
