@@ -14,6 +14,8 @@ def parse(parser):
                        help="Randomize the doors in Upper Narshe WoR")
     doors.add_argument("-drem", "--door-randomize-esper-mountain", action="store_true",
                        help="Randomize the doors in Esper Mountain")
+    doors.add_argument("-drob", "--door-randomize-owzer-basement", action="store_true",
+                       help="Randomize the doors in Owzer's Basement")
     doors.add_argument("-dra", "--door-randomize-all", action = "store_true",
                          help = "Randomize all currently-implemented doors")
 
@@ -38,6 +40,9 @@ def flags(args):
 
     if args.door_randomize_esper_mountain:
         flags += " -drem"
+
+    if args.door_randomize_owzer_basement:
+        flags += " -drob"
 
     if args.door_randomize_all:
         flags += " -dra"
@@ -64,6 +69,7 @@ def options(args):
             ("Umaro's Cave", args.door_randomize_umaro),
             ("Upper Narshe", un_state),
             ("Esper Mountain", args.door_randomize_esper_mountain),
+            ("Owzer Basement", args.door_randomize_owzer_basement),
         ]
 
 def menu(args):

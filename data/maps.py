@@ -15,6 +15,8 @@ from data.map_exit import ShortMapExit, LongMapExit
 
 import data.world_map_event_modifications as world_map_event_modifications
 
+from memory.space import Allocate, Bank
+
 class Maps():
     MAP_COUNT = 416
 
@@ -25,6 +27,9 @@ class Maps():
     LONG_EXIT_PTR_START = 0x2df480
 
     NPCS_PTR_START = 0x41a10
+
+    GO_WOB_EVENT_ADDR = None
+    GO_WOR_EVENT_ADDR = None
 
     def __init__(self, rom, args, items):
         self.rom = rom
@@ -38,6 +43,17 @@ class Maps():
         self.read()
 
         self.doors = doors.Doors(args)
+
+        # Create an event code to set the world bit
+        src_WOR = [0xd0, 0xa4, 0xfe]  # Set world bit = WoR, return
+        space = Allocate(Bank.CC, len(src_WOR), "Go To WoR")
+        space.write(src_WOR)
+        self.GO_WOR_EVENT_ADDR = space.start_address
+
+        src_WOB = [0xd1, 0xa4, 0xfe]  # Set world bit = WoB, return
+        space = Allocate(Bank.CC, len(src_WOB), "Go To WoB")
+        space.write(src_WOB)
+        self.GO_WOB_EVENT_ADDR = space.start_address
 
     def read(self):
         self.maps = []
@@ -87,9 +103,22 @@ class Maps():
             for i in range(num_long):
                 self.exit_maps[i + counter] = m
             counter += num_long
+
         ### Do we also need this for event exits?
-        # No: doors directly re-write destinations; event exits just mash code together, so preserving map info.
-        # For event exits, we just need what rooms they are in (which is metadata, not in the ROM).
+        self.event_maps = {}
+        counter = 0
+        for m in range(len(self.maps)-1):
+            num_events = self.get_event_count(m)
+            for i in range(num_events):
+                self.event_maps[i + counter] = m
+            counter += num_events
+
+        #f = open('event_map&address_info.txt','w')
+        #f.write('# Event_ID: map_ID, (x, y), event_address')
+        #for i in self.event_maps.keys():
+        #    f.write(str(i) + ' : ' + str(self.event_maps[i]) + ', (' + str(self.events.events[i].x) + ', ' +
+        #            str(self.events.events[i].y) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
+        #f.close()
 
 
     def set_entrance_event(self, map_id, event_address):
@@ -216,8 +245,22 @@ class Maps():
         self.npcs.mod(characters)
         self.chests.mod()
         self.doors.mod()
-        self.events.mod(self.doors)
-        self.exits.mod(self.doors.map[0])
+        ### HACK FOR TESTING
+        # self.doors.map = [[[81, 588]], [[2020, 3017], [2017, 3020] ] ]   # Airship <--> Owzer Basement,
+        # self.doors.map = [[[81, 738],    # Airship <--> Umaro's Cave 2 from Bridge Room
+        #                    [729, 1150]],     # Umaro's Cave 1 West Door <--> Narshe Peak WoR
+        #                   [[2005, 3015], # Umaro's Cave 2 West --> Esper Mtn 2 North
+        #                    [2007, 3014], # Umaro's Cave 2 East --> Esper Mtn 2 South
+        #                    [2001, 3009], # Umaro's Cave 1 Top ---> Umaro's Cave Exit
+        #                    [2002, 3016], # Umaro's Cave 1 Left --> Esper Mtn 2 East
+        #                    [2010, 3009], # Tritoch Jump In --> Umaro's Cave Exit
+        #                    [2014, 3010], # Esper Mtn Pit South --> Umaro's Cave Entrance
+        #                    [2015, 3015], # Esper Mtn Pit North --> Esper Mtn 2 North (confirm edit)
+        #                    [2016, 3009]]  # Esper Mtn Pit West --> Umaro's Cave Exit
+        #                   ]
+        ###
+        self.events.mod(self.doors, self)
+        self.exits.mod(self.doors.map[0], self)
 
         self._fix_imperial_camp_boxes()
 

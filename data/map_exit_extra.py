@@ -1,4 +1,4 @@
-# exit number : [doorpair ID, description]
+# exit number : [doorpair ID, description, required_world]
 exit_data = {
     0: [1130, "Dragon's Eye Chocobo Stable WoB"],
     1: [1130, "Figaro Chocobo Stable WoB"],
@@ -679,10 +679,15 @@ exit_data = {
     587: [588, "Owzer's Basement Switching Door Room Left Door"],
     588: [587, "Owzer's Basement Behind Door Switch Room South Door"],
     589: [591, "Owzer's Basement Save Point Room Right Door"],
-    590: [None, "Owzer's Basement Floating Chest Room Door"],
+    590: [None, "Owzer's Basement Floating Chest Room Door"],  # Note: door is inaccessible.
     591: [589, "Owzer's Basement Chadarnook's Room"],
     592: [567, "Owzer's House Inside Door to Outside"],
     593: [580, "Owzer's House Door to Behind Painting"],
+    2017: [None, "Owzer's Mansion switching door left"],
+    2018: [None, "Owzer's Mansion switching door right"],  # same destination & same event as 2017
+    2019: [None, "Owzer's Mansion behind switching door exit"],
+    2020: [None, "Owzer's Mansion floating chest room exit"],
+    2021: [None, "Owzer's Mansion save point room oneway"],
     1218: [597, "Esper World Outside South Right House"],
     1219: [595, "Esper World Outside Northwest House"],
     1220: [599, "Esper World Outside South Left House"],
@@ -1313,7 +1318,12 @@ set_unknown = lambda info, value: info[:7] + [value]
 exit_data_patch = {
     1135: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 0), info[1]+1 ), info[0]-2 ),   # [4, "Narshe To World Map WoB"],
     1143: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 1), 115), 34),  # [67, "Narshe To World Map WoR"],
-    1047: lambda info: set_dest_y(set_dest_map(info, 0), info[1]+1)   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
+    1047: lambda info: set_dest_y(set_dest_map(info, 0), info[1]+1),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
+
+    # Note: all Jidoor exits should go to WoB, we'll write event tiles to handle WoR (????????? that's ~64 event tiles.)
+    1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],
+    1214: lambda info: set_dest_map(info, 0),   # [28, "Jidoor West to World Map"],
+    1215: lambda info: set_dest_map(info, 0)    # [28, "Jidoor East to World Map"],
 }
 
 # exit number in WOB : equivalent exit in WOR

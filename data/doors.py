@@ -9,10 +9,12 @@ ROOM_SETS = {
     'UpperNarshe_WoB': [19, 20, '21a', 22, 23, 53, 54, 55, 59, 60],
     'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47],
     'EsperMountain': ['487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501],
+    'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, '285a'],
     'All': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
             19, 20, '21a', 22, 23, 53, 54, 55, 59, 60,  # Upper Narshe WoB
             '37a', 38, '39a', 40, '41a', 42, 43, 44, 46, 47,  # Upper Narshe WoR
-            '487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501  # Esper Mountain
+            '487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501,  # Esper Mountain
+            277, 278, 279, 280, 281, 282, 283, 284, '285a'  # Owzer's Basement
             ]
 }
 
@@ -36,7 +38,7 @@ class Doors():
         self.map = []
 
         self.match_WOB_WOR = False
-        self.verbose = True
+        self.verbose = False
 
         # Read in the doors to be randomized.
         room_sets = []
@@ -60,6 +62,9 @@ class Doors():
             if self.args.door_randomize_esper_mountain:  # -drem
                 room_sets.append(ROOM_SETS['EsperMountain'])
 
+            if self.args.door_randomize_owzer_basement:  # -drob
+                room_sets.append(ROOM_SETS['OwzerBasement'])
+
         self.read(room_sets)
 
     def read(self, whichRooms=[]):
@@ -70,7 +75,7 @@ class Doors():
             for room in area:
                 # Collect room info:
                 self.room_doors[room] = room_data[room]
-                self.room_counts[room] = [len(s) for s in room_data[room]]
+                self.room_counts[room] = [len(s) for s in room_data[room][:-1]]
                 # Extract door info
                 for i in range(3):
                     self.doors[-1].extend(room_data[room][i])

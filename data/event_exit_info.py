@@ -1,5 +1,5 @@
 #event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description]
-#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
+#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on, required_world]
 #   None = not implemented
 event_exit_info = {
     2001 : [int('0cd8d4',16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor top'],
@@ -17,7 +17,12 @@ event_exit_info = {
     2013 : [int('0bee62',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump east'],    # forced connection, no mod
     2014 : [int('0bee8f',16), 47, 30, [False, False, True], 'Esper Mtn Pit Room South trapdoor'],
     2015 : [int('0beebe',16), 46, 30, [False, False, True], 'Esper Mtn Pit Room North trapdoor'],  # no "38 (Hold screen)" after transition
-    2016 : [int('0beeec',16), 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor']
+    2016 : [int('0beeec',16), 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor'],
+    2017 : [int('0b4b86',16), 47, 1 , [False, False, False], 'Owzers Mansion switching door left'],
+    2018 : [int('0b4b86',16), 47, 1 , [False, False, False], 'Owzers Mansion switching door right'],  # same destination, same event!
+    2019 : [int('0b4bb5',16), 53, 3 , [False, False, False], 'Owzers Mansion behind switching door exit'],  # set event bit 0x24c?
+    2020 : [int('0b4c94',16), 13, 1 , [False, False, False], 'Owzers Mansion floating chest room exit'],
+    2021 : [int('0b4bea',16), 51, 1 , [False, False, False], 'Owzers Mansion save point room oneway']
     }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
