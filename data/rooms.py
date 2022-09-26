@@ -20,7 +20,7 @@ room_data = {
     19 : [ [113, 114], [ ], [ ], None], #Narshe Northern Mines 2nd/3rd Floor Outside WoB
     20 : [ [115, 1139], [ ], [ ], None], #Narshe Northern Mines 3rd Floor Outside WoB
     21 : [ [1137, 1138], [ ], [ ], None], #Narshe Northern Mines 1st Floor Outside WoB
-    '21a' : [ [1138], [ ], [ ], None], #Narshe Northern Mines 1st Floor Outside WoB ORIGIN
+    '21a' : [ [1138], [ ], [ ], 0], #Narshe Northern Mines 1st Floor Outside WoB ORIGIN
     22 : [ [1140, 1141], [ ], [ ], None], #Snow Battlefield WoB
     23 : [ [1142], [ ], [ ], None], #Narshe Peak WoB
     24 : [ [116, 117], [ ], [ ], None], #Narshe Weapon Shop
@@ -40,7 +40,7 @@ room_data = {
     '37a' : [ [145, 146], [ ], [3009], None], #Narshe Northern Mines 2nd/3rd Floor Outside WoR incl. exit from Umaro's cave
     38 : [ [147, 1147], [ ], [ ], None], #Narshe Northern Mines 3rd Floor Outside WoR
     39 : [ [1145, 1146], [ ], [ ], None], #Narshe Northern Mines 1st Floor Outside WoR
-    '39a' : [ [1146], [ ], [ ], None], #Narshe Northern Mines 1st Floor Outside WoR ORIGIN
+    '39a' : [ [1146], [ ], [ ], 1], #Narshe Northern Mines 1st Floor Outside WoR ORIGIN
     40 : [ [1148, 1149], [ ], [ ], None], #Snow Battlefield WoR
     41 : [ [1150], [ ], [ ], None], #Narshe Peak WoR
     '41a' : [ [1150], [2010], [], None], # Narshe Peak WoR incl. entrance to Umaro's cave
@@ -280,14 +280,14 @@ room_data = {
     275 : [ [1217], [ ], [ ], None], #Jidoor Chocobo Stable
     276 : [ [579], [ ], [ ], None], #Jidoor Inn
 
-    277 : [ [580, 581], [ ], [ ], None], #Owzer's Behind Painting Room
-    278 : [ [582, 583, 585], [ ], [3017], None], #Owzer's Basement 1st Room
-    279 : [ [584], [ ], [ ], None], #Owzer's Basement Single Chest Room
-    280 : [ [586, 587], [2017, 2018], [ ], None], #Owzer's Basement Switching Door Room
-    281 : [ [588], [2019], [3021], None], #Owzer's Basement Behind Switching Door Room
-    282 : [ [589], [2021], [3020], None], #Owzer's Basement Save Point Room
-    283 : [ [ ], [2020], [3019], None],  # Owzer's Basement Floating Chest room
-    284 : [ [591], [ ], [ ], None], #Owzer's Basement Chadarnook's Room
+    277 : [ [580, 581], [ ], [ ], 1], #Owzer's Behind Painting Room
+    278 : [ [582, 583, 585], [ ], [3017], 1], #Owzer's Basement 1st Room
+    279 : [ [584], [ ], [ ], 1], #Owzer's Basement Single Chest Room
+    280 : [ [586, 587], [2017, 2018], [ ], 1], #Owzer's Basement Switching Door Room
+    281 : [ [588], [2019], [3021], 1], #Owzer's Basement Behind Switching Door Room
+    282 : [ [589], [2021], [3020], 1], #Owzer's Basement Save Point Room
+    283 : [ [ ], [2020], [3019], 1],  # Owzer's Basement Floating Chest room
+    284 : [ [591], [ ], [ ], 1], #Owzer's Basement Chadarnook's Room
     285 : [ [592, 593], [ ], [ ], None], #Owzer's House
     '285a': [ [593], [ ], [ ], 1], # <VIRTUAL> Owzer's House entrance to Owzer's Basement
 
@@ -574,4 +574,10 @@ shared_exits = {
     1034 : [1035],  # Esper Mountain outside bridge, left door
     1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door
     1040 : [1041]   # Esper Mountain Outside Path to Final Room West Door
+}
+
+# List of rooms that should have a forced update to Parent Map variable when entering.
+# force_update_parent_map[roomID] = [x, y, mapID]
+force_update_parent_map = {
+    '285a' : [1, 34, 157]  # Entering WoR Jidoor from Owzer's Basement
 }

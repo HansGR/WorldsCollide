@@ -1321,9 +1321,9 @@ exit_data_patch = {
     1047: lambda info: set_dest_y(set_dest_map(info, 0), info[1]+1),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
 
     # Note: all Jidoor exits should go to WoB, we'll write event tiles to handle WoR (????????? that's ~64 event tiles.)
-    1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],
-    1214: lambda info: set_dest_map(info, 0),   # [28, "Jidoor West to World Map"],
-    1215: lambda info: set_dest_map(info, 0)    # [28, "Jidoor East to World Map"],
+    #1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],
+    #1214: lambda info: set_dest_map(info, 0),   # [28, "Jidoor West to World Map"],
+    #1215: lambda info: set_dest_map(info, 0)    # [28, "Jidoor East to World Map"],
 }
 
 # exit number in WOB : equivalent exit in WOR

@@ -3,7 +3,11 @@ from data.map_exit_extra import exit_data as exit_data_orig
 from data.map_exit_extra import exit_data_patch
 
 from data.map_event import MapEvent
-from data.rooms import room_data
+from data.rooms import room_data, force_update_parent_map
+
+from instruction import field
+
+from memory.space import Allocate, Bank, Write
 
 class MapExits():
     SHORT_EXIT_COUNT = 0x469
@@ -113,52 +117,133 @@ class MapExits():
             # print('\tAfter: exitB')
             # exitB.print()
 
-            # Check to see if either exit requires a specific world,
-            # NOTE: this will only work if there isn't already an exit event on the exit.
-            # If there is, it must be modified instead.
+            # Write an event on the exit to handle required conditions
             forced_world = [room_data[maps.doors.door_rooms[d]][3] for d in m]
-            if forced_world[0] is not None:
+            forced_pmap = [maps.doors.door_rooms[d] in force_update_parent_map.keys() for d in m]
+            write_exit_event = [(forced_world[i] != forced_world[i-1]) or
+                                forced_pmap[i]
+                                for i in range(2)]
+            if write_exit_event[0]:
                 # Write an event on top of door m[1] to set the correct world
                 this_exit = self.get_exit_from_ID(m[1])
-                mapID = maps.exit_maps[m[1]]
+                map_id = maps.exit_maps[m[1]]
+
                 try:
-                    existingEvent = maps.get_event(mapID, this_exit.x, this_exit.y)
-                    # event exists.  It will need to be modified.
-                    raise Exception('FREAK OUT!!!!!')
+                    existing_event = maps.get_event(map_id, this_exit.x, this_exit.y)
+                    # An event already exists.  It will need to be modified.
+                    # We have to be careful here: if it has a world door-switch event, we will need to do something else
+                    # Read in existing event code
+                    src = [maps.rom.get_byte(existing_event.event_Address)]
+                    while src[-1] != 0xfe:
+                        src.append(maps.rom.get_byte(existing_event.event_Address + len(src)))
+                    # delete existing event
+                    maps.delete_event(map_id, this_exit.x, this_exit.y)
+
                 except IndexError:
                     # event does not exist.  Make a new one.
+                    src = [field.Return()]
+
+                # If it's a new event that is just forcing the world, just directly call the "force world" event:
+                e_length = len(src)
+                if e_length == 1 and not forced_pmap[0]:
+                    if forced_world[0] == 0:
+                        this_address = maps.GO_WOB_EVENT_ADDR - maps.events.BASE_OFFSET
+                    elif forced_world[0] == 1:
+                        this_address = maps.GO_WOR_EVENT_ADDR - maps.events.BASE_OFFSET
+
+                else:
+                    # Prepend call to force world bit event, if required
+                    if forced_world[0] != forced_world[1]:
+                        if forced_world[0] == 0:
+                            src = [field.Call(maps.GO_WOB_EVENT_ADDR)] + src
+                        elif forced_world[0] == 1:
+                            src = [field.Call(maps.GO_WOR_EVENT_ADDR)] + src
+
+                    # Prepend call to force parent map
+                    if forced_pmap[0]:
+                        pmap_data = force_update_parent_map[maps.doors.door_rooms[m[0]]]
+                        src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + src
+
+                    # Write data to a new event & add it
+                    space = Write(Bank.CC, src, "Door Event " + str(m[1]))
+                    this_address = space.start_address - maps.events.BASE_OFFSET
+
+                if self.exit_type[m[1]] == 'short':
+                    # Write the event on the tile
                     new_event = MapEvent()
                     new_event.x = this_exit.x
                     new_event.y = this_exit.y
-                    if forced_world[0] == 0:
-                        # Go to WOB event
-                        new_event.event_address = maps.GO_WOB_EVENT_ADDR - maps.events.BASE_OFFSET
-                    elif forced_world[0] == 1:
-                        # Go to WOR event
-                        new_event.event_address = maps.GO_WOR_EVENT_ADDR - maps.events.BASE_OFFSET
-                    maps.add_event(mapID, new_event)
+                    new_event.event_address = this_address
+                    maps.add_event(map_id, new_event)
+                elif self.exit_type[m[1]] == 'long':
+                    # Write the event on every tile in the exit
+                    for i in range(this_exit.size+1):
+                        new_event = MapEvent()
+                        new_event.x = this_exit.x + i*(this_exit.direction == 0) # horizontal exit
+                        new_event.y = this_exit.y + i*(this_exit.direction > 0)  # vertical exit
+                        new_event.event_address = this_address
+                        maps.add_event(map_id, new_event)
 
-            if forced_world[1] is not None:
+            if write_exit_event[1]:
                 # Write an event on top of door m[0] to set the correct world
                 this_exit = self.get_exit_from_ID(m[0])
-                mapID = maps.exit_maps[m[0]]
+                map_id = maps.exit_maps[m[0]]
+
                 try:
-                    existingEvent = maps.get_event(mapID, this_exit.x, this_exit.y)
-                    # event exists.  It will need to be modified.
-                    raise Exception('FREAK OUT 2!!!!!')
+                    existing_event = maps.get_event(map_id, this_exit.x, this_exit.y)
+                    # An event already exists.  It will need to be modified.
+                    # We have to be careful here: if it has a world door-switch event, we will need to do something else
+                    # Read in existing event code
+                    src = [maps.rom.get_byte(existing_event.event_Address)]
+                    while src[-1] != 0xfe:
+                        src.append(maps.rom.get_byte(existing_event.event_Address + len(src)))
+                    # delete existing event
+                    maps.delete_event(map_id, this_exit.x, this_exit.y)
+
                 except IndexError:
                     # event does not exist.  Make a new one.
+                    src = [field.Return()]
+
+                # If it's a new event that is just forcing the world, just directly call the "force world" event:
+                e_length = len(src)
+                if e_length == 1 and not forced_pmap[1]:
+                    if forced_world[0] != forced_world[1]:
+                        if forced_world[1] == 0:
+                            this_address = maps.GO_WOB_EVENT_ADDR - maps.events.BASE_OFFSET
+                        elif forced_world[1] == 1:
+                            this_address = maps.GO_WOR_EVENT_ADDR - maps.events.BASE_OFFSET
+
+                else:
+                    # Prepend call to force world bit event, if required
+                    if forced_world[1] == 0:
+                        src = [field.Call(maps.GO_WOB_EVENT_ADDR)] + src
+                    elif forced_world[1] == 1:
+                        src = [field.Call(maps.GO_WOR_EVENT_ADDR)] + src
+
+                    # Prepend call to force parent map
+                    if forced_pmap[1]:
+                        pmap_data = force_update_parent_map[maps.doors.door_rooms[m[1]]]
+                        src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + src
+
+                    # Write data to a new event & add it
+                    space = Write(Bank.CC, src, "Door Event " + str(m[0]))
+                    this_address = space.start_address
+
+                if self.exit_type[m[0]] == 'short':
+                    # Write the event on the tile
                     new_event = MapEvent()
-                    this_exit = self.get_exit_from_ID(m[0])
                     new_event.x = this_exit.x
                     new_event.y = this_exit.y
-                    if forced_world[1] == 0:
-                        # Go to WOB event
-                        new_event.event_address = maps.GO_WOB_EVENT_ADDR - maps.events.BASE_OFFSET
-                    elif forced_world[1] == 1:
-                        # Go to WOR event
-                        new_event.event_address = maps.GO_WOR_EVENT_ADDR - maps.events.BASE_OFFSET
-                    maps.add_event(maps.exit_maps[m[0]], new_event)
+                    new_event.event_address = this_address
+                    maps.add_event(map_id, new_event)
+                elif self.exit_type[m[0]] == 'long':
+                    # Write the event on every tile in the exit
+                    for i in range(this_exit.size+1):
+                        new_event = MapEvent()
+                        new_event.x = this_exit.x + i*(this_exit.direction == 0) # horizontal exit
+                        new_event.y = this_exit.y + i*(this_exit.direction > 0)  # vertical exit
+                        new_event.event_address = this_address
+                        maps.add_event(map_id, new_event)
 
         ### One-way doors are connected in map_events.mod()
 

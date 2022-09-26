@@ -15,7 +15,8 @@ ROOM_SETS = {
             '37a', 38, '39a', 40, '41a', 42, 43, 44, 46, 47,  # Upper Narshe WoR
             '487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501,  # Esper Mountain
             277, 278, 279, 280, 281, 282, 283, 284, '285a'  # Owzer's Basement
-            ]
+            ],
+    'test': ['285a', '21a']  # for testing only
 }
 
 
@@ -65,6 +66,8 @@ class Doors():
             if self.args.door_randomize_owzer_basement:  # -drob
                 room_sets.append(ROOM_SETS['OwzerBasement'])
 
+            #room_sets.append(ROOM_SETS['test'])
+
         self.read(room_sets)
 
     def read(self, whichRooms=[]):
@@ -92,6 +95,12 @@ class Doors():
                                 self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
                         else:
                             self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
+                        # Capture information for shared exits
+                        if d in shared_exits.keys():
+                            for ds in shared_exits[d]:
+                                self.door_types[ds] = i
+                                self.door_rooms[ds] = room
+                                self.door_descr[ds] = exit_data[ds][1]
 
             for d in self.doors[-1]:
                 if d in forced_connections.keys():
