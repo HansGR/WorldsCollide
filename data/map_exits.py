@@ -76,7 +76,10 @@ class MapExits():
 
         # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
         for e in exit_data_patch.keys():
+            # Update the "original data"
             self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
+            # Copy the "original data" to the exit itself
+            self.copy_exit_info(self.get_exit_from_ID(e), e)
 
     def write(self):
         for exit_index, exit in enumerate(self.short_exits):

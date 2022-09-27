@@ -654,22 +654,51 @@ class Doors():
         return map
 
     def print(self):
+        from log import SECTION_WIDTH, section, format_option
+        lcolumn = []
+
         # Print state of the Doors object
         for a in range(len(self.rooms)):
-            print('Area',a,':')
-            print('\tDoors:')
+            lcolumn.append('Area' + str(a) + ':')
+            lcolumn.append('Doors:')
             for d in self.doors[a]:
-                print('\t\t', d, ': Room = ', self.door_rooms[d], '. ', self.door_descr[d])  # ', Map = ', self.door_maps[d],
-            print('\tRooms:')
+                lcolumn.append(str(d) + ': Room = ' + str(self.door_rooms[d]) + '. ' + str(
+                    self.door_descr[d]))  # ', Map = ', self.door_maps[d],
+            lcolumn.append('Rooms:')
             for r in self.rooms[a]:
-                print('\t\t', r, ': door count = ', self.room_counts[r], '\n\t\tdoors: ', self.room_doors[r][0],
-                      '\n\t\tone-way exits: ', self.room_doors[r][1], '\n\t\t one-way entrances: ', self.room_doors[r][2])
-        print('Forced connections:')
+                lcolumn.append(str(r) + ': door count = ' + str(self.room_counts[r]) + '\n\t\tdoors: ' + str(
+                    self.room_doors[r][0]) +
+                               'one-way exits: ' + str(self.room_doors[r][1]) + '\n\t\t one-way entrances: ' + str(
+                    self.room_doors[r][2]))
+        lcolumn.append('Forced connections:')
         for d in self.forcing.keys():
-            print('\t', d, ' --> ', self.forcing[d])
+            lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
         if len(self.map) > 0:
-            print('Map:')
+            lcolumn.append('Map:')
             for m in self.map[0]:
-                print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
+                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(self.door_descr[m[0]]) + ' --> ' + str(
+                    self.door_descr[m[1]]) + ')')
             for m in self.map[1]:
-                print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
+                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(self.door_descr[m[0]]) + ' --> ' + str(
+                    self.door_descr[m[1]]) + ')')
+
+        section("Door Rando: ", lcolumn, [])
+        # Print state of the Doors object
+        # for a in range(len(self.rooms)):
+        #     print('Area',a,':')
+        #     print('\tDoors:')
+        #     for d in self.doors[a]:
+        #         print('\t\t', d, ': Room = ', self.door_rooms[d], '. ', self.door_descr[d])  # ', Map = ', self.door_maps[d],
+        #     print('\tRooms:')
+        #     for r in self.rooms[a]:
+        #         print('\t\t', r, ': door count = ', self.room_counts[r], '\n\t\tdoors: ', self.room_doors[r][0],
+        #               '\n\t\tone-way exits: ', self.room_doors[r][1], '\n\t\t one-way entrances: ', self.room_doors[r][2])
+        # print('Forced connections:')
+        # for d in self.forcing.keys():
+        #     print('\t', d, ' --> ', self.forcing[d])
+        # if len(self.map) > 0:
+        #     print('Map:')
+        #     for m in self.map[0]:
+        #         print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
+        #     for m in self.map[1]:
+        #         print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')

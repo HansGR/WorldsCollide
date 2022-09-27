@@ -1300,7 +1300,8 @@ exit_data = {
     1125: [1127, "Coliseum Left Door"],
     1126: [1128, "Coliseum Right Door"],
     1127: [1125, "Coliseum Left Room Door"],
-    1128: [1126, "Coliseum Inn Door"]
+    1128: [1126, "Coliseum Inn Door"],
+    1280: [56,   "Coliseum to World Map"]
 }
 
 # Create functions to update values:
