@@ -41,19 +41,11 @@ class Doors():
         self.match_WOB_WOR = False
         self.verbose = False
 
-        ### build list of rooms directly from room_data
-        # print(room_data)
-        #roomlist = []
-        #for room_id, values in room_data.items():
-        #    roomlist.append(room_id)
-        ### ^ build list of rooms directly from room_data
-
         # Read in the doors to be randomized.
         room_sets = []
         if self.args.door_randomize_all:  # -dra
             # Prioritize randomizing all doors
             room_sets.append(ROOM_SETS['All'])
-            #room_sets.append(roomlist)
         else:
             # Randomize separately
             if self.args.door_randomize_umaro:  # -dru
@@ -168,8 +160,7 @@ class Doors():
                     print('\n[', counter, '] Zone state: ')
                     counter += 1
                     for z in range(len(zones)):
-                        if len(zones[z]) > 0:
-                            print(z, ':', zones[z], ', ', zone_counts[z])
+                        print(z, ':', zones[z], ', ', zone_counts[z])
 
                 # Certain special cases are liable to end up isolated and should always be connected first.
                 # Identify the dead end zones
@@ -182,7 +173,6 @@ class Doors():
                 one_entrs = [zi for zi in range(len(zones)) if zone_counts[zi] == [1, 0, 1]]
                 if len(to_force) > 0:
                     door1 = to_force.pop(0)
-                    doors.remove(door1)  # clean up
                     valid = self.forcing[door1]
                     if self.verbose:
                         print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (forced):')
@@ -334,7 +324,7 @@ class Doors():
                         print('ERROR: no valid doors!')
                         doors.append(door1)
                         error_ctr += 1
-                        if error_ctr > 1:
+                        if error_ctr > 3:
                             raise Exception('ERROR: too many errors.')
                 else:
                     door2 = valid.pop(randrange(len(valid)))
@@ -364,8 +354,6 @@ class Doors():
 
                     # Decrement these two doors from the zone
                     zone_counts[zone2][0] += -2
-                    if zone_counts[zone2][0] < 0:
-                        raise Exception('Error: we made a negative zone somehow!')
 
             # Clean up
             keep = [i for i in range(len(zones)) if zones[i] != []]
