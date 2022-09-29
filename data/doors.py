@@ -40,7 +40,7 @@ class Doors():
 
         self.use_shared_exits = True
         self.match_WOB_WOR = False
-        self.verbose = False
+        self.verbose = True
 
         # Read in the doors to be randomized.
         room_sets = []
@@ -120,7 +120,18 @@ class Doors():
     def mod(self):
         # Create list of randomized connections
         # Connect rooms together to produce zones
-        map1 = self.map_doors()
+        flag = True
+        failures = 0
+        while flag:
+            try:
+                map1 = self.map_doors()
+                flag = False
+            except Exception:
+                failures += 1
+                print('Error in mapping doors; trying again (' + str(failures) + ' errors)')
+                if failures > 4:
+                    raise Exception('Major Error: something is seriously wrong in map_doors()')
+
         if self.match_WOB_WOR:
             # Make the WOR map match the WOB map in relevant areas
             if self.verbose:
@@ -139,7 +150,8 @@ class Doors():
                 failures += 1
                 print('Error in mapping one-ways; trying again (' + str(failures) + ' errors)')
                 if failures > 4:
-                    raise Exception('Major Error: something is seriously wrong.')
+                    raise Exception('Major Error: something is seriously wrong in map_oneways()')
+
         self.map = [map1, map2]
 
 
@@ -171,7 +183,8 @@ class Doors():
                     print('\n[', counter, '] Zone state: ')
                     counter += 1
                     for z in range(len(zones)):
-                        print(z, ':', zones[z], ', ', zone_counts[z])
+                        if len(zones[z]) > 0:
+                            print(z, ':', zones[z], ', ', zone_counts[z])
 
                 # Certain special cases are liable to end up isolated and should always be connected first.
                 # Identify the dead end zones
@@ -212,7 +225,7 @@ class Doors():
                                        not (zone_counts[zi][0] == 1 and zone_counts[zi][2] == 0)]
                         valid = [d for d in doors if door_zones[d] in valid_zone2]
                     if self.verbose:
-                        print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (dead end):')
+                        print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (dead end):')
 
                 elif len(hallways) > 0:
                     # Second, always connect any hallway zones (those with only two doors)
@@ -229,7 +242,7 @@ class Doors():
                     valid_zone2 = [zi for zi in range(len(zones)) if zi != zone1]
                     valid = [d for d in doors if door_zones[d] in valid_zone2]
                     if self.verbose:
-                        print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (hallway):')
+                        print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (hallway):')
 
                 else:
                     # All dead-end and hallway zones have been connected.
@@ -248,7 +261,7 @@ class Doors():
                         zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
 
                         if self.verbose:
-                            print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (single exit):')
+                            print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (single exit):')
 
                     elif len(one_entrs) > 0:
                         # Fourth, always connect any rooms with a single entrance
@@ -260,13 +273,13 @@ class Doors():
                         zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
 
                         if self.verbose:
-                            print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (single entry):')
+                            print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (single entry):')
 
                     else:
                         door1 = doors.pop(randrange(len(doors)))
                         zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
                         if self.verbose:
-                            print('Connecting ', door1, ' [rm ', self.door_rooms[door1], ']:')
+                            print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], ']:')
 
                     # Construct list of valid doors: start with all doors, then remove invalid ones
                     valid = [d for d in doors]
@@ -298,7 +311,7 @@ class Doors():
                                     # Will force an outside zone with no exit or no entrance
                                     invalid.append(d)
                                     if self.verbose:
-                                        print('\t\t', d, '(', self.door_rooms[d], ') invalid from outside rule: ', outside_zones, ' --> ', outside_counts)
+                                        print('\t\t', d, '(', z2, ':', self.door_rooms[d], ') invalid from outside rule: ', outside_zones, ' --> ', outside_counts)
 
                             if zone1 == z2:
                                 # Self connection will remove two entrances and two exits from the zone
@@ -306,7 +319,7 @@ class Doors():
                                     # Creates a zone with no exit or no entrance
                                     invalid.append(d)
                                     if self.verbose:
-                                        print('\t\t', d, '(', self.door_rooms[d], ') invalid from self rule: ', zone1, ' --> ', z1_exits, z1_enter)
+                                        print('\t\t', d, '(', z2, ':', self.door_rooms[d], ') invalid from self rule: ', zone1, ' --> ', z1_exits, z1_enter)
                             else:
                                 z2_exits = zone_counts[z2][0] + zone_counts[z2][1]
                                 z2_enter = zone_counts[z2][0] + zone_counts[z2][2]
@@ -315,7 +328,7 @@ class Doors():
                                     # Creates a zone with no exit or no entrance
                                     invalid.append(d)
                                     if self.verbose:
-                                        print('\t\t', d, '(', self.door_rooms[d], ') invalid: ', zone1, ' --> ', z1_exits, z1_enter, ', ', z2,
+                                        print('\t\t', d, '(', z2, ':', self.door_rooms[d], ') invalid: ', zone1, ' --> ', z1_exits, z1_enter, ', ', z2,
                                               ' --> ', z2_exits, z2_enter)
 
                     invalid = list(set(invalid))  # remove duplicates, if any.
@@ -325,7 +338,7 @@ class Doors():
                 if self.verbose:
                     print('\tValid connections: ')
                     for v in valid:
-                        print('\t\t', v, ' (rm ', self.door_rooms[v], ')')
+                        print('\t\t', v, '[', door_zones[v], ':', self.door_rooms[v], ']')
 
                 # Select a connecting door
                 if len(valid) == 0:
@@ -349,7 +362,7 @@ class Doors():
 
                     # Modify the zones if necessary
                     if zone1 != zone2:
-                        # Add zone2 to zone1
+                        # Add zone1 to zone2
                         zones[zone2].extend(zones[zone1])
                         zones[zone1] = []
 
@@ -359,8 +372,9 @@ class Doors():
                             zone_counts[zone1][i] = 0
 
                         # Update door_zone listing
-                        for d in self.room_doors[self.door_rooms[door1]][0]:
-                            door_zones[d] = zone2
+                        for d in doors:
+                            if door_zones[d] == zone1:
+                                door_zones[d] = zone2
                         # door_zones[door2] = zone2  # shouldn't be necessary
 
                     # Decrement these two doors from the zone
@@ -695,22 +709,3 @@ class Doors():
                     self.door_descr[m[1]]) + ')')
 
         section("Door Rando: ", lcolumn, [])
-        # Print state of the Doors object
-        # for a in range(len(self.rooms)):
-        #     print('Area',a,':')
-        #     print('\tDoors:')
-        #     for d in self.doors[a]:
-        #         print('\t\t', d, ': Room = ', self.door_rooms[d], '. ', self.door_descr[d])  # ', Map = ', self.door_maps[d],
-        #     print('\tRooms:')
-        #     for r in self.rooms[a]:
-        #         print('\t\t', r, ': door count = ', self.room_counts[r], '\n\t\tdoors: ', self.room_doors[r][0],
-        #               '\n\t\tone-way exits: ', self.room_doors[r][1], '\n\t\t one-way entrances: ', self.room_doors[r][2])
-        # print('Forced connections:')
-        # for d in self.forcing.keys():
-        #     print('\t', d, ' --> ', self.forcing[d])
-        # if len(self.map) > 0:
-        #     print('Map:')
-        #     for m in self.map[0]:
-        #         print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
-        #     for m in self.map[1]:
-        #         print('\t', m[0], ' --> ', m[1], '(', self.door_descr[m[0]], ' --> ', self.door_descr[m[1]], ')')
