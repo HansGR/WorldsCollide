@@ -1317,7 +1317,7 @@ set_unknown = lambda info, value: info[:7] + [value]
 
 # Patch functions for individual exits:
 exit_data_patch = {
-    1135: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 0), info[1]+1 ), info[0]-2 ),   # [4, "Narshe To World Map WoB"],
+    1135: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 0), info[0]+1 ), info[1]-2 ),   # [4, "Narshe To World Map WoB"],
     1143: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 1), 115), 34),  # [67, "Narshe To World Map WoR"],
     1047: lambda info: set_dest_y(set_dest_map(info, 0), info[1]+1),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
 
