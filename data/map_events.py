@@ -6,7 +6,6 @@ import time
 class MapEvents():
     EVENT_COUNT = 1164
     DATA_START_ADDR = 0x040342
-    BASE_OFFSET = 0xA0000
 
     def __init__(self, rom):
         self.rom = rom

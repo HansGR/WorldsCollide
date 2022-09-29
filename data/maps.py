@@ -18,6 +18,7 @@ import data.world_map_event_modifications as world_map_event_modifications
 from memory.space import Allocate, Bank, Free, Write
 
 from instruction import field
+from instruction.event import EVENT_CODE_START
 
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch
 from data.map_exit_extra import exit_data as exit_data_orig
@@ -252,25 +253,25 @@ class Maps():
         self.chests.mod()
         self.doors.mod()
         ### HACK FOR TESTING
-        # self.doors.map = [[[81, 588]], [[2020, 3017], [2017, 3020] ] ]   # Airship <--> Owzer Basement,
-        # self.doors.map = [[[81, 738],    # Airship <--> Umaro's Cave 2 from Bridge Room
-        #                    [729, 1150]],     # Umaro's Cave 1 West Door <--> Narshe Peak WoR
-        #                   [[2005, 3015], # Umaro's Cave 2 West --> Esper Mtn 2 North
-        #                    [2007, 3014], # Umaro's Cave 2 East --> Esper Mtn 2 South
-        #                    [2001, 3009], # Umaro's Cave 1 Top ---> Umaro's Cave Exit
-        #                    [2002, 3016], # Umaro's Cave 1 Left --> Esper Mtn 2 East
-        #                    [2010, 3009], # Tritoch Jump In --> Umaro's Cave Exit
-        #                    [2014, 3010], # Esper Mtn Pit South --> Umaro's Cave Entrance
-        #                    [2015, 3015], # Esper Mtn Pit North --> Esper Mtn 2 North (confirm edit)
-        #                    [2016, 3009]]  # Esper Mtn Pit West --> Umaro's Cave Exit
-        #                   ]
+        # from data.map_exit_extra import exit_data as ed
+        # for r in room_data.keys():
+        #     for d in room_data[r][0]:
+        #         self.doors.door_rooms[d] = r
+        #         self.doors.door_descr[d] = ed[d][1]
+        #     for d in room_data[r][1]:
+        #         self.doors.door_descr[d] = event_exit_info[d][4]
+        #         self.doors.door_descr[d+1000] = event_exit_info[d][4] + "DEST"
+        #
+        # self.doors.map = [[[81, 582],    # Airship <--> Owzer Basement stairs,
+        #                    [587, 1032]],   # switch true door <--> esper mtn boss room
+        #                   [[2017, 3010], # switch Door left --> umaro's cave
+        #                    [2018, 3014], # switch door right --> esper mtn
+        #                    ] ]
         ###
+        self.events.mod()  # self.events.mod(self.doors, self)
+        self.exits.mod()  # self.exits.mod(self.doors.map[0], self)
 
-        ### NOTE: these modifications clearly require information at the level of maps.  Move them here as functions,
-        # e.g. maps.mod_events(), maps.mod_exits().
-        # If you have to pass your full object down to the level of a subclass you're doing it wrong.
-        self.events.mod()   #self.events.mod(self.doors, self)
-        self.exits.mod()    #self.exits.mod(self.doors.map[0], self)
+        # Door randomizer code:
         self.connect_events()
         self.connect_exits()
 
@@ -408,17 +409,17 @@ class Maps():
 
             if exit_address is not None:
                 # Update the MapEvent.event_address = Address(Event1a)
-                this_event_ID = self.events.event_address_index[exit_address - self.events.BASE_OFFSET]
+                this_event_ID = self.events.event_address_index[exit_address - EVENT_CODE_START]
                 if m[0] == 2017:  # HACK for shared event in Owzer's Mansion switch doors
                     this_event_ID -= 1
-                self.events.events[this_event_ID].event_address = new_event_address - self.events.BASE_OFFSET
+                self.events.events[this_event_ID].event_address = new_event_address - EVENT_CODE_START
                 # print('Updated event ', this_event_ID, ': ', hex(exit_address - self.BASE_OFFSET), '-->', hex(new_event_address - self.BASE_OFFSET), '\n\n')
             else:
                 # Create a new MapEvent for this event
                 new_event = MapEvent()
                 new_event.x = exit_location[0]
                 new_event.y = exit_location[1]
-                new_event.event_address = new_event_address - self.events.BASE_OFFSET
+                new_event.event_address = new_event_address - EVENT_CODE_START
                 self.add_event(exit_location[2], new_event)
 
             # (Event2 will be updated when the initiating door for Event2 is mapped)
@@ -479,9 +480,13 @@ class Maps():
         # Check to make sure an exit event is required:
         # (1) the connection requires a specific world that is not this world
         # (2) the connection requires a parent map update
+        # (3) the connection requires special code (in entrance_event_patch[d_ref])
+        # (4) the door requires special code (in exit_event_patch[d])
         require_event_flags = [
             ((forced_world is not None) and (forced_world != this_world)),
-            forced_pmap
+            forced_pmap,
+            d_ref in entrance_event_patch.keys(),
+            d in exit_event_patch.keys()
         ]
         if require_event_flags.count(True) > 0:
             # Look for an existing event on this exit tile
@@ -506,11 +511,11 @@ class Maps():
 
             # If it's a new event that is just forcing the world, just directly call the "force world" event:
             e_length = len(src)
-            if e_length == 1 and not forced_pmap:
+            if e_length == 1 and not require_event_flags[1:].count(True) > 0:
                 if forced_world == 0:
-                    this_address = self.GO_WOB_EVENT_ADDR - self.events.BASE_OFFSET
+                    this_address = self.GO_WOB_EVENT_ADDR - EVENT_CODE_START
                 elif forced_world == 1:
-                    this_address = self.GO_WOR_EVENT_ADDR - self.events.BASE_OFFSET
+                    this_address = self.GO_WOR_EVENT_ADDR - EVENT_CODE_START
 
             else:
                 # (1) Prepend call to force world bit event, if required
@@ -525,9 +530,17 @@ class Maps():
                     pmap_data = force_update_parent_map[self.doors.door_rooms[d_ref]]
                     src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + src
 
+                # (3) Prepend any data required by the connection
+                if require_event_flags[2]:
+                    src = entrance_event_patch[d_ref] + src
+
+                # (4) Prepend any data required by the door
+                if require_event_flags[3]:
+                    src = exit_event_patch[d] + src
+
                 # Write data to a new event & add it
                 space = Write(Bank.CC, src, "Door Event " + str(d))
-                this_address = space.start_address - self.events.BASE_OFFSET
+                this_address = space.start_address - EVENT_CODE_START
 
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':

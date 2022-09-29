@@ -30,9 +30,9 @@ event_exit_info = {
 #       to be patched in for exits, so the value shouldn't be "True" either.  If there were a value for which both
 #       "i" and "not i" were false, I would use it here.
 
-BASE_OFFSET = 0xA0000
-
-# ERROR: patches that change the length must happen BEFORE allocation; patches that depend on addresses must happen AFTER allocation!!!
+from instruction.event import EVENT_CODE_START
+import instruction.field as field
+from utils.flatten import flatten
 exit_event_patch = {
     # Jump into Umaro's Cave:
     #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
@@ -45,7 +45,15 @@ exit_event_patch = {
     # e.g. "CB/EE8F: C0    If ($1E80($097) [$1E92, bit 7] is clear), branch to $CA5EB3 (simply returns)
     2014 : lambda src, src_end: [ src[6:], src_end ],
     2015 : lambda src, src_end: [ src[6:], src_end ],
-    2016 : lambda src, src_end: [ src[6:], src_end ]
+    2016 : lambda src, src_end: [ src[6:], src_end ],
+
+    # Switching door events in Owzer's Mansion: turn off the door timer before transitioning
+    # Call subroutine $CB/2CAA (resets all timers).
+    # # May also be necessary to clear event bits $1FC, $1FD, $1FE: [0xd3, 0xfc, 0xd3, 0xfd, 0xd3, 0xfe], but
+    # # supposedly these are cleared on map load.
+    2017 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
+    2018 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
+    587 : [0xb2, 0xaa, 0x2c, 0x01]  # field.Call(0xb2caa)
 }
 
 entrance_event_patch = {
@@ -64,8 +72,8 @@ entrance_event_patch = {
 event_address_patch = {
     # Jump into Umaro's Cave: update branched event addresses
     2010 : lambda src, addr: src[:10] +
-                             [(23 + addr) % 0x100, ((23 + addr) >> 8) % 0x100, ((23 + addr - BASE_OFFSET) >> 16) % 0x100,
-                              (17 + addr) % 0x100, ((17 + addr) >> 8) % 0x100, ((17 + addr - BASE_OFFSET) >> 16) % 0x100] +
+                             [(23 + addr) % 0x100, ((23 + addr) >> 8) % 0x100, ((23 + addr - EVENT_CODE_START) >> 16) % 0x100,
+                              (17 + addr) % 0x100, ((17 + addr) >> 8) % 0x100, ((17 + addr - EVENT_CODE_START) >> 16) % 0x100] +
                              src[16:]
 }
 

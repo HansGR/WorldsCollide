@@ -42,6 +42,7 @@ class OwzerMansion(Event):
         self.log_reward(self.reward)
 
         self.door_timer_mod()
+        self.painting_mod()
 
     def flash_mod(self):
         space = Reserve(0xb4d10, 0xb4d11, "owzer mansion flash", field.NOP())
