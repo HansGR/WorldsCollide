@@ -202,8 +202,10 @@ TEMP_SONG_OVERRIDE = 0x1cc
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
 
+CAN_ENTER_GALLERY = 0x243   # Able to climb stairs to enter Owzer's gallery.
 DEFEATED_PAINTING_1 = 0x252  # beat 1st painting in Owzer's Mansion
-ENTERED_FLOATING_CHEST_ROOM = 0x24c  # walked thru the entrance that drops you in floating chest room
+# DEFEATED_CHADARNOOK = 0x253  # defined above, this is just for reference
+BRIGHTEN_OWZER_BASEMENT = 0x24c  # walked thru the entrance that drops you in floating chest room
 DEFEATED_PAINTING_3 = 0x254  # beat 2nd painting in Owzer's Basement
 
 from constants.objectives import MAX_OBJECTIVES

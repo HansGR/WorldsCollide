@@ -119,12 +119,12 @@ class Maps():
                 self.event_maps[i + counter] = m
             counter += num_events
 
-        #f = open('event_map&address_info.txt','w')
-        #f.write('# Event_ID: map_ID, (x, y), event_address')
-        #for i in self.event_maps.keys():
-        #    f.write(str(i) + ' : ' + str(self.event_maps[i]) + ', (' + str(self.events.events[i].x) + ', ' +
-        #            str(self.events.events[i].y) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
-        #f.close()
+        # f = open('event_map&address_info.txt','w')
+        # f.write('# Event_ID: map_ID, (x, y), event_address')
+        # for i in self.event_maps.keys():
+        #     f.write(str(i) + ' : ' + str(self.event_maps[i]) + ', (' + str(self.events.events[i].x) + ', ' +
+        #             str(self.events.events[i].y) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
+        # f.close()
 
 
     def set_entrance_event(self, map_id, event_address):
@@ -546,6 +546,6 @@ class Maps():
                     new_event.event_address = this_address
                     self.add_event(map_id, new_event)
 
-            print('Connecting ' + str(d) + '(map = ' + str(map_id) + ' [' + str(this_exit.x) + ',' + str(this_exit.y) +
-                  '], world = ' + str(this_world) + ') --> ' + str(d_ref) + ' (force world = ' + str(forced_world) +
-                  ', force parent map = ' + str(forced_pmap) + '): event script @ ' + str(hex(this_address)))
+            #print('Connecting ' + str(d) + '(map = ' + str(map_id) + ' [' + str(this_exit.x) + ',' + str(this_exit.y) +
+            #      '], world = ' + str(this_world) + ') --> ' + str(d_ref) + ' (force world = ' + str(forced_world) +
+            #      ', force parent map = ' + str(forced_pmap) + '): event script @ ' + str(hex(this_address)))

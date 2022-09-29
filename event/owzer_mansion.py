@@ -41,6 +41,8 @@ class OwzerMansion(Event):
 
         self.log_reward(self.reward)
 
+        self.door_timer_mod()
+
     def flash_mod(self):
         space = Reserve(0xb4d10, 0xb4d11, "owzer mansion flash", field.NOP())
 
@@ -157,3 +159,25 @@ class OwzerMansion(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def door_timer_mod(self):
+        # Overwrite the check to see if Chadarnook has been killed (so this room always works)
+        space = Reserve(0xb4962, 0xb4967, "owzer mansion start door timer", field.NOP())
+        space.write([0x3a])  # enable player to move while commands execute
+
+        # Write a 2nd event tile (so the door timer will start if entering the room through other door)
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 88
+        new_event.y = 51
+        new_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x0cf, new_event)
+
+    def painting_mod(self):
+        # Overwrite the check to see if Chadarnook has been killed (so you can always fight the painting)
+        # Painting 1:
+        space = Reserve(0xb47c2, 0xb47c7, "owzer mansion painting 1")
+        space.write([
+            field.BranchIfEventBitClear(event_bit.DEFEATED_PAINTING_1, 0xb47ce)
+        ])
+
