@@ -502,10 +502,8 @@ room_data = {
     '487a' : [ [44], [], [], None],  # <VIRTUAL> World map entrance to Esper Mountain
     488 : [ [1032, 1033], [ ], [ ], None], #Esper Mountain 3 Statues Room
     489 : [ [1034, 1035, 1036], [ ], [ ], None], #Esper Mountain Outside Bridge Room
-    '489a' : [ [1034, 1036], [ ], [ ], None], #Esper Mountain Outside Bridge Room (shared destinations: 1034: [1035])
     490 : [ [1037], [ ], [ ], None], #Esper Mountain Outside East Treasure Room
     491 : [ [1038, 1039, 1040, 1041], [ ], [ ], None], #Esper Mountain Outside Path to Final Room
-    '491a' : [ [1038, 1040], [ ], [ ], None], #Esper Mountain Outside Path to Final Room (shared: 1038: [1039], 1040: [1041])
     492 : [ [1042, 1043], [ ], [ ], None], #Esper Mountain Outside Statue Path
     493 : [ [1044], [ ], [ ], None], #Esper Mountain Outside West Treasure Room
     494 : [ [1045], [ ], [ ], None], #Esper Mountain Outside Northwest Treasure Room

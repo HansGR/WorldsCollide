@@ -8,12 +8,12 @@ ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, '368a'],
     'UpperNarshe_WoB': [19, 20, '21a', 22, 23, 53, 54, 55, 59, 60],
     'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47],
-    'EsperMountain': ['487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501],
+    'EsperMountain': ['487a', 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501],
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, '285a'],
     'All': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
             19, 20, '21a', 22, 23, 53, 54, 55, 59, 60,  # Upper Narshe WoB
             '37a', 38, '39a', 40, '41a', 42, 43, 44, 46, 47,  # Upper Narshe WoR
-            '487a', 488, '489a', 490, '491a', 492, 493, 494, 495, 496, 497, 498, 499, 500, 501,  # Esper Mountain
+            '487a', 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501,  # Esper Mountain
             277, 278, 279, 280, 281, 282, 283, 284, '285a'  # Owzer's Basement
             ],
     'test': ['285a', '21a']  # for testing only
@@ -38,6 +38,7 @@ class Doors():
         self.zone_counts = []
         self.map = []
 
+        self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.verbose = False
 
@@ -77,8 +78,18 @@ class Doors():
             self.rooms.append(area)
             for room in area:
                 # Collect room info:
-                self.room_doors[room] = room_data[room]
+                self.room_doors[room] = room_data[room][:-1]
                 self.room_counts[room] = [len(s) for s in room_data[room][:-1]]
+
+                if self.use_shared_exits:
+                    # Look for shared exits & remove them from the
+                    d_shared = [d for d in self.room_doors[room][0] if d in shared_exits.keys()]
+                    for d in d_shared:
+                        for s in shared_exits[d]:
+                            if s in self.room_doors[room][0]:
+                                self.room_doors[room][0].remove(s)
+                                self.room_counts[room][0] -= 1
+
                 # Extract door info
                 for i in range(3):
                     self.doors[-1].extend(room_data[room][i])
@@ -372,15 +383,16 @@ class Doors():
                     print(z,': ', self.zones[a][z], ', ', self.zone_counts[a][z])
 
         # Append shared doors to the map
-        for m in map:
-            if m[0] in shared_exits.keys():
-                for se in shared_exits[m[0]]:
-                    # Send shared exits to the same destination
-                    map.append([se, m[1]])
-            if m[1] in shared_exits.keys():
-                for se in shared_exits[m[1]]:
-                    # Send shared exits to the same destination
-                    map.append([m[0], se])
+        if self.use_shared_exits:
+            for m in map:
+                if m[0] in shared_exits.keys():
+                    for se in shared_exits[m[0]]:
+                        # Send shared exits to the same destination
+                        map.append([se, m[1]])
+                if m[1] in shared_exits.keys():
+                    for se in shared_exits[m[1]]:
+                        # Send shared exits to the same destination
+                        map.append([m[0], se])
 
         return map
 
