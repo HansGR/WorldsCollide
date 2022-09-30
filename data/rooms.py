@@ -553,21 +553,25 @@ room_data = {
 
 }
 
-# Lists of doors that must be connected
+# Lists of exits that must be connected
 forced_connections = {
-    2005 : [2006],   # Umaro's cave room 2: east trapdoor (shared exit)
-    2006 : [2005],   # Umaro's cave room 2: east trapdoor (shared exit)
-    2007 : [2008],   # Umaro's cave room 2: west trapdoor (shared exit)
-    2008 : [2007],   # Umaro's cave room 2: west trapdoor (shared exit)
     2011 : [3011],   # Esper Mountain Inside 2nd Room: North-to-South bridge jump West
     2012 : [3012],   #      North-to-South bridge jump Mid
-    2013 : [3013],   #      North-to-South bridge jump East
-    2017 : [2018],   # Owzer's Mansion switching doors (same destination)
-    2018 : [2017]    # Owzer's Mansion switching doors (same destination)
+    2013 : [3013]    #      North-to-South bridge jump East
+}
+
+# List of one-ways that must have the same destination
+shared_oneways = {
+    2005: [2006],  # Umaro's cave room 2: east trapdoor (shared exit)
+    2006: [2005],  # Umaro's cave room 2: east trapdoor (shared exit)
+    2007: [2008],  # Umaro's cave room 2: west trapdoor (shared exit)
+    2008: [2007],  # Umaro's cave room 2: west trapdoor (shared exit)
+
+    2017: [2018],   # Owzer's Mansion switching doors (same destination)
+    2018: [2017]    # Owzer's Mansion switching doors (same destination)
 }
 
 # Lists of doors that have a shared destination. key_doorID : [doorIDs that share destination]
-# Note that only key_doorID should be in a room.  If the shared exit(s) was randomized this will take priority
 shared_exits = {
     1034 : [1035],  # Esper Mountain outside bridge, left door
     1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door

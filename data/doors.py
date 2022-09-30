@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
 from random import randrange
-from data.rooms import room_data, forced_connections, shared_exits
+from data.rooms import room_data, forced_connections, shared_oneways, shared_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
 # DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
@@ -34,6 +34,7 @@ class Doors():
         self.room_doors = {}
         self.room_counts = {}
         self.forcing = {}
+        self.sharing = {}
         self.zones = []
         self.zone_counts = []
         self.map = []
@@ -116,6 +117,8 @@ class Doors():
             for d in self.doors[-1]:
                 if d in forced_connections.keys():
                     self.forcing[d] = forced_connections[d]
+                if d in shared_oneways.keys():
+                    self.sharing[d] = shared_oneways[d]
 
     def mod(self):
         # Create list of randomized connections
@@ -445,6 +448,7 @@ class Doors():
                         zone_nibs[zi].append(nib)
 
             to_force = [n for n in self.forcing.keys() if n in nobs]
+            to_share = [n for n in self.sharing.keys() if n in nobs]
             forced_nibs = []
             for n in to_force:
                 # Disallow forced nibs, except for the forcing nob
@@ -458,7 +462,11 @@ class Doors():
             if len(nobs) > 0:
                 if len(to_force) > 0:
                     # Start with a forced nob (reduces errors)
-                    nob = to_force[0]
+                    nob = to_force[randrange(len(to_force))]
+                    nobs.remove(nob)
+                elif len(to_share) > 0:
+                    # start with a shared nob (reduces errors, maybe?)
+                    nob = to_share[randrange(len(to_share))]
                     nobs.remove(nob)
                 else:
                     # Choose a random trap door to begin
@@ -471,49 +479,48 @@ class Doors():
                     if self.verbose:
                         print('\nZone state: ')
                         for z in range(len(zones)):
-                            print(z, ': ', zones[z], ', ', zone_counts[z])
+                            if len(zones[z]) > 0:
+                                print(z, ': ', zones[z], ', ', zone_counts[z])
                         print('Walk state: ', walk)
-                        print('Connecting: ', nob, '(', self.door_rooms[nob], ')')
+                        print('Connecting: ', nob, '(', zone1, ':', self.door_rooms[nob], ')')
 
                     # Construct list of valid entrances: start with all nibs, then remove invalid ones
                     valid = [n for n in nibs]
                     invalid = []
 
                     is_forced = nob in self.forcing.keys()
+                    is_shared = nob in self.sharing.keys()
                     if is_forced:
-                        # This is a forced connection.  There are two uses of this:
-                        # 1. forcing[nob] = [forced nibs]   # Only the entrances (nibs) in forcing[nob] are valid.
-                        # 2. forcing[nob] = [forced nobs]   # Force one exit to equal another exit (e.g. Umaro's cave #2 trapdoors)
-                        # We check whether forcing[nob] is entrances (nib) or exits (nob);
-                        #   If it's a list of entrances, connect one of them;
-                        #   if it's a list of exits, look to see if one of them is already connected;
-                        #       if so, connect this one to that same entrance (don't decrement entrances in zone 2)
-                        #       if not, just connect this one as normal.
+                        # This is a forced connection.  forcing[nob] = [forced nibs]
+                        # Only the entrances (nibs) in forcing[nob] are valid.
+                        #   If it's a list of entrances, connect one of them
                         to_force.remove(nob)  # clean up
                         forced = self.forcing[nob]
-                        these_nibs = [n for n in forced if n in nibs]
-                        if len(these_nibs) > 0:
-                            # this is a list of entrances that are valid for this exit
-                            valid = these_nibs
-                            if self.verbose:
-                                print('\tForced entrance connection: ', valid)
-                        else:
-                            # forced is a list of exits that must match.
-                            # Look to see if any have been assigned.
-                            assigned = [n for n in forced if n not in nobs]
-                            if len(assigned) > 0:
-                                # Find the previously-assigned connection in the map; take the nib
-                                mapped_nib = [m for m in map if assigned[0] == m[0]][0][1]
-                                valid = [mapped_nib]
-                                if self.verbose:
-                                    print('\tForced exit connection: ', valid)
-                            else:
-                                # Assign this one normally
-                                is_forced = False
-                                if self.verbose:
-                                    print('\tExit not forced.')
+                        valid = [n for n in forced if n in nibs]
+                        if self.verbose:
+                            print('\tForced entrance connection: ', valid)
 
-                    if len(nibs) > 1 and not is_forced:
+                    elif is_shared:
+                        # This exit must share a destination with another exit (e.g. Umaro's cave #2 trapdoors)
+                        #   shared[nob] = [nobs that must have the same exit]
+                        to_share.remove(nob)  # clean up
+                        shared = self.sharing[nob]
+
+                        # Look to see if any have been assigned.
+                        assigned = [n for n in shared if n not in nobs]
+                        if len(assigned) > 0:
+                            # Find the previously-assigned connection in the map; take the nib
+                            mapped_nib = [m for m in map if assigned[0] == m[0]][0][1]
+                            valid = [mapped_nib]
+                            if self.verbose:
+                                print('\tShared exit connection: ', valid)
+                        else:
+                            # Assign this one normally
+                            if self.verbose:
+                                is_shared = False
+                                print('\tShared exit has not yet been connected.')
+
+                    if len(nibs) > 1 and not is_forced and not is_shared:
                         # Remove doors that would create a zone with zero exits or zero entrances
                         # i.e. a zone with [0, n, 0], or [0, 0, n].
                         z1_exits = zone_counts[zone1][1]
@@ -523,39 +530,66 @@ class Doors():
                         for n in valid:
                             z2 = nib_zones[n]
 
-                            # We need to remove loops into the walk that have no downstream exits
-                            if zone1 == z2:
-                                if self.verbose:
-                                    print('\t\tTesting', n, '... ', '(', self.door_rooms[n], ') (same zone)')
-                                # Connection will remove an exit and an entrance from the zone
-                                if (z1_exits - 1) < 1 or (z1_enter - 1) < 1:
-                                    # Connection would create a walk with no exits or no entrances
-                                    invalid.append(n)
-                                    if self.verbose:
-                                        print('\tRemoving ', n, ' (same zone: ', zone_counts[zone1], ')')
+                            # Remove loops into the walk that have no downstream exits ***OR no upstream entrances***
+                            # If zone1 == z2, this creates a self loop (length = 1)
+                            ## IS this necessary, or can it just be handled in the walk search?
+                            # it IS necessary for there to always be entrances *UPSTREAM* and exits *DOWNSTREAM*
+                            # if zone1 == z2:
+                            #     # Resulting zone must have exits. (and entrances?)
+                            #     if self.verbose:
+                            #         print('\t\tTesting', n, '... ', '(', z2, ':', self.door_rooms[n], ') (same zone)')
+                            #     # Connection will remove an exit and an entrance from the zone
+                            #     if (z1_exits - 1) < 1 or (z1_enter - 1) < 1:
+                            #         # Connection would create a walk with no exits or no entrances
+                            #         invalid.append(n)
+                            #         if self.verbose:
+                            #             print('\tRemoving ', n, ' (same zone: ', zone_counts[zone1], ')')
 
-                            elif z2 in walk:
+                            # Look for downstream exits from zone2
+                            if z2 in walk:
                                 if self.verbose:
-                                    print('\t\tTesting', n, '... ', '(', self.door_rooms[n], ') in walk)')
+                                    print('\t\tTesting', n, '... ', '(', z2, ':', self.door_rooms[n], ') in walk)')
                                 # Search for a remaining downstream exit
                                 z2i = walk.index(z2)
-                                flag = 0
+                                flag = False
                                 for wi in range(z2i, len(walk)):
                                     if walk[wi] == zone1 and z1_exits > 1:
                                         if self.verbose:
                                             print('\t\t\tenough exits in the present zone!')
-                                        flag = 1
+                                        flag = True
                                         break
                                     elif walk[wi] != zone1 and zone_counts[walk[wi]][1] > 0:
                                         if self.verbose:
                                             print('\t\t\tenough exits in zone', walk[wi])
-                                        flag = 1
+                                        flag = True
                                         break
-                                if flag == 0:
+                                if not flag:
                                     # If no remaining downstream exit, remove this entrance
                                     invalid.append(n)
                                     if self.verbose:
-                                        print('\tRemoving ', n, ' (zone ', z2, 'in walk, count: ', zone_counts[z2], ')')
+                                        print('\tRemoving ', n, ' (zone ', z2, 'in walk, count: ',
+                                              zone_counts[z2], '): no downstream exits!')
+
+                                # Search for a remaining upstream entrance (including this zone)
+                                z1i = walk.index(zone1)
+                                flag2 = False
+                                for wi in range(z1i+1):
+                                    if walk[wi] == z2 and zone_counts[z2][2] > 1:
+                                        if self.verbose:
+                                            print('\t\t\tenough entrances in the connecting zone', walk[wi])
+                                        flag2 = True
+                                        break
+                                    elif zone_counts[walk[wi]][2] > 0:
+                                        if self.verbose:
+                                            print('\t\t\tenough entrances in zone', walk[wi])
+                                        flag2 = True
+                                        break
+                                if not flag2:
+                                    # If no remaining downstream exit, remove this entrance
+                                    invalid.append(n)
+                                    if self.verbose:
+                                        print('\tRemoving ', n, ' (zone ', z2, 'in walk, count: ',
+                                              zone_counts[z2], '): no upstream entrances!')
 
                             else:
                                 # z2 isn't in the walk yet.  Verify that the connection would still have exits.
@@ -566,8 +600,68 @@ class Doors():
                                     # Connection would create a walk with no exits
                                     invalid.append(n)
                                     if self.verbose:
-                                        print('\tRemoving ', n, ' (zone ', z2, 'not in walk, count: ', zone_counts[z2], ')')
+                                        print('\tRemoving ', n, ' (zone ', z2, 'not in walk, count: ',
+                                              zone_counts[z2], ')')
 
+                                # If there's only one exit in zone1, we need to make sure we don't connect to
+                                # a zone that forces a loop with no downstream exits
+                                elif z1_exits == 1:
+                                    unforced_nobs = len(zone_nobs[z2])
+                                    if self.verbose:
+                                        print('\tLooking for forced connection problems in zone', z2, '.',
+                                              unforced_nobs, 'to check: [',zone_nobs[z2],'].')
+                                    for n in zone_nobs[z2]:
+                                        if n in self.forcing.keys():
+                                            forced = self.forcing[n]
+                                            if self.verbose:
+                                                print('\t\t',n,'has forced connections:',forced)
+                                            for f in forced:
+                                                if nib_zones[f] in walk:
+                                                    # get downstream exits
+                                                    zli = walk.index(nib_zones[f])
+                                                    exitctr = 0
+                                                    for wi in range(zli,len(walk)):
+                                                        exitctr += zone_counts[walk[wi]][1]
+                                                    if exitctr < 2:
+                                                        # this nob is no good
+                                                        if self.verbose:
+                                                            print('\t\t\t', f, 'has no downstream exits!')
+                                                        unforced_nobs -= 1
+                                        elif n in self.sharing.keys():
+                                            shared = self.sharing[n]
+                                            if self.verbose:
+                                                print('\t\t',n,'has shared connections:',shared)
+                                            assigned = [n for n in shared if n not in nobs]
+                                            if len(assigned) > 0:
+                                                # Find the previously-assigned connection in the map
+                                                mapped_nib = [m for m in map if assigned[0] == m[0]][0][1]
+                                                if self.verbose:
+                                                    print('\t\t\t', assigned[0], 'previously assigned:', mapped_nib)
+                                                if nib_zones[mapped_nib] in walk:
+                                                    # get downstream exits
+                                                    zli = walk.index(nib_zones[mapped_nib])
+                                                    exitctr = 0
+                                                    for wi in range(zli, len(walk)):
+                                                        exitctr += zone_counts[walk[wi]][1]
+                                                    if exitctr < 2:
+                                                        # this nob is no good
+                                                        if self.verbose:
+                                                            print('\t\t\t', mapped_nib, 'has no downstream exits!')
+                                                        unforced_nobs -= 1
+
+                                    if unforced_nobs == 0:
+                                        # this connection is no good.
+                                        invalid.append(n)
+                                        if self.verbose:
+                                            print('\tRemoving ', n, ' (', z2,
+                                                  '): forced connections would result in a no-exit loop.')
+                                    else:
+                                        if self.verbose:
+                                            print('\tNo problems found.')
+
+                    invalid = list(set(invalid))  # remove any duplicates
+                    if self.verbose:
+                        print('Invalid connections found: ', invalid)
                     for i in invalid:
                         valid.remove(i)
 
@@ -580,7 +674,7 @@ class Doors():
                     if nib in forced_nibs:
                         forced_nibs.remove(nib)
                     if self.verbose:
-                        print('Selected entrance: ', nib)
+                        print('Selected entrance: ', nib, '[', zone2, ']')
 
                     # Write the connection
                     map.append([nob, nib])
@@ -648,8 +742,11 @@ class Doors():
                         if len(available) > 0:
                             # If any available are forced, do them first.
                             available_forced = list(set(available).intersection(to_force))
+                            available_shared = list(set(available).intersection(to_share))
                             if len(available_forced) > 0:
                                 nob = available_forced.pop(randrange(len(available_forced)))
+                            elif len(available_shared) > 0:
+                                nob = available_shared.pop(randrange(len(available_shared)))
                             else:
                                 nob = available.pop(randrange(len(available)))
                             nobs.remove(nob)
@@ -663,20 +760,28 @@ class Doors():
 
             # Clean up
             if len(nobs) > 0:
-                # There's probably a forced nob(s) that hasn't been connected.
+                # There's probably a forced or shared nob(s) that hasn't been connected.
                 for nob in nobs:
-                    print('Found a disconnected nob!', nob, '(to_force = ', to_force, ')')
+                    print('Found a disconnected nob!', nob, '(to_force = ', to_force, ', to_share = ', to_share, ')')
+                    assigned = []
                     if nob in to_force:
                         to_force.remove(nob)  # clean up
                         # Look for forced exits that have been assigned.
                         forced = self.forcing[nob]
                         assigned = [n for n in forced if n not in nobs]
-                        if len(assigned) > 0:
-                            # Find the previously-assigned connection in the map; take the nib
-                            mapped_nib = [m for m in map if assigned[0] == m[0]][0][1]
-                            map.append([nob, mapped_nib])
-                            if self.verbose:
-                                print('\tCleanup: forced exit connection: ', nob, ' --> ', mapped_nib)
+                    elif nob in to_share:
+                        to_share.remove(nob)  # clean up
+                        # Look for shared exits that have been assigned.
+                        shared = self.sharing[nob]
+                        assigned = [n for n in shared if n not in nobs]
+
+                    if len(assigned) > 0:
+                        # Find the previously-assigned connection in the map; take the nib
+                        mapped_nib = [m for m in map if assigned[0] == m[0]][0][1]
+                        map.append([nob, mapped_nib])
+                        if self.verbose:
+                            print('\tCleanup: forced or shared exit connection: ', nob, ' --> ', mapped_nib)
+
         return map
 
     def print(self):
