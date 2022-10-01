@@ -122,38 +122,34 @@ class Doors():
 
     def mod(self):
         # Create list of randomized connections
-        # Connect rooms together to produce zones
         flag = True
         failures = 0
         while flag:
             try:
+                # Clear any previous attempts
+                self.zones = []
+                self.zone_counts = []
+
+                # Connect rooms together to produce zones
                 map1 = self.map_doors()
+
+                if self.match_WOB_WOR:
+                    # Make the WOR map match the WOB map in relevant areas
+                    if self.verbose:
+                        print('Mapping WoR to match WoB ...')
+                    d = [m for m in map1 if m[0] in doors_WOB_WOR.keys()]
+                    map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
+
+                # Connect one-way exits together to produce a fully-connected map
+                map2 = self.map_oneways()
+
                 flag = False
+
             except Exception:
                 failures += 1
                 print('Error in mapping doors; trying again (' + str(failures) + ' errors)')
-                if failures > 4:
-                    raise Exception('Major Error: something is seriously wrong in map_doors()')
-
-        if self.match_WOB_WOR:
-            # Make the WOR map match the WOB map in relevant areas
-            if self.verbose:
-                print('Mapping WoR to match WoB ...')
-            d = [m for m in map1 if m[0] in doors_WOB_WOR.keys()]
-            map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
-
-
-        flag = True
-        failures = 0
-        while flag:
-            try:
-                map2 = self.map_oneways()
-                flag = False
-            except Exception:
-                failures += 1
-                print('Error in mapping one-ways; trying again (' + str(failures) + ' errors)')
-                if failures > 4:
-                    raise Exception('Major Error: something is seriously wrong in map_oneways()')
+                if failures > 3:
+                    raise Exception('Major Error: something is seriously wrong in doors.mod()')
 
         self.map = [map1, map2]
 
@@ -432,6 +428,10 @@ class Doors():
             zones = [z for z in self.zones[a]]
             zone_counts = [[c[0], c[1], c[2]] for c in self.zone_counts[a]]
 
+            zone_contents = {}
+            for zi in range(len(zones)):
+                zone_contents[zi] = [zi]
+
             nob_zones = {}
             nib_zones = {}
             zone_nobs = {}
@@ -449,31 +449,78 @@ class Doors():
 
             to_force = [n for n in self.forcing.keys() if n in nobs]
             to_share = [n for n in self.sharing.keys() if n in nobs]
-            forced_nibs = []
-            for n in to_force:
-                # Disallow forced nibs, except for the forcing nob
-                if self.forcing[n] in nibs:
-                    forced_nibs.extend(self.forcing[n])
 
             # Walk through all valid one-ways, connecting all zones and returning to the starting point
             walk = []
             if self.verbose:
                 print('\nMapping Area',a,'one-way exits ... ')
             if len(nobs) > 0:
-                if len(to_force) > 0:
-                    # Start with a forced nob (reduces errors)
-                    nob = to_force[randrange(len(to_force))]
-                    nobs.remove(nob)
-                elif len(to_share) > 0:
-                    # start with a shared nob (reduces errors, maybe?)
-                    nob = to_share[randrange(len(to_share))]
-                    nobs.remove(nob)
-                else:
-                    # Choose a random trap door to begin
-                    nob = nobs.pop(randrange(len(nobs)))
 
+                if len(to_force) > 0:
+                    # Connect all forced connections
+                    while len(to_force) > 0:
+                        # Create a new walk for this forced connection
+                        this_walk = []
+
+                        # Connect a forced nob ...
+                        nob = to_force.pop(randrange(len(to_force)))
+                        nobs.remove(nob)
+                        zone1 = nob_zones[nob]
+                        this_walk.append(zone1)  # record the path of the walk
+
+                        # ... to its forced nib
+                        available_nibs = [n for n in self.forcing[nob]]
+                        nib = available_nibs.pop(randrange(len(available_nibs)))  # it's probably just len(1)...
+                        nibs.remove(nib)
+                        zone2 = nib_zones[nib]
+                        if zone2 != zone1:
+                            this_walk.append(zone2)
+
+                        # Add this connection to the map
+                        map.append([nob, nib])
+
+                        # Add this walk to the walks
+                        walk.append(this_walk)
+
+                        # Adjust zone counts
+                        zone_counts[zone1][1] -= 1  # remove an exit
+                        zone_counts[zone2][2] -= 1  # remove an entrance
+
+                        if self.verbose:
+                            print('Created forced connection: ', nob, '[', zone1, '] --> ', nib, '[', zone2, ']')
+
+                else:
+                    # Just pick a random connection to start with
+                    walk.append([randrange(len(zones))])
+
+                # If any walks are connected, connect them
+                w = 0
+                while w < len(walk)-1:
+                    zone_extends = [i for i in range(w, len(walk)) if walk[w][-1] == walk[i][0]]
+                    if len(zone_extends) > 0:
+                        if self.verbose:
+                            print('Compacting walks: ', walk[w], ' --> ', walk[zone_extends[0]])
+                        # add walk[zone_extends[0]] to the active walk
+                        walk[w].extend(walk[zone_extends[0]][1:])
+                        # remove walk[zone_extends[0]]
+                        walk = walk[:zone_extends[0]] + walk[zone_extends[0] + 1:]
+                    else:
+                        w += 1
+
+                if self.verbose:
+                    print('Preprocessing complete.')
+
+                # Begin the normal walk process
+                # Construct the list of all downstream exits...
+                available = [n for n in zone_nobs[walk[0][-1]]]
+                # If any available are shared, do them first.
+                available_shared = list(set(available).intersection(to_share))
+                if len(available_shared) > 0:
+                    nob = available_shared.pop(randrange(len(available_shared)))
+                else:
+                    nob = available.pop(randrange(len(available)))
+                nobs.remove(nob)
                 zone1 = nob_zones[nob]
-                walk.append(zone1)  # record the path of the walk
 
                 while len(nibs) > 0:
                     if self.verbose:
@@ -488,19 +535,8 @@ class Doors():
                     valid = [n for n in nibs]
                     invalid = []
 
-                    is_forced = nob in self.forcing.keys()
                     is_shared = nob in self.sharing.keys()
-                    if is_forced:
-                        # This is a forced connection.  forcing[nob] = [forced nibs]
-                        # Only the entrances (nibs) in forcing[nob] are valid.
-                        #   If it's a list of entrances, connect one of them
-                        to_force.remove(nob)  # clean up
-                        forced = self.forcing[nob]
-                        valid = [n for n in forced if n in nibs]
-                        if self.verbose:
-                            print('\tForced entrance connection: ', valid)
-
-                    elif is_shared:
+                    if is_shared:
                         # This exit must share a destination with another exit (e.g. Umaro's cave #2 trapdoors)
                         #   shared[nob] = [nobs that must have the same exit]
                         to_share.remove(nob)  # clean up
@@ -520,47 +556,34 @@ class Doors():
                                 is_shared = False
                                 print('\tShared exit has not yet been connected.')
 
-                    if len(nibs) > 1 and not is_forced and not is_shared:
+                    if len(nibs) > 1 and not is_shared:
                         # Remove doors that would create a zone with zero exits or zero entrances
                         # i.e. a zone with [0, n, 0], or [0, 0, n].
                         z1_exits = zone_counts[zone1][1]
                         z1_enter = zone_counts[zone1][2]
-                        invalid.extend(forced_nibs)  # don't allow connections to forced entrances
 
                         for n in valid:
                             z2 = nib_zones[n]
 
-                            # Remove loops into the walk that have no downstream exits ***OR no upstream entrances***
-                            # If zone1 == z2, this creates a self loop (length = 1)
-                            ## IS this necessary, or can it just be handled in the walk search?
-                            # it IS necessary for there to always be entrances *UPSTREAM* and exits *DOWNSTREAM*
-                            # if zone1 == z2:
-                            #     # Resulting zone must have exits. (and entrances?)
-                            #     if self.verbose:
-                            #         print('\t\tTesting', n, '... ', '(', z2, ':', self.door_rooms[n], ') (same zone)')
-                            #     # Connection will remove an exit and an entrance from the zone
-                            #     if (z1_exits - 1) < 1 or (z1_enter - 1) < 1:
-                            #         # Connection would create a walk with no exits or no entrances
-                            #         invalid.append(n)
-                            #         if self.verbose:
-                            #             print('\tRemoving ', n, ' (same zone: ', zone_counts[zone1], ')')
+                            # Check if z2 is in any walk yet
+                            z2_walked = [z2 in walk[i] for i in range(len(walk))]
 
-                            # Look for downstream exits from zone2
-                            if z2 in walk:
+                            if z2_walked[0]:  # the active walk
+                                # Look for downstream exits from zone2 in the active walk
                                 if self.verbose:
-                                    print('\t\tTesting', n, '... ', '(', z2, ':', self.door_rooms[n], ') in walk)')
+                                    print('\t\tTesting', n, '... ', '(', z2, ':', self.door_rooms[n], ') in the active walk')
                                 # Search for a remaining downstream exit
-                                z2i = walk.index(z2)
+                                z2i = walk[0].index(z2)
                                 flag = False
-                                for wi in range(z2i, len(walk)):
-                                    if walk[wi] == zone1 and z1_exits > 1:
+                                for wi in range(z2i, len(walk[0])):
+                                    if walk[0][wi] == zone1 and z1_exits > 1:
                                         if self.verbose:
                                             print('\t\t\tenough exits in the present zone!')
                                         flag = True
                                         break
-                                    elif walk[wi] != zone1 and zone_counts[walk[wi]][1] > 0:
+                                    elif walk[0][wi] != zone1 and zone_counts[walk[0][wi]][1] > 0:
                                         if self.verbose:
-                                            print('\t\t\tenough exits in zone', walk[wi])
+                                            print('\t\t\tenough exits in zone', walk[0][wi])
                                         flag = True
                                         break
                                 if not flag:
@@ -571,17 +594,17 @@ class Doors():
                                               zone_counts[z2], '): no downstream exits!')
 
                                 # Search for a remaining upstream entrance (including this zone)
-                                z1i = walk.index(zone1)
+                                z1i = walk[0].index(zone1)
                                 flag2 = False
                                 for wi in range(z1i+1):
-                                    if walk[wi] == z2 and zone_counts[z2][2] > 1:
+                                    if walk[0][wi] == z2 and zone_counts[z2][2] > 1:
                                         if self.verbose:
-                                            print('\t\t\tenough entrances in the connecting zone', walk[wi])
+                                            print('\t\t\tenough entrances in the connecting zone', walk[0][wi])
                                         flag2 = True
                                         break
-                                    elif zone_counts[walk[wi]][2] > 0:
+                                    elif zone_counts[walk[0][wi]][2] > 0:
                                         if self.verbose:
-                                            print('\t\t\tenough entrances in zone', walk[wi])
+                                            print('\t\t\tenough entrances in zone', walk[0][wi])
                                         flag2 = True
                                         break
                                 if not flag2:
@@ -591,8 +614,14 @@ class Doors():
                                         print('\tRemoving ', n, ' (zone ', z2, 'in walk, count: ',
                                               zone_counts[z2], '): no upstream entrances!')
 
+                            elif z2_walked[1:].count(True):
+                                # z2 is in some other walk.
+                                # But any non-active walk has both exits and entrances by definition.
+                                if self.verbose:
+                                    print('\t', z2, 'is in walk ', z2_walked.index(True), 'and is probably ok.')
+
                             else:
-                                # z2 isn't in the walk yet.  Verify that the connection would still have exits.
+                                # z2 isn't in a walk yet.  Verify that the connection would still have exits.
                                 z2_exits = zone_counts[z2][1]
                                 z2_enter = zone_counts[z2][2]
                                 # Connection will remove 1 exit from zone1 and 1 entrance from zone2
@@ -602,62 +631,6 @@ class Doors():
                                     if self.verbose:
                                         print('\tRemoving ', n, ' (zone ', z2, 'not in walk, count: ',
                                               zone_counts[z2], ')')
-
-                                # If there's only one exit in zone1, we need to make sure we don't connect to
-                                # a zone that forces a loop with no downstream exits
-                                elif z1_exits == 1:
-                                    unforced_nobs = len(zone_nobs[z2])
-                                    if self.verbose:
-                                        print('\tLooking for forced connection problems in zone', z2, '.',
-                                              unforced_nobs, 'to check: [',zone_nobs[z2],'].')
-                                    for n in zone_nobs[z2]:
-                                        if n in self.forcing.keys():
-                                            forced = self.forcing[n]
-                                            if self.verbose:
-                                                print('\t\t',n,'has forced connections:',forced)
-                                            for f in forced:
-                                                if nib_zones[f] in walk:
-                                                    # get downstream exits
-                                                    zli = walk.index(nib_zones[f])
-                                                    exitctr = 0
-                                                    for wi in range(zli,len(walk)):
-                                                        exitctr += zone_counts[walk[wi]][1]
-                                                    if exitctr < 2:
-                                                        # this nob is no good
-                                                        if self.verbose:
-                                                            print('\t\t\t', f, 'has no downstream exits!')
-                                                        unforced_nobs -= 1
-                                        elif n in self.sharing.keys():
-                                            shared = self.sharing[n]
-                                            if self.verbose:
-                                                print('\t\t',n,'has shared connections:',shared)
-                                            assigned = [n for n in shared if n not in nobs]
-                                            if len(assigned) > 0:
-                                                # Find the previously-assigned connection in the map
-                                                mapped_nib = [m for m in map if assigned[0] == m[0]][0][1]
-                                                if self.verbose:
-                                                    print('\t\t\t', assigned[0], 'previously assigned:', mapped_nib)
-                                                if nib_zones[mapped_nib] in walk:
-                                                    # get downstream exits
-                                                    zli = walk.index(nib_zones[mapped_nib])
-                                                    exitctr = 0
-                                                    for wi in range(zli, len(walk)):
-                                                        exitctr += zone_counts[walk[wi]][1]
-                                                    if exitctr < 2:
-                                                        # this nob is no good
-                                                        if self.verbose:
-                                                            print('\t\t\t', mapped_nib, 'has no downstream exits!')
-                                                        unforced_nobs -= 1
-
-                                    if unforced_nobs == 0:
-                                        # this connection is no good.
-                                        invalid.append(n)
-                                        if self.verbose:
-                                            print('\tRemoving ', n, ' (', z2,
-                                                  '): forced connections would result in a no-exit loop.')
-                                    else:
-                                        if self.verbose:
-                                            print('\tNo problems found.')
 
                     invalid = list(set(invalid))  # remove any duplicates
                     if self.verbose:
@@ -671,8 +644,6 @@ class Doors():
                     if nib in nibs:
                         nibs.remove(nib)
                         zone_counts[zone2][2] -= 1  # decrement entrances (nibs) in zone2
-                    if nib in forced_nibs:
-                        forced_nibs.remove(nib)
                     if self.verbose:
                         print('Selected entrance: ', nib, '[', zone2, ']')
 
@@ -681,41 +652,69 @@ class Doors():
                     zone_counts[zone1][1] -= 1  # decrement exits (nobs) in zone1
 
                     # Update the walk and zone counts
-                    walk.append(zone2)
+                    walk[0].append(zone2)
+
+                    # Compactify the walks, if necessary
+                    zone_extends = [i for i in range(1,len(walk)) if walk[i][0] == zone2]
+                    if len(zone_extends) > 0:
+                        # add walk[zone_extends[0]] to the active walk
+                        walk[0].extend(walk[zone_extends[0]][1:])
+                        # remove walk[zone_extends[0]]
+                        walk = walk[:zone_extends[0]] + walk[zone_extends[0]+1:]
 
                     # If we created a loop, combine all zones in the loop into a new zone
-                    # A loop is created when a zone appears a second time in the walk, and is always bookended by zone2.
-                    if walk.count(zone2) > 1:
-                        loop = walk[walk.index(zone2):-1]
-                        if len(loop) == 1:
+                    # A loop is created when a zone appears a second time in the walk, and is always bookended by the
+                    # last zone in the walk.
+                    lastzone = walk[0][-1]
+                    loop_found = False
+                    loop_index = -1  # default value.
+                    for z in walk[0][:-1]:
+                        if lastzone in zone_contents[z]:
+                            # if a loop is found, record the index and stop looking.
+                            loop_found = True
+                            loop_index = walk[0].index(z)
+                            break
+                    if loop_found:
+                        # Check if the loop is just a self-loop (zone linking to itself)
+                        if walk[0][-1] == walk[0][-2]:
                             # Self loop only, skip it.
-                            walk = walk[:-1]
+                            walk[0] = walk[0][:-1]
                             if self.verbose:
                                 print('\tSelf loop found (ignored)')
+
                         else:
+                            # Collect the loop
+                            loop = walk[0][loop_index:-1]
+
                             # Create a new zone with the properties of all the zones in the loop
                             # Gather information on the new zone
                             if self.verbose:
-                                print('\tLoop found: ', zone2, ': ', walk,' - Compressing')
+                                print('\tLoop found: zone', lastzone, 'at position', loop_index,'in: ', walk[0],' - Compressing')
                             newzone = []
                             newzone_count = [0, 0, 0]
                             newzone_nobs = []
                             newzone_nibs = []
+                            newzone_contents = []
                             for zi in loop:
-                                newzone.extend(zones[zi])
+                                for zzi in zone_contents[zi]:
+                                    newzone_contents.append(zzi)
+                                newzone.extend(zones[zi])  # rooms in the zone
                                 for j in range(3):
                                     newzone_count[j] += zone_counts[zi][j]
                                 newzone_nobs.extend(zone_nobs[zi])
                                 newzone_nibs.extend(zone_nibs[zi])
+                                newzone = list(set(newzone)) # unique values only
                                 # Delete old zone information
                                 zones[zi] = []
                                 zone_counts[zi] = [0, 0, 0]
                                 zone_nobs[zi] = []
                                 zone_nibs[zi] = []
                             nzi = len(zones)  # new zone index
+                            newzone_contents = [nzi] + list(set(newzone_contents))  # unique values only
                             # Create the new zone
                             zones.append(newzone)
                             zone_counts.append(newzone_count)
+                            zone_contents[nzi] = newzone_contents
                             zone_nobs[nzi] = newzone_nobs
                             # Update dictionaries for nob zones & nib zones
                             for n in zone_nobs[nzi]:
@@ -724,15 +723,17 @@ class Doors():
                             for n in zone_nibs[nzi]:
                                 nib_zones[n] = nzi
                             # Update walk to replace the loop with the new zone ID
-                            walk = walk[:walk.index(zone2)]
-                            walk.append(nzi)
-                            zone2 = nzi
+                            walk[0] = walk[0][:loop_index]
+                            walk[0].append(nzi)
+                            lastzone = nzi
+                            if self.verbose:
+                                print('\tNew zone created:',nzi,':',newzone)
 
                     # Construct the list of all downstream exits...
-                    z2i = walk.index(zone2)
+                    z2i = walk[0].index(lastzone)
                     available = []
-                    for wi in range(z2i, len(walk)):
-                        available.extend([nob for nob in zone_nobs[walk[wi]] if nob in nobs])
+                    for wi in range(z2i, len(walk[0])):
+                        available.extend([nob for nob in zone_nobs[walk[0][wi]] if nob in nobs])
                     # ... And randomly select one to connect:
                     available = list(set(available))  # just unique values
                     if self.verbose:
@@ -740,12 +741,9 @@ class Doors():
                     if len(nibs) > 0:
                         # prepare for the next loop
                         if len(available) > 0:
-                            # If any available are forced, do them first.
-                            available_forced = list(set(available).intersection(to_force))
+                            # If any available are shared, do them first.
                             available_shared = list(set(available).intersection(to_share))
-                            if len(available_forced) > 0:
-                                nob = available_forced.pop(randrange(len(available_forced)))
-                            elif len(available_shared) > 0:
+                            if len(available_shared) > 0:
                                 nob = available_shared.pop(randrange(len(available_shared)))
                             else:
                                 nob = available.pop(randrange(len(available)))
@@ -762,14 +760,9 @@ class Doors():
             if len(nobs) > 0:
                 # There's probably a forced or shared nob(s) that hasn't been connected.
                 for nob in nobs:
-                    print('Found a disconnected nob!', nob, '(to_force = ', to_force, ', to_share = ', to_share, ')')
+                    print('Found a disconnected nob!', nob, '(to_share = ', to_share, ')')
                     assigned = []
-                    if nob in to_force:
-                        to_force.remove(nob)  # clean up
-                        # Look for forced exits that have been assigned.
-                        forced = self.forcing[nob]
-                        assigned = [n for n in forced if n not in nobs]
-                    elif nob in to_share:
+                    if nob in to_share:
                         to_share.remove(nob)  # clean up
                         # Look for shared exits that have been assigned.
                         shared = self.sharing[nob]

@@ -496,9 +496,9 @@ class Maps():
                 # We have to be careful here: if it has a world door-switch event, we will need to do something else
 
                 # Read in existing event code
-                src = [self.rom.get_byte(existing_event.event_Address)]
+                src = [self.rom.get_byte(existing_event.event_address)]
                 while src[-1] != 0xfe:
-                    src.append(self.rom.get_byte(existing_event.event_Address + len(src)))
+                    src.append(self.rom.get_byte(existing_event.event_address + len(src)))
 
                 # delete existing event
                 self.delete_event(map_id, this_exit.x, this_exit.y)
