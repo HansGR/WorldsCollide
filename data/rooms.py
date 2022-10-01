@@ -1,5 +1,24 @@
 #rooms - series of doors.  [ [2-way doors], [1-way exits], [1-way entrances], require_world?]
+
 room_data = {
+    'root' : [ [9000, 9001, 9002, 9003], [], [], None], # Virtual root map for -door-randomize-all
+
+    # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
+    # They are also used in Dungeon Crawl mode.
+    'root-u' : [ [], [2010], [3009], None], # Root map for -door-randomize-umaro
+    'root-unb' : [ [1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
+    'root-unr' : [ [1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
+    'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
+    'root-ob' : [ [593], [], [], 1], # Root map for -door-randomize-owzer's basement
+
+    # 'conn-code' rooms are connectors to a virtual root map for door-randomize-all.
+    # Virtual door pairs (8000s <--> 9000s) are forced connections that affect door-randomizing logic only.
+    #'conn-u' : [ [], [2010], [3009], None], # Root map for -door-randomize-umaro  # Not used, root in upper-narshe-wob
+    'conn-unb' : [ [8000, 1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
+    'conn-unr' : [ [8001, 1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
+    'conn-em' : [ [8002, 44], [], [], 0], # Root map for -door-randomize-esper-mountain
+    'conn-ob' : [ [8003, 593], [], [], 1], # Root map for -door-randomize-owzer's basement
+
     2 : [ [81], [ ], [ ], None], #Blackjack Outside
     3 : [ [82, 83], [ ], [ ], None], #Blackjack Gambling Room
     4 : [ [84, 85, 87], [ ], [ ], None], #Blackjack Party Room
@@ -20,7 +39,6 @@ room_data = {
     19 : [ [113, 114], [ ], [ ], None], #Narshe Northern Mines 2nd/3rd Floor Outside WoB
     20 : [ [115, 1139], [ ], [ ], None], #Narshe Northern Mines 3rd Floor Outside WoB
     21 : [ [1137, 1138], [ ], [ ], None], #Narshe Northern Mines 1st Floor Outside WoB
-    '21a' : [ [1138], [ ], [ ], 0], #Narshe Northern Mines 1st Floor Outside WoB ORIGIN
     22 : [ [1140, 1141], [ ], [ ], None], #Snow Battlefield WoB
     23 : [ [1142], [ ], [ ], None], #Narshe Peak WoB
     24 : [ [116, 117], [ ], [ ], None], #Narshe Weapon Shop
@@ -40,7 +58,6 @@ room_data = {
     '37a' : [ [145, 146], [ ], [3009], None], #Narshe Northern Mines 2nd/3rd Floor Outside WoR incl. exit from Umaro's cave
     38 : [ [147, 1147], [ ], [ ], None], #Narshe Northern Mines 3rd Floor Outside WoR
     39 : [ [1145, 1146], [ ], [ ], None], #Narshe Northern Mines 1st Floor Outside WoR
-    '39a' : [ [1146], [ ], [ ], 1], #Narshe Northern Mines 1st Floor Outside WoR ORIGIN
     40 : [ [1148, 1149], [ ], [ ], None], #Snow Battlefield WoR
     41 : [ [1150], [ ], [ ], None], #Narshe Peak WoR
     '41a' : [ [1150], [2010], [], None], # Narshe Peak WoR incl. entrance to Umaro's cave
@@ -289,7 +306,6 @@ room_data = {
     283 : [ [ ], [2020], [3019], 1],  # Owzer's Basement Floating Chest room
     284 : [ [591], [ ], [ ], 1], #Owzer's Basement Chadarnook's Room
     285 : [ [592, 593], [ ], [ ], None], #Owzer's House
-    '285a': [ [593], [ ], [ ], 1], # <VIRTUAL> Owzer's House entrance to Owzer's Basement
 
     286 : [ [1218, 1219, 1220, 1221, 1222, 1223], [ ], [ ], None], #Esper World Outside
     287 : [ [594], [ ], [ ], None], #Esper World Gate
@@ -377,7 +393,6 @@ room_data = {
     '367b' : [ [736, 737], [2006, 2008], [ ], None], #Umaro Cave 2nd Room - middle
     '367c' : [ [738], [2005], [ ], None], #Umaro Cave 2nd Room - east
     368 : [ [ ], [2009], [3004], None], # Umaro Cave Umaro's Den
-    '368a' : [ [ ], [2010], [3009], None], # <VIRTUAL> Narshe Peak WoR
 
     369 : [ [739, 740, 741, 742], [ ], [ ], None], #Maranda Outside
     370 : [ [743], [ ], [ ], None], #Doma 3F Outside
@@ -499,7 +514,6 @@ room_data = {
     486 : [ [1030], [ ], [ ], None], #Fanatic's Tower 4th Floor Treasure Room
     487 : [ [1031], [ ], [ ], None], #Fanatic's Tower 1st Floor Secret Room
 
-    '487a' : [ [44], [], [], None],  # <VIRTUAL> World map entrance to Esper Mountain
     488 : [ [1032, 1033], [ ], [ ], None], #Esper Mountain 3 Statues Room
     489 : [ [1034, 1035, 1036], [ ], [ ], None], #Esper Mountain Outside Bridge Room
     490 : [ [1037], [ ], [ ], None], #Esper Mountain Outside East Treasure Room
@@ -559,6 +573,10 @@ forced_connections = {
     2012 : [3012],   #      North-to-South bridge jump Mid
     2013 : [3013]    #      North-to-South bridge jump East
 }
+
+# Add forced connections for virtual doors (-dra)
+for i in range(8000, 8000+len(room_data['root'][0])):
+    forced_connections[i] = [i+1000]
 
 # List of one-ways that must have the same destination
 shared_oneways = {

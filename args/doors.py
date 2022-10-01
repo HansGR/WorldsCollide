@@ -4,6 +4,7 @@ def name():
 def parse(parser):
     doors = parser.add_argument_group("Doors")
 
+    # Individual zone randomization
     doors.add_argument("-dru", "--door-randomize-umaro", action = "store_true",
                          help = "Randomize the doors in Umaro's cave")
     doors.add_argument("-drun", "--door-randomize-upper-narshe", action="store_true",
@@ -16,6 +17,10 @@ def parse(parser):
                        help="Randomize the doors in Esper Mountain")
     doors.add_argument("-drob", "--door-randomize-owzer-basement", action="store_true",
                        help="Randomize the doors in Owzer's Basement")
+
+    # Full randomization
+    doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
+                       help="Randomize all doors to create a single giant dungeon")
     doors.add_argument("-dra", "--door-randomize-all", action = "store_true",
                          help = "Randomize all currently-implemented doors")
 
@@ -26,26 +31,32 @@ def process(args):
 def flags(args):
     flags = ""
 
-    if args.door_randomize_umaro:
-        flags += " -dru"
-
-    if args.door_randomize_upper_narshe:
-        flags += " -drun"
-    else:
-        # -drun supercedes -drunb, drunr
-        if args.door_randomize_upper_narshe_wob:
-            flags += " -drunb"
-        if args.door_randomize_upper_narshe_wor:
-            flags += " -drunr"
-
-    if args.door_randomize_esper_mountain:
-        flags += " -drem"
-
-    if args.door_randomize_owzer_basement:
-        flags += " -drob"
-
     if args.door_randomize_all:
+        # -dra supercedes all
         flags += " -dra"
+
+    elif args.door_randomize_dungeon_crawl:
+        # -drdc supercedes all but -dra
+        flags += " -drdc"
+
+    else:
+        if args.door_randomize_umaro:
+            flags += " -dru"
+
+        if args.door_randomize_upper_narshe:
+            flags += " -drun"
+        else:
+            # -drun supercedes -drunb, drunr
+            if args.door_randomize_upper_narshe_wob:
+                flags += " -drunb"
+            if args.door_randomize_upper_narshe_wor:
+                flags += " -drunr"
+
+        if args.door_randomize_esper_mountain:
+            flags += " -drem"
+
+        if args.door_randomize_owzer_basement:
+            flags += " -drob"
 
     return flags
 
@@ -54,6 +65,10 @@ def options(args):
     if args.door_randomize_all:
         return [
             ("Randomize All", args.door_randomize_all),
+        ]
+    elif args.door_randomize_dungeon_crawl:
+        return [
+            ("Dungeon Crawl", args.door_randomize_dungeon_crawl)
         ]
     else:
         un_state = args.door_randomize_upper_narshe

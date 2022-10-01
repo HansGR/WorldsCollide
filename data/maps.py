@@ -435,22 +435,27 @@ class Maps():
     def connect_exits(self):
         # For all doors in doors.map[0], we want to find the exit and change where it leads to
         for m in self.doors.map[0]:
-            # Get exits associated with doors m[0] and m[1]
-            exitA = self.exits.get_exit_from_ID(m[0])
-            exitB = self.exits.get_exit_from_ID(m[1])
+            # Only connect real doors (virtual doors should never connect to real doors)
+            if m[0] < 2000 and m[1] < 2000:
+                # Get exits associated with doors m[0] and m[1]
+                exitA = self.exits.get_exit_from_ID(m[0])
+                exitB = self.exits.get_exit_from_ID(m[1])
 
-            # Attach exits:
-            # Copy original properties of exitB_pair to exitA & vice versa.
-            exitB_pairID = exit_data_orig[m[1]][0] # Original connecting exit to B...
-            self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
-            exitA_pairID = exit_data_orig[m[0]][0]  # Original connecting exit to A...
-            self.exits.copy_exit_info(exitB, exitA_pairID)  # ... copied to exit B
+                # Attach exits:
+                # Copy original properties of exitB_pair to exitA & vice versa.
+                exitB_pairID = exit_data_orig[m[1]][0] # Original connecting exit to B...
+                self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
+                exitA_pairID = exit_data_orig[m[0]][0]  # Original connecting exit to A...
+                self.exits.copy_exit_info(exitB, exitA_pairID)  # ... copied to exit B
 
-            # Write events on the exits to handle required conditions:
-            # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
-            self.create_exit_event(m[1], m[0])
-            # Write an event on top of exit m[0] to set the correct properties (world, parent map) for exit m[1]
-            self.create_exit_event(m[0], m[1])
+                # Write events on the exits to handle required conditions:
+                # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
+                self.create_exit_event(m[1], m[0])
+                # Write an event on top of exit m[0] to set the correct properties (world, parent map) for exit m[1]
+                self.create_exit_event(m[0], m[1])
+
+            elif (m[0] < 2000) != (m[1] < 2000):
+                print('ERROR!  something weird happened.', m)
 
         ### NOTES:
         # There are two ways to think about connecting world-map exits:

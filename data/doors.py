@@ -5,20 +5,26 @@ from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door description
 
 # DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
 ROOM_SETS = {
-    'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, '368a'],
-    'UpperNarshe_WoB': [19, 20, '21a', 22, 23, 53, 54, 55, 59, 60],
-    'UpperNarshe_WoR': [37, 38, '39a', 40, 41, 42, 43, 44, 46, 47],
-    'EsperMountain': ['487a', 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501],
-    'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, '285a'],
-    'All': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
-            19, 20, '21a', 22, 23, 53, 54, 55, 59, 60,  # Upper Narshe WoB
-            '37a', 38, '39a', 40, '41a', 42, 43, 44, 46, 47,  # Upper Narshe WoR
-            '487a', 488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501,  # Esper Mountain
-            277, 278, 279, 280, 281, 282, 283, 284, '285a'  # Owzer's Basement
-            ],
+    'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
+    'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
+    'UpperNarshe_WoR': [37, 38, 40, 41, 42, 43, 44, 46, 47, 'root-unr'],
+    'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
+    'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
+    'DungeonCrawl': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
+                     19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
+                    '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr', # Upper Narshe WoR
+                    488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
+                    277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'  # Owzer's Basement
+                    ],
+    'All': ['root',  # root map with virtual doors [9000s] to virtual connectors [8000]
+            364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
+             19, 20, 22, 23, 53, 54, 55, 59, 60, 'conn-unb',  # Upper Narshe WoB
+             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'conn-unr',  # Upper Narshe WoR
+             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'conn-em',  # Esper Mountain
+             277, 278, 279, 280, 281, 282, 283, 284, 'conn-ob'  # Owzer's Basement
+             ],
     'test': ['285a', '21a']  # for testing only
 }
-
 
 class Doors():
     def __init__(self, args):
@@ -41,13 +47,16 @@ class Doors():
 
         self.use_shared_exits = True
         self.match_WOB_WOR = False
-        self.verbose = True
+        self.verbose = False
 
         # Read in the doors to be randomized.
         room_sets = []
         if self.args.door_randomize_all:  # -dra
             # Prioritize randomizing all doors
             room_sets.append(ROOM_SETS['All'])
+        elif self.args.door_randomize_dungeon_crawl:  # -drdc
+            # Prioritize randomizing all doors - dungeon crawl mode
+            room_sets.append(ROOM_SETS['DungeonCrawl'])
         else:
             # Randomize separately
             if self.args.door_randomize_umaro:  # -dru
@@ -55,7 +64,9 @@ class Doors():
 
             if self.args.door_randomize_upper_narshe:  # -drun
                 room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
+                room_sets.append(ROOM_SETS['UpperNarshe_WoR'])  # this randomization will be overwritten
                 self.match_WOB_WOR = True
+
             else:
                 if self.args.door_randomize_upper_narshe_wob:  # -drunb
                     room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
@@ -98,15 +109,21 @@ class Doors():
                         self.door_types[d] = i
                         self.door_rooms[d] = room
                         if i < 2:
-                            self.door_descr[d] = exit_data[d][1]
+                            if d in exit_data.keys():
+                                self.door_descr[d] = exit_data[d][1]
+                            else:
+                                self.door_descr[d] = 'virtual door'
                             if d in shared_exits.keys():
                                 for sd in shared_exits[d]:
                                     self.door_descr[sd] = exit_data[sd][1]
-                            if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
-                                # Also grab the description for the matching WOR door
-                                self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
+                            #if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
+                            #    # Also grab the description for the matching WOR door
+                            #    self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
                         else:
-                            self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
+                            if d in exit_data.keys():
+                                self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
+                            else:
+                                self.door_descr[d] = "virtual door DESTINATION"
                         # Capture information for shared exits
                         if d in shared_exits.keys():
                             for ds in shared_exits[d]:
@@ -137,8 +154,11 @@ class Doors():
                     # Make the WOR map match the WOB map in relevant areas
                     if self.verbose:
                         print('Mapping WoR to match WoB ...')
-                    d = [m for m in map1 if m[0] in doors_WOB_WOR.keys()]
-                    map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
+                    newmap = [m for m in map1 if m[0] in doors_WOB_WOR.keys()]
+                    newmap.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in newmap])
+                    map1 = [m for m in newmap]
+                    print(map1)
+                    #map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
 
                 # Connect one-way exits together to produce a fully-connected map
                 map2 = self.map_oneways()
@@ -196,6 +216,8 @@ class Doors():
                 one_entrs = [zi for zi in range(len(zones)) if zone_counts[zi] == [1, 0, 1]]
                 if len(to_force) > 0:
                     door1 = to_force.pop(0)
+                    doors.remove(door1)  # clean up
+                    zone1 = door_zones[door1]
                     valid = self.forcing[door1]
                     if self.verbose:
                         print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (forced):')
@@ -211,7 +233,7 @@ class Doors():
                     # Choose a random door
                     door1 = deadEndDoors.pop(randrange(len(deadEndDoors)))
                     doors.remove(door1)  # clean up
-                    zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
+                    zone1 = door_zones[door1]
 
                     if len(doors) == 1:
                         # Case if there are only two dead-end zones left: connect them.
@@ -234,7 +256,7 @@ class Doors():
                     # Choose a random door
                     door1 = hallwayDoors.pop(randrange(len(hallwayDoors)))
                     doors.remove(door1)  # clean up
-                    zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
+                    zone1 = door_zones[door1]
 
                     # Construct a list of valid zone connections:  Any zone that is not itself.
                     # Dead end zones would also be taboo but are impossible.
@@ -257,7 +279,7 @@ class Doors():
                         # Choose a random door
                         door1 = oneexitDoors.pop(randrange(len(oneexitDoors)))
                         doors.remove(door1)  # clean up
-                        zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
+                        zone1 = door_zones[door1]
 
                         if self.verbose:
                             print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (single exit):')
@@ -269,14 +291,14 @@ class Doors():
                         # Choose a random door
                         door1 = oneentryDoors.pop(randrange(len(oneentryDoors)))
                         doors.remove(door1)  # clean up
-                        zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
+                        zone1 = door_zones[door1]
 
                         if self.verbose:
                             print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (single entry):')
 
                     else:
                         door1 = doors.pop(randrange(len(doors)))
-                        zone1 = [i for i in range(len(zones)) if self.door_rooms[door1] in zones[i]][0]
+                        zone1 = door_zones[door1]
                         if self.verbose:
                             print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], ']:')
 
@@ -351,7 +373,7 @@ class Doors():
                             raise Exception('ERROR: too many errors.')
                 else:
                     door2 = valid.pop(randrange(len(valid)))
-                    zone2 = [i for i in range(len(zones)) if self.door_rooms[door2] in zones[i]][0]
+                    zone2 = door_zones[door2]
                     doors.remove(door2)
                     if self.verbose:
                         print('\tSelected:', door2)
