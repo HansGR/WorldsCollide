@@ -120,6 +120,11 @@ class Maps():
                 self.event_maps[i + counter] = m
             counter += num_events
 
+        # Make all maps warpable for -door-randomize-all
+        if self.args.debug or self.args.door_randomize_all:
+            for map_index, cur_map in enumerate(self.maps):
+                self.properties[map_index].warpable = 1
+
         # f = open('event_map&address_info.txt','w')
         # f.write('# Event_ID: map_ID, (x, y), event_address')
         # for i in self.event_maps.keys():
