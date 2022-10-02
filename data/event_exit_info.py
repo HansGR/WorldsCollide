@@ -53,7 +53,8 @@ exit_event_patch = {
     # # supposedly these are cleared on map load.
     2017 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     2018 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
-    587 : [0xb2, 0xaa, 0x2c, 0x01]  # field.Call(0xb2caa)
+    586 : [0xb2, 0xaa, 0x2c, 0x01],  # South door.  field.Call(0xb2caa)
+    587 : [0xb2, 0xaa, 0x2c, 0x01]   # North door.  field.Call(0xb2caa)
 }
 
 entrance_event_patch = {
