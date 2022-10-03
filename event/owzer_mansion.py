@@ -44,6 +44,10 @@ class OwzerMansion(Event):
         if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:
             # Remove warp-to-Jidoor from end of Chadarnook cutscene
             space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
+            src = [
+                field.FadeInScreen()
+            ]
+            space.write(src)
 
             self.door_timer_mod()
             self.painting_mod()

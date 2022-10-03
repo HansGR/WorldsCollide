@@ -24,15 +24,6 @@ class MapExits():
 
         self.read()
 
-        # f = open('exit_original_info.txt','w')
-        # f.write('# exit_ID: [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
-        # for li in self.exit_original_data.keys():
-        #     write_string = str(li)
-        #     write_string += ': '+str(self.exit_original_data[li])
-        #     write_string += '. '+str(self.exit_raw_data[li])+'\n'
-        #     f.write(write_string)
-        # f.close()
-
     def read(self):
         global_counter = 0
         for exit_index in range(self.SHORT_EXIT_COUNT):

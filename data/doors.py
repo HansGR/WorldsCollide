@@ -1,9 +1,17 @@
 from openpyxl import load_workbook
-from random import randrange
+from random import randrange, choices
 from data.rooms import room_data, forced_connections, shared_oneways, shared_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
 # DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
+# VERSION OF 'All' with root map connection:
+# 'All': ['root',  # root map with virtual doors [9000s] to virtual connectors [8000]
+#             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
+#              19, 20, 22, 23, 53, 54, 55, 59, 60, 'conn-unb',  # Upper Narshe WoB
+#              '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'conn-unr',  # Upper Narshe WoR
+#              488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'conn-em',  # Esper Mountain
+#              277, 278, 279, 280, 281, 282, 283, 284, 'conn-ob'  # Owzer's Basement
+#              ],
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
@@ -16,12 +24,13 @@ ROOM_SETS = {
                     488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
                     277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'  # Owzer's Basement
                     ],
-    'All': ['root',  # root map with virtual doors [9000s] to virtual connectors [8000]
+    # version of 'All' with drafting:
+    'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
-             19, 20, 22, 23, 53, 54, 55, 59, 60, 'conn-unb',  # Upper Narshe WoB
-             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'conn-unr',  # Upper Narshe WoR
-             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'conn-em',  # Esper Mountain
-             277, 278, 279, 280, 281, 282, 283, 284, 'conn-ob'  # Owzer's Basement
+             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
+             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
+             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
+             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'  # Owzer's Basement
              ],
     'test': ['285a', '21a']  # for testing only
 }
@@ -47,7 +56,9 @@ class Doors():
 
         self.use_shared_exits = True
         self.match_WOB_WOR = False
-        self.verbose = False
+        self.verbose = True
+
+        self._all_rooms = []
 
         # Read in the doors to be randomized.
         room_sets = []
@@ -143,6 +154,10 @@ class Doors():
         failures = 0
         while flag:
             try:
+                if self.args.door_randomize_all:
+                    # Draft rooms to create areas for randomization
+                    self.draft_areas()
+
                 # Clear any previous attempts
                 self.zones = []
                 self.zone_counts = []
@@ -172,6 +187,240 @@ class Doors():
                     raise Exception('Major Error: something is seriously wrong in doors.mod()')
 
         self.map = [map1, map2]
+
+    def draft_areas(self):
+        DRAFT_PROBABILITY = 0.25
+        is_even = lambda x: (x % 2) == 0
+
+        if len(self._all_rooms) == 0:
+            # Create backup in case of multiple drafting runs
+            # All rooms are currently in area 0.
+            self._all_rooms = [r for r in self.rooms[0]]
+
+        rooms = [r for r in self._all_rooms]
+
+        # Create an area for each 'root'
+        roots = [r for r in rooms if str(r).find('root') >= 0]  # root entrances
+        areas = []
+        area_counts = []
+        for root in roots:
+            areas.append([root])
+            area_counts.append([c for c in self.room_counts[root]])
+            rooms.remove(root)  # clean up
+
+        # HOW TO DEAL WITH FORCED CONNECTIONS?
+        # HOW TO DEAL WITH SHARED ONEWAYS?
+        # In both cases, if you find one, immediately append the shared/forced room to the same area?
+        forcing = {}
+        sharing = {}
+        for f in forced_connections.keys():
+            # find those in the current areas
+            if f in self.door_rooms.keys():
+                rf = self.door_rooms[f]  # the room with the forced connection
+                rc = self.door_rooms[forced_connections[f][0]]  # room that is forced connected to
+                forcing[rf] = [rc]  # Set the room --> room forcing
+                if rc in forcing.keys():
+                    # There's already another forced connection into rc, add this one to it
+                    forcing[rc].append(rf)
+                else:
+                    forcing[rc] = [rf]  # include the reciprocal forcing
+
+        for s in shared_oneways.keys():
+            rs = self.door_rooms[s]
+            rc = self.door_rooms[shared_oneways[s][0]]
+            if rs in sharing.keys():
+                if rc not in sharing[rs]:
+                    sharing[rs].append(rc)
+            else:
+                sharing[rs] = [rc]
+            if rc in sharing.keys():
+                if rs not in sharing[rc]:
+                    sharing[rc].append(rs)
+            else:
+                sharing[rc] = [rs]
+
+        if self.verbose:
+            print('Found forcing:', forcing)
+            print('Found sharing:', sharing)
+
+        # Have areas draft from the existing rooms
+        ai_active = [i for i in range(len(areas))]
+        while len(rooms) > 0:
+            # Choose an area to draft
+            ai = ai_active[randrange(len(ai_active))]
+            count = area_counts[ai]
+            if self.verbose:
+                print(len(rooms),': drafting', ai, '(', count, ')')
+
+            # Calculate room weights for this area
+            if self.verbose:
+                print('Rooms & weights:')
+            room_weight = [1 for i in range(len(rooms))]
+            for i in range(len(room_weight)):
+                rc = self.room_counts[rooms[i]]
+
+                # even # doors: slight benefit
+                #if is_even(count[0] + rc[0]):
+                #    room_weight[i] += 1
+
+                # exits = entrances: larger benefit
+                diff = count[1] - count[2]
+                rdiff = rc[1] - rc[2]
+                if abs(diff + rdiff) < abs(diff):
+                    room_weight[i] += abs(diff) - abs(diff + rdiff)
+
+                if self.verbose:
+                    print('\t', rooms[i], '(', self.room_counts[rooms[i]], '):', room_weight[i])
+
+            # Draft a room (weighted)
+            room = choices(rooms, room_weight)[0]
+            rooms.remove(room) # clean up
+            if self.verbose:
+                print('Selected:', room)
+
+            # Add it to the area
+            areas[ai].append(room)
+            for i in range(3):
+                count[i] += self.room_counts[room][i]
+
+            # Look for forced connections
+            if room in forcing.keys():
+                rf = forcing.pop(room)
+                if self.verbose:
+                    print('\tForced connection found:', rf)
+                for r in rf:
+                    # Add the forced connection to the area
+                    rooms.remove(r)
+                    areas[ai].append(r)
+                    for i in range(3):
+                        count[i] += self.room_counts[r][i]
+                    # Add reciprocal forced connections as well
+                    if r in forcing.keys():
+                        rfrf = forcing.pop(r)
+                        for recip in rfrf:
+                            if recip not in areas[ai]:
+                                if self.verbose:
+                                    print('\t\talso added reciprocal connection:', recip)
+                                rooms.remove(recip)
+                                areas[ai].append(recip)
+                                for i in range(3):
+                                    count[i] += self.room_counts[recip][i]
+            # Look for shared one-way exits:
+            if room in sharing.keys():
+                # add the shared connection
+                rs = sharing.pop(room)
+                if self.verbose:
+                    print('\tShared one-way found:', rs)
+                for r in rs:
+                    if r != room:
+                        # Shared one-ways are not in the same room.  Add the other room too.
+                        if r in sharing.keys():
+                            rss = sharing.pop(r)  # remove reciprocal
+                            reciprocals = [a for a in rss if a != room and a not in areas[ai]]
+                            if self.verbose:
+                                print('\t\tfound reciprocals:',r,'-->', reciprocals)
+                            rs.extend(reciprocals)
+                        if r in rooms:
+                            rooms.remove(r)  # clean up
+                        if r not in areas[ai]:
+                            areas[ai].append(r)
+                            for i in range(3):
+                                count[i] += self.room_counts[r][i]
+                            # Shared one-ways shouldn't count as an extra exit
+                            count[1] -= 1
+                            if self.verbose:
+                                print('\t\tadded shared one-way', r, '& decremented')
+                    else:
+                        # Shared one-ways shouldn't count as an extra exit
+                        count[1] -= 1
+                        if self.verbose:
+                            print('\t\tsame room, decremented.')
+
+            # Determine if the area is closeable
+            if len(ai_active) > 1 and is_even(count[0]) and (count[1] == count[2]):
+                # if so, decide whether to close the area
+                if choices([True, False], [6/(len(rooms)+1), 1 - 6/(len(rooms)+1)])[0]:
+                    # Close the area
+                    ai_active.remove(ai)
+                    if self.verbose:
+                        print('Closed area: ', ai, area_counts[ai])
+
+        if self.verbose:
+            print('Draft complete: ')
+            for ai in range(len(areas)):
+                print(ai,':',area_counts[ai],'\t',areas[ai])
+
+        # Once drafting is complete, connect remaining areas if necessary.
+        while len(ai_active) > 1:
+            if self.verbose:
+                print('Active areas:', ai_active)
+
+            # Choose a starter
+            ai = choices(ai_active)[0]
+            if self.verbose:
+                print(len(ai_active), ': merging', ai)
+
+            # Search for a partner
+            count = area_counts[ai]
+            matches = []
+            metric = {}
+            for ai2 in [a for a in ai_active if a != ai]:
+                count2 = area_counts[ai2]
+                metric[ai2] = (count[1] + count2[1]) - (count[2] + count2[2])
+                if is_even(count[0] + count2[0]) and metric[ai2] == 0:
+                    # found a match
+                    matches.append(ai2)
+
+            if len(matches) > 0:
+                # Select a partner
+                ai2 = choices(matches)[0]
+                if self.verbose:
+                    print('\tFound a pair!', ai2, area_counts[ai2])
+            else:
+                # Choose whichever has the smallest metric
+                min_val = min(metric.values())
+                for ai2 in metric.keys():
+                    if metric[ai2] == min_val:
+                        matches.append(ai2)
+                ai2 = choices(matches)[0]
+                if self.verbose:
+                    print('\tBest match:', ai2, area_counts[ai2])
+
+            # Combine areas
+            areas[ai].extend(areas[ai2])
+            for i in range(3):
+                area_counts[ai][i] += area_counts[ai2][i]
+            areas[ai2] = []  # clean up
+            area_counts[ai2] = [0, 0, 0]
+            ai_active.remove(ai2)
+            # Deactivate area if conditions are met
+            if is_even(count[0]) and (count[1] == count[2]):
+                ai_active.remove(ai)
+                if self.verbose:
+                    print('\t',ai,'now complete!')
+
+            if self.verbose:
+                print('\tMerged areas: new distribution')
+                for ai in range(len(areas)):
+                    print(ai, ':', area_counts[ai], '\t', areas[ai])
+
+        if self.verbose:
+            print('Drafting complete:')
+            for ai in range(len(areas)):
+                print(ai,':',area_counts[ai])
+                for r in areas[ai]:
+                    print('\t',r,'\t',self.room_counts[r])
+
+        # Clean up & update the rooms lists & doors lists
+        areas = [a for a in areas if len(a) > 0]
+        self.rooms = areas
+        self.doors = []
+        for a in self.rooms:
+            self.doors.append([])
+            for r in a:
+                for i in range(3):
+                    # Read in the doors associated with each room
+                    self.doors[-1].extend(room_data[r][i])
 
 
     def map_doors(self):
@@ -260,8 +509,12 @@ class Doors():
 
                     # Construct a list of valid zone connections:  Any zone that is not itself.
                     # Dead end zones would also be taboo but are impossible.
-                    valid_zone2 = [zi for zi in range(len(zones)) if zi != zone1]
-                    valid = [d for d in doors if door_zones[d] in valid_zone2]
+                    if len(doors) == 1:
+                        # Edge case: connect the last two doors in the zone
+                        valid = [d for d in doors]
+                    else:
+                        valid_zone2 = [zi for zi in range(len(zones)) if zi != zone1]
+                        valid = [d for d in doors if door_zones[d] in valid_zone2]
                     if self.verbose:
                         print('Connecting ', door1, '[', zone1, ': ', self.door_rooms[door1], '] (hallway):')
 

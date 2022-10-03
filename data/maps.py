@@ -125,6 +125,18 @@ class Maps():
             for map_index, cur_map in enumerate(self.maps):
                 self.properties[map_index].warpable = 1
 
+        # f = open('exit_original_info.txt', 'w')
+        # f.write(
+        #     '# exit_ID: [x, y, parent_map, dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
+        # for li in self.exits.exit_original_data.keys():
+        #     this_exit = self.exits.get_exit_from_ID(li)
+        #     write_string = str(li)
+        #     write_string += ': ' + str(this_exit.x) + ', ' + str(this_exit.y) + '[' + str(self.exit_maps[li]) + '] '
+        #     write_string += str(self.exits.exit_original_data[li])
+        #     write_string += '.\n'
+        #     f.write(write_string)
+        # f.close()
+
         # f = open('event_map&address_info.txt','w')
         # f.write('# Event_ID: map_ID, (x, y), event_address')
         # for i in self.event_maps.keys():

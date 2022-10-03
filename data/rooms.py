@@ -1,7 +1,7 @@
 #rooms - series of doors.  [ [2-way doors], [1-way exits], [1-way entrances], require_world?]
 
 room_data = {
-    'root' : [ [9000, 9001, 9002, 9003], [], [], None], # Virtual root map for -door-randomize-all
+    # 'root' : [ [9000, 9001, 9002, 9003], [], [], None], # Virtual root map for -door-randomize-all
 
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.
@@ -14,10 +14,10 @@ room_data = {
     # 'conn-code' rooms are connectors to a virtual root map for door-randomize-all.
     # Virtual door pairs (8000s <--> 9000s) are forced connections that affect door-randomizing logic only.
     #'conn-u' : [ [], [2010], [3009], None], # Root map for -door-randomize-umaro  # Not used, root in upper-narshe-wob
-    'conn-unb' : [ [8000, 1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
-    'conn-unr' : [ [8001, 1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
-    'conn-em' : [ [8002, 44], [], [], 0], # Root map for -door-randomize-esper-mountain
-    'conn-ob' : [ [8003, 593], [], [], 1], # Root map for -door-randomize-owzer's basement
+    # 'conn-unb' : [ [8000, 1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
+    # 'conn-unr' : [ [8001, 1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
+    # 'conn-em' : [ [8002, 44], [], [], 0], # Root map for -door-randomize-esper-mountain
+    # 'conn-ob' : [ [8003, 593], [], [], 1], # Root map for -door-randomize-owzer's basement
 
     2 : [ [81], [ ], [ ], None], #Blackjack Outside
     3 : [ [82, 83], [ ], [ ], None], #Blackjack Gambling Room
@@ -390,8 +390,8 @@ room_data = {
     366 : [ [734], [2003, 2004], [ ], None], #Umaro Cave Switch Room
     # 367 : [ [735, 736, 737, 738], [2005, 2006, 2007, 2008], [ ], None], #Umaro Cave 2nd Room
     '367a' : [ [735], [2007], [ ], None], #Umaro Cave 2nd Room - west
-    '367b' : [ [736, 737], [2006, 2008], [ ], None], #Umaro Cave 2nd Room - middle
-    '367c' : [ [738], [2005], [ ], None], #Umaro Cave 2nd Room - east
+    '367b' : [ [736, 738], [2006, 2008], [ ], None], #Umaro Cave 2nd Room - middle
+    '367c' : [ [737], [2005], [ ], None], #Umaro Cave 2nd Room - east
     368 : [ [ ], [2009], [3004], None], # Umaro Cave Umaro's Den
 
     369 : [ [739, 740, 741, 742], [ ], [ ], None], #Maranda Outside
@@ -575,8 +575,9 @@ forced_connections = {
 }
 
 # Add forced connections for virtual doors (-dra)
-for i in range(8000, 8000+len(room_data['root'][0])):
-    forced_connections[i] = [i+1000]
+if 'root' in room_data.keys():
+    for i in range(8000, 8000+len(room_data['root'][0])):
+        forced_connections[i] = [i+1000]
 
 # List of one-ways that must have the same destination
 shared_oneways = {
