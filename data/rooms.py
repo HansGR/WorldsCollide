@@ -366,17 +366,20 @@ room_data = {
     342 : [ [1233], [ ], [ ], None], #Imperial Castle Banquet Room
     343 : [ [695, 696], [ ], [ ], None], #Imperial Castle Barracks Room
 
-    345 : [ [702], [ ], [ ], None], #Magitek Factory Upper Room Platform From Lower Room
-    346 : [ [703], [ ], [ ], None], #Magitek Factory Upper Room
-    347 : [ [704], [ ], [ ], None], #Magitek Factory Lower Room
+    'root-mf' : [ [1229], [ ], [3028], 0],     # Magitek Factory root entrance in Vector
+    345 : [ [702], [2023], [ ], None], #Magitek Factory Upper Room Platform From Lower Room
+    346 : [ [703], [2022], [3023], None], #Magitek Factory Upper Room
+    347 : [ [704], [2024, 2025], [3022, 3024, 3026], None], #Magitek Factory Lower Room
 
-    349 : [ [705, 706], [ ], [ ], None], #Magitek Factory Garbage Room
+    349 : [ [705, 706], [2026], [3025], None], #Magitek Factory Garbage Room
 
     351 : [ [709, 710], [ ], [ ], None], #Magitek Factory Stairwell
     352 : [ [711], [ ], [ ], None], #Magitek Factory Save Point Room
     353 : [ [712, 713], [ ], [ ], None], #Magitek Factory Tube Hallway
     354 : [ [714, 715], [ ], [ ], None], #Magitek Factory Number 024 Room
-    355 : [ [716], [ ], [ ], None], #Magitek Factory Esper Tube Room
+    355 : [ [716], [2027], [ ], None], #Magitek Factory Esper Tube Room
+    '355a' : [ [], [2028], [3027], None],  # Magitek Factory Minecart Room
+
     356 : [ [717], [ ], [ ], None], #Zone Eater Entry Room
     357 : [ [718, 719, 721], [ ], [ ], None], #Zone Eater Bridge Guards Room
     358 : [ [720], [ ], [ ], None], #Zone Eater Pit
@@ -571,7 +574,9 @@ room_data = {
 forced_connections = {
     2011 : [3011],   # Esper Mountain Inside 2nd Room: North-to-South bridge jump West
     2012 : [3012],   #      North-to-South bridge jump Mid
-    2013 : [3013]    #      North-to-South bridge jump East
+    2013 : [3013],   #      North-to-South bridge jump East
+
+    2023 : [3023]   # Magitek factory elevator in Room 1
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -587,14 +592,16 @@ shared_oneways = {
     2008: [2007],  # Umaro's cave room 2: west trapdoor (shared exit)
 
     2017: [2018],   # Owzer's Mansion switching doors (same destination)
-    2018: [2017]    # Owzer's Mansion switching doors (same destination)
+    2018: [2017],    # Owzer's Mansion switching doors (same destination)
+
 }
 
 # Lists of doors that have a shared destination. key_doorID : [doorIDs that share destination]
 shared_exits = {
     1034 : [1035],  # Esper Mountain outside bridge, left door
     1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door
-    1040 : [1041]   # Esper Mountain Outside Path to Final Room West Door
+    1040 : [1041],  # Esper Mountain Outside Path to Final Room West Door
+
 }
 
 # List of rooms that should have a forced update to Parent Map variable when entering.

@@ -20,7 +20,7 @@ from memory.space import Allocate, Bank, Free, Write
 from instruction import field
 from instruction.event import EVENT_CODE_START
 
-from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch
+from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, long_events
 from data.map_exit_extra import exit_data as exit_data_orig
 from data.rooms import room_data, force_update_parent_map
 
@@ -111,6 +111,18 @@ class Maps():
                 self.exit_maps[i + counter] = m
             counter += num_long
 
+        # f = open('exit_original_info.txt', 'w')
+        # f.write(
+        #     '# exit_ID: [x, y, parent_map, dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
+        # for li in self.exits.exit_original_data.keys():
+        #     this_exit = self.exits.get_exit_from_ID(li)
+        #     write_string = str(li)
+        #     write_string += ': ' + str(this_exit.x) + ', ' + str(this_exit.y) + ' [' + str(hex(self.exit_maps[li])) + '], '
+        #     write_string += str(self.exits.exit_original_data[li])
+        #     write_string += '.\n'
+        #     f.write(write_string)
+        # f.close()
+
         ### Do we also need this for event exits?
         self.event_maps = {}
         counter = 0
@@ -120,28 +132,27 @@ class Maps():
                 self.event_maps[i + counter] = m
             counter += num_events
 
-        # Make all maps warpable for -door-randomize-all
-        if self.args.debug or self.args.door_randomize_all:
-            for map_index, cur_map in enumerate(self.maps):
-                self.properties[map_index].warpable = 1
-
-        # f = open('exit_original_info.txt', 'w')
-        # f.write(
-        #     '# exit_ID: [x, y, parent_map, dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
-        # for li in self.exits.exit_original_data.keys():
-        #     this_exit = self.exits.get_exit_from_ID(li)
-        #     write_string = str(li)
-        #     write_string += ': ' + str(this_exit.x) + ', ' + str(this_exit.y) + '[' + str(self.exit_maps[li]) + '] '
-        #     write_string += str(self.exits.exit_original_data[li])
-        #     write_string += '.\n'
-        #     f.write(write_string)
-        # f.close()
-
         # f = open('event_map&address_info.txt','w')
         # f.write('# Event_ID: map_ID, (x, y), event_address')
         # for i in self.event_maps.keys():
         #     f.write(str(i) + ' : ' + str(self.event_maps[i]) + ', (' + str(self.events.events[i].x) + ', ' +
         #             str(self.events.events[i].y) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
+        # f.close()
+
+        self.npc_maps = {}
+        counter = 0
+        for m in range(len(self.maps) - 1):
+            num_npcs = self.get_npc_count(m)
+            for i in range(num_npcs):
+                self.npc_maps[i + counter] = m
+            counter += num_npcs
+
+        # f = open('npc_info.txt', 'w')
+        # f.write('# NPC_id: map_ID, (x,y), event_address')
+        # for n in self.npc_maps.keys():
+        #     npc = self.npcs.get_npc(n)
+        #     f.write(str(n) + ': ' + str(hex(self.npc_maps[n])) + ' (' + str(npc.x) + ', ' + str(npc.y) + '): '
+        #           + str(hex(npc.event_address)) + '\n')
         # f.close()
 
 
@@ -294,6 +305,15 @@ class Maps():
 
         self._fix_imperial_camp_boxes()
 
+        # Make all maps warpable for -door-randomize-all
+        if self.args.debug or self.args.door_randomize_all:
+            for map_index, cur_map in enumerate(self.maps):
+                self.properties[map_index].warpable = 1
+
+        # Add doors to the spoiler log
+        if len(self.doors.map) > 0:
+            self.doors.print()
+
     def write(self):
         self.npcs.write()
         self.chests.write()
@@ -419,18 +439,33 @@ class Maps():
 
             space.write(src)
 
-            print('Writing: ', m[0], ' --> ', m[1],
-                  ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
-                  '\n\tbitstring: ', [hex(s)[2:] for s in src])
-            print('\n\tnew memory address: ', hex(new_event_address))
+            # print('Writing: ', m[0], ' --> ', m[1],
+            #       ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
+            #       '\n\tbitstring: ', [hex(s)[2:] for s in src])
+            # print('\n\tnew memory address: ', hex(new_event_address))
 
             if exit_address is not None:
-                # Update the MapEvent.event_address = Address(Event1a)
-                this_event_ID = self.events.event_address_index[exit_address - EVENT_CODE_START]
-                if m[0] == 2017:  # HACK for shared event in Owzer's Mansion switch doors
-                    this_event_ID -= 1
-                self.events.events[this_event_ID].event_address = new_event_address - EVENT_CODE_START
-                # print('Updated event ', this_event_ID, ': ', hex(exit_address - self.BASE_OFFSET), '-->', hex(new_event_address - self.BASE_OFFSET), '\n\n')
+                if exit_address == 0xc8022:
+                    # One-time hack for Cid/Minecart NPC entrance event.  If there are more, make a case for it.
+                    cid = self.get_npc(0x110, 0 + 0x10)
+                    # print('Cid index = ', self.get_npc_index(0x110, 0 + 0x10))
+                    cid.set_event_address(new_event_address)
+                    # cid.print()
+
+                else:
+                    # Update the MapEvent.event_address = Address(Event1a)
+                    this_event_id = self.events.event_address_index[exit_address - EVENT_CODE_START]
+                    if m[0] == 2017:  # HACK for shared event in Owzer's Mansion switch doors
+                        this_event_id -= 1
+                    self.events.events[this_event_id].event_address = new_event_address - EVENT_CODE_START
+
+                    if m[0] in long_events.keys():
+                        # Other tiles must also be updated to point to the event at the appropriate offset
+                        for le in long_events[m[0]]:
+                            le_addr = event_exit_info[le][0]
+                            le_id = self.events.event_address_index[le_addr - EVENT_CODE_START]
+                            self.events.events[le_id].event_address = new_event_address + (le_addr - exit_address) - EVENT_CODE_START
+
             else:
                 # Create a new MapEvent for this event
                 new_event = MapEvent()

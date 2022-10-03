@@ -3,21 +3,13 @@ from random import randrange, choices
 from data.rooms import room_data, forced_connections, shared_oneways, shared_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
-# DOORDATAFILE = 'LocationRandomizer-WC.xlsm'
-# VERSION OF 'All' with root map connection:
-# 'All': ['root',  # root map with virtual doors [9000s] to virtual connectors [8000]
-#             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
-#              19, 20, 22, 23, 53, 54, 55, 59, 60, 'conn-unb',  # Upper Narshe WoB
-#              '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'conn-unr',  # Upper Narshe WoR
-#              488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'conn-em',  # Esper Mountain
-#              277, 278, 279, 280, 281, 282, 283, 284, 'conn-ob'  # Owzer's Basement
-#              ],
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
     'UpperNarshe_WoR': [37, 38, 40, 41, 42, 43, 44, 46, 47, 'root-unr'],
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
+    'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'DungeonCrawl': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
                      19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
                     '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr', # Upper Narshe WoR
@@ -89,6 +81,9 @@ class Doors():
 
             if self.args.door_randomize_owzer_basement:  # -drob
                 room_sets.append(ROOM_SETS['OwzerBasement'])
+
+            if self.args.door_randomize_magitek_factory:  # -drmf
+                room_sets.append(ROOM_SETS['MagitekFactory'])
 
             #room_sets.append(ROOM_SETS['test'])
 

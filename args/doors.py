@@ -17,6 +17,8 @@ def parse(parser):
                        help="Randomize the doors in Esper Mountain")
     doors.add_argument("-drob", "--door-randomize-owzer-basement", action="store_true",
                        help="Randomize the doors in Owzer's Basement")
+    doors.add_argument("-drmf", "--door-randomize-magitek-factory", action="store_true",
+                       help="Randomize the doors in Magitek Factory")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -58,6 +60,9 @@ def flags(args):
         if args.door_randomize_owzer_basement:
             flags += " -drob"
 
+        if args.door_randomize_magitek_factory:
+            flags += " -drmf"
+
     return flags
 
 def options(args):
@@ -85,6 +90,7 @@ def options(args):
             ("Upper Narshe", un_state),
             ("Esper Mountain", args.door_randomize_esper_mountain),
             ("Owzer Basement", args.door_randomize_owzer_basement),
+            ("Magitek Factory", args.door_randomize_magitek_factory)
         ]
 
 def menu(args):
