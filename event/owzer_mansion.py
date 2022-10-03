@@ -45,6 +45,7 @@ class OwzerMansion(Event):
             # Remove warp-to-Jidoor from end of Chadarnook cutscene
             space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
             src = [
+                field.HideEntity(self.relm_npc_id),
                 field.FadeInScreen()
             ]
             space.write(src)
