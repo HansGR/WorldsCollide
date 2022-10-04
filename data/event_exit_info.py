@@ -2,6 +2,7 @@
 #   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on, required_world]
 #   None = not implemented
 event_exit_info = {
+    # UMARO'S CAVE
     2001 : [int('0cd8d4',16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor top'],
     2002 : [int('0cd8b2',16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor left'],
     2003 : [int('0cd93a',16), 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to 2nd Room'],
@@ -13,6 +14,7 @@ event_exit_info = {
     2009 : [int('0c3839',16), 50, 1 , [False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe'],
     2010 : [int('0c37e7',16), 82, 67, [True, True, True], 'Narshe Peak WoR entrance to Umaros Cave'],
 
+    # ESPER MOUNTAIN
     2011 : [int('0bee80',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump west'],   # forced connection, no mod
     2012 : [int('0bee71',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump middle'], # forced connection, no mod
     2013 : [int('0bee62',16), 15, 0 , [None, None, None], 'Esper Mtn 2nd Room bridge jump east'],    # forced connection, no mod
@@ -20,12 +22,14 @@ event_exit_info = {
     2015 : [int('0beebe',16), 46, 30, [False, False, True], 'Esper Mtn Pit Room North trapdoor'],  # no "38 (Hold screen)" after transition
     2016 : [int('0beeec',16), 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor'],
 
+    # OWZER'S MANSION
     2017 : [int('0b4b86',16), 47, 1 , [False, False, False], 'Owzers Mansion switching door left'],
     2018 : [int('0b4b86',16), 47, 1 , [False, False, False], 'Owzers Mansion switching door right'],  # same destination, same event!
     2019 : [int('0b4bb5',16), 53, 3 , [False, False, False], 'Owzers Mansion behind switching door exit'],  # set event bit 0x24c?
     2020 : [int('0b4c94',16), 13, 1 , [False, False, False], 'Owzers Mansion floating chest room exit'],
     2021 : [int('0b4bea',16), 51, 1 , [False, False, False], 'Owzers Mansion save point room oneway'],
 
+    # MAGITEK FACTORY
     2022 : [int('0c7651',16), 49, 29, [False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile'],    # will require address patching
     '2022a' : [int('0c765f',16), 0, 0, [None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile'],  # same exit as above; requires address patch & tile edit
     2023 : [int('0c7682',16),  37,  0, [None, None, None], 'Magitek factory platform elevator to Mtek-1'],
@@ -35,7 +39,7 @@ event_exit_info = {
     '2025b' : [int('0c7573',16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile'],    # same exit as above; requires address patch & tile edit
     2026 : [int('0c75f6',16), 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2'],
     2027 : [int('0c7f43',16), 216, 131, [False, False, False], 'Magitek factory lab Cid''s elevator'],  # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028 : [int('0c8022',16), 309, 98, [False, False, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
+    2028 : [int('0c8022',16), 309, 152, [False, False, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
     }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen

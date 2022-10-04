@@ -46,6 +46,7 @@ class OwzerMansion(Event):
             space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
             src = [
                 field.HideEntity(self.relm_npc_id),
+                field.RefreshEntities(),
                 field.FadeInScreen()
             ]
             space.write(src)
