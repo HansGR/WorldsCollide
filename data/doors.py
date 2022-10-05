@@ -126,7 +126,7 @@ class Doors():
                             #    # Also grab the description for the matching WOR door
                             #    self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
                         else:
-                            if d in exit_data.keys():
+                            if (d-1000) in exit_data.keys():
                                 self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
                             else:
                                 self.door_descr[d] = "virtual door DESTINATION"

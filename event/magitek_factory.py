@@ -63,6 +63,10 @@ class MagitekFactory(Event):
         red_soldier_id = 0x12
         south_soldier_id = 0x13
 
+        mtek_block_left_id = 0x20
+        mtek_block_mid_id = 0x21
+        mtek_block_right_id = 0x22
+
         # never show vector redish while burning, so hide npcs here instead
         # also do not conditionally branch to 0xc9540, always execute npc queues/movement
         space = Reserve(0xc9527, 0xc953f, "vector entrance event", field.NOP())
@@ -78,7 +82,15 @@ class MagitekFactory(Event):
             field.HideEntity(north_soldier_id),
             field.HideEntity(red_soldier_id),
             field.HideEntity(south_soldier_id),
+        )
 
+        if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl or self.args.door_randomize_magitek_factory:
+            space.write(
+                field.HideEntity(mtek_block_mid_id),
+                #field.HideEntity(mtek_block_right_id),
+            )
+
+        space.write(
             field.Branch("NPC_QUEUES"),
         )
 
@@ -285,10 +297,13 @@ class MagitekFactory(Event):
 
         # use original game over check function after mine cart ride, the custom one cannot be used here
         # refreshing objects or updating the party leader causes a hard lock at the end of the ride (never return from black screen)
-        space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
-        space.write(
-            field.Call(field.ORIGINAL_CHECK_GAME_OVER),
-        )
+        if not (self.args.door_randomize_all
+                or self.args.door_randomize_dungeon_crawl
+                or self.args.door_randomize_magitek_factory):
+            space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
+            space.write(
+                field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+            )
 
     def character_mod(self, character):
         self.setzer_npc.sprite = character

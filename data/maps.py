@@ -439,10 +439,10 @@ class Maps():
 
             space.write(src)
 
-            # print('Writing: ', m[0], ' --> ', m[1],
-            #       ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
-            #       '\n\tbitstring: ', [hex(s)[2:] for s in src])
-            # print('\n\tnew memory address: ', hex(new_event_address))
+            print('Writing: ', m[0], ' --> ', m[1],
+                  ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
+                  '\n\tbitstring: ', [hex(s)[2:] for s in src])
+            print('\n\tnew memory address: ', hex(new_event_address))
 
             if exit_address is not None:
                 if exit_address == 0xc8022:

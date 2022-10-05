@@ -1,5 +1,5 @@
 #event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description]
-#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on, required_world]
+#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
 #   None = not implemented
 event_exit_info = {
     # UMARO'S CAVE
@@ -39,7 +39,7 @@ event_exit_info = {
     '2025b' : [int('0c7573',16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile'],    # same exit as above; requires address patch & tile edit
     2026 : [int('0c75f6',16), 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2'],
     2027 : [int('0c7f43',16), 216, 131, [False, False, False], 'Magitek factory lab Cid''s elevator'],  # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028 : [int('0c8022',16), 309, 152, [False, False, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
+    2028 : [int('0c8022',16), 309, 152, [True, False, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
     }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -51,8 +51,7 @@ event_exit_info = {
 #       What happens with MTek3 prize?  Is it triggered by minecart, or by entering Vector?
 
 from instruction.event import EVENT_CODE_START
-import instruction.field as field
-from utils.flatten import flatten
+from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
     # Jump into Umaro's Cave:
     #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
@@ -74,7 +73,20 @@ exit_event_patch = {
     2017 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     2018 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     586 : [0xb2, 0xaa, 0x2c, 0x01],  # South door.  field.Call(0xb2caa)
-    587 : [0xb2, 0xaa, 0x2c, 0x01]   # North door.  field.Call(0xb2caa)
+    587 : [0xb2, 0xaa, 0x2c, 0x01],   # North door.  field.Call(0xb2caa)
+
+    # Cid's Elevator: Remove middle scene and dialog
+    2027 : lambda src, src_end: [ src[:41] + src[128:], src_end],
+    # Cid's Minecart ride: patch out custom annihilation check, replace with standard (?)
+    # TBD: Remove dialog:
+    #    space = Reserve(0xc8027, 0xc802a, "magitek factory celes i've known her", field.NOP())
+    #    space = Reserve(0xc803a, 0xc803d, "magitek factory no! it's kefka!", field.NOP())
+    #    space = Reserve(0xc805c, 0xc805e, "magitek factory go!!", field.NOP())
+    # space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
+    # space.write(field.Call(field.ORIGINAL_CHECK_GAME_OVER))
+    2028 : lambda src, src_end: [  src[:5] + src[9:23] + src[27:58] + src[61:139] +
+                                   [0xb2] + branch_code(ORIGINAL_CHECK_GAME_OVER, 0) + src[143:], src_end ]
+
 }
 
 entrance_event_patch = {
@@ -87,7 +99,12 @@ entrance_event_patch = {
 
     # Jump into Esper Mountain room 2, North trapdoor: patch in "hold screen" (0x38) after map transition
     # The other trapdoors have this, maybe it's just a typo?
-    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ]
+    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ],
+
+    # Cid's Elevator Ride: remove move-party-down after elevator.
+    # space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
+    3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
+
 }
 
 def branch_code(addr, offset):
@@ -118,6 +135,13 @@ long_events = {
     2022: ['2022a'],  # Magitek factory room 1 conveyor belt
     2025: ['2025a', '2025b']  # Magitek factory room 1 conveyor belt
 }
+
+# Some events need to be modified by different parts of the code before being written.  We identify them here by where
+# the event script starts in the code.
+#key_events = [0xc7f43,  # Cid's elevator ride
+#              0xc8022   # Cid's minecart ride
+#              ]
+
 # Notes:
 # 2009.  The transition out of Umaro's cave and back to Narshe should load the Narshe music, but instead just keeps
 #   playing the Umaro music when randomized. I am not sure why this happens: look at the post-transition code for 2009?
