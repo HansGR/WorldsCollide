@@ -34,12 +34,12 @@ event_exit_info = {
     '2022a' : [int('0c765f',16), 0, 0, [None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile'],  # same exit as above; requires address patch & tile edit
     2023 : [int('0c7682',16),  37,  0, [None, None, None], 'Magitek factory platform elevator to Mtek-1'],
     2024 : [int('0c7905',16), 50, 10, [False, False, False], 'Magitek factory 2 pipe exit loop'],
-    2025 : [int('0c7565',16), 86, 58, [False, False, False], 'Magitek factory 2 conveyor to pit left tile'],    # will require address patching
+    2025 : [int('0c7565',16), 86, 58, [True, False, False], 'Magitek factory 2 conveyor to pit left tile'],    # will require address patching
     '2025a' : [int('0c7581',16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit mid tile'],      # same exit as above; requires address patch & tile edit
     '2025b' : [int('0c7573',16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile'],    # same exit as above; requires address patch & tile edit
     2026 : [int('0c75f6',16), 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2'],
-    2027 : [int('0c7f43',16), 216, 131, [False, False, False], 'Magitek factory lab Cid''s elevator'],  # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028 : [int('0c8022',16), 309, 152, [True, False, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
+    2027 : [int('0c7f43',16), 217, 131, [False, False, False], 'Magitek factory lab Cid''s elevator'],  # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
+    2028 : [int('0c8022',16), 309, 152, [False, True, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
     }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -76,14 +76,10 @@ exit_event_patch = {
     587 : [0xb2, 0xaa, 0x2c, 0x01],   # North door.  field.Call(0xb2caa)
 
     # Cid's Elevator: Remove middle scene and dialog
-    2027 : lambda src, src_end: [ src[:41] + src[128:], src_end],
-    # Cid's Minecart ride: patch out custom annihilation check, replace with standard (?)
-    # TBD: Remove dialog:
-    #    space = Reserve(0xc8027, 0xc802a, "magitek factory celes i've known her", field.NOP())
-    #    space = Reserve(0xc803a, 0xc803d, "magitek factory no! it's kefka!", field.NOP())
-    #    space = Reserve(0xc805c, 0xc805e, "magitek factory go!!", field.NOP())
-    # space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
-    # space.write(field.Call(field.ORIGINAL_CHECK_GAME_OVER))
+    # [see events.magitek_factory.minecart_mod()]
+    2027 : lambda src, src_end: [ src[:41] + src[47:61] + src[128:], src_end],
+    # Cid's Minecart ride: Remove dialog; patch out custom annihilation check, replace with standard
+    # [see events.magitek_factory.minecart_mod() and number128_battle_mod()]
     2028 : lambda src, src_end: [  src[:5] + src[9:23] + src[27:58] + src[61:139] +
                                    [0xb2] + branch_code(ORIGINAL_CHECK_GAME_OVER, 0) + src[143:], src_end ]
 

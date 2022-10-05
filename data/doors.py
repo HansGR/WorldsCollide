@@ -3,6 +3,13 @@ from random import randrange, choices
 from data.rooms import room_data, forced_connections, shared_oneways, shared_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
+# 'DungeonCrawl': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
+#                      19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
+#                     '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr', # Upper Narshe WoR
+#                     488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
+#                     277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
+#                     345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'  # Magitek Factory
+#                     ],
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
@@ -10,19 +17,13 @@ ROOM_SETS = {
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
-    'DungeonCrawl': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
-                     19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
-                    '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr', # Upper Narshe WoR
-                    488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
-                    277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'  # Owzer's Basement
-                    ],
-    # version of 'All' with drafting:
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
-             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
-             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
-             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
-             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'  # Owzer's Basement
+            19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
+            '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
+            488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
+            277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
+            345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'  # Magitek Factory
              ],
     'test': ['285a', '21a']  # for testing only
 }
@@ -54,12 +55,11 @@ class Doors():
 
         # Read in the doors to be randomized.
         room_sets = []
-        if self.args.door_randomize_all:  # -dra
-            # Prioritize randomizing all doors
+        if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:  # -dra, -drdc
+            # Prioritize randomizing all doors.
+            # Both options the same room list.  -dra uses drafting; -drdc does not.
             room_sets.append(ROOM_SETS['All'])
-        elif self.args.door_randomize_dungeon_crawl:  # -drdc
-            # Prioritize randomizing all doors - dungeon crawl mode
-            room_sets.append(ROOM_SETS['DungeonCrawl'])
+
         else:
             # Randomize separately
             if self.args.door_randomize_umaro:  # -dru

@@ -1,8 +1,6 @@
 #rooms - series of doors.  [ [2-way doors], [1-way exits], [1-way entrances], require_world?]
 
 room_data = {
-    # 'root' : [ [9000, 9001, 9002, 9003], [], [], None], # Virtual root map for -door-randomize-all
-
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.
     'root-u' : [ [], [2010], [3009], None], # Root map for -door-randomize-umaro
@@ -10,14 +8,7 @@ room_data = {
     'root-unr' : [ [1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
     'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
     'root-ob' : [ [593], [], [], 1], # Root map for -door-randomize-owzer's basement
-
-    # 'conn-code' rooms are connectors to a virtual root map for door-randomize-all.
-    # Virtual door pairs (8000s <--> 9000s) are forced connections that affect door-randomizing logic only.
-    #'conn-u' : [ [], [2010], [3009], None], # Root map for -door-randomize-umaro  # Not used, root in upper-narshe-wob
-    # 'conn-unb' : [ [8000, 1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
-    # 'conn-unr' : [ [8001, 1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
-    # 'conn-em' : [ [8002, 44], [], [], 0], # Root map for -door-randomize-esper-mountain
-    # 'conn-ob' : [ [8003, 593], [], [], 1], # Root map for -door-randomize-owzer's basement
+    'root-mf' : [ [1229], [ ], [3028], 0],     # Magitek Factory root entrance in Vector
 
     2 : [ [81], [ ], [ ], None], #Blackjack Outside
     3 : [ [82, 83], [ ], [ ], None], #Blackjack Gambling Room
@@ -366,7 +357,6 @@ room_data = {
     342 : [ [1233], [ ], [ ], None], #Imperial Castle Banquet Room
     343 : [ [695, 696], [ ], [ ], None], #Imperial Castle Barracks Room
 
-    'root-mf' : [ [1229], [ ], [3028], 0],     # Magitek Factory root entrance in Vector
     345 : [ [702], [2023], [ ], None], #Magitek Factory Upper Room Platform From Lower Room
     346 : [ [703], [2022], [3023], None], #Magitek Factory Upper Room
     347 : [ [704], [2024, 2025], [3022, 3024, 3026], None], #Magitek Factory Lower Room

@@ -409,7 +409,7 @@ class Maps():
                     en_patch += [0x41, 0x31]
                 if exit_state[1] and not entr_state[1]:
                     # Song override bit is on in the exit but not cleared in the entrance.
-                    # Add a "clear $1EB9 bit 4" (song override) before transition
+                    # Add a "clear $1E80($1CC)" (song override) before transition
                     ex_patch += [0xd3, 0xcc]
                 if exit_state[2] and not entr_state[2]:
                     # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
