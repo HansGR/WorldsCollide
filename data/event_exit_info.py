@@ -94,14 +94,22 @@ exit_event_patch = {
 def minecart_event_mod(src, src_end):
     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.
     # C0    If ($1E80($06B) is set), branch to $(new event) that sends you to Vector map instead
+    # C0    If ($1E80($069) is set), branch to $(new event) that sends you to MTek3 Vector map without animation
     from memory.space import Write, Bank
     from event.event import direction
     go_to_vector = (
         field.FadeLoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
         field.Return()
     )
+    go_to_mtek3_vector = (
+        field.FadeLoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.Return()
+    )
     space = Write(Bank.CC, go_to_vector, "Return to Vector")
-    src = src[:-1] + [0xc0, 0x6b, 0x80] + branch_code(space.start_address, 0) + src[-1:]
+    patch1 = branch_code(space.start_address, 0)
+    space = Write(Bank.CC, go_to_mtek3_vector, "Return to MTek3 Vector")
+    patch2 = branch_code(space.start_address, 0)
+    src = src[:-1] + [0xc0, 0x6b, 0x80] + patch1 + [0xc0, 0x69, 0x80] + patch2 + src[-1:]
     return src, src_end
 
 
