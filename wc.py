@@ -7,7 +7,6 @@ def main():
 
     from data.data import Data
     data = Data(memory.rom, args)
-    data.maps.doors.print()
 
     from event.events import Events
     events = Events(memory.rom, args, data)

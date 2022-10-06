@@ -230,9 +230,12 @@ class MagitekFactory(Event):
     def minecart_mod(self):
         space = Reserve(0xc7f6c, 0xc7f71, "magitek factory load elevator ride down with cid map", field.NOP())
         space = Reserve(0xc7f80, 0xc7fc2, "magitek factory elevator ride down with cid", field.NOP())
-        space.write(
-            field.Branch(space.end_address + 1), # skip nops
-        )
+        if not (self.args.door_randomize_all
+                or self.args.door_randomize_dungeon_crawl
+                or self.args.door_randomize_magitek_factory):
+            space.write(
+                field.Branch(space.end_address + 1), # skip nops
+            )
         space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
         space = Reserve(0xc8027, 0xc802a, "magitek factory celes i've known her", field.NOP())
         space = Reserve(0xc803a, 0xc803d, "magitek factory no! it's kefka!", field.NOP())
@@ -297,13 +300,10 @@ class MagitekFactory(Event):
 
         # use original game over check function after mine cart ride, the custom one cannot be used here
         # refreshing objects or updating the party leader causes a hard lock at the end of the ride (never return from black screen)
-        if not (self.args.door_randomize_all
-                or self.args.door_randomize_dungeon_crawl
-                or self.args.door_randomize_magitek_factory):
-            space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
-            space.write(
-                field.Call(field.ORIGINAL_CHECK_GAME_OVER),
-            )
+        space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
+        space.write(
+            field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+        )
 
     def character_mod(self, character):
         self.setzer_npc.sprite = character

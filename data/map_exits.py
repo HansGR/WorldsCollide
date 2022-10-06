@@ -69,7 +69,7 @@ class MapExits():
             # Update the "original data"
             self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
             # Copy the "original data" to the exit itself
-            self.copy_exit_info(self.get_exit_from_ID(e), e)
+            self.copy_exit_info(self._get_exit_from_ID(e), e)
 
     def write(self):
         for exit_index, exit in enumerate(self.short_exits):
@@ -85,7 +85,7 @@ class MapExits():
     def mod(self):
         pass
 
-    def get_exit_from_ID(self, exitID):
+    def _get_exit_from_ID(self, exitID):
         if self.exit_type[exitID] == 'short':
             exit = self.short_exits[exitID]  # Exit = short exit
         else:
@@ -114,6 +114,18 @@ class MapExits():
     def print_long_exit_range(self, start, count):
         for offset in range(count):
             self.long_exits[start + offset].print()
+
+    def get_short_exit(self, search_start, search_end, x, y):
+        for exit in self.short_exits[search_start:search_end + 1]:
+            if exit.x == x and exit.y == y:
+                return exit
+        raise IndexError(f"get_short_exit: could not find short exit at {x} {y}")
+
+    def get_long_exit(self, search_start, search_end, x, y):
+        for exit in self.long_exits[search_start:search_end + 1]:
+            if exit.x == x and exit.y == y:
+                return exit
+        raise IndexError(f"get_long_exit: could not find long exit at {x} {y}")
 
     def delete_short_exit(self, search_start, x, y):
         for exit in self.short_exits[search_start:]:

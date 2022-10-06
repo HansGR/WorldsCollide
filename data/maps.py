@@ -24,6 +24,8 @@ from data.event_exit_info import event_exit_info, exit_event_patch, entrance_eve
 from data.map_exit_extra import exit_data as exit_data_orig
 from data.rooms import room_data, force_update_parent_map
 
+from data.parse import delete_nops
+
 class Maps():
     MAP_COUNT = 416
 
@@ -99,23 +101,29 @@ class Maps():
 
         ### Populate the dictionary for parent map given door ID
         self.exit_maps = {}
+        self.exit_x_y = {}
         counter = 0
         for m in range(len(self.maps)-1):
             num_short = self.get_short_exit_count(m)
             for i in range(num_short):
                 self.exit_maps[i+counter] = m
+                se = self.exits.short_exits[i+counter]
+                self.exit_x_y[i+counter] = [se.x, se.y]
             counter += num_short
+        num_short_exits = counter
         for m in range(len(self.maps)-1):
             num_long = self.get_long_exit_count(m)
             for i in range(num_long):
                 self.exit_maps[i + counter] = m
+                le = self.exits.long_exits[i + counter - num_short_exits]
+                self.exit_x_y[i + counter] = [le.x, le.y]
             counter += num_long
 
         # f = open('exit_original_info.txt', 'w')
         # f.write(
         #     '# exit_ID: [x, y, parent_map, dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
         # for li in self.exits.exit_original_data.keys():
-        #     this_exit = self.exits.get_exit_from_ID(li)
+        #     this_exit = self.get_exit(li)
         #     write_string = str(li)
         #     write_string += ': ' + str(this_exit.x) + ', ' + str(this_exit.y) + ' [' + str(hex(self.exit_maps[li])) + '], '
         #     write_string += str(self.exits.exit_original_data[li])
@@ -124,12 +132,15 @@ class Maps():
         # f.close()
 
         ### Do we also need this for event exits?
-        self.event_maps = {}
+        #self.event_maps = {}
+        self.event_map_x_y = {}
         counter = 0
         for m in range(len(self.maps)-1):
             num_events = self.get_event_count(m)
             for i in range(num_events):
-                self.event_maps[i + counter] = m
+                #self.event_maps[i + counter] = m
+                this_e = self.events.events[i + counter]
+                self.event_map_x_y[i + counter] = [m, this_e.x, this_e.y]
             counter += num_events
 
         # f = open('event_map&address_info.txt','w')
@@ -225,6 +236,20 @@ class Maps():
         last_event_id = first_event_id + self.get_event_count(map_id)
         self.events.delete_event(first_event_id, last_event_id, x, y)
 
+    def get_exit(self, exit_id):
+        map_id = self.exit_maps[exit_id]  # Get [map_id, x, y] for exits
+        xy = self.exit_x_y[exit_id]
+        if self.exits.exit_type[exit_id] == 'short':
+            first_exit_id = (self.maps[map_id]["short_exits_ptr"] - self.maps[0]["short_exits_ptr"]) // ShortMapExit.DATA_SIZE
+            last_exit_id = first_exit_id + self.get_short_exit_count(map_id)
+            return self.exits.get_short_exit(first_exit_id, last_exit_id, xy[0], xy[1])
+        elif self.exits.exit_type[exit_id] == 'long':
+            first_exit_id = (self.maps[map_id]["long_exits_ptr"] - self.maps[0]["long_exits_ptr"]) // LongMapExit.DATA_SIZE
+            last_exit_id = first_exit_id + self.get_long_exit_count(map_id)
+            return self.exits.get_long_exit(first_exit_id, last_exit_id, xy[0], xy[1])
+        else:
+            raise Exception('Unknown exit type')
+
     def get_short_exit_count(self, map_id):
         return (self.maps[map_id + 1]["short_exits_ptr"] - self.maps[map_id]["short_exits_ptr"]) // ShortMapExit.DATA_SIZE
 
@@ -299,10 +324,6 @@ class Maps():
         self.events.mod()  # self.events.mod(self.doors, self)
         self.exits.mod()  # self.exits.mod(self.doors.map[0], self)
 
-        # Door randomizer code:
-        self.connect_events()
-        self.connect_exits()
-
         self._fix_imperial_camp_boxes()
 
         # Make all maps warpable for -door-randomize-all
@@ -315,6 +336,10 @@ class Maps():
             self.doors.print()
 
     def write(self):
+        # Patch the door randomizer exits & events before writing:
+        self.connect_events()
+        self.connect_exits()
+
         self.npcs.write()
         self.chests.write()
         self.events.write()
@@ -373,7 +398,7 @@ class Maps():
                 # Handle the small number of one-way exits coded as doors
                 exit_address = None
                 exit_state = [False, False, False]
-                this_exit = self.exits.get_exit_from_ID(m[0])
+                this_exit = self.get_exit(m[0])
                 exit_location = [this_exit.x, this_exit.y, self.exit_maps[m[0]]]
 
                 src = [0x6a]
@@ -429,6 +454,11 @@ class Maps():
             # Combine events
             src.extend(src_end)
 
+            # Delete NOPs, if requested, to save space
+            # Note there is the possibility for conflict with event_address_patch - be careful!
+            if True:
+                src = delete_nops(src)
+
             # Allocate space
             space = Allocate(Bank.CC, len(src), "Exit Event Randomize: " + str(m[0]) + " --> " + str(m[1]))
             new_event_address = space.start_address
@@ -457,14 +487,18 @@ class Maps():
                     this_event_id = self.events.event_address_index[exit_address - EVENT_CODE_START]
                     if m[0] == 2017:  # HACK for shared event in Owzer's Mansion switch doors
                         this_event_id -= 1
-                    self.events.events[this_event_id].event_address = new_event_address - EVENT_CODE_START
+                    e_mxy = self.event_map_x_y[this_event_id]
+                    this_event = self.get_event(e_mxy[0], e_mxy[1], e_mxy[2])  # get event using [map_id, x, y] data
+                    this_event.event_address = new_event_address - EVENT_CODE_START
 
                     if m[0] in long_events.keys():
                         # Other tiles must also be updated to point to the event at the appropriate offset
                         for le in long_events[m[0]]:
                             le_addr = event_exit_info[le][0]
                             le_id = self.events.event_address_index[le_addr - EVENT_CODE_START]
-                            self.events.events[le_id].event_address = new_event_address + (le_addr - exit_address) - EVENT_CODE_START
+                            le_mxy = self.event_map_x_y[le_id]
+                            le_event = self.get_event(le_mxy[0], le_mxy[1], le_mxy[2]) # get event using [map_id, x, y] data
+                            le_event.event_address = new_event_address + (le_addr - exit_address) - EVENT_CODE_START
 
             else:
                 # Create a new MapEvent for this event
@@ -490,8 +524,8 @@ class Maps():
             # Only connect real doors (virtual doors should never connect to real doors)
             if m[0] < 2000 and m[1] < 2000:
                 # Get exits associated with doors m[0] and m[1]
-                exitA = self.exits.get_exit_from_ID(m[0])
-                exitB = self.exits.get_exit_from_ID(m[1])
+                exitA = self.get_exit(m[0])
+                exitB = self.get_exit(m[1])
 
                 # Attach exits:
                 # Copy original properties of exitB_pair to exitA & vice versa.
@@ -526,7 +560,7 @@ class Maps():
         # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref
 
         # Collect information about the properties for the exit
-        this_exit = self.exits.get_exit_from_ID(d)
+        this_exit = self.get_exit(d)
         map_id = self.exit_maps[d]
         this_world = room_data[self.doors.door_rooms[d]][3]
 

@@ -73,15 +73,18 @@ exit_event_patch = {
     2017 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     2018 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     586 : [0xb2, 0xaa, 0x2c, 0x01],  # South door.  field.Call(0xb2caa)
-    587 : [0xb2, 0xaa, 0x2c, 0x01],   # North door.  field.Call(0xb2caa)
+    587 : [0xb2, 0xaa, 0x2c, 0x01]   # North door.  field.Call(0xb2caa)
 
     # Cid's Elevator: Remove middle scene and dialog
     # [see events.magitek_factory.minecart_mod()]
-    2027 : lambda src, src_end: [ src[:41] + src[47:61] + src[128:], src_end],
+    # NOTE: Should now be handled in Events(), no need to repeat
+    #2027 : lambda src, src_end: [ src[:41] + src[47:61] + src[128:], src_end],
+
     # Cid's Minecart ride: Remove dialog; patch out custom annihilation check, replace with standard
     # [see events.magitek_factory.minecart_mod() and number128_battle_mod()]
-    2028 : lambda src, src_end: [  src[:5] + src[9:23] + src[27:58] + src[61:139] +
-                                   [0xb2] + branch_code(ORIGINAL_CHECK_GAME_OVER, 0) + src[143:], src_end ]
+    # NOTE: should now be handled in Events(), no need to repeat
+    #2028 : lambda src, src_end: [  src[:5] + src[9:23] + src[27:58] + src[61:139] +
+    #                               [0xb2] + branch_code(ORIGINAL_CHECK_GAME_OVER, 0) + src[143:], src_end ]
 
 }
 
@@ -95,11 +98,12 @@ entrance_event_patch = {
 
     # Jump into Esper Mountain room 2, North trapdoor: patch in "hold screen" (0x38) after map transition
     # The other trapdoors have this, maybe it's just a typo?
-    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ],
+    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ]
 
     # Cid's Elevator Ride: remove move-party-down after elevator.
     # space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
-    3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
+    # NOTE: should now be handled in Events(), no need to repeat.
+    #3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
 
 }
 
