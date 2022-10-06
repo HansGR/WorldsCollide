@@ -1,6 +1,12 @@
 from event.event import *
 
 class MagitekFactory(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_magitek_factory)
+
     def name(self):
         return "Magitek Factory"
 
@@ -24,6 +30,9 @@ class MagitekFactory(Event):
         self.setzer_npc = self.maps.get_npc(0x0f0, self.setzer_npc_id)
 
         self.vector_mod()
+
+        if self.DOOR_RANDOMIZE:
+            self.mtek_1_mod()
 
         if self.reward1.type == RewardType.ESPER:
             self.ifrit_shiva_esper_mod(self.reward1.id)
@@ -84,7 +93,7 @@ class MagitekFactory(Event):
             field.HideEntity(south_soldier_id),
         )
 
-        if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl or self.args.door_randomize_magitek_factory:
+        if self.DOOR_RANDOMIZE:
             space.write(
                 field.HideEntity(mtek_block_mid_id),
                 #field.HideEntity(mtek_block_right_id),
@@ -230,9 +239,7 @@ class MagitekFactory(Event):
     def minecart_mod(self):
         space = Reserve(0xc7f6c, 0xc7f71, "magitek factory load elevator ride down with cid map", field.NOP())
         space = Reserve(0xc7f80, 0xc7fc2, "magitek factory elevator ride down with cid", field.NOP())
-        if not (self.args.door_randomize_all
-                or self.args.door_randomize_dungeon_crawl
-                or self.args.door_randomize_magitek_factory):
+        if not self.DOOR_RANDOMIZE:
             space.write(
                 field.Branch(space.end_address + 1), # skip nops
             )
@@ -376,3 +383,20 @@ class MagitekFactory(Event):
         self.maps.delete_event(0x0f2, 32, 60)
         self.maps.delete_event(0x0f2, 33, 60)
         self.maps.delete_event(0x0f2, 34, 59)
+
+    def mtek_1_mod(self):
+        # Fix behavior of MTek room 1 if you re-enter after minecart ride
+        # Remove event tile that sends you to Mtek-escape-Vector:
+        self.maps.delete_event(0x106, 28, 9)
+
+        # Modify entrance event:
+        space = Reserve(0xc72dc, 0xc7315, "after MTek minecart do not change MTek1", field.NOP())
+
+        # Modify pipe events to remove check for RODE_MINE_CART
+        space = Reserve(0xc7735, 0xc773a, "after MTek minecart do not change MTek1 pipeL1", field.NOP())
+        space = Reserve(0xc7753, 0xc7758, "after MTek minecart do not change MTek1 pipeL2", field.NOP())
+        space = Reserve(0xc7771, 0xc7776, "after MTek minecart do not change MTek1 pipeL3", field.NOP())
+        space = Reserve(0xc77b0, 0xc77b5, "after MTek minecart do not change MTek1 pipeR1", field.NOP())
+        space = Reserve(0xc77ce, 0xc77d3, "after MTek minecart do not change MTek1 pipeR2", field.NOP())
+        space = Reserve(0xc77ec, 0xc77f1, "after MTek minecart do not change MTek1 pipeR3", field.NOP())
+        space = Reserve(0xc781b, 0xc7820, "after MTek minecart do not change MTek1 pipeR4", field.NOP())
