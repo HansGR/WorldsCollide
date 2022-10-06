@@ -570,9 +570,9 @@ forced_connections = {
 }
 
 # Add forced connections for virtual doors (-dra)
-if 'root' in room_data.keys():
-    for i in range(8000, 8000+len(room_data['root'][0])):
-        forced_connections[i] = [i+1000]
+#if 'root' in room_data.keys():
+#    for i in range(8000, 8000+len(room_data['root'][0])):
+#        forced_connections[i] = [i+1000]
 
 # List of one-ways that must have the same destination
 shared_oneways = {
@@ -592,6 +592,7 @@ shared_exits = {
     1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door
     1040 : [1041],  # Esper Mountain Outside Path to Final Room West Door
 
+    1229 : [1226]   # Post-minecart Vector long exit to MTek.  Same destination as normal Vector exit to MTek.
 }
 
 # List of rooms that should have a forced update to Parent Map variable when entering.

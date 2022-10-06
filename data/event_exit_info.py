@@ -51,7 +51,8 @@ event_exit_info = {
 #       What happens with MTek3 prize?  Is it triggered by minecart, or by entering Vector?
 
 from instruction.event import EVENT_CODE_START
-from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
+from instruction import field
+#from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
     # Jump into Umaro's Cave:
     #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
@@ -72,8 +73,8 @@ exit_event_patch = {
     # # supposedly these are cleared on map load.
     2017 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     2018 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
-    586 : [0xb2, 0xaa, 0x2c, 0x01],  # South door.  field.Call(0xb2caa)
-    587 : [0xb2, 0xaa, 0x2c, 0x01]   # North door.  field.Call(0xb2caa)
+    586 : [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
+    587 : [field.Call(0xb2caa)]  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
 
     # Cid's Elevator: Remove middle scene and dialog
     # [see events.magitek_factory.minecart_mod()]
@@ -86,7 +87,23 @@ exit_event_patch = {
     #2028 : lambda src, src_end: [  src[:5] + src[9:23] + src[27:58] + src[61:139] +
     #                               [0xb2] + branch_code(ORIGINAL_CHECK_GAME_OVER, 0) + src[143:], src_end ]
 
+    # Re-entrance to MTek Factory after minecart ride: Clear RODE_MINE_CART bit (0x069)
+    #1226 : [field.ClearEventBit(0x069)]  # [0xd1, 0x69]
 }
+
+def minecart_event_mod(src, src_end):
+    # Special event for outro of minecart ride: return to Vector if cranes have been defeated.
+    # C0    If ($1E80($06B) is set), branch to $(new event) that sends you to Vector map instead
+    from memory.space import Write, Bank
+    from event.event import direction
+    go_to_vector = (
+        field.FadeLoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.Return()
+    )
+    space = Write(Bank.CC, go_to_vector, "Return to Vector")
+    src = src[:-1] + [0xc0, 0x6b, 0x80] + branch_code(space.start_address, 0) + src[-1:]
+    return src, src_end
+
 
 entrance_event_patch = {
     # Jump back to Narshe from Umaro's cave: force "clear $1EB9 bit 4" (song override) before transition
@@ -98,13 +115,15 @@ entrance_event_patch = {
 
     # Jump into Esper Mountain room 2, North trapdoor: patch in "hold screen" (0x38) after map transition
     # The other trapdoors have this, maybe it's just a typo?
-    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ]
+    3015: lambda src, src_end: [ src, src_end[:5] + [0x38] + src_end[5:] ],
 
     # Cid's Elevator Ride: remove move-party-down after elevator.
     # space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
     # NOTE: should now be handled in Events(), no need to repeat.
     #3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
 
+    # Minecart Ride: if Cranes are defeated, instead go to normal Vector
+    3028: lambda src, src_end: minecart_event_mod(src, src_end)
 }
 
 def branch_code(addr, offset):

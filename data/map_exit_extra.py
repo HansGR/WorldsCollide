@@ -1314,20 +1314,25 @@ exit_data = {
 
 # Create functions to update values:
 # [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
-set_dest_x = lambda info, value: [value] + info[1:]
-set_dest_y = lambda info, value: info[:1] + [value] + info[2:]
-set_dest_map = lambda info, value: info[:2] + [value] + info[3:]
-set_refreshparentmap = lambda info, value: info[:3] + [value] + info[4:]
-set_enterlowZlevel = lambda info, value: info[:4] + [value] + info[5:]
-set_displaylocationname = lambda info, value: info[:5] + [value] + info[6:]
-set_facing = lambda info, value: info[:6] + [value] + info[7:]
-set_unknown = lambda info, value: info[:7] + [value]
+set_dest_x = lambda value, info: [value] + info[1:]
+set_dest_y = lambda value, info: info[:1] + [value] + info[2:]
+set_dest_map = lambda value, info: info[:2] + [value] + info[3:]
+set_refreshparentmap = lambda value, info: info[:3] + [value] + info[4:]
+set_enterlowZlevel = lambda value, info: info[:4] + [value] + info[5:]
+set_displaylocationname = lambda value, info: info[:5] + [value] + info[6:]
+set_facing = lambda value, info: info[:6] + [value] + info[7:]
+set_unknown = lambda value, info: info[:7] + [value]
 
 # Patch functions for individual exits:
 exit_data_patch = {
-    1135: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 0), info[0]+1 ), info[1]-2 ),   # [4, "Narshe To World Map WoB"],
-    1143: lambda info: set_dest_y( set_dest_x( set_dest_map(info, 1), 115), 34),  # [67, "Narshe To World Map WoR"],
-    1047: lambda info: set_dest_y(set_dest_map(info, 0), info[1]+1),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
+    1135: lambda info: set_dest_y( info[1]-2,
+                       set_dest_x( info[0]+1,
+                       set_dest_map(0, info) ) ),   # [4, "Narshe To World Map WoB"],
+    1143: lambda info: set_dest_y( 34,
+                       set_dest_x( 115,
+                       set_dest_map(1, info) ) ),  # [67, "Narshe To World Map WoR"],
+    1047: lambda info: set_dest_y( info[1]+1,
+                       set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
 
     # Note: all Jidoor exits should go to WoB, we'll write event tiles to handle WoR (????????? that's ~64 event tiles.)
     #1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],
