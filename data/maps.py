@@ -477,7 +477,7 @@ class Maps():
 
             # Delete NOPs, if requested, to save space
             # Note there is the possibility for conflict with event_address_patch - be careful!
-            if False:
+            if True:
                 src = delete_nops(src)
 
             # Allocate space

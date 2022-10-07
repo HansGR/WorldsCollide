@@ -3,18 +3,45 @@ def delete_nops(src):
     sp = simple_parser(src)
     out = []
     for o, p in sp:
+        # print('\t', hex(o)[2:], [hex(a)[2:] for a in p])
         if o != 0xfd:
             out.append(o)
             out.extend(p)
     return out
 
-
 def simple_parser(src):
     while len(src) > 0:
         opcode = src.pop(0)
         split = OP_LENGTH[opcode]
+
         if split == 'var':
-            split = src.index(0xff)+1
+            if opcode < 0x35:
+                # Character action queues; search for termination (0xff)
+                split = src.index(0xff)+1
+
+            elif opcode == 0x73 or opcode == 0x74:
+                # Replace background; get split from tile size
+                tilesize = src[2]*src[3]
+                split = 4 + tilesize
+
+            elif opcode == 0xb0:
+                # Repeating block of commands; look for 0xb1 (terminate) or 0xbc (terminate if event bit is set, 2 params)
+                inds = [len(src) for i in range(2)]
+                if 0xb1 in src:
+                    inds[0] = src.index(0xb1)+1
+                if 0xbc in src:
+                    inds[1] = src.index(0xbc)+3
+                split = min(inds)
+
+            elif opcode == 0xb6:
+                # Dialog box with choices; there's no way to determine how many options there are locally in the event,
+                # and most of them are 2.  Here's hoping.
+                num_options = 2
+                split = 3*num_options
+
+            else:
+                raise Exception('Unimplemented variable opcode: ', opcode)
+
         params = src[:split]
         src = src[split:]
         yield opcode, params
@@ -72,8 +99,8 @@ OP_LENGTH = {
     0x70: 2, # Same as 5D?  If you have any further insight please let me know
     0x71: 2, # Same as 5E?  If you have any further insight please let me know
     0x72: 2, # Same as 5F?  If you have any further insight please let me know
-    0x73: 0, # Replace a portion of the background.  The background will refresh immediately after the command is executed
-    0x74: 0, # Replace a portion of the background.  The background will not refresh immediately after the command is executed.
+    0x73: 'var', # Replace a portion of the background.  The background will refresh immediately after the command is executed
+    0x74: 'var', # Replace a portion of the background.  The background will not refresh immediately after the command is executed.
     0x75: 0, # Reloads the background.  Useful if it has been modified with command 74
     0x77: 1, # Perform level averaging on a character
     0x78: 1, # Allow a character to pass through sprites
@@ -123,13 +150,13 @@ OP_LENGTH = {
     0xAD: 0, # Show world getting torn apart
     0xAE: 0, # Shows the mine cart escape from the Magitek facility
     0xAF: 0, # Start a Coliseum battle
-    0xB0: 0, # Repeat a sequence of event commands
+    0xB0: 'var', # Repeat a sequence of event commands
     0xB1: 0, # Denotes the end of a block of repeating commands
     0xB2: 3, # Jump to an address in the event code
     0xB3: 4, # Jump to an address in the event code multiple times.
     0xB4: 1, # Pause execution of the event for a small amount of time
     0xB5: 1, # Pause execution of the event for an amount of time x15
-    0xB6: 0, # This is meant to be placed after a dialog box that gives the player multiple choices.  This will jump to different events
+    0xB6: 'var', # This is meant to be placed after a dialog box that gives the player multiple choices.  This will jump to different events
     0xB7: 4, # Branch to an address if a battle related event bit is clear
     0xB8: 1, # Set a battle related event bit
     0xB9: 1, # Clear a battle related event bit
