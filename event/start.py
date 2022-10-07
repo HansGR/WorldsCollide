@@ -68,7 +68,7 @@ class Start(Event):
         self.start_game_mod()
 
         # Warp stone modification
-        if self.args.debug or self.args.door_randomize_all:
+        if self.args.debug or self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:
             src = [
                 field.Call(0xa0159),
                 # 0x6b, 0xff, 0x25, 0x00, 0x00, 0x00, 0xff, 0xfe,  <- original warp to parent map
