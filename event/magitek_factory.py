@@ -205,6 +205,14 @@ class MagitekFactory(Event):
         cid_npc_id = 0x1c
         elevator_npc_id = 0x22 # elevator is also an npc
 
+        if self.DOOR_RANDOMIZE:
+            # Make switch scene repeatable: write over switch condition
+            # CC/7A60: C2    If ($1E80($1B0) [$1EB6, bit 0] is clear) or ($1E80($1B4) [$1EB6, bit 4] is clear) or ($1E80($068) [$1E8D, bit 0] is set), branch to $CA5EB3 (simply returns)
+            space = Reserve(0xc7a60, 0xc7a69, "magitek factory esper room switch", field.NOP())
+            space.write(
+                field.BranchIfAny([0x1b0, False, 0x1b4, False], 0xa5eb3)
+            )
+
         space = Reserve(0xc7ec9, 0xc7ecb, "magitek factory cid ooh, ooh", field.NOP())
         space = Reserve(0xc7ed1, 0xc7edc, "magitek factory characters turn down after screen shake", field.NOP())
 

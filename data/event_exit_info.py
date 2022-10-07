@@ -98,11 +98,13 @@ def minecart_event_mod(src, src_end):
     from memory.space import Write, Bank
     from event.event import direction
     go_to_vector = (
-        field.FadeLoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.LoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.FadeInScreen(),
         field.Return()
     )
     go_to_mtek3_vector = (
-        field.FadeLoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.LoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.FadeInScreen(),
         field.Return()
     )
     space = Write(Bank.CC, go_to_vector, "Return to Vector")

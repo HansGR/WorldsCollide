@@ -1,6 +1,6 @@
 from openpyxl import load_workbook
 from random import randrange, choices
-from data.rooms import room_data, forced_connections, shared_oneways, shared_exits
+from data.rooms import room_data, forced_connections, shared_oneways, shared_exits, invalid_connections
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
 # 'DungeonCrawl': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
@@ -43,6 +43,7 @@ class Doors():
         self.room_counts = {}
         self.forcing = {}
         self.sharing = {}
+        self.invalid = {}
         self.zones = []
         self.zone_counts = []
         self.map = []
@@ -142,6 +143,8 @@ class Doors():
                     self.forcing[d] = forced_connections[d]
                 if d in shared_oneways.keys():
                     self.sharing[d] = shared_oneways[d]
+                if d in invalid_connections.keys():
+                    self.invalid[d] = invalid_connections[d]
 
     def mod(self):
         # Create list of randomized connections
@@ -553,6 +556,7 @@ class Doors():
                     # Construct list of valid doors: start with all doors, then remove invalid ones
                     valid = [d for d in doors]
                     invalid = []
+
                     if len(doors) > 2:
                         # Remove doors that would create a zone with zero exits or zero entrances
                         # i.e. a zone with [0, n, 0], or [0, 0, n].
@@ -603,6 +607,15 @@ class Doors():
                     invalid = list(set(invalid))  # remove duplicates, if any.
                     for i in invalid:
                         valid.remove(i)
+
+                # Make sure no invalid connections got through
+                if door1 in self.invalid.keys():
+                    #print('potentially invalid pair...', self.invalid[door1])
+                    for d2 in self.invalid[door1]:
+                        if d2 in valid:
+                            if self.verbose:
+                                print('\tBlocked door detected: ', door1, '<-/->', d2)
+                            valid.remove(d2)
 
                 if self.verbose:
                     print('\tValid connections: ')

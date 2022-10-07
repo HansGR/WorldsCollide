@@ -595,6 +595,12 @@ shared_exits = {
     1229 : [1226]   # Post-minecart Vector long exit to MTek.  Same destination as normal Vector exit to MTek.
 }
 
+# List of doors that CANNOT be connected to each other.  Only rare instances.
+invalid_connections = {
+    702 : [703],  # Magitek factory room 1: entrance & platform door
+    703 : [702]
+}
+
 # List of rooms that should have a forced update to Parent Map variable when entering.
 # force_update_parent_map[roomID] = [x, y, mapID]
 force_update_parent_map = {

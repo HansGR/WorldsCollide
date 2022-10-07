@@ -145,9 +145,9 @@ class Maps():
 
         # f = open('event_map&address_info.txt','w')
         # f.write('# Event_ID: map_ID, (x, y), event_address')
-        # for i in self.event_maps.keys():
-        #     f.write(str(i) + ' : ' + str(self.event_maps[i]) + ', (' + str(self.events.events[i].x) + ', ' +
-        #             str(self.events.events[i].y) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
+        # for i in self.event_map_x_y.keys():
+        #     f.write(str(i) + ' : ' + str(hex(self.event_map_x_y[i][0])) + ', (' + str(self.event_map_x_y[i][1]) + ', ' +
+        #             str(self.event_map_x_y[i][2]) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
         # f.close()
 
         self.npc_maps = {}
@@ -335,7 +335,28 @@ class Maps():
         if len(self.doors.map) > 0:
             self.doors.print()
 
+    def write_post_diagnostic_info(self):
+        # Write edited event info to a text file in human-readable format
+        f = open('event_map&address_info_post.txt','w')
+        f.write('# Event_ID: map_ID, (x, y), event_address')
+        counter = 0
+        for m in range(len(self.maps) - 1):
+            num_events = self.get_event_count(m)
+            for i in range(num_events):
+                this_e = self.events.events[i + counter]
+                f.write(str(counter+i) + ': ' + str(hex(m)) + " (" + str(this_e.x) + ", " + str(this_e.y) + ").  "
+                        + str(hex(this_e.event_address)) + '\n')
+            counter += num_events
+        f.write('\n\n')
+        for i in range(len(self.events.events)):
+            this_e = self.events.events[i]
+            f.write(str(counter + i) + ': ' + "(" + str(this_e.x) + ", " + str(this_e.y) + ").  "
+                    + str(hex(this_e.event_address)) + '\n')
+        f.close()
+
     def write(self):
+        #self.write_post_diagnostic_info()
+
         # Patch the door randomizer exits & events before writing:
         self.connect_events()
         self.connect_exits()
@@ -558,7 +579,6 @@ class Maps():
 
     def create_exit_event(self, d, d_ref):
         # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref
-
         # Collect information about the properties for the exit
         this_exit = self.get_exit(d)
         map_id = self.exit_maps[d]
@@ -587,9 +607,16 @@ class Maps():
                 # We have to be careful here: if it has a world door-switch event, we will need to do something else
 
                 # Read in existing event code
-                src = [self.rom.get_byte(existing_event.event_address)]
+                start_address = existing_event.event_address + EVENT_CODE_START
+                src = [self.rom.get_byte(start_address)]
                 while src[-1] != 0xfe:
-                    src.append(self.rom.get_byte(existing_event.event_address + len(src)))
+                    src.append(self.rom.get_byte(start_address + len(src)))
+
+                if self.doors.verbose:
+                    print('Found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ', str(this_exit.y),
+                          '): ')
+                    print('\t(', str(existing_event.x), ', ', str(existing_event.y), '):  ',
+                          str(hex(existing_event.event_address)))
 
                 # delete existing event
                 self.delete_event(map_id, this_exit.x, this_exit.y)
@@ -607,6 +634,10 @@ class Maps():
                     this_address = self.GO_WOB_EVENT_ADDR - EVENT_CODE_START
                 elif forced_world == 1:
                     this_address = self.GO_WOR_EVENT_ADDR - EVENT_CODE_START
+
+                if self.doors.verbose:
+                    print('Writing exit event:', d, '(pair =',d_ref,') @ ', hex(this_address))
+                    print('\tReason: ', require_event_flags)
 
             else:
                 # (1) Prepend call to force world bit event, if required
@@ -633,6 +664,11 @@ class Maps():
                 space = Write(Bank.CC, src, "Door Event " + str(d))
                 this_address = space.start_address - EVENT_CODE_START
 
+                if self.doors.verbose:
+                    print('Writing exit event:', d, '(pair =',d_ref,') @ ', hex(this_address))
+                    print('\tReason: ', require_event_flags)
+                    print([str(s) for s in src])
+
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':
                 # Write the event on the short exit tile
@@ -650,6 +686,3 @@ class Maps():
                     new_event.event_address = this_address
                     self.add_event(map_id, new_event)
 
-            #print('Connecting ' + str(d) + '(map = ' + str(map_id) + ' [' + str(this_exit.x) + ',' + str(this_exit.y) +
-            #      '], world = ' + str(this_world) + ') --> ' + str(d_ref) + ' (force world = ' + str(forced_world) +
-            #      ', force parent map = ' + str(forced_pmap) + '): event script @ ' + str(hex(this_address)))
