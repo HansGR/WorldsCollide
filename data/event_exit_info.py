@@ -39,7 +39,12 @@ event_exit_info = {
     '2025b' : [int('0c7573',16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile'],    # same exit as above; requires address patch & tile edit
     2026 : [int('0c75f6',16), 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2'],
     2027 : [int('0c7f43',16), 217, 131, [False, False, False], 'Magitek factory lab Cid''s elevator'],  # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028 : [int('0c8022',16), 309, 152, [False, True, False], 'Magitek factory minecart start event']  # Started by talking to Cid.
+    2028 : [int('0c8022',16), 309, 152, [False, True, False], 'Magitek factory minecart start event'],  # Started by talking to Cid.
+
+    # CAVE TO THE SEALED GATE
+    2029 : [int('0b3176',16), 84, 0, [None, None, None], 'Cave to the Sealed Gate grand staircase'],  # Grand staircase event
+    2030 : [int('0b36b5',16), 32, 0, [None, None, None], 'Cave to the Sealed Gate switch bridges'],  # Switch bridge events
+    2031 : [int('0b2a9f',16), 7, 1, [False, False, False], 'Cave to the Sealed Gate shortcut exit'],  # Shortcut exit
     }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -74,21 +79,11 @@ exit_event_patch = {
     2017 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     2018 : lambda src, src_end: [ [0xb2, 0xaa, 0x2c, 0x01] + src, src_end ],
     586 : [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
-    587 : [field.Call(0xb2caa)]  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
+    587 : [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
 
-    # Cid's Elevator: Remove middle scene and dialog
-    # [see events.magitek_factory.minecart_mod()]
-    # NOTE: Should now be handled in Events(), no need to repeat
-    #2027 : lambda src, src_end: [ src[:41] + src[47:61] + src[128:], src_end],
-
-    # Cid's Minecart ride: Remove dialog; patch out custom annihilation check, replace with standard
-    # [see events.magitek_factory.minecart_mod() and number128_battle_mod()]
-    # NOTE: should now be handled in Events(), no need to repeat
-    #2028 : lambda src, src_end: [  src[:5] + src[9:23] + src[27:58] + src[61:139] +
-    #                               [0xb2] + branch_code(ORIGINAL_CHECK_GAME_OVER, 0) + src[143:], src_end ]
-
-    # Re-entrance to MTek Factory after minecart ride: Clear RODE_MINE_CART bit (0x069)
-    #1226 : [field.ClearEventBit(0x069)]  # [0xd1, 0x69]
+    # Cave to the sealed gate: force reset timers when leaving lava room
+    1075 : [field.Call(0xb2caa)], # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
+    1077 : [field.Call(0xb2caa)]  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 }
 
 def minecart_event_mod(src, src_end):

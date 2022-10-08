@@ -42,7 +42,7 @@ exit_data = {
     39: [1224, "Zozo Bottom Right Tile WoB"],
     40: [658, "Opera House WoB"],
     41: [1263, "Imperial Base Right Tile WoB"],
-    42: [1263, "Imperial Base Left Tile WoB"],
+    42: [1059, "Imperial Base Left Tile WoB"],
     43: [1064, "Cave to Sealed Gate"],
     44: [1047, "Esper Mountain"],
     45: [1132, "Mobliz Chocobo Stable WoR"],
@@ -1222,13 +1222,13 @@ exit_data = {
     2013: [None, "Esper Mtn 2nd Room bridge jump east"],  # forced connection for room logic, no modified
     1057: [1041, "Esper Mountain Inside Final Room Dead End"],
     1058: [1061, "Imperial Base House Outside"],
-    1059: [None, "Imperial Base West to World Map Top Tile"],
-    1060: [None, "Imperial Base West to World Map Bottom Tile"],
-    1263: [None, "Imperial Base East to Cave to Sealed Gate World Map "],
+    1059: [42, "Imperial Base West to World Map Top Tile"],
+    1060: [42, "Imperial Base West to World Map Bottom Tile"],
+    1263: [41, "Imperial Base East to Cave to Sealed Gate World Map "],
     1061: [1058, "Imperial Base House Inside"],
     1062: [1063, "Imperial Base House Stairs Down"],
     1063: [1062, "Imperial Base House Stairs Up"],
-    1064: [None, "Cave to the Sealed Gate to World Map"],
+    1064: [43, "Cave to the Sealed Gate to World Map"],
     1065: [1066, "Cave to the Sealed Gate Entry Room to B1"],
     1066: [1065, "Cave to the Sealed Gate B1 North to Entry Room"],
     1067: [1075, "Cave to the Sealed Gate B1 South to Lava Switch Room"],
@@ -1238,10 +1238,13 @@ exit_data = {
     1071: [1077, "Cave to Sealed Gate Main Room to Lava Switch Room"],
     1072: [1078, "Cave to Sealed Gate Main Room to Save Point Room"],
     1073: [1074, "Cave to Sealed Gate Main Room to 4 Chest Room"],
+    2029: [None, 'Cave to Sealed Gate Main Room grand staircase'],
+    2030: [None, 'Cave to Sealed Gate Main Room switch bridges'],
     1074: [1073, "Cave to Sealed Gate 4 Chest Room"],
     1264: [1079, "Cave to Sealed Gate Last Room to Sealed Gate"],
+    2031: [None, 'Cave to the Sealed Gate shortcut exit'],
     1075: [1067, "Cave to Sealed Gate Lava Switch Room North"],
-    1076: [1067, "Cave to Sealed Gate Lava Switch Room North"],
+    1076: [1067, "Cave to Sealed Gate Lava Switch Room North"],  # inaccessible?
     1077: [1071, "Cave to Sealed Gate Lava Switch Room South"],
     1078: [1072, "Cave to Sealed Gate Save Point Room"],
     1079: [1264, "Sealed Gate"],
@@ -1333,6 +1336,7 @@ exit_data_patch = {
                        set_dest_map(1, info) ) ),  # [67, "Narshe To World Map WoR"],
     1047: lambda info: set_dest_y( info[1]+1,
                        set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
+    1064: lambda info: set_dest_map(0, info),     # Cave to the Sealed Gate: return to WoB
 
     # Note: all Jidoor exits should go to WoB, we'll write event tiles to handle WoR (????????? that's ~64 event tiles.)
     #1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],

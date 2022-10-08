@@ -3,13 +3,6 @@ from random import randrange, choices
 from data.rooms import room_data, forced_connections, shared_oneways, shared_exits, invalid_connections
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 
-# 'DungeonCrawl': [364, 365, 366, '367a', '367b', '367c', 368, # Umaro's cave
-#                      19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
-#                     '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr', # Upper Narshe WoR
-#                     488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
-#                     277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
-#                     345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'  # Magitek Factory
-#                     ],
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
@@ -17,15 +10,17 @@ ROOM_SETS = {
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
+    'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
-            345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'  # Magitek Factory
-             ],
-    'test': ['285a', '21a']  # for testing only
+            345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
+            503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg'  # Cave to the Sealed Gate
+             ]
+    #'test': ['285a', '21a']  # for testing only
 }
 
 class Doors():
@@ -85,6 +80,9 @@ class Doors():
 
             if self.args.door_randomize_magitek_factory:  # -drmf
                 room_sets.append(ROOM_SETS['MagitekFactory'])
+
+            if self.args.door_randomize_sealed_gate:  # -drsg
+                room_sets.append(ROOM_SETS['SealedGate'])
 
             #room_sets.append(ROOM_SETS['test'])
 

@@ -522,19 +522,22 @@ room_data = {
     500 : [ [1056], [2012], [3014], None], #Esper Mountain Inside Second Room North Section
     501 : [ [1057], [ ], [ ], None], #Esper Mountain Inside Second Room Dead End
 
-    502 : [ [1058], [ ], [ ], None], #Imperial Base
+    502 : [ [1059, 1060, 1058, 1263], [ ], [ ], None], #Imperial Base
+    'root_sg': [[1058, 1263], [], [], 0],  # Root entrance = imperial base
     503 : [ [1061, 1062], [ ], [ ], None], #Imperial Base House
     504 : [ [1063], [ ], [ ], None], #Imperial Base House Basement
-    505 : [ [1065], [ ], [ ], None], #Cave to Sealed Gate Entry Room
+    '504a' : [ [41, 43], [], [], 0],  # WOB Imperial Base / Cave to Sealed Gate connector
+    505 : [ [1064, 1065], [ ], [3031], None], #Cave to Sealed Gate Entry Room
     506 : [ [1066, 1067], [ ], [ ], None], #Cave to Sealed Gate B1
-    507 : [ [1069, 1264], [ ], [ ], None], #Cave to Sealed Gate Last Room
-    508 : [ [1070], [ ], [ ], None], #Cave to Sealed Gate Main Room Last Section
-    509 : [ [1071, 1072], [ ], [ ], None], #Cave to Sealed Gate Main Room First Section
-    510 : [ [1073], [ ], [ ], None], #Cave to Sealed Gate Main Room Middle Section
+    507 : [ [1069, 1264], [2031], [ ], None], #Cave to Sealed Gate Last Room
+    508 : [ [1070], [ ], [3030], None], #Cave to Sealed Gate Main Room Last Section
+    509 : [ [1071, 1072], [2029], [ ], None], #Cave to Sealed Gate Main Room First Section
+    510 : [ [1073], [2030], [3029], None], #Cave to Sealed Gate Main Room Middle Section
     511 : [ [1074], [ ], [ ], None], #Cave to Sealed Gate 4 Chest Room
-    512 : [ [1075, 1076, 1077], [ ], [ ], None], #Cave to Sealed Gate Lava Switch Room
+    512 : [ [1075, 1076, 1077], [ ], [ ], None], #Cave to Sealed Gate Lava Switch Room  # 1076 inaccessible?
     513 : [ [1078], [ ], [ ], None], #Cave to Sealed Gate Save Point Room
     514 : [ [1079], [ ], [ ], None], #Sealed Gate
+
     515 : [ [1080, 1265, 1266, 1267, 1268, 1269, 1270], [ ], [ ], None], #Solitary Island House Outside
     516 : [ [1081], [ ], [ ], None], #Solitary Island House Inside
     517 : [ [1271], [ ], [ ], None], #Solitary Island Beach
@@ -556,8 +559,6 @@ room_data = {
     533 : [ [1125, 1126, 1280], [ ], [ ], None], #Coliseum Main Room
     534 : [ [1127], [ ], [ ], None], #Coliseum Left Room
 
-
-
 }
 
 # Lists of exits that must be connected
@@ -566,7 +567,11 @@ forced_connections = {
     2012 : [3012],   #      North-to-South bridge jump Mid
     2013 : [3013],   #      North-to-South bridge jump East
 
-    2023 : [3023]   # Magitek factory elevator in Room 1
+    2023 : [3023],   # Magitek factory elevator in Room 1
+
+    2029 : [3029],   # Cave to the Sealed Gate, grand staircase
+    2030 : [3030],   # Cave to the Sealed Gate, switch bridges
+    1079 : [1264]   # Cave to the Sealed Gate, actual Sealed Gate (must be connected to enable shortcut exit)
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -592,7 +597,11 @@ shared_exits = {
     1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door
     1040 : [1041],  # Esper Mountain Outside Path to Final Room West Door
 
-    1229 : [1226]   # Post-minecart Vector long exit to MTek.  Same destination as normal Vector exit to MTek.
+    1229 : [1226],  # Post-minecart Vector long exit to MTek.  Same destination as normal Vector exit to MTek.
+
+    1059 : [1060],  # Imperial camp, left entrance
+
+    1075 : [1076]   # Cave to the Sealed Gate, lava switch room: exit 1076 inaccessible (for door exit error?)
 }
 
 # List of doors that CANNOT be connected to each other.  Only rare instances.
