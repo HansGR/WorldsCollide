@@ -70,9 +70,9 @@ exit_data = {
     67: [1143, "Narshe WoR"],
     68: [1187, "Crazy Old Man's House WoR"],
     69: [1262, "Fanatic's Tower"],
-    70: [1224, "Zozo Top Left Tile WoR"],
-    71: [1224, "Zozo Bottom Left Tile WoR"],
-    72: [1224, "Zozo Right Tile WoR"],
+    70: [5224, "Zozo Top Left Tile WoR"],    # EDIT goes to logical WOR Zozo, not 1224 (default WOB Zozo)
+    71: [5224, "Zozo Bottom Left Tile WoR"],
+    72: [5224, "Zozo Right Tile WoR"],
     73: [1213, "Jidoor Left Tile WoR"],
     74: [1213, "Jidoor Right Tile WoR"],
     75: [1261, "Thamasa WoR"],
@@ -1312,31 +1312,52 @@ exit_data = {
     1126: [1128, "Coliseum Right Door"],
     1127: [1125, "Coliseum Left Room Door"],
     1128: [1126, "Coliseum Inn Door"],
-    1280: [56,   "Coliseum to World Map"]
+    1280: [56,   "Coliseum to World Map"],
+
+    # WORLD OF RUIN (logical) DOORS:
+    #'zozo-r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOR:
+    4600: [630, "Zozo Weapon Outside WOR"],
+    4601: [629, "Zozo Armor Outside WOR"],
+    4602: [631, "Zozo Clock Puzzle Room 1F Outside WOR"],
+    4604: [620, "Zozo Cafe 1F Outside WOR"],
+    5224: [70, "Zozo WoR to World Map"]
 }
 
 # Create functions to update values:
 # [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
-set_dest_x = lambda value, info: [value] + info[1:]
-set_dest_y = lambda value, info: info[:1] + [value] + info[2:]
-set_dest_map = lambda value, info: info[:2] + [value] + info[3:]
-set_refreshparentmap = lambda value, info: info[:3] + [value] + info[4:]
-set_enterlowZlevel = lambda value, info: info[:4] + [value] + info[5:]
+set_dest_x =              lambda value, info: [value] + info[1:]
+set_dest_y =              lambda value, info: info[:1] + [value] + info[2:]
+set_dest_map =            lambda value, info: info[:2] + [value] + info[3:]
+set_refreshparentmap =    lambda value, info: info[:3] + [value] + info[4:]
+set_enterlowZlevel =      lambda value, info: info[:4] + [value] + info[5:]
 set_displaylocationname = lambda value, info: info[:5] + [value] + info[6:]
-set_facing = lambda value, info: info[:6] + [value] + info[7:]
-set_unknown = lambda value, info: info[:7] + [value]
+set_facing =              lambda value, info: info[:6] + [value] + info[7:]
+set_unknown =             lambda value, info: info[:7] + [value] + info[8:]
+set_x =                   lambda value, info: info[:8] + [value] + info[9:]
+set_y =                   lambda value, info: info[:9] + [value] + info[10:]
+set_size =                lambda value, info: info[:10] + [value] + info[11:]
+set_direction =           lambda value, info: info[:11] + [value]
 
 # Patch functions for individual exits:
 exit_data_patch = {
-    1135: lambda info: set_dest_y( info[1]-2,
-                       set_dest_x( info[0]+1,
+    1135: lambda info: set_dest_y( 34,
+                       set_dest_x( 84,
                        set_dest_map(0, info) ) ),   # [4, "Narshe To World Map WoB"],
     1143: lambda info: set_dest_y( 34,
                        set_dest_x( 115,
                        set_dest_map(1, info) ) ),  # [67, "Narshe To World Map WoR"],
-    1047: lambda info: set_dest_y( info[1]+1,
+    1047: lambda info: set_dest_y( 131,
                        set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
     1064: lambda info: set_dest_map(0, info),     # Cave to the Sealed Gate: return to WoB
+
+    1224: lambda info: set_y( 42,
+                       set_size (5,
+                       set_dest_map(0, info) ) ), # Zozo WoB.  Shorten exit for exit events.
+
+    # WOR patches (logical)
+    5224: lambda info: set_dest_y(131,
+                       set_dest_x(44,
+                       set_dest_map(1, info))),   # Zozo WoR.
 
     # Note: all Jidoor exits should go to WoB, we'll write event tiles to handle WoR (????????? that's ~64 event tiles.)
     #1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],

@@ -140,6 +140,7 @@ OP_LENGTH = {
     0x9D: 0, # Invoke the screen before the final battle where you choose your party order
     0xA0: 5, # Invoke a timer
     0xA1: 1, # Use this to reset a timer, clearing it from the display and preventing it from triggering
+    0xA2: 0, # Unknown, but used, command.
     0xA6: 0, # Eliminate the rotating pyramid
     0xA7: 1, # Create a rotating pyramid around a character
     0xA8: 0, # Show the cutscene where the Floating Continent flies into the sky

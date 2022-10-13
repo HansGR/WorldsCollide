@@ -305,27 +305,42 @@ room_data = {
     290 : [ [597], [ ], [ ], None], #Esper World South Right House
     291 : [ [598], [ ], [ ], None], #Esper World East House
     292 : [ [599], [ ], [ ], None], #Esper World South Left House
+
+    # ZOZO
+    'root-zb' : [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
+    'root-zr' : [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
     293 : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], None], #Zozo 1F Outside
+    'zozo-b' : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], 0], #Zozo 1F Outside WOB
+    # Convention: if same door is used in WoB and WoR, then logical id_WOR = (4000 + id_WOB)
+    # Then, when writing door tiles, we can use id >= 4000 to write an exit event, and id <= 2000 to write the exit.
+    'zozo-r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOR:
     294 : [ [603], [ ], [ ], None], #Zozo 2F Clock Room Balcony Outside
     295 : [ [605], [ ], [ ], None], #Zozo 2F Cafe Balcony Outside
-    296 : [ [606, 607, 618], [ ], [ ], None], #Zozo Cafe Upstairs Outside
-    297 : [ [609, 610], [ ], [ ], None], #Zozo Relic 1st Section Outside
-    298 : [ [611, 612, 616], [ ], [ ], None], #Zozo Relic 2nd Section Outside
+    296 : [ [606, 607], [ ], [ ], None], #Zozo Cafe Upstairs Outside WOB (618 --> Mt Zozo not accessible)
+    '296r' : [ [606, 607, 618], [ ], [ ], None], #Zozo Cafe Upstairs Outside WOR
+    297 : [ [609, 610], [ ], [3032], None], #Zozo Relic 1st Section Outside (incl. hook entry event)
+    298 : [ [611, 612, 616], [2032], [ ], None], #Zozo Relic 2nd Section Outside (incl. hook exit)
     299 : [ [613, 617], [ ], [ ], None], #Zozo Relic 3rd Section Outside
     300 : [ [614, 615, 619], [ ], [ ], None], #Zozo Relic 4th Section Outside
     301 : [ [620, 621, 622], [ ], [ ], None], #Zozo Cafe
     302 : [ [623, 624], [ ], [ ], None], #Zozo Relic 1st Room Inside
-    303 : [ [625, 626], [ ], [ ], None], #Zozo Relic 2nd Room Inside
+    # 303 : [ [625, 626], [ ], [ ], None], #Zozo Relic 2nd Room Inside - Walking guys create a one-way gate
+    '303a' : [ [625], [2033], [ ], None], #Zozo Relic 2nd Room Inside - entrance
+    '303b' : [ [626], [ ], [3033], None], #Zozo Relic 2nd Room Inside - exit
     304 : [ [627, 628], [ ], [ ], None], #Zozo West Tower Inside
     305 : [ [629], [ ], [ ], None], #Zozo Armor
     306 : [ [630], [ ], [ ], None], #Zozo Weapon
-    307 : [ [631], [ ], [ ], None], #Zozo Clock Puzzle Room West
-    308 : [ [632], [ ], [ ], None], #Zozo Clock Puzzle Room East
+    #307 : [ [631], [ ], [ ], None], #Zozo Clock Puzzle Room West
+    #308 : [ [632], [ ], [ ], None], #Zozo Clock Puzzle Room East
+    '307a' : [ [631, 632],  [ ], [ ], None],  #Zozo Clock Puzzle Room (complete)
     309 : [ [633], [ ], [ ], None], #Zozo Cafe Chest Room
     310 : [ [634], [ ], [ ], None], #Zozo Tower 6F Chest Room
     311 : [ [635, 636], [ ], [ ], None], #Zozo Tower Stairwell Room
     312 : [ [637], [ ], [ ], None], #Zozo Tower 12F Chest Room
+    # Exits 638, 639, 640, 641 appear to be redundant with 634, 635, 636, 637
     313 : [ [1225], [ ], [ ], None], #Zozo Tower Ramuh's Room
+
+    # OPERA HOUSE
     314 : [ [642, 643], [ ], [ ], None], #Opera House Balcony WoR and WoB Disruption
     315 : [ [646, 647], [ ], [ ], None], #Opera House Catwalk Stairwell
     316 : [ [648], [ ], [ ], None], #Opera House Switch Room
@@ -571,7 +586,9 @@ forced_connections = {
 
     2029 : [3029],   # Cave to the Sealed Gate, grand staircase
     2030 : [3030],   # Cave to the Sealed Gate, switch bridges
-    1079 : [1264]   # Cave to the Sealed Gate, actual Sealed Gate (must be connected to enable shortcut exit)
+    1079 : [1264],   # Cave to the Sealed Gate, actual Sealed Gate (must be connected to enable shortcut exit)
+
+    2032 : [3032]   # Zozo hook exit from building
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -601,13 +618,16 @@ shared_exits = {
 
     1059 : [1060],  # Imperial camp, left entrance
 
-    1075 : [1076]   # Cave to the Sealed Gate, lava switch room: exit 1076 inaccessible (for door exit error?)
+    1075 : [1076],  # Cave to the Sealed Gate, lava switch room: exit 1076 inaccessible (for door exit error?)
+
+    38 : [37, 39]   # Zozo WoB entrance
 }
 
 # List of doors that CANNOT be connected to each other.  Only rare instances.
 invalid_connections = {
     702 : [703],  # Magitek factory room 1: entrance & platform door
-    703 : [702]
+    703 : [702],
+
 }
 
 # List of rooms that should have a forced update to Parent Map variable when entering.

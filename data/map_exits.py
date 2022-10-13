@@ -41,9 +41,9 @@ class MapExits():
 
             # Archive original data for randomizing
             self.exit_original_data[new_exit.index] = [new_exit.dest_x, new_exit.dest_y, new_exit.dest_map,
-                                                              new_exit.refreshparentmap, new_exit.enterlowZlevel,
-                                                              new_exit.displaylocationname, new_exit.facing,
-                                                              new_exit.unknown]
+                                                       new_exit.refreshparentmap, new_exit.enterlowZlevel,
+                                                       new_exit.displaylocationname, new_exit.facing, new_exit.unknown,
+                                                       new_exit.x, new_exit.y, new_exit.size, new_exit.direction]
 
         for exit_index in range(self.LONG_EXIT_COUNT):
             exit_data_start = self.LONG_DATA_START_ADDR + exit_index * LongMapExit.DATA_SIZE
@@ -61,15 +61,19 @@ class MapExits():
             # Archive original data for randomizing
             self.exit_original_data[new_exit.index] = [new_exit.dest_x, new_exit.dest_y, new_exit.dest_map,
                                                        new_exit.refreshparentmap, new_exit.enterlowZlevel,
-                                                       new_exit.displaylocationname, new_exit.facing,
-                                                       new_exit.unknown]
+                                                       new_exit.displaylocationname, new_exit.facing, new_exit.unknown,
+                                                       new_exit.x, new_exit.y, new_exit.size, new_exit.direction]
 
         # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
         for e in exit_data_patch.keys():
-            # Update the "original data"
-            self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
-            # Copy the "original data" to the exit itself
-            self.copy_exit_info(self._get_exit_from_ID(e), e)
+            if e in self.exit_original_data.keys():
+                # Update the "original data"
+                self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
+                # Copy the "original data" to the exit itself
+                self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
+            else:
+                # This is a logical exit.  Create an entry for it from its WOB pair.
+                self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
 
     def write(self):
         for exit_index, exit in enumerate(self.short_exits):
@@ -92,7 +96,7 @@ class MapExits():
             exit = self.long_exits[exitID - self.SHORT_EXIT_COUNT]  # Exit = long exit
         return exit
 
-    def copy_exit_info(self, mod_exit, pair_ID):
+    def copy_exit_info(self, mod_exit, pair_ID, type='dest'):
         # Copy information to mod_exit from another exit with exitID = pair_ID.
         # Original door data is stored in self.exit_original_data[exitID] as:
         #   [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
@@ -105,6 +109,13 @@ class MapExits():
         mod_exit.displaylocationname = pair_info[5]
         mod_exit.facing = pair_info[6]
         mod_exit.unknown = pair_info[7]
+
+        if type == 'all':
+            # Include exit location info
+            mod_exit.x = pair_info[8]
+            mod_exit.y = pair_info[9]
+            mod_exit.size = pair_info[10]
+            mod_exit.direction = pair_info[11]
         return
 
     def print_short_exit_range(self, start, count):

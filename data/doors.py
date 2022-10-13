@@ -11,6 +11,7 @@ ROOM_SETS = {
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg'],
+    'Zozo' : ['root-zb', 'zozo-b', 294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -83,6 +84,9 @@ class Doors():
 
             if self.args.door_randomize_sealed_gate:  # -drsg
                 room_sets.append(ROOM_SETS['SealedGate'])
+
+            if self.args.door_randomize_zozo_wob:  # -drzb
+                room_sets.append(ROOM_SETS['Zozo'])
 
             #room_sets.append(ROOM_SETS['test'])
 
