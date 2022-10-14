@@ -162,6 +162,7 @@ class Doors():
 
     def mod(self):
         # Create list of randomized connections
+        # Maybe re-write this to loop on each area separately (instead of all together) to increase success rate?
         flag = True
         failures = 0
         while flag:
