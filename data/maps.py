@@ -450,7 +450,7 @@ class Maps():
             # Ignore forced vanilla / logical event patches
             if exit_address != entr_address:
 
-                # Check for specific event patches & implement if found
+                # Check for other event patches & implement if found
                 if m[0] in exit_event_patch.keys():
                     [src, src_end] = exit_event_patch[m[0]](src, src_end)
                 if m[1] in entrance_event_patch.keys():
@@ -558,6 +558,8 @@ class Maps():
         for m in temp:
             # Add logical WoR exits to the map (with vanilla connections)
             map[m + 4000] = exit_data[m + 4000][0]
+            map[map[m + 4000]] = m + 4000
+
             # Look up the rooms of these exits
             this_room = [r for r in room_data.keys() if (m+4000) in room_data[r][0]]
             self.doors.door_rooms[m + 4000] = this_room[0]
@@ -778,8 +780,19 @@ class Maps():
 
         # Send the player to the location that the connection's vanilla partner sends you to
         # [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, ...]
-        conn_data = self.exits.exit_original_data[exit_data[d_ref][0]]
-        wor_src = [field.LoadMap(self.exit_maps[d_ref], conn_data[6], True, conn_data[0], conn_data[1]), field.Return()]
+        d_ref_partner = exit_data[d_ref][0]
+        if d_ref_partner in self.exits.exit_original_data.keys():
+            conn_data = self.exits.exit_original_data[d_ref_partner]
+        else:
+            # Probably a logical exit without tweaks.  Can use vanilla connection info.
+            conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
+        if d_ref in self.exit_maps.keys():
+            conn_map = self.exit_maps[d_ref]
+        else:
+            # Probably a logical exit without tweaks.  Can use vanilla connection info.
+            conn_map = self.exit_maps[d_ref - 4000]
+        wor_src = [field.LoadMap(conn_map, conn_data[6], True, conn_data[0], conn_data[1], fade_in=True),
+                   field.Return()]
 
         # (1) Prepend call to force world bit event, if required
         if require_event_flags[0]:
@@ -805,6 +818,9 @@ class Maps():
         if len(wor_src) > 0:
             space = Write(Bank.CC, wor_src, "WOR door Event " + str(d))
             this_address = space.start_address
+            if self.doors.verbose:
+                print('Writing WOR door event:', d, ' @ ', hex(this_address))
+                print('\t',[str(s) for s in wor_src])
 
         src = [field.BranchIfEventBitSet(event_bit.IN_WOR, this_address)] + src
 

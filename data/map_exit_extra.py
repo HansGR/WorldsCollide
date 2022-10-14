@@ -1316,10 +1316,22 @@ exit_data = {
 
     # WORLD OF RUIN (logical) DOORS:
     #'zozo-r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOR:
-    4600: [630, "Zozo Weapon Outside WOR"],
-    4601: [629, "Zozo Armor Outside WOR"],
-    4602: [631, "Zozo Clock Puzzle Room 1F Outside WOR"],
-    4604: [620, "Zozo Cafe 1F Outside WOR"],
+    4600: [4630, "Zozo Weapon Outside WOR"],
+    4601: [4629, "Zozo Armor Outside WOR"],
+    4602: [4631, "Zozo Clock Puzzle Room 1F Outside WOR"],
+    4603: [4632, "Zozo Clock Puzzle Room 2F Outside WOR"],
+    4604: [4620, "Zozo Cafe 1F Outside WOR"],
+    4605: [4621, "Zozo Cafe 2F Left Outside WOR"],
+    4606: [4622, "Zozo Cafe 2F Right Outside WOR"],
+    4607: [4633, "Zozo Cafe 3F Right Outside WOR"],
+    4620: [4604, "Zozo Cafe 1F Inside WOR"],
+    4621: [4605, "Zozo Cafe 2F Left Inside WOR"],
+    4622: [4606, "Zozo Cafe 2F Right Inside WOR"],
+    4629: [4601, "Zozo Armor Inside WOR"],
+    4630: [4600, "Zozo Weapon Inside WOR"],
+    4631: [4602, "Zozo Clock Puzzle Room 1F Inside WOR"],
+    4632: [4603, "Zozo Clock Puzzle Room 2F Inside WOR"],
+    4633: [4607, "Zozo Cafe 3F Right Inside WOR"],
     5224: [70, "Zozo WoR to World Map"]
 }
 
