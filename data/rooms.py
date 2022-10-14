@@ -317,33 +317,33 @@ room_data = {
     # ZOZO
     293 : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], 0], #Zozo 1F Outside WOB
     '293r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOB
-    294 : [ [603], [ ], [ ], None], #Zozo 2F Clock Room Balcony Outside
-    '294r' : [ [4603], [ ], [ ], None], #Zozo 2F Clock Room Balcony Outside
-    295 : [ [605], [ ], [ ], None], #Zozo 2F Cafe Balcony Outside
-    '295r' : [ [4605], [ ], [ ], None], #Zozo 2F Cafe Balcony Outside
-    296 : [ [606, 607], [ ], [ ], None], #Zozo Cafe Upstairs Outside WOB (618 --> Mt Zozo not accessible)
-    '296r' : [ [4606, 4607, 618], [ ], [ ], None], #Zozo Cafe Upstairs Outside WOR
+    294 : [ [603], [ ], [ ], 0], #Zozo 2F Clock Room Balcony Outside
+    '294r' : [ [4603], [ ], [ ], 1], #Zozo 2F Clock Room Balcony Outside
+    295 : [ [605], [ ], [ ], 0], #Zozo 2F Cafe Balcony Outside
+    '295r' : [ [4605], [ ], [ ], 1], #Zozo 2F Cafe Balcony Outside
+    296 : [ [606, 607], [ ], [ ], 0], #Zozo Cafe Upstairs Outside WOB (618 --> Mt Zozo not accessible)
+    '296r' : [ [4606, 4607, 618], [ ], [ ], 1], #Zozo Cafe Upstairs Outside WOR
     297 : [ [609, 610], [ ], [3032], None], #Zozo Relic 1st Section Outside (incl. hook entry event)
     298 : [ [611, 612, 616], [2032], [ ], None], #Zozo Relic 2nd Section Outside (incl. hook exit)
     299 : [ [613, 617], [ ], [ ], None], #Zozo Relic 3rd Section Outside
     300 : [ [614, 615, 619], [ ], [ ], None], #Zozo Relic 4th Section Outside
-    301 : [ [620, 621, 622], [ ], [ ], None], #Zozo Cafe
-    '301r' : [ [4620, 4621, 4622], [ ], [ ], None], #Zozo Cafe
+    301 : [ [620, 621, 622], [ ], [ ], 0], #Zozo Cafe
+    '301r' : [ [4620, 4621, 4622], [ ], [ ], 1], #Zozo Cafe
     302 : [ [623, 624], [ ], [ ], None], #Zozo Relic 1st Room Inside
     # 303 : [ [625, 626], [ ], [ ], None], #Zozo Relic 2nd Room Inside - Walking guys create a one-way gate
     '303a' : [ [625], [2033], [ ], None], #Zozo Relic 2nd Room Inside - entrance
     '303b' : [ [626], [ ], [3033], None], #Zozo Relic 2nd Room Inside - exit
     304 : [ [627, 628], [ ], [ ], None], #Zozo West Tower Inside
-    305 : [ [629], [ ], [ ], None], #Zozo Armor
-    '305r' : [ [4629], [ ], [ ], None], #Zozo Armor
-    306 : [ [630], [ ], [ ], None], #Zozo Weapon
-    '306r' : [ [4630], [ ], [ ], None], #Zozo Weapon
+    305 : [ [629], [ ], [ ], 0], #Zozo Armor
+    '305r' : [ [4629], [ ], [ ], 1], #Zozo Armor
+    306 : [ [630], [ ], [ ], 0], #Zozo Weapon
+    '306r' : [ [4630], [ ], [ ], 1], #Zozo Weapon
     #307 : [ [631], [ ], [ ], None], #Zozo Clock Puzzle Room West
     #308 : [ [632], [ ], [ ], None], #Zozo Clock Puzzle Room East
-    '307a' : [ [631, 632],  [ ], [ ], None],  #Zozo Clock Puzzle Room (complete)
-    '307r' : [ [4631, 4632],  [ ], [ ], None],  #Zozo Clock Puzzle Room (complete)
-    309 : [ [633], [ ], [ ], None], #Zozo Cafe Chest Room
-    '309r' : [ [4633], [ ], [ ], None], #Zozo Cafe Chest Room
+    '307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
+    '307r' : [ [4631, 4632],  [ ], [ ], 1],  #Zozo Clock Puzzle Room (complete)
+    309 : [ [633], [ ], [ ], 0], #Zozo Cafe Chest Room
+    '309r' : [ [4633], [ ], [ ], 1], #Zozo Cafe Chest Room
     310 : [ [634], [ ], [ ], None], #Zozo Tower 6F Chest Room
     311 : [ [635, 636], [ ], [ ], None], #Zozo Tower Stairwell Room
     312 : [ [637], [ ], [ ], None], #Zozo Tower 12F Chest Room
