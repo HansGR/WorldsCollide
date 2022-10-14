@@ -596,10 +596,10 @@ forced_connections = {
 
     2029 : [3029],   # Cave to the Sealed Gate, grand staircase
     2030 : [3030],   # Cave to the Sealed Gate, switch bridges
-
     1079 : [1264],   # Cave to the Sealed Gate, actual Sealed Gate (must be connected to enable shortcut exit)
 
-    2032 : [3032]   # Zozo hook exit from building
+    2032 : [3032],   # Zozo hook exit from building
+    2033 : [3033]    # Zozo walking guys room
 
 }
 
