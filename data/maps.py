@@ -791,8 +791,11 @@ class Maps():
         else:
             # Probably a logical exit without tweaks.  Can use vanilla connection info.
             conn_map = self.exit_maps[d_ref - 4000]
-        wor_src = [field.LoadMap(conn_map, conn_data[6], True, conn_data[0], conn_data[1], fade_in=True),
-                   field.Return()]
+        wor_src = [field.FadeLoadMap(conn_map, conn_data[6], True, conn_data[0], conn_data[1], fade_in=True, entrance_event=True)]
+        if conn_map in [0, 1, 2]:
+            # Include End command when loading world maps
+            wor_src += [field.End()]
+        wor_src += [field.Return()]
 
         # (1) Prepend call to force world bit event, if required
         if require_event_flags[0]:
