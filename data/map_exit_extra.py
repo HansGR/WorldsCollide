@@ -1315,7 +1315,6 @@ exit_data = {
     1280: [56,   "Coliseum to World Map"],
 
     # WORLD OF RUIN (logical) DOORS:
-    #'zozo-r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOR:
     4600: [4630, "Zozo Weapon Outside WOR"],
     4601: [4629, "Zozo Armor Outside WOR"],
     4602: [4631, "Zozo Clock Puzzle Room 1F Outside WOR"],
@@ -1352,9 +1351,13 @@ set_direction =           lambda value, info: info[:11] + [value]
 
 # Patch functions for individual exits:
 exit_data_patch = {
-    1135: lambda info: set_dest_y( 34,
+    1135: lambda info: set_x( 15,
+                       set_size( 28,
+                       set_dest_y( 34,
                        set_dest_x( 84,
-                       set_dest_map(0, info) ) ),   # [4, "Narshe To World Map WoB"],
+                       set_dest_map(0, info) ) ) ) ),   # [4, "Narshe To World Map WoB"].  Shorten to fit.
+    1136: lambda info: set_x( 35,
+                       set_size( 4, info) ),        # [1137, "Narshe To Northern Mines Outside WoB"].  Shorten to fit.
     1143: lambda info: set_dest_y( 34,
                        set_dest_x( 115,
                        set_dest_map(1, info) ) ),  # [67, "Narshe To World Map WoR"],

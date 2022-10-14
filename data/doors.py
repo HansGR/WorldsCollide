@@ -11,7 +11,8 @@ ROOM_SETS = {
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg'],
-    'Zozo' : ['root-zb', 'zozo-b', 294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313],
+    'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb'],
+    'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', 'branch-mz'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -19,7 +20,9 @@ ROOM_SETS = {
             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
             345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
-            503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg'  # Cave to the Sealed Gate
+            503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg',  # Cave to the Sealed Gate
+            294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
+            '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', 'branch-mz' # Zozo-WoR
              ]
     #'test': ['285a', '21a']  # for testing only
 }
@@ -57,6 +60,12 @@ class Doors():
             # Both options the same room list.  -dra uses drafting; -drdc does not.
             room_sets.append(ROOM_SETS['All'])
 
+        elif self.args.door_randomize_each:  # -dre
+            # Randomize all areas separately
+            for key in ROOM_SETS.keys():
+                if key != 'All':
+                    room_sets.append(ROOM_SETS[key])
+
         else:
             # Randomize separately
             if self.args.door_randomize_umaro:  # -dru
@@ -87,6 +96,9 @@ class Doors():
 
             if self.args.door_randomize_zozo_wob:  # -drzb
                 room_sets.append(ROOM_SETS['Zozo'])
+
+            if self.args.door_randomize_zozo_wor:  # -drzr
+                room_sets.append(ROOM_SETS['Zozo-WOR'])
 
             #room_sets.append(ROOM_SETS['test'])
 
@@ -444,7 +456,10 @@ class Doors():
 
             if self.verbose:
                 print('Mapping area', a, ':', len(doors), ' doors... ')
+                #for d in to_force:
+                #    print('Forced: ', d, '-->', self.forcing[d])
                 counter = 1
+
             # Connect all valid doors, creating zones in the process
             while len(doors) > 0:
                 if self.verbose:
@@ -467,9 +482,9 @@ class Doors():
                     door1 = to_force.pop(0)
                     doors.remove(door1)  # clean up
                     zone1 = door_zones[door1]
-                    valid = self.forcing[door1]
+                    valid = [v for v in self.forcing[door1]]
                     if self.verbose:
-                        print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (forced):')
+                        print('Connecting ', door1, ' [rm ', self.door_rooms[door1], '] (forced):', valid)
 
                 elif len(deadEnds) > 0:
                     # First, always connect any dead-end zones (those with only one door)

@@ -21,7 +21,7 @@ from instruction import field
 from instruction.event import EVENT_CODE_START
 
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, long_events
-from data.map_exit_extra import exit_data
+from data.map_exit_extra import exit_data, exit_data_patch
 from data.rooms import room_data, force_update_parent_map
 
 from data.parse import delete_nops
@@ -566,6 +566,17 @@ class Maps():
             that_room = [r for r in room_data.keys() if map[m+4000] in room_data[r][0]]
             self.doors.door_rooms[map[m+4000]] = that_room[0]
 
+        # Need to add modified world map exits if they weren't randomized (to print exit events)
+        for m in exit_data_patch.keys():
+            if m not in map.keys():
+                map[m] = exit_data[m][0]
+
+                # Look up the rooms of these exits
+                this_room = [r for r in room_data.keys() if m in room_data[r][0]]
+                self.doors.door_rooms[m] = this_room[0]
+                that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
+                self.doors.door_rooms[map[m]] = that_room[0]
+
         all_exits = list(map.keys())
         all_exits.sort()
 
@@ -579,6 +590,9 @@ class Maps():
                 # Attach exits:
                 # Copy original properties of exitB_pair to exitA & vice versa.
                 exitB_pairID = exit_data[map[m]][0] # Original connecting exit to B...
+                if exitB_pairID not in self.exits.exit_original_data.keys():
+                    # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                    exitB_pairID = exitB_pairID - 4000
                 self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
                 #exitA_pairID = exit_data[m[0]][0]  # Original connecting exit to A...
                 #self.exits.copy_exit_info(exitB, exitA_pairID)  # ... copied to exit B

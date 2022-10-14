@@ -8,7 +8,15 @@ room_data = {
     'root-unr' : [ [1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
     'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
     'root-ob' : [ [593], [], [], 1], # Root map for -door-randomize-owzer's basement
-    'root-mf' : [ [1229], [ ], [3028], 0],     # Magitek Factory root entrance in Vector
+    'root-mf' : [ [1229], [], [3028], 0],     # Magitek Factory root entrance in Vector
+    #'root-zb': [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
+    #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
+    'root-zb': [[600, 601, 602, 604, 608], [], [], 0],  # Zozo 1F Outside WOB
+    'root-zr': [[4600, 4601, 4602, 4604], [], [], 1],  # Zozo 1F Outside WOR
+    'branch-mz': [ [537], [], [], None],  # Zozo branch to Mount Zozo
+
+    0 : [ [i for i in range(45)], [ ], [ ], 0],  # World of Balance
+    1 : [ [i for i in range(45,80)], [ ], [ ], 1],  # World of Ruin
 
     2 : [ [81], [ ], [ ], None], #Blackjack Outside
     3 : [ [82, 83], [ ], [ ], None], #Blackjack Gambling Room
@@ -307,13 +315,8 @@ room_data = {
     292 : [ [599], [ ], [ ], None], #Esper World South Left House
 
     # ZOZO
-    'root-zb' : [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
-    'root-zr' : [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
-    293 : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], None], #Zozo 1F Outside
-    'zozo-b' : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], 0], #Zozo 1F Outside WOB
-    # Convention: if same door is used in WoB and WoR, then logical id_WOR = (4000 + id_WOB)
-    # Then, when writing door tiles, we can use id >= 4000 to write an exit event, and id <= 2000 to write the exit.
-    'zozo-r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOR:
+    293 : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], 0], #Zozo 1F Outside WOB
+    '293r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOB
     294 : [ [603], [ ], [ ], None], #Zozo 2F Clock Room Balcony Outside
     '294r' : [ [4603], [ ], [ ], None], #Zozo 2F Clock Room Balcony Outside
     295 : [ [605], [ ], [ ], None], #Zozo 2F Cafe Balcony Outside
@@ -593,9 +596,11 @@ forced_connections = {
 
     2029 : [3029],   # Cave to the Sealed Gate, grand staircase
     2030 : [3030],   # Cave to the Sealed Gate, switch bridges
+
     1079 : [1264],   # Cave to the Sealed Gate, actual Sealed Gate (must be connected to enable shortcut exit)
 
     2032 : [3032]   # Zozo hook exit from building
+
 }
 
 # Add forced connections for virtual doors (-dra)

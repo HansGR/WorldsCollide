@@ -23,12 +23,16 @@ def parse(parser):
                        help="Randomize the doors in Cave to the Sealed Gate")
     doors.add_argument("-drzb", "--door-randomize-zozo-wob", action="store_true",
                        help="Randomize the doors in Zozo WoB")
+    doors.add_argument("-drzr", "--door-randomize-zozo-wor", action="store_true",
+                       help="Randomize the doors in Zozo WoR")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
                        help="Randomize all doors to create a single giant dungeon")
     doors.add_argument("-dra", "--door-randomize-all", action = "store_true",
                          help = "Randomize all currently-implemented doors")
+    doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
+                         help = "Randomize doors in each currently-implemented area")
 
 
 def process(args):
@@ -44,6 +48,10 @@ def flags(args):
     elif args.door_randomize_dungeon_crawl:
         # -drdc supercedes all but -dra
         flags += " -drdc"
+
+    elif args.door_randomize_each:
+        # -dre supercedes all but -dra, -drdc
+        flags += " -dre"
 
     else:
         if args.door_randomize_umaro:
@@ -73,6 +81,9 @@ def flags(args):
         if args.door_randomize_zozo_wob:
             flags += " -drzb"
 
+        if args.door_randomize_zozo_wor:
+            flags += " -drzr"
+
     return flags
 
 def options(args):
@@ -85,6 +96,16 @@ def options(args):
         return [
             ("Dungeon Crawl", args.door_randomize_dungeon_crawl)
         ]
+    elif args.door_randomize_each:
+        return [
+            ("Umaro's Cave", True),
+            ("Upper Narshe", 'WoB+WoR'),
+            ("Esper Mountain", True),
+            ("Owzer Basement", True),
+            ("Magitek Factory", True),
+            ("Sealed Gate", True),
+            ("Zozo", 'WoB+WoR'),
+        ]
     else:
         un_state = args.door_randomize_upper_narshe
         if not un_state:
@@ -95,6 +116,14 @@ def options(args):
             elif args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
                 un_state = 'WoB+WoR'
 
+        zozo_state = False
+        if args.door_randomize_zozo_wob and args.door_randomize_zozo_wor:
+            zozo_state = 'WoB+WoR'
+        elif args.door_randomize_zozo_wob:
+            zozo_state = 'WoB'
+        elif args.door_randomize_zozo_wor:
+            zozo_state = 'WoR'
+
         return [
             ("Umaro's Cave", args.door_randomize_umaro),
             ("Upper Narshe", un_state),
@@ -102,7 +131,7 @@ def options(args):
             ("Owzer Basement", args.door_randomize_owzer_basement),
             ("Magitek Factory", args.door_randomize_magitek_factory),
             ("Sealed Gate", args.door_randomize_sealed_gate),
-            ("Zozo WOB", args.door_randomize_zozo_wob)
+            ("Zozo", zozo_state)
         ]
 
 def menu(args):
