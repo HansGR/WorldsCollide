@@ -127,9 +127,14 @@ entrance_event_patch = {
     # 3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
 
     # Minecart Ride: if Cranes are defeated, instead go to normal Vector
-    3028: lambda src, src_end: minecart_event_mod(src, src_end)
+    3028: lambda src, src_end: minecart_event_mod(src, src_end),
+
 }
 
+
+has_event_entrance = {
+    1204 : [0xb4, 44, 55] # map_id, x, y for event entrance to this door
+}
 
 def minecart_event_mod(src, src_end):
     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.

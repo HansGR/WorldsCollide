@@ -13,7 +13,8 @@ room_data = {
     #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
     'root-zb': [[600, 601, 602, 604, 608], [], [], 0],  # Zozo 1F Outside WOB
     'root-zr': [[4600, 4601, 4602, 4604], [], [], 1],  # Zozo 1F Outside WOR
-    'branch-mz': [ [537], [], [], None],  # Zozo branch to Mount Zozo
+    'branch-mz': [ [537], [], [], None],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
+    'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
 
     0 : [ [i for i in range(45)], [ ], [ ], 0],  # World of Balance
     1 : [ [i for i in range(45,80)], [ ], [ ], 1],  # World of Ruin
@@ -267,7 +268,7 @@ room_data = {
     246 : [ [529], [ ], [ ], None], #Serpent Trench Cave 2nd Part 1st Room
     247 : [ [530], [ ], [ ], None], #Serpent Trench Cave 2nd Part 2nd Room
 
-
+    # Mount Zozo
     250 : [ [531, 532, 533], [ ], [ ], None], #Mt Zozo Outside Bridge
     251 : [ [534], [ ], [ ], None], #Mt Zozo Outside Single Chest Room
     252 : [ [535, 536], [ ], [ ], None], #Mt Zozo Outside Cliff to Cyan's Cave
@@ -275,6 +276,7 @@ room_data = {
     254 : [ [540, 541], [ ], [ ], None], #Mt Zozo Inside Dragon Room
     255 : [ [542, 543], [ ], [ ], None], #Mt Zozo Cyan's Cave
     256 : [ [1204], [ ], [ ], None], #Mt Zozo Cyan's Cliff
+
     257 : [ [544, 1205, 1206, 1207], [ ], [ ], None], #Coliseum Guy's House Outside
     258 : [ [545], [ ], [ ], None], #Coliseum Guy's House Inside
     259 : [ [1208], [ ], [ ], None], #Nikeah Docks
@@ -632,7 +634,9 @@ shared_exits = {
 
     1075 : [1076],  # Cave to the Sealed Gate, lava switch room: exit 1076 inaccessible (for door exit error?)
 
-    38 : [37, 39]   # Zozo WoB entrance
+    38 : [37, 39],  # Zozo WoB entrance
+
+    531 : [532]     # Mt. Zozo, entrance to dragon room
 }
 
 # List of doors that CANNOT be connected to each other.  Only rare instances.

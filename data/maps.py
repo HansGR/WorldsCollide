@@ -20,7 +20,8 @@ from memory.space import Allocate, Bank, Free, Write
 from instruction import field
 from instruction.event import EVENT_CODE_START
 
-from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, long_events
+from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
+    long_events, has_event_entrance
 from data.map_exit_extra import exit_data, exit_data_patch
 from data.rooms import room_data, force_update_parent_map
 
@@ -597,11 +598,30 @@ class Maps():
                 #exitA_pairID = exit_data[m[0]][0]  # Original connecting exit to A...
                 #self.exits.copy_exit_info(exitB, exitA_pairID)  # ... copied to exit B
 
+                # THERE IS THE POTENTIAL FOR CONFLICTS between has_event_entrance() and create_exit_event()
+                # Ultimately, we should probably handle this in there as well:
+                #   one function that creates events and handles all cases would be ideal.
+                if m in has_event_entrance.keys():
+                    # move the event entrance to the partner tile
+                    info = has_event_entrance[m]
+                    this_event = self.get_event(info[0], info[1], info[2])
+
+                    # Create an event tile that activates the event to this entrance on it's connection
+                    conn_exit = self.get_exit(map[m])
+                    new_event = MapEvent()
+                    new_event.x = conn_exit.x
+                    new_event.y = conn_exit.y
+                    new_event.event_address = this_event.event_address
+
+                    self.add_event(self.exit_maps[map[m]], new_event) # add the new event
+                    self.delete_event(info[0], info[1], info[2])  # delete the original event
+
                 # Write events on the exits to handle required conditions:
                 # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
                 self.create_exit_event(m, map[m])
                 # Write an event on top of exit m[0] to set the correct properties (world, parent map) for exit m[1]
                 #self.create_exit_event(m[0], m[1])
+
 
             elif m >= 4000:
                 # This is a shared (WOB, WOR) exit (m - 4000, m).

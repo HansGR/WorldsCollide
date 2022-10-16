@@ -25,6 +25,8 @@ def parse(parser):
                        help="Randomize the doors in Zozo WoB")
     doors.add_argument("-drzr", "--door-randomize-zozo-wor", action="store_true",
                        help="Randomize the doors in Zozo WoR")
+    doors.add_argument("-drmz", "--door-randomize-mt-zozo", action="store_true",
+                       help="Randomize the doors in Mt Zozo")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -84,6 +86,9 @@ def flags(args):
         if args.door_randomize_zozo_wor:
             flags += " -drzr"
 
+        if args.door_randomize_mt_zozo:
+            flags += " -drmz"
+
     return flags
 
 def options(args):
@@ -105,6 +110,7 @@ def options(args):
             ("Magitek Factory", True),
             ("Sealed Gate", True),
             ("Zozo", 'WoB+WoR'),
+            ("Mt. Zozo", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -131,7 +137,8 @@ def options(args):
             ("Owzer Basement", args.door_randomize_owzer_basement),
             ("Magitek Factory", args.door_randomize_magitek_factory),
             ("Sealed Gate", args.door_randomize_sealed_gate),
-            ("Zozo", zozo_state)
+            ("Zozo", zozo_state),
+            ("Mt. Zozo", args.door_randomize_mt_zozo),
         ]
 
 def menu(args):

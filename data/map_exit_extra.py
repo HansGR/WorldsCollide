@@ -1365,8 +1365,11 @@ exit_data_patch = {
                        set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
     1064: lambda info: set_dest_map(0, info),     # Cave to the Sealed Gate: return to WoB
 
+    1204: lambda info: set_x(12,
+                             set_size(9, info)),  # Mt. Zozo, Cyan's cliff.  Shorten exit for exit events.
+
     1224: lambda info: set_y( 42,
-                       set_size (5,
+                       set_size(5,
                        set_dest_map(0, info) ) ), # Zozo WoB.  Shorten exit for exit events.
 
     # WOR patches (logical)

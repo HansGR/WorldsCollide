@@ -13,6 +13,7 @@ ROOM_SETS = {
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg'],
     'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb'],
     'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', 'branch-mz'],
+    'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -22,7 +23,8 @@ ROOM_SETS = {
             345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
             503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root_sg',  # Cave to the Sealed Gate
             294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
-            '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', 'branch-mz' # Zozo-WoR
+            '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', # Zozo-WoR
+            250, 251, 252, 253, 254, 255, 256  # Mt. Zozo
              ]
     #'test': ['285a', '21a']  # for testing only
 }
@@ -99,6 +101,9 @@ class Doors():
 
             if self.args.door_randomize_zozo_wor:  # -drzr
                 room_sets.append(ROOM_SETS['Zozo-WOR'])
+
+            if self.args.door_randomize_mt_zozo:  # -drmz
+                room_sets.append(ROOM_SETS['MtZozo'])
 
             #room_sets.append(ROOM_SETS['test'])
 
