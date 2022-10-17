@@ -15,7 +15,7 @@ from data.map_exit import ShortMapExit, LongMapExit
 
 import data.world_map_event_modifications as world_map_event_modifications
 
-from memory.space import Allocate, Bank, Free, Write
+from memory.space import Allocate, Bank, Free, Write, Reserve
 
 from instruction import field
 from instruction.event import EVENT_CODE_START
@@ -167,6 +167,16 @@ class Maps():
         #     npc = self.npcs.get_npc(n)
         #     f.write(str(n) + ': ' + str(hex(self.npc_maps[n])) + ' (' + str(npc.x) + ', ' + str(npc.y) + '): '
         #           + str(hex(npc.event_address)) + '\n')
+        # f.close()
+
+        # f = open('original_map_event_tally.txt', 'w')
+        # f.write('# map_ID: # events in map, then event data in map\n')
+        # for m in range(len(self.maps) - 1):
+        #     num_events = self.get_event_count(m)
+        #     this_ptr = self.maps[m]["events_ptr"]
+        #     write_string = str(m) + ':\t' + str(num_events) + '(' + str(hex(this_ptr)) + ')'
+        #     write_string += '.\n'
+        #     f.write(write_string)
         # f.close()
 
 
@@ -363,6 +373,9 @@ class Maps():
         # Patch the door randomizer exits & events before writing:
         self.connect_events()
         self.connect_exits()
+
+        # Move Event Trigger pointer & data location in ROM
+        self.move_event_trigger_data()
 
         self.npcs.write()
         self.chests.write()
@@ -586,7 +599,6 @@ class Maps():
             if m < 2000:
                 # Get exits associated with doors m and m_conn
                 exitA = self.get_exit(m)
-                #exitB = self.get_exit(map[m])
 
                 # Attach exits:
                 # Copy original properties of exitB_pair to exitA & vice versa.
@@ -595,8 +607,9 @@ class Maps():
                     # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
                     exitB_pairID = exitB_pairID - 4000
                 self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
-                #exitA_pairID = exit_data[m[0]][0]  # Original connecting exit to A...
-                #self.exits.copy_exit_info(exitB, exitA_pairID)  # ... copied to exit B
+
+                if self.doors.verbose:
+                    print('Connecting: ' + str(m) + ' to ' + str(map[m]))
 
                 # THERE IS THE POTENTIAL FOR CONFLICTS between has_event_entrance() and create_exit_event()
                 # Ultimately, we should probably handle this in there as well:
@@ -615,13 +628,13 @@ class Maps():
 
                     self.add_event(self.exit_maps[map[m]], new_event) # add the new event
                     self.delete_event(info[0], info[1], info[2])  # delete the original event
+                    if self.doors.verbose:
+                        print('Moving event ', str(hex(info[0])) + ' (' + str(info[1]) + ',' + str(info[2]) + ') to',
+                              str(hex(self.exit_maps[map[m]])) + ' (' + str(conn_exit.x) + ',' + str(conn_exit.y))
 
                 # Write events on the exits to handle required conditions:
                 # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
                 self.create_exit_event(m, map[m])
-                # Write an event on top of exit m[0] to set the correct properties (world, parent map) for exit m[1]
-                #self.create_exit_event(m[0], m[1])
-
 
             elif m >= 4000:
                 # This is a shared (WOB, WOR) exit (m - 4000, m).
@@ -666,6 +679,8 @@ class Maps():
         if require_event_flags.count(True) > 0:
             # Look for an existing event on this exit tile
             try:
+                if self.doors.verbose:
+                    print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
                 existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
                 # An event already exists.  It will need to be modified.
                 # We have to be careful here: if it has a world door-switch event, we will need to do something else
@@ -755,6 +770,7 @@ class Maps():
                     new_event.event_address = this_address
                     self.add_event(map_id, new_event)
 
+
     def shared_map_exit_event(self, d, d_ref):
         # THIS IS A SHARED ROOM (i.e. the exit d is one of a (WOB, WOR) pair: (d-4000, d).
         # SINCE THE WOB CONNECTION IS ALWAYS DONE FIRST, WHEN THE WOR CONNECTION IS WRITTEN WE CAN DO:
@@ -795,6 +811,8 @@ class Maps():
             d in exit_event_patch.keys()
         ]
 
+        #if self.doors.verbose:
+        #    print('Writing shared event at ' + str(d) + ' (ref = ' + str(d_ref) + ')')
         # Look for an existing event on this exit tile
         try:
             existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
@@ -886,3 +904,48 @@ class Maps():
                 new_event.y = this_exit.y + i * (this_exit.direction > 0)  # vertical exit
                 new_event.event_address = tile_address
                 self.add_event(map_id, new_event)
+
+    def move_event_trigger_data(self):
+        # Rewrite the ROM bits that look for event trigger data
+        new_bank = 0xf4
+
+        # Patch Field Program
+        # C0 / BCAE: BF0200C4       LDA $C40002, X
+        self.rom.set_byte(0x0bcb1, new_bank)
+        # C0 / BCB4: BF0000C4       LDA $C40000, X
+        self.rom.set_byte(0x0bcb7, new_bank)
+        # C0 / BCBD: BF0000C4       LDA $C40000, X
+        self.rom.set_byte(0x0bcc0, new_bank)
+        # C0 / BCD3: BF0200C4       LDA $C40002, X
+        self.rom.set_byte(0x0bcd6, new_bank)
+        # C0 / BCED: BF0400C4       LDA $C40004, X
+        self.rom.set_byte(0x0bcf0, new_bank)
+
+        # Patch World Program
+        # EE / 2176: BF0000C4   LDA $C40000, X
+        self.rom.set_byte(0x2e2179, new_bank)
+        # EE / 217C: BF0200C4   LDA $C40002, X
+        self.rom.set_byte(0x2e217f, new_bank)
+        # EE / 218B: BF0000C4   LDA $C40000, X
+        self.rom.set_byte(0x2e218e, new_bank)
+        # EE / 2193: BF0100C4   LDA $C40001, X
+        self.rom.set_byte(0x2e2196, new_bank)
+        # EE / 219B: BF0200C4   LDA $C40002, X
+        self.rom.set_byte(0x2e219e, new_bank)
+        # EE / 21A4: BF0300C4   LDA $C40003, X
+        self.rom.set_byte(0x2e21a7, new_bank)
+        # EE / 21AC: BF0400C4   LDA $C40004, X
+        self.rom.set_byte(0x2e21af, new_bank)
+
+        # Repoint event pointers & event tile data to the expanded ROM
+        new_ref = (new_bank << 16) - 0xC00000
+        self.events.DATA_START_ADDR = new_ref + (self.events.DATA_START_ADDR - self.EVENT_PTR_START)
+        self.EVENT_PTR_START = new_ref
+
+        space = Reserve(0x340000, 0x370000, "Door Rando map event pointers")
+        space = Reserve(0x040000, 0x041A0F, "Original map event pointer data", field.NOP())
+
+        if self.doors.verbose:
+            print('Moved Event Trigger data to ' + str(hex(new_bank)) + ': ' + str(hex(self.EVENT_PTR_START)) + ', ' + str(hex(self.events.DATA_START_ADDR)))
+            for e in range(14):
+                print('\t' + str(e) + ' (' + str(self.events.events[e].x) + ', ' + str(self.events.events[e].y) + '): ' + str(hex(self.events.events[e].event_address)))
