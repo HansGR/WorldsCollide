@@ -907,7 +907,7 @@ class Maps():
 
     def move_event_trigger_data(self):
         # Rewrite the ROM bits that look for event trigger data
-        new_bank = 0xf4
+        new_bank = 0xf1
 
         # Patch Field Program
         # C0 / BCAE: BF0200C4       LDA $C40002, X
@@ -942,7 +942,7 @@ class Maps():
         self.events.DATA_START_ADDR = new_ref + (self.events.DATA_START_ADDR - self.EVENT_PTR_START)
         self.EVENT_PTR_START = new_ref
 
-        space = Reserve(0x340000, 0x370000, "Door Rando map event pointers")
+        space = Reserve(new_ref, new_ref + 0xffff, "Door Rando map event pointers")
         space = Reserve(0x040000, 0x041A0F, "Original map event pointer data", field.NOP())
 
         if self.doors.verbose:

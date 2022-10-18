@@ -161,16 +161,18 @@ def minecart_event_mod(src, src_end):
 
 
 def tritoch_event_mod(src, src_end):
-    # Special event for cliff jump behind Tritoch: reproduce the modified WC event
-    atma_event_addr = code_address(src[9:12]) + EVENT_CODE_START
-    # atma_src = rom.ROM.get_bytes(atma_event_addr, 0xed-0xd8)
+    new_src = [0xc0, 0x9e, 0x2, 0xb3, 0x5e, 0x0]  # field.BranchIfEventBitClear(event_bit.GOT_TRITOCH, 0xa5eb3),
 
-    new_src = [0xc0, 0x9e, 0x2, 0xb3, 0x5e, 0x0,  # field.BranchIfEventBitClear(event_bit.GOT_TRITOCH, 0xa5eb3),
-               0xc0, 0xed, 0x2] + branch_code(atma_event_addr, 17) + [  # field.BranchIfEventBitClear(0x2ed, 0xc74e9)
-                  0x4b, 0x3b, 0xa] + [  # display text box $a3b
-                  0xb6] + [0x0, 0x0, 0x0] + [0xf8, 0x37, 0x2] + [
-                  # Yes --> branch to (placeholder), No --> branch to step back;
-                  0xfe] + src[23:]  # return; source code for jumping animation
+    if src[6] == 0xc0:
+        # Special event for cliff jump behind Tritoch: reproduce the modified WC event for character gating
+        atma_event_addr = code_address(src[10:13]) + EVENT_CODE_START
+        # atma_src = rom.ROM.get_bytes(atma_event_addr, 0xed-0xd8)
+        new_src += [0xc0, 0xed, 0x2] + branch_code(atma_event_addr, 17) # field.BranchIfEventBitClear(0x2ed, 0xc74e9)
+
+    new_src += [0x4b, 0x3b, 0xa] + [  # display text box $a3b
+                0xb6] + [0x0, 0x0, 0x0] + [0xf8, 0x37, 0x2] + [   # Yes --> branch to (placeholder), No --> branch to step back;
+                0xfe] + src[23:]  # return; source code for jumping animation
+
     return new_src, src_end
 
 
@@ -183,8 +185,8 @@ def code_address(code):
 
 
 event_address_patch = {
-    # Jump into Umaro's Cave: update branched event addresses
-    2010: lambda src, addr: src[:16] + branch_code(addr, 23) + src[19:],
+    # Jump into Umaro's Cave: update branched event address.  Slightly risky search for 1st instance of 0xb6.
+    2010: lambda src, addr: src[:src.index(0xb6)+1] + branch_code(addr, 23) + src[src.index(0xb6)+4:],
 
     # Magitek factory Room 1 conveyor into room 2:
     #   At CC/7658 (+7), branch-if-clear [0xc0, ] to CC/7666 (+21)
