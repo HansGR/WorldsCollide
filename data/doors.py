@@ -201,7 +201,7 @@ class Doors():
             except Exception:
                 failures += 1
                 print('Error in mapping doors; trying again (' + str(failures) + ' errors)')
-                if failures > 10:
+                if failures > 20:
                     raise Exception('Major Error: something is seriously wrong in doors.mod()')
 
         self.map = [map1, map2]
