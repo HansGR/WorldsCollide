@@ -907,7 +907,7 @@ class Maps():
 
     def move_event_trigger_data(self):
         # Rewrite the ROM bits that look for event trigger data
-        new_bank = 0xf1
+        new_bank = 0xfe
 
         # Patch Field Program
         # C0 / BCAE: BF0200C4       LDA $C40002, X
