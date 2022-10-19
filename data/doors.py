@@ -168,9 +168,9 @@ class Doors():
     def mod(self):
         # Create list of randomized connections
         # Maybe re-write this to loop on each area separately (instead of all together) to increase success rate?
-        flag = True
-        failures = 0
-        while flag:
+        flag_a = True
+        failures_a = 0
+        while flag_a:
             try:
                 if self.args.door_randomize_all:
                     # Draft rooms to create areas for randomization
@@ -180,28 +180,46 @@ class Doors():
                 self.zones = []
                 self.zone_counts = []
 
-                # Connect rooms together to produce zones
-                map1 = self.map_doors()
+                map1 = []
+                map2 = []
+                for a in range(len(self.doors)):
+                    flag_b = True
+                    failures_b = 0
+                    while flag_b:
+                        try:
+                            # Connect rooms together to produce zones
+                            this_map = self.map_doors([a])
 
-                if self.match_WOB_WOR:
-                    # Make the WOR map match the WOB map in relevant areas
-                    if self.verbose:
-                        print('Mapping WoR to match WoB ...')
-                    newmap = [m for m in map1 if m[0] in doors_WOB_WOR.keys()]
-                    newmap.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in newmap])
-                    map1 = [m for m in newmap]
-                    print(map1)
-                    #map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
+                            if self.match_WOB_WOR:
+                                # Make the WOR map match the WOB map in relevant areas
+                                if self.verbose:
+                                    print('Mapping WoR to match WoB ...')
+                                newmap = [m for m in this_map if m[0] in doors_WOB_WOR.keys()]
+                                newmap.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in newmap])
+                                this_map = [m for m in newmap]
+                                #print(this_map)
+                                #map1.extend([[doors_WOB_WOR[m[0]], doors_WOB_WOR[m[1]]] for m in d])
 
-                # Connect one-way exits together to produce a fully-connected map
-                map2 = self.map_oneways()
+                            # Connect one-way exits together to produce a fully-connected map
+                            that_map = self.map_oneways([a])
 
-                flag = False
+                            map1.extend(this_map)
+                            map2.extend(that_map)
+
+                            flag_b = False
+
+                        except Exception:
+                            failures_b += 1
+                            print('Error in mapping doors in area' + str(a) + '; trying again (' + str(failures_b) + ' errors)')
+                            if failures_b > 10:
+                                raise Exception('Error: something is wrong in doors.mod()')
+
+                flag_a = False
 
             except Exception:
-                failures += 1
-                print('Error in mapping doors; trying again (' + str(failures) + ' errors)')
-                if failures > 20:
+                failures_a += 1
+                print('Error in drafting areas; trying again (' + str(failures_a) + ' errors)')
+                if failures_a > 10:
                     raise Exception('Major Error: something is seriously wrong in doors.mod()')
 
         self.map = [map1, map2]
@@ -236,7 +254,11 @@ class Doors():
             if f in self.door_rooms.keys():
                 rf = self.door_rooms[f]  # the room with the forced connection
                 rc = self.door_rooms[forced_connections[f][0]]  # room that is forced connected to
-                forcing[rf] = [rc]  # Set the room --> room forcing
+                if rf in forcing.keys():
+                    # There's already another forced connection into rf, add this one to it
+                    forcing[rf].append(rc)
+                else:
+                    forcing[rf] = [rc]  # Set the room --> room forcing
                 if rc in forcing.keys():
                     # There's already another forced connection into rc, add this one to it
                     forcing[rc].append(rf)
@@ -441,11 +463,14 @@ class Doors():
                     self.doors[-1].extend(room_data[r][i])
 
 
-    def map_doors(self):
+    def map_doors(self, areas='all'):
         # Generate list of valid (i.e. 2-way) doors & reverse door-->room lookup
+        if areas == 'all':
+            areas = [a for a in range(len(self.rooms))]
+
         map = []
         error_ctr = 0
-        for a in range(len(self.rooms)):
+        for a in areas:
             zones = []
             zone_counts = []
             for R in self.rooms[a]:
@@ -715,10 +740,13 @@ class Doors():
 
         return map
 
-    def map_oneways(self):
+    def map_oneways(self, areas='all'):
         # Generate lists of 1-way gates & reverse gate-->zone lookups
+        if areas == 'all':
+            areas = [a for a in range(len(self.rooms))]
+
         map = []
-        for a in range(len(self.rooms)):
+        for a in areas:
             nobs = []  # "outs" one-way exits
             nibs = []  # "ins" one-way entrances
             nob_rooms = {}
@@ -818,13 +846,17 @@ class Doors():
 
                 # Begin the normal walk process
                 # Construct the list of all downstream exits...
-                available = [n for n in zone_nobs[walk[0][-1]]]
+                available = [n for n in zone_nobs[walk[0][-1]] if n in nobs]
                 # If any available are shared, do them first.
                 available_shared = list(set(available).intersection(to_share))
                 if len(available_shared) > 0:
                     nob = available_shared.pop(randrange(len(available_shared)))
+                    if self.verbose:
+                        print('From available shared: ', available_shared, ' choose: ', nob)
                 else:
                     nob = available.pop(randrange(len(available)))
+                    if self.verbose:
+                        print('From available: ', available, ' choose: ', nob)
                 nobs.remove(nob)
                 zone1 = nob_zones[nob]
 
