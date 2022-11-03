@@ -550,7 +550,7 @@ room_data = {
     501 : [ [1057], [ ], [ ], None], #Esper Mountain Inside Second Room Dead End
 
     502 : [ [1059, 1060, 1058, 1263], [ ], [ ], None], #Imperial Base
-    'root_sg': [[1058, 1263], [], [], 0],  # Root entrance = imperial base
+    'root-sg': [[1058, 1263], [], [], 0],  # Root entrance = imperial base
     503 : [ [1061, 1062], [ ], [ ], None], #Imperial Base House
     504 : [ [1063], [ ], [ ], None], #Imperial Base House Basement
     '504a' : [ [41, 43], [], [], 0],  # WOB Imperial Base / Cave to Sealed Gate connector

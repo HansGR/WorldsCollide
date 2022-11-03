@@ -64,6 +64,9 @@ event_exit_info = {
     # ZOZO (WORLD OF BALANCE)
     2032: [int('0a963d', 16), 22, 0, [None, None, None], 'Zozo hook descent from building'],
     2033: [int('000000', 16), 0, 0, [None, None, None], 'Zozo line of walking guys (logical)'],
+
+    # LETE RIVER
+    2034: [0x0b059f, 0, 0, [None, None, None], 'Lete River start']
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
