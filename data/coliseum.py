@@ -30,11 +30,9 @@ class Coliseum():
         for match_index, match in enumerate(self.matches):
             match.opponent = opponents[match_index]
 
-    def randomize_opponents(self, random_opponent_percent = None):
-        import random
-
+    def randomize_opponents(self):
         for match in self.matches:
-            match.opponent = self.enemies.get_random() if random_opponent_percent is not None and (random.random() < random_opponent_percent) else match.opponent
+            match.opponent = self.enemies.get_random()
 
     def shuffle_rewards(self):
         rewards = []
@@ -46,11 +44,9 @@ class Coliseum():
         for match_index, match in enumerate(self.matches):
             match.reward = rewards[match_index]
 
-    def randomize_rewards(self, random_reward_percent = None):
-        import random
-
+    def randomize_rewards(self):
         for match in self.matches:
-            match.reward = self.items.get_random() if random_reward_percent is not None and (random.random() < random_reward_percent) else match.reward
+            match.reward = self.items.get_random()
 
     def remove_excluded_items(self):
         import random
@@ -80,17 +76,15 @@ class Coliseum():
             self.matches[match_index].reward_hidden = 1
 
     def mod(self):
-        if self.args.coliseum_opponents_random:
-            self.randomize_opponents(self.args.coliseum_opponents_random / 100.0)
-        elif self.args.coliseum_opponents_shuffle_random:
+        if self.args.coliseum_opponents_shuffle:
             self.shuffle_opponents()
-            self.randomize_opponents(self.args.coliseum_opponents_shuffle_random / 100.0)
+        elif self.args.coliseum_opponents_random:
+            self.randomize_opponents()
 
-        if self.args.coliseum_rewards_random:
-            self.randomize_rewards(self.args.coliseum_rewards_random / 100.0)
-        elif self.args.coliseum_rewards_shuffle_random:
+        if self.args.coliseum_rewards_shuffle:
             self.shuffle_rewards()
-            self.randomize_rewards(self.args.coliseum_rewards_shuffle_random / 100.0)
+        elif self.args.coliseum_rewards_random:
+            self.randomize_rewards()
 
         self.remove_excluded_items()
 
