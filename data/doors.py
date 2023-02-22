@@ -105,7 +105,8 @@ class Doors():
             if self.args.door_randomize_mt_zozo:  # -drmz
                 room_sets.append(ROOM_SETS['MtZozo'])
 
-            room_sets.append(ROOM_SETS['test'])
+            #Hard override for testing
+            #room_sets.append(ROOM_SETS['test'])
 
         self.read(room_sets)
 
