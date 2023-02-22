@@ -14,6 +14,7 @@ import data.map_exits as exits
 from data.map_exit import ShortMapExit, LongMapExit
 
 import data.world_map_event_modifications as world_map_event_modifications
+from data.world_map import WorldMap
 
 from memory.space import Allocate, Bank, Free, Write, Reserve
 
@@ -52,6 +53,7 @@ class Maps():
         self.events = events.MapEvents(rom)
         self.exits = exits.MapExits(rom)
         self.world_map_event_modifications = world_map_event_modifications.WorldMapEventModifications(rom)
+        self.world_map = WorldMap(rom, args)
         self.read()
 
         self.doors = doors.Doors(args)
@@ -317,6 +319,7 @@ class Maps():
     def mod(self, characters):
         self.npcs.mod(characters)
         self.chests.mod()
+        self.world_map.mod()
         self.doors.mod()
         ### HACK FOR TESTING
         # from data.map_exit_extra import exit_data as ed

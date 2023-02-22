@@ -14,6 +14,10 @@ class Characters():
     TERRA, LOCKE, CYAN, SHADOW, EDGAR, SABIN, CELES, STRAGO, RELM, SETZER, MOG, GAU, GOGO, UMARO = range(CHARACTER_COUNT)
     SOLDIER, IMP, GENERAL_LEO, BANON_DUNCAN, ESPER_TERRA, MERCHANT, GHOST, KEFKA = range(CHARACTER_COUNT, 22)
 
+    # Moogle character indexes
+    FIRST_MOOGLE = 0x12
+    LAST_MOOGLE = 0x1B
+
     DEFAULT_NAME = ["TERRA", "LOCKE", "CYAN", "SHADOW", "EDGAR", "SABIN", "CELES", "STRAGO", "RELM", "SETZER", "MOG", "GAU", "GOGO", "UMARO"]
 
     INIT_DATA_START = 0x2d7ca0
@@ -78,10 +82,11 @@ class Characters():
         return self.character_paths[character]
 
     def mod_init_levels(self):
-        if self.args.start_average_level:
-            # characters recruited at average level, set everyone's initial level to 3
-            for character in self.characters:
-                character.init_level_factor = 0
+        # remove all variation in leveling, since we're controlling level directly
+        for character in self.characters:
+            character.init_level_factor = 0
+
+        characters_asm.set_starting_level(self.args.start_level)
 
     def stats_random_percent(self):
         import random
@@ -182,7 +187,7 @@ class Characters():
         return self.DEFAULT_NAME[character]
 
     def get_sprite(self, character):
-        return self.characters[character].sprite
+        return self.character_sprites.character_sprites[character].id
 
     def get_random_esper_item_sprite(self):
         sprites = [self.SOLDIER, self.IMP, self.MERCHANT, self.GHOST]
