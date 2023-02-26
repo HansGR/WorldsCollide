@@ -8,7 +8,7 @@ from data.chests import Chests
 import data.doors as doors
 
 import data.map_events as events
-from data.map_event import MapEvent
+from data.map_event import MapEvent, LongMapEvent
 
 import data.map_exits as exits
 from data.map_exit import ShortMapExit, LongMapExit
@@ -34,6 +34,7 @@ class Maps():
     MAP_COUNT = 416
 
     EVENT_PTR_START = 0x40000
+    LONG_EVENT_PTR_START = events.LongMapEvents.POINTER_START_ADDR_LONG
     ENTRANCE_EVENTS_START_ADDR = 0x11fa00
 
     SHORT_EXIT_PTR_START = 0x1fbb00
@@ -51,6 +52,7 @@ class Maps():
         self.npcs = npcs.NPCs(rom)
         self.chests = Chests(self.rom, self.args, items)
         self.events = events.MapEvents(rom)
+        self.long_events = events.LongMapEvents(rom)
         self.exits = exits.MapExits(rom)
         self.world_map_event_modifications = world_map_event_modifications.WorldMapEventModifications(rom)
         self.world_map = WorldMap(rom, args)
@@ -87,6 +89,13 @@ class Maps():
             events_ptr_address = self.EVENT_PTR_START + map_index * self.rom.SHORT_PTR_SIZE
             events_ptr = self.rom.get_bytes(events_ptr_address, self.rom.SHORT_PTR_SIZE)
             self.maps[map_index]["events_ptr"] = events_ptr[0] | (events_ptr[1] << 8)
+
+            # LONG EVENTS INITIALIZATION:
+            # Vanilla code has no long events.  Set initial offset to the vanilla value for each map.
+            self.maps[map_index]["long_events_ptr"] = self.maps[0]["events_ptr"]
+            #long_events_ptr_address = self.LONG_EVENT_PTR_START + map_index * self.rom.SHORT_PTR_SIZE
+            #long_events_ptr = self.rom.get_bytes(long_events_ptr_address, self.rom.SHORT_PTR_SIZE)
+            #self.maps[map_index]["long_events_ptr"] = long_events_ptr[0] | (long_events_ptr[1] << 8)
 
             short_exit_ptr_address = self.SHORT_EXIT_PTR_START + map_index * self.rom.SHORT_PTR_SIZE
             short_exit_ptr = self.rom.get_bytes(short_exit_ptr_address, self.rom.SHORT_PTR_SIZE)
@@ -251,6 +260,36 @@ class Maps():
         last_event_id = first_event_id + self.get_event_count(map_id)
         self.events.delete_event(first_event_id, last_event_id, x, y)
 
+    ### LONG EVENTS ###
+    def get_long_event_count(self, map_id):
+        return (self.maps[map_id + 1]["long_events_ptr"] - self.maps[map_id]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+
+    def print_long_events(self, map_id):
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+
+        self.long_events.print_range(first_event_id, self.get_event_count(map_id))
+
+    def get_long_event(self, map_id, x, y):
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        last_event_id = first_event_id + self.get_event_count(map_id)
+        return self.long_events.get_event(first_event_id, last_event_id, x, y)
+
+    def add_long_event(self, map_id, new_event):
+        for map_index in range(map_id + 1, self.MAP_COUNT):
+            self.maps[map_index]["long_events_ptr"] += LongMapEvent.DATA_SIZE
+
+        event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        self.long_events.add_event(event_id, new_event)
+
+    def delete_long_event(self, map_id, x, y):
+        for map_index in range(map_id + 1, self.MAP_COUNT):
+            self.maps[map_index]["long_events_ptr"] -= LongMapEvent.DATA_SIZE
+
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        last_event_id = first_event_id + self.get_event_count(map_id)
+        self.long_events.delete_event(first_event_id, last_event_id, x, y)
+    ### LONG EVENTS ###
+
     def get_exit(self, exit_id):
         map_id = self.exit_maps[exit_id]  # Get [map_id, x, y] for exits
         xy = self.exit_x_y[exit_id]
@@ -338,6 +377,12 @@ class Maps():
         #                    ] ]
         ###
         self.events.mod()  # self.events.mod(self.doors, self)
+        self.long_events.mod()  # LONG EVENTS
+
+        ### FOR TESTING ONLY ###
+        # self.testLongEvents()
+        ### FOR TESTING ONLY ###
+
         self.exits.mod()  # self.exits.mod(self.doors.map[0], self)
 
         self._fix_imperial_camp_boxes()
@@ -350,6 +395,50 @@ class Maps():
         # Add doors to the spoiler log
         if len(self.doors.map) > 0:
             self.doors.print()
+
+    def testLongEvents(self):
+        ### FOR TESTING: MAKE SOME LONG EVENTS TO VERIFY THE CODE WORKS CORRECTLY
+        print('Long event count: ' + str(self.long_events.EVENT_COUNT))
+
+        # LONG EVENT #1: play the lore sound effect on some horizontal tiles on the Blackjack
+        src = [
+            field.BranchIfEventBitSet(0x1b5, "SetBit"),
+            field.PlaySoundEffect(0x0),  # Lore sound effect
+            field.SetEventBit(0x1b5),
+            "SetBit",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, 'Test long event')
+        new_le = LongMapEvent()
+        new_le.x = 14
+        new_le.y = 7
+        new_le.size = 2
+        new_le.direction = 0  # 0 = horizontal; 128 = vertical
+        new_le.event_address = space.start_address - EVENT_CODE_START
+        self.add_long_event(0x006, new_le)  # add to map 0x006 (Blackjack, Deck)
+        print('Added long event #1:')
+        new_le.print()
+
+        # LONG EVENT #2: play the Bolt3 sound effect on some vertical tiles on the Blackjack
+        src = [
+            field.BranchIfEventBitSet(0x1b5, "SetBit"),
+            field.PlaySoundEffect(0x015),  # Bolt3 sound effect
+            field.SetEventBit(0x1b5),
+            "SetBit",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, 'Test long event')
+        new_le = LongMapEvent()
+        new_le.x = 17
+        new_le.y = 6
+        new_le.size = 2
+        new_le.direction = 128  # 0 = horizontal; 128 = vertical
+        new_le.event_address = space.start_address - EVENT_CODE_START
+        self.add_long_event(0x006, new_le)  # add to map 0x006 (Blackjack, Deck)
+        print('Added long event #2:')
+        new_le.print()
+
+        print('Long event count: ' + str(self.long_events.EVENT_COUNT))
 
     def write_post_diagnostic_info(self):
         # Write edited event info to a text file in human-readable format
@@ -383,6 +472,7 @@ class Maps():
         self.npcs.write()
         self.chests.write()
         self.events.write()
+        self.long_events.write()
         self.exits.write()
         self.world_map_event_modifications.write()
 
@@ -401,6 +491,13 @@ class Maps():
             events_ptr_bytes[0] = cur_map["events_ptr"] & 0xff
             events_ptr_bytes[1] = (cur_map["events_ptr"] & 0xff00) >> 8
             self.rom.set_bytes(events_ptr_start, events_ptr_bytes)
+
+            # LONG EVENTS
+            long_events_ptr_start = self.LONG_EVENT_PTR_START + cur_map["id"] * self.rom.SHORT_PTR_SIZE
+            long_events_ptr_bytes = [0x00] * self.rom.SHORT_PTR_SIZE
+            long_events_ptr_bytes[0] = cur_map["long_events_ptr"] & 0xff
+            long_events_ptr_bytes[1] = (cur_map["long_events_ptr"] & 0xff00) >> 8
+            self.rom.set_bytes(long_events_ptr_start, long_events_ptr_bytes)
 
             short_exits_ptr_start = self.SHORT_EXIT_PTR_START + cur_map["id"] * self.rom.SHORT_PTR_SIZE
             short_exits_bytes = [0x00] * self.rom.SHORT_PTR_SIZE

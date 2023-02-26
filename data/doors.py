@@ -51,7 +51,7 @@ class Doors():
 
         self.use_shared_exits = True
         self.match_WOB_WOR = False
-        self.verbose = True
+        self.verbose = False  # True
 
         self._all_rooms = []
 
