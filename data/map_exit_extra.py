@@ -1335,7 +1335,7 @@ exit_data = {
 }
 
 # Create functions to update values:
-# [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
+# [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 set_dest_x =              lambda value, info: [value] + info[1:]
 set_dest_y =              lambda value, info: info[:1] + [value] + info[2:]
 set_dest_map =            lambda value, info: info[:2] + [value] + info[3:]
@@ -1377,10 +1377,16 @@ exit_data_patch = {
                        set_dest_x(44,
                        set_dest_map(1, info))),   # Zozo WoR.
 
-    # Note: all Jidoor exits should go to WoB, we'll write event tiles to handle WoR (????????? that's ~64 event tiles.)
+    # Note: all Jidoor exits should go to WoB, we'll write long_event tiles to handle WoR
     #1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],
     #1214: lambda info: set_dest_map(info, 0),   # [28, "Jidoor West to World Map"],
     #1215: lambda info: set_dest_map(info, 0)    # [28, "Jidoor East to World Map"],
+}
+
+# Add exits to make the vanilla rom consistent (it handles some non-event exits using events)
+# [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
+add_new_exits = {
+
 }
 
 # exit number in WOB : equivalent exit in WOR

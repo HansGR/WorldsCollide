@@ -12,6 +12,7 @@ from data.map_event import MapEvent, LongMapEvent
 
 import data.map_exits as exits
 from data.map_exit import ShortMapExit, LongMapExit
+#from data.connections import Connections
 
 import data.world_map_event_modifications as world_map_event_modifications
 from data.world_map import WorldMap
@@ -24,7 +25,7 @@ from instruction.event import EVENT_CODE_START
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
     long_events, has_event_entrance
 from data.map_exit_extra import exit_data, exit_data_patch
-from data.rooms import room_data, force_update_parent_map
+from data.rooms import room_data, force_update_parent_map, shared_exits
 
 from data.parse import delete_nops
 
@@ -53,7 +54,8 @@ class Maps():
         self.chests = Chests(self.rom, self.args, items)
         self.events = events.MapEvents(rom)
         self.long_events = events.LongMapEvents(rom)
-        self.exits = exits.MapExits(rom)
+        self.exits = exits.MapExits(rom, args.door_randomize)
+        #self.connections = Connections(self.exits)
         self.world_map_event_modifications = world_map_event_modifications.WorldMapEventModifications(rom)
         self.world_map = WorldMap(rom, args)
         self.read()
@@ -70,6 +72,15 @@ class Maps():
         space = Allocate(Bank.CC, len(src_WOB), "Go To WoB")
         space.write(src_WOB)
         self.GO_WOB_EVENT_ADDR = space.start_address
+
+        # Record the vanilla world of each door
+        self.exit_world = {}
+        for r in room_data.keys():
+            for d in room_data[r][0]:
+                self.exit_world[d] = room_data[r][-1]
+                if d in shared_exits.keys():
+                    for ds in shared_exits[d]:
+                        self.exit_world[ds] = room_data[r][-1]
 
     def read(self):
         self.maps = []
@@ -755,24 +766,27 @@ class Maps():
         #       put you at the vanilla entrance, which is a different long exit.
 
     def create_exit_event(self, d, d_ref):
+        SOUND_EFFECT = None # [None, 0x00 = Lore, 0x15 = Bolt3]
+
         # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref
         # Collect information about the properties for the exit
         this_exit = self.get_exit(d)
         map_id = self.exit_maps[d]
-        this_world = room_data[self.doors.door_rooms[d]][3]
+        this_world = self.exit_world[d]  # room_data[self.doors.door_rooms[d]][3]
 
         # Collect information about the properties of the connecting exit
-        forced_world = room_data[self.doors.door_rooms[d_ref]][3]
-        forced_pmap = self.doors.door_rooms[d_ref] in force_update_parent_map.keys()
+        that_world = self.exit_world[d_ref]
+        #forced_world = room_data[self.doors.door_rooms[d_ref]][3]
+        #forced_pmap = self.doors.door_rooms[d_ref] in force_update_parent_map.keys()
 
         # Check to make sure an exit event is required:
-        # (1) the connection requires a specific world that is not this world
-        # (2) the connection requires a parent map update
-        # (3) the connection requires special code (in entrance_event_patch[d_ref])
-        # (4) the door requires special code (in exit_event_patch[d])
+        # (1) the connection is in the other world
+        ### (XXX) the connection requires a parent map update
+        # (2) the connection requires special code (in entrance_event_patch[d_ref])
+        # (3) the door requires special code (in exit_event_patch[d])
         require_event_flags = [
-            ((forced_world is not None) and (forced_world != this_world)),
-            forced_pmap,
+            (this_world != that_world), # ((forced_world is not None) and (forced_world != this_world)),
+            #forced_pmap,
             d_ref in entrance_event_patch.keys(),
             d in exit_event_patch.keys()
         ]
@@ -806,12 +820,16 @@ class Maps():
 
             this_address = 0x05eb3  # Default address to fail gracefully: event at $CA/5EB3 is just 0xfe (return)
 
+            if SOUND_EFFECT is not None:
+                # Note this kills the direct "force world" event.
+                src = [field.PlaySoundEffect(SOUND_EFFECT)] + src
+
             # If it's a new event that is just forcing the world, just directly call the "force world" event:
             e_length = len(src)
             if e_length == 1 and not require_event_flags[1:].count(True) > 0:
-                if forced_world == 0:
+                if that_world == 0:
                     this_address = self.GO_WOB_EVENT_ADDR - EVENT_CODE_START
-                elif forced_world == 1:
+                elif that_world == 1:
                     this_address = self.GO_WOR_EVENT_ADDR - EVENT_CODE_START
 
                 if self.doors.verbose:
@@ -826,22 +844,22 @@ class Maps():
 
                 # (1) Prepend call to force world bit event, if required
                 if require_event_flags[0]:
-                    if forced_world == 0:
+                    if that_world == 0:
                         src = [field.ClearEventBit(event_bit.IN_WOR)] + src
-                    elif forced_world == 1:
+                    elif that_world == 1:
                         src = [field.SetEventBit(event_bit.IN_WOR)] + src
 
-                # (2) Prepend call to force parent map, if required
-                if require_event_flags[1]:
-                    pmap_data = force_update_parent_map[self.doors.door_rooms[d_ref]]
-                    src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + src
+                ## (2) Prepend call to force parent map, if required
+                #if require_event_flags[1]:
+                #    pmap_data = force_update_parent_map[self.doors.door_rooms[d_ref]]
+                #    src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + src
 
                 # (3) Prepend any data required by the connection
-                if require_event_flags[2]:
+                if require_event_flags[1]:
                     src = entrance_event_patch[d_ref] + src
 
                 # (4) Prepend any data required by the door
-                if require_event_flags[3]:
+                if require_event_flags[2]:
                     src = exit_event_patch[d] + src
 
                 # Write data to a new event & add it
@@ -862,16 +880,24 @@ class Maps():
                 new_event.event_address = this_address
                 self.add_event(map_id, new_event)
             elif self.exits.exit_type[d] == 'long':
+                # Write the long event on the long exit tile
+                new_event = LongMapEvent()
+                new_event.x = this_exit.x
+                new_event.y = this_exit.y
+                new_event.direction = this_exit.direction
+                new_event.size = this_exit.size
+                new_event.event_address = this_address
+                self.add_long_event(map_id, new_event)
                 # Write the event on every tile in the long exit
-                for i in range(this_exit.size + 1):
-                    new_event = MapEvent()
-                    new_event.x = this_exit.x + i * (this_exit.direction == 0)  # horizontal exit
-                    new_event.y = this_exit.y + i * (this_exit.direction > 0)  # vertical exit
-                    new_event.event_address = this_address
-                    self.add_event(map_id, new_event)
-
+                # for i in range(this_exit.size + 1):
+                #    new_event = MapEvent()
+                #    new_event.x = this_exit.x + i * (this_exit.direction == 0)  # horizontal exit
+                #    new_event.y = this_exit.y + i * (this_exit.direction > 0)  # vertical exit
+                #    new_event.event_address = this_address
+                #    self.add_event(map_id, new_event)
 
     def shared_map_exit_event(self, d, d_ref):
+        SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
         # THIS IS A SHARED ROOM (i.e. the exit d is one of a (WOB, WOR) pair: (d-4000, d).
         # SINCE THE WOB CONNECTION IS ALWAYS DONE FIRST, WHEN THE WOR CONNECTION IS WRITTEN WE CAN DO:
         #   if IS_WOR:
@@ -894,19 +920,19 @@ class Maps():
         # Collect information about the properties for the exit
         this_exit = self.get_exit(d-4000)
         map_id = self.exit_maps[d-4000]
-        this_world = room_data[self.doors.door_rooms[d]][3]
+        this_world = self.exit_world[d] # note: virtual exits should always be WoR
 
         # Collect information about the properties of the connecting exit
-        forced_world = room_data[self.doors.door_rooms[d_ref]][3]
-        forced_pmap = self.doors.door_rooms[d_ref] in force_update_parent_map.keys()
+        that_world = self.exit_world[d_ref]
+        #forced_pmap = self.doors.door_rooms[d_ref] in force_update_parent_map.keys()
 
         # (1) the connection requires a specific world that is not this world
-        # (2) the connection requires a parent map update
-        # (3) the connection requires special code (in entrance_event_patch[d_ref])
-        # (4) the door requires special code (in exit_event_patch[d])
+        ### (XXX) the connection requires a parent map update
+        # (2) the connection requires special code (in entrance_event_patch[d_ref])
+        # (3) the door requires special code (in exit_event_patch[d])
         require_event_flags = [
-            ((forced_world is not None) and (forced_world != this_world)),
-            forced_pmap,
+            ( (this_world != that_world)),
+            # forced_pmap,
             d_ref in entrance_event_patch.keys(),
             d in exit_event_patch.keys()
         ]
@@ -918,7 +944,7 @@ class Maps():
             existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
             # An event already exists.
 
-            # Add Call to existing event
+            # Add Call to existing event code
             src = [field.Call(existing_event.event_address + EVENT_CODE_START), field.Return()]
 
             # delete existing event
@@ -938,35 +964,40 @@ class Maps():
         else:
             # Probably a logical exit without tweaks.  Can use vanilla connection info.
             conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
+
         if d_ref in self.exit_maps.keys():
             conn_map = self.exit_maps[d_ref]
         else:
             # Probably a logical exit without tweaks.  Can use vanilla connection info.
             conn_map = self.exit_maps[d_ref - 4000]
+
         wor_src = [field.FadeLoadMap(conn_map, conn_data[6], True, conn_data[0], conn_data[1], fade_in=True, entrance_event=True)]
         if conn_map in [0, 1, 2]:
             # Include End command when loading world maps
             wor_src += [field.End()]
         wor_src += [field.Return()]
 
+        if SOUND_EFFECT is not None:
+            wor_src = [field.PlaySoundEffect(SOUND_EFFECT)] + wor_src
+
         # (1) Prepend call to force world bit event, if required
         if require_event_flags[0]:
-            if forced_world == 0:
+            if that_world == 0:
                 wor_src = [field.ClearEventBit(event_bit.IN_WOR)] + wor_src
-            elif forced_world == 1:
+            elif that_world == 1:
                 wor_src = [field.SetEventBit(event_bit.IN_WOR)] + wor_src
 
         # (2) Prepend call to force parent map, if required
-        if require_event_flags[1]:
-            pmap_data = force_update_parent_map[self.doors.door_rooms[d_ref]]
-            wor_src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + wor_src
+        #if require_event_flags[1]:
+        #    pmap_data = force_update_parent_map[self.doors.door_rooms[d_ref]]
+        #    wor_src = [field.SetParentMap(pmap_data[0], 2, pmap_data[1], pmap_data[2])] + wor_src
 
-        # (3) Prepend any data required by the connection
-        if require_event_flags[2]:
+        # (2) Prepend any data required by the connection
+        if require_event_flags[1]:
             wor_src = entrance_event_patch[d_ref] + wor_src
 
-        # (4) Prepend any data required by the door
-        if require_event_flags[3]:
+        # (3) Prepend any data required by the door
+        if require_event_flags[2]:
             wor_src = exit_event_patch[d] + wor_src
 
         # Write data to a new event & add it
@@ -997,13 +1028,21 @@ class Maps():
             new_event.event_address = tile_address
             self.add_event(map_id, new_event)
         elif self.exits.exit_type[d-4000] == 'long':
+            # Write the event on the long exit tile
+            new_long_event = LongMapEvent()
+            new_long_event.x = this_exit.x
+            new_long_event.y = this_exit.y
+            new_long_event.size = this_exit.size
+            new_long_event.direction = this_exit.direction
+            new_long_event.event_address = tile_address
+            self.add_long_event(map_id, new_long_event)
             # Write the event on every tile in the long exit
-            for i in range(this_exit.size + 1):
-                new_event = MapEvent()
-                new_event.x = this_exit.x + i * (this_exit.direction == 0)  # horizontal exit
-                new_event.y = this_exit.y + i * (this_exit.direction > 0)  # vertical exit
-                new_event.event_address = tile_address
-                self.add_event(map_id, new_event)
+            #for i in range(this_exit.size + 1):
+            #    new_event = MapEvent()
+            #    new_event.x = this_exit.x + i * (this_exit.direction == 0)  # horizontal exit
+            #    new_event.y = this_exit.y + i * (this_exit.direction > 0)  # vertical exit
+            #    new_event.event_address = tile_address
+            #    self.add_event(map_id, new_event)
 
     def move_event_trigger_data(self):
         # Rewrite the ROM bits that look for event trigger data

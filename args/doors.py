@@ -36,9 +36,12 @@ def parse(parser):
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
 
-
 def process(args):
-    pass
+    #pass
+    if args.door_randomize_all or args.door_randomize_dungeon_crawl or args.door_randomize_each or args.door_randomize_umaro or args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob or args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor or args.door_randomize_mt_zozo:
+        args.door_randomize = True
+    else:
+        args.door_randomize = False
 
 def flags(args):
     flags = ""

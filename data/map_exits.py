@@ -1,5 +1,5 @@
 from data.map_exit import ShortMapExit, LongMapExit
-from data.map_exit_extra import exit_data_patch
+from data.map_exit_extra import exit_data_patch, add_new_exits
 
 from data.map_event import MapEvent
 from data.rooms import room_data, force_update_parent_map
@@ -15,8 +15,9 @@ class MapExits():
     SHORT_DATA_START_ADDR = 0x1fbf02
     LONG_DATA_START_ADDR = 0x2df882
 
-    def __init__(self, rom):
+    def __init__(self, rom, DOOR_RANDO = False):
         self.rom = rom
+        self.DOOR_RANDOMIZE = DOOR_RANDO
         self.short_exits = []
         self.long_exits = []
         self.exit_original_data = {}
@@ -64,16 +65,20 @@ class MapExits():
                                                        new_exit.displaylocationname, new_exit.facing, new_exit.unknown,
                                                        new_exit.x, new_exit.y, new_exit.size, new_exit.direction]
 
-        # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
-        for e in exit_data_patch.keys():
-            if e in self.exit_original_data.keys():
-                # Update the "original data"
-                self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
-                # Copy the "original data" to the exit itself
-                self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
-            else:
-                # This is a logical exit.  Create an entry for it from its WOB pair.
-                self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
+        if self.DOOR_RANDOMIZE:
+            # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
+            for e in exit_data_patch.keys():
+                if e in self.exit_original_data.keys():
+                    # Update the "original data"
+                    self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
+                    # Copy the "original data" to the exit itself
+                    self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
+                else:
+                    # This is a logical exit.  Create an entry for it from its WOB pair.
+                    self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
+
+            for e in add_new_exits.keys():
+                pass
 
     def write(self):
         for exit_index, exit in enumerate(self.short_exits):
