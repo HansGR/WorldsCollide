@@ -41,7 +41,7 @@ class MapExits():
             self.exit_type[new_exit.index] = 'short'
 
             # Archive original data for randomizing
-            self.exit_original_data[new_exit.index] = [new_exit.dest_x, new_exit.dest_y, new_exit.dest_map,
+            self.exit_original_data[new_exit.index] = [new_exit.dest_map, new_exit.dest_x, new_exit.dest_y,
                                                        new_exit.refreshparentmap, new_exit.enterlowZlevel,
                                                        new_exit.displaylocationname, new_exit.facing, new_exit.unknown,
                                                        new_exit.x, new_exit.y, new_exit.size, new_exit.direction]
@@ -60,7 +60,7 @@ class MapExits():
             self.exit_type[new_exit.index] = 'long'
 
             # Archive original data for randomizing
-            self.exit_original_data[new_exit.index] = [new_exit.dest_x, new_exit.dest_y, new_exit.dest_map,
+            self.exit_original_data[new_exit.index] = [new_exit.dest_map, new_exit.dest_x, new_exit.dest_y,
                                                        new_exit.refreshparentmap, new_exit.enterlowZlevel,
                                                        new_exit.displaylocationname, new_exit.facing, new_exit.unknown,
                                                        new_exit.x, new_exit.y, new_exit.size, new_exit.direction]
@@ -104,11 +104,11 @@ class MapExits():
     def copy_exit_info(self, mod_exit, pair_ID, type='dest'):
         # Copy information to mod_exit from another exit with exitID = pair_ID.
         # Original door data is stored in self.exit_original_data[exitID] as:
-        #   [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
+        #   [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
         pair_info = self.exit_original_data[pair_ID]
-        mod_exit.dest_x = pair_info[0]
-        mod_exit.dest_y = pair_info[1]
-        mod_exit.dest_map = pair_info[2]
+        mod_exit.dest_map = pair_info[0]
+        mod_exit.dest_x = pair_info[1]
+        mod_exit.dest_y = pair_info[2]
         # mod_exit.refreshparentmap = pair_info[3]  # do not want to copy refresh parent map!  Messes up warp stones.
         mod_exit.enterlowZlevel = pair_info[4]
         mod_exit.displaylocationname = pair_info[5]

@@ -28,8 +28,8 @@ room_data = {
     'branch-mz': [ [537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
 
-    0 : [ [i for i in range(45)], [ ], [ ], 0],  # World of Balance
-    1 : [ [i for i in range(45,80)], [ ], [ ], 1],  # World of Ruin
+    0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [ ], 0],  # World of Balance
+    1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [ ], 1],  # World of Ruin
 
     2 : [ [81], [ ], [ ], 0], #Blackjack Outside
     3 : [ [82, 83], [ ], [ ], 0], #Blackjack Gambling Room
@@ -513,7 +513,7 @@ room_data = {
 
     # VECTOR
     321 : [ [1226], [ ], [ ], 0], #Vector After Train Ride
-    322 : [ [1229], [ ], [ ], 0], #Vector Outside
+    322 : [ [1228, 1229], [ ], [ ], 0], #Vector Outside
     323 : [ [670], [ ], [ ], 0], #Imperial Castle Entrance
 
     325 : [ [671, 672, 673], [ ], [ ], 0], #Imperial Castle Roof
@@ -655,8 +655,8 @@ room_data = {
 
 
 
-    # THAMASA - does WC only use this one Thamasa map?  Probably!  That's why barrels don't rejuvenate.
-    447 : [ [922, 923, 924, 925, 926, 927, 928], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
+    # THAMASA - does WC only use this one Thamasa map (0x154)?
+    447 : [ [922, 923, 924, 925, 926, 927, 928, 1255], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
     450 : [ [950, 951], [ ], [ ], 0], #Thamasa Arsenal
     451 : [ [952], [ ], [ ], 0], #Thamasa Inn
     452 : [ [953], [ ], [ ], 0], #Thamasa Item Shop
@@ -664,7 +664,9 @@ room_data = {
     454 : [ [955, 956], [ ], [ ], 0], #Strago's House First Floor
     455 : [ [957], [ ], [ ], 0], #Strago's House Second Floor
     456 : [ [958], [ ], [ ], 0], #Thamasa Relic
-    '447R': [[4922, 4923, 4924, 4925, 4926, 4927, 4928], [], [], 1],  # Thamasa After Kefka Outside WoR
+
+    449 : [ [943, 944, 945, 946, 947, 948, 949, 1261], [], [], 1],  # Thamasa WoR outside (0x158)
+    #'447R': [[4922, 4923, 4924, 4925, 4926, 4927, 4928], [], [], 1],  # Thamasa After Kefka Outside WoR
     '450R': [[4950, 4951], [], [], 1],  # Thamasa Arsenal
     '451R': [[4952], [], [], 1],  # Thamasa Inn
     '452R': [[4953], [], [], 1],  # Thamasa Item Shop
@@ -816,7 +818,12 @@ shared_exits = {
 
     38 : [37, 39],  # Zozo WoB entrance
 
-    531 : [532]     # Mt. Zozo, entrance to dragon room
+    531 : [532],    # Mt. Zozo, entrance to dragon room
+
+    1156 : [1157, 1158, 1159],     # Figaro Castle exits to world map
+
+    1255: [1254, 1253],   # "Thamasa After Kefka WoB exits to world map"
+    1261: [1259, 1260]    # "Thamasa WoR exits to world map"
 }
 
 # List of doors that CANNOT be connected to each other.  Only rare instances.

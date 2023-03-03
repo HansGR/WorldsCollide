@@ -236,7 +236,7 @@ exit_data = {
     206: [224, "Figaro Castle East Tower Outside"],
     207: [231, "Figaro Castle Below Inn Outside"],
     208: [233, "Figaro Castle Below Library Outside"],
-    1156: [None, "Figaro Castle Outside South to World Map"],
+    1156: [1502, "Figaro Castle Outside South to World Map"],
     1157: [None, "Figaro Castle Outside East to World Map"],
     1158: [None, "Figaro Castle Outside North to World Map"],
     1159: [None, "Figaro Castle Outside West to World Map"],
@@ -301,7 +301,7 @@ exit_data = {
     266: [270, "Cave to South Figaro Big Room to Single Chest Room WoB"],
     267: [264, "Cave to South Figaro Big Room to Small Hallway WoB"],
     268: [263, "Cave to South Figaro Entrance Room to Small Hallway WoB"],
-    269: [None, "Cave to South Figaro to World Map WoB"],
+    269: [1506, "Cave to South Figaro to World Map WoB"],
     270: [266, "Cave to South Figaro Single Chest Room WoB"],
     271: [265, "Cave to South Figaro Turtle Room to Big Room WoB"],
     272: [None, "Cave to South Figaro Turtle Room to Outside WoB"],
@@ -468,7 +468,7 @@ exit_data = {
     411: [412, "Crazy Old Man's House Outside to Inside WoB"],
     1183: [None, "Crazy Old Man's House to World Map WoB"],
     412: [411, "Crazy Old Man's House Inside to Outside"],
-    1184: [None, "Imperial Camp"],
+    1184: [1501, "Imperial Camp"],
     413: [None, "Doma Poisoning Event - 3F Outside to Inside"],
     414: [None, "Doma Poisoning Event - 1F Outside Main Door"],
     415: [None, "Doma Poisoning Event - 2F Outside to Main Room"],
@@ -774,7 +774,7 @@ exit_data = {
     668: [None, "Vector Healer House Outside"],
     669: [None, "Vector Inn Outside"],
     1227: [None, "Vector To Imperial Castle"],
-    1228: [None, "Vector South to World Map"],
+    1228: [1505, "Vector South to World Map"],
     1229: [703, "Vector To Magitek"],
     670: [1230, "Imperial Castle Main Door Outside"],
     671: [693, "Imperial Castle Roof Outside Left Door"],
@@ -1078,7 +1078,7 @@ exit_data = {
     928: [952, "Thamasa After Kefka Inn Outside WoB"],
     1253: [None, "Thamasa After Kefka North to World Map WoB"],
     1254: [None, "Thamasa After Kefka West to World Map WoB"],
-    1255: [None, "Thamasa After Kefka South to World Map WoB"],
+    1255: [1504, "Thamasa After Kefka South to World Map WoB"],
     929: [None, "Thamasa Kefka Attack Arsenal West Outside WoB"],
     930: [None, "Thamasa Kefka Attack Arsenal East Outside WoB"],
     931: [None, "Thamasa Kefka Attack Item Outside WoB"],
@@ -1105,7 +1105,7 @@ exit_data = {
     949: [None, "Thamasa Inn Outside WoR"],
     1259: [None, "Thamasa North to World Map WoR"],
     1260: [None, "Thamasa West to World Map WoR"],
-    1261: [None, "Thamasa South to World Map WoR"],
+    1261: [75, "Thamasa South to World Map WoR"],
     950: [936, "Thamasa Arsenal Inside West"],
     951: [937, "Thamasa Arsenal Inside East"],
     952: [942, "Thamasa Inn Inside"],
@@ -1257,7 +1257,7 @@ exit_data = {
     1270: [48, "Cid's House Northeast to World Map"],
     1081: [1080, "Cid's House Inside"],
     1271: [1265, "Cid's House Beach"],
-    1272: [None, "Solitary Island Cliff"],
+    1272: [1509, "Solitary Island Cliff"],
     1273: [None, "Cid's House Beach with No Fish"],
     1082: [None, "Ancient Cave North to Figaro Castle"],
     1083: [1084, "Ancient Cave First Room South Left Door"],
@@ -1314,6 +1314,17 @@ exit_data = {
     1128: [1126, "Coliseum Inn Door"],
     1280: [56,   "Coliseum to World Map"],
 
+    # EVENT TILE ENTRANCES:
+    1501: [1184, 'Imperial Camp WoB entrance'],
+    1502: [1156, 'Figaro Castle WoB'],
+    1503: [1156, 'Figaro Castle WoB (kohlingen)'],  # Hmm.....
+    1504: [1255, 'Thamasa WoB'],  # WC sets LEO_BURIED_THAMASA, so game loads map 0x154 (the first thamasa map)
+    1505: [1228, "World Map entrance to Vector"],
+    1506: [269, 'Cave to South Figaro South Entrance WoB'],
+    1507: [5156, 'Figaro Castle WoR'],
+    1508: [5156, 'Figaro Castle WoR (kohlingen)'],  # HMM.....
+    1509: [1272, 'Solitary Island cliff entrance'],
+
     # WORLD OF RUIN (logical) DOORS:
     4600: [4630, "Zozo Weapon Outside WOR"],
     4601: [4629, "Zozo Armor Outside WOR"],
@@ -1331,7 +1342,11 @@ exit_data = {
     4631: [4602, "Zozo Clock Puzzle Room 1F Inside WOR"],
     4632: [4603, "Zozo Clock Puzzle Room 2F Inside WOR"],
     4633: [4607, "Zozo Cafe 3F Right Inside WOR"],
-    5224: [70, "Zozo WoR to World Map"]
+    5156: [1507, "Figaro Castle WoR exit to world map"],
+    5224: [70, "Zozo WoR to World Map"],
+    5213: [73, "Jidoor WoR to World Map South"],
+    5214: [73, "Jidoor WoR to World Map West"],
+    5215: [74, "Jidoor WoR to World Map East"]
 }
 
 # Create functions to update values:
@@ -1350,46 +1365,66 @@ set_size =                lambda value, info: info[:10] + [value] + info[11:]
 set_direction =           lambda value, info: info[:11] + [value]
 
 # Patch functions for individual exits:
+# Note: no longer need to 'shorten to fit', after incorporating LongMapEvents!
 exit_data_patch = {
-    1135: lambda info: set_x( 15,
-                       set_size( 28,
-                       set_dest_y( 34,
+    # NARSHE
+    1135: lambda info: set_dest_y( 34,
                        set_dest_x( 84,
-                       set_dest_map(0, info) ) ) ) ),   # [4, "Narshe To World Map WoB"].  Shorten to fit.
-    1136: lambda info: set_x( 35,
-                       set_size( 4, info) ),        # [1137, "Narshe To Northern Mines Outside WoB"].  Shorten to fit.
+                       set_dest_map(0, info) ) ),   # [4, "Narshe To World Map WoB"].  Shorten to fit: set_x( 15, set_size( 28, ... ) )
+    #1136: lambda info: set_x( 35,
+    #                   set_size( 4, info) ),        # [1137, "Narshe To Northern Mines Outside WoB"].  Shorten to fit.
     1143: lambda info: set_dest_y( 34,
                        set_dest_x( 115,
                        set_dest_map(1, info) ) ),  # [67, "Narshe To World Map WoR"],
+
+    # ESPER MOUNTAIN
     1047: lambda info: set_dest_y( 131,
                        set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
+
+    # SEALED GATE CAVE
     1064: lambda info: set_dest_map(0, info),     # Cave to the Sealed Gate: return to WoB
 
-    1204: lambda info: set_x(12,
-                             set_size(9, info)),  # Mt. Zozo, Cyan's cliff.  Shorten exit for exit events.
+    # 1204: lambda info: set_x(12, set_size(9, info)),  # Mt. Zozo, Cyan's cliff.  Shorten exit for exit events.
 
-    1224: lambda info: set_y( 42,
-                       set_size(5,
-                       set_dest_map(0, info) ) ), # Zozo WoB.  Shorten exit for exit events.
+    # VECTOR
+    1228: lambda info: set_dest_map(0, info),    # Vector south exit to world map
 
-    # WOR patches (logical)
-    5224: lambda info: set_dest_y(131,
-                       set_dest_x(44,
+    # ZOZO
+    1224: lambda info: set_dest_map(0, info), # Zozo WoB.  Shorten exit for exit events: set_y( 42, set_size(5, ...) )
+    5224: lambda info: set_dest_x(44,
+                       set_dest_y(131,
                        set_dest_map(1, info))),   # Zozo WoR.
 
-    # Note: all Jidoor exits should go to WoB, we'll write long_event tiles to handle WoR
-    #1213: lambda info: set_dest_map(info, 0),   # [28, "Jidoor South to World Map"],
-    #1214: lambda info: set_dest_map(info, 0),   # [28, "Jidoor West to World Map"],
-    #1215: lambda info: set_dest_map(info, 0)    # [28, "Jidoor East to World Map"],
+    # JIDOOR
+    1213: lambda info: set_dest_map(0, info),   # [28, "Jidoor South to World Map"],
+    1214: lambda info: set_dest_map(0, info),   # [28, "Jidoor West to World Map"],
+    1215: lambda info: set_dest_map(0, info),    # [28, "Jidoor East to World Map"],
+    5213: lambda info: set_dest_x(33,
+                       set_dest_y(156,
+                       set_dest_map(1, info) ) ),   # [73, "Jidoor South to World Map WoR"],
+    5214: lambda info: set_dest_x(34,
+                       set_dest_y(157,
+                       set_dest_map(1, info) ) ),   # [73, "Jidoor West to World Map WoR"],
+    5215: lambda info: set_dest_x(35,
+                       set_dest_y(157,
+                       set_dest_map(1, info) ) )   # [74, "Jidoor East to World Map WoR"],
+}
+
+# Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).
+# Doors listed here will move that event tile to the new partner in maps.connect_exits().
+has_event_entrance = {
+    # door_id : [map_id, x, y] for event entrance to this door
+    1204 : [0xb4, 44, 55] # Cyan's cliff: start the reward cutscene
 }
 
 # Add exits to make the vanilla rom consistent (it handles some non-event exits using events)
-# [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
+# [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 add_new_exits = {
 
 }
 
 # exit number in WOB : equivalent exit in WOR
+# (only need to list if both are real doors)
 doors_WOB_WOR = {
     113: 145,
     114: 146,

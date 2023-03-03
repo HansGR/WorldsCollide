@@ -1,72 +1,95 @@
-# event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description]
+# event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description, location]
 #   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
+#   location = [map_id, x, y]
 #   None = not implemented
 event_exit_info = {
     # UMARO'S CAVE
-    2001: [int('0cd8d4', 16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor top'],
-    2002: [int('0cd8b2', 16), 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor left'],
-    2003: [int('0cd93a', 16), 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to 2nd Room'],
-    2004: [int('0cd967', 16), 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to Boss Room'],
-    2005: [int('0cd918', 16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor'],
-    2006: [int('0cd918', 16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***'],
-    2007: [int('0cd8f6', 16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor'],
-    2008: [int('0cd8f6', 16), 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***'],
-    2009: [int('0c3839', 16), 50, 1, [False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe'],
-    2010: [int('0c37e7', 16), 82, 67, [True, True, True], 'Narshe Peak WoR entrance to Umaros Cave'],
+    2001: [0xcd8d4, 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor top', [281, 11, 53] ],
+    2002: [0xcd8b2, 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor left', [281, 10, 54] ],
+    2003: [0xcd93a, 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to 2nd Room', [281, 31, 9] ],
+    2004: [0xcd967, 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to Boss Room', [281, 40, 12] ],
+    2005: [0xcd918, 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor', [282, 33, 26] ],
+    2006: [0xcd918, 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***', [282, 33, 26] ],
+    2007: [0xcd8f6, 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor', [282, 14, 30] ],
+    2008: [0xcd8f6, 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***', [282, 14, 30] ],
+    2009: [0xc3839, 50, 1, [False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe', [283, 57, 7] ],
+    2010: [0xc37e7, 82, 67, [True, True, True], 'Narshe Peak WoR entrance to Umaros Cave', [35, 9, 12] ],
 
     # ESPER MOUNTAIN
-    2011: [int('0bee80', 16), 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump west'],
+    2011: [0xbee80, 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump west', [0x177, 36, 53] ],
     # forced connection, no mod
-    2012: [int('0bee71', 16), 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump middle'],
+    2012: [0xbee71, 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump middle', [0x177, 39, 54] ],
     # forced connection, no mod
-    2013: [int('0bee62', 16), 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump east'],
+    2013: [0xbee62, 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump east', [0x177, 47, 53] ],
     # forced connection, no mod
-    2014: [int('0bee8f', 16), 47, 30, [False, False, True], 'Esper Mtn Pit Room South trapdoor'],
-    2015: [int('0beebe', 16), 46, 30, [False, False, True], 'Esper Mtn Pit Room North trapdoor'],
+    2014: [0xbee8f, 47, 30, [False, False, True], 'Esper Mtn Pit Room South trapdoor', [0x177, 11, 51] ],
+    2015: [0xbeebe, 46, 30, [False, False, True], 'Esper Mtn Pit Room North trapdoor', [0x177, 12, 46] ],
     # no "38 (Hold screen)" after transition
-    2016: [int('0beeec', 16), 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor'],
+    2016: [0xbeeec, 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor', [0x177, 17, 49]],
 
     # OWZER'S MANSION
-    2017: [int('0b4b86', 16), 47, 1, [False, False, False], 'Owzers Mansion switching door left'],
-    2018: [int('0b4b86', 16), 47, 1, [False, False, False], 'Owzers Mansion switching door right'],
+    2017: [0xb4b86, 47, 1, [False, False, False], 'Owzers Mansion switching door left', [0x0CF, 90, 50]],
+    2018: [0xb4b86, 47, 1, [False, False, False], 'Owzers Mansion switching door right', [0x0CF, 92, 50]],
     # same destination, same event!
-    2019: [int('0b4bb5', 16), 53, 3, [False, False, False], 'Owzers Mansion behind switching door exit'],
+    2019: [0xb4bb5, 53, 3, [False, False, False], 'Owzers Mansion behind switching door exit', [0x0CF, 85, 50]],
     # set event bit 0x24c?
-    2020: [int('0b4c94', 16), 13, 1, [False, False, False], 'Owzers Mansion floating chest room exit'],
-    2021: [int('0b4bea', 16), 51, 1, [False, False, False], 'Owzers Mansion save point room oneway'],
+    2020: [0xb4c94, 13, 1, [False, False, False], 'Owzers Mansion floating chest room exit', [0x0CF, 76, 51]],
+    2021: [0xb4bea, 51, 1, [False, False, False], 'Owzers Mansion save point room oneway', [0x0CF, 86, 38]],
 
     # MAGITEK FACTORY
-    2022: [int('0c7651', 16), 49, 29, [False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile'],
+    2022: [0xc7651, 49, 29, [False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile', [0x106, 22, 53]],
     # will require address patching
-    '2022a': [int('0c765f', 16), 0, 0, [None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile'],
+    '2022a': [0xc765f, 0, 0, [None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile', [0x106, 22, 54]],
     # same exit as above; requires address patch & tile edit
-    2023: [int('0c7682', 16), 37, 0, [None, None, None], 'Magitek factory platform elevator to Mtek-1'],
-    2024: [int('0c7905', 16), 50, 10, [False, False, False], 'Magitek factory 2 pipe exit loop'],
-    2025: [int('0c7565', 16), 86, 58, [True, False, False], 'Magitek factory 2 conveyor to pit left tile'],
+    2023: [0xc7682, 37, 0, [None, None, None], 'Magitek factory platform elevator to Mtek-1', [0x106, 10, 54]],
+    2024: [0xc7905, 50, 10, [False, False, False], 'Magitek factory 2 pipe exit loop', [0x107, 49, 48]],
+    2025: [0xc7565, 86, 58, [True, False, False], 'Magitek factory 2 conveyor to pit left tile', [0x107, 36, 44]],
     # will require address patching
-    '2025a': [int('0c7581', 16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit mid tile'],
+    '2025a': [0xc7581, 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit mid tile', [0x107, 37, 44]],
     # same exit as above; requires address patch & tile edit
-    '2025b': [int('0c7573', 16), 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile'],
+    '2025b': [0xc7573, 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile', [0x107, 38, 44]],
     # same exit as above; requires address patch & tile edit
-    2026: [int('0c75f6', 16), 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2'],
-    2027: [int('0c7f43', 16), 217, 131, [False, False, False], 'Magitek factory lab Cid''s elevator'],
+    2026: [0xc75f6, 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2', [0x108, 6, 6]],
+    2027: [0xc7f43, 217, 131, [False, False, False], 'Magitek factory lab Cid''s elevator', [0x112, 20, 13]],
     # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028: [int('0c8022', 16), 309, 152, [False, True, False], 'Magitek factory minecart start event'],
-    # Started by talking to Cid.
+    2028: [0xc8022, 309, 152, [False, True, False], 'Magitek factory minecart start event', [0x110, 'NPC', 0]],
+    # NPC #0 on this map. Not an event tile.  Started by talking to Cid.  Position: # [0x110, 9, 51]
 
     # CAVE TO THE SEALED GATE
-    2029: [int('0b3176', 16), 84, 0, [None, None, None], 'Cave to the Sealed Gate grand staircase'],
+    2029: [0xb3176, 84, 0, [None, None, None], 'Cave to the Sealed Gate grand staircase', [0x180, 71, 15]],
     # Grand staircase event
-    2030: [int('0b36b5', 16), 32, 0, [None, None, None], 'Cave to the Sealed Gate switch bridges'],
+    2030: [0xb33c9, 32, 0, [None, None, None], 'Cave to the Sealed Gate switch bridges', [0x180, 104, 17]],
     # Switch bridge events
-    2031: [int('0b2a9f', 16), 7, 1, [False, False, False], 'Cave to the Sealed Gate shortcut exit'],  # Shortcut exit
+    2031: [0xb2a9f, 7, 1, [False, False, False], 'Cave to the Sealed Gate shortcut exit', [0x180, 5, 43]],  # Shortcut exit
 
     # ZOZO (WORLD OF BALANCE)
-    2032: [int('0a963d', 16), 22, 0, [None, None, None], 'Zozo hook descent from building'],
-    2033: [int('000000', 16), 0, 0, [None, None, None], 'Zozo line of walking guys (logical)'],
+    2032: [0xa963d, 22, 0, [None, None, None], 'Zozo hook descent from building', [0x0DD, 35, 41] ],
+    2033: [0x00000, 0, 0, [None, None, None], 'Zozo line of walking guys (logical)', [0x0E1, 0, 0] ],
 
     # LETE RIVER
-    2034: [0x0b059f, 0, 0, [None, None, None], 'Lete River start']
+    2034: [0xb059f, 0, 0, [None, None, None], 'Lete River start', [0x071, 31, 51]],
+
+    # EVENT TILES that behave as if they are doors:
+    #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
+    #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
+    #       Other: Opera House Lobby, Mobliz Outside, ...
+    # To do this: must add index to map_exit_extra.
+    1501: [0xb0bb7, 0, 0, [None, None, None], 'Imperial Camp WoB', [0x000, 179, 71] ],
+    1502: [0xa5eb5, 0, 0, [None, None, None], 'Figaro Castle WoB', [0x000, 64, 76] ],
+    '1502a': [0xa5eb5, 0, 0, [None, None, None], 'Figaro Castle WoB 2', [0x000, 65, 76] ],
+    1503: [0xa5ec2, 0, 0, [None, None, None], 'Figaro Castle WoB (kohlingen)', [0x000, 30, 48] ],
+    '1503c': [0xa5ec2, 0, 0, [None, None, None], 'Figaro Castle WoB (kohlingen) 2', [0x000, 31, 48] ],
+    1504: [0xbd2ee, 0, 0, [None, None, None], 'Thamasa WoB', [0x000, 250, 128] ],  # wtf is this event doing?
+    1505: [0xa5ecf, 14, 7, [None, None, None], 'Vector entrance event tile', [0x000, 120, 187] ],
+    '1505a': [0xa5ecf, 14, 7, [None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187] ],
+    1506: [0xa5ee3, 0, 0, [None, None, None], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102] ],
+
+    1507: [0xa5f0b, 0, 0, [None, None, None], 'Figaro Castle WoR', [0x001, 81, 85] ],
+    '1507a': [0xa5f0b, 0, 0, [None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85] ],
+    1508: [0xa5f18, 0, 0, [None, None, None], 'Figaro Castle WoR (kohlingen)', [0x001, 53, 58] ],
+    '1508a': [0xa5f18, 0, 0, [None, None, None], 'Figaro Castle WoR (kohlingen) 2', [0x001, 54, 58] ],
+    1509: [0xa5f39, 0, 0, [None, None, None], 'Solitary Island cliff entrance', [0x001, 73, 231] ]
+
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -135,10 +158,6 @@ entrance_event_patch = {
 }
 
 
-has_event_entrance = {
-    1204 : [0xb4, 44, 55] # map_id, x, y for event entrance to this door
-}
-
 def minecart_event_mod(src, src_end):
     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.
     # C0    If ($1E80($06B) is set), branch to $(new event) that sends you to Vector map instead
@@ -204,11 +223,18 @@ event_address_patch = {
 
 }
 
-# We define "long events" similarly to "long exits": multiple event tiles that are all logically the same exit and share
+# We define "multi events" as multiple event tiles that are all logically the same exit and partially share
 # the same code.  The event tile with the earliest address should be the key event, others will be referenced to it.
-long_events = {
+multi_events = {
     2022: ['2022a'],  # Magitek factory room 1 conveyor belt
-    2025: ['2025a', '2025b']  # Magitek factory room 1 conveyor belt
+    2025: ['2025a', '2025b'],  # Magitek factory room 1 conveyor belt
+
+    1502: ['1502a'],  # Figaro Castle WoB entrance tiles
+    1503: ['1503c'],  # Figaro Castle WoB (kohlingen) entrance tiles
+    1505: ['1505a'],   # Vector entrance tiles WoB
+
+    1507: ['1507a'],  # Figaro Castle WoR entrance tiles
+    1508: ['1508a']   # Figaro Castle WoR (kohlingen) entrance tiles
 }
 
 # Some events need to be modified by different parts of the code before being written.  We identify them here by where

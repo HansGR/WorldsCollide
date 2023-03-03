@@ -1,49 +1,61 @@
+from instruction import field
+
 def delete_nops(src):
     # Remove No Operation (NOPs, 0xfd) commands from a source string
     sp = simple_parser(src)
     out = []
     for o, p in sp:
         # print('\t', hex(o)[2:], [hex(a)[2:] for a in p])
-        if o != 0xfd:
-            out.append(o)
-            out.extend(p)
+        if isinstance(o, int):
+            if o != 0xfd:
+                out.append(o)
+                out.extend(p)
+        else:
+            if o.opcode != 0xfd:
+                out.append(o)
     return out
 
 def simple_parser(src):
     while len(src) > 0:
         opcode = src.pop(0)
-        split = OP_LENGTH[opcode]
+        if isinstance(opcode, int):
+            split = OP_LENGTH[opcode]
 
-        if split == 'var':
-            if opcode < 0x35:
-                # Character action queues; search for termination (0xff)
-                split = src.index(0xff)+1
+            if split == 'var':
+                if opcode < 0x35:
+                    # Character action queues; search for termination (0xff)
+                    split = src.index(0xff)+1
 
-            elif opcode == 0x73 or opcode == 0x74:
-                # Replace background; get split from tile size
-                tilesize = src[2]*src[3]
-                split = 4 + tilesize
+                elif opcode == 0x73 or opcode == 0x74:
+                    # Replace background; get split from tile size
+                    tilesize = src[2]*src[3]
+                    split = 4 + tilesize
 
-            elif opcode == 0xb0:
-                # Repeating block of commands; look for 0xb1 (terminate) or 0xbc (terminate if event bit is set, 2 params)
-                inds = [len(src) for i in range(2)]
-                if 0xb1 in src:
-                    inds[0] = src.index(0xb1)+1
-                if 0xbc in src:
-                    inds[1] = src.index(0xbc)+3
-                split = min(inds)
+                elif opcode == 0xb0:
+                    # Repeating block of commands; look for 0xb1 (terminate) or 0xbc (terminate if event bit is set, 2 params)
+                    inds = [len(src) for i in range(2)]
+                    if 0xb1 in src:
+                        inds[0] = src.index(0xb1)+1
+                    if 0xbc in src:
+                        inds[1] = src.index(0xbc)+3
+                    split = min(inds)
 
-            elif opcode == 0xb6:
-                # Dialog box with choices; there's no way to determine how many options there are locally in the event,
-                # and most of them are 2.  Here's hoping.
-                num_options = 2
-                split = 3*num_options
+                elif opcode == 0xb6:
+                    # Dialog box with choices; there's no way to determine how many options there are locally in the event,
+                    # and most of them are 2.  Here's hoping.
+                    num_options = 2
+                    split = 3*num_options
 
-            else:
-                raise Exception('Unimplemented variable opcode: ', opcode)
+                else:
+                    raise Exception('Unimplemented variable opcode: ', opcode)
 
-        params = src[:split]
-        src = src[split:]
+            params = src[:split]
+            src = src[split:]
+
+        else:
+            # This is probably a Field class object.  just move on.
+            params = []
+
         yield opcode, params
 
 OP_LENGTH = {
