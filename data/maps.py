@@ -27,7 +27,7 @@ import instruction.field.entity as field_entity
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
     multi_events
 from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance
-from data.rooms import room_data, force_update_parent_map, shared_exits
+from data.rooms import room_data, exit_world, force_update_parent_map, shared_exits
 
 from data.parse import delete_nops
 
@@ -76,13 +76,7 @@ class Maps():
         self.GO_WOB_EVENT_ADDR = space.start_address
 
         # Record the vanilla world of each door
-        self.exit_world = {}
-        for r in room_data.keys():
-            for d in room_data[r][0]:
-                self.exit_world[d] = room_data[r][-1]
-                if d in shared_exits.keys():
-                    for ds in shared_exits[d]:
-                        self.exit_world[ds] = room_data[r][-1]
+        self.exit_world = exit_world
 
         # Perform cleanup actions if door randomization is happening
         if args.door_randomize is True:
@@ -149,6 +143,18 @@ class Maps():
                 le = self.exits.long_exits[i + counter - num_short_exits]
                 self.exit_x_y[i + counter] = [le.x, le.y]
             counter += num_long
+
+        # Add non-standard "exits"
+        for e in exit_data.keys():
+            if e not in self.exit_maps.keys():
+                if (e-4000) in self.exit_maps.keys():
+                    # Logical exit
+                    self.exit_maps[e] = self.exit_maps[e-4000]
+                    self.exit_x_y[e] = self.exit_x_y[e-4000]
+                elif e in event_exit_info.keys():
+                    # Event tile as exit.
+                    self.exit_maps[e] = event_exit_info[e][5][0]
+                    self.exit_x_y[e] = event_exit_info[e][5][1:]
 
         # f = open('exit_original_info.txt', 'w')
         # f.write(
@@ -378,21 +384,20 @@ class Maps():
         self.world_map.mod()
         self.doors.mod()
         ### HACK FOR TESTING
-        # from data.map_exit_extra import exit_data as ed
-        # for r in room_data.keys():
-        #     for d in room_data[r][0]:
-        #         self.doors.door_rooms[d] = r
-        #         self.doors.door_descr[d] = ed[d][1]
-        #     for d in room_data[r][1]:
-        #         self.doors.door_descr[d] = event_exit_info[d][4]
-        #         self.doors.door_descr[d+1000] = event_exit_info[d][4] + "DEST"
-        #
-        # self.doors.map = [[[81, 582],    # Airship <--> Owzer Basement stairs,
-        #                    [587, 1032]],   # switch true door <--> esper mtn boss room
-        #                   [[2017, 3010], # switch Door left --> umaro's cave
-        #                    [2018, 3014], # switch door right --> esper mtn
-        #                    ] ]
+        #newmap = [
+        #    [[81, 736]],  # Airship <--> Umaro Cave 2nd room mid door,
+        #    [[2005, 3015], # Umaro Cave 2nd Room west trapdoor --> Esper mtn north pit
+        #     [2015, 3005]], # Esper mtn north pit --> Umaro cave
+        #]
+        #self.doorRandoOverride(newmap)
         ###
+        if self.doors.verbose:
+            print('Door connections:')
+            for m in self.doors.map[0]:
+                print('\t' + str(m[0]) + "<-->" + str(m[1]) )
+            print('One-way connections:')
+            for m in self.doors.map[1]:
+                print('\t', m[0], " -> ", m[1])
         self.events.mod()  # self.events.mod(self.doors, self)
         self.long_events.mod()  # LONG EVENTS
 
@@ -412,6 +417,20 @@ class Maps():
         # Add doors to the spoiler log
         if len(self.doors.map) > 0:
             self.doors.print()
+
+    def doorRandoOverride(self, newmap):
+        from data.map_exit_extra import exit_data as ed
+        for r in room_data.keys():
+            for d in room_data[r][0]:
+                self.doors.door_rooms[d] = r
+                if d > 4000:
+                    self.doors.door_descr[d] = ed[d-4000][1] + "LOGICAL WOR"
+                else:
+                    self.doors.door_descr[d] = ed[d][1]
+        for d in room_data[r][1]:
+            self.doors.door_descr[d] = event_exit_info[d][4]
+            self.doors.door_descr[d+1000] = event_exit_info[d][4] + "DEST"
+        self.doors.map = newmap
 
     def testLongEvents(self):
         ### FOR TESTING: MAKE SOME LONG EVENTS TO VERIFY THE CODE WORKS CORRECTLY
@@ -479,12 +498,12 @@ class Maps():
     def write(self):
         #self.write_post_diagnostic_info()
 
-        # Try the Transitions class
+        # Patch the door randomizer exits & events before writing:
+        # Connect one-way event exits using the Transitions class
         self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data)
         for t in self.transitions.transitions:
             print(t.exit.id, t.entr.id)
         self.transitions.write(maps=self)
-        # Patch the door randomizer exits & events before writing:
         #self.connect_events()
         self.connect_exits()
 
@@ -539,158 +558,158 @@ class Maps():
             npcs_ptr[1] = (cur_map["npcs_ptr"] & 0xff00) >> 8
             self.rom.set_bytes(npcs_ptr_address, npcs_ptr)
 
-    def connect_events(self):
-        # Perform Event modification for one-way entrances
-        # For the connection "Event1" --> "Event2":
-        for m in self.doors.map[1]:
-            if m[0] >= 2000:
-                # Collect exit event information for patching
-                exit_info = event_exit_info[m[0]]
-                exit_address = exit_info[0]
-                exit_length = exit_info[1]
-                exit_split = exit_info[2]
-                exit_state = exit_info[3]
-                exit_descr = exit_info[4]
-                exit_location = exit_info[5]
-
-                src = self.rom.get_bytes(exit_address, exit_split)  # First half of event
-
-            else:
-                # Handle the small number of one-way exits coded as doors
-                exit_address = None
-                exit_state = [False, False, False]
-                this_exit = self.get_exit(m[0])
-                exit_location = [self.exit_maps[m[0]], this_exit.x, this_exit.y]
-
-                src = [0x6a]
-
-            if m[1] >= 3000:
-                # Right now the convention is that vanilla one-way entrance ID = (vanilla one-way exit ID + 1000)
-                entr_info = event_exit_info[m[1] - 1000]
-                entr_address = entr_info[0]
-                entr_length = entr_info[1]
-                entr_split = entr_info[2]
-                entr_state = entr_info[3]
-                entr_descr = entr_info[4]
-                entr_location = entr_info[5]
-
-                src_end = self.rom.get_bytes(entr_address + entr_split,
-                                             entr_length - entr_split)  # Second half of event
-
-            else:
-                # Handle the small number of one-way entrances from doors
-                entr_address = None
-                entr_state = [False, False, False]
-                entr_location = self.exits.exit_original_data[m[1] - 1000]
-                # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
-
-                # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
-                src_end = [entr_location[0], entr_location[6] << 4, entr_location[1], entr_location[2], 0x80, 0xfe]
-
-            # Ignore forced vanilla / logical event patches
-            if exit_address != entr_address:
-
-                # Check for other event patches & implement if found
-                if m[0] in exit_event_patch.keys():
-                    [src, src_end] = exit_event_patch[m[0]](src, src_end)
-                if m[1] in entrance_event_patch.keys():
-                    [src, src_end] = entrance_event_patch[m[1]](src, src_end)
-
-                # Perform common event patches
-                if exit_state != entr_state:
-                    ex_patch = []
-                    en_patch = []
-                    if exit_state[0] and not entr_state[0]:
-                        # Character is hidden during the transition and not unhidden later.
-                        # Add a "Show object 31" line ("0x41 0x31", two bytes)
-                        en_patch += [0x41, 0x31]  # [field.ShowEntity(field_entity.PARTY0)]  #
-                    if exit_state[1] and not entr_state[1]:
-                        # Song override bit is on in the exit but not cleared in the entrance.
-                        # Add a "clear $1E80($1CC)" (song override) before transition
-                        ex_patch += [0xd3, 0xcc]  # [field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE)]  #
-                    if exit_state[2] and not entr_state[2]:
-                        # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
-                        # Add a "0x39 Free Screen" before transition
-                        ex_patch += [0x39]  # [field.FreeScreen()]  #
-
-                    # Add patched lines before map transition
-                    src = src[:-1] + ex_patch + src[-1:]
-                    # Add patched lines after map transition
-                    src_end = src_end[:5] + en_patch + src_end[5:]
-
-                # Combine events
-                src.extend(src_end)
-
-                # Delete NOPs, if requested, to save space
-                # Note there is the possibility for conflict with event_address_patch - be careful!
-                if True:
-                    src = delete_nops(src)
-
-                # Allocate space
-                space = Allocate(Bank.CC, len(src), "Exit Event Randomize: " + str(m[0]) + " --> " + str(m[1]))
-                new_event_address = space.start_address
-
-                # Check for event address patches & implement if found
-                if m[0] in event_address_patch.keys():
-                    src = event_address_patch[m[0]](src, new_event_address)
-
-                space.write(src)
-
-                print('Writing: ', m[0], ' --> ', m[1],
-                      ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
-                      '\n\tbitstring: ', [hex(s)[2:] for s in src])
-                print('\n\tnew memory address: ', hex(new_event_address))
-
-                if exit_address is not None:
-                    if exit_location[1] == 'NPC':
-                            # This is an NPC event.  (see e.g. Cid/Minecart entrance).  NPC ID is stored in location[2]
-                            npc = self.get_npc(exit_location[0], exit_location[2] + 0x10)
-                            npc.set_event_address(new_event_address)
-
-                    #if exit_address == 0xc8022:
-                        # One-time hack for Cid/Minecart NPC entrance event.  If there are more, make a case for it.
-                        #cid = self.get_npc(0x110, 0 + 0x10)
-                        # print('Cid index = ', self.get_npc_index(0x110, 0 + 0x10))
-                        #cid.set_event_address(new_event_address)
-                        # cid.print()
-
-                    else:
-                        # Update the MapEvent.event_address = Address(Event1a)
-                        #this_event_id = self.events.event_address_index[exit_address - EVENT_CODE_START]
-                        #if m[0] == 2017:  # HACK for shared event in Owzer's Mansion switch doors
-                        #    this_event_id -= 1
-                        #e_mxy = self.event_map_x_y[this_event_id]
-                        e_mxy = event_exit_info[m[0]][5]
-                        this_event = self.get_event(e_mxy[0], e_mxy[1], e_mxy[2])  # get event using [map_id, x, y] data
-                        this_event.event_address = new_event_address - EVENT_CODE_START
-
-                        if m[0] in multi_events.keys():
-                            # Other tiles must also be updated to point to the event at the appropriate offset
-                            for le in multi_events[m[0]]:
-                                le_addr = event_exit_info[le][0]
-                                #le_id = self.events.event_address_index[le_addr - EVENT_CODE_START]
-                                #le_mxy = self.event_map_x_y[le_id]
-                                le_mxy = event_exit_info[le][5]
-                                le_event = self.get_event(le_mxy[0], le_mxy[1], le_mxy[2]) # get event using [map_id, x, y] data
-                                le_event.event_address = new_event_address + (le_addr - exit_address) - EVENT_CODE_START
-
-                else:
-                    # Create a new MapEvent for this event
-                    new_event = MapEvent()
-                    new_event.x = exit_location[1]
-                    new_event.y = exit_location[2]
-                    new_event.event_address = new_event_address - EVENT_CODE_START
-                    self.add_event(exit_location[0], new_event)
-
-                # (Event2 will be updated when the initiating door for Event2 is mapped)
-
-                # free previous event data space
-                do_free = False
-                if do_free:
-                    Free(exit_address, exit_address + exit_length - 1)
-
-                if do_free:
-                    print('\n\tFreed addresses: ', hex(exit_address), hex(exit_address + exit_length - 1))
+    # def connect_events(self):
+    #     # Perform Event modification for one-way entrances
+    #     # For the connection "Event1" --> "Event2":
+    #     for m in self.doors.map[1]:
+    #         if m[0] >= 2000:
+    #             # Collect exit event information for patching
+    #             exit_info = event_exit_info[m[0]]
+    #             exit_address = exit_info[0]
+    #             exit_length = exit_info[1]
+    #             exit_split = exit_info[2]
+    #             exit_state = exit_info[3]
+    #             exit_descr = exit_info[4]
+    #             exit_location = exit_info[5]
+    #
+    #             src = self.rom.get_bytes(exit_address, exit_split)  # First half of event
+    #
+    #         else:
+    #             # Handle the small number of one-way exits coded as doors
+    #             exit_address = None
+    #             exit_state = [False, False, False]
+    #             this_exit = self.get_exit(m[0])
+    #             exit_location = [self.exit_maps[m[0]], this_exit.x, this_exit.y]
+    #
+    #             src = [0x6a]
+    #
+    #         if m[1] >= 3000:
+    #             # Right now the convention is that vanilla one-way entrance ID = (vanilla one-way exit ID + 1000)
+    #             entr_info = event_exit_info[m[1] - 1000]
+    #             entr_address = entr_info[0]
+    #             entr_length = entr_info[1]
+    #             entr_split = entr_info[2]
+    #             entr_state = entr_info[3]
+    #             entr_descr = entr_info[4]
+    #             entr_location = entr_info[5]
+    #
+    #             src_end = self.rom.get_bytes(entr_address + entr_split,
+    #                                          entr_length - entr_split)  # Second half of event
+    #
+    #         else:
+    #             # Handle the small number of one-way entrances from doors
+    #             entr_address = None
+    #             entr_state = [False, False, False]
+    #             entr_location = self.exits.exit_original_data[m[1] - 1000]
+    #             # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
+    #
+    #             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
+    #             src_end = [entr_location[0], entr_location[6] << 4, entr_location[1], entr_location[2], 0x80, 0xfe]
+    #
+    #         # Ignore forced vanilla / logical event patches
+    #         if exit_address != entr_address:
+    #
+    #             # Check for other event patches & implement if found
+    #             if m[0] in exit_event_patch.keys():
+    #                 [src, src_end] = exit_event_patch[m[0]](src, src_end)
+    #             if m[1] in entrance_event_patch.keys():
+    #                 [src, src_end] = entrance_event_patch[m[1]](src, src_end)
+    #
+    #             # Perform common event patches
+    #             if exit_state != entr_state:
+    #                 ex_patch = []
+    #                 en_patch = []
+    #                 if exit_state[0] and not entr_state[0]:
+    #                     # Character is hidden during the transition and not unhidden later.
+    #                     # Add a "Show object 31" line ("0x41 0x31", two bytes)
+    #                     en_patch += [0x41, 0x31]  # [field.ShowEntity(field_entity.PARTY0)]  #
+    #                 if exit_state[1] and not entr_state[1]:
+    #                     # Song override bit is on in the exit but not cleared in the entrance.
+    #                     # Add a "clear $1E80($1CC)" (song override) before transition
+    #                     ex_patch += [0xd3, 0xcc]  # [field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE)]  #
+    #                 if exit_state[2] and not entr_state[2]:
+    #                     # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
+    #                     # Add a "0x39 Free Screen" before transition
+    #                     ex_patch += [0x39]  # [field.FreeScreen()]  #
+    #
+    #                 # Add patched lines before map transition
+    #                 src = src[:-1] + ex_patch + src[-1:]
+    #                 # Add patched lines after map transition
+    #                 src_end = src_end[:5] + en_patch + src_end[5:]
+    #
+    #             # Combine events
+    #             src.extend(src_end)
+    #
+    #             # Delete NOPs, if requested, to save space
+    #             # Note there is the possibility for conflict with event_address_patch - be careful!
+    #             if True:
+    #                 src = delete_nops(src)
+    #
+    #             # Allocate space
+    #             space = Allocate(Bank.CC, len(src), "Exit Event Randomize: " + str(m[0]) + " --> " + str(m[1]))
+    #             new_event_address = space.start_address
+    #
+    #             # Check for event address patches & implement if found
+    #             if m[0] in event_address_patch.keys():
+    #                 src = event_address_patch[m[0]](src, new_event_address)
+    #
+    #             space.write(src)
+    #
+    #             print('Writing: ', m[0], ' --> ', m[1],
+    #                   ':\n\toriginal memory addresses: ', hex(exit_address), ', ', hex(entr_address),
+    #                   '\n\tbitstring: ', [hex(s)[2:] for s in src])
+    #             print('\n\tnew memory address: ', hex(new_event_address))
+    #
+    #             if exit_address is not None:
+    #                 if exit_location[1] == 'NPC':
+    #                         # This is an NPC event.  (see e.g. Cid/Minecart entrance).  NPC ID is stored in location[2]
+    #                         npc = self.get_npc(exit_location[0], exit_location[2] + 0x10)
+    #                         npc.set_event_address(new_event_address)
+    #
+    #                 #if exit_address == 0xc8022:
+    #                     # One-time hack for Cid/Minecart NPC entrance event.  If there are more, make a case for it.
+    #                     #cid = self.get_npc(0x110, 0 + 0x10)
+    #                     # print('Cid index = ', self.get_npc_index(0x110, 0 + 0x10))
+    #                     #cid.set_event_address(new_event_address)
+    #                     # cid.print()
+    #
+    #                 else:
+    #                     # Update the MapEvent.event_address = Address(Event1a)
+    #                     #this_event_id = self.events.event_address_index[exit_address - EVENT_CODE_START]
+    #                     #if m[0] == 2017:  # HACK for shared event in Owzer's Mansion switch doors
+    #                     #    this_event_id -= 1
+    #                     #e_mxy = self.event_map_x_y[this_event_id]
+    #                     e_mxy = event_exit_info[m[0]][5]
+    #                     this_event = self.get_event(e_mxy[0], e_mxy[1], e_mxy[2])  # get event using [map_id, x, y] data
+    #                     this_event.event_address = new_event_address - EVENT_CODE_START
+    #
+    #                     if m[0] in multi_events.keys():
+    #                         # Other tiles must also be updated to point to the event at the appropriate offset
+    #                         for le in multi_events[m[0]]:
+    #                             le_addr = event_exit_info[le][0]
+    #                             #le_id = self.events.event_address_index[le_addr - EVENT_CODE_START]
+    #                             #le_mxy = self.event_map_x_y[le_id]
+    #                             le_mxy = event_exit_info[le][5]
+    #                             le_event = self.get_event(le_mxy[0], le_mxy[1], le_mxy[2]) # get event using [map_id, x, y] data
+    #                             le_event.event_address = new_event_address + (le_addr - exit_address) - EVENT_CODE_START
+    #
+    #             else:
+    #                 # Create a new MapEvent for this event
+    #                 new_event = MapEvent()
+    #                 new_event.x = exit_location[1]
+    #                 new_event.y = exit_location[2]
+    #                 new_event.event_address = new_event_address - EVENT_CODE_START
+    #                 self.add_event(exit_location[0], new_event)
+    #
+    #             # (Event2 will be updated when the initiating door for Event2 is mapped)
+    #
+    #             # free previous event data space
+    #             do_free = False
+    #             if do_free:
+    #                 Free(exit_address, exit_address + exit_length - 1)
+    #
+    #             if do_free:
+    #                 print('\n\tFreed addresses: ', hex(exit_address), hex(exit_address + exit_length - 1))
 
     def connect_exits(self):
         # For all doors in doors.map[0], we want to find the exit and change where it leads to
@@ -753,7 +772,7 @@ class Maps():
                     info = has_event_entrance[m]
                     this_event = self.get_event(info[0], info[1], info[2])
 
-                    # Create an event tile that activates the event to this entrance on it's connection
+                    # Create an event tile that activates the event to this entrance on its connection
                     conn_exit = self.get_exit(map[m])
                     new_event = MapEvent()
                     new_event.x = conn_exit.x

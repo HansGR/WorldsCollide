@@ -1,5 +1,5 @@
 from data.event_exit_info import *
-#from data.rooms import room_data
+from data.rooms import exit_world
 from data.parse import delete_nops
 from instruction import field
 import instruction.field.entity as field_entity
@@ -30,8 +30,10 @@ class Transitions:
         self.rom = rom
 
         for m in mapping:
-            flags = [(m[0] > 2000) and (m[0] == m[1] - 1000)]   # connecting event to itself, do nothing
-            if flags.count(True) == 0:
+            flags = [(m[0] > 2000) and (m[0] != m[1] - 1000),  # connecting two unequal one-ways...
+                     m[0] in exit_event_patch,                 # modifications to exit script
+                     m[1] in entrance_event_patch]             # modifications to entrance script
+            if flags.count(True) > 0:
                 new_trans = Transition(m[0], m[1], rom, exit_data)
                 self.transitions.append(new_trans)
 
@@ -64,18 +66,38 @@ class Transitions:
             # Perform common event patches
             ex_patch = []
             en_patch = []
+            t.patches = [False, False, False, False]
             if t.exit.is_char_hidden and not t.entr.is_char_hidden:
-                # Character is hidden during the transition and not unhidden later.
+                t.patches[0] = True
+                # Character is hidden during the transition (command [0x42, 0x31]) and not unhidden later.
                 # Add a "Show object 31" line ("0x41 0x31", two bytes)
                 en_patch += [0x41, 0x31]  # [field.ShowEntity(field_entity.PARTY0)]   #
             if t.exit.is_song_override_on and not t.entr.is_song_override_on:
+                t.patches[1] = True
                 # Song override bit is on in the exit but not cleared in the entrance.
                 # Add a "clear $1E80($1CC)" (song override) before transition
                 ex_patch += [0xd3, 0xcc]  # [field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE)]  #
-            if t.exit.is_screen_hold_on  and not t.exit.is_screen_hold_on:
-                # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
-                # Add a "0x39 Free Screen" before transition
-                ex_patch += [0x39]  # [field.FreeScreen()]  #
+            if t.exit.is_screen_hold_on != t.entr.is_screen_hold_on:
+                if t.exit.is_screen_hold_on:
+                    t.patches[2] = 'off'
+                    # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
+                    # Add a "0x39 Free Screen" before transition
+                    ex_patch += [0x39]  # [field.FreeScreen()]  #
+                elif t.entr.is_screen_hold_on:
+                    t.patches[2] = 'on'
+                    # Hold screen bit is expected to be set (command 0x38) in the entrance
+                    # Add a "0x38 Hold Screen" before transition
+                    ex_patch += [0x38]  # [field.HoldScreen()]  #
+            if t.exit.world != t.entr.world:
+                # include code to set the appropriate world:
+                if t.entr.world == 0:
+                    t.patches[3] = 'WoB'
+                    # Set world bit to WoB: [0xd1, 0xa4]
+                    ex_patch += [0xd1, 0xa4]  # [field.ClearEventBit(0xa4)]
+                elif t.entr.world == 1:
+                    t.patches[3] = 'WoR'
+                    # Set world bit to WoR: [0xd0, 0xa4]
+                    ex_patch += [0xd0, 0xa4]  # [field.SetEventBit(0xa4)]
 
             # Add patched lines before map transition
             src = src[:-1] + ex_patch + src[-1:]
@@ -109,6 +131,7 @@ class Transitions:
 
             print('Writing: ', t.exit.id, ' --> ', t.entr.id,
                   ':\n\toriginal memory addresses: ', hex(t.exit.event_addr), ', ', hex(t.entr.event_addr),
+                  '\n\tpatches applied: ', t.patches,
                   '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
             print('\n\tnew memory address: ', hex(new_event_address))
 
@@ -159,6 +182,7 @@ class EventExit:
     is_screen_hold_on = False
     description = ''
     location = []
+    world = -1
 
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
@@ -180,6 +204,7 @@ class EventExit:
             self.is_screen_hold_on = event_info[3][2]
             self.description = event_info[4]
             self.location = event_info[5]
+            self.world = exit_world[ID]
 
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
             self.entr_code = rom.get_bytes(self.event_addr + self.event_split,
@@ -188,6 +213,7 @@ class EventExit:
             # Handle the small number of one-way entrances from doors
             exit_location = exit_data[ID]
             self.location = exit_location[0:3]
+            self.world = exit_world[ID]
 
             # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return

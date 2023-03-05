@@ -1350,10 +1350,10 @@ exit_data = {
 }
 
 # Create functions to update values:
-# [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
-set_dest_x =              lambda value, info: [value] + info[1:]
-set_dest_y =              lambda value, info: info[:1] + [value] + info[2:]
-set_dest_map =            lambda value, info: info[:2] + [value] + info[3:]
+# [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
+set_dest_map =            lambda value, info: [value] + info[1:]
+set_dest_x =              lambda value, info: info[:1] + [value] + info[2:]
+set_dest_y =              lambda value, info: info[:2] + [value] + info[3:]
 set_refreshparentmap =    lambda value, info: info[:3] + [value] + info[4:]
 set_enterlowZlevel =      lambda value, info: info[:4] + [value] + info[5:]
 set_displaylocationname = lambda value, info: info[:5] + [value] + info[6:]

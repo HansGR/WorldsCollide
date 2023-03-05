@@ -838,3 +838,20 @@ invalid_connections = {
 force_update_parent_map = {
     '285a' : [1, 34, 157]  # Entering WoR Jidoor from Owzer's Basement
 }
+
+
+# Create dictionary lookup for which world each exit is in
+exit_world = {}
+for r in room_data.keys():
+    # Read in door world
+    for d in room_data[r][0]:
+        exit_world[d] = room_data[r][-1]
+        if d in shared_oneways.keys():
+            for ds in shared_oneways[d]:
+                exit_world[ds] = room_data[r][-1]
+    # Read in one-way world
+    for e in room_data[r][1]:
+        exit_world[e] = room_data[r][-1]
+        if e in shared_oneways.keys():
+            for es in shared_oneways[e]:
+                exit_world[es] = room_data[r][-1]

@@ -73,9 +73,11 @@ class MapExits():
                     self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
                     # Copy the "original data" to the exit itself
                     self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
+                    #print('Patching: ', e)
                 else:
                     # This is a logical exit.  Create an entry for it from its WOB pair.
                     self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
+                    #print('Patching logical: ', e)
 
             for e in add_new_exits.keys():
                 pass
