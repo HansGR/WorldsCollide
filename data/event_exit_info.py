@@ -1,80 +1,73 @@
 # event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description, location]
-#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on, is_on_raft]
+#   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
 #   location = [map_id, x, y]
 #   None = not implemented
 event_exit_info = {
     # UMARO'S CAVE
-    2001: [0xcd8d4, 34, 24, [True, True, False, False], 'Umaro Cave 1st Room trapdoor top', [281, 11, 53] ],
-    2002: [0xcd8b2, 34, 24, [True, True, False, False], 'Umaro Cave 1st Room trapdoor left', [281, 10, 54] ],
-    2003: [0xcd93a, 45, 35, [True, True, False, False], 'Umaro Cave Switch Room trapdoor to 2nd Room', [281, 31, 9] ],
-    2004: [0xcd967, 45, 35, [True, True, False, False], 'Umaro Cave Switch Room trapdoor to Boss Room', [281, 40, 12] ],
-    2005: [0xcd918, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room west trapdoor', [282, 33, 26] ],
-    2006: [0xcd918, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***', [282, 33, 26] ],
-    2007: [0xcd8f6, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room east trapdoor', [282, 14, 30] ],
-    2008: [0xcd8f6, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***', [282, 14, 30] ],
-    2009: [0xc3839, 50, 1, [False, False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe', [283, 57, 7] ],
-    2010: [0xc37e7, 82, 67, [True, True, True, False], 'Narshe Peak WoR entrance to Umaros Cave', [35, 9, 12] ],
+    2001: [0xcd8d4, 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor top', [281, 11, 53] ],
+    2002: [0xcd8b2, 34, 24, [True, True, False], 'Umaro Cave 1st Room trapdoor left', [281, 10, 54] ],
+    2003: [0xcd93a, 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to 2nd Room', [281, 31, 9] ],
+    2004: [0xcd967, 45, 35, [True, True, False], 'Umaro Cave Switch Room trapdoor to Boss Room', [281, 40, 12] ],
+    2005: [0xcd918, 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor', [282, 33, 26] ],
+    2006: [0xcd918, 34, 24, [True, True, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***', [282, 33, 26] ],
+    2007: [0xcd8f6, 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor', [282, 14, 30] ],
+    2008: [0xcd8f6, 34, 24, [True, True, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***', [282, 14, 30] ],
+    2009: [0xc3839, 50, 1, [False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe', [283, 57, 7] ],
+    2010: [0xc37e7, 82, 67, [True, True, True], 'Narshe Peak WoR entrance to Umaros Cave', [35, 9, 12] ],
 
     # ESPER MOUNTAIN
-    2011: [0xbee80, 15, 0, [None, None, None, None], 'Esper Mtn 2nd Room bridge jump west', [0x177, 36, 53] ],
+    2011: [0xbee80, 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump west', [0x177, 36, 53] ],
     # forced connection, no mod
-    2012: [0xbee71, 15, 0, [None, None, None, None], 'Esper Mtn 2nd Room bridge jump middle', [0x177, 39, 54] ],
+    2012: [0xbee71, 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump middle', [0x177, 39, 54] ],
     # forced connection, no mod
-    2013: [0xbee62, 15, 0, [None, None, None,None], 'Esper Mtn 2nd Room bridge jump east', [0x177, 47, 53] ],
+    2013: [0xbee62, 15, 0, [None, None, None], 'Esper Mtn 2nd Room bridge jump east', [0x177, 47, 53] ],
     # forced connection, no mod
-    2014: [0xbee8f, 47, 30, [False, False, True, False], 'Esper Mtn Pit Room South trapdoor', [0x177, 11, 51] ],
-    2015: [0xbeebe, 46, 30, [False, False, True, False], 'Esper Mtn Pit Room North trapdoor', [0x177, 12, 46] ],
+    2014: [0xbee8f, 47, 30, [False, False, True], 'Esper Mtn Pit Room South trapdoor', [0x177, 11, 51] ],
+    2015: [0xbeebe, 46, 30, [False, False, True], 'Esper Mtn Pit Room North trapdoor', [0x177, 12, 46] ],
     # no "38 (Hold screen)" after transition
-    2016: [0xbeeec, 47, 30, [False, False, True, False], 'Esper Mtn Pit Room East trapdoor', [0x177, 17, 49]],
+    2016: [0xbeeec, 47, 30, [False, False, True], 'Esper Mtn Pit Room East trapdoor', [0x177, 17, 49]],
 
     # OWZER'S MANSION
-    2017: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door left', [0x0CF, 90, 50]],
-    2018: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door right', [0x0CF, 92, 50]],
+    2017: [0xb4b86, 47, 1, [False, False, False], 'Owzers Mansion switching door left', [0x0CF, 90, 50]],
+    2018: [0xb4b86, 47, 1, [False, False, False], 'Owzers Mansion switching door right', [0x0CF, 92, 50]],
     # same destination, same event!
-    2019: [0xb4bb5, 53, 3, [False, False, False, False], 'Owzers Mansion behind switching door exit', [0x0CF, 85, 50]],
+    2019: [0xb4bb5, 53, 3, [False, False, False], 'Owzers Mansion behind switching door exit', [0x0CF, 85, 50]],
     # set event bit 0x24c?
-    2020: [0xb4c94, 13, 1, [False, False, False, False], 'Owzers Mansion floating chest room exit', [0x0CF, 76, 51]],
-    2021: [0xb4bea, 51, 1, [False, False, False, False], 'Owzers Mansion save point room oneway', [0x0CF, 86, 38]],
+    2020: [0xb4c94, 13, 1, [False, False, False], 'Owzers Mansion floating chest room exit', [0x0CF, 76, 51]],
+    2021: [0xb4bea, 51, 1, [False, False, False], 'Owzers Mansion save point room oneway', [0x0CF, 86, 38]],
 
     # MAGITEK FACTORY
-    2022: [0xc7651, 49, 29, [False, False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile', [0x106, 22, 53]],
+    2022: [0xc7651, 49, 29, [False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile', [0x106, 22, 53]],
     # will require address patching
-    '2022a': [0xc765f, 0, 0, [None, None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile', [0x106, 22, 54]],
+    '2022a': [0xc765f, 0, 0, [None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile', [0x106, 22, 54]],
     # same exit as above; requires address patch & tile edit
-    2023: [0xc7682, 37, 0, [None, None, None, None], 'Magitek factory platform elevator to Mtek-1', [0x106, 10, 54]],
-    2024: [0xc7905, 50, 10, [False, False, False, False], 'Magitek factory 2 pipe exit loop', [0x107, 49, 48]],
-    2025: [0xc7565, 86, 58, [True, False, False, False], 'Magitek factory 2 conveyor to pit left tile', [0x107, 36, 44]],
+    2023: [0xc7682, 37, 0, [None, None, None], 'Magitek factory platform elevator to Mtek-1', [0x106, 10, 54]],
+    2024: [0xc7905, 50, 10, [False, False, False], 'Magitek factory 2 pipe exit loop', [0x107, 49, 48]],
+    2025: [0xc7565, 86, 58, [True, False, False], 'Magitek factory 2 conveyor to pit left tile', [0x107, 36, 44]],
     # will require address patching
-    '2025a': [0xc7581, 0, 0, [None, None, None, None], 'Magitek factory 2 conveyor to pit mid tile', [0x107, 37, 44]],
+    '2025a': [0xc7581, 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit mid tile', [0x107, 37, 44]],
     # same exit as above; requires address patch & tile edit
-    '2025b': [0xc7573, 0, 0, [None, None, None, None], 'Magitek factory 2 conveyor to pit right tile', [0x107, 38, 44]],
+    '2025b': [0xc7573, 0, 0, [None, None, None], 'Magitek factory 2 conveyor to pit right tile', [0x107, 38, 44]],
     # same exit as above; requires address patch & tile edit
-    2026: [0xc75f6, 91, 39, [False, False, False, False], 'Magitek factory pit hook to Mtek-2', [0x108, 6, 6]],
-    2027: [0xc7f43, 217, 131, [False, False, False, False], 'Magitek factory lab Cid''s elevator', [0x112, 20, 13]],
+    2026: [0xc75f6, 91, 39, [False, False, False], 'Magitek factory pit hook to Mtek-2', [0x108, 6, 6]],
+    2027: [0xc7f43, 217, 131, [False, False, False], 'Magitek factory lab Cid''s elevator', [0x112, 20, 13]],
     # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028: [0xc8022, 309, 152, [False, True, False, False], 'Magitek factory minecart start event', [0x110, 'NPC', 0]],
+    2028: [0xc8022, 309, 152, [False, True, False], 'Magitek factory minecart start event', [0x110, 'NPC', 0]],
     # NPC #0 on this map. Not an event tile.  Started by talking to Cid.  Position: # [0x110, 9, 51]
 
     # CAVE TO THE SEALED GATE
-    2029: [0xb3176, 84, 0, [None, None, None, None], 'Cave to the Sealed Gate grand staircase', [0x180, 71, 15]],
+    2029: [0xb3176, 84, 0, [None, None, None], 'Cave to the Sealed Gate grand staircase', [0x180, 71, 15]],
     # Grand staircase event
-    2030: [0xb33c9, 32, 0, [None, None, None, None], 'Cave to the Sealed Gate switch bridges', [0x180, 104, 17]],
+    2030: [0xb33c9, 32, 0, [None, None, None], 'Cave to the Sealed Gate switch bridges', [0x180, 104, 17]],
     # Switch bridge events
-    2031: [0xb2a9f, 7, 1, [False, False, False, False], 'Cave to the Sealed Gate shortcut exit', [0x180, 5, 43]],  # Shortcut exit
+    2031: [0xb2a9f, 7, 1, [False, False, False], 'Cave to the Sealed Gate shortcut exit', [0x180, 5, 43]],  # Shortcut exit
 
     # ZOZO (WORLD OF BALANCE)
-    2032: [0xa963d, 22, 0, [None, None, None, None], 'Zozo hook descent from building', [0x0DD, 35, 41] ],
-    2033: [0x00000, 0, 0, [None, None, None, None], 'Zozo line of walking guys (logical)', [0x0E1, 0, 0] ],
+    2032: [0xa963d, 22, 0, [None, None, None], 'Zozo hook descent from building', [0x0DD, 35, 41] ],
+    2033: [0x00000, 0, 0, [None, None, None], 'Zozo line of walking guys (logical)', [0x0E1, 0, 0] ],
 
     # LETE RIVER
-    2034: [0xb059f, 151, 146, [False, False, False, True], 'Lete River start', [0x071, 'JMP', None]], # [x,y] = [31, 51]
-    2035: [0xb0636, 193, 182, [False, False, False, True], 'Lete River Section 1', [0x071, 'JMP', None]],
-    '2035a': [0xb06f7, 101, 90, [False, False, False, True], 'Lete River Section 1 (LEFT)', [0x071, 'JMP', None]],
-    '2035b': [0xb07c0, 106, 95, [False, False, False, True], 'Lete River Section 1 (RIGHT)', [0x071, 'JMP', None]],
-    2036: [0xb051c, 64, 52, [False, False, False, True], 'Lete River Cave 1', [0x072, 'JMP', None]], # [x,y] = [20, 24]
-    2037: [0xb07cc, 157, 145, [False, False, False, True], 'Lete River Section 2', [0x071, 'JMP', None]],
-    2038: [0xb055c, 67, 55, [False, False, False, True], 'Lete River Cave 2', [0x072, 'JMP', None]],  # [x,y] = [6, 15]:
-    2039: [0xb0869, 229, 108, [False, False, False, True], 'Lete River Section 3 + boss', [0x071, 'JMP', None]],
+    2034: [0xb059f, 0, 0, [None, None, None], 'Lete River start', [0x071, 31, 51]],
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
@@ -236,8 +229,6 @@ multi_events = {
     2022: ['2022a'],  # Magitek factory room 1 conveyor belt
     2025: ['2025a', '2025b'],  # Magitek factory room 1 conveyor belt
 
-    2035: ['2035a', '2035b'],  # Lete River section 1 branching code
-
     1502: ['1502a'],  # Figaro Castle WoB entrance tiles
     1503: ['1503c'],  # Figaro Castle WoB (kohlingen) entrance tiles
     1505: ['1505a'],   # Vector entrance tiles WoB
@@ -245,13 +236,6 @@ multi_events = {
     1507: ['1507a'],  # Figaro Castle WoR entrance tiles
     1508: ['1508a']   # Figaro Castle WoR (kohlingen) entrance tiles
 }
-
-# NOTES ON JUMP/CALL vs REWRITE:
-# 1. If we use jumping/calling instead of writing, we are probably much efficient...
-# --> UNLESS we can reclaim all the original event space, in which case rewriting would be much more efficient because
-# --> we can reclaim all the NOP space!
-# 2. Using jumping/calling removes the need for event_address_patch and the Magitek use of multi_events (2 in, 1 out)
-# 3. Using jumping/calling adds a need for Lete river use of multi_events (1 in, 3 out).
 
 # Some events need to be modified by different parts of the code before being written.  We identify them here by where
 # the event script starts in the code.

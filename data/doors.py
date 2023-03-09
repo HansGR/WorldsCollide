@@ -14,7 +14,6 @@ ROOM_SETS = {
     'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb'],
     'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', 'branch-mz'],
     'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
-    'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -25,8 +24,7 @@ ROOM_SETS = {
             503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
             294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
             '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', # Zozo-WoR
-            250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
-            'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'  # Lete River
+            250, 251, 252, 253, 254, 255, 256  # Mt. Zozo
              ],
     'test': [8, 284]  # for testing only
 }
@@ -53,7 +51,6 @@ class Doors():
 
         self.use_shared_exits = True
         self.match_WOB_WOR = False
-        self.combine_areas = True  # make individually called flags get mixed together
         self.verbose = True # False  # True
 
         self._all_rooms = []
@@ -108,18 +105,8 @@ class Doors():
             if self.args.door_randomize_mt_zozo:  # -drmz
                 room_sets.append(ROOM_SETS['MtZozo'])
 
-            if self.args.door_randomize_lete_river:  # -drlr
-                room_sets.append(ROOM_SETS['Lete'])
-
             #Hard override for testing
             #room_sets.append(ROOM_SETS['test'])
-
-            if self.combine_areas:
-                temp = []
-                for r in room_sets:
-                    temp.extend(r)
-                room_sets = [temp]
-
 
         self.read(room_sets)
 

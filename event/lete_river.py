@@ -85,13 +85,7 @@ class LeteRiver(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
-        if self.args.door_randomize:
-            # Don't patch out the map load argument
-            space = Reserve(0xb0617, 0xb062f, "lete river tutorial", field.NOP())
-            self.rom.set_byte(0xb0630, 0x6b)  # this should be a load map, not a fade-load map
-            #space = Reserve(0xb0636, 0xb063c, "lete river tutorial end", field.NOP())
-        else:
-            space = Reserve(0xb0617, 0xb063c, "lete river tutorial", field.NOP())
+        space = Reserve(0xb0617, 0xb063c, "lete river tutorial", field.NOP())
 
         # skip setting started raft ride bit to avoid side effects (terra/edgar/banon party in narshe)
         space = Reserve(0xb066f, 0xb0670, "lete river set started raft ride bit", field.NOP())
