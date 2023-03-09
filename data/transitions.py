@@ -40,7 +40,14 @@ class Transitions:
         if self.FREE_MEMORY:
             self.free()
 
+        print('Number of Transitions = ', len(self.transitions))
+        hexify = lambda src: [hex(a)[2:] for a in src]
+        for t in self.transitions:
+            print(t.exit.id, '-->', hexify(t.exit.exit_code))
+            print(t.entr.id, '-->', hexify(t.entr.entr_code))
+
         self.mod()  # Modify the code after loading all transitions
+
 
     def free(self):
         # Free previous event data space to be overwritten (after all are modified)
@@ -54,19 +61,30 @@ class Transitions:
         # Check for other event patches & implement if found
         for t in self.transitions:
             # Initialize source codes
-            src = t.exit.exit_code
-            src_end = t.entr.entr_code
+            if t.exit.use_jmp:
+                # If writing as subroutine: we want map load command only from exit
+                src = [t.exit.exit_code[-1]]
+            else:
+                src = t.exit.exit_code
+
+            if t.entr.use_jmp:
+                # If writing as subroutine: we want map load command from exit + Call Entrance Script + return command
+                src_end = t.entr.entr_code[:5] + [0xb2] + \
+                          list((t.entr.event_addr + t.entr.event_split + 5 - EVENT_CODE_START).to_bytes(3,"little")) + \
+                          [0xfe]
+            else:
+                src_end = t.entr.entr_code
 
             # Run event patches
-            if t.exit.id in exit_event_patch.keys():
+            if not t.exit.use_jmp and t.exit.id in exit_event_patch.keys():
                 [src, src_end] = exit_event_patch[t.exit.id](src, src_end)
-            if t.entr.id in entrance_event_patch.keys():
+            if not t.entr.use_jmp and t.entr.id in entrance_event_patch.keys():
                 [src, src_end] = entrance_event_patch[t.entr.id](src, src_end)
 
             # Perform common event patches
             ex_patch = []
             en_patch = []
-            t.patches = [False, False, False, False]
+            t.patches = [False, False, False, False, False]
             if t.exit.is_char_hidden and not t.entr.is_char_hidden:
                 t.patches[0] = True
                 # Character is hidden during the transition (command [0x42, 0x31]) and not unhidden later.
@@ -98,6 +116,16 @@ class Transitions:
                     t.patches[3] = 'WoR'
                     # Set world bit to WoR: [0xd0, 0xa4]
                     ex_patch += [0xd0, 0xa4]  # [field.SetEventBit(0xa4)]
+            if t.exit.is_on_raft != t.entr.is_on_raft:
+                # include code to set the appropriate raft graphic
+                if t.exit.is_on_raft:
+                    t.patches[4] = 'remove'
+                    # Call "remove raft" subroutine (CB/04AA)
+                    ex_patch += [0xb2, 0xaa, 0x04, 0x01]  # [field.Call(0xb04aa)]
+                elif t.entr.is_on_raft:
+                    t.patches[4] = 'add'
+                    # Call "place on raft" subroutine (CB/050F)
+                    ex_patch += [0xb2, 0x0f, 0x05, 0x01]  # [field.Call(0xb050f)]
 
             # Add patched lines before map transition
             src = src[:-1] + ex_patch + src[-1:]
@@ -110,6 +138,7 @@ class Transitions:
 
             # Delete NOPs, if requested, to save space
             # Note there is the possibility for conflict with event_address_patch - be careful!
+            print(src)
             if True:
                 src = delete_nops(src)
 
@@ -124,7 +153,7 @@ class Transitions:
             new_event_address = space.start_address
 
             # Check for event address patches & implement if found
-            if t.exit.id in event_address_patch.keys():
+            if t.exit.id in event_address_patch.keys() and not t.exit.use_jmp:
                 t.src = event_address_patch[t.exit.id](t.src, new_event_address)
 
             space.write(t.src)
@@ -135,7 +164,19 @@ class Transitions:
                   '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
             print('\n\tnew memory address: ', hex(new_event_address))
 
-            if t.exit.event_addr is not None:
+            if t.exit.use_jmp:
+                # Overwrite the Load Map command with a CALL SUBROUTINE & RETURN & NOP (B2 XX XX XX FE FD)
+                jump_src = [0xb2] + list((new_event_address - EVENT_CODE_START).to_bytes(3, "little")) + [0xfe, 0xfd]
+                self.rom.set_bytes(t.exit.event_addr + t.exit.event_split - 1, jump_src)
+
+                if t.exit.id in multi_events.keys():
+                    # Patch sister event transitions
+                    for me in multi_events[t.exit.id]:
+                        this_addr = event_exit_info[me][0]
+                        this_split = event_exit_info[me][2]
+                        self.rom.set_bytes(this_addr + this_split - 1, jump_src)
+
+            elif t.exit.event_addr is not None:
                 if t.exit.location[1] == 'NPC':
                     # This is an NPC event.  (see e.g. Cid/Minecart entrance).  NPC ID is stored in location[2]
                     npc = maps.get_npc(t.exit.location[0], t.exit.location[2] + 0x10)
@@ -180,9 +221,11 @@ class EventExit:
     is_char_hidden = False
     is_song_override_on = False
     is_screen_hold_on = False
+    is_on_raft = False
     description = ''
     location = []
     world = -1
+    use_jmp = False
 
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
@@ -202,9 +245,12 @@ class EventExit:
             self.is_char_hidden = event_info[3][0]
             self.is_song_override_on = event_info[3][1]
             self.is_screen_hold_on = event_info[3][2]
+            self.is_on_raft = event_info[3][3]
             self.description = event_info[4]
             self.location = event_info[5]
             self.world = exit_world[ID]
+            if self.location[1] == 'JMP':
+                self.use_jmp = True
 
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
             self.entr_code = rom.get_bytes(self.event_addr + self.event_split,
@@ -218,5 +264,3 @@ class EventExit:
             # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
             self.entr_code = [exit_location[0], exit_location[6] << 4, exit_location[1], exit_location[2], 0x80, 0xfe]
-
-

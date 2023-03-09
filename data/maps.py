@@ -505,6 +505,7 @@ class Maps():
             print(t.exit.id, t.entr.id)
         self.transitions.write(maps=self)
         #self.connect_events()
+        #self.connections = Connections(self.doors.map[0], self.doors.door_rooms)
         self.connect_exits()
 
         # Move Event Trigger pointer & data location in ROM
@@ -1164,4 +1165,3 @@ class Maps():
             self.delete_event(THA_WR, 0, y)
         #self.add_long_event(THA_WR, le)
         Free(0x17d69, 0x17d82)
-
