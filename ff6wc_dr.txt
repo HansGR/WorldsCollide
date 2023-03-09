@@ -1,0 +1,922 @@
+Version   1.1.0
+Generated 2023-02-14 10:26:34
+Input     FFIII.smc
+Output    ff6wc_dr.smc
+Log       ff6wc_dr.txt
+Seed      esb
+Flags     -cg -oa 2.2.2.2.6.6.4.9.9 -ob 3.1.1.2.9.9.4.12.12 -oc 30.8.8.1.1.11.8 -sc1 random -sc2 random -sc3 random -sal -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 5 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -csb 3 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -ccsr 20 -cms -cor -crr -crvr 50 60 -crm -ari -anca -adeh -nmc -nu -nfps -fs -fe -fvd -fr -fj -fbs -fedc -ond -rr -etn -frw -drdc
+Hash      Arvis, Banon, Daryl, Conductor
+
+--------------------------------------------------------- Game ---------------------------------------------------------
+
+Settings
+    Mode                       Character Gating
+    Seed                       esb
+    Spoiler Log                False
+
+------------------------------------------------------ Objectives ------------------------------------------------------
+
+    A Unlock Final Kefka                                        B Unlock KT Skip
+      Characters               6-6                                Characters               9-9
+      Espers                   9-9                                Espers                   12-12
+    Conditions Required        2-2                              Conditions Required        1-1
+
+    C Learn SwdTechs           8-8
+      Check                    Doma Dream Awaken
+    Conditions Required        1-1
+
+-------------------------------------------------------- Party ---------------------------------------------------------
+
+Starting Party                                              Characters
+    Start Character            Random                           Start Average Level        True
+    Start Character            Random                           Start Naked                False
+    Start Character            Random                           Equipable Umaro            True
+    Start Character            None                             Character Stats            80-125%
+
+SwdTechs                                                    Commands
+    Fast SwdTech               True                             Morph                      Random Unique
+    Everyone Learns            False                            Steal                      Random Unique
+                                                                SwdTech                    Random Unique
+Blitzes                                                         Throw                      Random Unique
+    Bum Rush Last              True                             Tools                      Random Unique
+    Everyone Learns            False                            Blitz                      Random Unique
+                                                                Runic                      Random Unique
+Lores                                                           Lore                       Random Unique
+    Start Lores                Random 3-5                       Sketch                     Random Unique
+    MP                         Random Percent 75-125%           Slot                       Random Unique
+    Everyone Learns            True                             Dance                      Random Unique
+                                                                Rage                       Random Unique
+Rages                                                           Leap                       Random Unique
+    Start Rages                Random 25-35
+    No Leap                    True                             Shuffle Commands           False
+    No Charm                   True                             Random Exclude             Possess
+                                                                Random Exclude             Shock
+Dances                                                          Random Exclude             None
+    Start Dances               Random 1-2                       Random Exclude             None
+    Shuffle Abilities          True                             Random Exclude             None
+    Display Abilities          True                             Random Exclude             None
+    No Stumble                 True
+    Everyone Learns            False
+
+Steal
+    Chances                    Higher
+
+-------------------------------------------------------- Battle --------------------------------------------------------
+
+Experience, Magic Points, Gold                              Scaling
+    Experience Multiplier      3                                Level Scaling              Characters + Espers + Dragons
+    Magic Points Multiplier    5                                Level Scaling Factor       2
+    Gold Multiplier            5                                HP/MP Scaling              Characters + Espers + Dragons
+    No Exp Party Divide        True                             HP/MP Scaling Factor       2
+                                                                Exp/GP Scaling             Characters + Espers + Dragons
+Bosses                                                          Exp/GP Scaling Factor      2
+    Boss Battles               Shuffle                          Ability Scaling            Element
+    Mix Bosses & Dragons       False                            Ability Scaling Factor     2
+    Shuffle/Random Phunbaba 3  False                            Max Scale Level            40
+    Normalize & Distort Stats  False                            Scale Eight Dragons        True
+    Boss Experience            True                             Scale Final Battles        False
+    No Undead                  True
+                                                            Encounters
+Boss AI                                                         Random Encounters          Shuffle
+    Doom Gaze No Escape        True                             Fixed Encounters           Random
+    Wrexsoul No Zinger         True                             Boss Percent               0%
+    MagiMaster No Ultima       True                             Escapable                  100%
+    Chadarnook More Demon      True
+
+-------------------------------------------------------- Magic ---------------------------------------------------------
+
+Espers                                                      Natural Magic
+    Spells                     Random 2-5                       Natural Magic              Random
+    Bonuses                    Random                           Randomize Levels           True
+    Bonus Chance               82%                              Randomize Spells           True
+    MP                         Random Percent 75-125%           Natural Magic              Random
+    Equipable                  All                              Randomize Levels           True
+    Multi Summon               False                            Randomize Spells           True
+                                                                Menu Indicator             True
+
+-------------------------------------------------------- Items ---------------------------------------------------------
+
+Starting Gold/Items                                         Shops
+    Start Gold                 5000                             Inventory                  Shuffle + Random
+    Start Moogle Charms        3                                Random Percent             20%
+    Start Warp Stones          0                                Price                      Random Percent 75-125%
+    Start Fenix Downs          0                                Sell Fraction              1/2
+    Start Tools                1                                Dried Meat                 4
+                                                                No Priceless Items         True
+Items                                                           No Breakable Rods          False
+    Equipable                  Original + Random 33%            No Elemental Shields       False
+    Equipable Relics           Original + Random 33%            No Super Balls             False
+    Cursed Shield Battles      3-14                             No Exp. Eggs               False
+    Moogle Charm All           True                             No Illuminas               False
+    SwdTech Runic All          True
+    Stronger Atma Weapon       True                         Chests
+                                                                Contents                   Shuffle + Random
+                                                                Random Percent             20%
+                                                                Monsters-In-A-Box Shuffled True
+
+------------------------------------------------------- Graphics -------------------------------------------------------
+
+Sprite Palettes                                             Character Customization
+    Palette 0                  Original 0                       TERRA  -> TERRA            Terra
+    Palette 1                  Original 1                                                  Terra
+    Palette 2                  Original 2                                                  Palette 2
+    Palette 3                  Original 3                       LOCKE  -> LOCKE            Locke
+    Palette 4                  Original 4                                                  Locke
+    Palette 5                  Original 5                                                  Palette 1
+    Palette 6                  Original 6                       CYAN   -> CYAN             Cyan
+                                                                                           Cyan
+Other Portraits & Sprites                                                                  Palette 4
+    Soldier                    Soldier                          SHADOW -> SHADOW           Shadow
+                               Palette 1                                                   Shadow
+    Imp                        Imp                                                         Palette 4
+                               Imp                              EDGAR  -> EDGAR            Edgar
+                               Palette 0                                                   Edgar
+    Esper Terra                General Leo                                                 Palette 0
+                               Palette 6                        SABIN  -> SABIN            Sabin
+    Merchant                   Banon-Duncan                                                Sabin
+                               Palette 1                                                   Palette 0
+    Ghost                      Esper Terra                      CELES  -> CELES            Celes
+                               Palette 0                                                   Celes
+    Kefka                      Merchant                                                    Palette 0
+                               Palette 3                        STRAGO -> STRAGO           Strago
+                                                                                           Strago
+                                                                                           Palette 3
+                                                                RELM   -> RELM             Relm
+                                                                                           Relm
+                                                                                           Palette 3
+                                                                SETZER -> SETZER           Setzer
+                                                                                           Setzer
+                                                                                           Palette 4
+                                                                MOG    -> MOG              Mog
+                                                                                           Mog
+                                                                                           Palette 5
+                                                                GAU    -> GAU              Gau
+                                                                                           Gau
+                                                                                           Palette 3
+                                                                GOGO   -> GOGO             Gogo
+                                                                                           Gogo
+                                                                                           Palette 3
+                                                                UMARO  -> UMARO            Umaro
+                                                                                           Umaro
+                                                                                           Palette 5
+
+-------------------------------------------------------- Other ---------------------------------------------------------
+
+Coliseum                                                    Challenges
+    Opponents                  Random                           No Moogle Charms           True
+    Rewards                    Random                           No Exp Eggs                False
+    Rewards Visible            50-60                            No Illuminas               False
+    Rewards Menu               True                             No Ultima                  True
+    No Exp. Eggs               False                            No Free Paladin Shields    True
+    No Illuminas               False                            No Free Characters/Espers  False
+                                                                Permadeath                 False
+Auction House
+    Randomize Items            True                         Bug Fixes
+    No Chocobo/Airship         True                             Sketch                     True
+    Door Esper Hint            True                             Evade                      True
+                                                                Vanish/Doom                True
+Misc.                                                           Retort                     True
+    Auto Sprint                False                            Jump                       True
+    Original Name Display      True                             Boss Skip                  True
+    Random RNG                 True                             Enemy Damage Counter       True
+    Random Clock               False
+    Scan All                   False
+    Event Timers               None
+    Y NPC                      None
+    Remove Flashes             Worst
+
+----------------------------------------------------- Door Rando:  -----------------------------------------------------
+Area0:
+Doors:
+729: Room = 364. Umaro Cave 1st Room West Door
+730: Room = 364. Umaro Cave 1st Room Middle Door
+731: Room = 364. Umaro Cave 1st Room East Door
+2001: Room = 364. Umaro Cave 1st Room trapdoor top
+2002: Room = 364. Umaro Cave 1st Room trapdoor left
+3010: Room = 364. <VIRTUAL> Narshe Peak WoR entrance to Umaro's Cave DESTINATION
+732: Room = 365. Umaro Cave Bridge Room to 2nd Room
+733: Room = 365. Umaro Cave Bridge Room to Switch Room
+3001: Room = 365. Umaro Cave 1st Room trapdoor top DESTINATION
+3002: Room = 365. Umaro Cave 1st Room trapdoor left DESTINATION
+3003: Room = 365. Umaro Cave Switch Room trapdoor to 2nd Room DESTINATION
+3005: Room = 365. Umaro Cave 2nd Room east trapdoor DESTINATION
+3007: Room = 365. Umaro Cave 2nd Room west trapdoor DESTINATION
+734: Room = 366. Umaro Cave Switch Room to Bridge Room
+2003: Room = 366. Umaro Cave Switch Room trapdoor to 2nd Room
+2004: Room = 366. Umaro Cave Switch Room trapdoor to Boss
+735: Room = 367a. Umaro Cave 2nd Room to 1st Room West Door
+2007: Room = 367a. Umaro Cave 2nd Room west trapdoor
+736: Room = 367b. Umaro Cave 2nd Room to 1st Room Middle Door
+738: Room = 367b. Umaro Cave 2nd Room to Bridge Room
+2006: Room = 367b. Umaro Cave 2nd Room east trapdoor
+2008: Room = 367b. Umaro Cave 2nd Room west trapdoor
+737: Room = 367c. Umaro Cave 2nd Room to 1st Room East Door
+2005: Room = 367c. Umaro Cave 2nd Room east trapdoor
+2009: Room = 368. Umaro Cave Umaro's Room trapdoor to Narshe
+3004: Room = 368. Umaro Cave Switch Room trapdoor to Boss DESTINATION
+113: Room = 19. Narshe Northern Mines 2F Outside WoB
+114: Room = 19. Narshe Northern Mines 3F Outside West WoB
+115: Room = 20. Narshe Northern Mines 3F Outside East WoB
+1139: Room = 20. Narshe Northern Mines 3F to Snow Battlefield WoB
+1140: Room = 22. Snow Battlefield South WoB
+1141: Room = 22. Snow Battlefield North WoB
+1142: Room = 23. Narshe Peak WoB
+169: Room = 53. Narshe Northern Mines Side Room to Main Hallway WoB
+170: Room = 53. Narshe Northern Mines 1F Stairs to 2F WoB
+171: Room = 54. Narshe Northern Mines 2F Stairs to 1F WoB
+172: Room = 54. Narshe Northern Mines 2F Inside WoB
+173: Room = 55. Narshe Northern Mines 3F Inside West WoB
+174: Room = 55. Narshe Northern Mines 3F Inside East WoB
+178: Room = 59. Narshe Northern Mines Main Hallway to Side Room WoB
+179: Room = 59. Narshe Northern Mines Main Hallway Inside to Mines Outside WoB
+1155: Room = 59. Narshe Northern Mines Main Hallway to Tritoch Room WoB
+180: Room = 60. Narshe Northern Mines Tritoch Room WoB
+1138: Room = root-unb. Narshe Northern Mines Outside to Mines Main Hallway Inside WoB
+145: Room = 37a. Narshe Northern Mines 2F Outside WoR
+146: Room = 37a. Narshe Northern Mines 3F West WoR
+3009: Room = 37a. Umaro Cave Umaro's Room trapdoor to Narshe DESTINATION
+147: Room = 38. Narshe Northern Mines 3F East WoR
+1147: Room = 38. Narshe Northern Mines 3F to Snow Battlefield WoR
+1148: Room = 40. Snow Battlefield South WoR
+1149: Room = 40. Snow Battlefield North WoR
+1150: Room = 41a. Narshe Peak WoR
+2010: Room = 41a. <VIRTUAL> Narshe Peak WoR entrance to Umaro's Cave
+148: Room = 42. Narshe Northern Mines Side Room to Main Hallway WoR
+149: Room = 42. Narshe Northern Mines 1F Stairs to 2F WoR
+150: Room = 43. Narshe Northern Mines 2F Stairs to 1F WoR
+151: Room = 43. Narshe Northern Mines 2F Inside WoR
+152: Room = 44. Narshe Northern Mines 3F Inside West WoR
+153: Room = 44. Narshe Northern Mines 3F Inside East WoR
+156: Room = 46. Narshe Northern Mines Main Hallway to Side Room WoR
+157: Room = 46. Narshe Northern Mines Main Hallway to  Mines Outside WoR
+1151: Room = 46. Narshe Northern Mines Main Hallway to Tritoch Room WoR
+158: Room = 47. Narshe Northern Mines Tritoch Room WoR
+1146: Room = root-unr. Narshe Northern Mines Outside to Mines Main Hallway WoR
+1032: Room = 488. Esper Mountain 3 Statues Room Left Door
+1033: Room = 488. Esper Mountain 3 Statues Room Right Door
+1034: Room = 489. Esper Mountain Outside Bridge Room West Door Left Tile
+1036: Room = 489. Esper Mountain Outside Bridge Room East Door
+1037: Room = 490. Esper Mountain Outside East Treasure Room
+1038: Room = 491. Esper Mountain Outside Path to Final Room East Door Left Tile
+1040: Room = 491. Esper Mountain Outside Path to Final Room West Door Left Tile
+1042: Room = 492. Esper Mountain Outside Statue Path South Door
+1043: Room = 492. Esper Mountain Outside Statue Path North Door
+1044: Room = 493. Esper Mountain Outside West Treasure Room
+1045: Room = 494. Esper Mountain Outside Northwest Treasure Room
+1046: Room = 495. Esper Mountain Inside First Room North Door to Outside Loop
+1047: Room = 495. Esper Mountain Inside to World Map
+1048: Room = 495. Esper Mountain Inside First Room West Door to Outside Loop
+1049: Room = 495. Esper Mountain Inside First Room East Door to Statue Path
+1050: Room = 496. Esper Mountain Inside Second Room Southwest Door
+1051: Room = 496. Esper Mountain Inside Second Room Southeast Door
+3011: Room = 496. Esper Mtn 2nd Room bridge jump west DESTINATION
+3012: Room = 496. Esper Mtn 2nd Room bridge jump middle DESTINATION
+3013: Room = 496. Esper Mtn 2nd Room bridge jump east DESTINATION
+1052: Room = 497. Esper Mountain Inside Pit Room
+2014: Room = 497. Esper Mtn Pit Room South trapdoor
+2015: Room = 497. Esper Mtn Pit Room North trapdoor
+2016: Room = 497. Esper Mtn Pit Room East trapdoor
+1053: Room = 498. Esper Mountain Inside Second Room West Door
+1054: Room = 498. Esper Mountain Inside Second Room Northwest Door
+2011: Room = 498. Esper Mtn 2nd Room bridge jump west
+3015: Room = 498. Esper Mtn Pit Room North trapdoor DESTINATION
+1055: Room = 499. Esper Mountain Inside Second Room East Door
+2013: Room = 499. Esper Mtn 2nd Room bridge jump east
+3016: Room = 499. Esper Mtn Pit Room East trapdoor DESTINATION
+1056: Room = 500. Esper Mountain Inside Second Room North Door
+2012: Room = 500. Esper Mtn 2nd Room bridge jump middle
+3014: Room = 500. Esper Mtn Pit Room South trapdoor DESTINATION
+1057: Room = 501. Esper Mountain Inside Final Room Dead End
+44: Room = root-em. Esper Mountain
+580: Room = 277. Owzer's Behind Painting to Owzer's House
+581: Room = 277. Owzer's Behind Painting Stairs Down
+582: Room = 278. Owzer's Basement Stairs Up
+583: Room = 278. Owzer's Basement Door to Single Chest Room
+585: Room = 278. Owzer's Basement First Room to Door Switch Room
+3017: Room = 278. Owzer's Mansion switching door left DESTINATION
+584: Room = 279. Owzer's Basement Single Chest Room
+586: Room = 280. Owzer's Basement Switching Door Room South
+587: Room = 280. Owzer's Basement Switching Door Room Left Door
+2017: Room = 280. Owzer's Mansion switching door left
+2018: Room = 280. Owzer's Mansion switching door right
+588: Room = 281. Owzer's Basement Behind Door Switch Room South Door
+2019: Room = 281. Owzer's Mansion behind switching door exit
+3021: Room = 281. Owzer's Mansion save point room oneway DESTINATION
+589: Room = 282. Owzer's Basement Save Point Room Right Door
+2021: Room = 282. Owzer's Mansion save point room oneway
+3020: Room = 282. Owzer's Mansion floating chest room exit DESTINATION
+2020: Room = 283. Owzer's Mansion floating chest room exit
+3019: Room = 283. Owzer's Mansion behind switching door exit DESTINATION
+591: Room = 284. Owzer's Basement Chadarnook's Room
+593: Room = root-ob. Owzer's House Door to Behind Painting
+702: Room = 345. Magitek Factory Upper Room Door
+2023: Room = 345. Magitek factory platform elevator to Mtek-1
+703: Room = 346. Magitek Factory Entrance
+2022: Room = 346. Magitek factory 1 conveyor to Mtek-2 top tile
+3023: Room = 346. Magitek factory platform elevator to Mtek-1 DESTINATION
+704: Room = 347. Magitek Factory Lower Room Door
+2024: Room = 347. Magitek factory 2 pipe exit loop
+2025: Room = 347. Magitek factory 2 conveyor to pit left tile
+3022: Room = 347. Magitek factory 1 conveyor to Mtek-2 top tile DESTINATION
+3024: Room = 347. Magitek factory 2 pipe exit loop DESTINATION
+3026: Room = 347. Magitek factory pit hook to Mtek-2 DESTINATION
+705: Room = 349. Magitek Factory Garbage Room Left Door
+706: Room = 349. Magitek Factory Garbage Room Right Door
+2026: Room = 349. Magitek factory pit hook to Mtek-2
+3025: Room = 349. Magitek factory 2 conveyor to pit left tile DESTINATION
+709: Room = 351. Magitek Factory Stairwell Bottom
+710: Room = 351. Magitek Factory Stairwell Top
+711: Room = 352. Magitek Factory Save Point Room
+712: Room = 353. Magitek Factory Tube Hallway East
+713: Room = 353. Magitek Factory Tube Hallway West
+714: Room = 354. Magitek Factory Number 024 Room South
+715: Room = 354. Magitek Factory Number 024 Room North
+716: Room = 355. Magitek Factory Esper Tube Room
+2027: Room = 355. Magitek factory lab Cids elevator
+2028: Room = 355a. Magitek factory minecart start event
+3027: Room = 355a. Magitek factory lab Cids elevator DESTINATION
+1229: Room = root-mf. Vector To Magitek
+3028: Room = root-mf. Magitek factory minecart start event DESTINATION
+1061: Room = 503. Imperial Base House Inside
+1062: Room = 503. Imperial Base House Stairs Down
+1063: Room = 504. Imperial Base House Stairs Up
+41: Room = 504a. Imperial Base Right Tile WoB
+43: Room = 504a. Cave to Sealed Gate
+1064: Room = 505. Cave to the Sealed Gate to World Map
+1065: Room = 505. Cave to the Sealed Gate Entry Room to B1
+3031: Room = 505. Cave to the Sealed Gate shortcut exit DESTINATION
+1066: Room = 506. Cave to the Sealed Gate B1 North to Entry Room
+1067: Room = 506. Cave to the Sealed Gate B1 South to Lava Switch Room
+1069: Room = 507. Cave to Sealed Gate Last Room South Door
+1264: Room = 507. Cave to Sealed Gate Last Room to Sealed Gate
+2031: Room = 507. Cave to the Sealed Gate shortcut exit
+1070: Room = 508. Cave to Sealed Gate Main Room to Last Room
+3030: Room = 508. Cave to Sealed Gate Main Room switch bridges DESTINATION
+1071: Room = 509. Cave to Sealed Gate Main Room to Lava Switch Room
+1072: Room = 509. Cave to Sealed Gate Main Room to Save Point Room
+2029: Room = 509. Cave to Sealed Gate Main Room grand staircase
+1073: Room = 510. Cave to Sealed Gate Main Room to 4 Chest Room
+2030: Room = 510. Cave to Sealed Gate Main Room switch bridges
+3029: Room = 510. Cave to Sealed Gate Main Room grand staircase DESTINATION
+1074: Room = 511. Cave to Sealed Gate 4 Chest Room
+1075: Room = 512. Cave to Sealed Gate Lava Switch Room North
+1077: Room = 512. Cave to Sealed Gate Lava Switch Room South
+1078: Room = 513. Cave to Sealed Gate Save Point Room
+1079: Room = 514. Sealed Gate
+1058: Room = root-sg. Imperial Base House Outside
+1263: Room = root-sg. Imperial Base East to Cave to Sealed Gate World Map
+603: Room = 294. Zozo Clock Puzzle Room 2F Outside
+605: Room = 295. Zozo Cafe 2F Left Outside
+606: Room = 296. Zozo Cafe 2F Right Outside
+607: Room = 296. Zozo Cafe 3F Right Outside
+609: Room = 297. Zozo Relic 2F Outside
+610: Room = 297. Zozo Relic 3F Outside
+3032: Room = 297. virtual door DESTINATION
+611: Room = 298. Zozo Tower 4F Outside to 3F Narrow Hallway
+612: Room = 298. Zozo Tower 6F to 6F Single Chest Room Outside
+616: Room = 298. Zozo West Tower 4F Outside
+2032: Room = 298. virtual door
+613: Room = 299. Zozo Tower 7F Outside
+617: Room = 299. Zozo West Tower 5F Outside
+614: Room = 300. Zozo Tower 10F Outside
+615: Room = 300. Zozo Tower 12F Outside
+619: Room = 300. Zozo Tower 14F
+620: Room = 301. Zozo Cafe 1F Inside
+621: Room = 301. Zozo Cafe 2F Left Inside
+622: Room = 301. Zozo Cafe 2F Right Inside
+623: Room = 302. Zozo Relic 1F Inside
+624: Room = 302. Zozo Relic 2F Inside
+625: Room = 303a. Zozo Relic 3F Inside
+2033: Room = 303a. virtual door
+626: Room = 303b. Zozo Tower 3F Narrow Hallway Stairs to 4F
+3033: Room = 303b. virtual door DESTINATION
+627: Room = 304. Zozo West Tower Right Door 4F Inside
+628: Room = 304. Zozo West Tower Left Door 5F Inside
+629: Room = 305. Zozo Armor Inside
+630: Room = 306. Zozo Weapon Inside
+631: Room = 307a. Zozo Clock Puzzle Room 1F Inside
+632: Room = 307a. Zozo Clock Puzzle Room 2F Inside
+633: Room = 309. Zozo Cafe 3F Right Inside
+634: Room = 310. Zozo Tower 6F Single Chest Room Inside
+635: Room = 311. Zozo Tower 7F Inside
+636: Room = 311. Zozo Tower 10F Inside
+637: Room = 312. Zozo Tower 12F Single Chest Room Inside
+1225: Room = 313. Zozo Tower Ramuh's Room 14F Inside
+600: Room = root-zb. Zozo Weapon Outside
+601: Room = root-zb. Zozo Armor Outside
+602: Room = root-zb. Zozo Clock Puzzle Room 1F Outside
+604: Room = root-zb. Zozo Cafe 1F Outside
+608: Room = root-zb. Zozo Relic 1F Outside
+4603: Room = 294r. Zozo Clock Puzzle Room 2F Outside WOR
+4605: Room = 295r. Zozo Cafe 2F Left Outside WOR
+4606: Room = 296r. Zozo Cafe 2F Right Outside WOR
+4607: Room = 296r. Zozo Cafe 3F Right Outside WOR
+618: Room = 296r. Zozo Door to Mt Zozo
+4620: Room = 301r. Zozo Cafe 1F Inside WOR
+4621: Room = 301r. Zozo Cafe 2F Left Inside WOR
+4622: Room = 301r. Zozo Cafe 2F Right Inside WOR
+4629: Room = 305r. Zozo Armor Inside WOR
+4630: Room = 306r. Zozo Weapon Inside WOR
+4631: Room = 307r. Zozo Clock Puzzle Room 1F Inside WOR
+4632: Room = 307r. Zozo Clock Puzzle Room 2F Inside WOR
+4633: Room = 309r. Zozo Cafe 3F Right Inside WOR
+4600: Room = root-zr. Zozo Weapon Outside WOR
+4601: Room = root-zr. Zozo Armor Outside WOR
+4602: Room = root-zr. Zozo Clock Puzzle Room 1F Outside WOR
+4604: Room = root-zr. Zozo Cafe 1F Outside WOR
+531: Room = 250. Mt Zozo Outside Bridge West Door Left Tile
+533: Room = 250. Mt Zozo Outside Bridge East Door
+534: Room = 251. Mt Zozo Outside Single Chest Room
+535: Room = 252. Mt Zozo Outside Cliff to Cyan's Cave West Door
+536: Room = 252. Mt Zozo Outside Cliff to Cyan's Cave East Door
+537: Room = 253. Mt Zozo Inside Door to Zozo
+538: Room = 253. Mt Zozo Inside to Single Chest Room
+539: Room = 253. Mt Zozo Inside to Bridge Room East
+540: Room = 254. Mt Zozo Inside to Bridge Room West
+541: Room = 254. Mt Zozo Inside to Cliff to Cyan's Cave West
+542: Room = 255. Mt Zozo Cyan's Cave West
+543: Room = 255. Mt Zozo Cyan's Cave East
+1204: Room = 256. Mt Zozo Cyan's Cliff
+Rooms:
+364: door count = [3, 2, 1]
+		doors: [729, 730, 731]one-way exits: [2001, 2002]
+		 one-way entrances: [3010]
+365: door count = [2, 0, 5]
+		doors: [732, 733]one-way exits: []
+		 one-way entrances: [3001, 3002, 3003, 3005, 3007]
+366: door count = [1, 2, 0]
+		doors: [734]one-way exits: [2003, 2004]
+		 one-way entrances: []
+367a: door count = [1, 1, 0]
+		doors: [735]one-way exits: [2007]
+		 one-way entrances: []
+367b: door count = [2, 2, 0]
+		doors: [736, 738]one-way exits: [2006, 2008]
+		 one-way entrances: []
+367c: door count = [1, 1, 0]
+		doors: [737]one-way exits: [2005]
+		 one-way entrances: []
+368: door count = [0, 1, 1]
+		doors: []one-way exits: [2009]
+		 one-way entrances: [3004]
+19: door count = [2, 0, 0]
+		doors: [113, 114]one-way exits: []
+		 one-way entrances: []
+20: door count = [2, 0, 0]
+		doors: [115, 1139]one-way exits: []
+		 one-way entrances: []
+22: door count = [2, 0, 0]
+		doors: [1140, 1141]one-way exits: []
+		 one-way entrances: []
+23: door count = [1, 0, 0]
+		doors: [1142]one-way exits: []
+		 one-way entrances: []
+53: door count = [2, 0, 0]
+		doors: [169, 170]one-way exits: []
+		 one-way entrances: []
+54: door count = [2, 0, 0]
+		doors: [171, 172]one-way exits: []
+		 one-way entrances: []
+55: door count = [2, 0, 0]
+		doors: [173, 174]one-way exits: []
+		 one-way entrances: []
+59: door count = [3, 0, 0]
+		doors: [178, 179, 1155]one-way exits: []
+		 one-way entrances: []
+60: door count = [1, 0, 0]
+		doors: [180]one-way exits: []
+		 one-way entrances: []
+root-unb: door count = [1, 0, 0]
+		doors: [1138]one-way exits: []
+		 one-way entrances: []
+37a: door count = [2, 0, 1]
+		doors: [145, 146]one-way exits: []
+		 one-way entrances: [3009]
+38: door count = [2, 0, 0]
+		doors: [147, 1147]one-way exits: []
+		 one-way entrances: []
+40: door count = [2, 0, 0]
+		doors: [1148, 1149]one-way exits: []
+		 one-way entrances: []
+41a: door count = [1, 1, 0]
+		doors: [1150]one-way exits: [2010]
+		 one-way entrances: []
+42: door count = [2, 0, 0]
+		doors: [148, 149]one-way exits: []
+		 one-way entrances: []
+43: door count = [2, 0, 0]
+		doors: [150, 151]one-way exits: []
+		 one-way entrances: []
+44: door count = [2, 0, 0]
+		doors: [152, 153]one-way exits: []
+		 one-way entrances: []
+46: door count = [3, 0, 0]
+		doors: [156, 157, 1151]one-way exits: []
+		 one-way entrances: []
+47: door count = [1, 0, 0]
+		doors: [158]one-way exits: []
+		 one-way entrances: []
+root-unr: door count = [1, 0, 0]
+		doors: [1146]one-way exits: []
+		 one-way entrances: []
+488: door count = [2, 0, 0]
+		doors: [1032, 1033]one-way exits: []
+		 one-way entrances: []
+489: door count = [2, 0, 0]
+		doors: [1034, 1036]one-way exits: []
+		 one-way entrances: []
+490: door count = [1, 0, 0]
+		doors: [1037]one-way exits: []
+		 one-way entrances: []
+491: door count = [2, 0, 0]
+		doors: [1038, 1040]one-way exits: []
+		 one-way entrances: []
+492: door count = [2, 0, 0]
+		doors: [1042, 1043]one-way exits: []
+		 one-way entrances: []
+493: door count = [1, 0, 0]
+		doors: [1044]one-way exits: []
+		 one-way entrances: []
+494: door count = [1, 0, 0]
+		doors: [1045]one-way exits: []
+		 one-way entrances: []
+495: door count = [4, 0, 0]
+		doors: [1046, 1047, 1048, 1049]one-way exits: []
+		 one-way entrances: []
+496: door count = [2, 0, 3]
+		doors: [1050, 1051]one-way exits: []
+		 one-way entrances: [3011, 3012, 3013]
+497: door count = [1, 3, 0]
+		doors: [1052]one-way exits: [2014, 2015, 2016]
+		 one-way entrances: []
+498: door count = [2, 1, 1]
+		doors: [1053, 1054]one-way exits: [2011]
+		 one-way entrances: [3015]
+499: door count = [1, 1, 1]
+		doors: [1055]one-way exits: [2013]
+		 one-way entrances: [3016]
+500: door count = [1, 1, 1]
+		doors: [1056]one-way exits: [2012]
+		 one-way entrances: [3014]
+501: door count = [1, 0, 0]
+		doors: [1057]one-way exits: []
+		 one-way entrances: []
+root-em: door count = [1, 0, 0]
+		doors: [44]one-way exits: []
+		 one-way entrances: []
+277: door count = [2, 0, 0]
+		doors: [580, 581]one-way exits: []
+		 one-way entrances: []
+278: door count = [3, 0, 1]
+		doors: [582, 583, 585]one-way exits: []
+		 one-way entrances: [3017]
+279: door count = [1, 0, 0]
+		doors: [584]one-way exits: []
+		 one-way entrances: []
+280: door count = [2, 2, 0]
+		doors: [586, 587]one-way exits: [2017, 2018]
+		 one-way entrances: []
+281: door count = [1, 1, 1]
+		doors: [588]one-way exits: [2019]
+		 one-way entrances: [3021]
+282: door count = [1, 1, 1]
+		doors: [589]one-way exits: [2021]
+		 one-way entrances: [3020]
+283: door count = [0, 1, 1]
+		doors: []one-way exits: [2020]
+		 one-way entrances: [3019]
+284: door count = [1, 0, 0]
+		doors: [591]one-way exits: []
+		 one-way entrances: []
+root-ob: door count = [1, 0, 0]
+		doors: [593]one-way exits: []
+		 one-way entrances: []
+345: door count = [1, 1, 0]
+		doors: [702]one-way exits: [2023]
+		 one-way entrances: []
+346: door count = [1, 1, 1]
+		doors: [703]one-way exits: [2022]
+		 one-way entrances: [3023]
+347: door count = [1, 2, 3]
+		doors: [704]one-way exits: [2024, 2025]
+		 one-way entrances: [3022, 3024, 3026]
+349: door count = [2, 1, 1]
+		doors: [705, 706]one-way exits: [2026]
+		 one-way entrances: [3025]
+351: door count = [2, 0, 0]
+		doors: [709, 710]one-way exits: []
+		 one-way entrances: []
+352: door count = [1, 0, 0]
+		doors: [711]one-way exits: []
+		 one-way entrances: []
+353: door count = [2, 0, 0]
+		doors: [712, 713]one-way exits: []
+		 one-way entrances: []
+354: door count = [2, 0, 0]
+		doors: [714, 715]one-way exits: []
+		 one-way entrances: []
+355: door count = [1, 1, 0]
+		doors: [716]one-way exits: [2027]
+		 one-way entrances: []
+355a: door count = [0, 1, 1]
+		doors: []one-way exits: [2028]
+		 one-way entrances: [3027]
+root-mf: door count = [1, 0, 1]
+		doors: [1229]one-way exits: []
+		 one-way entrances: [3028]
+503: door count = [2, 0, 0]
+		doors: [1061, 1062]one-way exits: []
+		 one-way entrances: []
+504: door count = [1, 0, 0]
+		doors: [1063]one-way exits: []
+		 one-way entrances: []
+504a: door count = [2, 0, 0]
+		doors: [41, 43]one-way exits: []
+		 one-way entrances: []
+505: door count = [2, 0, 1]
+		doors: [1064, 1065]one-way exits: []
+		 one-way entrances: [3031]
+506: door count = [2, 0, 0]
+		doors: [1066, 1067]one-way exits: []
+		 one-way entrances: []
+507: door count = [2, 1, 0]
+		doors: [1069, 1264]one-way exits: [2031]
+		 one-way entrances: []
+508: door count = [1, 0, 1]
+		doors: [1070]one-way exits: []
+		 one-way entrances: [3030]
+509: door count = [2, 1, 0]
+		doors: [1071, 1072]one-way exits: [2029]
+		 one-way entrances: []
+510: door count = [1, 1, 1]
+		doors: [1073]one-way exits: [2030]
+		 one-way entrances: [3029]
+511: door count = [1, 0, 0]
+		doors: [1074]one-way exits: []
+		 one-way entrances: []
+512: door count = [2, 0, 0]
+		doors: [1075, 1077]one-way exits: []
+		 one-way entrances: []
+513: door count = [1, 0, 0]
+		doors: [1078]one-way exits: []
+		 one-way entrances: []
+514: door count = [1, 0, 0]
+		doors: [1079]one-way exits: []
+		 one-way entrances: []
+root-sg: door count = [2, 0, 0]
+		doors: [1058, 1263]one-way exits: []
+		 one-way entrances: []
+294: door count = [1, 0, 0]
+		doors: [603]one-way exits: []
+		 one-way entrances: []
+295: door count = [1, 0, 0]
+		doors: [605]one-way exits: []
+		 one-way entrances: []
+296: door count = [2, 0, 0]
+		doors: [606, 607]one-way exits: []
+		 one-way entrances: []
+297: door count = [2, 0, 1]
+		doors: [609, 610]one-way exits: []
+		 one-way entrances: [3032]
+298: door count = [3, 1, 0]
+		doors: [611, 612, 616]one-way exits: [2032]
+		 one-way entrances: []
+299: door count = [2, 0, 0]
+		doors: [613, 617]one-way exits: []
+		 one-way entrances: []
+300: door count = [3, 0, 0]
+		doors: [614, 615, 619]one-way exits: []
+		 one-way entrances: []
+301: door count = [3, 0, 0]
+		doors: [620, 621, 622]one-way exits: []
+		 one-way entrances: []
+302: door count = [2, 0, 0]
+		doors: [623, 624]one-way exits: []
+		 one-way entrances: []
+303a: door count = [1, 1, 0]
+		doors: [625]one-way exits: [2033]
+		 one-way entrances: []
+303b: door count = [1, 0, 1]
+		doors: [626]one-way exits: []
+		 one-way entrances: [3033]
+304: door count = [2, 0, 0]
+		doors: [627, 628]one-way exits: []
+		 one-way entrances: []
+305: door count = [1, 0, 0]
+		doors: [629]one-way exits: []
+		 one-way entrances: []
+306: door count = [1, 0, 0]
+		doors: [630]one-way exits: []
+		 one-way entrances: []
+307a: door count = [2, 0, 0]
+		doors: [631, 632]one-way exits: []
+		 one-way entrances: []
+309: door count = [1, 0, 0]
+		doors: [633]one-way exits: []
+		 one-way entrances: []
+310: door count = [1, 0, 0]
+		doors: [634]one-way exits: []
+		 one-way entrances: []
+311: door count = [2, 0, 0]
+		doors: [635, 636]one-way exits: []
+		 one-way entrances: []
+312: door count = [1, 0, 0]
+		doors: [637]one-way exits: []
+		 one-way entrances: []
+313: door count = [1, 0, 0]
+		doors: [1225]one-way exits: []
+		 one-way entrances: []
+root-zb: door count = [5, 0, 0]
+		doors: [600, 601, 602, 604, 608]one-way exits: []
+		 one-way entrances: []
+294r: door count = [1, 0, 0]
+		doors: [4603]one-way exits: []
+		 one-way entrances: []
+295r: door count = [1, 0, 0]
+		doors: [4605]one-way exits: []
+		 one-way entrances: []
+296r: door count = [3, 0, 0]
+		doors: [4606, 4607, 618]one-way exits: []
+		 one-way entrances: []
+301r: door count = [3, 0, 0]
+		doors: [4620, 4621, 4622]one-way exits: []
+		 one-way entrances: []
+305r: door count = [1, 0, 0]
+		doors: [4629]one-way exits: []
+		 one-way entrances: []
+306r: door count = [1, 0, 0]
+		doors: [4630]one-way exits: []
+		 one-way entrances: []
+307r: door count = [2, 0, 0]
+		doors: [4631, 4632]one-way exits: []
+		 one-way entrances: []
+309r: door count = [1, 0, 0]
+		doors: [4633]one-way exits: []
+		 one-way entrances: []
+root-zr: door count = [4, 0, 0]
+		doors: [4600, 4601, 4602, 4604]one-way exits: []
+		 one-way entrances: []
+250: door count = [2, 0, 0]
+		doors: [531, 533]one-way exits: []
+		 one-way entrances: []
+251: door count = [1, 0, 0]
+		doors: [534]one-way exits: []
+		 one-way entrances: []
+252: door count = [2, 0, 0]
+		doors: [535, 536]one-way exits: []
+		 one-way entrances: []
+253: door count = [3, 0, 0]
+		doors: [537, 538, 539]one-way exits: []
+		 one-way entrances: []
+254: door count = [2, 0, 0]
+		doors: [540, 541]one-way exits: []
+		 one-way entrances: []
+255: door count = [2, 0, 0]
+		doors: [542, 543]one-way exits: []
+		 one-way entrances: []
+256: door count = [1, 0, 0]
+		doors: [1204]one-way exits: []
+		 one-way entrances: []
+Forced connections:
+2011 --> [3011]
+2013 --> [3013]
+2012 --> [3012]
+2023 --> [3023]
+2029 --> [3029]
+2030 --> [3030]
+1079 --> [1264]
+2032 --> [3032]
+2033 --> [3033]
+Map:
+1079 --> 1264(Sealed Gate --> Cave to Sealed Gate Last Room to Sealed Gate)
+1057 --> 1066(Esper Mountain Inside Final Room Dead End --> Cave to the Sealed Gate B1 North to Entry Room)
+1063 --> 147(Imperial Base House Stairs Up --> Narshe Northern Mines 3F East WoR)
+1074 --> 1058(Cave to Sealed Gate 4 Chest Room --> Imperial Base House Outside)
+1146 --> 635(Narshe Northern Mines Outside to Mines Main Hallway WoR --> Zozo Tower 7F Inside)
+4633 --> 174(Zozo Cafe 3F Right Inside WOR --> Narshe Northern Mines 3F Inside East WoB)
+634 --> 627(Zozo Tower 6F Single Chest Room Inside --> Zozo West Tower Right Door 4F Inside)
+44 --> 710(Esper Mountain --> Magitek Factory Stairwell Top)
+1045 --> 1051(Esper Mountain Outside Northwest Treasure Room --> Esper Mountain Inside Second Room Southeast Door)
+593 --> 4606(Owzer's House Door to Behind Painting --> Zozo Cafe 2F Right Outside WOR)
+603 --> 733(Zozo Clock Puzzle Room 2F Outside --> Umaro Cave Bridge Room to Switch Room)
+605 --> 613(Zozo Cafe 2F Left Outside --> Zozo Tower 7F Outside)
+636 --> 145(Zozo Tower 10F Inside --> Narshe Northern Mines 2F Outside WoR)
+180 --> 1046(Narshe Northern Mines Tritoch Room WoB --> Esper Mountain Inside First Room North Door to Outside Loop)
+1037 --> 152(Esper Mountain Outside East Treasure Room --> Narshe Northern Mines 3F Inside West WoR)
+630 --> 1073(Zozo Weapon Inside --> Cave to Sealed Gate Main Room to 4 Chest Room)
+1204 --> 611(Mt Zozo Cyan's Cliff --> Zozo Tower 4F Outside to 3F Narrow Hallway)
+709 --> 632(Magitek Factory Stairwell Bottom --> Zozo Clock Puzzle Room 2F Inside)
+1263 --> 537(Imperial Base East to Cave to Sealed Gate World Map  --> Mt Zozo Inside Door to Zozo)
+1044 --> 149(Esper Mountain Outside West Treasure Room --> Narshe Northern Mines 1F Stairs to 2F WoR)
+1142 --> 1056(Narshe Peak WoB --> Esper Mountain Inside Second Room North Door)
+633 --> 169(Zozo Cafe 3F Right Inside --> Narshe Northern Mines Side Room to Main Hallway WoB)
+631 --> 1141(Zozo Clock Puzzle Room 1F Inside --> Snow Battlefield North WoB)
+534 --> 4601(Mt Zozo Outside Single Chest Room --> Zozo Armor Outside WOR)
+1225 --> 620(Zozo Tower Ramuh's Room 14F Inside --> Zozo Cafe 1F Inside)
+4603 --> 608(Zozo Clock Puzzle Room 2F Outside WOR --> Zozo Relic 1F Outside)
+1140 --> 609(Snow Battlefield South WoB --> Zozo Relic 2F Outside)
+4630 --> 1139(Zozo Weapon Inside WOR --> Narshe Northern Mines 3F to Snow Battlefield WoB)
+153 --> 536(Narshe Northern Mines 3F Inside East WoR --> Mt Zozo Outside Cliff to Cyan's Cave East Door)
+629 --> 156(Zozo Armor Inside --> Narshe Northern Mines Main Hallway to Side Room WoR)
+4605 --> 1071(Zozo Cafe 2F Left Outside WOR --> Cave to Sealed Gate Main Room to Lava Switch Room)
+173 --> 580(Narshe Northern Mines 3F Inside West WoB --> Owzer's Behind Painting to Owzer's House)
+1147 --> 706(Narshe Northern Mines 3F to Snow Battlefield WoR --> Magitek Factory Garbage Room Right Door)
+4629 --> 1040(Zozo Armor Inside WOR --> Esper Mountain Outside Path to Final Room West Door Left Tile)
+628 --> 729(Zozo West Tower Left Door 5F Inside --> Umaro Cave 1st Room West Door)
+584 --> 600(Owzer's Basement Single Chest Room --> Zozo Weapon Outside)
+581 --> 539(Owzer's Behind Painting Stairs Down --> Mt Zozo Inside to Bridge Room East)
+617 --> 607(Zozo West Tower 5F Outside --> Zozo Cafe 3F Right Outside)
+1138 --> 1042(Narshe Northern Mines Outside to Mines Main Hallway Inside WoB --> Esper Mountain Outside Statue Path South Door)
+148 --> 582(Narshe Northern Mines Side Room to Main Hallway WoR --> Owzer's Basement Stairs Up)
+606 --> 601(Zozo Cafe 2F Right Outside --> Zozo Armor Outside)
+170 --> 586(Narshe Northern Mines 1F Stairs to 2F WoB --> Owzer's Basement Switching Door Room South)
+1067 --> 4604(Cave to the Sealed Gate B1 South to Lava Switch Room --> Zozo Cafe 1F Outside WOR)
+538 --> 615(Mt Zozo Inside to Single Chest Room --> Zozo Tower 12F Outside)
+711 --> 179(Magitek Factory Save Point Room --> Narshe Northern Mines Main Hallway Inside to Mines Outside WoB)
+591 --> 622(Owzer's Basement Chadarnook's Room --> Zozo Cafe 2F Right Inside)
+535 --> 1053(Mt Zozo Outside Cliff to Cyan's Cave West Door --> Esper Mountain Inside Second Room West Door)
+1043 --> 43(Esper Mountain Outside Statue Path North Door --> Cave to Sealed Gate)
+637 --> 1155(Zozo Tower 12F Single Chest Room Inside --> Narshe Northern Mines Main Hallway to Tritoch Room WoB)
+1078 --> 705(Cave to Sealed Gate Save Point Room --> Magitek Factory Garbage Room Left Door)
+1038 --> 1047(Esper Mountain Outside Path to Final Room East Door Left Tile --> Esper Mountain Inside to World Map)
+621 --> 533(Zozo Cafe 2F Left Inside --> Mt Zozo Outside Bridge East Door)
+115 --> 540(Narshe Northern Mines 3F Outside East WoB --> Mt Zozo Inside to Bridge Room West)
+178 --> 619(Narshe Northern Mines Main Hallway to Side Room WoB --> Zozo Tower 14F)
+531 --> 583(Mt Zozo Outside Bridge West Door Left Tile --> Owzer's Basement Door to Single Chest Room)
+614 --> 1075(Zozo Tower 10F Outside --> Cave to Sealed Gate Lava Switch Room North)
+541 --> 604(Mt Zozo Inside to Cliff to Cyan's Cave West --> Zozo Cafe 1F Outside)
+602 --> 4632(Zozo Clock Puzzle Room 1F Outside --> Zozo Clock Puzzle Room 2F Inside WOR)
+41 --> 1036(Imperial Base Right Tile WoB --> Esper Mountain Outside Bridge Room East Door)
+1034 --> 113(Esper Mountain Outside Bridge Room West Door Left Tile --> Narshe Northern Mines 2F Outside WoB)
+158 --> 713(Narshe Northern Mines Tritoch Room WoR --> Magitek Factory Tube Hallway West)
+114 --> 623(Narshe Northern Mines 3F Outside West WoB --> Zozo Relic 1F Inside)
+1077 --> 1049(Cave to Sealed Gate Lava Switch Room South --> Esper Mountain Inside First Room East Door to Statue Path)
+4631 --> 151(Zozo Clock Puzzle Room 1F Inside WOR --> Narshe Northern Mines 2F Inside WoR)
+150 --> 1062(Narshe Northern Mines 2F Stairs to 1F WoR --> Imperial Base House Stairs Down)
+712 --> 172(Magitek Factory Tube Hallway East --> Narshe Northern Mines 2F Inside WoB)
+1061 --> 542(Imperial Base House Inside --> Mt Zozo Cyan's Cave West)
+1048 --> 157(Esper Mountain Inside First Room West Door to Outside Loop --> Narshe Northern Mines Main Hallway to  Mines Outside WoR)
+171 --> 4602(Narshe Northern Mines 2F Stairs to 1F WoB --> Zozo Clock Puzzle Room 1F Outside WOR)
+543 --> 714(Mt Zozo Cyan's Cave East --> Magitek Factory Number 024 Room South)
+4600 --> 1065(Zozo Weapon Outside WOR --> Cave to the Sealed Gate Entry Room to B1)
+1151 --> 4621(Narshe Northern Mines Main Hallway to Tritoch Room WoR --> Zozo Cafe 2F Left Inside WOR)
+715 --> 704(Magitek Factory Number 024 Room North --> Magitek Factory Lower Room Door)
+624 --> 4620(Zozo Relic 2F Inside --> Zozo Cafe 1F Inside WOR)
+4622 --> 616(Zozo Cafe 2F Right Inside WOR --> Zozo West Tower 4F Outside)
+1148 --> 1229(Snow Battlefield South WoR --> Vector To Magitek)
+4607 --> 734(Zozo Cafe 3F Right Outside WOR --> Umaro Cave Switch Room to Bridge Room)
+1032 --> 732(Esper Mountain 3 Statues Room Left Door --> Umaro Cave Bridge Room to 2nd Room)
+737 --> 703(Umaro Cave 2nd Room to 1st Room East Door --> Magitek Factory Entrance)
+716 --> 626(Magitek Factory Esper Tube Room --> Zozo Tower 3F Narrow Hallway Stairs to 4F)
+625 --> 1050(Zozo Relic 3F Inside --> Esper Mountain Inside Second Room Southwest Door)
+702 --> 1070(Magitek Factory Upper Room Door --> Cave to Sealed Gate Main Room to Last Room)
+1150 --> 1033(Narshe Peak WoR --> Esper Mountain 3 Statues Room Right Door)
+735 --> 730(Umaro Cave 2nd Room to 1st Room West Door --> Umaro Cave 1st Room Middle Door)
+1069 --> 731(Cave to Sealed Gate Last Room South Door --> Umaro Cave 1st Room East Door)
+612 --> 610(Zozo Tower 6F to 6F Single Chest Room Outside --> Zozo Relic 3F Outside)
+1072 --> 1064(Cave to Sealed Gate Main Room to Save Point Room --> Cave to the Sealed Gate to World Map)
+1149 --> 738(Snow Battlefield North WoR --> Umaro Cave 2nd Room to Bridge Room)
+585 --> 1054(Owzer's Basement First Room to Door Switch Room --> Esper Mountain Inside Second Room Northwest Door)
+146 --> 589(Narshe Northern Mines 3F West WoR --> Owzer's Basement Save Point Room Right Door)
+588 --> 1052(Owzer's Basement Behind Door Switch Room South Door --> Esper Mountain Inside Pit Room)
+1055 --> 618(Esper Mountain Inside Second Room East Door --> Zozo Door to Mt Zozo)
+736 --> 587(Umaro Cave 2nd Room to 1st Room Middle Door --> Owzer's Basement Switching Door Room Left Door)
+4629 --> 1041(Zozo Armor Inside WOR --> Esper Mountain Outside Path to Final Room West Door Right Tile)
+1039 --> 1047(Esper Mountain Outside Path to Final Room East Door Right Tile --> Esper Mountain Inside to World Map)
+532 --> 583(Mt Zozo Outside Bridge West Door Right Tile --> Owzer's Basement Door to Single Chest Room)
+614 --> 1076(Zozo Tower 10F Outside --> Cave to Sealed Gate Lava Switch Room North)
+1035 --> 113(Esper Mountain Outside Bridge Room West Door Right Tile --> Narshe Northern Mines 2F Outside WoB)
+1148 --> 1226(Snow Battlefield South WoR --> Vector After Train Ride To Magitek)
+2032 --> 3032(virtual door --> virtual door DESTINATION)
+2013 --> 3013(Esper Mtn 2nd Room bridge jump east --> Esper Mtn 2nd Room bridge jump east DESTINATION)
+2011 --> 3011(Esper Mtn 2nd Room bridge jump west --> Esper Mtn 2nd Room bridge jump west DESTINATION)
+2029 --> 3029(Cave to Sealed Gate Main Room grand staircase --> Cave to Sealed Gate Main Room grand staircase DESTINATION)
+2033 --> 3033(virtual door --> virtual door DESTINATION)
+2012 --> 3012(Esper Mtn 2nd Room bridge jump middle --> Esper Mtn 2nd Room bridge jump middle DESTINATION)
+2023 --> 3023(Magitek factory platform elevator to Mtek-1 --> Magitek factory platform elevator to Mtek-1 DESTINATION)
+2030 --> 3030(Cave to Sealed Gate Main Room switch bridges --> Cave to Sealed Gate Main Room switch bridges DESTINATION)
+2022 --> 3015(Magitek factory 1 conveyor to Mtek-2 top tile --> Esper Mtn Pit Room North trapdoor DESTINATION)
+2031 --> 3024(Cave to the Sealed Gate shortcut exit --> Magitek factory 2 pipe exit loop DESTINATION)
+2024 --> 3020(Magitek factory 2 pipe exit loop --> Owzer's Mansion floating chest room exit DESTINATION)
+2021 --> 3001(Owzer's Mansion save point room oneway --> Umaro Cave 1st Room trapdoor top DESTINATION)
+2008 --> 3028(Umaro Cave 2nd Room west trapdoor --> Magitek factory minecart start event DESTINATION)
+2027 --> 3031(Magitek factory lab Cids elevator --> Cave to the Sealed Gate shortcut exit DESTINATION)
+2005 --> 3019(Umaro Cave 2nd Room east trapdoor --> Owzer's Mansion behind switching door exit DESTINATION)
+2020 --> 3004(Owzer's Mansion floating chest room exit --> Umaro Cave Switch Room trapdoor to Boss DESTINATION)
+2009 --> 3009(Umaro Cave Umaro's Room trapdoor to Narshe --> Umaro Cave Umaro's Room trapdoor to Narshe DESTINATION)
+2010 --> 3026(<VIRTUAL> Narshe Peak WoR entrance to Umaro's Cave --> Magitek factory pit hook to Mtek-2 DESTINATION)
+2006 --> 3019(Umaro Cave 2nd Room east trapdoor --> Owzer's Mansion behind switching door exit DESTINATION)
+2014 --> 3014(Esper Mtn Pit Room South trapdoor --> Esper Mtn Pit Room South trapdoor DESTINATION)
+2016 --> 3010(Esper Mtn Pit Room East trapdoor --> <VIRTUAL> Narshe Peak WoR entrance to Umaro's Cave DESTINATION)
+2007 --> 3028(Umaro Cave 2nd Room west trapdoor --> Magitek factory minecart start event DESTINATION)
+2003 --> 3021(Umaro Cave Switch Room trapdoor to 2nd Room --> Owzer's Mansion save point room oneway DESTINATION)
+2019 --> 3003(Owzer's Mansion behind switching door exit --> Umaro Cave Switch Room trapdoor to 2nd Room DESTINATION)
+2001 --> 3016(Umaro Cave 1st Room trapdoor top --> Esper Mtn Pit Room East trapdoor DESTINATION)
+2004 --> 3025(Umaro Cave Switch Room trapdoor to Boss --> Magitek factory 2 conveyor to pit left tile DESTINATION)
+2015 --> 3002(Esper Mtn Pit Room North trapdoor --> Umaro Cave 1st Room trapdoor left DESTINATION)
+2002 --> 3005(Umaro Cave 1st Room trapdoor left --> Umaro Cave 2nd Room east trapdoor DESTINATION)
+2025 --> 3027(Magitek factory 2 conveyor to pit left tile --> Magitek factory lab Cids elevator DESTINATION)
+2028 --> 3017(Magitek factory minecart start event --> Owzer's Mansion switching door left DESTINATION)
+2018 --> 3007(Owzer's Mansion switching door right --> Umaro Cave 2nd Room west trapdoor DESTINATION)
+2017 --> 3007(Owzer's Mansion switching door left --> Umaro Cave 2nd Room west trapdoor DESTINATION)
+2026 --> 3022(Magitek factory pit hook to Mtek-2 --> Magitek factory 1 conveyor to Mtek-2 top tile DESTINATION)

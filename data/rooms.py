@@ -27,8 +27,9 @@ room_data = {
     'root-zr': [[4600, 4601, 4602, 4604], [], [], 1],  # Zozo 1F Outside WOR
     'branch-mz': [ [537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
+    'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
 
-    0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [ ], 0],  # World of Balance
+    0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [ ], 1],  # World of Ruin
 
     2 : [ [81], [ ], [ ], 0], #Blackjack Outside
@@ -287,7 +288,14 @@ room_data = {
     169 : [ [407], [ ], [ ], 0], #Returner's Hideout Bedroom
     170 : [ [408], [ ], [ ], 0], #Returner's Hideout Inn
     171 : [ [409, 410], [ ], [ ], 0], #Returner's Hideout Secret Passage
-    172 : [ [1182], [ ], [ ], 0], #Lete River Jumpoff
+    172 : [ [1182], [2034], [ ], 0], #Lete River Jumpoff
+
+    # LETE RIVER
+    'LeteRiver1':  [ [ ], [2035], [3034], 0], # Lete River section 1
+    'LeteCave1' :  [ [ ], [2036], [3035], 0], # Lete River cave 1
+    'LeteRiver2':  [ [ ], [2037], [3036], 0],  # Lete River section 2
+    'LeteCave2' :  [ [ ], [2038], [3037], 0],  # Lete River cave 2
+    'LeteRiver3':  [ [ ], [2039], [3038], 0],  # Lete River section 3 + boss
 
     # GAU'S DAD'S HOUSE
     173 : [ [411, 1183], [ ], [ ], 0], #Crazy Old Man's House Outside WoB
@@ -783,8 +791,9 @@ forced_connections = {
     1079 : [1264],   # Cave to the Sealed Gate, actual Sealed Gate (must be connected to enable shortcut exit)
 
     2032 : [3032],   # Zozo hook exit from building
-    2033 : [3033]    # Zozo walking guys room
+    2033 : [3033],   # Zozo walking guys room
 
+    2039: [3039]    # Lete river exit to world map
 }
 
 # Add forced connections for virtual doors (-dra)

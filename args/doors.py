@@ -27,6 +27,8 @@ def parse(parser):
                        help="Randomize the doors in Zozo WoR")
     doors.add_argument("-drmz", "--door-randomize-mt-zozo", action="store_true",
                        help="Randomize the doors in Mt Zozo")
+    doors.add_argument("-drlr", "--door-randomize-lete-river", action="store_true",
+                       help="Randomize the doors in Lete River")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -38,7 +40,12 @@ def parse(parser):
 
 def process(args):
     #pass
-    if args.door_randomize_all or args.door_randomize_dungeon_crawl or args.door_randomize_each or args.door_randomize_umaro or args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob or args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor or args.door_randomize_mt_zozo:
+    if args.door_randomize_all or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
+            args.door_randomize_umaro or args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob or \
+            args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or \
+            args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or \
+            args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor \
+            or args.door_randomize_mt_zozo or args.door_randomize_lete_river:
         args.door_randomize = True
     else:
         args.door_randomize = False
@@ -92,6 +99,9 @@ def flags(args):
         if args.door_randomize_mt_zozo:
             flags += " -drmz"
 
+        if args.door_randomize_lete_river:
+            flags += " -drlr"
+
     return flags
 
 def options(args):
@@ -114,6 +124,7 @@ def options(args):
             ("Sealed Gate", True),
             ("Zozo", 'WoB+WoR'),
             ("Mt. Zozo", True),
+            ("Lete River", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -142,6 +153,7 @@ def options(args):
             ("Sealed Gate", args.door_randomize_sealed_gate),
             ("Zozo", zozo_state),
             ("Mt. Zozo", args.door_randomize_mt_zozo),
+            ("Lete River", args.door_randomize_lete_river),
         ]
 
 def menu(args):
