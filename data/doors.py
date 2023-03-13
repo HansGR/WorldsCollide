@@ -954,7 +954,7 @@ class Doors():
                                             print('\t\t\tenough entrances in the connecting zone', walk[0][wi])
                                         flag2 = True
                                         break
-                                    elif zone_counts[walk[0][wi]][2] > 0:
+                                    elif zone_counts[walk[0][wi]][2] > 1:
                                         if self.verbose:
                                             print('\t\t\tenough entrances in zone', walk[0][wi])
                                         flag2 = True

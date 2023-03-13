@@ -3,9 +3,9 @@ from event.event import *
 class MagitekFactory(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
-        self.DOOR_RANDOMIZE = (args.door_randomize_all
+        self.DOOR_RANDOMIZE = (args.door_randomize_magitek_factory
+                          or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_magitek_factory
                           or args.door_randomize_each)
 
     def name(self):
@@ -31,9 +31,6 @@ class MagitekFactory(Event):
         self.setzer_npc = self.maps.get_npc(0x0f0, self.setzer_npc_id)
 
         self.vector_mod()
-
-        if self.DOOR_RANDOMIZE:
-            self.mtek_1_mod()
 
         if self.reward1.type == RewardType.ESPER:
             self.ifrit_shiva_esper_mod(self.reward1.id)
@@ -65,6 +62,10 @@ class MagitekFactory(Event):
         self.log_reward(self.reward1)
         self.log_reward(self.reward2)
         self.log_reward(self.reward3)
+
+        if self.DOOR_RANDOMIZE:
+            self.mtek_1_mod()
+
 
     def vector_mod(self):
         # npcs used to block/enter magitek factory
@@ -250,10 +251,10 @@ class MagitekFactory(Event):
     def minecart_mod(self):
         space = Reserve(0xc7f6c, 0xc7f71, "magitek factory load elevator ride down with cid map", field.NOP())
         space = Reserve(0xc7f80, 0xc7fc2, "magitek factory elevator ride down with cid", field.NOP())
-        if not self.DOOR_RANDOMIZE:
-            space.write(
-                field.Branch(space.end_address + 1), # skip nops
-            )
+        # if not self.DOOR_RANDOMIZE:   # Not needed with JMP technique
+        #     space.write(
+        #         field.Branch(space.end_address + 1), # skip nops
+        #     )
         space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
         space = Reserve(0xc8027, 0xc802a, "magitek factory celes i've known her", field.NOP())
         space = Reserve(0xc803a, 0xc803d, "magitek factory no! it's kefka!", field.NOP())
@@ -411,3 +412,34 @@ class MagitekFactory(Event):
         space = Reserve(0xc77ce, 0xc77d3, "after MTek minecart do not change MTek1 pipeR2", field.NOP())
         space = Reserve(0xc77ec, 0xc77f1, "after MTek minecart do not change MTek1 pipeR3", field.NOP())
         space = Reserve(0xc781b, 0xc7820, "after MTek minecart do not change MTek1 pipeR4", field.NOP())
+
+    # def reride_minecart_mod(src):
+    #     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.
+    #     # C0    If ($1E80($06B) is set), branch to $(new event) that sends you to Vector map instead
+    #     # C0    If ($1E80($069) is set), branch to $(new event) that sends you to MTek3 Vector map without animation
+    #     #from memory.space import Write, Bank
+    #     #from event.event import direction
+    #
+    #     # Hook in at CC/80B5.  Need 4 bytes for field.Call().  LoadMap at CC/80B9.
+    #     patch_magitek_minecart = (
+    #         field.SetEventBit(0x6a3),   # CC/80B5
+    #         field.ClearEventBit(0x6ae), # CC/80B7
+    #         field.BranchIfEventBitSet(event_bit.DEFEATED_CRANES, 'GO_TO_VECTOR'),
+    #         field.BranchIfEventBitSet(event_bit.RODE_MINE_CART_MAGITEK_FACTORY, 'GO_TO_MTEK3_VECTOR'),
+    #         field.Return(),
+    #         'GO_TO_VECTOR',
+    #         field.LoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+    #         field.FadeInScreen(),
+    #         field.Return(),
+    #         'GO_TO_MTEK3_VECTOR',
+    #         field.LoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+    #         field.FadeInScreen(),
+    #         field.Return()
+    #     )
+    #     space = Write(Bank.CC, patch_magitek_minecart, 'Patch for re-rideable minecart')
+    #
+    #     hook = Reserve(0xc80b5, 0xc80b8, 'Hook for Minecart Exit Patch')
+    #     hook_code = (
+    #         field.Call(space.start_address)
+    #     )
+    #     hook.write(hook_code)

@@ -1,5 +1,5 @@
 from data.event_exit_info import *
-from data.rooms import exit_world
+from data.rooms import exit_world, shared_oneways
 from data.parse import delete_nops
 from instruction import field
 import instruction.field.entity as field_entity
@@ -30,10 +30,16 @@ class Transitions:
         self.rom = rom
 
         for m in mapping:
+            # Check reasons to overwrite this transition
             flags = [(m[0] > 2000) and (m[0] != m[1] - 1000),  # connecting two unequal one-ways...
                      m[0] in exit_event_patch,                 # modifications to exit script
-                     m[1] in entrance_event_patch]             # modifications to entrance script
-            if flags.count(True) > 0:
+                     m[1] - 1000 in entrance_event_patch]      # modifications to entrance script
+            # If a shared_oneway, only write the lowest-valued one
+            soo_flag = True
+            if m[0] in shared_oneways:
+                soo_flag = m[0] < min(shared_oneways[m[0]])
+
+            if flags.count(True) > 0 and soo_flag:
                 new_trans = Transition(m[0], m[1], rom, exit_data)
                 self.transitions.append(new_trans)
 
@@ -76,9 +82,9 @@ class Transitions:
                 src_end = t.entr.entr_code
 
             # Run event patches
-            if not t.exit.use_jmp and t.exit.id in exit_event_patch.keys():
+            if t.exit.id in exit_event_patch.keys():
                 [src, src_end] = exit_event_patch[t.exit.id](src, src_end)
-            if not t.entr.use_jmp and t.entr.id in entrance_event_patch.keys():
+            if t.entr.id in entrance_event_patch.keys():
                 [src, src_end] = entrance_event_patch[t.entr.id](src, src_end)
 
             # Perform common event patches
@@ -86,23 +92,23 @@ class Transitions:
             en_patch = []
             t.patches = [False, False, False, False, False]
             if t.exit.is_char_hidden and not t.entr.is_char_hidden:
-                t.patches[0] = True
+                t.patches[0] = 'unhide'
                 # Character is hidden during the transition (command [0x42, 0x31]) and not unhidden later.
                 # Add a "Show object 31" line ("0x41 0x31", two bytes)
                 en_patch += [0x41, 0x31]  # [field.ShowEntity(field_entity.PARTY0)]   #
             if t.exit.is_song_override_on and not t.entr.is_song_override_on:
-                t.patches[1] = True
+                t.patches[1] = 'unsong'
                 # Song override bit is on in the exit but not cleared in the entrance.
                 # Add a "clear $1E80($1CC)" (song override) before transition
                 ex_patch += [0xd3, 0xcc]  # [field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE)]  #
             if t.exit.is_screen_hold_on != t.entr.is_screen_hold_on:
                 if t.exit.is_screen_hold_on:
-                    t.patches[2] = 'off'
+                    t.patches[2] = 'hold_off'
                     # Hold screen bit is set (command 0x38) in the exit but not freed (command 0x39) in the entrance
                     # Add a "0x39 Free Screen" before transition
                     ex_patch += [0x39]  # [field.FreeScreen()]  #
                 elif t.entr.is_screen_hold_on:
-                    t.patches[2] = 'on'
+                    t.patches[2] = 'hold_on'
                     # Hold screen bit is expected to be set (command 0x38) in the entrance
                     # Add a "0x38 Hold Screen" before transition
                     ex_patch += [0x38]  # [field.HoldScreen()]  #

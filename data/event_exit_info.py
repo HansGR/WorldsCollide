@@ -4,16 +4,16 @@
 #   None = not implemented
 event_exit_info = {
     # UMARO'S CAVE
-    2001: [0xcd8d4, 34, 24, [True, True, False, False], 'Umaro Cave 1st Room trapdoor top', [281, 11, 53] ],
-    2002: [0xcd8b2, 34, 24, [True, True, False, False], 'Umaro Cave 1st Room trapdoor left', [281, 10, 54] ],
-    2003: [0xcd93a, 45, 35, [True, True, False, False], 'Umaro Cave Switch Room trapdoor to 2nd Room', [281, 31, 9] ],
-    2004: [0xcd967, 45, 35, [True, True, False, False], 'Umaro Cave Switch Room trapdoor to Boss Room', [281, 40, 12] ],
-    2005: [0xcd918, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room west trapdoor', [282, 33, 26] ],
-    2006: [0xcd918, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***', [282, 33, 26] ],
-    2007: [0xcd8f6, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room east trapdoor', [282, 14, 30] ],
-    2008: [0xcd8f6, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***', [282, 14, 30] ],
-    2009: [0xc3839, 50, 1, [False, False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe', [283, 57, 7] ],
-    2010: [0xc37e7, 82, 67, [True, True, True, False], 'Narshe Peak WoR entrance to Umaros Cave', [35, 9, 12] ],
+    2001: [0xcd8d4, 34, 24, [True, True, False, False], 'Umaro Cave 1st Room trapdoor top', [281, 'JMP', None] ],  # [281, 11, 53]
+    2002: [0xcd8b2, 34, 24, [True, True, False, False], 'Umaro Cave 1st Room trapdoor left', [281, 'JMP', None] ], # [281, 10, 54]
+    2003: [0xcd93a, 45, 35, [True, True, False, False], 'Umaro Cave Switch Room trapdoor to 2nd Room', [281, 'JMP', None] ], # [281, 31, 9]
+    2004: [0xcd967, 45, 35, [True, True, False, False], 'Umaro Cave Switch Room trapdoor to Boss Room', [281, 'JMP', None] ],  # [281, 40, 12]
+    2005: [0xcd918, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room west trapdoor', [282, 'JMP', None] ],  # [282, 33, 26]
+    2006: [0xcd918, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room west trapdoor ***duplicate***', [282, 'JMP', None] ], # [282, 33, 26]
+    2007: [0xcd8f6, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room east trapdoor', [282, 'JMP', None] ], # [282, 14, 30]
+    2008: [0xcd8f6, 34, 24, [True, True, False, False], 'Umaro Cave 2nd Room east trapdoor ***duplicate***', [282, 'JMP', None] ], # [282, 14, 30]
+    2009: [0xc3839, 50, 1, [False, False, False, False], 'Umaro Cave Boss Room trapdoor to Narshe', [283, 'JMP', None] ], # [283, 57, 7]
+    2010: [0xc37e7, 82, 67, [True, True, True, False], 'Narshe Peak WoR entrance to Umaros Cave', [35, 'JMP', None] ],  # [35, 9, 12]
 
     # ESPER MOUNTAIN
     2011: [0xbee80, 15, 0, [None, None, None, None], 'Esper Mtn 2nd Room bridge jump west', [0x177, 36, 53] ],
@@ -22,37 +22,33 @@ event_exit_info = {
     # forced connection, no mod
     2013: [0xbee62, 15, 0, [None, None, None,None], 'Esper Mtn 2nd Room bridge jump east', [0x177, 47, 53] ],
     # forced connection, no mod
-    2014: [0xbee8f, 47, 30, [False, False, True, False], 'Esper Mtn Pit Room South trapdoor', [0x177, 11, 51] ],
-    2015: [0xbeebe, 46, 30, [False, False, True, False], 'Esper Mtn Pit Room North trapdoor', [0x177, 12, 46] ],
-    # no "38 (Hold screen)" after transition
-    2016: [0xbeeec, 47, 30, [False, False, True, False], 'Esper Mtn Pit Room East trapdoor', [0x177, 17, 49]],
+    2014: [0xbee8f, 47, 30, [False, False, True, False], 'Esper Mtn Pit Room South trapdoor', [0x177, 'JMP', None] ],  # [0x177, 11, 51]
+    2015: [0xbeebe, 46, 30, [False, False, True, False], 'Esper Mtn Pit Room North trapdoor', [0x177, 'JMP', None] ],  # [0x177, 12, 46]
+    2016: [0xbeeec, 47, 30, [False, False, True, False], 'Esper Mtn Pit Room East trapdoor', [0x177, 'JMP', None] ],   # [0x177, 17, 49]
 
     # OWZER'S MANSION
-    2017: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door left', [0x0CF, 90, 50]],
-    2018: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door right', [0x0CF, 92, 50]],
-    # same destination, same event!
-    2019: [0xb4bb5, 53, 3, [False, False, False, False], 'Owzers Mansion behind switching door exit', [0x0CF, 85, 50]],
+    2017: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door left', [0x0CF, 'JMP', None]], # [0x0CF, 90, 50]
+    2018: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door right', [0x0CF, 'JMP', None]],  # [0x0CF, 92, 50]
+    # same destination, same event!  When handling as JMP, this is not included a 2nd time (shared_oneways).
+    2019: [0xb4bb5, 53, 3, [False, False, False, False], 'Owzers Mansion behind switching door exit', [0x0CF, 'JMP', None]], # [0x0CF, 85, 50]
     # set event bit 0x24c?
-    2020: [0xb4c94, 13, 1, [False, False, False, False], 'Owzers Mansion floating chest room exit', [0x0CF, 76, 51]],
-    2021: [0xb4bea, 51, 1, [False, False, False, False], 'Owzers Mansion save point room oneway', [0x0CF, 86, 38]],
+    2020: [0xb4c94, 13, 1, [False, False, False, False], 'Owzers Mansion floating chest room exit', [0x0CF, 'JMP', None]], # [0x0CF, 76, 51]
+    2021: [0xb4bea, 51, 1, [False, False, False, False], 'Owzers Mansion save point room oneway', [0x0CF, 'JMP', None]], # [0x0CF, 86, 38]
 
     # MAGITEK FACTORY
-    2022: [0xc7651, 49, 29, [False, False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile', [0x106, 22, 53]],
-    # will require address patching
-    '2022a': [0xc765f, 0, 0, [None, None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile', [0x106, 22, 54]],
-    # same exit as above; requires address patch & tile edit
+    2022: [0xc7651, 49, 29, [False, False, False, False], 'Magitek factory 1 conveyor to Mtek-2 top tile', [0x106, 'JMP', None]],  # [0x106, 22, 53]
+    # '2022a': [0xc765f, 0, 0, [None, None, None, None], 'Magitek factory 1 conveyor to Mtek-2 bottom tile', [0x106, 22, 54]],
+    # same exit as above; requires address patch & tile edit if using rewrite method.
     2023: [0xc7682, 37, 0, [None, None, None, None], 'Magitek factory platform elevator to Mtek-1', [0x106, 10, 54]],
-    2024: [0xc7905, 50, 10, [False, False, False, False], 'Magitek factory 2 pipe exit loop', [0x107, 49, 48]],
-    2025: [0xc7565, 86, 58, [True, False, False, False], 'Magitek factory 2 conveyor to pit left tile', [0x107, 36, 44]],
-    # will require address patching
-    '2025a': [0xc7581, 0, 0, [None, None, None, None], 'Magitek factory 2 conveyor to pit mid tile', [0x107, 37, 44]],
-    # same exit as above; requires address patch & tile edit
-    '2025b': [0xc7573, 0, 0, [None, None, None, None], 'Magitek factory 2 conveyor to pit right tile', [0x107, 38, 44]],
-    # same exit as above; requires address patch & tile edit
-    2026: [0xc75f6, 91, 39, [False, False, False, False], 'Magitek factory pit hook to Mtek-2', [0x108, 6, 6]],
-    2027: [0xc7f43, 217, 131, [False, False, False, False], 'Magitek factory lab Cid''s elevator', [0x112, 20, 13]],
+    2024: [0xc7905, 50, 10, [False, False, False, False], 'Magitek factory 2 pipe exit loop', [0x107, 'JMP', None]],  # [0x107, 49, 48]
+    2025: [0xc7565, 86, 58, [True, False, False, False], 'Magitek factory 2 conveyor to pit left tile', [0x107, 'JMP', None]], # [0x107, 36, 44]
+    #'2025a': [0xc7581, 0, 0, [None, None, None, None], 'Magitek factory 2 conveyor to pit mid tile', [0x107, 37, 44]],
+    #'2025b': [0xc7573, 0, 0, [None, None, None, None], 'Magitek factory 2 conveyor to pit right tile', [0x107, 38, 44]],
+    # same exits as above; requires address patch & tile edit if using rewrite method.
+    2026: [0xc75f6, 91, 39, [False, False, False, False], 'Magitek factory pit hook to Mtek-2', [0x108, 'JMP', None]],  # [0x108, 6, 6]
+    2027: [0xc7f43, 217, 131, [False, False, False, False], 'Magitek factory lab Cid''s elevator', [0x112, 'JMP', None]],  # [0x112, 20, 13]
     # bit $1E80($068) set by switch (0c7a60)?  Look for conflicts with event patch code.
-    2028: [0xc8022, 309, 152, [False, True, False, False], 'Magitek factory minecart start event', [0x110, 'NPC', 0]],
+    2028: [0xc8022, 309, 152, [False, True, False, False], 'Magitek factory minecart start event', [0x110, 'JMP', None]],  # [0x110, 'NPC', 0]
     # NPC #0 on this map. Not an event tile.  Started by talking to Cid.  Position: # [0x110, 9, 51]
 
     # CAVE TO THE SEALED GATE
@@ -60,7 +56,7 @@ event_exit_info = {
     # Grand staircase event
     2030: [0xb33c9, 32, 0, [None, None, None, None], 'Cave to the Sealed Gate switch bridges', [0x180, 104, 17]],
     # Switch bridge events
-    2031: [0xb2a9f, 7, 1, [False, False, False, False], 'Cave to the Sealed Gate shortcut exit', [0x180, 5, 43]],  # Shortcut exit
+    2031: [0xb2a9f, 7, 1, [False, False, False, False], 'Cave to the Sealed Gate shortcut exit', [0x180, 'JMP', 0]],  # Shortcut exit  # [0x180, 5, 43]
 
     # ZOZO (WORLD OF BALANCE)
     2032: [0xa963d, 22, 0, [None, None, None, None], 'Zozo hook descent from building', [0x0DD, 35, 41] ],
@@ -113,19 +109,16 @@ import data.event_bit as event_bit
 
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
-    # Jump into Umaro's Cave:
-    #   - add falling sound effect [0xf4, 0xba] after map load (src_end[5]);
-    #   - force load Umaro's music [0xf0, 0x30] just before return (src_end[-1])
-    # In original event at: CC/3836
-    # NOTE you only really want to force load this music if it's in Umaro's Cave...
-    # 2010 : lambda src, src_end: [ src, src_end[:5] + [0xf4, 0xba] + src_end[5:-1] + [0xf0, 0x30] + src_end[-1:] ],
-    2010: lambda src, src_end: tritoch_event_mod(src, src_end),
+    # Jump into Umaro's Cave:  Reproduce AtmaTek's changes to the event in data/umaro_cave.add_gating_condition()
+    ### Not used when using JMP method ###
+    #2010: lambda src, src_end: tritoch_event_mod(src, src_end),
 
     # Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
     # e.g. "CB/EE8F: C0    If ($1E80($097) [$1E92, bit 7] is clear), branch to $CA5EB3 (simply returns)
-    2014: lambda src, src_end: [src[6:], src_end],
-    2015: lambda src, src_end: [src[6:], src_end],
-    2016: lambda src, src_end: [src[6:], src_end],
+    # When using JMP method, this should be handled in events.esper_mountain.py
+    #2014: lambda src, src_end: [src[6:], src_end],
+    #2015: lambda src, src_end: [src[6:], src_end],
+    #2016: lambda src, src_end: [src[6:], src_end],
 
     # Switching door events in Owzer's Mansion: turn off the door timer before transitioning
     # Call subroutine $CB/2CAA (resets all timers).
@@ -148,7 +141,8 @@ entrance_event_patch = {
     # 3009: lambda src, src_end: [src[:-1] + [0xd3, 0xcc] + src[-1:], src_end],
 
     # Jump from Narshe into Umaro's cave: Remove extra falling sound effect (src_end[5:6])
-    3010: lambda src, src_end: [src, src_end[:5] + src_end[7:]],
+    # Can't do this with JMP method.
+    #3010: lambda src, src_end: [src, src_end[:5] + src_end[7:]],
 
     # Jump into Esper Mountain room 2, North trapdoor: patch in "hold screen" (0x38) after map transition
     # The other trapdoors have this, maybe it's just a typo?
@@ -160,7 +154,8 @@ entrance_event_patch = {
     # 3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
 
     # Minecart Ride: if Cranes are defeated, instead go to normal Vector
-    3028: lambda src, src_end: minecart_event_mod(src, src_end),
+    2028: lambda src, src_end: minecart_event_mod(src, src_end)    # JMP code
+    #3028: lambda src, src_end: minecart_event_mod(src, src_end),   # rewrite code
 
 }
 
@@ -215,26 +210,29 @@ def code_address(code):
 
 event_address_patch = {
     # Jump into Umaro's Cave: update branched event address.  Slightly risky search for 1st instance of 0xb6.
-    2010: lambda src, addr: src[:src.index(0xb6)+1] + branch_code(addr, 23) + src[src.index(0xb6)+4:],
+    ### Not used with JMP method ###
+    #2010: lambda src, addr: src[:src.index(0xb6)+1] + branch_code(addr, 23) + src[src.index(0xb6)+4:],
 
     # Magitek factory Room 1 conveyor into room 2:
     #   At CC/7658 (+7), branch-if-clear [0xc0, ] to CC/7666 (+21)
     #   Paired event starts at CC/765F (+14).
-    2022: lambda src, addr: src[:10] + branch_code(addr, 21) + src[13:],
+    ### Not needed if using JMP method ###
+    #2022: lambda src, addr: src[:10] + branch_code(addr, 21) + src[13:],
 
     # Magitek factory Room 2 conveyor into pit room:
     #   At CC/756C (+7), branch-if-clear [0xc0, ] to CC/7588 (+35)
     #   At CC/757A (+21), branch-if-clear [0xc0, ] to CC/7588 (+35)
     #   Paired events start at CC/7573 (+14) and CC/7581 (+28).
-    2025: lambda src, addr: src[:10] + branch_code(addr, 35) + src[13:24] + branch_code(addr, 35) + src[27:]
+    ### Not needed if using JMP method ###
+    #2025: lambda src, addr: src[:10] + branch_code(addr, 35) + src[13:24] + branch_code(addr, 35) + src[27:]
 
 }
 
 # We define "multi events" as multiple event tiles that are all logically the same exit and partially share
 # the same code.  The event tile with the earliest address should be the key event, others will be referenced to it.
 multi_events = {
-    2022: ['2022a'],  # Magitek factory room 1 conveyor belt
-    2025: ['2025a', '2025b'],  # Magitek factory room 1 conveyor belt
+    #2022: ['2022a'],  # Magitek factory room 1 conveyor belt  ### Not needed if using JMP method
+    #2025: ['2025a', '2025b'],  # Magitek factory room 1 conveyor belt ### Not needed if using JMP method ###
 
     2035: ['2035a', '2035b'],  # Lete River section 1 branching code
 

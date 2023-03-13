@@ -410,7 +410,7 @@ class Maps():
         self._fix_imperial_camp_boxes()
 
         # Make all maps warpable for -door-randomize-all
-        if self.args.debug or self.args.door_randomize_all:
+        if self.args.debug or self.args.door_randomize:
             for map_index, cur_map in enumerate(self.maps):
                 self.properties[map_index].warpable = 1
 

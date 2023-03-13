@@ -669,7 +669,7 @@ exit_data = {
     578: [572, "Jidoor Weapon Inside"],
     1217: [1216, "Jidoor Chocobo Stable Inside"],
     579: [570, "Jidoor Inn Inside"],
-    580: [593, "Owzer's Behind Painting to Owzer's House"],
+    580: [4593, "Owzer's Behind Painting to Owzer's House WOR"],
     581: [582, "Owzer's Behind Painting Stairs Down"],
     582: [581, "Owzer's Basement Stairs Up"],
     583: [584, "Owzer's Basement Door to Single Chest Room"],
@@ -682,7 +682,8 @@ exit_data = {
     590: [None, "Owzer's Basement Floating Chest Room Door"],  # Note: door is inaccessible.
     591: [589, "Owzer's Basement Chadarnook's Room"],
     592: [567, "Owzer's House Inside Door to Outside"],
-    593: [580, "Owzer's House Door to Behind Painting"],
+    593: [None, "Owzer's House Door to Behind Painting WOB"],  # technically connects to 580, but inaccessible
+    4593: [580, "Owzer's House Door to Behind Painting WOR"],  # LOGICAL (WOR) only!
     2017: [None, "Owzer's Mansion switching door left"],
     2018: [None, "Owzer's Mansion switching door right"],  # same destination & same event as 2017
     2019: [None, "Owzer's Mansion behind switching door exit"],

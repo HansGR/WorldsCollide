@@ -19,7 +19,7 @@ room_data = {
     'root-unb' : [ [1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
     'root-unr' : [ [1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
     'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
-    'root-ob' : [ [593], [], [], 1], # Root map for -door-randomize-owzer's basement
+    'root-ob' : [ [4593], [], [], 1], # Root map for -door-randomize-owzer's basement
     'root-mf' : [ [1229], [], [3028], 0],     # Magitek Factory root entrance in Vector
     #'root-zb': [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
     #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
@@ -462,7 +462,7 @@ room_data = {
     282 : [ [589], [2021], [3020], 1], #Owzer's Basement Save Point Room
     283 : [ [ ], [2020], [3019], 1],  # Owzer's Basement Floating Chest room
     284 : [ [591], [ ], [ ], 1], #Owzer's Basement Chadarnook's Room
-    285 : [ [592, 593], [ ], [ ], 0], #Owzer's House
+    285 : [ [592], [ ], [ ], 0], #Owzer's House
     '285r' : [ [4592, 4593], [ ], [ ], 1], #Owzer's House
 
     # ESPER WORLD
@@ -785,6 +785,7 @@ forced_connections = {
     2013 : [3013],   #      North-to-South bridge jump East
 
     2023 : [3023],   # Magitek factory elevator in Room 1
+    #2028 : [3028],   # Magitek minecart ride to Mtek 3 exit
 
     2029 : [3029],   # Cave to the Sealed Gate, grand staircase
     2030 : [3030],   # Cave to the Sealed Gate, switch bridges
