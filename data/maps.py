@@ -809,7 +809,7 @@ class Maps():
         #       put you at the vanilla entrance, which is a different long exit.
 
     def create_exit_event(self, d, d_ref):
-        SOUND_EFFECT = None # [None, 0x00 = Lore, 0x15 = Bolt3]
+        SOUND_EFFECT = 0x00 # [None, 0x00 = Lore, 0x15 = Bolt3]
 
         # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref
         # Collect information about the properties for the exit
@@ -940,7 +940,7 @@ class Maps():
                 #    self.add_event(map_id, new_event)
 
     def shared_map_exit_event(self, d, d_ref):
-        SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
+        SOUND_EFFECT = 0x15  # [None, 0x00 = Lore, 0x15 = Bolt3]
         # THIS IS A SHARED ROOM (i.e. the exit d is one of a (WOB, WOR) pair: (d-4000, d).
         # SINCE THE WOB CONNECTION IS ALWAYS DONE FIRST, WHEN THE WOR CONNECTION IS WRITTEN WE CAN DO:
         #   if IS_WOR:

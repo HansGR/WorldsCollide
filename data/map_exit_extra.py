@@ -73,8 +73,8 @@ exit_data = {
     70: [5224, "Zozo Top Left Tile WoR"],    # EDIT goes to logical WOR Zozo, not 1224 (default WOB Zozo)
     71: [5224, "Zozo Bottom Left Tile WoR"],
     72: [5224, "Zozo Right Tile WoR"],
-    73: [1213, "Jidoor Left Tile WoR"],
-    74: [1213, "Jidoor Right Tile WoR"],
+    73: [5213, "Jidoor Left Tile WoR"],   # EDIT goes to logical WOR Jidoor, not 1213
+    74: [5213, "Jidoor Right Tile WoR"],
     75: [1261, "Thamasa WoR"],
     76: [1240, "Doma Left Tile WoR"],
     77: [1240, "Doma Right Tile WoR"],

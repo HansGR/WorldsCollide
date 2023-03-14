@@ -1,6 +1,12 @@
 from event.event import *
 
 class OwzerMansion(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_owzer_basement
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
     def name(self):
         return "Owzer Mansion"
 
@@ -41,7 +47,7 @@ class OwzerMansion(Event):
 
         self.log_reward(self.reward)
 
-        if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:
+        if self.DOOR_RANDOMIZE:
             # Remove warp-to-Jidoor from end of Chadarnook cutscene
             space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
             src = [
