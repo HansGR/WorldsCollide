@@ -4,7 +4,7 @@ import data.npcs as npcs
 from data.npc import NPC
 
 from data.chests import Chests
-
+import data.direction as direction
 import data.doors as doors
 
 import data.map_events as events
@@ -20,7 +20,7 @@ from data.world_map import WorldMap
 
 from memory.space import Allocate, Bank, Free, Write, Reserve
 
-from instruction import field
+from instruction import field, world
 from instruction.event import EVENT_CODE_START
 import instruction.field.entity as field_entity
 
@@ -834,6 +834,7 @@ class Maps():
             d in exit_event_patch.keys()
         ]
         if require_event_flags.count(True) > 0:
+            # Need to use different commands for world maps vs field maps.
             # Look for an existing event on this exit tile
             try:
                 if self.doors.verbose:
@@ -904,6 +905,12 @@ class Maps():
                 # (4) Prepend any data required by the door
                 if require_event_flags[2]:
                     src = exit_event_patch[d] + src
+
+                #if map_id <= 2:
+                #    # You can't do normal event scripting on the world map.
+                #    # Load an intermediate dummy map to do the event scripting
+                #    src = [world.FadeLoadMap(0x005, direction=direction.UP, default_music=True, x=0, y=0),
+                #           field.Pause(2)] + src
 
                 # Write data to a new event & add it
                 space = Write(Bank.CC, src, "Door Event " + str(d))

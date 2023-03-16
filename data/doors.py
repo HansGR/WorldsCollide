@@ -858,21 +858,22 @@ class Doors():
                 if self.verbose:
                     print('Preprocessing complete.')
 
-                # Begin the normal walk process
-                # Construct the list of all downstream exits...
-                available = [n for n in zone_nobs[walk[0][-1]] if n in nobs]
-                # If any available are shared, do them first.
-                available_shared = list(set(available).intersection(to_share))
-                if len(available_shared) > 0:
-                    nob = available_shared.pop(randrange(len(available_shared)))
-                    if self.verbose:
-                        print('From available shared: ', available_shared, ' choose: ', nob)
-                else:
-                    nob = available.pop(randrange(len(available)))
-                    if self.verbose:
-                        print('From available: ', available, ' choose: ', nob)
-                nobs.remove(nob)
-                zone1 = nob_zones[nob]
+                if len(nobs) > 0:
+                    # Begin the normal walk process
+                    # Construct the list of all downstream exits...
+                    available = [n for n in zone_nobs[walk[0][-1]] if n in nobs]
+                    # If any available are shared, do them first.
+                    available_shared = list(set(available).intersection(to_share))
+                    if len(available_shared) > 0:
+                        nob = available_shared.pop(randrange(len(available_shared)))
+                        if self.verbose:
+                            print('From available shared: ', available_shared, ' choose: ', nob)
+                    else:
+                        nob = available.pop(randrange(len(available)))
+                        if self.verbose:
+                            print('From available: ', available, ' choose: ', nob)
+                    nobs.remove(nob)
+                    zone1 = nob_zones[nob]
 
                 while len(nibs) > 0:
                     if self.verbose:
