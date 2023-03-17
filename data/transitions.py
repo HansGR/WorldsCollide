@@ -25,6 +25,7 @@ from data.map_event import MapEvent
 class Transitions:
     transitions = []
     FREE_MEMORY = False
+    verbose = False
 
     def __init__(self, mapping, rom, exit_data):
         self.rom = rom
@@ -46,11 +47,12 @@ class Transitions:
         if self.FREE_MEMORY:
             self.free()
 
-        print('Number of Transitions = ', len(self.transitions))
-        hexify = lambda src: [hex(a)[2:] for a in src]
-        for t in self.transitions:
-            print(t.exit.id, '-->', hexify(t.exit.exit_code))
-            print(t.entr.id, '-->', hexify(t.entr.entr_code))
+        if self.verbose:
+            print('Number of Transitions = ', len(self.transitions))
+            hexify = lambda src: [hex(a)[2:] for a in src]
+            for t in self.transitions:
+                print(t.exit.id, '-->', hexify(t.exit.exit_code))
+                print(t.entr.id, '-->', hexify(t.entr.entr_code))
 
         self.mod()  # Modify the code after loading all transitions
 
@@ -144,7 +146,6 @@ class Transitions:
 
             # Delete NOPs, if requested, to save space
             # Note there is the possibility for conflict with event_address_patch - be careful!
-            print(src)
             if True:
                 src = delete_nops(src)
 
@@ -164,11 +165,12 @@ class Transitions:
 
             space.write(t.src)
 
-            print('Writing: ', t.exit.id, ' --> ', t.entr.id,
-                  ':\n\toriginal memory addresses: ', hex(t.exit.event_addr), ', ', hex(t.entr.event_addr),
-                  '\n\tpatches applied: ', t.patches,
-                  '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
-            print('\n\tnew memory address: ', hex(new_event_address))
+            if self.verbose:
+                print('Writing: ', t.exit.id, ' --> ', t.entr.id,
+                      ':\n\toriginal memory addresses: ', hex(t.exit.event_addr), ', ', hex(t.entr.event_addr),
+                      '\n\tpatches applied: ', t.patches,
+                      '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
+                print('\n\tnew memory address: ', hex(new_event_address))
 
             if t.exit.use_jmp:
                 # Overwrite the Load Map command with a CALL SUBROUTINE & RETURN & NOP (B2 XX XX XX FE FD)

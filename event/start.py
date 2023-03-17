@@ -82,14 +82,14 @@ class Start(Event):
             ]
             space = Write(Bank.CA, src, "new warp")
             warp_to_narshe = space.start_address
-            space.printr()
+            #space.printr()
 
             space = Reserve(0xa0144, 0xa014e, "edited warp section", field.NOP())
             space.write(
                 field.Call(warp_to_narshe),
                 field.End(),
             )
-            space.printr()
+            #space.printr()
 
         # where the game begins after intro/pregame
         space = Reserve(0xc9a4f, 0xc9ad4, "setup and start game", field.NOP())

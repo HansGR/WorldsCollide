@@ -501,8 +501,6 @@ class Maps():
         # Patch the door randomizer exits & events before writing:
         # Connect one-way event exits using the Transitions class
         self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data)
-        for t in self.transitions.transitions:
-            print(t.exit.id, t.entr.id)
         self.transitions.write(maps=self)
         #self.connect_events()
         #self.connections = Connections(self.doors.map[0], self.doors.door_rooms)
@@ -809,7 +807,7 @@ class Maps():
         #       put you at the vanilla entrance, which is a different long exit.
 
     def create_exit_event(self, d, d_ref):
-        SOUND_EFFECT = 0x00 # [None, 0x00 = Lore, 0x15 = Bolt3]
+        SOUND_EFFECT = None # [None, 0x00 = Lore, 0x15 = Bolt3]
 
         # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref
         # Collect information about the properties for the exit
@@ -870,7 +868,7 @@ class Maps():
 
             # If it's a new event that is just forcing the world, just directly call the "force world" event:
             e_length = len(src)
-            if e_length == 1 and not require_event_flags[1:].count(True) > 0:
+            if e_length == 1 and not require_event_flags[1:].count(True) > 0 and map_id > 2:
                 if that_world == 0:
                     this_address = self.GO_WOB_EVENT_ADDR - EVENT_CODE_START
                 elif that_world == 1:
@@ -906,11 +904,34 @@ class Maps():
                 if require_event_flags[2]:
                     src = exit_event_patch[d] + src
 
-                #if map_id <= 2:
-                #    # You can't do normal event scripting on the world map.
-                #    # Load an intermediate dummy map to do the event scripting
-                #    src = [world.FadeLoadMap(0x005, direction=direction.UP, default_music=True, x=0, y=0),
-                #           field.Pause(2)] + src
+                if map_id <= 2:
+                    # This event is on the world map, where the event -> exit passthru trick doesn't work
+                    # Solution: send the player to a dummy map, directly onto an event tile that does the necessary
+                    # modifications and then sends them onto the destination.  A switchyard, if you will.
+                    dummy_map = 0x005   # mog's black map, 128 x 128
+                    dummy_x = d % 128   # unique ID in [x,y]
+                    dummy_y = d // 128
+
+                    # (a) add a LoadMap command for the destination; write it to a dummy event
+                    src_dummy = src[:-1] + [
+                        field.LoadMap(this_exit.dest_map, direction=this_exit.facing, default_music=True,
+                                      x=this_exit.dest_x, y=this_exit.dest_y, fade_in=True, entrance_event=True)
+                        ] + src[-1:]
+                    space = Write(Bank.CC, src_dummy, "Door Dummy Event " + str(d))
+                    dummy_address = space.start_address - EVENT_CODE_START
+
+                    # (b) make a new event tile on the dummy map
+                    dummy_event = MapEvent()
+                    dummy_event.x = dummy_x
+                    dummy_event.y = dummy_y
+                    dummy_event.event_address = dummy_address
+                    self.add_event(dummy_map, dummy_event)
+
+                    # (c) make a new src that loads the dummy map and places the character on tile [d,1]
+                    src = [world.LoadMap(dummy_map, direction=direction.UP, default_music=False,
+                                         x=dummy_x, y=dummy_y,
+                                         fade_in=False, entrance_event=False), field.Return()]
+
 
                 # Write data to a new event & add it
                 space = Write(Bank.CC, src, "Door Event " + str(d))
@@ -920,6 +941,7 @@ class Maps():
                     print('Writing exit event:', d, '(pair =',d_ref,') @ ', hex(this_address))
                     print('\tReason: ', require_event_flags)
                     print([str(s) for s in src])
+
 
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':
@@ -946,8 +968,14 @@ class Maps():
                 #    new_event.event_address = this_address
                 #    self.add_event(map_id, new_event)
 
+            if map_id <= 2:
+                # This event is on the world map, where the event -> exit passthru trick doesn't work
+                # (b) move the exit it is replacing to somewhere else ('dummy' it)
+                this_exit.x = d
+                this_exit.y = 0
+
     def shared_map_exit_event(self, d, d_ref):
-        SOUND_EFFECT = 0x15  # [None, 0x00 = Lore, 0x15 = Bolt3]
+        SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
         # THIS IS A SHARED ROOM (i.e. the exit d is one of a (WOB, WOR) pair: (d-4000, d).
         # SINCE THE WOB CONNECTION IS ALWAYS DONE FIRST, WHEN THE WOR CONNECTION IS WRITTEN WE CAN DO:
         #   if IS_WOR:

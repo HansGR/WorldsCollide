@@ -65,6 +65,7 @@ class LongMapEvents():
     EVENT_COUNT = 0
     POINTER_START_ADDR_LONG = 0x320000  # Bank $F2.  Set dynamically?
     DATA_START_ADDR_LONG = 0x320342
+    verbose = False
 
     def __init__(self, rom):
         self.rom = rom
@@ -274,6 +275,7 @@ class LongMapEvents():
 
         pointspace = Reserve(self.POINTER_START_ADDR_LONG, self.DATA_START_ADDR_LONG, 'Long Event Pointers', 0x0)
 
-        print('Added long event program at: ' + str(hex(space.start_address)) + ' -- ', str(hex(space.end_address)) )
+        if self.verbose:
+            print('Added long event program at: ' + str(hex(space.start_address)) + ' -- ', str(hex(space.end_address)) )
 
 

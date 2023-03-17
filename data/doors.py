@@ -54,7 +54,7 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
-        self.verbose = True # False  # True
+        self.verbose = False  # True
 
         self._all_rooms = []
 
