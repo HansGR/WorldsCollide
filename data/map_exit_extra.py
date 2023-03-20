@@ -845,13 +845,16 @@ exit_data = {
     719: [720, "Zone Eater Bridge Guards Room East Stairwell to Pit"],
     720: [719, "Zone Eater Pit"],
     721: [725, "Zone Eater Bridge Guards Room West to Save Point Room"],
-    722: [None, "Zone Eater Hallway to Falling Ceiling Room"],
+    722: [1511, "Zone Eater Hallway to Falling Ceiling Room"],
+    1511: [722, "Zone Eater Falling Ceiling Room to Hallway"],
     723: [727, "Zone Eater Hallway to Bridge Switch South"],
     724: [728, "Zone Eater Gogo Room"],
     725: [721, "Zone Eater Save Point Room East"],
-    726: [None, "Zone Eater Save Point Room West"],
+    726: [1510, "Zone Eater Save Point Room West"],
+    1510: [726, "Zone Eater Falling Ceiling Room to Save Point Room"],
     727: [723, "Zone Eater Bridge Switch Room East"],
     728: [724, "Zone Eater Bridge Switch Room West to Gogo Room"],
+
     729: [735, "Umaro Cave 1st Room West Door"],
     730: [736, "Umaro Cave 1st Room Middle Door"],
     731: [737, "Umaro Cave 1st Room East Door"],
@@ -1408,7 +1411,12 @@ exit_data_patch = {
                        set_dest_map(1, info) ) ),   # [73, "Jidoor West to World Map WoR"],
     5215: lambda info: set_dest_x(35,
                        set_dest_y(157,
-                       set_dest_map(1, info) ) )   # [74, "Jidoor East to World Map WoR"],
+                       set_dest_map(1, info) ) ),   # [74, "Jidoor East to World Map WoR"],
+
+    ### EVENT EXITS BEHAVING AS NORMAL EXITS:
+    # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
+    1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
+    1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract wast'
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

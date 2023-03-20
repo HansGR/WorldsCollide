@@ -1,6 +1,12 @@
 from event.event import *
 
 class ZoneEater(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_zone_eater
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
     def name(self):
         return "Zone Eater"
 
@@ -23,6 +29,9 @@ class ZoneEater(Event):
             self.esper_mod(self.reward.id)
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         self.log_reward(self.reward)
 
@@ -113,3 +122,34 @@ class ZoneEater(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Modifications for door rando
+        engulfID = 2040  # ID of engulf event
+
+        # (1) Change the entry event to load the switchyard location
+        switchyard_map = 0x005
+        switchyard_x = engulfID % 128
+        switchyard_y = engulfID // 128
+
+        space = Reserve(0xa008f, 0xa0095, 'Zone Eater Entry modification')
+        space.write([
+            world.LoadMap(switchyard_map, direction=direction.UP, default_music=False,
+                          x=switchyard_x, y=switchyard_y,
+                          fade_in=False, entrance_event=False),
+            field.Return()
+        ])
+        # (2) Add the switchyard event tile that handles entry to Zone Eater
+        src = [
+            field.LoadMap(0x114, direction=direction.DOWN, default_music=True,
+                          x=10, y=12, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src, "Zone Eater Entry Switchyard")
+
+        from data.map_event import MapEvent
+        switchyard_event = MapEvent()
+        switchyard_event.x = switchyard_x
+        switchyard_event.y = switchyard_y
+        switchyard_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(switchyard_map, switchyard_event)

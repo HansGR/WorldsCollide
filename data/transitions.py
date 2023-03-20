@@ -5,7 +5,7 @@ from instruction import field
 import instruction.field.entity as field_entity
 
 from memory.space import Allocate, Bank, Free, Write, Reserve
-
+from data.map_exit_extra import exit_data as exit_partner
 from data.map_event import MapEvent
 
 # NOTES:
@@ -23,25 +23,27 @@ from data.map_event import MapEvent
 #           - not being single valued doesn't matter for this: doubled-up rooms never change worlds.
 
 class Transitions:
-    transitions = []
     FREE_MEMORY = False
-    verbose = False
+    verbose = True
 
-    def __init__(self, mapping, rom, exit_data):
+    def __init__(self, mapping, rom, exit_data, event_data):
+        self.transitions = []
         self.rom = rom
 
         for m in mapping:
             # Check reasons to overwrite this transition
             flags = [(m[0] > 2000) and (m[0] != m[1] - 1000),  # connecting two unequal one-ways...
                      m[0] in exit_event_patch,                 # modifications to exit script
-                     m[1] - 1000 in entrance_event_patch]      # modifications to entrance script
+                     m[1] - 1000 in entrance_event_patch,      # modifications to entrance script
+                     (1500 <= m[0] < 2000)                     # connecting a one-way acting as a door
+                     ]
             # If a shared_oneway, only write the lowest-valued one
             soo_flag = True
             if m[0] in shared_oneways:
                 soo_flag = m[0] < min(shared_oneways[m[0]])
 
             if flags.count(True) > 0 and soo_flag:
-                new_trans = Transition(m[0], m[1], rom, exit_data)
+                new_trans = Transition(m[0], m[1], rom, exit_data, event_data)
                 self.transitions.append(new_trans)
 
         if self.FREE_MEMORY:
@@ -169,6 +171,7 @@ class Transitions:
                 print('Writing: ', t.exit.id, ' --> ', t.entr.id,
                       ':\n\toriginal memory addresses: ', hex(t.exit.event_addr), ', ', hex(t.entr.event_addr),
                       '\n\tpatches applied: ', t.patches,
+                      '\n\tuse jump method: ', t.exit.use_jmp,
                       '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
                 print('\n\tnew memory address: ', hex(new_event_address))
 
@@ -217,9 +220,13 @@ class Transitions:
 
 
 class Transition:
-    def __init__(self, exit_id, entr_id, rom, exit_data):
-        self.exit = EventExit(exit_id, rom, exit_data)
-        self.entr = EventExit(entr_id - 1000, rom, exit_data)
+    def __init__(self, exit_id, entr_id, rom, exit_data, event_data):
+        self.exit = EventExit(exit_id, rom, exit_data, event_data)
+        if entr_id > 3000:
+            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data)
+        else:
+            # This is a normal door
+            self.entr = EventExit(entr_id, rom, exit_data, event_data)
 
 
 class EventExit:
@@ -238,13 +245,13 @@ class EventExit:
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
 
-    def __init__(self, ID, rom=[], exit_data=[]):
+    def __init__(self, ID, rom=[], exit_data=[], event_data=[]):
         self.id = ID
 
-        if self.id > 2000:
-            event_info = event_exit_info[ID]
+        if self.id > 1500:
+            event_info = event_data[ID]
             # Data structure: event_exit_info[id] = ...
-            #   [original address, event bit length, split point, transition state, description, location]
+            #   [original address, event bit length, split point, transition state, description, location, method]
             #   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
             #   location = [map_id, x, y]
             self.event_addr = event_info[0]
@@ -256,8 +263,9 @@ class EventExit:
             self.is_on_raft = event_info[3][3]
             self.description = event_info[4]
             self.location = event_info[5]
+            self.method = event_info[6]
             self.world = exit_world[ID]
-            if self.location[1] == 'JMP':
+            if self.method == 'JMP':
                 self.use_jmp = True
 
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
@@ -265,10 +273,12 @@ class EventExit:
                                            self.event_length - self.event_split)  # Second half of event
         else:
             # Handle the small number of one-way entrances from doors
-            exit_location = exit_data[ID]
+            partner_ID = exit_partner[ID][0]  # get vanilla connecting door to this ID
+            exit_location = exit_data[partner_ID] # get connection data from partner door
             self.location = exit_location[0:3]
             self.world = exit_world[ID]
 
             # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
-            self.entr_code = [exit_location[0], exit_location[6] << 4, exit_location[1], exit_location[2], 0x80, 0xfe]
+            self.entr_code = [exit_location[0] % 0x100, (exit_location[0] // 0x100) + (exit_location[6] << 4),
+                              exit_location[1], exit_location[2], 0x80, 0xfe]

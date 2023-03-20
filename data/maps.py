@@ -499,8 +499,16 @@ class Maps():
         #self.write_post_diagnostic_info()
 
         # Patch the door randomizer exits & events before writing:
+        for e in event_exit_info.keys():
+            if event_exit_info[e][0] is None:
+                # Update the event addresses
+                mapid = event_exit_info[e][5][0]
+                ex = event_exit_info[e][5][1]
+                ey = event_exit_info[e][5][2]
+                ev = self.get_event(mapid, ex, ey)
+                event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
         # Connect one-way event exits using the Transitions class
-        self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data)
+        self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info)
         self.transitions.write(maps=self)
         #self.connect_events()
         #self.connections = Connections(self.doors.map[0], self.doors.door_rooms)
@@ -748,7 +756,7 @@ class Maps():
 
         for m in all_exits:
             # Only connect real doors (virtual doors should never connect to real doors)
-            if m < 2000:
+            if m < 1500:
                 # Get exits associated with doors m and m_conn
                 exitA = self.get_exit(m)
 
@@ -756,8 +764,13 @@ class Maps():
                 # Copy original properties of exitB_pair to exitA & vice versa.
                 exitB_pairID = exit_data[map[m]][0] # Original connecting exit to B...
                 if exitB_pairID not in self.exits.exit_original_data.keys():
-                    # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
-                    exitB_pairID = exitB_pairID - 4000
+                    if 1500 <= exitB_pairID < 4000:
+                        # Event exit behaving as a door.
+                        pass
+                    elif exitB_pairID >= 4000:
+                        # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                        exitB_pairID = exitB_pairID - 4000
+
                 self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
 
                 if self.doors.verbose:
@@ -788,10 +801,20 @@ class Maps():
                 # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
                 self.create_exit_event(m, map[m])
 
+            elif 1500 <= m < 4000:
+                # This is an event tile that is acting as a door.  Treat it as a transition.
+                if self.doors.verbose:
+                    print('Connecting: ' + str(m) + ' to ' + str(map[m]))
+                new_map = [[m, map[m]]]
+                dt = Transitions(new_map, self.rom, self.exits.exit_original_data, event_exit_info)
+                dt.write(maps=self)
+
             elif m >= 4000:
                 # This is a shared (WOB, WOR) exit (m - 4000, m).
                 # The WOB exit & exit event (if necessary) are handled by the previous door code.
                 self.shared_map_exit_event(m, map[m])
+
+
 
         ### NOTES:
         # There are two ways to think about connecting world-map exits:

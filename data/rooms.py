@@ -558,13 +558,16 @@ room_data = {
     355 : [ [716], [2027], [ ], 0], #Magitek Factory Esper Tube Room
     '355a' : [ [], [2028], [3027], 0],  # Magitek Factory Minecart Room
 
-    356 : [ [717], [ ], [ ], 1], #Zone Eater Entry Room
-    357 : [ [718, 719, 721], [ ], [ ], 1], #Zone Eater Bridge Guards Room
-    358 : [ [720], [ ], [ ], 1], #Zone Eater Pit
-    359 : [ [723], [ ], [ ], 1], #Zone Eater Short Tunnel
-    360 : [ [724], [ ], [ ], 1], #Zone Eater Gogo Room
-    361 : [ [725], [ ], [ ], 1], #Zone Eater Save Point Room
+    'root-ze' : [ [], [2040], [3041], 1], # ZoneEater Engulf
+    356 : [ [717], [2041], [3040], 1], #Zone Eater Entry Room
+    357 : [ [718, 719, 721], [2042], [ ], 1], #Zone Eater Bridge Guards Room
+    358 : [ [ ], [2043], [3042], 1], #Zone Eater Pit entry
+    '358b' : [ [720], [ ], [3043], 1], #Zone Eater Pit exit
+    359 : [ [725, 726], [ ], [ ], 1], #Zone Eater Save Point Room
+    '359b': [ [1510, 1511], [ ], [ ], 1], # Zone Eater digestive tract
+    361 : [ [722, 723], [ ], [ ], 1], #Zone Eater Short Tunnel
     362 : [ [727, 728], [ ], [ ], 1], #Zone Eater Bridge Switch Room
+    363 : [ [724], [ ], [ ], 1], #Zone Eater Gogo Room
 
     364 : [ [729, 730, 731], [2001, 2002], [3010], 1], #Umaro Cave 1st Room
     365 : [ [732, 733], [ ], [3001, 3002, 3003, 3005, 3007], 1], #Umaro Cave Bridge Room
@@ -794,7 +797,9 @@ forced_connections = {
     2032 : [3032],   # Zozo hook exit from building
     2033 : [3033],   # Zozo walking guys room
 
-    2039: [3039]    # Lete river exit to world map
+    2039: [3039],    # Lete river exit to world map
+
+    2043: [3043]    # Zone Eater Pit to handle switch exit
 }
 
 # Add forced connections for virtual doors (-dra)
