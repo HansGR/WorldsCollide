@@ -222,7 +222,7 @@ class Transitions:
 class Transition:
     def __init__(self, exit_id, entr_id, rom, exit_data, event_data):
         self.exit = EventExit(exit_id, rom, exit_data, event_data)
-        if entr_id > 3000:
+        if 4000 > entr_id >= 3000:
             self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data)
         else:
             # This is a normal door

@@ -27,7 +27,8 @@ ROOM_SETS = {
             294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
             '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', # Zozo-WoR
             250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
-            'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'  # Lete River
+            'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
+            356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'  # Zone Eater
              ],
     'test': [8, 284]  # for testing only
 }

@@ -499,20 +499,22 @@ class Maps():
         #self.write_post_diagnostic_info()
 
         # Patch the door randomizer exits & events before writing:
-        for e in event_exit_info.keys():
-            if event_exit_info[e][0] is None:
-                # Update the event addresses
-                mapid = event_exit_info[e][5][0]
-                ex = event_exit_info[e][5][1]
-                ey = event_exit_info[e][5][2]
-                ev = self.get_event(mapid, ex, ey)
-                event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
-        # Connect one-way event exits using the Transitions class
-        self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info)
-        self.transitions.write(maps=self)
-        #self.connect_events()
-        #self.connections = Connections(self.doors.map[0], self.doors.door_rooms)
-        self.connect_exits()
+        if self.args.door_randomize:
+            used_events = [m[0] for m in self.doors.map[1]]
+            for e in event_exit_info.keys():
+                if e in used_events and event_exit_info[e][0] is None:
+                    # Update the event addresses
+                    mapid = event_exit_info[e][5][0]
+                    ex = event_exit_info[e][5][1]
+                    ey = event_exit_info[e][5][2]
+                    ev = self.get_event(mapid, ex, ey)
+                    event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
+            # Connect one-way event exits using the Transitions class
+            self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info)
+            self.transitions.write(maps=self)
+            #self.connect_events()
+            #self.connections = Connections(self.doors.map[0], self.doors.door_rooms)
+            self.connect_exits()
 
         # Move Event Trigger pointer & data location in ROM
         self.move_event_trigger_data()
