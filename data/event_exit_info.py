@@ -73,12 +73,12 @@ event_exit_info = {
     2039: [0xb0869, 229, 108, [False, False, False, True], 'Lete River Section 3 + boss', [0x071, None, None], 'JMP'],
 
     # ZONE EATER
-    #2040: [0xa008f, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x001, 'JMP', 0] ],  # In battle event
-    # For Zone Eater, we are in world map operations, so we can't use the normal state mod codes.
+    # For Zone Eater entrance and exit, we are in world map operations, so we can't use the normal state mod codes.
     # Instead, we make ZoneEater send you to the switchyard [0x005, 2040 % 128, 2040 // 128] and place an event tile
     # there that just does the load command.  That event tile can then be modified by Transitions()
-    2040: [None, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x005, 120, 15], 'JMP'],  # Switchyard tile
-    2041: [0xb7d9d, 33, 27, [False, False, False, False], 'Zone Eater Exit', [0x114, 5, 6], 'full' ],  # Can't use jump method for this (because of exit to world map).
+    #2040: [0xa008f, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x001, 'JMP', 0] ],  # In battle event
+    2040: [None, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x005, 120, 15], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2041: [0xb7d9d, 33, 27, [False, False, False, False], 'Zone Eater Exit', [0x114, 5, 6], 'JMP'],  # Goes to Switchyard tile
     2042: [0xb8251, 35, 18, [False, False, False, False], 'Zone Eater leprechaun bump', [0x114, 'NPC', 0], 'JMP' ], # Shared code, 3 NPCs
     2043: [0xb8062, 0, 0, [None, None, None, None], 'Zone Eater pit switch exit (logical)', [0x114, 46, 17], None],
 
@@ -144,8 +144,10 @@ exit_event_patch = {
 
     # Cave to the sealed gate: force reset timers when leaving lava room
     1075: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
-    1077: [field.Call(0xb2caa)]  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
+    1077: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 
+    # Zone eater: fade back in music after exit animation
+    2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end]
 }
 
 entrance_event_patch = {
