@@ -131,7 +131,7 @@ class ZoneEater(Event):
         # (1a) Change the entry event to load the switchyard location
         event_id = 2040  # ID of engulf event
         space = Reserve(0xa008f, 0xa0095, 'Zone Eater Entry modification')
-        space.write(GoToSwitchyard(event_id))
+        space.write(GoToSwitchyard(event_id, map='world'))
         # (1b) Add the switchyard event tile that handles entry to Zone Eater
         src = [
             field.LoadMap(0x114, direction=direction.DOWN, default_music=True,

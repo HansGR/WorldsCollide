@@ -16,7 +16,7 @@ ROOM_SETS = {
     'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
     'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
-    'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', 'root-st'],
+    'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB

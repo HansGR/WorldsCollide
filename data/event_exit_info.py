@@ -92,7 +92,8 @@ event_exit_info = {
     2049: [0x00000, 0, 0, [None, None, None, None], 'Serpent Trench #2 continue to #3', [0x002, 0, 0], None],  # logical exit
     2050: [0xa8cae, 13, 7, [False, False, False, False], 'Serpent Trench Cave 2b to Cave 2c', [0x0af, 49, 42], 'JMP'],
     2051: [0xa8c94, 7, 1, [False, False, False, False], 'Serpent Trench Cave 2c to Serpent Trench #3', [0x0af, 6, 36], 'JMP'], # Goes to switchyard.
-    2052: [None, 11, 1, [False, False, False, False], 'Serpent Trench #3 to Nikeah', [0x005, 2052 % 128, 2052 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2052: [None, 7, 1, [False, False, False, False], 'Serpent Trench #3 to SWITCHYARD', [0x005, 2052 % 128, 2052 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2053: [None, 11, 1, [False, False, False, False], 'SWITCHYARD to Nikeah (forced)', [0x005, 2053 % 128, 2053 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance

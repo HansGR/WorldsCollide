@@ -28,7 +28,7 @@ room_data = {
     'branch-mz': [ [537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
-    'root-st' : [ [ ], [2044], [3052], 0], # Root map for -door-randomize-serpent-trench
+    'root-st' : [ [ ], [2044], [3053], 0], # Root map for -door-randomize-serpent-trench
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [ ], 1],  # World of Ruin
@@ -396,9 +396,10 @@ room_data = {
     '247b' : [ [530], [2050], [ ], 0], #Serpent Trench Cave 2 Part B
     '247c' : [ [ ], [2051], [3050], 0], #Serpent Trench Cave 2 Part C
     '241c' : [ [ ], [2052], [3049, 3051], 0], # Serpent Trench #3
+    '241d' : [ [ ], [2053], [3052], 0], # Passthru room for handling ST#3 --> Nikeah transition
 
     # NIKEAH DOCKS
-    259: [[1208], [], [3052], 0],  # Nikeah Docks
+    259: [[1208], [], [3053], 0],  # Nikeah Docks
     '259R': [[5208], [], [], 1],  # Nikeah Docks
 
     # NIKEAH
@@ -810,7 +811,8 @@ forced_connections = {
     2043: [3043],    # Zone Eater Pit to handle switch exit
 
     2046: [3046],    # Serpent Trench #1 continue to #2
-    2049: [3049]    # Serpent Trench #2 continue to #3
+    2049: [3049],    # Serpent Trench #2 continue to #3
+    2053: [3053]    # Nikeah entry
 }
 
 # Add forced connections for virtual doors (-dra)

@@ -170,6 +170,7 @@ class SerpentTrench(Event):
         src = [
             field.LoadMap(0x002, direction=direction.DOWN, default_music=False,
                           x=83, y=67, fade_in=True, entrance_event=False, airship=True),
+            world.HideMinimap(),
             vehicle.MoveForward(direction.UP, 14),
             world.Branch(0xa8c49)
         ]
@@ -196,16 +197,22 @@ class SerpentTrench(Event):
         src = [
             field.LoadMap(0x002, direction=direction.DOWN, default_music=True,
                           x=31, y=33, fade_in=True, entrance_event=True, airship=True),
+            world.HideMinimap(),
             vehicle.MoveForward([], 4),
             world.Branch(0xa8c9c)
         ]
+        print('Event 2051:', [f.__call__([]) for f in src])
         AddSwitchyardEvent(event_id, self.maps, src=src)
 
         # (6a) Change the Nikeah Entry event to load the switchyard location
         event_id = 2052
         space = Reserve(0xa8be6, 0xa8bec, 'Serpent Trench #3 to Nikeah modification')
         space.write(GoToSwitchyard(event_id, map='world'))
-        # (6b) Add the switchyard event tile that handles entry to Nikeah entrance animation
+        # (6b) Add the switchyard event tile that handles exit from Serpent Trench #3
+        AddSwitchyardEvent(event_id, self.maps, src=GoToSwitchyard(2053))
+
+        # (6c) Add the switchyard event tile that handles entry to Nikeah entrance animation
+        event_id = 2053
         from instruction.field.entity import Hide
         src = [
             field.LoadMap(0x000, direction=direction.UP, default_music=True,
