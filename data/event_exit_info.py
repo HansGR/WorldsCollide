@@ -77,31 +77,43 @@ event_exit_info = {
     # Instead, we make ZoneEater send you to the switchyard [0x005, 2040 % 128, 2040 // 128] and place an event tile
     # there that just does the load command.  That event tile can then be modified by Transitions()
     #2040: [0xa008f, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x001, 'JMP', 0] ],  # In battle event
-    2040: [None, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x005, 120, 15], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2040: [None, 7, 1, [False, False, False, False], 'Zone Eater Engulf', [0x005, 2040 % 128, 2040 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     2041: [0xb7d9d, 33, 27, [False, False, False, False], 'Zone Eater Exit', [0x114, 5, 6], 'JMP'],  # Goes to Switchyard tile
     2042: [0xb8251, 35, 18, [False, False, False, False], 'Zone Eater leprechaun bump', [0x114, 'NPC', 0], 'JMP' ], # Shared code, 3 NPCs
     2043: [0xb8062, 0, 0, [None, None, None, None], 'Zone Eater pit switch exit (logical)', [0x114, 46, 17], None],
+
+    # SERPENT TRENCH
+    2044: [0xbc84d, 45, 39, [False, False, False, False], 'Cliff jump to Serpent Trench', [0x0A8, 8, 11], 'JMP'],
+    #2044a: [0x1c84d, 7, 1, [False, False, False, False], 'Cliff jump to Serpent Trench tile 2', [0x0A8, 9, 11], 'JMP'],  # Duplicate, not needed with JMP
+    2045: [None, 7, 1, [False, False, False, False], 'Serpent Trench #1 to cave', [0x005, 2045 % 128, 2045 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2046: [0x00000, 0, 0, [None, None, None, None], 'Serpent Trench #1 continue to #2', [0x002, 0, 0], None],  # logical exit
+    2047: [0xa8c41, 7, 1, [False, False, False, False], 'Serpent Trench Cave 1 to Serpent Trench #2', [0x0af, 43, 4], 'JMP'], # Goes to switchyard
+    2048: [None, 7, 1, [False, False, False, False], 'Serpent Trench #2 to cave 2a', [0x005, 2048 % 128, 2048 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2049: [0x00000, 0, 0, [None, None, None, None], 'Serpent Trench #2 continue to #3', [0x002, 0, 0], None],  # logical exit
+    2050: [0xa8cae, 13, 7, [False, False, False, False], 'Serpent Trench Cave 2b to Cave 2c', [0x0af, 49, 42], 'JMP'],
+    2051: [0xa8c94, 7, 1, [False, False, False, False], 'Serpent Trench Cave 2c to Serpent Trench #3', [0x0af, 6, 36], 'JMP'], # Goes to switchyard
+    2052: [None, 7, 1, [False, False, False, False], 'Serpent Trench #3 to Nikeah', [0x005, 2045 % 128, 2045 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
     #       Other: Opera House Lobby, Mobliz Outside, ...
     # To do this: must add index to map_exit_extra.
-    1501: [0xb0bb7, 0, 0, [None, None, None], 'Imperial Camp WoB', [0x000, 179, 71], None],
-    1502: [0xa5eb5, 0, 0, [None, None, None], 'Figaro Castle WoB', [0x000, 64, 76], None],
-    '1502a': [0xa5eb5, 0, 0, [None, None, None], 'Figaro Castle WoB 2', [0x000, 65, 76], None],
-    1503: [0xa5ec2, 0, 0, [None, None, None], 'Figaro Castle WoB (kohlingen)', [0x000, 30, 48], None],
-    '1503c': [0xa5ec2, 0, 0, [None, None, None], 'Figaro Castle WoB (kohlingen) 2', [0x000, 31, 48], None],
-    1504: [0xbd2ee, 0, 0, [None, None, None], 'Thamasa WoB', [0x000, 250, 128] ],  # wtf is this event doing?
-    1505: [0xa5ecf, 14, 7, [None, None, None], 'Vector entrance event tile', [0x000, 120, 187], None],
-    '1505a': [0xa5ecf, 14, 7, [None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187], None],
-    1506: [0xa5ee3, 0, 0, [None, None, None], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102], None],
+    1501: [0xb0bb7, 0, 0, [None, None, None, None], 'Imperial Camp WoB', [0x000, 179, 71], None],
+    1502: [0xa5eb5, 0, 0, [None, None, None, None], 'Figaro Castle WoB', [0x000, 64, 76], None],
+    '1502a': [0xa5eb5, 0, 0, [None, None, None, None], 'Figaro Castle WoB 2', [0x000, 65, 76], None],
+    1503: [0xa5ec2, 0, 0, [None, None, None, None], 'Figaro Castle WoB (kohlingen)', [0x000, 30, 48], None],
+    '1503c': [0xa5ec2, 0, 0, [None, None, None, None], 'Figaro Castle WoB (kohlingen) 2', [0x000, 31, 48], None],
+    1504: [0xbd2ee, 0, 0, [None, None, None, None], 'Thamasa WoB', [0x000, 250, 128] ],  # wtf is this event doing?
+    1505: [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile', [0x000, 120, 187], None],
+    '1505a': [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187], None],
+    1506: [0xa5ee3, 0, 0, [None, None, None, None], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102], None],
 
-    1507: [0xa5f0b, 0, 0, [None, None, None], 'Figaro Castle WoR', [0x001, 81, 85], None],
-    '1507a': [0xa5f0b, 0, 0, [None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85], None],
-    1508: [0xa5f18, 0, 0, [None, None, None], 'Figaro Castle WoR (kohlingen)', [0x001, 53, 58], None],
-    '1508a': [0xa5f18, 0, 0, [None, None, None], 'Figaro Castle WoR (kohlingen) 2', [0x001, 54, 58], None],
-    1509: [0xa5f39, 0, 0, [None, None, None], 'Solitary Island cliff entrance', [0x001, 73, 231], None],
+    1507: [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR', [0x001, 81, 85], None],
+    '1507a': [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85], None],
+    1508: [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen)', [0x001, 53, 58], None],
+    '1508a': [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen) 2', [0x001, 54, 58], None],
+    1509: [0xa5f39, 0, 0, [None, None, None, None], 'Solitary Island cliff entrance', [0x001, 73, 231], None],
 
     1510: [0xb80a9, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract east', [0x118, 54, 53], 'JMP'],
     1511: [0xb809a, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract west', [0x118, 26, 54], 'JMP']

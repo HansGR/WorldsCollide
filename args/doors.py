@@ -31,6 +31,8 @@ def parse(parser):
                        help="Randomize the doors in Lete River")
     doors.add_argument("-drze", "--door-randomize-zone-eater", action="store_true",
                        help="Randomize the doors in Zone Eater")
+    doors.add_argument("-drst", "--door-randomize-serpent-trench", action="store_true",
+                       help="Randomize the doors in Serpent Trench")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -47,7 +49,8 @@ def process(args):
             args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or \
             args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or \
             args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor \
-            or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater:
+            or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
+            or args.door_randomize_serpent_trench:
         args.door_randomize = True
     else:
         args.door_randomize = False
@@ -107,6 +110,9 @@ def flags(args):
         if args.door_randomize_zone_eater:
             flags += " -drze"
 
+        if args.door_randomize_serpent_trench:
+            flags += " -drst"
+
     return flags
 
 def options(args):
@@ -131,6 +137,7 @@ def options(args):
             ("Mt. Zozo", True),
             ("Lete River", True),
             ("Zone Eater", True),
+            ("Serpent Trench", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -161,6 +168,7 @@ def options(args):
             ("Mt. Zozo", args.door_randomize_mt_zozo),
             ("Lete River", args.door_randomize_lete_river),
             ("Zone Eater", args.door_randomize_zone_eater),
+            ("Serpent Trench", args.door_randomize_zone_eater),
         ]
 
 def menu(args):

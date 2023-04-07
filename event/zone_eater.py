@@ -7,6 +7,7 @@ class ZoneEater(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+
     def name(self):
         return "Zone Eater"
 
