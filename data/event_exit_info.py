@@ -87,12 +87,12 @@ event_exit_info = {
     #2044a: [0x1c84d, 7, 1, [False, False, False, False], 'Cliff jump to Serpent Trench tile 2', [0x0A8, 9, 11], 'JMP'],  # Duplicate, not needed with JMP
     2045: [None, 7, 1, [False, False, False, False], 'Serpent Trench #1 to cave', [0x005, 2045 % 128, 2045 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     2046: [0x00000, 0, 0, [None, None, None, None], 'Serpent Trench #1 continue to #2', [0x002, 0, 0], None],  # logical exit
-    2047: [0xa8c41, 7, 1, [False, False, False, False], 'Serpent Trench Cave 1 to Serpent Trench #2', [0x0af, 43, 4], 'JMP'], # Goes to switchyard
+    2047: [0xa8c41, 7, 1, [False, False, False, False], 'Serpent Trench Cave 1 to Serpent Trench #2', [0x0af, 43, 4], 'JMP'], # Goes to switchyard.
     2048: [None, 7, 1, [False, False, False, False], 'Serpent Trench #2 to cave 2a', [0x005, 2048 % 128, 2048 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     2049: [0x00000, 0, 0, [None, None, None, None], 'Serpent Trench #2 continue to #3', [0x002, 0, 0], None],  # logical exit
     2050: [0xa8cae, 13, 7, [False, False, False, False], 'Serpent Trench Cave 2b to Cave 2c', [0x0af, 49, 42], 'JMP'],
-    2051: [0xa8c94, 7, 1, [False, False, False, False], 'Serpent Trench Cave 2c to Serpent Trench #3', [0x0af, 6, 36], 'JMP'], # Goes to switchyard
-    2052: [None, 7, 1, [False, False, False, False], 'Serpent Trench #3 to Nikeah', [0x005, 2045 % 128, 2045 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    2051: [0xa8c94, 7, 1, [False, False, False, False], 'Serpent Trench Cave 2c to Serpent Trench #3', [0x0af, 6, 36], 'JMP'], # Goes to switchyard.
+    2052: [None, 11, 1, [False, False, False, False], 'Serpent Trench #3 to Nikeah', [0x005, 2052 % 128, 2052 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance

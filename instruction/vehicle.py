@@ -60,3 +60,26 @@ class LoadMap(_LoadMap):
 
         super().__init__(0xd3, map_id, direction, default_music, x, y,
                          fade_in, entrance_event, airship, chocobo, update_parent_map, unknown)
+
+class MoveForward(_Instruction):
+    def __init__(self, direction, distance):
+        self.direction = direction
+        self.distance = distance
+
+        import data.direction
+
+        if direction == data.direction.UP:
+            opcode = 0x24
+        elif direction == data.direction.RIGHT:
+            opcode = 0x0c
+        elif direction == data.direction.DOWN:
+            opcode = 0x44
+        elif direction == data.direction.LEFT:
+            opcode = 0x14
+        else:
+            opcode = 0x04
+
+        super().__init__(opcode, distance)
+
+    def __str__(self):
+        return super().__str__(f"{str(self.direction)} {str(self.distance)}")

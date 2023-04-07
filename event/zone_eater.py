@@ -126,73 +126,28 @@ class ZoneEater(Event):
 
     def door_rando_mod(self):
         # Modifications for door rando
-        engulfID = 2040  # ID of engulf event
+        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
         # (1a) Change the entry event to load the switchyard location
-        switchyard_map = 0x005
-        switchyard_x = engulfID % 128
-        switchyard_y = engulfID // 128
-
+        event_id = 2040  # ID of engulf event
         space = Reserve(0xa008f, 0xa0095, 'Zone Eater Entry modification')
-        space.write([
-            world.LoadMap(switchyard_map, direction=direction.UP, default_music=False,
-                          x=switchyard_x, y=switchyard_y,
-                          fade_in=False, entrance_event=False),
-            field.Return()
-        ])
+        space.write(GoToSwitchyard(event_id))
         # (1b) Add the switchyard event tile that handles entry to Zone Eater
         src = [
             field.LoadMap(0x114, direction=direction.DOWN, default_music=True,
                           x=10, y=12, fade_in=True, entrance_event=True),
             field.Return()
         ]
-        space = Write(Bank.CA, src, "Zone Eater Entry Switchyard")
-
-        from data.map_event import MapEvent
-        switchyard_event = MapEvent()
-        switchyard_event.x = switchyard_x
-        switchyard_event.y = switchyard_y
-        switchyard_event.event_address = space.start_address - EVENT_CODE_START
-        self.maps.add_event(switchyard_map, switchyard_event)
-
-
+        AddSwitchyardEvent(event_id, self.maps, src=src)
 
         # (2a) Change the exit event to load the switchyard location
-        exitID = 2041  # ID of engulf event
-        switchyard_x = exitID % 128
-        switchyard_y = exitID // 128
-
-        # CB/7DB7: 6B    Load map $0001 (World of Ruin) instantly, (upper bits $2400), place party at (237, 50), facing down
-        # CB/7DBD: FF        End map script
+        event_id = 2041  # ID of engulf event
         space = Reserve(0xb7db7, 0xb7dbd, 'Zone Eater Exit modification')
-        space.write([
-            field.LoadMap(switchyard_map, direction=direction.UP, default_music=False,
-                          x=switchyard_x, y=switchyard_y,
-                          fade_in=False, entrance_event=False),
-            field.Return()
-        ])
+        space.write(GoToSwitchyard(event_id))
         # (2b) Add the switchyard event tile that handles exit to Triangle Island
         src = [
            field.FadeLoadMap(0x001, direction=direction.DOWN, default_music=True,
                              x=237, y=50, fade_in=True, entrance_event=True),
            field.End()
         ]
-        # Include moving the airship to you?
-        #src = [
-        #    field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-        #    field.FadeLoadMap(0x001, direction.DOWN, default_music=False,
-        #                      x=237, y=50, fade_in=False, airship=True),
-        #    vehicle.SetPosition(237, 50),
-        #    vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-        #    vehicle.LoadMap(0x001, direction=direction.DOWN, default_music=True,
-        #                  x=237, y=50, fade_in=True, entrance_event=True),
-        #    field.FadeInScreen(),
-        #    field.End()
-        #]
-        space = Write(Bank.CB, src, "Zone Eater Exit Switchyard")
-
-        switchyard_event = MapEvent()
-        switchyard_event.x = switchyard_x
-        switchyard_event.y = switchyard_y
-        switchyard_event.event_address = space.start_address - EVENT_CODE_START
-        self.maps.add_event(switchyard_map, switchyard_event)
+        AddSwitchyardEvent(event_id, self.maps, src=src)
