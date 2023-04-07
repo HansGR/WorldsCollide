@@ -28,6 +28,7 @@ room_data = {
     'branch-mz': [ [537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
+    'root-st' : [ [ ], [2044], [3052], 0], # Root map for -door-randomize-serpent-trench
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [ ], 1],  # World of Ruin
@@ -382,8 +383,23 @@ room_data = {
     238 : [ [ ], [ ], [ ], 1],   # Mobliz Injured Lad Hidden Basement
 
     239 : [ [1196, 1197], [ ], [ ], 0], #Baren Falls Outside
+
+    ### SERPENT TRENCH & NIKEAH SEQUENCE
     240 : [ [523, 524], [ ], [ ], 0], #Crescent Mountain
-    241 : [ [1198], [ ], [ ], 0], #Serpent Trench Cliff
+    241 : [ [1198], [2044], [ ], 0], #Serpent Trench Cliff
+
+    # SERPENT TRENCH
+    '241a' : [ [], [2045, 2046], [3044], 0], # Serpent Trench #1
+    246 : [  [], [2047], [3045], 0],  # Serpent Trench Cave 1
+    '241b' : [ [], [2048, 2049], [3046, 3047], 0], # Serpent Trench #2
+    '247a' : [ [529], [ ], [3048], 0], #Serpent Trench Cave 2 Part A
+    '247b' : [ [530], [2050], [ ], 0], #Serpent Trench Cave 2 Part B
+    '247c' : [ [ ], [2051], [3050], 0], #Serpent Trench Cave 2 Part C
+    '241c' : [ [ ], [2052], [3049, 3051], 0], # Serpent Trench #3
+
+    # NIKEAH DOCKS
+    259: [[1208], [], [3052], 0],  # Nikeah Docks
+    '259R': [[5208], [], [], 1],  # Nikeah Docks
 
     # NIKEAH
     242 : [ [525, 526, 1199, 1200, 1201, 1202], [ ], [ ], 0], #Nikeah Outside WoB
@@ -394,10 +410,6 @@ room_data = {
     '243R' : [ [4527], [ ], [ ], 1], #Nikeah Inn
     '244R' : [ [4528], [ ], [ ], 1], #Nikeah Pub
     '245R' : [ [5203], [ ], [ ], 1], #Nikeah Chocobo Stable
-
-    # SERPENT TRENCH
-    246 : [ [529], [ ], [ ], 0], #Serpent Trench Cave 2nd Part 1st Room
-    247 : [ [530], [ ], [ ], 0], #Serpent Trench Cave 2nd Part 2nd Room
 
     # MOUNT ZOZO
     250 : [ [531, 532, 533], [ ], [ ], 1], #Mt Zozo Outside Bridge
@@ -411,10 +423,6 @@ room_data = {
     #COLISEUM GUY'S HOUSE
     257 : [ [544, 1205, 1206, 1207], [ ], [ ], 0], #Coliseum Guy's House Outside
     258 : [ [545], [ ], [ ], 0], #Coliseum Guy's House Inside
-
-    # NIKEAH DOCKS
-    259 : [ [1208], [ ], [ ], 0], #Nikeah Docks
-    '259R' : [ [5208], [ ], [ ], 1], #Nikeah Docks
 
     # KOHLINGEN
     260 : [ [546, 547, 548, 549, 550, 551, 1209, 1210], [ ], [ ], 0], #Kohlingen Outside WoB
@@ -799,7 +807,10 @@ forced_connections = {
 
     2039: [3039],    # Lete river exit to world map
 
-    2043: [3043]    # Zone Eater Pit to handle switch exit
+    2043: [3043],    # Zone Eater Pit to handle switch exit
+
+    2046: [3046],    # Serpent Trench #1 continue to #2
+    2049: [3049]    # Serpent Trench #2 continue to #3
 }
 
 # Add forced connections for virtual doors (-dra)

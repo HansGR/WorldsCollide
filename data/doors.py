@@ -16,6 +16,7 @@ ROOM_SETS = {
     'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
     'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
+    'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', 'root-st'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -28,7 +29,8 @@ ROOM_SETS = {
             '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', # Zozo-WoR
             250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
             'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
-            356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'  # Zone Eater
+            356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
+            '241a', 246, '241b', '247a', '247b', '247c', '241c', 'root-st'  # Serpent Trench
              ],
     'test': [8, 284]  # for testing only
 }
@@ -56,7 +58,7 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
-        self.verbose = True # False  # True
+        self.verbose = True    # False  # True
 
         self._all_rooms = []
 
@@ -113,8 +115,11 @@ class Doors():
             if self.args.door_randomize_lete_river:  # -drlr
                 room_sets.append(ROOM_SETS['Lete'])
 
-            if self.args.door_randomize_zone_eater:  # -drlr
+            if self.args.door_randomize_zone_eater:  # -drze
                 room_sets.append(ROOM_SETS['ZoneEater'])
+
+            if self.args.door_randomize_serpent_trench:  # -drst
+                room_sets.append(ROOM_SETS['SerpentTrench'])
 
             #Hard override for testing
             #room_sets.append(ROOM_SETS['test'])

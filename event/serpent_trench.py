@@ -139,6 +139,8 @@ class SerpentTrench(Event):
         )
 
     def door_rando_mod(self):
+        ### Maybe write a class to handle switchyard map tile writing functions?  This repeats a lot of code. ###
+
         # Modifications for door rando
         from data.map_event import MapEvent
         from data.event_exit_info import event_exit_info
