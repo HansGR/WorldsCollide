@@ -95,6 +95,10 @@ event_exit_info = {
     2052: [None, 7, 1, [False, False, False, False], 'Serpent Trench #3 to SWITCHYARD', [0x005, 2052 % 128, 2052 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     2053: [None, 11, 1, [False, False, False, False], 'SWITCHYARD to Nikeah (forced)', [0x005, 2053 % 128, 2053 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
 
+    # BURNING HOUSE
+    2054: [0xbdcc7, 7, 1, [False, False, False, False], 'Thamasa Inn to Burning House', [0x15A, 'NPC', 0], 'JMP' ], # Talk to the innkeeper.  requires JMP.
+    2055: [0x00000, 0, 0, [None, None, None, None], 'Burning House after boss to Inn', [0x15F, None, None], None], # logical? no randomize?
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff

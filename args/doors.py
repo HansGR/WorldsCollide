@@ -33,6 +33,8 @@ def parse(parser):
                        help="Randomize the doors in Zone Eater")
     doors.add_argument("-drst", "--door-randomize-serpent-trench", action="store_true",
                        help="Randomize the doors in Serpent Trench")
+    doors.add_argument("-drbh", "--door-randomize-burning-house", action="store_true",
+                       help="Randomize the doors in Burning House")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -50,7 +52,7 @@ def process(args):
             args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or \
             args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor \
             or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
-            or args.door_randomize_serpent_trench:
+            or args.door_randomize_serpent_trench or args.door_randomize_burning_house:
         args.door_randomize = True
     else:
         args.door_randomize = False
@@ -113,6 +115,9 @@ def flags(args):
         if args.door_randomize_serpent_trench:
             flags += " -drst"
 
+        if args.door_randomize_burning_house:
+            flags += " -drbh"
+
     return flags
 
 def options(args):
@@ -138,6 +143,7 @@ def options(args):
             ("Lete River", True),
             ("Zone Eater", True),
             ("Serpent Trench", True),
+            ("Burning House", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -168,7 +174,8 @@ def options(args):
             ("Mt. Zozo", args.door_randomize_mt_zozo),
             ("Lete River", args.door_randomize_lete_river),
             ("Zone Eater", args.door_randomize_zone_eater),
-            ("Serpent Trench", args.door_randomize_zone_eater),
+            ("Serpent Trench", args.door_randomize_serpent_trench),
+            ("Burning House", args.door_randomize_burning_house),
         ]
 
 def menu(args):

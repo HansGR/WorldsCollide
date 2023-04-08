@@ -17,6 +17,7 @@ ROOM_SETS = {
     'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
+    'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -30,7 +31,8 @@ ROOM_SETS = {
             250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
             'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
             356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
-            '241a', 246, '241b', '247a', '247b', '247c', '241c', 'root-st'  # Serpent Trench
+            '241a', 246, '241b', '247a', '247b', '247c', '241c', 'root-st',  # Serpent Trench
+            457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'  # Burning House
              ],
     'test': [8, 284]  # for testing only
 }
@@ -120,6 +122,9 @@ class Doors():
 
             if self.args.door_randomize_serpent_trench:  # -drst
                 room_sets.append(ROOM_SETS['SerpentTrench'])
+
+            if self.args.door_randomize_burning_house:  # -drbh
+                room_sets.append(ROOM_SETS['BurningHouse'])
 
             #Hard override for testing
             #room_sets.append(ROOM_SETS['test'])

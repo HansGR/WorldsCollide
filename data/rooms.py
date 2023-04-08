@@ -29,6 +29,7 @@ room_data = {
     'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
     'root-st' : [ [ ], [2044], [3053], 0], # Root map for -door-randomize-serpent-trench
+    'root-bh' : [ [ ], [2054], [3055], 0],  # Root map for -door-randomize-burning-house
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [ ], 1],  # World of Ruin
@@ -678,7 +679,7 @@ room_data = {
     # THAMASA - does WC only use this one Thamasa map (0x154)?
     447 : [ [922, 923, 924, 925, 926, 927, 928, 1255], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
     450 : [ [950, 951], [ ], [ ], 0], #Thamasa Arsenal
-    451 : [ [952], [ ], [ ], 0], #Thamasa Inn
+    451 : [ [952], [2054], [3055], 0], #Thamasa Inn
     452 : [ [953], [ ], [ ], 0], #Thamasa Item Shop
     453 : [ [954], [ ], [ ], 0], #Thamasa Elder's House
     454 : [ [955, 956], [ ], [ ], 0], #Strago's House First Floor
@@ -696,7 +697,7 @@ room_data = {
     '456R': [[4958], [], [], 1],  # Thamasa Relic
 
     # Burning House - event in, event out
-    457 : [ [959], [ ], [ ], 0], #Burning House Entry Room
+    457 : [ [959], [ ], [3054], 0], #Burning House Entry Room
     458 : [ [960, 961, 962], [ ], [ ], 0], #Burning House Second Room
     459 : [ [963, 964], [ ], [ ], 0], #Burning House Third Room
     460 : [ [965, 966, 968], [ ], [ ], 0], #Burning House Fourth Room
@@ -704,7 +705,7 @@ room_data = {
     462 : [ [969], [ ], [ ], 0], #Burning House 1st Chest Room
     463 : [ [971], [ ], [ ], 0], #Burning House 2nd Chest Room
     464 : [ [973, 974], [ ], [ ], 0], #Burning House Sixth Room
-    465 : [ [975], [ ], [ ], 0], #Burning House Final Room
+    465 : [ [975], [2055], [ ], 0], #Burning House Final Room
 
     # CAVE ON THE VELDT
     467 : [ [979, 985], [ ], [ ], 1], #Veldt Cave First Room
@@ -812,7 +813,9 @@ forced_connections = {
 
     2046: [3046],    # Serpent Trench #1 continue to #2
     2049: [3049],    # Serpent Trench #2 continue to #3
-    2053: [3053]    # Nikeah entry
+    2053: [3053],    # Nikeah entry
+
+    2055: [3055]    # Burning House defeating boss --> Thamasa Inn.  This *could* be randomized.
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -851,7 +854,9 @@ shared_exits = {
     1156 : [1157, 1158, 1159],     # Figaro Castle exits to world map
 
     1255: [1254, 1253],   # "Thamasa After Kefka WoB exits to world map"
-    1261: [1259, 1260]    # "Thamasa WoR exits to world map"
+    1261: [1259, 1260],   # "Thamasa WoR exits to world map"
+
+    960: [961]  # Double door in Burning House Room 2
 }
 
 # List of doors that CANNOT be connected to each other.  Only rare instances.
