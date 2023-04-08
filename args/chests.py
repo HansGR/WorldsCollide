@@ -14,6 +14,9 @@ def parse(parser):
                                  help = "Chest contents randomized by tier. Probability of higher tiers begins low and increases as more chests are opened")
     chests_contents.add_argument("-cce", "--chest-contents-empty", action = "store_true",
                                  help = "Chest contents empty")
+    chests_contents.add_argument("-cam", "--chest-all-monsters", default = None, type = int,
+                                 metavar = "PERCENT", choices = range(101),
+                                 help="Chest contents all monster-in-a-boxes and given percent bosses")
 
     chests.add_argument("-chrm", "--chest-random-monsters", default = [0, 0], type = int,
                                  nargs = 2, metavar = ("ENEMY", "BOSS"), choices = range(101),
@@ -21,6 +24,12 @@ def parse(parser):
 
     chests.add_argument("-cms", "--chest-monsters-shuffle", action = "store_true",
                         help = "Monsters-in-a-box shuffled but locations unchanged")
+
+    chests.add_argument("-ntc", "--no-trash-chests",  action = "store_true",
+                       help="Replace Low Tier Items with gold in chests")
+
+
+
 
 def process(args):
     if args.chest_contents_shuffle_random is not None:
@@ -47,6 +56,8 @@ def flags(args):
 
     if args.chest_monsters_shuffle:
         flags += " -cms"
+    if args.no_trash_chests:
+        flags += " -ntc"
 
     return flags
 
@@ -62,6 +73,8 @@ def options(args):
         contents_value = "Random Scaled"
     elif args.chest_contents_empty:
         contents_value = "Empty"
+    elif args.chest_all_monsters:
+        contents_value = "All MiaB"
 
     result.append(("Contents", contents_value, "contents_value"))
     if args.chest_contents_shuffle_random:
