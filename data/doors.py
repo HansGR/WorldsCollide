@@ -2,6 +2,7 @@
 from random import randrange, choices
 from data.rooms import room_data, forced_connections, shared_oneways, shared_exits, invalid_connections
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
+from data.walks import *
 
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
@@ -1175,3 +1176,12 @@ class Doors():
                     self.door_descr[m[1]]) + ')')
 
         section("Door Rando: ", lcolumn, [])
+
+    def walk_exits(self):
+        # Create Walks; walk them until you get a fully-connected map.
+        self.walks = Walks(self.rooms, self.room_doors, self.room_counts)  # Initialize the Walks state.
+        map = self.walks.ForceConnections(self.forcing)
+        while sum(self.walks.count) > 0:
+            pass
+
+
