@@ -1177,11 +1177,27 @@ class Doors():
 
         section("Door Rando: ", lcolumn, [])
 
-    def walk_exits(self):
+    def walk_exits(self, start_room_id):
         # Create Walks; walk them until you get a fully-connected map.
-        self.walks = Walks(self.rooms, self.room_doors, self.room_counts)  # Initialize the Walks state.
-        map = self.walks.ForceConnections(self.forcing)
-        while sum(self.walks.count) > 0:
-            pass
+        self.walks = Network(self.rooms)  # Initialize the Walk Network
+        self.walks.ForceConnections(self.forcing)  # Force initial connections
+        self.walks.active = self.walks.rooms.rooms.index(self.walks.rooms.get_room(start_room_id))
+
+        while sum(self.walks.rooms.count[:3]) > 0:
+            # Select an initial door
+            r1 = self.walks.rooms.rooms[self.walks.active]  # Get initial room
+            d1 = r1.get_exit()  # select an exit
+
+            # Collect valid connections & select one
+            valid = self.walks.get_valid_connections(d1)
+            d2 = random.choice(valid)
+
+            # Connect the two exits.  This function automatically:
+            # 0. creates the connection (R1, R2), and (R2, R1) if it's a normal door,
+            # 1. applies any keys found in R2,
+            # 2. updates the rooms and the network if a loop is formed,
+            # 3. updates the active room id.
+            self.walks.connect(d1, d2)
+
 
 

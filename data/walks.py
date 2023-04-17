@@ -1,5 +1,6 @@
 from data.rooms import room_data
 import networkx as nx
+import random
 
 class Walks:
     # Class for handling a group of Walks, i.e. logical mapping sequences for rooms
@@ -233,9 +234,14 @@ class Rooms():
             locked.append(r.locks.values())
         return locked
 
-    def remove(self, door_id):
+    def remove(self, id):
         for room in self.rooms:
-            if room.remove(door_id):
+            if room.id == id:
+                # This is a room id.  Remove it.
+                self.rooms.remove(room)
+                return True
+            # If this is an exit id, remove it.
+            if room.remove(id):
                 return True
         return False
 
@@ -278,11 +284,26 @@ class Room():
     def count(self):
         return [len(s) for s in self._contents]
 
+    def add_doors(self, doors):
+        self._contents[0].extend(doors)
+
+    def add_traps(self, traps):
+        self._contents[1].extend(traps)
+
+    def add_pits(self, pits):
+        self._contents[2].extend(pits)
+
+    def add_keys(self, keys):
+        self._contents[3].extend(keys)
+
+    def add_locks(self, lock_dict):
+        for k in lock_dict.keys():
+            self._contents[4][k] = lock_dict[k]
+
     def remove(self, id):
         for r in range(len(self._contents)):
             if id in self._contents[r]:
                 self._contents[r].remove(id)
-                self.count[r] -= 1
                 return True
         return False
 
@@ -307,7 +328,7 @@ class Room():
     def element_type(self, e_id):
         return [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()].index(True)
 
-    def get_elements(self, node_list, element_type):
+    def get_elements(self, element_type):
         if element_type == 0:
             return self.doors
         elif element_type == 1:
@@ -322,6 +343,11 @@ class Room():
             return self.locks.values()
         else:
             return False
+
+    def get_exit(self):
+        # Return a random exit from those available
+        exit_list = self.doors + self.traps
+        return random.choice(exit_list)
 
 
 class Network:
@@ -343,22 +369,155 @@ class Network:
                 self.map.append([d, df])
 
     def connect(self, d1, d2):
+        # (0) Create directed connection: d1 --> d2
         R1 = self.rooms.get_room(d1)
         R2 = self.rooms.get_room(d2)
-        self.net.add_edge(R1, R2)
+        if R1 is not R2:
+            # Add the edge connecting R1 --> R2
+            self.net.add_edge(R1, R2)
+            if R1.element_type(d1) == 0:
+                # This is a normal door: add the reverse connection R2 --> R1
+                self.net.add_edge(R2, R1)
+        # Remove the doors from their respective rooms
         R1.remove(d1)
         R2.remove(d2)
+
+        # (1) Apply any keys in R2:
+        for k in R2.keys:
+            self.apply_key(k)
+
+        # (2) Compress any loops and (3) update the active room
+        loop = self.get_loop(R1)
+        if loop:
+            # Compress the node, update the active room
+            loop_room = self.compress_loop(loop)
+            self.active = self.rooms.rooms.index(loop_room)
+        else:
+            # Update the active room to R2
+            self.active = self.rooms.rooms.index(R2)
+
+        # (3) if there are downstream nodes, move to one of them.
+        # This should only happen when there are forced connections.
+        downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+        while self.rooms.rooms[self.active] in downstream:
+            # Found a loop: compress it.  This should never happen, but just in case.
+            loop_room = self.compress_loop(self.get_loop(self.rooms.rooms[self.active]))
+            self.active = self.rooms.rooms.index(loop_room)
+            downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+        while downstream:
+            # Walk downstream & update active step
+            self.active = self.rooms.rooms.index(random.choice(downstream))
+            downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+
+    def apply_key(self, key):
+        # unlock any doors or traps locked by key
+        for room in self.rooms.rooms:
+            if key in room.locks:
+                locked = room.locks.pop(key)  # this also removes the item from room.locks
+                for item in locked:
+                    if item < 2000:
+                        room.add_doors([item])
+                    else:
+                        room.add_traps([item])
+            # Delete the key, we already have it.
+            if key in room.keys:
+                room.remove(key)
+
+    def get_loop(self, room):
+        # Look for a loop containing this room.  If found, return [list of nodes in loop]; if not, return [].
+        paths = self.get_upstream_paths(room)
+        is_loop = [path.__contains__(room) for path in paths]
+        if True in is_loop:
+            loop = paths[is_loop.index(True)]  # returns the first loop found
+            loop = loop[:loop.index(room)+1]  # return only the looping part; not any subsequent bits
+            return loop
+        else:
+            return []
+
+    def compress_loop(self, loop):
+        # compress a loop = [list of nodes].  All nodes must be accessible from all other nodes: it is not checked here.
+        if len(loop) > 1:
+            r_id = ''
+            for node in loop:
+                r_id += str(node.id) + '_'
+            new_room = Room(r_id)
+            for node in loop:
+                new_room.add_doors([d for d in node.doors])
+                new_room.add_traps([t for t in node.traps])
+                new_room.add_pits([p for p in node.pits])
+                new_room.add_keys([k for k in node.keys])
+                new_room.add_locks(node.locks)
+
+            # Add new_room to the network
+            self.rooms.rooms.append(new_room)
+            self.net.add_node(new_room)
+
+            # Inherit edges from all nodes to/from new node
+            for e in self.net.edges:
+                if e[0] in loop and e[1] not in loop:
+                    self.net.add_edge(new_room, e[1])
+                elif e[0] not in loop and e[1] in loop:
+                    self.net.add_edge(e[0], new_room)
+
+            # Delete loop nodes from network
+            for node in loop:
+                self.net.remove_node(node)  # remove from the network
+                self.rooms.remove(node.id)  # remove from the list of rooms
+
+            # If successful, return the room
+            return new_room
+
+        # If not successful, return false
+        return False
+
+    def flatten_paths(self, paths):
+        temp = []
+        for p in paths:
+            if len(p) == 0:
+                pass
+            elif isinstance(p[0], list):
+                temp.extend(self.flatten_paths(p))
+            else:
+                temp.append(p)
+        return temp
+
+    def get_upstream_paths(self, room, nodes=None):
+        # Return a list of each branching path heading upstream from room until it hits a dead end.
+        if nodes is None:
+            nodes = []
+        pred = [p for p in self.net.predecessors(room) if p not in nodes]
+        if len(pred) > 0:
+            if len(pred) == 1:
+                p = pred[0]
+                #if room in list(self.net.predecessors(p)):
+                #    # Ignore simple 2-way doors
+                #    return self.get_upstream_paths(p, nodes)
+                #else:
+                return self.get_upstream_paths(p, nodes + [p])
+            else:
+                temp = []
+                for p in pred:
+                    #if room in list(self.net.predecessors(p)):
+                    #    # Ignore simple 2-way doors
+                    #    temp.append(self.get_upstream_paths(p, nodes))
+                    #else:
+                    temp.append(self.get_upstream_paths(p, nodes + [p]))
+                return self.flatten_paths(temp)
+        return self.flatten_paths([nodes])
 
     def get_upstream_nodes(self, room, nodes=None):
         if nodes is None:
             nodes = []
         pred = [p for p in self.net.predecessors(room) if p not in nodes]
         if len(pred) > 0:
+            temp = []
             for p in pred:
-                if room not in list(self.net.predecessors(p)):
+                if room in list(self.net.predecessors(p)):
                     # Ignore simple 2-way doors
-                    nodes.append(p)
-                nodes.extend(self.get_upstream_nodes(p, nodes))
+                    temp += self.get_upstream_nodes(p, nodes)
+                else:
+                    temp += self.get_upstream_nodes(p, nodes + [p])
+            return temp
         return nodes
 
     def get_downstream_nodes(self, room, nodes=None):
@@ -366,21 +525,25 @@ class Network:
             nodes = []
         succ = [s for s in self.net.successors(room) if s not in nodes]
         if len(succ) > 0:
+            temp = []
             for s in succ:
-                if room not in list(self.net.successors(s)):
-                    # Don't include simple 2-way doors
-                    nodes.append(s)
-                nodes.extend(self.get_downstream_nodes(s, nodes))
+                if room in list(self.net.successors(s)):
+                    # Ignore simple 2-way doors
+                    temp += self.get_downstream_nodes(s, nodes)
+                else:
+                    temp += self.get_downstream_nodes(s, nodes + [s])
+            return temp
         return nodes
 
     def get_connected_nodes(self, room, nodes=None):
+        is_original = False
         if nodes is None:
             nodes = []
             is_original = True
         conn = [c for c in self.net.successors(room) if c in self.net.predecessors(room) and c not in nodes]
         if len(conn) > 0:
+            nodes += conn  # Add next ring of connected nodes
             for c in conn:
-                nodes.append(c)
                 nodes.extend(self.get_connected_nodes(c, nodes))
         if is_original and room in nodes:
             # Remove room from the connected nodes
@@ -403,37 +566,56 @@ class Network:
             d2_type = 2
 
         upstream_nodes = self.get_upstream_nodes(R1)
-        downstream_nodes = self.get_downstream_nodes(R1)
-        connected_nodes = self.get_connected_nodes(R1)
+        #downstream_nodes = self.get_downstream_nodes(R1)   # should be empty by construction (active is downstream)
+        #connected_nodes = self.get_connected_nodes(R1)     # should be empty by construction (loops compressed)
         # Only connect loose nodes if they have no predecessors
         unconnected_nodes = [r for r in self.rooms.rooms if r not in upstream_nodes and
-                             r not in downstream_nodes and r is not R1 and
-                             len(list(self.net.predecessors(r))) == 0]
-        loose_conn = [l for l in self.get_elements(unconnected_nodes, d2_type)]  # available connections in new nodes
+                             r is not R1 and len(list(self.net.predecessors(r))) == 0]
 
-        # (2) Do not create a loop with no exits while there remain entrances
-        if R1 in upstream_nodes:
-            # inspect the loop for other exits
-            loop = upstream_nodes[upstream_nodes.index(R1):] + downstream_nodes
-            doors_out = [d for d in self.get_elements(loop, 0) if d is not d1]
-            traps_out = [t for t in self.get_elements(loop, 1) if t is not d1]
+        # By construction, there should be no loops or downstream nodes.
+        valid = []
 
-            if len(doors_out) + len(traps_out) == 0:
-                # Remove the loop connections:
-                upstream_nodes = upstream_nodes[:upstream_nodes.index(R1)]
-
-        upstream_conn = [u for u in self.get_elements(upstream_nodes, d2_type)]
-        downstream_conn = [d for d in self.get_elements(downstream_nodes, d2_type)]
-        self_conn = [id for id in R1.get_elements(d2_type) if id is not d1]
-
-        valid = [u for u in loose_conn]   # always include unconnected nodes
         # Validity rules:
-        # (1) Do not complete this loop while there remain disconnected nodes
-        if len(upstream_conn + downstream_conn + self_conn) > 1 and len(loose_conn) == 0:
-            pass
+        self_exits = [d for d in R1.doors if d is not d1] + [t for t in R1.traps if t is not d1]
+        is_last_exit = len(self_exits) == 0
 
+        up_conn = [[c for c in node.get_elements(d2_type)] for node in upstream_nodes]
+        self_conn = [c for c in R1.get_elements(d2_type) if c is not d1]
+        conn = up_conn + [self_conn]
+        conn_count = [len(c) for c in conn]
 
+        for node in unconnected_nodes:
+            if not node.is_dead_end():
+                # 0. Always include unconnected nodes from non-dead-ends
+                valid.extend([c for c in node.get_elements(d2_type)])
 
+            else:
+                if not is_last_exit or (sum(conn_count) == 0 and len(unconnected_nodes) == 1):
+                    # 1. Include dead ends IF there's another exit in R1, or it's the last exit
+                    valid.extend([c for c in node.get_elements(d2_type)])
 
-        # We can check for loops by seeing if R1 is in its own upstream_nodes (or downstream_nodes)
+        # 2. if there are no loose connections and there is only one upstream connection, add it.
+        if len(valid) == 0 and sum(conn_count) == 1:
+            valid.extend(conn[conn_count.index(1)])
+
+        # 3. Otherwise, add any connections that leave downstream exits
+        elif len(self_exits) == 0:
+            paths = self.get_upstream_paths(R1)
+            for path in paths:
+                # Get the cumulative downstream exit count on the list of nodes.
+                down_exits = []  # there are no exits downstream (len(self_exits) == 0)
+                for p in path:
+                    down_exits.extend([c for c in p.doors] + [c for c in p.traps])
+                    # If the cumulative count of exits > 0, add the entrances above that point.
+                    if len(down_exits) > 0:
+                        valid.extend([c for c in self.get_elements(p, d2_type)])
+
+        else:
+            # (4) There are more exits in the room: just add everything above it.
+            for c in conn:
+                valid.extend(c)
+
+        valid = list(set(valid))  # remove duplicates, if any.
+
+        return valid
 
