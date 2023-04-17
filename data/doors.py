@@ -5,7 +5,7 @@ from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door description
 from data.walks import *
 
 ROOM_SETS = {
-    'Umaro': [364, 365, 366, '367a', '367b', '367c', 368, 'root-u'],
+    'Umaro': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368, 'root-u'],
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
     'UpperNarshe_WoR': [37, 38, 40, 41, 42, 43, 44, 46, 47, 'root-unr'],
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],

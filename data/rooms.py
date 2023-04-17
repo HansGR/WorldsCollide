@@ -580,12 +580,14 @@ room_data = {
     363 : [ [724], [ ], [ ], 1], #Zone Eater Gogo Room
 
     364 : [ [729, 730, 731], [2001, 2002], [3010], 1], #Umaro Cave 1st Room
-    365 : [ [732, 733], [ ], [3001, 3002, 3003, 3005, 3007], 1], #Umaro Cave Bridge Room
+    365 : [ [732, 733], [ ], [3001, 3002, 3003, '3005L', '3007L'], 1], #Umaro Cave Bridge Room
     366 : [ [734], [2003, 2004], [ ], 1], #Umaro Cave Switch Room
     # 367 : [ [735, 736, 737, 738], [2005, 2006, 2007, 2008], [ ], None], #Umaro Cave 2nd Room
     '367a' : [ [735], [2007], [ ], 1], #Umaro Cave 2nd Room - west
     '367b' : [ [736, 738], [2006, 2008], [ ], 1], #Umaro Cave 2nd Room - middle
     '367c' : [ [737], [2005], [ ], 1], #Umaro Cave 2nd Room - east
+    'share_east': [ [], ['2005L'], [3005, 3006], 1], # Umaro Cave west shared pit logical room
+    'share_west': [ [], ['2007L'], [3007, 3008], 1], # Umaro Cave west shared pit logical room
     368 : [ [ ], [2009], [3004], 1], # Umaro Cave Umaro's Den
 
     369 : [ [739, 740, 741, 742], [ ], [ ], 0], #Maranda Outside
@@ -793,6 +795,11 @@ room_data = {
 
 # Lists of exits that must be connected
 forced_connections = {
+    2005 : [3005],   # Umaro's Cave logical handler for pit trapdoor accessible from 2 rooms
+    2006 : [3006],   # Umaro's Cave logical handler for pit trapdoor accessible from 2 rooms
+    2007 : [3007],   # Umaro's Cave logical handler for pit trapdoor accessible from 2 rooms
+    2008 : [3008],   # Umaro's Cave logical handler for pit trapdoor accessible from 2 rooms
+
     2011 : [3011],   # Esper Mountain Inside 2nd Room: North-to-South bridge jump West
     2012 : [3012],   #      North-to-South bridge jump Mid
     2013 : [3013],   #      North-to-South bridge jump East
@@ -825,10 +832,14 @@ forced_connections = {
 
 # List of one-ways that must have the same destination
 shared_oneways = {
-    2005: [2006],  # Umaro's cave room 2: east trapdoor (shared exit)
-    2006: [2005],  # Umaro's cave room 2: east trapdoor (shared exit)
-    2007: [2008],  # Umaro's cave room 2: west trapdoor (shared exit)
-    2008: [2007],  # Umaro's cave room 2: west trapdoor (shared exit)
+    # These are better handled with a logical room:  'share_east' = [ [], ['2005L'], [3005, 3006], 1] and
+    # and forced connections:  2005: [3005], 2006: [3006]
+    #2005: [2006],  # Umaro's cave room 2: east trapdoor (shared exit)
+    #2006: [2005],  # Umaro's cave room 2: east trapdoor (shared exit)
+    # These are better handled with a logical room:  'share_west' = [ [], ['2007L'], [3007, 3008], 1]
+    # and forced connections:  2007: [3007], 2008: [3008]
+    #2007: [2008],  # Umaro's cave room 2: west trapdoor (shared exit)
+    #2008: [2007],  # Umaro's cave room 2: west trapdoor (shared exit)
 
     2017: [2018],   # Owzer's Mansion switching doors (same destination)
     2018: [2017],    # Owzer's Mansion switching doors (same destination)
