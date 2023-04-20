@@ -1,8 +1,6 @@
 from data.rooms import room_data
 import networkx as nx
 import random
-import numpy as np
-import matplotlib.pyplot as plt
 from copy import deepcopy
 
 class Walks:
@@ -258,7 +256,7 @@ class Room():
                 # before implementing keys & locks
                 contents = [i for i in data[:-1]] + [[], {}]
             else:
-                contents = [i for i in data[r][:-1]]   # [ doors, traps, pits, keys, locks ]
+                contents = [i for i in data[:-1]]   # [ doors, traps, pits, keys, locks ]
             self._contents = deepcopy(contents)  # Copy, don't replicate
 
         else:
@@ -403,16 +401,16 @@ class Network:
 
         # (3) if there are downstream nodes, move to one of them.
         # This should only happen when there are forced connections.
-        downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
-        while self.rooms.rooms[self.active] in downstream:
-            # Found a loop: compress it.  This should never happen, but just in case.
-            loop_room = self.compress_loop(self.get_loop(self.rooms.rooms[self.active]))
-            self.active = self.rooms.rooms.index(loop_room)
-            downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
-        while downstream:
-            # Walk downstream & update active step
-            self.active = self.rooms.rooms.index(random.choice(downstream))
-            downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+        # downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+        # while self.rooms.rooms[self.active] in downstream:
+        #    # Found a loop: compress it.  This should never happen, but just in case.
+        #    loop_room = self.compress_loop(self.get_loop(self.rooms.rooms[self.active]))
+        #    self.active = self.rooms.rooms.index(loop_room)
+        #    downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+        #while downstream:
+        #    # Walk downstream & update active step
+        #    self.active = self.rooms.rooms.index(random.choice(downstream))
+        #    downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
 
     def apply_key(self, key):
         # unlock any doors or traps locked by key
@@ -576,6 +574,72 @@ class Network:
                 top_nodes.add(path[-1])
         return top_nodes
 
+    def connect_network_stupid(self):
+        # The rules for how to validly connect the network are too hard to figure out.
+        # However, it's relatively easy to figure out when the network is invalid.
+        # So: let's make a recursive connection algorithm that throws an error if it is invalid, and tries again at the
+        # next step up.  This is like solving a maze by retreating to the most recent fork if you find a dead end.
+        # Update: THIS ACTUALLY WORKS.  It can also occasionally take forever.
+        # We might be able to make it more reliable by adding a *few* rules.
+        net_state = deepcopy(self)
+
+        if sum(net_state.rooms.count[:3]) == 0:
+            # Successfully completed the network.
+            return net_state
+
+        else:
+            R_active = net_state.rooms.rooms[net_state.active]
+            #print('Active node: ', R_active.id)
+            # Collect possible exits
+            possible_exits = [d for d in R_active.doors] + [t for t in R_active.traps]
+            #print('Possible exits: ')
+            #print('\t' + str(R_active.id) + ': ', possible_exits)
+            for node in net_state.get_downstream_nodes(R_active):
+                node_exits = [d for d in node.doors] + [t for t in node.traps]
+                #print('\t' + str(node.id) + ': ', node_exits)
+                possible_exits += node_exits
+            random.shuffle(possible_exits)  # randomize order
+
+            # Collect possible entrances
+            possible_entrances = [[], []]
+            #print('Possible entrances:')
+            for node in net_state.net.nodes:
+                node_entr = [[d for d in node.doors], [p for p in node.pits]]
+                #print('\t' + str(node.id) + ': ', node_entr[0], node_entr[1])
+                possible_entrances[0].extend(node_entr[0])
+                possible_entrances[1].extend(node_entr[1])
+            random.shuffle(possible_entrances[0])  # randomize order
+            random.shuffle(possible_entrances[1])
+
+            # Start trying exits
+            while len(possible_exits) > 0:
+                d1 = possible_exits.pop()
+                R1 = net_state.rooms.get_room(d1)
+                d1_type = R1.element_type(d1)
+                while len(possible_entrances[d1_type]) > 0:
+                    d2 = possible_entrances[d1_type].pop()
+
+                    try:
+                        net_backup = deepcopy(net_state)
+                        #print('\t\tTrying Connection: ', str(d1), str(d2))
+                        net_state.connect(d1, d2)
+                        net_state = net_state.connect_network_stupid()
+
+                        # up_propagate the successful connection
+                        return net_state
+
+                    except:
+                        print('\t\t(' + str(d1) + ',' + str(d2) + ') failed')
+                        net_state = net_backup # reset the network
+
+                # If you get here, you ran out of possible entrances.
+                #print('\t' + str(d1) + ' ran out of possible entrances.')
+                raise Exception(str(d1) + ' ran out of possible entrances.')
+
+            #print('\t' + str(R_active.id) + ' ran out of possible exits.')
+            raise Exception("Ran out of possible exits.")
+
+
     def get_valid_connections(self, d1):
         # Return a list of valid connections for the door or trap d1
         R1 = self.rooms.get_room(d1)
@@ -736,11 +800,12 @@ class Network:
             edge_labels[(r1, r2)] = str(m[0]) + '-->' + str(m[1])
 
         pos = nx.spring_layout(plotnet)
-        nx.draw_networkx(plotnet, pos=pos)
-        edgepos = {}
-        for e in plotnet.edges():
-            avg = (pos[e[0]] + pos[e[1]]) / 2
-            edgepos[e] = avg
+        nx.draw_networkx_nodes(plotnet, pos=pos)
+        nx.draw_networkx_labels(plotnet, pos=pos)
+        two_ways = [e for e in plotnet.edges if (e[1],e[0]) in plotnet.edges]
+        one_ways = [e for e in plotnet.edges if (e[1], e[0]) not in plotnet.edges]
+        nx.draw_networkx_edges(plotnet, pos=pos, edgelist=two_ways)
+        nx.draw_networkx_edges(plotnet, pos=pos, edgelist=one_ways, edge_color='r')
         nx.draw_networkx_edge_labels(plotnet, pos=pos, edge_labels=edge_labels)
 
 

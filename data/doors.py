@@ -196,6 +196,24 @@ class Doors():
                     self.invalid[d] = invalid_connections[d]
 
     def mod(self):
+        # Create list of randomized connections using walks
+        map = [ [], []]
+        for area in self.rooms:
+            start_rooms = [r for r in area if 'root' in str(r)]
+            start_room_id = random.choice(start_rooms)
+
+            walks = Network(area)  # Initialize the Walk Network
+            walks.ForceConnections(self.forcing)  # Force initial connections
+            walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
+
+            fully_connected = walks.connect_network_stupid()
+
+            map[0].extend([m for m in fully_connected.map[0]])
+            map[1].extend([m for m in fully_connected.map[1]])
+
+        self.map = map
+
+    def mod_original(self):
         # Create list of randomized connections
         # Maybe re-write this to loop on each area separately (instead of all together) to increase success rate?
         flag_a = True
@@ -1177,8 +1195,9 @@ class Doors():
 
         section("Door Rando: ", lcolumn, [])
 
-    def walk_exits(self, start_room_id):
+    def walk_exits_with_rules(self, start_room_id):
         # Create Walks; walk them until you get a fully-connected map.
+        # INCOMPLETE / NOT WORKING
         self.walks = Network(self.rooms)  # Initialize the Walk Network
         self.walks.ForceConnections(self.forcing)  # Force initial connections
         self.walks.active = self.walks.rooms.rooms.index(self.walks.rooms.get_room(start_room_id))
@@ -1202,4 +1221,6 @@ class Doors():
             # 2. updates the rooms and the network if a loop is formed,
             # 3. updates the active room id.
             self.walks.connect(d1, d2)
+
+
 

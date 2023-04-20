@@ -580,14 +580,14 @@ room_data = {
     363 : [ [724], [ ], [ ], 1], #Zone Eater Gogo Room
 
     364 : [ [729, 730, 731], [2001, 2002], [3010], 1], #Umaro Cave 1st Room
-    365 : [ [732, 733], [ ], [3001, 3002, 3003, '3005L', '3007L'], 1], #Umaro Cave Bridge Room
+    365 : [ [732, 733], [ ], [3001, 3002, 3003, 3056, 3057], 1], #Umaro Cave Bridge Room
     366 : [ [734], [2003, 2004], [ ], 1], #Umaro Cave Switch Room
     # 367 : [ [735, 736, 737, 738], [2005, 2006, 2007, 2008], [ ], None], #Umaro Cave 2nd Room
     '367a' : [ [735], [2007], [ ], 1], #Umaro Cave 2nd Room - west
     '367b' : [ [736, 738], [2006, 2008], [ ], 1], #Umaro Cave 2nd Room - middle
     '367c' : [ [737], [2005], [ ], 1], #Umaro Cave 2nd Room - east
-    'share_east': [ [], ['2005L'], [3005, 3006], 1], # Umaro Cave west shared pit logical room
-    'share_west': [ [], ['2007L'], [3007, 3008], 1], # Umaro Cave west shared pit logical room
+    'share_east': [ [], [2056], [3005, 3006], 1], # Umaro Cave west shared pit logical room
+    'share_west': [ [], [2057], [3007, 3008], 1], # Umaro Cave west shared pit logical room
     368 : [ [ ], [2009], [3004], 1], # Umaro Cave Umaro's Den
 
     369 : [ [739, 740, 741, 742], [ ], [ ], 0], #Maranda Outside
