@@ -1187,10 +1187,14 @@ class Doors():
             # Select an initial door
             r1 = self.walks.rooms.rooms[self.walks.active]  # Get initial room
             d1 = r1.get_exit()  # select an exit
+            d1_type = r1.element_type(d1)
 
             # Collect valid connections & select one
             valid = self.walks.get_valid_connections(d1)
             d2 = random.choice(valid)
+
+            r2 = self.walks.rooms.get_room(d2)
+            print('Connecting: ', r1.id, '(' + str(d1) + ') --> ', r2.id, '(' + str(d2) + ')')
 
             # Connect the two exits.  This function automatically:
             # 0. creates the connection (R1, R2), and (R2, R1) if it's a normal door,
@@ -1198,6 +1202,4 @@ class Doors():
             # 2. updates the rooms and the network if a loop is formed,
             # 3. updates the active room id.
             self.walks.connect(d1, d2)
-
-
 

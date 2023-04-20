@@ -1,6 +1,9 @@
 from data.rooms import room_data
 import networkx as nx
 import random
+import numpy as np
+import matplotlib.pyplot as plt
+from copy import deepcopy
 
 class Walks:
     # Class for handling a group of Walks, i.e. logical mapping sequences for rooms
@@ -184,7 +187,7 @@ class Rooms():
     @property
     def count(self):
         # Return the count of unused [doors, traps, pits, keys, locks] in this walk
-        return [len(self.doors), len(self.traps), len(self.pits), len(self.keys), len(self.locks)]
+        return [len(self.doors), len(self.traps), len(self.pits), len(self.keys), sum([len(r.locks) for r in self.rooms])]
 
     @property
     def doors(self):
@@ -250,12 +253,13 @@ class Room():
     def __init__(self, r=None):
         self.id = r
         if r is not None:
-            if len(room_data[r]) == 4:
+            data = room_data[r]
+            if len(data) == 4:
                 # before implementing keys & locks
-                contents = room_data[r][:-1] + [[], {}]
+                contents = [i for i in data[:-1]] + [[], {}]
             else:
-                contents = room_data[r][:-1]   # [ doors, traps, pits, keys, locks ]
-            self._contents = [i for i in contents]  # Copy, don't replicate
+                contents = [i for i in data[r][:-1]]   # [ doors, traps, pits, keys, locks ]
+            self._contents = deepcopy(contents)  # Copy, don't replicate
 
         else:
             self._contents = [ [], [], [], [], {}]
@@ -321,10 +325,6 @@ class Room():
         else:
             return False
 
-    def is_dead_end(self):
-        rc = self.count
-        return rc[:3] == [1, 0, 0] and rc[4] == 0
-
     def element_type(self, e_id):
         return [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()].index(True)
 
@@ -352,10 +352,11 @@ class Room():
 
 class Network:
     def __init__(self, rooms):
+        self.original_room_ids = [r for r in rooms]
         self.rooms = Rooms(rooms)
         self.net = nx.DiGraph()
         self.net.add_nodes_from(self.rooms.rooms)
-        self.map = []
+        self.map = [[], []]
 
         self.active = 0  # index of active room
 
@@ -366,7 +367,6 @@ class Network:
             if d in these_doors:
                 df = forcing[d][0]  # get forced connection ID
                 self.connect(d, df)
-                self.map.append([d, df])
 
     def connect(self, d1, d2):
         # (0) Create directed connection: d1 --> d2
@@ -378,6 +378,11 @@ class Network:
             if R1.element_type(d1) == 0:
                 # This is a normal door: add the reverse connection R2 --> R1
                 self.net.add_edge(R2, R1)
+        # Add to the network map
+        if R1.element_type(d1) == 0:
+            self.map[0].append([d1, d2])
+        else:
+            self.map[1].append([d1, d2])
         # Remove the doors from their respective rooms
         R1.remove(d1)
         R2.remove(d2)
@@ -440,7 +445,9 @@ class Network:
             r_id = ''
             for node in loop:
                 r_id += str(node.id) + '_'
-            new_room = Room(r_id)
+            r_id = r_id[:-1]  # Remove trailing '_'
+            new_room = Room()
+            new_room.id = r_id
             for node in loop:
                 new_room.add_doors([d for d in node.doors])
                 new_room.add_traps([t for t in node.traps])
@@ -453,11 +460,14 @@ class Network:
             self.net.add_node(new_room)
 
             # Inherit edges from all nodes to/from new node
-            for e in self.net.edges:
+            current_edges = [e for e in self.net.edges]
+            for e in current_edges:
                 if e[0] in loop and e[1] not in loop:
                     self.net.add_edge(new_room, e[1])
                 elif e[0] not in loop and e[1] in loop:
                     self.net.add_edge(e[0], new_room)
+                else:
+                    pass
 
             # Delete loop nodes from network
             for node in loop:
@@ -467,8 +477,9 @@ class Network:
             # If successful, return the room
             return new_room
 
-        # If not successful, return false
-        return False
+        # If no loop is given, return false
+        else:
+            return False
 
     def flatten_paths(self, paths):
         temp = []
@@ -556,6 +567,15 @@ class Network:
             elements.extend(R.get_elements(element_type))
         return elements
 
+    def get_top_nodes(self):
+        top_nodes = set([])
+        for n in self.net.nodes:
+            paths = self.get_upstream_paths(n)
+            for path in paths:
+                # Add the ultimate node to the set
+                top_nodes.add(path[-1])
+        return top_nodes
+
     def get_valid_connections(self, d1):
         # Return a list of valid connections for the door or trap d1
         R1 = self.rooms.get_room(d1)
@@ -564,58 +584,172 @@ class Network:
             d2_type = 0
         elif d1_type == 1:
             d2_type = 2
+        print('\nConnecting ' + str(R1.id) + ' (' + str(d1) + '): type = ' + str(d1_type) + ', looking for type ' + str(d2_type))
 
-        upstream_nodes = self.get_upstream_nodes(R1)
-        #downstream_nodes = self.get_downstream_nodes(R1)   # should be empty by construction (active is downstream)
-        #connected_nodes = self.get_connected_nodes(R1)     # should be empty by construction (loops compressed)
-        # Only connect loose nodes if they have no predecessors
-        unconnected_nodes = [r for r in self.rooms.rooms if r not in upstream_nodes and
-                             r is not R1 and len(list(self.net.predecessors(r))) == 0]
+        # Collect information about the state of the network
+        top_nodes = self.get_top_nodes()
+        inlets = [[], []]
+        inlet_count = [0, 0]
+        outlet_count = [0 - (d1_type == 0), 0 - (d1_type == 1)]
+        downstream_exits = {}
+        for n in top_nodes:
+            # Count entrances/exits for the top node
+            inlets[0].extend([d for d in n.doors if d is not d1])
+            inlet_count[0] += len(n.doors) - (d1 in n.doors)
+            inlets[1].extend([p for p in n.pits])
+            inlet_count[0] += len(n.pits)
+            outlet_count[0] += len(n.doors) - (d1 in n.doors)
+            outlet_count[1] += len(n.traps) - (d1 in n.traps)
 
-        # By construction, there should be no loops or downstream nodes.
+            # Count downstream exits from the top node
+            downstream_exits[n] = [[d for d in n.doors if d is not d1], [t for t in n.traps if t is not d1]]
+            d_nodes = self.get_downstream_nodes(n)
+            for dn in d_nodes:
+                downstream_exits[n][0].extend([d for d in dn.doors if d is not d1])
+                downstream_exits[n][1].extend([t for t in dn.traps if t is not d1])
+            outlet_count[0] += len(downstream_exits[n][0])
+            outlet_count[1] += len(downstream_exits[n][1])
+
+        print('\tTop nodes are: ', [n.id for n in top_nodes])
+        print('\tinlet count: ', inlet_count)
+        print('\toutlet count: ', outlet_count)
+
+        # If inlet count == outlet count for the type in question, only include inlets in the valid set.
         valid = []
 
-        # Validity rules:
-        self_exits = [d for d in R1.doors if d is not d1] + [t for t in R1.traps if t is not d1]
-        is_last_exit = len(self_exits) == 0
+        if inlet_count[d1_type] == outlet_count[d1_type]:
+            valid.extend(inlets[d1_type])
+        else:
+            upstream_nodes = self.get_upstream_nodes(R1)
+            print('\tFound upstream nodes: ', [e.id for e in upstream_nodes])
+            # Only connect loose nodes if they have no predecessors
+            unconnected_nodes = [r for r in self.rooms.rooms if r not in upstream_nodes and
+                                 r is not R1 and len(list(self.net.predecessors(r))) == 0]
+            print('\tFound loose nodes: ', [e.id for e in unconnected_nodes])
 
-        up_conn = [[c for c in node.get_elements(d2_type)] for node in upstream_nodes]
-        self_conn = [c for c in R1.get_elements(d2_type) if c is not d1]
-        conn = up_conn + [self_conn]
-        conn_count = [len(c) for c in conn]
+            # By construction, there should be no loops or downstream nodes.
 
-        for node in unconnected_nodes:
-            if not node.is_dead_end():
-                # 0. Always include unconnected nodes from non-dead-ends
-                valid.extend([c for c in node.get_elements(d2_type)])
+            # Validity rules:
+            self_exits = [d for d in R1.doors if d is not d1] + [t for t in R1.traps if t is not d1]
+            is_last_exit = len(self_exits) == 0
+            print('\tSelf-exits found: ', self_exits)
 
-            else:
-                if not is_last_exit or (sum(conn_count) == 0 and len(unconnected_nodes) == 1):
-                    # 1. Include dead ends IF there's another exit in R1, or it's the last exit
+            up_conn = [[c for c in node.get_elements(d2_type)] for node in upstream_nodes]
+            print('\tUpstream connections found: ', up_conn)
+            self_conn = [c for c in R1.get_elements(d2_type) if c is not d1]
+            print('\tSelf connections found: ', self_conn)
+            conn = up_conn + [self_conn]
+            conn_count = [len(c) for c in conn]
+
+            outside_count = [0, 0]  # count ways into outside nodes
+            for node in unconnected_nodes:
+                outside_count[0] += node.count[0]  # number of doors in node
+                outside_count[1] += node.count[2]  # number of pits in node
+                print('\t\tChecking node ', node.id, '(', node.count, ')')
+                if not self.is_dead_end(node):
+                    # 0. Always include unconnected nodes from non-dead-ends
+                    print('\t\tnot a dead end, add connections: ', [c for c in node.get_elements(d2_type)])
                     valid.extend([c for c in node.get_elements(d2_type)])
 
-        # 2. if there are no loose connections and there is only one upstream connection, add it.
-        if len(valid) == 0 and sum(conn_count) == 1:
-            valid.extend(conn[conn_count.index(1)])
+                else:
+                    print('\t\tis a dead end.  Check if valid.')
+                    if not is_last_exit or (sum(conn_count) == 0 and len(unconnected_nodes) == 1):
+                        # 1. Include dead ends IF there's another exit in R1, or it's the last exit
+                        print('\t\tis valid, add connections: ', [c for c in node.get_elements(d2_type)])
+                        valid.extend([c for c in node.get_elements(d2_type)])
 
-        # 3. Otherwise, add any connections that leave downstream exits
-        elif len(self_exits) == 0:
-            paths = self.get_upstream_paths(R1)
-            for path in paths:
-                # Get the cumulative downstream exit count on the list of nodes.
-                down_exits = []  # there are no exits downstream (len(self_exits) == 0)
-                for p in path:
-                    down_exits.extend([c for c in p.doors] + [c for c in p.traps])
-                    # If the cumulative count of exits > 0, add the entrances above that point.
-                    if len(down_exits) > 0:
-                        valid.extend([c for c in self.get_elements(p, d2_type)])
+            conn_outside_count = len(valid)  # number of valid connections in outside nodes
 
-        else:
-            # (4) There are more exits in the room: just add everything above it.
-            for c in conn:
-                valid.extend(c)
 
-        valid = list(set(valid))  # remove duplicates, if any.
+            # 2. if there are no loose connections and there is only one upstream connection, add it.
+            if conn_outside_count == 0 and sum(conn_count) == 1:
+                print('\tOnly one connection available: add it. ', conn[conn_count.index(1)])
+                valid.extend(conn[conn_count.index(1)])
+
+            # 3. Otherwise, add connections that leave downstream exits
+            elif len(self_exits) == 0:
+                print('\tNo self-exits.  Add upstream connections that have downstream exits.')
+                paths = self.get_upstream_paths(R1)
+                for path in paths:
+                    print('\tChecking path: ', [p.id for p in path])
+                    # Get the cumulative downstream exit count on the list of nodes.
+                    down_exits = []  # there are no exits downstream (len(self_exits) == 0)
+                    down_exit_count = [-(d1_type == 0), 0]  # Reduce count by one door, if d1 is a door.
+                    for p in path:
+                        down_exits.extend([c for c in p.doors] + [c for c in p.traps])
+                        down_exit_count[0] += len(p.doors)
+                        down_exit_count[1] += len(p.traps)
+                        print('\t\tNode ' + str(p.id) + ' exits:', down_exits, '(', down_exit_count, ')')
+                        # If the cumulative count of exits > 0, add the entrances above that point.
+                        if (down_exit_count[0] > 0) or (down_exit_count[1] > 0):
+                            # and (down_exit_count[d1_type] > 0 or conn_outside_count == 0)
+                            print('\t\tThere are downstream exits, include these connections: ', [c for c in p.get_elements(d2_type)])
+                            valid.extend([c for c in p.get_elements(d2_type)])
+
+            elif len(self_exits) == 1 and d1_type == 0 and R1.element_type(self_exits[0]) == 0:
+                    # We are connecting a door, and there is one door in R1.
+                    print('\tOne self-exit.  Add all upstream connections (but not the self exit)')
+                    # Connect to any upstream path, but not the door in R1
+                    for connection in up_conn:
+                        print('\t\tadd:', [c for c in connection])
+                        valid.extend([c for c in connection])
+
+            else:
+                print('\tSeveral self-exits.  Add all self and upstream connections')
+                # (4) There are more exits in the room: include everything above it.
+                for connection in conn:
+                    print('\t\tadd:', [c for c in connection])
+                    valid.extend([c for c in connection])
+
+            print('Valid connections found: ', valid)
+            valid = list(set(valid))  # remove duplicates, if any.
+            print('No duplicates: ', valid)
 
         return valid
 
+    def plot_map(self):
+        # Make a plot of the map
+        # Construct a new network and write in the map edges
+        plotnet = nx.DiGraph()
+        plotnet.add_nodes_from(self.original_room_ids)
+        door_rooms = {}
+        room_labels = {}
+        for r in plotnet.nodes():
+            room_labels[r] = str(r)
+            for t in room_data[r][:3]:
+                for d in t:
+                    door_rooms[d] = r
+        # add edges to the plotnet
+        edge_labels = {}
+        for m in self.map[0]:
+            # Add doors
+            r1 = door_rooms[m[0]]
+            r2 = door_rooms[m[1]]
+            plotnet.add_edge(r1, r2)
+            plotnet.add_edge(r2, r1)
+            edge_labels[(r1, r2)] = str(m[0]) + '<->'+str(m[1])
+        for m in self.map[1]:
+            # Add traps
+            r1 = door_rooms[m[0]]
+            r2 = door_rooms[m[1]]
+            plotnet.add_edge(r1, r2)
+            edge_labels[(r1, r2)] = str(m[0]) + '-->' + str(m[1])
+
+        pos = nx.spring_layout(plotnet)
+        nx.draw_networkx(plotnet, pos=pos)
+        edgepos = {}
+        for e in plotnet.edges():
+            avg = (pos[e[0]] + pos[e[1]]) / 2
+            edgepos[e] = avg
+        nx.draw_networkx_edge_labels(plotnet, pos=pos, edge_labels=edge_labels)
+
+
+    def is_dead_end(self, node):
+        # Return True if node is a dead end (one entrance, no exits)
+        down = self.get_downstream_nodes(node)
+        if down:
+            # Cannot be a dead-end if it has downstream nodes, by construction.
+            return False
+        else:
+            nc = node.count
+            return nc[:3] == [1, 0, 0] and nc[4] == 0
