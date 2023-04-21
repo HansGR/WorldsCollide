@@ -13,6 +13,13 @@
 # Chocobo stables on World Map: all of them use parent map functionality.  Maybe just don't rando them.
 
 room_data = {
+    ## Test rooms for connection algorithm:
+    # 'A' : [ [1], [2001], [3003], [], {'a': [2]}, 0],
+    # 'B' : [ [], [2002], [3001], ['a'], {}, 0],
+    # 'C' : [ [3, 4], [2003], [3002, 3004], [], {}, 0],
+    # 'D' : [ [5], [], [], [], {}, 0],
+    # 'E' : [ [6], [2004], [], [], {}, 0],
+
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.
     'root-u' : [ [], [2010], [3009], 1], # Root map for -door-randomize-umaro

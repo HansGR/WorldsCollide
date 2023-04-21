@@ -190,26 +190,59 @@ class Doors():
             for d in self.doors[-1]:
                 if d in forced_connections.keys():
                     self.forcing[d] = forced_connections[d]
-                if d in shared_oneways.keys():
-                    self.sharing[d] = shared_oneways[d]
-                if d in invalid_connections.keys():
+                #if d in shared_oneways.keys():     # No longer used with 'JMP' and logical rooms.
+                #    self.sharing[d] = shared_oneways[d]
+                if d in invalid_connections.keys():   # Not currently used.
                     self.invalid[d] = invalid_connections[d]
 
     def mod(self):
         # Create list of randomized connections using walks
-        map = [ [], []]
-        for area in self.rooms:
-            start_rooms = [r for r in area if 'root' in str(r)]
-            start_room_id = random.choice(start_rooms)
+        map = [[], []]
 
+        if self.args.door_randomize_all:
+            # Draft rooms to create areas for randomization
+            # NOTE this can produce non-viable areas; haven't updated with the new methods.
+            #self.draft_areas()
+            # A better solution would be to add a 'root' room with forced single-door connections to all the 'root-zone'
+            # rooms.  This is effectively the "meta-World Map", encoding that you can reach all roots from all roots.
+            root_rooms = [r for r in self.rooms[0] if 'root' in str(r)]
+            offset = 10000
+            root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
+            root_doors = []
+            for ri in range(len(root_rooms)):
+                room_data[root_rooms[ri]][0].append(root_map[ri][0])
+                root_doors.append(root_map[ri][1])
+                self.forcing[root_map[ri][1]] = root_map[ri][0]
+            self.rooms[0].append('root')
+            room_data['root'] = [ root_doors, [], [], [], {}, 0]
+
+        for area in self.rooms:
             walks = Network(area)  # Initialize the Walk Network
-            walks.ForceConnections(self.forcing)  # Force initial connections
+            walks.ForceConnections(self.forcing)  # Force initial connections, if any
+
+            # Select starting node
+            if self.args.door_randomize_all:
+                # Start in the root room
+                start_room_id = walks.rooms.get_room(root_doors[0]).id
+            elif len([r for r in area if 'root' in str(r)]) > 0:
+                # Choose a root room to begin
+                # This might fail due to forcing.
+                start_room_id = random.choice([r for r in area if 'root' in str(r)])
+            else:
+                # Choose a random room
+                start_room_id = random.choice([n.id for n in walks.net.nodes])
             walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
+            # Connect the network
             fully_connected = walks.connect_network_stupid()
 
+            # Copy the results into the map
             map[0].extend([m for m in fully_connected.map[0]])
             map[1].extend([m for m in fully_connected.map[1]])
+
+        if self.args.door_randomize_all:
+            # Remove the (logical) root doors from the map
+            map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
 
         self.map = map
 

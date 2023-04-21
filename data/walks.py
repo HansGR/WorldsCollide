@@ -349,6 +349,8 @@ class Room():
 
 
 class Network:
+    verbose = True
+
     def __init__(self, rooms):
         self.original_room_ids = [r for r in rooms]
         self.rooms = Rooms(rooms)
@@ -415,7 +417,9 @@ class Network:
     def apply_key(self, key):
         # unlock any doors or traps locked by key
         for room in self.rooms.rooms:
-            if key in room.locks:
+            if key in room.locks.keys():
+                if self.verbose:
+                    print('Applying key:', key, 'in room', room.id)
                 locked = room.locks.pop(key)  # this also removes the item from room.locks
                 for item in locked:
                     if item < 2000:
@@ -589,39 +593,49 @@ class Network:
 
         else:
             R_active = net_state.rooms.rooms[net_state.active]
-            #print('Active node: ', R_active.id)
+            if self.verbose:
+                print('Active node: ', R_active.id)
             # Collect possible exits
             possible_exits = [d for d in R_active.doors] + [t for t in R_active.traps]
-            #print('Possible exits: ')
-            #print('\t' + str(R_active.id) + ': ', possible_exits)
+            if self.verbose:
+                print('Possible exits: ')
+                print('\t' + str(R_active.id) + ': ', possible_exits)
             for node in net_state.get_downstream_nodes(R_active):
                 node_exits = [d for d in node.doors] + [t for t in node.traps]
-                #print('\t' + str(node.id) + ': ', node_exits)
+                if self.verbose:
+                    print('\t' + str(node.id) + ': ', node_exits)
                 possible_exits += node_exits
             random.shuffle(possible_exits)  # randomize order
-
-            # Collect possible entrances
-            possible_entrances = [[], []]
-            #print('Possible entrances:')
-            for node in net_state.net.nodes:
-                node_entr = [[d for d in node.doors], [p for p in node.pits]]
-                #print('\t' + str(node.id) + ': ', node_entr[0], node_entr[1])
-                possible_entrances[0].extend(node_entr[0])
-                possible_entrances[1].extend(node_entr[1])
-            random.shuffle(possible_entrances[0])  # randomize order
-            random.shuffle(possible_entrances[1])
 
             # Start trying exits
             while len(possible_exits) > 0:
                 d1 = possible_exits.pop()
                 R1 = net_state.rooms.get_room(d1)
                 d1_type = R1.element_type(d1)
-                while len(possible_entrances[d1_type]) > 0:
-                    d2 = possible_entrances[d1_type].pop()
+                if self.verbose:
+                    print('selected: ', d1)
+
+                # Collect possible entrances for d1
+                possible_entrances = []
+                if self.verbose:
+                    print('Possible entrances:')
+                for node in net_state.net.nodes:
+                    if d1_type == 0:
+                        node_entr = [d for d in node.doors if d is not d1]
+                    else:
+                        node_entr = [p for p in node.pits]
+                    if self.verbose:
+                        print('\t' + str(node.id) + ': ', node_entr)
+                    possible_entrances.extend(node_entr)
+                random.shuffle(possible_entrances)  # randomize order
+
+                while len(possible_entrances) > 0:
+                    d2 = possible_entrances.pop()
 
                     try:
                         net_backup = deepcopy(net_state)
-                        #print('\t\tTrying Connection: ', str(d1), str(d2))
+                        if self.verbose:
+                            print('\t\tTrying Connection: ', str(d1), str(d2))
                         net_state.connect(d1, d2)
                         net_state = net_state.connect_network_stupid()
 
@@ -629,14 +643,17 @@ class Network:
                         return net_state
 
                     except:
-                        print('\t\t(' + str(d1) + ',' + str(d2) + ') failed')
+                        if self.verbose:
+                            print('\t\t(' + str(d1) + ',' + str(d2) + ') failed')
                         net_state = net_backup # reset the network
 
                 # If you get here, you ran out of possible entrances.
-                #print('\t' + str(d1) + ' ran out of possible entrances.')
+                if self.verbose:
+                    print('\t' + str(d1) + ' ran out of possible entrances.')
                 raise Exception(str(d1) + ' ran out of possible entrances.')
 
-            #print('\t' + str(R_active.id) + ' ran out of possible exits.')
+            if self.verbose:
+                print('\t' + str(R_active.id) + ' ran out of possible exits.')
             raise Exception("Ran out of possible exits.")
 
 
@@ -648,7 +665,8 @@ class Network:
             d2_type = 0
         elif d1_type == 1:
             d2_type = 2
-        print('\nConnecting ' + str(R1.id) + ' (' + str(d1) + '): type = ' + str(d1_type) + ', looking for type ' + str(d2_type))
+        if self.verbose:
+            print('\nConnecting ' + str(R1.id) + ' (' + str(d1) + '): type = ' + str(d1_type) + ', looking for type ' + str(d2_type))
 
         # Collect information about the state of the network
         top_nodes = self.get_top_nodes()
@@ -674,9 +692,10 @@ class Network:
             outlet_count[0] += len(downstream_exits[n][0])
             outlet_count[1] += len(downstream_exits[n][1])
 
-        print('\tTop nodes are: ', [n.id for n in top_nodes])
-        print('\tinlet count: ', inlet_count)
-        print('\toutlet count: ', outlet_count)
+        if self.verbose:
+            print('\tTop nodes are: ', [n.id for n in top_nodes])
+            print('\tinlet count: ', inlet_count)
+            print('\toutlet count: ', outlet_count)
 
         # If inlet count == outlet count for the type in question, only include inlets in the valid set.
         valid = []
@@ -685,23 +704,28 @@ class Network:
             valid.extend(inlets[d1_type])
         else:
             upstream_nodes = self.get_upstream_nodes(R1)
-            print('\tFound upstream nodes: ', [e.id for e in upstream_nodes])
+            if self.verbose:
+                print('\tFound upstream nodes: ', [e.id for e in upstream_nodes])
             # Only connect loose nodes if they have no predecessors
             unconnected_nodes = [r for r in self.rooms.rooms if r not in upstream_nodes and
                                  r is not R1 and len(list(self.net.predecessors(r))) == 0]
-            print('\tFound loose nodes: ', [e.id for e in unconnected_nodes])
+            if self.verbose:
+                print('\tFound loose nodes: ', [e.id for e in unconnected_nodes])
 
             # By construction, there should be no loops or downstream nodes.
 
             # Validity rules:
             self_exits = [d for d in R1.doors if d is not d1] + [t for t in R1.traps if t is not d1]
             is_last_exit = len(self_exits) == 0
-            print('\tSelf-exits found: ', self_exits)
+            if self.verbose:
+                print('\tSelf-exits found: ', self_exits)
 
             up_conn = [[c for c in node.get_elements(d2_type)] for node in upstream_nodes]
-            print('\tUpstream connections found: ', up_conn)
+            if self.verbose:
+                print('\tUpstream connections found: ', up_conn)
             self_conn = [c for c in R1.get_elements(d2_type) if c is not d1]
-            print('\tSelf connections found: ', self_conn)
+            if self.verbose:
+                print('\tSelf connections found: ', self_conn)
             conn = up_conn + [self_conn]
             conn_count = [len(c) for c in conn]
 
@@ -709,17 +733,21 @@ class Network:
             for node in unconnected_nodes:
                 outside_count[0] += node.count[0]  # number of doors in node
                 outside_count[1] += node.count[2]  # number of pits in node
-                print('\t\tChecking node ', node.id, '(', node.count, ')')
+                if self.verbose:
+                    print('\t\tChecking node ', node.id, '(', node.count, ')')
                 if not self.is_dead_end(node):
                     # 0. Always include unconnected nodes from non-dead-ends
-                    print('\t\tnot a dead end, add connections: ', [c for c in node.get_elements(d2_type)])
+                    if self.verbose:
+                        print('\t\tnot a dead end, add connections: ', [c for c in node.get_elements(d2_type)])
                     valid.extend([c for c in node.get_elements(d2_type)])
 
                 else:
-                    print('\t\tis a dead end.  Check if valid.')
+                    if self.verbose:
+                        print('\t\tis a dead end.  Check if valid.')
                     if not is_last_exit or (sum(conn_count) == 0 and len(unconnected_nodes) == 1):
                         # 1. Include dead ends IF there's another exit in R1, or it's the last exit
-                        print('\t\tis valid, add connections: ', [c for c in node.get_elements(d2_type)])
+                        if self.verbose:
+                            print('\t\tis valid, add connections: ', [c for c in node.get_elements(d2_type)])
                         valid.extend([c for c in node.get_elements(d2_type)])
 
             conn_outside_count = len(valid)  # number of valid connections in outside nodes
@@ -727,15 +755,18 @@ class Network:
 
             # 2. if there are no loose connections and there is only one upstream connection, add it.
             if conn_outside_count == 0 and sum(conn_count) == 1:
-                print('\tOnly one connection available: add it. ', conn[conn_count.index(1)])
+                if self.verbose:
+                    print('\tOnly one connection available: add it. ', conn[conn_count.index(1)])
                 valid.extend(conn[conn_count.index(1)])
 
             # 3. Otherwise, add connections that leave downstream exits
             elif len(self_exits) == 0:
-                print('\tNo self-exits.  Add upstream connections that have downstream exits.')
+                if self.verbose:
+                    print('\tNo self-exits.  Add upstream connections that have downstream exits.')
                 paths = self.get_upstream_paths(R1)
                 for path in paths:
-                    print('\tChecking path: ', [p.id for p in path])
+                    if self.verbose:
+                        print('\tChecking path: ', [p.id for p in path])
                     # Get the cumulative downstream exit count on the list of nodes.
                     down_exits = []  # there are no exits downstream (len(self_exits) == 0)
                     down_exit_count = [-(d1_type == 0), 0]  # Reduce count by one door, if d1 is a door.
@@ -743,31 +774,39 @@ class Network:
                         down_exits.extend([c for c in p.doors] + [c for c in p.traps])
                         down_exit_count[0] += len(p.doors)
                         down_exit_count[1] += len(p.traps)
-                        print('\t\tNode ' + str(p.id) + ' exits:', down_exits, '(', down_exit_count, ')')
+                        if self.verbose:
+                            print('\t\tNode ' + str(p.id) + ' exits:', down_exits, '(', down_exit_count, ')')
                         # If the cumulative count of exits > 0, add the entrances above that point.
                         if (down_exit_count[0] > 0) or (down_exit_count[1] > 0):
                             # and (down_exit_count[d1_type] > 0 or conn_outside_count == 0)
-                            print('\t\tThere are downstream exits, include these connections: ', [c for c in p.get_elements(d2_type)])
+                            if self.verbose:
+                                print('\t\tThere are downstream exits, include these connections: ', [c for c in p.get_elements(d2_type)])
                             valid.extend([c for c in p.get_elements(d2_type)])
 
             elif len(self_exits) == 1 and d1_type == 0 and R1.element_type(self_exits[0]) == 0:
                     # We are connecting a door, and there is one door in R1.
-                    print('\tOne self-exit.  Add all upstream connections (but not the self exit)')
+                    if self.verbose:
+                        print('\tOne self-exit.  Add all upstream connections (but not the self exit)')
                     # Connect to any upstream path, but not the door in R1
                     for connection in up_conn:
-                        print('\t\tadd:', [c for c in connection])
+                        if self.verbose:
+                            print('\t\tadd:', [c for c in connection])
                         valid.extend([c for c in connection])
 
             else:
-                print('\tSeveral self-exits.  Add all self and upstream connections')
+                if self.verbose:
+                    print('\tSeveral self-exits.  Add all self and upstream connections')
                 # (4) There are more exits in the room: include everything above it.
                 for connection in conn:
-                    print('\t\tadd:', [c for c in connection])
+                    if self.verbose:
+                        print('\t\tadd:', [c for c in connection])
                     valid.extend([c for c in connection])
 
-            print('Valid connections found: ', valid)
+            if self.verbose:
+                print('Valid connections found: ', valid)
             valid = list(set(valid))  # remove duplicates, if any.
-            print('No duplicates: ', valid)
+            if self.verbose:
+                print('No duplicates: ', valid)
 
         return valid
 
@@ -783,6 +822,9 @@ class Network:
             for t in room_data[r][:3]:
                 for d in t:
                     door_rooms[d] = r
+            for t in room_data[r][4].values():
+                for l in t:
+                    door_rooms[l] = r
         # add edges to the plotnet
         edge_labels = {}
         for m in self.map[0]:
