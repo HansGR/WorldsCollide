@@ -77,6 +77,7 @@ class Doors():
             for key in ROOM_SETS.keys():
                 if key != 'All':
                     room_sets.append(ROOM_SETS[key])
+            self.combine_areas = False
 
         else:
             # Randomize separately
@@ -85,7 +86,7 @@ class Doors():
 
             if self.args.door_randomize_upper_narshe:  # -drun
                 room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
-                room_sets.append(ROOM_SETS['UpperNarshe_WoR'])  # this randomization will be overwritten
+                #room_sets.append(ROOM_SETS['UpperNarshe_WoR'])  # this randomization will be overwritten
                 self.match_WOB_WOR = True
 
             else:
@@ -172,9 +173,9 @@ class Doors():
                             if d in shared_exits.keys():
                                 for sd in shared_exits[d]:
                                     self.door_descr[sd] = exit_data[sd][1]
-                            #if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
-                            #    # Also grab the description for the matching WOR door
-                            #    self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
+                            if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
+                                # Also grab the description for the matching WOR door
+                                self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
                         else:
                             if (d-1000) in exit_data.keys():
                                 self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
@@ -245,9 +246,30 @@ class Doors():
             map[0].extend([m for m in fully_connected.map[0]])
             map[1].extend([m for m in fully_connected.map[1]])
 
+            # Append shared doors to the map
+            for m in map[0]:
+                if m[0] in shared_exits.keys():
+                    for se in shared_exits[m[0]]:
+                        # Send shared exits to the same destination
+                        map[0].append([se, m[1]])
+                if m[1] in shared_exits.keys():
+                    for se in shared_exits[m[1]]:
+                        # Send shared exits to the same destination
+                        map[0].append([m[0], se])
+
         if self.args.door_randomize_all:
             # Remove the (logical) root doors from the map
             map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
+
+        if self.match_WOB_WOR:
+            # Make the WOR map match the WOB map in relevant areas
+            if self.verbose:
+                print('Mapping WoR to match WoB ...')
+            WOR_map = []
+            for m in map[0]:
+                if m[0] in doors_WOB_WOR.keys():
+                    WOR_map.append([doors_WOB_WOR[j] for j in m])
+            map[0].extend(WOR_map)
 
         self.map = map
 

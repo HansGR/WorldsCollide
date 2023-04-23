@@ -668,6 +668,10 @@ class Network:
                         for d in more_doors:
                             attachable_doors.remove(d)
 
+                else:
+                    # If no attachable doors, just end.  It'll probably get straightened out in the walk.
+                    return
+
             # having attached all the dead ends, see if we created any & attach them if we did.
             dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
             if len(dead_ends) > 0 and self.verbose:
@@ -956,8 +960,9 @@ class Network:
     def is_dead_end(self, node):
         # Return True if node is a dead end (one entrance, no exits)
         down = self.get_downstream_nodes(node)
-        if down:
-            # Cannot be a dead-end if it has downstream nodes, by construction.
+        up = self.get_upstream_nodes(node)
+        if down or up:
+            # Cannot be a dead-end if it has downstream or upstream nodes, by definition
             return False
         else:
             nc = node.count
