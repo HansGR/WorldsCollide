@@ -20,7 +20,7 @@ ROOM_SETS = {
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
     'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'],
     'All': [
-            364, 365, 366, '367a', '367b', '367c', 368,  # Umaro's cave
+            364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
             488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
@@ -212,7 +212,7 @@ class Doors():
             for ri in range(len(root_rooms)):
                 room_data[root_rooms[ri]][0].append(root_map[ri][0])
                 root_doors.append(root_map[ri][1])
-                self.forcing[root_map[ri][1]] = root_map[ri][0]
+                self.forcing[root_map[ri][1]] = [root_map[ri][0]]
             self.rooms[0].append('root')
             room_data['root'] = [ root_doors, [], [], [], {}, 0]
 
@@ -220,20 +220,25 @@ class Doors():
             walks = Network(area)  # Initialize the Walk Network
             walks.ForceConnections(self.forcing)  # Force initial connections, if any
 
+            walks.attach_dead_ends()  # Connect all the dead ends.
+
             # Select starting node
             if self.args.door_randomize_all:
                 # Start in the root room
-                start_room_id = walks.rooms.get_room(root_doors[0]).id
-            elif len([r for r in area if 'root' in str(r)]) > 0:
+                string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
+                root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
+                start_room_id = root_room.id
+            elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
                 # Choose a root room to begin
                 # This might fail due to forcing.
-                start_room_id = random.choice([r for r in area if 'root' in str(r)])
+                start_room_id = random.choice([r.id for r in walks.rooms.rooms if 'root' in str(r.id)])
             else:
                 # Choose a random room
                 start_room_id = random.choice([n.id for n in walks.net.nodes])
             walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
             # Connect the network
+            print('Randomizing map...')
             fully_connected = walks.connect_network_stupid()
 
             # Copy the results into the map

@@ -1,4 +1,4 @@
-from data.rooms import room_data
+from data.rooms import room_data, shared_exits
 import networkx as nx
 import random
 from copy import deepcopy
@@ -259,6 +259,12 @@ class Room():
                 contents = [i for i in data[:-1]]   # [ doors, traps, pits, keys, locks ]
             self._contents = deepcopy(contents)  # Copy, don't replicate
 
+            # Adjust shared exits:
+            d_shared = [d for d in self.doors if d in shared_exits.keys()]
+            for d in d_shared:
+                for s in shared_exits[d]:
+                    self.remove(s)
+
         else:
             self._contents = [ [], [], [], [], {}]
 
@@ -302,6 +308,23 @@ class Room():
         for k in lock_dict.keys():
             self._contents[4][k] = lock_dict[k]
 
+    def locked(self, elementtype=None):
+        if elementtype is None:
+            return self._contents[4].values()
+        elif elementtype in ['doors', 0]:
+            locked = [d for d in self._contents[4].values() if type(d) is int]
+            return [d for d in locked if d < 2000]
+        elif elementtype in ['traps', 1]:
+            locked = [d for d in self._contents[4].values() if type(d) is int]
+            return [d for d in locked if 2000 <= d < 3000]
+        elif elementtype in ['pits', 2]:
+            locked = [d for d in self._contents[4].values() if type(d) is int]
+            return [d for d in locked if 3000 <= d]
+        elif elementtype in ['keys', 3]:
+            return [d for d in self._contents[4].values() if type(d) is str]
+        else:
+            return False
+
     def remove(self, id):
         for r in range(len(self._contents)):
             if id in self._contents[r]:
@@ -327,25 +350,38 @@ class Room():
         return [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()].index(True)
 
     def get_elements(self, element_type):
-        if element_type == 0:
+        if element_type in [0, 'doors']:
             return self.doors
-        elif element_type == 1:
+        elif element_type in [1, 'traps']:
             return self.traps
-        elif element_type == 2:
+        elif element_type in [2, 'pits']:
             return self.pits
-        elif element_type == 3:
+        elif element_type in [3, 'keys']:
             return self.keys
-        elif element_type == 4:
+        elif element_type in [4, 'locks']:
             return self.locks.keys()
-        elif element_type == 5:
+        elif element_type in [5, 'locked']:
             return self.locks.values()
         else:
             return False
+
+    def get_key(self, locked_element):
+        for k, l in self.locks:
+            if locked_element in l:
+                return k
 
     def get_exit(self):
         # Return a random exit from those available
         exit_list = self.doors + self.traps
         return random.choice(exit_list)
+
+    def is_attachable(self):
+        # A room is attachable to a dead end room if it has 2 doors or 1 door and at least 1 pit AND 1 trap.
+        # These can include locked values.
+        all_doors = self.doors + self.locked('doors')
+        all_traps = self.traps + self.locked('traps')
+        all_pits = self.pits + self.locked('pits')
+        return (len(all_doors) > 1) or (len(all_doors) == 1 and len(all_traps) > 0 and len(all_pits) > 0)
 
 
 class Network:
@@ -368,7 +404,7 @@ class Network:
                 df = forcing[d][0]  # get forced connection ID
                 self.connect(d, df)
 
-    def connect(self, d1, d2):
+    def connect(self, d1, d2, state=None):
         # (0) Create directed connection: d1 --> d2
         R1 = self.rooms.get_room(d1)
         R2 = self.rooms.get_room(d2)
@@ -383,36 +419,27 @@ class Network:
             self.map[0].append([d1, d2])
         else:
             self.map[1].append([d1, d2])
-        # Remove the doors from their respective rooms
+        # (1) Remove the doors from their respective rooms
         R1.remove(d1)
         R2.remove(d2)
 
-        # (1) Apply any keys in R2:
-        for k in R2.keys:
-            self.apply_key(k)
+        # Update the state of the network if desired:
+        if state != 'static':
+            # (2) Compress any loops
+            loop = self.get_loop(R1)
+            if loop:
+                # Compress the node, update the active room
+                loop_room = self.compress_loop(loop)
 
-        # (2) Compress any loops and (3) update the active room
-        loop = self.get_loop(R1)
-        if loop:
-            # Compress the node, update the active room
-            loop_room = self.compress_loop(loop)
-            self.active = self.rooms.rooms.index(loop_room)
-        else:
-            # Update the active room to R2
-            self.active = self.rooms.rooms.index(R2)
+            # (3) Apply any keys in R2:
+            for k in R2.keys:
+                self.apply_key(k)
 
-        # (3) if there are downstream nodes, move to one of them.
-        # This should only happen when there are forced connections.
-        # downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
-        # while self.rooms.rooms[self.active] in downstream:
-        #    # Found a loop: compress it.  This should never happen, but just in case.
-        #    loop_room = self.compress_loop(self.get_loop(self.rooms.rooms[self.active]))
-        #    self.active = self.rooms.rooms.index(loop_room)
-        #    downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
-        #while downstream:
-        #    # Walk downstream & update active step
-        #    self.active = self.rooms.rooms.index(random.choice(downstream))
-        #    downstream = self.get_downstream_nodes(self.rooms.rooms[self.active])
+            # (4) Update the active room
+            if loop:
+                self.active = self.rooms.rooms.index(loop_room)
+            else:
+                self.active = self.rooms.rooms.index(R2)
 
     def apply_key(self, key):
         # unlock any doors or traps locked by key
@@ -422,7 +449,10 @@ class Network:
                     print('Applying key:', key, 'in room', room.id)
                 locked = room.locks.pop(key)  # this also removes the item from room.locks
                 for item in locked:
-                    if item < 2000:
+                    if type(item) is str:
+                        # This is a key.  Immediately apply it.
+                        self.apply_key(item)
+                    elif item < 2000:
                         room.add_doors([item])
                     else:
                         room.add_traps([item])
@@ -548,21 +578,6 @@ class Network:
             return temp
         return nodes
 
-    def get_connected_nodes(self, room, nodes=None):
-        is_original = False
-        if nodes is None:
-            nodes = []
-            is_original = True
-        conn = [c for c in self.net.successors(room) if c in self.net.predecessors(room) and c not in nodes]
-        if len(conn) > 0:
-            nodes += conn  # Add next ring of connected nodes
-            for c in conn:
-                nodes.extend(self.get_connected_nodes(c, nodes))
-        if is_original and room in nodes:
-            # Remove room from the connected nodes
-            nodes.remove(room)
-        return nodes
-
     def get_elements(self, node_list, element_type):
         elements = []
         for R in node_list:
@@ -578,6 +593,86 @@ class Network:
                 top_nodes.add(path[-1])
         return top_nodes
 
+    def attach_dead_ends(self):
+        # Attach all dead-end rooms to open connections
+        dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
+        if self.verbose:
+            print("Attaching dead ends: ", [(e.id, e.doors[0]) for e in dead_ends])
+
+        while len(dead_ends) > 0:
+            if self.rooms.count[0] == 2:
+                # These are the last two doors. Just connect them.
+                R1 = dead_ends.pop()
+                attachable_doors = [R1.doors[0]]
+            else:
+                attachable_doors = []
+                for n in self.net.nodes:
+                    if n.is_attachable():
+                        attachable_doors.extend([d for d in n.doors + n.locked('doors')])
+                if self.verbose:
+                    print("found attachable doors: ", attachable_doors)
+                random.shuffle(dead_ends)
+                random.shuffle(attachable_doors)
+
+            for Rd in dead_ends:
+                if len(attachable_doors) > 0:
+                    # select a door
+                    dd = Rd.doors[0]
+                    # select an attachable node
+                    da = attachable_doors.pop(0)
+                    Ra = self.rooms.get_room(da)
+
+                    # Verify the dead end doesn't contain the key to unlock this door
+                    while len(Rd.keys) > 0 and da in Ra.locked('doors'):
+                        ka = Ra.get_key(da)
+                        if ka in Ra.keys:
+                            # ERROR don't connect it!
+                            if self.verbose:
+                                print('\t\tCannot connect ' + str(dd) + ' to ' + str(da) + ': ')
+                                print('\t\t' + str(da) + ' is locked by key ' + str(ka) + ' which is in ' + str(Rd.id) + '!')
+                            attachable_doors.append(da)  # put the door back
+                            da = attachable_doors.pop(0) # get another
+                            Ra = self.rooms.get_room(da) # check again
+
+                    # Attach the doors
+                    if self.verbose:
+                        print('\tConnecting: ' + str(dd) + '(' + str(Rd.id) + ') to ' + str(da) + '(' + str(Ra.id) + ')')
+                    self.connect(dd, da, 'static')
+
+                    # If there were any keys in the dead end, add them to the connected room
+                    if da in Ra.locked('doors'):
+                        # If we connected to a locked door, add the key to the locked items
+                        ka = Ra.get_key(da)
+                        for kd in Rd.keys:
+                            if self.verbose:
+                                print('\t\tMoving key' + str(kd) + ' to room ' + str(Ra.id) + ' behind lock ' + str(ka))
+                            Ra.locks[ka].append(kd)
+                    elif len(Rd.keys) > 0:
+                        if self.verbose:
+                            print('\t\tMoving keys to room ' + str(Ra.id) + ': ', Rd.keys)
+                        Ra.add_keys([k for k in Rd.keys])
+
+                    # Add the dead room name to the attached room
+                    Ra.id = str(Ra.id) + '_' + str(Rd.id)
+
+                    # Remove the dead room from the network and list of rooms
+                    self.net.remove_node(Rd)
+                    self.rooms.remove(Rd.id)
+
+                    # Check to see if the attached room is still attachable.
+                    if not Ra.is_attachable():
+                        # If not, remove any remaining doors.
+                        more_doors = [d for d in Ra.doors + Ra.locked('doors')]
+                        if self.verbose:
+                            print('\t' + str(Ra.id) + ' is no longer attachable. Removing doors:', more_doors)
+                        for d in more_doors:
+                            attachable_doors.remove(d)
+
+            # having attached all the dead ends, see if we created any & attach them if we did.
+            dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
+            if len(dead_ends) > 0 and self.verbose:
+                print("Attaching dead ends: ", [(e.id, e.doors[0]) for e in dead_ends])
+
     def connect_network_stupid(self):
         # The rules for how to validly connect the network are too hard to figure out.
         # However, it's relatively easy to figure out when the network is invalid.
@@ -585,6 +680,11 @@ class Network:
         # next step up.  This is like solving a maze by retreating to the most recent fork if you find a dead end.
         # Update: THIS ACTUALLY WORKS.  It can also occasionally take forever.
         # We might be able to make it more reliable by adding a *few* rules.
+        # 1. Dead ends make this approach take a long time.  Solutions:
+        # *** reimplement "connect all dead ends first" procedure
+        # --- make the code not attach dead ends under certain conditions:
+        # ------ Count [# doors total, # dead-end-doors total].
+        # ------ If #dead_end_doors*2 >= #doors_total, only connect dead-end-doors.
         net_state = deepcopy(self)
 
         if sum(net_state.rooms.count[:3]) == 0:
@@ -822,9 +922,11 @@ class Network:
             for t in room_data[r][:3]:
                 for d in t:
                     door_rooms[d] = r
-            for t in room_data[r][4].values():
-                for l in t:
-                    door_rooms[l] = r
+            if len(room_data[r]) == 6:
+                # Collect locked items data
+                for t in room_data[r][4].values():
+                    for l in t:
+                        door_rooms[l] = r
         # add edges to the plotnet
         edge_labels = {}
         for m in self.map[0]:

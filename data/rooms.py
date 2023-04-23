@@ -14,11 +14,11 @@
 
 room_data = {
     ## Test rooms for connection algorithm:
-    # 'A' : [ [1], [2001], [3003], [], {'a': [2]}, 0],
-    # 'B' : [ [], [2002], [3001], ['a'], {}, 0],
-    # 'C' : [ [3, 4], [2003], [3002, 3004], [], {}, 0],
-    # 'D' : [ [5], [], [], [], {}, 0],
-    # 'E' : [ [6], [2004], [], [], {}, 0],
+    #'A' : [ [1], [2001], [3003], [], {'a': [2]}, 0],
+    #'B' : [ [], [2002], [3001], ['a'], {}, 0],
+    #'C' : [ [3, 4], [2003], [3002, 3004], [], {}, 0],
+    #'D' : [ [5], [], [], [], {}, 0],
+    #'E' : [ [6], [2004], [], [], {}, 0],
 
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.
@@ -421,7 +421,7 @@ room_data = {
     '245R' : [ [5203], [ ], [ ], 1], #Nikeah Chocobo Stable
 
     # MOUNT ZOZO
-    250 : [ [531, 532, 533], [ ], [ ], 1], #Mt Zozo Outside Bridge
+    250 : [ [531, 532, 533], [ ], [ ],  1], #Mt Zozo Outside Bridge
     251 : [ [534], [ ], [ ], 1], #Mt Zozo Outside Single Chest Room
     252 : [ [535, 536], [ ], [ ], 1], #Mt Zozo Outside Cliff to Cyan's Cave
     253 : [ [537, 538, 539], [ ], [ ], 1], #Mt Zozo Inside First Room
