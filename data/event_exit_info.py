@@ -30,7 +30,7 @@ event_exit_info = {
 
     # OWZER'S MANSION
     2017: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door left',  [0x0CF, 90, 50], 'JMP'],
-    2018: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door right', [0x0CF, 92, 50], 'JMP'],
+    #2018: [0xb4b86, 47, 1, [False, False, False, False], 'Owzers Mansion switching door right', [0x0CF, 92, 50], 'JMP'],
     # same destination, same event!  When handling as JMP, this is not included a 2nd time (shared_oneways).
     2019: [0xb4bb5, 53, 3, [False, False, False, False], 'Owzers Mansion behind switching door exit', [0x0CF, 85, 50], 'JMP'],
     # set event bit 0x24c?

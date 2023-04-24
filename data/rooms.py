@@ -474,7 +474,7 @@ room_data = {
     277 : [ [580, 581], [ ], [ ], 1], #Owzer's Behind Painting Room
     278 : [ [582, 583, 585], [ ], [3017], 1], #Owzer's Basement 1st Room
     279 : [ [584], [ ], [ ], 1], #Owzer's Basement Single Chest Room
-    280 : [ [586, 587], [2017, 2018], [ ], 1], #Owzer's Basement Switching Door Room
+    280 : [ [586, 587], [2017], [ ], 1], #Owzer's Basement Switching Door Room.  Removed 2nd trap exit (2018)
     281 : [ [588], [2019], [3021], 1], #Owzer's Basement Behind Switching Door Room
     282 : [ [589], [2021], [3020], 1], #Owzer's Basement Save Point Room
     283 : [ [ ], [2020], [3019], 1],  # Owzer's Basement Floating Chest room
@@ -848,8 +848,9 @@ shared_oneways = {
     #2007: [2008],  # Umaro's cave room 2: west trapdoor (shared exit)
     #2008: [2007],  # Umaro's cave room 2: west trapdoor (shared exit)
 
-    2017: [2018],   # Owzer's Mansion switching doors (same destination)
-    2018: [2017],    # Owzer's Mansion switching doors (same destination)
+    # With JMP, just modify one of them (they call the same code).
+    #2017: [2018],   # Owzer's Mansion switching doors (same destination)
+    #2018: [2017],    # Owzer's Mansion switching doors (same destination)
 
 }
 

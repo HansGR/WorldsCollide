@@ -32,10 +32,10 @@ ROOM_SETS = {
             250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
             'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
             356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
-            '241a', 246, '241b', '247a', '247b', '247c', '241c', 'root-st',  # Serpent Trench
+            '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
             457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'  # Burning House
              ],
-    'test': [8, 284]  # for testing only
+    #'test': [8, 284]  # for testing only
 }
 
 class Doors():
@@ -216,12 +216,19 @@ class Doors():
                 self.forcing[root_map[ri][1]] = [root_map[ri][0]]
             self.rooms[0].append('root')
             room_data['root'] = [ root_doors, [], [], [], {}, 0]
+            self.room_counts['root'] = [len(r) for r in room_data['root'][:-1]]
+            self.room_doors['root'] = [r for r in room_data['root'][:-1]]
 
         for area in self.rooms:
             walks = Network(area)  # Initialize the Walk Network
+            if self.verbose:
+                print('Initial Count: ', walks.rooms.count)
             walks.ForceConnections(self.forcing)  # Force initial connections, if any
-
+            if self.verbose:
+                print('Count after forced connections: ', walks.rooms.count)
             walks.attach_dead_ends()  # Connect all the dead ends.
+            if self.verbose:
+                print('Count after attaching dead ends: ', walks.rooms.count)
 
             # Select starting node
             if self.args.door_randomize_all:

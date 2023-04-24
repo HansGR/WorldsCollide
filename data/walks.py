@@ -2,6 +2,7 @@ from data.rooms import room_data, shared_exits
 import networkx as nx
 import random
 from copy import deepcopy
+import numpy as np
 
 class Walks:
     # Class for handling a group of Walks, i.e. logical mapping sequences for rooms
@@ -46,8 +47,8 @@ class Walks:
         w2 = self.get_walk(d2)
 
         # Find rooms and remove the doors
-        r1 = w1.get_room(d1)
-        r2 = w2.get_room(d2)
+        r1 = w1.get_room_from_element(d1)
+        r2 = w2.get_room_from_element(d2)
         r1.remove(d1)
         r2.remove(d2)
 
@@ -178,7 +179,11 @@ class Rooms():
         for room in self.rooms:
             if room.id == id:
                 return room
-            elif room.contains(id):
+        return False
+
+    def get_room_from_element(self, id):
+        for room in self.rooms:
+            if room.contains(id):
                 return room
         return False
 
@@ -347,7 +352,12 @@ class Room():
             return False
 
     def element_type(self, e_id):
-        return [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()].index(True)
+        is_element = [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()]
+        if True in is_element:
+            return is_element.index(True)
+        else:
+            print('ERROR: ', e_id, 'is not in ', self.id,': ', self._contents)
+            raise Exception('Missing Element')
 
     def get_elements(self, element_type):
         if element_type in [0, 'doors']:
@@ -406,8 +416,8 @@ class Network:
 
     def connect(self, d1, d2, state=None):
         # (0) Create directed connection: d1 --> d2
-        R1 = self.rooms.get_room(d1)
-        R2 = self.rooms.get_room(d2)
+        R1 = self.rooms.get_room_from_element(d1)
+        R2 = self.rooms.get_room_from_element(d2)
         if R1 is not R2:
             # Add the edge connecting R1 --> R2
             self.net.add_edge(R1, R2)
@@ -620,7 +630,7 @@ class Network:
                     dd = Rd.doors[0]
                     # select an attachable node
                     da = attachable_doors.pop(0)
-                    Ra = self.rooms.get_room(da)
+                    Ra = self.rooms.get_room_from_element(da)
 
                     # Verify the dead end doesn't contain the key to unlock this door
                     while len(Rd.keys) > 0 and da in Ra.locked('doors'):
@@ -632,7 +642,7 @@ class Network:
                                 print('\t\t' + str(da) + ' is locked by key ' + str(ka) + ' which is in ' + str(Rd.id) + '!')
                             attachable_doors.append(da)  # put the door back
                             da = attachable_doors.pop(0) # get another
-                            Ra = self.rooms.get_room(da) # check again
+                            Ra = self.rooms.get_room_from_element(da) # check again
 
                     # Attach the doors
                     if self.verbose:
@@ -677,6 +687,86 @@ class Network:
             if len(dead_ends) > 0 and self.verbose:
                 print("Attaching dead ends: ", [(e.id, e.doors[0]) for e in dead_ends])
 
+    def check_network_invalidity(self):
+        # Check the network validity based on the following three validity rules:
+        # [A] not [(Door in / trap out) and (Pit in / door out)] and (Door in / door out) and (Pit in / trap out)
+        #     = not "Network Bifurcation"
+        # If returns True, network is invalid
+        ## [B] not (Door out) and (Door in / trap out). May be impossible.
+        ## [C] not (Trap out) and (Pit in / door out).  May be impossible.
+
+        classifications = {}
+        total_doors_in = 0
+        total_doors_out = 0
+        total_doors_either = 0
+        for node in self.net.nodes:
+            # Count entrances & exits
+            self_count = node.count[:3]
+            up_count = np.array([0, 0, 0])
+            for up in self.get_upstream_nodes(node):
+                up_count += up.count[:3]
+            down_count = np.array([0, 0, 0])
+            for down in self.get_downstream_nodes(node):
+                down_count += down.count[:3]
+
+            # Assess classifications
+            door_in = (up_count[0] + self_count[0]) > 0
+            door_out = (down_count[0] + self_count[0]) > 0
+            # Handle special case (avoid double counting self exits)
+            door_in_door_out = (door_in and down_count[0] > 0) or (door_out and up_count[0] > 0) or (self_count[0] > 1)
+            pit_in = (up_count[2] + self_count[2]) > 0
+            trap_out = (down_count[1] + self_count[1]) > 0
+
+            # Count total doors in/out OF THIS NODE
+            #total_doors_in += up_count[0]
+            #total_doors_out += down_count[0]
+            delta_in = 0
+            delta_out = 0
+            delta_either = 0
+            if self_count == [2, 0, 0] and sum(up_count + down_count) == 0:
+                # Special case: hallways always have 1 entrance and 1 exit.
+                delta_in += 1
+                delta_out += 1
+            elif self_count[0] > 1:
+                # all self doors count as both doors in and doors out.
+                delta_either += self_count[0]
+            elif self_count[0] == 1:
+                # self door may not be either a door in or a door out.
+                is_out = up_count[0] + up_count[2] + self_count[2] > 0    # pits or doors in: it's a door out
+                is_in = down_count[0] + down_count[1] + self_count[1] > 0 # doors or traps out: it's a door in
+                if is_out and is_in:
+                    delta_either += self_count[0]
+                elif is_out:
+                    delta_out += self_count[0]
+                elif is_in:
+                    delta_in += self_count[0]
+            total_doors_in += delta_in
+            total_doors_out += delta_out
+            total_doors_either += delta_either
+
+            # For each node: [(door in, door out), (door in, trap out), (pit in, door out), (pit in, trap out)]
+            classifications[node] = [door_in_door_out, door_in and trap_out, pit_in and door_out, pit_in and trap_out,
+                                     [list(up_count), self_count, list(down_count)],
+                                     [delta_in, delta_out, delta_either]]
+
+        # Assess logical parameters
+        DiDo = [cl[0] for cl in classifications.values()].count(True) > 0
+        DiTo = [cl[1] for cl in classifications.values()].count(True) > 0
+        PiDo = [cl[2] for cl in classifications.values()].count(True) > 0
+        PiTo = [cl[3] for cl in classifications.values()].count(True) > 0
+        Rule_A = not (DiTo and PiDo) and DiDo and PiTo
+        Rule_B = DiTo and not PiDo
+        Rule_C = PiDo and not DiTo
+        Rule_D = (total_doors_in + total_doors_either < total_doors_out) or \
+                 (total_doors_out + total_doors_either < total_doors_in)
+        return [
+            Rule_A or Rule_B or Rule_C or Rule_D,
+            [Rule_A, Rule_B, Rule_C, Rule_D],
+            [DiDo, DiTo, PiDo, PiTo],
+            classifications,
+            [total_doors_in, total_doors_out, total_doors_either]
+        ]
+
     def connect_network_stupid(self):
         # The rules for how to validly connect the network are too hard to figure out.
         # However, it's relatively easy to figure out when the network is invalid.
@@ -686,9 +776,12 @@ class Network:
         # We might be able to make it more reliable by adding a *few* rules.
         # 1. Dead ends make this approach take a long time.  Solutions:
         # *** reimplement "connect all dead ends first" procedure
-        # --- make the code not attach dead ends under certain conditions:
-        # ------ Count [# doors total, # dead-end-doors total].
-        # ------ If #dead_end_doors*2 >= #doors_total, only connect dead-end-doors.
+        # 2. Something else is also making this code take a long time.  Needs addl testing...
+        # --- Minimum broken example: -dru -drem -drbh produced 300 MB+ output file on first try, ran instantly on 2,3.
+        # --- I think this has to do with making a sub-net that has no door (trap) exits, and excluded nodes that
+        # have no door (pit) entrances, and then it has to try all permutations of the subnet before escaping.
+        # *** Can we avoid this by disallowing choice of an exit that results in no connections of the other type, if
+        # connections of the other type still exist?
         net_state = deepcopy(self)
 
         if sum(net_state.rooms.count[:3]) == 0:
@@ -696,25 +789,38 @@ class Network:
             return net_state
 
         else:
+            [invalidity, by_rules, classification, cl, td] = net_state.check_network_invalidity()
+            if self.verbose:
+                print('Network classification: ', classification)
+            if invalidity:
+                # If network state is invalid, fail now.
+                if self.verbose:
+                    print('\tInvalid!  By rule: ', [['A','B','C','D'][i] for i in range(len(by_rules)) if by_rules[i]],
+                          'in/out/either = ', td)
+                raise Exception('Invalid network state.')
+
             R_active = net_state.rooms.rooms[net_state.active]
             if self.verbose:
                 print('Active node: ', R_active.id)
             # Collect possible exits
-            possible_exits = [d for d in R_active.doors] + [t for t in R_active.traps]
+            possible_exits = [[d for d in R_active.doors], [t for t in R_active.traps]]
             if self.verbose:
                 print('Possible exits: ')
-                print('\t' + str(R_active.id) + ': ', possible_exits)
+                print('\t' + str(R_active.id) + ': ', possible_exits, ' - (', cl[R_active], ')')
             for node in net_state.get_downstream_nodes(R_active):
-                node_exits = [d for d in node.doors] + [t for t in node.traps]
+                node_exits = [[d for d in node.doors], [t for t in node.traps]]
                 if self.verbose:
-                    print('\t' + str(node.id) + ': ', node_exits)
-                possible_exits += node_exits
+                    print('\t' + str(node.id) + ': ', node_exits, ' - (', cl[node], ')')
+                possible_exits[0] += node_exits[0]
+                possible_exits[1] += node_exits[1]
+
+            possible_exits = possible_exits[0] + possible_exits[1]
             random.shuffle(possible_exits)  # randomize order
 
             # Start trying exits
             while len(possible_exits) > 0:
                 d1 = possible_exits.pop()
-                R1 = net_state.rooms.get_room(d1)
+                R1 = net_state.rooms.get_room_from_element(d1)
                 d1_type = R1.element_type(d1)
                 if self.verbose:
                     print('selected: ', d1)
@@ -729,7 +835,7 @@ class Network:
                     else:
                         node_entr = [p for p in node.pits]
                     if self.verbose:
-                        print('\t' + str(node.id) + ': ', node_entr)
+                        print('\t' + str(node.id) + ': ', node_entr, '(count: ',node.count,')', ' - ', cl[node])
                     possible_entrances.extend(node_entr)
                 random.shuffle(possible_entrances)  # randomize order
 
@@ -763,7 +869,7 @@ class Network:
 
     def get_valid_connections(self, d1):
         # Return a list of valid connections for the door or trap d1
-        R1 = self.rooms.get_room(d1)
+        R1 = self.rooms.get_room_from_element(d1)
         d1_type = R1.element_type(d1)
         if d1_type == 0:
             d2_type = 0
