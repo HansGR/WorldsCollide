@@ -1,6 +1,6 @@
 #from openpyxl import load_workbook
 from random import randrange, choices
-from data.rooms import room_data, forced_connections, shared_oneways, shared_exits, invalid_connections
+from data.rooms import forced_connections, shared_oneways, invalid_connections
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
@@ -61,7 +61,7 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
-        self.verbose = True    # False  # True
+        self.verbose = False    # False  # True
 
         self._all_rooms = []
 
@@ -246,8 +246,9 @@ class Doors():
             walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
             # Connect the network
-            print('Randomizing map...')
-            fully_connected = walks.connect_network_stupid()
+            if self.verbose:
+                print('Randomizing map...')
+            fully_connected = walks.connect_network()
 
             # Copy the results into the map
             map[0].extend([m for m in fully_connected.map[0]])

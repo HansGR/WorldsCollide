@@ -174,7 +174,6 @@ class SerpentTrench(Event):
             vehicle.MoveForward(direction.UP, 14),
             world.Branch(0xa8c49)
         ]
-        print('Event 2047: ', [f.__call__([]) for f in src])
         AddSwitchyardEvent(event_id, self.maps, src=src)
 
         # (4a) Change the Cave #2 Entry event to load the switchyard location

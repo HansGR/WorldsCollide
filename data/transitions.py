@@ -24,7 +24,7 @@ from data.map_event import MapEvent
 
 class Transitions:
     FREE_MEMORY = False
-    verbose = True
+    verbose = False
 
     def __init__(self, mapping, rom, exit_data, event_data):
         self.transitions = []
@@ -248,7 +248,7 @@ class EventExit:
     def __init__(self, ID, rom=[], exit_data=[], event_data=[]):
         self.id = ID
 
-        if self.id > 1500:
+        if 1500 < self.id < 4000:
             event_info = event_data[ID]
             # Data structure: event_exit_info[id] = ...
             #   [original address, event bit length, split point, transition state, description, location, method]

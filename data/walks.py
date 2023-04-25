@@ -4,398 +4,9 @@ import random
 from copy import deepcopy
 import numpy as np
 
-class Walks:
-    # Class for handling a group of Walks, i.e. logical mapping sequences for rooms
-    def __init__(self, rooms):
-        self.walks = []
-        self.deadends = []
-        #self.room_doors = room_doors    # dictionary for [ [doors], [traps], [pits], [keys], [locks] ] in each room
-        #self.room_counts = room_counts  # count of [ doors, traps, pits, keys, locks ] in each room
-        for r in rooms:
-            R = Room(r)
-            if R.is_dead_end():
-                self.deadends.append(R)
-            else:
-                self.walks.append(Walk([R]))
-
-        self.active = 0  # Index of the active walk
-
-    @property
-    def count(self):
-        # Return the number of unused [doors, traps, pits, keys, locks] in the walk
-        count = [0, 0, 0, 0, 0]
-        for w in self.walks:
-            w_count = w.count
-            for i in range(len(count)):
-                count[i] += w_count[i]
-        return count
-
-    def ForceConnections(self, forcing):
-        # Look up forced connections for doors and connect them
-        map = []
-        for w in self.walks:
-            for d in w.doors:
-                if d in forcing.keys():
-                    df = forcing[d]  # get forced connection ID
-                    self.connect(d, df)
-                    map.append([d, df])
-        return map
-
-    def connect(self, d1, d2):
-        # Connect two doors & handle updates to the walks
-        w1 = self.get_walk(d1)
-        w2 = self.get_walk(d2)
-
-        # Find rooms and remove the doors
-        r1 = w1.get_room_from_element(d1)
-        r2 = w2.get_room_from_element(d2)
-        r1.remove(d1)
-        r2.remove(d2)
-
-        if w1 == w2:
-            # Both doors are in the same walk. Combine all rooms in the walk between r1 and r2 into a new room
-            w1.compress_loop(r1, r2)
-
-        else:
-            # Doors are in different walks.  By default, can only enter a new walk at the first node.
-            # Add the new walk (w2) onto the end of this one (w1) & delete the other copy
-            for r in w2.walk:
-                w1.walk.append(r)
-
-            # Delete w2
-            self.walks.remove(w2)
-
-    def get_walk(self, id):
-        # Return the walk containing an object
-        for w in self.walks:
-            if w.get_room(id) is not False:
-                return w
-        return False
-
-
-class Walk:
-    # Class for handling a logical mapping sequence for Rooms
-    def __init__(self, rooms):
-        self.walk = []
-        for r in rooms:
-            self.walk.append(r)
-
-    @property
-    def count(self):
-        # Return the count of unused [doors, traps, pits, keys, locks] in this walk
-        return [len(self.doors), len(self.traps), len(self.pits), len(self.keys), len(self.locks)]
-
-    @property
-    def doors(self):
-        # List of doors in the walk
-        doors = []
-        for r in self.walk:
-            doors.extend(r.doors)
-        return doors
-
-    @property
-    def traps(self):
-        # List of traps in the walk
-        traps = []
-        for r in self.walk:
-            traps.extend(r.traps)
-        return traps
-
-    @property
-    def pits(self):
-        # List of pits in the walk
-        pits = []
-        for r in self.walk:
-            pits.extend(r.pits)
-        return pits
-
-    @property
-    def keys(self):
-        # List of keys in the walk
-        keys = []
-        for r in self.walk:
-            keys.extend(r.keys)
-        return keys
-
-    @property
-    def locks(self):
-        # List of locks in the walk
-        locks = []
-        for r in self.walk:
-            locks.append(r.locks.keys())
-        return locks
-
-    @property
-    def locked(self):
-        # List of locked exits in the walk
-        locked = []
-        for r in self.walk:
-            locked.append(r.locks.values())
-        return locked
-
-    def remove(self, id):
-        for room in self.walk:
-            if room.remove(id):
-                return True
-        return False
-
-    def get_room(self, id):
-        for room in self.walk:
-            if room.contains(id):
-                return room
-        return False
-
-    def compress_loop(self, room1, room2):
-        # Compress a loop containing two rooms
-        # Note: the active connection should be removed from the room before compressing.
-        inds = [self.walk.index(room1), self.walk.index(room2)]
-        inds.sort()  # this shouldn't matter, but doesn't hurt
-        looproom = Room()
-        looproom.id = ''
-        for r in self.walk[inds[0]:inds[1]+1]:
-            looproom.id += str(r.id) + '_'
-            looproom.doors.extend(r.doors)
-            looproom.traps.extend(r.traps)
-            looproom.pits.extend(r.pits)
-            looproom.keys.extend(r.keys)
-            for k in r.locks.keys():
-                looproom.locks[k] = r.locks[k]
-        self.walk = self.walk[:inds[0]] + [looproom] + self.walk[inds[1]+1:]
-
-    def get_upstream_entr_count(self):
-        pass
-
-    def get_upstream_exit_count(self):
-        pass
-
-
-class Rooms():
-    def __init__(self, rooms):
-        self.rooms = []
-        for r in rooms:
-            self.rooms.append(Room(r))
-
-    def get_room(self, id):
-        for room in self.rooms:
-            if room.id == id:
-                return room
-        return False
-
-    def get_room_from_element(self, id):
-        for room in self.rooms:
-            if room.contains(id):
-                return room
-        return False
-
-    @property
-    def count(self):
-        # Return the count of unused [doors, traps, pits, keys, locks] in this walk
-        return [len(self.doors), len(self.traps), len(self.pits), len(self.keys), sum([len(r.locks) for r in self.rooms])]
-
-    @property
-    def doors(self):
-        # List of doors in the walk
-        doors = []
-        for r in self.rooms:
-            doors.extend(r.doors)
-        return doors
-
-    @property
-    def traps(self):
-        # List of traps in the walk
-        traps = []
-        for r in self.rooms:
-            traps.extend(r.traps)
-        return traps
-
-    @property
-    def pits(self):
-        # List of pits in the walk
-        pits = []
-        for r in self.rooms:
-            pits.extend(r.pits)
-        return pits
-
-    @property
-    def keys(self):
-        # List of keys in the walk
-        keys = []
-        for r in self.rooms:
-            keys.extend(r.keys)
-        return keys
-
-    @property
-    def locks(self):
-        # List of locks in the walk
-        locks = []
-        for r in self.rooms:
-            locks.append(r.locks.keys())
-        return locks
-
-    @property
-    def locked(self):
-        # List of locked exits in the walk
-        locked = []
-        for r in self.rooms:
-            locked.append(r.locks.values())
-        return locked
-
-    def remove(self, id):
-        for room in self.rooms:
-            if room.id == id:
-                # This is a room id.  Remove it.
-                self.rooms.remove(room)
-                return True
-            # If this is an exit id, remove it.
-            if room.remove(id):
-                return True
-        return False
-
-
-class Room():
-    def __init__(self, r=None):
-        self.id = r
-        if r is not None:
-            data = room_data[r]
-            if len(data) == 4:
-                # before implementing keys & locks
-                contents = [i for i in data[:-1]] + [[], {}]
-            else:
-                contents = [i for i in data[:-1]]   # [ doors, traps, pits, keys, locks ]
-            self._contents = deepcopy(contents)  # Copy, don't replicate
-
-            # Adjust shared exits:
-            d_shared = [d for d in self.doors if d in shared_exits.keys()]
-            for d in d_shared:
-                for s in shared_exits[d]:
-                    self.remove(s)
-
-        else:
-            self._contents = [ [], [], [], [], {}]
-
-    @property
-    def doors(self):
-        return self._contents[0]
-
-    @property
-    def traps(self):
-        return self._contents[1]
-
-    @property
-    def pits(self):
-        return self._contents[2]
-
-    @property
-    def keys(self):
-        return self._contents[3]
-
-    @property
-    def locks(self):
-        return self._contents[4]
-
-    @property
-    def count(self):
-        return [len(s) for s in self._contents]
-
-    def add_doors(self, doors):
-        self._contents[0].extend(doors)
-
-    def add_traps(self, traps):
-        self._contents[1].extend(traps)
-
-    def add_pits(self, pits):
-        self._contents[2].extend(pits)
-
-    def add_keys(self, keys):
-        self._contents[3].extend(keys)
-
-    def add_locks(self, lock_dict):
-        for k in lock_dict.keys():
-            self._contents[4][k] = lock_dict[k]
-
-    def locked(self, elementtype=None):
-        if elementtype is None:
-            return self._contents[4].values()
-        elif elementtype in ['doors', 0]:
-            locked = [d for d in self._contents[4].values() if type(d) is int]
-            return [d for d in locked if d < 2000]
-        elif elementtype in ['traps', 1]:
-            locked = [d for d in self._contents[4].values() if type(d) is int]
-            return [d for d in locked if 2000 <= d < 3000]
-        elif elementtype in ['pits', 2]:
-            locked = [d for d in self._contents[4].values() if type(d) is int]
-            return [d for d in locked if 3000 <= d]
-        elif elementtype in ['keys', 3]:
-            return [d for d in self._contents[4].values() if type(d) is str]
-        else:
-            return False
-
-    def remove(self, id):
-        for r in range(len(self._contents)):
-            if id in self._contents[r]:
-                self._contents[r].remove(id)
-                return True
-        return False
-
-    def contains(self, id):
-        if id in self.doors:
-            return True
-        elif id in self.traps:
-            return True
-        elif id in self.pits:
-            return True
-        elif id in self.keys:
-            return True
-        elif id in self.locks.values():
-            return True
-        else:
-            return False
-
-    def element_type(self, e_id):
-        is_element = [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()]
-        if True in is_element:
-            return is_element.index(True)
-        else:
-            print('ERROR: ', e_id, 'is not in ', self.id,': ', self._contents)
-            raise Exception('Missing Element')
-
-    def get_elements(self, element_type):
-        if element_type in [0, 'doors']:
-            return self.doors
-        elif element_type in [1, 'traps']:
-            return self.traps
-        elif element_type in [2, 'pits']:
-            return self.pits
-        elif element_type in [3, 'keys']:
-            return self.keys
-        elif element_type in [4, 'locks']:
-            return self.locks.keys()
-        elif element_type in [5, 'locked']:
-            return self.locks.values()
-        else:
-            return False
-
-    def get_key(self, locked_element):
-        for k, l in self.locks:
-            if locked_element in l:
-                return k
-
-    def get_exit(self):
-        # Return a random exit from those available
-        exit_list = self.doors + self.traps
-        return random.choice(exit_list)
-
-    def is_attachable(self):
-        # A room is attachable to a dead end room if it has 2 doors or 1 door and at least 1 pit AND 1 trap.
-        # These can include locked values.
-        all_doors = self.doors + self.locked('doors')
-        all_traps = self.traps + self.locked('traps')
-        all_pits = self.pits + self.locked('pits')
-        return (len(all_doors) > 1) or (len(all_doors) == 1 and len(all_traps) > 0 and len(all_pits) > 0)
-
 
 class Network:
-    verbose = True
+    verbose = False
 
     def __init__(self, rooms):
         self.original_room_ids = [r for r in rooms]
@@ -542,18 +153,10 @@ class Network:
         if len(pred) > 0:
             if len(pred) == 1:
                 p = pred[0]
-                #if room in list(self.net.predecessors(p)):
-                #    # Ignore simple 2-way doors
-                #    return self.get_upstream_paths(p, nodes)
-                #else:
                 return self.get_upstream_paths(p, nodes + [p])
             else:
                 temp = []
                 for p in pred:
-                    #if room in list(self.net.predecessors(p)):
-                    #    # Ignore simple 2-way doors
-                    #    temp.append(self.get_upstream_paths(p, nodes))
-                    #else:
                     temp.append(self.get_upstream_paths(p, nodes + [p]))
                 return self.flatten_paths(temp)
         return self.flatten_paths([nodes])
@@ -688,13 +291,14 @@ class Network:
                 print("Attaching dead ends: ", [(e.id, e.doors[0]) for e in dead_ends])
 
     def check_network_invalidity(self):
-        # Check the network validity based on the following three validity rules:
+        # Check the network validity based on the following four validity rules:
         # [A] not [(Door in / trap out) and (Pit in / door out)] and (Door in / door out) and (Pit in / trap out)
         #     = not "Network Bifurcation"
+        # [B] not (Door in / trap out) and (Pit in / door out)   = not "one-way version 1"
+        # [C] (Door in / trap out) and not (Pit in / door out)   = not "one-way version 2"
+        # [D] (#_doors_in + #_undetermined_doors < #_doors_out) or (#_doors_out + #_undetermined_doors < #_doors_in)
+        #     = door imbalance
         # If returns True, network is invalid
-        ## [B] not (Door out) and (Door in / trap out). May be impossible.
-        ## [C] not (Trap out) and (Pit in / door out).  May be impossible.
-
         classifications = {}
         total_doors_in = 0
         total_doors_out = 0
@@ -718,28 +322,17 @@ class Network:
             trap_out = (down_count[1] + self_count[1]) > 0
 
             # Count total doors in/out OF THIS NODE
-            #total_doors_in += up_count[0]
-            #total_doors_out += down_count[0]
             delta_in = 0
+            if sum(up_count) == 0 and self_count[2] == 0:
+                # No guaranteed entrances.  One door must be an entrance.
+                delta_in = min([1, self_count[0]])
             delta_out = 0
-            delta_either = 0
-            if self_count == [2, 0, 0] and sum(up_count + down_count) == 0:
-                # Special case: hallways always have 1 entrance and 1 exit.
-                delta_in += 1
-                delta_out += 1
-            elif self_count[0] > 1:
-                # all self doors count as both doors in and doors out.
-                delta_either += self_count[0]
-            elif self_count[0] == 1:
-                # self door may not be either a door in or a door out.
-                is_out = up_count[0] + up_count[2] + self_count[2] > 0    # pits or doors in: it's a door out
-                is_in = down_count[0] + down_count[1] + self_count[1] > 0 # doors or traps out: it's a door in
-                if is_out and is_in:
-                    delta_either += self_count[0]
-                elif is_out:
-                    delta_out += self_count[0]
-                elif is_in:
-                    delta_in += self_count[0]
+            if sum(down_count) == 0 and self_count[1] == 0:
+                # No guaranteed exits.  One door must be an exit.
+                delta_out = min([1, self_count[0]])
+            # All remaining doors may be either
+            delta_either = self_count[0] - delta_in - delta_out
+
             total_doors_in += delta_in
             total_doors_out += delta_out
             total_doors_either += delta_either
@@ -767,21 +360,9 @@ class Network:
             [total_doors_in, total_doors_out, total_doors_either]
         ]
 
-    def connect_network_stupid(self):
-        # The rules for how to validly connect the network are too hard to figure out.
-        # However, it's relatively easy to figure out when the network is invalid.
-        # So: let's make a recursive connection algorithm that throws an error if it is invalid, and tries again at the
-        # next step up.  This is like solving a maze by retreating to the most recent fork if you find a dead end.
-        # Update: THIS ACTUALLY WORKS.  It can also occasionally take forever.
-        # We might be able to make it more reliable by adding a *few* rules.
-        # 1. Dead ends make this approach take a long time.  Solutions:
-        # *** reimplement "connect all dead ends first" procedure
-        # 2. Something else is also making this code take a long time.  Needs addl testing...
-        # --- Minimum broken example: -dru -drem -drbh produced 300 MB+ output file on first try, ran instantly on 2,3.
-        # --- I think this has to do with making a sub-net that has no door (trap) exits, and excluded nodes that
-        # have no door (pit) entrances, and then it has to try all permutations of the subnet before escaping.
-        # *** Can we avoid this by disallowing choice of an exit that results in no connections of the other type, if
-        # connections of the other type still exist?
+    def connect_network(self):
+        # Connect the network by proposing a connection & recursively connecting the created network.
+        # If a connection fails or creates an invalid network, retreat a step and try a different one.
         net_state = deepcopy(self)
 
         if sum(net_state.rooms.count[:3]) == 0:
@@ -847,7 +428,7 @@ class Network:
                         if self.verbose:
                             print('\t\tTrying Connection: ', str(d1), str(d2))
                         net_state.connect(d1, d2)
-                        net_state = net_state.connect_network_stupid()
+                        net_state = net_state.connect_network()
 
                         # up_propagate the successful connection
                         return net_state
@@ -865,160 +446,6 @@ class Network:
             if self.verbose:
                 print('\t' + str(R_active.id) + ' ran out of possible exits.')
             raise Exception("Ran out of possible exits.")
-
-
-    def get_valid_connections(self, d1):
-        # Return a list of valid connections for the door or trap d1
-        R1 = self.rooms.get_room_from_element(d1)
-        d1_type = R1.element_type(d1)
-        if d1_type == 0:
-            d2_type = 0
-        elif d1_type == 1:
-            d2_type = 2
-        if self.verbose:
-            print('\nConnecting ' + str(R1.id) + ' (' + str(d1) + '): type = ' + str(d1_type) + ', looking for type ' + str(d2_type))
-
-        # Collect information about the state of the network
-        top_nodes = self.get_top_nodes()
-        inlets = [[], []]
-        inlet_count = [0, 0]
-        outlet_count = [0 - (d1_type == 0), 0 - (d1_type == 1)]
-        downstream_exits = {}
-        for n in top_nodes:
-            # Count entrances/exits for the top node
-            inlets[0].extend([d for d in n.doors if d is not d1])
-            inlet_count[0] += len(n.doors) - (d1 in n.doors)
-            inlets[1].extend([p for p in n.pits])
-            inlet_count[0] += len(n.pits)
-            outlet_count[0] += len(n.doors) - (d1 in n.doors)
-            outlet_count[1] += len(n.traps) - (d1 in n.traps)
-
-            # Count downstream exits from the top node
-            downstream_exits[n] = [[d for d in n.doors if d is not d1], [t for t in n.traps if t is not d1]]
-            d_nodes = self.get_downstream_nodes(n)
-            for dn in d_nodes:
-                downstream_exits[n][0].extend([d for d in dn.doors if d is not d1])
-                downstream_exits[n][1].extend([t for t in dn.traps if t is not d1])
-            outlet_count[0] += len(downstream_exits[n][0])
-            outlet_count[1] += len(downstream_exits[n][1])
-
-        if self.verbose:
-            print('\tTop nodes are: ', [n.id for n in top_nodes])
-            print('\tinlet count: ', inlet_count)
-            print('\toutlet count: ', outlet_count)
-
-        # If inlet count == outlet count for the type in question, only include inlets in the valid set.
-        valid = []
-
-        if inlet_count[d1_type] == outlet_count[d1_type]:
-            valid.extend(inlets[d1_type])
-        else:
-            upstream_nodes = self.get_upstream_nodes(R1)
-            if self.verbose:
-                print('\tFound upstream nodes: ', [e.id for e in upstream_nodes])
-            # Only connect loose nodes if they have no predecessors
-            unconnected_nodes = [r for r in self.rooms.rooms if r not in upstream_nodes and
-                                 r is not R1 and len(list(self.net.predecessors(r))) == 0]
-            if self.verbose:
-                print('\tFound loose nodes: ', [e.id for e in unconnected_nodes])
-
-            # By construction, there should be no loops or downstream nodes.
-
-            # Validity rules:
-            self_exits = [d for d in R1.doors if d is not d1] + [t for t in R1.traps if t is not d1]
-            is_last_exit = len(self_exits) == 0
-            if self.verbose:
-                print('\tSelf-exits found: ', self_exits)
-
-            up_conn = [[c for c in node.get_elements(d2_type)] for node in upstream_nodes]
-            if self.verbose:
-                print('\tUpstream connections found: ', up_conn)
-            self_conn = [c for c in R1.get_elements(d2_type) if c is not d1]
-            if self.verbose:
-                print('\tSelf connections found: ', self_conn)
-            conn = up_conn + [self_conn]
-            conn_count = [len(c) for c in conn]
-
-            outside_count = [0, 0]  # count ways into outside nodes
-            for node in unconnected_nodes:
-                outside_count[0] += node.count[0]  # number of doors in node
-                outside_count[1] += node.count[2]  # number of pits in node
-                if self.verbose:
-                    print('\t\tChecking node ', node.id, '(', node.count, ')')
-                if not self.is_dead_end(node):
-                    # 0. Always include unconnected nodes from non-dead-ends
-                    if self.verbose:
-                        print('\t\tnot a dead end, add connections: ', [c for c in node.get_elements(d2_type)])
-                    valid.extend([c for c in node.get_elements(d2_type)])
-
-                else:
-                    if self.verbose:
-                        print('\t\tis a dead end.  Check if valid.')
-                    if not is_last_exit or (sum(conn_count) == 0 and len(unconnected_nodes) == 1):
-                        # 1. Include dead ends IF there's another exit in R1, or it's the last exit
-                        if self.verbose:
-                            print('\t\tis valid, add connections: ', [c for c in node.get_elements(d2_type)])
-                        valid.extend([c for c in node.get_elements(d2_type)])
-
-            conn_outside_count = len(valid)  # number of valid connections in outside nodes
-
-
-            # 2. if there are no loose connections and there is only one upstream connection, add it.
-            if conn_outside_count == 0 and sum(conn_count) == 1:
-                if self.verbose:
-                    print('\tOnly one connection available: add it. ', conn[conn_count.index(1)])
-                valid.extend(conn[conn_count.index(1)])
-
-            # 3. Otherwise, add connections that leave downstream exits
-            elif len(self_exits) == 0:
-                if self.verbose:
-                    print('\tNo self-exits.  Add upstream connections that have downstream exits.')
-                paths = self.get_upstream_paths(R1)
-                for path in paths:
-                    if self.verbose:
-                        print('\tChecking path: ', [p.id for p in path])
-                    # Get the cumulative downstream exit count on the list of nodes.
-                    down_exits = []  # there are no exits downstream (len(self_exits) == 0)
-                    down_exit_count = [-(d1_type == 0), 0]  # Reduce count by one door, if d1 is a door.
-                    for p in path:
-                        down_exits.extend([c for c in p.doors] + [c for c in p.traps])
-                        down_exit_count[0] += len(p.doors)
-                        down_exit_count[1] += len(p.traps)
-                        if self.verbose:
-                            print('\t\tNode ' + str(p.id) + ' exits:', down_exits, '(', down_exit_count, ')')
-                        # If the cumulative count of exits > 0, add the entrances above that point.
-                        if (down_exit_count[0] > 0) or (down_exit_count[1] > 0):
-                            # and (down_exit_count[d1_type] > 0 or conn_outside_count == 0)
-                            if self.verbose:
-                                print('\t\tThere are downstream exits, include these connections: ', [c for c in p.get_elements(d2_type)])
-                            valid.extend([c for c in p.get_elements(d2_type)])
-
-            elif len(self_exits) == 1 and d1_type == 0 and R1.element_type(self_exits[0]) == 0:
-                    # We are connecting a door, and there is one door in R1.
-                    if self.verbose:
-                        print('\tOne self-exit.  Add all upstream connections (but not the self exit)')
-                    # Connect to any upstream path, but not the door in R1
-                    for connection in up_conn:
-                        if self.verbose:
-                            print('\t\tadd:', [c for c in connection])
-                        valid.extend([c for c in connection])
-
-            else:
-                if self.verbose:
-                    print('\tSeveral self-exits.  Add all self and upstream connections')
-                # (4) There are more exits in the room: include everything above it.
-                for connection in conn:
-                    if self.verbose:
-                        print('\t\tadd:', [c for c in connection])
-                    valid.extend([c for c in connection])
-
-            if self.verbose:
-                print('Valid connections found: ', valid)
-            valid = list(set(valid))  # remove duplicates, if any.
-            if self.verbose:
-                print('No duplicates: ', valid)
-
-        return valid
 
     def plot_map(self):
         # Make a plot of the map
@@ -1062,7 +489,6 @@ class Network:
         nx.draw_networkx_edges(plotnet, pos=pos, edgelist=one_ways, edge_color='r')
         nx.draw_networkx_edge_labels(plotnet, pos=pos, edge_labels=edge_labels)
 
-
     def is_dead_end(self, node):
         # Return True if node is a dead end (one entrance, no exits)
         down = self.get_downstream_nodes(node)
@@ -1073,3 +499,228 @@ class Network:
         else:
             nc = node.count
             return nc[:3] == [1, 0, 0] and nc[4] == 0
+
+
+class Rooms:
+    def __init__(self, rooms):
+        self.rooms = []
+        for r in rooms:
+            self.rooms.append(Room(r))
+
+    def get_room(self, id):
+        for room in self.rooms:
+            if room.id == id:
+                return room
+        return False
+
+    def get_room_from_element(self, id):
+        for room in self.rooms:
+            if room.contains(id):
+                return room
+        return False
+
+    @property
+    def count(self):
+        # Return the count of unused [doors, traps, pits, keys, locks] in this walk
+        return [len(self.doors), len(self.traps), len(self.pits), len(self.keys), sum([len(r.locks) for r in self.rooms])]
+
+    @property
+    def doors(self):
+        # List of doors in the walk
+        doors = []
+        for r in self.rooms:
+            doors.extend(r.doors)
+        return doors
+
+    @property
+    def traps(self):
+        # List of traps in the walk
+        traps = []
+        for r in self.rooms:
+            traps.extend(r.traps)
+        return traps
+
+    @property
+    def pits(self):
+        # List of pits in the walk
+        pits = []
+        for r in self.rooms:
+            pits.extend(r.pits)
+        return pits
+
+    @property
+    def keys(self):
+        # List of keys in the walk
+        keys = []
+        for r in self.rooms:
+            keys.extend(r.keys)
+        return keys
+
+    @property
+    def locks(self):
+        # List of locks in the walk
+        locks = []
+        for r in self.rooms:
+            locks.append(r.locks.keys())
+        return locks
+
+    @property
+    def locked(self):
+        # List of locked exits in the walk
+        locked = []
+        for r in self.rooms:
+            locked.append(r.locks.values())
+        return locked
+
+    def remove(self, id):
+        for room in self.rooms:
+            if room.id == id:
+                # This is a room id.  Remove it.
+                self.rooms.remove(room)
+                return True
+            # If this is an exit id, remove it.
+            if room.remove(id):
+                return True
+        return False
+
+
+class Room:
+    def __init__(self, r=None):
+        self.id = r
+        if r is not None:
+            data = room_data[r]
+            if len(data) == 4:
+                # before implementing keys & locks
+                contents = [i for i in data[:-1]] + [[], {}]
+            else:
+                contents = [i for i in data[:-1]]   # [ doors, traps, pits, keys, locks ]
+            self._contents = deepcopy(contents)  # Copy, don't replicate
+
+            # Adjust shared exits:
+            d_shared = [d for d in self.doors if d in shared_exits.keys()]
+            for d in d_shared:
+                for s in shared_exits[d]:
+                    self.remove(s)
+
+        else:
+            self._contents = [ [], [], [], [], {}]
+
+    @property
+    def doors(self):
+        return self._contents[0]
+
+    @property
+    def traps(self):
+        return self._contents[1]
+
+    @property
+    def pits(self):
+        return self._contents[2]
+
+    @property
+    def keys(self):
+        return self._contents[3]
+
+    @property
+    def locks(self):
+        return self._contents[4]
+
+    @property
+    def count(self):
+        return [len(s) for s in self._contents]
+
+    def add_doors(self, doors):
+        self._contents[0].extend(doors)
+
+    def add_traps(self, traps):
+        self._contents[1].extend(traps)
+
+    def add_pits(self, pits):
+        self._contents[2].extend(pits)
+
+    def add_keys(self, keys):
+        self._contents[3].extend(keys)
+
+    def add_locks(self, lock_dict):
+        for k in lock_dict.keys():
+            self._contents[4][k] = lock_dict[k]
+
+    def locked(self, elementtype=None):
+        if elementtype is None:
+            return self._contents[4].values()
+        elif elementtype in ['doors', 0]:
+            locked = [d for d in self._contents[4].values() if type(d) is int]
+            return [d for d in locked if d < 2000]
+        elif elementtype in ['traps', 1]:
+            locked = [d for d in self._contents[4].values() if type(d) is int]
+            return [d for d in locked if 2000 <= d < 3000]
+        elif elementtype in ['pits', 2]:
+            locked = [d for d in self._contents[4].values() if type(d) is int]
+            return [d for d in locked if 3000 <= d]
+        elif elementtype in ['keys', 3]:
+            return [d for d in self._contents[4].values() if type(d) is str]
+        else:
+            return False
+
+    def remove(self, id):
+        for r in range(len(self._contents)):
+            if id in self._contents[r]:
+                self._contents[r].remove(id)
+                return True
+        return False
+
+    def contains(self, id):
+        if id in self.doors:
+            return True
+        elif id in self.traps:
+            return True
+        elif id in self.pits:
+            return True
+        elif id in self.keys:
+            return True
+        elif id in self.locks.values():
+            return True
+        else:
+            return False
+
+    def element_type(self, e_id):
+        is_element = [e_id in self.doors, e_id in self.traps, e_id in self.pits, e_id in self.keys, e_id in self.locks.keys(), e_id in self.locks.values()]
+        if True in is_element:
+            return is_element.index(True)
+        else:
+            print('ERROR: ', e_id, 'is not in ', self.id,': ', self._contents)
+            raise Exception('Missing Element')
+
+    def get_elements(self, element_type):
+        if element_type in [0, 'doors']:
+            return self.doors
+        elif element_type in [1, 'traps']:
+            return self.traps
+        elif element_type in [2, 'pits']:
+            return self.pits
+        elif element_type in [3, 'keys']:
+            return self.keys
+        elif element_type in [4, 'locks']:
+            return self.locks.keys()
+        elif element_type in [5, 'locked']:
+            return self.locks.values()
+        else:
+            return False
+
+    def get_key(self, locked_element):
+        for k, l in self.locks:
+            if locked_element in l:
+                return k
+
+    def get_exit(self):
+        # Return a random exit from those available
+        exit_list = self.doors + self.traps
+        return random.choice(exit_list)
+
+    def is_attachable(self):
+        # A room is attachable to a dead end room if it has 2 doors or 1 door and at least 1 pit AND 1 trap.
+        # These can include locked values.
+        all_doors = self.doors + self.locked('doors')
+        all_traps = self.traps + self.locked('traps')
+        all_pits = self.pits + self.locked('pits')
+        return (len(all_doors) > 1) or (len(all_doors) == 1 and len(all_traps) > 0 and len(all_pits) > 0)
