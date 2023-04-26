@@ -220,50 +220,51 @@ class Doors():
             self.room_doors['root'] = [r for r in room_data['root'][:-1]]
 
         for area in self.rooms:
-            walks = Network(area)  # Initialize the Walk Network
-            if self.verbose:
-                print('Initial Count: ', walks.rooms.count)
-            walks.ForceConnections(self.forcing)  # Force initial connections, if any
-            if self.verbose:
-                print('Count after forced connections: ', walks.rooms.count)
-            walks.attach_dead_ends()  # Connect all the dead ends.
-            if self.verbose:
-                print('Count after attaching dead ends: ', walks.rooms.count)
+            if len(area) > 0:
+                walks = Network(area)  # Initialize the Walk Network
+                if self.verbose:
+                    print('Initial Count: ', walks.rooms.count)
+                walks.ForceConnections(self.forcing)  # Force initial connections, if any
+                if self.verbose:
+                    print('Count after forced connections: ', walks.rooms.count)
+                walks.attach_dead_ends()  # Connect all the dead ends.
+                if self.verbose:
+                    print('Count after attaching dead ends: ', walks.rooms.count)
 
-            # Select starting node
-            if self.args.door_randomize_all:
-                # Start in the root room
-                string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
-                root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
-                start_room_id = root_room.id
-            elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
-                # Choose a root room to begin
-                # This might fail due to forcing.
-                start_room_id = random.choice([r.id for r in walks.rooms.rooms if 'root' in str(r.id)])
-            else:
-                # Choose a random room
-                start_room_id = random.choice([n.id for n in walks.net.nodes])
-            walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
+                # Select starting node
+                if self.args.door_randomize_all:
+                    # Start in the root room
+                    string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
+                    root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
+                    start_room_id = root_room.id
+                elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
+                    # Choose a root room to begin
+                    # This might fail due to forcing.
+                    start_room_id = random.choice([r.id for r in walks.rooms.rooms if 'root' in str(r.id)])
+                else:
+                    # Choose a random room
+                    start_room_id = random.choice([n.id for n in walks.net.nodes])
+                walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
-            # Connect the network
-            if self.verbose:
-                print('Randomizing map...')
-            fully_connected = walks.connect_network()
+                # Connect the network
+                if self.verbose:
+                    print('Randomizing map...')
+                fully_connected = walks.connect_network()
 
-            # Copy the results into the map
-            map[0].extend([m for m in fully_connected.map[0]])
-            map[1].extend([m for m in fully_connected.map[1]])
+                # Copy the results into the map
+                map[0].extend([m for m in fully_connected.map[0]])
+                map[1].extend([m for m in fully_connected.map[1]])
 
-            # Append shared doors to the map
-            for m in map[0]:
-                if m[0] in shared_exits.keys():
-                    for se in shared_exits[m[0]]:
-                        # Send shared exits to the same destination
-                        map[0].append([se, m[1]])
-                if m[1] in shared_exits.keys():
-                    for se in shared_exits[m[1]]:
-                        # Send shared exits to the same destination
-                        map[0].append([m[0], se])
+                # Append shared doors to the map
+                for m in map[0]:
+                    if m[0] in shared_exits.keys():
+                        for se in shared_exits[m[0]]:
+                            # Send shared exits to the same destination
+                            map[0].append([se, m[1]])
+                    if m[1] in shared_exits.keys():
+                        for se in shared_exits[m[1]]:
+                            # Send shared exits to the same destination
+                            map[0].append([m[0], se])
 
         if self.args.door_randomize_all:
             # Remove the (logical) root doors from the map
