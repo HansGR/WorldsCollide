@@ -137,7 +137,6 @@ class Doors():
                     temp.extend(r)
                 room_sets = [temp]
 
-
         self.read(room_sets)
 
     def read(self, whichRooms=[]):

@@ -331,7 +331,7 @@ class Network:
                 # No guaranteed exits.  One door must be an exit.
                 delta_out = min([1, self_count[0]])
             # All remaining doors may be either
-            delta_either = self_count[0] - delta_in - delta_out
+            delta_either = max([0, self_count[0] - delta_in - delta_out])
 
             total_doors_in += delta_in
             total_doors_out += delta_out
@@ -378,6 +378,8 @@ class Network:
                 if self.verbose:
                     print('\tInvalid!  By rule: ', [['A','B','C','D'][i] for i in range(len(by_rules)) if by_rules[i]],
                           'in/out/either = ', td)
+                    #for k in cl.keys():
+                    #    print('\t',k.id,': ', cl[k])
                 raise Exception('Invalid network state.')
 
             R_active = net_state.rooms.rooms[net_state.active]
