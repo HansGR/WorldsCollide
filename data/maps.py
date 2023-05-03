@@ -993,31 +993,17 @@ class Maps():
         # Perform cleanup actions, if we are doing door rando
 
         ### THAMASA WOR (0x158): replace manual long-event tiles with a real long_event
-        # To be honest, we probably don't need these events at all.  They just check bits 0x196, 0x19E, 0x19F to see if Relm/Shadow story can progress.
+        # We don't need these events: they just check bits 0x196, 0x19E, 0x19F to see if Relm/Shadow story can progress.
         # Let's just delete them and free space (CB/7D69 - CB/7D82)
         THA_WR = 0x158
 
         # South Exit tiles
-        #e = self.get_event(THA_WR, 20, 48)
-        #le = LongMapEvent()
-        #le.x = e.x
-        #le.y = e.y
-        #le.event_address = e.event_address
-        #le.direction = 0
-        #le.size = 5
         for x in range(20, 26):
             self.delete_event(THA_WR, x, 48)
-        #self.add_long_event(THA_WR, le)
 
         # West Exit tiles
-        #e = self.get_event(THA_WR, 0, 28)
-        #le = LongMapEvent()
-        #le.x = e.x
-        #le.y = e.y
-        #le.event_address = e.event_address
-        #le.direction = 128  # Vertical
-        #le.size = 3
         for y in range(28, 32):
             self.delete_event(THA_WR, 0, y)
-        #self.add_long_event(THA_WR, le)
-        Free(0x17d69, 0x17d82)
+
+        # Note: This line caused SwdTech to break the game - because I forgot the EVENT_CODE_START offset!
+        Free(0x17d69 + EVENT_CODE_START, 0x17d82 + EVENT_CODE_START)

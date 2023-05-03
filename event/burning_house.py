@@ -41,15 +41,15 @@ class BurningHouse(Event):
         self.flame_eater_mod()
         self.wake_up_mod()
 
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
-
-        if self.DOOR_RANDOMIZE:
-            self.door_rando_mod()
 
         self.log_reward(self.reward)
 
@@ -108,8 +108,6 @@ class BurningHouse(Event):
         else:
             # split party, "Is this the source of our blaze...?"
             space = Reserve(0xbe76c, 0xbe78d, "burning house approach flame eater dialog", field.NOP())
-
-
 
 
     def defeated_flame_eater_mod(self, space):
@@ -190,11 +188,36 @@ class BurningHouse(Event):
         # "I'll use a smoke bomb"
         space = Reserve(0xbea2c, 0xbea2e, "burning house smoke bomb dialog", field.NOP())
 
-        space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
-        space.write(
-            field.RecruitAndSelectParty(character),
-            field.Branch(self.wake_up),
-        )
+        if self.DOOR_RANDOMIZE:
+            dog_npc_id = 0x1c
+            # If door randomized, just replace the character where they were.
+            # Talking to the dog will animate the exit to Thamasa Inn.
+            space = Reserve(0xbea2f, 0xbea64, "burning house wake up", field.NOP())
+            src = [
+                field.RecruitAndSelectParty(character),
+                # Two event bits cleared after animation:
+                field.ClearEventBit(0x507),  # CB/EA40: DB    Clear event bit $1E80($507) [$1F20, bit 7]
+                field.ClearEventBit(0x506),  # CB/EA42: DB    Clear event bit $1E80($506) [$1F20, bit 6]
+                field.Call(self.delete_flameeater_npcs),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.AnimateStandingFront(),
+                                ),
+                field.EntityAct(dog_npc_id, True,
+                                field_entity.SetPosition(47, 43),
+                                ),
+                #field.FreeMovement(),
+                field.FadeInScreen(),
+                field.FreeScreen(),
+                field.Return()
+            ]
+        else:
+            space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
+            src = [
+                field.RecruitAndSelectParty(character),
+                field.Branch(self.wake_up)
+            ]
+
+        space.write(src)
 
     def esper_item_mod(self, instructions):
         # strago jumps around, party finds relm
@@ -208,9 +231,18 @@ class BurningHouse(Event):
         )
 
         space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
-        space.write(
-            field.Branch(self.wake_up),
-        )
+        if self.DOOR_RANDOMIZE:
+            # if doors are randomized, don't auto go to wakeup
+            space.write(
+                field.Call(self.delete_flameeater_npcs),
+                field.FadeInScreen(),
+                field.FreeScreen(),
+                field.Return()
+            )
+        else:
+            space.write(
+                field.Branch(self.wake_up),
+            )
 
     def esper_mod(self, esper):
         self.esper_item_mod([
@@ -256,21 +288,24 @@ class BurningHouse(Event):
         shadow_npc_id = 0x1d
         src = [
             field.ReturnIfEventBitClear(event_bit.DEFEATED_FLAME_EATER),
+            field.ReturnIfEventBitSet(0x1b5),
             field.DeleteEntity(boss_npc_id),
             field.HideEntity(boss_npc_id),
             field.DeleteEntity(relm_npc_id),
             field.HideEntity(relm_npc_id),
             field.DeleteEntity(shadow_npc_id),
             field.HideEntity(shadow_npc_id),
+            field.SetEventBit(0x1b5),
             field.Return()
         ]
         space = Write(Bank.CB, src, "Burning House Delete NPCs if Boss Cleared")
+        self.delete_flameeater_npcs = space.start_address
 
         from data.map_event import MapEvent
         new_event = MapEvent()
         new_event.x = 46
         new_event.y = 54
-        new_event.event_address = space.start_address - EVENT_CODE_START
+        new_event.event_address = self.delete_flameeater_npcs - EVENT_CODE_START
         self.maps.add_event(0x15f, new_event)
 
 
