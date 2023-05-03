@@ -623,17 +623,18 @@ class Maps():
                     this_event = self.get_event(info[0], info[1], info[2])
 
                     # Create an event tile that activates the event to this entrance on its connection
-                    conn_exit = self.get_exit(map[m])
+                    conn_id = map[m] - 4000*(map[m] >= 4000)
+                    conn_exit = self.get_exit(conn_id)
                     new_event = MapEvent()
                     new_event.x = conn_exit.x
                     new_event.y = conn_exit.y
                     new_event.event_address = this_event.event_address
 
-                    self.add_event(self.exit_maps[map[m]], new_event) # add the new event
+                    self.add_event(self.exit_maps[conn_id], new_event) # add the new event
                     self.delete_event(info[0], info[1], info[2])  # delete the original event
                     if self.doors.verbose:
                         print('Moving event ', str(hex(info[0])) + ' (' + str(info[1]) + ',' + str(info[2]) + ') to',
-                              str(hex(self.exit_maps[map[m]])) + ' (' + str(conn_exit.x) + ',' + str(conn_exit.y))
+                              str(hex(self.exit_maps[conn_id])) + ' (' + str(conn_exit.x) + ',' + str(conn_exit.y) + ')')
 
                 # Write events on the exits to handle required conditions:
                 # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]

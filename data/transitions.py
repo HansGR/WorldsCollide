@@ -274,7 +274,12 @@ class EventExit:
         else:
             # Handle the small number of one-way entrances from doors
             partner_ID = exit_partner[ID][0]  # get vanilla connecting door to this ID
-            exit_location = exit_data[partner_ID] # get connection data from partner door
+            if partner_ID in exit_data.keys():
+                exit_location = exit_data[partner_ID] # get connection data from partner door
+            elif partner_ID - 4000 in exit_data.keys():
+                exit_location = exit_data[partner_ID-4000]  # get connection data from partner door
+            else:
+                raise Exception('Exit data not found for ID: ' + str(partner_ID))
             self.location = exit_location[0:3]
             self.world = exit_world[ID]
 

@@ -225,8 +225,7 @@ class BurningHouse(Event):
         self.defeated_flame_eater_mod(space)
         space.write(
             instructions,
-
-            field.FadeOutScreen(4),
+            #field.FadeOutScreen(4),
             field.Branch(space.end_address + 1), # skip nops
         )
 
@@ -235,12 +234,13 @@ class BurningHouse(Event):
             # if doors are randomized, don't auto go to wakeup
             space.write(
                 field.Call(self.delete_flameeater_npcs),
-                field.FadeInScreen(),
+                #field.FadeInScreen(),
                 field.FreeScreen(),
                 field.Return()
             )
         else:
             space.write(
+                field.FadeOutScreen(4),
                 field.Branch(self.wake_up),
             )
 
