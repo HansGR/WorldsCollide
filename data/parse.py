@@ -1,4 +1,4 @@
-from instruction import field
+from instruction import field, world
 
 def delete_nops(src):
     # Remove No Operation (NOPs, 0xfd) commands from a source string
@@ -15,6 +15,36 @@ def delete_nops(src):
                 out.append(o)
     return out
 
+def branch_parser(src):
+    # Return the parsed data content of a Branch call
+    if src[0] == 0xb0:
+        command_set = 'world'
+    elif src[0] == 0xc0:
+        command_set = 'field'
+    else:
+        raise Exception('Not a branch command: ' + str(hex(src[0])))
+
+    event_bit = int.from_bytes(src[1:3], 'little')
+    is_set = event_bit >= 0x8000
+    event_bit -= (0x8000 * is_set)
+    branch_addr = int.from_bytes(src[3:6], 'little')
+    return [command_set, is_set, event_bit, branch_addr]
+
+def get_branch_code(event_bit, is_set, branch_addr, map_id):
+    # Return branch code source string
+    if map_id <= 2:
+        # use World commands
+        if is_set:
+            src = [world.BranchIfEventBitSet(event_bit, branch_addr)]
+        else:
+            src = [world.BranchIfEventBitClear(event_bit, branch_addr)]
+    else:
+        # use Field commands
+        if is_set:
+            src = [field.BranchIfEventBitSet(event_bit, branch_addr)]
+        else:
+            src = [field.BranchIfEventBitClear(event_bit, branch_addr)]
+    return src
 def simple_parser(src):
     while len(src) > 0:
         opcode = src.pop(0)

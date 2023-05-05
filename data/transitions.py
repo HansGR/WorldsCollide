@@ -1,6 +1,6 @@
 from data.event_exit_info import *
 from data.rooms import exit_world, shared_oneways
-from data.parse import delete_nops
+from data.parse import delete_nops, branch_parser, get_branch_code
 from instruction import field
 import instruction.field.entity as field_entity
 
@@ -26,9 +26,12 @@ class Transitions:
     FREE_MEMORY = False
     verbose = False
 
-    def __init__(self, mapping, rom, exit_data, event_data):
+    def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
         self.transitions = []
         self.rom = rom
+        self.call_script_addr = call_script_addr
+        if self.call_script_addr is None:
+            self.call_script_addr = {}
 
         for m in mapping:
             # Check reasons to overwrite this transition
@@ -136,6 +139,21 @@ class Transitions:
                     t.patches[4] = 'add'
                     # Call "place on raft" subroutine (CB/050F)
                     ex_patch += [0xb2, 0x0f, 0x05, 0x01]  # [field.Call(0xb050f)]
+
+            if t.exit.id in self.call_script_addr.keys():
+                # This is an event tile behaving as a door, and it needs to call an event script for its partner.
+                this_addr = self.call_script_addr[t.exit.id]
+                srcdata = self.rom.get_bytes(this_addr, 6)
+                [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+
+                if branch_addr == 0x5eb3:
+                    # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+                    branch_addr = load_address + 6
+                    is_set = not is_set
+
+                branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.location[0])
+                print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
+                ex_patch += [branch_src[0].opcode] + branch_src[0].args
 
             # Add patched lines before map transition
             src = src[:-1] + ex_patch + src[-1:]

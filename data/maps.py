@@ -29,9 +29,11 @@ from data.event_exit_info import event_exit_info, exit_event_patch, entrance_eve
 from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance
 from data.rooms import room_data, exit_world, force_update_parent_map, shared_exits
 
-from data.parse import delete_nops
+from data.parse import delete_nops, branch_parser, get_branch_code
 
 import data.event_bit as event_bit
+
+from event.switchyard import *
 
 class Maps():
     MAP_COUNT = 416
@@ -589,6 +591,21 @@ class Maps():
                 that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
                 self.doors.door_rooms[map[m]] = that_room[0]
 
+        # Build dictionary of maps with entrance events that will need to be called
+        self.exit_event_addr_to_call = {}
+        # Must be referenced in:
+        # (A) self.create_exit_event(m, map[m])     # for normal doors, m < 1500
+        # (B) dt = Transitions(new_map, ...)        # for event tiles acting as doors, 1500 <= m < 4000
+        # (C) self.shared_map_exit_event(m, map[m]) # for logical WOR exits
+        for m in has_event_entrance.keys():
+            if m in map.keys():
+                # Record the event script address to call
+                info = has_event_entrance[m]
+                this_event = self.get_event(info[0], info[1], info[2])
+                self.exit_event_addr_to_call[map[m]] = this_event.event_address + EVENT_CODE_START
+                # Delete the event tile
+                self.delete_event(info[0], info[1], info[2])  # delete the original event
+
         all_exits = list(map.keys())
         all_exits.sort()
 
@@ -617,24 +634,26 @@ class Maps():
                 # THERE IS THE POTENTIAL FOR CONFLICTS between has_event_entrance() and create_exit_event()
                 # Ultimately, we should probably handle this in there as well:
                 #   one function that creates events and handles all cases would be ideal.
-                if m in has_event_entrance.keys():
-                    # move the event entrance to the partner tile
-                    info = has_event_entrance[m]
-                    this_event = self.get_event(info[0], info[1], info[2])
-
-                    # Create an event tile that activates the event to this entrance on its connection
-                    conn_id = map[m] - 4000*(map[m] >= 4000)
-                    conn_exit = self.get_exit(conn_id)
-                    new_event = MapEvent()
-                    new_event.x = conn_exit.x
-                    new_event.y = conn_exit.y
-                    new_event.event_address = this_event.event_address
-
-                    self.add_event(self.exit_maps[conn_id], new_event) # add the new event
-                    self.delete_event(info[0], info[1], info[2])  # delete the original event
-                    if self.doors.verbose:
-                        print('Moving event ', str(hex(info[0])) + ' (' + str(info[1]) + ',' + str(info[2]) + ') to',
-                              str(hex(self.exit_maps[conn_id])) + ' (' + str(conn_exit.x) + ',' + str(conn_exit.y) + ')')
+                # 5/3/23 We will do this by loading the event address to call into a new dictionary, and then reference
+                # that dictionary when the exit event is created.
+                # if m in has_event_entrance.keys():
+                #     # move the event entrance to the partner tile
+                #     info = has_event_entrance[m]
+                #     this_event = self.get_event(info[0], info[1], info[2])
+                #
+                #     # Create an event tile that activates the event to this entrance on its connection
+                #     conn_id = map[m] - 4000*(map[m] >= 4000)
+                #     conn_exit = self.get_exit(conn_id)
+                #     new_event = MapEvent()
+                #     new_event.x = conn_exit.x
+                #     new_event.y = conn_exit.y
+                #     new_event.event_address = this_event.event_address
+                #
+                #     self.add_event(self.exit_maps[conn_id], new_event) # add the new event
+                #     self.delete_event(info[0], info[1], info[2])  # delete the original event
+                #     if self.doors.verbose:
+                #         print('Moving event ', str(hex(info[0])) + ' (' + str(info[1]) + ',' + str(info[2]) + ') to',
+                #               str(hex(self.exit_maps[conn_id])) + ' (' + str(conn_exit.x) + ',' + str(conn_exit.y) + ')')
 
                 # Write events on the exits to handle required conditions:
                 # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
@@ -645,7 +664,7 @@ class Maps():
                 if self.doors.verbose:
                     print('Connecting: ' + str(m) + ' to ' + str(map[m]))
                 new_map = [[m, map[m]]]
-                dt = Transitions(new_map, self.rom, self.exits.exit_original_data, event_exit_info)
+                dt = Transitions(new_map, self.rom, self.exits.exit_original_data, event_exit_info, self.exit_event_addr_to_call)
                 dt.write(maps=self)
 
             elif m >= 4000:
@@ -653,23 +672,11 @@ class Maps():
                 # The WOB exit & exit event (if necessary) are handled by the previous door code.
                 self.shared_map_exit_event(m, map[m])
 
-        ### NOTES:
-        # There are two ways to think about connecting world-map exits:
-        #   (a) make all exits that would go to the world map instead go to some randomly selected exit
-        #       --> Note this is also needed for some multi-short-exit "doors", see e.g. Esper Mountain
-        #   (b) allowing any exit to connect to any other exit.
-        #       This makes e.g. Cid's House a "hub" (5 doors) instead of a "hallway" (2 doors)
-        # To make these two modes work:
-        #   (a) needs a way to define that [list of exits] should all be connected to the same place,
-        #       (plus a special treatment for SF WoB east side, probably just making it its own room).
-        #       --> This is now implemented using rooms.shared_events[doorID] = [list of doorIDs with shared connection]
-        #   (b) needs additional patching to make some long exits behave in a sensible way, since in vanilla they would
-        #       put you at the vanilla entrance, which is a different long exit.
-
     def create_exit_event(self, d, d_ref):
-        SOUND_EFFECT = None # [None, 0x00 = Lore, 0x15 = Bolt3]
+        # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref.
+        # Logical WOR exits (id >= 4000) are handled by maps.shared_map_exit_event(d, d_ref).
+        SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
 
-        # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref
         # Collect information about the properties for the exit
         this_exit = self.get_exit(d)
         map_id = self.exit_maps[d]
@@ -682,10 +689,12 @@ class Maps():
         # (1) the connection is in the other world
         # (2) the connection requires special code (in entrance_event_patch[d_ref])
         # (3) the door requires special code (in exit_event_patch[d])
+        # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
         require_event_flags = [
             (this_world != that_world),
             d_ref in entrance_event_patch.keys(),
-            d in exit_event_patch.keys()
+            d in exit_event_patch.keys(),
+            d in self.exit_event_addr_to_call.keys()
         ]
         if require_event_flags.count(True) > 0:
             # Need to use different commands for world maps vs field maps.
@@ -695,7 +704,7 @@ class Maps():
                     print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
                 existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
                 # An event already exists.  It will need to be modified.
-                # We have to be careful here: if it has a world door-switch event, we will need to do something else
+                # I'm not convinced this should ever happen now.
 
                 # Read in existing event code
                 start_address = existing_event.event_address + EVENT_CODE_START
@@ -704,7 +713,7 @@ class Maps():
                     src.append(self.rom.get_byte(start_address + len(src)))
 
                 if self.doors.verbose:
-                    print('Found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ', str(this_exit.y),
+                    print('WARNING: found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ', str(this_exit.y),
                           '): ')
                     print('\t(', str(existing_event.x), ', ', str(existing_event.y), '):  ',
                           str(hex(existing_event.event_address)))
@@ -737,52 +746,80 @@ class Maps():
             else:
                 #  (4) <code required when leaving room>
                 #  (3) <code required when entering connection>
-                #  (1,2) <required world-bit setting when entering WOB connection>
+                #  (2) <required world-bit setting when entering WOB connection>
+                #  (1) <call any required entrance script>
                 #  (0) Return();  # Connection is handled by the door.
 
-                # (1) Prepend call to force world bit event, if required
+                # (1) Add call to entrance script, if any
+                if require_event_flags[3]:
+                    # This could be more elegant.
+                    if map_id > 2:
+                        # This is a normal door, just call the expected script
+                        src = [field.Call(self.exit_event_addr_to_call[d])] + src
+                    else:
+                        # This is a worldmap door, and will be replaced by an event tile.
+                        # Need to treat it as such.
+                        # Parse the requested branching condition
+                        load_address = self.exit_event_addr_to_call[d]
+                        srcdata = self.rom.get_bytes(load_address, 6)
+                        [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+
+                        if branch_addr == 0x5eb3:
+                            # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+                            branch_addr = load_address + 6
+                            is_set = not is_set
+
+                        # Prepend the required branch condition
+                        src = get_branch_code(ebit, is_set, branch_addr, SWITCHYARD_MAP) + src
+
+                # (2) Prepend call to force world bit event, if required
                 if require_event_flags[0]:
                     if that_world == 0:
                         src = [field.ClearEventBit(event_bit.IN_WOR)] + src
                     elif that_world == 1:
                         src = [field.SetEventBit(event_bit.IN_WOR)] + src
 
-                # (2) Prepend any data required by the connection
+                # (3) Prepend any data required by the connection
                 if require_event_flags[1]:
                     src = entrance_event_patch[d_ref] + src
 
-                # (3) Prepend any data required by the door
+                # (4) Prepend any data required by the door
                 if require_event_flags[2]:
                     src = exit_event_patch[d] + src
 
                 if map_id <= 2:
                     # This event is on the world map, where the event -> exit passthru trick doesn't work
                     # Solution: send the player to a dummy map, directly onto an event tile that does the necessary
-                    # modifications and then sends them onto the destination.  A switchyard, if you will.
-                    dummy_map = 0x005   # mog's black map, 128 x 128
-                    dummy_x = d % 128   # unique ID in [x,y]
-                    dummy_y = d // 128
+                    # modifications and then sends them on to the destination.  A switchyard, if you will.
+                    #dummy_map = 0x005   # mog's black map, 128 x 128
+                    #dummy_x = d % 128   # unique ID in [x,y]
+                    #dummy_y = d // 128
+                    #[dummy_x, dummy_y] = switchyard_xy(d)
 
                     # (a) add a LoadMap command for the destination; write it to a dummy event
                     src_dummy = src[:-1] + [
                         field.LoadMap(this_exit.dest_map, direction=this_exit.facing, default_music=True,
                                       x=this_exit.dest_x, y=this_exit.dest_y, fade_in=True, entrance_event=True)
                         ] + src[-1:]
-                    space = Write(Bank.CC, src_dummy, "Door Dummy Event " + str(d))
-                    dummy_address = space.start_address - EVENT_CODE_START
-
+                    AddSwitchyardEvent(d, self, src=src_dummy)
+                    #space = Write(Bank.CC, src_dummy, "Door Dummy Event " + str(d))
+                    #dummy_address = space.start_address - EVENT_CODE_START
                     # (b) make a new event tile on the dummy map
-                    dummy_event = MapEvent()
-                    dummy_event.x = dummy_x
-                    dummy_event.y = dummy_y
-                    dummy_event.event_address = dummy_address
-                    self.add_event(dummy_map, dummy_event)
+                    #dummy_event = MapEvent()
+                    #dummy_event.x = dummy_x
+                    #dummy_event.y = dummy_y
+                    #dummy_event.event_address = dummy_address
+                    #self.add_event(dummy_map, dummy_event)
 
-                    # (c) make a new src that loads the dummy map and places the character on tile [d,1]
-                    src = [world.LoadMap(dummy_map, direction=direction.UP, default_music=False,
-                                         x=dummy_x, y=dummy_y,
-                                         fade_in=False, entrance_event=False), field.Return()]
-
+                    # (c) make a new src that loads the dummy map and places the character on the dummy tile.
+                    if map_id > 0x002:
+                        maptype = 'field'
+                    else:
+                        maptype = 'world'
+                    src = GoToSwitchyard(d, map=maptype)
+                    #src = [world.LoadMap(dummy_map, direction=direction.UP, default_music=False,
+                    #                     x=dummy_x, y=dummy_y,
+                    #                     fade_in=False, entrance_event=False), field.Return()]
 
                 # Write data to a new event & add it
                 space = Write(Bank.CC, src, "Door Event " + str(d))
@@ -792,7 +829,6 @@ class Maps():
                     print('Writing exit event:', d, '(pair =',d_ref,') @ ', hex(this_address))
                     print('\tReason: ', require_event_flags)
                     print([str(s) for s in src])
-
 
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':
@@ -813,10 +849,13 @@ class Maps():
                 self.add_long_event(map_id, new_event)
 
             if map_id <= 2:
-                # This event is on the world map, where the event -> exit passthru trick doesn't work
+                # This event is on the world map, where the event -> exit passthru trick doesn't work.
+                # (a) eventually, just delete the exit. but for now:
                 # (b) move the exit it is replacing to somewhere else ('dummy' it)
                 this_exit.x = d
                 this_exit.y = 0
+                # DO WE NEED to move the exit, though?  Does it matter?
+                # I forget - on the world map, does the exit take effect before the event?  Is that why we did this?
 
     def shared_map_exit_event(self, d, d_ref):
         SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
@@ -826,6 +865,7 @@ class Maps():
         #       <code required when leaving WOR room>
         #       <code required when entering WOR connection>
         #       <required world-bit setting when entering WOR connection>
+        #       <Call (or Branch to?) entrance_script code, if any>
         #       <Load Map call for WOR connection>
         #   else:
         #       BranchTo(existing_event_code)
@@ -853,7 +893,8 @@ class Maps():
         require_event_flags = [
             ( (this_world != that_world)),
             d_ref in entrance_event_patch.keys(),
-            d in exit_event_patch.keys()
+            d in exit_event_patch.keys(),
+            d in self.exit_event_addr_to_call.keys()
         ]
 
         #if self.doors.verbose:
@@ -893,6 +934,42 @@ class Maps():
         if SOUND_EFFECT is not None:
             wor_src = [field.PlaySoundEffect(SOUND_EFFECT)] + wor_src
 
+        # (0) Prepend a call to entrance event script, if any
+        # NOTES: This is trying to replicate the event-tile passthru to a door.
+        # It's probably not going to work - it will complete the event script, and then ALWAYS load the map.
+        # What we need is to replicate the event script code by doing *here*:
+        #   [field.BranchIfEventBitCONDITION(eventbit, branchaddr)]
+        # for whatever the appropriate branch condition is.
+        # So for example, the entry script to Cyan's Cliff is:
+        #   CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
+        #   ... <continue script until hitting an 0xfe>
+        # ... And the one for Doma Siege is:
+        #   ['b0', '40', '80', 'c2', '9a', '1',   # world.BranchIfEventBitSet(0x40, 0x19ac2)
+        #    'd3', '78', '0', '21', '2a', '40',   # world.LoadMap(0x78, x=0x21, y = 0x2a, ...)
+        #    'fe']                                # field.Return()
+        # In these cases (also in Transitions version), we want to:
+        #   (1) In the case of Cyan's Cliff:
+        #       wor_src = [field.BranchIfEventBitClear(0x0d2, 0xc3fa7 + 6] + wor_src
+        #   (2) In the case of Doma Siege:
+        #       wor_src = [field.BranchIfEventBitSet(0x40, doma_siege_addr)] + wor_src
+        # Right now, we're just copying the address from the tile.  our options are:
+        #   (A) Parse the data in the event script; make the right choice based on it
+        #   (B) Track what needs to happen for each exit as metadata, in has_entrance_event
+        # Let's try A for now.
+        if require_event_flags[3]:
+            # Parse the requested branching condition
+            load_address = self.exit_event_addr_to_call[d]
+            srcdata = self.rom.get_bytes(load_address, 6)
+            [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+
+            if branch_addr == 0x5eb3:
+                # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+                branch_addr = load_address + 6
+                is_set = not is_set
+
+            # Prepend the required branch condition
+            wor_src = get_branch_code(ebit, is_set, branch_addr, map_id) + wor_src
+
         # (1) Prepend call to force world bit event, if required
         if require_event_flags[0]:
             if that_world == 0:
@@ -908,7 +985,7 @@ class Maps():
         if require_event_flags[2]:
             wor_src = exit_event_patch[d] + wor_src
 
-        # Write data to a new event & add it
+        # Write WOR data to a new event script
         if len(wor_src) > 0:
             space = Write(Bank.CC, wor_src, "WOR door Event " + str(d))
             this_address = space.start_address
