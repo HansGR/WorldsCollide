@@ -169,34 +169,14 @@ class Doors():
                     for d in room_data[room][i]:
                         self.door_types[d] = i
                         self.door_rooms[d] = room
-                        #if i < 2:
-                            #if d in exit_data.keys():
-                            #    self.door_descr[d] = exit_data[d][1]
-                            #else:
-                            #    self.door_descr[d] = 'virtual door'
-                            #if d in shared_exits.keys():
-                            #    for sd in shared_exits[d]:
-                            #        self.door_descr[sd] = exit_data[sd][1]
-                            #if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
-                            #    # Also grab the description for the matching WOR door
-                            #    self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
-                        #else:
-                            #if (d-1000) in exit_data.keys():
-                            #    self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
-                            #else:
-                            #    self.door_descr[d] = "virtual door DESTINATION"
-                        # Capture information for shared exits
                         if d in shared_exits.keys():
                             for ds in shared_exits[d]:
                                 self.door_types[ds] = i
                                 self.door_rooms[ds] = room
-                                #self.door_descr[ds] = exit_data[ds][1]
 
             for d in self.doors[-1]:
                 if d in forced_connections.keys():
                     self.forcing[d] = forced_connections[d]
-                #if d in shared_oneways.keys():     # No longer used with 'JMP' and logical rooms.
-                #    self.sharing[d] = shared_oneways[d]
                 if d in invalid_connections.keys():   # Not currently used.
                     self.invalid[d] = invalid_connections[d]
 
