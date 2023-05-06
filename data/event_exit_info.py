@@ -101,6 +101,9 @@ event_exit_info = {
     2054: [0xbdcc7, 7, 1, [False, False, False, False], 'Thamasa Inn to Burning House', [0x15A, 'NPC', 0], 'JMP' ], # Talk to the innkeeper.  requires JMP.
     2055: [0x00000, 0, 0, [None, None, None, None], 'Burning House after boss to Inn', [0x15F, None, None], None], # logical? no randomize?
 
+    # DARYL'S TOMB
+    2058: [0xa435d, 12, 5, [False, False, False, False], 'Darills Tomb Quick Exit to World Map', [0x12B, 100, 7], 'JMP' ],
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
@@ -123,8 +126,9 @@ event_exit_info = {
     1509: [0xa5f39, 0, 0, [None, None, None, None], 'Solitary Island cliff entrance', [0x001, 73, 231], None],
 
     1510: [0xb80a9, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract east', [0x118, 54, 53], 'JMP'],
-    1511: [0xb809a, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract west', [0x118, 26, 54], 'JMP']
+    1511: [0xb809a, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract west', [0x118, 26, 54], 'JMP'],
 
+    1512: [0xa422e, 43, 35, [False, False, False, False], 'Daryls Tomb turtle room south exit', [0x12b, 56, 14], 'JMP'],
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -158,6 +162,16 @@ exit_event_patch = {
     # # supposedly these are cleared on map load.
     2017: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01] + src, src_end],
     2018: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01] + src, src_end],
+
+    # Zone eater: fade back in music after exit animation
+    2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end]
+
+}
+
+exit_door_patch = {
+    # For use with maps.create_exit_event() and maps.shared_map_exit_event()
+
+    # Owzer's Mansion doors
     586: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
     587: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
 
@@ -165,11 +179,11 @@ exit_event_patch = {
     1075: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
     1077: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 
-    # Zone eater: fade back in music after exit animation
-    2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end]
 }
 
 entrance_event_patch = {
+    # For use by transitions.mod()
+
     # Jump back to Narshe from Umaro's cave: force "clear $1EB9 bit 4" (song override) before transition
     # Now handled in map_events.mod() with common patches
     # 3009: lambda src, src_end: [src[:-1] + [0xd3, 0xcc] + src[-1:], src_end],
@@ -188,9 +202,25 @@ entrance_event_patch = {
     # 3027: lambda src, src_end: [ src, src_end[:-8] + src_end[-1:]]
 
     # Minecart Ride: if Cranes are defeated, instead go to normal Vector
-    2028: lambda src, src_end: minecart_event_mod(src, src_end)    # JMP code
+    2028: lambda src, src_end: minecart_event_mod(src, src_end),    # JMP code
     #3028: lambda src, src_end: minecart_event_mod(src, src_end),   # rewrite code
 
+    # Lete River: Hide the Raft NPCs ($10, $11) when entering the cave rooms
+    # see e.g. CA/CB95 -- CA/CB9B
+    3035: lambda src, src_end: [src, src_end[:5] + [] + src_end[5:]],
+    3037: lambda src, src_end: [src, src_end[:5] + [] + src_end[5:]],
+
+    # Daryl's Tomb: Move the turtles to the appropriate side.
+    1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit
+}
+
+entrance_door_patch = {
+    # For use by maps.create_exit_event() and maps.shared_map_exit_event()
+    1512: [field.SetEventBit(0x2b4)],   # Turtle room south exit
+    782: [field.ClearEventBit(0x2b4)],  # Turtle room north exit. CA/4273: D5    Clear event bit $1E80($2B4) [$1ED6, bit 4]
+    793: [field.ClearEventBit(0x2b6)],  # Water puzzle room top exit.
+    794: [field.ClearEventBit(0x2b6)],  # Water puzzle room bottom exit.
+    795: [field.SetEventBit(0x2B6)]    # Water puzzle room right exit. CA/42EC: D5    Clear event bit $1E80($2B6) [$1ED6, bit 6]
 }
 
 

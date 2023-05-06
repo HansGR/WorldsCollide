@@ -19,6 +19,8 @@ room_data = {
     #'C' : [ [3, 4], [2003], [3002, 3004], [], {}, 0],
     #'D' : [ [5], [], [], [], {}, 0],
     #'E' : [ [6], [2004], [], [], {}, 0],
+    #'test_room_1': [ [42], [], [], 0],
+    #'test_room_2': [ [1204], [], [], 0],
 
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.
@@ -37,9 +39,10 @@ room_data = {
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
     'root-st' : [ [ ], [2044], [3053], 0], # Root map for -door-randomize-serpent-trench
     'root-bh' : [ [ ], [2054], [3055], 0],  # Root map for -door-randomize-burning-house
+    'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
-    1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [ ], 1],  # World of Ruin
+    1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
 
     2 : [ [81], [ ], [ ], 0], #Blackjack Outside
     3 : [ [82, 83], [ ], [ ], 0], #Blackjack Gambling Room
@@ -616,22 +619,22 @@ room_data = {
     '376R': [[4752], [], [], 1],  # Maranda Armor Shop
 
     # DARILL's TOMB
-    377 : [ [1241], [ ], [ ], 1], #Darill's Tomb Outside
+    377 : [ [1241, 1242], [ ], [ ], 1], #Darill's Tomb Outside
     378 : [ [771, 772], [ ], [ ], 1], #Darill's Tomb Entry Room
     379 : [ [773, 774, 776, 778, 780, 783], [ ], [ ], 1], #Darill's Tomb Main Upstairs Room
     380 : [ [775], [ ], [ ], 1], #Darill's Tomb Left Side Tombstone Room
     381 : [ [777, 786], [ ], [ ], 1], #Darill's Tomb Right Side Tombstone Room
     382 : [ [779, 785], [ ], [ ], 1], #Darill's Tomb B2 Left Side Bottom Room
-    383 : [ [781, 782], [ ], [ ], 1], #Darill's Tomb B2 Turtle Hallway
+    383 : [ [782], [ ], [ ], [ ], {'dt1': [1512]}, 1], #Darill's Tomb B2 Turtle Hallway.  781 is not used.
     384 : [ [784], [ ], [ ], 1], #Darill's Tomb B2 Right Side Bottom Room
-    385 : [ [787], [ ], [ ], 1], #Darill's Tomb Right Side Secret Room
+    #385 : [ [787], [ ], [ ], [ ], {}, 1], #Darill's Tomb Right Side Secret Room Duplicate?
     386 : [ [788], [ ], [ ], 1], #Darill's Tomb B2 Graveyard
-    387 : [ [789], [ ], [ ], 1], #Darill's Tomb Dullahan Room
+    387 : [ [789], [2058], [ ], 1], #Darill's Tomb Dullahan Room
     388 : [ [790, 791], [ ], [ ], 1], #Darills' Tomb B3
-    389 : [ [792], [ ], [ ], 1], #Darills' Tomb B3 Water Level Switch Room
-    390 : [ [793, 794], [ ], [ ], 1], #Darills' Tomb B2 Water Level Switch Room Left Side
-
-
+    389 : [ [792], [ ], [ ], ['dt2'], {}, 1], #Darills' Tomb B3 Switch Puzzle Room
+    390 : [ [793, 794], [ ], [ ], [], {'dt2': [795]}, 1], #Darills' Tomb B2 Switch Puzzle Room Left Side
+    #391 : [ [], [], [], [], {'dt2': 795}, 1], # Darills' Tomb B2 Switch Puzzle Room Right Side
+    392 : [ [796], [], [], ['dt1'], {}, 1], # Darills' Tomb Right Side Secret Room
     393 : [ [797, 798], [ ], [ ], 1], #Darill's Tomb MIAB Hallway
 
 
@@ -891,19 +894,37 @@ force_update_parent_map = {
     '285a' : [1, 34, 157]  # Entering WoR Jidoor from Owzer's Basement
 }
 
+def get_locked_items(locks):
+    locked = []
+    for v in locks.values():
+        for vv in v:
+            if type(vv) is dict:
+                locked.extend(get_locked_items(vv))
+            else:
+                locked.append(vv)
+    return locked
 
 # Create dictionary lookup for which world each exit is in
 exit_world = {}
 for r in room_data.keys():
+    locked = []
+    if len(room_data[r]) > 4:
+        #contains locked elements.
+        locked = [item for item in get_locked_items(room_data[r][4]) if type(item) is int]
+
     # Read in door world
-    for d in room_data[r][0]:
+    these_doors = [d for d in room_data[r][0]] + [d for d in locked if d < 2000]
+    for d in these_doors:
         exit_world[d] = room_data[r][-1]
         if d in shared_oneways.keys():
             for ds in shared_oneways[d]:
                 exit_world[ds] = room_data[r][-1]
+
     # Read in one-way world
-    for e in room_data[r][1]:
+    these_traps = [t for t in room_data[r][1]] + [t for t in locked if t < 3000]
+    for e in these_traps:
         exit_world[e] = room_data[r][-1]
         if e in shared_oneways.keys():
             for es in shared_oneways[e]:
                 exit_world[es] = room_data[r][-1]
+

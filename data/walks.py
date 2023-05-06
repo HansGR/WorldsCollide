@@ -13,6 +13,7 @@ class Network:
         self.rooms = Rooms(rooms)
         self.net = nx.DiGraph()
         self.net.add_nodes_from(self.rooms.rooms)
+        self.keychain = set()
         self.map = [[], []]
 
         self.active = 0  # index of active room
@@ -63,6 +64,9 @@ class Network:
                 self.active = self.rooms.rooms.index(R2)
 
     def apply_key(self, key):
+        # Add the key to the keychain
+        self.keychain.add(key)
+
         # unlock any doors or traps locked by key
         for room in self.rooms.rooms:
             if key in room.locks.keys():
@@ -73,9 +77,18 @@ class Network:
                     if type(item) is str:
                         # This is a key.  Immediately apply it.
                         self.apply_key(item)
+                    elif type(item) is dict:
+                        # This is another locked item.
+                        room.add_locks(item)
+                        unlockable = [k for k in item.keys() if k in self.keychain]
+                        for k in unlockable:
+                            # unlock the nested lock, if we already have the key.
+                            self.apply_key(k)
                     elif item < 2000:
+                        # This is a door.
                         room.add_doors([item])
                     else:
+                        # This is a trap.
                         room.add_traps([item])
             # Delete the key, we already have it.
             if key in room.keys:

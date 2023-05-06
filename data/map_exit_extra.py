@@ -911,7 +911,7 @@ exit_data = {
     769: [977, "Kefka's Tower Left Side Hallway After Broken Capsule Room Left Door"],
     770: [919, "Kefka's Tower Inferno Room 2 Chests Upstairs"],
     1241: [771, "Darill's Tomb Outside to B1"],
-    1242: [None, "Darill's Tomb Outside to World Map"],
+    1242: [53, "Darill's Tomb Outside to World Map"],
     771: [1241, "Darill's Tomb B1 Entry Room North"],
     772: [773, "Darill's Tomb B1 Entry Room South"],
     773: [772, "Darill's Tomb B2 to B1 Stairs"],
@@ -922,19 +922,19 @@ exit_data = {
     778: [779, "Darill's Tomb B2 Main Room Left Side Bottom Door"],
     779: [778, "Darill's Tomb B2 Left Side Bottom Room to Main Room"],
     780: [782, "Darill's Tomb B2 Main Room to Turtle Hallway"],
-    781: [793, "Darill's Tomb B2 Turtle Hallway South"],
+    781: [None, "Darill's Tomb B2 Turtle Hallway South"],
     782: [780, "Darill's Tomb B2 Turtle Hallway North"],
     783: [784, "Darill's Tomb B2 Main Room Right Side Bottom Door"],
     784: [783, "Darill's Tomb B2 Right Side Bottom Room to Main Room"],
     785: [790, "Darill's Tomb B2 Stairwell to B3"],
     786: [796, "Darill's Tomb B2 Right Side Tombstone Room North"],
-    787: [786, "Darill's Tomb B2 Right Side Secret Room"],
+    787: [None, "Darill's Tomb B2 Right Side Secret Room"],
     788: [794, "Darill's Tomb B2 Graveyard"],
     789: [798, "Darill's Tomb Dullahan Room South"],
     790: [785, "Darill's Tomb B3 Stairwell to B2"],
     791: [792, "Darill's Tomb B3 Door to Water Level Switch Room"],
     792: [791, "Darill's Tomb B3 Water Level Switch Room"],
-    793: [781, "Darill's Tomb B2 Water Room Left Top Door"],
+    793: [1512, "Darill's Tomb B2 Water Room Left Top Door"],  # 781 is not used, handled by event tile.
     794: [788, "Darill's Tomb B2 Water Room Left Bottom Door to Graveyard"],
     795: [797, "Darill's Tomb B2 Water Room Right Door"],
     796: [786, "Darill's Tomb B2 Right Side Secret Room"],
@@ -1328,6 +1328,7 @@ exit_data = {
     1507: [5156, 'Figaro Castle WoR'],
     1508: [5156, 'Figaro Castle WoR (kohlingen)'],  # HMM.....
     1509: [1272, 'Solitary Island cliff entrance'],
+    1512: [793, "Darill's Tomb B2 Turtle Hallway South"],
 
     # WORLD OF RUIN (logical) DOORS:
     4525: [4527, "Nikeah Inn Outside WoR"],
@@ -1427,6 +1428,7 @@ exit_data_patch = {
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
     1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
     1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract wast'
+    1512: [0x12c, 69, 8, 0, 0, 0, 0, 0, 56, 14, 0, 0] # 'Zone Eater Digestive Tract wast'
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

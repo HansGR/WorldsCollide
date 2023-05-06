@@ -56,13 +56,15 @@ class DarylTomb(Event):
             world.End(),
             field.Return(),
         ]
-        space = Write(Bank.CA, src, "daryl tomb back exit")
-        back_exit = space.start_address
+        #space = Write(Bank.CA, src, "daryl tomb back exit")
+        #back_exit = space.start_address
 
-        space = Reserve(0xa435d, 0xa4362, "daryl tomb staircase and getting falcon scenes", field.NOP())
-        space.write(
-            field.Branch(back_exit),
-        )
+        #space = Reserve(0xa435d, 0xa4362, "daryl tomb staircase and getting falcon scenes", field.NOP())
+        #space.write(
+        #    field.Branch(back_exit),
+        #)
+        space = Reserve(0xa435d, 0xa4368, "daryl tomb staircase and getting falcon scenes", field.NOP())
+        space.write(src)
 
     def dullahan_battle_mod(self):
         boss_pack_id = self.get_boss("Dullahan")

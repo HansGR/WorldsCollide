@@ -25,7 +25,8 @@ from instruction.event import EVENT_CODE_START
 import instruction.field.entity as field_entity
 
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
-    multi_events
+    multi_events, entrance_door_patch, exit_door_patch
+
 from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance
 from data.rooms import room_data, exit_world, force_update_parent_map, shared_exits
 
@@ -687,13 +688,13 @@ class Maps():
 
         # Check to make sure an exit event is required:
         # (1) the connection is in the other world
-        # (2) the connection requires special code (in entrance_event_patch[d_ref])
-        # (3) the door requires special code (in exit_event_patch[d])
+        # (2) the connection requires special code (in entrance_door_patch[d_ref])
+        # (3) the door requires special code (in exit_door_patch[d])
         # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
         require_event_flags = [
             (this_world != that_world),
-            d_ref in entrance_event_patch.keys(),
-            d in exit_event_patch.keys(),
+            d_ref in entrance_door_patch.keys(),
+            d in exit_door_patch.keys(),
             d in self.exit_event_addr_to_call.keys()
         ]
         if require_event_flags.count(True) > 0:
@@ -757,8 +758,7 @@ class Maps():
                         # This is a normal door, just call the expected script
                         src = [field.Call(self.exit_event_addr_to_call[d])] + src
                     else:
-                        # This is a worldmap door, and will be replaced by an event tile.
-                        # Need to treat it as such.
+                        # This is a worldmap door, and will be replaced by an event tile going to the switchyard.
                         # Parse the requested branching condition
                         load_address = self.exit_event_addr_to_call[d]
                         srcdata = self.rom.get_bytes(load_address, 6)
@@ -769,7 +769,7 @@ class Maps():
                             branch_addr = load_address + 6
                             is_set = not is_set
 
-                        # Prepend the required branch condition
+                        # Prepend the required branch condition to the switchyard script
                         src = get_branch_code(ebit, is_set, branch_addr, SWITCHYARD_MAP) + src
 
                 # (2) Prepend call to force world bit event, if required
@@ -781,11 +781,11 @@ class Maps():
 
                 # (3) Prepend any data required by the connection
                 if require_event_flags[1]:
-                    src = entrance_event_patch[d_ref] + src
+                    src = entrance_door_patch[d_ref] + src
 
                 # (4) Prepend any data required by the door
                 if require_event_flags[2]:
-                    src = exit_event_patch[d] + src
+                    src = exit_door_patch[d] + src
 
                 if map_id <= 2:
                     # This event is on the world map, where the event -> exit passthru trick doesn't work
@@ -888,12 +888,12 @@ class Maps():
         that_world = self.exit_world[d_ref]
 
         # (1) the connection requires a specific world that is not this world
-        # (2) the connection requires special code (in entrance_event_patch[d_ref])
-        # (3) the door requires special code (in exit_event_patch[d])
+        # (2) the connection requires special code (in entrance_door_patch[d_ref])
+        # (3) the door requires special code (in exit_door_patch[d])
         require_event_flags = [
             ( (this_world != that_world)),
-            d_ref in entrance_event_patch.keys(),
-            d in exit_event_patch.keys(),
+            d_ref in entrance_door_patch.keys(),
+            d in exit_door_patch.keys(),
             d in self.exit_event_addr_to_call.keys()
         ]
 
@@ -979,11 +979,11 @@ class Maps():
 
         # (2) Prepend any data required by the connection
         if require_event_flags[1]:
-            wor_src = entrance_event_patch[d_ref] + wor_src
+            wor_src = entrance_door_patch[d_ref] + wor_src
 
         # (3) Prepend any data required by the door
         if require_event_flags[2]:
-            wor_src = exit_event_patch[d] + wor_src
+            wor_src = exit_door_patch[d] + wor_src
 
         # Write WOR data to a new event script
         if len(wor_src) > 0:

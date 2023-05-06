@@ -19,6 +19,7 @@ ROOM_SETS = {
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
     'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'],
+    'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -33,9 +34,10 @@ ROOM_SETS = {
             'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
             356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
             '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
-            457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'  # Burning House
+            457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
+            378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt'  # Daryl's Tomb
              ],
-    #'test': [8, 284]  # for testing only
+    #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
 
 class Doors():
@@ -128,14 +130,17 @@ class Doors():
             if self.args.door_randomize_burning_house:  # -drbh
                 room_sets.append(ROOM_SETS['BurningHouse'])
 
-            #Hard override for testing
-            #room_sets.append(ROOM_SETS['test'])
+            if self.args.door_randomize_daryls_tomb:  # -drdt
+                room_sets.append(ROOM_SETS['DarylsTomb'])
 
             if self.combine_areas:
                 temp = []
                 for r in room_sets:
                     temp.extend(r)
                 room_sets = [temp]
+
+        # Hard override for testing
+        #room_sets = [ROOM_SETS['test']]
 
         self.read(room_sets)
 
@@ -164,28 +169,28 @@ class Doors():
                     for d in room_data[room][i]:
                         self.door_types[d] = i
                         self.door_rooms[d] = room
-                        if i < 2:
-                            if d in exit_data.keys():
-                                self.door_descr[d] = exit_data[d][1]
-                            else:
-                                self.door_descr[d] = 'virtual door'
-                            if d in shared_exits.keys():
-                                for sd in shared_exits[d]:
-                                    self.door_descr[sd] = exit_data[sd][1]
-                            if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
-                                # Also grab the description for the matching WOR door
-                                self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
-                        else:
-                            if (d-1000) in exit_data.keys():
-                                self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
-                            else:
-                                self.door_descr[d] = "virtual door DESTINATION"
+                        #if i < 2:
+                            #if d in exit_data.keys():
+                            #    self.door_descr[d] = exit_data[d][1]
+                            #else:
+                            #    self.door_descr[d] = 'virtual door'
+                            #if d in shared_exits.keys():
+                            #    for sd in shared_exits[d]:
+                            #        self.door_descr[sd] = exit_data[sd][1]
+                            #if self.match_WOB_WOR and d in doors_WOB_WOR.keys():
+                            #    # Also grab the description for the matching WOR door
+                            #    self.door_descr[doors_WOB_WOR[d]] = exit_data[doors_WOB_WOR[d]][1]
+                        #else:
+                            #if (d-1000) in exit_data.keys():
+                            #    self.door_descr[d] = exit_data[d-1000][1] + " DESTINATION"
+                            #else:
+                            #    self.door_descr[d] = "virtual door DESTINATION"
                         # Capture information for shared exits
                         if d in shared_exits.keys():
                             for ds in shared_exits[d]:
                                 self.door_types[ds] = i
                                 self.door_rooms[ds] = room
-                                self.door_descr[ds] = exit_data[ds][1]
+                                #self.door_descr[ds] = exit_data[ds][1]
 
             for d in self.doors[-1]:
                 if d in forced_connections.keys():
@@ -1236,13 +1241,28 @@ class Doors():
         from log import SECTION_WIDTH, section, format_option
         lcolumn = []
 
+        # Construct door descriptions
+        from data.event_exit_info import event_exit_info
+        door_descr = {}
+        for mmm in self.map:
+            for m in mmm:
+                for d in m:
+                    if d in exit_data.keys():
+                        door_descr[d] = exit_data[d][1]
+                    elif d in event_exit_info.keys():
+                        door_descr[d] = event_exit_info[d][4]
+                    elif d-1000 in event_exit_info.keys():
+                        door_descr[d] = event_exit_info[d-1000][4] + 'DESTINATION'
+                    else:
+                        door_descr[d] = 'UNKNOWN'
+
         # Print state of the Doors object
         for a in range(len(self.rooms)):
             lcolumn.append('Area' + str(a) + ':')
             lcolumn.append('Doors:')
             for d in self.doors[a]:
                 lcolumn.append(str(d) + ': Room = ' + str(self.door_rooms[d]) + '. ' + str(
-                    self.door_descr[d]))  # ', Map = ', self.door_maps[d],
+                    door_descr[d]))  # ', Map = ', self.door_maps[d],
             lcolumn.append('Rooms:')
             for r in self.rooms[a]:
                 lcolumn.append(str(r) + ': door count = ' + str(self.room_counts[r]) + '\n\t\tdoors: ' + str(
@@ -1255,11 +1275,11 @@ class Doors():
         if len(self.map) > 0:
             lcolumn.append('Map:')
             for m in self.map[0]:
-                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(self.door_descr[m[0]]) + ' --> ' + str(
-                    self.door_descr[m[1]]) + ')')
+                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(door_descr[m[0]]) + ' --> ' + str(
+                    door_descr[m[1]]) + ')')
             for m in self.map[1]:
-                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(self.door_descr[m[0]]) + ' --> ' + str(
-                    self.door_descr[m[1]]) + ')')
+                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(door_descr[m[0]]) + ' --> ' + str(
+                    door_descr[m[1]]) + ')')
 
         section("Door Rando: ", lcolumn, [])
 
