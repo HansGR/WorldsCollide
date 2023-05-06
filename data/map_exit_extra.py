@@ -304,7 +304,7 @@ exit_data = {
     269: [1506, "Cave to South Figaro to World Map WoB"],
     270: [266, "Cave to South Figaro Single Chest Room WoB"],
     271: [265, "Cave to South Figaro Turtle Room to Big Room WoB"],
-    272: [None, "Cave to South Figaro Turtle Room to Outside WoB"],
+    272: [1513, "Cave to South Figaro Turtle Room to Outside WoB"],
     1161: [5, "Cave to South Figaro Outside to World Map WoB"],
     273: [None, "Cave to South Figaro Small Hallway West WoB - vanilla Terra/Locke/Edgar"],
     274: [None, "Cave to South Figaro Small Hallway East to Big Room WoB - vanilla Terra/Locke/Edgar"],
@@ -1329,6 +1329,7 @@ exit_data = {
     1508: [5156, 'Figaro Castle WoR (kohlingen)'],  # HMM.....
     1509: [1272, 'Solitary Island cliff entrance'],
     1512: [793, "Darill's Tomb B2 Turtle Hallway South"],
+    1513: [272, "South Figaro Cave WoB North Entrance"],
 
     # WORLD OF RUIN (logical) DOORS:
     4525: [4527, "Nikeah Inn Outside WoR"],
@@ -1429,9 +1430,11 @@ exit_data_patch = {
 ### EVENT EXITS BEHAVING AS NORMAL EXITS:
 event_door_connection_data = {
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
+    1506: [0x045, 16, 42, 0, 0, 0, 2, 0, 75, 102, 0, 0], # 'South Figaro Cave WOB South entrance'
     1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
     1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract west'
-    1512: [0x12c, 69, 8, 0, 0, 0, 0, 0, 56, 14, 0, 0] # 'Darills tomb turtle south exit'
+    1512: [0x12c, 69, 8, 0, 0, 0, 0, 0, 56, 14, 0, 0], # 'Darills tomb turtle south exit'
+    1513: [0x046, 47, 39, 0, 0, 0, 2, 0, 10, 48, 0, 0] # 'South Figaro Cave WOB North entrance'
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

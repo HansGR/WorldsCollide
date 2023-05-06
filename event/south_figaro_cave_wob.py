@@ -1,6 +1,14 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class SouthFigaroCaveWOB(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_south_figaro_cave_wob
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "South Figaro Cave"
 
@@ -18,9 +26,13 @@ class SouthFigaroCaveWOB(Event):
     def mod(self):
         self.cleanup_mod()
         self.requirement_mod()
-        self.noises_mod()
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+        else:
+            self.noises_mod()
+            self.entrance_exit_mod()
         self.tunnel_armor_battle_mod()
-        self.entrance_exit_mod()
+
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -45,11 +57,13 @@ class SouthFigaroCaveWOB(Event):
     def requirement_mod(self):
         # after lete river a different figaro cave is loaded which has tunnel armor
         # remove the lete river completed requirement
-        space = Reserve(0xa5ee3, 0xa5ee8, "figaro cave lete river complete requirement")
-        space.add_label("LOAD_MAP", 0xa5ef0),
-        space.write(
-            world.Branch("LOAD_MAP"),
-        )
+        if not self.DOOR_RANDOMIZE:
+            # for door randomizer, add switchyard tile in self.door_rando_mod()
+            space = Reserve(0xa5ee3, 0xa5ee8, "figaro cave lete river complete requirement")
+            space.add_label("LOAD_MAP", 0xa5ef0),
+            space.write(
+                world.Branch("LOAD_MAP"),
+            )
 
         space = Reserve(0xa5ef7, 0xa5efc, "figaro cave lete river complete requirement")
         space.add_label("LOAD_MAP", 0xa5f04)
@@ -105,6 +119,7 @@ class SouthFigaroCaveWOB(Event):
             field.ReturnIfEventBitClear(event_bit.SECOND_NOISE_FIGARO_CAVE),
             field.Branch(third_noise),
         )
+
 
     def tunnel_armor_battle_mod(self):
         space = Reserve(0x10a8c4, 0x10a8cf, "figaro cave tunnel armor battle dialog",)
@@ -229,3 +244,20 @@ class SouthFigaroCaveWOB(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Remove Locke's dialog
+        space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
+
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1506  # ID of engulf event
+        space = Reserve(0xa5ee3, 0xa5ef6, 'Cave to South Figaro South Entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x045, direction=direction.UP, x=16, y=42, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # For the time being: do not summon the airship when walking back to the world map.

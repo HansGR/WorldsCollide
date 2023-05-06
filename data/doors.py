@@ -20,6 +20,7 @@ ROOM_SETS = {
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
     'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'],
     'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt'],
+    'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -35,7 +36,8 @@ ROOM_SETS = {
             356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
             '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
             457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
-            378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt'  # Daryl's Tomb
+            378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt',  # Daryl's Tomb
+            100, 101, 102, 103, 104, 105, 'root-sfcb'  # South Figaro Cave WOB
              ],
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
@@ -63,7 +65,7 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
-        self.verbose = False    # False  # True
+        self.verbose = True    # False  # True
 
         self._all_rooms = []
 
@@ -132,6 +134,9 @@ class Doors():
 
             if self.args.door_randomize_daryls_tomb:  # -drdt
                 room_sets.append(ROOM_SETS['DarylsTomb'])
+
+            if self.args.door_randomize_south_figaro_cave_wob:  # -drsfcb
+                room_sets.append(ROOM_SETS['SouthFigaroCaveWOB'])
 
             if self.combine_areas:
                 temp = []

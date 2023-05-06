@@ -493,7 +493,9 @@ class Maps():
         #self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
         if self.args.door_randomize:
-            used_events = [m[0] for m in self.doors.map[1]]
+            used_events = [m[0] for m in self.doors.map[1]] \
+                          + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
+                          + [m[1] for m in self.doors.map[0] if 2000 > m[1] >= 1500]
             for e in event_exit_info.keys():
                 if e in used_events and event_exit_info[e][0] is None:
                     # Update the event addresses

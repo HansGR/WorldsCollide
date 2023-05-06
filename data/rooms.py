@@ -33,13 +33,14 @@ room_data = {
     #'root-zb': [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
     #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
     'root-zb': [[600, 601, 602, 604, 608], [], [], 0],  # Zozo 1F Outside WOB
-    'root-zr': [[4600, 4601, 4602, 4604], [], [], 1],  # Zozo 1F Outside WOR
+    'root-zr': [[4600, 4601, 4602, 4604], [], [], ['zr1'], {}, 1],  # Zozo 1F Outside WOR
     'branch-mz': [ [537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
     'root-st' : [ [ ], [2044], [3053], 0], # Root map for -door-randomize-serpent-trench
     'root-bh' : [ [ ], [2054], [3055], 0],  # Root map for -door-randomize-burning-house
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
+    'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
@@ -184,12 +185,13 @@ room_data = {
     97 : [ [256, 257], [ ], [ ], 1], #Cave to South Figaro Small Hallway WoR
     98 : [ [258, 259, 260], [ ], [ ], 1], #Cave to South Figaro Big Room WoR
     99 : [ [261, 262], [ ], [ ], 1], #Cave to South Figaro South Entrance WoR
+
     100 : [ [263, 264], [ ], [ ], 0], #Cave to South Figaro Small Hallway WoB
     101 : [ [265, 266, 267], [ ], [ ], 0], #Cave to South Figaro Big Room WoB
-    102 : [ [268], [ ], [ ], 0], #Cave to South Figaro South Entrance WoB
+    102 : [ [268, 269], [ ], [ ], 0], #Cave to South Figaro South Entrance WoB
     103 : [ [270], [ ], [ ], 0], #Cave to South Figaro Single Chest Room WoB
-    104 : [ [271], [ ], [ ], 0], #Cave to South Figaro Turtle Room WoB
-    105 : [ [1161], [ ], [ ], 0], #Cave to South Figaro Outside WoB
+    104 : [ [271, 272], [ ], [ ], 0], #Cave to South Figaro Turtle Room WoB
+    105 : [ [1161, 1513], [ ], [ ], 0], #Cave to South Figaro Outside WoB
 
     # SOUTH FIGARO
     106 : [ [283, 286, 287, 288, 289, 290, 291, 292, 293, 294, 1162, 1163, 1164, 1165, 1166], [ ], [ ], 1], #South Figaro Outside WoR
@@ -502,7 +504,7 @@ room_data = {
     295 : [ [605], [ ], [ ], 0], #Zozo 2F Cafe Balcony Outside
     '295r' : [ [4605], [ ], [ ], 1], #Zozo 2F Cafe Balcony Outside
     296 : [ [606, 607], [ ], [ ], 0], #Zozo Cafe Upstairs Outside WOB (618 --> Mt Zozo not accessible)
-    '296r' : [ [4606, 4607, 618], [ ], [ ], 1], #Zozo Cafe Upstairs Outside WOR
+    '296r' : [ [4606, 4607], [ ], [ ], [], {'zr1': [618]}, 1], #Zozo Cafe Upstairs Outside WOR
     297 : [ [609, 610], [ ], [3032], 0], #Zozo Relic 1st Section Outside (incl. hook entry event)
     298 : [ [611, 612, 616], [2032], [ ], 0], #Zozo Relic 2nd Section Outside (incl. hook exit)
     299 : [ [613, 617], [ ], [ ], 0], #Zozo Relic 3rd Section Outside

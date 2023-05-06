@@ -117,7 +117,8 @@ event_exit_info = {
     1504: [0xbd2ee, 0, 0, [None, None, None, None], 'Thamasa WoB', [0x000, 250, 128] ],  # wtf is this event doing?
     1505: [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile', [0x000, 120, 187], None],
     '1505a': [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187], None],
-    1506: [0xa5ee3, 0, 0, [None, None, None, None], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102], None],
+    #1506: [0xa5ee3, 20, 14, [False, False, False, False], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102], None],
+    1506: [None, 7, 1, [False, False, False, False], 'Cave to South Figaro South Entrance WoB', [0x005, 1506 % 128, 1506 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
 
     1507: [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR', [0x001, 81, 85], None],
     '1507a': [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85], None],
@@ -129,6 +130,9 @@ event_exit_info = {
     1511: [0xb809a, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract west', [0x118, 26, 54], 'JMP'],
 
     1512: [0xa422e, 43, 35, [False, False, False, False], 'Daryls Tomb turtle room south exit', [0x12b, 56, 14], 'JMP'],
+
+    1513: [0xa5ef7, 20, 14, [False, False, False, False], 'Cave to South Figaro North WOB', [0x047, 10, 48], 'JMP'],
+    #'1513a': [0xa5ef7, 20, 14, [False, False, False, False], 'Cave to South Figaro North WOB 2', [0x047, 11, 48], 'JMP']
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
