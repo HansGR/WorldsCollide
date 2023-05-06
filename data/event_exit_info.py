@@ -102,7 +102,7 @@ event_exit_info = {
     2055: [0x00000, 0, 0, [None, None, None, None], 'Burning House after boss to Inn', [0x15F, None, None], None], # logical? no randomize?
 
     # DARYL'S TOMB
-    2058: [0xa435d, 12, 5, [False, False, False, False], 'Darills Tomb Quick Exit to World Map', [0x12B, 100, 7], 'JMP' ],
+    2058: [0xa435d, 12, 5, [False, False, False, False], 'Darills Tomb Quick Exit to World Map', [0x12B, 100, 7], 'JMP' ],  # Goes to Switchyard tile
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance

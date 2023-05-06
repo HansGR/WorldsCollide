@@ -1,6 +1,14 @@
 from event.event import *
+from event.switchyard import *
 
 class DarylTomb(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_daryls_tomb
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Daryl's Tomb"
 
@@ -50,19 +58,28 @@ class DarylTomb(Event):
             # reset turtle's positions before leaving in case player re-enters later
             field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED),
             field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED),
-
-            # for convenience change staircase door to take player back out to wor
-            field.LoadMap(0x01, direction.DOWN, default_music = True, x = 25, y = 53),
-            world.End(),
-            field.Return(),
         ]
-        #space = Write(Bank.CA, src, "daryl tomb back exit")
-        #back_exit = space.start_address
 
-        #space = Reserve(0xa435d, 0xa4362, "daryl tomb staircase and getting falcon scenes", field.NOP())
-        #space.write(
-        #    field.Branch(back_exit),
-        #)
+        if self.DOOR_RANDOMIZE:
+            # Send the player to the switchyard to handle random connections
+            event_id = 2058  # ID of Daryl's Tomb quick exit
+            src += GoToSwitchyard(event_id)
+
+            # (2b) Add the switchyard event tile that handles exit to the world map
+            switchyard_src = [
+                field.LoadMap(0x01, direction.DOWN, default_music=True, x=25, y=53),
+                field.End()
+            ]
+            AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
+
+        else:
+            # for convenience change staircase door to take player back out to wor
+            src += [
+                field.LoadMap(0x01, direction.DOWN, default_music = True, x = 25, y = 53),
+                world.End(),
+                field.Return()
+            ]
+        # Need to reserve 12 bytes for vanilla command.
         space = Reserve(0xa435d, 0xa4368, "daryl tomb staircase and getting falcon scenes", field.NOP())
         space.write(src)
 
