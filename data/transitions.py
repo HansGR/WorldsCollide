@@ -93,6 +93,7 @@ class Transitions:
                 [src, src_end] = exit_event_patch[t.exit.id](src, src_end)
             if t.entr.id in entrance_event_patch.keys():
                 [src, src_end] = entrance_event_patch[t.entr.id](src, src_end)
+                #print('Modified entrance code: ', [hex(a)[2:] for a in src_end])
 
             # Perform common event patches
             ex_patch = []
@@ -134,11 +135,11 @@ class Transitions:
                 if t.exit.is_on_raft:
                     t.patches[4] = 'remove'
                     # Call "remove raft" subroutine (CB/04AA)
-                    ex_patch += [0xb2, 0xaa, 0x04, 0x01]  # [field.Call(0xb04aa)]
+                    en_patch += [0xb2, 0xaa, 0x04, 0x01]  # [field.Call(0xb04aa)]
                 elif t.entr.is_on_raft:
                     t.patches[4] = 'add'
                     # Call "place on raft" subroutine (CB/050F)
-                    ex_patch += [0xb2, 0x0f, 0x05, 0x01]  # [field.Call(0xb050f)]
+                    en_patch += [0xb2, 0x0f, 0x05, 0x01]  # [field.Call(0xb050f)]
 
             if t.exit.id in self.call_script_addr.keys():
                 # This is an event tile behaving as a door, and it needs to call an event script for its partner.

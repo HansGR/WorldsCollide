@@ -19,8 +19,8 @@ room_data = {
     #'C' : [ [3, 4], [2003], [3002, 3004], [], {}, 0],
     #'D' : [ [5], [], [], [], {}, 0],
     #'E' : [ [6], [2004], [], [], {}, 0],
-    #'test_room_1': [ [42], [], [], 0],
-    #'test_room_2': [ [1204], [], [], 0],
+    #'test_room_1': [ [], [2038], [3037], 0],  # 2036 --> 3024 (MTek Pipe Exit)
+    #'test_room_2': [ [], [2024], [3024], 0],  # 2024 --> 3035
 
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.

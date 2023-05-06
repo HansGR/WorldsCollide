@@ -194,7 +194,7 @@ entrance_event_patch = {
 
     # Jump into Esper Mountain room 2, North trapdoor: patch in "hold screen" (0x38) after map transition
     # The other trapdoors have this, maybe it's just a typo?
-    3015: lambda src, src_end: [src, src_end[:5] + [0x38] + src_end[5:]],
+    2015: lambda src, src_end: [src, src_end[:5] + [0x38] + src_end[5:]],
 
     # Cid's Elevator Ride: remove move-party-down after elevator.
     # space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
@@ -206,9 +206,9 @@ entrance_event_patch = {
     #3028: lambda src, src_end: minecart_event_mod(src, src_end),   # rewrite code
 
     # Lete River: Hide the Raft NPCs ($10, $11) when entering the cave rooms
-    # see e.g. CA/CB95 -- CA/CB9B
-    3035: lambda src, src_end: [src, src_end[:5] + [] + src_end[5:]],
-    3037: lambda src, src_end: [src, src_end[:5] + [] + src_end[5:]],
+    # see e.g. CB/052F -- CB/0533 (Delete object $10, Refresh Objects, Hide Object $10)
+    2035: lambda src, src_end: [src, src_end[:5] + [0x3e, 0x10, 0x45, 0x42, 0x10] + src_end[5:]], # Cave 1 entry, object $10
+    2037: lambda src, src_end: [src, src_end[:5] + [0x3e, 0x11, 0x45, 0x42, 0x11] + src_end[5:]], # Cave 2 entry, object $11
 
     # Daryl's Tomb: Move the turtles to the appropriate side.
     1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit

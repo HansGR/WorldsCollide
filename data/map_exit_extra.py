@@ -1424,11 +1424,14 @@ exit_data_patch = {
                        set_dest_y(157,
                        set_dest_map(1, info) ) ),   # [74, "Jidoor East to World Map WoR"],
 
-    ### EVENT EXITS BEHAVING AS NORMAL EXITS:
+}
+
+### EVENT EXITS BEHAVING AS NORMAL EXITS:
+event_door_connection_data = {
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
     1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
-    1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract wast'
-    1512: [0x12c, 69, 8, 0, 0, 0, 0, 0, 56, 14, 0, 0] # 'Zone Eater Digestive Tract wast'
+    1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract west'
+    1512: [0x12c, 69, 8, 0, 0, 0, 0, 0, 56, 14, 0, 0] # 'Darills tomb turtle south exit'
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

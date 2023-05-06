@@ -27,7 +27,7 @@ import instruction.field.entity as field_entity
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
     multi_events, entrance_door_patch, exit_door_patch
 
-from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance
+from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance, event_door_connection_data
 from data.rooms import room_data, exit_world, force_update_parent_map, shared_exits
 
 from data.parse import delete_nops, branch_parser, get_branch_code

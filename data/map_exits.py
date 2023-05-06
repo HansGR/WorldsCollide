@@ -1,5 +1,5 @@
 from data.map_exit import ShortMapExit, LongMapExit
-from data.map_exit_extra import exit_data_patch, add_new_exits
+from data.map_exit_extra import exit_data_patch, add_new_exits, event_door_connection_data
 
 from data.map_event import MapEvent
 from data.rooms import room_data, force_update_parent_map
@@ -75,13 +75,14 @@ class MapExits():
                     self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
                     #print('Patching: ', e)
                 else:
-                    if 1500 <= e < 4000:
-                        # This is an event exit behaving as an exit.  Create an entry for it.
-                        self.exit_original_data[e] = exit_data_patch[e]
                     if e >= 4000:
                         # This is a logical exit.  Create an entry for it from its WOB pair.
                         self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
                         #print('Patching logical: ', e)
+
+            for e in event_door_connection_data.keys():
+                # This is an event exit behaving as an exit.  Create an entry for it.
+                self.exit_original_data[e] = event_door_connection_data[e]
 
             for e in add_new_exits.keys():
                 pass
