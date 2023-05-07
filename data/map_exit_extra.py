@@ -1081,7 +1081,7 @@ exit_data = {
     927: [954, "Thamasa After Kefka Elder's House Outside WoB"],
     928: [952, "Thamasa After Kefka Inn Outside WoB"],
     1253: [None, "Thamasa After Kefka North to World Map WoB"],
-    1254: [None, "Thamasa After Kefka West to World Map WoB"],
+    1254: [1504, "Thamasa After Kefka West to World Map WoB"],
     1255: [1504, "Thamasa After Kefka South to World Map WoB"],
     929: [None, "Thamasa Kefka Attack Arsenal West Outside WoB"],
     930: [None, "Thamasa Kefka Attack Arsenal East Outside WoB"],
@@ -1428,6 +1428,10 @@ exit_data_patch = {
 
     # DARYL'S TOMB
     1242: lambda info: set_dest_map(1, info),    # [53, "Darill's Tomb Outside to World Map"],
+
+    # THAMASA WOB
+    1254: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka West to World Map WoB"],
+    1255: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka South to World Map WoB"],
 
 }
 

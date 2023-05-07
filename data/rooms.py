@@ -692,7 +692,7 @@ room_data = {
 
 
     # THAMASA - does WC only use this one Thamasa map (0x154)?
-    447 : [ [922, 923, 924, 925, 926, 927, 928, 1255], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
+    447 : [ [922, 923, 924, 925, 926, 927, 928, 1254, 1255], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
     450 : [ [950, 951], [ ], [ ], 0], #Thamasa Arsenal
     451 : [ [952], [2054], [3055], 0], #Thamasa Inn
     452 : [ [953], [ ], [ ], 0], #Thamasa Item Shop

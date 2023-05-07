@@ -589,10 +589,12 @@ class Maps():
                 map[m] = exit_data[m][0]
 
                 # Look up the rooms of these exits
-                this_room = [r for r in room_data.keys() if m in room_data[r][0]]
-                self.doors.door_rooms[m] = this_room[0]
-                that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
-                self.doors.door_rooms[map[m]] = that_room[0]
+                #this_room = [r for r in room_data.keys() if m in room_data[r][0]]
+                #if len(this_room)> 0:
+                #    self.doors.door_rooms[m] = this_room[0]
+                #that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
+                #if len(that_room)> 0:
+                #    self.doors.door_rooms[map[m]] = that_room[0]
 
         # Build dictionary of maps with entrance events that will need to be called
         self.exit_event_addr_to_call = {}
