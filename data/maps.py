@@ -634,32 +634,7 @@ class Maps():
                 if self.doors.verbose:
                     print('Connecting: ' + str(m) + ' to ' + str(map[m]))
 
-                # THERE IS THE POTENTIAL FOR CONFLICTS between has_event_entrance() and create_exit_event()
-                # Ultimately, we should probably handle this in there as well:
-                #   one function that creates events and handles all cases would be ideal.
-                # 5/3/23 We will do this by loading the event address to call into a new dictionary, and then reference
-                # that dictionary when the exit event is created.
-                # if m in has_event_entrance.keys():
-                #     # move the event entrance to the partner tile
-                #     info = has_event_entrance[m]
-                #     this_event = self.get_event(info[0], info[1], info[2])
-                #
-                #     # Create an event tile that activates the event to this entrance on its connection
-                #     conn_id = map[m] - 4000*(map[m] >= 4000)
-                #     conn_exit = self.get_exit(conn_id)
-                #     new_event = MapEvent()
-                #     new_event.x = conn_exit.x
-                #     new_event.y = conn_exit.y
-                #     new_event.event_address = this_event.event_address
-                #
-                #     self.add_event(self.exit_maps[conn_id], new_event) # add the new event
-                #     self.delete_event(info[0], info[1], info[2])  # delete the original event
-                #     if self.doors.verbose:
-                #         print('Moving event ', str(hex(info[0])) + ' (' + str(info[1]) + ',' + str(info[2]) + ') to',
-                #               str(hex(self.exit_maps[conn_id])) + ' (' + str(conn_exit.x) + ',' + str(conn_exit.y) + ')')
-
                 # Write events on the exits to handle required conditions:
-                # Write an event on top of exit m[1] to set the correct properties (world, parent map) for exit m[0]
                 self.create_exit_event(m, map[m])
 
             elif 1500 <= m < 4000:
@@ -687,17 +662,20 @@ class Maps():
 
         # Collect information about the properties of the connecting exit
         that_world = self.exit_world[d_ref]
+        that_map = self.exit_maps[d_ref]
 
         # Check to make sure an exit event is required:
         # (1) the connection is in the other world
         # (2) the connection requires special code (in entrance_door_patch[d_ref])
         # (3) the door requires special code (in exit_door_patch[d])
         # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
+        # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
         require_event_flags = [
             (this_world != that_world),
             d_ref in entrance_door_patch.keys(),
             d in exit_door_patch.keys(),
-            d in self.exit_event_addr_to_call.keys()
+            d in self.exit_event_addr_to_call.keys(),
+            that_map in [0x000, 0x001, SWITCHYARD_MAP]
         ]
         if require_event_flags.count(True) > 0:
             # Need to use different commands for world maps vs field maps.
@@ -730,10 +708,6 @@ class Maps():
 
             this_address = 0x05eb3  # Default address to fail gracefully: event at $CA/5EB3 is just 0xfe (return)
 
-            if SOUND_EFFECT is not None:
-                # Note this kills the direct "force world" event.
-                src = [field.PlaySoundEffect(SOUND_EFFECT)] + src
-
             # If it's a new event that is just forcing the world, just directly call the "force world" event:
             e_length = len(src)
             if e_length == 1 and not require_event_flags[1:].count(True) > 0 and map_id > 2:
@@ -747,13 +721,27 @@ class Maps():
                     print('\tReason: ', require_event_flags)
 
             else:
-                #  (4) <code required when leaving room>
-                #  (3) <code required when entering connection>
-                #  (2) <required world-bit setting when entering WOB connection>
-                #  (1) <call any required entrance script>
+                #  (5) <code required when leaving room>
+                #  (4) <code required when entering connection>
+                #  (3) <required world-bit setting when entering WOB connection>
+                #  (2) <call any required entrance script>
+                #  (1) If going to the world map, summon the airship as well.
                 #  (0) Return();  # Connection is handled by the door.
 
-                # (1) Add call to entrance script, if any
+                # (1) If going to world map, also summon the airship
+                if require_event_flags[4]:
+                    # Note, in this case we don't need the terminal field.Return(), but it doesn't hurt and makes this
+                    # more robust to errors.
+                    # Get [x,y] location of the destination for the exit.
+                    d_ref_pairID = exit_data[d_ref][0]  # Original connecting exit to d_ref..
+                    #if d_ref_pairID in self.exits.exit_original_data.keys():
+                    conn_data = self.exits.exit_original_data[d_ref_pairID]  # [dest_map, dest_x, dest_y, ...]
+                    #elif d_ref_pairID >= 4000:  # Do we actually need this?
+                    #    # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                    #    conn_data = self.exits.exit_original_data[d_ref_pairID - 4000]
+                    src = SummonAirship(conn_data[0], conn_data[1], conn_data[2]) + src
+
+                # (2) Add call to entrance script, if any
                 if require_event_flags[3]:
                     # This could be more elegant.
                     if map_id > 2:
@@ -774,18 +762,18 @@ class Maps():
                         # Prepend the required branch condition to the switchyard script
                         src = get_branch_code(ebit, is_set, branch_addr, SWITCHYARD_MAP) + src
 
-                # (2) Prepend call to force world bit event, if required
+                # (3) Prepend call to force world bit event, if required
                 if require_event_flags[0]:
                     if that_world == 0:
                         src = [field.ClearEventBit(event_bit.IN_WOR)] + src
                     elif that_world == 1:
                         src = [field.SetEventBit(event_bit.IN_WOR)] + src
 
-                # (3) Prepend any data required by the connection
+                # (4) Prepend any data required by the connection
                 if require_event_flags[1]:
                     src = entrance_door_patch[d_ref] + src
 
-                # (4) Prepend any data required by the door
+                # (5) Prepend any data required by the door
                 if require_event_flags[2]:
                     src = exit_door_patch[d] + src
 
@@ -831,6 +819,10 @@ class Maps():
                     print('Writing exit event:', d, '(pair =',d_ref,') @ ', hex(this_address))
                     print('\tReason: ', require_event_flags)
                     print([str(s) for s in src])
+
+            if SOUND_EFFECT is not None:
+                # Note this kills the direct "force world" event.
+                src = [field.PlaySoundEffect(SOUND_EFFECT)] + src
 
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':
@@ -888,15 +880,19 @@ class Maps():
 
         # Collect information about the properties of the connecting exit
         that_world = self.exit_world[d_ref]
+        that_map = self.exit_maps[d_ref]
 
         # (1) the connection requires a specific world that is not this world
         # (2) the connection requires special code (in entrance_door_patch[d_ref])
         # (3) the door requires special code (in exit_door_patch[d])
+        # (4) the door needs to run an entrance event script (in exit_event_addr_to_call[d])
+        # (5) the connection is a world map: also summon the airship.
         require_event_flags = [
             ( (this_world != that_world)),
             d_ref in entrance_door_patch.keys(),
             d in exit_door_patch.keys(),
-            d in self.exit_event_addr_to_call.keys()
+            d in self.exit_event_addr_to_call.keys(),
+            that_map in [0x0, 0x1]
         ]
 
         #if self.doors.verbose:
@@ -927,11 +923,15 @@ class Maps():
             # Probably a logical exit without tweaks.  Can use vanilla connection info.
             conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
 
-        wor_src = [field.FadeLoadMap(conn_data[0], conn_data[6], True, conn_data[1], conn_data[2], fade_in=True, entrance_event=True)]
-        if conn_data[0] in [0, 1, 2]:
-            # Include End command when loading world maps
-            wor_src += [field.End()]
-        wor_src += [field.Return()]
+        if require_event_flags[4]:
+            wor_src = SummonAirship(conn_data[0], conn_data[1], conn_data[2])
+        else:
+            wor_src = [field.FadeLoadMap(conn_data[0], conn_data[6], True, conn_data[1], conn_data[2], fade_in=True, entrance_event=True)]
+            if conn_data[0] in [0, 1, 2]:
+                # Include End command when loading world maps
+                wor_src += [field.End()]
+            else:
+                wor_src += [field.Return()]
 
         if SOUND_EFFECT is not None:
             wor_src = [field.PlaySoundEffect(SOUND_EFFECT)] + wor_src

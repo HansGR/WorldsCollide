@@ -7,6 +7,7 @@ import instruction.field.entity as field_entity
 from memory.space import Allocate, Bank, Free, Write, Reserve
 from data.map_exit_extra import exit_data as exit_partner
 from data.map_event import MapEvent
+from event.switchyard import SummonAirship
 
 # NOTES:
 # To be comprehensive, we should treat this the same way we treat exits:
@@ -153,7 +154,8 @@ class Transitions:
                     is_set = not is_set
 
                 branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.location[0])
-                print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
+                if self.verbose:
+                    print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
                 ex_patch += [branch_src[0].opcode] + branch_src[0].args
 
             # Add patched lines before map transition
@@ -162,8 +164,14 @@ class Transitions:
             # Add patched lines after map transition
             src_end = src_end[:5] + en_patch + src_end[5:]
 
-            # Combine events
-            src.extend(src_end)
+            if t.entr.location[0] in [0x0, 0x1]:
+                # This is loading to a world map.  Summon the airship, and make everything happen before that.
+                get_airship_src = SummonAirship(t.entr.location[0], t.entr.location[1], t.entr.location[2], bytes=True)
+                #print([hex(a)[2:] for a in get_airship_src])
+                src = src[:-1] + en_patch + get_airship_src
+            else:
+                # Combine events
+                src.extend(src_end)
 
             # Delete NOPs, if requested, to save space
             # Note there is the possibility for conflict with event_address_patch - be careful!

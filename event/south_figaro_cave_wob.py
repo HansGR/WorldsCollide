@@ -181,29 +181,40 @@ class SouthFigaroCaveWOB(Event):
         space = Write(Bank.CA, src, "figaro cave tunnel armor and reward")
         battle_reward = space.start_address
 
-        space = Reserve(0xa89af, 0xa89eb, "figaro cave tunnel armor", field.NOP())
-        space.write(
-            field.ReturnIfEventBitSet(event_bit.DEFEATED_TUNNEL_ARMOR),
-            field.ReturnIfEventBitClear(event_bit.THIRD_NOISE_FIGARO_CAVE),
+        src = [field.ReturnIfEventBitSet(event_bit.DEFEATED_TUNNEL_ARMOR)]
 
+        if not self.DOOR_RANDOMIZE:
+            src += [field.ReturnIfEventBitClear(event_bit.THIRD_NOISE_FIGARO_CAVE)]
+
+        src += [
             # some replaced code from 0xa89b5 to 0xa89be
             field.EntityAct(field_entity.PARTY0, True,
-                field_entity.Turn(direction.UP),
-            ),
-            field.ShakeScreen(intensity = 3, permanent = True, layer1 = True,
-                              layer2 = True, layer3 = True, sprite_layer = True),
+                            field_entity.Turn(direction.UP),
+                            ),
+            field.ShakeScreen(intensity=3, permanent=True, layer1=True,
+                              layer2=True, layer3=True, sprite_layer=True),
             field.PlaySoundEffect(165),
             field.Pause(2.5),
 
             # call new function
             field.Call(battle_reward),
 
-            field.SetEventBit(event_bit.DEFEATED_TUNNEL_ARMOR),
+            field.SetEventBit(event_bit.DEFEATED_TUNNEL_ARMOR)
+        ]
+        if self.DOOR_RANDOMIZE:
+            src += [
+                field.SetEventBit(event_bit.FIRST_NOISE_FIGARO_CAVE),
+                field.SetEventBit(event_bit.SECOND_NOISE_FIGARO_CAVE),
+                field.SetEventBit(event_bit.THIRD_NOISE_FIGARO_CAVE)
+            ]
+        src += [
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.FinishCheck(),
 
             field.Return(),
-        )
+        ]
+        space = Reserve(0xa89af, 0xa89eb, "figaro cave tunnel armor", field.NOP())
+        space.write(src)
 
     def character_mod(self, character):
         self.tunnel_armor_function([

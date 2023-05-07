@@ -1382,6 +1382,7 @@ set_direction =           lambda value, info: info[:11] + [value]
 
 # Patch functions for individual exits:
 # Note: no longer need to 'shorten to fit', after incorporating LongMapEvents!
+# This is necessary to remove "parent map" calls.
 exit_data_patch = {
     # NARSHE
     1135: lambda info: set_dest_y( 34,
@@ -1424,6 +1425,9 @@ exit_data_patch = {
     5215: lambda info: set_dest_x(35,
                        set_dest_y(157,
                        set_dest_map(1, info) ) ),   # [74, "Jidoor East to World Map WoR"],
+
+    # DARYL'S TOMB
+    1242: lambda info: set_dest_map(1, info),    # [53, "Darill's Tomb Outside to World Map"],
 
 }
 

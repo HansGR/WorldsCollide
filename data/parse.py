@@ -88,6 +88,13 @@ def simple_parser(src):
 
         yield opcode, params
 
+def functions_to_bytes(src):
+    # Taking a WC function string, return a byte string
+    src_out = []
+    for f in src:
+        src_out += [f.opcode] + f.args
+    return src_out
+
 OP_LENGTH = {
     #0x00-34: 0, # Begin action queue for a character
     0x35: 1, # Pause event until a character's action queue has finished executing

@@ -627,7 +627,8 @@ room_data = {
     380 : [ [775], [ ], [ ], 1], #Darill's Tomb Left Side Tombstone Room
     381 : [ [777, 786], [ ], [ ], 1], #Darill's Tomb Right Side Tombstone Room
     382 : [ [779, 785], [ ], [ ], 1], #Darill's Tomb B2 Left Side Bottom Room
-    383 : [ [782], [ ], [ ], [ ], {'dt1': [1512]}, 1], #Darill's Tomb B2 Turtle Hallway.  781 is not used.
+    383 : [ [782], [ ], [ ], [ ], {'dt1': [1512]}, 1], #Darill's Tomb B2 Turtle Hallway.  781 is a shared exit.
+    '383a' : [ [782], [ ], [ ], [ ], {'dt1': [1512, 781]}, 1], #Darill's Tomb B2 Turtle Hallway.  781 is a shared exit.
     384 : [ [784], [ ], [ ], 1], #Darill's Tomb B2 Right Side Bottom Room
     #385 : [ [787], [ ], [ ], [ ], {}, 1], #Darill's Tomb Right Side Secret Room Duplicate?
     386 : [ [788], [ ], [ ], 1], #Darill's Tomb B2 Graveyard
@@ -880,7 +881,9 @@ shared_exits = {
     1255: [1254, 1253],   # "Thamasa After Kefka WoB exits to world map"
     1261: [1259, 1260],   # "Thamasa WoR exits to world map"
 
-    960: [961]  # Double door in Burning House Room 2
+    960: [961],  # Double door in Burning House Room 2
+
+    1512: [781]  # Daryl's Tomb: Turtle exit event, same as south door.
 }
 
 # List of doors that CANNOT be connected to each other.  Only rare instances.

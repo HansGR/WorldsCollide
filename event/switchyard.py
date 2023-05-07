@@ -1,10 +1,12 @@
 from data.map_event import MapEvent
 from memory.space import Write, Bank
 import instruction.field as field
-from instruction import world
+from instruction import world, vehicle
 from instruction.event import EVENT_CODE_START
 from data.event_exit_info import event_exit_info
 import data.direction as direction
+import data.event_bit as event_bit
+from data.parse import functions_to_bytes
 
 SWITCHYARD_MAP = 0x005
 
@@ -60,3 +62,23 @@ def GoToSwitchyard(event_id, map=''):
         ]
 
     return src
+
+def SummonAirship(map_id, x, y, bytes=False):
+    # Return code that puts you in position [x,y] on world map map_id, with the airship there as well.
+    if map_id not in [0x0, 0x1]:
+        # Not an airshippable map!
+        return []
+
+    src = [
+        field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        field.FadeLoadMap(map_id, direction.DOWN, default_music=False,
+                          x=x, y=y, fade_in=False, airship=True),
+        vehicle.SetPosition(x, y),
+        vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        vehicle.LoadMap(map_id, direction.DOWN, default_music=True, x=x, y=y, fade_in=True),
+        world.End()
+    ]
+    if bytes:
+        return functions_to_bytes(src)
+    else:
+        return src

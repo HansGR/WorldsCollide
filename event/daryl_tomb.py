@@ -31,6 +31,9 @@ class DarylTomb(Event):
             self.item_mod(self.reward.id)
         self.finish_check_mod()
 
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+
         self.log_reward(self.reward)
 
     def entrance_mod(self):
@@ -156,3 +159,15 @@ class DarylTomb(Event):
                               layer1 = True, layer2 = True, layer3 = True, sprite_layer = True),
             field.Call(OPEN_BACK_EXIT),
         )
+
+    def door_rando_mod(self):
+        # Make turtle #1 not activate if water is low?
+        src = [
+            field.BranchIfEventBitSet(0x2B3, 0xa4259),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src, 'Modified daryls tomb turtle #1 event')
+
+        turtle_event = self.maps.get_event(0x12b, 56, 20)
+        turtle_event.event_address = space.start_address - EVENT_CODE_START
+
