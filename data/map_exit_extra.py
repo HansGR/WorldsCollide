@@ -1437,8 +1437,8 @@ event_door_connection_data = {
     1506: [0x045, 16, 42, 0, 0, 0, 2, 0, 75, 102, 0, 0], # 'South Figaro Cave WOB South entrance'
     1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
     1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract west'
-    1512: [0x12c, 69, 8, 0, 0, 0, 0, 0, 56, 14, 0, 0], # 'Darills tomb turtle south exit'
-    1513: [0x046, 47, 39, 0, 0, 0, 2, 0, 10, 48, 0, 0] # 'South Figaro Cave WOB North entrance'
+    1512: [0x12c, 69, 8, 0, 0, 0, 2, 0, 56, 14, 0, 0], # 'Darills tomb turtle south exit'
+    1513: [0x046, 47, 39, 0, 0, 0, 0, 0, 10, 48, 0, 0] # 'South Figaro Cave WOB North entrance'
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

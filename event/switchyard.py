@@ -76,6 +76,7 @@ def SummonAirship(map_id, x, y, bytes=False):
         vehicle.SetPosition(x, y),
         vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
         vehicle.LoadMap(map_id, direction.DOWN, default_music=True, x=x, y=y, fade_in=True),
+        world.Turn(direction.DOWN),
         world.End()
     ]
     if bytes:

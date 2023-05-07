@@ -69,10 +69,7 @@ class DarylTomb(Event):
             src += GoToSwitchyard(event_id)
 
             # (2b) Add the switchyard event tile that handles exit to the world map
-            switchyard_src = [
-                field.LoadMap(0x01, direction.DOWN, default_music=True, x=25, y=53),
-                field.End()
-            ]
+            switchyard_src = SummonAirship(0x001, 25, 53)
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
         else:

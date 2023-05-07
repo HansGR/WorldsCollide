@@ -126,7 +126,7 @@ class ZoneEater(Event):
 
     def door_rando_mod(self):
         # Modifications for door rando
-        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard, SummonAirship
 
         # (1a) Change the entry event to load the switchyard location
         event_id = 2040  # ID of engulf event
@@ -145,9 +145,5 @@ class ZoneEater(Event):
         space = Reserve(0xb7db7, 0xb7dbd, 'Zone Eater Exit modification')
         space.write(GoToSwitchyard(event_id))
         # (2b) Add the switchyard event tile that handles exit to Triangle Island
-        src = [
-           field.FadeLoadMap(0x001, direction=direction.DOWN, default_music=True,
-                             x=237, y=50, fade_in=True, entrance_event=True),
-           field.End()
-        ]
+        src = SummonAirship(0x001, 237, 50)
         AddSwitchyardEvent(event_id, self.maps, src=src)

@@ -261,7 +261,7 @@ class SouthFigaroCaveWOB(Event):
         space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
 
         # (1a) Change the entry event to load the switchyard location
-        event_id = 1506  # ID of engulf event
+        event_id = 1506  # ID of SF Cave south entrance
         space = Reserve(0xa5ee3, 0xa5ef6, 'Cave to South Figaro South Entrance', field.NOP())
         space.write(GoToSwitchyard(event_id, map='world'))
         # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
@@ -270,5 +270,3 @@ class SouthFigaroCaveWOB(Event):
             field.Return()
         ]
         AddSwitchyardEvent(event_id, self.maps, src=src)
-
-        # For the time being: do not summon the airship when walking back to the world map.
