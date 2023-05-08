@@ -1399,6 +1399,8 @@ exit_data_patch = {
                        set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
 
     # SEALED GATE CAVE
+    1059: lambda info: set_dest_map(0, info),     # [42, "Imperial Base West to World Map Top Tile"],
+    1060: lambda info: set_dest_map(0, info),     # [42, "Imperial Base West to World Map Bottom Tile"],
     1064: lambda info: set_dest_map(0, info),     # Cave to the Sealed Gate: return to WoB
 
     # 1204: lambda info: set_x(12, set_size(9, info)),  # Mt. Zozo, Cyan's cliff.  Shorten exit for exit events.
