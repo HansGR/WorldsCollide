@@ -8,7 +8,7 @@ class Arguments:
             "xpmpgp", "scaling", "bosses", "encounters", "boss_ai",
             "espers", "natural_magic", "misc_magic",
             "starting_gold_items", "items", "shops", "chests",
-            "graphics", "audio",
+            "graphics",
             "coliseum", "auction_house", "challenges", "bug_fixes", "misc",
         ]
         self.group_modules = {}
