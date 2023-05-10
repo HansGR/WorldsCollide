@@ -1,6 +1,6 @@
 #from openpyxl import load_workbook
 from random import randrange, choices
-from data.rooms import forced_connections, shared_oneways, invalid_connections
+from data.rooms import forced_connections, shared_oneways, invalid_connections, exit_room
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
@@ -19,7 +19,8 @@ ROOM_SETS = {
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
     'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'],
-    'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt'],
+    'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt'],
+    'DarylsTombMinimal': [379, 380, 383, 384, 386, 387, 389, 390, 391, 392, 'root-dt'],  # for testing
     'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
@@ -36,13 +37,15 @@ ROOM_SETS = {
             356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
             '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
             457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
-            378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 392, 393, 'root-dt',  # Daryl's Tomb
+            #378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt',  # Daryl's Tomb
             100, 101, 102, 103, 104, 105, 'root-sfcb'  # South Figaro Cave WOB
              ],
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
 
 class Doors():
+    verbose = False  # False  # True
+
     def __init__(self, args):
         # self.rom = rom
         self.args = args
@@ -55,7 +58,7 @@ class Doors():
         self.rooms = []
         self.room_doors = {}
         self.room_counts = {}
-        self.forcing = {}
+        self.forcing = forced_connections
         self.sharing = {}
         self.invalid = {}
         self.zones = []
@@ -65,7 +68,6 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
-        self.verbose = True    # False  # True
 
         self._all_rooms = []
 
@@ -180,8 +182,8 @@ class Doors():
                                 self.door_rooms[ds] = room
 
             for d in self.doors[-1]:
-                if d in forced_connections.keys():
-                    self.forcing[d] = forced_connections[d]
+                #if d in forced_connections.keys():
+                #    self.forcing[d] = forced_connections[d]
                 if d in invalid_connections.keys():   # Not currently used.
                     self.invalid[d] = invalid_connections[d]
 
@@ -216,6 +218,8 @@ class Doors():
                 walks.ForceConnections(self.forcing)  # Force initial connections, if any
                 if self.verbose:
                     print('Count after forced connections: ', walks.rooms.count)
+                    #for n in walks.net.nodes:
+                    #    print(n.id, n.doors, n.traps, n.pits, n.keys, n.locks)
                 walks.attach_dead_ends()  # Connect all the dead ends.
                 if self.verbose:
                     print('Count after attaching dead ends: ', walks.rooms.count)
@@ -225,20 +229,29 @@ class Doors():
                     # Start in the root room
                     string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
                     root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
-                    start_room_id = root_room.id
+                    start_room_ids = [root_room.id]
                 elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
                     # Choose a root room to begin
                     # This might fail due to forcing.
-                    start_room_id = random.choice([r.id for r in walks.rooms.rooms if 'root' in str(r.id)])
+                    start_room_ids = [r.id for r in walks.rooms.rooms if 'root' in str(r.id)]
                 else:
                     # Choose a random room
-                    start_room_id = random.choice([n.id for n in walks.net.nodes])
+                    start_room_ids = [n.id for n in walks.net.nodes]
+
+                #while len(start_room_ids) > 0:
+                #try:
+                start_room_id = random.choice(start_room_ids)
                 walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
                 # Connect the network
                 if self.verbose:
-                    print('Randomizing map...')
+                    print('Randomizing map from...', start_room_id)
                 fully_connected = walks.connect_network()
+
+                #start_room_ids = []  # end loop
+                #except:
+                #    # remove this start room & try again
+                #    start_room_ids.remove(start_room_id)
 
                 # Copy the results into the map
                 map[0].extend([m for m in fully_connected.map[0]])
@@ -1242,18 +1255,17 @@ class Doors():
                         door_descr[d] = 'UNKNOWN'
 
         # Print state of the Doors object
-        for a in range(len(self.rooms)):
-            lcolumn.append('Area' + str(a) + ':')
-            lcolumn.append('Doors:')
-            for d in self.doors[a]:
-                lcolumn.append(str(d) + ': Room = ' + str(self.door_rooms[d]) + '. ' + str(
-                    door_descr[d]))  # ', Map = ', self.door_maps[d],
-            lcolumn.append('Rooms:')
-            for r in self.rooms[a]:
-                lcolumn.append(str(r) + ': door count = ' + str(self.room_counts[r]) + '\n\t\tdoors: ' + str(
-                    self.room_doors[r][0]) +
-                               'one-way exits: ' + str(self.room_doors[r][1]) + '\n\t\t one-way entrances: ' + str(
-                    self.room_doors[r][2]))
+        # for a in range(len(self.rooms)):
+        #     lcolumn.append('Area' + str(a) + ':')
+        #     lcolumn.append('Doors:')
+        #     for d in self.doors[a]:
+        #         lcolumn.append(str(d) + ': Room = ' + str(exit_room[d]) + '. ' + str(door_descr[d]) )
+        #     lcolumn.append('Rooms:')
+        #     for r in self.rooms[a]:
+        #         lcolumn.append(str(r) + ': door count = ' + str(self.room_counts[r]) + '\n\t\tdoors: ' + str(
+        #             self.room_doors[r][0]) +
+        #                        'one-way exits: ' + str(self.room_doors[r][1]) + '\n\t\t one-way entrances: ' + str(
+        #             self.room_doors[r][2]))
         lcolumn.append('Forced connections:')
         for d in self.forcing.keys():
             lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
@@ -1267,33 +1279,3 @@ class Doors():
                     door_descr[m[1]]) + ')')
 
         section("Door Rando: ", lcolumn, [])
-
-    def walk_exits_with_rules(self, start_room_id):
-        # Create Walks; walk them until you get a fully-connected map.
-        # INCOMPLETE / NOT WORKING
-        self.walks = Network(self.rooms)  # Initialize the Walk Network
-        self.walks.ForceConnections(self.forcing)  # Force initial connections
-        self.walks.active = self.walks.rooms.rooms.index(self.walks.rooms.get_room(start_room_id))
-
-        while sum(self.walks.rooms.count[:3]) > 0:
-            # Select an initial door
-            r1 = self.walks.rooms.rooms[self.walks.active]  # Get initial room
-            d1 = r1.get_exit()  # select an exit
-            d1_type = r1.element_type(d1)
-
-            # Collect valid connections & select one
-            valid = self.walks.get_valid_connections(d1)
-            d2 = random.choice(valid)
-
-            r2 = self.walks.rooms.get_room(d2)
-            print('Connecting: ', r1.id, '(' + str(d1) + ') --> ', r2.id, '(' + str(d2) + ')')
-
-            # Connect the two exits.  This function automatically:
-            # 0. creates the connection (R1, R2), and (R2, R1) if it's a normal door,
-            # 1. applies any keys found in R2,
-            # 2. updates the rooms and the network if a loop is formed,
-            # 3. updates the active room id.
-            self.walks.connect(d1, d2)
-
-
-

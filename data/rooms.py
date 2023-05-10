@@ -19,8 +19,8 @@ room_data = {
     #'C' : [ [3, 4], [2003], [3002, 3004], [], {}, 0],
     #'D' : [ [5], [], [], [], {}, 0],
     #'E' : [ [6], [2004], [], [], {}, 0],
-    #'test_room_1': [ [], [2038], [3037], 0],  # 2036 --> 3024 (MTek Pipe Exit)
-    #'test_room_2': [ [], [2024], [3024], 0],  # 2024 --> 3035
+    #'test_room_1': [ [1801], [], [], ['b'], {}, 0],  # 2036 --> 3024 (MTek Pipe Exit)
+    #'test_room_2': [ [1802], [], [], [], {'a': [1800]}, 0],  # 2024 --> 3035
 
     # 'root-code' rooms are terminal entrance rooms for randomizing individual sections.
     # They are also used in Dungeon Crawl mode.
@@ -635,8 +635,8 @@ room_data = {
     387 : [ [789], [2058], [ ], 1], #Darill's Tomb Dullahan Room
     388 : [ [790, 791], [ ], [ ], 1], #Darills' Tomb B3
     389 : [ [792], [ ], [ ], ['dt2'], {}, 1], #Darills' Tomb B3 Switch Puzzle Room
-    390 : [ [793, 794], [ ], [ ], [], {'dt2': [795]}, 1], #Darills' Tomb B2 Switch Puzzle Room Left Side
-    #391 : [ [], [], [], [], {'dt2': 795}, 1], # Darills' Tomb B2 Switch Puzzle Room Right Side
+    390 : [ [793, 794], [2059], [], ['dt3'], {'forced': [3060]}, 1], #Darills' Tomb B2 Switch Puzzle Room Left Side
+    391 : [ [], [], [3059], [], {'dt2': [795], 'dt3': [2060]}, 1], # Darills' Tomb B2 Switch Puzzle Room Right Side
     392 : [ [796], [], [], ['dt1'], {}, 1], # Darills' Tomb Right Side Secret Room
     393 : [ [797, 798], [ ], [ ], 1], #Darill's Tomb MIAB Hallway
 
@@ -835,7 +835,10 @@ forced_connections = {
     2049: [3049],    # Serpent Trench #2 continue to #3
     2053: [3053],    # Nikeah entry
 
-    2055: [3055]    # Burning House defeating boss --> Thamasa Inn.  This *could* be randomized.
+    2055: [3055],    # Burning House defeating boss --> Thamasa Inn.  This *could* be randomized.
+
+    2059: [3059],    # Daryl's Tomb, Turtle #2 left to right
+    2060: [3060]    # Daryl's Tomb, Turtle #2 right to left
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -911,6 +914,7 @@ def get_locked_items(locks):
 
 # Create dictionary lookup for which world each exit is in
 exit_world = {}
+exit_room = {}
 for r in room_data.keys():
     locked = []
     if len(room_data[r]) > 4:
@@ -921,15 +925,19 @@ for r in room_data.keys():
     these_doors = [d for d in room_data[r][0]] + [d for d in locked if d < 2000]
     for d in these_doors:
         exit_world[d] = room_data[r][-1]
-        if d in shared_oneways.keys():
-            for ds in shared_oneways[d]:
-                exit_world[ds] = room_data[r][-1]
+        exit_room[d] = r
+        #if d in shared_oneways.keys():
+        #    for ds in shared_oneways[d]:
+        #        exit_world[ds] = room_data[r][-1]
+        #        exit_room[d]
 
     # Read in one-way world
-    these_traps = [t for t in room_data[r][1]] + [t for t in locked if t < 3000]
-    for e in these_traps:
-        exit_world[e] = room_data[r][-1]
-        if e in shared_oneways.keys():
-            for es in shared_oneways[e]:
-                exit_world[es] = room_data[r][-1]
+    these_traps = [t for t in room_data[r][1]] + [t for t in locked if 2000 <= t < 3000]
+    for t in these_traps:
+        exit_world[t] = room_data[r][-1]
+        exit_room[t] = r
 
+    # Read in one-way exits
+    these_pits = [p for p in room_data[r][2]] + [p for p in locked if 3000 <= p < 4000]
+    for p in these_pits:
+        exit_room[p] = r
