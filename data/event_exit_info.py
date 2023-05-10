@@ -103,6 +103,8 @@ event_exit_info = {
 
     # DARYL'S TOMB
     2058: [0xa435d, 12, 5, [False, False, False, False], 'Darills Tomb Quick Exit to World Map', [0x12B, 100, 7], 'JMP' ],  # Goes to Switchyard tile
+    2059: [0x00000, 0, 0, [None, None, None, None], 'Darills Tomb Turtle 2 left to right (logical)', [0x12C, None, None], None], # logical no randomize
+    2060: [0x00000, 0, 0, [None, None, None, None], 'Darills Tomb Turtle 2 right to left (logical)', [0x12C, None, None], None], # logical, no randomize
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
@@ -220,11 +222,12 @@ entrance_event_patch = {
 
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
-    1512: [field.SetEventBit(0x2b4)],   # Turtle room south exit
-    782: [field.ClearEventBit(0x2b4)],  # Turtle room north exit. CA/4273: D5    Clear event bit $1E80($2B4) [$1ED6, bit 4]
-    793: [field.ClearEventBit(0x2b6)],  # Water puzzle room top exit.
-    794: [field.ClearEventBit(0x2b6)],  # Water puzzle room bottom exit.
-    795: [field.SetEventBit(0x2B6)]    # Water puzzle room right exit. CA/42EC: D5    Clear event bit $1E80($2B6) [$1ED6, bit 6]
+    # Daryl's Tomb: Move the turtles to the appropriate side.
+    1512: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],   # Turtle room south exit
+    782: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],  # Turtle room north exit.
+    793: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room top exit.
+    794: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room bottom exit.
+    795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)]    # Water puzzle room right exit.
 }
 
 

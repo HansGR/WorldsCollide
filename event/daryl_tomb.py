@@ -31,7 +31,7 @@ class DarylTomb(Event):
             self.item_mod(self.reward.id)
         self.finish_check_mod()
 
-        if self.DOOR_RANDOMIZE:
+        if self.args.door_randomize:
             self.door_rando_mod()
 
         self.log_reward(self.reward)
@@ -158,13 +158,39 @@ class DarylTomb(Event):
         )
 
     def door_rando_mod(self):
-        # Make turtle #1 not activate if water is low?
+        # Global Door Rando changes:
+        # (1) Change map for Daryl's Tomb turtle #2 right door.  The exit is always modified when doors are randomized.
+        # Change the tiles at map_id = 0x12C, Layer 1 (79, 2) with the following 2x1: $0A, $04 
         src = [
-            field.BranchIfEventBitSet(0x2B3, 0xa4259),
-            field.Return()
+            field.SetMapTiles(1, 79, 2, 1, 2, [0x0a, 0x04]),
+            field.SetMapTiles(2, 79, 1, 1, 1, [0x21]),
+            field.BranchIfEventBitClear(event_bit.DARYL_TOMB_DOOR_SWITCH, 0xaf20f),
+            # CA/F205: C0    If ($1E80($2B8) [$1ED7, bit 0] is clear), branch to $CAF20F
+            field.Branch(0xaf20b)
         ]
-        space = Write(Bank.CA, src, 'Modified daryls tomb turtle #1 event')
+        space = Write(Bank.CA, src, 'Daryls Tomb DR map modification')
+        dr_map_address = space.start_address
+        # Call this script in the entrance event:
+        space = Reserve(0xaf205, 0xaf20a, "Daryls Tomb entrance event DR modification", field.NOP())
+        space.write(field.Branch(dr_map_address))
 
-        turtle_event = self.maps.get_event(0x12b, 56, 20)
-        turtle_event.event_address = space.start_address - EVENT_CODE_START
+        # Module-specific door-rando changes:
+        if self.DOOR_RANDOMIZE:
+            # (2) Make turtle #1 not activate if water is low
+            src = [
+                field.BranchIfEventBitSet(event_bit.DARYL_TOMB_WATER1_HIGH, 0xa4259),
+                field.Return()
+            ]
+            space = Write(Bank.CA, src, 'Modified daryls tomb turtle #1 event')
 
+            turtle_event = self.maps.get_event(0x12b, 56, 20)
+            turtle_event.event_address = space.start_address - EVENT_CODE_START
+
+            # (3) Make turtle #2 not activate if water is low
+            src = [
+                field.BranchIfEventBitSet(event_bit.DARYL_TOMB_WATER2_HIGH, 0xa42c0),
+                field.Return()
+            ]
+            space = Write(Bank.CA, src, 'Modified daryls tomb turtle #2 event R')
+            turtle2_event = self.maps.get_event(0x12c, 79, 6)
+            turtle2_event.event_address = space.start_address - EVENT_CODE_START

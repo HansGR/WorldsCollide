@@ -1429,6 +1429,8 @@ exit_data_patch = {
                        set_dest_map(1, info) ) ),   # [74, "Jidoor East to World Map WoR"],
 
     # DARYL'S TOMB
+    795: lambda info: set_y(info[9]-1, info),  # [797, "Darill's Tomb B2 Water Room Right Door"], move up 1 tile
+    797: lambda info: set_dest_y(info[2]-2, info),  #  [795, "Darill's Tomb B2 MIAB Hallway to Water Room"],
     1242: lambda info: set_dest_map(1, info),    # [53, "Darill's Tomb Outside to World Map"],
 
     # THAMASA WOB

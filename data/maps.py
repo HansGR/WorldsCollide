@@ -68,14 +68,12 @@ class Maps():
         self.doors = doors.Doors(args)
 
         # Create an event code to set the world bit
-        src_WOR = [0xd0, 0xa4, 0xfe]  # Set world bit = WoR, return
-        space = Allocate(Bank.CC, len(src_WOR), "Go To WoR")
-        space.write(src_WOR)
+        src_WOR = [field.SetEventBit(event_bit.IN_WOR), field.Return()]  # [0xd0, 0xa4, 0xfe]
+        space = Write(Bank.CC, src_WOR, "Go To WoR")
         self.GO_WOR_EVENT_ADDR = space.start_address
 
-        src_WOB = [0xd1, 0xa4, 0xfe]  # Set world bit = WoB, return
-        space = Allocate(Bank.CC, len(src_WOB), "Go To WoB")
-        space.write(src_WOB)
+        src_WOB = [field.ClearEventBit(event_bit.IN_WOR), field.Return()]  # [0xd1, 0xa4, 0xfe]
+        space = Write(Bank.CC, src_WOB, "Go To WoB")
         self.GO_WOB_EVENT_ADDR = space.start_address
 
         # Record the vanilla world of each door
