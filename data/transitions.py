@@ -150,7 +150,7 @@ class Transitions:
 
                 if branch_addr == 0x5eb3:
                     # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
-                    branch_addr = load_address + 6
+                    branch_addr = this_addr + 6
                     is_set = not is_set
 
                 branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.location[0])

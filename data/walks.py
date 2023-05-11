@@ -97,6 +97,7 @@ class Network:
                     else:
                         # This is a trap.
                         room.add_traps([item])
+
             # Delete the key, we already have it.
             if key in room.keys:
                 room.remove(key)
@@ -370,11 +371,75 @@ class Network:
             # Count entrances & exits
             self_count = node.full_count[:3]
             up_count = np.array([0, 0, 0])
-            for up in self.get_upstream_nodes(node):
+            up_nodes = self.get_upstream_nodes(node)
+            for up in up_nodes:
                 up_count += up.full_count[:3]
             down_count = np.array([0, 0, 0])
-            for down in self.get_downstream_nodes(node):
+            down_nodes = self.get_downstream_nodes(node)
+            for down in down_nodes:
                 down_count += down.full_count[:3]
+
+            # Look for the small number of cases in which a forced exit is still locked
+            locked_forced = [lf for lf in node.locked() if lf in forced_connections.keys()]  # locked forced traps
+            if 'forced' in node.locks.keys():
+                locked_protected = [lf for lf in node.locks['forced']]   # locked forced entrances
+            else:
+                locked_protected = []
+            for lf in locked_forced:
+                if self.verbose:
+                    print('\t\t\tFound locked forced connection:', lf, 'in', node.id)
+                [l_type, c_type] = [[0, 1][[True, False].index(lf < 2000)],
+                                    [0, 2][[True, False].index(lf < 2000)]]
+                fc = forced_connections[lf][0]
+                if self.verbose:
+                    print('\t\t\t\t-->', fc)
+                if fc in locked_protected:
+                    # Forced connection is in the same room.  Remove 1 entrance & 1 exit from here.
+                    if self.verbose:
+                        print('\t\t\t\tforced connection in same room!')
+                    self_count[l_type] -= 1
+                    self_count[c_type] -= 1
+                    locked_protected.remove(fc)
+                else:
+                    Rconn = self.rooms.get_room_from_element(fc)
+                    if self.verbose:
+                        print('\t\t\t\tforced connection in room:', Rconn.id)
+                    if Rconn in up_nodes:
+                        # Forced connection is upstream.  Remove 1 exit from here & 1 entrance from upstream
+                        self_count[l_type] -= 1
+                        up_count[c_type] -= 1
+                        if self.verbose:
+                            print('\t\t\t\t... in upstream')
+                    elif Rconn in down_nodes:
+                        # Forced connection is downstream.  Remove 1 exit from here & 1 entrance from downstream
+                        self_count[l_type] -= 1
+                        down_count[c_type] -= 1
+                        if self.verbose:
+                            print('\t\t\t\t... in downstream')
+            for lp in locked_protected:
+                if self.verbose:
+                    print('\t\t\tFound locked forced connection:', lp, 'in', node.id)
+                # already handled case where lf and lp are in the same room
+                [l_type, c_type] = [[0, 2][[True, False].index(lp < 2000)],
+                                    [0, 1][[True, False].index(lp < 2000)]]
+                fc = [lf for lf in forced_connections.keys() if lp in forced_connections[lf]][0]
+                if self.verbose:
+                    print('\t\t\t\t-->', fc)
+                Rconn = self.rooms.get_room_from_element(fc)
+                if self.verbose:
+                    print('\t\t\t\tForced connection is in room:', Rconn.id)
+                if Rconn in up_nodes:
+                    # Forced connection is upstream.  Remove 1 entrance from here & 1 exit from upstream
+                    self_count[l_type] -= 1
+                    up_count[c_type] -= 1
+                    if self.verbose:
+                        print('\t\t\t\t... in upstream')
+                elif Rconn in down_nodes:
+                    # Forced connection is downstream.  Remove 1 entrance from here & 1 exit from downstream
+                    self_count[l_type] -= 1
+                    down_count[c_type] -= 1
+                    if self.verbose:
+                        print('\t\t\t\t... in downstream')
 
             # Assess classifications
             door_in = (up_count[0] + self_count[0]) > 0
@@ -402,7 +467,7 @@ class Network:
 
             # For each node: [(door in, door out), (door in, trap out), (pit in, door out), (pit in, trap out)]
             classifications[node] = [door_in_door_out, door_in and trap_out, pit_in and door_out, pit_in and trap_out,
-                                     [list(up_count), self_count, list(down_count)],
+                                     [list(up_count), list(self_count), list(down_count)],
                                      [delta_in, delta_out, delta_either]]
 
         # Assess logical parameters
@@ -426,7 +491,7 @@ class Network:
     def connect_network(self):
         # Connect the network by proposing a connection & recursively connecting the created network.
         # If a connection fails or creates an invalid network, retreat a step and try a different one.
-        net_state = deepcopy(self)
+        net_state = deepcopy(self)  # AFTER THIS POINT: all operations should be on net_state!
 
         if sum(net_state.rooms.count[:3]) == 0:
             # Successfully completed the network.
@@ -444,6 +509,9 @@ class Network:
                     #for k in cl.keys():
                     #    print('\t',k.id,': ', cl[k])
                 raise Exception('Invalid network state.')
+            else:
+                if self.verbose:
+                    print('\tValid!  in/out/either = ', td)
 
             R_active = net_state.rooms.rooms[net_state.active]
             if self.verbose:
@@ -453,17 +521,21 @@ class Network:
             for k in R_active.keys:
                 if self.verbose:
                     print('Found an unused key: ', k)
-                self.apply_key(k)
+                net_state.apply_key(k)
 
             # Collect possible exits
             possible_exits = [[d for d in R_active.doors], [t for t in R_active.traps]]
             if self.verbose:
                 print('Possible exits: ')
-                print('\t' + str(R_active.id) + ': ', possible_exits, ' - (', cl[R_active], ')')
+                print('\t' + str(R_active.id) + ': ', possible_exits, ' - (', R_active.count[:3], '). K: ',
+                      R_active.keys, ', L: ', R_active.locks, '. [U/s/D]:', cl[R_active][4])
             for node in net_state.get_downstream_nodes(R_active):
+                # Collect exits from downstream nodes.
+                ### AS WE DO THIS: do we need to look for keys & apply them?  but only along the present branch???
                 node_exits = [[d for d in node.doors], [t for t in node.traps]]
                 if self.verbose:
-                    print('\t' + str(node.id) + ': ', node_exits, ' - (', cl[node], ')')
+                    print('\t' + str(node.id) + ': ', node_exits, ' - (', node.count[:3], '). K: ', node.keys, ', L: ',
+                          node.locks, '. [U/s/D]:', cl[node][4])
                 possible_exits[0] += node_exits[0]
                 possible_exits[1] += node_exits[1]
 
@@ -481,23 +553,23 @@ class Network:
                 R1 = net_state.rooms.get_room_from_element(d1)
                 d1_type = R1.element_type(d1)
                 if self.verbose:
-                    print('selected: ', d1)
+                    print('selected: ', d1, '(', R1.id, ')')
 
                 # if d1 was in a downstream node, R1 might have a key that hasn't been used yet.
-                for k in R1.keys:
-                    if self.verbose:
-                        print('Found an unused key: ', k, 'in', R1.id)
-                    self.apply_key(k)
-                # if R1 is not R_active:
-                #     trail = [p for p in self.get_upstream_paths[R1] if R_active in p][0]
-                #     trail = [R1] + trail[:trail.index(R_active)]
-                #     if self.verbose:
-                #         print('Traversed: ', [r.id for r in trail])
-                #     for Rt in trail:
-                #         for k in Rt.keys:
-                #             if self.verbose:
-                #                 print('Found an unused key: ', k, 'in',Rt.id)
-                #             self.apply_key(k)
+                if R1 is not R_active:
+                    trail = [R1]
+                    if R_active not in net_state.net.predecessors(R1):
+                        # R_active is significantly upstream.  Find the traversed nodes.
+                        trails = [p for p in net_state.get_upstream_paths(R1) if R_active in p]
+                        trail += trails[0][:trails[0].index(R_active)]
+                        if self.verbose:
+                            print('Traversed: ', [r.id for r in trail])
+                    # Apply any keys found along the way.
+                    for Rt in trail:
+                        for k in Rt.keys:
+                            if self.verbose:
+                                print('Found an unused key: ', k, 'in',Rt.id)
+                            net_state.apply_key(k)
 
                 # Collect possible entrances for d1
                 possible_entrances = []
@@ -509,14 +581,17 @@ class Network:
                     else:
                         node_entr = [p for p in node.pits]
                     if self.verbose:
-                        print('\t' + str(node.id) + ': ', node_entr, '(count: ',node.count,')', ' - ', cl[node])
+                        print('\t' + str(node.id) + ': ', node_entr, ' - (', node.count[:3], '). K: ', node.keys,
+                              ', L: ', node.locks, '. [U/s/D]:', cl[node][4])
                     possible_entrances.extend(node_entr)
 
                 if d1 in forced_connections.keys():
                     # This should only happen for forced one-way connections.  d2 must be locked, so it's not sampled.
                     possible_entrances = [d for d in forced_connections[d1]] # fail fast!
+                    if self.verbose:
+                        print('\t\tForced connection: ', possible_entrances)
                 else:
-                    possible_entrances = [p for p in possible_entrances if p not in self.protected]
+                    possible_entrances = [p for p in possible_entrances if p not in net_state.protected]
 
                 random.shuffle(possible_entrances)  # randomize order
 
@@ -528,6 +603,8 @@ class Network:
                         if self.verbose:
                             print('\t\tTrying Connection: ', str(d1), str(d2))
                         net_state.connect(d1, d2)
+                        if self.verbose:
+                            print('\t\t...')
                         net_state = net_state.connect_network()
 
                         # up_propagate the successful connection
@@ -701,6 +778,8 @@ class Rooms:
 
 
 class Room:
+    verbose = False
+
     def __init__(self, r=None):
         self.id = r
         if r is not None:
@@ -804,17 +883,23 @@ class Room:
         else:
             return False
 
-    def remove(self, id):
+    def remove(self, item):
         for r in range(len(self._contents) - 1):
-            if id in self._contents[r]:
-                self._contents[r].remove(id)
+            if item in self._contents[r]:
+                self._contents[r].remove(item)
+                if self.verbose:
+                    print('Removed:', item, 'from room:', self.id)
                 return True
         for k in self.locks.keys():
-            if id in self.locks[k]:
-                self.locks[k].remove(id)
+            if item in self.locks[k]:
+                self.locks[k].remove(item)
+                if self.verbose:
+                    print('Removed locked item:', item, 'from lock:', self.locks[k], 'in room:', self.id)
                 if len(self.locks[k]) == 0:
                     # This lock is empty.  Remove it.
                     self.locks.pop(k)
+                    if self.verbose:
+                        print('Empty lock, deleted.')
                 return True
         return False
 
