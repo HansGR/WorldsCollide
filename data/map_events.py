@@ -78,7 +78,6 @@ class LongMapEvents:
         self.events = []
         self.event_address_index = {}
         counter = 0
-
         for event_index in range(self.EVENT_COUNT):
             event_data_start = self.DATA_START_ADDR_LONG + event_index * LongMapEvent.DATA_SIZE
             event_data = self.rom.get_bytes(event_data_start, LongMapEvent.DATA_SIZE)
@@ -127,7 +126,6 @@ class LongMapEvents:
     def addLongEvents(self):
         # Modify the ROM to check for long events in the field program & include long event pointers
         # (Following Lenophis' code implementing long events, the event equivalent of long exits)
-
         ROM_OFFSET = 0xC00000
 
         # long event triggers

@@ -287,6 +287,7 @@ class Maps():
 
     def print_long_events(self, map_id):
         first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+
         self.long_events.print_range(first_event_id, self.get_event_count(map_id))
 
     def get_long_event(self, map_id, x, y):
@@ -297,14 +298,14 @@ class Maps():
     def add_long_event(self, map_id, new_event):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] += LongMapEvent.DATA_SIZE
-            
+
         event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         self.long_events.add_event(event_id, new_event)
 
     def delete_long_event(self, map_id, x, y):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] -= LongMapEvent.DATA_SIZE
-            
+
         first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         last_event_id = first_event_id + self.get_event_count(map_id)
         self.long_events.delete_event(first_event_id, last_event_id, x, y)
@@ -432,6 +433,92 @@ class Maps():
         self.exits.mod()  # self.exits.mod(self.doors.map[0], self)
         self._fix_imperial_camp_boxes()
         self._fix_Cid_timer_glitch()
+
+        # Make all maps warpable for -door-randomize-all
+        if self.args.debug or self.args.door_randomize:
+            for map_index, cur_map in enumerate(self.maps):
+                self.properties[map_index].warpable = 1
+
+        # Add doors to the spoiler log
+        if len(self.doors.map) > 0:
+            self.doors.print()
+
+    def doorRandoOverride(self, newmap):
+        from data.map_exit_extra import exit_data as ed
+        for r in room_data.keys():
+            for d in room_data[r][0]:
+                self.doors.door_rooms[d] = r
+                if d > 4000:
+                    self.doors.door_descr[d] = ed[d-4000][1] + "LOGICAL WOR"
+                else:
+                    self.doors.door_descr[d] = ed[d][1]
+        for d in room_data[r][1]:
+            self.doors.door_descr[d] = event_exit_info[d][4]
+            self.doors.door_descr[d+1000] = event_exit_info[d][4] + "DEST"
+        self.doors.map = newmap
+
+    def testLongEvents(self):
+        ### FOR TESTING: MAKE SOME LONG EVENTS TO VERIFY THE CODE WORKS CORRECTLY
+        print('Long event count: ' + str(self.long_events.EVENT_COUNT))
+
+        # LONG EVENT #1: play the lore sound effect on some horizontal tiles on the Blackjack
+        src = [
+            field.BranchIfEventBitSet(0x1b5, "SetBit"),
+            field.PlaySoundEffect(0x0),  # Lore sound effect
+            field.SetEventBit(0x1b5),
+            "SetBit",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, 'Test long event')
+        new_le = LongMapEvent()
+        new_le.x = 14
+        new_le.y = 7
+        new_le.size = 2
+        new_le.direction = 0  # 0 = horizontal; 128 = vertical
+        new_le.event_address = space.start_address - EVENT_CODE_START
+        self.add_long_event(0x006, new_le)  # add to map 0x006 (Blackjack, Deck)
+        print('Added long event #1:')
+        new_le.print()
+
+        # LONG EVENT #2: play the Bolt3 sound effect on some vertical tiles on the Blackjack
+        src = [
+            field.BranchIfEventBitSet(0x1b5, "SetBit"),
+            field.PlaySoundEffect(0x015),  # Bolt3 sound effect
+            field.SetEventBit(0x1b5),
+            "SetBit",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, 'Test long event')
+        new_le = LongMapEvent()
+        new_le.x = 17
+        new_le.y = 6
+        new_le.size = 2
+        new_le.direction = 128  # 0 = horizontal; 128 = vertical
+        new_le.event_address = space.start_address - EVENT_CODE_START
+        self.add_long_event(0x006, new_le)  # add to map 0x006 (Blackjack, Deck)
+        print('Added long event #2:')
+        new_le.print()
+
+        print('Long event count: ' + str(self.long_events.EVENT_COUNT))
+
+    def write_post_diagnostic_info(self):
+        # Write edited event info to a text file in human-readable format
+        f = open('event_map&address_info_post.txt','w')
+        f.write('# Event_ID: map_ID, (x, y), event_address')
+        counter = 0
+        for m in range(len(self.maps) - 1):
+            num_events = self.get_event_count(m)
+            for i in range(num_events):
+                this_e = self.events.events[i + counter]
+                f.write(str(counter+i) + ': ' + str(hex(m)) + " (" + str(this_e.x) + ", " + str(this_e.y) + ").  "
+                        + str(hex(this_e.event_address)) + '\n')
+            counter += num_events
+        f.write('\n\n')
+        for i in range(len(self.events.events)):
+            this_e = self.events.events[i]
+            f.write(str(counter + i) + ': ' + "(" + str(this_e.x) + ", " + str(this_e.y) + ").  "
+                    + str(hex(this_e.event_address)) + '\n')
+        f.close()
 
         # Make all maps warpable for -door-randomize-all
         if self.args.debug or self.args.door_randomize:
