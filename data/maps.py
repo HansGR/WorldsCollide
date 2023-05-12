@@ -283,35 +283,29 @@ class Maps():
 
     ### LONG EVENTS ###
     def get_long_event_count(self, map_id):
-        return (self.maps[map_id + 1]["long_events_ptr"] - self.maps[map_id][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        return (self.maps[map_id + 1]["long_events_ptr"] - self.maps[map_id]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
 
     def print_long_events(self, map_id):
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         self.long_events.print_range(first_event_id, self.get_event_count(map_id))
 
     def get_long_event(self, map_id, x, y):
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         last_event_id = first_event_id + self.get_event_count(map_id)
         return self.long_events.get_event(first_event_id, last_event_id, x, y)
 
     def add_long_event(self, map_id, new_event):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] += LongMapEvent.DATA_SIZE
-
-        event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
+            
+        event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         self.long_events.add_event(event_id, new_event)
 
     def delete_long_event(self, map_id, x, y):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] -= LongMapEvent.DATA_SIZE
-
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
+            
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         last_event_id = first_event_id + self.get_event_count(map_id)
         self.long_events.delete_event(first_event_id, last_event_id, x, y)
     ### LONG EVENTS ###
