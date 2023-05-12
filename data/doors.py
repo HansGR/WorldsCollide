@@ -20,7 +20,7 @@ ROOM_SETS = {
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
     'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh'],
     'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt'],
-    'DarylsTombMinimal': [379, 380, 383, 384, 386, 387, 389, 390, 391, 392, 'root-dt'],  # for testing
+    #'DarylsTombMinimal': [379, 380, 383, 384, 386, 387, 389, 390, 391, 392, 'root-dt'],  # for testing
     'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
