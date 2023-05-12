@@ -29,7 +29,6 @@ class MapEvent():
     def print(self):
         print("{}, {}: {}".format(self.x, self.y, hex(self.event_address)))
 
-
 class LongMapEvent():
     # By analogy to LongMapExit()
     DATA_SIZE = 0x06
