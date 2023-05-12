@@ -1,6 +1,13 @@
 from event.event import *
 
 class ImperialBase(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_sealed_gate
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Imperial Base"
 
@@ -22,6 +29,14 @@ class ImperialBase(Event):
                 #field.BranchIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate()), SOLDIERS_BATTLE_ON_TOUCH),
                 field.ReturnIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate())),
             )
+            if self.DOOR_RANDOMIZE:
+                from event.switchyard import SummonAirship
+                space = Write(Bank.CB, SummonAirship(0x0, 164, 194), "summon airship to imperial base")
+                airship_addr = space.start_address
+                space = Reserve(0xb25fd, 0xb2605, "imperial base thrown out summon airship", field.NOP())
+                space.write(
+                    field.Branch(airship_addr)
+                )
         else:
             space.write(
                 #field.Branch(SOLDIERS_BATTLE_ON_TOUCH),

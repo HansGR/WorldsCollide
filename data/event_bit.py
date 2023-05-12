@@ -143,8 +143,11 @@ GOT_BOTH_REWARDS_LONE_WOLF = 0x241
 MET_LONE_WOLF_WOR = 0x29b
 RECRUITED_MOG_WOB = 0x29f
 RECRUITED_UMARO_WOR = 0x07e
+DARYL_TOMB_WATER1_HIGH = 0x2b3
 DARYL_TOMB_TURTLE1_MOVED = 0x2b4
+DARYL_TOMB_WATER2_HIGH = 0x2b5
 DARYL_TOMB_TURTLE2_MOVED = 0x2b6
+DARYL_TOMB_DOOR_SWITCH = 0x2b8
 DEFEATED_DULLAHAN = 0x2b2
 RUST_RID_FOR_SALE = 0x298
 GOT_RUST_RID = 0x1db
@@ -208,6 +211,12 @@ DISABLE_MENU_ACCESS = 0x1c2
 TEMP_SONG_OVERRIDE = 0x1cc
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
+
+CAN_ENTER_GALLERY = 0x243   # Able to climb stairs to enter Owzer's gallery.
+DEFEATED_PAINTING_1 = 0x252  # beat 1st painting in Owzer's Mansion
+# DEFEATED_CHADARNOOK = 0x253  # defined above, this is just for reference
+BRIGHTEN_OWZER_BASEMENT = 0x24c  # walked thru the entrance that drops you in floating chest room
+DEFEATED_PAINTING_3 = 0x254  # beat 2nd painting in Owzer's Basement
 
 from constants.objectives import MAX_OBJECTIVES
 for index in range(MAX_OBJECTIVES):

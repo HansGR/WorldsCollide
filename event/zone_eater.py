@@ -1,6 +1,13 @@
 from event.event import *
 
 class ZoneEater(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_zone_eater
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Zone Eater"
 
@@ -23,6 +30,9 @@ class ZoneEater(Event):
             self.esper_mod(self.reward.id)
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         self.log_reward(self.reward)
 
@@ -113,3 +123,27 @@ class ZoneEater(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Modifications for door rando
+        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard, SummonAirship
+
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 2040  # ID of engulf event
+        space = Reserve(0xa008f, 0xa0095, 'Zone Eater Entry modification')
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to Zone Eater
+        src = [
+            field.LoadMap(0x114, direction=direction.DOWN, default_music=True,
+                          x=10, y=12, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # (2a) Change the exit event to load the switchyard location
+        event_id = 2041  # ID of engulf event
+        space = Reserve(0xb7db7, 0xb7dbd, 'Zone Eater Exit modification')
+        space.write(GoToSwitchyard(event_id))
+        # (2b) Add the switchyard event tile that handles exit to Triangle Island
+        src = SummonAirship(0x001, 237, 50)
+        AddSwitchyardEvent(event_id, self.maps, src=src)

@@ -1,6 +1,13 @@
 from event.event import *
 
 class NarsheBattle(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Narshe Battle"
 
@@ -208,16 +215,22 @@ class NarsheBattle(Event):
             reward_instructions,
 
             field.SetParty(1),
-            
-            # ref: CB/7217
-            field.HoldScreen(),
-            field.DisableEntityCollision(field_entity.PARTY0),
+        ]
 
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.SetSpeed(field_entity.Speed.FAST),
-                field_entity.Move(direction.DOWN, 8),
-            ),
+        if not self.DOOR_RANDOMIZE:
+            # If door randomizing, do not animate walk back to Narshe at end
+            src += [
+                # ref: CB/7217
+                field.HoldScreen(),
+                field.DisableEntityCollision(field_entity.PARTY0),
 
+                field.EntityAct(field_entity.PARTY0, True,
+                    field_entity.SetSpeed(field_entity.Speed.FAST),
+                    field_entity.Move(direction.DOWN, 8)
+                )
+            ]
+
+        src += [
             field.FadeOutScreen(4),
             field.WaitForFade(),
 
@@ -227,10 +240,17 @@ class NarsheBattle(Event):
             field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
             field.RefreshEntities(),
+        ]
 
-            field.FreeScreen(),
-            field.LoadMap(0x1e, direction.DOWN, default_music = True,
-                          x = 60, y = 37, fade_in = False, entrance_event = True),
+        if not self.DOOR_RANDOMIZE:
+            # If door randomizing, do not load Arvis' house.
+            src += [
+                field.FreeScreen(),
+                field.LoadMap(0x1e, direction.DOWN, default_music = True,
+                              x = 60, y = 37, fade_in = False, entrance_event = True),
+            ]
+
+        src += [
             field.FadeInScreen(4),
             field.WaitForFade(),
 

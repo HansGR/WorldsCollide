@@ -1,6 +1,13 @@
 from event.event import *
 
 class SerpentTrench(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_serpent_trench
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Serpent Trench"
 
@@ -21,6 +28,9 @@ class SerpentTrench(Event):
             self.esper_mod(self.reward.id)
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         self.log_reward(self.reward)
 
@@ -127,6 +137,88 @@ class SerpentTrench(Event):
         space.write(
             field.Branch(self.move_airship_to_south_figaro),
         )
+
+    def door_rando_mod(self):
+        # Modifications for door rando
+        from data.event_exit_info import event_exit_info
+        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 2044  # ID of cliff jump event
+        space = Reserve(0xbc873, 0xbc879, 'Serpent Trench Cliff Jump entry modification')
+        space.write(GoToSwitchyard(event_id))
+        # (1b) Add the switchyard event tile that handles entry to Serpent Trench #1
+        AddSwitchyardEvent(event_id, self.maps, branch=0xa8ae3)
+
+        # (2a) Change the Cave #1 Entry event to load the switchyard location
+        event_id = 2045
+        space = Reserve(0xa8c3a, 0xa8c40, 'Serpent Trench #1 to cave modification')
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (2b) Add the switchyard event tile that handles entry to ST Cave #1
+        src = [
+            field.LoadMap(0x0af, direction=direction.UP, default_music=True,
+                          x=44, y=16, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # (3a) Edit the event tile in Cave #1 to go to a new script that goes to the switchyard
+        event_id = 2047
+        space = Reserve(0xa8c41, 0xa8c47, 'Serpent Trench Cave 1 exit modification')
+        space.write(GoToSwitchyard(event_id), "Serpent Trench Cave 1 exit to Switchyard")
+        # (3b) Add the switchyard event tile that handles exit from ST Cave #1
+        src = [
+            field.LoadMap(0x002, direction=direction.DOWN, default_music=True,
+                          x=83, y=67, fade_in=True, entrance_event=True, airship=True),
+            world.HideMinimap(),
+            vehicle.MoveForward(direction.UP, 14),
+            world.Branch(0xa8c49)
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # (4a) Change the Cave #2 Entry event to load the switchyard location
+        event_id = 2048
+        space = Reserve(0xa8c8d, 0xa8c93, 'Serpent Trench #2 to cave modification')
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (4b) Add the switchyard event tile that handles entry to ST Cave #2
+        src = [
+            field.LoadMap(0x0af, direction=direction.UP, default_music=True,
+                          x=25, y=16, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # (5a) Edit the event tile in Cave #2c to go to a new script that goes to the switchyard
+        event_id = 2051
+        space = Reserve(0xa8c94, 0xa8c9b, 'Serpent Trench Cave 2 exit modification')
+        space.write(GoToSwitchyard(event_id), "Serpent Trench Cave 2 exit to Switchyard")
+        # (5b) Add the switchyard event tile that handles exit from ST Cave #2
+        src = [
+            field.LoadMap(0x002, direction=direction.DOWN, default_music=True,
+                          x=31, y=33, fade_in=True, entrance_event=True, airship=True),
+            world.HideMinimap(),
+            vehicle.MoveForward([], 4),
+            world.Branch(0xa8c9c)
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # (6a) Change the Nikeah Entry event to load the switchyard location
+        event_id = 2052
+        space = Reserve(0xa8be6, 0xa8bec, 'Serpent Trench #3 to Nikeah modification')
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (6b) Add the switchyard event tile that handles exit from Serpent Trench #3
+        AddSwitchyardEvent(event_id, self.maps, src=GoToSwitchyard(2053))
+
+        # (6c) Add the switchyard event tile that handles entry to Nikeah entrance animation
+        event_id = 2053
+        from instruction.field.entity import Hide
+        src = [
+            field.LoadMap(0x000, direction=direction.UP, default_music=False,
+                          x=128, y=73, fade_in=True, entrance_event=True),
+            Hide(),
+            world.Branch(0xa8bed)
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
 
     def character_mod(self, character):
         # use gerad npc to show character

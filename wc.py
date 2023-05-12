@@ -26,5 +26,9 @@ def main():
     data.write()
     memory.write()
 
+    if data.maps.doors.verbose:
+        from memory.space import Space
+        print(Space.heaps)
+
 if __name__ == '__main__':
     main()

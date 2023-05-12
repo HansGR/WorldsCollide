@@ -1,6 +1,13 @@
 from event.event import *
 
 class EsperMountain(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_esper_mountain
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Esper Mountain"
 
@@ -51,6 +58,9 @@ class EsperMountain(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
     def entrance_event_mod(self):
         src = [
@@ -200,3 +210,10 @@ class EsperMountain(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
+        # e.g. "CB/EE8F: C0    If ($1E80($097) [$1E92, bit 7] is clear), branch to $CA5EB3 (simply returns)
+        space = Reserve(0x0bee8f, 0x0bee94, "esper mountain trapdoor boss check 1", field.NOP())
+        space = Reserve(0x0beebe, 0x0beec3, "esper mountain trapdoor boss check 2", field.NOP())
+        space = Reserve(0x0beeec, 0x0beef1, "esper mountain trapdoor boss check 3", field.NOP())
