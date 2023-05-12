@@ -68,6 +68,29 @@ class Start(Event):
         self.start_items_mod()
         self.start_game_mod()
 
+        # Warp stone modification
+        if self.args.debug or self.args.door_randomize:
+            src = [
+                field.Call(0xa0159),
+                # 0x6b, 0xff, 0x25, 0x00, 0x00, 0x00, 0xff, 0xfe,  <- original warp to parent map
+                field.LoadMap(0x00, direction.UP, default_music=False,
+                              x=84, y=34, fade_in=True, airship=True),
+                vehicle.SetPosition(84, 34),
+                vehicle.ClearEventBit(event_bit.IN_WOR),  # we're going back to WoB
+                field.End(),  # end of script
+                field.Return(),  # return
+            ]
+            space = Write(Bank.CA, src, "new warp")
+            warp_to_narshe = space.start_address
+            #space.printr()
+
+            space = Reserve(0xa0144, 0xa014e, "edited warp section", field.NOP())
+            space.write(
+                field.Call(warp_to_narshe),
+                field.End(),
+            )
+            #space.printr()
+
         # where the game begins after intro/pregame
         space = Reserve(0xc9a4f, 0xc9ad4, "setup and start game", field.NOP())
         space.write(
@@ -234,6 +257,11 @@ class Start(Event):
                 field.AddItem("Warp Stone", sound_effect = False),
                 field.AddItem("Warp Stone", sound_effect = False),
             ]
+            for fd in range(99):
+                src += [
+                    field.AddItem("Warp Stone", sound_effect=False),
+                ]
+
         src += [
             field.Return(),
         ]

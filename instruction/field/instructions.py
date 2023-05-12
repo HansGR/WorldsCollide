@@ -421,6 +421,12 @@ class FlashScreen(_Instruction):
     def __str__(self):
         return super().__str__(self.args[0])
 
+class MosaicScreen(_Instruction):
+    def __init__(self, speed):
+        super().__init__(0x62, speed)
+    def __str__(self):
+        return super().__str__(self.args[0])
+
 class HoldScreen(_Instruction):
     def __init__(self):
         super().__init__(0x38)

@@ -1,6 +1,14 @@
 from event.event import *
+from event.switchyard import *
 
 class DarylTomb(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_daryls_tomb
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Daryl's Tomb"
 
@@ -22,6 +30,9 @@ class DarylTomb(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
         self.finish_check_mod()
+
+        if self.args.door_randomize:
+            self.door_rando_mod()
 
         self.log_reward(self.reward)
 
@@ -50,19 +61,27 @@ class DarylTomb(Event):
             # reset turtle's positions before leaving in case player re-enters later
             field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED),
             field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED),
-
-            # for convenience change staircase door to take player back out to wor
-            field.LoadMap(0x01, direction.DOWN, default_music = True, x = 25, y = 53),
-            world.End(),
-            field.Return(),
         ]
-        space = Write(Bank.CA, src, "daryl tomb back exit")
-        back_exit = space.start_address
 
-        space = Reserve(0xa435d, 0xa4362, "daryl tomb staircase and getting falcon scenes", field.NOP())
-        space.write(
-            field.Branch(back_exit),
-        )
+        if self.DOOR_RANDOMIZE:
+            # Send the player to the switchyard to handle random connections
+            event_id = 2058  # ID of Daryl's Tomb quick exit
+            src += GoToSwitchyard(event_id)
+
+            # (2b) Add the switchyard event tile that handles exit to the world map
+            switchyard_src = SummonAirship(0x001, 25, 53)
+            AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
+
+        else:
+            # for convenience change staircase door to take player back out to wor
+            src += [
+                field.LoadMap(0x01, direction.DOWN, default_music = True, x = 25, y = 53),
+                world.End(),
+                field.Return()
+            ]
+        # Need to reserve 12 bytes for vanilla command.
+        space = Reserve(0xa435d, 0xa4368, "daryl tomb staircase and getting falcon scenes", field.NOP())
+        space.write(src)
 
     def dullahan_battle_mod(self):
         boss_pack_id = self.get_boss("Dullahan")
@@ -137,3 +156,41 @@ class DarylTomb(Event):
                               layer1 = True, layer2 = True, layer3 = True, sprite_layer = True),
             field.Call(OPEN_BACK_EXIT),
         )
+
+    def door_rando_mod(self):
+        # Global Door Rando changes:
+        # (1) Change map for Daryl's Tomb turtle #2 right door.  The exit is always modified when doors are randomized.
+        # Change the tiles at map_id = 0x12C, Layer 1 (79, 2) with the following 2x1: $0A, $04 
+        src = [
+            field.SetMapTiles(1, 79, 2, 1, 2, [0x0a, 0x04]),
+            field.SetMapTiles(2, 79, 1, 1, 1, [0x21]),
+            field.BranchIfEventBitClear(event_bit.DARYL_TOMB_DOOR_SWITCH, 0xaf20f),
+            # CA/F205: C0    If ($1E80($2B8) [$1ED7, bit 0] is clear), branch to $CAF20F
+            field.Branch(0xaf20b)
+        ]
+        space = Write(Bank.CA, src, 'Daryls Tomb DR map modification')
+        dr_map_address = space.start_address
+        # Call this script in the entrance event:
+        space = Reserve(0xaf205, 0xaf20a, "Daryls Tomb entrance event DR modification", field.NOP())
+        space.write(field.Branch(dr_map_address))
+
+        # Module-specific door-rando changes:
+        if self.DOOR_RANDOMIZE:
+            # (2) Make turtle #1 not activate if water is low
+            src = [
+                field.BranchIfEventBitSet(event_bit.DARYL_TOMB_WATER1_HIGH, 0xa4259),
+                field.Return()
+            ]
+            space = Write(Bank.CA, src, 'Modified daryls tomb turtle #1 event')
+
+            turtle_event = self.maps.get_event(0x12b, 56, 20)
+            turtle_event.event_address = space.start_address - EVENT_CODE_START
+
+            # (3) Make turtle #2 not activate if water is low
+            src = [
+                field.BranchIfEventBitSet(event_bit.DARYL_TOMB_WATER2_HIGH, 0xa42c0),
+                field.Return()
+            ]
+            space = Write(Bank.CA, src, 'Modified daryls tomb turtle #2 event R')
+            turtle2_event = self.maps.get_event(0x12c, 79, 6)
+            turtle2_event.event_address = space.start_address - EVENT_CODE_START
