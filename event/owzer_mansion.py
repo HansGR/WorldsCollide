@@ -1,6 +1,12 @@
 from event.event import *
 
 class OwzerMansion(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_owzer_basement
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
     def name(self):
         return "Owzer Mansion"
 
@@ -40,6 +46,19 @@ class OwzerMansion(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+        if self.DOOR_RANDOMIZE:
+            # Remove warp-to-Jidoor from end of Chadarnook cutscene
+            space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
+            src = [
+                field.HideEntity(self.relm_npc_id),
+                field.RefreshEntities(),
+                field.FadeInScreen()
+            ]
+            space.write(src)
+
+            self.door_timer_mod()
+            self.painting_mod()
 
     def flash_mod(self):
         space = Reserve(0xb4d10, 0xb4d11, "owzer mansion flash", field.FlashScreen(field.Flash.NONE))
@@ -166,3 +185,25 @@ class OwzerMansion(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def door_timer_mod(self):
+        # Overwrite the check to see if Chadarnook has been killed (so this room always works)
+        space = Reserve(0xb4962, 0xb4967, "owzer mansion start door timer", field.NOP())
+        space.write([0x3a])  # enable player to move while commands execute
+
+        # Write a 2nd event tile (so the door timer will start if entering the room through other door)
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 88
+        new_event.y = 51
+        new_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x0cf, new_event)
+
+    def painting_mod(self):
+        # Overwrite the check to see if Chadarnook has been killed (so you can always fight the painting)
+        # Painting 1:
+        space = Reserve(0xb47c2, 0xb47c7, "owzer mansion painting 1")
+        space.write([
+            field.BranchIfEventBitClear(event_bit.DEFEATED_PAINTING_1, 0xb47ce)
+        ])
+

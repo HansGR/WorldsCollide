@@ -67,7 +67,7 @@ spaces = [
     (0x2ffbc8, 0x2ffeef),
 
     # EVENTS
-    (0x0a4363, 0x0a48bf), # daryl tomb staircase daryl flashback
+    (0x0a4369, 0x0a48bf), # daryl tomb staircase daryl flashback
     (0x0a48e3, 0x0a533e), # end of the world
     (0x0a6629, 0x0a6785), # terra/locke meet edgar in figaro castle wob
     (0x0a75ee, 0x0a7673), # figaro cave entrance guard
