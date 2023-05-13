@@ -507,23 +507,25 @@ room_data = {
     '296r' : [ [4606, 4607], [ ], [ ], [], {'zr1': [618]}, 1], #Zozo Cafe Upstairs Outside WOR
     297 : [ [609, 610], [ ], [3032], 0], #Zozo Relic 1st Section Outside (incl. hook entry event)
     298 : [ [611, 612, 616], [2032], [ ], 0], #Zozo Relic 2nd Section Outside (incl. hook exit)
-    299 : [ [613, 617], [ ], [ ], 0], #Zozo Relic 3rd Section Outside
+    299 : [ [613, 617], [ ], [ ], ['clock5'], {}, 0], #Zozo Relic 3rd Section Outside
     300 : [ [614, 615, 619], [ ], [ ], 0], #Zozo Relic 4th Section Outside
-    301 : [ [620, 621, 622], [ ], [ ], 0], #Zozo Cafe
-    '301r' : [ [4620, 4621, 4622], [ ], [ ], 1], #Zozo Cafe
+    301 : [ [620, 621, 622], [ ], [ ], ['clock1'], {}, 0], #Zozo Cafe WoB
+    '301r' : [ [4620, 4621, 4622], [ ], [ ], ['clock1'], {}, 1], #Zozo Cafe WoR
     302 : [ [623, 624], [ ], [ ], 0], #Zozo Relic 1st Room Inside
     # 303 : [ [625, 626], [ ], [ ], None], #Zozo Relic 2nd Room Inside - Walking guys create a one-way gate
-    '303a' : [ [625], [2033], [ ], 0], #Zozo Relic 2nd Room Inside - entrance
-    '303b' : [ [626], [ ], [3033], 0], #Zozo Relic 2nd Room Inside - exit
-    304 : [ [627, 628], [ ], [ ], 0], #Zozo West Tower Inside
+    '303a' : [ [625], [2033], [ ], ['clock3'], {},  0], #Zozo Relic 2nd Room Inside - entrance
+    '303b' : [ [626], [ ], [3033], ['clock3'], {},  0], #Zozo Relic 2nd Room Inside - exit
+    304 : [ [627, 628], [ ], [ ], ['clock4'], {},  0], #Zozo West Tower Inside
     305 : [ [629], [ ], [ ], 0], #Zozo Armor
     '305r' : [ [4629], [ ], [ ], 1], #Zozo Armor
-    306 : [ [630], [ ], [ ], 0], #Zozo Weapon
-    '306r' : [ [4630], [ ], [ ], 1], #Zozo Weapon
-    #307 : [ [631], [ ], [ ], None], #Zozo Clock Puzzle Room West
-    #308 : [ [632], [ ], [ ], None], #Zozo Clock Puzzle Room East
-    '307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
-    '307r' : [ [4631, 4632],  [ ], [ ], 1],  #Zozo Clock Puzzle Room (complete)
+    306 : [ [630], [ ], [ ], ['clock2'], {}, 0], #Zozo Weapon WoB
+    '306r' : [ [4630], [ ], [ ], ['clock2'], {}, 1], #Zozo Weapon WoR
+    307 : [ [631], [], [3062], [ ], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2061]}]}]}]}]}, 0], #Zozo Clock Puzzle Room West WoB
+    308 : [ [632], [2062], [], [ ], {'forced':[3061]}, 0], #Zozo Clock Puzzle Room East WoB
+    '307r': [[4631], [], [3064], [], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2063]}]}]}]}]}, 0],  # Zozo Clock Puzzle Room West WoB
+    '308r': [[4632], [2064], [], [], {'forced': [3063]}, 0],  # Zozo Clock Puzzle Room East WoB
+    #'307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
+    #'307r' : [ [4631, 4632],  [ ], [ ], 1],  #Zozo Clock Puzzle Room (complete)
     309 : [ [633], [ ], [ ], 0], #Zozo Cafe Chest Room
     '309r' : [ [4633], [ ], [ ], 1], #Zozo Cafe Chest Room
     310 : [ [634], [ ], [ ], 0], #Zozo Tower 6F Chest Room
@@ -826,6 +828,10 @@ forced_connections = {
 
     2032 : [3032],   # Zozo hook exit from building
     2033 : [3033],   # Zozo walking guys room
+    2061 : [3061],   # Zozo WOB clock room W --> E
+    2062 : [3062],   # Zozo WOB clock room E --> W
+    2063 : [3063],   # Zozo WOR clock room W --> E
+    2064 : [3064],   # Zozo WOR clock room E --> W
 
     2039: [3039],    # Lete river exit to world map
 
@@ -889,18 +895,24 @@ shared_exits = {
     1512: [781]  # Daryl's Tomb: Turtle exit event, same as south door.
 }
 
-# List of doors that CANNOT be connected to each other.  Only rare instances.
-invalid_connections = {
-    702 : [703],  # Magitek factory room 1: entrance & platform door
-    703 : [702],
-
+# Keys to apply immediately, based on flags.
+# '-flag': [True/False, [list of keys to apply]]
+keys_applied_immediately = {
+    'random_clock': [False, ['clock1', 'clock2', 'clock3', 'clock4', 'clock5']]
 }
+
+# List of doors that CANNOT be connected to each other.  Only rare instances.
+# Superceded by walk method
+# invalid_connections = {
+#     702 : [703],  # Magitek factory room 1: entrance & platform door
+#     703 : [702],
+# }
 
 # List of rooms that should have a forced update to Parent Map variable when entering.
 # force_update_parent_map[roomID] = [x, y, mapID]
-force_update_parent_map = {
-    '285a' : [1, 34, 157]  # Entering WoR Jidoor from Owzer's Basement
-}
+# force_update_parent_map = {
+#     '285a' : [1, 34, 157]  # Entering WoR Jidoor from Owzer's Basement
+# }
 
 def get_locked_items(locks):
     locked = []

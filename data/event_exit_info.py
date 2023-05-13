@@ -63,6 +63,10 @@ event_exit_info = {
     # ZOZO (WORLD OF BALANCE)
     2032: [0xa963d, 22, 0, [None, None, None, None], 'Zozo hook descent from building', [0x0DD, 35, 41], None],
     2033: [0x00000, 0, 0, [None, None, None, None], 'Zozo line of walking guys (logical)', [0x0E1, 0, 0], None],
+    2061: [0x00000, 0, 0, [None, None, None, None], 'Zozo clock room left to right WOB (logical)', [0x0E1, None, None], None], # logical no randomize
+    2062: [0x00000, 0, 0, [None, None, None, None], 'Zozo clock room right to left WOB (logical)', [0x0E1, None, None], None], # logical, no randomize
+    2063: [0x00000, 0, 0, [None, None, None, None], 'Zozo clock room left to right WOR (logical)', [0x0E1, None, None], None], # logical no randomize
+    2064: [0x00000, 0, 0, [None, None, None, None], 'Zozo clock room right to left WOR (logical)', [0x0E1, None, None], None], # logical, no randomize
 
     # LETE RIVER
     2034: [0xb059f, 151, 146, [False, False, False, True], 'Lete River start', [0x071, 31, 51], 'JMP'],

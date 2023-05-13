@@ -1,4 +1,4 @@
-from data.rooms import room_data, shared_exits, forced_connections
+from data.rooms import room_data, shared_exits, forced_connections, keys_applied_immediately
 import networkx as nx
 import random
 from copy import deepcopy
@@ -29,6 +29,19 @@ class Network:
                     print('Forcing: ', d, df)
                 self.connect(d, df, state='forced')
             self.protected.extend(forcing[d])
+
+    def ApplyImmediateKeys(self, args):
+        # Apply keys controlled by args
+        for flag in keys_applied_immediately.keys():
+            if self.verbose:
+                print('testing flag: ', flag, '(', getattr(args, flag), ')')
+            [condition, keylist] = keys_applied_immediately[flag]
+            applykeys = (getattr(args, flag) == condition)
+            if applykeys:
+                if self.verbose:
+                    print('condition satisfied!')
+                for k in keylist:
+                    self.apply_key(k)
 
     def connect(self, d1, d2, state=None):
         # (0) Create directed connection: d1 --> d2
@@ -862,10 +875,17 @@ class Room:
         for k in lock_dict.keys():
             self._contents[4][k] = lock_dict[k]
 
+    def extract_locked(self, lock):
+        elements = []
+        for vv in lock.values():
+            elements.extend([v for v in vv if type(v) is not dict])
+            locked_locks = [v for v in vv if type(v) is dict]
+            for ll in locked_locks:
+                elements.extend(self.extract_locked(ll))
+        return elements
+
     def locked(self, elementtype=None):
-        locked_elements = []
-        for vv in self._contents[4].values():
-            locked_elements.extend([v for v in vv])
+        locked_elements = self.extract_locked(self._contents[4])
 
         if elementtype is None:
             return locked_elements
@@ -912,10 +932,8 @@ class Room:
             return True
         elif id in self.keys:
             return True
-        else:
-            for vv in self.locks.values():
-                if id in vv:
-                    return True
+        elif id in self.locked():
+            return True
         return False
 
     def element_type(self, e_id):
