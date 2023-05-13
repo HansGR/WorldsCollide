@@ -1,6 +1,6 @@
 #from openpyxl import load_workbook
 from random import randrange, choices
-from data.rooms import forced_connections, shared_oneways, invalid_connections, exit_room
+from data.rooms import forced_connections, shared_oneways, exit_room
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
@@ -12,8 +12,8 @@ ROOM_SETS = {
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg'],
-    'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb'],
-    'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', 'branch-mz'],
+    'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 'root-zb'],
+    'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', 'branch-mz'],
     'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
     'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
@@ -30,8 +30,8 @@ ROOM_SETS = {
             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
             345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
             503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
-            294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, '307a', 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
-            '294r', '295r', '296r', '301r', '305r', '306r', '307r', '309r', 'root-zr', # Zozo-WoR
+            294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
+            '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', # Zozo-WoR
             250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
             'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
             356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
@@ -213,6 +213,7 @@ class Doors():
                 walks = Network(area)  # Initialize the Walk Network
                 if self.verbose:
                     print('Initial Count: ', walks.rooms.count)
+                walks.ApplyImmediateKeys(self.args)
                 walks.ForceConnections(self.forcing)  # Force initial connections, if any
                 if self.verbose:
                     print('Count after forced connections: ', walks.rooms.count)

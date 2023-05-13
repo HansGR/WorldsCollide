@@ -2,7 +2,7 @@ from data.map_exit import ShortMapExit, LongMapExit
 from data.map_exit_extra import exit_data_patch, add_new_exits, event_door_connection_data
 
 from data.map_event import MapEvent
-from data.rooms import room_data, force_update_parent_map
+from data.rooms import room_data
 
 from instruction import field
 
