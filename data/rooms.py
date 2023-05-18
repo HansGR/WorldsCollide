@@ -353,14 +353,14 @@ room_data = {
     196 : [ [460, 1187], [ ], [ ], 1], #Crazy Old Man's House WoR
 
     # PHANTOM FOREST & TRAIN
-    'root-pt' : [ [20, 21, 22], [], [], 0],  # Root map for Phantom Forest
     197 : [ [1188, 461], [], [466-1000], 0],  # Phantom Forest North Room.  Exit 466 also puts you in here!
     198 : [ [462, 463], [], [], 0], # Phantom Forest Healing Pool
     199 : [ [464, 465], [466], [], 0], # Phantom Forest Fork Room.  466 is a normal door behaving as a one-way (!) and 465 goes to world map BUT has an event tile exit....
     200 : [ [467, 468], [], [], 0],  # Phantom Forest Path to Phantom Train (0x087)
 
+    'root-pt' : [ [468], [], [3068], 0],  # Root map for Phantom Train
     201 : [ [469], [2065], [ ], 0], #Phantom Train Station
-    202 : [ [470, 471, 472, 473, 1528, 1529, 1530, 1531, 1532], [ ], [ ], 0], #Phantom Train Outside Front Section
+    202 : [ [470, 471, 472, 473, 1528, 1529, 1530, 1531, 1532], [ ], [ ], [], {'pt2': [2068]}, 0], #Phantom Train Outside Front Section
     '203a': [[1515, 1516], [], [3065], 0],  # Phantom Train Inside 1st Car
     '203b': [[1523, 1524], [], [3066], 0],  # Phantom Train Inside 2nd Car
     '203c': [[1514], [], [], 0],  # Phantom Train Inside 3rd Car
@@ -373,10 +373,12 @@ room_data = {
     207 : [ [1539, 1540, 1541, 1542], [], [], 0],  # Phantom Train Car 7 Inside (map 0x097 + event_bit 0x17E)
     '207a': [[1543], [], [], 0],  # Phantom Train Car 7 Inside Right Cabin
     '207b': [[1544], [], [], 0],  # Phantom Train Car 7 Inside Left Cabin MIAB room
+
     208 : [ [477, 483], [ ], [ ], 1], #Doma Dream Train Outside 3rd Section
     209 : [ [478, 479, 480, 481], [ ], [ ], 1], #Doma Dream Train Outside 2nd Section
     210 : [ [482], [ ], [ ], 1], #Doma Dream Train Outside 1st Section
     211 : [ [484, 485, 486, 487], [ ], [ ], 1], #Doma Dream Train 2nd Car
+
     212 : [ [1545], [], [], ['pt2'], {}, 0], # Phantom Train Locomotive Interior
     213 : [ [488], [ ], [ ], 0], #Phantom Train Caboose Inner Room
 

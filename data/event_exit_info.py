@@ -114,6 +114,7 @@ event_exit_info = {
     2065: [0xba8f1, 309, 149, [False, False, False, False], 'Phantom Train Platform to Car 1', [0x08C, 72, 10], 'JMP' ],
     2066: [0xba709, 83, 32, [False, False, False, False], 'Phantom Train Car 2 outside trapdoor', [0x08E, 56, 5], 'JMP'],  # Who knew about this ?!?
     2067: [0x00000, 0, 0, [False, False, False, False], 'Phantom Train roof jump cutscene (logical)', [0x08E, 56, 5], 'JMP'],  #
+    2068: [0xbba0c, 9, 3, [False, False, False, False], 'Phantom Train smokestack switch & boss', [0x08D, 31, 7], 'JMP'],  # tile points to 0xbb9d4
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
@@ -172,8 +173,8 @@ event_exit_info = {
     #'1534a': [0xba7d2, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Exit 2', [0x097, 1, 9], 'JMP'],
     1535: [0xba6c3, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Cabin', [0x097, 19, 7], 'JMP'],  # --> 0x99, 8, 28
     1536: [0xba6d0, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Cabin', [0x097, 9, 7], 'JMP'],    # --> 0x99, 23, 11
-    1537: [0xba81e, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Cabin interior', [0x099, 8, 29], 'JMP'],  # Not shared. --> 0x97, 19, 9. Siegfried room?
-    1538: [0xba82b, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Cabin interior', [0x099, 23, 12], 'JMP'],  # --> 0x97, 9, 9. 0x17E OFF!
+    1537: [0xba81e, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Cabin interior exit', [0x099, 8, 29], 'JMP'],  # Not shared. --> 0x97, 19, 9. Siegfried room?
+    1538: [0xba82b, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Cabin interior exit', [0x099, 23, 12], 'JMP'],  # --> 0x97, 9, 9. 0x17E OFF!
 
     1539: [0xba7db, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Exit', [0x097, 26, 8], 'JMP'],  # map 0x097 & 0x17E set
     #'1539a': [0xba7bf, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Exit 2', [0x097, 26, 9], 'JMP'],
@@ -181,10 +182,10 @@ event_exit_info = {
     #'1540a': [0xba801, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Exit 2', [0x097, 1, 9], 'JMP'],
     1541: [0xba6d7, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Cabin', [0x097, 19, 7], 'JMP'],  # --> 0x99, 23, 11
     1542: [0xba6de, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin', [0x097, 9, 7], 'JMP'],    # --> 0x99, 23, 28
-    1543: [0xba832, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Cabin interior', [0x099, 23, 12], 'JMP'],  # --> 0x97, 19, 9.  0x17E ON, NOT CLEARED!
-    1544: [0xba839, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin interior', [0x099, 23, 29], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
+    1543: [0xba832, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Cabin interior exit', [0x099, 23, 12], 'JMP'],  # --> 0x97, 19, 9.  0x17E ON, NOT CLEARED!
+    1544: [0xba839, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin interior exit', [0x099, 23, 29], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
 
-    1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior', [0x092, 8, 13], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
+    1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior exit', [0x092, 8, 13], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -198,6 +199,30 @@ event_exit_info = {
 from instruction.event import EVENT_CODE_START
 from instruction import field
 import data.event_bit as event_bit
+
+def set_locomotive_switches(bytes=True):
+    # Set single event bit 0x03E to check when initiating smokestack event
+    # CB/B9DC: C2    If ($1E80($185) [$1EB0, bit 5] is set) or ($1E80($186) [$1EB0, bit 6] is clear) or ($1E80($184) [$1EB0, bit 4] is clear), branch to $CBB9D0
+    # CB/B9D0: <smokestack doesn't work>
+    from memory.space import Write, Bank
+    clear_pt_switches_bit = [
+        field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+        field.Return()
+    ]
+    space = Write(Bank.CB, clear_pt_switches_bit, "Clear PT switches bit")
+
+    set_switches = [
+        field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], space.start_address),
+        field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+        field.Return()
+    ]
+    if bytes:
+        set_switches_bytes = []
+        for f in set_switches:
+            set_switches_bytes += [f.opcode] + f.args
+        return set_switches_bytes
+    else:
+        return set_switches
 
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
@@ -224,7 +249,10 @@ exit_event_patch = {
 
     # Phantom Train shared map bit controls
     1543: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Clear bit 0x17E
+    # Phantom Train set correct "switches" bit if leaving locomotive
+    1545: lambda src, src_end: [src[:-1] + set_locomotive_switches(bytes=True) + src[-1:], src_end]
 }
+
 
 exit_door_patch = {
     # For use with maps.create_exit_event() and maps.shared_map_exit_event()
@@ -239,6 +267,9 @@ exit_door_patch = {
 
     # Phantom Train shared map bit controls
     1543: [field.ClearEventBit(0x17E)],  # Clear bit 0x17E
+    # Phantom Train set correct "switches" bit if leaving locomotive
+    1545: set_locomotive_switches(bytes=False)
+
 }
 
 entrance_event_patch = {
@@ -305,11 +336,11 @@ entrance_door_patch = {
 
     # Phantom Train: set the correct room bits for Cars 1, 2, 3:
     # Bits are cleared upon leaving the cars. Explicit is safer, though.
-    1515: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 1 Left Exit
-    1516: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 1 Right Exit
-    1523: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 2 Left Exit
-    1524: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 2 Right Exit
-    1514: [field.ClearEventBit(0x17E), field.SetEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 3 South Exit
+    1515: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 1 Left Exit
+    1516: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 1 Right Exit
+    1523: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 2 Left Exit
+    1524: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 2 Right Exit
+    1514: [field.ClearEventBit(0x17E), field.SetEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 3 South Exit
 
     1533: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Right Exit # 0x17E clear
     1534: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Exit
@@ -349,20 +380,20 @@ def minecart_event_mod(src, src_end):
     return src, src_end
 
 
-def tritoch_event_mod(src, src_end):
-    new_src = [0xc0, 0x9e, 0x2, 0xb3, 0x5e, 0x0]  # field.BranchIfEventBitClear(event_bit.GOT_TRITOCH, 0xa5eb3),
-
-    if src[6] == 0xc0:
-        # Special event for cliff jump behind Tritoch: reproduce the modified WC event for character gating
-        atma_event_addr = code_address(src[10:13]) + EVENT_CODE_START
-        # atma_src = rom.ROM.get_bytes(atma_event_addr, 0xed-0xd8)
-        new_src += [0xc0, 0xed, 0x2] + branch_code(atma_event_addr, 17) # field.BranchIfEventBitClear(0x2ed, 0xc74e9)
-
-    new_src += [0x4b, 0x3b, 0xa] + [  # display text box $a3b
-                0xb6] + [0x0, 0x0, 0x0] + [0xf8, 0x37, 0x2] + [   # Yes --> branch to (placeholder), No --> branch to step back;
-                0xfe] + src[23:]  # return; source code for jumping animation
-
-    return new_src, src_end
+# def tritoch_event_mod(src, src_end):
+#     new_src = [0xc0, 0x9e, 0x2, 0xb3, 0x5e, 0x0]  # field.BranchIfEventBitClear(event_bit.GOT_TRITOCH, 0xa5eb3),
+#
+#     if src[6] == 0xc0:
+#         # Special event for cliff jump behind Tritoch: reproduce the modified WC event for character gating
+#         atma_event_addr = code_address(src[10:13]) + EVENT_CODE_START
+#         # atma_src = rom.ROM.get_bytes(atma_event_addr, 0xed-0xd8)
+#         new_src += [0xc0, 0xed, 0x2] + branch_code(atma_event_addr, 17) # field.BranchIfEventBitClear(0x2ed, 0xc74e9)
+#
+#     new_src += [0x4b, 0x3b, 0xa] + [  # display text box $a3b
+#                 0xb6] + [0x0, 0x0, 0x0] + [0xf8, 0x37, 0x2] + [   # Yes --> branch to (placeholder), No --> branch to step back;
+#                 0xfe] + src[23:]  # return; source code for jumping animation
+#
+#     return new_src, src_end
 
 
 def branch_code(addr, offset):

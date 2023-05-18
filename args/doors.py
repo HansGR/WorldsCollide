@@ -39,6 +39,8 @@ def parse(parser):
                        help="Randomize the doors in Darills Tomb")
     doors.add_argument("-drsfcb", "--door-randomize-south-figaro-cave-wob", action="store_true",
                        help="Randomize the doors in South Figaro Cave WoB")
+    doors.add_argument("-drpt", "--door-randomize-phantom-train", action="store_true",
+                       help="Randomize the doors in Phantom Train")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -57,7 +59,8 @@ def process(args):
             args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor \
             or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
             or args.door_randomize_serpent_trench or args.door_randomize_burning_house \
-            or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob:
+            or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
+            or args.door_randomize_phantom_train:
         args.door_randomize = True
     else:
         args.door_randomize = False
@@ -129,6 +132,9 @@ def flags(args):
         if args.door_randomize_south_figaro_cave_wob:
             flags += " -drsfcb"
 
+        if args.door_randomize_phantom_train:
+            flags += " -drpt"
+
     return flags
 
 def options(args):
@@ -157,6 +163,7 @@ def options(args):
             ("Burning House", True),
             ("Daryl's Tomb", True),
             ("SF Cave WOB", True),
+            ("Phantom Train", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -191,6 +198,7 @@ def options(args):
             ("Burning House", args.door_randomize_burning_house),
             ("Darill's Tomb", args.door_randomize_daryls_tomb),
             ("SF Cave WOB", args.door_randomize_south_figaro_cave_wob),
+            ("Phantom Train", args.door_randomize_phantom_train),
         ]
 
 def menu(args):

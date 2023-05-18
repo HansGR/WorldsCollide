@@ -85,7 +85,7 @@ spaces = [
     (0x0b39de, 0x0b3dca), # sealed gate opening/kefka/close scene
     (0x0b75d6, 0x0b77c7), # relm and strago find gungho hurt in thamasa wor
     (0x0ba0ec, 0x0ba37d), # doma poisoned, purple water function, cyan checks liege
-    (0x0bba0c, 0x0bbec3), # cyan's family scene after phantom train
+    (0x0bba23, 0x0bbec3), # cyan's family scene after phantom train  # originally (0x0bba0c, 0x0bbec3), needed fixed space for DR exit event.
     (0x0bbfe9, 0x0bc026), # baren falls shadow leaves
     (0x0bc228, 0x0bc5fa), # serpent trench cave various tile events (gau forget, scare sabin, drop gp, ...)
     (0x0bc730, 0x0bc84c), # serpent trench cave go outside and jump in water
