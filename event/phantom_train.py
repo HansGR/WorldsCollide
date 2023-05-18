@@ -1,6 +1,13 @@
 from event.event import *
 
 class PhantomTrain(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_phantom_train
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Phantom Train"
 
@@ -31,6 +38,9 @@ class PhantomTrain(Event):
         self.phantom_train_battle_mod()
         self.phantom_train_mod()
         self.random_forest_mod()
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         if self.args.character_gating:
             self.add_gating_condition()
@@ -174,8 +184,10 @@ class PhantomTrain(Event):
         ghost_shop_npc.set_event_address(0xbad44)
 
     def find_train_mod(self):
-        space = Reserve(0xba864, 0xba8e6, "phantom train skip find train event", field.NOP())
-        space.write(field.Return())
+        #space = Reserve(0xba864, 0xba8e6, "phantom train skip find train event", field.NOP())
+        #space.write(field.Return())
+        self.maps.delete_event(0x8c, 79, 11)
+
 
     def enter_train_mod(self):
         ghost_train_pack = self.enemies.packs.get_id("GhostTrain")
@@ -446,7 +458,7 @@ class PhantomTrain(Event):
         space = Write(Bank.CB, src, "phantom train ensure reward and exit forest")
         end_event = space.start_address
 
-        space = Reserve(0xbba06, 0xbba0b, "phantom train defeated call ensure reward and exit froest", field.NOP())
+        space = Reserve(0xbba06, 0xbba0b, "phantom train defeated call ensure reward and exit forest", field.NOP())
         space.write(
             field.Branch(end_event),
         )
@@ -501,3 +513,25 @@ class PhantomTrain(Event):
         space.write(
             field.BranchIfEventBitSet(event_bit.STOPPED_PHANTOM_TRAIN, random_destination),
         )
+
+    def door_rando_mod(self):
+        # Remove checks for 0x039 when exiting the reused train car.  Unnecessary.
+        space = Reserve(0xbaab5, 0xbaaba, "Phantom Train Reused Car right exit", field.NOP())
+        space.write([field.Branch(0xba76c)])
+        #space = Free(0xbaabb, 0xbaac3)
+
+        space = Reserve(0xbaaca, 0xbaacf, "Phantom Train Reused Car left exit", field.NOP())
+        space.write([field.Branch(0xba77f)])
+        # space = Free(0xbaad0, 0xbaad8)
+
+        # Remove "Car bit" setting when entering the reused train car.  These will be handled by entrance_door_patch.
+        space = Reserve(0xba6e5, 0xba6e6, "Phantom Train enter car 2 right bit set", field.NOP())
+        space = Reserve(0xba6f7, 0xba6f8, "Phantom Train enter car 2 left bit set", field.NOP())
+        space = Reserve(0xba683, 0xba684, "Phantom Train enter car 3 south bit set", field.NOP())
+
+        # Remove unused checks for bit 0x180 when leaving Car 6/7
+        space = Reserve(0xba7b7, 0xba7bc, "Phantom Train unused car 6/7 replica", field.NOP())
+        # space = Free(0xba815, 0xba81d)
+        space = Reserve(0xba7cc, 0xba7d1, "Phantom Train unused car 6/7 replica", field.NOP())
+        # space = Free(0xba7a8, 0xba7b0)
+

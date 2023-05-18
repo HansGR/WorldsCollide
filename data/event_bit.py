@@ -55,6 +55,7 @@ FINISHED_IMPERIAL_CAMP = 0x037
 LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN = 0x180 # used for both door ghost in wob and lump of metal chest in wor
 GOT_PHANTOM_TRAIN_REWARD = 0x192 # custom, used to be phantom forest recovery spring
 FOUND_PHANTOM_TRAIN = 0x038
+LOCKED_ON_PHANTOM_TRAIN = 0x039
 STOPPED_PHANTOM_TRAIN = 0x03a
 DEFEATED_PHANTOM_TRAIN = 0x03b
 NAMED_GAU = 0x03f
