@@ -110,6 +110,11 @@ event_exit_info = {
     2059: [0x00000, 0, 0, [None, None, None, None], 'Darills Tomb Turtle 2 left to right (logical)', [0x12C, None, None], None], # logical no randomize
     2060: [0x00000, 0, 0, [None, None, None, None], 'Darills Tomb Turtle 2 right to left (logical)', [0x12C, None, None], None], # logical, no randomize
 
+    # PHANTOM TRAIN
+    2065: [0xba8f1, 309, 149, [False, False, False, False], 'Phantom Train Platform to Car 1', [0x08C, 72, 10], 'JMP' ],
+    2066: [0xba709, 83, 32, [False, False, False, False], 'Phantom Train Car 2 outside trapdoor', [0x08E, 56, 5], 'JMP'],  # Who knew about this ?!?
+    2067: [0x00000, 0, 0, [False, False, False, False], 'Phantom Train roof jump cutscene (logical)', [0x08E, 56, 5], 'JMP'],  #
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
@@ -125,20 +130,61 @@ event_exit_info = {
     '1505a': [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187], None],
     #1506: [0xa5ee3, 20, 14, [False, False, False, False], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102], None],
     1506: [None, 7, 1, [False, False, False, False], 'Cave to South Figaro South Entrance WoB', [0x005, 1506 % 128, 1506 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
-
     1507: [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR', [0x001, 81, 85], None],
     '1507a': [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85], None],
     1508: [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen)', [0x001, 53, 58], None],
     '1508a': [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen) 2', [0x001, 54, 58], None],
     1509: [0xa5f39, 0, 0, [None, None, None, None], 'Solitary Island cliff entrance', [0x001, 73, 231], None],
-
     1510: [0xb80a9, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract east', [0x118, 54, 53], 'JMP'],
     1511: [0xb809a, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract west', [0x118, 26, 54], 'JMP'],
-
     1512: [0xa422e, 43, 35, [False, False, False, False], 'Daryls Tomb turtle room south exit', [0x12b, 56, 14], 'JMP'],
-
     1513: [0xa5ef7, 20, 14, [False, False, False, False], 'Cave to South Figaro North WOB', [0x047, 10, 48], 'JMP'],
     #'1513a': [0xa5ef7, 20, 14, [False, False, False, False], 'Cave to South Figaro North WOB 2', [0x047, 11, 48], 'JMP']
+
+    1514: [0xba7e4, 7, 1, [False, False, False, False], 'Phantom Train Car 3 South Exit', [0x091, 26, 11], 'JMP'],  # Note: just including event addresses for map loads.  Ignoring all switchyard code.
+    1515: [0xba78b, 7, 1, [False, False, False, False], 'Phantom Train Car 1 Left Exit', [0x091, 1, 7], 'JMP'],
+    #'1515a': [0xbaac4, 143, 137, [False, False, False, False], 'Phantom Train Car 1 Left Exit 2', [0x091, 1, 8], 'JMP'],
+    1516: [0xba778, 7, 1, [False, False, False, False], 'Phantom Train Car 1 Right Exit', [0x091, 30, 7], 'JMP'],
+    #'1516a': [0xbaac4, 143, 137, [False, False, False, False], 'Phantom Train Car 1 Right Exit 2', [0x091, 30, 8], 'JMP'],
+    #1517: [0xba5f9, 21, 15, [False, False, False, False], 'Phantom Train Car 1 South Door Outside', [0x08E, 72, 8], 'JMP'],  # These will need special treatment:
+    1518: [0xba60e, 21, 15, [False, False, False, False], 'Phantom Train Car 1 Right Door Outside', [0x08E, 74, 8], 'JMP'],  # They set event bits that are used by the interior
+    1519: [0xba623, 21, 15, [False, False, False, False], 'Phantom Train Car 1 Left Door Outside', [0x08E, 67, 8], 'JMP'],   # switchyard exit tiles to decide on destination.
+    1520: [0xba6e5, 18, 11, [False, False, False, False], 'Phantom Train Car 2 Right Door Outside', [0x08E, 58, 8], 'JMP'],  # These event bits need to be set upon entry.
+    1521: [0xba6f7, 18, 11, [False, False, False, False], 'Phantom Train Car 2 Left Door Outside', [0x08E, 51, 8], 'JMP'],
+    1522: [0xba67d, 23, 17, [False, False, False, False], 'Phantom Train Car 3 South Door Outside', [0x08E, 41, 8], 'JMP'],
+
+    1523: [0xba84b, 7, 1, [False, False, False, False], 'Phantom Train Car 2 Left Exit', [0x091, 1, 7], 'JMP'],
+    1524: [0xba842, 7, 1, [False, False, False, False], 'Phantom Train Car 2 Right Exit', [0x091, 30, 7], 'JMP'],
+
+    1525: [0xba638, 7, 1, [False, False, False, False], 'Phantom Train Car 4 Right Door Outside', [0x08E, 10, 8], 'JMP'],  # on map 0x08E
+    1526: [0xba647, 7, 1, [False, False, False, False], 'Phantom Train Car 4 Right Door Outside no caboose', [0x08D, 116, 8], 'JMP'],  # on map 0x08D
+    1527: [0xba7a1, 7, 1, [False, False, False, False], 'Phantom Train Car 4 Right Exit', [0x095, 31, 7], 'JMP'],  # 0xba792
+
+    1528: [0xba656, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Door Outside', [0x08D, 82, 8], 'JMP'],
+    1529: [0xba665, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Door Outside', [0x08D, 75, 8], 'JMP'],
+    1530: [0xba676, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Door Outside', [0x08D, 66, 8], 'JMP'],
+    1531: [0xba69e, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Door Outside', [0x08D, 59, 8], 'JMP'],
+    1532: [0xba6a5, 24, 7, [False, False, False, False], 'Phantom Train Engine Door Outside', [0x08D, 38, 8], 'JMP'], # --> 0x92, 8, 12
+
+    1533: [0xba7bf, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Exit', [0x097, 26, 8], 'JMP'],  # map 0x097 & 0x17E clear
+    #'1533a': [0xba7bf, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Exit 2', [0x097, 26, 9], 'JMP'],
+    1534: [0xba7d2, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Exit', [0x097, 1, 8], 'JMP'],
+    #'1534a': [0xba7d2, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Exit 2', [0x097, 1, 9], 'JMP'],
+    1535: [0xba6c3, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Cabin', [0x097, 19, 7], 'JMP'],  # --> 0x99, 8, 28
+    1536: [0xba6d0, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Cabin', [0x097, 9, 7], 'JMP'],    # --> 0x99, 23, 11
+    1537: [0xba81e, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Cabin interior', [0x099, 8, 29], 'JMP'],  # Not shared. --> 0x97, 19, 9. Siegfried room?
+    1538: [0xba82b, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Left Cabin interior', [0x099, 23, 12], 'JMP'],  # --> 0x97, 9, 9. 0x17E OFF!
+
+    1539: [0xba7db, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Exit', [0x097, 26, 8], 'JMP'],  # map 0x097 & 0x17E set
+    #'1539a': [0xba7bf, 7, 1, [False, False, False, False], 'Phantom Train Car 6 Right Exit 2', [0x097, 26, 9], 'JMP'],
+    1540: [0xba801, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Exit', [0x097, 1, 8], 'JMP'],
+    #'1540a': [0xba801, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Exit 2', [0x097, 1, 9], 'JMP'],
+    1541: [0xba6d7, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Cabin', [0x097, 19, 7], 'JMP'],  # --> 0x99, 23, 11
+    1542: [0xba6de, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin', [0x097, 9, 7], 'JMP'],    # --> 0x99, 23, 28
+    1543: [0xba832, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Cabin interior', [0x099, 23, 12], 'JMP'],  # --> 0x97, 19, 9.  0x17E ON, NOT CLEARED!
+    1544: [0xba839, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin interior', [0x099, 23, 29], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
+
+    1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior', [0x092, 8, 13], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -174,8 +220,10 @@ exit_event_patch = {
     2018: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01] + src, src_end],
 
     # Zone eater: fade back in music after exit animation
-    2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end]
+    2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end],
 
+    # Phantom Train shared map bit controls
+    1543: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Clear bit 0x17E
 }
 
 exit_door_patch = {
@@ -189,6 +237,8 @@ exit_door_patch = {
     1075: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
     1077: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 
+    # Phantom Train shared map bit controls
+    1543: [field.ClearEventBit(0x17E)],  # Clear bit 0x17E
 }
 
 entrance_event_patch = {
@@ -222,6 +272,26 @@ entrance_event_patch = {
 
     # Daryl's Tomb: Move the turtles to the appropriate side.
     1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit
+
+    # Phantom Train: set the correct room bits when entering Cars 1, 2, 3:
+    1515: lambda src, src_end: [src[:-1] + [0xd3, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 1 Left Exit
+    1516: lambda src, src_end: [src[:-1] + [0xd3, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 1 Right Exit
+    1523: lambda src, src_end: [src[:-1] + [0xd2, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 2 Left Exit
+    1524: lambda src, src_end: [src[:-1] + [0xd2, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 2 Right Exit
+    1514: lambda src, src_end: [src[:-1] + [0xd3, 0x7e, 0xd2, 0x80] + src[-1:], src_end],  # Phantom Train Car 3 South Exit
+
+    1533: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Right Exit # 0x17E clear
+    1534: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Left Exit
+    1535: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Right Cabin
+    1536: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Left Cabin
+    1538: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Left Cabin interior
+
+    1539: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Right Exit # 0x17E set
+    1540: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Left Exit
+    1541: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Right Cabin
+    1542: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Left Cabin
+    1543: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Right Cabin interior # 0x17E ON, NOT CLEARED!
+
 }
 
 entrance_door_patch = {
@@ -231,7 +301,27 @@ entrance_door_patch = {
     782: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],  # Turtle room north exit.
     793: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room top exit.
     794: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room bottom exit.
-    795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)]    # Water puzzle room right exit.
+    795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],    # Water puzzle room right exit.
+
+    # Phantom Train: set the correct room bits for Cars 1, 2, 3:
+    # Bits are cleared upon leaving the cars. Explicit is safer, though.
+    1515: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 1 Left Exit
+    1516: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 1 Right Exit
+    1523: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 2 Left Exit
+    1524: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 2 Right Exit
+    1514: [field.ClearEventBit(0x17E), field.SetEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN)], # Phantom Train Car 3 South Exit
+
+    1533: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Right Exit # 0x17E clear
+    1534: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Exit
+    1535: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Right Cabin
+    1536: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Cabin
+    1538: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Cabin interior
+
+    1539: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Right Exit # 0x17E set
+    1540: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Left Exit
+    1541: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Right Cabin
+    1542: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Left Cabin
+    1543: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Right Cabin interior # 0x17E ON, NOT CLEARED!
 }
 
 

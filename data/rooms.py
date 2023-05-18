@@ -352,23 +352,37 @@ room_data = {
 
     196 : [ [460, 1187], [ ], [ ], 1], #Crazy Old Man's House WoR
 
-    # PHANTOM TRAIN
-    201 : [ [469], [ ], [ ], 0], #Phantom Train Station
-    202 : [ [470, 471, 472, 473], [ ], [ ], 0], #Phantom Train Outside 4th Section
+    # PHANTOM FOREST & TRAIN
+    'root-pt' : [ [20, 21, 22], [], [], 0],  # Root map for Phantom Forest
+    197 : [ [1188, 461], [], [466-1000], 0],  # Phantom Forest North Room.  Exit 466 also puts you in here!
+    198 : [ [462, 463], [], [], 0], # Phantom Forest Healing Pool
+    199 : [ [464, 465], [466], [], 0], # Phantom Forest Fork Room.  466 is a normal door behaving as a one-way (!) and 465 goes to world map BUT has an event tile exit....
+    200 : [ [467, 468], [], [], 0],  # Phantom Forest Path to Phantom Train (0x087)
 
-    204 : [ [474, 475, 476], [ ], [ ], 0], #Phantom Train Outside 1st Section
-
-
-
+    201 : [ [469], [2065], [ ], 0], #Phantom Train Station
+    202 : [ [470, 471, 472, 473, 1528, 1529, 1530, 1531, 1532], [ ], [ ], 0], #Phantom Train Outside Front Section
+    '203a': [[1515, 1516], [], [3065], 0],  # Phantom Train Inside 1st Car
+    '203b': [[1523, 1524], [], [3066], 0],  # Phantom Train Inside 2nd Car
+    '203c': [[1514], [], [], 0],  # Phantom Train Inside 3rd Car
+    204 : [ [474, 475, 476, 1518, 1519, 1520, 1521, 1522], [2066, 2067], [ ], 0], #Phantom Train Outside 1st Section
+    205 : [ [1525], [], [3067], 0],  # Phantom Train Outside after jump
+    '205b' : [ [1526], [], [], 0],  # Phantom Train Outside after jump & disconnect
+    206 : [ [1533, 1534, 1535, 1536], [], [], 0],  # Phantom Train Car 6 Inside (map 0x097)
+    '206a' : [ [1537], [], [], 0],  # Phantom Train Car 6 Inside Right Cabin Siegfried Event
+    '206b' : [ [1538], [], [], 0],  # Phantom Train Car 6 Inside Left Cabin
+    207 : [ [1539, 1540, 1541, 1542], [], [], 0],  # Phantom Train Car 7 Inside (map 0x097 + event_bit 0x17E)
+    '207a': [[1543], [], [], 0],  # Phantom Train Car 7 Inside Right Cabin
+    '207b': [[1544], [], [], 0],  # Phantom Train Car 7 Inside Left Cabin MIAB room
     208 : [ [477, 483], [ ], [ ], 1], #Doma Dream Train Outside 3rd Section
     209 : [ [478, 479, 480, 481], [ ], [ ], 1], #Doma Dream Train Outside 2nd Section
     210 : [ [482], [ ], [ ], 1], #Doma Dream Train Outside 1st Section
     211 : [ [484, 485, 486, 487], [ ], [ ], 1], #Doma Dream Train 2nd Car
-
+    212 : [ [1545], [], [], ['pt2'], {}, 0], # Phantom Train Locomotive Interior
     213 : [ [488], [ ], [ ], 0], #Phantom Train Caboose Inner Room
 
-    215 : [ [489, 490, 491, 492], [ ], [ ], 0], #Phantom Train Dining Room
-    216 : [ [493, 494], [ ], [ ], 0], #Phantom Train Seating Car with Switch Left Side
+    '215a' : [ [489, 490], [ ], [ ], 0], #Phantom Train Dining Room Left
+    '215b' : [ [491, 492], [ ], [ ], 0], #Phantom Train Dining Room Right
+    216 : [ [1527], [ ], [ ], ['pt1'], {'pt1': [493, 494]}, 0], #Phantom Train Car 4 with Switch
 
 
 
@@ -892,7 +906,16 @@ shared_exits = {
 
     960: [961],  # Double door in Burning House Room 2
 
-    1512: [781]  # Daryl's Tomb: Turtle exit event, same as south door.
+    1512: [781],  # Daryl's Tomb: Turtle exit event, same as south door.
+
+    21: [22],    # Phantom Forest, south entrance
+    496: [498],  # Phantom Train Caboose, left exit
+    497: [499],  # Phantom Train Caboose, right exit
+    493: [494],  # Phantom Train Car 4, left exit
+    1525: [1526], # Phantom Train Car 4 outside --> car 4.
+
+    489: [490],  # Phantom Train dining car left side
+    491: [492]  # Phantom Train dining car right side
 }
 
 # Keys to apply immediately, based on flags.
