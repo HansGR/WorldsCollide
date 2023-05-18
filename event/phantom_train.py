@@ -1,4 +1,5 @@
 from event.event import *
+from event.switchyard import *
 
 class PhantomTrain(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -72,17 +73,30 @@ class PhantomTrain(Event):
             self.shops.no_dried_meat_phantom_train()
 
     def _load_world_map(self):
-        src = [
-            field.FadeOutSong(32),
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x00, direction.DOWN, default_music = False, x = 178, y = 94, airship = True),
-            vehicle.SetPosition(178, 94),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x00, direction.DOWN, default_music = True, x = 178, y = 93),
-            world.Turn(direction.DOWN),
-            world.End(),
-        ]
-        space = Write(Bank.CB, src, "phantom train move airship and return to world map")
+        src = [field.FadeOutSong(32)]
+        if self.DOOR_RANDOMIZE:
+            # Send to switchyard tile
+            event_id = 2068
+            src += GoToSwitchyard(event_id)
+
+            # Add the switchyard event tile that handles exit to the world map
+            switchyard_src = SummonAirship(0x000, 178, 93)
+            AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
+
+        else:
+            src += [
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(0x00, direction.DOWN, default_music = False, x = 178, y = 94, airship = True),
+                vehicle.SetPosition(178, 94),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(0x00, direction.DOWN, default_music = True, x = 178, y = 93),
+                world.Turn(direction.DOWN),
+                world.End(),
+            ]
+        #space = Write(Bank.CB, src, "phantom train move airship and return to world map")
+        # Must be at a fixed address for DR!  Need 23 bytes.
+        space = Reserve(0xbba0c, 0xbba22, "phantom train move airship and return to world map", field.NOP())
+        space.write(src)
         self.load_world_map = space.start_address
 
     def esper_item_mod(self, esper_item_instructions):
@@ -201,7 +215,7 @@ class PhantomTrain(Event):
         space = Reserve(0xba901, 0xba951, "phantom train skip enter event", field.NOP())
         space.write(
             # clear this event bit in case lump of metal chest already done
-            field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN),
+            field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3),
             field.Branch(space.end_address + 1), # skip nops
         )
 
@@ -452,7 +466,7 @@ class PhantomTrain(Event):
             field.SetEventBit(npc_bit.GHOST_SHOP_PHANTOM_FOREST),
             field.ClearEventBit(npc_bit.PHANTOM_TRAIN_SAVE_POINT),
             field.ClearEventBit(npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN),
-            field.ClearEventBit(event_bit.SIEGFRIED_LUMP_OF_METAL_CHESTS),
+            field.ClearEventBit(event_bit.LUMP_OF_METAL_CHESTS),
             field.Branch(self.load_world_map),
         ]
         space = Write(Bank.CB, src, "phantom train ensure reward and exit forest")
@@ -534,4 +548,8 @@ class PhantomTrain(Event):
         # space = Free(0xba815, 0xba81d)
         space = Reserve(0xba7cc, 0xba7d1, "Phantom Train unused car 6/7 replica", field.NOP())
         # space = Free(0xba7a8, 0xba7b0)
+
+        # Change smokestack event to check new event bit 0x03E
+        space = Reserve(0xbb9dc, 0xbb9e5, "Phantom Train initialize boss condition", field.NOP())
+        space.write([field.BranchIfEventBitClear(event_bit.SET_PHANTOM_TRAIN_SWITCHES, 0xbb9d0)])
 

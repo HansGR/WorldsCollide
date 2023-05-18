@@ -22,6 +22,7 @@ ROOM_SETS = {
     'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt'],
     #'DarylsTombMinimal': [379, 380, 383, 384, 386, 387, 389, 390, 391, 392, 'root-dt'],  # for testing
     'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
+    'PhantomTrain': [201, 202, '203a', '203b', '203c', 204, 205, 206, '206a', '206b', 207, '207a', '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB

@@ -31,7 +31,7 @@ class Start(Event):
 
     def init_event_bits(self, space):
         self.event_bit_init = space.start_address
-        space.write(
+        initialize_event_bits = [
             field.SetEventBit(event_bit.NAMED_SABIN),
             field.SetEventBit(event_bit.NAMED_SHADOW),
 
@@ -57,7 +57,36 @@ class Start(Event):
             field.SetEventWord(event_word.ESPERS_FOUND, 0),
 
             field.SetBattleEventBit(battle_bit.MAGIC_POINTS_AFTER_BATTLE),
-        )
+        ]
+
+        # Handle event bits specific to door randomizer
+        if self.args.door_randomize_all or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl \
+                or self.args.door_randomize_phantom_train or self.args.door_randomize_doma_dream:
+            # Deconflict Siegfried event bit:  shared with Lump Of Metal event bit 0x187 in vanilla.
+            # CB/B7F8: C2    If ($1E80($1B0) [$1EB6, bit 0] is clear) or ($1E80($187) [$1EB0, bit 7] is set) or ($1E80($188) [$1EB1, bit 0] is set), branch to $CA5EB3 (simply returns)
+            space = Reserve(0xbb7f8, 0xbb801, "Siegfried event tile bit check", field.NOP())
+            space.write([field.ReturnIfAny([0x1B0, False, event_bit.FOUGHT_SIEGFRIED, True])])
+            # CB/B8FC: D2    Set event bit $1E80($187) [$1EB0, bit 7]
+            space = Reserve(0xbb8fc, 0xbb8fd, "Fought Siegfried", field.NOP())
+            space.write([field.SetEventBit(event_bit.FOUGHT_SIEGFRIED)])
+
+            # Deconflict "Lump of metal" bit from "Phantom Train" bit.  Originally 0x180
+            # CB/91D9: C0    If ($1E80($180) [$1EB0, bit 0] is set), branch to $CB91E8
+            space = Reserve(0xb91d9, 0xb91de, "Lump of metal bit check", field.NOP())
+            space.write([field.BranchIfEventBitSet(event_bit.LUMP_OF_METAL_CHEST, 0xb91e8)])
+            # CB/922D: D2    Set event bit $1E80($180) [$1EB0, bit 0]
+            space = Reserve(0xb922d, 0xb922e, "Lump of metal bit set", field.NOP())
+            space.write([field.SetEventBit(event_bit.LUMP_OF_METAL_CHEST)])
+
+            # initialize new event bits
+            initialize_event_bits += [
+                field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+                field.ClearEventBit(event_bit.FOUGHT_SIEGFRIED),
+                field.ClearEventBit(event_bit.LUMP_OF_METAL_CHEST)
+            ]
+
+        space.write(initialize_event_bits)
+
 
     def mod(self):
         self.intro_loop_mod()
