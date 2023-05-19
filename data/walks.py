@@ -6,7 +6,7 @@ import numpy as np
 
 
 class Network:
-    verbose = False
+    verbose = True
 
     def __init__(self, rooms):
         self.original_room_ids = [r for r in rooms]
@@ -293,19 +293,21 @@ class Network:
                     Ra = self.rooms.get_room_from_element(da)
 
                     # Handle various bad cases if the dead end has a key:
-                    if len(Rd.keys) > 0:
-                        # Verify the dead end doesn't contain the key to unlock this door
+                    if len(Rd.keys) > 0 or len(Ra.keys) > 0:
+                        # 1. Verify the dead end doesn't contain the key to unlock this door
                         flags = [False]
                         if da in Ra.locked('doors'):
                             ka = Ra.get_key(da)
                             flags[0] = ka in Rd.keys
-                        # Verify there is an exit from this room that isn't locked by this key
+
+                        # 2. Verify there is an exit from this room that isn't locked by keys in these 2 rooms
                         flags.append(True)
                         otherdoors = [d for d in Ra.alldoors if d is not da]
+                        available_keys = [k for k in Rd.keys] + [k for k in Ra.keys]
                         for d in otherdoors:
                             if d in Ra.locked('doors'):
                                 ka = Ra.get_key(d)
-                                if ka not in Rd.keys:
+                                if ka not in available_keys:
                                     # It's locked by something else
                                     flags[1] = False
                             else:
@@ -805,7 +807,7 @@ class Room:
             self._contents = deepcopy(contents)  # Copy, don't replicate
 
             # Adjust shared exits:
-            d_shared = [d for d in self.doors if d in shared_exits.keys()]
+            d_shared = [d for d in self.alldoors if d in shared_exits.keys()]
             for d in d_shared:
                 for s in shared_exits[d]:
                     self.remove(s)

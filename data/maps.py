@@ -627,7 +627,6 @@ class Maps():
         for m in exit_data_patch.keys():
             if m not in map.keys():
                 map[m] = exit_data[m][0]
-
                 # Look up the rooms of these exits
                 #this_room = [r for r in room_data.keys() if m in room_data[r][0]]
                 #if len(this_room)> 0:
@@ -675,6 +674,7 @@ class Maps():
 
                 if self.doors.verbose:
                     print('Connecting: ' + str(m) + ' to ' + str(map[m]))
+                    #  + ": " + str(exit_data[m][1]) + ' to ' + str(exit_data[map[m]][1])
 
                 # Write events on the exits to handle required conditions:
                 self.create_exit_event(m, map[m])
@@ -959,11 +959,11 @@ class Maps():
         # Send the player to the location that the connection's vanilla partner sends you to
         # [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, ...]
         d_ref_partner = exit_data[d_ref][0]
-        if d_ref_partner in self.exits.exit_original_data.keys():
-            conn_data = self.exits.exit_original_data[d_ref_partner]
-        else:
-            # Probably a logical exit without tweaks.  Can use vanilla connection info.
-            conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
+        #if d_ref_partner in self.exits.exit_original_data.keys():
+        conn_data = self.exits.exit_original_data[d_ref_partner]
+        #else:
+        #   This is a logical exit without tweaks.  Can use vanilla connection info.
+        #   conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
 
         if require_event_flags[4]:
             wor_src = SummonAirship(conn_data[0], conn_data[1], conn_data[2])
