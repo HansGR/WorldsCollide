@@ -186,6 +186,7 @@ event_exit_info = {
     1544: [0xba839, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin interior exit', [0x099, 23, 29], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
 
     1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior exit', [0x092, 8, 13], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
+
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen

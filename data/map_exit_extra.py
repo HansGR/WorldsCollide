@@ -1330,6 +1330,37 @@ exit_data = {
     1509: [1272, 'Solitary Island cliff entrance'],
     1512: [793, "Darill's Tomb B2 Turtle Hallway South"],
     1513: [272, "South Figaro Cave WoB North Entrance"],
+    1514: [1522,  "Phantom Train Car 3 South Exit"],
+    1515: [1519,  "Phantom Train Car 1 Left Exit"],
+    1516: [1518,  "Phantom Train Car 1 Right Exit"],
+    1518: [1516,  "Phantom Train Car 1 Right Door Outside"],
+    1519: [1515,  "Phantom Train Car 1 Left Door Outside"],
+    1520: [1524,  "Phantom Train Car 2 Right Door Outside"],
+    1521: [1523,  "Phantom Train Car 2 Left Door Outside"],
+    1522: [1514,  "Phantom Train Car 3 South Door Outside"],
+    1523: [1521,  "Phantom Train Car 2 Left Exit"],
+    1524: [1520,  "Phantom Train Car 2 Right Exit"],
+    1525: [1527,  "Phantom Train Car 4 Right Door Outside"],
+    1526: [1527,  "Phantom Train Car 4 Right Door Outside no caboose"],
+    1527: [1526,  "Phantom Train Car 4 Right Exit"],
+    1528: [1533,  "Phantom Train Car 6 Right Door Outside"],
+    1529: [1534,  "Phantom Train Car 6 Left Door Outside"],
+    1530: [1539,  "Phantom Train Car 7 Right Door Outside"],
+    1531: [1540,  "Phantom Train Car 7 Left Door Outside"],
+    1532: [1545,  "Phantom Train Engine Door Outside"],
+    1533: [1528,  "Phantom Train Car 6 Right Exit"],
+    1534: [1529,  "Phantom Train Car 6 Left Exit"],
+    1535: [1537,  "Phantom Train Car 6 Right Cabin"],
+    1536: [1538,  "Phantom Train Car 6 Left Cabin"],
+    1537: [1535,  "Phantom Train Car 6 Right Cabin interior exit"],
+    1538: [1536,  "Phantom Train Car 6 Left Cabin interior exit"],
+    1539: [1530,  "Phantom Train Car 7 Right Exit"],
+    1540: [1531,  "Phantom Train Car 7 Left Exit"],
+    1541: [1543,  "Phantom Train Car 7 Right Cabin"],
+    1542: [1544,  "Phantom Train Car 7 Left Cabin"],
+    1543: [1541,  "Phantom Train Car 7 Right Cabin interior exit"],
+    1544: [1542,  "Phantom Train Car 7 Left Cabin interior exit"],
+    1545: [1532,  "Phantom Train Locomotive interior exit"],
 
     # WORLD OF RUIN (logical) DOORS:
     4525: [4527, "Nikeah Inn Outside WoR"],
@@ -1435,7 +1466,7 @@ exit_data_patch = {
 
     # THAMASA WOB
     1254: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka West to World Map WoB"],
-    1255: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka South to World Map WoB"],
+    1255: lambda info: set_dest_map(0, info)  # [1504, "Thamasa After Kefka South to World Map WoB"],
 
 }
 
@@ -1446,7 +1477,39 @@ event_door_connection_data = {
     1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
     1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract west'
     1512: [0x12c, 69, 8, 0, 0, 0, 2, 0, 56, 14, 0, 0], # 'Darills tomb turtle south exit'
-    1513: [0x046, 47, 39, 0, 0, 0, 0, 0, 10, 48, 0, 0] # 'South Figaro Cave WOB North entrance'
+    1513: [0x046, 47, 39, 0, 0, 0, 0, 0, 10, 48, 0, 0], # 'South Figaro Cave WOB North entrance'
+    1514: [0x08E, 41, 9, 0, 0, 0, 2, 0, 26, 11, 0, 0],  #  'Phantom Train Car 3 South Exit'
+    1515: [0x08E, 66, 8, 0, 0, 0, 3, 0, 1, 7, 0, 0],  #  'Phantom Train Car 1 Left Exit'
+    1516: [0x08E, 75, 8, 0, 0, 0, 1, 0, 30, 7, 0, 0],  #  'Phantom Train Car 1 Right Exit'
+    1518: [0x091, 29, 7, 0, 0, 0, 3, 0, 74, 8, 0, 0],  #  'Phantom Train Car 1 Right Door Outside'
+    1519: [0x091, 2, 7, 0, 0, 0, 1, 0, 67, 8, 0, 0],  #  'Phantom Train Car 1 Left Door Outside'
+    1520: [0x091, 29, 7, 0, 0, 0, 3, 0, 58, 8, 0, 0],  #  'Phantom Train Car 2 Right Door Outside'
+    1521: [0x091, 2, 7, 0, 0, 0, 1, 0, 51, 8, 0, 0],  #  'Phantom Train Car 2 Left Door Outside'
+    1522: [0x091, 26, 9, 0, 0, 0, 0, 0, 41, 8, 0, 0],  #  'Phantom Train Car 3 South Door Outside'
+    1523: [0x08E, 50, 8, 0, 0, 0, 3, 0, 1, 7, 0, 0],  #  'Phantom Train Car 2 Left Exit'
+    1524: [0x08E, 59, 8, 0, 0, 0, 1, 0, 30, 7, 0, 0],  #  'Phantom Train Car 2 Right Exit'
+    1525: [0x095, 30, 7, 0, 0, 0, 3, 0, 10, 8, 0, 0],  #  'Phantom Train Car 4 Right Door Outside'
+    1526: [0x095, 30, 7, 0, 0, 0, 3, 0, 116, 8, 0, 0],  #  'Phantom Train Car 4 Right Door Outside no caboose'
+    1527: [0x08D, 117, 8, 0, 0, 0, 1, 0, 31, 7, 0, 0],  #  'Phantom Train Car 4 Right Exit'
+    1528: [0x097, 25, 8, 0, 0, 0, 3, 0, 82, 8, 0, 0],  #  'Phantom Train Car 6 Right Door Outside'
+    1529: [0x097, 2, 8, 0, 0, 0, 1, 0, 75, 8, 0, 0],  #  'Phantom Train Car 6 Left Door Outside'
+    1530: [0x097, 25, 8, 0, 0, 0, 3, 0, 66, 8, 0, 0],  #  'Phantom Train Car 7 Right Door Outside'
+    1531: [0x097, 2, 8, 0, 0, 0, 1, 0, 59, 8, 0, 0],  #  'Phantom Train Car 7 Left Door Outside'
+    1532: [0x092, 8, 12, 0, 0, 0, 0, 0, 38, 8, 0, 0],  #  'Phantom Train Engine Door Outside'
+    1533: [0x08D, 83, 8, 0, 0, 0, 1, 0, 26, 8, 0, 0],  #  'Phantom Train Car 6 Right Exit'
+    1534: [0x08D, 74, 8, 0, 0, 0, 3, 0, 1, 8, 0, 0],  #  'Phantom Train Car 6 Left Exit'
+    1535: [0x099, 8, 28, 0, 0, 0, 0, 0, 19, 7, 0, 0],  #  'Phantom Train Car 6 Right Cabin'
+    1536: [0x099, 23, 11, 0, 0, 0, 0, 0, 9, 7, 0, 0],  #  'Phantom Train Car 6 Left Cabin'
+    1537: [0x097, 19, 9, 0, 0, 0, 2, 0, 8, 29, 0, 0],  #  'Phantom Train Car 6 Right Cabin interior exit'
+    1538: [0x097, 9, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0],  #  'Phantom Train Car 6 Left Cabin interior exit'
+    1539: [0x08D, 67, 8, 0, 0, 0, 1, 0, 26, 8, 0, 0],  #  'Phantom Train Car 7 Right Exit'
+    1540: [0x08D, 58, 8, 0, 0, 0, 3, 0, 1, 8, 0, 0],  #  'Phantom Train Car 7 Left Exit'
+    1541: [0x099, 23, 11, 0, 0, 0, 0, 0, 19, 7, 0, 0],  #  'Phantom Train Car 7 Right Cabin'
+    1542: [0x099, 23, 28, 0, 0, 0, 0, 0, 9, 7, 0, 0],  #  'Phantom Train Car 7 Left Cabin'
+    1543: [0x097, 19, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0],  #  'Phantom Train Car 7 Right Cabin interior exit'
+    1544: [0x097, 9, 9, 0, 0, 0, 2, 0, 23, 29, 0, 0],  #  'Phantom Train Car 7 Left Cabin interior exit'
+    1545: [0x08D, 38, 10, 0, 0, 0, 2, 0, 8, 13, 0, 0]  #  'Phantom Train Locomotive interior exit'
+
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

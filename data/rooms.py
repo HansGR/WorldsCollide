@@ -860,7 +860,9 @@ forced_connections = {
     2055: [3055],    # Burning House defeating boss --> Thamasa Inn.  This *could* be randomized.
 
     2059: [3059],    # Daryl's Tomb, Turtle #2 left to right
-    2060: [3060]    # Daryl's Tomb, Turtle #2 right to left
+    2060: [3060],    # Daryl's Tomb, Turtle #2 right to left
+
+    2067: [3067]    # Phantom train roof jump event
 }
 
 # Add forced connections for virtual doors (-dra)

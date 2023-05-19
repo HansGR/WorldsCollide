@@ -45,7 +45,7 @@ ROOM_SETS = {
 }
 
 class Doors():
-    verbose = False  # False  # True
+    verbose = True  # False  # True
 
     def __init__(self, args):
         # self.rom = rom
@@ -140,6 +140,9 @@ class Doors():
 
             if self.args.door_randomize_south_figaro_cave_wob:  # -drsfcb
                 room_sets.append(ROOM_SETS['SouthFigaroCaveWOB'])
+
+            if self.args.door_randomize_phantom_train:  # -drpt
+                room_sets.append(ROOM_SETS['PhantomTrain'])
 
             if self.combine_areas:
                 temp = []
