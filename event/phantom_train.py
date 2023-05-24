@@ -277,31 +277,32 @@ class PhantomTrain(Event):
     def escape_ghosts_mod(self):
         space = Reserve(0xbb267, 0xbb269, "phantom train ghost blocking exit no escape", field.NOP())
 
-        space = Reserve(0xbb276, 0xbb397, "phantom train ghosts surround party event", field.NOP())
-        space.write(
-            field.LoadMap(0x08e, direction.DOWN, default_music = True, x = 40, y = 9, fade_in = False),
-        )
-
-        # skip ghosts surrounding party cutscene and instead place every ghost in final position immediately when map loads
-        ghosts = [
-            (0x10, (37, 9), direction.RIGHT), (0x11, (36, 9), direction.RIGHT), (0x12, (35, 9), direction.RIGHT),
-            (0x13, (34, 9), direction.DOWN),  (0x14, (34, 8), direction.DOWN),  (0x15, (33, 8), direction.DOWN),
-            (0x18, (41, 9), direction.LEFT),  (0x19, (42, 9), direction.LEFT),
-            (0x1a, (43, 9), direction.DOWN),  (0x1b, (43, 8), direction.DOWN),  (0x1c, (44, 8), direction.DOWN),
-        ]
-        for ghost in ghosts:
+        if not self.DOOR_RANDOMIZE:
+            space = Reserve(0xbb276, 0xbb397, "phantom train ghosts surround party event", field.NOP())
             space.write(
-                field.ShowEntity(ghost[0]),
-                field.EntityAct(ghost[0], True,
-                    field_entity.SetPosition(ghost[1][0], ghost[1][1]),
-                    field_entity.Turn(ghost[2]),
-                ),
+                field.LoadMap(0x08e, direction.DOWN, default_music = True, x = 40, y = 9, fade_in = False),
             )
 
-        space.write(
-            field.FadeInScreen(),
-            field.Return(),
-        )
+            # skip ghosts surrounding party cutscene and instead place every ghost in final position immediately when map loads
+            ghosts = [
+                (0x10, (37, 9), direction.RIGHT), (0x11, (36, 9), direction.RIGHT), (0x12, (35, 9), direction.RIGHT),
+                (0x13, (34, 9), direction.DOWN),  (0x14, (34, 8), direction.DOWN),  (0x15, (33, 8), direction.DOWN),
+                (0x18, (41, 9), direction.LEFT),  (0x19, (42, 9), direction.LEFT),
+                (0x1a, (43, 9), direction.DOWN),  (0x1b, (43, 8), direction.DOWN),  (0x1c, (44, 8), direction.DOWN),
+            ]
+            for ghost in ghosts:
+                space.write(
+                    field.ShowEntity(ghost[0]),
+                    field.EntityAct(ghost[0], True,
+                        field_entity.SetPosition(ghost[1][0], ghost[1][1]),
+                        field_entity.Turn(ghost[2]),
+                    ),
+                )
+
+            space.write(
+                field.FadeInScreen(),
+                field.Return(),
+            )
 
         space = Reserve(0xbb3f4, 0xbb4d3, "phantom train ladder event, ghosts move closer", field.NOP())
         space.write(
@@ -603,6 +604,15 @@ class PhantomTrain(Event):
         space = Reserve(0xba55f, 0xba562, "Phantom train car 1 modify entrance event", field.NOP())
         space.write(src)
 
+        # Always hide NPCs on train map 0x8e
+        src = [
+            field.ClearEventBit(0x509),
+            field.Call(0xba545),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Phantom train rear section entrance event")
+        self.maps.set_entrance_event(0x08e, space.start_address - EVENT_CODE_START)
+
         # Remove "Car bits" setting when entering the reused train car.  These will be handled by entrance_door_patch.
         #space = Reserve(0xba6e5, 0xba6e6, "Phantom Train enter car 2 right bit set", field.NOP())
         #space = Reserve(0xba6f7, 0xba6f8, "Phantom Train enter car 2 left bit set", field.NOP())
@@ -613,6 +623,17 @@ class PhantomTrain(Event):
         space = Reserve(0xba6f7, 0xba700, "Phantom Train enter car 2 left bits set", field.NOP())
         space = Reserve(0xba683, 0xba68C, "Phantom Train enter car 3 south bits set", field.NOP())
         # Would be nice to Free these & move the event tile pointers.
+
+        # Make Car 3 door ghost only trigger once (by removing the "clear bit 0x03d")
+        # CB/B27F: D1    Clear event bit $1E80($03D) [$1E87, bit 5]
+        #space = Reserve(0xbb27f, 0xbb280, "Phantom train door ghost bit reset", field.NOP())
+        # Actually, just truncate the event after the fight
+        space = Reserve(0xbb276, 0xbb27b, "Phantom train door ghost warp", field.NOP())
+        space.write([field.ClearEventBit(0x17b), field.Return()])  # I don't know if the event bit matters
+
+        # Remove bit 0x17c check to allow roof jumping event
+        # CB/B4D5: C0    If ($1E80($17C) [$1EAF, bit 4] is clear), branch to $CA5EB3 (simply returns)
+        space = Reserve(0xbb4d5, 0xbb4da, "Phantom Train always allow roof jump", field.NOP())
 
         # Remove unused checks for bit 0x180 when leaving Car 6/7
         space = Reserve(0xba7b7, 0xba7bc, "Phantom Train unused car 6/7 replica", field.NOP())
