@@ -206,17 +206,18 @@ def set_locomotive_switches(bytes=True):
     # CB/B9DC: C2    If ($1E80($185) [$1EB0, bit 5] is set) or ($1E80($186) [$1EB0, bit 6] is clear) or ($1E80($184) [$1EB0, bit 4] is clear), branch to $CBB9D0
     # CB/B9D0: <smokestack doesn't work>
     from memory.space import Write, Bank
-    clear_pt_switches_bit = [
+    pt_switches_bit = [
+        field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], "CLEAR_SWITCHES"),
+        field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+        field.Return(),
+        "CLEAR_SWITCHES",
         field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
         field.Return()
     ]
-    space = Write(Bank.CB, clear_pt_switches_bit, "Clear PT switches bit")
+    space = Write(Bank.CB, pt_switches_bit, "Set or Clear PT switches bit")
 
-    set_switches = [
-        field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], space.start_address),
-        field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
-        field.Return()
-    ]
+    set_switches = [field.Call(space.start_address)]
+
     if bytes:
         set_switches_bytes = []
         for f in set_switches:
