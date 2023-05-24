@@ -529,6 +529,29 @@ class PhantomTrain(Event):
         )
 
     def door_rando_mod(self):
+        # change the platform entrance event so the exit is returnable
+        space = Reserve(0xba438, 0xba438, "Patch platform 1", field.NOP())
+        space.write([0x5c])  # Patch gate in existing program
+        #space = Reserve(0xba480, 0xba49e, "Patch platform 2", field.NOP())
+        src = [
+            field.SetMapTiles(1, 79, 12, 1, 4, [0x5c, 0x5c, 0x5c, 0x5c]),  # Patch rewalkable tiles
+            field.SetMapTiles(2, 24, 12, 1, 4, [0xe5, 0xe5, 0xe5, 0xe5]),  # Patch visual tiles
+            field.Call(0xb6ad3),
+            field.Return()
+        ]
+        patch_gate = Write(Bank.CB, src, "Patch Platform code")
+        space = Reserve(0xba4a7, 0xba4aa, "Patch platform", field.NOP())
+        space.write([field.Call(patch_gate.start_address)])
+
+        # Test the map patching code in the map 0x08c entrance event:  CB/A414 -- CB/A4A5
+        #space = Reserve(0xba414, 0xba41a, "Understand Patch platform 1", field.NOP())   # creates left clock
+        #space = Reserve(0xba41b, 0xba43d, "Understand Patch platform 2", field.NOP())   # creates walkable platform.
+        #space = Reserve(0xba43e, 0xba45e, "Understand Patch platform 3", field.NOP())   # puts walkable platform under character somehow?
+        #space = Reserve(0xba45f, 0xba47f, "Understand Patch platform 4", field.NOP())   # Extends platform to the left of the door
+        #space = Reserve(0xba480, 0xba49e, "Understand Patch platform 5", field.NOP())   # puts left part of platform under character somehow?
+        #space = Reserve(0xba49f, 0xba4a5, "Understand Patch platform 6", field.NOP())   # unknown
+        self.maps.delete_event(0x8c, 72, 11)  # allow the player to reach the left end of the platform
+
         # Remove checks for 0x039 when exiting the reused train car.  Unnecessary.
         space = Reserve(0xbaab5, 0xbaaba, "Phantom Train Reused Car right exit", field.NOP())
         space.write([field.Branch(0xba76c)])
@@ -538,16 +561,88 @@ class PhantomTrain(Event):
         space.write([field.Branch(0xba77f)])
         # space = Free(0xbaad0, 0xbaad8)
 
-        # Remove "Car bit" setting when entering the reused train car.  These will be handled by entrance_door_patch.
-        space = Reserve(0xba6e5, 0xba6e6, "Phantom Train enter car 2 right bit set", field.NOP())
-        space = Reserve(0xba6f7, 0xba6f8, "Phantom Train enter car 2 left bit set", field.NOP())
-        space = Reserve(0xba683, 0xba684, "Phantom Train enter car 3 south bit set", field.NOP())
+        # Try setting the NPC bits in the entrance event for Car 1/2/3 (map 0x091, CB/A553)
+        # -- Car 3 --
+        # CB/A553: C0    If ($1E80($180) [$1EB0, bit 0] is set), branch to $CBA564
+        src = [
+            field.ClearEventBit(0x506),
+            field.ClearEventBit(0x507),
+            field.ClearEventBit(0x508),
+            field.SetEventBit(0x509),
+            field.Branch(0xba564)
+        ]
+        space = Write(Bank.CB, src, "Phantom train car 3 entrance event")
+        src = [field.BranchIfEventBitSet(event_bit.PHANTOM_TRAIN_CAR_3, space.start_address)]
+        space = Reserve(0xba553, 0xba558, "Phantom train car 3 modify entrance event", field.NOP())
+        space.write(src)
+        # -- Car 2 --
+        # CB/A559: C0    If ($1E80($17E) [$1EAF, bit 6] is clear), branch to $CA5EB3 (simply returns)
+        # CB/A55F: B2    Call subroutine $CB8CB0
+        # CB/A563: FE    Return
+        src = [
+            field.ClearEventBit(0x506),
+            field.SetEventBit(0x507),
+            field.ClearEventBit(0x508),
+            field.ClearEventBit(0x509),
+            field.Branch(0xb8cb0)
+        ]
+        space = Write(Bank.CB, src, "Phantom train car 2 entrance event")
+        src = [field.BranchIfEventBitSet(0x17E, space.start_address)]
+        space = Reserve(0xba559, 0xba55e, "Phantom train car 2 modify entrance event", field.NOP())
+        space.write(src)
+        # -- Car 1 -- need to write a new one
+        src = [
+            field.SetEventBit(0x506),
+            field.ClearEventBit(0x507),
+            field.ClearEventBit(0x508),
+            field.ClearEventBit(0x509),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Phantom train car 1 entrance event")
+        src = [field.Call(space.start_address)]
+        space = Reserve(0xba55f, 0xba562, "Phantom train car 1 modify entrance event", field.NOP())
+        space.write(src)
+
+        # Remove "Car bits" setting when entering the reused train car.  These will be handled by entrance_door_patch.
+        #space = Reserve(0xba6e5, 0xba6e6, "Phantom Train enter car 2 right bit set", field.NOP())
+        #space = Reserve(0xba6f7, 0xba6f8, "Phantom Train enter car 2 left bit set", field.NOP())
+        #space = Reserve(0xba683, 0xba684, "Phantom Train enter car 3 south bit set", field.NOP())
+        space = Reserve(0xba614, 0xba61b, "Phantom Train enter car 1 right bits set", field.NOP())
+        space = Reserve(0xba629, 0xba630, "Phantom Train enter car 1 left bits set", field.NOP())
+        space = Reserve(0xba6e5, 0xba6ee, "Phantom Train enter car 2 right bits set", field.NOP())
+        space = Reserve(0xba6f7, 0xba700, "Phantom Train enter car 2 left bits set", field.NOP())
+        space = Reserve(0xba683, 0xba68C, "Phantom Train enter car 3 south bits set", field.NOP())
+        # Would be nice to Free these & move the event tile pointers.
 
         # Remove unused checks for bit 0x180 when leaving Car 6/7
         space = Reserve(0xba7b7, 0xba7bc, "Phantom Train unused car 6/7 replica", field.NOP())
         # space = Free(0xba815, 0xba81d)
         space = Reserve(0xba7cc, 0xba7d1, "Phantom Train unused car 6/7 replica", field.NOP())
         # space = Free(0xba7a8, 0xba7b0)
+
+        # Try setting the NPC bits in the entrance event for Car 6/7 (map 0x097, CA/5EB3 (i.e. no event))
+        # CB/A553: C0    If ($1E80($180) [$1EB0, bit 0] is set), branch to $CBA564   -- Car 3
+        src = [
+            field.BranchIfEventBitSet(0x17E, "SET_CAR_7"),
+            field.SetEventBit(0x506),
+            field.ClearEventBit(0x507),
+            field.BranchIfEventBitClear(0x17E, "SET_508_509_RETURN"),
+            "SET_CAR_7",
+            field.ClearEventBit(0x506),
+            field.SetEventBit(0x507),
+            "SET_508_509_RETURN",
+            field.ClearEventBit(0x508),
+            field.ClearEventBit(0x509),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Phantom train car 6/7 entrance event")
+        self.maps.set_entrance_event(0x097, space.start_address - EVENT_CODE_START)
+
+        # Remove "Car bits" setting when entering reused train car 6/7.  These are now handled in entrance event.
+        space = Reserve(0xba64e, 0xba655, "Phantom Train enter car 6 right bits set", field.NOP())
+        space = Reserve(0xba65d, 0xba664, "Phantom Train enter car 6 left bits set", field.NOP())
+        space = Reserve(0xba66c, 0xba675, "Phantom Train enter car 7 right bits set", field.NOP())
+        space = Reserve(0xba694, 0xba69d, "Phantom Train enter car 7 left bits set", field.NOP())
 
         # Change smokestack event to check new event bit 0x03E
         space = Reserve(0xbb9dc, 0xbb9e5, "Phantom Train initialize boss condition", field.NOP())

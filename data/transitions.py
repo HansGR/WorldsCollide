@@ -25,7 +25,7 @@ from event.switchyard import SummonAirship
 
 class Transitions:
     FREE_MEMORY = False
-    verbose = False
+    verbose = True
 
     def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
         self.transitions = []
@@ -143,7 +143,7 @@ class Transitions:
                     en_patch += [0xb2, 0x0f, 0x05, 0x01]  # [field.Call(0xb050f)]
 
             if t.exit.id in self.call_script_addr.keys():
-                # This is an event tile behaving as a door, and it needs to call an event script for its partner.
+                # This is an event tile behaving as a door that needs to call an event script for its partner.
                 this_addr = self.call_script_addr[t.exit.id]
                 srcdata = self.rom.get_bytes(this_addr, 6)
                 [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
@@ -248,12 +248,25 @@ class Transitions:
 
 class Transition:
     def __init__(self, exit_id, entr_id, rom, exit_data, event_data):
-        self.exit = EventExit(exit_id, rom, exit_data, event_data)
+        # Import exit
+        self.exit = EventExit(exit_id, rom, exit_data, event_data, is_event=(1500 < exit_id < 4000) )
+
+        # Import entrance
         if 4000 > entr_id >= 3000:
-            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data)
+            # This is a pit associated with an event transition
+            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data, is_event=True)
+        elif 1500 <= entr_id < 2000:
+            # This is an event tile behaving as a normal door.
+            partner_id = exit_partner[entr_id][0]
+            if 1500 <= partner_id < 2000:
+                # If the vanilla partner is also an event tile, we can use its event code.
+                self.entr = EventExit(partner_id, rom, exit_data, event_data, is_event=True)
+            else:
+                # The vanilla partner is a normal door.  We need to construct the exit script the same way we do for doors.
+                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
         else:
             # This is a normal door
-            self.entr = EventExit(entr_id, rom, exit_data, event_data)
+            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
 
 
 class EventExit:
@@ -272,10 +285,10 @@ class EventExit:
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
 
-    def __init__(self, ID, rom=[], exit_data=[], event_data=[]):
+    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True):
         self.id = ID
 
-        if 1500 < self.id < 4000:
+        if is_event:
             event_info = event_data[ID]
             # Data structure: event_exit_info[id] = ...
             #   [original address, event bit length, split point, transition state, description, location, method]
