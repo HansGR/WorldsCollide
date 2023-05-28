@@ -25,7 +25,7 @@ from instruction.event import EVENT_CODE_START
 import instruction.field.entity as field_entity
 
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
-    multi_events, entrance_door_patch, exit_door_patch
+    multi_events, entrance_door_patch, exit_door_patch, require_event_bit
 
 from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance, event_door_connection_data
 from data.rooms import room_data, exit_world, shared_exits
@@ -716,13 +716,13 @@ class Maps():
 
         # Check to make sure an exit event is required:
         # (1) the connection is in the other world
-        # (2) the connection requires special code (in entrance_door_patch[d_ref])
+        # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
         # (3) the door requires special code (in exit_door_patch[d])
         # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
         # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
         require_event_flags = [
             (this_world != that_world),
-            d_ref in entrance_door_patch.keys(),
+            d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
             d in exit_door_patch.keys(),
             d in self.exit_event_addr_to_call.keys(),
             that_map in [0x000, 0x001, SWITCHYARD_MAP]
@@ -821,7 +821,16 @@ class Maps():
 
                 # (4) Prepend any data required by the connection
                 if require_event_flags[1]:
-                    src = entrance_door_patch[d_ref] + src
+                    if d_ref in entrance_door_patch.keys():
+                        src = entrance_door_patch[d_ref] + src
+
+                    if d_ref in require_event_bit.keys():
+                        entr_bits = require_event_bit[d_ref]
+                        for k in entr_bits:
+                            if entr_bits[k]:
+                                src = [field.SetEventBit(k)] + src
+                            else:
+                                src = [field.ClearEventBit(k)] + src
 
                 # (5) Prepend any data required by the door
                 if require_event_flags[2]:
@@ -933,13 +942,13 @@ class Maps():
         that_map = self.exit_maps[d_ref]
 
         # (1) the connection requires a specific world that is not this world
-        # (2) the connection requires special code (in entrance_door_patch[d_ref])
+        # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
         # (3) the door requires special code (in exit_door_patch[d])
         # (4) the door needs to run an entrance event script (in exit_event_addr_to_call[d])
         # (5) the connection is a world map: also summon the airship.
         require_event_flags = [
             ( (this_world != that_world)),
-            d_ref in entrance_door_patch.keys(),
+            d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
             d in exit_door_patch.keys(),
             d in self.exit_event_addr_to_call.keys(),
             that_map in [0x0, 0x1]
@@ -1031,7 +1040,16 @@ class Maps():
 
         # (2) Prepend any data required by the connection
         if require_event_flags[1]:
-            wor_src = entrance_door_patch[d_ref] + wor_src
+            if d_ref in entrance_door_patch.keys():
+                wor_src = entrance_door_patch[d_ref] + wor_src
+
+            if d_ref in require_event_bit.keys():
+                entr_bits = require_event_bit[d_ref]
+                for k in entr_bits:
+                    if entr_bits[k]:
+                        wor_src = [field.SetEventBit(k)] + wor_src
+                    else:
+                        wor_src = [field.ClearEventBit(k)] + wor_src
 
         # (3) Prepend any data required by the door
         if require_event_flags[2]:

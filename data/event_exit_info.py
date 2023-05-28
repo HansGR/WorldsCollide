@@ -250,7 +250,7 @@ exit_event_patch = {
     2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end],
 
     # Phantom Train shared map bit controls
-    1543: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Clear bit 0x17E
+    #1543: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Clear bit 0x17E
     # Phantom Train set correct "switches" bit if leaving locomotive
     1545: lambda src, src_end: [src[:-1] + set_locomotive_switches(bytes=True) + src[-1:], src_end]
 }
@@ -268,7 +268,7 @@ exit_door_patch = {
     1077: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 
     # Phantom Train shared map bit controls
-    1543: [field.ClearEventBit(0x17E)],  # Clear bit 0x17E
+    #1543: [field.ClearEventBit(0x17E)],  # Clear bit 0x17E
     # Phantom Train set correct "switches" bit if leaving locomotive
     1545: set_locomotive_switches(bytes=False)
 
@@ -306,25 +306,6 @@ entrance_event_patch = {
     # Daryl's Tomb: Move the turtles to the appropriate side.
     1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit
 
-    # Phantom Train: set the correct room bits when entering Cars 1, 2, 3:
-    1515: lambda src, src_end: [src[:-1] + [0xd3, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 1 Left Exit
-    1516: lambda src, src_end: [src[:-1] + [0xd3, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 1 Right Exit
-    1523: lambda src, src_end: [src[:-1] + [0xd2, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 2 Left Exit
-    1524: lambda src, src_end: [src[:-1] + [0xd2, 0x7e, 0xd3, 0x80] + src[-1:], src_end],  # Phantom Train Car 2 Right Exit
-    1514: lambda src, src_end: [src[:-1] + [0xd3, 0x7e, 0xd2, 0x80] + src[-1:], src_end],  # Phantom Train Car 3 South Exit
-
-    1533: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Right Exit # 0x17E clear
-    1534: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Left Exit
-    1535: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Right Cabin
-    1536: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Left Cabin
-    1538: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Phantom Train Car 6 Left Cabin interior
-
-    1539: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Right Exit # 0x17E set
-    1540: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Left Exit
-    1541: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Right Cabin
-    1542: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Left Cabin
-    1543: lambda src, src_end: [src[:-1] + [0xd2, 0x7e] + src[-1:], src_end],  # Phantom Train Car 7 Right Cabin interior # 0x17E ON, NOT CLEARED!
-
 }
 
 entrance_door_patch = {
@@ -336,27 +317,43 @@ entrance_door_patch = {
     794: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room bottom exit.
     795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],    # Water puzzle room right exit.
 
-    # Phantom Train: set the correct room bits for Cars 1, 2, 3:
-    # Bits are cleared upon leaving the cars. Explicit is safer, though.
-    1515: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 1 Left Exit
-    1516: [field.ClearEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 1 Right Exit
-    1523: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 2 Left Exit
-    1524: [field.SetEventBit(0x17E), field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 2 Right Exit
-    1514: [field.ClearEventBit(0x17E), field.SetEventBit(event_bit.PHANTOM_TRAIN_CAR_3)], # Phantom Train Car 3 South Exit
-
-    1533: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Right Exit # 0x17E clear
-    1534: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Exit
-    1535: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Right Cabin
-    1536: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Cabin
-    1538: [field.ClearEventBit(0x17E)],  # Phantom Train Car 6 Left Cabin interior
-
-    1539: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Right Exit # 0x17E set
-    1540: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Left Exit
-    1541: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Right Cabin
-    1542: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Left Cabin
-    1543: [field.SetEventBit(0x17E)],   # Phantom Train Car 7 Right Cabin interior # 0x17E ON, NOT CLEARED!
 }
 
+# Automatically set required event bits BEFORE loading the map
+require_event_bit = {
+    # Phantom Train, Outside rear section: turn off ghosts
+    474: {0x509: False},
+    475: {0x509: False},
+    476: {0x509: False},
+    1518: {0x509: False},
+    1519: {0x509: False},
+    1520: {0x509: False},
+    1521: {0x509: False},
+    1522: {0x509: False},
+
+    # Phantom Train, Car 1
+    1515: {0x17e: False, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: True, 0x507: False, 0x509: False},
+    1516: {0x17e: False, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: True, 0x507: False, 0x509: False},
+    # Phantom Train, Car 2
+    1523: {0x17e: True, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: False, 0x507: True, 0x509: False},
+    1524: {0x17e: True, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: False, 0x507: True, 0x509: False},
+    # Phantom Train, Car 3
+    1514: {0x17e: False, event_bit.PHANTOM_TRAIN_CAR_3: True, 0x506: False, 0x507: False, 0x509: True},
+
+    # Phantom Train, Car 6
+    1533: {0x17e: False, 0x506: True, 0x507: False},  # Phantom Train Car 6 Right Exit
+    1534: {0x17e: False, 0x506: True, 0x507: False},  # Phantom Train Car 6 Left Exit
+    1535: {0x17e: False, 0x506: True, 0x507: False},  # Phantom Train Car 6 Right Cabin
+    1536: {0x17e: False, 0x506: True, 0x507: False},  # Phantom Train Car 6 Left Cabin
+    1538: {0x17e: False},  # Phantom Train Car 6 Left Cabin interior
+
+    # Phantom Train, Car 7
+    1539: {0x17e: True, 0x506: False, 0x507: True},  # Phantom Train Car 7 Right Exit
+    1540: {0x17e: True, 0x506: False, 0x507: True},  # Phantom Train Car 7 Left Exit
+    1541: {0x17e: True, 0x506: False, 0x507: True},  # Phantom Train Car 7 Right Cabin
+    1542: {0x17e: True, 0x506: False, 0x507: True},  # Phantom Train Car 7 Left Cabin
+    1543: {0x17e: True},  # Phantom Train Car 7 Right Cabin interior # 0x17E ON, NOT CLEARED!
+}
 
 def minecart_event_mod(src, src_end):
     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.

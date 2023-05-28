@@ -1508,7 +1508,7 @@ event_door_connection_data = {
     1542: [0x099, 23, 28, 0, 0, 0, 0, 0, 9, 7, 0, 0],  #  'Phantom Train Car 7 Left Cabin'
     1543: [0x097, 19, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0],  #  'Phantom Train Car 7 Right Cabin interior exit'
     1544: [0x097, 9, 9, 0, 0, 0, 2, 0, 23, 29, 0, 0],  #  'Phantom Train Car 7 Left Cabin interior exit'
-    1545: [0x08D, 38, 10, 0, 0, 0, 2, 0, 8, 13, 0, 0]  #  'Phantom Train Locomotive interior exit'
+    1545: [0x08D, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0]  #  'Phantom Train Locomotive interior exit'
 
 }
 

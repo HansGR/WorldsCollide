@@ -99,7 +99,7 @@ class Transitions:
             # Perform common event patches
             ex_patch = []
             en_patch = []
-            t.patches = [False, False, False, False, False]
+            t.patches = [False, False, False, False, False, False]
             if t.exit.is_char_hidden and not t.entr.is_char_hidden:
                 t.patches[0] = 'unhide'
                 # Character is hidden during the transition (command [0x42, 0x31]) and not unhidden later.
@@ -141,6 +141,21 @@ class Transitions:
                     t.patches[4] = 'add'
                     # Call "place on raft" subroutine (CB/050F)
                     en_patch += [0xb2, 0x0f, 0x05, 0x01]  # [field.Call(0xb050f)]
+
+            # Include code for required event bit states
+            entr_bits = {}
+            if t.entr.id in require_event_bit.keys():
+                entr_bits = require_event_bit[t.entr.id]
+            if len(entr_bits) > 0:
+                t.patches[5] = 'bit'
+                for k in entr_bits.keys():
+                    if entr_bits[k]:
+                        t.patches[5] += '_set' + hex(k)[2:]
+                        bitsrc = [field.SetEventBit(k)]
+                    else:
+                        t.patches[5] += '_clear' + hex(k)[2:]
+                        bitsrc = [field.ClearEventBit(k)]
+                    ex_patch += [bitsrc[0].opcode] + bitsrc[0].args
 
             if t.exit.id in self.call_script_addr.keys():
                 # This is an event tile behaving as a door that needs to call an event script for its partner.
@@ -260,9 +275,9 @@ class Transition:
             partner_id = exit_partner[entr_id][0]
             if 1500 <= partner_id < 2000:
                 # If the vanilla partner is also an event tile, we can use its event code.
-                self.entr = EventExit(partner_id, rom, exit_data, event_data, is_event=True)
+                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=True, use_event_info=partner_id)
             else:
-                # The vanilla partner is a normal door.  We need to construct the exit script the same way we do for doors.
+                # The vanilla partner is a normal door.  Construct the exit script the same way we do for doors.
                 self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
         else:
             # This is a normal door
@@ -285,11 +300,15 @@ class EventExit:
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
 
-    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True):
+    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True, use_event_info=None):
         self.id = ID
 
         if is_event:
-            event_info = event_data[ID]
+            if use_event_info:
+                event_info = event_data[use_event_info]
+            else:
+                event_info = event_data[ID]
+
             # Data structure: event_exit_info[id] = ...
             #   [original address, event bit length, split point, transition state, description, location, method]
             #   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on]
