@@ -364,7 +364,9 @@ room_data = {
     '203a': [[1515, 1516], [], [3065], 0],  # Phantom Train Inside 1st Car
     '203b': [[1523, 1524], [], [3066], 0],  # Phantom Train Inside 2nd Car
     '203c': [[1514], [], [], 0],  # Phantom Train Inside 3rd Car
-    204 : [ [474, 475, 476, 1518, 1519, 1520, 1521, 1522], [2066, 2067], [ ], 0], #Phantom Train Outside 1st Section
+    204 : [ [474, 475, 476, 1518], [] , [ ], 0], # Phantom Train Outside Car 1 - Caboose
+    '204b': [ [1519, 1520], [], [], 0],  # Phantom Train Outside Car 1 - Car 2
+    '204c': [ [1521, 1522], [2066, 2067], [], 0],  # Phantom Train Outside Car 2 - Car 3
     205 : [ [1525], [], [3067], 0],  # Phantom Train Outside after jump
     '205b' : [ [1526], [], [], 0],  # Phantom Train Outside after jump & disconnect
     206 : [ [1533, 1534, 1535, 1536], [], [], 0],  # Phantom Train Car 6 Inside (map 0x097)

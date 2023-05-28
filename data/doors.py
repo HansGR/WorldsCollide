@@ -12,7 +12,8 @@ ROOM_SETS = {
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg'],
-    'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 'root-zb'],
+    'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312,
+              313, 'root-zb'],
     'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', 'branch-mz'],
     'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
     'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
@@ -22,7 +23,8 @@ ROOM_SETS = {
     'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt'],
     #'DarylsTombMinimal': [379, 380, 383, 384, 386, 387, 389, 390, 391, 392, 'root-dt'],  # for testing
     'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
-    'PhantomTrain': [201, 202, '203a', '203b', '203c', 204, 205, 206, '206a', '206b', 207, '207a', '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'],
+    'PhantomTrain': [201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
+                     '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -46,6 +48,7 @@ ROOM_SETS = {
 
 class Doors():
     verbose = True  # False  # True
+    force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
         # self.rom = rom
@@ -284,6 +287,18 @@ class Doors():
                 if m[0] in doors_WOB_WOR.keys():
                     WOR_map.append([doors_WOB_WOR[j] for j in m])
             map[0].extend(WOR_map)
+
+        if self.force_vanilla:
+            # disregard all that and force vanilla connections to be written.
+            if self.verbose:
+                print('OVERWRITING MAP: ')
+                print(map)
+            vanilla_map = [tuple( sorted((m[0], exit_data[m[0]][0])) ) for m in map[0]] + \
+                          [tuple( sorted((m[1], exit_data[m[1]][0])) ) for m in map[0]]
+            vanilla_map = list(set(vanilla_map))
+            vanilla_oneways = [ [m[0], m[0]+1000] for m in map[1] ]
+            map = [vanilla_map, vanilla_oneways]
+            print(map)
 
         self.map = map
 
