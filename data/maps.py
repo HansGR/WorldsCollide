@@ -784,11 +784,11 @@ class Maps():
                     # more robust to errors.
                     # Get [x,y] location of the destination for the exit.
                     d_ref_pairID = exit_data[d_ref][0]  # Original connecting exit to d_ref..
-                    #if d_ref_pairID in self.exits.exit_original_data.keys():
-                    conn_data = self.exits.exit_original_data[d_ref_pairID]  # [dest_map, dest_x, dest_y, ...]
-                    #elif d_ref_pairID >= 4000:  # Do we actually need this?
-                    #    # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
-                    #    conn_data = self.exits.exit_original_data[d_ref_pairID - 4000]
+                    if d_ref_pairID in self.exits.exit_original_data.keys():
+                        conn_data = self.exits.exit_original_data[d_ref_pairID]  # [dest_map, dest_x, dest_y, ...]
+                    elif d_ref_pairID >= 4000:  # Do we actually need this?
+                        # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                        conn_data = self.exits.exit_original_data[d_ref_pairID - 4000]
                     src = SummonAirship(conn_data[0], conn_data[1], conn_data[2]) + src
 
                 # (2) Add call to entrance script, if any
@@ -976,11 +976,11 @@ class Maps():
         # Send the player to the location that the connection's vanilla partner sends you to
         # [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, ...]
         d_ref_partner = exit_data[d_ref][0]
-        #if d_ref_partner in self.exits.exit_original_data.keys():
-        conn_data = self.exits.exit_original_data[d_ref_partner]
-        #else:
-        #   This is a logical exit without tweaks.  Can use vanilla connection info.
-        #   conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
+        if d_ref_partner in self.exits.exit_original_data.keys():
+            conn_data = self.exits.exit_original_data[d_ref_partner]
+        else:
+            # This is a logical exit without tweaks.  Can use vanilla connection info.
+            conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
 
         if require_event_flags[4]:
             wor_src = SummonAirship(conn_data[0], conn_data[1], conn_data[2])

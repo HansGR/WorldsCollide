@@ -304,23 +304,32 @@ entrance_event_patch = {
     2037: lambda src, src_end: [src, src_end[:5] + [0x3e, 0x11, 0x45, 0x42, 0x11] + src_end[5:]], # Cave 2 entry, object $11
 
     # Daryl's Tomb: Move the turtles to the appropriate side.
-    1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit
+    ### MOVED TO require_event_bit
+    #1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit
 
 }
 
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
     # Daryl's Tomb: Move the turtles to the appropriate side.
-    1512: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],   # Turtle room south exit
-    782: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],  # Turtle room north exit.
-    793: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room top exit.
-    794: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room bottom exit.
-    795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],    # Water puzzle room right exit.
+    ### MOVED TO require_event_bit
+    #1512: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],   # Turtle room south exit
+    #782: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],  # Turtle room north exit.
+    #793: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room top exit.
+    #794: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room bottom exit.
+    #795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],    # Water puzzle room right exit.
 
 }
 
 # Automatically set required event bits BEFORE loading the map
 require_event_bit = {
+    # Daryl's Tomb: move turtles to the appropriate side
+    1512: {event_bit.DARYL_TOMB_TURTLE1_MOVED: True},
+    782: {event_bit.DARYL_TOMB_TURTLE1_MOVED: False},
+    793: {event_bit.DARYL_TOMB_TURTLE2_MOVED: False},
+    794: {event_bit.DARYL_TOMB_TURTLE2_MOVED: False},
+    795: {event_bit.DARYL_TOMB_TURTLE2_MOVED: True},
+
     # Phantom Train, Outside rear section: turn off ghosts
     474: {0x509: False},
     475: {0x509: False},
