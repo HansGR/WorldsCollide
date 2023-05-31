@@ -95,7 +95,7 @@ class PhantomTrain(Event):
             ]
         #space = Write(Bank.CB, src, "phantom train move airship and return to world map")
         # Must be at a fixed address for DR!  Need 23 bytes.
-        space = Reserve(0xbba0c, 0xbba22, "phantom train move airship and return to world map", field.NOP())
+        space = Reserve(0xbba0c, 0xbba23, "phantom train move airship and return to world map", field.NOP())
         space.write(src)
         self.load_world_map = space.start_address
 
@@ -558,7 +558,7 @@ class PhantomTrain(Event):
         space.write([field.Branch(0xba77f)])
         # space = Free(0xbaad0, 0xbaad8)
 
-        # Remove "Car bits" setting when entering the reused train car.  These will be handled by entrance_door_patch.
+        # Remove "Car bits" setting when entering the reused train car.  These are handled by require_event_bit.
         space = Reserve(0xba614, 0xba61b, "Phantom Train enter car 1 right bits set", field.NOP())
         space = Reserve(0xba629, 0xba630, "Phantom Train enter car 1 left bits set", field.NOP())
         space = Reserve(0xba6e5, 0xba6ee, "Phantom Train enter car 2 right bits set", field.NOP())
