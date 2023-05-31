@@ -25,7 +25,7 @@ from event.switchyard import SummonAirship
 
 class Transitions:
     FREE_MEMORY = False
-    verbose = True
+    verbose = False
 
     def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
         self.transitions = []

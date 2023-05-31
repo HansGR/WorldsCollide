@@ -41,13 +41,15 @@ ROOM_SETS = {
             '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
             457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
             378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt',  # Daryl's Tomb
-            100, 101, 102, 103, 104, 105, 'root-sfcb'  # South Figaro Cave WOB
+            100, 101, 102, 103, 104, 105, 'root-sfcb',  # South Figaro Cave WOB
+            201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
+            '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'  # Phantom Train
              ],
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
 
 class Doors():
-    verbose = True  # False  # True
+    verbose = False  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):

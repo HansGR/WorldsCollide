@@ -6,7 +6,7 @@ import numpy as np
 
 
 class Network:
-    verbose = True
+    verbose = False
 
     def __init__(self, rooms):
         self.original_room_ids = [r for r in rooms]
