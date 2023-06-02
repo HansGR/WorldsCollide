@@ -543,7 +543,7 @@ exit_data = {
     480: [486, "Doma Dream Train Outside Lump of Metal Room East"],
     481: [869, "Doma Dream Train Outside First Room West"],
     482: [870, "Doma Dream Train Outside First Room East"],
-    483: [502, "Doma Dream Train Outside Save Point Room"],
+    483: [4502, "Doma Dream Train Outside Save Point Room"],
     484: [479, "Doma Dream Train 2nd Car West Top Tile"],
     485: [479, "Doma Dream Train 2nd Car West Bottom Tile"],
     486: [480, "Doma Dream Train 2nd Car East Top Tile"],
@@ -1002,10 +1002,10 @@ exit_data = {
     856: [855, "Doma Dream Stooges Room"],
     857: [828, "Phoenix Cave Outside"],
     858: [863, "Doma Dream Cliffs Outside Loop West Door"],
-    859: [864, "Doma Dream Cliffs Outside Loop East Door"],
+    859: [None, "Doma Dream Cliffs Outside Loop East Door"],
     860: [864, "Doma Dream Cliffs Outside Final Room Top Tile"],
     861: [864, "Doma Dream Cliffs Outside Final Room Bottom Tile"],
-    862: [858, "Doma Dream Caves Starting Room to Cliffs"],
+    862: [None, "Doma Dream Caves Starting Room to Cliffs"],
     863: [858, "Doma Dream Caves Loop Room North"],
     864: [861, "Doma Dream Caves Loop Room South"],
     865: [477, "Doma Dream Train Switch Puzzle Room West Door Top Tile"],
@@ -1363,6 +1363,7 @@ exit_data = {
     1545: [1532,  "Phantom Train Locomotive interior exit"],
 
     # WORLD OF RUIN (logical) DOORS:
+    4502: [483, "Doma Dream Train Final Save Point Room"],
     4525: [4527, "Nikeah Inn Outside WoR"],
     4526: [4528, "Nikeah Pub Outside WoR"],
     5199: [65, "Nikeah West to WOR"],
@@ -1508,8 +1509,10 @@ event_door_connection_data = {
     1542: [0x099, 23, 28, 0, 0, 0, 0, 0, 9, 7, 0, 0],  #  'Phantom Train Car 7 Left Cabin'
     1543: [0x097, 19, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0],  #  'Phantom Train Car 7 Right Cabin interior exit'
     1544: [0x097, 9, 9, 0, 0, 0, 2, 0, 23, 29, 0, 0],  #  'Phantom Train Car 7 Left Cabin interior exit'
-    1545: [0x08D, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0]  #  'Phantom Train Locomotive interior exit'
-
+    1545: [0x08D, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0],  #  'Phantom Train Locomotive interior exit'
+    # Logical exits with different destinations
+    4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0]  #  'Doma Dream Train Save point room interior (logical)'
+    # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 }
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).

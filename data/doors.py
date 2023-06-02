@@ -25,6 +25,8 @@ ROOM_SETS = {
     'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
     'PhantomTrain': [201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
                      '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'],
+    'CyansDream': [421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
+                  432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -49,7 +51,7 @@ ROOM_SETS = {
 }
 
 class Doors():
-    verbose = False  # False  # True
+    verbose = True  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
@@ -149,6 +151,9 @@ class Doors():
             if self.args.door_randomize_phantom_train:  # -drpt
                 room_sets.append(ROOM_SETS['PhantomTrain'])
 
+            if self.args.door_randomize_cyans_dream:  # -drcd
+                room_sets.append(ROOM_SETS['CyansDream'])
+
             if self.combine_areas:
                 temp = []
                 for r in room_sets:
@@ -163,47 +168,15 @@ class Doors():
     def read(self, whichRooms=None):
         # Collect & organize data on rooms and doors
         for area in whichRooms:
-            #self.doors.append([])
             self.rooms.append(area)
-            # for room in area:
-            #     # Collect room info:
-            #     self.room_doors[room] = room_data[room][:-1]
-            #     self.room_counts[room] = [len(s) for s in room_data[room][:-1]]
-            #
-            #     if self.use_shared_exits:
-            #         # Look for shared exits & remove them from the
-            #         d_shared = [d for d in self.room_doors[room][0] if d in shared_exits.keys()]
-            #         for d in d_shared:
-            #             for s in shared_exits[d]:
-            #                 if s in self.room_doors[room][0]:
-            #                     self.room_doors[room][0].remove(s)
-            #                     self.room_counts[room][0] -= 1
-            #
-            #     # Extract door info
-            #     for i in range(3):
-            #         self.doors[-1].extend(room_data[room][i])
-            #         for d in room_data[room][i]:
-            #             self.door_types[d] = i
-            #             self.door_rooms[d] = room
-            #             if d in shared_exits.keys():
-            #                 for ds in shared_exits[d]:
-            #                     self.door_types[ds] = i
-            #                     self.door_rooms[ds] = room
-
-            #for d in self.doors[-1]:
-            #    if d in invalid_connections.keys():   # Not currently used.
-            #        self.invalid[d] = invalid_connections[d]
 
     def mod(self):
         # Create list of randomized connections using walks
         map = [[], []]
 
         if self.args.door_randomize_all:
-            # Draft rooms to create areas for randomization
-            # NOTE this can produce non-viable areas; haven't updated with the new methods.
-            #self.draft_areas()
-            # A better solution would be to add a 'root' room with forced single-door connections to all the 'root-zone'
-            # rooms.  This is effectively the "meta-World Map", encoding that you can reach all roots from all roots.
+            # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
+            # This encodes that you can reach all roots from all roots.
             root_rooms = [r for r in self.rooms[0] if 'root' in str(r)]
             offset = 10000
             root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
@@ -291,7 +264,7 @@ class Doors():
             map[0].extend(WOR_map)
 
         if self.force_vanilla:
-            # disregard all that and force vanilla connections to be written.
+            # disregard everything above.  Force vanilla connections to be written.
             if self.verbose:
                 print('OVERWRITING MAP: ')
                 print(map)
