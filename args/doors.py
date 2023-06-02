@@ -41,6 +41,8 @@ def parse(parser):
                        help="Randomize the doors in South Figaro Cave WoB")
     doors.add_argument("-drpt", "--door-randomize-phantom-train", action="store_true",
                        help="Randomize the doors in Phantom Train")
+    doors.add_argument("-drcd", "--door-randomize-cyans-dream", action="store_true",
+                       help="Randomize the doors in Cyan's Dream")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -60,7 +62,7 @@ def process(args):
             or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
             or args.door_randomize_serpent_trench or args.door_randomize_burning_house \
             or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
-            or args.door_randomize_phantom_train:
+            or args.door_randomize_phantom_train or args.door_randomize_cyans_dream:
         args.door_randomize = True
     else:
         args.door_randomize = False
@@ -135,6 +137,9 @@ def flags(args):
         if args.door_randomize_phantom_train:
             flags += " -drpt"
 
+        if args.door_randomize_cyans_dream:
+            flags += " -drcd"
+
     return flags
 
 def options(args):
@@ -164,6 +169,7 @@ def options(args):
             ("Daryl's Tomb", True),
             ("SF Cave WOB", True),
             ("Phantom Train", True),
+            ("Cyan's Dream", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -199,6 +205,7 @@ def options(args):
             ("Darill's Tomb", args.door_randomize_daryls_tomb),
             ("SF Cave WOB", args.door_randomize_south_figaro_cave_wob),
             ("Phantom Train", args.door_randomize_phantom_train),
+            ("Cyan's Dream", args.door_randomize_cyans_dream),
         ]
 
 def menu(args):

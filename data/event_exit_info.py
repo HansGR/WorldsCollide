@@ -116,6 +116,14 @@ event_exit_info = {
     2067: [0x00000, 0, 0, [False, False, False, False], 'Phantom Train roof jump cutscene (logical)', [0x08E, 56, 5], 'JMP'],  #
     2068: [0xbba0c, 9, 3, [False, False, False, False], 'Phantom Train smokestack switch & boss', [0x08D, 31, 7], 'JMP'],  # tile points to 0xbb9d4
 
+    # CYAN'S DREAM
+    2069: [0xb8484, 18, 1, [False, False, False, False], 'Doma sleeping into Cyans Dream', [0x07b, 4, 12], 'JMP'],  # tile points to 0xb827d
+    2070: [0xb8c62, 21, 1, [False, False, False, False], 'Cyans Dream Three Stooges Door', [0x13d, 46, 55], 'JMP'],  # tile points to 0xb8bd1
+    2071: [0xb93b8, 7, 1, [False, False, False, False], 'Cyans Dream Locomotive outside', [0x08f, 38, 8], 'JMP'],  # tile points to 0xb93b8
+    2072: [0xb93bf, 226, 12, [False, False, False, False], 'Cyans Dream Locomotive interior', [0x092, 8, 13], 'JMP'],  # tile points to 0xba808
+    2073: [0xb94e7, 268, 46, [False, False, False, False], 'Cyans Dream Caves Bridge Fall', [0x13f, 14, 25], 'JMP'],  # tile points to 0xb94e7
+    2074: [0xb97d6, 676, 524, [False, False, False, False], 'Cyans Dream Doma Throne Room Boss', [0x07e, 25, 11], 'JMP'],  # tile points to 0xb97d6
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
@@ -185,7 +193,7 @@ event_exit_info = {
     1543: [0xba832, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Right Cabin interior exit', [0x099, 23, 12], 'JMP'],  # --> 0x97, 19, 9.  0x17E ON, NOT CLEARED!
     1544: [0xba839, 7, 1, [False, False, False, False], 'Phantom Train Car 7 Left Cabin interior exit', [0x099, 23, 29], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
 
-    1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior exit', [0x092, 8, 13], 'JMP'],  # Not shared. --> 0x97, 9, 9.  MIAB room.
+    1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior exit', [0x092, 8, 13], 'JMP'],  # --> 0x8d, 38, 9.  tile calls 0xba808.
 
 }
 # Notes:
@@ -199,6 +207,7 @@ event_exit_info = {
 
 from instruction.event import EVENT_CODE_START
 from instruction import field
+import instruction.field.entity as field_entity
 import data.event_bit as event_bit
 
 def set_locomotive_switches(bytes=True):
@@ -226,6 +235,34 @@ def set_locomotive_switches(bytes=True):
     else:
         return set_switches
 
+
+def add_mtek_armor(bytes=False):
+    src = [
+        field.Call(field.TOGGLE_PARTY_MAGITEK),
+        field.SetVehicle(field_entity.PARTY0, field.Vehicle.MAGITEK_AND_RIDER)
+    ]
+    if bytes:
+        src_bit = []
+        for s in src:
+            src_bit += [s.opcode] + s.args
+        return src_bit
+    else:
+        return [field.FadeOutScreen(), field.WaitForFade()] + src
+
+
+def remove_mtek_armor(bytes=False):
+    src = [
+        field.Call(field.TOGGLE_PARTY_MAGITEK),
+        field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE)
+    ]
+    if bytes:
+        src_bit = []
+        for s in src:
+            src_bit += [s.opcode] + s.args
+        return src_bit
+    else:
+        return [field.FadeOutScreen(), field.WaitForFade()] + src
+
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
     # Jump into Umaro's Cave:  Reproduce AtmaTek's changes to the event in data/umaro_cave.add_gating_condition()
@@ -249,10 +286,12 @@ exit_event_patch = {
     # Zone eater: fade back in music after exit animation
     2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end],
 
-    # Phantom Train shared map bit controls
-    #1543: lambda src, src_end: [src[:-1] + [0xd3, 0x7e] + src[-1:], src_end],  # Clear bit 0x17E
     # Phantom Train set correct "switches" bit if leaving locomotive
-    1545: lambda src, src_end: [src[:-1] + set_locomotive_switches(bytes=True) + src[-1:], src_end]
+    1545: lambda src, src_end: [src[:-1] + set_locomotive_switches(bytes=True) + src[-1:], src_end],
+
+    # Doma Cave one-way doors: remove MTek armor
+    859: lambda src, src_end: [src, src_end[:5] + remove_mtek_armor(bytes=True) + src_end[5:]],
+    862: lambda src, src_end: [src, src_end[:5] + remove_mtek_armor(bytes=True) + src_end[5:]],
 }
 
 
@@ -267,10 +306,15 @@ exit_door_patch = {
     1075: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
     1077: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 
-    # Phantom Train shared map bit controls
-    #1543: [field.ClearEventBit(0x17E)],  # Clear bit 0x17E
     # Phantom Train set correct "switches" bit if leaving locomotive
-    1545: set_locomotive_switches(bytes=False)
+    1545: set_locomotive_switches(bytes=False),
+
+    # Doma Cave doors: remove MTek armor
+    858: remove_mtek_armor(),
+    860: remove_mtek_armor(),
+    861: remove_mtek_armor(),
+    863: remove_mtek_armor(),
+    864: remove_mtek_armor(),
 
 }
 
@@ -305,19 +349,24 @@ entrance_event_patch = {
 
     # Daryl's Tomb: Move the turtles to the appropriate side.
     ### MOVED TO require_event_bit
-    #1512: lambda src, src_end: [src[:-1] + [0xd4, 0xb6] + src[-1:], src_end],   # Turtle room south exit
 
+    # Doma Cave one-way doors: add MTek armor.  Redundant if in map.
+    6859: lambda src, src_end: [src, src_end[:5] + add_mtek_armor(bytes=True) + src_end[5:]],
+    6862: lambda src, src_end: [src, src_end[:5] + add_mtek_armor(bytes=True) + src_end[5:]],
 }
+
 
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
     # Daryl's Tomb: Move the turtles to the appropriate side.
     ### MOVED TO require_event_bit
-    #1512: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],   # Turtle room south exit
-    #782: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED)],  # Turtle room north exit.
-    #793: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room top exit.
-    #794: [field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],  # Water puzzle room bottom exit.
-    #795: [field.SetEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED)],    # Water puzzle room right exit.
+
+    # Doma Cave doors: add MTek armor.  Redundant if in map.
+    858: add_mtek_armor(),
+    860: add_mtek_armor(),
+    861: add_mtek_armor(),
+    863: add_mtek_armor(),
+    864: add_mtek_armor()
 
 }
 

@@ -122,7 +122,7 @@ class Maps():
             self.maps[map_index]["warpable"] = map_property.warpable
             #####grab map warp-ability flag
 
-        ### Populate the dictionary for parent map given door ID
+        ### Populate the dictionary for map_id given door ID
         self.exit_maps = {}
         self.exit_x_y = {}
         counter = 0
@@ -153,6 +153,12 @@ class Maps():
                     # Event tile as exit.
                     self.exit_maps[e] = event_exit_info[e][5][0]
                     self.exit_x_y[e] = event_exit_info[e][5][1:]
+
+        # Append map_id information to exit_original_data
+        for e in self.exits.exit_original_data.keys():
+            if e in self.exit_maps.keys():
+                self.exits.exit_original_data[e].append(self.exit_maps[e])
+
 
         # f = open('exit_original_info.txt', 'w')
         # f.write(
@@ -312,15 +318,15 @@ class Maps():
 
     def get_exit(self, exit_id):
         map_id = self.exit_maps[exit_id]  # Get [map_id, x, y] for exits
-        xy = self.exit_x_y[exit_id]
+        #xy = self.exit_x_y[exit_id]
         if self.exits.exit_type[exit_id] == 'short':
             first_exit_id = (self.maps[map_id]["short_exits_ptr"] - self.maps[0]["short_exits_ptr"]) // ShortMapExit.DATA_SIZE
             last_exit_id = first_exit_id + self.get_short_exit_count(map_id)
-            return self.exits.get_short_exit(first_exit_id, last_exit_id, xy[0], xy[1])
+            return self.exits.get_short_exit_by_id(first_exit_id, last_exit_id, exit_id)
         elif self.exits.exit_type[exit_id] == 'long':
             first_exit_id = (self.maps[map_id]["long_exits_ptr"] - self.maps[0]["long_exits_ptr"]) // LongMapExit.DATA_SIZE
             last_exit_id = first_exit_id + self.get_long_exit_count(map_id)
-            return self.exits.get_long_exit(first_exit_id, last_exit_id, xy[0], xy[1])
+            return self.exits.get_long_exit_by_id(first_exit_id, last_exit_id, exit_id)
         else:
             raise Exception('Unknown exit type')
 

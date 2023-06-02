@@ -25,7 +25,7 @@ from event.switchyard import SummonAirship
 
 class Transitions:
     FREE_MEMORY = False
-    verbose = False
+    verbose = True
 
     def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
         self.transitions = []
@@ -36,10 +36,12 @@ class Transitions:
 
         for m in mapping:
             # Check reasons to overwrite this transition
-            flags = [(m[0] > 2000) and (m[0] != m[1] - 1000),  # connecting two unequal one-ways...
+            flags = [(3000 > m[0] >= 2000) and (m[0] != m[1] - 1000),  # connecting two unequal one-ways...
                      m[0] in exit_event_patch,                 # modifications to exit script
                      m[1] - 1000 in entrance_event_patch,      # modifications to entrance script
-                     (1500 <= m[0] < 2000)                     # connecting a one-way acting as a door
+                     (1500 <= m[0] < 2000),                    # connecting a one-way acting as a door
+                     (m[0] < 1500),                            # connecting a door acting as a one-way
+                     (6000 < m[1])                             # connecting to the exit of a door acting as a one-way
                      ]
             # If a shared_oneway, only write the lowest-valued one
             soo_flag = True
@@ -89,12 +91,11 @@ class Transitions:
             else:
                 src_end = t.entr.entr_code
 
-            # Run event patches
-            if t.exit.id in exit_event_patch.keys():
-                [src, src_end] = exit_event_patch[t.exit.id](src, src_end)
+            # Run event patches.  Do entrance events first (to avoid conflict if both adding & removing same status)
             if t.entr.id in entrance_event_patch.keys():
                 [src, src_end] = entrance_event_patch[t.entr.id](src, src_end)
-                #print('Modified entrance code: ', [hex(a)[2:] for a in src_end])
+            if t.exit.id in exit_event_patch.keys():
+                [src, src_end] = exit_event_patch[t.exit.id](src, src_end)
 
             # Perform common event patches
             ex_patch = []
@@ -168,7 +169,7 @@ class Transitions:
                     branch_addr = this_addr + 6
                     is_set = not is_set
 
-                branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.location[0])
+                branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.dest_location[0])
                 if self.verbose:
                     print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
                 ex_patch += [branch_src[0].opcode] + branch_src[0].args
@@ -179,9 +180,9 @@ class Transitions:
             # Add patched lines after map transition
             src_end = src_end[:5] + en_patch + src_end[5:]
 
-            if t.entr.location[0] in [0x0, 0x1]:
+            if t.entr.dest_location[0] in [0x0, 0x1]:
                 # This is loading to a world map.  Summon the airship, and make everything happen before that.
-                get_airship_src = SummonAirship(t.entr.location[0], t.entr.location[1], t.entr.location[2], bytes=True)
+                get_airship_src = SummonAirship(t.entr.dest_location[0], t.entr.dest_location[1], t.entr.dest_location[2], bytes=True)
                 #print([hex(a)[2:] for a in get_airship_src])
                 src = src[:-1] + en_patch + get_airship_src
             else:
@@ -210,8 +211,12 @@ class Transitions:
             space.write(t.src)
 
             if self.verbose:
+                addr = [t.exit.event_addr, t.entr.event_addr]
+                for i in range(len(addr)):
+                    if addr[i] is int:
+                        addr[i] = hex(addr[i])
                 print('Writing: ', t.exit.id, ' --> ', t.entr.id,
-                      ':\n\toriginal memory addresses: ', hex(t.exit.event_addr), ', ', hex(t.entr.event_addr),
+                      ':\n\toriginal memory addresses: ', str(addr[0]), ', ', str(addr[1]),
                       '\n\tpatches applied: ', t.patches,
                       '\n\tuse jump method: ', t.exit.use_jmp,
                       '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
@@ -258,7 +263,7 @@ class Transitions:
                 new_event.event_address = new_event_address - EVENT_CODE_START
                 maps.add_event(t.exit.location[0], new_event)
 
-            # (Event2 will be updated when the initiating door for Event2 is mapped)
+                # Note that if this is a door acting as a one-way, the door itself is not actually used.
 
 
 class Transition:
@@ -279,13 +284,16 @@ class Transition:
             else:
                 # The vanilla partner is a normal door.  Construct the exit script the same way we do for doors.
                 self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+        elif entr_id > 6000:
+            # This is the one-way exit of a normal door acting as a one-way.
+            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
         else:
             # This is a normal door
             self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
 
 
 class EventExit:
-    event_addr = 0
+    event_addr = None
     event_length = 0
     event_split = 0
     is_char_hidden = False
@@ -294,6 +302,7 @@ class EventExit:
     is_on_raft = False
     description = ''
     location = []
+    dest_location = []
     world = -1
     use_jmp = False
 
@@ -330,19 +339,45 @@ class EventExit:
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
             self.entr_code = rom.get_bytes(self.event_addr + self.event_split,
                                            self.event_length - self.event_split)  # Second half of event
+
+            dest_map = self.entr_code[0] + (((self.entr_code[1] % 0x10) % 0x4) << 8)  # extract destination map_id
+            self.dest_location = [dest_map, self.entr_code[2], self.entr_code[3]]  # [map_id, x, y]
+
         else:
-            # Handle the small number of one-way entrances from doors
-            partner_ID = exit_partner[ID][0]  # get vanilla connecting door to this ID
-            if partner_ID in exit_data.keys():
-                exit_location = exit_data[partner_ID] # get connection data from partner door
+            # Handle the small number of one-way entrances from doors.
+            if ID < 6000:
+                # get vanilla connecting door to this ID
+                partner_ID = exit_partner[ID][0]
+                exit_location = exit_data[ID]  # Get location info for this door
+            else:
+                # This is the destination of a door acting as a one-way.  Use the door itself.
+                partner_ID = ID - 6000
+                exit_location = exit_data[ID - 6000]  # Get location info for this door.
+
+            if partner_ID is None:
+                # This is a door acting as a one-way trap or pit.  If it's a pit, its destination is the destination.
+                partner_data = exit_data[ID]
+            elif partner_ID in exit_data.keys():
+                # This is a door transition.  Get connection data for partner door
+                partner_data = exit_data[partner_ID]
             elif partner_ID - 4000 in exit_data.keys():
-                exit_location = exit_data[partner_ID-4000]  # get connection data from partner door
+                # This is a logical door transition.  Get connection data from partner door
+                partner_data = exit_data[partner_ID - 4000]
             else:
                 raise Exception('Exit data not found for ID: ' + str(partner_ID))
-            self.location = exit_location[0:3]
-            self.world = exit_world[ID]
 
-            # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]
+            # exit_original_data structure:
+            # [dest_map, dest_x, dest_y,
+            #  refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown,
+            #  x, y, size, direction, map_id].  note: map_id appended in maps.read().
+
+            # Use exit_location for the "exit" info
+            self.location = exit_location[-1:] + exit_location[8:12]  # [map_id, x, y, size, direction]
+            self.world = exit_world[ID]            # which world is it in?
+
+            # Use partner_data for the "entrance" info
+            self.dest_location = partner_data[0:3]  # [dest_map, dest_x, dest_y]
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
-            self.entr_code = [exit_location[0] % 0x100, (exit_location[0] // 0x100) + (exit_location[6] << 4),
-                              exit_location[1], exit_location[2], 0x80, 0xfe]
+            self.entr_code = [partner_data[0] % 0x100,
+                              (partner_data[0] // 0x100) + (partner_data[6] << 4),
+                              partner_data[1], partner_data[2], 0x80, 0xfe]

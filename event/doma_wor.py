@@ -1,6 +1,13 @@
 from event.event import *
 
 class DomaWOR(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_cyans_dream
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Doma WOR"
 
@@ -41,6 +48,9 @@ class DomaWOR(Event):
         self.doma_mod()
         self.wrexsoul_battle_mod()
 
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+
         if self.reward1.type == RewardType.CHARACTER:
             self.cyan_character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
@@ -62,8 +72,12 @@ class DomaWOR(Event):
         space = Reserve(0xb82b1, 0xb82c6, "doma wor check if event already done, in wor, have cyan and 4 party members", field.NOP())
         space.write(
             field.BranchIfEventBitClear(event_bit.IN_WOR, NORMAL_SLEEP_ADDR),
-            field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOR, NORMAL_SLEEP_ADDR),
         )
+        if not self.DOOR_RANDOMIZE:
+            # Make the dream repeatable
+            space.write(
+                field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOR, NORMAL_SLEEP_ADDR),
+            )
         if self.args.character_gating:
             space.write(
                 field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), NORMAL_SLEEP_ADDR),
@@ -322,3 +336,46 @@ class DomaWOR(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Delete vanilla shared map exit event tile in phantom train car
+        self.maps.delete_event(0x99, 8, 12)
+
+        # Randomize Train Chest code?
+        # - Actually randomize code shown/read in Cars 2/3
+        # - Lock exit to Car 3 with a key in Car 2.
+
+        # Only play the initial bridge escape animation one time:
+        # use custom event_bit.SAW_DREAM_BRIDGE_ESCAPE = 0x164  # DR custom
+        space = Reserve(0xb94b2, 0xb94b7, "Check for dream bridge escape", field.NOP())
+        space.write([field.ReturnIfEventBitSet(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
+        space = Reserve(0xb94e2, 0xb94e3, "Set dream bridge escape bit", field.NOP())
+        space.write([field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
+
+        # Make the 2f exit to balcony (id = 441) accessible in Doma Dream
+        balcony_exit = self.maps.get_exit(441)
+        balcony_exit.x -= 1  # move to [17, 39]
+
+        # Skip Wrexsoul battle, if already fought
+        src = [
+            field.BranchIfEventBitClear(event_bit.FINISHED_DOMA_WOR, 0xb97D6), # branch to Wrexsoul battle
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.SLOW),
+                            field_entity.Move(direction.UP, 6),
+                            field_entity.Pause(4),
+                            field_entity.Turn(direction.RIGHT),
+                            field_entity.Pause(2),
+                            field_entity.Turn(direction.DOWN),
+                            field_entity.Pause(6),
+                            field_entity.AnimateCloseEyes(),
+                            field_entity.Pause(6),
+                            field_entity.AnimateStandingHeadDown(),
+                            field_entity.Pause(8),
+            ),
+            field.Branch(0xb99D4),  # branch back to fade screen, load map etc.
+        ]
+        space = Write(Bank.CB, src, "Skip Wrexsoul fight if already done")
+        # Update event tile
+        boss_event = self.maps.get_event(0x07E, 25, 11)
+        boss_event.event_address = space.start_address - EVENT_CODE_START
+

@@ -334,18 +334,6 @@ room_data = {
     '182R': [[4427, 4429], [], [], 1],  # Doma Inner Room
     '183R': [[4434], [], [], 1],  # Doma Cyan's Room
 
-    # DOMA DREAM
-    184 : [ [435], [ ], [ ], 1], #Doma Dream 3F Outside
-    185 : [ [436], [ ], [ ], 1], #Doma Dream 1F Outside
-    186 : [ [437, 438], [ ], [ ], 1], #Doma Dream 2F Outside
-    187 : [ [439, 453], [ ], [ ], 1], #Doma Dream 3F Inside
-    188 : [ [440, 441, 443, 444, 445, 446, 449, 451, 452, 454], [ ], [ ], 1], #Doma Dream Main Room
-    189 : [ [442], [ ], [ ], 1], #Doma Dream Treasure Room
-    190 : [ [447], [ ], [ ], 1], #Doma Dream Side Bedroom
-    191 : [ [448, 450], [ ], [ ], 1], #Doma Dream Inner Room
-    192 : [ [455], [ ], [ ], 1], #Doma Dream Cyan's Room
-    193 : [ [456], [ ], [ ], 1], #Doma Dream Throne Room
-
     # DUNCAN'S HOUSE
     194 : [ [458, 457, 1186], [ ], [ ], 1], #Duncan's House Outside
     195 : [ [459], [ ], [ ], 1], #Duncan's House
@@ -375,11 +363,6 @@ room_data = {
     207 : [ [1539, 1540, 1541, 1542], [], [], 0],  # Phantom Train Car 7 Inside (map 0x097 + event_bit 0x17E)
     '207a': [[1543], [], [], 0],  # Phantom Train Car 7 Inside Right Cabin
     '207b': [[1544], [], [], 0],  # Phantom Train Car 7 Inside Left Cabin MIAB room
-
-    208 : [ [477, 483], [ ], [ ], 1], #Doma Dream Train Outside 3rd Section
-    209 : [ [478, 479, 480, 481], [ ], [ ], 1], #Doma Dream Train Outside 2nd Section
-    210 : [ [482], [ ], [ ], 1], #Doma Dream Train Outside 1st Section
-    211 : [ [484, 485, 486, 487], [ ], [ ], 1], #Doma Dream Train 2nd Car
 
     212 : [ [1545], [], [], ['pt2'], {}, 0], # Phantom Train Locomotive Interior
     213 : [ [488], [ ], [ ], 0], #Phantom Train Caboose Inner Room
@@ -677,35 +660,46 @@ room_data = {
 
 
 
+    # CYAN DREAM STOOGES MAZE:  0x13d
+    'root-cd' : [ [], [2069], [3074], 1], # Root room for Cyan's Dream
+    421 : [ [], [843, 844], [6845, 6846], 1], # Doma Dream 3 Stooges Maze Northwest Section  0x13d
+    422 : [ [], [845], [6844], 1], # Doma Dream 3 Stooges Maze West Section
+    423 : [ [], [846], [6847], ['cd1'], {}, 1], # Doma Dream 3 Stooges Maze North Section
+    424 : [ [], [847, 848, 849], [6854, 3069], 1], # Doma Dream 3 Stooges Maze Middle Section
+    425 : [ [850], [852], [6849, 6843], 1], # Doma Dream 3 Stooges Maze Northeast Section
+    426 : [ [851], [], [], 1], # Doma Dream 3 Stooges Maze Southeast Section
+    427 : [ [], [853], [6852], ['cd2'], {}, 1], # Doma Dream 3 Stooges Maze East Section
+    428 : [ [855], [854], [6848, 6853], 1], # Doma Dream 3 Stooges Maze South Section
+    429 : [ [856], [], [], [], {'cd1': [{'cd2': [2070]}]}, 1], # Doma Dream 3 Stooges Room
 
+    # CYAN DREAM TRAIN: 0x08f exterior; 0x090 car 2; 0x141 car 3; 0x142 car 1
+    208 : [ [477, 483], [2071], [ ], 1],  # Doma Dream Train Outside 3rd Section (front)  0x08f
+    209 : [ [478, 479, 480, 481], [ ], [ ], 1],  # Doma Dream Train Outside 2nd Section (mid) 0x08f
+    210 : [ [482], [ ], [3070], 1],  # Doma Dream Train Outside 1st Section (rear)        0x08f
+    211 : [ [484, 485, 486, 487], [ ], [ ], 1],  # Doma Dream Train 2nd Car ("Lump of metal") 0x090
+    '221R' : [ [4502], [ ], [ ], 1],  # Doma Dream Train Final Save Point Room
+    435 : [ [867], [ ], [ ], ['cd3'], {'cd3': [865, 866]}, 1],  # Doma Dream Train Switch Puzzle Room  0x141
+    436 : [ [868, 869, 870, 871], [ ], [ ], 1],  # Doma Dream Train 1st Car   0x142
+    '212R' : [ [], [2072], [3071], 1], # Doma Dream Train Locomotive Interior
 
+    # CYAN DREAM CAVES: 0x13f exterior, 0x140 interior
+    430: [ [858], [859], [6862], 1],  # Doma Dream Caves Outside Loop     0x13f
+    431: [ [860, 861], [2073], [], 1],  # Doma Dream Caves Outside Final Room    0x13f
+    432: [ [], [862], [3072], 1],  # Doma Dream Caves Starting Room  0x140
+    433: [ [863, 864], [], [6859], 1],  # Doma Dream Caves Inside Loop   0x140
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    434 : [ [865, 866], [ ], [ ], 1], #Doma Dream Train Switch Puzzle Room Left Section
-    435 : [ [867], [ ], [ ], 1], #Doma Dream Train Switch Puzzle Room
-    436 : [ [868, 869, 870, 871], [ ], [ ], 1], #Doma Dream Train 1st Car
-
-
-
-
+    # CYAN DREAM DOMA: 0x7d exterior, 0x7e interior
+    184 : [ [435], [ ], [ ], 1],  # Doma Dream 3F Outside
+    185 : [ [436], [ ], [ ], 1],  # Doma Dream 1F Outside
+    186 : [ [437, 438], [ ], [ ], 1],  # Doma Dream 2F Outside
+    187 : [ [439, 453], [ ], [ ], 1],  # Doma Dream 3F Inside
+    188 : [ [440, 441, 445, 449, 451, 452, 454], [ ], [ ], 1],  # Doma Dream Main Room
+    '188B' : [ [443], [], [3073], 1], # Doma Dream Right Bedroom with savepoint
+    189 : [ [442], [ ], [ ], 1],  # Doma Dream Treasure Room
+    190 : [ [447], [ ], [ ], 1],  # Doma Dream Left Bedroom
+    191 : [ [444, 446, 448, 450], [ ], [ ], 1],  # Doma Dream Inner Room
+    192 : [ [455], [ ], [ ], 1],  # Doma Dream Cyan's Room
+    193 : [ [456], [2074], [ ], 1],  # Doma Dream Throne Room
 
 
 
@@ -921,7 +915,14 @@ shared_exits = {
     1525: [1526], # Phantom Train Car 4 outside --> car 4.
 
     489: [490],  # Phantom Train dining car left side
-    491: [492]  # Phantom Train dining car right side
+    491: [492],  # Phantom Train dining car right side
+
+    484: [485],  # Dream train lump-of-metal room left side
+    486: [487],  # Dream train lump-of-metal room right side
+    865: [866],  #Doma Dream Train Switch Puzzle Room Left Section  0x141
+    868: [869],  #Doma Dream Train 1st Car Left door   0x142
+    870: [871],  #Doma Dream Train 1st Car Right door   0x142
+    860: [861]  # Doma Dream Caves final room door (not used?)
 }
 
 # Keys to apply immediately, based on flags.
@@ -979,6 +980,7 @@ for r in room_data.keys():
         exit_room[t] = r
 
     # Read in one-way exits
-    these_pits = [p for p in room_data[r][2]] + [p for p in locked if 3000 <= p < 4000]
+    these_pits = [p for p in room_data[r][2]] + [p for p in locked if 3000 <= p < 4000 or 6000 < p]
     for p in these_pits:
+        exit_world[p] = room_data[r][-1]
         exit_room[p] = r

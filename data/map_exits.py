@@ -77,13 +77,13 @@ class MapExits():
                     self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
                     #print('Patching: ', e)
                 else:
-                    if e >= 4000:
+                    if 6000 > e >= 4000:
                         # This is a logical exit.  Create an entry for it from its WOB pair.
                         self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
-                        #print('Patching logical: ', e)
 
             for e in event_door_connection_data.keys():
-                # This is an event exit behaving as an exit.  Create an entry for it.
+                # This is an event exit behaving as an exit, or a logical exit that cannot be copied from its vanilla
+                # partner. Create an entry for it.
                 self.exit_original_data[e] = event_door_connection_data[e]
 
             for e in add_new_exits.keys():
@@ -150,11 +150,23 @@ class MapExits():
                 return exit
         raise IndexError(f"get_short_exit: could not find short exit at {x} {y}")
 
+    def get_short_exit_by_id(self, search_start, search_end, id):
+        for exit in self.short_exits[search_start:search_end + 1]:
+            if exit.index == id:
+                return exit
+        raise IndexError(f"get_short_exit: could not find short exit with index {id}")
+
     def get_long_exit(self, search_start, search_end, x, y):
         for exit in self.long_exits[search_start:search_end + 1]:
             if exit.x == x and exit.y == y:
                 return exit
         raise IndexError(f"get_long_exit: could not find long exit at {x} {y}")
+
+    def get_long_exit_by_id(self, search_start, search_end, id):
+        for exit in self.long_exits[search_start:search_end + 1]:
+            if exit.index == id:
+                return exit
+        raise IndexError(f"get_long_exit: could not find long exit with index {id}")
 
     def delete_short_exit(self, search_start, x, y):
         for exit in self.short_exits[search_start:]:
