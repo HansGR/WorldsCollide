@@ -186,6 +186,11 @@ class DomaWOR(Event):
 
         space = Reserve(0xb997d, 0xb9984, "doma wor cyan kneeling", field.NOP())
         space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
+        if self.DOOR_RANDOMIZE:
+            # move the "Set Event Bit COMPLETED_DOMA_WOR (0x0DA)" to before the load map @ CB/99E1
+            space.write([field.SetEventBit(event_bit.FINISHED_DOMA_WOR)])
+            space = Reserve(0xb99e7, 0xb99e8, "doma wor moved set event bit for completed", field.NOP())
+
         space = Reserve(0xb99f6, 0xb99fa, "doma wor animate party knocked out", field.NOP())
 
         space = Reserve(0xb99fe, 0xb9a23, "doma wor change party members after elayne and owain scene", field.NOP())
@@ -345,16 +350,69 @@ class DomaWOR(Event):
         # - Actually randomize code shown/read in Cars 2/3
         # - Lock exit to Car 3 with a key in Car 2.
 
-        # Only play the initial bridge escape animation one time:
+        # Only play the cave chase animation one time:
+        # use custom event_bit.SAW_DREAM_CAVE_CHASE = 0x163  # DR custom
+        src = [
+            field.ReturnIfEventBitClear(event_bit.SAW_DREAM_CAVE_CHASE),
+            field.SetEventBit(event_bit.SAW_DREAM_CAVE_CHASE),
+            # CB/93FA: 31    Begin action queue for character $31 (Party Character 0), 4 bytes long (Wait until complete)
+            # CB/93FC: CF        Turn vehicle/entity left
+            # CB/93FD: E0        Pause for 4 * 6 (24) frames
+            # CB/93FF: FF        End queue
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.Turn(direction.LEFT),
+                            field_entity.Pause(6)),
+            field.Branch(0xb9402),
+        ]
+        show_dream_chase = Write(Bank.CB, src, "Show dream chase once")
+        space = Reserve(0xb93fa, 0xb93ff, "Cyan Dream play chase scene only once", field.NOP())
+        space.write([field.Branch(show_dream_chase.start_address)])
+
+        # Only play the bridge escape animation one time:
         # use custom event_bit.SAW_DREAM_BRIDGE_ESCAPE = 0x164  # DR custom
+        src = [
+            field.DeleteEntity(0x10),
+            field.HideEntity(0x10),
+            field.DeleteEntity(0x11),
+            field.HideEntity(0x11),
+            field.RefreshEntities(),
+            field.Return()
+        ]
+        hide_npc_script = Write(Bank.CB, src, "Delete NPCs in bridge room")
         space = Reserve(0xb94b2, 0xb94b7, "Check for dream bridge escape", field.NOP())
-        space.write([field.ReturnIfEventBitSet(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
+        space.write([field.BranchIfEventBitSet(event_bit.SAW_DREAM_BRIDGE_ESCAPE, hide_npc_script.start_address)])
         space = Reserve(0xb94e2, 0xb94e3, "Set dream bridge escape bit", field.NOP())
         space.write([field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
 
         # Make the 2f exit to balcony (id = 441) accessible in Doma Dream
         balcony_exit = self.maps.get_exit(441)
         balcony_exit.x -= 1  # move to [17, 39]
+        balcony_entrance = self.maps.get_exit(437)
+        balcony_entrance.dest_x -= 1  # Move to [17, 38] to match
+
+        # Place an event tile on [0x07e, 25, 17] that deletes Wrexsoul & Cyan NPCs if boss is defeated
+        boss_npc_id = 0x18
+        cyan_npc_id = 0x17
+        magicite_npc_id = 0x24
+        src = [
+            field.ReturnIfEventBitClear(event_bit.FINISHED_DOMA_WOR),
+            field.ReturnIfEventBitSet(0x1b5),
+            field.DeleteEntity(boss_npc_id),
+            field.HideEntity(boss_npc_id),
+            field.DeleteEntity(cyan_npc_id),
+            field.HideEntity(cyan_npc_id),
+            #field.DeleteEntity(cyan_npc_id),
+            field.HideEntity(magicite_npc_id),
+            field.SetEventBit(0x1b5),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Cyan Dream Delete NPCs if Boss Cleared")
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 25
+        new_event.y = 17
+        new_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x07e, new_event)
 
         # Skip Wrexsoul battle, if already fought
         src = [
