@@ -247,7 +247,7 @@ def add_mtek_armor(bytes=False):
             src_bit += [s.opcode] + s.args
         return src_bit
     else:
-        return [field.FadeOutScreen(), field.WaitForFade()] + src
+        return src
 
 
 def remove_mtek_armor(bytes=False):
@@ -261,7 +261,7 @@ def remove_mtek_armor(bytes=False):
             src_bit += [s.opcode] + s.args
         return src_bit
     else:
-        return [field.FadeOutScreen(), field.WaitForFade()] + src
+        return src
 
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
@@ -411,6 +411,19 @@ require_event_bit = {
     1541: {0x17e: True, 0x506: False, 0x507: True},  # Phantom Train Car 7 Right Cabin
     1542: {0x17e: True, 0x506: False, 0x507: True},  # Phantom Train Car 7 Left Cabin
     1543: {0x17e: True},  # Phantom Train Car 7 Right Cabin interior # 0x17E ON, NOT CLEARED!
+
+    # Cyan Dream, Train (NPCs for jumping animation).  Not needed.
+    #478: {0x543: True},
+    #479: {0x543: True},
+    #480: {0x543: True},
+    #481: {0x543: True},
+
+    # Cyan Dream, Caves exit (NPCs for bridge animation)
+    860: {0x545: True},
+    861: {0x545: True},
+
+    # Cyan Dream, Wrexsoul room (NPCs)
+    456: {0x548: True},
 }
 
 def minecart_event_mod(src, src_end):

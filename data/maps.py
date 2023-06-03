@@ -741,7 +741,6 @@ class Maps():
                     print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
                 existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
                 # An event already exists.  It will need to be modified.
-                # I'm not convinced this should ever happen now.
 
                 # Read in existing event code
                 start_address = existing_event.event_address + EVENT_CODE_START
@@ -757,10 +756,12 @@ class Maps():
 
                 # delete existing event
                 self.delete_event(map_id, this_exit.x, this_exit.y)
+                #existing_event_length = len(src) - 1
 
             except IndexError:
                 # event does not exist.  Make a new one.
                 src = [field.Return()]
+                #existing_event_length = False
 
             this_address = 0x05eb3  # Default address to fail gracefully: event at $CA/5EB3 is just 0xfe (return)
 
@@ -828,7 +829,10 @@ class Maps():
                 # (4) Prepend any data required by the connection
                 if require_event_flags[1]:
                     if d_ref in entrance_door_patch.keys():
-                        src = entrance_door_patch[d_ref] + src
+                        # These need to be inserted AFTER loading the map.
+                        # Generate map load code for this door; the door itself will not be used.
+                        load_map_src = self._get_load_map_code(d_ref)
+                        src = src[:-1] + load_map_src + entrance_door_patch[d_ref] + src[-1:]
 
                     if d_ref in require_event_bit.keys():
                         entr_bits = require_event_bit[d_ref]
@@ -1047,7 +1051,10 @@ class Maps():
         # (2) Prepend any data required by the connection
         if require_event_flags[1]:
             if d_ref in entrance_door_patch.keys():
-                wor_src = entrance_door_patch[d_ref] + wor_src
+                # These need to be inserted AFTER loading the map.
+                # Generate map load code for this door; the door itself will not be used.
+                load_map_src = self._get_load_map_code(d_ref)
+                wor_src = wor_src[:-1] + load_map_src + entrance_door_patch[d_ref] + wor_src[-1:]
 
             if d_ref in require_event_bit.keys():
                 entr_bits = require_event_bit[d_ref]
@@ -1097,6 +1104,18 @@ class Maps():
             new_long_event.direction = this_exit.direction
             new_long_event.event_address = tile_address
             self.add_long_event(map_id, new_long_event)
+
+    def _get_load_map_code(self, entr_id):
+        # Generate load map code for a given door
+        partner_id = exit_data[entr_id][0]  # vanilla partner of door
+        partner_data = self.exits.exit_original_data[partner_id]  # connection data for vanilla partner
+        map_id = partner_data[0]  # destination map
+        x = partner_data[1]       # destination x
+        y = partner_data[2]       # destination y
+        direction = partner_data[6]   # facing after transit
+        src = [field.LoadMap(map_id=map_id, direction=direction, x=x, y=y,
+                             default_music=True, fade_in=True, entrance_event=True)]
+        return src
 
     def move_event_trigger_data(self):
         # Rewrite the ROM bits that look for event trigger data
