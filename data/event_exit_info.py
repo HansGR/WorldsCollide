@@ -122,7 +122,7 @@ event_exit_info = {
     2071: [0xb93b8, 7, 1, [False, False, False, False], 'Cyans Dream Locomotive outside', [0x08f, 38, 8], 'JMP'],  # tile points to 0xb93b8
     2072: [0xb93bf, 226, 12, [False, False, False, False], 'Cyans Dream Locomotive interior', [0x092, 8, 13], 'JMP'],  # tile points to 0xba808
     2073: [0xb94e7, 268, 46, [False, False, False, False], 'Cyans Dream Caves Bridge Fall', [0x13f, 14, 25], 'JMP'],  # tile points to 0xb94e7
-    2074: [0xb97d6, 676, 524, [False, False, False, False], 'Cyans Dream Doma Throne Room Boss', [0x07e, 25, 11], 'JMP'],  # tile points to 0xb97d6
+    2074: [0xb97d6, 676, 524, [False, True, False, False], 'Cyans Dream Doma Throne Room Boss', [0x07e, 25, 11], 'JMP'],  # tile points to 0xb97d6
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance

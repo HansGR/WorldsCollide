@@ -353,19 +353,24 @@ class DomaWOR(Event):
         # Only play the cave chase animation one time:
         # use custom event_bit.SAW_DREAM_CAVE_CHASE = 0x163  # DR custom
         src = [
-            field.ReturnIfEventBitClear(event_bit.SAW_DREAM_CAVE_CHASE),
+            field.BranchIfEventBitSet(event_bit.SAW_DREAM_CAVE_CHASE, "SKIP_CHASE_SCENE"),
             field.SetEventBit(event_bit.SAW_DREAM_CAVE_CHASE),
+            # CB/93F8: F4    Play sound effect 152
             # CB/93FA: 31    Begin action queue for character $31 (Party Character 0), 4 bytes long (Wait until complete)
             # CB/93FC: CF        Turn vehicle/entity left
             # CB/93FD: E0        Pause for 4 * 6 (24) frames
             # CB/93FF: FF        End queue
+            field.PlaySoundEffect(0x98),  # Magitek walk sound effect
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.Turn(direction.LEFT),
                             field_entity.Pause(6)),
             field.Branch(0xb9402),
+            "SKIP_CHASE_SCENE",
+            field.FreeScreen(),
+            field.Return()
         ]
         show_dream_chase = Write(Bank.CB, src, "Show dream chase once")
-        space = Reserve(0xb93fa, 0xb93ff, "Cyan Dream play chase scene only once", field.NOP())
+        space = Reserve(0xb93f8, 0xb93ff, "Cyan Dream play chase scene only once", field.NOP())
         space.write([field.Branch(show_dream_chase.start_address)])
 
         # Only play the bridge escape animation one time:
@@ -401,7 +406,7 @@ class DomaWOR(Event):
             field.HideEntity(boss_npc_id),
             field.DeleteEntity(cyan_npc_id),
             field.HideEntity(cyan_npc_id),
-            #field.DeleteEntity(cyan_npc_id),
+            field.DeleteEntity(magicite_npc_id),
             field.HideEntity(magicite_npc_id),
             field.SetEventBit(0x1b5),
             field.Return()
