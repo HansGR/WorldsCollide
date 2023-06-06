@@ -25,7 +25,7 @@ from event.switchyard import SummonAirship
 
 class Transitions:
     FREE_MEMORY = False
-    verbose = True
+    verbose = False
 
     def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
         self.transitions = []
@@ -348,7 +348,13 @@ class EventExit:
             if ID < 6000:
                 # get vanilla connecting door to this ID
                 partner_ID = exit_partner[ID][0]
-                exit_location = exit_data[ID]  # Get location info for this door
+                if ID in exit_data.keys():
+                    exit_location = exit_data[ID]  # Get location info for this door
+                elif ID - 4000 in exit_data.keys():
+                    # This is a logical door, use its partner
+                    exit_location = exit_data[ID - 4000]
+                else:
+                    raise Exception('Exit data not found for ID: ' + str(ID))
             else:
                 # This is the destination of a door acting as a one-way.  Use the door itself.
                 partner_ID = ID - 6000
