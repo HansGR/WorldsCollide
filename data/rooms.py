@@ -267,6 +267,7 @@ room_data = {
     144 : [ [362], [ ], [ ], 0], #Sabin's House Inside
 
     # MT KOLTS
+    'root-mk' : [ [11, 12], [], [], 0],  # Root room for Mt Kolts
     145 : [ [363, 1175], [ ], [ ], 0], #Mt. Kolts South Entrance
     146 : [ [364, 365, 366], [ ], [ ], 0], #Mt. Kolts 1F Outside
     147 : [ [367], [ ], [ ], 0], #Mt Kolts Outside Chest 1 Room
@@ -922,7 +923,10 @@ shared_exits = {
     865: [866],  #Doma Dream Train Switch Puzzle Room Left Section  0x141
     868: [869],  #Doma Dream Train 1st Car Left door   0x142
     870: [871],  #Doma Dream Train 1st Car Right door   0x142
-    860: [861]  # Doma Dream Caves final room door (not used?)
+    860: [861],  # Doma Dream Caves final room door (not used?)
+
+    364: [365],  # Mt Kolts 1F outside left
+    387: [388]  # Mt Koltz back side middle door
 }
 
 # Keys to apply immediately, based on flags.

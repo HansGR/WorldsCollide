@@ -27,6 +27,7 @@ ROOM_SETS = {
                      '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'],
     'CyansDream': [421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
                   432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd'],
+    'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 'root-mk'],
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -47,7 +48,8 @@ ROOM_SETS = {
             201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
             '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt',  # Phantom Train
             421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
-            432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd'  # Cyan's Dream
+            432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd',  # Cyan's Dream
+            145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 'root-mk' # Mt. Kolts
              ],
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
@@ -155,6 +157,9 @@ class Doors():
 
             if self.args.door_randomize_cyans_dream:  # -drcd
                 room_sets.append(ROOM_SETS['CyansDream'])
+
+            if self.args.door_randomize_mt_kolts:  # -drmk
+                room_sets.append(ROOM_SETS['MtKolts'])
 
             if self.combine_areas:
                 temp = []
