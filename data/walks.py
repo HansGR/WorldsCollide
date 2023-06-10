@@ -292,6 +292,9 @@ class Network:
                     da = attachable_doors.pop(0)
                     Ra = self.rooms.get_room_from_element(da)
 
+                    #if self.verbose:
+                    #    print('\tConnecting: ' + str(dd) + '(' + str(Rd.id) + ') to ' + str(da) + '(' + str(Ra.id) + ')')
+
                     # Handle various bad cases if the dead end has a key:
                     if len(Rd.keys) > 0 or len(Ra.keys) > 0:
                         # 1. Verify the dead end doesn't contain the key to unlock this door
@@ -783,12 +786,13 @@ class Rooms:
     def remove(self, id):
         for room in self.rooms:
             if room.id == id:
-                # This is a room id.  Remove it.
+                # Remove this room id
                 self.rooms.remove(room)
                 return True
             # If this is an exit id, remove it.
-            if room.remove(id):
-                return True
+            # UPDATE: NEVER DO THIS.  ONLY explicitly remove an exit from its room using Room.remove(exit_id)
+            #if room.remove(id):
+            #    return True
         return False
 
 
