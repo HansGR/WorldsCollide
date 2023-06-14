@@ -738,13 +738,14 @@ room_data = {
     465 : [ [975], [2055], [ ], 0], #Burning House Final Room
 
     # CAVE ON THE VELDT
-    467 : [ [979, 985], [ ], [ ], 1], #Veldt Cave First Room
+    'root-vc' : [ [61], [], [], 1], # Root room for Cave on the Veldt
+    467 : [ [978, 979, 985], [ ], [ ], 1], #Veldt Cave First Room
     468 : [ [980], [ ], [ ], 1], #Veldt Cave Second Room Dead End
     469 : [ [981, 986], [ ], [ ], 1], #Veldt Cave Bandit Room / Second Room
     470 : [ [982, 983], [ ], [ ], 1], #Veldt Cave Third Room
     471 : [ [984, 987], [ ], [ ], 1], #Veldt Cave Bandit Room / Second Room Lower Floor
-    472 : [ [988], [ ], [ ], 1], #Veldt Cave Fourth Room Left Side
-    473 : [ [989], [ ], [ ], 1], #Veldt Cave Fourth Room Right Side
+    472 : [ [988], [ ], [ ], ['vc1'], {'vc1': [989]}, 1], #Veldt Cave Fourth Room Left Side
+    #473 : [ [], [ ], [ ], 1], #Veldt Cave Fourth Room Right Side
     474 : [ [990, 992], [ ], [ ], 1], #Veldt Cave Fifth Room
     475 : [ [991], [ ], [ ], 1], #Veldt Cave Final Room
 

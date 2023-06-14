@@ -45,6 +45,8 @@ def parse(parser):
                        help="Randomize the doors in Cyan's Dream")
     doors.add_argument("-drmk", "--door-randomize-mt-kolts", action="store_true",
                        help="Randomize the doors in Mt Kolts")
+    doors.add_argument("-drvc", "--door-randomize-veldt-cave", action="store_true",
+                       help="Randomize the doors in Cave on the Veldt")
 
     # Full randomization
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
@@ -64,7 +66,8 @@ def process(args):
             or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
             or args.door_randomize_serpent_trench or args.door_randomize_burning_house \
             or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
-            or args.door_randomize_phantom_train or args.door_randomize_cyans_dream or args.door_randomize_mt_kolts:
+            or args.door_randomize_phantom_train or args.door_randomize_cyans_dream or args.door_randomize_mt_kolts \
+            or args.door_randomize_veldt_cave:
         args.door_randomize = True
     else:
         args.door_randomize = False
@@ -145,6 +148,9 @@ def flags(args):
         if args.door_randomize_cyans_dream:
             flags += " -drmk"
 
+        if args.door_randomize_veldt_cave:
+            flags += " -drvc"
+
     return flags
 
 def options(args):
@@ -176,6 +182,7 @@ def options(args):
             ("Phantom Train", True),
             ("Cyan's Dream", True),
             ("Mt. Kolts", True),
+            ("Veldt Cave", True),
         ]
     else:
         un_state = args.door_randomize_upper_narshe
@@ -213,6 +220,7 @@ def options(args):
             ("Phantom Train", args.door_randomize_phantom_train),
             ("Cyan's Dream", args.door_randomize_cyans_dream),
             ("Mt. Kolts", args.door_randomize_mt_kolts),
+            ("Veldt Cave", args.door_randomize_veldt_cave),
         ]
 
 def menu(args):
