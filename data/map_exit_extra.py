@@ -1138,7 +1138,7 @@ exit_data = {
     975: [974, "Burning House Final Room"],
     976: [761, "Kefka's Tower Broken Capsule Room West Door"],
     977: [769, "Kefka's Tower Broken Capsule Room East Door"],
-    978: [None, "Veldt Cave to World Map"],
+    978: [61, "Veldt Cave to World Map"],
     979: [980, "Veldt Cave First Room Bottom Right Door"],
     980: [979, "Veldt Cave Second Room Bottom Left Door"],
     981: [982, "Veldt Cave Second Room Stairs Down to B1"],
@@ -1467,7 +1467,10 @@ exit_data_patch = {
 
     # THAMASA WOB
     1254: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka West to World Map WoB"],
-    1255: lambda info: set_dest_map(0, info)  # [1504, "Thamasa After Kefka South to World Map WoB"],
+    1255: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka South to World Map WoB"],
+
+    # CAVE ON THE VELDT WOR
+    978: lambda info: set_dest_map(1, info)  # [61, "Veldt Cave to World Map"],
 
 }
 

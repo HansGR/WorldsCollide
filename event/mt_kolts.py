@@ -336,6 +336,8 @@ class MtKolts(Event):
 
     def door_rando_mod(self):
         # Make the character get jumped immediately if they come out of Vargas' door
+        # Note: "CB/79AA: B3    Call subroutine $CAC7FE, 3 times" causes the character to turn south & blink 3 times.
+        animate_blink_addr = 0xac7fe
         src = [
             field.ReturnIfEventBitSet(0x10A),    # Skip if it already happened
             field.ReturnIfEventBitClear(0x1B3),  # must be facing left (i.e. just came out of door)
@@ -346,22 +348,10 @@ class MtKolts(Event):
             field.RefreshEntities(),
             field.EntityAct(0x10, False,
                             field_entity.SetPosition(x=24, y=31)),
+            field.PauseUnits(4),
+            field.MultipleCalls(3, animate_blink_addr),
+            field.PauseUnits(6),
             field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.Pause(4),
-                            field_entity.Turn(direction.DOWN),
-                            field_entity.Pause(2),
-                            field_entity.AnimateCloseEyes(),
-                            field_entity.Pause(1),
-                            field_entity.AnimateStandingFront(),
-                            field_entity.Pause(1),
-                            field_entity.AnimateCloseEyes(),
-                            field_entity.Pause(1),
-                            field_entity.AnimateStandingFront(),
-                            field_entity.Pause(1),
-                            field_entity.AnimateCloseEyes(),
-                            field_entity.Pause(1),
-                            field_entity.AnimateStandingFront(),
-                            field_entity.Pause(4),
                             field_entity.Turn(direction.RIGHT)),
             field.PauseUnits(4),
             field.EntityAct(0x10, False,

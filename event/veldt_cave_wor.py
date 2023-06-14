@@ -1,6 +1,13 @@
 from event.event import *
 
 class VeldtCaveWOR(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_veldt_cave
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Veldt Cave WOR"
 
@@ -23,6 +30,9 @@ class VeldtCaveWOR(Event):
             self.add_gating_condition()
 
         self.srbehemoth_battle_mod()
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -158,3 +168,33 @@ class VeldtCaveWOR(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Add event tile to delete dog, if not yet seen: [0x161, 39, 45]
+        interceptor_npc = 0x11
+        src = [
+            field.ReturnIfEventBitSet(event_bit.FOUND_INTERCEPTOR_VELDT_CAVE_WOR),
+            field.DeleteEntity(interceptor_npc),
+            field.HideEntity(interceptor_npc),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Delete Interceptor coming from north")
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 39
+        new_event.y = 45
+        new_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x161, new_event)
+
+        # Add "create dog" to dog event script, just in case:
+        # replace CB/79A5: B2    Call subroutine $CB6ABF
+        src = [
+            field.CreateEntity(interceptor_npc),
+            field.ShowEntity(interceptor_npc),
+            field.Call(0xb6abf),
+            field.Return()
+        ]
+        show_interceptor = Write(Bank.CB, src, "force show Interceptor")
+        space = Reserve(0xb79a5, 0xb79a8, "force create interceptor npc", field.NOP())
+        space.write([field.Call(show_interceptor.start_address)])
+
