@@ -106,21 +106,48 @@ class VeldtCaveWOR(Event):
 
     def move_to_thamasa(self, reward_instructions):
         space = Reserve(0xb7aa1, 0xb7be2, "veldt cave wor move party to strago's room in thamasa", field.NOP())
-        space.write(
-            field.FadeInSong(0x08, 0x30),
-            field.LoadMap(0x001, direction.DOWN, default_music = False, x = 251, y = 230, fade_in = False, airship = True),
-            vehicle.SetPosition(251, 231),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x15d, direction.DOWN, default_music = True, x = 61, y = 13, update_parent_map = True),
+        if self.DOOR_RANDOMIZE:
+            # In door rando, we want to reward the player before the transition, and use a switchyard tile for the
+            # transition so the airship is moved.
+            from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+            event_id = 2075
+            switchyard_src = [
+                field.FadeInSong(0x08, 0x30),
+                field.LoadMap(0x001, direction.DOWN, default_music=False, x=251, y=230, fade_in=False, airship=True),
+                vehicle.SetPosition(251, 231),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
+                # make interceptor only appear until you leave the screen
+                field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
+                field.FadeInScreen(),
+                field.Return(),
+            ]
+            AddSwitchyardEvent(event_id=event_id, maps=self.maps, src=switchyard_src)
 
-            # make interceptor only appear until you leave the screen
-            field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
+            src = [
+                reward_instructions,
+                field.FinishCheck(),
+                GoToSwitchyard(event_id, map='field'),
+                field.Return()
+            ]
 
-            reward_instructions,
+        else:
+            src = [
+                field.FadeInSong(0x08, 0x30),
+                field.LoadMap(0x001, direction.DOWN, default_music=False, x=251, y=230, fade_in=False, airship=True),
+                vehicle.SetPosition(251, 231),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
 
-            field.FinishCheck(),
-            field.Return(),
-        )
+                # make interceptor only appear until you leave the screen
+                field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
+
+                reward_instructions,
+
+                field.FinishCheck(),
+                field.Return(),
+            ]
+        space.write(src)
 
     def character_mod(self, character):
         self.shadow_npc.sprite = character
@@ -128,16 +155,37 @@ class VeldtCaveWOR(Event):
         self.relm_npc.sprite = character
         self.relm_npc.palette = self.characters.get_palette(character)
 
-        self.move_to_thamasa([
-            field.RecruitAndSelectParty(character),
-            field.FadeInScreen(),
-        ])
+        if self.DOOR_RANDOMIZE:
+            char_instructions = [
+                field.RecruitAndSelectParty(character),
+            ]
+        else:
+            char_instructions = [
+                field.RecruitAndSelectParty(character),
+                field.FadeInScreen(),
+            ]
+        self.move_to_thamasa(char_instructions)
 
     def esper_item_mod(self, esper_item_instructions):
-        self.move_to_thamasa([
-            field.FadeInScreen(),
-            esper_item_instructions,
-        ])
+        if self.DOOR_RANDOMIZE:
+            sr_behemoth_npc = 0x14
+            relm_shadow_npc = 0x12
+            reward_instructions = [
+                field.EntityAct(sr_behemoth_npc, True,
+                                field_entity.SetPosition(58, 24),
+                                field_entity.AnimateKnockedOut()),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.AnimateStandingFront()),
+                field.HideEntity(relm_shadow_npc),
+                field.FadeInScreen(),
+                esper_item_instructions,
+            ]
+        else:
+            reward_instructions = [
+                field.FadeInScreen(),
+                esper_item_instructions,
+            ]
+        self.move_to_thamasa(reward_instructions)
 
     def esper_mod(self, esper):
         self.shadow_npc.sprite = 91
@@ -198,3 +246,46 @@ class VeldtCaveWOR(Event):
         space = Reserve(0xb79a5, 0xb79a8, "force create interceptor npc", field.NOP())
         space.write([field.Call(show_interceptor.start_address)])
 
+        # Add a mechanism to redo the event transition after the boss is defeated
+        # Modify entrance event: if Sr. Behemoth defeated, show Sr. Behemoth knocked out
+        sr_behemoth_npc = 0x14
+        relm_shadow_npc = 0x12
+        src = [
+            field.BranchIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH, "normal_entrance_event"),
+            field.DeleteEntity(relm_shadow_npc),
+            field.HideEntity(relm_shadow_npc),
+            field.CreateEntity(sr_behemoth_npc),
+            field.ShowEntity(sr_behemoth_npc),
+            field.EntityAct(sr_behemoth_npc, False,
+                            field_entity.SetPosition(x=58, y=24),
+                            field_entity.AnimateKnockedOut()),
+            "normal_entrance_event",
+            field.Branch(0xB7982)
+        ]
+        space = Write(Bank.CB, src, "Cave on the Veldt updated entrance event")
+        self.maps.set_entrance_event(0x161, space.start_address - EVENT_CODE_START)
+
+        # Modify Sr. Behemoth NPC event
+        from event.switchyard import GoToSwitchyard
+        sr_behemoth = self.maps.get_npc(0x161, sr_behemoth_npc)
+        src = [
+            field.ReturnIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH),
+            field.HoldScreen(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.AnimateKneelingRight(),
+                            field_entity.Pause(10)),
+            field.EntityAct(sr_behemoth_npc, True,
+                            field_entity.AnimateStandingFront()),
+            field.PauseUnits(1),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.AnimateSurprised(),
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.AnimateHighJump(),
+                            field_entity.Move(direction.UP, 10),
+                            field_entity.EnableWalkingAnimation()),
+            field.FreeScreen()
+        ]
+        src += GoToSwitchyard(2075, map='field')
+        space = Write(Bank.CB, src, "Senior Behemoth exit event")
+        sr_behemoth.event_address = space.start_address - EVENT_CODE_START

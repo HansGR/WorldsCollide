@@ -300,7 +300,7 @@ class MtKolts(Event):
 
         # scene with vargas and sabin
         # replace with: vargas jumps on party and fight happens
-        space = Reserve(0xa82a3, 0xa82c5, "mt kolts invoke vargas battle", field.NOP())
+        space = Reserve(0xa82a3, 0xa82c7, "mt kolts invoke vargas battle", field.NOP())
         src = [
             field.Pause(1),
             field.InvokeBattle(boss_pack_id, 0x0b),
@@ -313,6 +313,8 @@ class MtKolts(Event):
                 field.SetEventBit(event_bit.SAW_VARGAS_SHADOW1),
                 field.SetEventBit(event_bit.SAW_VARGAS_SHADOW2),
                 field.SetEventBit(event_bit.SAW_VARGAS_SHADOW3),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.AnimateStandingFront())
             ]
         src += [
             field.FadeInScreen(),
@@ -348,18 +350,19 @@ class MtKolts(Event):
             field.RefreshEntities(),
             field.EntityAct(0x10, False,
                             field_entity.SetPosition(x=24, y=31)),
-            field.PauseUnits(4),
+            field.Pause(0.5),
             field.MultipleCalls(3, animate_blink_addr),
-            field.PauseUnits(6),
+            field.Pause(0.75),
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.Turn(direction.RIGHT)),
-            field.PauseUnits(4),
+            field.Pause(0.25),
             field.EntityAct(0x10, False,
                             field_entity.AnimateHighJump(),
                             field_entity.MoveDiagonal(direction.LEFT, 2, direction.DOWN, 1)),
             field.EntityAct(field_entity.PARTY0, False,
                             field_entity.AnimateSurprised()),
-            field.Branch(0xa82a3)
+            field.PauseUnits(32),
+            field.Branch(0xa82a4)
         ]
         space = Write(Bank.CA, src, "Vargas jumps you immediately at his door")
         from data.map_event import MapEvent
