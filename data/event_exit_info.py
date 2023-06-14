@@ -124,6 +124,9 @@ event_exit_info = {
     2073: [0xb94e7, 268, 46, [False, False, False, False], 'Cyans Dream Caves Bridge Fall', [0x13f, 14, 25], 'JMP'],  # tile points to 0xb94e7
     2074: [0xb97d6, 676, 524, [False, True, False, False], 'Cyans Dream Doma Throne Room Boss', [0x07e, 25, 11], 'JMP'],  # tile points to 0xb97d6
 
+    # CAVE ON THE VELDT
+    2075: [0xb, 0, 0, [False, True, False, False], 'Cave on the Veldt Boss Fight', [0x161, 59, 18], 'JMP'],  # tile points to 0xb7a18
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
@@ -424,6 +427,10 @@ require_event_bit = {
 
     # Cyan Dream, Wrexsoul room (NPCs)
     456: {0x548: True},
+
+    # Cave on the Veldt, Relm/shadow NPC
+    988: {0x552: True},
+    991: {0x552: True}
 }
 
 def minecart_event_mod(src, src_end):

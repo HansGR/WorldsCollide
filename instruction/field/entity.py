@@ -3,6 +3,7 @@ from instruction.entity import *
 
 CAMERA, PARTY0, PARTY1, PARTY2, PARTY3 = range(0x30, 0x35)
 
+
 class MoveDiagonal(_Instruction):
     def __init__(self, dir1, dist1, dir2, dist2):
         import data.direction as direction
@@ -59,6 +60,10 @@ class AnimateStandingFront(_Instruction):
 class AnimateKneeling(_Instruction):
     def __init__(self):
         super().__init__(0x09)
+
+class AnimateKneelingRight(_Instruction):
+    def __init__(self):
+        super().__init__(0x49)
 
 class AnimateCloseEyes(_Instruction):
     def __init__(self):
