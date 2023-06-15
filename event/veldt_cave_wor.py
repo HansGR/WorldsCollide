@@ -24,15 +24,14 @@ class VeldtCaveWOR(Event):
         self.relm_npc_id = 0x13
         self.relm_npc = self.maps.get_npc(0x161, self.relm_npc_id)
 
+        self.dr_exit_type = 'dog'  # 'behemoth'
+
         self.dialog_mod()
 
         if self.args.character_gating:
             self.add_gating_condition()
 
         self.srbehemoth_battle_mod()
-
-        if self.DOOR_RANDOMIZE:
-            self.door_rando_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -42,6 +41,9 @@ class VeldtCaveWOR(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
     def dialog_mod(self):
         space = Reserve(0xb79cd, 0xb79d5, "veldt cave wor you're coming with us", field.NOP())
@@ -117,19 +119,27 @@ class VeldtCaveWOR(Event):
                 vehicle.SetPosition(251, 231),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
-                # make interceptor only appear until you leave the screen
-                field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
+                # Always show interceptor in door rando
+                #field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
                 field.FadeInScreen(),
                 field.Return(),
             ]
             AddSwitchyardEvent(event_id=event_id, maps=self.maps, src=switchyard_src)
 
-            src = [
+            space.write([
                 reward_instructions,
-                field.FinishCheck(),
+                field.FinishCheck()
+            ])
+            self.gotoswitchyard_addr = space.next_address
+
+            # Update event_exit_info[2075] with this information
+            from data.event_exit_info import event_exit_info
+            event_exit_info[2075][0:3] = [self.gotoswitchyard_addr, 7, 1]
+            
+            space.write([
                 GoToSwitchyard(event_id, map='field'),
                 field.Return()
-            ]
+            ])
 
         else:
             src = [
@@ -147,7 +157,7 @@ class VeldtCaveWOR(Event):
                 field.FinishCheck(),
                 field.Return(),
             ]
-        space.write(src)
+            space.write(src)
 
     def character_mod(self, character):
         self.shadow_npc.sprite = character
@@ -169,17 +179,27 @@ class VeldtCaveWOR(Event):
     def esper_item_mod(self, esper_item_instructions):
         if self.DOOR_RANDOMIZE:
             sr_behemoth_npc = 0x14
-            relm_shadow_npc = 0x12
-            reward_instructions = [
-                field.EntityAct(sr_behemoth_npc, True,
-                                field_entity.SetPosition(58, 24),
-                                field_entity.AnimateKnockedOut()),
-                field.EntityAct(field_entity.PARTY0, True,
-                                field_entity.AnimateStandingFront()),
-                field.HideEntity(relm_shadow_npc),
-                field.FadeInScreen(),
-                esper_item_instructions,
-            ]
+
+            if self.dr_exit_type == 'behemoth':
+                reward_instructions = [
+                    field.EntityAct(sr_behemoth_npc, True,
+                                    field_entity.SetPosition(58, 24),
+                                    field_entity.Turn(direction.UP)),
+                    field.EntityAct(field_entity.PARTY0, True,
+                                    field_entity.AnimateStandingFront()),
+                    field.HideEntity(self.shadow_npc_id),
+                    field.FadeInScreen(),
+                    esper_item_instructions,
+                ]
+            elif self.dr_exit_type == 'dog':
+                reward_instructions = [
+                    field.EntityAct(field_entity.PARTY0, True,
+                                    field_entity.AnimateStandingFront()),
+                    field.HideEntity(sr_behemoth_npc),
+                    field.HideEntity(self.shadow_npc_id),
+                    field.FadeInScreen(),
+                    esper_item_instructions,
+                ]
         else:
             reward_instructions = [
                 field.FadeInScreen(),
@@ -248,44 +268,80 @@ class VeldtCaveWOR(Event):
 
         # Add a mechanism to redo the event transition after the boss is defeated
         # Modify entrance event: if Sr. Behemoth defeated, show Sr. Behemoth knocked out
-        sr_behemoth_npc = 0x14
-        relm_shadow_npc = 0x12
-        src = [
-            field.BranchIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH, "normal_entrance_event"),
-            field.DeleteEntity(relm_shadow_npc),
-            field.HideEntity(relm_shadow_npc),
-            field.CreateEntity(sr_behemoth_npc),
-            field.ShowEntity(sr_behemoth_npc),
-            field.EntityAct(sr_behemoth_npc, False,
-                            field_entity.SetPosition(x=58, y=24),
-                            field_entity.AnimateKnockedOut()),
-            "normal_entrance_event",
-            field.Branch(0xB7982)
-        ]
-        space = Write(Bank.CB, src, "Cave on the Veldt updated entrance event")
-        self.maps.set_entrance_event(0x161, space.start_address - EVENT_CODE_START)
+        norm_entr_event_addr = 0xb7982
+        if self.dr_exit_type == 'behemoth':
+            sr_behemoth_npc = 0x14
+            src = [
+                field.BranchIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH, "normal_entrance_event"),
+                field.DeleteEntity(self.shadow_npc_id),
+                field.HideEntity(self.shadow_npc_id),
+                field.CreateEntity(sr_behemoth_npc),
+                field.ShowEntity(sr_behemoth_npc),
+                field.EntityAct(sr_behemoth_npc, False,
+                                field_entity.Turn(direction.UP),
+                                field_entity.SetPosition(x=58, y=24)),
+                "normal_entrance_event",
+                field.Branch(norm_entr_event_addr)
+            ]
+            space = Write(Bank.CB, src, "Cave on the Veldt updated entrance event")
+            self.maps.set_entrance_event(0x161, space.start_address - EVENT_CODE_START)
 
-        # Modify Sr. Behemoth NPC event
-        from event.switchyard import GoToSwitchyard
-        sr_behemoth = self.maps.get_npc(0x161, sr_behemoth_npc)
-        src = [
-            field.ReturnIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH),
-            field.HoldScreen(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.AnimateKneelingRight(),
-                            field_entity.Pause(10)),
-            field.EntityAct(sr_behemoth_npc, True,
-                            field_entity.AnimateStandingFront()),
-            field.PauseUnits(1),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetSpeed(field_entity.Speed.FAST),
-                            field_entity.AnimateSurprised(),
-                            field_entity.DisableWalkingAnimation(),
-                            field_entity.AnimateHighJump(),
-                            field_entity.Move(direction.UP, 10),
-                            field_entity.EnableWalkingAnimation()),
-            field.FreeScreen()
-        ]
-        src += GoToSwitchyard(2075, map='field')
-        space = Write(Bank.CB, src, "Senior Behemoth exit event")
-        sr_behemoth.event_address = space.start_address - EVENT_CODE_START
+            # Modify Sr. Behemoth NPC event
+            sr_behemoth = self.maps.get_npc(0x161, sr_behemoth_npc)
+            src = [
+                field.ReturnIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH),
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.HoldScreen(),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.AnimateKneelingRight(),
+                                field_entity.Pause(10)),
+                field.EntityAct(sr_behemoth_npc, True,
+                                field_entity.AnimateStandingFront()),
+                field.PauseUnits(1),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetSpeed(field_entity.Speed.FAST),
+                                field_entity.AnimateSurprised(),
+                                field_entity.DisableWalkingAnimation(),
+                                field_entity.AnimateHighJump(),
+                                field_entity.Move(direction.UP, 10),
+                                field_entity.EnableWalkingAnimation()),
+                field.FreeScreen(),
+                field.Branch(self.gotoswitchyard_addr)
+            ]
+            space = Write(Bank.CB, src, "Senior Behemoth exit event")
+            sr_behemoth.event_address = space.start_address - EVENT_CODE_START
+        elif self.dr_exit_type == 'dog':
+            dog_npc_id = 0x15
+            behemoth_npc_id = 0x14
+            src = [
+                field.BranchIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH, "normal_entrance_event"),
+                field.DeleteEntity(self.shadow_npc_id),
+                field.HideEntity(self.shadow_npc_id),
+                field.DeleteEntity(behemoth_npc_id),
+                field.HideEntity(behemoth_npc_id),
+                field.CreateEntity(dog_npc_id),
+                field.ShowEntity(dog_npc_id),
+                field.EntityAct(dog_npc_id, False,
+                                field_entity.SetPosition(x=55, y=25)),
+                "normal_entrance_event",
+                field.Branch(norm_entr_event_addr)
+            ]
+            space = Write(Bank.CB, src, "Cave on the Veldt updated entrance event")
+            self.maps.set_entrance_event(0x161, space.start_address - EVENT_CODE_START)
+
+            # Modify dog NPC event
+            dog_npc = self.maps.get_npc(0x161, dog_npc_id)
+            src = [
+                field.ReturnIfEventBitClear(event_bit.DEFEATED_SR_BEHEMOTH),
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.Call(0xb6abf), # bark; pause 30 units
+                field.Pause(.25),
+                field.PlaySoundEffect(0x51),  # xfer
+                field.MosaicScreen(3),
+                field.PauseUnits(60),
+                field.FadeOutScreen(4),
+                field.Branch(self.gotoswitchyard_addr)
+            ]
+            space = Write(Bank.CB, src, "Veldt Cave Interceptor exit event")
+            dog_npc.event_address = space.start_address - EVENT_CODE_START
+
