@@ -19,9 +19,6 @@ def parse(parser):
     misc.add_argument("-npctips", "--npc-dialog-tips", action = "store_true",
                       help = "NPC provide general game tips")
 
-    misc.add_argument("-npctips", "--npc-dialog-tips", action = "store_true",
-                      help = "NPC provide general game tips")
-
     from data.movement import ALL
     movement = misc.add_mutually_exclusive_group()
     movement.name = "Movement"

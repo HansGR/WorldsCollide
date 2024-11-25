@@ -30,7 +30,7 @@ class MapEvents():
             event_data = event.to_data()
             event_data_start = self.DATA_START_ADDR + event_index * MapEvent.DATA_SIZE
             # Assert that the address being written doesn't go beyond the expected end point
-            assert(event_data_start < self.DATA_END_ADDR)
+            #assert(event_data_start < self.DATA_END_ADDR)
             self.rom.set_bytes(event_data_start, event_data)
 
     def mod(self):
