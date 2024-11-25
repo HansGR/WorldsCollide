@@ -42,6 +42,8 @@ room_data = {
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
     'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
 
+    'root-wob' : [ [], [], [], 0],  # Root map for WOB exit-only randomizer (does not include connector to Sealed Gate Cave)
+    'root-wor' : [ [], [], [], 1],  # Root map for WOR exit-only randomizer (does not include Figaro Castle, KT, or Phoenix Cave)
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
 
