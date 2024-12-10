@@ -198,6 +198,22 @@ event_exit_info = {
 
     1545: [0xba80e, 7, 1, [False, False, False, False], 'Phantom Train Locomotive interior exit', [0x092, 8, 13], 'JMP'],  # --> 0x8d, 38, 9.  tile calls 0xba808.
 
+    # EBOT'S ROCK (HIDON CAVE)
+    1546: [0xb6e51, 7, 1, [False, False, False, False], 'Exit from Hidon Cave', [0x195, 7, 24], 'JMP'],  # --> 0x1, 249, 224.  tile points to 0xb6e4b
+
+    # DOMA WOB MODIFIED EVENT ENTRANCE
+    1547: [None, 7, 1, [False, False, False, False], 'Doma Left Tile WoB', [0x005, 1547 % 128, 1547 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    #'1547a': [None, 7, 1, [False, False, False, False], 'Doma Right Tile WoB', [0x005, 1547 % 128, 1547 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]  # don't need both, just reuse code
+
+    # ALBROOK WoB/WoR
+    1548: [0xc60d8, 7, 1, [False, False, False, False], 'Albrook Inn exit WoB', [0x145, 58, 57], 'JMP'],  # --> 0x143, 54, 14.  tile calls 0xc60d2 (a WOB/WOR handler)
+    5548: [0xc60df, 7, 1, [False, False, False, False], 'Albrook Inn exit WoR', [0x145, 58, 57], 'JMP'],  # --> 0x144, 54, 14.  tile calls 0xc60d2 (a WOB/WOR handler)
+    1549: [0xc60ec, 7, 1, [False, False, False, False], 'Albrook Wpn Shop exit WoB', [0x146, 4, 56], 'JMP'],  # --> 0x143, 23, 21.  tile calls 0xc60e6 (a WOB/WOR handler)
+    5549: [0xc60f3, 7, 1, [False, False, False, False], 'Albrook Wpn Shop exit WoR', [0x146, 4, 56], 'JMP'],  # --> 0x144, 23, 21.  tile calls 0xc60e6 (a WOB/WOR handler)
+    1550: [0xc6100, 7, 1, [False, False, False, False], 'Albrook Armor Shop exit WoB', [0x147, 101, 24], 'JMP'],  # --> 0x143, 39, 21.  tile calls 0xc60fa (a WOB/WOR handler)
+    5550: [0xc6107, 7, 1, [False, False, False, False], 'Albrook Armor Shop exit WoR', [0x147, 101, 24], 'JMP'],  # --> 0x144, 39, 21.  tile calls 0xc60fa (a WOB/WOR handler)
+    1551: [0xc6114, 7, 1, [False, False, False, False], 'Albrook Item Shop exit WoB', [0x148, 37, 55], 'JMP'],  # --> 0x143, 7, 15.  tile calls 0xc610e (a WOB/WOR handler)
+    5551: [0xc611b, 7, 1, [False, False, False, False], 'Albrook Item Shop exit WoR', [0x148, 37, 55], 'JMP'],  # --> 0x144, 7, 15.  tile calls 0xc610e (a WOB/WOR handler)
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen

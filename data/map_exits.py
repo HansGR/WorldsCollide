@@ -17,9 +17,10 @@ class MapExits():
     LONG_DATA_START_ADDR  = 0x2df882
     LONG_DATA_END_ADDR    = 0x2DFDFF
 
-    def __init__(self, rom, DOOR_RANDO = False):
+    def __init__(self, rom, DOOR_RANDO = [False, False]):
         self.rom = rom
-        self.DOOR_RANDOMIZE = DOOR_RANDO
+        self.DOOR_RANDOMIZE = DOOR_RANDO[0]
+        self.MAP_SHUFFLE = DOOR_RANDO[1]
         self.short_exits = []
         self.long_exits = []
         self.exit_original_data = {}
@@ -67,24 +68,33 @@ class MapExits():
                                                        new_exit.displaylocationname, new_exit.facing, new_exit.unknown,
                                                        new_exit.x, new_exit.y, new_exit.size, new_exit.direction]
 
-        if self.DOOR_RANDOMIZE:
-            # For door mapping to work, all exits must be explicit (i.e. patch out "return to parent map").
+        if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
+            # Make all exits explicit (i.e. patch out "return to parent map") for door randomization
+            # "Parent map" is set when entering a non-world-map from a world map.
+            # - Warp stones send you back to the last parent map location.
+            # - Some exits (but only exits to world map?) send you back to the last parent map location.
             for e in exit_data_patch.keys():
                 if e in self.exit_original_data.keys():
-                    # Update the "original data"
-                    self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
-                    # Copy the "original data" to the exit itself
-                    self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
-                    #print('Patching: ', e)
+                    if self.DOOR_RANDOMIZE:  # apply patches if doing full door rando
+                        # Update the "original data"
+                        self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
+                        # Copy the "original data" to the exit itself
+                        self.copy_exit_info(self._get_exit_from_ID(e), e, type='all')
+                        #print('Patching: ', e)
                 else:
                     if 6000 > e >= 4000:
                         # This is a logical exit.  Create an entry for it from its WOB pair.
-                        self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
+                        if self.DOOR_RANDOMIZE:  # apply patches if doing full door rando
+                            self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
+                        else:
+                            self.exit_original_data[e] = self.exit_original_data[e - 4000]
+                        #print(e, self.exit_original_data[e])
 
             for e in event_door_connection_data.keys():
                 # This is an event exit behaving as an exit, or a logical exit that cannot be copied from its vanilla
                 # partner. Create an entry for it.
                 self.exit_original_data[e] = event_door_connection_data[e]
+                #print(e, self.exit_original_data[e])
 
             for e in add_new_exits.keys():
                 pass

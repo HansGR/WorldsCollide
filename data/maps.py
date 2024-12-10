@@ -59,7 +59,7 @@ class Maps():
         self.chests = Chests(self.rom, self.args, items)
         self.events = events.MapEvents(rom)
         self.long_events = events.LongMapEvents(rom)
-        self.exits = exits.MapExits(rom, args.door_randomize)
+        self.exits = exits.MapExits(rom, [args.door_randomize, args.map_shuffle])
         #self.connections = Connections(self.exits)
         self.world_map_event_modifications = world_map_event_modifications.WorldMapEventModifications(rom)
         self.world_map = WorldMap(rom, args)
@@ -278,6 +278,7 @@ class Maps():
 
         event_id = (self.maps[map_id]["events_ptr"] - self.maps[0]["events_ptr"]) // MapEvent.DATA_SIZE
         self.events.add_event(event_id, new_event)
+        #print('added event: ', map_id, new_event.x, new_event.y, event_id, '. # events in this map: ', self.get_event_count(map_id))
 
     def delete_event(self, map_id, x, y):
         for map_index in range(map_id + 1, self.MAP_COUNT):
@@ -458,6 +459,7 @@ class Maps():
         if len(self.doors.map) > 0:
             self.doors.print()
 
+
     def doorRandoOverride(self, newmap):
         from data.map_exit_extra import exit_data as ed
         for r in room_data.keys():
@@ -538,7 +540,7 @@ class Maps():
     def write(self):
         #self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
-        if self.args.door_randomize:
+        if self.args.door_randomize or self.args.map_shuffle:
             used_events = [m[0] for m in self.doors.map[1]] \
                           + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
                           + [m[1] for m in self.doors.map[0] if 2000 > m[1] >= 1500]
@@ -550,6 +552,7 @@ class Maps():
                     ey = event_exit_info[e][5][2]
                     ev = self.get_event(mapid, ex, ey)
                     event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
+                    #print(e, event_exit_info[e][0])
             # Connect one-way event exits using the Transitions class
             self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info)
             self.transitions.write(maps=self)
@@ -566,6 +569,8 @@ class Maps():
         self.long_events.write()
         self.exits.write()
         self.world_map_event_modifications.write()
+
+
 
         for map_index, cur_map in enumerate(self.maps):
             self.properties[map_index].write()
@@ -632,16 +637,18 @@ class Maps():
             self.doors.door_rooms[map[m+4000]] = that_room[0]
 
         # Need to add modified world map exits if they weren't randomized (to print exit events)
-        for m in exit_data_patch.keys():
-            if m not in map.keys():
-                map[m] = exit_data[m][0]
-                # Look up the rooms of these exits
-                #this_room = [r for r in room_data.keys() if m in room_data[r][0]]
-                #if len(this_room)> 0:
-                #    self.doors.door_rooms[m] = this_room[0]
-                #that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
-                #if len(that_room)> 0:
-                #    self.doors.door_rooms[map[m]] = that_room[0]
+        if self.args.door_randomize:
+            # Only do this if door_randomize, not map_shuffle
+            for m in exit_data_patch.keys():
+                if m not in map.keys():
+                    map[m] = exit_data[m][0]
+                    # Look up the rooms of these exits
+                    #this_room = [r for r in room_data.keys() if m in room_data[r][0]]
+                    #if len(this_room)> 0:
+                    #    self.doors.door_rooms[m] = this_room[0]
+                    #that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
+                    #if len(that_room)> 0:
+                    #    self.doors.door_rooms[map[m]] = that_room[0]
 
         # Build dictionary of maps with entrance events that will need to be called
         self.exit_event_addr_to_call = {}
@@ -661,10 +668,16 @@ class Maps():
         # Generate a final list of all exits that need to be connected
         all_exits = list(map.keys())
         all_exits.sort()  # apply the doors in order.
+        #if self.doors.verbose:
+            #print(all_exits)
 
         # Connect real doors:  m < 1500
         door_exits = [m for m in all_exits if m < 1500]
         for m in door_exits:
+            if self.doors.verbose:
+                print('Connecting: ' + str(m) + ' to ' + str(map[m]))
+                #  + ": " + str(exit_data[m][1]) + ' to ' + str(exit_data[map[m]][1])
+
             # Get exits associated with doors m and m_conn
             exitA = self.get_exit(m)
 
@@ -680,10 +693,6 @@ class Maps():
                     exitB_pairID = exitB_pairID - 4000
 
             self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
-
-            if self.doors.verbose:
-                print('Connecting: ' + str(m) + ' to ' + str(map[m]))
-                #  + ": " + str(exit_data[m][1]) + ' to ' + str(exit_data[map[m]][1])
 
             # Write events on the exits to handle required conditions:
             self.create_exit_event(m, map[m])
@@ -1159,8 +1168,8 @@ class Maps():
 
         if self.doors.verbose:
             print('Moved Event Trigger data to ' + str(hex(new_bank)) + ': ' + str(hex(self.EVENT_PTR_START)) + ', ' + str(hex(self.events.DATA_START_ADDR)))
-            for e in range(14):
-                print('\t' + str(e) + ' (' + str(self.events.events[e].x) + ', ' + str(self.events.events[e].y) + '): ' + str(hex(self.events.events[e].event_address)))
+            #for e in range(14):
+            #    print('\t' + str(e) + ' (' + str(self.events.events[e].x) + ', ' + str(self.events.events[e].y) + '): ' + str(hex(self.events.events[e].event_address)))
 
     def door_rando_cleanup(self):
         # Perform cleanup actions, if we are doing door rando

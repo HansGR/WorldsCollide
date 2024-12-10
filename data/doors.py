@@ -55,11 +55,14 @@ ROOM_SETS = {
             145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 'root-mk', # Mt. Kolts
             467, 468, 469, 470, 471, 472, 474, 475, 'root-vc' # Veldt Cave WOR
              ],
+    'MapShuffleWOB':  ['root-wob'],  # dynamically appended later
+    'MapShuffleWOR':  ['root-wor'],  # dynamically appended later
+
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
 
 class Doors():
-    verbose = False  # False  # True
+    verbose = True  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
@@ -173,6 +176,21 @@ class Doors():
                 for r in room_sets:
                     temp.extend(r)
                 room_sets = [temp]
+
+        if self.args.map_shuffle:  # -maps
+            # Separately:  add rooms for WOR, WOB
+            # Need to dynamically construct connecting rooms first
+            for dk in room_data['root-wob'][0]:
+                this_room_name = 'ms-wob-' + str(dk)
+                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 0]
+                ROOM_SETS['MapShuffleWOB'].append(this_room_name)
+            for dk in room_data['root-wor'][0]:
+                this_room_name = 'ms-wor-'+str(dk)
+                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 1]
+                ROOM_SETS['MapShuffleWOR'].append(this_room_name)
+
+            room_sets.append(ROOM_SETS['MapShuffleWOB'])
+            #room_sets.append(ROOM_SETS['MapShuffleWOR'])
 
         # Hard override for testing
         #room_sets = [ROOM_SETS['test']]

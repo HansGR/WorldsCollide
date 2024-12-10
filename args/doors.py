@@ -56,6 +56,10 @@ def parse(parser):
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
 
+    # Map shuffle
+    doors.add_argument("-maps", "--map-shuffle", action="store_true",
+                       help="Randomize overworld entrances in each world")
+
 def process(args):
     #pass
     if args.door_randomize_all or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
@@ -74,6 +78,10 @@ def process(args):
 
 def flags(args):
     flags = ""
+
+    if args.map_shuffle:
+        # -maps is separate from door randomization for now
+        flags += " -maps"
 
     if args.door_randomize_all:
         # -dra supercedes all
@@ -154,6 +162,11 @@ def flags(args):
     return flags
 
 def options(args):
+
+    if args.map_shuffle:
+        return [
+            ("Map Shuffle", args.door_randomize_all),
+        ]
 
     if args.door_randomize_all:
         return [

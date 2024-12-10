@@ -42,8 +42,10 @@ room_data = {
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
     'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
 
-    'root-wob' : [ [], [], [], 0],  # Root map for WOB exit-only randomizer (does not include connector to Sealed Gate Cave)
-    'root-wor' : [ [], [], [], 1],  # Root map for WOR exit-only randomizer (does not include Figaro Castle, KT, or Phoenix Cave)
+    'root-wob' : [ [4, 1547], [], [], 0],  # Root map for WOB map shuffle testing
+    #'root-wob' : [ [4, 5, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 1547, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
+    'root-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
+
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
 
@@ -608,8 +610,8 @@ room_data = {
     'share_west': [ [], [2057], [3007, 3008], 1], # Umaro Cave west shared pit logical room
     368 : [ [ ], [2009], [3004], 1], # Umaro Cave Umaro's Den
 
-    369 : [ [739, 740, 741, 742], [ ], [ ], 0], #Maranda Outside
-    '369R' : [ [4739, 4740, 4741, 4742], [ ], [ ], 1], #Maranda Outside
+    369 : [ [739, 740, 741, 742, 1238, 1239], [ ], [ ], 0], #Maranda Outside
+    '369R' : [ [4739, 4740, 4741, 4742, 5238, 5239], [ ], [ ], 1], #Maranda Outside
 
     370 : [ [743], [ ], [ ], 0], #Doma 3F Outside
     371 : [ [744, 1240], [ ], [ ], 0], #Doma 1F Outside
@@ -647,12 +649,13 @@ room_data = {
     393 : [ [797, 798], [ ], [ ], 1], #Darill's Tomb MIAB Hallway
 
 
-
-
-
-
-
-    401 : [ [814, 815], [ ], [ ], 1], #Tzen Collapsing House Downstairs
+    395 : [ [803, 804, 805, 806, 807, 808, 1243], [], [], 1],  # Tzen Outside WoR 0x131
+    396 : [ [809, 810, 811, 812, 813, 1244], [], [], 0],  # Tzen Outside WoB 0x132
+    #397 : [ [], [], [], 1],  # Tzen Item WoR  0x133
+    #398 : [ [], [], [], 1],  # Tzen Inn WoR  0x134
+    #399 : [ [], [], [], 1],  # Tzen Weapon Shop WoR  0x135
+    #400 : [ [], [], [], 1],  # Tzen Armor Shop WoR  0x136
+    401 : [ [814, 815], [ ], [ ], 1], #Tzen Collapsing House Downstairs  0x137
 
 
 
@@ -704,12 +707,22 @@ room_data = {
     192 : [ [455], [ ], [ ], 1],  # Doma Dream Cyan's Room
     193 : [ [456], [2074], [ ], 1],  # Doma Dream Throne Room
 
-
+    # ALBROOK:
+    437: [ [872, 873, 874, 875, 876, 877, 1245, 1246, 1247, 1248], [], [], 0],   # Albrook WoB, outside (0x143)
+    438: [ [878, 879, 880, 881, 882, 883, 1249, 1250, 1251, 1252], [], [], 1],   # Albrook WoR, outside (0x144)
+    439: [ [1548], [], [], 0],   # Albrook Inn WoB (0x145)
+    '439R': [ [5548], [], [], 1],   # Albrook Inn WoR (shared map 0x145)
+    440: [ [1549], [], [], 0],   # Albrook Weapon Shop WoB (0x146)
+    '440R': [ [5549], [], [], 1],   # Albrook Weapon Shop WoR (shared map 0x146)
+    441: [ [1550], [], [], 0],   # Albrook Armor Shop WoB (0x147)
+    '441R': [ [5550], [], [], 1],   # Albrook Armor Shop WoR (shared map 0x147)
+    442: [ [1551], [], [], 0],   # Albrook Item Shop WoB (0x148)
+    '442R': [ [5551], [], [], 1],   # Albrook Item Shop WoR (shared map 0x148)
 
 
 
     # THAMASA - does WC only use this one Thamasa map (0x154)?
-    447 : [ [922, 923, 924, 925, 926, 927, 928, 1254, 1255], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
+    447 : [ [922, 923, 924, 925, 926, 927, 928, 1253, 1254, 1255], [ ], [ ], 0], #Thamasa After Kefka Outside WoB
     450 : [ [950, 951], [ ], [ ], 0], #Thamasa Arsenal
     451 : [ [952], [2054], [3055], 0], #Thamasa Inn
     452 : [ [953], [ ], [ ], 0], #Thamasa Item Shop
@@ -718,7 +731,7 @@ room_data = {
     455 : [ [957], [ ], [ ], 0], #Strago's House Second Floor
     456 : [ [958], [ ], [ ], 0], #Thamasa Relic
 
-    449 : [ [943, 944, 945, 946, 947, 948, 949, 1261], [], [], 1],  # Thamasa WoR outside (0x158)
+    449 : [ [943, 944, 945, 946, 947, 948, 949, 1261, 1259, 1260], [], [], 1],  # Thamasa WoR outside (0x158)
     #'447R': [[4922, 4923, 4924, 4925, 4926, 4927, 4928], [], [], 1],  # Thamasa After Kefka Outside WoR
     '450R': [[4950, 4951], [], [], 1],  # Thamasa Arsenal
     '451R': [[4952], [], [], 1],  # Thamasa Inn
@@ -755,7 +768,7 @@ room_data = {
     476 : [ [1010, 1011, 1012], [ ], [ ], 1], #Fanatic's Tower 2nd Floor Outside
     477 : [ [1013, 1014, 1015], [ ], [ ], 1], #Fanatic's Tower 3rd Floor Outside
     478 : [ [1016, 1017, 1018], [ ], [ ], 1], #Fanatic's Tower 4th Floor Outside
-    479 : [ [1019], [ ], [ ], 1], #Fanatic's Tower Bottom
+    479 : [ [1262, 1019], [ ], [ ], 1], #Fanatic's Tower Bottom
     480 : [ [1020, 1021, 1022, 1023], [ ], [ ], 1], #Fanatic's Tower 1st Floor Outside
     481 : [ [1024, 1025], [ ], [ ], 1], #Fanatic's Tower Top
     482 : [ [1026], [ ], [ ], 1], #Fanatic's Tower 1st Floor Treasure Room
@@ -821,6 +834,9 @@ room_data = {
     # COLISEUM
     533 : [ [1125, 1126, 1280], [ ], [ ], 1], #Coliseum Main Room
     534 : [ [1127], [ ], [ ], 1], #Coliseum Left Room
+
+    # EBOT'S ROCK
+    535 : [ [1546], [], [], 1],  # Ebot's Rock entrance, 0x195
 
 }
 
@@ -889,21 +905,39 @@ shared_oneways = {
 
 # Lists of doors that have a shared destination. key_doorID : [doorIDs that share destination]
 shared_exits = {
-    1034 : [1035],  # Esper Mountain outside bridge, left door
-    1038 : [1039],  # Esper Mountain Outside Path to Final Room East Door
-    1040 : [1041],  # Esper Mountain Outside Path to Final Room West Door
+    6: [7, 8, 9],  # South Figaro WoB entrance
+    16: [17],      # Nikeah WoB entrance
+    18: [19],      # Doma WoB entrance
+    21: [22],      # Phantom Forest, south entrance
+    24: [25],      # Kohlingen WoB entrance
+    28: [29, 30],  # Jidoor WoB entrance
+    31: [32],      # Maranda WoB entrance
+    33: [34],      # Tzen WoB entrance
+    35: [36],      # Albrook WoB entrance
+    37: [38, 39],  # Zozo WoB entrance
 
-    1229 : [1226],  # Post-minecart Vector long exit to MTek.  Same destination as normal Vector exit to MTek.
+    49: [50],      # Albrook WoR entrance
+    54: [55],      # Nikeah WoR entrance, pair 1.
+    59: [60],      # Kohlingen WoR entrance
+    63: [64],      # Maranda WoR entrance
+    65: [66],      # Nikeah WoR entrance, pair 2.
+    70: [71, 72],  # Zozo WoR entrance
+    73: [74],      # Jidoor WoR entrance
+    76: [77],      # Doma WoR entrance
 
-    1059 : [1060],  # Imperial camp, left entrance
+    1034: [1035],  # Esper Mountain outside bridge, left door
+    1038: [1039],  # Esper Mountain Outside Path to Final Room East Door
+    1040: [1041],  # Esper Mountain Outside Path to Final Room West Door
 
-    1075 : [1076],  # Cave to the Sealed Gate, lava switch room: exit 1076 inaccessible (for door exit error?)
+    1229: [1226],  # Post-minecart Vector long exit to MTek.  Same destination as normal Vector exit to MTek.
 
-    38 : [37, 39],  # Zozo WoB entrance
+    1059: [1060],  # Imperial camp, left entrance
 
-    531 : [532],    # Mt. Zozo, entrance to dragon room
+    1075: [1076],  # Cave to the Sealed Gate, lava switch room: exit 1076 inaccessible (for door exit error?)
 
-    1156 : [1157, 1158, 1159],     # Figaro Castle exits to world map
+    531: [532],    # Mt. Zozo, entrance to dragon room
+
+    1156: [1157, 1158, 1159],     # Figaro Castle exits to world map
 
     1255: [1254, 1253],   # "Thamasa After Kefka WoB exits to world map"
     1261: [1259, 1260],   # "Thamasa WoR exits to world map"
@@ -912,7 +946,6 @@ shared_exits = {
 
     1512: [781],  # Daryl's Tomb: Turtle exit event, same as south door.
 
-    21: [22],    # Phantom Forest, south entrance
     496: [498],  # Phantom Train Caboose, left exit
     497: [499],  # Phantom Train Caboose, right exit
     493: [494],  # Phantom Train Car 4, left exit
@@ -928,8 +961,16 @@ shared_exits = {
     870: [871],  #Doma Dream Train 1st Car Right door   0x142
     860: [861],  # Doma Dream Caves final room door (not used?)
 
+    360: [1174], # Sabin's house, north & south exits
+
     364: [365],  # Mt Kolts 1F outside left
-    387: [388]  # Mt Koltz back side middle door
+    387: [388],  # Mt Koltz back side middle door
+
+    1162: [1163, 1164],  # South Figaro WoR to world map
+    1167: [1168, 1169],  # South Figaro WoB to world map
+    1238: [1239],         # Maranda WoB to world map
+    1245: [1246, 1247],   # Albrook WoB to world map
+
 }
 
 # Keys to apply immediately, based on flags.
@@ -991,3 +1032,4 @@ for r in room_data.keys():
     for p in these_pits:
         exit_world[p] = room_data[r][-1]
         exit_room[p] = r
+
