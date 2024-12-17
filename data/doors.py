@@ -62,7 +62,7 @@ ROOM_SETS = {
 }
 
 class Doors():
-    verbose = True  # False  # True
+    verbose = False  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):

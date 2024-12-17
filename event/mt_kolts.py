@@ -1,4 +1,5 @@
 from event.event import *
+from data.map_exit_extra import exit_data
 
 class MtKolts(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -7,6 +8,7 @@ class MtKolts(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Mt. Kolts"
@@ -19,6 +21,19 @@ class MtKolts(Event):
 
     def mod(self):
         self.vargas_npc_id = 0x10
+        self.airship_south = [0x0, 102, 101]
+        self.airship_north = [0x0, 98, 93]
+        if self.MAP_SHUFFLE:
+            # modify airship position: south
+            conn_south = self.maps.door_map[1175]  # connecting exit south
+            conn_pair = exit_data[conn_south][0]  # original connecting exit
+            self.airship_south = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+
+            # modify airship position: north
+            conn_north = self.maps.door_map[1178]
+            conn_pair = exit_data[conn_north][0]  # original connecting exit
+            self.airship_north = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+            #print('Updated Mt. Kolts airship teleports: ', self.airship_south, self.airship_north)
 
         self.dialog_mod()
 
@@ -112,9 +127,9 @@ class MtKolts(Event):
             #       instead, replace exits leading to entrance/exit cliffs with events to move it
             src = [
                 field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                field.FadeLoadMap(0x00, direction.DOWN, default_music = False,
-                                  x = 102, y = 101, fade_in = False, airship = True),
-                vehicle.SetPosition(102, 101),
+                field.FadeLoadMap(self.airship_south[0], direction.DOWN, default_music = False,
+                                  x = self.airship_south[1], y = self.airship_south[2], fade_in = False, airship = True),
+                vehicle.SetPosition(self.airship_south[1], y = self.airship_south[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 vehicle.LoadMap(0x5f, direction.LEFT, default_music = True, x = 10, y = 26),
                 field.FadeInScreen(),
@@ -125,9 +140,9 @@ class MtKolts(Event):
 
             src = [
                 field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                field.FadeLoadMap(0x00, direction.DOWN, default_music = False,
-                                  x = 98, y = 93, fade_in = False, airship = True),
-                vehicle.SetPosition(98, 93),
+                field.FadeLoadMap(self.airship_north[0], direction.DOWN, default_music = False,
+                                  x = self.airship_north[1], y = self.airship_north[2], fade_in = False, airship = True),
+                vehicle.SetPosition(self.airship_north[1], y = self.airship_north[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 vehicle.LoadMap(0x65, direction.DOWN, default_music = True, x = 10, y = 49),
                 field.FadeInScreen(),

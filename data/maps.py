@@ -456,8 +456,31 @@ class Maps():
                 self.properties[map_index].warpable = 1
 
         # Add doors to the spoiler log
+        self.door_map = {}
         if len(self.doors.map) > 0:
             self.doors.print()
+
+            # Create sorted map, so they are connected in order:
+            for m in self.doors.map[0]:
+                if m[0] not in self.door_map.keys():
+                    self.door_map[m[0]] = m[1]
+                if m[1] not in self.door_map.keys():
+                    self.door_map[m[1]] = m[0]
+
+            temp = [m for m in self.door_map.keys() if m + 4000 in exit_data.keys() and m + 4000 not in self.door_map.keys()]
+            for m in temp:
+                # Add logical WoR exits to the map (with vanilla connections)
+                self.door_map[m + 4000] = exit_data[m + 4000][0]
+                self.door_map[self.door_map[m + 4000]] = m + 4000
+
+                # Look up the rooms of these exits
+                this_room = [r for r in room_data.keys() if (m + 4000) in room_data[r][0]]
+                self.doors.door_rooms[m + 4000] = this_room[0]
+                that_room = [r for r in room_data.keys() if self.door_map[m + 4000] in room_data[r][0]]
+                self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
+
+        # Patch all used exits
+        self.exits.patch_exits([m for m in self.door_map.keys()])
 
 
     def doorRandoOverride(self, newmap):
@@ -541,33 +564,8 @@ class Maps():
         #self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
         if self.args.door_randomize or self.args.map_shuffle:
-            #used_exits = list(set([m[0] for m in self.doors.map[0]] + [m[1] for m in self.doors.map[0]]))
-            #print(used_exits)
-            #self.exits.patch_exits(used_exits)
-            # Create sorted map, so they are connected in order:
-            map = {}
-            for m in self.doors.map[0]:
-                if m[0] not in map.keys():
-                    map[m[0]] = m[1]
-                if m[1] not in map.keys():
-                    map[m[1]] = m[0]
-
-            temp = [m for m in map.keys() if m + 4000 in exit_data.keys() and m + 4000 not in map.keys()]
-            for m in temp:
-                # Add logical WoR exits to the map (with vanilla connections)
-                map[m + 4000] = exit_data[m + 4000][0]
-                map[map[m + 4000]] = m + 4000
-
-                # Look up the rooms of these exits
-                this_room = [r for r in room_data.keys() if (m + 4000) in room_data[r][0]]
-                self.doors.door_rooms[m + 4000] = this_room[0]
-                that_room = [r for r in room_data.keys() if map[m + 4000] in room_data[r][0]]
-                self.doors.door_rooms[map[m + 4000]] = that_room[0]
-
             # Patch exits if necessary
-            used_exits = [m for m in map.keys()]
-            #print(used_exits)
-            self.exits.patch_exits(used_exits)
+            used_exits = [m for m in self.door_map.keys()]
 
             used_events = [m[0] for m in self.doors.map[1]] \
                           + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
@@ -589,7 +587,7 @@ class Maps():
             self.transitions.write(maps=self)
 
             # Connect two-way doors
-            self.connect_exits(map)
+            self.connect_exits()
 
         # Move Event Trigger pointer & data location in ROM
         self.move_event_trigger_data()
@@ -644,7 +642,7 @@ class Maps():
             self.rom.set_bytes(npcs_ptr_address, npcs_ptr)
 
 
-    def connect_exits(self, map):
+    def connect_exits(self):
         # For all doors in doors.map[0], we want to find the exit and change where it leads to
         # # Create sorted map, so they are connected in order:
         # map = {}
@@ -669,6 +667,7 @@ class Maps():
         #     # Patch exits if necessary
         #     if m + 4000 in exit_data_patch.keys():
         #         self.exits.patch_exits([m+4000])
+        map = self.door_map
 
         # Need to add modified world map exits if they weren't randomized (to print exit events)
         if self.args.door_randomize:
