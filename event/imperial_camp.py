@@ -1,6 +1,11 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class ImperialCamp(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Imperial Camp"
 
@@ -22,9 +27,18 @@ class ImperialCamp(Event):
             field.ClearEventBit(npc_bit.MARANDA_SOLDIER_IMPERIAL_CAMP),
             field.ClearEventBit(npc_bit.DOMA_GENERAL_IMPERIAL_CAMP),
         )
+        if self.MAP_SHUFFLE:
+            # Deactivate imperial camp by default.  It will be activated when needed.
+            space.write(
+                field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+                field.SetEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+                field.SetEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+                field.SetEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
+            )
 
     def mod(self):
         self.kefka_npc_id = 0x15
+        self.soldier_npc_id = 0x17
 
         self.entrance_events_mod()
         self.leo_and_chasing_kefka_mod()
@@ -52,17 +66,76 @@ class ImperialCamp(Event):
         )
 
         # this does not get called anymore, use it for extra wob event tile space
-        # TODO what does the unknown flag here in load map do?
-        space = Reserve(0xb0bbd, 0xb0bea, "imperial camp load after doma wob scene", world.End())
-        if self.args.character_gating:
+        if self.MAP_SHUFFLE:
+            # Overwrite the entrance event to go to switchyard.
+            # (1a) Change the entry event to load the switchyard location
+            event_id = 1501  # ID of Imperial Camp event entrance
+
+            # For map shuffle, we will allow re-entry, so we can just write over the bit check
+            sy_space = Reserve(0xb0bb7, 0xb0bea, 'Imperial Camp WOB entrance', field.NOP())
+
+            sy_space.write(GoToSwitchyard(event_id, map='world'))
+            # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+            src = [
+                field.LoadMap(0x075, direction=direction.DOWN, x=36, y=2, default_music=True, fade_in=True),
+                field.Return()
+            ]
+            AddSwitchyardEvent(event_id, self.maps, src=src)
+
+            # Modify the logic to allow exploring a deactivated imperial camp if not yet complete & gating condition not met
+            gating_logic = space.next_address
             space.write(
-                world.EndIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                field.HideEntity(self.soldier_npc_id),
+                #field.BranchIfEventBitSet(event_bit.FINISHED_IMPERIAL_CAMP, "IMPERIAL_CAMP_DEACTIVATED")
+                field.ReturnIfEventBitSet(event_bit.FINISHED_IMPERIAL_CAMP)
             )
-        space.write(
-            world.FadeLoadMap(0x075, direction.DOWN, default_music = False, x = 36, y = 2,
-                              fade_in = True, entrance_event = True, unknown = True),
-            field.Return(),
-        )
+            if self.args.character_gating:
+                space.write(
+                    #field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "IMPERIAL_CAMP_DEACTIVATED"),
+                    field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                )
+            # Activate imperial camp if it should be active.
+            space.write(
+                #field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+                field.ClearEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+                field.ClearEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+                field.ClearEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
+                field.ShowEntity(self.soldier_npc_id),
+                field.Return()
+            )
+
+            space = Reserve(0xb0bf1, 0xb0bf4, "Call imperial camp gating logic") # replace call to unused spotlight routine at CB/0EF8 depending on event_bit 0x1b5
+            space.write(field.Call(gating_logic))
+
+            # Figure out how to neutralize imperial camp actions
+            # If the following event bits are set, imperial camp is deactivated:
+            # --> clear 02c (BRIDGE_BLOCKED_IMPERIAL_CAMP), and ...    (CB/1104).
+            # --> set 02c or set 0x02d (CHASING_KEFKA1_IMPERIAL_CAMP), and ...   (CB/1032)  Modified in leo_and_chasing_kefka_mod()
+            # --> clear 02c or set 02f (CHASING_KEFKA3_IMPERIAL_CAMP), and ...
+            # --> set 155 (FINISHED_CHASING_KEFKA_IMPERIAL_CAMP)
+            #space.write(
+            #    'IMPERIAL_CAMP_DEACTIVATED',
+            #    field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+            #    field.SetEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+            #    field.SetEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+            #    field.SetEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
+            #    field.Return()
+            #)
+            # We will actually just deactivate it by default in the init_event_bits,
+            # and only activate it if it should be active.
+
+        else:
+            # TODO what does the unknown flag here in load map do?
+            space = Reserve(0xb0bbd, 0xb0bea, "imperial camp load after doma wob scene", world.End())
+            if self.args.character_gating:
+                space.write(
+                    world.EndIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                )
+            space.write(
+                world.FadeLoadMap(0x075, direction.DOWN, default_music = False, x = 36, y = 2,
+                                  fade_in = True, entrance_event = True, unknown = True),
+                field.Return(),
+            )
 
     def leo_and_chasing_kefka_mod(self):
         # first scene with general leo

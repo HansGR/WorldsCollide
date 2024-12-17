@@ -887,7 +887,7 @@ exit_data = {
     744: [418, "Doma 1F Outside Main Door"],
     745: [419, "Doma 2F Outside to Main Room"],
     746: [420, "Doma 2F Outside to Treasure Room"],
-    1240: [1547, "Doma Outside to World Map"],                      # Edit: was 19 (WC deletes this exit)
+    1240: [18, "Doma Outside to World Map"],                      # WC uses 1547
     747: [758, "Kefka's Tower After Guardian Right Door"],
     748: [900, "Kefka's Tower After Guardian Left Door"],
     749: [1122, "Kefka's Tower After Guardian Return from Final Switch Room"],
@@ -1560,13 +1560,33 @@ exit_data_patch = {
     1157: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside East to World Map"],
     1158: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside North to World Map"],
     1159: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside West to World Map"],
+    5156: lambda info: set_dest_x(82,
+                       set_dest_y(86,
+                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside South to World Map"],
+    5157: lambda info: set_dest_x(83,
+                       set_dest_y(85,
+                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside East to World Map"],
+    5158: lambda info: set_dest_x(82,
+                       set_dest_y(84,
+                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside North to World Map"],
+    5159: lambda info: set_dest_x(80,
+                       set_dest_y(85,
+                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside West to World Map"],
+
+    # DOMA CASTLE WOB
+    1240: lambda info: set_dest_map(0, info),   #  [19, "Doma Outside to World Map"],  # Edit: 1547 in WC (event)
 
 }
 
 ### EVENT EXITS BEHAVING AS NORMAL EXITS:
 event_door_connection_data = {
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
-    1506: [0x045, 16, 42, 0, 0, 0, 2, 0, 75, 102, 0, 0], # 'South Figaro Cave WOB South entrance'
+    1501: [0x075, 36, 2, 0, 0, 1, 2, 0, 179, 71, 0, 0], # 'Imperial camp WOB'  [0x000, 179, 71]  load Imperial Camp (0x075, 36, 02)
+    1502: [0x037, 28, 42, 0, 0, 1, 0, 0, 64, 76, 0, 0], # 'Figaro Castle WOB (figaro side)'  [0x000, 64, 76]
+    1504: [0x154, 23, 46, 0, 0, 1, 0, 0, 250, 128, 0, 0], # 'Thamasa WoB' (0x154, after Leo dies)
+    1505: [0x0f2, 32, 61, 0, 0, 1, 0, 0, 120, 187, 0, 0], #  'Vector WOB' (0x0f2, not burning)  [0x000, 120, 187]
+    1506: [0x045, 16, 42, 0, 0, 0, 0, 0, 75, 102, 0, 0], # 'South Figaro Cave WOB South entrance'
+    1507: [0x037, 28, 42, 0, 0, 1, 0, 0, 64, 76, 0, 0], # 'Figaro Castle WOR (figaro side)'  [0x001, 81, 85]
     1510: [0x117, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0], # 'Zone Eater Digestive Tract east'
     1511: [0x115, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0], # 'Zone Eater Digestive Tract west'
     1512: [0x12c, 69, 8, 0, 0, 0, 2, 0, 56, 14, 0, 0], # 'Darills tomb turtle south exit'
@@ -1603,7 +1623,7 @@ event_door_connection_data = {
     1544: [0x097, 9, 9, 0, 0, 0, 2, 0, 23, 29, 0, 0],  #  'Phantom Train Car 7 Left Cabin interior exit'
     1545: [0x08D, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0],  #  'Phantom Train Locomotive interior exit'
     1546: [0x001, 249, 224, 0, 0, 0, 2, 0, 7, 24, 0, 0],  #  'Ebot's Rock exit to World Map WoR'
-    1547: [0x005, 1547 % 128, 1547 // 128, 0, 0, 0, 0, 0, 156, 84, 0, 0],  #  'Doma Castle entrance WC with Doma Siege event'.  Use switchyard to capture event logic?  [0x078, 33, 53, 0, 0, 0, 0, 0, 7, 24, 0, 0]
+    1547: [0x11d, 33, 53, 0, 0, 0, 0, 0, 156, 85, 0, 0],  #  'Doma Castle entrance WC with Doma Siege event'.  Use switchyard to capture event logic?  [0x005, 1547 % 128, 1547 // 128, 0, 0, 0, 0, 0, 156, 84, 0, 0]
     # Logical exits with different destinations
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0]  #  'Doma Dream Train Save point room interior (logical)'
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]

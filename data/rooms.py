@@ -42,8 +42,8 @@ room_data = {
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
     'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
 
-    'root-wob' : [ [4, 1547], [], [], 0],  # Root map for WOB map shuffle testing
-    #'root-wob' : [ [4, 5, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 1547, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
+    #'root-wob' : [ [4, 1501], [], [], 0],  # Root map for WOB map shuffle testing
+    'root-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
     'root-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
@@ -320,6 +320,9 @@ room_data = {
     173 : [ [411, 1183], [ ], [ ], 0], #Crazy Old Man's House Outside WoB
     174 : [ [412], [ ], [ ], 0], #Crazy Old Man's House Inside
     '174R' : [ [4412], [ ], [ ], 1], #Crazy Old Man's House Inside
+
+    # IMPERIAL CAMP
+    175: [ [1184], [], [], 0],  # Imperial camp WoB, map 0x075
 
     # DOMA CASTLE
     176: [[417, 432], [], [], 0],  # Doma 3F Inside

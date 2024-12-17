@@ -8,6 +8,7 @@ class SouthFigaroCaveWOB(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "South Figaro Cave"
@@ -26,10 +27,11 @@ class SouthFigaroCaveWOB(Event):
     def mod(self):
         self.cleanup_mod()
         self.requirement_mod()
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
             self.door_rando_mod()
-        else:
+        if not self.DOOR_RANDOMIZE:
             self.noises_mod()
+        if not self.DOOR_RANDOMIZE and not self.MAP_SHUFFLE:
             self.entrance_exit_mod()
         self.tunnel_armor_battle_mod()
 
@@ -57,7 +59,7 @@ class SouthFigaroCaveWOB(Event):
     def requirement_mod(self):
         # after lete river a different figaro cave is loaded which has tunnel armor
         # remove the lete river completed requirement
-        if not self.DOOR_RANDOMIZE:
+        if not (self.DOOR_RANDOMIZE or self.MAP_SHUFFLE):
             # for door randomizer, add switchyard tile in self.door_rando_mod()
             space = Reserve(0xa5ee3, 0xa5ee8, "figaro cave lete river complete requirement")
             space.add_label("LOAD_MAP", 0xa5ef0),
@@ -258,7 +260,8 @@ class SouthFigaroCaveWOB(Event):
 
     def door_rando_mod(self):
         # Remove Locke's dialog
-        space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
+        if self.DOOR_RANDOMIZE:
+            space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
 
         # (1a) Change the entry event to load the switchyard location
         event_id = 1506  # ID of SF Cave south entrance

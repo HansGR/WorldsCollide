@@ -9,6 +9,7 @@ class BurningHouse(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Burning House"
@@ -43,6 +44,8 @@ class BurningHouse(Event):
 
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -331,4 +334,19 @@ class BurningHouse(Event):
         new_event.event_address = self.delete_flameeater_npcs - EVENT_CODE_START
         self.maps.add_event(0x15f, new_event)
 
+    def map_shuffle_mod(self):
+        # Change the entrance on the worldmap to skip bit checks & just load the map
+        #enter_event = self.maps.get_event(0x0, 250, 128)
+        #enter_event.event_address = 0xbd308 - EVENT_CODE_START
+        from event.switchyard import GoToSwitchyard, AddSwitchyardEvent
 
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1504  # ID of Thamasa WoB entrance
+        space = Reserve(0xbd2ee, 0xbd30e, 'Thamasa WoB Entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x154, direction=direction.UP, x=23, y=46, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)

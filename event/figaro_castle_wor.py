@@ -1,6 +1,11 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class FigaroCastleWOR(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Figaro Castle WOR"
 
@@ -47,6 +52,9 @@ class FigaroCastleWOR(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
         self.finish_check_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
         self.log_reward(self.reward)
 
@@ -172,3 +180,41 @@ class FigaroCastleWOR(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def map_shuffle_mod(self):
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1507  # ID of FC event entrance
+
+        sy_space = Write(Bank.CA, GoToSwitchyard(event_id, map='world'), 'FC Go To Switchyard')
+
+        space = Reserve(0xa5f11, 0xa5f17, 'Figaro Castle WOB entrance', field.NOP())
+        space.write([
+            world.Branch(sy_space.start_address),
+            field.Return()
+        ])
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x037, direction=direction.UP, x=28, y=42, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # Note: we are not changing the Kohlingen side.  If someone rides to Kohlingen, exits the castle, and comes back
+        # in, they should be in FC (not wherever FC vanilla connects to).
+
+        # Add a "summon airship" event to the emerging of the castle after the engine room event
+        airship_x = 106  # (106, 99) = cave at south figaro entrance
+        airship_y = 99   # (82, 86) = in the desert, right at FC
+        src = [
+            world.FadeScreen(),
+            #world.FadeLoadMap(0x1, direction.DOWN, default_music=False, x=airship_x, y=airship_y, fade_in=False, airship=True),
+            vehicle.SetPosition(airship_x, airship_y),
+            world.LoadMap(map_id=0x03d, x=6, y=34, fade_in=True, direction=direction.UP, default_music=True),
+            #field.SetParentMap(map_id=0x1, x=81, y=0),
+            field.FadeInScreen(),
+            field.Branch(0xa6a19),  # complete event
+            field.Return()
+        ]
+        airship_event = Write(Bank.CA, src, "summon airship to Figaro Castle WOR")
+        space = Reserve(0xa6a13, 0xa6a18, field.NOP())  #  Load map $003D (Figaro Castle, switch room and prison (always)), position (06, 34), mode $00)
+        space.write(world.Branch(airship_event.start_address))

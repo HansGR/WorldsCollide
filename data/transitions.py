@@ -49,6 +49,8 @@ class Transitions:
                 soo_flag = m[0] < min(shared_oneways[m[0]])
 
             if flags.count(True) > 0 and soo_flag:
+                if self.verbose:
+                    print('Making new transition: ', m[0], m[1])
                 new_trans = Transition(m[0], m[1], rom, exit_data, event_data)
                 self.transitions.append(new_trans)
 
@@ -213,8 +215,8 @@ class Transitions:
             if self.verbose:
                 addr = [t.exit.event_addr, t.entr.event_addr]
                 for i in range(len(addr)):
-                    if addr[i] is int:
-                        addr[i] = hex(addr[i])
+                    if addr[i] is not None:
+                        addr[i] = str(hex(addr[i]))
                 print('Writing: ', t.exit.id, ' --> ', t.entr.id,
                       ':\n\toriginal memory addresses: ', str(addr[0]), ', ', str(addr[1]),
                       '\n\tpatches applied: ', t.patches,
@@ -224,6 +226,11 @@ class Transitions:
 
             if t.exit.use_jmp:
                 # Overwrite the Load Map command with a CALL SUBROUTINE & RETURN & NOP (B2 XX XX XX FE FD)
+                if t.exit.location[0] <= 0x2:
+                    # There doesn't appear to be an overworld "Call" routine (straight goto).
+                    # The closest is an overworld branch, which requires 7 bits.  Jmp commands must fit in 6.
+                    print('Warning: cannot use JMP routines on world map! ', t.exit.id ,' --> ', t.entr.id, '!')
+
                 jump_src = [0xb2] + list((new_event_address - EVENT_CODE_START).to_bytes(3, "little")) + [0xfe, 0xfd]
                 self.rom.set_bytes(t.exit.event_addr + t.exit.event_split - 1, jump_src)
 
@@ -262,6 +269,8 @@ class Transitions:
                 new_event.y = t.exit.location[2]
                 new_event.event_address = new_event_address - EVENT_CODE_START
                 maps.add_event(t.exit.location[0], new_event)
+                if self.verbose:
+                    print('Added new map event: ', t.exit.location[0], new_event.x, new_event.y, hex(new_event_address))
 
                 # Note that if this is a door acting as a one-way, the door itself is not actually used.
 
@@ -336,6 +345,7 @@ class EventExit:
             if self.method == 'JMP':
                 self.use_jmp = True
 
+            #print(self.id, self.event_addr, self.event_length, self.event_split)
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
             self.entr_code = rom.get_bytes(self.event_addr + self.event_split,
                                            self.event_length - self.event_split)  # Second half of event

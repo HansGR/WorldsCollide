@@ -433,7 +433,7 @@ class Maps():
         if self.doors.verbose:
             print('Door connections:')
             for m in self.doors.map[0]:
-                print('\t' + str(m[0]) + "<-->" + str(m[1]) )
+                print('\t' + str(m[0]) + "<-->" + str(m[1]) + '\t(' + exit_data[m[0]][1] + '<-->' + exit_data[m[1]][1] + ')')
             print('One-way connections:')
             for m in self.doors.map[1]:
                 print('\t', m[0], " -> ", m[1])
@@ -541,28 +541,58 @@ class Maps():
         #self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
         if self.args.door_randomize or self.args.map_shuffle:
+            #used_exits = list(set([m[0] for m in self.doors.map[0]] + [m[1] for m in self.doors.map[0]]))
+            #print(used_exits)
+            #self.exits.patch_exits(used_exits)
+            # Create sorted map, so they are connected in order:
+            map = {}
+            for m in self.doors.map[0]:
+                if m[0] not in map.keys():
+                    map[m[0]] = m[1]
+                if m[1] not in map.keys():
+                    map[m[1]] = m[0]
+
+            temp = [m for m in map.keys() if m + 4000 in exit_data.keys() and m + 4000 not in map.keys()]
+            for m in temp:
+                # Add logical WoR exits to the map (with vanilla connections)
+                map[m + 4000] = exit_data[m + 4000][0]
+                map[map[m + 4000]] = m + 4000
+
+                # Look up the rooms of these exits
+                this_room = [r for r in room_data.keys() if (m + 4000) in room_data[r][0]]
+                self.doors.door_rooms[m + 4000] = this_room[0]
+                that_room = [r for r in room_data.keys() if map[m + 4000] in room_data[r][0]]
+                self.doors.door_rooms[map[m + 4000]] = that_room[0]
+
+            # Patch exits if necessary
+            used_exits = [m for m in map.keys()]
+            #print(used_exits)
+            self.exits.patch_exits(used_exits)
+
             used_events = [m[0] for m in self.doors.map[1]] \
                           + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
                           + [m[1] for m in self.doors.map[0] if 2000 > m[1] >= 1500]
+
             for e in event_exit_info.keys():
-                if e in used_events and event_exit_info[e][0] is None:
+                if (e in used_events or e in used_exits) and event_exit_info[e][0] is None:
                     # Update the event addresses
                     mapid = event_exit_info[e][5][0]
                     ex = event_exit_info[e][5][1]
                     ey = event_exit_info[e][5][2]
                     ev = self.get_event(mapid, ex, ey)
                     event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
-                    #print(e, event_exit_info[e][0])
+                    if self.doors.verbose:
+                        print('Updated event exit info: ', e, hex(event_exit_info[e][0]))
+
             # Connect one-way event exits using the Transitions class
             self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info)
             self.transitions.write(maps=self)
 
             # Connect two-way doors
-            self.connect_exits()
+            self.connect_exits(map)
 
         # Move Event Trigger pointer & data location in ROM
         self.move_event_trigger_data()
-
         self.npcs.write()
         self.chests.write()
         self.events.write()
@@ -614,27 +644,31 @@ class Maps():
             self.rom.set_bytes(npcs_ptr_address, npcs_ptr)
 
 
-    def connect_exits(self):
+    def connect_exits(self, map):
         # For all doors in doors.map[0], we want to find the exit and change where it leads to
-        # Create sorted map, so they are connected in order:
-        map = {}
-        for m in self.doors.map[0]:
-            if m[0] not in map.keys():
-                map[m[0]] = m[1]
-            if m[1] not in map.keys():
-                map[m[1]] = m[0]
-
-        temp = [m for m in map.keys() if m+4000 in exit_data.keys() and m+4000 not in map.keys()]
-        for m in temp:
-            # Add logical WoR exits to the map (with vanilla connections)
-            map[m + 4000] = exit_data[m + 4000][0]
-            map[map[m + 4000]] = m + 4000
-
-            # Look up the rooms of these exits
-            this_room = [r for r in room_data.keys() if (m+4000) in room_data[r][0]]
-            self.doors.door_rooms[m + 4000] = this_room[0]
-            that_room = [r for r in room_data.keys() if map[m+4000] in room_data[r][0]]
-            self.doors.door_rooms[map[m+4000]] = that_room[0]
+        # # Create sorted map, so they are connected in order:
+        # map = {}
+        # for m in self.doors.map[0]:
+        #     if m[0] not in map.keys():
+        #         map[m[0]] = m[1]
+        #     if m[1] not in map.keys():
+        #         map[m[1]] = m[0]
+        #
+        # temp = [m for m in map.keys() if m+4000 in exit_data.keys() and m+4000 not in map.keys()]
+        # for m in temp:
+        #     # Add logical WoR exits to the map (with vanilla connections)
+        #     map[m + 4000] = exit_data[m + 4000][0]
+        #     map[map[m + 4000]] = m + 4000
+        #
+        #     # Look up the rooms of these exits
+        #     this_room = [r for r in room_data.keys() if (m+4000) in room_data[r][0]]
+        #     self.doors.door_rooms[m + 4000] = this_room[0]
+        #     that_room = [r for r in room_data.keys() if map[m+4000] in room_data[r][0]]
+        #     self.doors.door_rooms[map[m+4000]] = that_room[0]
+        #
+        #     # Patch exits if necessary
+        #     if m + 4000 in exit_data_patch.keys():
+        #         self.exits.patch_exits([m+4000])
 
         # Need to add modified world map exits if they weren't randomized (to print exit events)
         if self.args.door_randomize:
@@ -697,6 +731,8 @@ class Maps():
             # Write events on the exits to handle required conditions:
             self.create_exit_event(m, map[m])
 
+
+
         # Connect event tiles that are acting as doors: 1500 <= m < 4000.  Treat them as transitions.
         transition_map = []
         transition_exits = [m for m in all_exits if 1500 <= m < 4000]
@@ -735,6 +771,7 @@ class Maps():
         # (3) the door requires special code (in exit_door_patch[d])
         # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
         # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
+        # (6) the door is an event tile behaving as a door
         require_event_flags = [
             (this_world != that_world),
             d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
@@ -742,6 +779,10 @@ class Maps():
             d in self.exit_event_addr_to_call.keys(),
             that_map in [0x000, 0x001, SWITCHYARD_MAP]
         ]
+        if self.args.map_shuffle and not self.args.door_randomize:
+            # Don't summon the airship by default
+            require_event_flags[4] = False
+
         if require_event_flags.count(True) > 0:
             # Need to use different commands for world maps vs field maps.
             # Look for an existing event on this exit tile
@@ -841,7 +882,12 @@ class Maps():
                         # These need to be inserted AFTER loading the map.
                         # Generate map load code for this door; the door itself will not be used.
                         load_map_src = self._get_load_map_code(d_ref)
-                        src = src[:-1] + load_map_src + entrance_door_patch[d_ref] + src[-1:]
+                        if entrance_door_patch[d_ref] is list:
+                            edp = entrance_door_patch[d_ref]
+                        else:
+                            # patch requires knowledge of arguments
+                            edp = entrance_door_patch[d_ref](self.args)
+                        src = src[:-1] + load_map_src + edp + src[-1:]
 
                     if d_ref in require_event_bit.keys():
                         entr_bits = require_event_bit[d_ref]

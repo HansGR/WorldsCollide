@@ -1,4 +1,5 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class MagitekFactory(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -7,6 +8,7 @@ class MagitekFactory(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Magitek Factory"
@@ -65,6 +67,9 @@ class MagitekFactory(Event):
 
         if self.DOOR_RANDOMIZE:
             self.mtek_1_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
 
     def vector_mod(self):
@@ -412,6 +417,20 @@ class MagitekFactory(Event):
         space = Reserve(0xc77ce, 0xc77d3, "after MTek minecart do not change MTek1 pipeR2", field.NOP())
         space = Reserve(0xc77ec, 0xc77f1, "after MTek minecart do not change MTek1 pipeR3", field.NOP())
         space = Reserve(0xc781b, 0xc7820, "after MTek minecart do not change MTek1 pipeR4", field.NOP())
+
+    def map_shuffle_mod(self):
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1505  # ID of Vector event entrance
+
+        # We don't use Burning Vector so we can just write over the event bit check
+        space = Reserve(0xa5ecf, 0xa5edb, 'Vector WOB entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x0f2, direction=direction.UP, x=32, y=61, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
 
     # def reride_minecart_mod(src):
     #     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.

@@ -1,6 +1,11 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class FigaroCastleWOB(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Figaro Castle WOB"
 
@@ -35,6 +40,9 @@ class FigaroCastleWOB(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
         self.shop_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
         self.log_reward(self.reward)
 
@@ -125,3 +133,24 @@ class FigaroCastleWOB(Event):
         space.write(
             field.Branch("INVOKE_SHOP"),
         )
+
+    def map_shuffle_mod(self):
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1502  # ID of FC event entrance
+
+        sy_space = Write(Bank.CA, GoToSwitchyard(event_id, map='world'), 'FC Go To Switchyard')
+
+        space = Reserve(0xa5ebb, 0xa5ec1, 'Figaro Castle WOB entrance', field.NOP())
+        space.write([
+            world.Branch(sy_space.start_address),
+            field.Return()
+        ])
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x037, direction=direction.UP, x=28, y=42, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+        # Note: we are not changing the Kohlingen side.  If someone rides to Kohlingen, exits the castle, and comes back
+        # in, they should be in FC (not wherever FC vanilla connects to).

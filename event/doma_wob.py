@@ -1,6 +1,11 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class DomaWOB(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Doma WOB"
 
@@ -67,11 +72,20 @@ class DomaWOB(Event):
 
         # in wob, entrance is changed to a tile event from a wob exit
         # need to update the parent map to return to
-        space.write(
-            field.ReturnIfEventBitSet(event_bit.IN_WOR),
-            field.SetParentMap(0, direction.DOWN, self.wob_left_x,self.wob_left_y),
-            field.Return(),
-        )
+        if self.SHUFFLE:
+            # Make exit explicit
+            from data.map_exit_extra import exit_data_patch
+            exit_ID = 1240
+            self.maps.exits.exit_original_data[exit_ID] = exit_data_patch[exit_ID](self.maps.exits.exit_original_data[exit_ID])
+            # Copy the "original data" to the exit itself
+            self.maps.exits.copy_exit_info(self.maps.get_exit(exit_ID), exit_ID, type='all')
+
+        else:
+            space.write(
+                field.ReturnIfEventBitSet(event_bit.IN_WOR),
+                field.SetParentMap(0, direction.DOWN, self.wob_left_x,self.wob_left_y),
+                field.Return(),
+            )
 
         # doma attack scene up until char (and 2 soldiers) go outside
         space = Reserve(0xb9aae, 0xb9d30, "doma add char and exit functions", field.NOP())
@@ -88,32 +102,33 @@ class DomaWOB(Event):
             field.Return(),
         )
 
-        load_doma_function = space.next_address
-        space.write(
-            world.LoadMap(0x11d, direction.UP, default_music = True,
-                          x = self.exit_event_x, y = self.exit_event_y,
-                          fade_in = True, entrance_event = True),
-            field.Return(),
-        )
-
-        # NOTE: adding wob event for doma to load the map at an event tile which
-        #       immediately executes enter_event_function because entrance events cannot load a different map
-        self.enter_function = space.next_address
-        space.write(
-            # enter normal doma if event bit set
-            world.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOB, load_doma_function),
-        )
-
-        if self.args.character_gating:
+        if not self.SHUFFLE:
+            load_doma_function = space.next_address
             space.write(
-                world.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), load_doma_function),
+                world.LoadMap(0x11d, direction.UP, default_music = True,
+                              x = self.exit_event_x, y = self.exit_event_y,
+                              fade_in = True, entrance_event = True),
+                field.Return(),
             )
-        space.write(
-            # else load doma attack scene and at event tile to trigger scene
-            world.LoadMap(0x78, direction.UP, default_music = True,
-                          x = self.enter_event_x, y = self.enter_event_y, fade_in = False),
-            field.Return(),
-        )
+
+            # NOTE: adding wob event for doma to load the map at an event tile which
+            #       immediately executes enter_event_function because entrance events cannot load a different map
+            self.enter_function = space.next_address
+            space.write(
+                # enter normal doma if event bit set
+                world.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOB, load_doma_function),
+            )
+
+            if self.args.character_gating:
+                space.write(
+                    world.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), load_doma_function),
+                )
+            space.write(
+                # else load doma attack scene and at event tile to trigger scene
+                world.LoadMap(0x78, direction.UP, default_music = True,
+                              x = self.enter_event_x, y = self.enter_event_y, fade_in = False),
+                field.Return(),
+            )
 
         self.enter_event_function = space.next_address
         space.write(
@@ -133,23 +148,27 @@ class DomaWOB(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
+
     def map_events_mod(self):
-        self.maps.delete_short_exit(0x00, self.wob_left_x, self.wob_left_y)
-        self.maps.delete_short_exit(0x00, self.wob_right_x, self.wob_right_y)
+        if not self.SHUFFLE:
+            # If doing map shuffle, use the short exits!
+            self.maps.delete_short_exit(0x00, self.wob_left_x, self.wob_left_y)
+            self.maps.delete_short_exit(0x00, self.wob_right_x, self.wob_right_y)
 
         from data.map_event import MapEvent
 
-        new_event = MapEvent()
-        new_event.x = self.wob_left_x
-        new_event.y = self.wob_left_y
-        new_event.event_address = self.enter_function - EVENT_CODE_START
-        self.maps.add_event(0x00, new_event)
+        if not self.SHUFFLE:
+            new_event = MapEvent()
+            new_event.x = self.wob_left_x
+            new_event.y = self.wob_left_y
+            new_event.event_address = self.enter_function - EVENT_CODE_START
+            self.maps.add_event(0x00, new_event)
 
-        new_event = MapEvent()
-        new_event.x = self.wob_right_x
-        new_event.y = self.wob_right_y
-        new_event.event_address = self.enter_function - EVENT_CODE_START
-        self.maps.add_event(0x00, new_event)
+            new_event = MapEvent()
+            new_event.x = self.wob_right_x
+            new_event.y = self.wob_right_y
+            new_event.event_address = self.enter_function - EVENT_CODE_START
+            self.maps.add_event(0x00, new_event)
 
         new_event = MapEvent()
         new_event.x = self.enter_event_x
@@ -229,3 +248,45 @@ class DomaWOB(Event):
 
         # call the new event end function instead of returning to imperial camp
         space.write(field.Call(self.exit_function))
+
+
+    @staticmethod
+    def entrance_door_patch(args):
+        # self-contained code to be called in door rando after entering Doma WoB
+        # to be used in event_exit_info.entrance_door_patch()
+        enter_event_x = 33
+        enter_event_y = 42
+        exit_event_x = 33
+        exit_event_y = 53
+        CYAN = 2
+
+        src_field = []
+        src_world = []
+
+        if args.character_gating:
+            src_field += [field.BranchIfEventBitClear(event_bit.character_recruited(CYAN), "LOAD_DOMA")]
+            src_world += [world.BranchIfEventBitClear(event_bit.character_recruited(CYAN), "LOAD_DOMA")]
+
+        src_field += [field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOB, "LOAD_DOMA")]
+        src_world += [world.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOB, "LOAD_DOMA")]
+
+        # else load doma attack scene and at event tile to trigger scene
+        src_field += [field.LoadMap(0x78, direction.UP, default_music=True,
+                          x=enter_event_x, y=enter_event_y, fade_in=False), field.Return()]
+        src_world += [world.LoadMap(0x78, direction.UP, default_music=True,
+                          x=enter_event_x, y=enter_event_y, fade_in=False), field.Return()]
+
+        src_field += [
+            "LOAD_DOMA",
+            field.LoadMap(0x11d, direction.UP, default_music=True, x=exit_event_x, y=exit_event_y,
+                          fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        src_world += [
+            "LOAD_DOMA",
+            world.LoadMap(0x11d, direction.UP, default_music = True, x = exit_event_x, y = exit_event_y,
+                          fade_in = True, entrance_event = True),
+            field.Return()
+        ]
+
+        return src_field  # {'field': src_field, 'world': src_world}

@@ -14,6 +14,10 @@ class HideMinimap(_Instruction):
     def __init__(self):
         super().__init__(0xdd)
 
+class FadeScreen(_Instruction):
+    def __init__(self):
+        super().__init__(0xd9)
+
 class FadeLoadMap(_LoadMap):
     # same as load map, except fades out screen
     def __init__(self, map_id, direction, default_music, x, y, fade_in = False, entrance_event = False,

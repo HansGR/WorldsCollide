@@ -17,23 +17,24 @@ def switchyard_xy(event_id):
 
 
 def AddSwitchyardEvent(event_id, maps, branch=[], src=[]):
-    [sx, sy] = switchyard_xy(event_id)
-
-    if branch:
-        src = [
-            field.Branch(branch),
-            field.Return()
-        ]
-    elif not src:
+    if not src and not branch:
         raise Exception()
 
-    space = Write(Bank.CA, src, f"Switchyard tile for event {event_id}")
+    [sx, sy] = switchyard_xy(event_id)
 
     switchyard_event = MapEvent()
     switchyard_event.x = sx
     switchyard_event.y = sy
-    switchyard_event.event_address = space.start_address - EVENT_CODE_START
+
+    if branch:
+        switchyard_event.event_address = branch - EVENT_CODE_START   # Just do it directly
+        #src = [field.Branch(branch), field.Return()]
+    if src:
+        space = Write(Bank.CA, src, f"Switchyard tile for event {event_id}")
+        switchyard_event.event_address = space.start_address - EVENT_CODE_START
+
     maps.add_event(SWITCHYARD_MAP, switchyard_event)
+    #print('Added Switchyard event: ', event_id, sx, sy, hex(space.start_address))
 
 
 def GoToSwitchyard(event_id, map=''):
@@ -56,6 +57,7 @@ def GoToSwitchyard(event_id, map=''):
         #print('*** ', event_id , ': ', [f.__call__([]) for f in src])
     elif map == 'world':
         src = [
+            world.FadeScreen(),
             world.LoadMap(SWITCHYARD_MAP, direction=direction.UP, default_music=False,
                           x=sx, y=sy, fade_in=False, entrance_event=False),
             field.Return()

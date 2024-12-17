@@ -190,7 +190,7 @@ class Doors():
                 ROOM_SETS['MapShuffleWOR'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleWOB'])
-            #room_sets.append(ROOM_SETS['MapShuffleWOR'])
+            room_sets.append(ROOM_SETS['MapShuffleWOR'])
 
         # Hard override for testing
         #room_sets = [ROOM_SETS['test']]

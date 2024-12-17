@@ -132,20 +132,22 @@ event_exit_info = {
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
     #       Other: Opera House Lobby, Mobliz Outside, ...
     # To do this: must add index to map_exit_extra.
-    1501: [0xb0bb7, 0, 0, [None, None, None, None], 'Imperial Camp WoB', [0x000, 179, 71], None],
-    1502: [0xa5eb5, 0, 0, [None, None, None, None], 'Figaro Castle WoB', [0x000, 64, 76], None],
-    '1502a': [0xa5eb5, 0, 0, [None, None, None, None], 'Figaro Castle WoB 2', [0x000, 65, 76], None],
+    # FOR TILES ON WORLD MAP:  we cannot use JMP routines (because world map opcodes are different, and there's no straight Call)
+    # Instead, send to a switchyard tile.  See event.south_figaro_cave_wob.door_rando_mod() for an example.
+    1501: [None, 7, 1, [None, None, None, None], 'Imperial Camp WoB', [0x005, 1501 % 128, 1501 // 128], 'JMP'],  # Tile loads 0xb0bb7 (Check if FINISHED_IMPERIAL_CAMP, load camp if not)  [0x000, 179, 71]
+    1502: [None, 7, 1, [None, None, None, None], 'Figaro Castle WoB', [0x005, 1502 % 128, 1502 // 128], 'JMP'],  # Tile loads 0xa5eb5 (Check if FC is in figaro desert, branch to load map 0x037 at 0xa5ebb).  [0x000, 64, 76]
+    #'1502a': [0xa5eb5, 0, 0, [None, None, None, None], 'Figaro Castle WoB 2', [0x000, 65, 76], None],
     1503: [0xa5ec2, 0, 0, [None, None, None, None], 'Figaro Castle WoB (kohlingen)', [0x000, 30, 48], None],
-    '1503c': [0xa5ec2, 0, 0, [None, None, None, None], 'Figaro Castle WoB (kohlingen) 2', [0x000, 31, 48], None],
-    1504: [0xbd2ee, 0, 0, [None, None, None, None], 'Thamasa WoB', [0x000, 250, 128] ],  # wtf is this event doing?
-    1505: [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile', [0x000, 120, 187], None],
-    '1505a': [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187], None],
+    #'1503a': [0xa5ec2, 0, 0, [None, None, None, None], 'Figaro Castle WoB (kohlingen) 2', [0x000, 31, 48], None],
+    1504: [None, 7, 1, [None, None, None, None], 'Thamasa WoB', [0x005, 1504 % 128, 1504 // 128], 'JMP'],  # Tile loads 0xbd2ee (Check if LEO_BURIED_THAMASA, branch to load map 0x154 at 0xbd308) [0x000, 250, 128]
+    1505: [None, 7, 1, [None, None, None, None], 'Vector entrance event tile', [0x005, 1505 % 128, 1505 // 128], 'JMP'],  # Tile loads 0xa5ecf (Check if SEALED_GATE, branch to load burning vector if so; load map at CA/5ED5 (0x0f2, 32, 61)  [0x000, 120, 187]
+    #'1505a': [0xa5ecf, 14, 7, [None, None, None, None], 'Vector entrance event tile 2', [0x000, 121, 187], None],
     #1506: [0xa5ee3, 20, 14, [False, False, False, False], 'Cave to South Figaro South Entrance WoB', [0x000, 75, 102], None],
     1506: [None, 7, 1, [False, False, False, False], 'Cave to South Figaro South Entrance WoB', [0x005, 1506 % 128, 1506 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
-    1507: [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR', [0x001, 81, 85], None],
-    '1507a': [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85], None],
+    1507: [None, 7, 1, [None, None, None, None], 'Figaro Castle WoR', [0x005, 1507 % 128, 1507 // 128], 'JMP'],  # Tile loads 0xa5f0b (Check if FC in figaro desert WOR, branch to load map at 0x037 if so. [0x001, 81, 85]
+    #'1507a': [0xa5f0b, 0, 0, [None, None, None, None], 'Figaro Castle WoR 2', [0x001, 82, 85], None],
     1508: [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen)', [0x001, 53, 58], None],
-    '1508a': [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen) 2', [0x001, 54, 58], None],
+    #'1508a': [0xa5f18, 0, 0, [None, None, None, None], 'Figaro Castle WoR (kohlingen) 2', [0x001, 54, 58], None],
     1509: [0xa5f39, 0, 0, [None, None, None, None], 'Solitary Island cliff entrance', [0x001, 73, 231], None],
     1510: [0xb80a9, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract east', [0x118, 54, 53], 'JMP'],
     1511: [0xb809a, 15, 9, [False, False, False, False], 'Zone Eater Digestive Tract west', [0x118, 26, 54], 'JMP'],
@@ -214,6 +216,7 @@ event_exit_info = {
     5550: [0xc6107, 7, 1, [False, False, False, False], 'Albrook Armor Shop exit WoR', [0x147, 101, 24], 'JMP'],  # --> 0x144, 39, 21.  tile calls 0xc60fa (a WOB/WOR handler)
     1551: [0xc6114, 7, 1, [False, False, False, False], 'Albrook Item Shop exit WoB', [0x148, 37, 55], 'JMP'],  # --> 0x143, 7, 15.  tile calls 0xc610e (a WOB/WOR handler)
     5551: [0xc611b, 7, 1, [False, False, False, False], 'Albrook Item Shop exit WoR', [0x148, 37, 55], 'JMP'],  # --> 0x144, 7, 15.  tile calls 0xc610e (a WOB/WOR handler)
+
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -374,6 +377,8 @@ entrance_event_patch = {
     6862: lambda src, src_end: [src, src_end[:5] + add_mtek_armor(bytes=True) + src_end[5:]],
 }
 
+from event.doma_wob import *
+doma_siege_patch = DomaWOB.entrance_door_patch
 
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
@@ -385,7 +390,9 @@ entrance_door_patch = {
     860: add_mtek_armor(),
     861: add_mtek_armor(),
     863: add_mtek_armor(),
-    864: add_mtek_armor()
+    864: add_mtek_armor(),
+
+    1240: doma_siege_patch,
 
 }
 
@@ -525,12 +532,12 @@ multi_events = {
 
     2035: ['2035a', '2035b'],  # Lete River section 1 branching code
 
-    1502: ['1502a'],  # Figaro Castle WoB entrance tiles
-    1503: ['1503c'],  # Figaro Castle WoB (kohlingen) entrance tiles
-    1505: ['1505a'],   # Vector entrance tiles WoB
+    #1502: ['1502a'],  # Figaro Castle WoB entrance tiles
+    #1503: ['1503c'],  # Figaro Castle WoB (kohlingen) entrance tiles
+    #1505: ['1505a'],   # Vector entrance tiles WoB
 
-    1507: ['1507a'],  # Figaro Castle WoR entrance tiles
-    1508: ['1508a']   # Figaro Castle WoR (kohlingen) entrance tiles
+    #1507: ['1507a'],  # Figaro Castle WoR entrance tiles
+    #1508: ['1508a']   # Figaro Castle WoR (kohlingen) entrance tiles
 }
 
 # NOTES ON JUMP/CALL vs REWRITE:
