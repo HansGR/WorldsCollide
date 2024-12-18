@@ -165,7 +165,7 @@ def options(args):
 
     if args.map_shuffle:
         return [
-            ("Map Shuffle", args.door_randomize_all),
+            ("Map Shuffle", args.map_shuffle),
         ]
 
     if args.door_randomize_all:

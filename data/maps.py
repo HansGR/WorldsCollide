@@ -701,6 +701,22 @@ class Maps():
                 # Delete the event tile
                 self.delete_event(info[0], info[1], info[2])  # delete the original event
 
+        for m in entrance_door_patch.keys():
+            if m in map.keys():
+                # Only do this if the connection is handled by Transitions
+                if 1500 <= map[m] < 4000:
+                    if entrance_door_patch[m] is list:
+                        info = entrance_door_patch[m]
+                    else:
+                        info = entrance_door_patch[m](self.args)
+                    # Write the script address somewhere
+                    space = Write(Bank.CA, info, "entrance door patch for " + str(map[m]) + ' --> ' + str(m))
+                    self.exit_event_addr_to_call[map[m]] = space.start_address
+                    if self.doors.verbose:
+                        print('Wrote entrance door patch for ', str(map[m]), ' --> ', str(m), ': ', hex(space.start_address))
+                        print([a.__str__() for a in info])
+
+
         # Generate a final list of all exits that need to be connected
         all_exits = list(map.keys())
         all_exits.sort()  # apply the doors in order.

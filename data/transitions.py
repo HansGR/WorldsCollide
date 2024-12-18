@@ -161,20 +161,33 @@ class Transitions:
                     ex_patch += [bitsrc[0].opcode] + bitsrc[0].args
 
             if t.exit.id in self.call_script_addr.keys():
+                # This is attempting to look at an event script, read it, build a branch code based on what it says, and then load the door.
+                # Instead, I think we should just call the script, followed by loading the door.
+
                 # This is an event tile behaving as a door that needs to call an event script for its partner.
                 this_addr = self.call_script_addr[t.exit.id]
-                srcdata = self.rom.get_bytes(this_addr, 6)
-                [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
 
-                if branch_addr == 0x5eb3:
-                    # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
-                    branch_addr = this_addr + 6
-                    is_set = not is_set
-
-                branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.dest_location[0])
-                if self.verbose:
-                    print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
+                # srcdata = self.rom.get_bytes(this_addr, 6)
+                # if self.verbose:
+                #     print([hex(a) for a in srcdata])
+                # [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+                # if self.verbose:
+                #     print(comm_type, is_set, ebit, branch_addr)
+                #
+                # if branch_addr == 0x5eb3:
+                #     # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+                #     branch_addr = this_addr + 6
+                #     is_set = not is_set
+                #
+                # branch_src = get_branch_code(ebit, is_set, branch_addr + EVENT_CODE_START, map_id=t.exit.dest_location[0])
+                # if self.verbose:
+                #     print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
+                # ex_patch += [branch_src[0].opcode] + branch_src[0].args
+                branch_src = get_branch_code(event_bit.ALWAYS_CLEAR, is_set=False, branch_addr=this_addr, map_id=t.exit.dest_location[0])
                 ex_patch += [branch_src[0].opcode] + branch_src[0].args
+                if self.verbose:
+                    print(t.exit.id, t.entr.id, ' incl. branch to ', hex(this_addr))
+
 
             # Add patched lines before map transition
             src = src[:-1] + ex_patch + src[-1:]
@@ -393,7 +406,20 @@ class EventExit:
 
             # Use partner_data for the "entrance" info
             self.dest_location = partner_data[0:3]  # [dest_map, dest_x, dest_y]
+
+            # if ID in exit_door_patch:
+            #     # Prepend any data required by the door
+            #     self.exit_code = exit_door_patch[ID] + self.exit_code
+
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
             self.entr_code = [partner_data[0] % 0x100,
                               (partner_data[0] // 0x100) + (partner_data[6] << 4),
                               partner_data[1], partner_data[2], 0x80, 0xfe]
+
+            # if ID in entrance_door_patch.keys():
+            #     # This door additionally requires code to be executed after the load command
+            #     if entrance_door_patch[ID] is list:
+            #         self.entr_code += entrance_door_patch[ID]
+            #     else:
+            #         self.entr_code += entrance_door_patch[ID](self.args)
+
