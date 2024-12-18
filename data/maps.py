@@ -433,7 +433,9 @@ class Maps():
         if self.doors.verbose:
             print('Door connections:')
             for m in self.doors.map[0]:
-                print('\t' + str(m[0]) + "<-->" + str(m[1]) + '\t(' + exit_data[m[0]][1] + '<-->' + exit_data[m[1]][1] + ')')
+                ma = [a for a in m]
+                ma.sort()
+                print('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + exit_data[ma[0]][1] + '<-->' + exit_data[ma[1]][1] + ')')
             print('One-way connections:')
             for m in self.doors.map[1]:
                 print('\t', m[0], " -> ", m[1])
@@ -455,9 +457,10 @@ class Maps():
             for map_index, cur_map in enumerate(self.maps):
                 self.properties[map_index].warpable = 1
 
-        # Add doors to the spoiler log
+        # Postprocess the door map
         self.door_map = {}
         if len(self.doors.map) > 0:
+            # Add doors to the spoiler log
             self.doors.print()
 
             # Create sorted map, so they are connected in order:
@@ -479,8 +482,8 @@ class Maps():
                 that_room = [r for r in room_data.keys() if self.door_map[m + 4000] in room_data[r][0]]
                 self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
 
-        # Patch all used exits
-        self.exits.patch_exits([m for m in self.door_map.keys()])
+            # Patch all used exits
+            self.exits.patch_exits([m for m in self.door_map.keys()])
 
 
     def doorRandoOverride(self, newmap):
@@ -770,7 +773,6 @@ class Maps():
         # (3) the door requires special code (in exit_door_patch[d])
         # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
         # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
-        # (6) the door is an event tile behaving as a door
         require_event_flags = [
             (this_world != that_world),
             d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
@@ -1048,6 +1050,7 @@ class Maps():
 
         if require_event_flags[4]:
             wor_src = SummonAirship(conn_data[0], conn_data[1], conn_data[2])
+            #print(d, d_ref, d_ref_partner, conn_data)
         else:
             wor_src = [field.FadeLoadMap(conn_data[0], conn_data[6], True, conn_data[1], conn_data[2], fade_in=True, entrance_event=True)]
             if conn_data[0] in [0, 1, 2]:

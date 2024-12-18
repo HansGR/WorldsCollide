@@ -29,7 +29,7 @@ class DarylTomb(Event):
                 conn_south = self.maps.door_map[south_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
                 self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
-                print('Updated Daryl Cave quick exit: ', self.exit_loc)
+                #print('Updated Daryl Cave quick exit: ', self.exit_loc)
 
         self.entrance_mod()
         self.staircase_mod()

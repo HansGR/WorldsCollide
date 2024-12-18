@@ -549,7 +549,8 @@ room_data = {
     316 : [ [648], [ ], [ ], None], #Opera House Switch Room
     317 : [ [649, 650], [ ], [ ], None], #Opera House Balcony WoB
     318 : [ [657], [ ], [ ], None], #Opera House Catwalks
-    319 : [ [658, 659], [ ], [ ], None], #Opera House Lobby
+    319 : [ [658, 659], [ ], [ ], 0], #Opera House Lobby WoB
+    '319r' : [ [4658, 4659], [ ], [ ], 1], #Opera House Lobby WoR
     320 : [ [662], [ ], [ ], None], #Opera House Dressing Room
 
     # VECTOR
@@ -973,6 +974,9 @@ shared_exits = {
     1167: [1168, 1169],  # South Figaro WoB to world map
     1238: [1239],         # Maranda WoB to world map
     1245: [1246, 1247],   # Albrook WoB to world map
+
+    1199: [1200],    # Nikeah WoB to world map
+    5199: [5200],    # Nikeah WoR to world map
 
 }
 

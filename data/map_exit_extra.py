@@ -59,10 +59,10 @@ exit_data = {
     56: [1280, "Coliseum"],
     57: [262, "Cave to Figaro Castle WoR"],
     58: [1162, "South Figaro WoR"],
-    59: [1209, "Kohlingen Left Tile WoR"],
-    60: [1209, "Kohlingen Right Tile WoR"],
+    59: [1211, "Kohlingen Left Tile WoR"],
+    60: [1211, "Kohlingen Right Tile WoR"],
     61: [978, "Cave in the Veldt WoR"],
-    62: [658, "Opera House WoR"],
+    62: [4658, "Opera House WoR"],
     63: [5238, "Maranda Left Tile WoR"],        # EDIT goes to logical WOR Maranda, not 1238
     64: [5238, "Maranda Right Tile WoR"],
     65: [5199, "Nikeah Left Tile WoR"],
@@ -1393,6 +1393,7 @@ exit_data = {
     4631: [4602, "Zozo Clock Puzzle Room 1F Inside WOR"],
     4632: [4603, "Zozo Clock Puzzle Room 2F Inside WOR"],
     4633: [4607, "Zozo Cafe 3F Right Inside WOR"],
+    4658: [62, "Opera House WoR"],
     5156: [1507, "Figaro Castle WoR exit to world map"],
     5208: [5201, "Nikeah Docks WoR"],
     5224: [70, "Zozo WoR to World Map"],
@@ -1579,6 +1580,38 @@ exit_data_patch = {
     5240: lambda info: set_dest_x(172,
                        set_dest_y(76,
                        set_dest_map(1, info))),   #  [76, "Doma Outside to World Map WoR"],
+
+    # NIKEAH
+    1199: lambda info: set_dest_map(0, info),   #   [16, "Nikeah West to World Map"],
+    1200: lambda info: set_dest_map(0, info),   #   [16, "Nikeah East to World Map"],
+    5199: lambda info: set_dest_x(145,
+                       set_dest_y(76,
+                       set_dest_map(1, info))),   #[65, "Nikeah West to WOR"],
+    5200: lambda info: set_dest_x(148,
+                       set_dest_y(76,
+                       set_dest_map(1, info))),   #[65, "Nikeah East to WOR"],
+
+    # KOHLINGEN
+    1209: lambda info: set_dest_y(40,
+                       set_dest_map(0, info)),   #  [25, "Kohlingen South to World Map WoB"],
+    1210: lambda info: set_dest_map(0, info),   #  [25, "Kohlingen West to World Map WoB"],
+    1211: lambda info: set_dest_map(1, info),   #  [59, "Kohlingen South to World Map WoR"],
+    1212: lambda info: set_dest_map(1, info),   #  [59, "Kohlingen West to World Map WoR"],
+
+    # OPERA HOUSE
+    658: lambda info: set_dest_y(155,
+                      set_dest_map(0, info)),   # [40, "Opera House Lobby to World Map"],
+    4658: lambda info: set_dest_x(31,
+                       set_dest_y(184,
+                       set_dest_map(1, info))),   # [62, "Opera House Lobby to WoR"],
+
+    # MOBLIZ WoR
+    1192: lambda info: set_dest_y(136,
+                       set_dest_map(1, info)),   #  [52, "Mobliz East to World Map WoR"],
+    1193: lambda info: set_dest_map(1, info),   #  [52, "Mobliz South to World Map WoR"],
+
+    # COLISEUM
+    1280: lambda info: set_dest_map(1, info),   # [56,   "Coliseum to World Map"],
 
 }
 
