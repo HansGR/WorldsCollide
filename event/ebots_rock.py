@@ -1,6 +1,11 @@
 from event.event import *
+from data.map_exit_extra import exit_data
 
 class EbotsRock(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Ebot's Rock"
 
@@ -20,6 +25,16 @@ class EbotsRock(Event):
         )
 
     def mod(self):
+        self.airship_thamasa = [0x001, 251, 230]
+        if self.MAP_SHUFFLE:
+            # modify airship warp position
+            thamasa_id = 1261
+            if thamasa_id in self.maps.door_map.keys():
+                conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
+                conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.airship_thamasa = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                print('Updated Ebots Rock airship teleport: ', self.airship_thamasa)
+
         self.find_gungho_hurt_mod()
         self.chest_mod()
         self.hidon_mod()
@@ -97,6 +112,16 @@ class EbotsRock(Event):
         space = Reserve(0xb7221, 0xb7225, "ebots rock strago runs down", field.NOP())
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago character commands", field.NOP())
         space = Reserve(0xb7238, 0xb7239, "ebots rock enable collisions for strago", field.NOP())
+
+        if self.MAP_SHUFFLE:
+            # CB/723B: 6B    Load map $0001 (World of Ruin) instantly, (upper bits $0400), place party at (251, 231), facing up, party is in the airship
+            # CB/7241: C7    Place airship at position (250, 231)
+            space = Reserve(0xb723b, 0xb7243, "ebots rock airship move", field.NOP())
+            space.write(
+                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                              y=self.airship_thamasa[2], fade_in=False, airship=True),
+                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
+            )
 
         # NOTE: just finished moving airship to thamasa, use vehicle command to load map here
         space = Reserve(0xb7244, 0xb7249, "ebots rock after hidon load strago's room map", field.NOP())

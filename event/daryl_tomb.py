@@ -1,5 +1,6 @@
 from event.event import *
 from event.switchyard import *
+from data.map_exit_extra import exit_data
 
 class DarylTomb(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -8,6 +9,7 @@ class DarylTomb(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Daryl's Tomb"
@@ -19,6 +21,16 @@ class DarylTomb(Event):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def mod(self):
+        self.exit_loc = [0x01, 25, 53]
+        if self.MAP_SHUFFLE:
+            # modify exit position
+            south_id = 1242
+            if south_id in self.maps.door_map.keys():
+                conn_south = self.maps.door_map[south_id]  # connecting exit south
+                conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                print('Updated Daryl Cave quick exit: ', self.exit_loc)
+
         self.entrance_mod()
         self.staircase_mod()
         self.dullahan_battle_mod()
@@ -69,13 +81,14 @@ class DarylTomb(Event):
             src += GoToSwitchyard(event_id)
 
             # (2b) Add the switchyard event tile that handles exit to the world map
-            switchyard_src = SummonAirship(0x001, 25, 53)
+            switchyard_src = SummonAirship(self.exit_loc[0], self.exit_loc[1], self.exit_loc[2])
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
         else:
             # for convenience change staircase door to take player back out to wor
             src += [
-                field.LoadMap(0x01, direction.DOWN, default_music = True, x = 25, y = 53),
+                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
+                              y = self.exit_loc[2]),
                 world.End(),
                 field.Return()
             ]

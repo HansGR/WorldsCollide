@@ -76,8 +76,8 @@ exit_data = {
     73: [5213, "Jidoor Left Tile WoR"],   # EDIT goes to logical WOR Jidoor, not 1213
     74: [5213, "Jidoor Right Tile WoR"],
     75: [1261, "Thamasa WoR"],
-    76: [1240, "Doma Left Tile WoR"],
-    77: [1240, "Doma Right Tile WoR"],
+    76: [5240, "Doma Left Tile WoR"],
+    77: [5240, "Doma Right Tile WoR"],
     78: [1546, "Ebot's Rock"],          # Event exit acting as door
     79: [1186, "Duncan's House WoR"],
     80: [None, "Serpent Trench"],
@@ -1398,7 +1398,8 @@ exit_data = {
     5224: [70, "Zozo WoR to World Map"],
     5213: [73, "Jidoor WoR to World Map South"],
     5214: [73, "Jidoor WoR to World Map West"],
-    5215: [74, "Jidoor WoR to World Map East"]
+    5215: [74, "Jidoor WoR to World Map East"],
+    5240: [76, "Doma WoR to World Map"],
 }
 
 # Create functions to update values:
@@ -1573,8 +1574,11 @@ exit_data_patch = {
                        set_dest_y(85,
                        set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside West to World Map"],
 
-    # DOMA CASTLE WOB
+    # DOMA CASTLE
     1240: lambda info: set_dest_map(0, info),   #  [19, "Doma Outside to World Map"],  # Edit: 1547 in WC (event)
+    5240: lambda info: set_dest_x(172,
+                       set_dest_y(76,
+                       set_dest_map(1, info))),   #  [76, "Doma Outside to World Map WoR"],
 
 }
 

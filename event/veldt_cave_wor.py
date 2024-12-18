@@ -1,4 +1,5 @@
 from event.event import *
+from data.map_exit_extra import exit_data
 
 class VeldtCaveWOR(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -7,6 +8,7 @@ class VeldtCaveWOR(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Veldt Cave WOR"
@@ -25,6 +27,16 @@ class VeldtCaveWOR(Event):
         self.relm_npc = self.maps.get_npc(0x161, self.relm_npc_id)
 
         self.dr_exit_type = 'dog'  # 'behemoth'
+
+        self.airship_thamasa = [0x001, 251, 230]
+        if self.MAP_SHUFFLE:
+            # modify airship warp position
+            thamasa_id = 1261
+            if thamasa_id in self.maps.door_map.keys():
+                conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
+                conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.airship_thamasa = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                print('Updated Veldt Cave airship teleport: ', self.airship_thamasa)
 
         self.dialog_mod()
 
@@ -115,8 +127,9 @@ class VeldtCaveWOR(Event):
             event_id = 2075
             switchyard_src = [
                 field.FadeInSong(0x08, 0x30),
-                field.LoadMap(0x001, direction.DOWN, default_music=False, x=251, y=230, fade_in=False, airship=True),
-                vehicle.SetPosition(251, 231),
+                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                              y=self.airship_thamasa[2], fade_in=False, airship=True),
+                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
                 # Always show interceptor in door rando
@@ -144,8 +157,9 @@ class VeldtCaveWOR(Event):
         else:
             src = [
                 field.FadeInSong(0x08, 0x30),
-                field.LoadMap(0x001, direction.DOWN, default_music=False, x=251, y=230, fade_in=False, airship=True),
-                vehicle.SetPosition(251, 231),
+                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                              y=self.airship_thamasa[2], fade_in=False, airship=True),
+                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
 
