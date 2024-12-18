@@ -1020,6 +1020,10 @@ class Maps():
             that_map in [0x0, 0x1]
         ]
 
+        if self.args.map_shuffle and not self.args.door_randomize:
+            # Don't airship warp if only doing map shuffle
+            require_event_flags[4] = False
+            
         #if self.doors.verbose:
         #    print('Writing shared event at ' + str(d) + ' (ref = ' + str(d_ref) + ')')
         # Look for an existing event on this exit tile

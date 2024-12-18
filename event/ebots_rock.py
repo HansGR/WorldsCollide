@@ -25,8 +25,17 @@ class EbotsRock(Event):
         )
 
     def mod(self):
+        self.exit_loc = [0x01, 249, 224]
         self.airship_thamasa = [0x001, 251, 230]
         if self.MAP_SHUFFLE:
+            # modify exit position
+            exit_id = 1546
+            if exit_id in self.maps.door_map.keys():
+                conn_south = self.maps.door_map[exit_id]  # connecting exit south
+                conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                # print('Updated Ebots Rock exit warp: ', self.exit_loc)
+
             # modify airship warp position
             thamasa_id = 1261
             if thamasa_id in self.maps.door_map.keys():
@@ -205,7 +214,8 @@ class EbotsRock(Event):
         space.copy_from(0xb73e1, 0xb73f0) # event bits after hidon
         space.write(
             field.FreeScreen(),
-            field.LoadMap(0x01, direction.DOWN, default_music = True, x = 249, y = 224),
+            field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
+                          y = self.exit_loc[2]),
             world.End(),
         )
 
