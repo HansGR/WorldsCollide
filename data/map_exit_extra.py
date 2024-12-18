@@ -48,7 +48,7 @@ exit_data = {
     45: [1132, "Mobliz Chocobo Stable WoR"],
     46: [1132, "Tzen Chocobo Stable WoR"],
     47: [1132, "Kohlingen Chocobo Stable WoR"],
-    48: [1080, "Solitary Island Cid's House"],
+    48: [1267, "Solitary Island Cid's House"],
     49: [1249, "Albrook Left Tile WoR"],
     50: [1249, "Albrook Right Tile WoR"],
     51: [1243, "Tzen WoR"],
@@ -1456,11 +1456,11 @@ exit_data_patch = {
     1213: lambda info: set_dest_map(0, info),   # [28, "Jidoor South to World Map"],
     1214: lambda info: set_dest_map(0, info),   # [28, "Jidoor West to World Map"],
     1215: lambda info: set_dest_map(0, info),    # [28, "Jidoor East to World Map"],
-    5213: lambda info: set_dest_x(33,
-                       set_dest_y(156,
-                       set_dest_map(1, info) ) ),   # [73, "Jidoor South to World Map WoR"],
-    5214: lambda info: set_dest_x(34,
+    5213: lambda info: set_dest_x(34,
                        set_dest_y(157,
+                       set_dest_map(1, info) ) ),   # [73, "Jidoor South to World Map WoR"],
+    5214: lambda info: set_dest_x(33,
+                       set_dest_y(156,
                        set_dest_map(1, info) ) ),   # [73, "Jidoor West to World Map WoR"],
     5215: lambda info: set_dest_x(35,
                        set_dest_y(157,
@@ -1612,6 +1612,23 @@ exit_data_patch = {
 
     # COLISEUM
     1280: lambda info: set_dest_map(1, info),   # [56,   "Coliseum to World Map"],
+
+    # CID's HOUSE
+    1266: lambda info: set_dest_x(77,
+                       set_dest_y(240,
+                       set_dest_map(1, info))),   #  [48, "Cid's House East to World Map"],
+    1267: lambda info: set_dest_x(75,
+                       set_dest_y(240,
+                       set_dest_map(1, info))),   #   [48, "Cid's House West to World Map"],
+    1268: lambda info: set_dest_x(76,
+                       set_dest_y(239,
+                       set_dest_map(1, info))),   #   [48, "Cid's House Northwest to World Map"],
+    1269: lambda info: set_dest_x(76,
+                       set_dest_y(239,
+                       set_dest_map(1, info))),   #   [48, "Cid's House North to World Map"],
+    1270: lambda info: set_dest_x(76,
+                       set_dest_y(239,
+                       set_dest_map(1, info))),   #   [48, "Cid's House Northeast to World Map"],
 
 }
 

@@ -921,10 +921,10 @@ shared_exits = {
     37: [38, 39],  # Zozo WoB entrance
 
     49: [50],      # Albrook WoR entrance
-    54: [55],      # Nikeah WoR entrance, pair 1.
+    #54: [55],      # Nikeah WoR entrance, pair 1.
     59: [60],      # Kohlingen WoR entrance
     63: [64],      # Maranda WoR entrance
-    65: [66],      # Nikeah WoR entrance, pair 2.
+    65: [66, 54, 55],      # Nikeah WoR entrance, both pairs
     70: [71, 72],  # Zozo WoR entrance
     73: [74],      # Jidoor WoR entrance
     76: [77],      # Doma WoR entrance
@@ -977,6 +977,9 @@ shared_exits = {
 
     1199: [1200],    # Nikeah WoB to world map
     5199: [5200],    # Nikeah WoR to world map
+    5238: [5239],    # Maranda WoR to world map
+
+    1267: [1266, 1268, 1269, 1270],   # Cid's house outside to world map
 
 }
 
