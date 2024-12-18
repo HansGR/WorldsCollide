@@ -1,5 +1,6 @@
 from event.event import *
 from event.switchyard import *
+from data.map_exit_extra import exit_data
 
 class PhantomTrain(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -8,6 +9,7 @@ class PhantomTrain(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Phantom Train"
@@ -25,6 +27,16 @@ class PhantomTrain(Event):
         )
 
     def mod(self):
+        self.airship_loc = [0x0, 178, 93]
+        if self.MAP_SHUFFLE:
+            # modify airship position after completing check
+            exit_id = 465
+            if exit_id in self.maps.door_map.keys():
+                conn_south = self.maps.door_map[exit_id]  # connecting exit south
+                conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.airship_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                #print('Updated Phantom Train airship exit: ', self.airship_loc)
+
         self._load_world_map()
         self.forest_spring_mod()
         self.ghost_shop_forest_mod()
@@ -80,16 +92,18 @@ class PhantomTrain(Event):
             src += GoToSwitchyard(event_id)
 
             # Add the switchyard event tile that handles exit to the world map
-            switchyard_src = SummonAirship(0x000, 178, 93)
+            switchyard_src = SummonAirship(self.airship_loc[0], self.airship_loc[1], self.airship_loc[2])
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
         else:
             src += [
                 field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                field.LoadMap(0x00, direction.DOWN, default_music = False, x = 178, y = 94, airship = True),
-                vehicle.SetPosition(178, 94),
+                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = False, x = self.airship_loc[1],
+                              y = self.airship_loc[2], airship = True),
+                vehicle.SetPosition(self.airship_loc[1], self.airship_loc[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x00, direction.DOWN, default_music = True, x = 178, y = 93),
+                vehicle.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
+                                y = self.airship_loc[2]),
                 world.Turn(direction.DOWN),
                 world.End(),
             ]

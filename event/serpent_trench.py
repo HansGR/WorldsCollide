@@ -37,7 +37,7 @@ class SerpentTrench(Event):
                 conn_pair = exit_data[conn_north][0]  # original connecting exit
                 self.airship_sf = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
 
-            print('Updated Serpent Trench airship teleports: ', self.airship_nikeah, self.airship_sf)
+            #print('Updated Serpent Trench airship teleports: ', self.airship_nikeah, self.airship_sf)
 
         self.cave_mod()
         self.find_diving_helmet_mod()
