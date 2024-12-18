@@ -981,6 +981,9 @@ shared_exits = {
 
     1267: [1266, 1268, 1269, 1270],   # Cid's house outside to world map
 
+    1209: [1210],    # Kohlingen WoB to world map
+    1211: [1212],    # Kohlingen WoR to world map
+
 }
 
 # Keys to apply immediately, based on flags.

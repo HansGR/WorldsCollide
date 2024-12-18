@@ -1453,7 +1453,9 @@ exit_data_patch = {
                        set_dest_map(1, info))),   # Zozo WoR.
 
     # JIDOOR
-    1213: lambda info: set_dest_map(0, info),   # [28, "Jidoor South to World Map"],
+    1213: lambda info: set_dest_x(27,
+                       set_dest_y(131,
+                       set_dest_map(0, info))),   # [28, "Jidoor South to World Map"],
     1214: lambda info: set_dest_map(0, info),   # [28, "Jidoor West to World Map"],
     1215: lambda info: set_dest_map(0, info),    # [28, "Jidoor East to World Map"],
     5213: lambda info: set_dest_x(34,
@@ -1629,6 +1631,10 @@ exit_data_patch = {
     1270: lambda info: set_dest_x(76,
                        set_dest_y(239,
                        set_dest_map(1, info))),   #   [48, "Cid's House Northeast to World Map"],
+
+    # CRESCENT MOUNTAIN
+    523: lambda info: set_dest_y(149,
+                      set_dest_map(0, info)),   # [23, "Crescent Mountain to World Map"],
 
 }
 
