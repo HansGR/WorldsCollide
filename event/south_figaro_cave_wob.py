@@ -30,15 +30,19 @@ class SouthFigaroCaveWOB(Event):
         self.airship_south = [0x00, 75, 103]
         if self.MAP_SHUFFLE:
             # modify airship position: south
-            conn_south = self.maps.door_map[269]  # connecting exit south
-            conn_pair = exit_data[conn_south][0]  # original connecting exit
-            self.airship_south = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+            south_id = 269
+            if south_id in self.maps.door_map.keys():
+                conn_south = self.maps.door_map[south_id]  # connecting exit south
+                conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.airship_south = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
 
             # modify airship position: north
-            conn_north = self.maps.door_map[1161]
-            conn_pair = exit_data[conn_north][0]  # original connecting exit
-            self.airship_north = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
-            #print('Updated South Figaro Cave airship teleports: ', self.airship_south, self.airship_north)
+            north_id = 1161
+            if north_id in self.maps.door_map.keys():
+                conn_north = self.maps.door_map[north_id]
+                conn_pair = exit_data[conn_north][0]  # original connecting exit
+                self.airship_north = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                #print('Updated South Figaro Cave airship teleports: ', self.airship_south, self.airship_north)
 
         self.cleanup_mod()
         self.requirement_mod()
