@@ -165,7 +165,7 @@ class MapExits():
         for long_exit in self.long_exits:
             long_exit.print()
 
-    def patch_exits(self, exit_list):
+    def patch_exits(self, exit_list, verbose=False):
         # For DOOR_RANDOMIZE and MAP_SHUFFLE
         # Make all exits explicit (i.e. patch out "return to parent map") for door randomization
         # "Parent map" is set when entering a non-world-map from a world map.
@@ -181,7 +181,8 @@ class MapExits():
                     # Copy the "original data" to the exit itself
                     this_exit = self._get_exit_from_ID(e)
                     self.copy_exit_info(this_exit, e, type='all')
-                    #print('Patching: ', e, ':', self.exit_original_data[e])
+                    if verbose:
+                        print('Patching: ', e, ':', self.exit_original_data[e])
                 else:
                     if 6000 > e >= 4000:
                         # This is a logical exit.  Create an entry for it from its WOB pair.
@@ -189,13 +190,15 @@ class MapExits():
                         self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e-4000])
                         #else:
                         #self.exit_original_data[e] = self.exit_original_data[e - 4000]
-                        #print('Patching used logical:', e, self.exit_original_data[e])
+                        if verbose:
+                            print('Patching used logical:', e, self.exit_original_data[e])
 
             if e in event_door_connection_data.keys():
                 # This is an event exit behaving as an exit, or a logical exit that cannot be copied from its vanilla
                 # partner. Create an entry for it.
                 self.exit_original_data[e] = event_door_connection_data[e]
-                #print('Patching event door:', e, self.exit_original_data[e])
+                if verbose:
+                    print('Patching event door:', e, self.exit_original_data[e])
 
             if e in add_new_exits.keys():
                 pass

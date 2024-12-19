@@ -102,7 +102,7 @@ class Transitions:
             # Perform common event patches
             ex_patch = []
             en_patch = []
-            t.patches = [False, False, False, False, False, False]
+            t.patches = [False, False, False, False, False, False, False]
             if t.exit.is_char_hidden and not t.entr.is_char_hidden:
                 t.patches[0] = 'unhide'
                 # Character is hidden during the transition (command [0x42, 0x31]) and not unhidden later.
@@ -188,6 +188,15 @@ class Transitions:
                 if self.verbose:
                     print(t.exit.id, t.entr.id, ' incl. branch to ', hex(this_addr))
 
+            # Check if updated parent map is required
+            if t.exit.do_update_parent_map:
+                t.patches[6] = 'update'
+                this_dir = t.exit.partner_destination[3]
+                bitsrc = [field.SetParentMap(map_id=t.exit.partner_destination[0],
+                                             x=t.exit.partner_destination[1] + direction.xy_shift_parent_map(this_dir)[0],
+                                             y=t.exit.partner_destination[2] + direction.xy_shift_parent_map(this_dir)[1],
+                                             direction=this_dir)]
+                en_patch += [bitsrc[0].opcode] + bitsrc[0].args
 
             # Add patched lines before map transition
             src = src[:-1] + ex_patch + src[-1:]
@@ -351,6 +360,7 @@ class EventExit:
             self.is_song_override_on = event_info[3][1]
             self.is_screen_hold_on = event_info[3][2]
             self.is_on_raft = event_info[3][3]
+            self.do_update_parent_map = event_info[3][4]
             self.description = event_info[4]
             self.location = event_info[5]
             self.method = event_info[6]
@@ -365,6 +375,12 @@ class EventExit:
 
             dest_map = self.entr_code[0] + (((self.entr_code[1] % 0x10) % 0x4) << 8)  # extract destination map_id
             self.dest_location = [dest_map, self.entr_code[2], self.entr_code[3]]  # [map_id, x, y]
+
+            # Get partner connection info for Update Parent Map
+            if self.do_update_parent_map:
+                partner_id = exit_partner[ID][0]
+                partner_data = exit_data[partner_id]  # If partner isn't in exit_data, this shouldn't be a door connection.
+                self.partner_destination = partner_data[:3] + [partner_data[6]]  # [dest_map, dest_x, dest_y, facing]
 
         else:
             # Handle the small number of one-way entrances from doors.
@@ -402,6 +418,9 @@ class EventExit:
 
             # Use exit_location for the "exit" info
             self.location = exit_location[-1:] + exit_location[8:12]  # [map_id, x, y, size, direction]
+            #self.destination = exit_location[:3] + [exit_location[6]] # [dest_map, dest_x, dest_y, facing]
+            #print(self.id, exit_location, self.location, self.destination)
+
             self.world = exit_world[ID]            # which world is it in?
 
             # Use partner_data for the "entrance" info

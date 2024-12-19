@@ -1607,7 +1607,9 @@ exit_data_patch = {
                        set_dest_y(184,
                        set_dest_map(1, info))),   # [62, "Opera House Lobby to WoR"],
 
-    # MOBLIZ WoR
+    # MOBLIZ
+    1190: lambda info: set_dest_map(0, info),   # [26, "Mobliz South to World Map WoB"],
+    1191: lambda info: set_dest_map(0, info),   #  [26, "Mobliz East to World Map WoB"],
     1192: lambda info: set_dest_y(136,
                        set_dest_map(1, info)),   #  [52, "Mobliz East to World Map WoR"],
     1193: lambda info: set_dest_map(1, info),   #  [52, "Mobliz South to World Map WoR"],
@@ -1635,6 +1637,12 @@ exit_data_patch = {
     # CRESCENT MOUNTAIN
     523: lambda info: set_dest_y(149,
                       set_dest_map(0, info)),   # [23, "Crescent Mountain to World Map"],
+
+    # COLISEUM GUY's HOUSE
+    1205: lambda info: set_dest_map(0, info),   #   [27, "Coliseum Guy's House South to World Map"],
+    1206: lambda info: set_dest_map(0, info),   #   [27, "Coliseum Guy's House East to World Map"],
+    1207: lambda info: set_dest_x(32,
+                       set_dest_map(0, info)),   #   [27, "Coliseum Guy's House West to World Map"],
 
 }
 

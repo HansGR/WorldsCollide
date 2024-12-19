@@ -483,7 +483,7 @@ class Maps():
                 self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
 
             # Patch all used exits
-            self.exits.patch_exits([m for m in self.door_map.keys()])
+            self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose)
 
 
     def doorRandoOverride(self, newmap):
@@ -716,7 +716,6 @@ class Maps():
                         print('Wrote entrance door patch for ', str(map[m]), ' --> ', str(m), ': ', hex(space.start_address))
                         print([a.__str__() for a in info])
 
-
         # Generate a final list of all exits that need to be connected
         all_exits = list(map.keys())
         all_exits.sort()  # apply the doors in order.
@@ -927,11 +926,26 @@ class Maps():
                     #dummy_y = d // 128
                     #[dummy_x, dummy_y] = switchyard_xy(d)
 
-                    # (a) add a LoadMap command for the destination; write it to a dummy event
-                    src_dummy = src[:-1] + [
+                    # (a) add a SetParentMap and LoadMap command for the destination; write it to a dummy event
+                    d_pairID = exit_data[d][0]  # Original connecting exit to d
+                    if d_pairID in self.exits.exit_original_data.keys():
+                        conn_data = self.exits.exit_original_data[d_pairID]  # [dest_map, dest_x, dest_y, ...]
+                    elif d_pairID >= 4000:  # Do we actually need this?
+                        # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                        conn_data = self.exits.exit_original_data[d_pairID - 4000]
+                    pm_dir = conn_data[6]
+                    pm_x = conn_data[1] + direction.xy_shift_parent_map(pm_dir)[0]
+                    pm_y = conn_data[2] + direction.xy_shift_parent_map(pm_dir)[1]
+                    update_parent_map_src = [
+                        field.SetParentMap(map_id=map_id, x=pm_x, y=pm_y, direction=pm_dir),
+                    ]
+                    load_destination_src = [
                         field.LoadMap(this_exit.dest_map, direction=this_exit.facing, default_music=True,
                                       x=this_exit.dest_x, y=this_exit.dest_y, fade_in=True, entrance_event=True)
-                        ] + src[-1:]
+                        ]
+                    src_dummy = update_parent_map_src + src[:-1] + load_destination_src + src[-1:]
+                    if self.doors.verbose:
+                        print('source code at switchyard: ', [a.__str__() for a in src_dummy])
                     AddSwitchyardEvent(d, self, src=src_dummy)
                     #space = Write(Bank.CC, src_dummy, "Door Dummy Event " + str(d))
                     #dummy_address = space.start_address - EVENT_CODE_START
