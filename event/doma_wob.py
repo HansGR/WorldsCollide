@@ -4,7 +4,7 @@ from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 class DomaWOB(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
-        self.SHUFFLE = args.map_shuffle
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Doma WOB"
@@ -72,13 +72,14 @@ class DomaWOB(Event):
 
         # in wob, entrance is changed to a tile event from a wob exit
         # need to update the parent map to return to
-        if self.SHUFFLE:
+        if self.MAP_SHUFFLE:
+            pass  # This should now be handled by SetParentMap in the event entrance and/or data.map_exits.patch_exits()
             # Make exit explicit
-            from data.map_exit_extra import exit_data_patch
-            exit_ID = 1240
-            self.maps.exits.exit_original_data[exit_ID] = exit_data_patch[exit_ID](self.maps.exits.exit_original_data[exit_ID])
+            #from data.map_exit_extra import exit_data_patch
+            #exit_ID = 1240
+            #self.maps.exits.exit_original_data[exit_ID] = exit_data_patch[exit_ID](self.maps.exits.exit_original_data[exit_ID])
             # Copy the "original data" to the exit itself
-            self.maps.exits.copy_exit_info(self.maps.get_exit(exit_ID), exit_ID, type='all')
+            #self.maps.exits.copy_exit_info(self.maps.get_exit(exit_ID), exit_ID, type='all')
 
         else:
             space.write(
@@ -102,7 +103,7 @@ class DomaWOB(Event):
             field.Return(),
         )
 
-        if not self.SHUFFLE:
+        if not self.MAP_SHUFFLE:
             load_doma_function = space.next_address
             space.write(
                 world.LoadMap(0x11d, direction.UP, default_music = True,
@@ -150,14 +151,14 @@ class DomaWOB(Event):
 
 
     def map_events_mod(self):
-        if not self.SHUFFLE:
+        if not self.MAP_SHUFFLE:
             # If doing map shuffle, use the short exits!
             self.maps.delete_short_exit(0x00, self.wob_left_x, self.wob_left_y)
             self.maps.delete_short_exit(0x00, self.wob_right_x, self.wob_right_y)
 
         from data.map_event import MapEvent
 
-        if not self.SHUFFLE:
+        if not self.MAP_SHUFFLE:
             new_event = MapEvent()
             new_event.x = self.wob_left_x
             new_event.y = self.wob_left_y

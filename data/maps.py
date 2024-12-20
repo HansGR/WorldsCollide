@@ -27,7 +27,7 @@ import instruction.field.entity as field_entity
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
     multi_events, entrance_door_patch, exit_door_patch, require_event_bit
 
-from data.map_exit_extra import exit_data, exit_data_patch, has_event_entrance, event_door_connection_data
+from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, event_door_connection_data
 from data.rooms import room_data, exit_world, shared_exits
 
 from data.parse import delete_nops, branch_parser, get_branch_code
@@ -482,8 +482,8 @@ class Maps():
                 that_room = [r for r in room_data.keys() if self.door_map[m + 4000] in room_data[r][0]]
                 self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
 
-            # Patch all used exits
-            self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose)
+            # Make all used exits explicit
+            self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=True)
 
 
     def doorRandoOverride(self, newmap):
@@ -675,7 +675,7 @@ class Maps():
         # Need to add modified world map exits if they weren't randomized (to print exit events)
         if self.args.door_randomize:
             # Only do this if door_randomize, not map_shuffle
-            for m in exit_data_patch.keys():
+            for m in exit_make_explicit.keys():
                 if m not in map.keys():
                     map[m] = exit_data[m][0]
                     # Look up the rooms of these exits

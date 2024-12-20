@@ -1420,21 +1420,145 @@ set_direction =           lambda value, info: info[:11] + [value]
 
 # Patch functions for individual exits:
 # Note: no longer need to 'shorten to fit', after incorporating LongMapEvents!
-# This is necessary to remove "parent map" calls.
+# UPDATE 12/20/2024:
+#   we will no longer use this to update parent map calls: that has been separated to exit_make_explicit
+#   exit_data_patch is now just correcting other aspects of exits that are incorrect in the original code (dest_x, dest_y, etc.)
 exit_data_patch = {
     # NARSHE
     1135: lambda info: set_dest_y( 34,
-                       set_dest_x( 84,
-                       set_dest_map(0, info) ) ),   # [4, "Narshe To World Map WoB"].  Shorten to fit: set_x( 15, set_size( 28, ... ) )
-    #1136: lambda info: set_x( 35,
-    #                   set_size( 4, info) ),        # [1137, "Narshe To Northern Mines Outside WoB"].  Shorten to fit.
+                       set_dest_x( 84, info) ),   # [4, "Narshe To World Map WoB"].  Shorten to fit: set_x( 15, set_size( 28, ... ) )
     1143: lambda info: set_dest_y( 34,
-                       set_dest_x( 115,
-                       set_dest_map(1, info) ) ),  # [67, "Narshe To World Map WoR"],
+                       set_dest_x( 115, info) ),  # [67, "Narshe To World Map WoR"],
 
     # ESPER MOUNTAIN
-    1047: lambda info: set_dest_y( 131,
-                       set_dest_map(0, info) ),   # Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
+    1047: lambda info: set_dest_y( 131, info ),   # Esper Mts Return to World Map
+
+    # ZOZO
+    5224: lambda info: set_dest_x(44,
+                       set_dest_y(131, info)),   # Zozo WoR.
+
+    # JIDOOR
+    1213: lambda info: set_dest_x(27,
+                       set_dest_y(131, info)),   # [28, "Jidoor South to World Map"],
+    5213: lambda info: set_dest_x(34,
+                       set_dest_y(157, info) ),   # [73, "Jidoor South to World Map WoR"],
+    5214: lambda info: set_dest_x(33,
+                       set_dest_y(156, info) ),   # [73, "Jidoor West to World Map WoR"],
+    5215: lambda info: set_dest_x(35,
+                       set_dest_y(157, info) ),   # [74, "Jidoor East to World Map WoR"],
+
+    # THAMASA
+    1259: lambda info: set_dest_x(251,
+                       set_dest_y(229, info ) ),   # [75, "Thamasa North to World Map WoR"], inaccessible
+    1260: lambda info: set_dest_x(250,
+                       set_dest_y(230, info ) ),   # [75, "Thamasa West to World Map WoR"],
+    1261: lambda info: set_dest_x(251,
+                       set_dest_y(231, info ) ),   # [75, "Thamasa South to World Map WoR"],
+
+
+    # SABIN'S HOUSE WOB
+    360: lambda info: set_dest_y(100, info),  # [10, "Sabin's House North to World Map WoB"],
+    1174: lambda info: set_dest_y(100, info),  # [10, "Sabin's House South to World Map WoB"],
+
+    # SOUTH FIGARO
+    1162: lambda info: set_dest_x(112,
+                       set_dest_y(95, info)),  # [58, "South Figaro West to World Map WoR"],
+    1163: lambda info: set_dest_x(114,
+                       set_dest_y(95, info)),  # [58, "South Figaro East to World Map WoR"],
+    1164: lambda info: set_dest_x(113,
+                       set_dest_y(94, info)),  # [58, "South Figaro North to World Map WoR"],
+
+    # GAU'S DAD'S HOUSE
+    1187: lambda info: set_dest_x(178,
+                       set_dest_y(46, info)),  # [68, "Crazy Old Man's House to World Map WoR"],  # 178, 46
+
+    # MARANDA
+    5238: lambda info: set_dest_x(69,
+                       set_dest_y(185, info)), # [63, "Maranda South to World Map WoR"],
+    5239: lambda info: set_dest_x(69,
+                       set_dest_y(185, info)), # [63, "Maranda East to World Map WoR"],
+
+    # ALBROOK
+    1249: lambda info: set_dest_x(140,
+                       set_dest_y(208, info)),   # [49, "Albrook West to World Map WoR"],
+    1250: lambda info: set_dest_x(140,
+                       set_dest_y(208, info)),   # [49, "Albrook North to World Map WoR"],
+    1251: lambda info: set_dest_x(140,
+                       set_dest_y(208, info)),   # [49, "Albrook Further North to World Map WoR"], not used
+
+    # TZEN
+    1243: lambda info: set_dest_x(129,
+                       set_dest_y(179, info)),   # [51, "Tzen South to World Map WoR"],
+    1244: lambda info: set_dest_x(120,
+                       set_dest_y(150, info)),   # [33, "Tzen South to World Map WoB"],
+
+    # DUNCAN'S HOUSE
+    457:  lambda info: set_dest_x(140,
+                       set_dest_y(19, info)),   #  [79, "Duncan's House Outside North WoR"],
+    1186: lambda info: set_dest_x(140,
+                       set_dest_y(21, info)),   #  [79, "Duncan's House Outside South WoR"],
+
+    # FIGARO CASTLE
+    5156: lambda info: set_dest_x(82,
+                       set_dest_y(86, info)),   #  [1502, "Figaro Castle Outside South to World Map"],
+    5157: lambda info: set_dest_x(83,
+                       set_dest_y(85, info)),   #  [1502, "Figaro Castle Outside East to World Map"],
+    5158: lambda info: set_dest_x(82,
+                       set_dest_y(84, info)),   #  [1502, "Figaro Castle Outside North to World Map"],
+    5159: lambda info: set_dest_x(80,
+                       set_dest_y(85, info)),   #  [1502, "Figaro Castle Outside West to World Map"],
+
+    # DOMA CASTLE
+    5240: lambda info: set_dest_x(172,
+                       set_dest_y(76, info)),   #  [76, "Doma Outside to World Map WoR"],
+
+    # NIKEAH
+    5199: lambda info: set_dest_x(145,
+                       set_dest_y(76, info)),   #[65, "Nikeah West to WOR"],
+    5200: lambda info: set_dest_x(148,
+                       set_dest_y(76, info)),   #[65, "Nikeah East to WOR"],
+
+    # KOHLINGEN
+    1209: lambda info: set_dest_y(40, info),   #  [25, "Kohlingen South to World Map WoB"],
+
+    # OPERA HOUSE
+    658: lambda info: set_dest_y(155, info),   # [40, "Opera House Lobby to World Map"],
+    4658: lambda info: set_dest_x(31,
+                       set_dest_y(184, info)),   # [62, "Opera House Lobby to WoR"],
+
+    # MOBLIZ
+    1192: lambda info: set_dest_y(136, info),   #  [52, "Mobliz East to World Map WoR"],
+
+    # CID's HOUSE
+    1266: lambda info: set_dest_x(77,
+                       set_dest_y(240, info)),   #  [48, "Cid's House East to World Map"],
+    1267: lambda info: set_dest_x(75,
+                       set_dest_y(240, info)),   #   [48, "Cid's House West to World Map"],
+    1268: lambda info: set_dest_x(76,
+                       set_dest_y(239, info)),   #   [48, "Cid's House Northwest to World Map"],
+    1269: lambda info: set_dest_x(76,
+                       set_dest_y(239, info)),   #   [48, "Cid's House North to World Map"],
+    1270: lambda info: set_dest_x(76,
+                       set_dest_y(239, info)),   #   [48, "Cid's House Northeast to World Map"],
+
+    # CRESCENT MOUNTAIN
+    523: lambda info: set_dest_y(149, info),   # [23, "Crescent Mountain to World Map"],
+
+    # COLISEUM GUY's HOUSE
+    1207: lambda info: set_dest_x(32, info),   #   [27, "Coliseum Guy's House West to World Map"],
+
+}
+
+# We could probably do this as:
+# for e in exit_world.keys():
+#   exit_make_explicit[e] = lambda info: set_dest_map(exit_world[e], info)
+exit_make_explicit = {
+    # NARSHE
+    1135: lambda info: set_dest_map(0, info),   # [4, "Narshe To World Map WoB"].  Shorten to fit: set_x( 15, set_size( 28, ... ) )
+    1143: lambda info: set_dest_map(1, info),   #  [67, "Narshe To World Map WoR"],
+
+    # ESPER MOUNTAIN
+    1047: lambda info: set_dest_map(0, info),   #  Esper Mts Return to World Map: explicitly load WoB map & adjust entry point
 
     # SEALED GATE CAVE
     1059: lambda info: set_dest_map(0, info),     # [42, "Imperial Base West to World Map Top Tile"],
@@ -1447,202 +1571,125 @@ exit_data_patch = {
     1228: lambda info: set_dest_map(0, info),    # Vector south exit to world map
 
     # ZOZO
-    1224: lambda info: set_dest_map(0, info), # Zozo WoB.  Shorten exit for exit events: set_y( 42, set_size(5, ...) )
-    5224: lambda info: set_dest_x(44,
-                       set_dest_y(131,
-                       set_dest_map(1, info))),   # Zozo WoR.
+    1224: lambda info: set_dest_map(0, info),   # Zozo WoB.
+    5224: lambda info: set_dest_map(1, info),   # Zozo WoR.
 
     # JIDOOR
-    1213: lambda info: set_dest_x(27,
-                       set_dest_y(131,
-                       set_dest_map(0, info))),   # [28, "Jidoor South to World Map"],
+    1213: lambda info: set_dest_map(0, info),   # [28, "Jidoor South to World Map"],
     1214: lambda info: set_dest_map(0, info),   # [28, "Jidoor West to World Map"],
-    1215: lambda info: set_dest_map(0, info),    # [28, "Jidoor East to World Map"],
-    5213: lambda info: set_dest_x(34,
-                       set_dest_y(157,
-                       set_dest_map(1, info) ) ),   # [73, "Jidoor South to World Map WoR"],
-    5214: lambda info: set_dest_x(33,
-                       set_dest_y(156,
-                       set_dest_map(1, info) ) ),   # [73, "Jidoor West to World Map WoR"],
-    5215: lambda info: set_dest_x(35,
-                       set_dest_y(157,
-                       set_dest_map(1, info) ) ),   # [74, "Jidoor East to World Map WoR"],
+    1215: lambda info: set_dest_map(0, info),   # [28, "Jidoor East to World Map"],
+    5213: lambda info: set_dest_map(1, info),   #  [73, "Jidoor South to World Map WoR"],
+    5214: lambda info: set_dest_map(1, info),   #  [73, "Jidoor West to World Map WoR"],
+    5215: lambda info: set_dest_map(1, info),   #  [74, "Jidoor East to World Map WoR"],
 
     # DARYL'S TOMB.  Adjust interior exits in daryl_tomb.door_rando_mod()
-    #795: lambda info: set_y(info[9]-1, info),  # [797, "Darill's Tomb B2 Water Room Right Door"], move up 1 tile
-    #797: lambda info: set_dest_y(info[2]-2, info),  #  [795, "Darill's Tomb B2 MIAB Hallway to Water Room"],
     1242: lambda info: set_dest_map(1, info),    # [53, "Darill's Tomb Outside to World Map"],
 
     # THAMASA
     1253: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka West to World Map WoB"], inaccessible
     1254: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka West to World Map WoB"],
     1255: lambda info: set_dest_map(0, info),  # [1504, "Thamasa After Kefka South to World Map WoB"],
-    1259: lambda info: set_dest_x(251,
-                       set_dest_y(229,
-                       set_dest_map(1, info) ) ),   # [75, "Thamasa North to World Map WoR"], inaccessible
-    1260: lambda info: set_dest_x(250,
-                       set_dest_y(230,
-                       set_dest_map(1, info) ) ),   # [75, "Thamasa West to World Map WoR"],
-    1261: lambda info: set_dest_x(251,
-                       set_dest_y(231,
-                       set_dest_map(1, info) ) ),   # [75, "Thamasa South to World Map WoR"],
+    1259: lambda info: set_dest_map(1, info),   #  [75, "Thamasa North to World Map WoR"], inaccessible
+    1260: lambda info: set_dest_map(1, info),   # [75, "Thamasa West to World Map WoR"],
+    1261: lambda info: set_dest_map(1, info),   # [75, "Thamasa South to World Map WoR"],
 
     # CAVE ON THE VELDT WOR
     978: lambda info: set_dest_map(1, info),  # [61, "Veldt Cave to World Map"],
 
     # SABIN'S HOUSE WOB
-    360: lambda info: set_dest_y(100,
-                      set_dest_map(0, info)),  # [10, "Sabin's House North to World Map WoB"],
-    1174: lambda info: set_dest_y(100,
-                       set_dest_map(0, info)),  # [10, "Sabin's House South to World Map WoB"],
+    360:  lambda info: set_dest_map(0, info),   #  [10, "Sabin's House North to World Map WoB"],
+    1174: lambda info: set_dest_map(0, info),   #  [10, "Sabin's House South to World Map WoB"],
 
     # SOUTH FIGARO
     1167: lambda info: set_dest_map(0, info),  # [6, "South Figaro West to World Map WoB"],
     1168: lambda info: set_dest_map(0, info),  # [6, "South Figaro East to World Map WoB"],
     1169: lambda info: set_dest_map(0, info),   # [6, "South Figaro North to World Map WoB"],
-    1162: lambda info: set_dest_x(112,
-                       set_dest_y(95,
-                       set_dest_map(1, info))),  # [58, "South Figaro West to World Map WoR"],
-    1163: lambda info: set_dest_x(114,
-                       set_dest_y(95,
-                       set_dest_map(1, info))),  # [58, "South Figaro East to World Map WoR"],
-    1164: lambda info: set_dest_x(113,
-                       set_dest_y(94,
-                       set_dest_map(1, info))),  # [58, "South Figaro North to World Map WoR"],
+    1162: lambda info: set_dest_map(1, info),   # [58, "South Figaro West to World Map WoR"],
+    1163: lambda info: set_dest_map(1, info),   #  [58, "South Figaro East to World Map WoR"],
+    1164: lambda info: set_dest_map(1, info),   #  [58, "South Figaro North to World Map WoR"],
 
     # GAU'S DAD'S HOUSE
     1183: lambda info: set_dest_map(0, info),   # [14, "Crazy Old Man's House to World Map WoB"],
-    1187: lambda info: set_dest_x(178,
-                       set_dest_y(46,
-                       set_dest_map(1, info))),  # [68, "Crazy Old Man's House to World Map WoR"],  # 178, 46
+    1187: lambda info: set_dest_map(1, info),   # [68, "Crazy Old Man's House to World Map WoR"],  # 178, 46
 
     # MARANDA
     1238: lambda info: set_dest_map(0, info), # [31, "Maranda South to World Map"],
     1239: lambda info: set_dest_map(0, info), # [31, "Maranda East to World Map"],
-    5238: lambda info: set_dest_x(69,
-                       set_dest_y(185,
-                       set_dest_map(1, info))), # [63, "Maranda South to World Map WoR"],
-    5239: lambda info: set_dest_x(69,
-                       set_dest_y(185,
-                       set_dest_map(1, info))), # [63, "Maranda East to World Map WoR"],
+    5238: lambda info: set_dest_map(1, info),   #  [63, "Maranda South to World Map WoR"],
+    5239: lambda info: set_dest_map(1, info),   #  [63, "Maranda East to World Map WoR"],
 
     # ALBROOK
     1245: lambda info: set_dest_map(0, info),   # [35, "Albrook West to World Map WoB"],
     1246: lambda info: set_dest_map(0, info),   # [35, "Albrook North to World Map WoB"],
     1247: lambda info: set_dest_map(0, info),   # [35, "Albrook Further North to World Map WoB"], not used
-    1249: lambda info: set_dest_x(140,
-                       set_dest_y(208,
-                       set_dest_map(1, info))),   # [49, "Albrook West to World Map WoR"],
-    1250: lambda info: set_dest_x(140,
-                       set_dest_y(208,
-                       set_dest_map(1, info))),   # [49, "Albrook North to World Map WoR"],
-    1251: lambda info: set_dest_x(140,
-                       set_dest_y(208,
-                       set_dest_map(1, info))),   # [49, "Albrook Further North to World Map WoR"], not used
+    1249: lambda info: set_dest_map(1, info),   # [49, "Albrook West to World Map WoR"],
+    1250: lambda info: set_dest_map(1, info),   # [49, "Albrook North to World Map WoR"],
+    1251: lambda info: set_dest_map(1, info),   # [49, "Albrook Further North to World Map WoR"], not used
 
     # TZEN
-    1243: lambda info: set_dest_x(129,
-                       set_dest_y(179,
-                       set_dest_map(1, info))),   # [51, "Tzen South to World Map WoR"],
-    1244: lambda info: set_dest_x(120,
-                       set_dest_y(150,
-                       set_dest_map(0, info))),   # [33, "Tzen South to World Map WoB"],
+    1243: lambda info: set_dest_map(1, info),   # [51, "Tzen South to World Map WoR"],
+    1244: lambda info: set_dest_map(0, info),   # [33, "Tzen South to World Map WoB"],
 
     # FANATICS TOWER
     1262: lambda info: set_dest_map(1, info),   # [69, "Fanatic's Tower to World Map"],
 
     # DUNCAN'S HOUSE
-    457:  lambda info: set_dest_x(140,
-                       set_dest_y(19,
-                       set_dest_map(1, info))),   #  [79, "Duncan's House Outside North WoR"],
-    1186: lambda info: set_dest_x(140,
-                       set_dest_y(21,
-                       set_dest_map(1, info))),   #  [79, "Duncan's House Outside South WoR"],
+    457:  lambda info: set_dest_map(1, info),   #  [79, "Duncan's House Outside North WoR"],
+    1186: lambda info: set_dest_map(1, info),   #  [79, "Duncan's House Outside South WoR"],
 
     # FIGARO CASTLE
     1156: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside South to World Map"],
     1157: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside East to World Map"],
     1158: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside North to World Map"],
     1159: lambda info: set_dest_map(0, info),   #  [1502, "Figaro Castle Outside West to World Map"],
-    5156: lambda info: set_dest_x(82,
-                       set_dest_y(86,
-                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside South to World Map"],
-    5157: lambda info: set_dest_x(83,
-                       set_dest_y(85,
-                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside East to World Map"],
-    5158: lambda info: set_dest_x(82,
-                       set_dest_y(84,
-                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside North to World Map"],
-    5159: lambda info: set_dest_x(80,
-                       set_dest_y(85,
-                       set_dest_map(1, info))),   #  [1502, "Figaro Castle Outside West to World Map"],
+    5156: lambda info: set_dest_map(1, info),   #  [1502, "Figaro Castle Outside South to World Map"],
+    5157: lambda info: set_dest_map(1, info),   #  [1502, "Figaro Castle Outside East to World Map"],
+    5158: lambda info: set_dest_map(1, info),   #  [1502, "Figaro Castle Outside North to World Map"],
+    5159: lambda info: set_dest_map(1, info),   #  [1502, "Figaro Castle Outside West to World Map"],
 
     # DOMA CASTLE
     1240: lambda info: set_dest_map(0, info),   #  [19, "Doma Outside to World Map"],  # Edit: 1547 in WC (event)
-    5240: lambda info: set_dest_x(172,
-                       set_dest_y(76,
-                       set_dest_map(1, info))),   #  [76, "Doma Outside to World Map WoR"],
+    5240: lambda info: set_dest_map(1, info),   #  [76, "Doma Outside to World Map WoR"],
 
     # NIKEAH
     1199: lambda info: set_dest_map(0, info),   #   [16, "Nikeah West to World Map"],
     1200: lambda info: set_dest_map(0, info),   #   [16, "Nikeah East to World Map"],
-    5199: lambda info: set_dest_x(145,
-                       set_dest_y(76,
-                       set_dest_map(1, info))),   #[65, "Nikeah West to WOR"],
-    5200: lambda info: set_dest_x(148,
-                       set_dest_y(76,
-                       set_dest_map(1, info))),   #[65, "Nikeah East to WOR"],
+    5199: lambda info: set_dest_map(1, info),   #   [65, "Nikeah West to WOR"],
+    5200: lambda info: set_dest_map(1, info),   #   [65, "Nikeah East to WOR"],
 
     # KOHLINGEN
-    1209: lambda info: set_dest_y(40,
-                       set_dest_map(0, info)),   #  [25, "Kohlingen South to World Map WoB"],
+    1209: lambda info: set_dest_map(0, info),   #  [25, "Kohlingen South to World Map WoB"],
     1210: lambda info: set_dest_map(0, info),   #  [25, "Kohlingen West to World Map WoB"],
     1211: lambda info: set_dest_map(1, info),   #  [59, "Kohlingen South to World Map WoR"],
     1212: lambda info: set_dest_map(1, info),   #  [59, "Kohlingen West to World Map WoR"],
 
     # OPERA HOUSE
-    658: lambda info: set_dest_y(155,
-                      set_dest_map(0, info)),   # [40, "Opera House Lobby to World Map"],
-    4658: lambda info: set_dest_x(31,
-                       set_dest_y(184,
-                       set_dest_map(1, info))),   # [62, "Opera House Lobby to WoR"],
+    658: lambda info: set_dest_map(0, info),   # [40, "Opera House Lobby to World Map"],
+    4658: lambda info: set_dest_map(1, info),   # [62, "Opera House Lobby to WoR"],
 
     # MOBLIZ
     1190: lambda info: set_dest_map(0, info),   # [26, "Mobliz South to World Map WoB"],
     1191: lambda info: set_dest_map(0, info),   #  [26, "Mobliz East to World Map WoB"],
-    1192: lambda info: set_dest_y(136,
-                       set_dest_map(1, info)),   #  [52, "Mobliz East to World Map WoR"],
+    1192: lambda info: set_dest_map(1, info),   #  [52, "Mobliz East to World Map WoR"],
     1193: lambda info: set_dest_map(1, info),   #  [52, "Mobliz South to World Map WoR"],
 
     # COLISEUM
     1280: lambda info: set_dest_map(1, info),   # [56,   "Coliseum to World Map"],
 
     # CID's HOUSE
-    1266: lambda info: set_dest_x(77,
-                       set_dest_y(240,
-                       set_dest_map(1, info))),   #  [48, "Cid's House East to World Map"],
-    1267: lambda info: set_dest_x(75,
-                       set_dest_y(240,
-                       set_dest_map(1, info))),   #   [48, "Cid's House West to World Map"],
-    1268: lambda info: set_dest_x(76,
-                       set_dest_y(239,
-                       set_dest_map(1, info))),   #   [48, "Cid's House Northwest to World Map"],
-    1269: lambda info: set_dest_x(76,
-                       set_dest_y(239,
-                       set_dest_map(1, info))),   #   [48, "Cid's House North to World Map"],
-    1270: lambda info: set_dest_x(76,
-                       set_dest_y(239,
-                       set_dest_map(1, info))),   #   [48, "Cid's House Northeast to World Map"],
+    1266: lambda info: set_dest_map(1, info),   #  [48, "Cid's House East to World Map"],
+    1267: lambda info: set_dest_map(1, info),   #   [48, "Cid's House West to World Map"],
+    1268: lambda info: set_dest_map(1, info),   #   [48, "Cid's House Northwest to World Map"],
+    1269: lambda info: set_dest_map(1, info),   #   [48, "Cid's House North to World Map"],
+    1270: lambda info: set_dest_map(1, info),   #   [48, "Cid's House Northeast to World Map"],
 
     # CRESCENT MOUNTAIN
-    523: lambda info: set_dest_y(149,
-                      set_dest_map(0, info)),   # [23, "Crescent Mountain to World Map"],
+    523: lambda info: set_dest_map(0, info),   # [23, "Crescent Mountain to World Map"],
 
     # COLISEUM GUY's HOUSE
     1205: lambda info: set_dest_map(0, info),   #   [27, "Coliseum Guy's House South to World Map"],
     1206: lambda info: set_dest_map(0, info),   #   [27, "Coliseum Guy's House East to World Map"],
-    1207: lambda info: set_dest_x(32,
-                       set_dest_map(0, info)),   #   [27, "Coliseum Guy's House West to World Map"],
+    1207: lambda info: set_dest_map(0, info),   #   [27, "Coliseum Guy's House West to World Map"],
 
 }
 
