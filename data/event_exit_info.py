@@ -317,6 +317,8 @@ exit_event_patch = {
     862: lambda src, src_end: [src, src_end[:5] + remove_mtek_armor(bytes=True) + src_end[5:]],
 }
 
+from event.phantom_train import *
+phantom_train_initiate = PhantomTrain.initiation_script
 
 exit_door_patch = {
     # For use with maps.create_exit_event() and maps.shared_map_exit_event()
@@ -338,6 +340,9 @@ exit_door_patch = {
     861: remove_mtek_armor(),
     863: remove_mtek_armor(),
     864: remove_mtek_armor(),
+
+    # Phantom Train: initiate PT event if Sabin is recruited
+    465: phantom_train_initiate()
 
 }
 

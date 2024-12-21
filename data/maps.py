@@ -27,7 +27,8 @@ import instruction.field.entity as field_entity
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
     multi_events, entrance_door_patch, exit_door_patch, require_event_bit
 
-from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, event_door_connection_data
+from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, \
+    event_door_connection_data, map_shuffle_airship_warp
 from data.rooms import room_data, exit_world, shared_exits
 
 from data.parse import delete_nops, branch_parser, get_branch_code
@@ -482,8 +483,8 @@ class Maps():
                 that_room = [r for r in room_data.keys() if self.door_map[m + 4000] in room_data[r][0]]
                 self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
 
-            # Make all used exits explicit
-            self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=True)
+            # Patch all used exits
+            self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=False)
 
 
     def doorRandoOverride(self, newmap):
@@ -797,7 +798,8 @@ class Maps():
         ]
         if self.args.map_shuffle and not self.args.door_randomize:
             # Don't summon the airship by default
-            require_event_flags[4] = False
+            if d not in map_shuffle_airship_warp:
+                require_event_flags[4] = False
 
         if require_event_flags.count(True) > 0:
             # Need to use different commands for world maps vs field maps.
@@ -862,7 +864,7 @@ class Maps():
                     elif d_ref_pairID >= 4000:  # Do we actually need this?
                         # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
                         conn_data = self.exits.exit_original_data[d_ref_pairID - 4000]
-                    src = SummonAirship(conn_data[0], conn_data[1], conn_data[2]) + src
+                    src = SummonAirship(that_world, conn_data[1], conn_data[2]) + src
 
                 # (2) Add call to entrance script, if any
                 if require_event_flags[3]:
@@ -1052,7 +1054,8 @@ class Maps():
 
         if self.args.map_shuffle and not self.args.door_randomize:
             # Don't airship warp if only doing map shuffle
-            require_event_flags[4] = False
+            if d not in map_shuffle_airship_warp:
+                require_event_flags[4] = False
 
         #if self.doors.verbose:
         #    print('Writing shared event at ' + str(d) + ' (ref = ' + str(d_ref) + ')')
@@ -1083,13 +1086,13 @@ class Maps():
             conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
 
         if require_event_flags[4]:
-            wor_src = SummonAirship(conn_data[0], conn_data[1], conn_data[2])
+            wor_src = SummonAirship(that_world, conn_data[1], conn_data[2])
             #print(d, d_ref, d_ref_partner, conn_data)
         else:
             wor_src = [field.FadeLoadMap(conn_data[0], conn_data[6], True, conn_data[1], conn_data[2], fade_in=True, entrance_event=True)]
-            if conn_data[0] in [0, 1, 2]:
-                # Include End command when loading world maps
-                wor_src += [field.End()]
+            if conn_data[0] in [0, 1, 2, 511]:
+                # Include End command when loading world maps.  Parent Map (511) should always be a world map
+                wor_src += [world.End()]
             else:
                 wor_src += [field.Return()]
 

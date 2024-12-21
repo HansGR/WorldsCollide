@@ -1,6 +1,7 @@
 from event.event import *
 from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class SouthFigaroCaveWOB(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -34,21 +35,23 @@ class SouthFigaroCaveWOB(Event):
             if south_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[south_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_south = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_south = [exit_world[conn_pair]] + \
+                                     self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
             # modify airship position: north
             north_id = 1161
             if north_id in self.maps.door_map.keys():
                 conn_north = self.maps.door_map[north_id]
                 conn_pair = exit_data[conn_north][0]  # original connecting exit
-                self.airship_north = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_north = [exit_world[conn_pair]] + \
+                                     self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 #print('Updated South Figaro Cave airship teleports: ', self.airship_south, self.airship_north)
 
         self.cleanup_mod()
         self.requirement_mod()
         if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
             self.door_rando_mod()
-        if not self.DOOR_RANDOMIZE:
+        if not self.DOOR_RANDOMIZE and not self.MAP_SHUFFLE:
             self.noises_mod()
             self.entrance_exit_mod()
         self.tunnel_armor_battle_mod()
@@ -166,21 +169,11 @@ class SouthFigaroCaveWOB(Event):
                               x = self.airship_south[1], y = self.airship_south[2], fade_in = False, airship = True),
             vehicle.SetPosition(self.airship_south[1], self.airship_south[2]),
             vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            vehicle.LoadMap(self.airship_south[0], direction.DOWN, default_music=True,
+                            x=self.airship_south[1], y=self.airship_south[2]),
+            world.Turn(direction.DOWN),
+            world.End(),
         ]
-        if self.MAP_SHUFFLE:
-            dest = self.maps.exits.exit_original_data[263][:3]
-            src += [
-                vehicle.LoadMap(dest[0], direction.DOWN, default_music=True, fade_in=True,
-                                x=dest[1], y=dest[2]),
-                field.FadeInScreen(),
-                field.Return(),
-            ]
-        else:
-            src += [
-                vehicle.LoadMap(0x00, direction.DOWN, default_music=True, x=75, y=103),
-                world.Turn(direction.DOWN),
-                world.End(),
-            ]
         space = Write(Bank.CA, src, "figaro cave move airship to town side")
         move_airship_to_town_side = space.start_address
 
@@ -192,11 +185,11 @@ class SouthFigaroCaveWOB(Event):
         new_event.event_address = move_airship_to_castle_side - EVENT_CODE_START
         self.maps.add_event(0x046, new_event)
 
-        if self.MAP_SHUFFLE:
-            # For map shuffle, do the vehicle move going into the antechamber, rather than going outside.
-            exit_to_replace = [0x045, 55, 57]
-        else:
-            exit_to_replace = [0x045, 16, 43]
+        #if self.MAP_SHUFFLE:
+        #    # For map shuffle, do the vehicle move going into the antechamber, rather than going outside.
+        #    exit_to_replace = [0x045, 55, 57]
+        #else:
+        #    exit_to_replace = [0x045, 16, 43]
 
         self.maps.delete_short_exit(exit_to_replace[0], exit_to_replace[1], exit_to_replace[2])
         new_event = MapEvent()
@@ -295,8 +288,7 @@ class SouthFigaroCaveWOB(Event):
 
     def door_rando_mod(self):
         # Remove Locke's dialog
-        if self.DOOR_RANDOMIZE:
-            space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
+        space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
 
         # (1a) Change the entry event to load the switchyard location
         event_id = 1506  # ID of SF Cave south entrance

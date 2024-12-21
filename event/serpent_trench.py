@@ -1,5 +1,6 @@
 from event.event import *
 from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class SerpentTrench(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -28,14 +29,16 @@ class SerpentTrench(Event):
             if nikeah_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[nikeah_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_nikeah = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_nikeah = [exit_world[conn_pair]] + \
+                                      self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
             # modify airship position: south figaro
             sf_id = 1167
             if sf_id in self.maps.door_map.keys():
                 conn_north = self.maps.door_map[sf_id]
                 conn_pair = exit_data[conn_north][0]  # original connecting exit
-                self.airship_sf = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_sf = [exit_world[conn_pair]] + \
+                                  self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
             #print('Updated Serpent Trench airship teleports: ', self.airship_nikeah, self.airship_sf)
 
@@ -188,7 +191,7 @@ class SerpentTrench(Event):
             # CA/8C05: 6C    Set parent map to $0000 (World of Balance), parent coordinates to (117, 0), facing left
             space = Reserve(0xa8c05, 0xa8c0a, "serpent trench to nikeah parent map update")
             space.write(
-                field.SetParentMap(map_id=self.airship_nikeah[0], x=self.airship_nikeah[1], y=self.airship_nikeah[2],
+                field.SetParentMap(map_id=self.airship_nikeah[0], x=self.airship_nikeah[1], y=self.airship_nikeah[2]-1,
                                    direction=direction.DOWN)
             )
 
@@ -196,7 +199,7 @@ class SerpentTrench(Event):
             # CA/8D1B: 6C    Set parent map to $0000 (World of Balance), parent coordinates to (84, 0), facing down
             space = Reserve(0xa8d1b, 0xa8d20, "nikeah ship to south figaro parent map update")
             space.write(
-                field.SetParentMap(map_id=self.airship_sf[0], x=self.airship_sf[1], y=self.airship_sf[2],
+                field.SetParentMap(map_id=self.airship_sf[0], x=self.airship_sf[1], y=self.airship_sf[2]-1,
                                    direction=direction.DOWN)
             )
 

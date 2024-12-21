@@ -126,49 +126,50 @@ class MtKolts(Event):
 
             self.maps.set_entrance_event(0x64, block_back_entrance - EVENT_CODE_START)
 
-            # move the airship, have it follow player on both sides of mt kolts
-            # NOTE: cannot use entrance events to load a map (i.e. the world map to move airship)
-            #       instead, replace exits leading to entrance/exit cliffs with events to move it
-            src = [
-                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                field.FadeLoadMap(self.airship_south[0], direction.DOWN, default_music = False,
-                                  x = self.airship_south[1], y = self.airship_south[2], fade_in = False, airship = True),
-                vehicle.SetPosition(self.airship_south[1], y = self.airship_south[2]),
-                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x5f, direction.LEFT, default_music = True, x = 10, y = 26),
-                field.FadeInScreen(),
-                field.Return(),
-            ]
-            space = Write(Bank.CA, src, "mt kolts entrance move airship")
-            entrance_move_airship = space.start_address
+            if not self.MAP_SHUFFLE:
+                # move the airship, have it follow player on both sides of mt kolts
+                # NOTE: cannot use entrance events to load a map (i.e. the world map to move airship)
+                #       instead, replace exits leading to entrance/exit cliffs with events to move it
+                src = [
+                    field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    field.FadeLoadMap(self.airship_south[0], direction.DOWN, default_music = False,
+                                      x = self.airship_south[1], y = self.airship_south[2], fade_in = False, airship = True),
+                    vehicle.SetPosition(self.airship_south[1], y = self.airship_south[2]),
+                    vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    vehicle.LoadMap(0x5f, direction.LEFT, default_music = True, x = 10, y = 26),
+                    field.FadeInScreen(),
+                    field.Return(),
+                ]
+                space = Write(Bank.CA, src, "mt kolts entrance move airship")
+                entrance_move_airship = space.start_address
 
-            src = [
-                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                field.FadeLoadMap(self.airship_north[0], direction.DOWN, default_music = False,
-                                  x = self.airship_north[1], y = self.airship_north[2], fade_in = False, airship = True),
-                vehicle.SetPosition(self.airship_north[1], y = self.airship_north[2]),
-                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x65, direction.DOWN, default_music = True, x = 10, y = 49),
-                field.FadeInScreen(),
-                field.Return(),
-            ]
-            space = Write(Bank.CA, src, "mt kolts exit move airship")
-            exit_move_airship = space.start_address
+                src = [
+                    field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    field.FadeLoadMap(self.airship_north[0], direction.DOWN, default_music = False,
+                                      x = self.airship_north[1], y = self.airship_north[2], fade_in = False, airship = True),
+                    vehicle.SetPosition(self.airship_north[1], y = self.airship_north[2]),
+                    vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    vehicle.LoadMap(0x65, direction.DOWN, default_music = True, x = 10, y = 49),
+                    field.FadeInScreen(),
+                    field.Return(),
+                ]
+                space = Write(Bank.CA, src, "mt kolts exit move airship")
+                exit_move_airship = space.start_address
 
-            from data.map_event import MapEvent
-            self.maps.delete_short_exit(0x64, 7, 13)
-            new_event = MapEvent()
-            new_event.x = 7
-            new_event.y = 13
-            new_event.event_address = entrance_move_airship - EVENT_CODE_START
-            self.maps.add_event(0x64, new_event)
+                from data.map_event import MapEvent
+                self.maps.delete_short_exit(0x64, 7, 13)
+                new_event = MapEvent()
+                new_event.x = 7
+                new_event.y = 13
+                new_event.event_address = entrance_move_airship - EVENT_CODE_START
+                self.maps.add_event(0x64, new_event)
 
-            self.maps.delete_short_exit(0x64, 17, 59)
-            new_event = MapEvent()
-            new_event.x = 17
-            new_event.y = 59
-            new_event.event_address = exit_move_airship - EVENT_CODE_START
-            self.maps.add_event(0x64, new_event)
+                self.maps.delete_short_exit(0x64, 17, 59)
+                new_event = MapEvent()
+                new_event.x = 17
+                new_event.y = 59
+                new_event.event_address = exit_move_airship - EVENT_CODE_START
+                self.maps.add_event(0x64, new_event)
 
     def vargas_trigger_mod(self):
         # Vargas appears on the map 0x62 via 2 tile triggers. With B-Dash, players can outpace him leading to soft-locks.

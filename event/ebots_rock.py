@@ -1,5 +1,6 @@
 from event.event import *
 from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class EbotsRock(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -33,7 +34,7 @@ class EbotsRock(Event):
             if exit_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[exit_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y].  It's OK if this one returns to parent map.
                 # print('Updated Ebots Rock exit warp: ', self.exit_loc)
 
             # modify airship warp position
@@ -41,7 +42,7 @@ class EbotsRock(Event):
             if thamasa_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_thamasa = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_thamasa = [exit_world[conn_pair]] + self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 #print('Updated Ebots Rock airship teleport: ', self.airship_thamasa)
 
         self.find_gungho_hurt_mod()
@@ -146,10 +147,16 @@ class EbotsRock(Event):
             field.DisableEntityCollision(field_entity.PARTY0),
             field.EntityAct(field_entity.PARTY0, True,
                 field_entity.SetSpriteLayer(2)
-            ),
+            )
+        )
+        if self.MAP_SHUFFLE:
+            space.write(
+                field.SetParentMap(map_id=self.airship_thamasa[0], x=self.airship_thamasa[1],
+                                   y=self.airship_thamasa[2] - 1, direction=direction.DOWN)
+            )
+        space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
-
         # change strago npc to party
         space = Reserve(0xb7316, 0xb7316, "ebots rock dinner table strago")
         space.write(field_entity.PARTY0)

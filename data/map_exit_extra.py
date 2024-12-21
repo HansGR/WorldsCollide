@@ -1325,7 +1325,7 @@ exit_data = {
     1502: [1156, 'Figaro Castle WoB'],
     1503: [1156, 'Figaro Castle WoB (kohlingen)'],  # Hmm.....
     1504: [1255, 'Thamasa WoB'],  # WC sets LEO_BURIED_THAMASA, so game loads map 0x154 (the first thamasa map)
-    1505: [1228, "World Map entrance to Vector"],
+    1505: [1228, "Vector WoB"],
     1506: [269, 'Cave to South Figaro South Entrance WoB'],
     1507: [5156, 'Figaro Castle WoR'],
     1508: [5156, 'Figaro Castle WoR (kohlingen)'],  # HMM.....
@@ -1780,3 +1780,13 @@ doors_WOB_WOR = {
     1155: 1151,
     180: 158
 }
+
+# for some exits, force airship warp in map shuffle.
+map_shuffle_airship_warp = [
+    1178,  # Mt Kolts North
+    1175,  # Mt Kolts South
+	1161,  # S Figaro Cave N
+    269,   # S Figaro Cave S
+	1188,  # Phantom Forest N
+    465    # Phantom Forest S
+]

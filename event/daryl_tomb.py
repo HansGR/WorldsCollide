@@ -1,6 +1,7 @@
 from event.event import *
 from event.switchyard import *
 from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class DarylTomb(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -28,7 +29,8 @@ class DarylTomb(Event):
             if south_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[south_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.exit_loc = [exit_world[conn_pair]] + \
+                                self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 #print('Updated Daryl Cave quick exit: ', self.exit_loc)
 
         self.entrance_mod()

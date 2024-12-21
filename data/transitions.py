@@ -192,7 +192,7 @@ class Transitions:
             if t.exit.do_update_parent_map:
                 t.patches[6] = 'update'
                 this_dir = t.exit.partner_destination[3]
-                bitsrc = [field.SetParentMap(map_id=t.exit.partner_destination[0],
+                bitsrc = [field.SetParentMap(map_id=t.exit.world,
                                              x=t.exit.partner_destination[1] + direction.xy_shift_parent_map(this_dir)[0],
                                              y=t.exit.partner_destination[2] + direction.xy_shift_parent_map(this_dir)[1],
                                              direction=this_dir)]
@@ -433,7 +433,11 @@ class EventExit:
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
             self.entr_code = [partner_data[0] % 0x100,
                               (partner_data[0] // 0x100) + (partner_data[6] << 4),
-                              partner_data[1], partner_data[2], 0x80, 0xfe]
+                              partner_data[1], partner_data[2], 0x80]
+            if self.location[0] < 2:
+                self.entr_code += [0xff]  # world.End()
+            else:
+                self.entr_code += [0xfe]  # field.Return()
 
             # if ID in entrance_door_patch.keys():
             #     # This door additionally requires code to be executed after the load command

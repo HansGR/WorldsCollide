@@ -1,5 +1,6 @@
 from event.event import *
 from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class VeldtCaveWOR(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -35,7 +36,7 @@ class VeldtCaveWOR(Event):
             if thamasa_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_thamasa = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_thamasa = [exit_world[conn_pair]] + self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 #print('Updated Veldt Cave airship teleport: ', self.airship_thamasa)
 
         self.dialog_mod()
@@ -161,8 +162,13 @@ class VeldtCaveWOR(Event):
                               y=self.airship_thamasa[2], fade_in=False, airship=True),
                 vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
-
+                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True)
+            ]
+            if self.MAP_SHUFFLE:
+                # Explicitly set the parent map.  Otherwise the placement is weird...
+                src += [field.SetParentMap(map_id=self.airship_thamasa[0], x=self.airship_thamasa[1],
+                                           y=self.airship_thamasa[2]-1, direction=direction.DOWN)]
+            src += [
                 # make interceptor only appear until you leave the screen
                 field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
 
@@ -172,6 +178,7 @@ class VeldtCaveWOR(Event):
                 field.Return(),
             ]
             space.write(src)
+            print([a.__str__() for a in src])
 
     def character_mod(self, character):
         self.shadow_npc.sprite = character

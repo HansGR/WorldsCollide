@@ -1,6 +1,7 @@
 from event.event import *
 from event.switchyard import *
 from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class PhantomTrain(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -34,7 +35,8 @@ class PhantomTrain(Event):
             if exit_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[exit_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y]
+                self.airship_loc = [exit_world[conn_pair]] + \
+                                   self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 #print('Updated Phantom Train airship exit: ', self.airship_loc)
 
         self._load_world_map()
@@ -633,3 +635,13 @@ class PhantomTrain(Event):
             field.Branch(pt_check.start_address),
         ])
 
+    @staticmethod
+    def initiation_script():
+        # self-contained code to be called in door rando when trying to use Phantom Forest south exit
+        # to be used in event_exit_info.entrance_door_patch()
+
+        # Since this event happens at a fixed location in the event script, let's just call that.
+        src = [
+            field.Branch(0xba3c4)
+        ]
+        return src

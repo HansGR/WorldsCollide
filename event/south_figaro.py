@@ -1,6 +1,12 @@
 from event.event import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class SouthFigaro(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle
+        
     def name(self):
         return "South Figaro"
 
@@ -28,7 +34,7 @@ class SouthFigaro(Event):
         self.celes_npc_id = 0x13
         self.celes_npc = self.maps.get_npc(0x053, self.celes_npc_id)
         self.celes_npc.unknown1 = 0 # this was set to 1 and prevented animating character in entrance event
-
+        
         # delete underground exit map event
         self.maps.delete_event(0x56, 52, 29)
 
@@ -41,6 +47,17 @@ class SouthFigaro(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
+        self.airship_loc = [0x01, 113, 96]
+        if self.MAP_SHUFFLE:
+            # modify airship warp position
+            sf_id = 1163
+            if sf_id in self.maps.door_map.keys():
+                conn_id = self.maps.door_map[sf_id]  # connecting exit south
+                conn_pair = exit_data[conn_id][0]  # original connecting exit
+                self.airship_loc = [exit_world[conn_pair]] + \
+                                   self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+                # print('Updated SF boat airship teleport: ', self.airship_loc)
+                
         self.airship_follow_boat_mod()
 
         self.log_reward(self.reward)
@@ -130,12 +147,12 @@ class SouthFigaro(Event):
         space = Reserve(0xa92d8, 0xa931b, "south figaro wor crimson robbers exit boat after arriving", field.NOP())
         space.write(
             vehicle.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x01, direction.DOWN, default_music = False,
-                            x = 113, y = 96, fade_in = False, airship = True),
-            vehicle.SetPosition(113, 96),
+            vehicle.LoadMap(self.airship_loc[0], direction.DOWN, default_music = False,
+                            x = self.airship_loc[1], y = self.airship_loc[2], fade_in = False, airship = True),
+            vehicle.SetPosition(self.airship_loc[1], self.airship_loc[2]),
             vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             vehicle.FadeLoadMap(0x5b, direction.LEFT, default_music = True,
                                 x = 12, y = 11, fade_in = True, entrance_event = True),
-            field.SetParentMap(0x01, direction.DOWN, 113, 95),
+            field.SetParentMap(self.airship_loc[0], direction.DOWN, x=self.airship_loc[1], y=self.airship_loc[2]-1),
             field.Return(),
         )
