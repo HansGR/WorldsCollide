@@ -178,7 +178,7 @@ class VeldtCaveWOR(Event):
                 field.Return(),
             ]
             space.write(src)
-            print([a.__str__() for a in src])
+            # print([a.__str__() for a in src])
 
     def character_mod(self, character):
         self.shadow_npc.sprite = character

@@ -57,7 +57,7 @@ def GoToSwitchyard(event_id, map=''):
         #print('*** ', event_id , ': ', [f.__call__([]) for f in src])
     elif map == 'world':
         src = [
-            world.FadeScreen(),
+            # world.FadeScreen(),
             world.LoadMap(SWITCHYARD_MAP, direction=direction.UP, default_music=False,
                           x=sx, y=sy, fade_in=False, entrance_event=False),
             field.Return()
