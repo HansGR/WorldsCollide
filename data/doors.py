@@ -1260,46 +1260,47 @@ class Doors():
     #     return map
 
     def print(self):
-        from log import SECTION_WIDTH, section, format_option
-        lcolumn = []
+        if self.args.spoiler_log:
+            from log import SECTION_WIDTH, section, format_option
+            lcolumn = []
 
-        # Construct door descriptions
-        from data.event_exit_info import event_exit_info
-        door_descr = {}
-        for mmm in self.map:
-            for m in mmm:
-                for d in m:
-                    if d in exit_data.keys():
-                        door_descr[d] = exit_data[d][1]
-                    elif d in event_exit_info.keys():
-                        door_descr[d] = event_exit_info[d][4]
-                    elif d-1000 in event_exit_info.keys():
-                        door_descr[d] = event_exit_info[d-1000][4] + 'DESTINATION'
-                    else:
-                        door_descr[d] = 'UNKNOWN'
+            # Construct door descriptions
+            from data.event_exit_info import event_exit_info
+            door_descr = {}
+            for mmm in self.map:
+                for m in mmm:
+                    for d in m:
+                        if d in exit_data.keys():
+                            door_descr[d] = exit_data[d][1]
+                        elif d in event_exit_info.keys():
+                            door_descr[d] = event_exit_info[d][4]
+                        elif d-1000 in event_exit_info.keys():
+                            door_descr[d] = event_exit_info[d-1000][4] + 'DESTINATION'
+                        else:
+                            door_descr[d] = 'UNKNOWN'
 
-        # Print state of the Doors object
-        # for a in range(len(self.rooms)):
-        #     lcolumn.append('Area' + str(a) + ':')
-        #     lcolumn.append('Doors:')
-        #     for d in self.doors[a]:
-        #         lcolumn.append(str(d) + ': Room = ' + str(exit_room[d]) + '. ' + str(door_descr[d]) )
-        #     lcolumn.append('Rooms:')
-        #     for r in self.rooms[a]:
-        #         lcolumn.append(str(r) + ': door count = ' + str(self.room_counts[r]) + '\n\t\tdoors: ' + str(
-        #             self.room_doors[r][0]) +
-        #                        'one-way exits: ' + str(self.room_doors[r][1]) + '\n\t\t one-way entrances: ' + str(
-        #             self.room_doors[r][2]))
-        lcolumn.append('Forced connections:')
-        for d in self.forcing.keys():
-            lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
-        if len(self.map) > 0:
-            lcolumn.append('Map:')
-            for m in self.map[0]:
-                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(door_descr[m[0]]) + ' --> ' + str(
-                    door_descr[m[1]]) + ')')
-            for m in self.map[1]:
-                lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(door_descr[m[0]]) + ' --> ' + str(
-                    door_descr[m[1]]) + ')')
+            # Print state of the Doors object
+            # for a in range(len(self.rooms)):
+            #     lcolumn.append('Area' + str(a) + ':')
+            #     lcolumn.append('Doors:')
+            #     for d in self.doors[a]:
+            #         lcolumn.append(str(d) + ': Room = ' + str(exit_room[d]) + '. ' + str(door_descr[d]) )
+            #     lcolumn.append('Rooms:')
+            #     for r in self.rooms[a]:
+            #         lcolumn.append(str(r) + ': door count = ' + str(self.room_counts[r]) + '\n\t\tdoors: ' + str(
+            #             self.room_doors[r][0]) +
+            #                        'one-way exits: ' + str(self.room_doors[r][1]) + '\n\t\t one-way entrances: ' + str(
+            #             self.room_doors[r][2]))
+            lcolumn.append('Forced connections:')
+            for d in self.forcing.keys():
+                lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
+            if len(self.map) > 0:
+                lcolumn.append('Map:')
+                for m in self.map[0]:
+                    lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(door_descr[m[0]]) + ' --> ' + str(
+                        door_descr[m[1]]) + ')')
+                for m in self.map[1]:
+                    lcolumn.append(str(m[0]) + ' --> ' + str(m[1]) + '(' + str(door_descr[m[0]]) + ' --> ' + str(
+                        door_descr[m[1]]) + ')')
 
-        section("Door Rando: ", lcolumn, [])
+            section("Door Rando: ", lcolumn, [])
