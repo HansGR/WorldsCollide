@@ -1,5 +1,7 @@
 from event.event import *
 from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class DomaWOB(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -34,6 +36,17 @@ class DomaWOB(Event):
         self.wob_left_y = 84
         self.wob_right_x = 157
         self.wob_right_y = 84
+
+        self.exit_loc = [0x0, self.wob_left_x, self.wob_left_y]
+        if self.MAP_SHUFFLE:
+            # modify destination for parent map update
+            exit_id = 1240
+            if exit_id in self.maps.door_map.keys():
+                conn_id = self.maps.door_map[exit_id]
+                conn_pair = exit_data[conn_id][0]  # original connecting exit
+                self.exit_loc = [exit_world[conn_pair]] + \
+                                self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                # print('Updated Doma parent map location: ', self.exit_loc)
 
         self.dialog_mod()
         self.leader_battle_mod()
@@ -72,21 +85,11 @@ class DomaWOB(Event):
 
         # in wob, entrance is changed to a tile event from a wob exit
         # need to update the parent map to return to
-        if self.MAP_SHUFFLE:
-            pass  # This should now be handled by SetParentMap in the event entrance and/or data.map_exits.patch_exits()
-            # Make exit explicit
-            #from data.map_exit_extra import exit_data_patch
-            #exit_ID = 1240
-            #self.maps.exits.exit_original_data[exit_ID] = exit_data_patch[exit_ID](self.maps.exits.exit_original_data[exit_ID])
-            # Copy the "original data" to the exit itself
-            #self.maps.exits.copy_exit_info(self.maps.get_exit(exit_ID), exit_ID, type='all')
-
-        else:
-            space.write(
-                field.ReturnIfEventBitSet(event_bit.IN_WOR),
-                field.SetParentMap(0, direction.DOWN, self.wob_left_x,self.wob_left_y),
-                field.Return(),
-            )
+        space.write(
+            field.ReturnIfEventBitSet(event_bit.IN_WOR),
+            field.SetParentMap(self.exit_loc[0], direction.DOWN, self.exit_loc[1], self.exit_loc[2]-1),
+            field.Return(),
+        )
 
         # doma attack scene up until char (and 2 soldiers) go outside
         space = Reserve(0xb9aae, 0xb9d30, "doma add char and exit functions", field.NOP())

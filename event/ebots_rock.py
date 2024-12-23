@@ -34,7 +34,7 @@ class EbotsRock(Event):
             if exit_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[exit_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # [dest_map, dest_x, dest_y].  It's OK if this one returns to parent map.
+                self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # It's OK if this one returns to parent map.
                 # print('Updated Ebots Rock exit warp: ', self.exit_loc)
 
             # modify airship warp position
