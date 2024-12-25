@@ -336,6 +336,7 @@ class EventExit:
     dest_location = []
     world = -1
     use_jmp = False
+    do_update_parent_map = False
 
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]

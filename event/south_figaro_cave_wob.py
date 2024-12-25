@@ -51,8 +51,9 @@ class SouthFigaroCaveWOB(Event):
         self.requirement_mod()
         if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
             self.door_rando_mod()
-        if not self.DOOR_RANDOMIZE and not self.MAP_SHUFFLE:
+        if not self.DOOR_RANDOMIZE:
             self.noises_mod()
+        if not self.DOOR_RANDOMIZE and not self.MAP_SHUFFLE:
             self.entrance_exit_mod()
         self.tunnel_armor_battle_mod()
 
@@ -189,7 +190,7 @@ class SouthFigaroCaveWOB(Event):
         #    # For map shuffle, do the vehicle move going into the antechamber, rather than going outside.
         #    exit_to_replace = [0x045, 55, 57]
         #else:
-        #    exit_to_replace = [0x045, 16, 43]
+        exit_to_replace = [0x045, 16, 43]
 
         self.maps.delete_short_exit(exit_to_replace[0], exit_to_replace[1], exit_to_replace[2])
         new_event = MapEvent()
@@ -287,8 +288,9 @@ class SouthFigaroCaveWOB(Event):
         ])
 
     def door_rando_mod(self):
-        # Remove Locke's dialog
-        space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
+        if self.DOOR_RANDOMIZE and not self.MAP_SHUFFLE:
+            # Remove Locke's dialog
+            space = Reserve(0xa76aa, 0xa76ac, "Locke: What IS that noise?", field.NOP())
 
         # (1a) Change the entry event to load the switchyard location
         event_id = 1506  # ID of SF Cave south entrance
