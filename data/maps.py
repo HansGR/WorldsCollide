@@ -28,7 +28,7 @@ from data.event_exit_info import event_exit_info, exit_event_patch, entrance_eve
     multi_events, entrance_door_patch, exit_door_patch, require_event_bit
 
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, \
-    event_door_connection_data, map_shuffle_airship_warp
+    event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit
 from data.rooms import room_data, exit_world, shared_exits
 
 from data.parse import delete_nops, branch_parser, get_branch_code
@@ -486,6 +486,24 @@ class Maps():
             # Patch all used exits
             self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=False)
 
+        # if self.args.map_shuffle:
+        #     # Modify the entrance events for maps 0x0 and 0x1 to correctly set the world bit.
+        #     # Note we also need to change the 'load map' calls on airship & warp stones to use the entrance event.
+        #     # THIS DOESN'T SEEM TO WORK.  Alas.  I guess entrance events just don't work on the world map.
+        #     src = [
+        #         vehicle.ClearEventBit(event_bit.IN_WOR),
+        #         world.End()
+        #     ]
+        #     space = Write(Bank.CA, src, "WOB entrance event update world bit")
+        #     self.maps[0x0]["entrance_event_address"] = space.start_address - EVENT_CODE_START
+        #
+        #     src = [
+        #         vehicle.SetEventBit(event_bit.IN_WOR),
+        #         world.End()
+        #     ]
+        #     space = Write(Bank.CA, src, "WOR entrance event update world bit")
+        #     self.maps[0x1]["entrance_event_address"] = space.start_address - EVENT_CODE_START
+
 
     def doorRandoOverride(self, newmap):
         from data.map_exit_extra import exit_data as ed
@@ -706,6 +724,7 @@ class Maps():
             if m in map.keys():
                 # Only do this if the connection is handled by Transitions
                 if 1500 <= map[m] < 4000:
+                    print(m, map[m])
                     if entrance_door_patch[m] is list:
                         info = entrance_door_patch[m]
                     else:
@@ -745,6 +764,10 @@ class Maps():
                     exitB_pairID = exitB_pairID - 4000
 
             self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
+
+            # For a very few exits, must force explicit
+            if m in map_shuffle_force_explicit:
+                exitA.dest_map = exit_world[exitB_pairID]
 
             # Write events on the exits to handle required conditions:
             self.create_exit_event(m, map[m])

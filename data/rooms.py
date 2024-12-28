@@ -42,7 +42,7 @@ room_data = {
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
     'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
 
-    #'root-wob' : [ [18, 1504], [], [], 0],  # Root map for WOB map shuffle testing
+    #'root-wob' : [ [4, 42], [], [], 0],  # Root map for WOB map shuffle testing
     'root-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
     #'root-wor' : [ [], [], [], 1],  # Root map for WOR map shuffle testing
     'root-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.

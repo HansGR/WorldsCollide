@@ -23,7 +23,7 @@ class ImperialBase(Event):
     def mod(self):
         self.exit_location = [0x0, 164, 194]
         if self.MAP_SHUFFLE:
-            # modify exit position from "no terra" event
+            # modify exit position from "no terra" and "chucked out!" events
             exit_id = 1059
             if exit_id in self.maps.door_map.keys():
                 conn = self.maps.door_map[exit_id]  # connecting exit
@@ -35,6 +35,7 @@ class ImperialBase(Event):
 
     def entrance_event_mod(self):
         SOLDIERS_BATTLE_ON_TOUCH = 0xb25b9
+        SOLDIER_BATTLE_EVENT = 0xb2583
 
         space = Reserve(0xb25d6, 0xb25f8, "imperial base entrance event conditions", field.NOP())
         if self.args.character_gating:
@@ -65,3 +66,21 @@ class ImperialBase(Event):
                 #field.Branch(SOLDIERS_BATTLE_ON_TOUCH),
                 field.Return(),
             )
+
+        # Modify where touching the soldiers sends you
+        if self.MAP_SHUFFLE:
+            # There are three apparent "chucked out!" routines.  Not sure which is used, let's patch all of them
+            src = [field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+                                  direction=direction.LEFT, default_music=True, fade_in=True)]
+
+            # CB/2587: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
+            space = Reserve(0xb2587, 0xb258c, 'Chucked Out destination #1')
+            space.write(src)
+
+            # CB/2592: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
+            space = Reserve(0xb2592, 0xb2597, 'Chucked Out destination #2')
+            space.write(src)
+
+            # CB/25B2: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
+            space = Reserve(0xb25b2, 0xb25b7, 'Chucked Out destination #1')
+            space.write(src)

@@ -1793,3 +1793,8 @@ map_shuffle_airship_warp = [
 	1188,  # Phantom Forest N
     465    # Phantom Forest S
 ]
+
+# For a very small number of exits, the exit MUST be explicit (because the parent map is not updated correctly)
+map_shuffle_force_explicit = [
+    1059, 1060  # Imperial base west to world map
+]
