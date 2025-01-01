@@ -1,6 +1,13 @@
 from event.event import *
 
 class MtZozo(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.DOOR_RANDOMIZE = (args.door_randomize_mt_zozo
+                          or args.door_randomize_all
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+
     def name(self):
         return "Mt. Zozo"
 
@@ -35,6 +42,9 @@ class MtZozo(Event):
         self.entrance_event_mod()
         self.mod_rust_rid_salesman()
         self.chest_mod()
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -251,3 +261,23 @@ class MtZozo(Event):
             field.Dialog(self.items.get_receive_dialog(item)),
             field.HideEntity(self.cliff_cyan_npc_id),
         ])
+
+    def door_rando_mod(self):
+        # delete event tile entrance to Cyan's Cliff.  It will be handled by entrance_door_patch()
+        map_id = 0xb4
+        event_x = 44
+        event_y = 55
+        self.delete_event(map_id, event_x, event_y)  # delete the original event
+
+    @staticmethod
+    def entrance_door_patch():
+        # self-contained code to be called in door rando upon entering into Cyan's Cliff (door 1204)
+        # replaces has_entrance_event;
+        # to be used in event_exit_info.entrance_door_patch()
+
+        # CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
+        src = [
+            field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, 0xc3fad),
+            field.Return()
+        ]
+        return src

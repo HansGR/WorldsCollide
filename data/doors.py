@@ -57,6 +57,7 @@ ROOM_SETS = {
              ],
     'MapShuffleWOB':  ['root-wob'],  # dynamically appended later
     'MapShuffleWOR':  ['root-wor'],  # dynamically appended later
+    'MapShuffleXW': ['root-wob', 'root-wor']  # dynamically appended later
 
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
@@ -92,6 +93,7 @@ class Doors():
 
         # Read in the doors to be randomized.
         room_sets = []
+
         if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:  # -dra, -drdc
             # Prioritize randomizing all doors.
             # Both options the same room list.  -dra uses drafting; -drdc does not.
@@ -175,9 +177,10 @@ class Doors():
                 temp = []
                 for r in room_sets:
                     temp.extend(r)
-                room_sets = [temp]
+                if len(temp) > 0:
+                    room_sets = [temp]
 
-        if self.args.map_shuffle:  # -maps
+        if self.args.map_shuffle_separate:  # -maps
             # Separately:  add rooms for WOR, WOB
             # Need to dynamically construct connecting rooms first
             for dk in room_data['root-wob'][0]:
@@ -192,9 +195,24 @@ class Doors():
             room_sets.append(ROOM_SETS['MapShuffleWOB'])
             room_sets.append(ROOM_SETS['MapShuffleWOR'])
 
+        elif self.args.map_shuffle_crossworld:  # -mapx
+            # Add rooms for WOR and WOB
+            # Need to dynamically construct connecting rooms first
+            for dk in room_data['root-wob'][0]:
+                this_room_name = 'ms-wob-' + str(dk)
+                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 0]
+                ROOM_SETS['MapShuffleXW'].append(this_room_name)
+            for dk in room_data['root-wor'][0]:
+                this_room_name = 'ms-wor-' + str(dk)
+                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 1]
+                ROOM_SETS['MapShuffleXW'].append(this_room_name)
+
+            room_sets.append(ROOM_SETS['MapShuffleXW'])
+
+
+
         # Hard override for testing
         #room_sets = [ROOM_SETS['test']]
-
         self.read(room_sets)
 
     def read(self, whichRooms=None):
@@ -206,7 +224,7 @@ class Doors():
         # Create list of randomized connections using walks
         map = [[], []]
 
-        if self.args.door_randomize_all:
+        if self.args.door_randomize_all or self.args.map_shuffle_crossworld:
             # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
             # This encodes that you can reach all roots from all roots.
             root_rooms = [r for r in self.rooms[0] if 'root' in str(r)]
@@ -281,7 +299,7 @@ class Doors():
                             # Send shared exits to the same destination
                             map[0].append([m[0], se])
 
-        if self.args.door_randomize_all:
+        if self.args.door_randomize_all or self.args.map_shuffle_crossworld:
             # Remove the (logical) root doors from the map
             map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
 

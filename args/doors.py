@@ -57,8 +57,10 @@ def parse(parser):
                          help = "Randomize doors in each currently-implemented area")
 
     # Map shuffle
-    doors.add_argument("-maps", "--map-shuffle", action="store_true",
+    doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
                        help="Randomize overworld entrances in each world")
+    doors.add_argument("-mapx", "--map-shuffle-crossworld", action="store_true",
+                       help="Randomize overworld entrances across worlds")
 
 def process(args):
     #pass
@@ -76,12 +78,21 @@ def process(args):
     else:
         args.door_randomize = False
 
+    if args.map_shuffle_separate or args.map_shuffle_crossworld:
+        args.map_shuffle = True
+    else:
+        args.map_shuffle = False
+
 def flags(args):
     flags = ""
 
-    if args.map_shuffle:
+    if args.map_shuffle_separate:
         # -maps is separate from door randomization for now
         flags += " -maps"
+    elif args.map_shuffle_crossworld:
+        # -mapx is separate from door randomization for now
+        flags += " -mapx"
+
 
     if args.door_randomize_all:
         # -dra supercedes all
@@ -164,9 +175,14 @@ def flags(args):
 def options(args):
 
     if args.map_shuffle:
-        return [
-            ("Map Shuffle", args.map_shuffle),
-        ]
+        if args.map_shuffle_separate:
+            return [
+                ("Map Shuffle", args.map_shuffle),
+            ]
+        else:
+            return [
+                ("Map Shuffle", 'crossworld')
+            ]
 
     if args.door_randomize_all:
         return [

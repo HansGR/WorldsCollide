@@ -11,6 +11,7 @@ class DarylTomb(Event):
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
         self.MAP_SHUFFLE = args.map_shuffle
+        self.MAP_CROSSWORLD = args.map_shuffle_crossworld
 
     def name(self):
         return "Daryl's Tomb"
@@ -87,6 +88,13 @@ class DarylTomb(Event):
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
         else:
+            if self.MAP_CROSSWORLD:
+                # Need to set/clear world bit before returning to world map
+                if self.exit_loc[0] == 0x0:
+                    src += [field.ClearEventBit(event_bit.IN_WOR)]
+                else:
+                    src += [field.SetEventBit(event_bit.IN_WOR)]
+
             # for convenience change staircase door to take player back out to wor
             src += [
                 field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
@@ -95,7 +103,7 @@ class DarylTomb(Event):
                 field.Return()
             ]
         # Need to reserve 12 bytes for vanilla command.
-        space = Reserve(0xa435d, 0xa4368, "daryl tomb staircase and getting falcon scenes", field.NOP())
+        space = Reserve(0xa435d, 0xa436a, "daryl tomb staircase and getting falcon scenes", field.NOP())
         space.write(src)
 
     def dullahan_battle_mod(self):

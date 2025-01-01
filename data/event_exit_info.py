@@ -272,6 +272,63 @@ def add_mtek_armor(bytes=False):
     else:
         return src
 
+def tentacles_bit_check(bytes=False):
+    src = [
+        field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
+        field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
+        field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
+        field.ReturnIfEventBitSet(event_bit.DEFEATED_TENTACLES_FIGARO),
+        field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
+        field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
+        field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
+        field.Return()
+    ]
+    if bytes:
+        src_bit = []
+        for s in src:
+            src_bit += [s.opcode] + s.args
+        return src_bit
+    else:
+        return src
+
+def opera_disruption_bit_check(bytes=False):
+    src = [
+        field.ReturnIfEventBitSet(event_bit.FINISHED_OPERA_DISRUPTION),
+        field.ClearEventBit(event_bit.BEGAN_OPERA_DISRUPTION),
+        field.SetEventBit(npc_bit.ULTROS_OPERA_CEILING),
+        field.SetEventBit(npc_bit.RAT1_OPERA_CEILING),
+        field.SetEventBit(npc_bit.RAT2_OPERA_CEILING),
+        field.SetEventBit(npc_bit.RAT3_OPERA_CEILING),
+        field.SetEventBit(npc_bit.RAT4_OPERA_CEILING),
+        field.SetEventBit(npc_bit.RAT5_OPERA_CEILING),
+        field.SetEventBit(npc_bit.CEILING_DOOR_OPERA_HOUSE),
+        field.SetEventBit(npc_bit.DANCING_COUPLE1_OPERA),
+        field.SetEventBit(npc_bit.DANCING_COUPLE2_OPERA),
+        field.SetEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING)
+    ]
+    if bytes:
+        src_bit = []
+        for s in src:
+            src_bit += [s.opcode] + s.args
+        return src_bit
+    else:
+        return src
+
+def opera_dragon_bit_check(bytes=False):
+    src = [
+        field.ReturnIfEventBitSet(event_bit.DEFEATED_OPERA_HOUSE_DRAGON),
+        field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
+        field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
+        field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
+        field.HideEntity(0x13)   # hide the Impressario in the lobby, since he's not supposed to be there.
+    ]
+    if bytes:
+        src_bit = []
+        for s in src:
+            src_bit += [s.opcode] + s.args
+        return src_bit
+    else:
+        return src
 
 def remove_mtek_armor(bytes=False):
     src = [
@@ -386,19 +443,35 @@ entrance_event_patch = {
 from event.doma_wob import *
 doma_siege_patch = DomaWOB.entrance_door_patch
 
+from event.mt_zozo import *
+mt_zozo_cliff_check = MtZozo.entrance_door_patch
+
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
-    # Daryl's Tomb: Move the turtles to the appropriate side.
-    ### MOVED TO require_event_bit
+    # door_id: [Code that must be run upon entering a door, Before (True) or After (False) map load]
+    # If you are just setting or clearing event bits, use require_event_bit instead.
 
     # Doma Cave doors: add MTek armor.  Redundant if in map.
-    858: add_mtek_armor(),
-    860: add_mtek_armor(),
-    861: add_mtek_armor(),
-    863: add_mtek_armor(),
-    864: add_mtek_armor(),
+    858: [add_mtek_armor(), False],
+    860: [add_mtek_armor(), False],
+    861: [add_mtek_armor(), False],
+    863: [add_mtek_armor(), False],
+    864: [add_mtek_armor(), False],
 
-    1240: doma_siege_patch,
+    # Doma siege entrance patch
+    1240: [doma_siege_patch, True],
+
+    # Figaro Castle WoR tentacles bit check patch (on entering SF Cave for map shuffle)
+    262: [tentacles_bit_check(), False],
+
+    # Opera House WoB completed opera bit check patch
+    658: [opera_disruption_bit_check(), False],
+
+    # Opera House WoR defeated dragon bit check patch
+    4658: [opera_dragon_bit_check(), False],
+
+    # Mt Zozo cliff entrance patch
+    1204: [mt_zozo_cliff_check(), True],
 
 }
 
@@ -460,7 +533,89 @@ require_event_bit = {
     # Cave on the Veldt, Relm/shadow NPC
     988: {0x552: True},
     991: {0x552: True}
+
 }
+
+room_require_event_bit = {
+    # Narshe WoB NPC bits
+    16: {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False},
+
+    # Narshe WoR NPC bits
+    34: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True},
+
+    # Mobliz WoB NPC bits
+    228: {npc_bit.MOBLIZ_CITIZENS: True, npc_bit.MOBLIZ_SOLDIERS_LETTER: True},
+
+    # Mobliz WoR NPC bits
+    229: {npc_bit.MOBLIZ_CITIZENS: False, npc_bit.MOBLIZ_SOLDIERS_LETTER: False},
+
+    # Figaro Castle WoB NPC & event bits:
+    68: {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: False,
+         npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE: False,
+         npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE: False,
+         npc_bit.LONE_WOLF_FIGARO_CASTLE: True,
+         npc_bit.PRISONERS_FIGARO_CASTLE: True,
+         npc_bit.PRISON_GUARD_FIGARO_CASTLE: True},
+
+    # Figaro Castle WoR NPC & event bits:
+    '68R': {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: True,
+            npc_bit.LONE_WOLF_FIGARO_CASTLE: False,
+            npc_bit.PRISONERS_FIGARO_CASTLE: False},
+            # Other bits must be set when entering south figaro cave, but only if not TENTACLE_DEFEATED:
+            #if not TENTACLE_DEFEATED:
+            #   field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
+            #   field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
+            #   field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
+
+    # Opera House WoB NPC & event bits:
+    319: {npc_bit.MAN_AT_COUNTER_OPERA: False,
+          npc_bit.IMPRESARIO_OPERA_PANICKING: False,
+          npc_bit.IMPRESARIO_OPERA_LOBBY: False,
+          npc_bit.IMPRESARIO_OPERA_SITTING: True,
+          npc_bit.DRAGON_OPERA_HOUSE: False},
+          # Other bits must be set/cleared depending on FINISHED_OPERA_DISRUPTION:
+          #if not FINISHED_OPERA_DISRUPTION:
+          #   field.ClearEventBit(event_bit.BEGAN_OPERA_DISRUPTION),
+          #   field.SetEventBit(npc_bit.ULTROS_OPERA_CEILING),
+          #   field.SetEventBit(npc_bit.RAT1_OPERA_CEILING),
+          #   field.SetEventBit(npc_bit.RAT2_OPERA_CEILING),
+          #   field.SetEventBit(npc_bit.RAT3_OPERA_CEILING),
+          #   field.SetEventBit(npc_bit.RAT4_OPERA_CEILING),
+          #   field.SetEventBit(npc_bit.RAT5_OPERA_CEILING),
+          #   field.SetEventBit(npc_bit.CEILING_DOOR_OPERA_HOUSE),
+          #   field.SetEventBit(npc_bit.DANCING_COUPLE1_OPERA),
+          #   field.SetEventBit(npc_bit.DANCING_COUPLE2_OPERA),
+          #   field.SetEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING),
+
+    '319r': {npc_bit.MAN_AT_COUNTER_OPERA: True,
+             npc_bit.IMPRESARIO_OPERA_LOBBY: True,
+             npc_bit.IMPRESARIO_OPERA_SITTING: False,
+             event_bit.BEGAN_OPERA_DISRUPTION: True,
+             npc_bit.ULTROS_OPERA_CEILING: False,
+             npc_bit.RAT1_OPERA_CEILING: False,
+             npc_bit.RAT2_OPERA_CEILING: False,
+             npc_bit.RAT3_OPERA_CEILING: False,
+             npc_bit.RAT4_OPERA_CEILING: False,
+             npc_bit.RAT5_OPERA_CEILING: False,
+             npc_bit.CEILING_DOOR_OPERA_HOUSE: False,
+             npc_bit.DANCING_COUPLE1_OPERA: False,
+             npc_bit.DANCING_COUPLE2_OPERA: False,
+             npc_bit.FIGHTING_SOLDIERS_OPERA: False,
+             npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING: False},
+             #if not DEFEATED_OPERA_HOUSE_DRAGON:
+             #    field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
+             #    field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
+             #    field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
+
+}
+
+# push room required event bits to door required event bits
+from data.rooms import room_data
+for rb in room_require_event_bit.keys():
+    for db in room_data[rb][0]:
+        # door entrances
+        require_event_bit[db] = room_require_event_bit[rb]
+
 
 def minecart_event_mod(src, src_end):
     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.

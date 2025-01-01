@@ -144,6 +144,44 @@ class SetEquipmentAndCommands(_Instruction):
         SetEquipmentAndCommands.__init__ = lambda self, to_character, from_character : super().__init__(opcode, to_character, from_character)
         self.__init__(to_character, from_character)
 
+
+class UpdateWorldReturnToParentMap(_Instruction):
+    def __init__(self):
+        # For Map Shuffle & door rando purposes
+        # Custom command to: Read parent map, update world bit ($1E94 bit 4) to match parent map, return to parent map.
+        fade_load_map = 0xab47
+        load_map = 0xab55
+
+        src = [
+            asm.LDA(0x1f69, asm.ABS),           # a = low 8 bits of parent map (00 or 01)
+            asm.CMP(0x00, asm.IMM8),            # compare if the map is 0x00 (WoB)
+            asm.BEQ("GO_TO_WOB"),               # Branch to WoB code
+            asm.LDA(0x1e94, asm.ABS),           # a = event bits incl. bit 4 (IS_WOR)
+            asm.AND(0xEF, asm.IMM8),            # delete event bit (aaaxaaaa & 11101111 = aaa0aaaa)
+            asm.CLC(),                          # Clear carry flag, otherwise the addition is off by one.
+            asm.ADC(0x10, asm.IMM8),            # set event bit = 1 (aaa1aaaa) (WoR).
+            asm.STA(0x1e94, asm.ABS),           # update event byte
+            asm.JMP(load_map, asm.ABS),         # jump to original load map command
+            "GO_TO_WOB",
+            asm.LDA(0x1e94, asm.ABS),           # a = event bits incl. bit 4 (IS_WOR)
+            asm.AND(0xEF, asm.IMM8),            # delete event bit (aaaxaaaa & 11101111 = aaa0aaaa)
+            asm.STA(0x1e94, asm.ABS),           # update event byte
+            asm.JMP(load_map, asm.ABS),         # jump to original load map command
+        ]
+        space = Write(Bank.C0, src, "custom return to parent map & update event bit IN_WOR")
+        address = space.start_address
+
+        opcode = 0x69
+        _set_opcode_address(opcode, address)
+
+        # basic return to parent map arguments
+        # special map 0x1ff, return to parent map at same position/direction, not on airship
+        args = [0xff, 0x21, 0x00, 0x00, 0x00]
+
+        UpdateWorldReturnToParentMap.__init__ = lambda self : super().__init__(opcode, *args)
+        self.__init__()
+
+
 class ToggleWorlds(_Instruction):
     def __init__(self):
         fade_load_map = 0xab47
@@ -162,7 +200,7 @@ class ToggleWorlds(_Instruction):
 
         # same args as airship lift-off load map
         # special map 0x1ff, return to parent map at same position/direction
-        args = [0xff, 0x25, 0x00, 0x00, 0x01]
+        args = [0xff, 0x25, 0x00, 0x00, 0x81]  # map shuffle mod to run entrance event; final bit was 0x01
 
         ToggleWorlds.__init__ = lambda self : super().__init__(opcode, *args)
         self.__init__()

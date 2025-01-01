@@ -27,12 +27,12 @@ class Transitions:
     FREE_MEMORY = False
     verbose = False
 
-    def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
+    def __init__(self, mapping, rom, exit_data, event_data, include_script_data=None):
         self.transitions = []
         self.rom = rom
-        self.call_script_addr = call_script_addr
-        if self.call_script_addr is None:
-            self.call_script_addr = {}
+        self.include_script_data = include_script_data
+        if self.include_script_data is None:
+            self.include_script_data = {}
 
         for m in mapping:
             # Check reasons to overwrite this transition
@@ -160,12 +160,15 @@ class Transitions:
                         bitsrc = [field.ClearEventBit(k)]
                     ex_patch += [bitsrc[0].opcode] + bitsrc[0].args
 
-            if t.exit.id in self.call_script_addr.keys():
+            if t.exit.id in self.include_script_data.keys():
                 # This is attempting to look at an event script, read it, build a branch code based on what it says, and then load the door.
                 # Instead, I think we should just call the script, followed by loading the door.
 
                 # This is an event tile behaving as a door that needs to call an event script for its partner.
-                this_addr = self.call_script_addr[t.exit.id]
+                #this_addr = self.call_script_addr[t.exit.id]
+
+                # Instead instead, just include the required data here.
+                this_data = self.include_script_data[t.exit.id]
 
                 # srcdata = self.rom.get_bytes(this_addr, 6)
                 # if self.verbose:
@@ -183,10 +186,28 @@ class Transitions:
                 # if self.verbose:
                 #     print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
                 # ex_patch += [branch_src[0].opcode] + branch_src[0].args
-                branch_src = get_branch_code(event_bit.ALWAYS_CLEAR, is_set=False, branch_addr=this_addr, map_id=t.exit.dest_location[0])
-                ex_patch += [branch_src[0].opcode] + branch_src[0].args
+
+                #branch_src = get_branch_code(event_bit.ALWAYS_CLEAR, is_set=False, branch_addr=this_addr, map_id=t.exit.dest_location[0])
+                #ex_patch += [branch_src[0].opcode] + branch_src[0].args
+
+                branch_src = this_data[0] # convert command script to bits?
+
+                if this_data[1]:
+                    # Include before load map
+                    ex_patch += branch_src
+                else:
+                    # Include after load map
+                    en_patch += branch_src
+
                 if self.verbose:
-                    print(t.exit.id, t.entr.id, ' incl. branch to ', hex(this_addr))
+                    #print(t.exit.id, t.entr.id, ' incl. branch to ', hex(this_addr))
+                    print_src = []
+                    for b in branch_src:
+                        if isinstance(b, str) or isinstance(b, int):
+                            print_src += [b]
+                        else:
+                            print_src += [b.__str__()]
+                    print(t.exit.id, t.entr.id, ' incl. addl. data ', print_src)
 
             # Check if updated parent map is required
             if t.exit.do_update_parent_map:
@@ -225,7 +246,15 @@ class Transitions:
         # Write modified events to the ROM
         for t in self.transitions:
             # Allocate space
-            space = Allocate(Bank.CC, len(t.src), "Exit Event Randomize: " + str(t.exit.id) + " --> " + str(t.entr.id))
+            src_len = 0
+            for s in t.src:
+                if isinstance(s, int):
+                    src_len += 1
+                elif isinstance(s, str):
+                    pass
+                else:
+                    src_len += s.__len__()
+            space = Allocate(Bank.CC, src_len, "Exit Event Randomize: " + str(t.exit.id) + " --> " + str(t.entr.id))
             new_event_address = space.start_address
 
             # Check for event address patches & implement if found
@@ -233,6 +262,7 @@ class Transitions:
                 t.src = event_address_patch[t.exit.id](t.src, new_event_address)
 
             space.write(t.src)
+            bit_src = space.rom.get_bytes(new_event_address, src_len)
 
             if self.verbose:
                 addr = [t.exit.event_addr, t.entr.event_addr]
@@ -243,7 +273,7 @@ class Transitions:
                       ':\n\toriginal memory addresses: ', str(addr[0]), ', ', str(addr[1]),
                       '\n\tpatches applied: ', t.patches,
                       '\n\tuse jump method: ', t.exit.use_jmp,
-                      '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
+                      '\n\tbitstring: ', [hex(s)[2:] for s in bit_src])  # t.src
                 print('\n\tnew memory address: ', hex(new_event_address))
 
             if t.exit.use_jmp:

@@ -111,14 +111,26 @@ class Start(Event):
             ]
             space = Write(Bank.CA, src, "new warp")
             warp_to_narshe = space.start_address
-            #space.printr()
 
             space = Reserve(0xa0144, 0xa014e, "edited warp section", field.NOP())
             space.write(
                 field.Call(warp_to_narshe),
                 field.End(),
             )
-            #space.printr()
+        elif self.args.map_shuffle:
+            src = [
+                field.Call(0xa0159),
+                field.UpdateWorldReturnToParentMap(),
+                world.End(),  # end of script
+            ]
+            space = Write(Bank.CA, src, "warp update IN_WOR")
+            warp_update = space.start_address
+
+            space = Reserve(0xa0144, 0xa014e, "edited warp to respect world bit", field.NOP())
+            space.write(
+                field.Call(warp_update),
+                world.End(),
+            )
 
         # where the game begins after intro/pregame
         space = Reserve(0xc9a4f, 0xc9ad4, "setup and start game", field.NOP())

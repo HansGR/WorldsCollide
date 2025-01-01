@@ -1393,7 +1393,7 @@ exit_data = {
     4631: [4602, "Zozo Clock Puzzle Room 1F Inside WOR"],
     4632: [4603, "Zozo Clock Puzzle Room 2F Inside WOR"],
     4633: [4607, "Zozo Cafe 3F Right Inside WOR"],
-    4658: [62, "Opera House WoR"],
+    4658: [62, "Opera House Lobby to WoR"],
     5156: [1507, "Figaro Castle WoR exit to world map"],
     5157: [1507, "Figaro Castle WoR exit to world map"],
     5158: [1507, "Figaro Castle WoR exit to world map"],
@@ -1537,8 +1537,10 @@ exit_data_patch = {
                        set_dest_y(240, info)),   #  [48, "Cid's House East to World Map"],
     1267: lambda info: set_dest_x(75,
                        set_dest_y(240, info)),   #   [48, "Cid's House West to World Map"],
-    1268: lambda info: set_dest_x(76,
-                       set_dest_y(239, info)),   #   [48, "Cid's House Northwest to World Map"],
+    1268: lambda info: set_x(1,                  # Move it so it doesn't overlap!
+                       set_size(2,
+                       set_dest_x(76,
+                       set_dest_y(239, info)))),   #   [48, "Cid's House Northwest to World Map"],
     1269: lambda info: set_dest_x(76,
                        set_dest_y(239, info)),   #   [48, "Cid's House North to World Map"],
     1270: lambda info: set_dest_x(76,
@@ -1749,9 +1751,12 @@ event_door_connection_data = {
 
 # Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).
 # Doors listed here will move that event tile to the new partner in maps.connect_exits().
+### 1/1/25: in the rare cases where there's an event that needs to happen before using a door, we should actually write
+# the necessary code rather than trying to call or branch to it (because sometimes it needs a call, sometimes a branch).
+# So we will get rid of has_event_entrance and deal with each case invididually.
 has_event_entrance = {
     # door_id : [map_id, x, y] for event entrance to this door
-    1204 : [0xb4, 44, 55] # Cyan's cliff: start the reward cutscene
+#    1204 : [0xb4, 44, 55] # Cyan's cliff: start the reward cutscene
 }
 
 # Add exits to make the vanilla rom consistent (it handles some non-event exits using events)
