@@ -54,6 +54,7 @@ class SouthFigaroCaveWOB(Event):
         if not self.DOOR_RANDOMIZE:
             self.noises_mod()
         if not self.DOOR_RANDOMIZE and not self.MAP_SHUFFLE:
+            # This is now handled by map_shuffle_airship_warp for MAP_SHUFFLE
             self.entrance_exit_mod()
         self.tunnel_armor_battle_mod()
 

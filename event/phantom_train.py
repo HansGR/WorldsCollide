@@ -98,6 +98,10 @@ class PhantomTrain(Event):
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
         else:
+            if self.airship_loc[0] == 0x1:
+                # Set world bit before exit
+                src += [field.SetEventBit(event_bit.IN_WOR)]
+
             src += [
                 field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = False, x = self.airship_loc[1],
@@ -111,7 +115,7 @@ class PhantomTrain(Event):
             ]
         #space = Write(Bank.CB, src, "phantom train move airship and return to world map")
         # Must be at a fixed address for DR!  Need 23 bytes.
-        space = Reserve(0xbba0c, 0xbba23, "phantom train move airship and return to world map", field.NOP())
+        space = Reserve(0xbba0c, 0xbba25, "phantom train move airship and return to world map", field.NOP())
         space.write(src)
         self.load_world_map = space.start_address
 

@@ -10,6 +10,7 @@ class ImperialBase(Event):
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
         self.MAP_SHUFFLE = args.map_shuffle
+        self.MAP_CROSSWORLD = args.map_shuffle_crossworld
 
     def name(self):
         return "Imperial Base"
@@ -52,13 +53,19 @@ class ImperialBase(Event):
                 space.write(
                     field.Branch(airship_addr)
                 )
-            if self.MAP_SHUFFLE:
+            elif self.MAP_SHUFFLE:
+                # CB/25FD: 97    Fade screen to black
+                # CB/25FE: 5C    Pause execution until fade in or fade out is complete
                 # CB/25FF: 6B    Load map $0000 (World of Balance) instantly, (upper bits $3000), place party at (164, 194), facing left, flags $00
-                space = Reserve(0xb25ff, 0xb2604, 'Edit Imperial Base return to world map')
-                space.write(
-                    field.LoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
-                                  direction=direction.LEFT, default_music=True, fade_in=True)
-                )
+                space = Reserve(0xb25fd, 0xb2604, 'Edit Imperial Base return to world map')
+                src = [
+                    field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+                                  direction=direction.DOWN, default_music=True, fade_in=True)
+                ]
+                if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
+                    # Prepend set world bit
+                    src = [field.SetEventBit(event_bit.IN_WOR)] + src
+                space.write(src)
                 # CB/2605: FF        End map script
 
         else:
@@ -70,17 +77,29 @@ class ImperialBase(Event):
         # Modify where touching the soldiers sends you
         if self.MAP_SHUFFLE:
             # There are three apparent "chucked out!" routines.  Not sure which is used, let's patch all of them
-            src = [field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
-                                  direction=direction.LEFT, default_music=True, fade_in=True)]
+            src = [
+                field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+                                  direction=direction.LEFT, default_music=True, fade_in=True),
+                world.End()
+            ]
+            if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
+                # Prepend set world bit
+                src = [field.SetEventBit(event_bit.IN_WOR)] + src
+
+            space = Write(Bank.CB, src, 'Imperial base updated chucked out destination')
+            chucked_address = space.start_address
+
+            # Call 'chucked out' address at each location
+            src = [field.Branch(chucked_address)]
 
             # CB/2587: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
-            space = Reserve(0xb2587, 0xb258c, 'Chucked Out destination #1')
+            space = Reserve(0xb2587, 0xb258c, 'Chucked Out destination #1', field.NOP())
             space.write(src)
 
             # CB/2592: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
-            space = Reserve(0xb2592, 0xb2597, 'Chucked Out destination #2')
+            space = Reserve(0xb2592, 0xb2597, 'Chucked Out destination #2', field.NOP())
             space.write(src)
 
             # CB/25B2: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
-            space = Reserve(0xb25b2, 0xb25b7, 'Chucked Out destination #1')
+            space = Reserve(0xb25b2, 0xb25b7, 'Chucked Out destination #1', field.NOP())
             space.write(src)

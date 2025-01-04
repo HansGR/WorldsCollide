@@ -34,6 +34,7 @@ class EbotsRock(Event):
             if exit_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[exit_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.EXIT_IN_WOB = (exit_world[conn_pair] == 0)
                 self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # It's OK if this one returns to parent map.
                 # print('Updated Ebots Rock exit warp: ', self.exit_loc)
 
@@ -218,7 +219,11 @@ class EbotsRock(Event):
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago runs down", field.NOP())
 
         space = Reserve(0xb7238, 0xb73df, "ebots rock strago/relm/gungho events after hidon", field.NOP())
-        space.copy_from(0xb73e1, 0xb73f0) # event bits after hidon
+        space.copy_from(0xb73e1, 0xb73f0)  # event bits after hidon
+        if self.EXIT_IN_WOB:
+            space.write(
+                field.ClearEventBit(event_bit.IN_WOR)
+            )
         space.write(
             field.FreeScreen(),
             field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],

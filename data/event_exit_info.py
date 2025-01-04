@@ -277,6 +277,7 @@ def tentacles_bit_check(bytes=False):
         field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
         field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
         field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
+        field.SetEventBit(event_bit.GOT_FALCON),  # Needed to go to AC afterward
         field.ReturnIfEventBitSet(event_bit.DEFEATED_TENTACLES_FIGARO),
         field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
         field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
@@ -555,12 +556,14 @@ room_require_event_bit = {
          npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE: False,
          npc_bit.LONE_WOLF_FIGARO_CASTLE: True,
          npc_bit.PRISONERS_FIGARO_CASTLE: True,
-         npc_bit.PRISON_GUARD_FIGARO_CASTLE: True},
+         npc_bit.PRISON_GUARD_FIGARO_CASTLE: True,
+         event_bit.GOT_FALCON: False},  # Required to not go to AC in WOB
 
     # Figaro Castle WoR NPC & event bits:
     '68R': {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: True,
             npc_bit.LONE_WOLF_FIGARO_CASTLE: False,
-            npc_bit.PRISONERS_FIGARO_CASTLE: False},
+            npc_bit.PRISONERS_FIGARO_CASTLE: False,
+            event_bit.GOT_FALCON: True},  # Required to go to AC
             # Other bits must be set when entering south figaro cave, but only if not TENTACLE_DEFEATED:
             #if not TENTACLE_DEFEATED:
             #   field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),

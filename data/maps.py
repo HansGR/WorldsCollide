@@ -312,14 +312,12 @@ class Maps():
             "long_events_ptr"]) // LongMapEvent.DATA_SIZE
 
     def print_long_events(self, map_id):
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-        self.long_events.print_range(first_event_id, self.get_event_count(map_id))
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        self.long_events.print_range(first_event_id, self.get_long_event_count(map_id))
 
     def get_long_event(self, map_id, x, y):
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_event_count(map_id)
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        last_event_id = first_event_id + self.get_long_event_count(map_id)
         return self.long_events.get_event(first_event_id, last_event_id, x, y)
 
     def add_long_event(self, map_id, new_event):
@@ -333,9 +331,8 @@ class Maps():
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] -= LongMapEvent.DATA_SIZE
 
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_event_count(map_id)
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        last_event_id = first_event_id + self.get_long_event_count(map_id)
         self.long_events.delete_event(first_event_id, last_event_id, x, y)
 
     ### LONG EVENTS ###
@@ -514,6 +511,10 @@ class Maps():
 
             # Patch all used exits
             self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=False)
+            for e in self.exits.exit_original_data.keys():
+                if len(self.exits.exit_original_data[e]) == 12:
+                    # need to append map_id for event doors
+                    self.exits.exit_original_data[e].append(self.exit_maps[e])
 
         # if self.args.map_shuffle:
         #     # Modify the entrance events for maps 0x0 and 0x1 to correctly set the world bit.
@@ -860,7 +861,7 @@ class Maps():
             # Look for an existing event on this exit tile
             try:
                 if self.doors.verbose:
-                    print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
+                    print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y, '(type ', self.exits.exit_type[d], ')')
                 existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
                 # An event already exists.  It will need to be modified.
 
@@ -1127,6 +1128,8 @@ class Maps():
         #    print('Writing shared event at ' + str(d) + ' (ref = ' + str(d_ref) + ')')
         # Look for an existing event on this exit tile
         try:
+            if self.doors.verbose:
+                print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
             existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
             # An event already exists.
             if self.doors.verbose:
