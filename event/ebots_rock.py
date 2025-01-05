@@ -31,6 +31,7 @@ class EbotsRock(Event):
         if self.MAP_SHUFFLE:
             # modify exit position
             exit_id = 1546
+            self.EXIT_IN_WOB = False
             if exit_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[exit_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit

@@ -400,7 +400,10 @@ exit_door_patch = {
     864: remove_mtek_armor(),
 
     # Phantom Train: initiate PT event if Sabin is recruited
-    465: phantom_train_initiate()
+    465: phantom_train_initiate(),
+
+    # Baren Falls: for some reason, it doesn't auto update the parent map
+    15: [field.SetParentMap(0x0, direction.DOWN, 185, 93)]
 
 }
 

@@ -1552,6 +1552,8 @@ exit_data_patch = {
     # COLISEUM GUY's HOUSE
     1207: lambda info: set_dest_x(32, info),   #   [27, "Coliseum Guy's House West to World Map"],
 
+    # BAREN FALLS
+    15:  lambda info: set_refreshparentmap(1, info),  #   15: [1196, "Baren Falls"],
 }
 
 # We could probably do this as:

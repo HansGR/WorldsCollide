@@ -181,7 +181,7 @@ def options(args):
             ]
         else:
             return [
-                ("Map Shuffle", 'crossworld')
+                ("Map Shuffle", 'Crossworld')
             ]
 
     if args.door_randomize_all:
