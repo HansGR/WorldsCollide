@@ -82,7 +82,7 @@ class Maps():
         self.exit_world = exit_world
 
         # Perform cleanup actions if door randomization is happening
-        if args.door_randomize is True:
+        if args.door_randomize or args.map_shuffle:
             self.door_rando_cleanup()
 
     def read(self):

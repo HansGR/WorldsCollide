@@ -58,8 +58,8 @@ class VeldtCaveWOR(Event):
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
-        if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
-            self.delete_exit_event_tiles()
+        #if self.MAP_SHUFFLE:
+        #    self.delete_exit_event_tiles()
 
     def dialog_mod(self):
         space = Reserve(0xb79cd, 0xb79d5, "veldt cave wor you're coming with us", field.NOP())
@@ -369,9 +369,11 @@ class VeldtCaveWOR(Event):
             space = Write(Bank.CB, src, "Veldt Cave Interceptor exit event")
             dog_npc.event_address = space.start_address - EVENT_CODE_START
 
-    def delete_exit_event_tiles(self):
-        # Delete extra exit event tiles on WOR Thamasa map, so that long exit events work correctly
-        map_id = 0x158
-        event_x_y = [[a, 48] for a in range(20, 26)] + [[0, b] for b in range(28, 32)]
-        for xy in event_x_y:
-            self.maps.delete_short_event(map_id, xy[0], xy[1])
+    # def delete_exit_event_tiles(self):
+    #     # Delete extra exit event tiles on WOR Thamasa map, so that long exit events work correctly
+    #     ### Actually handled by maps.door_rando_cleanup()
+    #     pass
+    #     #map_id = 0x158
+    #     #event_x_y = [[a, 48] for a in range(20, 26)] + [[0, b] for b in range(28, 32)]
+    #     #for xy in event_x_y:
+    #     #    self.maps.delete_short_event(map_id, xy[0], xy[1])

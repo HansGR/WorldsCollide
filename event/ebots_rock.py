@@ -28,10 +28,10 @@ class EbotsRock(Event):
     def mod(self):
         self.exit_loc = [0x01, 249, 224]
         self.airship_thamasa = [0x001, 251, 230]
+        self.EXIT_IN_WOB = False
         if self.MAP_SHUFFLE:
             # modify exit position
             exit_id = 1546
-            self.EXIT_IN_WOB = False
             if exit_id in self.maps.door_map.keys():
                 conn_south = self.maps.door_map[exit_id]  # connecting exit south
                 conn_pair = exit_data[conn_south][0]  # original connecting exit

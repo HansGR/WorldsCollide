@@ -267,7 +267,7 @@ class MtZozo(Event):
         map_id = 0xb4
         event_x = 44
         event_y = 55
-        self.delete_event(map_id, event_x, event_y)  # delete the original event
+        self.maps.delete_event(map_id, event_x, event_y)  # delete the original event
 
     @staticmethod
     def entrance_door_patch():
