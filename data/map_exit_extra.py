@@ -682,8 +682,9 @@ exit_data = {
     590: [None, "Owzer's Basement Floating Chest Room Door"],  # Note: door is inaccessible.
     591: [589, "Owzer's Basement Chadarnook's Room"],
     592: [567, "Owzer's House Inside Door to Outside"],
-    593: [None, "Owzer's House Door to Behind Painting WOB"],  # technically connects to 580, but inaccessible
-    4593: [580, "Owzer's House Door to Behind Painting WOR"],  # LOGICAL (WOR) only!
+    4592: [4567, "Owzer's House Inside Door to Outside"],
+    #593: [None, "Owzer's House Door to Behind Painting WOB"],  # technically connects to 580, but inaccessible
+    593: [580, "Owzer's House Door to Behind Painting WOR"],  # WOR only!
     2017: [None, "Owzer's Mansion switching door left"],
     2018: [None, "Owzer's Mansion switching door right"],  # same destination & same event as 2017
     2019: [None, "Owzer's Mansion behind switching door exit"],
@@ -1365,6 +1366,8 @@ exit_data = {
     1545: [1532,  "Phantom Train Locomotive interior exit"],
     1546: [78,  "Ebot's Rock exit to World Map WoR"],
     1547: [1240,  "Doma entrance from World Map WoB"],
+    1552: [1553,  "Zone Eater engulf as door"],
+    1553: [1552,  "Zone Eater exit as door"],
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
@@ -1746,8 +1749,10 @@ event_door_connection_data = {
     1545: [0x08D, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0],  #  'Phantom Train Locomotive interior exit'
     1546: [0x001, 249, 224, 0, 0, 0, 2, 0, 7, 24, 0, 0],  #  'Ebot's Rock exit to World Map WoR'
     1547: [0x11d, 33, 53, 0, 0, 0, 0, 0, 156, 85, 0, 0],  #  'Doma Castle entrance WC with Doma Siege event'.  Use switchyard to capture event logic?  [0x005, 1547 % 128, 1547 // 128, 0, 0, 0, 0, 0, 156, 84, 0, 0]
+    1552: [0x114, 10, 12, 0, 0, 0, 2, 0, 237, 50, 0, 0],  #  "Zone Eater engulf as door"
+    1553: [0x001, 237, 50, 0, 0, 0, 2, 0, 5, 6, 0, 0],  #  "Zone Eater exit as door"
     # Logical exits with different destinations
-    4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0]  #  'Doma Dream Train Save point room interior (logical)'
+    4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 }
 

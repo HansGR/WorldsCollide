@@ -28,7 +28,7 @@ room_data = {
     'root-unb' : [ [1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
     'root-unr' : [ [1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
     'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
-    'root-ob' : [ [4593], [], [], 1], # Root map for -door-randomize-owzer's basement
+    'root-ob' : [ [593], [], [], 1], # Root map for -door-randomize-owzer's basement
     'root-mf' : [ [1229], [], [3028], 0],     # Magitek Factory root entrance in Vector
     #'root-zb': [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
     #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
@@ -42,10 +42,10 @@ room_data = {
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
     'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
 
-    #'root-wob' : [ [15, 37], [], [], 0],  # Root map for WOB map shuffle testing
+    #'root-wob' : [ [37], [], [], 0],  # Root map for WOB map shuffle testing
     'root-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
-    #'root-wor' : [ [], [], [], 1],  # Root map for WOR map shuffle testing
-    'root-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
+    #'root-wor' : [ [1552], [], [], 1],  # Root map for WOR map shuffle testing
+    'root-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
@@ -495,7 +495,7 @@ room_data = {
     283 : [ [ ], [2020], [3019], 1],  # Owzer's Basement Floating Chest room
     284 : [ [591], [ ], [ ], 1], #Owzer's Basement Chadarnook's Room
     285 : [ [592], [ ], [ ], 0], #Owzer's House
-    '285r' : [ [4592, 4593], [ ], [ ], 1], #Owzer's House
+    '285r' : [ [4592, 593], [ ], [ ], 1], #Owzer's House
 
     # ESPER WORLD
     286 : [ [1218, 1219, 1220, 1221, 1222, 1223], [ ], [ ], 0], #Esper World Outside
@@ -594,6 +594,7 @@ room_data = {
     '355a' : [ [], [2028], [3027], 0],  # Magitek Factory Minecart Room
 
     'root-ze' : [ [], [2040], [3041], 1], # ZoneEater Engulf
+    'root-ze-as-doors': [ [1552, 1553], [], [], 1], # ZoneEater Engulf as doors
     356 : [ [717], [2041], [3040], 1], #Zone Eater Entry Room
     357 : [ [718, 719, 721], [2042], [ ], 1], #Zone Eater Bridge Guards Room
     358 : [ [ ], [2043], [3042], 1], #Zone Eater Pit entry

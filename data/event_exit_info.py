@@ -218,6 +218,10 @@ event_exit_info = {
     1551: [0xc6114, 7, 1, [False, False, False, False, False], 'Albrook Item Shop exit WoB', [0x148, 37, 55], 'JMP'],  # --> 0x143, 7, 15.  tile calls 0xc610e (a WOB/WOR handler)
     5551: [0xc611b, 7, 1, [False, False, False, False, False], 'Albrook Item Shop exit WoR', [0x148, 37, 55], 'JMP'],  # --> 0x144, 7, 15.  tile calls 0xc610e (a WOB/WOR handler)
 
+    # ZONE EATER AS DOOR (for Map Shuffle only!)
+    # NOTE: not compatible with &doors, if Zone Eater entrance/exit are being treated as one-ways!  (2040, 2041)
+    1552: [None, 7, 1, [False, False, False, False, True], 'Zone Eater Engulf as door', [0x005, 1552 % 128, 1552 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    1553: [0xb7d9d, 33, 27, [False, False, False, False, False], 'Zone Eater Exit as door', [0x114, 5, 6], 'JMP'],  # Goes to Switchyard tile
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -403,7 +407,7 @@ exit_door_patch = {
     465: phantom_train_initiate(),
 
     # Baren Falls: for some reason, it doesn't auto update the parent map
-    15: [field.SetParentMap(0x0, direction.DOWN, 185, 93)]
+    15: [field.SetParentMap(0x0, direction.DOWN, 185, 93)],
 
 }
 

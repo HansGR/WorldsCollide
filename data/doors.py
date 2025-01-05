@@ -31,6 +31,8 @@ ROOM_SETS = {
     #'MtKoltsMinimal': [151, 'root-mk'],
     'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 475, 'root-vc'],
     #'VeldtCaveMinimal': [470, 475, 'root-vc'],
+
+    # Meta rooms:
     'All': [
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
@@ -102,7 +104,7 @@ class Doors():
         elif self.args.door_randomize_each:  # -dre
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
-                if key != 'All':
+                if key not in ['All', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
                     room_sets.append(ROOM_SETS[key])
             self.combine_areas = False
 
@@ -180,6 +182,18 @@ class Doors():
                 if len(temp) > 0:
                     room_sets = [temp]
 
+        # Deconflict door_randomize and map_shuffle
+        if (self.args.door_randomize_all or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
+            ignore_doors = [1552, 1553]  # don't include zone-eater as doors if included as transitions
+            for dk in room_data['root-wob'][0]:
+                if dk in ignore_doors:
+                    print('removing ', dk, ' from root-wob')
+                    room_data['root-wob'][0].remove(dk)
+            for dk in room_data['root-wor'][0]:
+                if dk in ignore_doors:
+                    print('removing ', dk, ' from root-wor')
+                    room_data['root-wor'][0].remove(dk)
+
         if self.args.map_shuffle_separate:  # -maps
             # Separately:  add rooms for WOR, WOB
             # Need to dynamically construct connecting rooms first
@@ -208,7 +222,6 @@ class Doors():
                 ROOM_SETS['MapShuffleXW'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleXW'])
-
 
 
         # Hard override for testing

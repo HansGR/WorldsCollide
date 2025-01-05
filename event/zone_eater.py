@@ -1,4 +1,6 @@
 from event.event import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class ZoneEater(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -7,6 +9,7 @@ class ZoneEater(Event):
                           or args.door_randomize_all
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Zone Eater"
@@ -21,6 +24,15 @@ class ZoneEater(Event):
         self.gogo_npc_id = 0x10
         self.gogo_npc = self.maps.get_npc(0x116, self.gogo_npc_id)
 
+        if self.DOOR_RANDOMIZE:
+            # Use events as one-ways.  Takes priority.
+            self.engulf_id = 2040  # ID of engulf event
+            self.exit_id = 2041  # ID of exit zone eater event
+        elif self.MAP_SHUFFLE:
+            # Use events as doors
+            self.engulf_id = 1552  # ID of engulf door
+            self.exit_id = 1553  # ID of exit zone eater door
+
         if self.args.character_gating:
             self.add_gating_condition()
 
@@ -31,7 +43,7 @@ class ZoneEater(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
             self.door_rando_mod()
 
         self.log_reward(self.reward)
@@ -126,24 +138,37 @@ class ZoneEater(Event):
 
     def door_rando_mod(self):
         # Modifications for door rando
-        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard, SummonAirship
+        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard, SummonAirship, switchyard_xy
 
         # (1a) Change the entry event to load the switchyard location
-        event_id = 2040  # ID of engulf event
         space = Reserve(0xa008f, 0xa0095, 'Zone Eater Entry modification')
-        space.write(GoToSwitchyard(event_id, map='world'))
+        space.write(GoToSwitchyard(self.engulf_id, map='world'))
+
         # (1b) Add the switchyard event tile that handles entry to Zone Eater
         src = [
             field.LoadMap(0x114, direction=direction.DOWN, default_music=True,
                           x=10, y=12, fade_in=True, entrance_event=True),
-            field.Return()
         ]
-        AddSwitchyardEvent(event_id, self.maps, src=src)
+        if self.MAP_SHUFFLE:
+            # Get the connecting exit
+            self.parent_map = [0x001, 237, 50]
+            if self.exit_id in self.maps.door_map.keys():
+                conn_id = self.maps.door_map[self.exit_id]  # connecting exit south
+                conn_pair = exit_data[conn_id][0]  # original connecting exit
+                self.parent_map = [exit_world[conn_pair]] + \
+                                     self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+            # Force update the parent map here
+            src += [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] + 1)]
+            if self.parent_map[0] == 0:
+                # Update world
+                src += [field.ClearEventBit(event_bit.IN_WOR)]
+        src += [field.Return()]
+        AddSwitchyardEvent(self.engulf_id, self.maps, src=src)
+        #print(self.exit_id, ': added event at ', switchyard_xy(self.engulf_id), ':', [a.__str__() for a in src])
 
         # (2a) Change the exit event to load the switchyard location
-        event_id = 2041  # ID of engulf event
         space = Reserve(0xb7db7, 0xb7dbd, 'Zone Eater Exit modification')
-        space.write(GoToSwitchyard(event_id))
+        space.write(GoToSwitchyard(self.exit_id))
         # (2b) Add the switchyard event tile that handles exit to Triangle Island
         src = SummonAirship(0x001, 237, 50)
-        AddSwitchyardEvent(event_id, self.maps, src=src)
+        AddSwitchyardEvent(self.exit_id, self.maps, src=src)

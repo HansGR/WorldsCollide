@@ -624,6 +624,8 @@ class Maps():
 
             for e in event_exit_info.keys():
                 if (e in used_events or e in used_exits) and event_exit_info[e][0] is None:
+                    if self.doors.verbose:
+                        print('attempting to update event exit info: ', e)
                     # Update the event addresses
                     mapid = event_exit_info[e][5][0]
                     ex = event_exit_info[e][5][1]
