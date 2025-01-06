@@ -304,7 +304,8 @@ class Doors():
                         if fully_connected is None:
                             print('Door connection timed out')
                     except Exception as e:
-                        print(f"Network connection failed: {e}")
+                        if self.verbose:
+                            print(f"Network connection failed: {e}")
 
                 #start_room_ids = []  # end loop
                 #except:
