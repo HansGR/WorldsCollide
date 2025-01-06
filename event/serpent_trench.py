@@ -27,18 +27,20 @@ class SerpentTrench(Event):
             # modify airship position: nikeah
             nikeah_id = 1199
             if nikeah_id in self.maps.door_map.keys():
-                conn_south = self.maps.door_map[nikeah_id]  # connecting exit south
-                conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_nikeah = [exit_world[conn_pair]] + \
-                                      self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.airship_nikeah = self.maps.get_connection_location(nikeah_id)
+                # conn_south = self.maps.door_map[nikeah_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_nikeah = [exit_world[conn_pair]] + \
+                #                       self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
             # modify airship position: south figaro
             sf_id = 1167
             if sf_id in self.maps.door_map.keys():
-                conn_north = self.maps.door_map[sf_id]
-                conn_pair = exit_data[conn_north][0]  # original connecting exit
-                self.airship_sf = [exit_world[conn_pair]] + \
-                                  self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.airship_sf = self.maps.get_connection_location(sf_id)
+                # conn_north = self.maps.door_map[sf_id]
+                # conn_pair = exit_data[conn_north][0]  # original connecting exit
+                # self.airship_sf = [exit_world[conn_pair]] + \
+                #                   self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
             #print('Updated Serpent Trench airship teleports: ', self.airship_nikeah, self.airship_sf)
 

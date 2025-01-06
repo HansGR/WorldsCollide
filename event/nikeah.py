@@ -21,10 +21,11 @@ class Nikeah(Event):
             # modify airship warp position
             nikeah_id = 5199
             if nikeah_id in self.maps.door_map.keys():
-                conn_id = self.maps.door_map[nikeah_id]  # connecting exit south
-                conn_pair = exit_data[conn_id][0]  # original connecting exit
-                self.airship_loc = [exit_world[conn_pair]] + \
-                                   self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+                self.airship_loc = self.maps.get_connection_location(nikeah_id)
+                # conn_id = self.maps.door_map[nikeah_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.airship_loc = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
                 # print('Updated Nikeah boat airship teleport: ', self.airship_loc)
 
         self.free_event_bit()

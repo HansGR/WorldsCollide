@@ -1,7 +1,5 @@
 from event.event import *
 from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
-from data.map_exit_extra import exit_data
-from data.rooms import exit_world
 
 class SouthFigaroCaveWOB(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
@@ -33,18 +31,16 @@ class SouthFigaroCaveWOB(Event):
             # modify airship position: south
             south_id = 269
             if south_id in self.maps.door_map.keys():
-                conn_south = self.maps.door_map[south_id]  # connecting exit south
-                conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.airship_south = [exit_world[conn_pair]] + \
-                                     self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.airship_south = self.maps.get_connection_location(south_id)
+                # conn_south = self.maps.door_map[south_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_south = [exit_world[conn_pair]] + \
+                #                      self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
             # modify airship position: north
             north_id = 1161
             if north_id in self.maps.door_map.keys():
-                conn_north = self.maps.door_map[north_id]
-                conn_pair = exit_data[conn_north][0]  # original connecting exit
-                self.airship_north = [exit_world[conn_pair]] + \
-                                     self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.airship_north = self.maps.get_connection_location(north_id)  # [dest_map, dest_x, dest_y]
                 #print('Updated South Figaro Cave airship teleports: ', self.airship_south, self.airship_north)
 
         self.cleanup_mod()

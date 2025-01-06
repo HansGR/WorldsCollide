@@ -27,10 +27,11 @@ class ImperialBase(Event):
             # modify exit position from "no terra" and "chucked out!" events
             exit_id = 1059
             if exit_id in self.maps.door_map.keys():
-                conn = self.maps.door_map[exit_id]  # connecting exit
-                conn_pair = exit_data[conn][0]  # original connecting exit
-                self.exit_location = [exit_world[conn_pair]] + \
-                                     self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.exit_location = self.maps.get_connection_location(exit_id)
+                # conn = self.maps.door_map[exit_id]  # connecting exit
+                # conn_pair = exit_data[conn][0]  # original connecting exit
+                # self.exit_location = [exit_world[conn_pair]] + \
+                #                      self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
 
         self.entrance_event_mod()
 

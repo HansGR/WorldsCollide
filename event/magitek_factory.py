@@ -38,10 +38,11 @@ class MagitekFactory(Event):
         if self.MAP_SHUFFLE:
             exit_id = 1228
             if exit_id in self.maps.door_map.keys():
-                conn_id = self.maps.door_map[exit_id]  # connecting exit south
-                conn_pair = exit_data[conn_id][0]  # original connecting exit
-                self.airship_position = [exit_world[conn_pair]] + \
-                                   self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+                self.airship_position = self.maps.get_connection_location(exit_id)
+                # conn_id = self.maps.door_map[exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.airship_position = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
 
         self.vector_mod()
 

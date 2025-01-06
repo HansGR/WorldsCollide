@@ -1,4 +1,5 @@
 #from openpyxl import load_workbook
+import threading
 from random import randrange, choices
 from data.rooms import forced_connections, shared_oneways, exit_room
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
@@ -90,6 +91,8 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
+
+        self.timeout = 10   # seconds allowed for connecting the network
 
         self._all_rooms = []
 
@@ -187,11 +190,11 @@ class Doors():
             ignore_doors = [1552, 1553]  # don't include zone-eater as doors if included as transitions
             for dk in room_data['root-wob'][0]:
                 if dk in ignore_doors:
-                    print('removing ', dk, ' from root-wob')
+                    #print('removing ', dk, ' from root-wob')
                     room_data['root-wob'][0].remove(dk)
             for dk in room_data['root-wor'][0]:
                 if dk in ignore_doors:
-                    print('removing ', dk, ' from root-wor')
+                    #print('removing ', dk, ' from root-wor')
                     room_data['root-wor'][0].remove(dk)
 
         if self.args.map_shuffle_separate:  # -maps
@@ -290,7 +293,18 @@ class Doors():
                 # Connect the network
                 if self.verbose:
                     print('Randomizing map from...', start_room_id)
-                fully_connected = walks.connect_network()
+
+                if self.timeout <= 0:
+                    # Directly connect the network
+                    fully_connected = walks.connect_network()
+                else:
+                    # Connect the network with a timeout
+                    try:
+                        fully_connected = connect_with_timeout(walks, self.timeout)
+                        if fully_connected is None:
+                            print('Door connection timed out')
+                    except Exception as e:
+                        print(f"Network connection failed: {e}")
 
                 #start_room_ids = []  # end loop
                 #except:
@@ -312,6 +326,8 @@ class Doors():
                             # Send shared exits to the same destination
                             map[0].append([m[0], se])
 
+
+        # Postprocess the mapping algorithm results
         if self.args.door_randomize_all or self.args.map_shuffle_crossworld:
             # Remove the (logical) root doors from the map
             map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
@@ -1335,3 +1351,30 @@ class Doors():
                         door_descr[m[1]]) + ')')
 
             section("Door Rando: ", lcolumn, [])
+
+
+class NetworkConnector:
+    def __init__(self, walks):
+        self.walks = walks
+        self.result = None
+        self.exception = None
+
+    def run(self):
+        try:
+            self.result = self.walks.connect_network()
+        except Exception as e:
+            self.exception = e
+
+
+def connect_with_timeout(walks, timeout=10):
+    connector = NetworkConnector(walks)
+    thread = threading.Thread(target=connector.run)
+    thread.start()
+    thread.join(timeout)
+
+    if thread.is_alive():
+        return None  # Timeout occurred
+
+    if connector.exception:
+        raise connector.exception
+    return connector.result

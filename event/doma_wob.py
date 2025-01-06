@@ -42,10 +42,11 @@ class DomaWOB(Event):
             # modify destination for parent map update
             exit_id = 1240
             if exit_id in self.maps.door_map.keys():
-                conn_id = self.maps.door_map[exit_id]
-                conn_pair = exit_data[conn_id][0]  # original connecting exit
-                self.exit_loc = [exit_world[conn_pair]] + \
-                                self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.exit_loc = self.maps.get_connection_location(exit_id)
+                # conn_id = self.maps.door_map[exit_id]
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.exit_loc = [exit_world[conn_pair]] + \
+                #                 self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 # print('Updated Doma parent map location: ', self.exit_loc)
 
         self.dialog_mod()

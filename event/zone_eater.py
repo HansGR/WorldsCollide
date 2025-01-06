@@ -153,10 +153,11 @@ class ZoneEater(Event):
             # Get the connecting exit
             self.parent_map = [0x001, 237, 50]
             if self.exit_id in self.maps.door_map.keys():
-                conn_id = self.maps.door_map[self.exit_id]  # connecting exit south
-                conn_pair = exit_data[conn_id][0]  # original connecting exit
-                self.parent_map = [exit_world[conn_pair]] + \
-                                     self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+                self.parent_map = self.maps.get_connection_location(self.exit_id)
+                # conn_id = self.maps.door_map[self.exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.parent_map = [exit_world[conn_pair]] + \
+                #                      self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
             # Force update the parent map here
             src += [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] + 1)]
             if self.parent_map[0] == 0:

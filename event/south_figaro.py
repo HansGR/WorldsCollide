@@ -52,10 +52,11 @@ class SouthFigaro(Event):
             # modify airship warp position
             sf_id = 1163
             if sf_id in self.maps.door_map.keys():
-                conn_id = self.maps.door_map[sf_id]  # connecting exit south
-                conn_pair = exit_data[conn_id][0]  # original connecting exit
-                self.airship_loc = [exit_world[conn_pair]] + \
-                                   self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+                self.airship_loc = self.maps.get_connection_location(sf_id)
+                # conn_id = self.maps.door_map[sf_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.airship_loc = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
                 # print('Updated SF boat airship teleport: ', self.airship_loc)
                 
         self.airship_follow_boat_mod()

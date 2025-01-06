@@ -28,10 +28,11 @@ class DarylTomb(Event):
             # modify exit position
             south_id = 1242
             if south_id in self.maps.door_map.keys():
-                conn_south = self.maps.door_map[south_id]  # connecting exit south
-                conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.exit_loc = [exit_world[conn_pair]] + \
-                                self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                self.exit_loc = self.maps.get_connection_location(south_id)
+                # conn_south = self.maps.door_map[south_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.exit_loc = [exit_world[conn_pair]] + \
+                #                 self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
                 #print('Updated Daryl Cave quick exit: ', self.exit_loc)
 
         self.entrance_mod()

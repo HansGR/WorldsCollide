@@ -174,26 +174,27 @@ def flags(args):
 
 def options(args):
 
+    opts = []
     if args.map_shuffle:
         if args.map_shuffle_separate:
-            return [
+            opts += [
                 ("Map Shuffle", args.map_shuffle),
             ]
         else:
-            return [
+            opts += [
                 ("Map Shuffle", 'Crossworld')
             ]
 
     if args.door_randomize_all:
-        return [
+        opts += [
             ("Randomize All", args.door_randomize_all),
         ]
     elif args.door_randomize_dungeon_crawl:
-        return [
+        opts += [
             ("Dungeon Crawl", args.door_randomize_dungeon_crawl)
         ]
     elif args.door_randomize_each:
-        return [
+        opts += [
             ("Umaro's Cave", True),
             ("Upper Narshe", 'WoB+WoR'),
             ("Esper Mountain", True),
@@ -231,7 +232,7 @@ def options(args):
         elif args.door_randomize_zozo_wor:
             zozo_state = 'WoR'
 
-        return [
+        opts += [
             ("Umaro's Cave", args.door_randomize_umaro),
             ("Upper Narshe", un_state),
             ("Esper Mountain", args.door_randomize_esper_mountain),
@@ -251,6 +252,8 @@ def options(args):
             ("Mt. Kolts", args.door_randomize_mt_kolts),
             ("Veldt Cave", args.door_randomize_veldt_cave),
         ]
+
+    return opts
 
 def menu(args):
     return (name(), options(args))

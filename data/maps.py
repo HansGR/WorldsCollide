@@ -1356,3 +1356,18 @@ class Maps():
 
         # Note: This line caused SwdTech to break the game - because I forgot the EVENT_CODE_START offset!
         Free(0x17d69 + EVENT_CODE_START, 0x17d82 + EVENT_CODE_START)
+
+    def get_connection_location(self, exit_id, parent_map_ok=False):
+        # Return the location [map_id, x, y] that a given exit_id should go to
+        conn_id = self.door_map[exit_id]
+        conn_pair = exit_data[conn_id][0]  # original connecting exit
+        if conn_pair in self.exits.exit_original_data.keys():
+            conn_data = self.exits.exit_original_data[conn_pair]   # [dest_map, dest_x, dest_y]
+        elif conn_pair >= 4000:
+            # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+            conn_data = self.exits.exit_original_data[conn_pair - 4000]
+
+        if parent_map_ok:
+            return conn_data[:3]
+        else:
+            return [exit_world[conn_pair]] + conn_data[1:3]  # [dest_map, dest_x, dest_y]
