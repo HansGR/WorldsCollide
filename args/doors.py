@@ -184,6 +184,8 @@ def options(args):
             opts += [
                 ("Map Shuffle", 'Crossworld')
             ]
+        if not args.door_randomize:
+            return opts
 
     if args.door_randomize_all:
         opts += [
