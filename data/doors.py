@@ -1430,14 +1430,18 @@ class NetworkConnector:
 
 
 def connect_with_timeout(walks, timeout=10):
+    walks.should_stop = threading.Event()
     connector = NetworkConnector(walks)
     thread = threading.Thread(target=connector.run)
     thread.start()
     thread.join(timeout)
 
     if thread.is_alive():
+        walks.should_stop.set()
+        thread.join(1)
         return None  # Timeout occurred
 
+    walks.should_stop = None  # Reset the flag
     if connector.exception:
         raise connector.exception
     return connector.result

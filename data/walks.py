@@ -18,6 +18,19 @@ class Network:
 
         self.active = 0  # index of active room
 
+        self.should_stop = None  # timeout control
+
+    def __deepcopy__(self, memo):
+        # Custom deepcopy that excludes the should_stop Event
+        cls = self.__class__
+        result = self.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k != 'should_stop':  # Skip copying the Event object
+                setattr(result, k, deepcopy(v, memo))
+        result.should_stop = self.should_stop  # share the same Event object
+        return result
+
     def ForceConnections(self, forcing):
         # Look up forced connections for doors and connect them
         these_doors = self.rooms.doors + self.rooms.traps
@@ -507,6 +520,9 @@ class Network:
         ]
 
     def connect_network(self):
+        if self.should_stop and self.should_stop.is_set():
+            raise TimeoutError('Operation cancelled')
+
         # Connect the network by proposing a connection & recursively connecting the created network.
         # If a connection fails or creates an invalid network, retreat a step and try a different one.
         net_state = deepcopy(self)  # AFTER THIS POINT: all operations should be on net_state!
