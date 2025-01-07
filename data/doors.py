@@ -58,9 +58,9 @@ ROOM_SETS = {
             145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 'root-mk', # Mt. Kolts
             467, 468, 469, 470, 471, 472, 474, 475, 'root-vc' # Veldt Cave WOR
              ],
-    'MapShuffleWOB':  ['root-wob'],  # dynamically appended later
-    'MapShuffleWOR':  ['root-wor'],  # dynamically appended later
-    'MapShuffleXW': ['root-wob', 'root-wor']  # dynamically appended later
+    'MapShuffleWOB':  ['shuffle-wob'],  # dynamically appended later
+    'MapShuffleWOR':  ['shuffle-wor'],  # dynamically appended later
+    'MapShuffleXW': ['shuffle-wob', 'shuffle-wor']  # dynamically appended later
 
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
@@ -91,6 +91,7 @@ class Doors():
         self.use_shared_exits = True
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
+        self.area_name = []
 
         self.timeout = 10   # seconds allowed for connecting the network
 
@@ -103,80 +104,123 @@ class Doors():
             # Prioritize randomizing all doors.
             # Both options the same room list.  -dra uses drafting; -drdc does not.
             room_sets.append(ROOM_SETS['All'])
+            self.area_name.append('All')
 
         elif self.args.door_randomize_each:  # -dre
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
                 if key not in ['All', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
                     room_sets.append(ROOM_SETS[key])
+                    self.area_name.append(key)
             self.combine_areas = False
 
         else:
             # Randomize separately
             if self.args.door_randomize_umaro:  # -dru
-                room_sets.append(ROOM_SETS['Umaro'])
+                key = 'Umaro'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_upper_narshe:  # -drun
-                room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
-                #room_sets.append(ROOM_SETS['UpperNarshe_WoR'])  # this randomization will be overwritten
+                key = 'UpperNarshe_WoB'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
                 self.match_WOB_WOR = True
 
             else:
                 if self.args.door_randomize_upper_narshe_wob:  # -drunb
-                    room_sets.append(ROOM_SETS['UpperNarshe_WoB'])
+                    key = 'UpperNarshe_WoB'
+                    room_sets.append(ROOM_SETS[key])
+                    self.area_name.append(key)
                 if self.args.door_randomize_upper_narshe_wor:  # -drunr
-                    room_sets.append(ROOM_SETS['UpperNarshe_WoR'])
+                    key = 'UpperNarshe_WoR'
+                    room_sets.append(ROOM_SETS[key])
+                    self.area_name.append(key)
 
             if self.args.door_randomize_esper_mountain:  # -drem
-                room_sets.append(ROOM_SETS['EsperMountain'])
+                key = 'EsperMountain'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_owzer_basement:  # -drob
-                room_sets.append(ROOM_SETS['OwzerBasement'])
+                key = 'OwzerBasement'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_magitek_factory:  # -drmf
-                room_sets.append(ROOM_SETS['MagitekFactory'])
+                key = 'MagitekFactory'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_sealed_gate:  # -drsg
-                room_sets.append(ROOM_SETS['SealedGate'])
+                key = 'SealedGate'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_zozo_wob:  # -drzb
-                room_sets.append(ROOM_SETS['Zozo'])
+                key = 'Zozo'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_zozo_wor:  # -drzr
-                room_sets.append(ROOM_SETS['Zozo-WOR'])
+                key = 'Zozo-WOR'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_mt_zozo:  # -drmz
-                room_sets.append(ROOM_SETS['MtZozo'])
+                key = 'MtZozo'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_lete_river:  # -drlr
-                room_sets.append(ROOM_SETS['Lete'])
+                key = 'Lete'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_zone_eater:  # -drze
-                room_sets.append(ROOM_SETS['ZoneEater'])
+                key = 'ZoneEater'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_serpent_trench:  # -drst
-                room_sets.append(ROOM_SETS['SerpentTrench'])
+                key = 'SerpentTrench'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_burning_house:  # -drbh
-                room_sets.append(ROOM_SETS['BurningHouse'])
+                key = 'BurningHouse'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_daryls_tomb:  # -drdt
-                room_sets.append(ROOM_SETS['DarylsTomb'])
+                key = 'DarylsTomb'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_south_figaro_cave_wob:  # -drsfcb
-                room_sets.append(ROOM_SETS['SouthFigaroCaveWOB'])
+                key = 'SouthFigaroCaveWOB'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_phantom_train:  # -drpt
-                room_sets.append(ROOM_SETS['PhantomTrain'])
+                key = 'PhantomTrain'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_cyans_dream:  # -drcd
-                room_sets.append(ROOM_SETS['CyansDream'])
+                key = 'CyansDream'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_mt_kolts:  # -drmk
-                room_sets.append(ROOM_SETS['MtKolts'])
+                key = 'MtKolts'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.args.door_randomize_veldt_cave:  # -drvc
-                room_sets.append(ROOM_SETS['VeldtCave'])
+                key = 'VeldtCave'
+                room_sets.append(ROOM_SETS[key])
+                self.area_name.append(key)
 
             if self.combine_areas:
                 temp = []
@@ -188,44 +232,45 @@ class Doors():
         # Deconflict door_randomize and map_shuffle
         if (self.args.door_randomize_all or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
             ignore_doors = [1552, 1553]  # don't include zone-eater as doors if included as transitions
-            for dk in room_data['root-wob'][0]:
+            for dk in room_data['shuffle-wob'][0]:
                 if dk in ignore_doors:
                     #print('removing ', dk, ' from root-wob')
-                    room_data['root-wob'][0].remove(dk)
-            for dk in room_data['root-wor'][0]:
+                    room_data['shuffle-wob'][0].remove(dk)
+            for dk in room_data['shuffle-wor'][0]:
                 if dk in ignore_doors:
                     #print('removing ', dk, ' from root-wor')
-                    room_data['root-wor'][0].remove(dk)
+                    room_data['shuffle-wor'][0].remove(dk)
 
         if self.args.map_shuffle_separate:  # -maps
             # Separately:  add rooms for WOR, WOB
             # Need to dynamically construct connecting rooms first
-            for dk in room_data['root-wob'][0]:
+            for dk in room_data['shuffle-wob'][0]:
                 this_room_name = 'ms-wob-' + str(dk)
                 room_data[this_room_name] = [[exit_data[dk][0]], [], [], 0]
                 ROOM_SETS['MapShuffleWOB'].append(this_room_name)
-            for dk in room_data['root-wor'][0]:
+            for dk in room_data['shuffle-wor'][0]:
                 this_room_name = 'ms-wor-'+str(dk)
                 room_data[this_room_name] = [[exit_data[dk][0]], [], [], 1]
                 ROOM_SETS['MapShuffleWOR'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleWOB'])
+            self.area_name.append('MapShuffleWOB')
             room_sets.append(ROOM_SETS['MapShuffleWOR'])
+            self.area_name.append('MapShuffleWOR')
 
         elif self.args.map_shuffle_crossworld:  # -mapx
             # Add rooms for WOR and WOB
             # Need to dynamically construct connecting rooms first
-            for dk in room_data['root-wob'][0]:
-                this_room_name = 'ms-wob-' + str(dk)
-                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 0]
-                ROOM_SETS['MapShuffleXW'].append(this_room_name)
-            for dk in room_data['root-wor'][0]:
-                this_room_name = 'ms-wor-' + str(dk)
-                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 1]
-                ROOM_SETS['MapShuffleXW'].append(this_room_name)
+            shuffle_rooms = [r for r in ROOM_SETS['MapShuffleXW']]
+            for sr in shuffle_rooms:
+                rw = room_data[sr][-1]
+                for dk in room_data[sr][0]:
+                    this_room_name = sr + '-' + str(dk)
+                    room_data[this_room_name] = [[exit_data[dk][0]], [], [], rw]
+                    ROOM_SETS['MapShuffleXW'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleXW'])
-
+            self.area_name.append('MapShuffleXW')
 
         # Hard override for testing
         #room_sets = [ROOM_SETS['test']]
@@ -240,10 +285,12 @@ class Doors():
         # Create list of randomized connections using walks
         map = [[], []]
 
-        if self.args.door_randomize_all or self.args.map_shuffle_crossworld:
+        if self.args.door_randomize_all:
+            all_id = self.area_name.index('All')
             # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
             # This encodes that you can reach all roots from all roots.
-            root_rooms = [r for r in self.rooms[0] if 'root' in str(r)]
+            # This is not done for door-randomize-dungeon-crawl.
+            root_rooms = [r for r in self.rooms[all_id] if 'root' in str(r)]
             offset = 10000
             root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
             root_doors = []
@@ -251,12 +298,25 @@ class Doors():
                 room_data[root_rooms[ri]][0].append(root_map[ri][0])
                 root_doors.append(root_map[ri][1])
                 self.forcing[root_map[ri][1]] = [root_map[ri][0]]
-            self.rooms[0].append('root')
+            self.rooms[all_id].append('root')
             room_data['root'] = [ root_doors, [], [], [], {}, 0]
             self.room_counts['root'] = [len(r) for r in room_data['root'][:-1]]
             self.room_doors['root'] = [r for r in room_data['root'][:-1]]
 
-        for area in self.rooms:
+        if self.args.map_shuffle_crossworld:
+            xw_id = self.area_name.index('MapShuffleXW')
+            # Force a connection between the WoB and WoR.
+            # This encodes that you can reach these rooms from each other.
+            offset = 20000
+            xw_map = [[offset, offset + 1]]
+            xw_root_doors = xw_map[0]
+            room_data['shuffle-wob'][0].append(xw_map[0][0])
+            room_data['shuffle-wor'][0].append(xw_map[0][1])
+            self.forcing[xw_map[0][0]] = [xw_map[0][1]]
+
+        for area_id in self.area_name:
+            ai = self.area_name.index(area_id)
+            area = self.rooms[ai]
             if len(area) > 0:
                 walks = Network(area)  # Initialize the Walk Network
                 if self.verbose:
@@ -272,7 +332,7 @@ class Doors():
                     print('Count after attaching dead ends: ', walks.rooms.count)
 
                 # Select starting node
-                if self.args.door_randomize_all:
+                if area_id == 'All':
                     # Start in the root room
                     string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
                     root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
@@ -329,9 +389,11 @@ class Doors():
 
 
         # Postprocess the mapping algorithm results
-        if self.args.door_randomize_all or self.args.map_shuffle_crossworld:
+        if self.args.door_randomize_all:
             # Remove the (logical) root doors from the map
             map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
+        if self.args.map_shuffle_crossworld:
+            map[0] = [m for m in map[0] if m[0] not in xw_root_doors and m[1] not in xw_root_doors]
 
         if self.match_WOB_WOR:
             # Make the WOR map match the WOB map in relevant areas

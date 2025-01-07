@@ -162,7 +162,7 @@ class ZoneEater(Event):
             src += [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] + 1)]
             if self.parent_map[0] == 0:
                 # Update world
-                src += [field.ClearEventBit(event_bit.IN_WOR)]
+                src += [field.SetEventBit(event_bit.IN_WOR)]  # Zone Eater is in WOR.  is this necessary?
         src += [field.Return()]
         AddSwitchyardEvent(self.engulf_id, self.maps, src=src)
         #print(self.exit_id, ': added event at ', switchyard_xy(self.engulf_id), ':', [a.__str__() for a in src])
