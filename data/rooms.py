@@ -844,6 +844,9 @@ room_data = {
     # EBOT'S ROCK
     535 : [ [1546], [], [], 1],  # Ebot's Rock entrance, 0x195
 
+    # PHOENIX CAVE
+    'root-pc-as-doors' : [ [1554], [], [], 1],  # Phoenix cave entry as door
+    536 : [ [1555, 857], [], [], 1],   # Phoenix cave outside (with exit as door)
 }
 
 # Lists of exits that must be connected
@@ -923,10 +926,11 @@ shared_exits = {
     37: [38, 39],  # Zozo WoB entrance
 
     49: [50],      # Albrook WoR entrance
-    #54: [55],      # Nikeah WoR entrance, pair 1.
+    #54: [55],      # Nikeah WoR entrance, pair 1 (not used)
     59: [60],      # Kohlingen WoR entrance
     63: [64],      # Maranda WoR entrance
-    65: [66, 54, 55],      # Nikeah WoR entrance, both pairs
+    65: [66],      # Nikeah WoR entrance, pair 2
+    #65: [66, 54, 55],      # Nikeah WoR entrance, both pairs
     70: [71, 72],  # Zozo WoR entrance
     73: [74],      # Jidoor WoR entrance
     76: [77],      # Doma WoR entrance

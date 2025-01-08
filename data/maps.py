@@ -511,6 +511,9 @@ class Maps():
 
             # Patch all used exits
             self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=False)
+            # Also patch exits that are logical and have different destinations than their WOB companions ...
+            # Actually just patch all exits in exit_data_patch, why not.  Should be safe. 
+            self.exits.patch_exits([e for e in exit_data_patch.keys()], verbose=self.doors.verbose, force_explicit=False)
             for e in self.exits.exit_original_data.keys():
                 if len(self.exits.exit_original_data[e]) == 12:
                     # need to append map_id for event doors
@@ -1354,8 +1357,15 @@ class Maps():
         for y in range(28, 32):
             self.delete_event(THA_WR, 0, y)
 
+        # Move unused Nikeah exits (54, 55) out of the way
+        for e_id in [54, 55]:
+            nikeah = self.get_exit(e_id)
+            nikeah.x = e_id
+            nikeah.y = 0
+
         # Note: This line caused SwdTech to break the game - because I forgot the EVENT_CODE_START offset!
         Free(0x17d69 + EVENT_CODE_START, 0x17d82 + EVENT_CODE_START)
+
 
     def get_connection_location(self, exit_id, parent_map_ok=False):
         # Return the location [map_id, x, y] that a given exit_id should go to

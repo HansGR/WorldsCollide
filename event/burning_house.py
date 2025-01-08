@@ -334,6 +334,26 @@ class BurningHouse(Event):
         new_event.event_address = self.delete_flameeater_npcs - EVENT_CODE_START
         self.maps.add_event(0x15f, new_event)
 
+        # Delete NPCs in Thamasa Inn to avoid softlocking.
+        # We don't use them, and they appear if npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN (0x507) is set
+        #thamasa_inn = 0x15a
+        strago_npc_id = 0x11
+        interceptor_npc_id = 0x12
+        src = [
+            field.DeleteEntity(strago_npc_id),
+            field.HideEntity(strago_npc_id),
+            field.DeleteEntity(interceptor_npc_id),
+            field.HideEntity(interceptor_npc_id),
+            field.Call(0xbd65f),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, 'Thamasa Inn Entrance Event hide npcs')
+        hide_addr = space.start_address
+
+        space = Reserve(0xbd6a3, 0xbd6a6, 'Thamasa Inn Entrance Event mod')
+        space.write(field.Call(hide_addr))
+
+
     def map_shuffle_mod(self):
         # Change the entrance on the worldmap to skip bit checks & just load the map
         #enter_event = self.maps.get_event(0x0, 250, 128)
