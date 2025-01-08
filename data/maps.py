@@ -510,10 +510,11 @@ class Maps():
                 self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
 
             # Patch all used exits
-            self.exits.patch_exits([m for m in self.door_map.keys()], verbose=self.doors.verbose, force_explicit=False)
             # Also patch exits that are logical and have different destinations than their WOB companions ...
-            # Actually just patch all exits in exit_data_patch, why not.  Should be safe. 
-            self.exits.patch_exits([e for e in exit_data_patch.keys()], verbose=self.doors.verbose, force_explicit=False)
+            # Actually just patch all exits in exit_data_patch, why not.  Should be safe.
+            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()]))
+            #print(exits_to_patch)
+            self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=False)
             for e in self.exits.exit_original_data.keys():
                 if len(self.exits.exit_original_data[e]) == 12:
                     # need to append map_id for event doors
