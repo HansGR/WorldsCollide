@@ -810,7 +810,12 @@ class Maps():
 
             # For a very few exits, must force explicit
             if m in map_shuffle_force_explicit:
-                exitA.dest_map = exit_world[exitB_pairID]
+                #if self.doors.verbose:
+                #    print('Checking if ', m, 'must be forced explicit...', hex(exitA.dest_map))
+                if exitA.dest_map == 0x1ff:
+                    exitA.dest_map = exit_world[exitB_pairID]
+                    if self.doors.verbose:
+                        print('Updated destination map for ', m,': 0x1ff --> ', hex(exitA.dest_map) )
 
             # Write events on the exits to handle required conditions:
             self.create_exit_event(m, map[m])

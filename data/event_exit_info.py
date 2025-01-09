@@ -430,6 +430,7 @@ exit_door_patch = {
     # Baren Falls: for some reason, it doesn't auto update the parent map
     15: [field.SetParentMap(0x0, direction.DOWN, 185, 93)],
 
+
 }
 
 entrance_event_patch = {
@@ -567,16 +568,24 @@ require_event_bit = {
 
     # Cave on the Veldt, Relm/shadow NPC
     988: {0x552: True},
-    991: {0x552: True}
+    991: {0x552: True},
+
+    # Owzer's Basement Chadarnook Room, Owzer & Relm NPCs
+    591: {0x488: True, 0x487: True},
+
+    # Phoenix Cave return to Falcon, unset warp bit
+    1554: {event_bit.PHOENIX_CAVE_WARP_OPTION: False},
 
 }
 
 room_require_event_bit = {
     # Narshe WoB NPC bits
     16: {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False},
+    21: {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False}, # north entrance from caves
 
     # Narshe WoR NPC bits
     34: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True},
+    39: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # north entrance from caves
 
     # Mobliz WoB NPC bits
     228: {npc_bit.MOBLIZ_CITIZENS: True, npc_bit.MOBLIZ_SOLDIERS_LETTER: True},

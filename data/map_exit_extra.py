@@ -1368,6 +1368,8 @@ exit_data = {
     1547: [1240,  "Doma entrance from World Map WoB"],
     1552: [1553,  "Zone Eater engulf as door"],
     1553: [1552,  "Zone Eater exit as door"],
+    1554: [1555,  "Phoenix cave entrance as door"],
+    1555: [1554,  "Phoenix cave exit as door"],
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
@@ -1751,6 +1753,8 @@ event_door_connection_data = {
     1547: [0x11d, 33, 53, 0, 0, 0, 0, 0, 156, 85, 0, 0],  #  'Doma Castle entrance WC with Doma Siege event'.  Use switchyard to capture event logic?  [0x005, 1547 % 128, 1547 // 128, 0, 0, 0, 0, 0, 156, 84, 0, 0]
     1552: [0x114, 10, 12, 0, 0, 0, 2, 0, 237, 50, 0, 0],  #  "Zone Eater engulf as door"
     1553: [0x001, 237, 50, 0, 0, 0, 2, 0, 5, 6, 0, 0],  #  "Zone Eater exit as door"
+    1554: [0x13e, 8, 7, 0, 0, 0, 2, 0, 117, 156, 0, 0],  #  "Phoenix cave entry as door"
+    1555: [0x00b, 16, 8, 0, 0, 0, 2, 0, 5, 6, 0, 0],  #  "Phoenix cave exit as door"  Should be flying afterward.  0x220E5.  world map: [0x001, 117, 162]
     # Logical exits with different destinations
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
@@ -1760,7 +1764,7 @@ event_door_connection_data = {
 # Doors listed here will move that event tile to the new partner in maps.connect_exits().
 ### 1/1/25: in the rare cases where there's an event that needs to happen before using a door, we should actually write
 # the necessary code rather than trying to call or branch to it (because sometimes it needs a call, sometimes a branch).
-# So we will get rid of has_event_entrance and deal with each case invididually.
+# So we will get rid of has_event_entrance and deal with each case individually.
 has_event_entrance = {
     # door_id : [map_id, x, y] for event entrance to this door
 #    1204 : [0xb4, 44, 55] # Cyan's cliff: start the reward cutscene
@@ -1808,5 +1812,5 @@ map_shuffle_airship_warp = [
 
 # For a very small number of exits, the exit MUST be explicit (because the parent map is not updated correctly)
 map_shuffle_force_explicit = [
-    1059, 1060  # Imperial base west to world map
+    1059, 1060,  # Imperial base west to world map
 ]

@@ -32,7 +32,9 @@ class MultipleCalls(_Instruction):
         return super().__str__(hex(self.address))
 
 class SelectParties(_Instruction):
-    def __init__(self, count, unmovable_characters = 0x0000):
+    def __init__(self, count, unmovable_characters = 0x0000, clear_party=False):
+        if clear_party:
+            count |= 0x80
         super().__init__(0x99, count, unmovable_characters.to_bytes(2, "little"))
 
     def __str__(self):
