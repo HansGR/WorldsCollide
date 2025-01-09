@@ -222,6 +222,11 @@ event_exit_info = {
     # NOTE: not compatible with &doors, if Zone Eater entrance/exit are being treated as one-ways!  (2040, 2041)
     1552: [None, 7, 1, [False, False, False, False, True], 'Zone Eater Engulf as door', [0x005, 1552 % 128, 1552 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     1553: [0xb7d9d, 33, 27, [False, False, False, False, False], 'Zone Eater Exit as door', [0x114, 5, 6], 'JMP'],  # Goes to Switchyard tile
+
+    # PHOENIX CAVE AS DOOR
+    1554: [None, 7, 1, [False, False, False, False, False], 'Phoenix Cave entry as door', [0x005, 1554 % 128, 1554 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    1555: [None, 7, 1, [False, False, False, False, False], 'Phoenix Cave exit as door', [0x005, 1555 % 128, 1555 // 128], 'JMP'],  # exit event from Phoenix cave. hook @ [0x13e, 5, 6] calls 0xc20e5
+
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -231,6 +236,22 @@ event_exit_info = {
 #   2. Currently choosing to randomize destination of mine cart event.
 #       Talking to Cid always starts minecart event, but destination can take you elsewhere
 #       What happens with MTek3 prize?  Is it triggered by minecart, or by entering Vector?
+
+# For events that go to switchyard tiles, we still will need to know sometimes what map they should return to.
+# Used in maps.
+event_return_map = {
+    1501: 0x000,  # 'Imperial Camp WoB'
+    1502: 0x000,  # 'Figaro Castle WoB'
+    1504: 0x000,  # 'Thamasa WoB'
+    1505: 0x000,  # 'Vector WOB'
+    1506: 0x000,  # 'Cave to South Figaro South Entrance WoB'
+    1507: 0x001,  # 'Figaro Castle WoR'
+    1546: 0x001,  # 'Exit from Hidon Cave' WoR
+    1547: 0x000,  # 'Doma Left Tile WoB'
+    1552: 0x001,  # 'Zone Eater Engulf as door' WoR
+    1554: 0x00b,  # 'Phoenix Cave entry as door' Falcon
+}
+
 
 from instruction.event import EVENT_CODE_START
 from instruction import field
@@ -452,7 +473,10 @@ from event.doma_wob import *
 doma_siege_patch = DomaWOB.entrance_door_patch
 
 from event.mt_zozo import *
-mt_zozo_cliff_check = MtZozo.entrance_door_patch
+mt_zozo_cliff_check = MtZozo.entrance_door_patch()
+
+from event.phoenix_cave import *
+phoenix_cave_animation = PhoenixCave.entrance_door_patch()
 
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
@@ -479,7 +503,10 @@ entrance_door_patch = {
     4658: [opera_dragon_bit_check(), False],
 
     # Mt Zozo cliff entrance patch
-    1204: [mt_zozo_cliff_check(), True],
+    1204: [mt_zozo_cliff_check, True],
+
+    # Phoenix cave animation & party split
+    1555: [phoenix_cave_animation, True]
 
 }
 
@@ -616,6 +643,10 @@ room_require_event_bit = {
              #    field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
              #    field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
              #    field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
+
+    # Thamasa inn NPC bits for Interceptor, Strago
+    #447: {npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN: False},  # Do we need to deconflict this?
+    # No, just change entrance event to delete these NPCS.  We don't use them.
 
 }
 

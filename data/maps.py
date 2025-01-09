@@ -25,7 +25,7 @@ from instruction.event import EVENT_CODE_START
 import instruction.field.entity as field_entity
 
 from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
-    multi_events, entrance_door_patch, exit_door_patch, require_event_bit
+    multi_events, entrance_door_patch, exit_door_patch, require_event_bit, event_return_map
 
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, \
     event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit
@@ -518,7 +518,11 @@ class Maps():
             for e in self.exits.exit_original_data.keys():
                 if len(self.exits.exit_original_data[e]) == 12:
                     # need to append map_id for event doors
-                    self.exits.exit_original_data[e].append(self.exit_maps[e])
+                    this_map = self.exit_maps[e]
+                    if this_map == SWITCHYARD_MAP and e in event_return_map.keys():
+                        self.exits.exit_original_data[e].append(event_return_map[e])
+                    else:
+                        self.exits.exit_original_data[e].append(this_map)
 
         # if self.args.map_shuffle:
         #     # Modify the entrance events for maps 0x0 and 0x1 to correctly set the world bit.
