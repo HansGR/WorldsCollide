@@ -534,8 +534,8 @@ room_data = {
     '306r' : [ [4630], [ ], [ ], ['clock2'], {}, 1], #Zozo Weapon WoR
     307 : [ [631], [], [3062], [ ], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2061]}]}]}]}]}, 0], #Zozo Clock Puzzle Room West WoB
     308 : [ [632], [2062], [], [ ], {'forced':[3061]}, 0], #Zozo Clock Puzzle Room East WoB
-    '307r': [[4631], [], [3064], [], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2063]}]}]}]}]}, 0],  # Zozo Clock Puzzle Room West WoB
-    '308r': [[4632], [2064], [], [], {'forced': [3063]}, 0],  # Zozo Clock Puzzle Room East WoB
+    '307r': [[4631], [], [3064], [], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2063]}]}]}]}]}, 1],  # Zozo Clock Puzzle Room West WoR
+    '308r': [[4632], [2064], [], [], {'forced': [3063]}, 1],  # Zozo Clock Puzzle Room East WoR
     #'307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
     #'307r' : [ [4631, 4632],  [ ], [ ], 1],  #Zozo Clock Puzzle Room (complete)
     309 : [ [633], [ ], [ ], 0], #Zozo Cafe Chest Room
