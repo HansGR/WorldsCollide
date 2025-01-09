@@ -27,24 +27,22 @@ room_data = {
     'root-u' : [ [], [2010], [3009], 1], # Root map for -door-randomize-umaro
     'root-unb' : [ [1138], [], [], 0], # Root map for -door-randomize-upper-narshe-wob
     'root-unr' : [ [1146], [], [], 1], # Root map for -door-randomize-upper-narshe-wor
-    'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
     'root-ob' : [ [593], [], [], 1], # Root map for -door-randomize-owzer's basement
     'root-mf' : [ [1229], [], [3028], 0],     # Magitek Factory root entrance in Vector
     #'root-zb': [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
     #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
     'root-zb': [[600, 601, 602, 604, 608], [], [], 0],  # Zozo 1F Outside WOB
     'root-zr': [[4600, 4601, 4602, 4604], [], [], ['zr1'], {}, 1],  # Zozo 1F Outside WOR
-    'branch-mz': [ [537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
-    'root-mz' : [ [618], [], [], 1],  # Mt Zozo connection (Rusty Door)
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
     'root-st' : [ [ ], [2044], [3053], 0], # Root map for -door-randomize-serpent-trench
     'root-bh' : [ [ ], [2054], [3055], 0],  # Root map for -door-randomize-burning-house
     'root-dt' : [ [1241], [], [3058], 1],  # Root map for -door-randomize-darills-tomb
-    'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob
+    'root-cd' : [ [], [2069], [3074], 1], # Root room for Cyan's Dream
+    'root-pt' : [ [468], [], [3068], 0],  # Root map for Phantom Train
 
-    #'shuffle-wob' : [ [37], [], [], 0],  # Root map for WOB map shuffle testing
+    #'shuffle-wob' : [ [44], [], [], 0],  # Root map for WOB map shuffle testing
     'shuffle-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
-    #'shuffle-wor' : [ [1552], [], [], 1],  # Root map for WOR map shuffle testing
+    #'shuffle-wor' : [ [1554], [], [], 1],  # Root map for WOR map shuffle testing
     'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
@@ -187,6 +185,8 @@ room_data = {
     96 : [ [255], [ ], [ ], 1], #Figaro Castle B1 Single Chest Room
 
     # CAVE TO SOUTH FIGARO
+    'root-sfcb' : [ [5, 1506], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob (to_world_map)
+    'root-sfcb-mapsafe' : [ [1513, 268], [], [], 0],  # Root map for -door-randomize-south-figaro-cave-wob (to entry)
     97 : [ [256, 257], [ ], [ ], 1], #Cave to South Figaro Small Hallway WoR
     98 : [ [258, 259, 260], [ ], [ ], 1], #Cave to South Figaro Big Room WoR
     99 : [ [261, 262], [ ], [ ], 1], #Cave to South Figaro South Entrance WoR
@@ -273,6 +273,7 @@ room_data = {
 
     # MT KOLTS
     'root-mk' : [ [11, 12], [], [], 0],  # Root room for Mt Kolts
+    'root-mk-mapsafe' : [ [363, 1177], [], [], 0],  # Root room for Mt Kolts (mapsafe)
     145 : [ [363, 1175], [ ], [ ], 0], #Mt. Kolts South Entrance
     146 : [ [364, 365, 366], [ ], [ ], 0], #Mt. Kolts 1F Outside
     147 : [ [367], [ ], [ ], 0], #Mt Kolts Outside Chest 1 Room
@@ -355,7 +356,6 @@ room_data = {
     199 : [ [464, 465], [466], [], 0], # Phantom Forest Fork Room.  466 is a normal door behaving as a one-way (!) and 465 goes to world map BUT has an event tile exit....
     200 : [ [467, 468], [], [], 0],  # Phantom Forest Path to Phantom Train (0x087)
 
-    'root-pt' : [ [468], [], [3068], 0],  # Root map for Phantom Train
     201 : [ [469], [2065], [ ], 0], #Phantom Train Station
     202 : [ [470, 471, 472, 473, 1528, 1529, 1530, 1531, 1532], [ ], [ ], [], {'pt2': [2068]}, 0], #Phantom Train Outside Front Section
     '203a': [[1515, 1516], [], [3065], 0],  # Phantom Train Inside 1st Car
@@ -436,6 +436,8 @@ room_data = {
     '245R' : [ [5203], [ ], [ ], 1], #Nikeah Chocobo Stable
 
     # MOUNT ZOZO
+    'root-mz': [[618], [], [], 1],  # Mt Zozo connection (Rusty Door)
+    'branch-mz': [[537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     250 : [ [531, 532, 533], [ ], [ ],  1], #Mt Zozo Outside Bridge
     251 : [ [534], [ ], [ ], 1], #Mt Zozo Outside Single Chest Room
     252 : [ [535, 536], [ ], [ ], 1], #Mt Zozo Outside Cliff to Cyan's Cave
@@ -673,7 +675,6 @@ room_data = {
 
 
     # CYAN DREAM STOOGES MAZE:  0x13d
-    'root-cd' : [ [], [2069], [3074], 1], # Root room for Cyan's Dream
     421 : [ [], [843, 844], [6845, 6846], 1], # Doma Dream 3 Stooges Maze Northwest Section  0x13d
     422 : [ [], [845], [6844], 1], # Doma Dream 3 Stooges Maze West Section
     423 : [ [], [846], [6847], ['cd1'], {}, 1], # Doma Dream 3 Stooges Maze North Section
@@ -760,6 +761,7 @@ room_data = {
 
     # CAVE ON THE VELDT
     'root-vc' : [ [61], [], [3075], 1], # Root room for Cave on the Veldt
+    'root-vc-mapsafe' : [ [979, 985], [], [3075], 1], # Root room for Cave on the Veldt
     467 : [ [978, 979, 985], [ ], [ ], 1], #Veldt Cave First Room
     468 : [ [980], [ ], [ ], 1], #Veldt Cave Second Room Dead End
     469 : [ [981, 986], [ ], [ ], 1], #Veldt Cave Bandit Room / Second Room
@@ -785,6 +787,8 @@ room_data = {
     487 : [ [1031], [ ], [ ], 1], #Fanatic's Tower 1st Floor Secret Room
 
     # ESPER MOUNTAIN
+    'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
+    'root-em-mapsafe' : [ [1046, 1048, 1049], [], [], 0], # Root map for -door-randomize-esper-mountain
     488 : [ [1032, 1033], [ ], [ ], 0], #Esper Mountain 3 Statues Room
     489 : [ [1034, 1035, 1036], [ ], [ ], 0], #Esper Mountain Outside Bridge Room
     490 : [ [1037], [ ], [ ], 0], #Esper Mountain Outside East Treasure Room

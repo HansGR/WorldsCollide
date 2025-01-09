@@ -10,6 +10,7 @@ ROOM_SETS = {
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
     'UpperNarshe_WoR': [37, 38, 40, 41, 42, 43, 44, 46, 47, 'root-unr'],
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
+    'EsperMountain_mapsafe': [488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em-mapsafe'],  # 495,
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg'],
@@ -24,13 +25,16 @@ ROOM_SETS = {
     'DarylsTomb': [378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt'],
     #'DarylsTombMinimal': [379, 380, 383, 384, 386, 387, 389, 390, 391, 392, 'root-dt'],  # for testing
     'SouthFigaroCaveWOB': [100, 101, 102, 103, 104, 105, 'root-sfcb'],
+    'SouthFigaroCaveWOB_mapsafe': [100, 101, 103, 104, 'root-sfcb-mapsafe'],  #  102, 105,
     'PhantomTrain': [201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
                      '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt'],
     'CyansDream': [421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
                   432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd'],
     'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 'root-mk'],
+    'MtKolts_mapsafe': [146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, 'root-mk-mapsafe'],  # 145, 158,
     #'MtKoltsMinimal': [151, 'root-mk'],
     'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 475, 'root-vc'],
+    'VeldtCave_mapsafe': [468, 469, 470, 471, 472, 474, 475, 'root-vc-mapsafe'],  # 467
     #'VeldtCaveMinimal': [470, 475, 'root-vc'],
 
     # Meta rooms:
@@ -38,7 +42,7 @@ ROOM_SETS = {
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
-            488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em',  # Esper Mountain
+            488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em-mapsafe',  # Esper Mountain  495,
             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
             345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
             503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
@@ -50,13 +54,13 @@ ROOM_SETS = {
             '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
             457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
             378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt',  # Daryl's Tomb
-            100, 101, 102, 103, 104, 105, 'root-sfcb',  # South Figaro Cave WOB
+            100, 101, 103, 104, 'root-sfcb-mapsafe',  # South Figaro Cave WOB  102, 105,
             201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
             '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt',  # Phantom Train
             421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
             432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd',  # Cyan's Dream
-            145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 'root-mk', # Mt. Kolts
-            467, 468, 469, 470, 471, 472, 474, 475, 'root-vc' # Veldt Cave WOR
+            146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, 'root-mk-mapsafe', # Mt. Kolts  145, 158,
+            468, 469, 470, 471, 472, 474, 475, 'root-vc-mapsafe' # Veldt Cave WOR   467,
              ],
     'MapShuffleWOB':  ['shuffle-wob'],  # dynamically appended later
     'MapShuffleWOR':  ['shuffle-wor'],  # dynamically appended later
@@ -66,7 +70,7 @@ ROOM_SETS = {
 }
 
 class Doors():
-    verbose = False  # False  # True
+    verbose = True  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
@@ -110,8 +114,10 @@ class Doors():
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
                 if key not in ['All', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
-                    room_sets.append(ROOM_SETS[key])
-                    self.area_name.append(key)
+                    # Check for _mapsafe
+                    if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
+                        room_sets.append(ROOM_SETS[key])
+                        self.area_name.append(key)
             self.combine_areas = False
 
         else:
@@ -139,6 +145,8 @@ class Doors():
 
             if self.args.door_randomize_esper_mountain:  # -drem
                 key = 'EsperMountain'
+                if self.args.map_shuffle:
+                    key += '_mapsafe'
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
@@ -199,6 +207,8 @@ class Doors():
 
             if self.args.door_randomize_south_figaro_cave_wob:  # -drsfcb
                 key = 'SouthFigaroCaveWOB'
+                if self.args.map_shuffle:
+                    key += '_mapsafe'
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
@@ -214,20 +224,27 @@ class Doors():
 
             if self.args.door_randomize_mt_kolts:  # -drmk
                 key = 'MtKolts'
+                if self.args.map_shuffle:
+                    key += '_mapsafe'
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
             if self.args.door_randomize_veldt_cave:  # -drvc
                 key = 'VeldtCave'
+                if self.args.map_shuffle:
+                    key += '_mapsafe'
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
             if self.combine_areas:
                 temp = []
-                for r in room_sets:
-                    temp.extend(r)
+                temp_name = ''
+                for r_id in range(len(room_sets)):
+                    temp.extend(room_sets[r_id])
+                    temp_name += self.area_name[r_id] + '_'
                 if len(temp) > 0:
                     room_sets = [temp]
+                    self.area_name = [temp_name]
 
         # Deconflict door_randomize and map_shuffle
         if (self.args.door_randomize_all or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
@@ -280,6 +297,9 @@ class Doors():
         # Collect & organize data on rooms and doors
         for area in whichRooms:
             self.rooms.append(area)
+        #if self.verbose:
+        #    print(self.area_name)
+        #    print(self.rooms)
 
     def mod(self):
         # Create list of randomized connections using walks
@@ -417,6 +437,24 @@ class Doors():
             map = [vanilla_map, vanilla_oneways]
             print(map)
 
+        # Assess map for repeats
+        all_shared = []
+        for s in shared_exits.keys():
+            all_shared += shared_exits[s]
+        doors_used = [d[0] for d in map[0] if d[0] not in all_shared and d[1] not in all_shared] \
+                     + [d[1] for d in map[0] if d[0] not in all_shared and d[1] not in all_shared]
+        unique_doors = set(doors_used)
+        if len(unique_doors) < len(doors_used):
+            repeat_doors = [d for d in unique_doors if doors_used.count(d) > 1]
+            repeat_doors.sort()
+            print('Warning: repeat doors:', repeat_doors)
+            for m in map[0]:
+                if m[0] in repeat_doors:
+                    print('\t',m)
+                elif m[1] in repeat_doors:
+                    print('\t',m)
+
+        # Return map
         self.map = map
 
     # def mod_original(self):

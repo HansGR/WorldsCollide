@@ -34,7 +34,7 @@ def AddSwitchyardEvent(event_id, maps, branch=[], src=[]):
         switchyard_event.event_address = space.start_address - EVENT_CODE_START
 
     maps.add_event(SWITCHYARD_MAP, switchyard_event)
-    #print('Added Switchyard event: ', event_id, sx, sy, hex(space.start_address))
+    #print('Added Switchyard event: ', event_id, sx, sy, hex(space.start_address), hex(space.end_address))
 
 
 def GoToSwitchyard(event_id, map=''):
