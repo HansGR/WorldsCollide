@@ -98,7 +98,9 @@ class Start(Event):
         self.start_game_mod()
 
         # Warp stone modification
-        if self.args.debug or self.args.door_randomize:
+        if self.args.debug or self.args.door_randomize_dungeon_crawl:
+            # Dungeon Crawl mode doesn't have a well-defined parent map.
+            # Warp stones will always go to the airship over WOB Narshe.
             src = [
                 field.Call(0xa0159),
                 # 0x6b, 0xff, 0x25, 0x00, 0x00, 0x00, 0xff, 0xfe,  <- original warp to parent map
@@ -112,12 +114,19 @@ class Start(Event):
             space = Write(Bank.CA, src, "new warp")
             warp_to_narshe = space.start_address
 
-            space = Reserve(0xa0144, 0xa014e, "edited warp section", field.NOP())
+            space = Reserve(0xa0144, 0xa014e, "edited warp section dungeon crawl", field.NOP())
             space.write(
                 field.Call(warp_to_narshe),
                 field.End(),
             )
+
+            # For safety, knock out the check for the phoenix cave warp bit.
+            # CA/0138: C0    If ($1E80($2BF) [$1ED7, bit 7] is set), branch to $CA0154
+            space = Reserve(0xa0138, 0xa013d, "skip phoenix cave custom warp bit check", field.NOP())
+
         elif self.args.map_shuffle:
+            # In Map Shuffle, parent map is well-defined, but sometimes the parent world is different.
+            # Update the world bit and return to parent map.
             src = [
                 field.Call(0xa0159),
                 field.UpdateWorldReturnToParentMap(),

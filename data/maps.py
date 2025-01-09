@@ -851,6 +851,9 @@ class Maps():
         # Collect information about the properties of the connecting exit
         that_world = self.exit_world[d_ref]
         that_map = self.exit_maps[d_ref]
+        if that_map == SWITCHYARD_MAP and d_ref in event_return_map.keys():
+            that_map = event_return_map[d_ref]  # verify the switchyard tile leads to the world map
+
         is_map_already_loaded = False
 
         # Check to make sure an exit event is required:
@@ -864,7 +867,7 @@ class Maps():
             d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
             d in exit_door_patch.keys(),
             d in self.exit_event_data_to_include.keys(),  # self.exit_event_addr_to_call.keys()
-            that_map in [0x000, 0x001, SWITCHYARD_MAP]
+            that_map in [0x000, 0x001]
         ]
         if self.args.map_shuffle and not self.args.door_randomize:
             # Don't summon the airship by default
@@ -1120,6 +1123,8 @@ class Maps():
         # Collect information about the properties of the connecting exit
         that_world = self.exit_world[d_ref]
         that_map = self.exit_maps[d_ref]
+        if that_map == SWITCHYARD_MAP and d_ref in event_return_map.keys():
+            that_map = event_return_map[d_ref]  # verify the switchyard tile leads to the world map
 
         # (1) the connection requires a specific world that is not this world
         # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
