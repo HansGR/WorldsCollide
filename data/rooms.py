@@ -31,8 +31,6 @@ room_data = {
     'root-mf' : [ [1229], [], [3028], 0],     # Magitek Factory root entrance in Vector
     #'root-zb': [ [37, 38, 39], [], [], 0],  # Zozo WoB entrance (for Terra check)
     #'root-zr': [ [70, 71, 72], [], [], 1],  # Zozo WoR entrance (for Mt Zozo check)
-    'root-zb': [[600, 601, 602, 604, 608], [], [], 0],  # Zozo 1F Outside WOB
-    'root-zr': [[4600, 4601, 4602, 4604], [], [], ['zr1'], {}, 1],  # Zozo 1F Outside WOR
     'root-lr' : [ [], [2034], [3039], 0],  # Root map for -door-randomize-lete
     'root-st' : [ [ ], [2044], [3053], 0], # Root map for -door-randomize-serpent-trench
     'root-bh' : [ [ ], [2054], [3055], 0],  # Root map for -door-randomize-burning-house
@@ -40,7 +38,7 @@ room_data = {
     'root-cd' : [ [], [2069], [3074], 1], # Root room for Cyan's Dream
     'root-pt' : [ [468], [], [3068], 0],  # Root map for Phantom Train
 
-    #'shuffle-wob' : [ [4], [], [], 0],  # Root map for WOB map shuffle testing
+    #'shuffle-wob' : [ [11], [], [], 0],  # Root map for WOB map shuffle testing
     'shuffle-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
     #'shuffle-wor' : [ [1554], [], [], 1],  # Root map for WOR map shuffle testing  1554 = Phoenix Cave
     'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
@@ -437,11 +435,14 @@ room_data = {
 
     # MOUNT ZOZO
     'root-mz': [[618], [], [], 1],  # Mt Zozo connection (Rusty Door)
+    'root-mz_mapsafe': [[30618], [], [], 1],  # Mt Zozo connection (Rusty Door)
     'branch-mz': [[537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
+    'branch-mz_mapsafe': [[30537], [], [], 1],  # Zozo branch to Mount Zozo (for use with Zozo-WoR)
     250 : [ [531, 532, 533], [ ], [ ],  1], #Mt Zozo Outside Bridge
     251 : [ [534], [ ], [ ], 1], #Mt Zozo Outside Single Chest Room
     252 : [ [535, 536], [ ], [ ], 1], #Mt Zozo Outside Cliff to Cyan's Cave
     253 : [ [537, 538, 539], [ ], [ ], 1], #Mt Zozo Inside First Room
+    '253-mapsafe' : [ [538, 539], [ ], [ ], 1], #Mt Zozo Inside First Room
     254 : [ [540, 541], [ ], [ ], 1], #Mt Zozo Inside Dragon Room
     255 : [ [542, 543], [ ], [ ], 1], #Mt Zozo Cyan's Cave
     256 : [ [1204], [ ], [ ], 1], #Mt Zozo Cyan's Cliff
@@ -509,6 +510,8 @@ room_data = {
     292 : [ [599], [ ], [ ], 0], #Esper World South Left House
 
     # ZOZO
+    'root-zb': [[600, 601, 602, 604, 608], [], [], 0],  # Zozo 1F Outside WOB
+    'root-zr': [[4600, 4601, 4602, 4604], [], [], ['zr1'], {}, 1],  # Zozo 1F Outside WOR
     293 : [ [600, 601, 602, 604, 608, 1224], [ ], [ ], 0], #Zozo 1F Outside WOB
     '293r' : [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], 1], #Zozo 1F Outside WOB
     294 : [ [603], [ ], [ ], 0], #Zozo 2F Clock Room Balcony Outside
@@ -517,6 +520,7 @@ room_data = {
     '295r' : [ [4605], [ ], [ ], 1], #Zozo 2F Cafe Balcony Outside
     296 : [ [606, 607], [ ], [ ], 0], #Zozo Cafe Upstairs Outside WOB (618 --> Mt Zozo not accessible)
     '296r' : [ [4606, 4607], [ ], [ ], [], {'zr1': [618]}, 1], #Zozo Cafe Upstairs Outside WOR
+    '296r-mapsafe' : [ [4606, 4607], [ ], [ ], [], {}, 1], #Zozo Cafe Upstairs Outside WOR
     297 : [ [609, 610], [ ], [3032], 0], #Zozo Relic 1st Section Outside (incl. hook entry event)
     298 : [ [611, 612, 616], [2032], [ ], 0], #Zozo Relic 2nd Section Outside (incl. hook exit)
     299 : [ [613, 617], [ ], [ ], ['clock5'], {}, 0], #Zozo Relic 3rd Section Outside
@@ -788,7 +792,8 @@ room_data = {
 
     # ESPER MOUNTAIN
     'root-em' : [ [44], [], [], 0], # Root map for -door-randomize-esper-mountain
-    'root-em-mapsafe' : [ [1046, 1048, 1049], [], [], 0], # Root map for -door-randomize-esper-mountain
+    'root-em_mapsafe' : [ [1046, 1048, 1049], [], [], 0], # Root map for -door-randomize-esper-mountain
+    'root-em_mapsafe_each' : [ [30044], [], [], 0], # Root map for -door-randomize-esper-mountain & map shuffle.  would need to have map shuffle use 31047 instead of 1047...
     488 : [ [1032, 1033], [ ], [ ], 0], #Esper Mountain 3 Statues Room
     489 : [ [1034, 1035, 1036], [ ], [ ], 0], #Esper Mountain Outside Bridge Room
     490 : [ [1037], [ ], [ ], 0], #Esper Mountain Outside East Treasure Room
@@ -1000,6 +1005,15 @@ shared_exits = {
 
     1213: [1214, 1215],     # Jidoor WoB
     5213: [5214, 5215],     # Jidoor WoR
+}
+
+logical_links = [
+    [30537, 30618],  # Mt Zozo connection
+    [30044, 31047],  # Esper Mtn connection
+]
+
+map_shuffle_protected_doors = {
+    'EsperMountain_mapsafe': 1047
 }
 
 # Keys to apply immediately, based on flags.

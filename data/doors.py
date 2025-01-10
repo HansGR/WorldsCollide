@@ -1,7 +1,7 @@
 #from openpyxl import load_workbook
 import threading
 from random import randrange, choices
-from data.rooms import forced_connections, shared_oneways, exit_room
+from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors
 from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
@@ -10,14 +10,18 @@ ROOM_SETS = {
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
     'UpperNarshe_WoR': [37, 38, 40, 41, 42, 43, 44, 46, 47, 'root-unr'],
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
-    'EsperMountain_mapsafe': [488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em-mapsafe'],  # 495,
+    'EsperMountain_mapsafe': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe_each'],  # 495,
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg'],
     'Zozo' : [294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312,
               313, 'root-zb'],
     'Zozo-WOR' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', 'branch-mz'],
+    #'Zozo-WOR_mapsafe' : ['294r', '295r', '296r-mapsafe', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr'],  # only used in -dre
+    'Zozo-WOR_mapsafe' : ['294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', 'branch-mz_mapsafe'],  # only used in -dre
     'MtZozo' : [250, 251, 252, 253, 254, 255, 256, 'root-mz'],
+    #'MtZozo_mapsafe' : [250, 251, 252, '253-mapsafe', 254, 255, 256],  # only used in -dre
+    'MtZozo_mapsafe' : [250, 251, 252, 253, 254, 255, 256, 'root-mz_mapsafe'],  # only used in -dre
     'Lete' : ['LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr'],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze'],
     'SerpentTrench': ['241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st'],
@@ -42,7 +46,7 @@ ROOM_SETS = {
             364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
             19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
             '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
-            488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em-mapsafe',  # Esper Mountain  495,
+            488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe',  # Esper Mountain  495,
             277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
             345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
             503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
@@ -103,6 +107,7 @@ class Doors():
 
         # Read in the doors to be randomized.
         room_sets = []
+        protect_doors = {}
 
         if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:  # -dra, -drdc
             # Prioritize randomizing all doors.
@@ -118,6 +123,10 @@ class Doors():
                     if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
                         room_sets.append(ROOM_SETS[key])
                         self.area_name.append(key)
+                        if key in map_shuffle_protected_doors.keys():
+                            d = map_shuffle_protected_doors[key]
+                            protect_doors[d] = d + 30000
+                            
             self.combine_areas = False
 
         else:
@@ -147,6 +156,8 @@ class Doors():
                 key = 'EsperMountain'
                 if self.args.map_shuffle:
                     key += '_mapsafe'
+                    pd = map_shuffle_protected_doors[key]
+                    protect_doors[pd] = pd + 30000  # protect map shuffle
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
@@ -171,12 +182,12 @@ class Doors():
                 self.area_name.append(key)
 
             if self.args.door_randomize_zozo_wor:  # -drzr
-                key = 'Zozo-WOR'
+                key = 'Zozo-WOR'  # not using _mapsafe here, it's for -dre only
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
             if self.args.door_randomize_mt_zozo:  # -drmz
-                key = 'MtZozo'
+                key = 'MtZozo'   # not using _mapsafe here, it's for -dre only
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
@@ -263,11 +274,17 @@ class Doors():
             # Need to dynamically construct connecting rooms first
             for dk in room_data['shuffle-wob'][0]:
                 this_room_name = 'ms-wob-' + str(dk)
-                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 0]
+                conn_door = exit_data[dk][0]
+                if conn_door in protect_doors.keys():
+                    conn_door = protect_doors[conn_door]
+                room_data[this_room_name] = [ [conn_door], [], [], 0]
                 ROOM_SETS['MapShuffleWOB'].append(this_room_name)
             for dk in room_data['shuffle-wor'][0]:
                 this_room_name = 'ms-wor-'+str(dk)
-                room_data[this_room_name] = [[exit_data[dk][0]], [], [], 1]
+                conn_door = exit_data[dk][0]
+                if conn_door in protect_doors.keys():
+                    conn_door = protect_doors[conn_door]
+                room_data[this_room_name] = [[conn_door], [], [], 1]
                 ROOM_SETS['MapShuffleWOR'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleWOB'])
@@ -283,7 +300,10 @@ class Doors():
                 rw = room_data[sr][-1]
                 for dk in room_data[sr][0]:
                     this_room_name = sr + '-' + str(dk)
-                    room_data[this_room_name] = [[exit_data[dk][0]], [], [], rw]
+                    conn_door = exit_data[dk][0]
+                    if conn_door in protect_doors.keys():
+                        conn_door = protect_doors[conn_door]
+                    room_data[this_room_name] = [[conn_door], [], [], rw]
                     ROOM_SETS['MapShuffleXW'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleXW'])
@@ -392,28 +412,57 @@ class Doors():
                 #    # remove this start room & try again
                 #    start_room_ids.remove(start_room_id)
 
+                fcm_doors = [m for m in fully_connected.map[0]]
+                fcm_oneways = [m for m in fully_connected.map[1]]
+
                 # Copy the results into the map
-                map[0].extend([m for m in fully_connected.map[0]])
-                map[1].extend([m for m in fully_connected.map[1]])
-
-                # Append shared doors to the map
-                for m in map[0]:
-                    if m[0] in shared_exits.keys():
-                        for se in shared_exits[m[0]]:
-                            # Send shared exits to the same destination
-                            map[0].append([se, m[1]])
-                    if m[1] in shared_exits.keys():
-                        for se in shared_exits[m[1]]:
-                            # Send shared exits to the same destination
-                            map[0].append([m[0], se])
-
+                map[0].extend(fcm_doors)
+                map[1].extend(fcm_oneways)
 
         # Postprocess the mapping algorithm results
+        # Patch out logical link
+        ll = {}
+        for l in logical_links:
+            ll[l[0]] = l[1]
+            ll[l[1]] = l[0]
+        llink = {}
+        for m in map[0]:
+            remove_flag = False
+            if m[0] in ll.keys():
+                llink[m[0]] = m[1]
+                remove_flag = True
+            if m[1] in ll.keys():
+                llink[m[1]] = m[0]
+                remove_flag = True
+            if remove_flag:
+                map[0].remove(m)
+                if self.verbose:
+                    print('Removing logical link: ', m)
+        for L in logical_links:
+            if L[0] in llink.keys():
+                patched_m = [llink[L[0]], llink[L[1]]]
+                map[0].append(patched_m)
+                if self.verbose:
+                    print('Patching logical link: ', patched_m)
+
+        # Append shared doors to the map
+        for m in map[0]:
+            if m[0] in shared_exits.keys():
+                for se in shared_exits[m[0]]:
+                    # Send shared exits to the same destination
+                    map[0].append([se, m[1]])
+            if m[1] in shared_exits.keys():
+                for se in shared_exits[m[1]]:
+                    # Send shared exits to the same destination
+                    map[0].append([m[0], se])
+
+        # Remove root doors
         if self.args.door_randomize_all:
             # Remove the (logical) root doors from the map
             map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
         if self.args.map_shuffle_crossworld:
             map[0] = [m for m in map[0] if m[0] not in xw_root_doors and m[1] not in xw_root_doors]
+
 
         if self.match_WOB_WOR:
             # Make the WOR map match the WOB map in relevant areas
