@@ -1,6 +1,11 @@
 from event.event import *
+from data.map_exit_extra import exit_data, door_short_text
 
 class Airship(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Airship"
 
@@ -27,7 +32,15 @@ class Airship(Event):
         fly_wob_dg_cancel_dialog = 1293
         fly_wob_cancel_dialog = 1319
 
-        self.dialogs.set_text(fly_wor_fc_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> (Floating Continent)<line><choice> (Not just yet)<end>')
+        # Edit Blackjack console text for map shuffle
+        fly_wor_fc_text = '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> '
+        fc_dest_str = '(Floating Continent)'
+        self.FC_id = 1556
+        if self.FC_id in self.maps.door_map.keys():
+            fc_dest_str = '(Find ' + door_short_text[exit_data[self.maps.door_map[self.FC_id]][0]] + ')'
+        fly_wor_fc_text += fc_dest_str + '<line><choice> (Not just yet)<end>'
+
+        self.dialogs.set_text(fly_wor_fc_cancel_dialog, fly_wor_fc_text)
         self.dialogs.set_text(fly_wor_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> (Not just yet)<end>')
         self.dialogs.set_text(fly_wob_dg_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Search The Skies)<line><choice> (Not just yet)<end>')
         self.dialogs.set_text(fly_wob_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Not just yet)<end>')
@@ -91,13 +104,17 @@ class Airship(Event):
         space = Reserve(0xaf53a, 0xaf559, "airship controls wor event bit check", field.NOP())
         space.write(
             field.BranchIfEventBitSet(event_bit.IN_WOR, wor_control_checks),
-            field.BranchIfEventBitSet(event_bit.FINISHED_FLOATING_CONTINENT, fly_wor_cancel_choice),
         )
-        if self.args.character_gating:
+        if not self.MAP_SHUFFLE:
+            # Do not turn off the "Find ..." option if map shuffle.
             space.write(
-                field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
-                                            fly_wor_cancel_choice),
+                field.BranchIfEventBitSet(event_bit.FINISHED_FLOATING_CONTINENT, fly_wor_cancel_choice),
             )
+            if self.args.character_gating:
+                space.write(
+                    field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
+                                                fly_wor_cancel_choice),
+                )
         space.write(
             field.Branch(fly_wor_fc_cancel_choice),
         )

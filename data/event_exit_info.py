@@ -227,6 +227,9 @@ event_exit_info = {
     1554: [None, 7, 1, [False, False, False, False, False], 'Phoenix Cave entry as door', [0x005, 1554 % 128, 1554 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     1555: [None, 7, 1, [False, False, False, False, False], 'Phoenix Cave exit as door', [0x005, 1555 % 128, 1555 // 128], 'JMP'],  # exit event from Phoenix cave. hook @ [0x13e, 5, 6] calls 0xc20e5
 
+    # FLOATING CONTINENT AS DOOR
+    1556: [None, 7, 1, [False, False, False, False, False], 'Floating Continent entry as door', [0x005, 1556 % 128, 1556 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
+    1557: [None, 7, 1, [False, False, False, False, False], 'Floating Continent exit as door', [0x005, 1557 % 128, 1557 // 128], 'JMP'],  # exit event from Floating Continent:
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -250,6 +253,7 @@ event_return_map = {
     1547: 0x000,  # 'Doma Left Tile WoB'
     1552: 0x001,  # 'Zone Eater Engulf as door' WoR
     1554: 0x00b,  # 'Phoenix Cave entry as door' Falcon
+    1556: 0x006,  # 'Floating Continent entry as door' Blackjack
 }
 
 
@@ -479,6 +483,9 @@ mt_zozo_cliff_check = MtZozo.entrance_door_patch()
 from event.phoenix_cave import *
 phoenix_cave_animation = PhoenixCave.entrance_door_patch()
 
+from event.floating_continent import *
+floating_continent_logic = FloatingContinent.entrance_door_patch()
+
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
     # door_id: [Code that must be run upon entering a door, Before (True) or After (False) map load]
@@ -507,7 +514,10 @@ entrance_door_patch = {
     1204: [mt_zozo_cliff_check, True],
 
     # Phoenix cave animation & party split
-    1555: [phoenix_cave_animation, True]
+    1555: [phoenix_cave_animation, True],
+
+    # Floating continent choice, animation, boss call
+    1557: [floating_continent_logic, True]
 
 }
 

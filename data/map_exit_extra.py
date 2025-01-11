@@ -1370,6 +1370,8 @@ exit_data = {
     1553: [1552,  "Zone Eater exit as door"],
     1554: [1555,  "Phoenix cave entrance as door"],
     1555: [1554,  "Phoenix cave exit as door"],
+    1556: [1557,  "Floating Continent entrance as door"],
+    1557: [1556,  "Floating Continent exit as door"],
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
@@ -1755,6 +1757,9 @@ event_door_connection_data = {
     1553: [0x001, 237, 50, 0, 0, 0, 2, 0, 5, 6, 0, 0],  #  "Zone Eater exit as door"
     1554: [0x13e, 8, 7, 0, 0, 0, 2, 0, 117, 156, 0, 0],  #  "Phoenix cave entry as door"
     1555: [0x00b, 16, 8, 0, 0, 0, 2, 0, 5, 6, 0, 0],  #  "Phoenix cave exit as door"  Should be flying afterward.  0x220E5.  world map: [0x001, 117, 162]
+    1556: [0x18a, 4, 12, 0, 0, 0, 2, 0, 163, 176, 0, 0],  # "Floating continent entry as door"
+    1557: [0x006, 16, 6, 0, 0, 0, 2, 0, 70, 29, 0, 0],   # "Floating Continent exit as door"
+
     # Logical exits with different destinations
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
@@ -1814,3 +1819,71 @@ map_shuffle_airship_warp = [
 map_shuffle_force_explicit = [
     1059, 1060,  # Imperial base west to world map
 ]
+
+# door short text for reference in game. Should be formatted to fit in the phrase: "(find <LOCATION>)"
+door_short_text = {
+    # wob: [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44]
+    4: "Narshe",
+    5: "South Figaro Cave",  #  (N)
+    1501: "the Imperial Camp",
+    1502: "Figaro Castle",
+    1504: "Thamasa",
+    1505: "Vector",
+    1506: "South Figaro Cave",  #  (S)
+    6: "South Figaro",
+    10: "Sabin's House",
+    11: "Mt. Kolts",  #  (S)
+    12: "Mt. Kolts",  #  (N)
+    13: "the Returners' Hideout",
+    14: "Gau's Dad's House",
+    15: "Baren Falls",
+    16: "Nikeah",
+    18: "Doma Castle",
+    20: "the Phantom Forest",  #  (N)
+    21: "the Phantom Forest",  #  (S)
+    23: "Crescent Mountain",
+    24: "Kohlingen",
+    26: "Mobliz",
+    27: "Coliseum Guy's House",
+    28: "Jidoor",
+    31: "Maranda",
+    33: "Tzen",
+    35: "Albrook",
+    37: "Zozo",
+    40: "the Opera House",
+    42: "the Imperial Base",
+    44: "Esper Mountain",
+
+    # wor: [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554, 1556]
+    48: "Cid's House",
+    49: "Albrook",
+    51: "Tzen",
+    52: "Mobliz",
+    53: "Darill's Tomb",
+    54: "Nikeah",
+    56: "the Coliseum",
+    57: "South Figaro Cave",
+    58: "South Figaro",
+    59: "Kohlingen",
+    61: "the Cave in the Veldt",
+    62: "the Opera House",
+    63: "Maranda",
+    65: "Nikeah",
+    67: "Narshe",
+    68: "Gau's Dad's House",
+    69: "Fanatic's Tower",
+    70: "Zozo",
+    73: "Jidoor",
+    75: "Thamasa",
+    76: "Doma Castle",
+    78: "Ebot's Rock",
+    79: "Duncan's House",
+    1552: "the Zone Eater",
+    1554: "Phoenix Cave",
+    1556: "the Floating Continent"
+}
+
+import random
+if random.random() >= 0.5:
+    door_short_text[53] = "Daryl's Tomb"
+

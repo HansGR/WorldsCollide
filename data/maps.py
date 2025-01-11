@@ -478,8 +478,8 @@ class Maps():
         if self.args.no_saves:
             self._disable_saves()
 
-        # Make all maps warpable for -door-randomize-all
-        if self.args.debug or self.args.door_randomize:
+        # Make all maps warpable for -door-randomize-dungeon-crawl
+        if self.args.debug or self.args.door_randomize_dungeon_crawl:
             for map_index, cur_map in enumerate(self.maps):
                 self.properties[map_index].warpable = 1
 
