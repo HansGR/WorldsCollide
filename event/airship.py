@@ -34,19 +34,29 @@ class Airship(Event):
 
         # Edit Blackjack console text for map shuffle
         fly_wor_fc_text = '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> '
+        fly_wor_cancel_text = '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> '
+
         fc_dest_str = '(Floating Continent)'
-        self.FC_id = 1556
-        if self.FC_id in self.maps.door_map.keys():
-            fc_dest_str = '(Find ' + door_short_text[exit_data[self.maps.door_map[self.FC_id]][0]] + ')'
+        if self.MAP_SHUFFLE:
+            self.FC_id = 1556
+            if self.FC_id in self.maps.door_map.keys():
+                # Find the new location and set the message
+                location_text = door_short_text[exit_data[self.maps.door_map[self.FC_id]][0]]
+                fc_dest_str = '(Find ' + location_text + ')'
+                fly_wor_cancel_text += '(Go to ' + location_text + ')<line><choice> '
+            else:
+                fly_wor_cancel_text += '(Go to Floating Continent)<line><choice> '
         fly_wor_fc_text += fc_dest_str + '<line><choice> (Not just yet)<end>'
+        fly_wor_cancel_text += '(Not just yet)<end>'
 
         self.dialogs.set_text(fly_wor_fc_cancel_dialog, fly_wor_fc_text)
-        self.dialogs.set_text(fly_wor_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> (Not just yet)<end>')
+        self.dialogs.set_text(fly_wor_cancel_dialog, fly_wor_cancel_text)
         self.dialogs.set_text(fly_wob_dg_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Search The Skies)<line><choice> (Not just yet)<end>')
         self.dialogs.set_text(fly_wob_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Not just yet)<end>')
 
         lift_off = 0xaf58d
         enter_floating_continent = 0xa581a
+        enter_floating_continent_skip_reform_iaf = 0xa5980
 
         space = Allocate(Bank.CA, 298, "airship controls dialog/choices", field.NOP())
 
@@ -63,13 +73,24 @@ class Airship(Event):
                                dest4 = field.RETURN),
         )
 
-        fly_wor_cancel_choice = space.next_address
-        space.write(
-            field.DialogBranch(fly_wor_cancel_dialog,
-                               dest1 = lift_off,
-                               dest2 = self.enter_wor,
-                               dest3 = field.RETURN),
-        )
+        if self.MAP_SHUFFLE:
+            # If FC completed, skip reform party & go to animation
+            fly_wor_skip_cancel_choice = space.next_address
+            space.write(
+                field.DialogBranch(fly_wor_cancel_dialog,
+                                   dest1=lift_off,
+                                   dest2=self.enter_wor,
+                                   dest3=enter_floating_continent_skip_reform_iaf,
+                                   dest4=field.RETURN),
+            )
+        else:
+            fly_wor_cancel_choice = space.next_address
+            space.write(
+                field.DialogBranch(fly_wor_cancel_dialog,
+                                   dest1 = lift_off,
+                                   dest2 = self.enter_wor,
+                                   dest3 = field.RETURN),
+            )
 
         fly_wob_dg_cancel_choice = space.next_address
         space.write(
@@ -105,8 +126,13 @@ class Airship(Event):
         space.write(
             field.BranchIfEventBitSet(event_bit.IN_WOR, wor_control_checks),
         )
-        if not self.MAP_SHUFFLE:
-            # Do not turn off the "Find ..." option if map shuffle.
+        if self.MAP_SHUFFLE:
+            # Skip party reform if IAF already defeated.
+            # Do not turn off the "Find ..." option if character gated.
+            space.write(
+                field.BranchIfEventBitSet(event_bit.DEFEATED_IAF, fly_wor_skip_cancel_choice),
+            )
+        else:
             space.write(
                 field.BranchIfEventBitSet(event_bit.FINISHED_FLOATING_CONTINENT, fly_wor_cancel_choice),
             )

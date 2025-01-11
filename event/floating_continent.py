@@ -598,7 +598,8 @@ class FloatingContinent(Event):
             field.Pause(seconds=2),
             field.FadeInScreen(speed=0x08),
             field.Pause(seconds=4),
-            #field.FadeOutScreen(speed=0x08)
+            field.FadeOutScreen(speed=0x10),
+            field.WaitForFade(),
             field.FadeSongVolume(fade_time=0x1d, volume=0xC0), # [0xf3, 0x1d],    # fade in previous song
         ] + GoToSwitchyard(self.exit_id, map='field') + [
             "FC_OK",
@@ -667,7 +668,7 @@ class FloatingContinent(Event):
         ] + GoToSwitchyard(self.exit_id, map='field')
         # We need a fixed location to put this.  Bit length ~ 60 bits?
         # look at 0xa48e3 (end of escape sequence)
-        space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 133, "Floating Continent entry code modified")
+        space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 138, "Floating Continent entry code modified")
         space.write(src)
         print('FC entrance event length: ', space.end_address - space.start_address)
 
@@ -707,6 +708,18 @@ class FloatingContinent(Event):
 
     @staticmethod
     def entrance_door_patch():
-        # self-contained code to be called in door rando after entering Doma WoB
+        # self-contained code to be called in door rando after entering Floating Continent (1557)
         # to be used in event_exit_info.entrance_door_patch()
         return [field.Branch(ENTRY_EVENT_CODE_ADDR)]
+
+    @staticmethod
+    def return_door_patch():
+        # self-contained code to be called in door rando upon returning to airship (1556)
+        # to be used in event_exit_info.entrance_door_patch()
+        src = [
+            field.LoadMap(0x006, x=16, y=6, direction=direction.DOWN, default_music=True, fade_in=False, entrance_event=True),
+            field.ShowEntity(field_entity.PARTY0),
+            field.HoldScreen(),
+            field.Branch(0xa5a9d),  # complete animation
+        ]
+        return src

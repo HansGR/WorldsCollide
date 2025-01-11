@@ -492,6 +492,8 @@ class Pause(_Instruction):
             super().__init__(0x95)
         elif math.isclose(seconds, 4.00):       # 240 units
             super().__init__(0xb5, 16)          # 15 * 16 = 240
+        elif math.isclose(seconds, 8.00):       # 480 units
+            super().__init__(0xb5, 32)          # 15 * 32 = 480
         else:
             print("pause: invalid seconds")
 

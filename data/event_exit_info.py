@@ -485,6 +485,7 @@ phoenix_cave_animation = PhoenixCave.entrance_door_patch()
 
 from event.floating_continent import *
 floating_continent_logic = FloatingContinent.entrance_door_patch()
+floating_continent_return = FloatingContinent.return_door_patch()
 
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
@@ -517,7 +518,10 @@ entrance_door_patch = {
     1555: [phoenix_cave_animation, True],
 
     # Floating continent choice, animation, boss call
-    1557: [floating_continent_logic, True]
+    1557: [floating_continent_logic, True],
+
+    # Return to Blackjack after FC connection, animation
+    1556: [floating_continent_return, True],
 
 }
 
