@@ -1053,6 +1053,10 @@ class Maps():
                     #                     x=dummy_x, y=dummy_y,
                     #                     fade_in=False, entrance_event=False), field.Return()]
 
+                if SOUND_EFFECT is not None:
+                    # Note this kills the direct "force world" event.
+                    src = [field.PlaySoundEffect(SOUND_EFFECT)] + src
+
                 # Write data to a new event & add it
                 space = Write(Bank.CC, src, "Door Event " + str(d))
                 this_address = space.start_address - EVENT_CODE_START
@@ -1061,10 +1065,6 @@ class Maps():
                     print('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
                     print('\tReason: ', require_event_flags)
                     print([str(s) for s in src])
-
-            if SOUND_EFFECT is not None:
-                # Note this kills the direct "force world" event.
-                src = [field.PlaySoundEffect(SOUND_EFFECT)] + src
 
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':

@@ -212,8 +212,134 @@ class EsperMountain(Event):
         ])
 
     def door_rando_mod(self):
-        # Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
+        # (1) Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
         # e.g. "CB/EE8F: C0    If ($1E80($097) [$1E92, bit 7] is clear), branch to $CA5EB3 (simply returns)
         space = Reserve(0x0bee8f, 0x0bee94, "esper mountain trapdoor boss check 1", field.NOP())
         space = Reserve(0x0beebe, 0x0beec3, "esper mountain trapdoor boss check 2", field.NOP())
         space = Reserve(0x0beeec, 0x0beef1, "esper mountain trapdoor boss check 3", field.NOP())
+
+        # (2) Need to add NPCs to block exits while the animation is playing.
+        from data.npc import CreateInvisibleBlockNPCs
+
+        # (2a) Room #1
+        map_id = 0x177
+        door_locations = [[60, 16], [42, 26], [55, 32], [48, 9]]
+
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.entrance_relm_npc)
+        #print('NPCs created 1: ', [hex(a) for a in npc_id])
+
+        # Insert code to animation to create/delete them as needed
+        patch_in = [0xbef28, 0xbef2b]  # set event bit, create relm npc
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs esper mountain 1")
+        #print('Create NPCs 1 src:', src)
+
+        space = Reserve(patch_in[0], patch_in[1], "patch create npcs esper mtn 1", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xbef3e, 0xbef41]  # set event bit, clear event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs esper mountain 1")
+        #print('Delete NPCs 1 src:', src)
+
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 1", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+
+        # (2b) Room 2
+        map_id = 0x175
+        door_locations = [[16, 23], [25, 15]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.outside1_relm_npc)
+        #print('NPCs created 2: ', npc_id)
+
+        # Insert code to animation to create/delete them as needed
+        patch_in = [0xbef50, 0xbef53]  # set event bit, create relm npc
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs esper mountain 2")
+        #print('Create NPCs 2src:', src)
+
+        space = Reserve(patch_in[0], patch_in[1], "patch create npcs esper mtn 2", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xbef6c, 0xbef6f]  # set event bit, clear event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs esper mountain 2")
+        #print('Delete NPCs 2 src:', src)
+
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 2", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+
+        # (2c) Room 3 (same map as Room 1)
+        map_id = 0x177
+        door_locations = [[42, 63], [53, 62]]
+
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.entrance_relm_npc)
+        #print('NPCs created 3: ', [hex(a) for a in npc_id])
+
+        # Insert code to animation to create/delete them as needed
+        patch_in = [0xbef7e, 0xbef81]  # set event bit, create relm npc
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs esper mountain 1")
+        #print('Create NPCs 3 src:', src)
+
+        space = Reserve(patch_in[0], patch_in[1], "patch create npcs esper mtn 3", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xbefa0, 0xbefa3]  # set event bit, clear event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs esper mountain 3")
+        #print('Delete NPCs 3 src:', src)
+
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 3", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+

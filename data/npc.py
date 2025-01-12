@@ -100,3 +100,32 @@ class NPC():
 
     def print(self):
         print(" ".join("{}: {}".format(k, v) for k, v in vars(self).items()))
+
+
+def InvisibleBlockNPC(x=0, y=0):
+    invisible_block_npc = NPC()
+    invisible_block_npc.x = x
+    invisible_block_npc.y = y
+    invisible_block_npc.direction = direction.UP
+    invisible_block_npc.speed = NPC.SLOWEST
+    invisible_block_npc.movement = NPC.NO_MOVE
+    invisible_block_npc.sprite = 101
+    invisible_block_npc.palette = 5
+    invisible_block_npc.split_sprite = 1
+    invisible_block_npc.const_sprite = 1
+
+    return invisible_block_npc
+
+def CreateInvisibleBlockNPCs(maps, map_id, xy_list, reference_npc=None):
+    # Routine to create several invisible block npc's that optionally share NPC bits with a particular NPC
+    npc_id = []
+    for xy in xy_list:
+        invisible_block_npc = InvisibleBlockNPC(x=xy[0], y=xy[1])
+        if reference_npc is not None:
+            invisible_block_npc.event_byte = reference_npc.event_byte
+            invisible_block_npc.event_bit = reference_npc.event_bit
+        invisible_block_npc_id = maps.append_npc(map_id, invisible_block_npc)
+
+        npc_id.append(invisible_block_npc_id)
+
+    return npc_id
