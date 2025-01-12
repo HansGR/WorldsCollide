@@ -618,7 +618,7 @@ class FloatingContinent(Event):
         ]
         if self.args.character_gating:
             src += [
-                field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
+                field.BranchIfEventBitSet(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
                                             "HAVE_SHADOW"),
                 field.Dialog(self.need_shadow_dialog, wait_for_input=True),
                 field.Branch("LEAVE_FC"),
