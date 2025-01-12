@@ -97,12 +97,29 @@ class Start(Event):
         self.start_items_mod()
         self.start_game_mod()
 
-        # Warp stone modification
+        # Warp stone modifications
+        self.warp_setbits_addr = 0xa0159
+        if self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all:
+            # Safety: make warp remove magitek armor.
+            # Bugs can let the player carry MTek armor out of Dream, we want a way to clear that.
+            # we'll replace the code at 0xa0159 which is called by all warps.
+            src = [
+                # Replicate 0xa0159
+                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED),
+                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED),
+                # Remove MTek Armor
+                field.Call(field.REMOVE_PARTY_MAGITEK),
+                field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
+                field.Return(),
+            ]
+            space = Write(Bank.CA, src, "mtek safe warp bits")
+            self.warp_setbits_addr = space.start_address
+            
         if self.args.debug or self.args.door_randomize_dungeon_crawl:
             # Dungeon Crawl mode doesn't have a well-defined parent map.
             # Warp stones will always go to the airship over WOB Narshe.
             src = [
-                field.Call(0xa0159),
+                field.Call(self.warp_setbits_addr),
                 # 0x6b, 0xff, 0x25, 0x00, 0x00, 0x00, 0xff, 0xfe,  <- original warp to parent map
                 field.LoadMap(0x00, direction.UP, default_music=False,
                               x=84, y=34, fade_in=True, airship=True),
@@ -128,7 +145,7 @@ class Start(Event):
             # In Map Shuffle, parent map is well-defined, but sometimes the parent world is different.
             # Update the world bit and return to parent map.
             src = [
-                field.Call(0xa0159),
+                field.Call(self.warp_setbits_addr),
                 field.UpdateWorldReturnToParentMap(),
                 world.End(),  # end of script
             ]

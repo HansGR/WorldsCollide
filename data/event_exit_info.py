@@ -290,7 +290,7 @@ def set_locomotive_switches(bytes=True):
 
 def add_mtek_armor(bytes=False):
     src = [
-        field.Call(field.TOGGLE_PARTY_MAGITEK),
+        field.Call(field.ADD_PARTY_MAGITEK),
         field.SetVehicle(field_entity.PARTY0, field.Vehicle.MAGITEK_AND_RIDER)
     ]
     if bytes:
@@ -300,6 +300,20 @@ def add_mtek_armor(bytes=False):
         return src_bit
     else:
         return src
+
+def remove_mtek_armor(bytes=False):
+    src = [
+        field.Call(field.REMOVE_PARTY_MAGITEK),
+        field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE)
+    ]
+    if bytes:
+        src_bit = []
+        for s in src:
+            src_bit += [s.opcode] + s.args
+        return src_bit
+    else:
+        return src
+
 
 def tentacles_bit_check(bytes=False):
     src = [
@@ -360,18 +374,6 @@ def opera_dragon_bit_check(bytes=False):
     else:
         return src
 
-def remove_mtek_armor(bytes=False):
-    src = [
-        field.Call(field.TOGGLE_PARTY_MAGITEK),
-        field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE)
-    ]
-    if bytes:
-        src_bit = []
-        for s in src:
-            src_bit += [s.opcode] + s.args
-        return src_bit
-    else:
-        return src
 
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {

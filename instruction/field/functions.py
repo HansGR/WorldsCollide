@@ -80,6 +80,30 @@ def _toggle_party_magitek_mod():
     return space.start_address
 TOGGLE_PARTY_MAGITEK = _toggle_party_magitek_mod()
 
+def _remove_party_magitek_mod():
+    src = [
+        field.RemoveStatusEffects(field_entity.PARTY0, field.Status.MAGITEK),
+        field.RemoveStatusEffects(field_entity.PARTY1, field.Status.MAGITEK),
+        field.RemoveStatusEffects(field_entity.PARTY2, field.Status.MAGITEK),
+        field.RemoveStatusEffects(field_entity.PARTY3, field.Status.MAGITEK),
+        field.Return(),
+    ]
+    space = Write(Bank.CA, src, "field function remove party magitek")
+    return space.start_address
+REMOVE_PARTY_MAGITEK = _remove_party_magitek_mod()
+
+def _add_party_magitek_mod():
+    src = [
+        field.AddStatusEffects(field_entity.PARTY0, field.Status.MAGITEK),
+        field.AddStatusEffects(field_entity.PARTY1, field.Status.MAGITEK),
+        field.AddStatusEffects(field_entity.PARTY2, field.Status.MAGITEK),
+        field.AddStatusEffects(field_entity.PARTY3, field.Status.MAGITEK),
+        field.Return(),
+    ]
+    space = Write(Bank.CA, src, "field function remove party magitek")
+    return space.start_address
+ADD_PARTY_MAGITEK = _add_party_magitek_mod()
+
 def _original_check_game_over_mod():
     src = [
         field.ReturnIfBattleEventBitClear(battle_bit.PARTY_ANNIHILATED),
