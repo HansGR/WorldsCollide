@@ -543,6 +543,7 @@ class FloatingContinent(Event):
                             field_entity.SetSpriteLayer(0)
                             ),
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.SetEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
             field.Call(field.HEAL_PARTY_HP_MP_STATUS),
         ] + GoToSwitchyard(self.entry_id, map='field')
         space = Write(Bank.CA, src_after_boss1, "Map Shuffle Split after FC boss 1")
@@ -561,7 +562,7 @@ class FloatingContinent(Event):
         ]
         AddSwitchyardEvent(self.entry_id, self.maps, src=src)
 
-        # Write actual entry code:
+        # Write the Floating Continent entry code:
         # Get the connecting exit
         self.parent_map = [0x000, 117, 162]
         if self.exit_id in self.maps.door_map.keys():
@@ -670,13 +671,13 @@ class FloatingContinent(Event):
         # look at 0xa48e3 (end of escape sequence)
         space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 138, "Floating Continent entry code modified")
         space.write(src)
-        print('FC entrance event length: ', space.end_address - space.start_address)
+        #print('FC entrance event length: ', space.end_address - space.start_address)
 
         # Write switchyard to handle return
         # (2b) Add the switchyard tile that handles exit to the Falcon
         # Note we will have to receive the reward before returning!  in escape_mod().
         src = [
-            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in=True, entrance_event=True),
+            field.LoadMap(0x006, direction.DOWN, default_music = True, x = 16, y = 6, fade_in=True, entrance_event=True),
             field.Return()
         ]
         AddSwitchyardEvent(self.exit_id, self.maps, src=src)
@@ -684,11 +685,12 @@ class FloatingContinent(Event):
         # (2c) Need to set DEFEATED_AIR_FORCE after first entry.
         # handled in airship_battle_mod().
 
-        # (3) Update post-IAF entry to FC: use switchyard.
+        # (3) Update post-IAF entry: use switchyard.
         # CA/5986: B2    Call subroutine $CA5ABE (jump off airship animation)
         # CA/598A: B2    Call subroutine $CA5A42 (land on FC, right after boss #2: 0xa5a3b).
         iaf_skip_src = [
-            field.FreeScreen()
+            field.FreeScreen(),
+            field.SetEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
         ] + GoToSwitchyard(self.entry_id, map='field')
         space_iaf_skip = Write(Bank.CA, iaf_skip_src, 'IAF skip mod')
         space = Reserve(0xa598a, 0xa598d, "Call load FC after boss 2 mod")
@@ -705,6 +707,50 @@ class FloatingContinent(Event):
             space = Reserve(0xa5a96, 0xa5a9c, "return to airship mid FC edit")
             space.write(GoToSwitchyard(self.exit_id, map='field'))
 
+        # (5) Modify warp behavior
+        # We will add a new event bit to track special warp to Blackjack
+        # In Warp:
+        # CA/0138: C0    If ($1E80($2BF) [$1ED7, bit 7] is set), branch to $CA0154
+        # CA/0154: B2    Call subroutine $CC1001
+        #    CC/1001: B2    Call subroutine $CC2109
+        #    CC/1005: D5    Clear event bit $1E80($2BF) [$1ED7, bit 7]
+        #    CC/1007: FE    Return
+        # CA/0158: FE    Return
+        if not self.args.door_randomize_dungeon_crawl:   # -drdc always warps to WoB airship.
+            pc_warp_addr = 0xc1001
+
+            src_safety = []
+            if self.args.door_randomize_all:
+                src_safety += [
+                    # Remove MTek Armor
+                    field.Call(field.REMOVE_PARTY_MAGITEK),
+                    field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
+                ]
+            src_warp = [
+                field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
+                # Replicate warp set bits
+                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED),
+                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED),
+            ] + src_safety + [
+                # Go to Blackjack
+                field.ClearEventBit(event_bit.IN_WOR),
+                field.LoadMap(map_id=0x006, x=16, y=6, direction=direction.LEFT,
+                              default_music=True, fade_in=True, entrance_event=True),
+                field.Return()
+            ]
+            space = Write(Bank.CC, src_warp, "New FC warp code")
+            fc_warp_addr = space.start_address
+
+            src_warp_handler = [
+                field.BranchIfEventBitSet(event_bit.PHOENIX_CAVE_WARP_OPTION, pc_warp_addr),
+                field.BranchIfEventBitSet(event_bit.FLOATING_CONTINENT_WARP_OPTION, fc_warp_addr),
+                field.Branch(0xa013e),  # Return to warp script
+            ]
+            space = Write(Bank.CA, src_warp_handler, "modified custom warp handler")
+            warp_handler_addr = space.start_address
+
+            space = Reserve(0xa0138, 0xa013d, "call modified custom warp handler", field.NOP())
+            space.write(field.Branch(warp_handler_addr))
 
     @staticmethod
     def entrance_door_patch():
@@ -718,6 +764,7 @@ class FloatingContinent(Event):
         # to be used in event_exit_info.entrance_door_patch()
         src = [
             field.LoadMap(0x006, x=16, y=6, direction=direction.DOWN, default_music=True, fade_in=False, entrance_event=True),
+            field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
             field.ShowEntity(field_entity.PARTY0),
             field.HoldScreen(),
             field.Branch(0xa5a9d),  # complete animation
