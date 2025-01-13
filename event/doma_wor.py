@@ -346,9 +346,81 @@ class DomaWOR(Event):
         # Delete vanilla shared map exit event tile in phantom train car
         self.maps.delete_event(0x99, 8, 12)
 
+        # (2) Need to add NPCs to block exits while the animation is playing.
+        from data.npc import CreateInvisibleBlockNPCs
+
+        # (2a) TRAIN GHOST CHASE
+        # Block door entry with invisible NPCs while a ghost chases Cyan
+        map_id = 0x08f
+        door_locations = [[65, 8], [75, 8], [82, 8], [91, 8]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb9347, 0xb934a]  # create object 0x10, create object 0x11
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 1")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 1", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb93a6, 0xb93a9]  # clear event bit, set event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 1")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 1", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
         # Randomize Train Chest code?
         # - Actually randomize code shown/read in Cars 2/3
         # - Lock exit to Car 3 with a key in Car 2.
+
+
+        # (2b) MAGITEK MINE CHASE
+        # Block door entry with invisible NPCs while soldiers chase Cyan
+        map_id = 0x140
+        door_locations = [[6, 22]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb9433, 0xb9436]  # call subroutine $CB6A4C (colorize)
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 2")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 2", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb949c, 0xb949f]  # disable passthru 0x13, 0x14
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 2")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 2", field.NOP())
+        space.write(field.Call(space_delete.start_address))
 
         # Only play the cave chase animation one time:
         # use custom event_bit.SAW_DREAM_CAVE_CHASE = 0x163  # DR custom
@@ -373,6 +445,42 @@ class DomaWOR(Event):
         space = Reserve(0xb93f8, 0xb93ff, "Cyan Dream play chase scene only once", field.NOP())
         space.write([field.Branch(show_dream_chase.start_address)])
 
+
+        # (3): BRIDGE ESCAPE
+        # Block door entry with invisible NPC while Cyan walks across bridge
+        map_id = 0x13f
+        door_locations = [[25, 24], [25, 25]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb94bb, 0xb94be]  # call subroutine $CB6A4C (colorize)
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 3")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 3", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb94e2, 0xb94e5]  # set event bit, disable passthru 0x10
+        src = [
+            Read(patch_out[0], patch_out[1]),
+            field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)   # see below
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 3")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 3", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
         # Only play the bridge escape animation one time:
         # use custom event_bit.SAW_DREAM_BRIDGE_ESCAPE = 0x164  # DR custom
         src = [
@@ -386,8 +494,104 @@ class DomaWOR(Event):
         hide_npc_script = Write(Bank.CB, src, "Delete NPCs in bridge room")
         space = Reserve(0xb94b2, 0xb94b7, "Check for dream bridge escape", field.NOP())
         space.write([field.BranchIfEventBitSet(event_bit.SAW_DREAM_BRIDGE_ESCAPE, hide_npc_script.start_address)])
-        space = Reserve(0xb94e2, 0xb94e3, "Set dream bridge escape bit", field.NOP())
-        space.write([field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
+        #space = Reserve(0xb94e2, 0xb94e3, "Set dream bridge escape bit", field.NOP())
+        #space.write([field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
+
+        # (4): SCENES IN DOMA CASTLE
+        # Block door entry with invisible NPC while Cyan walks across bridge
+        map_id = 0x07E
+        door_locations = [[28, 37]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb96ca, 0xb96cd]  # set event bit, create 0x14
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 4")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 4", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb979c, 0xb979f]  # disable passthru 0x10,  set event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 4")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 4", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Block door entry with invisible NPC while Cyan does stuff outside
+        map_id = 0x07D
+        door_locations = [[28, 31]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb964a, 0xb964d]  # set event bit, create 0x12
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 5")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 5", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb96be, 0xb96c1]  #  clear bit, set bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 5")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 5", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Same NPC for event 6 on the other side
+        patch_in = [0xb95f9, 0xb95fc]  # set event bit, create 0x10
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 6")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 6", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb963e, 0xb9641]  # set bit, clear bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 6")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 6", field.NOP())
+        space.write(field.Call(space_delete.start_address))
 
         # Make the 2f exit to balcony (id = 441) accessible in Doma Dream
         balcony_exit = self.maps.get_exit(441)
