@@ -48,7 +48,7 @@ class ImperialBase(Event):
             if self.DOOR_RANDOMIZE:
                 from event.switchyard import SummonAirship
                 space = Write(Bank.CB, SummonAirship(self.exit_location[0], self.exit_location[1],
-                                                     self.exit_location[2]), "summon airship to imperial base")
+                                                     self.exit_location[2], fadeout=True), "summon airship to imperial base")
                 airship_addr = space.start_address
                 space = Reserve(0xb25fd, 0xb2605, "imperial base thrown out summon airship", field.NOP())
                 space.write(

@@ -448,8 +448,10 @@ class FloatingContinent(Event):
         space = Reserve(0xa57cd, 0xa57cd, "floating continent update character animates in at escape")
         space.write(npc_id)
         space = Reserve(0xa57e1, 0xa57e3, "floating continent skip shadow arrives at airship dialog", field.NOP())
-        space = Reserve(0xa57ea, 0xa57ea, "floating continent update character who follows party to escape")
-        space.write(npc_id)
+        if not (self.MAP_SHUFFLE and self.reward3.type == RewardType.CHARACTER):
+            # For map shuffle character reward, use this space to branch to exit animation (see below)
+            space = Reserve(0xa57ea, 0xa57ea, "floating continent update character who follows party to escape")
+            space.write(npc_id)
 
         space = Reserve(0xa48cc, 0xa48cf, "floating continent do not clear shadow bits if don't wait at airship", field.NOP())
 
@@ -475,7 +477,15 @@ class FloatingContinent(Event):
         space = Write(Bank.CA, src, "floating continent return to airship")
         airship_return = space.start_address
 
-        space = Reserve(0xa48dd, 0xa48e2, "floating continent return to airship", field.NOP())
+        return_addr = [0xa48dd, 0xa48e2]
+        if self.MAP_SHUFFLE and self.reward3.type == RewardType.CHARACTER:
+            # The objective check must be before we leave the screen. This is fine for espers & items, but...
+            # For characters, do it after the 2nd character lands
+            # CA/57E6: B2    Call subroutine $CA5806  character jumps off FC after shadow arrives
+            # ... shadow jumps off (we'll delete 0x03 after character select & skip this)
+            # CA/5801: B2    Call subroutine $CA48D6
+            return_addr = [0xa57e6, 0xa57eb]
+        space = Reserve(return_addr[0], return_addr[1], "floating continent return to airship", field.NOP())
         space.write(
             field.Branch(airship_return),
         )
@@ -483,9 +493,22 @@ class FloatingContinent(Event):
     def escape_character_mod(self, character):
         space = Reserve(0xa579d, 0xa57b2, "floating continent wait dialogs", field.NOP())
         if self.MAP_SHUFFLE:
+            # CA/57E6: B2    Call subroutine $CA5806  character jumps off FC after shadow arrives
+            # ... shadow jumps off (we'll delete npc after character select & skip this)
+            # CA/5801: B2    Call subroutine $CA48D6
             escape_src = [
                 field.RecruitAndSelectParty(character),
-                field.FinishCheck(),
+                field.DeleteEntity(character),
+                field.HideEntity(character),
+                field.FadeInScreen(),
+                field.FinishCheck(),   # Must be done here: might return to the world map!
+                field.Call(0xa5806),   # complete jumping animation
+                #field.Call(0xa48d6),  Replicate up to map load
+                #Read(0xa48d6, 0xa48dc), # clear event bit, fade screen, wait for fade & animation.
+                field.ClearEventBit(0x2bc),
+                field.FadeOutScreen(speed=0x08),
+                field.WaitForFade(),
+                field.WaitForEntityAct(field_entity.PARTY0),
             ] + GoToSwitchyard(self.exit_id, map='field')
         else:
             escape_src = [
