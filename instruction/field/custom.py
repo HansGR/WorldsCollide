@@ -223,7 +223,6 @@ class SetParentWorld(_Instruction):
         ]
         space = Write(Bank.C0, src, "custom set_parent_world command")
         address = space.start_address
-        print("New opcode 0x68: ", hex(address), '--', hex(space.end_address))
 
         opcode = 0x6d
         _set_opcode_address(opcode, address)
