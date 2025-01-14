@@ -182,28 +182,55 @@ class UpdateWorldReturnToParentMap(_Instruction):
         self.__init__()
 
 
-class ToggleWorlds(_Instruction):
-    def __init__(self):
-        fade_load_map = 0xab47
+# class ToggleWorlds(_Instruction):
+#     def __init__(self):
+#         fade_load_map = 0xab47
+#
+#         src = [
+#             asm.LDA(0x1f69, asm.ABS),           # a = low 8 bits of parent map
+#             asm.XOR(1, asm.IMM8),               # toggle last bit of parent map id
+#             asm.STA(0x1f69, asm.ABS),           # update parent map
+#             asm.JMP(fade_load_map, asm.ABS),    # jump to original fade load map command
+#         ]
+#         space = Write(Bank.C0, src, "custom toggle worlds instruction")
+#         address = space.start_address
+#
+#         opcode = 0x6d
+#         _set_opcode_address(opcode, address)
+#
+#         # same args as airship lift-off load map
+#         # special map 0x1ff, return to parent map at same position/direction
+#         args = [0xff, 0x25, 0x00, 0x00, 0x81]  # map shuffle mod to run entrance event; final bit was 0x01
+#
+#         ToggleWorlds.__init__ = lambda self : super().__init__(opcode, *args)
+#         self.__init__()
 
+
+class SetParentWorld(_Instruction):
+    def __init__(self, world):
+        # Add a special command to set the parent map to a particular world.
+        # This is used for event_bit.IN_WOR safety in door randomizer
         src = [
-            asm.LDA(0x1f69, asm.ABS),           # a = low 8 bits of parent map
-            asm.XOR(1, asm.IMM8),               # toggle last bit of parent map id
-            asm.STA(0x1f69, asm.ABS),           # update parent map
-            asm.JMP(fade_load_map, asm.ABS),    # jump to original fade load map command
+            # Load value of next script byte into A
+            asm.A8(),
+            asm.LDA(0xeb, asm.DIR),         # Load the next script byte (in direct page @ $EB)
+                                            # now A = world
+            # Update value of parent map lower bit
+            asm.STA(0x1f69, asm.ABS),       # update low 8 bits of parent map
+            # Cleanup & continue
+            asm.LDA(0x02, asm.IMM8),        # command size
+            asm.JMP(0x9b5c, asm.ABS),       # next command
         ]
-        space = Write(Bank.C0, src, "custom toggle worlds instruction")
+        space = Write(Bank.C0, src, "custom set_parent_world command")
         address = space.start_address
+        print("New opcode 0x68: ", hex(address), '--', hex(space.end_address))
 
         opcode = 0x6d
         _set_opcode_address(opcode, address)
 
-        # same args as airship lift-off load map
-        # special map 0x1ff, return to parent map at same position/direction
-        args = [0xff, 0x25, 0x00, 0x00, 0x81]  # map shuffle mod to run entrance event; final bit was 0x01
+        SetParentWorld.__init__ = lambda self, world : super().__init__(opcode, world)
+        self.__init__(world)
 
-        ToggleWorlds.__init__ = lambda self : super().__init__(opcode, *args)
-        self.__init__()
 
 class LoadEsperFound(_Instruction):
     def __init__(self, esper):

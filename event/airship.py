@@ -156,7 +156,12 @@ class Airship(Event):
                 field_entity.Pause(6),
                 field_entity.Turn(direction.LEFT),
             ),
-            field.ToggleWorlds(),
+            #field.ToggleWorlds(),  # Update for world safety
+            field.SetParentWorld(0x1),
+            # same args as airship lift-off load map:  args = [0xff, 0x25, 0x00, 0x00, 0x81]
+            # return to parent map at same position/direction, continue music, on airship.
+            field.FadeLoadMap(map_id=0x1ff, direction=direction.DOWN, default_music=False, x=0, y=0, fade_in = True,
+                              airship=True, entrance_event=True),
             vehicle.End(),
             field.Return(),
         )
@@ -172,7 +177,12 @@ class Airship(Event):
                 field_entity.Pause(6),
                 field_entity.Turn(direction.LEFT),
             ),
-            field.ToggleWorlds(),
+            # field.ToggleWorlds(),  # Update for world safety
+            field.SetParentWorld(0x0),
+            # same args as airship lift-off load map:  args = [0xff, 0x25, 0x00, 0x00, 0x81]
+            # return to parent map at same position/direction, continue music, on airship.
+            field.FadeLoadMap(map_id=0x1ff, direction=direction.DOWN, default_music=False, x=0, y=0, fade_in=True,
+                              airship=True, entrance_event=True),
             vehicle.End(),
             field.Return(),
         )
