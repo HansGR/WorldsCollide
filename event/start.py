@@ -60,7 +60,8 @@ class Start(Event):
         ]
 
         # Handle event bits specific to door randomizer
-        if self.args.door_randomize_all or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl \
+        if self.args.door_randomize_all or self.args.door_randomize_crossworld \
+                or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl \
                 or self.args.door_randomize_phantom_train or self.args.door_randomize_cyans_dream:
             # Deconflict Siegfried event bit:  shared with Lump Of Metal event bit 0x187 in vanilla.
             # CB/B7F8: C2    If ($1E80($1B0) [$1EB6, bit 0] is clear) or ($1E80($187) [$1EB0, bit 7] is set) or ($1E80($188) [$1EB1, bit 0] is set), branch to $CA5EB3 (simply returns)
@@ -99,7 +100,7 @@ class Start(Event):
 
         # Warp stone modifications
         self.warp_setbits_addr = 0xa0159
-        if self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all:
+        if self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all or self.args.door_randomize_crossworld:
             # Safety: make warp remove magitek armor.
             # Bugs can let the player carry MTek armor out of Dream, we want a way to clear that.
             # we'll replace the code at 0xa0159 which is called by all warps.

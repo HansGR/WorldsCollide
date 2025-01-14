@@ -8,6 +8,8 @@ class PhoenixCave(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
         self.MAP_SHUFFLE = args.map_shuffle
+        self.DOOR_RANDOMIZE = args.door_randomize_all or args.door_randomize_crossworld \
+                              or args.door_randomize_dungeon_crawl
 
     def name(self):
         return "Phoenix Cave"
@@ -25,7 +27,7 @@ class PhoenixCave(Event):
         self.locke_npc_id = 0x10
         self.locke_npc = self.maps.get_npc(0x139, self.locke_npc_id)
 
-        if not self.MAP_SHUFFLE:
+        if not (self.MAP_SHUFFLE or self.DOOR_RANDOMIZE):
             self.landing_mod()
         else:
             self.map_shuffle_mod()
@@ -133,7 +135,7 @@ class PhoenixCave(Event):
         )
 
         space = Reserve(0xc2bcb, 0xc2bef, "phoenix cave kohlingen rachel scenes", field.NOP())
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.DOOR_RANDOMIZE:
             space.write(
                 reward_instructions,
                 field.FinishCheck(),
@@ -204,10 +206,11 @@ class PhoenixCave(Event):
         if self.exit_id in self.maps.door_map.keys():
             if self.maps.door_map[1555] != 1554:   # Hack, don't update if connection is vanilla
                 self.parent_map = self.maps.get_connection_location(self.exit_id)
-        # Force update the parent map here
-        src_addl = [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] - 1)]
-        if self.parent_map[0] == 0:
-            # Update world
+        if self.parent_map[0] < 0x2:
+            # The connection is on a world map.  Force update the parent map here
+            src_addl = [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] - 1)]
+        if self.parent_map[0] == 0 or self.args.door_randomize_crossworld or self.args.door_randomize_dungeon_crawl:
+            # Update world.  Possibly redundant/unneeded?  Might be handled by create_exit_event()
             src_addl += [field.SetEventBit(event_bit.IN_WOR)]
 
         self.need_more_characters_dialog = 2978

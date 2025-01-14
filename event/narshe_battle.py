@@ -5,6 +5,7 @@ class NarsheBattle(Event):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
         self.DOOR_RANDOMIZE = (args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
 

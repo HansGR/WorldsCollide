@@ -42,29 +42,32 @@ ROOM_SETS = {
     #'VeldtCaveMinimal': [470, 475, 'root-vc'],
 
     # Meta rooms:
-    'All': [
-            364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
-            19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
-            '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
-            488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe',  # Esper Mountain  495,
-            277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
-            345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
-            503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
-            294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
-            '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', # Zozo-WoR
-            250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
-            'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
-            356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
-            '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
-            457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
-            378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt',  # Daryl's Tomb
-            100, 101, 103, 104, 'root-sfcb-mapsafe',  # South Figaro Cave WOB  102, 105,
-            201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
-            '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt',  # Phantom Train
-            421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
-            432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd',  # Cyan's Dream
-            146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, 'root-mk-mapsafe', # Mt. Kolts  145, 158,
-            468, 469, 470, 471, 472, 474, 475, 'root-vc-mapsafe' # Veldt Cave WOR   467,
+    'WoB': [
+        19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
+        488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe',  # Esper Mountain  495,
+        345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
+        503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
+        294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
+        'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3', 'root-lr',  # Lete River
+        '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'root-st',  # Serpent Trench
+        457, 458, 459, 460, 461, 462, 463, 464, 465, 'root-bh', # Burning House
+        100, 101, 103, 104, 'root-sfcb-mapsafe',  # South Figaro Cave WOB  102, 105,
+        201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
+        '207b', 212, 213, '215a', '215b', 216, 220, 221, 'root-pt',  # Phantom Train
+        146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, 'root-mk-mapsafe', # Mt. Kolts  145, 158,
+        ],
+    'WoR': [
+        364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
+        '37a', 38, 40, '41a', 42, 43, 44, 46, 47, 'root-unr',  # Upper Narshe WoR
+        277, 278, 279, 280, 281, 282, 283, 284, 'root-ob',  # Owzer's Basement
+        '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'root-zr', # Zozo-WoR
+        250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
+        356, 357, 358, '358b', 359, '359b', 361, 362, 363, 'root-ze',  # Zone Eater
+        378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393, 'root-dt',  # Daryl's Tomb
+        421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
+        432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'root-cd',  # Cyan's Dream
+        468, 469, 470, 471, 472, 474, 475, 'root-vc-mapsafe', # Veldt Cave WOR   467,
+        'branch-pc', 'root-pc'  # Phoenix cave entry
              ],
     'MapShuffleWOB':  ['shuffle-wob'],  # dynamically appended later
     'MapShuffleWOR':  ['shuffle-wor'],  # dynamically appended later
@@ -72,6 +75,7 @@ ROOM_SETS = {
 
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
+ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 
 class Doors():
     verbose = False  # False  # True
@@ -109,16 +113,22 @@ class Doors():
         room_sets = []
         protect_doors = {}
 
-        if self.args.door_randomize_all or self.args.door_randomize_dungeon_crawl:  # -dra, -drdc
+        if self.args.door_randomize_crossworld or self.args.door_randomize_dungeon_crawl:  # -drx, -drdc
             # Prioritize randomizing all doors.
             # Both options the same room list.  -dra uses drafting; -drdc does not.
             room_sets.append(ROOM_SETS['All'])
             self.area_name.append('All')
 
+        elif self.args.door_randomize_all:  # -dra
+            room_sets.append(ROOM_SETS['WoB'])
+            self.area_name.append('WoB')
+            room_sets.append(ROOM_SETS['WoR'])
+            self.area_name.append('WoR')
+
         elif self.args.door_randomize_each:  # -dre
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
-                if key not in ['All', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
+                if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
                     # Check for _mapsafe
                     if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
                         room_sets.append(ROOM_SETS[key])
@@ -258,16 +268,25 @@ class Doors():
                     self.area_name = [temp_name]
 
         # Deconflict door_randomize and map_shuffle
-        if (self.args.door_randomize_all or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
-            ignore_doors = [1552, 1553]  # don't include zone-eater as doors if included as transitions
-            for dk in room_data['shuffle-wob'][0]:
-                if dk in ignore_doors:
+        if (self.args.door_randomize_all or self.args.door_randomize_crossworld or
+            self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
+            ignore_maps = [1552, 1553]  # don't include zone-eater as doors if included as transitions
+            for dk in [d for d in room_data['shuffle-wob'][0]]:
+                if dk in ignore_maps:
                     #print('removing ', dk, ' from root-wob')
                     room_data['shuffle-wob'][0].remove(dk)
-            for dk in room_data['shuffle-wor'][0]:
-                if dk in ignore_doors:
+            for dk in [d for d in room_data['shuffle-wor'][0]]:
+                if dk in ignore_maps:
                     #print('removing ', dk, ' from root-wor')
                     room_data['shuffle-wor'][0].remove(dk)
+
+            ignore_doors = [1554, 1555]  # don't include phoenix cave in doors if doing map shuffle
+            for a in room_data.keys():
+                if a not in ['shuffle-wob', 'shuffle-wor']:
+                    for dk in [d for d in room_data[a][0]]:
+                        if dk in ignore_doors:
+                            #print('removing ', dk, ' from ', a)
+                            room_data[a][0].remove(dk)
 
         if self.args.map_shuffle_separate:  # -maps
             # Separately:  add rooms for WOR, WOB
@@ -325,7 +344,7 @@ class Doors():
         # Create list of randomized connections using walks
         map = [[], []]
 
-        if self.args.door_randomize_all:
+        if self.args.door_randomize_crossworld:
             all_id = self.area_name.index('All')
             # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
             # This encodes that you can reach all roots from all roots.
@@ -342,6 +361,33 @@ class Doors():
             room_data['root'] = [ root_doors, [], [], [], {}, 0]
             self.room_counts['root'] = [len(r) for r in room_data['root'][:-1]]
             self.room_doors['root'] = [r for r in room_data['root'][:-1]]
+        elif self.args.door_randomize_all:
+            areas = ['WoB', 'WoR']
+            offset_0 = 0
+            store_root_doors = []
+            for name in areas:
+                a_id = self.area_name.index(name)
+                # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
+                # This encodes that you can reach all roots from all roots.
+                # This is not done for door-randomize-dungeon-crawl.
+                root_rooms = [r for r in self.rooms[a_id] if 'root' in str(r)]
+                offset = 10000 + offset_0
+                root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
+                root_doors = []
+                for ri in range(len(root_rooms)):
+                    room_data[root_rooms[ri]][0].append(root_map[ri][0])
+                    root_doors.append(root_map[ri][1])
+                    self.forcing[root_map[ri][1]] = [root_map[ri][0]]
+                rn = 'root_'+name
+                self.rooms[a_id].append(rn)
+                room_data[rn] = [ root_doors, [], [], [], {}, 0]
+                self.room_counts[rn] = [len(r) for r in room_data[rn][:-1]]
+                self.room_doors[rn] = [r for r in room_data[rn][:-1]]
+                # Prep for next area
+                offset_0 += 2*len(root_rooms)
+                store_root_doors.extend([d for d in root_doors])
+            # Store root doors for cleanup phase
+            root_doors = [d for d in store_root_doors]
 
         if self.args.map_shuffle_crossworld:
             xw_id = self.area_name.index('MapShuffleXW')
@@ -457,7 +503,7 @@ class Doors():
                     map[0].append([m[0], se])
 
         # Remove root doors
-        if self.args.door_randomize_all:
+        if self.args.door_randomize_all or self.args.door_randomize_crossworld:
             # Remove the (logical) root doors from the map
             map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
         if self.args.map_shuffle_crossworld:

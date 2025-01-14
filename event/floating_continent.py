@@ -743,7 +743,7 @@ class FloatingContinent(Event):
             pc_warp_addr = 0xc1001
 
             src_safety = []
-            if self.args.door_randomize_all:
+            if self.args.door_randomize_all or self.args.door_randomize_crossworld:
                 src_safety += [
                     # Remove MTek Armor
                     field.Call(field.REMOVE_PARTY_MAGITEK),

@@ -6,6 +6,7 @@ class SouthFigaroCaveWOB(Event):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
         self.DOOR_RANDOMIZE = (args.door_randomize_south_figaro_cave_wob
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
         self.MAP_SHUFFLE = args.map_shuffle

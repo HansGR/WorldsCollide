@@ -52,7 +52,9 @@ def parse(parser):
     doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
                        help="Randomize all doors to create a single giant dungeon")
     doors.add_argument("-dra", "--door-randomize-all", action = "store_true",
-                         help = "Randomize all currently-implemented doors")
+                         help = "Randomize all currently-implemented doors in each world")
+    doors.add_argument("-drx", "--door-randomize-crossworld", action="store_true",
+                       help="Randomize all currently-implemented doors across worlds")
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
 
@@ -64,7 +66,7 @@ def parse(parser):
 
 def process(args):
     #pass
-    if args.door_randomize_all or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
+    if args.door_randomize_all or args.door_randomize_crossworld or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
             args.door_randomize_umaro or args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob or \
             args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or \
             args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or \
@@ -97,6 +99,10 @@ def flags(args):
     if args.door_randomize_all:
         # -dra supercedes all
         flags += " -dra"
+
+    elif args.door_randomize_crossworld:
+        # -drx supercedes all but -dra
+        flags += " -drx"
 
     elif args.door_randomize_dungeon_crawl:
         # -drdc supercedes all but -dra
@@ -190,6 +196,10 @@ def options(args):
     if args.door_randomize_all:
         opts += [
             ("Randomize All", args.door_randomize_all),
+        ]
+    elif args.door_randomize_crossworld:
+        opts += [
+            ("Randomize All", 'Crossworld'),
         ]
     elif args.door_randomize_dungeon_crawl:
         opts += [
