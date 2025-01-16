@@ -485,6 +485,7 @@ class Maps():
 
         # Postprocess the door map
         self.door_map = {}
+        self.trap_map = {}
         if len(self.doors.map) > 0:
             # Add doors to the spoiler log
             self.doors.print()
@@ -523,6 +524,11 @@ class Maps():
                         self.exits.exit_original_data[e].append(event_return_map[e])
                     else:
                         self.exits.exit_original_data[e].append(this_map)
+
+            # Create a trapdoor map for reference
+            for m in self.doors.map[1]:
+                if m[0] not in self.trap_map.keys():
+                    self.trap_map[m[0]] = m[1]
 
         # if self.args.map_shuffle:
         #     # Modify the entrance events for maps 0x0 and 0x1 to correctly set the world bit.

@@ -286,12 +286,14 @@ class Transitions:
                 jump_src = [0xb2] + list((new_event_address - EVENT_CODE_START).to_bytes(3, "little")) + [0xfe, 0xfd]
                 self.rom.set_bytes(t.exit.event_addr + t.exit.event_split - 1, jump_src)
 
-                if t.exit.id in multi_events.keys():
-                    # Patch sister event transitions
-                    for me in multi_events[t.exit.id]:
-                        this_addr = event_exit_info[me][0]
-                        this_split = event_exit_info[me][2]
-                        self.rom.set_bytes(this_addr + this_split - 1, jump_src)
+                ### No longer using multi_events.  Just patch the code to all branch to the main transition
+                ### in the appropriate event file.
+                # if t.exit.id in multi_events.keys():
+                #     # Patch sister event transitions
+                #     for me in multi_events[t.exit.id]:
+                #         this_addr = event_exit_info[me][0]
+                #         this_split = event_exit_info[me][2]
+                #         self.rom.set_bytes(this_addr + this_split - 1, jump_src)
 
             elif t.exit.event_addr is not None:
                 if t.exit.location[1] == 'NPC':

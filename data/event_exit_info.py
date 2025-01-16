@@ -72,7 +72,7 @@ event_exit_info = {
     2034: [0xb059f, 151, 146, [False, False, False, True, False], 'Lete River start', [0x071, 31, 51], 'JMP'],
     2035: [0xb0636, 193, 182, [False, False, False, True, False], 'Lete River Section 1', [0x071, None, None], 'JMP'],
     '2035a': [0xb06f7, 101, 90, [False, False, False, True, False], 'Lete River Section 1 (LEFT)', [0x071, None, None], 'JMP'],
-    '2035b': [0xb07c0, 106, 95, [False, False, False, True, False], 'Lete River Section 1 (RIGHT)', [0x071, None, None], 'JMP'],
+    '2035b': [0xb075c, 112, 101, [False, False, False, True, False], 'Lete River Section 1 (RIGHT)', [0x071, None, None], 'JMP'],
     2036: [0xb051c, 64, 52, [False, False, False, True, False], 'Lete River Cave 1', [0x072, 20, 24], 'JMP'],
     2037: [0xb07cc, 157, 145, [False, False, False, True, False], 'Lete River Section 2', [0x071, None, None], 'JMP'],
     2038: [0xb055c, 67, 55, [False, False, False, True, False], 'Lete River Cave 2', [0x072, 6, 15], 'JMP'],
@@ -529,6 +529,10 @@ entrance_door_patch = {
 
 # Automatically set required event bits BEFORE loading the map
 require_event_bit = {
+    # Lete River: hide raft NPC before entering caves
+    2035: {0x4FC: False},   # Cave #1
+    2037: {0x4FD: False},   # Cave #2
+
     # Daryl's Tomb: move turtles to the appropriate side
     1512: {event_bit.DARYL_TOMB_TURTLE1_MOVED: True},
     782: {event_bit.DARYL_TOMB_TURTLE1_MOVED: False},
@@ -578,6 +582,10 @@ require_event_bit = {
     # Cyan Dream, Caves exit (NPCs for bridge animation)
     860: {0x545: True},
     861: {0x545: True},
+
+    # Cyan Dream, savepoint room (from door, show savepoint; from drop don't)
+    2073: {0x548: False},
+    443: {0x548: True},
 
     # Cyan Dream, Wrexsoul room (NPCs)
     456: {0x548: True},
@@ -753,11 +761,14 @@ event_address_patch = {
 
 # We define "multi events" as multiple event tiles that are all logically the same exit and partially share
 # the same code.  The event tile with the earliest address should be the key event, others will be referenced to it.
+### NOTE: multi_events no longer used!  Instead, just patch the relevant event scripts to all branch to the main transition.
+### e.g. events.leteriver.door_rando_mod()
+
 multi_events = {
     #2022: ['2022a'],  # Magitek factory room 1 conveyor belt  ### Not needed if using JMP method
     #2025: ['2025a', '2025b'],  # Magitek factory room 1 conveyor belt ### Not needed if using JMP method ###
 
-    2035: ['2035a', '2035b'],  # Lete River section 1 branching code
+    #2035: ['2035a', '2035b'],  # Lete River section 1 branching code
 
     #1502: ['1502a'],  # Figaro Castle WoB entrance tiles
     #1503: ['1503c'],  # Figaro Castle WoB (kohlingen) entrance tiles
