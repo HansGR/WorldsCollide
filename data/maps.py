@@ -28,7 +28,7 @@ from data.event_exit_info import event_exit_info, exit_event_patch, entrance_eve
     multi_events, entrance_door_patch, exit_door_patch, require_event_bit, event_return_map
 
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, \
-    event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit
+    event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit
 from data.rooms import room_data, exit_world, shared_exits
 
 from data.parse import delete_nops, branch_parser, get_branch_code
@@ -525,6 +525,11 @@ class Maps():
                     else:
                         self.exits.exit_original_data[e].append(this_map)
 
+            # Add required explicit exits, if required
+            for m in map_shuffle_partner_explicit:
+                if m in self.door_map.keys():
+                    map_shuffle_force_explicit.append(self.door_map[m])
+
             # Create a trapdoor map for reference
             for m in self.doors.map[1]:
                 if m[0] not in self.trap_map.keys():
@@ -825,7 +830,7 @@ class Maps():
                 #if self.doors.verbose:
                 #    print('Checking if ', m, 'must be forced explicit...', hex(exitA.dest_map))
                 if exitA.dest_map == 0x1ff:
-                    exitA.dest_map = exit_world[exitB_pairID]
+                    exitA.dest_map = self.exits.exit_original_data[map[m]][-1]  #exit_world[exitB_pairID]
                     if self.doors.verbose:
                         print('Updated destination map for ', m,': 0x1ff --> ', hex(exitA.dest_map) )
 
@@ -1188,6 +1193,10 @@ class Maps():
         else:
             # This is a logical exit without tweaks.  Can use vanilla connection info.
             conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
+        if d in map_shuffle_force_explicit:
+            # Update conn_data to not return to parent map
+            if conn_data[0] in [0x1ff, 0x1fe]:
+                conn_data[0] = self.exits.exit_original_data[d_ref][-1]
 
         if require_event_flags[4]:
             wor_src = SummonAirship(that_world, conn_data[1], conn_data[2])
@@ -1253,13 +1262,13 @@ class Maps():
         if require_event_flags[1]:
             if d_ref in entrance_door_patch.keys():
                 # Check whether this is BEFORE (True) or AFTER (False) loading the map.
-                if entrance_door_patch[d_ref][1]:
-                    load_map_src = []
+                world_map_override = (conn_data[0] in [0, 1, 2, 511])
+                if entrance_door_patch[d_ref][1] or world_map_override:
+                    # Put code before map load
+                    wor_src = entrance_door_patch[d_ref][0] + wor_src
                 else:
-                    # Generate map load code for this door; the door itself will not be used.
-                    load_map_src = self._get_load_map_code(d_ref)
-
-                wor_src = wor_src[:-1] + load_map_src + entrance_door_patch[d_ref] + wor_src[-1:]
+                    # Put code after map load
+                    wor_src = wor_src[:-1] + entrance_door_patch[d_ref][0] + wor_src[-1:]
 
             if d_ref in require_event_bit.keys():
                 entr_bits = require_event_bit[d_ref]
@@ -1405,6 +1414,14 @@ class Maps():
             conn_data = self.exits.exit_original_data[conn_pair - 4000]
 
         if parent_map_ok:
+            # It's OK to return a dest_map = 0x1ff.
             return conn_data[:3]
         else:
-            return [exit_world[conn_pair]] + conn_data[1:3]  # [dest_map, dest_x, dest_y]
+            # Safely handle dest_map = 0x1ff
+            if conn_data[0] in [0x1ff, 0x1fe]:
+                # instead of return to parent map, use world map
+                exit_map = exit_world[conn_pair]
+            else:
+                # wherever this goes is OK
+                exit_map = conn_data[0]
+            return [exit_map] + conn_data[1:3]  # [dest_map, dest_x, dest_y]

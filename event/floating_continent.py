@@ -732,17 +732,16 @@ class FloatingContinent(Event):
 
         # (5) Modify warp behavior
         # We will add a new event bit to track special warp to Blackjack
-        if not self.args.door_randomize_dungeon_crawl:   # -drdc always warps to WoB airship.
-            src_warp = [
-                field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
-                field.ClearEventBit(event_bit.IN_WOR),
-                field.LoadMap(map_id=0x006, x=16, y=6, direction=direction.LEFT,
-                              default_music=True, fade_in=True, entrance_event=True),
-                field.Return()
-            ]
-            space = Write(Bank.CC, src_warp, "New FC warp code")
-            fc_warp_addr = space.start_address
-            self.warps.add_warp(event_bit.FLOATING_CONTINENT_WARP_OPTION, fc_warp_addr)
+        src_warp = [
+            field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
+            field.ClearEventBit(event_bit.IN_WOR),
+            field.LoadMap(map_id=0x006, x=16, y=6, direction=direction.LEFT,
+                          default_music=True, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        space = Write(Bank.CC, src_warp, "New FC warp code")
+        fc_warp_addr = space.start_address
+        self.warps.add_warp(event_bit.FLOATING_CONTINENT_WARP_OPTION, fc_warp_addr)
 
 
     @staticmethod

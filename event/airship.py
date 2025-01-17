@@ -58,7 +58,7 @@ class Airship(Event):
         enter_floating_continent = 0xa581a
         enter_floating_continent_skip_reform_iaf = 0xa5980
 
-        space = Allocate(Bank.CA, 298, "airship controls dialog/choices", field.NOP())
+        space = Allocate(Bank.CA, 309, "airship controls dialog/choices", field.NOP())
 
         self.enter_wor_mod(space)
         self.enter_wob_mod(space)
@@ -191,13 +191,22 @@ class Airship(Event):
         # if tentacles not defeated yet, figaro castle still underground, block doors
         #                                also hide guard and show scattered dead soldiers
         # in wob and after tentacles dead, can't be both underground and in airship
+        # If defeated tentacles, have the airship transition bring FC back to the surface
         space.write(
             field.BranchIfEventBitSet(event_bit.DEFEATED_TENTACLES_FIGARO, "DEFEATED_TENTACLES"),
             field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
             field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
             field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
+            field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
 
             "DEFEATED_TENTACLES",
+            field.BranchIfEventBitClear(event_bit.DEFEATED_TENTACLES_FIGARO, "DID_NOT_DEFEAT_TENTACLES"),
+            field.SetEventBit(event_bit.FIGARO_CASTLE_IN_SF_DESERT_WOR),
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_KOHL_DESERT_WOR),
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR),
+            field.ClearEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
+
+            "DID_NOT_DEFEAT_TENTACLES",
             field.ClearEventBit(npc_bit.STORES_NARSHE),
             field.SetEventBit(npc_bit.WEAPON_ELDER_NARSHE),
             field.SetEventBit(npc_bit.WEAPON_ROOM_ESPER_NARSHE),
@@ -205,10 +214,8 @@ class Airship(Event):
             field.ClearEventBit(npc_bit.MOBLIZ_CITIZENS),
             field.ClearEventBit(npc_bit.MOBLIZ_SOLDIERS_LETTER),
 
-            field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
             field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
             field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
-
             field.SetEventBit(npc_bit.MAN_AT_COUNTER_OPERA),
             field.SetEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
             field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_SITTING),

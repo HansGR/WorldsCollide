@@ -176,7 +176,7 @@ class UpdateWorldReturnToParentMap(_Instruction):
 
         # basic return to parent map arguments
         # special map 0x1ff, return to parent map at same position/direction, not on airship
-        args = [0xff, 0x21, 0x00, 0x00, 0x00]
+        args = [0xff, 0x21, 0x00, 0x00, 0x00]  # last bit: 0x80 run entrance event? this works (on non-world-map screens) - but character can't move!  all inputs are off.
 
         UpdateWorldReturnToParentMap.__init__ = lambda self : super().__init__(opcode, *args)
         self.__init__()

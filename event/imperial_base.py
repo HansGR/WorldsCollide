@@ -60,13 +60,20 @@ class ImperialBase(Event):
                 # CB/25FE: 5C    Pause execution until fade in or fade out is complete
                 # CB/25FF: 6B    Load map $0000 (World of Balance) instantly, (upper bits $3000), place party at (164, 194), facing left, flags $00
                 space = Reserve(0xb25fd, 0xb2604, 'Edit Imperial Base return to world map')
+                # src = [
+                #     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+                #                   direction=direction.DOWN, default_music=True, fade_in=True)
+                # ]
+                # if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
+                #     # Prepend set world bit
+                #     src = [field.SetEventBit(event_bit.IN_WOR)] + src
+                from data.warps import CUSTOM_WARP_HOOK
                 src = [
-                    field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
-                                  direction=direction.DOWN, default_music=True, fade_in=True)
+                    field.FadeOutScreen(),
+                    field.WaitForFade(),
+                    field.Call(CUSTOM_WARP_HOOK),
+                    field.Return()
                 ]
-                if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
-                    # Prepend set world bit
-                    src = [field.SetEventBit(event_bit.IN_WOR)] + src
                 space.write(src)
                 # CB/2605: FF        End map script
 
@@ -79,14 +86,21 @@ class ImperialBase(Event):
         # Modify where touching the soldiers sends you
         if self.MAP_SHUFFLE:
             # There are three apparent "chucked out!" routines.  Not sure which is used, let's patch all of them
+            # src = [
+            #     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+            #                       direction=direction.LEFT, default_music=True, fade_in=True),
+            #     world.End()
+            # ]
+            # if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
+            #     # Prepend set world bit
+            #     src = [field.SetEventBit(event_bit.IN_WOR)] + src
+            from data.warps import CUSTOM_WARP_HOOK
             src = [
-                field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
-                                  direction=direction.LEFT, default_music=True, fade_in=True),
-                world.End()
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.Call(CUSTOM_WARP_HOOK),
+                field.Return()
             ]
-            if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
-                # Prepend set world bit
-                src = [field.SetEventBit(event_bit.IN_WOR)] + src
 
             space = Write(Bank.CB, src, 'Imperial base updated chucked out destination')
             chucked_address = space.start_address

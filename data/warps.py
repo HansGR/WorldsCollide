@@ -5,6 +5,10 @@ import instruction.field as field
 
 KT_CHECK_ADDR = 0xa014f
 CUSTOM_WARP_HOOK = 0xa0138
+CUSTOM_WARP_BITS = [event_bit.PHOENIX_CAVE_WARP_OPTION,
+                    event_bit.FLOATING_CONTINENT_WARP_OPTION,
+                    event_bit.ANCIENT_CASTLE_WARP_OPTION]
+
 
 class Warps():
 
@@ -31,6 +35,14 @@ class Warps():
         self.warps.append(new_warp)
         if self.verbose:
             print('Added custom warp: ', hex(event_bit), '@ address: ', hex(warp_code))
+
+    def add_bit(self, bit, setting):
+        if setting in ['clear', 'set']:
+            self.bits[bit] = setting
+            if self.verbose:
+                print('Added custom bit set to warp: ', hex(bit), ' --> ', setting)
+        else:
+            print('warning: bad setting', hex(bit), setting)
 
     def add_code(self, src):
         self.additional_code.extend(src)
@@ -74,7 +86,7 @@ class Warps():
             for s in src:
                 print('\t', s.__str__())
 
-        space = Reserve(CUSTOM_WARP_HOOK, CUSTOM_WARP_HOOK+5, "call modified custom warp handler", field.NOP())
+        space = Reserve(CUSTOM_WARP_HOOK, CUSTOM_WARP_HOOK+5, "branch to modified custom warp handler", field.NOP())
         space.write(field.Branch(warp_handler_addr))
 
 

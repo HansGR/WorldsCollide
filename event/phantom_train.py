@@ -95,9 +95,21 @@ class PhantomTrain(Event):
             event_id = 2068
             src += GoToSwitchyard(event_id)
 
-            # Add the switchyard event tile that handles exit to the world map
-            switchyard_src = SummonAirship(self.airship_loc[0], self.airship_loc[1], self.airship_loc[2])
+            # Add the switchyard event tile that handles exit 2068 --> the world map
+            airship_location = [0x0, 178, 93]
+            switchyard_src = SummonAirship(airship_location[0], airship_location[1], airship_location[2])
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
+
+        elif self.MAP_SHUFFLE and self.airship_loc[0] not in [0x0, 0x1]:
+            # In map shuffle, only airship if returning to the world map
+            # Call warp code without animation
+            from data.warps import CUSTOM_WARP_HOOK
+            src += [
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.Call(CUSTOM_WARP_HOOK),
+                field.Return()
+            ]
 
         else:
             if self.airship_loc[0] == 0x1:

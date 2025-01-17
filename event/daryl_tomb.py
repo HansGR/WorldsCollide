@@ -86,24 +86,29 @@ class DarylTomb(Event):
             src += GoToSwitchyard(event_id)
 
             # (2b) Add the switchyard event tile that handles exit to the world map
-            switchyard_src = SummonAirship(self.exit_loc[0], self.exit_loc[1], self.exit_loc[2])
+            # Use original world map location for this: whatever uses this is actually going to outside DT.
+            switchyard_src = SummonAirship(0x01, 25, 53)
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
-        else:
-            if self.MAP_CROSSWORLD:
-                # Need to set/clear world bit before returning to world map
-                if self.exit_loc[0] == 0x0:
-                    src += [field.ClearEventBit(event_bit.IN_WOR)]
-                else:
-                    src += [field.SetEventBit(event_bit.IN_WOR)]
+        elif self.MAP_SHUFFLE:
+            # Map shuffle without door randomization: this should just lead back to the origin of the dungeon.
+            # Call warp code without animation
+            from data.warps import CUSTOM_WARP_HOOK
+            src = [
+                field.Call(CUSTOM_WARP_HOOK),
+                field.Return()
+            ]
 
+        else:
             # for convenience change staircase door to take player back out to wor
+            exit_location = [0x01, 25, 53]
             src += [
-                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
-                              y = self.exit_loc[2]),
+                field.FadeLoadMap(exit_location[0], direction.DOWN, default_music = True,
+                              x = exit_location[1], y = exit_location[2]),
                 world.End(),
                 field.Return()
             ]
+
         # Need to reserve 12 bytes for vanilla command.
         space = Reserve(0xa435d, 0xa436a, "daryl tomb staircase and getting falcon scenes", field.NOP())
         space.write(src)

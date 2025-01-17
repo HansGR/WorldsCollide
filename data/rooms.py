@@ -41,7 +41,7 @@ room_data = {
     # Map Shuffle rooms:  World Maps
     #'shuffle-wob' : [ [6, 1556], [], [], 0],  # Root map for WOB map shuffle testing
     'shuffle-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44, 1556], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
-    #'shuffle-wor' : [ [1558], [], [], 1],  # Root map for WOR map shuffle testing  1554 = Phoenix Cave
+    #'shuffle-wor' : [ [1558, 51], [], [], 1],  # Root map for WOR map shuffle testing  1554 = Phoenix Cave
     'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
 
     # Map Shuffle rooms:  connectors

@@ -364,19 +364,17 @@ class PhoenixCave(Event):
 
         # The check complete exit event will be handled in self.reward_mod()
 
-        if not self.args.door_randomize_dungeon_crawl:
-            # If dungeon crawl, all warping should go to WOB Narshe airship.
-            # since we're only warping out of non-PC locations, we can just load the Falcon
-            src_warp = [
-                field.LoadMap(map_id=0x00b, x=16, y=8, direction=direction.LEFT,
-                              default_music=True, fade_in=True, entrance_event=True),
-                field.Return()
-            ]
-            warp_space = Write(Bank.CC, src_warp, "Repurposed PC warp code")
+        # since we're only warping out of non-PC locations, we can just load the Falcon
+        src_warp = [
+            field.LoadMap(map_id=0x00b, x=16, y=8, direction=direction.LEFT,
+                          default_music=True, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        warp_space = Write(Bank.CC, src_warp, "Repurposed PC warp code")
 
-            space = Reserve(0xc1001, 0xc1004, 'Call Phoenix Cave warp mod')
-            space.write(field.Call(warp_space.start_address))
-            self.warps.add_warp(event_bit.PHOENIX_CAVE_WARP_OPTION, space.start_address)
+        space = Reserve(0xc1001, 0xc1004, 'Call Phoenix Cave warp mod')
+        space.write(field.Call(warp_space.start_address))
+        self.warps.add_warp(event_bit.PHOENIX_CAVE_WARP_OPTION, space.start_address)
 
     @staticmethod
     def entrance_door_patch():

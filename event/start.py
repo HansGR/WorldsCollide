@@ -122,6 +122,11 @@ class Start(Event):
             ]
             self.warps.add_warp_override(warp_to_narshe_src)
 
+            # Turn off other custom warps
+            from data.warps import CUSTOM_WARP_BITS
+            for bit in CUSTOM_WARP_BITS:
+                self.warps.add_bit(bit, 'clear')
+
         elif self.args.map_shuffle:
             # In Map Shuffle, parent map is well-defined, but sometimes the parent world is different.
             # Update the world bit and return to parent map.

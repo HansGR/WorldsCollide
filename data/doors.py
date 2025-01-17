@@ -306,8 +306,11 @@ class Doors():
             room_sets.append(ROOM_SETS['MapShuffleXW'])
             self.area_name.append('MapShuffleXW')
 
-        # Hard override for testing
+        # Hard overrides for testing
         #room_sets = [ROOM_SETS['test']]
+        #self.forcing[1558] = [1242]  # AC --> daryl's tomb
+        #print(self.forcing)
+
         self.read(room_sets)
 
     def read(self, whichRooms=None):
