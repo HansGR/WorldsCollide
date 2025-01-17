@@ -1,11 +1,19 @@
 from event.event import *
 
 class AncientCastle(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+        self.MAP_SHUFFLE = args.map_shuffle_separate or args.map_shuffle_crossworld
+
     def name(self):
         return "Ancient Castle"
 
     def character_gate(self):
-        return self.characters.EDGAR
+        if self.MAP_SHUFFLE:
+            # AC may be ungated in map shuffle.  We handle Edgar logic later.
+            return None
+        else:
+            return self.characters.EDGAR
 
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)

@@ -56,6 +56,7 @@ class Characters():
         # path of characters required to unlock each character
         # e.g. self.character_paths[self.TERRA] = all characters required for terra (in order)
         self.character_paths = [[] for char_index in range(self.CHARACTER_COUNT)]
+        #self.character_location = {}
 
     def get_available_count(self):
         return len(self.available_characters)

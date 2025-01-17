@@ -40,8 +40,8 @@ room_data = {
 
     #'shuffle-wob' : [ [6, 1556], [], [], 0],  # Root map for WOB map shuffle testing
     'shuffle-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44, 1556], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
-    #'shuffle-wor' : [ [], [], [], 1],  # Root map for WOR map shuffle testing  1554 = Phoenix Cave
-    'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
+    #'shuffle-wor' : [ [1558], [], [], 1],  # Root map for WOR map shuffle testing  1554 = Phoenix Cave
+    'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554, 1558], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
@@ -169,7 +169,7 @@ room_data = {
     '84R': [[4232, 4233], [], [], 1],  # Figaro Castle Below Library
     '85R': [[4234, 4235], [], [], 1],  # Figaro Castle Library
     '86R': [[4236, 4238], [], [], 1],  # Figaro Castle Switch Room
-    '87R': [[4237], [], [], 1],  # Figaro Castle Prison
+    '87R': [[4237, 1558], [], [], 1],  # Figaro Castle Prison
 
     # FIGARO CASTLE ENGINE ROOM
     88 : [ [239, 240], [ ], [ ], 1], #Figaro Castle B1 Hallway East
@@ -832,7 +832,8 @@ room_data = {
     517 : [ [1271], [ ], [ ], 1], #Solitary Island Beach
 
     # ANCIENT CAVE & CASTLE
-    520 : [ [1083, 1085, 1087], [ ], [ ], 1], #Ancient Cave First Room
+    'root-ac': [ [1558], [], [], 1],  # Ancient Cave connection from Figaro Castle Basement
+    520 : [ [1082, 1083, 1085, 1087], [ ], [ ], 1], #Ancient Cave First Room
     521 : [ [1084, 1086, 1088, 1274], [ ], [ ], 1], #Ancient Cave Second Room
     522 : [ [1089, 1275], [ ], [ ], 1], #Ancient Cave Third Room
     523 : [ [1090, 1091], [ ], [ ], 1], #Ancient Cave Save Point Room
@@ -1015,6 +1016,7 @@ shared_exits = {
 logical_links = [
     [30537, 30618],  # Mt Zozo connection
     [30044, 31047],  # Esper Mtn connection
+    #[31558, 31082],  # Ancient Castle connection
 ]
 
 map_shuffle_protected_doors = {

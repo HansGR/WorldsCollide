@@ -1266,7 +1266,7 @@ exit_data = {
     1271: [1265, "Cid's House Beach"],
     1272: [1509, "Solitary Island Cliff"],
     1273: [None, "Cid's House Beach with No Fish"],
-    1082: [None, "Ancient Cave North to Figaro Castle"],
+    1082: [1558, "Ancient Cave North to Figaro Castle"],
     1083: [1084, "Ancient Cave First Room South Left Door"],
     1084: [1083, "Ancient Cave Second Room North Left Door"],
     1085: [1086, "Ancient Cave First Room South Middle Door"],
@@ -1372,6 +1372,7 @@ exit_data = {
     1555: [1554,  "Phoenix cave exit as door"],
     1556: [1557,  "Floating Continent entrance as door"],
     1557: [1556,  "Floating Continent exit as door"],
+    1558: [1082, "Figaro Castle prison to Ancient Cave"],
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
@@ -1759,6 +1760,7 @@ event_door_connection_data = {
     1555: [0x00b, 16, 8, 0, 0, 0, 2, 0, 5, 6, 0, 0],  #  "Phoenix cave exit as door"  Should be flying afterward.  0x220E5.  world map: [0x001, 117, 162]
     1556: [0x18a, 4, 12, 0, 0, 0, 2, 0, 163, 176, 0, 0],  # "Floating continent entry as door"
     1557: [0x006, 16, 6, 0, 0, 0, 2, 0, 70, 29, 0, 0],   # "Floating Continent exit as door"
+    1558: [0x191, 42, 5, 0, 0, 0, 2, 0, 35, 35, 0, 0],   # "Figaro castle prison to Ancient Cave"
 
     # Logical exits with different destinations
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'
@@ -1853,6 +1855,7 @@ door_short_text = {
     40: "the Opera House",
     42: "the Imperial Base",
     44: "Esper Mountain",
+    1556: "the Floating Continent",
 
     # wor: [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554, 1556]
     48: "Cid's House",
@@ -1879,11 +1882,64 @@ door_short_text = {
     78: "Ebot's Rock",
     79: "Duncan's House",
     1552: "the Zone Eater",
-    1554: "Phoenix Cave",
-    1556: "the Floating Continent"
+    1554: "Phoenix Cave"
 }
 
 import random
 if random.random() >= 0.5:
     door_short_text[53] = "Daryl's Tomb"
 
+# Note: we don't need to keep track of locations with multiple entrances... for now
+eventname_to_door = {
+    "Lone Wolf": 4,
+    "Narshe Battle": 4,
+    "Narshe Moogle Defense": 4,
+    "Whelk": 4,
+    #"South Figaro Cave": [5, 1506],
+    "Imperial Camp": 1501,
+    "Figaro Castle WOB": 1502,
+    #"Burning House": [1504, 75],
+    "Magitek Factory": 1505,
+    #"South Figaro": [6, 58],
+    "Sabin's House": 10,
+    "Mt. Kolts": 11,
+    "Lete River": 13,
+    "Gau Father House": 14,
+    "Baren Falls": 15,
+    "Doma WOB": 18,
+    #"Phantom Train": [20, 21],
+    "Serpent Trench": 23,
+    #"Kohlingen": [24, 59],
+    "Mobliz WOB": 26,
+    #"Tzen": [33, 51],
+    "Zozo": 37,
+    "Opera House": 40,
+    "Sealed Gate": 42,
+    "Esper Mountain": 44,
+    "Floating Continent": 1556,
+
+    "Ancient Castle": 1558,
+    "Collapsing House": 51,
+    "Mobliz WOR": 52,
+    "Daryl's Tomb": 53,
+    "Figaro Castle WOR": 57,  # actually SF Cave
+    "Veldt Cave WOR": 61,
+    #"the Opera House WOR": 62,
+    "Narshe WOR": 67,
+    "Tritoch": 67,
+    "Umaro's Cave": 67,
+    "Fanatic's Tower": 69,
+    "Mt. Zozo": 70,
+    "Owzer Mansion": 73,
+    "Doma WOR": 76,
+    "Ebot's Rock": 78,
+    "Zone Eater": 1552,
+    "Phoenix Cave": 1554,
+}
+
+door_to_eventname = {}
+for k in eventname_to_door.keys():
+    if eventname_to_door[k] in door_to_eventname.keys():
+        door_to_eventname[eventname_to_door[k]].append(k)
+    else:
+        door_to_eventname[eventname_to_door[k]] = [k]

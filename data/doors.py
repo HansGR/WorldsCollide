@@ -2,7 +2,7 @@
 import threading
 from random import randrange, choices
 from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors
-from data.map_exit_extra import exit_data, doors_WOB_WOR  # for door descriptions, WOR/WOB equivalent doors
+from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
 ROOM_SETS = {
@@ -288,6 +288,15 @@ class Doors():
                             #print('removing ', dk, ' from ', a)
                             room_data[a][0].remove(dk)
 
+        # If randomizing ancient castle, must not allow ancient castle to be connected to figaro castle WOR
+        if self.args.map_shuffle:
+            disallowed_connections = {
+                1558: [exit_data[57][0]]  # connection to South Figaro Cave WOR
+            }
+            ok_conns = {}
+            for dc in disallowed_connections.keys():
+                ok_conns[dc] = []
+
         if self.args.map_shuffle_separate:  # -maps
             # Separately:  add rooms for WOR, WOB
             # Need to dynamically construct connecting rooms first
@@ -298,11 +307,15 @@ class Doors():
                     conn_door = protect_doors[conn_door]
                 room_data[this_room_name] = [ [conn_door], [], [], 0]
                 ROOM_SETS['MapShuffleWOB'].append(this_room_name)
+
             for dk in room_data['shuffle-wor'][0]:
                 this_room_name = 'ms-wor-'+str(dk)
                 conn_door = exit_data[dk][0]
                 if conn_door in protect_doors.keys():
                     conn_door = protect_doors[conn_door]
+                for dc in disallowed_connections.keys():
+                    if conn_door not in disallowed_connections[dc]:
+                        ok_conns[dc].append(conn_door)
                 room_data[this_room_name] = [[conn_door], [], [], 1]
                 ROOM_SETS['MapShuffleWOR'].append(this_room_name)
 
@@ -322,11 +335,25 @@ class Doors():
                     conn_door = exit_data[dk][0]
                     if conn_door in protect_doors.keys():
                         conn_door = protect_doors[conn_door]
+                    for dc in disallowed_connections.keys():
+                        if conn_door not in disallowed_connections[dc]:
+                            ok_conns[dc].append(conn_door)
                     room_data[this_room_name] = [[conn_door], [], [], rw]
                     ROOM_SETS['MapShuffleXW'].append(this_room_name)
 
             room_sets.append(ROOM_SETS['MapShuffleXW'])
             self.area_name.append('MapShuffleXW')
+
+        # Force a connection for each disallowed connections
+        for dc in disallowed_connections.keys():
+            this_conn = random.choice(ok_conns[dc])
+            self.forcing[dc] = [this_conn]
+            if self.verbose:
+                print('Forced connection: ', dc, exit_data[dc][1], '-->', this_conn, exit_data[this_conn][1])
+            for oc in ok_conns.keys():
+                if this_conn in ok_conns[oc]:
+                    ok_conns[oc].remove(this_conn)
+
 
         # Hard override for testing
         #room_sets = [ROOM_SETS['test']]
@@ -340,7 +367,7 @@ class Doors():
         #    print(self.area_name)
         #    print(self.rooms)
 
-    def mod(self):
+    def mod(self, characters):
         # Create list of randomized connections using walks
         map = [[], []]
 

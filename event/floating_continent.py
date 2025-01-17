@@ -692,7 +692,7 @@ class FloatingContinent(Event):
         ] + GoToSwitchyard(self.exit_id, map='field')
         # We need a fixed location to put this.  Bit length ~ 60 bits?
         # look at 0xa48e3 (end of escape sequence)
-        space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 151, "Floating Continent entry code modified")
+        space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 153, "Floating Continent entry code modified")
         space.write(src)
         #print('FC entrance event length: ', space.end_address - space.start_address)
 

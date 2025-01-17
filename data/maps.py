@@ -454,7 +454,7 @@ class Maps():
         self.npcs.mod(characters)
         self.chests.mod()
         self.world_map.mod()
-        self.doors.mod()
+        self.doors.mod(characters)
         if self.doors.verbose:
             print('Door connections:')
             for m in self.doors.map[0]:

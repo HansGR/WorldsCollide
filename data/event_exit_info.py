@@ -230,6 +230,9 @@ event_exit_info = {
     # FLOATING CONTINENT AS DOOR
     1556: [None, 7, 1, [False, False, False, False, False], 'Floating Continent entry as door', [0x005, 1556 % 128, 1556 // 128], 'JMP'],  # Switchyard tile: [x,y] = [ID % 128, ID // 128]
     1557: [None, 7, 1, [False, False, False, False, False], 'Floating Continent exit as door', [0x005, 1557 % 128, 1557 // 128], 'JMP'],  # exit event from Floating Continent:
+
+    # FIGARO CASTLE PRISON TO ANCIENT CAVE
+    1558: [0xa5f25, 20, 14, [False, False, False, False, False], 'Figaro Castle Prison to Ancient Cave', [0x03d, 35, 35], 'JMP'],  # If (0x0cd), branch to load AC; otherwise load Cave to SF
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
