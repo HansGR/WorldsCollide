@@ -138,14 +138,19 @@ class Doors():
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
                 if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
-                    # Check for _mapsafe
-                    if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
-                        room_sets.append(ROOM_SETS[key])
-                        self.area_name.append(key)
-                        if key in map_shuffle_protected_doors.keys():
-                            d = map_shuffle_protected_doors[key]
-                            protect_doors[d] = d + 30000
-                            
+                    if self.args.map_shuffle:
+                        # Check for _mapsafe
+                        if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
+                            room_sets.append(ROOM_SETS[key])
+                            self.area_name.append(key)
+                            if key in map_shuffle_protected_doors.keys():
+                                d = map_shuffle_protected_doors[key]
+                                protect_doors[d] = d + 30000
+                    else:
+                        if '_mapsafe' not in key:
+                            room_sets.append(ROOM_SETS[key])
+                            self.area_name.append(key)
+
             self.combine_areas = False
 
         else:
@@ -284,15 +289,22 @@ class Doors():
             for r in shuffle_rooms:
                 for dk in [d for d in room_data[r][0]]:
                     if dk in ignore_maps:
-                        print('removing ', dk, ' from ', r)
+                        if self.verbose:
+                            print('removing ', dk, ' from ', r)
                         room_data[r][0].remove(dk)
+                    if dk in protect_doors.keys():
+                        if self.verbose:
+                            print('protecting ', dk, ' in ', r, ' --> ', protect_doors[dk])
+                        room_data[r][0].remove(dk)
+                        room_data[r][0].append(protect_doors[dk])
 
             ignore_doors = [1554, 1555]  # don't include phoenix cave in doors if doing map shuffle
             for a in room_data.keys():
                 if a not in shuffle_rooms:
                     for dk in [d for d in room_data[a][0]]:
                         if dk in ignore_doors:
-                            print('removing ', dk, ' from ', a)
+                            if self.verbose:
+                                print('removing ', dk, ' from ', a)
                             room_data[a][0].remove(dk)
 
         if self.args.map_shuffle_separate:  # -maps
