@@ -765,20 +765,26 @@ class Maps():
         #         # Delete the event tile
         #         self.delete_event(info[0], info[1], info[2])  # delete the original event
 
+        # Bundle exit_door_patch and entrance_door_patch data for transitions
+        for m in exit_door_patch.keys():
+            if m in map.keys():
+                # Select event tiles acting as doors
+                if 1500 <= m < 4000:
+                    info = exit_door_patch[m]
+                    # Pass the script data to exit_event_data_to_include
+                    self.exit_event_data_to_include[m] = [info, 1]  # always include before transition
+                    if self.doors.verbose:
+                        print('Passed exit door patch for ', str(m), ' --> ', str(map[m]))
+                        # print([a.__str__() for a in info[0]])
+
         for m in entrance_door_patch.keys():
             if m in map.keys():
-                # Only do this if the connection is handled by Transitions
+                # select connections acting as doors
                 if 1500 <= map[m] < 4000:
                     if isinstance(entrance_door_patch[m][0], list):
                         info = entrance_door_patch[m]
                     else:
                         info = [entrance_door_patch[m][0](self.args), entrance_door_patch[m][1]]
-                    # Write the script address somewhere
-                    # space = Write(Bank.CA, info, "entrance door patch for " + str(map[m]) + ' --> ' + str(m))
-                    # self.exit_event_addr_to_call[map[m]] = space.start_address
-                    # if self.doors.verbose:
-                    #    print('Wrote entrance door patch for ', str(map[m]), ' --> ', str(m), ': ', hex(space.start_address))
-                    #    print([a.__str__() for a in info])
                     # Pass the script data to exit_event_data_to_include
                     self.exit_event_data_to_include[map[m]] = info
                     if self.doors.verbose:

@@ -1,8 +1,8 @@
 from event.event import *
 
 class AncientCastle(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle_separate or args.map_shuffle_crossworld
 
     def name(self):
@@ -37,6 +37,9 @@ class AncientCastle(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
         self.finish_check_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
         self.log_reward(self.reward)
 
@@ -125,3 +128,15 @@ class AncientCastle(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def map_shuffle_mod(self):
+        # Add a specified warp handler case: return to FC prison WOR
+        src_warp = [
+            field.SetEventBit(event_bit.IN_WOR),
+            field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION),
+            field.LoadMap(map_id=0x03d, x=35, y=36, direction=direction.DOWN,
+                          default_music=True, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src_warp, 'Ancient Castle warp handler code')
+        self.warps.add_warp(event_bit.ANCIENT_CASTLE_WARP_OPTION, space.start_address)

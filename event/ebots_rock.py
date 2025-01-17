@@ -3,8 +3,8 @@ from data.map_exit_extra import exit_data
 from data.rooms import exit_world
 
 class EbotsRock(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):

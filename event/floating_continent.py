@@ -10,8 +10,8 @@ ENTRY_EVENT_CODE_ADDR = 0xa48e3
 #      going in that hole will freeze
 
 class FloatingContinent(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
@@ -732,30 +732,9 @@ class FloatingContinent(Event):
 
         # (5) Modify warp behavior
         # We will add a new event bit to track special warp to Blackjack
-        # In Warp:
-        # CA/0138: C0    If ($1E80($2BF) [$1ED7, bit 7] is set), branch to $CA0154
-        # CA/0154: B2    Call subroutine $CC1001
-        #    CC/1001: B2    Call subroutine $CC2109
-        #    CC/1005: D5    Clear event bit $1E80($2BF) [$1ED7, bit 7]
-        #    CC/1007: FE    Return
-        # CA/0158: FE    Return
         if not self.args.door_randomize_dungeon_crawl:   # -drdc always warps to WoB airship.
-            pc_warp_addr = 0xc1001
-
-            src_safety = []
-            if self.args.door_randomize_all or self.args.door_randomize_crossworld:
-                src_safety += [
-                    # Remove MTek Armor
-                    field.Call(field.REMOVE_PARTY_MAGITEK),
-                    field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
-                ]
             src_warp = [
                 field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
-                # Replicate warp set bits
-                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED),
-                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED),
-            ] + src_safety + [
-                # Go to Blackjack
                 field.ClearEventBit(event_bit.IN_WOR),
                 field.LoadMap(map_id=0x006, x=16, y=6, direction=direction.LEFT,
                               default_music=True, fade_in=True, entrance_event=True),
@@ -763,17 +742,8 @@ class FloatingContinent(Event):
             ]
             space = Write(Bank.CC, src_warp, "New FC warp code")
             fc_warp_addr = space.start_address
+            self.warps.add_warp(event_bit.FLOATING_CONTINENT_WARP_OPTION, fc_warp_addr)
 
-            src_warp_handler = [
-                field.BranchIfEventBitSet(event_bit.PHOENIX_CAVE_WARP_OPTION, pc_warp_addr),
-                field.BranchIfEventBitSet(event_bit.FLOATING_CONTINENT_WARP_OPTION, fc_warp_addr),
-                field.Branch(0xa013e),  # Return to warp script
-            ]
-            space = Write(Bank.CA, src_warp_handler, "modified custom warp handler")
-            warp_handler_addr = space.start_address
-
-            space = Reserve(0xa0138, 0xa013d, "call modified custom warp handler", field.NOP())
-            space.write(field.Branch(warp_handler_addr))
 
     @staticmethod
     def entrance_door_patch():

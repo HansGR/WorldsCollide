@@ -439,6 +439,10 @@ exit_door_patch = {
     # Baren Falls: for some reason, it doesn't auto update the parent map
     15: [field.SetParentMap(0x0, direction.DOWN, 185, 93)],
 
+    # Door from FC prison towards Ancient Castle: try setting warp stones to return here
+    # No good: Return To Parent Map freezes character if not on world map? why?
+    #1558: [field.SetParentMap(0x03d, direction.UP, 35, 39)],  # tile at [0x03d, 35, 35]
+    1558: [field.SetEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION)],  # Set custom event bit to handle warping in this situation
 
 }
 
@@ -527,6 +531,9 @@ entrance_door_patch = {
 
     # Return to Blackjack after FC connection, animation
     1556: [floating_continent_return, True],
+
+    # Return to Figaro Castle after AC connection, clear custom warp bit
+    1558: [[field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION)], False],  # Clear custom event bit to handle warping in this situation
 
 }
 

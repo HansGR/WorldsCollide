@@ -5,8 +5,8 @@ ENTRY_EVENT_CODE_ADDR = 0xc2bf0  # unused block in Rachel animation
 
 
 class PhoenixCave(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle
         self.DOOR_RANDOMIZE = args.door_randomize_all or args.door_randomize_crossworld \
                               or args.door_randomize_dungeon_crawl
@@ -364,23 +364,19 @@ class PhoenixCave(Event):
 
         # The check complete exit event will be handled in self.reward_mod()
 
-        # Modify Phoenix Cave warp option
-        # In Warp:
-        # CA/0138: C0    If ($1E80($2BF) [$1ED7, bit 7] is set), branch to $CA0154
-        # CA/0154: B2    Call subroutine $CC1001
-        #    CC/1001: B2    Call subroutine $CC2109
-        #    CC/1005: D5    Clear event bit $1E80($2BF) [$1ED7, bit 7]
-        #    CC/1007: FE    Return
-        # CA/0158: FE    Return
-        # since we're only warping out of non-PC locations, we can just load the Falcon
-        src_warp = [
-            field.LoadMap(map_id=0x00b, x=16, y=8, direction=direction.LEFT,
-                          default_music=True, fade_in=True, entrance_event=True),
-            field.Return()
-        ]
-        warp_space = Write(Bank.CC, src_warp, "Repurposed PC warp code")
-        space = Reserve(0xc1001, 0xc1004, 'Call Phoenix Cave warp mod')
-        space.write(field.Call(warp_space.start_address))
+        if not self.args.door_randomize_dungeon_crawl:
+            # If dungeon crawl, all warping should go to WOB Narshe airship.
+            # since we're only warping out of non-PC locations, we can just load the Falcon
+            src_warp = [
+                field.LoadMap(map_id=0x00b, x=16, y=8, direction=direction.LEFT,
+                              default_music=True, fade_in=True, entrance_event=True),
+                field.Return()
+            ]
+            warp_space = Write(Bank.CC, src_warp, "Repurposed PC warp code")
+
+            space = Reserve(0xc1001, 0xc1004, 'Call Phoenix Cave warp mod')
+            space.write(field.Call(warp_space.start_address))
+            self.warps.add_warp(event_bit.PHOENIX_CAVE_WARP_OPTION, space.start_address)
 
     @staticmethod
     def entrance_door_patch():

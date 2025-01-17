@@ -98,29 +98,20 @@ class Start(Event):
         self.start_items_mod()
         self.start_game_mod()
 
-        # Warp stone modifications
-        self.warp_setbits_addr = 0xa0159
+        # Warp modifications
         if self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all or self.args.door_randomize_crossworld:
             # Safety: make warp remove magitek armor.
             # Bugs can let the player carry MTek armor out of Dream, we want a way to clear that.
-            # we'll replace the code at 0xa0159 which is called by all warps.
-            src = [
-                # Replicate 0xa0159
-                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE1_MOVED),
-                field.ClearEventBit(event_bit.DARYL_TOMB_TURTLE2_MOVED),
-                # Remove MTek Armor
+            src_safety = [
                 field.Call(field.REMOVE_PARTY_MAGITEK),
                 field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
-                field.Return(),
             ]
-            space = Write(Bank.CA, src, "mtek safe warp bits")
-            self.warp_setbits_addr = space.start_address
+            self.warps.add_code(src_safety)
             
         if self.args.debug or self.args.door_randomize_dungeon_crawl:
             # Dungeon Crawl mode doesn't have a well-defined parent map.
             # Warp stones will always go to the airship over WOB Narshe.
-            src = [
-                field.Call(self.warp_setbits_addr),
+            warp_to_narshe_src = [
                 # 0x6b, 0xff, 0x25, 0x00, 0x00, 0x00, 0xff, 0xfe,  <- original warp to parent map
                 field.LoadMap(0x00, direction.UP, default_music=False,
                               x=84, y=34, fade_in=True, airship=True),
@@ -129,35 +120,17 @@ class Start(Event):
                 field.End(),  # end of script
                 field.Return(),  # return
             ]
-            space = Write(Bank.CA, src, "new warp")
-            warp_to_narshe = space.start_address
-
-            space = Reserve(0xa0144, 0xa014e, "edited warp section dungeon crawl", field.NOP())
-            space.write(
-                field.Call(warp_to_narshe),
-                field.End(),
-            )
-
-            # For safety, knock out the check for the phoenix cave warp bit.
-            # CA/0138: C0    If ($1E80($2BF) [$1ED7, bit 7] is set), branch to $CA0154
-            space = Reserve(0xa0138, 0xa013d, "skip phoenix cave custom warp bit check", field.NOP())
+            self.warps.add_warp_override(warp_to_narshe_src)
 
         elif self.args.map_shuffle:
             # In Map Shuffle, parent map is well-defined, but sometimes the parent world is different.
             # Update the world bit and return to parent map.
             src = [
-                field.Call(self.warp_setbits_addr),
                 field.UpdateWorldReturnToParentMap(),
                 world.End(),  # end of script
             ]
-            space = Write(Bank.CA, src, "warp update IN_WOR")
-            warp_update = space.start_address
+            self.warps.add_warp_override(src)
 
-            space = Reserve(0xa0144, 0xa014e, "edited warp to respect world bit", field.NOP())
-            space.write(
-                field.Call(warp_update),
-                world.End(),
-            )
 
         # where the game begins after intro/pregame
         space = Reserve(0xc9a4f, 0xc9ad4, "setup and start game", field.NOP())

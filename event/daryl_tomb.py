@@ -4,8 +4,8 @@ from data.map_exit_extra import exit_data
 from data.rooms import exit_world
 
 class DarylTomb(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_daryls_tomb
                           or args.door_randomize_all
                           or args.door_randomize_crossworld

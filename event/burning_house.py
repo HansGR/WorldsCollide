@@ -3,8 +3,8 @@ from event.event import *
 # TODO: only trigger this event in wob
 
 class BurningHouse(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_burning_house
                           or args.door_randomize_all
                           or args.door_randomize_crossworld
