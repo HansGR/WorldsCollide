@@ -38,10 +38,70 @@ room_data = {
     'root-cd' : [ [], [2069], [3074], 1], # Root room for Cyan's Dream
     'root-pt' : [ [468], [], [3068], 0],  # Root map for Phantom Train
 
+    # Map Shuffle rooms:  World Maps
     #'shuffle-wob' : [ [6, 1556], [], [], 0],  # Root map for WOB map shuffle testing
     'shuffle-wob' : [ [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44, 1556], [], [], 0],  # Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)
     #'shuffle-wor' : [ [1558], [], [], 1],  # Root map for WOR map shuffle testing  1554 = Phoenix Cave
-    'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554, 1558], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
+    'shuffle-wor' : [ [48, 49, 51, 52, 53, 56, 57, 58, 59, 61, 62, 63, 65, 67, 68, 69, 70, 73, 75, 76, 78, 79, 1552, 1554], [], [], 1],  # Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55.
+
+    # Map Shuffle rooms:  connectors
+    'ms-wob-4': [[1135], [], [], 0],        # Narshe WOB
+    'ms-wob-5': [[1161], [], [], 0],        # Cave to South Figaro N
+    'ms-wob-1501': [[1184], [], [], 0],     # Imperial Camp
+    'ms-wob-1502': [[1156], [], [], 0],     # Figaro Castle
+    'ms-wob-1504': [[1255], [], [], 0],     # Thamasa
+    'ms-wob-1505': [[1228], [], [], 0],     # Vector
+    'ms-wob-1506': [[269], [], [], 0],      # Cave to South Figaro S
+    'ms-wob-6': [[1167], [], [], 0],        # South Figaro
+    'ms-wob-10': [[360], [], [], 0],        # Sabin's House
+    'ms-wob-11': [[1175], [], [], 0],       # Mt Kolts S
+    'ms-wob-12': [[1178], [], [], 0],       # Mt Kolts N
+    'ms-wob-13': [[1181], [], [], 0],       # Returner's Hideout
+    'ms-wob-14': [[1183], [], [], 0],       # Gau's Dad's House
+    'ms-wob-15': [[1196], [], [], 0],       # Baren Falls
+    'ms-wob-16': [[1199], [], [], 0],       # Nikeah
+    'ms-wob-18': [[1240], [], [], 0],       # Doma
+    'ms-wob-20': [[1188], [], [], 0],       # Phantom Forest N
+    'ms-wob-21': [[465], [], [], 0],        # Phantom Forest S
+    'ms-wob-23': [[523], [], [], 0],        # Crescent Mtn
+    'ms-wob-24': [[1209], [], [], 0],       # Kohlingen
+    'ms-wob-26': [[1190], [], [], 0],       # Mobliz
+    'ms-wob-27': [[1205], [], [], 0],       # Coliseum guy's house
+    'ms-wob-28': [[1213], [], [], 0],       # Jidoor
+    'ms-wob-31': [[1238], [], [], 0],       # Maranda
+    'ms-wob-33': [[1244], [], [], 0],       # Tzen
+    'ms-wob-35': [[1245], [], [], 0],       # Albrook
+    'ms-wob-37': [[1224], [], [], 0],       # Zozo
+    'ms-wob-40': [[658], [], [], 0],        # Opera House
+    'ms-wob-42': [[1059], [], [], 0],       # Imperial Base
+    'ms-wob-44': [[1047], [], [], 0],       # Esper Mtn
+    'ms-wob-1556': [[1557], [], [], 0],     # Floating Continent
+
+    'ms-wor-48': [[1267], [], [], 1],       # Cid's House
+    'ms-wor-49': [[1249], [], [], 1],       # Albrook
+    'ms-wor-51': [[1243], [], [], 1],       # Tzen
+    'ms-wor-52': [[1192], [], [], 1],       # Mobliz
+    'ms-wor-53': [[1242], [], [], 1],       # Daryl's Tomb
+    'ms-wor-56': [[1280], [], [], 1],       # Coliseum
+    'ms-wor-57': [[262], [], [], ['ac1'], {'ac1': [1558]}, 1],        # Cave to Figaro Castle, incl. key & entry to ancient castle
+    'ms-wor-58': [[1162], [], [], 1],       # South Figaro
+    'ms-wor-59': [[1211], [], [], 1],       # Kohlingen
+    'ms-wor-61': [[978], [], [], 1],        # Cave in the Veldt
+    'ms-wor-62': [[4658], [], [], 1],       # Opera House
+    'ms-wor-63': [[5238], [], [], 1],       # Maranda
+    'ms-wor-65': [[5199], [], [], 1],       # Nikeah
+    'ms-wor-67': [[1143], [], [], 1],       # Narshe
+    'ms-wor-68': [[1187], [], [], 1],       # Gau's Dad's House
+    'ms-wor-69': [[1262], [], [], 1],       # Fanatics Tower
+    'ms-wor-70': [[5224], [], [], 1],       # Zozo
+    'ms-wor-73': [[5213], [], [], 1],       # Jidoor
+    'ms-wor-75': [[1261], [], [], 1],       # Thamasa
+    'ms-wor-76': [[5240], [], [], 1],       # Doma
+    'ms-wor-78': [[1546], [], [], 1],       # Ebot's Rock
+    'ms-wor-79': [[1186], [], [], 1],       # Duncan's House
+    'ms-wor-1552': [[1553], [], [], 1],     # Zone Eater
+    'ms-wor-1554': [[1555], [], [], 1],     # Phoenix Cave
+    'ms-wor-1558': [[1082], [], [], 1],     # Ancient Castle
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin

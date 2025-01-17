@@ -69,13 +69,22 @@ ROOM_SETS = {
         468, 469, 470, 471, 472, 474, 475, 'root-vc-mapsafe', # Veldt Cave WOR   467,
         'branch-pc', 'root-pc'  # Phoenix cave entry
              ],
-    'MapShuffleWOB':  ['shuffle-wob'],  # dynamically appended later
-    'MapShuffleWOR':  ['shuffle-wor'],  # dynamically appended later
-    'MapShuffleXW': ['shuffle-wob', 'shuffle-wor']  # dynamically appended later
+    'MapShuffleWOB':  ['shuffle-wob',
+                       'ms-wob-4', 'ms-wob-5', 'ms-wob-1501', 'ms-wob-1502', 'ms-wob-1504', 'ms-wob-1505',
+                       'ms-wob-1506', 'ms-wob-6', 'ms-wob-10', 'ms-wob-11', 'ms-wob-12', 'ms-wob-13', 'ms-wob-14',
+                       'ms-wob-15', 'ms-wob-16', 'ms-wob-18', 'ms-wob-20', 'ms-wob-21', 'ms-wob-23', 'ms-wob-24',
+                       'ms-wob-26', 'ms-wob-27', 'ms-wob-28', 'ms-wob-31', 'ms-wob-33', 'ms-wob-35', 'ms-wob-37',
+                       'ms-wob-40', 'ms-wob-42', 'ms-wob-44', 'ms-wob-1556'],
+    'MapShuffleWOR':  ['shuffle-wor',
+                       'ms-wor-48', 'ms-wor-49', 'ms-wor-51', 'ms-wor-52', 'ms-wor-53', 'ms-wor-56', 'ms-wor-57',
+                       'ms-wor-58', 'ms-wor-59', 'ms-wor-61', 'ms-wor-62', 'ms-wor-63', 'ms-wor-65', 'ms-wor-67',
+                       'ms-wor-68', 'ms-wor-69', 'ms-wor-70', 'ms-wor-73', 'ms-wor-75', 'ms-wor-76', 'ms-wor-78',
+                       'ms-wor-79', 'ms-wor-1552', 'ms-wor-1554', 'ms-wor-1558'],
 
     #'test': ['test_room_1', 'test_room_2']  # for testing only
 }
 ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
+ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
 class Doors():
     verbose = False  # False  # True
@@ -271,89 +280,31 @@ class Doors():
         if (self.args.door_randomize_all or self.args.door_randomize_crossworld or
             self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
             ignore_maps = [1552, 1553]  # don't include zone-eater as doors if included as transitions
-            for dk in [d for d in room_data['shuffle-wob'][0]]:
-                if dk in ignore_maps:
-                    #print('removing ', dk, ' from root-wob')
-                    room_data['shuffle-wob'][0].remove(dk)
-            for dk in [d for d in room_data['shuffle-wor'][0]]:
-                if dk in ignore_maps:
-                    #print('removing ', dk, ' from root-wor')
-                    room_data['shuffle-wor'][0].remove(dk)
+            shuffle_rooms = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
+            for r in shuffle_rooms:
+                for dk in [d for d in room_data[r][0]]:
+                    if dk in ignore_maps:
+                        print('removing ', dk, ' from ', r)
+                        room_data[r][0].remove(dk)
 
             ignore_doors = [1554, 1555]  # don't include phoenix cave in doors if doing map shuffle
             for a in room_data.keys():
-                if a not in ['shuffle-wob', 'shuffle-wor']:
+                if a not in shuffle_rooms:
                     for dk in [d for d in room_data[a][0]]:
                         if dk in ignore_doors:
-                            #print('removing ', dk, ' from ', a)
+                            print('removing ', dk, ' from ', a)
                             room_data[a][0].remove(dk)
-
-        # If randomizing ancient castle, must not allow ancient castle to be connected to figaro castle WOR
-        if self.args.map_shuffle:
-            disallowed_connections = {
-                1558: [exit_data[57][0]]  # connection to South Figaro Cave WOR
-            }
-            ok_conns = {}
-            for dc in disallowed_connections.keys():
-                ok_conns[dc] = []
 
         if self.args.map_shuffle_separate:  # -maps
             # Separately:  add rooms for WOR, WOB
-            # Need to dynamically construct connecting rooms first
-            for dk in room_data['shuffle-wob'][0]:
-                this_room_name = 'ms-wob-' + str(dk)
-                conn_door = exit_data[dk][0]
-                if conn_door in protect_doors.keys():
-                    conn_door = protect_doors[conn_door]
-                room_data[this_room_name] = [ [conn_door], [], [], 0]
-                ROOM_SETS['MapShuffleWOB'].append(this_room_name)
-
-            for dk in room_data['shuffle-wor'][0]:
-                this_room_name = 'ms-wor-'+str(dk)
-                conn_door = exit_data[dk][0]
-                if conn_door in protect_doors.keys():
-                    conn_door = protect_doors[conn_door]
-                for dc in disallowed_connections.keys():
-                    if conn_door not in disallowed_connections[dc]:
-                        ok_conns[dc].append(conn_door)
-                room_data[this_room_name] = [[conn_door], [], [], 1]
-                ROOM_SETS['MapShuffleWOR'].append(this_room_name)
-
             room_sets.append(ROOM_SETS['MapShuffleWOB'])
             self.area_name.append('MapShuffleWOB')
             room_sets.append(ROOM_SETS['MapShuffleWOR'])
             self.area_name.append('MapShuffleWOR')
 
         elif self.args.map_shuffle_crossworld:  # -mapx
-            # Add rooms for WOR and WOB
-            # Need to dynamically construct connecting rooms first
-            shuffle_rooms = [r for r in ROOM_SETS['MapShuffleXW']]
-            for sr in shuffle_rooms:
-                rw = room_data[sr][-1]
-                for dk in room_data[sr][0]:
-                    this_room_name = sr + '-' + str(dk)
-                    conn_door = exit_data[dk][0]
-                    if conn_door in protect_doors.keys():
-                        conn_door = protect_doors[conn_door]
-                    for dc in disallowed_connections.keys():
-                        if conn_door not in disallowed_connections[dc]:
-                            ok_conns[dc].append(conn_door)
-                    room_data[this_room_name] = [[conn_door], [], [], rw]
-                    ROOM_SETS['MapShuffleXW'].append(this_room_name)
-
             room_sets.append(ROOM_SETS['MapShuffleXW'])
             self.area_name.append('MapShuffleXW')
-
-        # Force a connection for each disallowed connections
-        for dc in disallowed_connections.keys():
-            this_conn = random.choice(ok_conns[dc])
-            self.forcing[dc] = [this_conn]
-            if self.verbose:
-                print('Forced connection: ', dc, exit_data[dc][1], '-->', this_conn, exit_data[this_conn][1])
-            for oc in ok_conns.keys():
-                if this_conn in ok_conns[oc]:
-                    ok_conns[oc].remove(this_conn)
-
 
         # Hard override for testing
         #room_sets = [ROOM_SETS['test']]
