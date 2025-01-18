@@ -496,6 +496,9 @@ from event.floating_continent import *
 floating_continent_logic = FloatingContinent.entrance_door_patch()
 floating_continent_return = FloatingContinent.return_door_patch()
 
+from event.ancient_castle import *
+figaro_castle_underground_state = AncientCastle.entrance_door_patch()
+
 entrance_door_patch = {
     # For use by maps.create_exit_event() and maps.shared_map_exit_event()
     # door_id: [Code that must be run upon entering a door, Before (True) or After (False) map load]
@@ -533,7 +536,8 @@ entrance_door_patch = {
     1556: [floating_continent_return, True],
 
     # Return to Figaro Castle after AC connection, clear custom warp bit
-    1558: [[field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION)], False],  # Clear custom event bit to handle warping in this situation
+    #1558: [[field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION)], False],  # Clear custom event bit to handle warping in this situation
+    1558: [figaro_castle_underground_state, True],  # force status depending on DEFEATED_TENTACLES
 
 }
 

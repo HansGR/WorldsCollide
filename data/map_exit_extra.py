@@ -1827,6 +1827,11 @@ map_shuffle_partner_explicit = [
     1558  # connector to Ancient Castle
 ]
 
+# For a very small number of exits, airship warp has to be custom.
+special_airship_locations = {
+    1558: [0x001, 106, 99]   # Ancient Castle:  park the airship near SF
+}
+
 # door short text for reference in game. Should be formatted to fit in the phrase: "(find <LOCATION>)"
 door_short_text = {
     # wob: [4, 5, 1501, 1502, 1504, 1505, 1506, 6, 10, 11, 12, 13, 14, 15, 16, 18, 20, 21, 23, 24, 26, 27, 28, 31, 33, 35, 37, 40, 42, 44]

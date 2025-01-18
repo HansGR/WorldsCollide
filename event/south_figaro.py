@@ -1,5 +1,5 @@
 from event.event import *
-from data.map_exit_extra import exit_data
+from data.map_exit_extra import exit_data, special_airship_locations
 from data.rooms import exit_world
 
 class SouthFigaro(Event):
@@ -52,7 +52,10 @@ class SouthFigaro(Event):
             # modify airship warp position
             sf_id = 1163
             if sf_id in self.maps.door_map.keys():
-                self.airship_loc = self.maps.get_connection_location(sf_id)
+                if self.maps.door_map[sf_id] in special_airship_locations.keys():
+                    self.airship_loc = special_airship_locations[self.maps.door_map[sf_id]]
+                else:
+                    self.airship_loc = self.maps.get_connection_location(sf_id)
                 # conn_id = self.maps.door_map[sf_id]  # connecting exit south
                 # conn_pair = exit_data[conn_id][0]  # original connecting exit
                 # self.airship_loc = [exit_world[conn_pair]] + \

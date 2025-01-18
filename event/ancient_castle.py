@@ -140,3 +140,33 @@ class AncientCastle(Event):
         ]
         space = Write(Bank.CA, src_warp, 'Ancient Castle warp handler code')
         self.warps.add_warp(event_bit.ANCIENT_CASTLE_WARP_OPTION, space.start_address)
+
+    @staticmethod
+    def entrance_door_patch():
+        # self-contained code to be called in door rando BEFORE entering 1558 (figaro castle basement) from AC connection
+        # This is necessary in case tentacles have not been defeated when you go there (and also if you go when FC is buried)
+
+        # to be used in event_exit_info.entrance_door_patch()
+        src = [
+            field.SetEventBit(event_bit.IN_WOR),
+            field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION),
+
+            # Set required bits for FC underground
+            field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
+            field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
+
+            # Set required flags for Engine Room Event...
+            field.BranchIfEventBitSet(event_bit.DEFEATED_TENTACLES_FIGARO, "DEFEATED_TENTACLES"),
+            field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
+            field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
+
+            # ... or set Figaro Castle under the desert, heading toward South Figaro
+            "DEFEATED_TENTACLES",
+            field.ReturnIfEventBitClear(event_bit.DEFEATED_TENTACLES_FIGARO),
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_SF_DESERT_WOR),
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_KOHL_DESERT_WOR),
+            field.SetEventBit(event_bit.FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR),  # 0x26f
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_HEADING_TOWARD_KOHLINGEN) # Head toward SF upon exit
+        ]
+
+        return src

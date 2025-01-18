@@ -1,5 +1,5 @@
 from event.event import *
-from data.map_exit_extra import exit_data
+from data.map_exit_extra import exit_data, special_airship_locations
 from data.rooms import exit_world
 
 class VeldtCaveWOR(Event):
@@ -35,7 +35,10 @@ class VeldtCaveWOR(Event):
             # modify airship warp position
             thamasa_id = 1261
             if thamasa_id in self.maps.door_map.keys():
-                self.airship_thamasa = self.maps.get_connection_location(thamasa_id)
+                if self.maps.door_map[thamasa_id] in special_airship_locations.keys():
+                    self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
+                else:
+                    self.airship_thamasa = self.maps.get_connection_location(thamasa_id)
                 # conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
                 # conn_pair = exit_data[conn_south][0]  # original connecting exit
                 # self.airship_thamasa = [exit_world[conn_pair]] + self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
