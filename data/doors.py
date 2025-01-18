@@ -87,7 +87,7 @@ ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
 class Doors():
-    verbose = False  # False  # True
+    verbose = False  # False  # True # useless edit to test seedbot
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
