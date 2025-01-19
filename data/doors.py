@@ -91,6 +91,13 @@ class Doors():
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
+        # Hard overrides for testing
+        self.OVERRIDE = [
+            #1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
+            #[56, 262],  # Connect Coliseum to Figaro Cave
+            #[62, 1261]   # Connect Opera House to Thamasa
+        ]
+
         # self.rom = rom
         self.args = args
 
@@ -318,11 +325,6 @@ class Doors():
             room_sets.append(ROOM_SETS['MapShuffleXW'])
             self.area_name.append('MapShuffleXW')
 
-        # Hard overrides for testing
-        #room_sets = [ROOM_SETS['test']]
-        #self.forcing[1558] = [1242]  # AC --> daryl's tomb
-        #print(self.forcing)
-
         self.read(room_sets)
 
     def read(self, whichRooms=None):
@@ -483,6 +485,25 @@ class Doors():
                 map[0].append(patched_m)
                 if self.verbose:
                     print('Patching logical link: ', patched_m)
+
+        # Process OVERRIDE
+        for op in self.OVERRIDE:
+            target = set(op)
+            containing_pairs = []
+            pair_indices = []
+            for i, pair in enumerate(map[0]):
+                if op[0] in pair or op[1] in pair:
+                    containing_pairs.append(set(pair))
+                    pair_indices.append(i)
+            if len(containing_pairs) == 2:
+                other_elements = (containing_pairs[0] | containing_pairs[1]) - target
+                # new_map = map[0].copy()
+                print('OVERRIDE: ', map[0][pair_indices[0]], "-->", list(target), ', ', map[0][pair_indices[1]],
+                      "-->", list(other_elements))
+                map[0][pair_indices[0]] = list(target)
+                map[0][pair_indices[1]] = list(other_elements)
+            else:
+                print('warning: did not find ', op, '. found pairs: ', containing_pairs)
 
         # Append shared doors to the map
         for m in map[0]:
