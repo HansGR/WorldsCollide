@@ -669,7 +669,7 @@ exit_data = {
     578: [572, "Jidoor Weapon Inside"],
     1217: [1216, "Jidoor Chocobo Stable Inside"],
     579: [570, "Jidoor Inn Inside"],
-    580: [4593, "Owzer's Behind Painting to Owzer's House WOR"],
+    580: [593, "Owzer's Behind Painting to Owzer's House WOR"],
     581: [582, "Owzer's Behind Painting Stairs Down"],
     582: [581, "Owzer's Basement Stairs Up"],
     583: [584, "Owzer's Basement Door to Single Chest Room"],
@@ -1345,7 +1345,7 @@ exit_data = {
     1524: [1520,  "Phantom Train Car 2 Right Exit"],
     1525: [1527,  "Phantom Train Car 4 Right Door Outside"],
     1526: [1527,  "Phantom Train Car 4 Right Door Outside no caboose"],
-    1527: [1526,  "Phantom Train Car 4 Right Exit"],
+    1527: [1525,  "Phantom Train Car 4 Right Exit"],
     1528: [1533,  "Phantom Train Car 6 Right Door Outside"],
     1529: [1534,  "Phantom Train Car 6 Left Door Outside"],
     1530: [1539,  "Phantom Train Car 7 Right Door Outside"],
@@ -1373,6 +1373,8 @@ exit_data = {
     1556: [1557,  "Floating Continent entrance as door"],
     1557: [1556,  "Floating Continent exit as door"],
     1558: [1082, "Figaro Castle prison to Ancient Cave"],
+    1559: [1560, "Imperial base west entrance for dungeon crawl"],
+    1560: [1559, "Imperial base west exit to world map for dungeon crawl"],
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
@@ -1761,6 +1763,8 @@ event_door_connection_data = {
     1556: [0x18a, 4, 12, 0, 0, 0, 2, 0, 163, 176, 0, 0],  # "Floating continent entry as door"
     1557: [0x006, 16, 6, 0, 0, 0, 2, 0, 70, 29, 0, 0],   # "Floating Continent exit as door"
     1558: [0x191, 42, 5, 0, 0, 0, 2, 0, 35, 35, 0, 0],   # "Figaro castle prison to Ancient Cave"
+    1559: [0x075, 1, 22, 0, 0, 0, 1, 0, 178, 71, 0, 0],  # "Imperial camp west entrance for dungeon crawl"
+    1560: [0x000, 177, 71, 0, 0, 0, 3, 0, 0, 22, 0, 0],  # "Imperial camp exit west for dungeon crawl"
 
     # Logical exits with different destinations
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'

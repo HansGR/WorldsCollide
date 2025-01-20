@@ -50,6 +50,9 @@ class ImperialCamp(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
+        if self.args.door_randomize_dungeon_crawl:
+            self.dungeon_crawl_mod()
+
         self.log_reward(self.reward)
 
     def entrance_events_mod(self):
@@ -66,7 +69,7 @@ class ImperialCamp(Event):
         )
 
         # this does not get called anymore, use it for extra wob event tile space
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             # Overwrite the entrance event to go to switchyard.
             # (1a) Change the entry event to load the switchyard location
             event_id = 1501  # ID of Imperial Camp event entrance
@@ -288,3 +291,45 @@ class ImperialCamp(Event):
             field.FinishCheck(),
             field.Return(),
         )
+
+    def dungeon_crawl_mod(self):
+        # Add a map tile that enters imperial camp from the west
+        entr_id = 1559
+        src = [GoToSwitchyard(entr_id, map='world')]
+        space = Write(Bank.CA, src, 'Enter imperial camp west')
+        enter_event_addr = space.start_address
+
+        from data.map_event import MapEvent, LongMapEvent
+        new_event = MapEvent()
+        new_event.x = 178
+        new_event.y = 71
+        new_event.event_address = enter_event_addr - EVENT_CODE_START
+        self.maps.add_event(0x0, new_event)
+
+        src = [
+            field.LoadMap(0x75, x=1, y=22, direction=direction.RIGHT,
+                          default_music=True, entrance_event=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(entr_id, self.maps, src=src)
+
+        # Add a west exit to imperial camp
+        exit_id = 1560
+        src = [GoToSwitchyard(entr_id, map='field')]
+        space = Write(Bank.CA, src, 'Exit imperial camp west')
+        exit_event_addr = space.start_address
+
+        new_event = LongMapEvent()
+        new_event.x = 0
+        new_event.y = 25
+        new_event.direction = 128
+        new_event.size = 5
+        new_event.event_address = exit_event_addr - EVENT_CODE_START
+        self.maps.add_long_event(0x075, new_event)
+
+        src = [
+            field.LoadMap(0x0, x=177, y=71, direction=direction.LEFT,
+                          default_music=True, entrance_event=True, fade_in=True),
+            world.End()
+        ]
+        AddSwitchyardEvent(exit_id, self.maps, src=src)

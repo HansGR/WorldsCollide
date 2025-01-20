@@ -11,7 +11,7 @@ class MagitekFactory(Event):
                           or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
-        self.MAP_SHUFFLE = args.map_shuffle
+        self.MAP_SHUFFLE = args.map_shuffle or args.door_randomize_dungeon_crawl
 
     def name(self):
         return "Magitek Factory"

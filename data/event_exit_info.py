@@ -127,6 +127,9 @@ event_exit_info = {
     # CAVE ON THE VELDT
     2075: [0, 0, 0, [False, True, False, False, False], 'Cave on the Veldt Boss Fight', [0x161, 59, 18], 'JMP'],  # tile points to 0xb7a18.  Address values updated dynamically in events.veldt_cave_wor???
 
+    # BAREN FALLS
+    2076: [0, 0, 0, [False, True, False, False, False], 'Baren Falls one-way exit to veldt shore (forced, for now)', [0x09f, None, None], 'JMP'],  #
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff
@@ -233,6 +236,11 @@ event_exit_info = {
 
     # FIGARO CASTLE PRISON TO ANCIENT CAVE
     1558: [0xa5f25, 20, 14, [False, False, False, False, False], 'Figaro Castle Prison to Ancient Cave', [0x03d, 35, 35], 'JMP'],  # If (0x0cd), branch to load AC; otherwise load Cave to SF
+
+    # DUNGEON CRAWL TILES
+    1559: [None, 7, 1, [None, None, None, None, True], 'Imperial Camp WoB west', [0x005, 1559 % 128, 1559 // 128], 'JMP'],  # New tile!  Goes to west exit of imperial camp!!!
+    1560: [None, 7, 1, [None, None, None, None, True], 'Imperial Camp west to world map', [0x005, 1560 % 128, 1560 // 128], 'JMP'],  # New tile!  Goes to world map from west of imperial camp!!!
+    1561: [None, 7, 1, [None, None, None, None, True], 'Veldt shore', [0x005, 1561 % 128, 1561 // 128], 'JMP'],  # Door going to veldt shore; doesn't go anywhere but helps logic.
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
@@ -257,6 +265,8 @@ event_return_map = {
     1552: 0x001,  # 'Zone Eater Engulf as door' WoR
     1554: 0x00b,  # 'Phoenix Cave entry as door' Falcon
     1556: 0x006,  # 'Floating Continent entry as door' Blackjack
+    1559: 0x000,  # 'Imperial Camp WoB west'
+    1560: 0x075,  # 'Imperial Camp new west exit to world map'
 }
 
 

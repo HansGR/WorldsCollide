@@ -4,7 +4,7 @@ from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 class FigaroCastleWOR(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.MAP_SHUFFLE = args.map_shuffle
+        self.MAP_SHUFFLE = args.map_shuffle or args.door_randomize_dungeon_crawl
 
     def name(self):
         return "Figaro Castle WOR"

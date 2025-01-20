@@ -45,7 +45,7 @@ class BurningHouse(Event):
 
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             self.map_shuffle_mod()
 
         if self.reward.type == RewardType.CHARACTER:

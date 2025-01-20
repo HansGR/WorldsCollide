@@ -277,7 +277,8 @@ class Network:
         # Attach all dead-end rooms to open connections
         dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
         if self.verbose:
-            print("Attaching dead ends: ", [(e.id, e.doors[0]) for e in dead_ends])
+            print("Attaching dead ends: ", len(dead_ends))
+            print([(e.id, e.doors[0]) for e in dead_ends])
 
         while len(dead_ends) > 0:
             if self.rooms.count[0] == 2:
@@ -383,7 +384,8 @@ class Network:
             # having attached all the dead ends, see if we created any & attach them if we did.
             dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
             if len(dead_ends) > 0 and self.verbose:
-                print("Attaching dead ends: ", [(e.id, e.doors[0]) for e in dead_ends])
+                print("Attaching dead ends: ", len(dead_ends))
+                print([(e.id, e.doors[0]) for e in dead_ends])
 
     def check_network_invalidity(self):
         # Check the network validity based on the following four validity rules:
@@ -540,8 +542,8 @@ class Network:
                 if self.verbose:
                     print('\tInvalid!  By rule: ', [['A','B','C','D'][i] for i in range(len(by_rules)) if by_rules[i]],
                           'in/out/either = ', td)
-                    #for k in cl.keys():
-                    #    print('\t',k.id,': ', cl[k])
+                    for k in cl.keys():
+                        print('\t',k.id,': ', cl[k])
                 raise Exception('Invalid network state.')
             else:
                 if self.verbose:

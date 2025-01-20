@@ -41,7 +41,7 @@ class FigaroCastleWOB(Event):
             self.item_mod(self.reward.id)
         self.shop_mod()
 
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             self.map_shuffle_mod()
 
         self.log_reward(self.reward)

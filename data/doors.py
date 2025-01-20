@@ -1,7 +1,7 @@
 #from openpyxl import load_workbook
 import threading
 from random import randrange, choices
-from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors
+from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors, dungeon_crawl_split_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
@@ -81,7 +81,45 @@ ROOM_SETS = {
                        'ms-wor-68', 'ms-wor-69', 'ms-wor-70', 'ms-wor-73', 'ms-wor-75', 'ms-wor-76', 'ms-wor-78',
                        'ms-wor-79', 'ms-wor-1552', 'ms-wor-1554', 'ms-wor-1558'],
 
+    'DungeonCrawl': [
+        #'dc-world',  # WOB & WOR
+        'wob-narshe', 'wob-figaro', 'wob-sabil', 'wob-nikeah', 'wob-doma', 'wob-baren', 'wob-veldt', 'wob-thamasa',
+        'wob-kohlingen', 'wob-empire', 'wob-airship',
+        'dc-4', 105, 'dc-1501', 'ms-wob-1502', 'dc-1504', 'dc-1505', 102, 'ms-wob-6', 'ms-wob-10', 145, 158, 'dc-13',
+        'ms-wob-14', 'dc-15', 'dc-16', 'ms-wob-18', 'dc-20-21', 'dc-23', 'ms-wob-24', 'ms-wob-26', 'ms-wob-27',
+        'ms-wob-28', 'ms-wob-31', 'ms-wob-33', 'ms-wob-35', 293, 'ms-wob-40', 502, 495, 'branch-fc', # WOB connectors
+        19, 20, 22, 23, 53, 54, 55, 59, 60,  # Upper Narshe WoB
+        488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500,  # Esper Mountain  removed dead ends: 501,
+        345, 346, 347, 349, 351, 352, 353, 354, 355, '355a',  # Magitek Factory
+        503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514,  # Cave to the Sealed Gate
+        296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, # Zozo-WoB  # removed dead ends: 294, 295,
+        'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3',  # Lete River
+        '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d',  # Serpent Trench
+        457, 458, 459, 460, 461, 462, 463, 464, 465, # Burning House
+        100, 101, 103, 104,  # South Figaro Cave WOB  102, 105,
+        201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
+        '207b', 212, 213, '215a', '215b', 216, 220, 221,  # Phantom Train
+        146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, # Mt. Kolts  145, 158,
+        331, 286,  # Vector castle, Esper world
+        'wor-island', 'wor-kefkastower', 'wor-fanatics', 'wor-figaro', 'wor-dragonsneck', 'wor-jidoor', 'wor-narshe',
+        'wor-doma', 'wor-dinosaur', 'wor-veldt', 'wor-thamasa', 'wor-ebots', 'wor-triangle', 'wor-airship',
+        'ms-wor-48', 'ms-wor-49', 'ms-wor-51', 'ms-wor-52', 377, 'ms-wor-56', 'dc-57', 'ms-wor-58', 'ms-wor-59', 467,
+        'ms-wor-62', 'ms-wor-63', 'ms-wor-65', 'dc-67', 'ms-wor-69', '293r', 'dc-73', 'dc-75', 'dc-76',  # 'ms-wor-68',
+        'ms-wor-78', 'ms-wor-79', 'branch-pc', 'ms-wor-1558',  # WOR connectors
+        364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368,  # Umaro's cave
+        '37a', 38, 40, '41a', 42, 43, 44, 46,   # Upper Narshe WoR  # removed dead ends: 47,
+        277, 278, 279, 280, 281, 282, 283, 284,  # Owzer's Basement
+        '296r', '301r', '305r', '306r', '307r', '308r', '309r', # Zozo-WoR  # removed dead ends: '294r', '295r',
+        250, 251, 252, 253, 254, 255, 256,  # Mt. Zozo
+        356, 357, 358, '358b', 359, '359b', 361, 362, 363,  # Zone Eater
+        378, 379, 380, 381, 382, 383, 384, 386, 387, 388, 389, 390, 391, 392, 393,  # Daryl's Tomb
+        421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
+        432, 433, 186, 187, 188, '188B', 189, 190, 191, 192, 193,  # Cyan's Dream  # removed dead ends: 184, 185,
+        469, 470, 471, 472, 474, 475 # Veldt Cave WOR  # removed dead end: 468,
+        ],
+
     #'test': ['test_room_1', 'test_room_2']  # for testing only
+
 }
 ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
@@ -129,11 +167,43 @@ class Doors():
         room_sets = []
         protect_doors = {}
 
-        if self.args.door_randomize_crossworld or self.args.door_randomize_dungeon_crawl:  # -drx, -drdc
+        if self.args.door_randomize_crossworld: # -drx, old version of -drdc
             # Prioritize randomizing all doors.
             # Both options the same room list.  -dra uses drafting; -drdc does not.
             room_sets.append(ROOM_SETS['All'])
             self.area_name.append('All')
+
+        elif self.args.door_randomize_dungeon_crawl:  # -drdc, updated with towns
+            # for Dungeon Crawl to work, all doors on the world map should be made into dead ends.
+            # This forces the dungeon to be fully connected.
+            # What about one-way exits on the world map? We don't want to force logic to always send you thru zone-eater engulf.
+            # OK, we will leave one door on the world map: Narshe WoB (4).
+            #for d in [door for door in room_data['dc-world'][0] if door != 4]:
+            #    newname = 'dcw-' + str(d)
+            #    if d in room_data['shuffle-wob'][0]:
+            #        this_world = 0
+            #    elif d in room_data['shuffle-wor'][0]:
+            #        this_world = 1
+            #    newroom = [[d], [], [], this_world]
+            #    room_data[newname] = newroom
+            #    ROOM_SETS['DungeonCrawl'].append(newname)
+            #    room_data['dc-world'][0].remove(d)
+            #    # print('created new room ', newname, newroom, room_data[newname])
+            #print(room_data['dc-world'])
+
+            ## That method added over 70 dead ends to the map, which it couldn't absorb.
+            # Replaced with 'real' world map rooms, most of which are not dead ends.
+
+            # Split some town exits in dungeon crawl mode:
+            for se in dungeon_crawl_split_exits.keys():
+                for exit in dungeon_crawl_split_exits[se]:
+                    shared_exits[se].remove(exit)
+                #print('Updated shared_exits[', se, '] = ', shared_exits[se])
+
+            room_sets.append(ROOM_SETS['DungeonCrawl'])
+            self.area_name.append('DungeonCrawl')
+            self.args.map_shuffle = False  # Do not allow -drdc with -maps or -mapx
+
 
         elif self.args.door_randomize_all:  # -dra
             room_sets.append(ROOM_SETS['WoB'])
@@ -289,8 +359,8 @@ class Doors():
                     self.area_name = [temp_name]
 
         # Deconflict door_randomize and map_shuffle
-        if (self.args.door_randomize_all or self.args.door_randomize_crossworld or
-            self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl) and self.args.map_shuffle:
+        if (self.args.door_randomize_all or self.args.door_randomize_crossworld or self.args.door_randomize_each) \
+                and self.args.map_shuffle:
             ignore_maps = [1552, 1553]  # don't include zone-eater as doors if included as transitions
             shuffle_rooms = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
             for r in shuffle_rooms:
@@ -343,7 +413,7 @@ class Doors():
             all_id = self.area_name.index('All')
             # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
             # This encodes that you can reach all roots from all roots.
-            # This is not done for door-randomize-dungeon-crawl.
+            # This is not done for old door-randomize-dungeon-crawl (using 'All' room)
             root_rooms = [r for r in self.rooms[all_id] if 'root' in str(r)]
             offset = 10000
             root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
@@ -364,7 +434,7 @@ class Doors():
                 a_id = self.area_name.index(name)
                 # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
                 # This encodes that you can reach all roots from all roots.
-                # This is not done for door-randomize-dungeon-crawl.
+                # This is not done for old door-randomize-dungeon-crawl (using 'All' room)
                 root_rooms = [r for r in self.rooms[a_id] if 'root' in str(r)]
                 offset = 10000 + offset_0
                 root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
@@ -398,6 +468,33 @@ class Doors():
         for area_id in self.area_name:
             ai = self.area_name.index(area_id)
             area = self.rooms[ai]
+
+            # all_doors = []
+            # all_out = []
+            # all_in = []
+            # all_locks = []
+            # all_keys = {}
+            # all_locked = []
+            # for r in area:
+            #     all_doors.extend(room_data[r][0])
+            #     all_out.extend(room_data[r][1])
+            #     all_in.extend(room_data[r][2])
+            #     if len(room_data[r]) > 4:
+            #         all_locks.extend(room_data[r][3])
+            #         for k in room_data[r][4].keys():
+            #             lockeditem = room_data[r][4][k]
+            #             all_keys[k] = lockeditem
+            #             all_locked.extend(lockeditem)
+            # print('Doors:', len(all_doors), all_doors)
+            # print('Outs:', len(all_out), all_out)
+            # print('Ins:', len(all_in), all_in)
+            # print('Locks:', len(all_locks), all_locks)
+            # print('Keys:', len(all_keys), all_keys)
+            # print('Locked:', len(all_locked), all_locked)
+
+            if self.verbose:
+                print('Now Randomizing:' , area_id)
+                #print(area)
             if len(area) > 0:
                 walks = Network(area)  # Initialize the Walk Network
                 if self.verbose:
@@ -406,11 +503,18 @@ class Doors():
                 walks.ForceConnections(self.forcing)  # Force initial connections, if any
                 if self.verbose:
                     print('Count after forced connections: ', walks.rooms.count)
-                    #for n in walks.net.nodes:
-                    #    print(n.id, n.doors, n.traps, n.pits, n.keys, n.locks)
+                    for n in walks.net.nodes:
+                        print(n.id, n.doors, n.traps, n.pits, n.keys, n.locks)
                 walks.attach_dead_ends()  # Connect all the dead ends.
                 if self.verbose:
                     print('Count after attaching dead ends: ', walks.rooms.count)
+                    print('Doors:', walks.rooms.doors)
+                    print('Traps:', walks.rooms.traps)
+                    print('Pits:', walks.rooms.pits)
+                    print('Keys:', walks.rooms.keys)
+                    print('Locks:', walks.rooms.locks)
+                    print('Locked:', walks.rooms.locked)
+
 
                 # Select starting node
                 if area_id == 'All':
@@ -418,6 +522,10 @@ class Doors():
                     string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
                     root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
                     start_room_ids = [root_room.id]
+                #elif area_id == 'DungeonCrawl':
+                #    string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
+                #    root_room = string_rooms[[sr.id.find('dc-world') >= 0 for sr in string_rooms].index(True)]
+                #    start_room_ids = [root_room.id]
                 elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
                     # Choose a root room to begin
                     # This might fail due to forcing.
