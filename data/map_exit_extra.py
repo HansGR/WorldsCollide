@@ -1566,6 +1566,44 @@ exit_data_patch = {
     15:  lambda info: set_refreshparentmap(1, info),  #   15: [1196, "Baren Falls"],
 }
 
+# Additional data patches for dungeon crawl mode
+dungeon_crawl_exit_destination_override = {
+    # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction, this_map_id]
+
+    # South Figaro WOB: east entrance
+    1168: [0x04b, 54, 34, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0],  # lambda info: set_dest_x(55, set_dest_y(34, info)),
+    # South Figaro WOR: east entrance (connects to 1163).  Only one tile!
+    1163: [0x04a, 54, 34, 0, 0, 1, 3, 0, 0, 0, 0, 0, 1],  # lambda info: set_dest_x(55, set_dest_y(34, info)),
+
+	# Kohlingen WOB: west entrance
+    1210: [0x0bc, 1, 15, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],  # lambda info: set_dest_x(1, set_dest_y(15, info)),
+    # Kohlingen WOR: west entrance (connects to 1212)
+    1212: [0x0bd, 1, 15, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1],  # lambda info: set_dest_x(1, set_dest_y(15, info)),
+
+	# Thamasa WoB: west entrance.  Only one tile!
+    1254: [0x154, 2, 30, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],  # lambda info: set_dest_x(1, set_dest_y(30, info)),
+    # Thamasa WoR: west entrance (connects to 1254).  Only one tile!
+    1260: [0x158, 2, 30, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1],  # lambda info: set_dest_x(1, set_dest_y(30, info)),
+
+	# Nikeah WoB: east entrance
+    1200: [0x0a9, 29, 31, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0],
+    # Nikeah WoR: east entrance
+    5200: [0x0a9, 29, 31, 0, 0, 1, 3, 0, 0, 0, 0, 0, 1],
+
+	# Maranda WoB:  east entrance
+    1239: [0x11c, 30, 16, 0, 0, 1, 3, 0, 0, 0, 0, 0, 0],
+    # Maranda WoR:  east entrance
+    5239: [0x11c, 30, 16, 0, 0, 1, 3, 0, 0, 0, 0, 0, 1],
+
+    # Sabin's house WoB:
+    360:  [0x05d, 7, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],  # north entrance
+    1174: [0x05d, 7, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # south entrance
+
+    # Duncan's house WoR:
+    457:  [0x05d, 7, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1],  # north entrance
+    1186: [0x05d, 7, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]  # south entrance
+}
+
 # We could probably do this as:
 # for e in exit_world.keys():
 #   exit_make_explicit[e] = lambda info: set_dest_map(exit_world[e], info)

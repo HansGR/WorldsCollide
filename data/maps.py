@@ -28,7 +28,8 @@ from data.event_exit_info import event_exit_info, exit_event_patch, entrance_eve
     multi_events, entrance_door_patch, exit_door_patch, require_event_bit, event_return_map
 
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, \
-    event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit
+    event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit, \
+    dungeon_crawl_exit_destination_override
 from data.rooms import room_data, exit_world, shared_exits
 
 from data.parse import delete_nops, branch_parser, get_branch_code
@@ -454,7 +455,7 @@ class Maps():
         self.npcs.mod(characters)
         self.chests.mod()
         self.world_map.mod()
-        self.doors.mod(characters)
+        self.doors.mod()
         if self.doors.verbose:
             print('Door connections:')
             for m in self.doors.map[0]:
@@ -529,6 +530,20 @@ class Maps():
             for m in map_shuffle_partner_explicit:
                 if m in self.door_map.keys():
                     map_shuffle_force_explicit.append(self.door_map[m])
+
+            # If dungeon crawl mode, add override exits
+            if self.args.door_randomize_dungeon_crawl:
+                safe_id = max([d for d in exit_data.keys() if d < 1500])
+                for d in dungeon_crawl_exit_destination_override.keys():
+                    safe_id += 1  # get a new safe door id
+
+                    # Update or add an entry for the new match
+                    exit_data[d] = [safe_id]
+
+                    this_data = dungeon_crawl_exit_destination_override[d]
+                    self.exits.exit_original_data[safe_id] = this_data
+                    #print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
+
 
             # Create a trapdoor map for reference
             for m in self.doors.map[1]:

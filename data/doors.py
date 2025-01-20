@@ -1,7 +1,8 @@
 #from openpyxl import load_workbook
 import threading
 from random import randrange, choices
-from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors, dungeon_crawl_split_exits
+from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors, \
+    dungeon_crawl_split_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door  # for door descriptions, WOR/WOB equivalent doors
 from data.walks import *
 
@@ -405,7 +406,7 @@ class Doors():
         #    print(self.area_name)
         #    print(self.rooms)
 
-    def mod(self, characters):
+    def mod(self):
         # Create list of randomized connections using walks
         map = [[], []]
 
@@ -503,17 +504,17 @@ class Doors():
                 walks.ForceConnections(self.forcing)  # Force initial connections, if any
                 if self.verbose:
                     print('Count after forced connections: ', walks.rooms.count)
-                    for n in walks.net.nodes:
-                        print(n.id, n.doors, n.traps, n.pits, n.keys, n.locks)
+                    #for n in walks.net.nodes:
+                    #    print(n.id, n.doors, n.traps, n.pits, n.keys, n.locks)
                 walks.attach_dead_ends()  # Connect all the dead ends.
-                if self.verbose:
-                    print('Count after attaching dead ends: ', walks.rooms.count)
-                    print('Doors:', walks.rooms.doors)
-                    print('Traps:', walks.rooms.traps)
-                    print('Pits:', walks.rooms.pits)
-                    print('Keys:', walks.rooms.keys)
-                    print('Locks:', walks.rooms.locks)
-                    print('Locked:', walks.rooms.locked)
+                #if self.verbose:
+                #    print('Count after attaching dead ends: ', walks.rooms.count)
+                #    print('Doors:', walks.rooms.doors)
+                #    print('Traps:', walks.rooms.traps)
+                #    print('Pits:', walks.rooms.pits)
+                #    print('Keys:', walks.rooms.keys)
+                #    print('Locks:', walks.rooms.locks)
+                #    print('Locked:', walks.rooms.locked)
 
 
                 # Select starting node

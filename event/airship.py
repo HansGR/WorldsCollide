@@ -46,6 +46,10 @@ class Airship(Event):
                 fly_wor_cancel_text += '(Go to ' + location_text + ')<line><choice> '
             else:
                 fly_wor_cancel_text += '(Go to Floating Continent)<line><choice> '
+        elif self.args.door_randomize_dungeon_crawl:
+            fc_dest_str = '(Engage the IAF)'
+            fly_wor_cancel_text += '(Enter the dungeon)<line><choice> '
+
         fly_wor_fc_text += fc_dest_str + '<line><choice> (Not just yet)<end>'
         fly_wor_cancel_text += '(Not just yet)<end>'
 
@@ -73,7 +77,7 @@ class Airship(Event):
                                dest4 = field.RETURN),
         )
 
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             # If FC completed, skip reform party & go to animation
             fly_wor_skip_cancel_choice = space.next_address
             space.write(
@@ -126,7 +130,7 @@ class Airship(Event):
         space.write(
             field.BranchIfEventBitSet(event_bit.IN_WOR, wor_control_checks),
         )
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             # Skip party reform if IAF already defeated.
             # Do not turn off the "Find ..." option if character gated.
             space.write(
