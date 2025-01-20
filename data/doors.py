@@ -101,7 +101,7 @@ ROOM_SETS = {
         201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
         '207b', 212, 213, '215a', '215b', 216, 220, 221,  # Phantom Train
         146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, # Mt. Kolts  145, 158,
-        331, 286,  # Vector castle, Esper world
+        # 331,   Vector castle;  286, Esper world
         'wor-island', 'wor-kefkastower', 'wor-fanatics', 'wor-figaro', 'wor-dragonsneck', 'wor-jidoor', 'wor-narshe',
         'wor-doma', 'wor-dinosaur', 'wor-veldt', 'wor-thamasa', 'wor-ebots', 'wor-triangle', 'wor-airship',
         'ms-wor-48', 'ms-wor-49', 'ms-wor-51', 'ms-wor-52', 377, 'ms-wor-56', 'dc-57', 'ms-wor-58', 'ms-wor-59', 467,
@@ -126,7 +126,7 @@ ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
 class Doors():
-    verbose = False  # False  # True # useless edit to test seedbot
+    verbose = False  # True # useless edit to test seedbot
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
