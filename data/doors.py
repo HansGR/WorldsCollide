@@ -177,23 +177,8 @@ class Doors():
         elif self.args.door_randomize_dungeon_crawl:  # -drdc, updated with towns
             # for Dungeon Crawl to work, all doors on the world map should be made into dead ends.
             # This forces the dungeon to be fully connected.
-            # What about one-way exits on the world map? We don't want to force logic to always send you thru zone-eater engulf.
-            # OK, we will leave one door on the world map: Narshe WoB (4).
-            #for d in [door for door in room_data['dc-world'][0] if door != 4]:
-            #    newname = 'dcw-' + str(d)
-            #    if d in room_data['shuffle-wob'][0]:
-            #        this_world = 0
-            #    elif d in room_data['shuffle-wor'][0]:
-            #        this_world = 1
-            #    newroom = [[d], [], [], this_world]
-            #    room_data[newname] = newroom
-            #    ROOM_SETS['DungeonCrawl'].append(newname)
-            #    room_data['dc-world'][0].remove(d)
-            #    # print('created new room ', newname, newroom, room_data[newname])
-            #print(room_data['dc-world'])
 
-            ## That method added over 70 dead ends to the map, which it couldn't absorb.
-            # Replaced with 'real' world map rooms, most of which are not dead ends.
+            # Uses 'real' world map rooms, most of which are not dead ends.
 
             # Split some town exits in dungeon crawl mode:
             for se in dungeon_crawl_split_exits.keys():
@@ -203,6 +188,8 @@ class Doors():
 
             room_sets.append(ROOM_SETS['DungeonCrawl'])
             self.area_name.append('DungeonCrawl')
+
+            # Redundant: -drdc overrides -maps, -mapx
             self.args.map_shuffle = False  # Do not allow -drdc with -maps or -mapx
 
 

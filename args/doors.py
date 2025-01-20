@@ -80,10 +80,18 @@ def process(args):
     else:
         args.door_randomize = False
 
+    if args.door_randomize_dungeon_crawl:
+        # Override: dungeon crawl is incompatible with map shuffle and takes precedence
+        args.map_shuffle_separate = False
+        args.map_shuffle_crossworld = False
+
     if args.map_shuffle_separate or args.map_shuffle_crossworld:
         args.map_shuffle = True
     else:
         args.map_shuffle = False
+
+    #print('-drdc overrides -maps and -mapx: ', args.door_randomize_dungeon_crawl, args.map_shuffle_separate,
+    #      args.map_shuffle_crossworld, args.map_shuffle)
 
 def flags(args):
     flags = ""
