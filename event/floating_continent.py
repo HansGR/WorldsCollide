@@ -509,6 +509,7 @@ class FloatingContinent(Event):
                 field.FadeOutScreen(speed=0x08),
                 field.WaitForFade(),
                 field.WaitForEntityAct(field_entity.PARTY0),
+                field.FreeScreen(),
             ] + GoToSwitchyard(self.exit_id, map='field')
         else:
             escape_src = [
