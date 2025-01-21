@@ -550,6 +550,8 @@ entrance_door_patch = {
     1558: [figaro_castle_underground_state, True],  # force status depending on DEFEATED_TENTACLES
 
 }
+#for j in entrance_door_patch.keys():
+#    print(j, entrance_door_patch[j])
 
 # Automatically set required event bits BEFORE loading the map
 require_event_bit = {

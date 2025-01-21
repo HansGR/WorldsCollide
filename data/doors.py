@@ -101,7 +101,7 @@ ROOM_SETS = {
         201, 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
         '207b', 212, 213, '215a', '215b', 216, 220, 221,  # Phantom Train
         146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 159, 160, # Mt. Kolts  145, 158,
-        # 331,   Vector castle;  286, Esper world
+        286, 331, #  Esper world  #  Vector castle;
         'wor-island', 'wor-kefkastower', 'wor-fanatics', 'wor-figaro', 'wor-dragonsneck', 'wor-jidoor', 'wor-narshe',
         'wor-doma', 'wor-dinosaur', 'wor-veldt', 'wor-thamasa', 'wor-ebots', 'wor-triangle', 'wor-airship',
         'ms-wor-48', 'ms-wor-49', 'ms-wor-51', 'ms-wor-52', 377, 'ms-wor-56', 'dc-57', 'ms-wor-58', 'ms-wor-59', 467,
@@ -126,7 +126,7 @@ ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
 class Doors():
-    verbose = False  # True # useless edit to test seedbot
+    verbose = False  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
@@ -482,27 +482,21 @@ class Doors():
 
             if self.verbose:
                 print('Now Randomizing:' , area_id)
-                #print(area)
+
             if len(area) > 0:
-                walks = Network(area)  # Initialize the Walk Network
+
+                # Initialize the Walk Network
+                walks = Network(area)
                 if self.verbose:
                     print('Initial Count: ', walks.rooms.count)
+
                 walks.ApplyImmediateKeys(self.args)
                 walks.ForceConnections(self.forcing)  # Force initial connections, if any
+
                 if self.verbose:
                     print('Count after forced connections: ', walks.rooms.count)
-                    #for n in walks.net.nodes:
-                    #    print(n.id, n.doors, n.traps, n.pits, n.keys, n.locks)
-                walks.attach_dead_ends()  # Connect all the dead ends.
-                #if self.verbose:
-                #    print('Count after attaching dead ends: ', walks.rooms.count)
-                #    print('Doors:', walks.rooms.doors)
-                #    print('Traps:', walks.rooms.traps)
-                #    print('Pits:', walks.rooms.pits)
-                #    print('Keys:', walks.rooms.keys)
-                #    print('Locks:', walks.rooms.locks)
-                #    print('Locked:', walks.rooms.locked)
 
+                walks.attach_dead_ends()  # Connect all the dead ends.
 
                 # Select starting node
                 if area_id == 'All':
@@ -510,10 +504,12 @@ class Doors():
                     string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
                     root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
                     start_room_ids = [root_room.id]
-                #elif area_id == 'DungeonCrawl':
-                #    string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
-                #    root_room = string_rooms[[sr.id.find('dc-world') >= 0 for sr in string_rooms].index(True)]
-                #    start_room_ids = [root_room.id]
+                elif area_id == 'DungeonCrawl':
+                    # Try starting from the biggest remaining room?
+                    room_sizes = [(r.id, len(r.doors)) for r in walks.rooms.rooms]
+                    max_size = max([r[1] for r in room_sizes])
+                    start_room_ids = [r[0] for r in room_sizes if r[1] == max_size]
+
                 elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
                     # Choose a root room to begin
                     # This might fail due to forcing.
@@ -522,32 +518,27 @@ class Doors():
                     # Choose a random room
                     start_room_ids = [n.id for n in walks.net.nodes]
 
-                #while len(start_room_ids) > 0:
-                #try:
                 start_room_id = random.choice(start_room_ids)
                 walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
                 # Connect the network
-                if self.verbose:
-                    print('Randomizing map from...', start_room_id)
-
                 if self.timeout <= 0:
                     # Directly connect the network
                     fully_connected = walks.connect_network()
                 else:
-                    # Connect the network with a timeout
                     try:
+                        if self.verbose:
+                            #print('\tTry', Ncount, ': start room... ', start_room_id)
+                            print('\tstarting room... ', start_room_id)
                         fully_connected = connect_with_timeout(walks, self.timeout)
+
                         if fully_connected is None:
                             print('Door connection timed out')
+                            #Ncount += 1
+
                     except Exception as e:
                         if self.verbose:
                             print(f"Network connection failed: {e}")
-
-                #start_room_ids = []  # end loop
-                #except:
-                #    # remove this start room & try again
-                #    start_room_ids.remove(start_room_id)
 
                 fcm_doors = [m for m in fully_connected.map[0]]
                 fcm_oneways = [m for m in fully_connected.map[1]]

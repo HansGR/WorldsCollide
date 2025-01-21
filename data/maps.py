@@ -1277,13 +1277,19 @@ class Maps():
         if require_event_flags[1]:
             if d_ref in entrance_door_patch.keys():
                 # Check whether this is BEFORE (True) or AFTER (False) loading the map.
+                if isinstance(entrance_door_patch[d_ref][0], list):
+                    edp = entrance_door_patch[d_ref][0]
+                else:
+                    # patch requires knowledge of arguments
+                    edp = entrance_door_patch[d_ref][0](self.args)
+
                 world_map_override = (conn_data[0] in [0, 1, 2, 511])
                 if entrance_door_patch[d_ref][1] or world_map_override:
                     # Put code before map load
-                    wor_src = entrance_door_patch[d_ref][0] + wor_src
+                    wor_src = edp + wor_src
                 else:
                     # Put code after map load
-                    wor_src = wor_src[:-1] + entrance_door_patch[d_ref][0] + wor_src[-1:]
+                    wor_src = wor_src[:-1] + edp + wor_src[-1:]
 
             if d_ref in require_event_bit.keys():
                 entr_bits = require_event_bit[d_ref]
