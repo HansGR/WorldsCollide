@@ -5,8 +5,9 @@ class EsperWorld(Event):
         return "Esper World"
 
     def init_event_bits(self, space):
-        # Set NPC bits to avoid showing NPCs
-        pass
+        space.write(
+            field.ClearEventBit(npc_bit.ESPER_WORLD_MADUIN)
+        )  # 0x337
 
     def mod(self):
         self.map_outside = 0x0d9   # Esper world hub

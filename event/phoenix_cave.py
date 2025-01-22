@@ -344,6 +344,7 @@ class PhoenixCave(Event):
         src = [
             field.LoadMap(map_id=0x00b, x=16, y=8, direction=direction.LEFT,
                               default_music=True, fade_in=True, entrance_event=True),
+            field.SetEventBit(event_bit.IN_WOR),
             field.Return()
         ]
         AddSwitchyardEvent(self.exit_id, self.maps, src=src)

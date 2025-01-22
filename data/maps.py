@@ -1425,7 +1425,7 @@ class Maps():
 
 
     def get_connection_location(self, exit_id, parent_map_ok=False):
-        # Return the location [map_id, x, y] that a given exit_id should go to
+        # Return the location [map_id, x, y, world] that a given exit_id should go to
         conn_id = self.door_map[exit_id]
         conn_pair = exit_data[conn_id][0]  # original connecting exit
         if conn_pair in self.exits.exit_original_data.keys():
@@ -1436,7 +1436,7 @@ class Maps():
 
         if parent_map_ok:
             # It's OK to return a dest_map = 0x1ff.
-            return conn_data[:3]
+            return conn_data[:3] + [exit_world[conn_id]]
         else:
             # Safely handle dest_map = 0x1ff
             if conn_data[0] in [0x1ff, 0x1fe]:
@@ -1445,4 +1445,4 @@ class Maps():
             else:
                 # wherever this goes is OK
                 exit_map = conn_data[0]
-            return [exit_map] + conn_data[1:3]  # [dest_map, dest_x, dest_y]
+            return [exit_map] + conn_data[1:3] + [exit_world[conn_id]] # [dest_map, dest_x, dest_y, dest_world]

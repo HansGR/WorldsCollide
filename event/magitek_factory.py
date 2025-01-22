@@ -380,11 +380,12 @@ class MagitekFactory(Event):
         if IS_CRANES:
             battle_type = field.BattleType.PINCER
 
-        if self.airship_position[0] == 0 and not IS_CRANES:
+        this_world = self.airship_position[-1]
+        if this_world == 0 and not IS_CRANES:
             battle_background = 48  # airship, right
-        elif self.airship_position[0] == 0 and IS_CRANES:
+        elif this_world == 0 and IS_CRANES:
             battle_background = 37  # airship, center
-        elif self.airship_position[0] == 1 and not IS_CRANES:
+        elif this_world == 1 and not IS_CRANES:
             battle_background = 41  # airship WOR, right
         else:
             battle_background = 37  # airship WOR, center (does not exist!)
@@ -410,11 +411,19 @@ class MagitekFactory(Event):
         space = Reserve(0xc8303, 0xc8304, "after magitek factory do not delete vector townspeople", field.NOP())
 
         space = Reserve(0xc8319, 0xc831f, "after magitek factory do not call go to zozo scenes", field.Return())
-        space.write(
-            field.LoadMap(self.airship_position[0], direction.DOWN, default_music = True, x = self.airship_position[1],
-                          y = self.airship_position[2], airship = True),
-            vehicle.End(),
-        )
+        if self.airship_position[0] in [0x0, 0x1, 0x1ff]:
+            src = [
+                field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
+                          y=self.airship_position[2], airship=True, fade_in=True),
+                vehicle.End()
+                ]
+        else:
+            src = [
+                field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
+                              y=self.airship_position[2], fade_in=True),
+                field.Return()
+            ]
+        space.write(src)
 
     def guardian_mod(self):
         # guardian is made up of 9 npcs, remove them all
