@@ -6,7 +6,10 @@ class VectorCastle(Event):
 
     def init_event_bits(self, space):
         # Set NPC bits to avoid showing NPCs
-        pass
+        space.write(
+            field.ClearEventBit(npc_bit.IMPERIAL_CASTLE_DOOR_GUARDS),
+            field.ClearEventBit(npc_bit.IMPERIAL_CASTLE_TEMPLAR)
+        )
 
     def mod(self):
         self.map_interiors = 0x0fa   # Interior rooms

@@ -564,7 +564,7 @@ require_event_bit = {
     782: {event_bit.DARYL_TOMB_TURTLE1_MOVED: False},
     793: {event_bit.DARYL_TOMB_TURTLE2_MOVED: False},
     794: {event_bit.DARYL_TOMB_TURTLE2_MOVED: False},
-    795: {event_bit.DARYL_TOMB_TURTLE2_MOVED: True},
+    795: {event_bit.DARYL_TOMB_TURTLE2_MOVED: True, event_bit.DARYL_TOMB_DOOR_SWITCH: True},
 
     # Phantom Train, Outside rear section: turn off ghosts
     474: {0x509: False},
