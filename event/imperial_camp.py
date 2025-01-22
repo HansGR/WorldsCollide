@@ -27,7 +27,7 @@ class ImperialCamp(Event):
             field.ClearEventBit(npc_bit.MARANDA_SOLDIER_IMPERIAL_CAMP),
             field.ClearEventBit(npc_bit.DOMA_GENERAL_IMPERIAL_CAMP),
         )
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             # Deactivate imperial camp by default.  It will be activated when needed.
             space.write(
                 field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
@@ -78,7 +78,7 @@ class ImperialCamp(Event):
             sy_space = Reserve(0xb0bb7, 0xb0bea, 'Imperial Camp WOB entrance', field.NOP())
 
             sy_space.write(GoToSwitchyard(event_id, map='world'))
-            # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+            # (1b) Add the switchyard event tile that handles entry to Imperial Camp
             src = [
                 field.LoadMap(0x075, direction=direction.DOWN, x=36, y=2, default_music=True, fade_in=True),
                 field.Return()
@@ -86,29 +86,33 @@ class ImperialCamp(Event):
             AddSwitchyardEvent(event_id, self.maps, src=src)
 
             # Modify the logic to allow exploring a deactivated imperial camp if not yet complete & gating condition not met
-            gating_logic = space.next_address
+            self.gating_logic = space.next_address
             space.write(
                 field.HideEntity(self.soldier_npc_id),
-                #field.BranchIfEventBitSet(event_bit.FINISHED_IMPERIAL_CAMP, "IMPERIAL_CAMP_DEACTIVATED")
-                field.ReturnIfEventBitSet(event_bit.FINISHED_IMPERIAL_CAMP)
-            )
-            if self.args.character_gating:
-                space.write(
-                    #field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "IMPERIAL_CAMP_DEACTIVATED"),
-                    field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
-                )
-            # Activate imperial camp if it should be active.
-            space.write(
-                #field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
-                field.ClearEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
-                field.ClearEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
-                field.ClearEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
-                field.ShowEntity(self.soldier_npc_id),
-                field.Return()
             )
 
-            space = Reserve(0xb0bf1, 0xb0bf4, "Call imperial camp gating logic") # replace call to unused spotlight routine at CB/0EF8 depending on event_bit 0x1b5
-            space.write(field.Call(gating_logic))
+            if self.MAP_SHUFFLE:
+                space.write(
+                    field.ReturnIfEventBitSet(event_bit.FINISHED_IMPERIAL_CAMP)
+                )
+                if self.args.character_gating:
+                    space.write(
+                        field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                    )
+                # Activate imperial camp if it should be active.
+                space.write(
+                    field.ClearEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+                    field.ClearEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+                    field.ClearEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
+                    field.ShowEntity(self.soldier_npc_id),
+                    field.Return()
+                )
+            elif self.args.door_randomize_dungeon_crawl:
+                # We will need to activate imperial camp at the Kefka tile.
+                space.write(field.Return())
+
+            space = Reserve(0xb0bf1, 0xb0bf4, "Call imperial camp gating logic", field.NOP()) # replace call to unused spotlight routine at CB/0EF8 depending on event_bit 0x1b5
+            space.write(field.Call(self.gating_logic))
 
             # Figure out how to neutralize imperial camp actions
             # If the following event bits are set, imperial camp is deactivated:
@@ -145,45 +149,76 @@ class ImperialCamp(Event):
         space = Reserve(0xb0f2e, 0xb0f2e, "imperial camp first general leo scene", field.Return())
 
         # scene before first kefka fight where leo leaves and kefka orders river poisoned
-        space = Reserve(0xb1032, 0xb10f5, "imperial camp player jumps in front of kefka", field.NOP())
-        space.write(
-            field.ReturnIfEventBitSet(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+        if self.args.door_randomize_dungeon_crawl:
+            # DEACTIVATED imperial camp state:
+            # field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+            # field.SetEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+            # field.SetEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+            # field.SetEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
 
-            # NOTE: add this check so can explore imperial camp after finished event
-            field.ReturnIfEventBitSet(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+            # to Activate imperial camp:
+            # field.ClearEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+            # field.ClearEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+            # field.ClearEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
+            # field.ShowEntity(self.soldier_npc_id),
+            src = [
+                field.ReturnIfEventBitSet(event_bit.FINISHED_IMPERIAL_CAMP),
+            ]
+            if self.args.character_gating:
+                src += [
+                    field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                ]
+            src += [
+                field.ReturnIfEventBitSet(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),  # only activate camp once
+                # Activate imperial camp
+                field.ClearEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+                field.ClearEventBit(event_bit.CHASING_KEFKA3_IMPERIAL_CAMP),
+                field.ClearEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
+                field.ShowEntity(self.soldier_npc_id),
+            ]
 
+
+        else:
+            src = [
+                field.ReturnIfEventBitSet(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+                # NOTE: add this check so can explore imperial camp after finished event
+                field.ReturnIfEventBitSet(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
+            ]
+        src += [
             field.SetEventBit(npc_bit.KEFKA_IMPERIAL_CAMP),
             field.CreateEntity(self.kefka_npc_id),
             field.ShowEntity(self.kefka_npc_id),
 
             field.HoldScreen(),
             field.EntityAct(field_entity.PARTY0, True,
-                field_entity.AnimateSurprised(),
-                field_entity.Pause(6),
-                field_entity.SetSpeed(field_entity.Speed.FAST),
-                field_entity.Move(direction.UP, 1),
-                field_entity.Move(direction.RIGHT, 3),
-                field_entity.AnimateKneeling(),
-            ),
+                            field_entity.AnimateSurprised(),
+                            field_entity.Pause(6),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.UP, 1),
+                            field_entity.Move(direction.RIGHT, 3),
+                            field_entity.AnimateKneeling(),
+                            ),
             field.EntityAct(self.kefka_npc_id, True,
-                field_entity.Move(direction.UP, 4),
-                field_entity.Move(direction.LEFT, 3),
-                field_entity.Move(direction.UP, 4),
-                field_entity.Move(direction.LEFT, 1),
-            ),
+                            field_entity.Move(direction.UP, 4),
+                            field_entity.Move(direction.LEFT, 3),
+                            field_entity.Move(direction.UP, 4),
+                            field_entity.Move(direction.LEFT, 1),
+                            ),
             field.EntityAct(self.kefka_npc_id, False,
-                field_entity.Move(direction.UP, 1),
-            ),
+                            field_entity.Move(direction.UP, 1),
+                            ),
             field.EntityAct(field_entity.PARTY0, True,
-                field_entity.SetSpeed(field_entity.Speed.FAST),
-                field_entity.Move(direction.LEFT, 3),
-                field_entity.Turn(direction.DOWN),
-            ),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.LEFT, 3),
+                            field_entity.Turn(direction.DOWN),
+                            ),
             field.FreeScreen(),
             field.SetEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.Call(0xb1126),
             field.Return(),
-        )
+        ]
+        space = Reserve(0xb1032, 0xb10f5, "imperial camp player jumps in front of kefka", field.NOP())
+        space.write(src)
 
         space = Reserve(0xb112c, 0xb112e, "imperial camp player jumps in front of kekfa dialog", field.NOP())
         space = Reserve(0xb115a, 0xb115c, "imperial camp first Wait!!! dialog", field.NOP())
@@ -315,13 +350,13 @@ class ImperialCamp(Event):
 
         # Add a west exit to imperial camp
         exit_id = 1560
-        src = [GoToSwitchyard(entr_id, map='field')]
+        src = [GoToSwitchyard(exit_id, map='field', use_fade=True)]
         space = Write(Bank.CA, src, 'Exit imperial camp west')
         exit_event_addr = space.start_address
 
         new_event = LongMapEvent()
         new_event.x = 0
-        new_event.y = 25
+        new_event.y = 20
         new_event.direction = 128
         new_event.size = 5
         new_event.event_address = exit_event_addr - EVENT_CODE_START

@@ -239,7 +239,7 @@ event_exit_info = {
 
     # DUNGEON CRAWL TILES
     1559: [None, 7, 1, [None, None, None, None, True], 'Imperial Camp WoB west', [0x005, 1559 % 128, 1559 // 128], 'JMP'],  # New tile!  Goes to west exit of imperial camp!!!
-    1560: [None, 7, 1, [None, None, None, None, True], 'Imperial Camp west to world map', [0x005, 1560 % 128, 1560 // 128], 'JMP'],  # New tile!  Goes to world map from west of imperial camp!!!
+    1560: [None, 7, 1, [None, None, None, None, False], 'Imperial Camp west to world map', [0x005, 1560 % 128, 1560 // 128], 'JMP'],  # New tile!  Goes to world map from west of imperial camp!!!
     1561: [None, 7, 1, [None, None, None, None, True], 'Veldt shore', [0x005, 1561 % 128, 1561 // 128], 'JMP'],  # Door going to veldt shore; doesn't go anywhere but helps logic.
 }
 # Notes:

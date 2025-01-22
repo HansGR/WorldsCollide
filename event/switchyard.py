@@ -37,7 +37,7 @@ def AddSwitchyardEvent(event_id, maps, branch=[], src=[]):
     #print('Added Switchyard event: ', event_id, sx, sy, hex(space.start_address), hex(space.end_address))
 
 
-def GoToSwitchyard(event_id, map=''):
+def GoToSwitchyard(event_id, map='', use_fade=False):
     [sx, sy] = switchyard_xy(event_id)
 
     # field maps and world maps have different LoadMap codes.  Use the correct one:
@@ -49,13 +49,21 @@ def GoToSwitchyard(event_id, map=''):
             map = 'world'
 
     if map == 'field':
-        src = [
-            field.LoadMap(SWITCHYARD_MAP, direction=direction.UP, default_music=False,
-                          x=sx, y=sy, fade_in=False, entrance_event=False),
-            field.Return()
-        ]
+        if use_fade:
+            src = [
+                field.FadeLoadMap(SWITCHYARD_MAP, direction=direction.UP, default_music=False,
+                              x=sx, y=sy, fade_in=False, entrance_event=False)
+                ]
+        else:
+            src = [
+                field.LoadMap(SWITCHYARD_MAP, direction=direction.UP, default_music=False,
+                              x=sx, y=sy, fade_in=False, entrance_event=False)
+            ]
+        src += [field.Return()]
         #print('*** ', event_id , ': ', [f.__call__([]) for f in src])
+
     elif map == 'world':
+        # World map always fades
         src = [
             # world.FadeScreen(),
             world.LoadMap(SWITCHYARD_MAP, direction=direction.UP, default_music=False,

@@ -333,26 +333,27 @@ class Transition:
     def __init__(self, exit_id, entr_id, rom, exit_data, event_data):
         # Import exit
         self.exit = EventExit(exit_id, rom, exit_data, event_data, is_event=(1500 < exit_id < 4000) )
+        from_world = self.exit.world in [0x0, 0x1, 0x2]
 
         # Import entrance
         if 4000 > entr_id >= 3000:
             # This is a pit associated with an event transition
-            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data, is_event=True)
+            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data, is_event=True, from_world=from_world)
         elif 1500 <= entr_id < 2000:
             # This is an event tile behaving as a normal door.
             partner_id = exit_partner[entr_id][0]
             if 1500 <= partner_id < 2000:
                 # If the vanilla partner is also an event tile, we can use its event code.
-                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=True, use_event_info=partner_id)
+                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=True, use_event_info=partner_id, from_world=from_world)
             else:
                 # The vanilla partner is a normal door.  Construct the exit script the same way we do for doors.
-                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
         elif entr_id > 6000:
             # This is the one-way exit of a normal door acting as a one-way.
-            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
         else:
             # This is a normal door
-            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
 
 
 class EventExit:
@@ -373,7 +374,7 @@ class EventExit:
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
 
-    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True, use_event_info=None):
+    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True, use_event_info=None, from_world=False):
         self.id = ID
 
         if is_event:
@@ -456,12 +457,13 @@ class EventExit:
 
             self.world = exit_world[ID]            # which world is it in?
 
+            # If coming from a world map, the entrance location cannot be 'return to parent map'
+            if from_world and partner_data[0] in [0x1ff, 0x1fe]:
+                # update partner data to explicit map
+                partner_data[0] = self.world
+
             # Use partner_data for the "entrance" info
             self.dest_location = partner_data[0:3]  # [dest_map, dest_x, dest_y]
-
-            # if ID in exit_door_patch:
-            #     # Prepend any data required by the door
-            #     self.exit_code = exit_door_patch[ID] + self.exit_code
 
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
             self.entr_code = [partner_data[0] % 0x100,
