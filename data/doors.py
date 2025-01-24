@@ -132,9 +132,12 @@ class Doors():
     def __init__(self, args):
         # Hard overrides for testing
         self.OVERRIDE = [
-            #1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
+            #[1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
             #[56, 262],  # Connect Coliseum to Figaro Cave
             #[62, 1261]   # Connect Opera House to Thamasa
+            #[1559, 1560]    # Imperial camp west force connection
+            #[4, 1218],    # Narshe to esper world
+            #[10, 674]    #  Sabin's house to Vector Castle interior
         ]
 
         # self.rom = rom
@@ -202,7 +205,7 @@ class Doors():
         elif self.args.door_randomize_each:  # -dre
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
-                if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW']:
+                if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW', 'DungeonCrawl']:
                     if self.args.map_shuffle:
                         # Check for _mapsafe
                         if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
@@ -270,7 +273,7 @@ class Doors():
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
 
-            if self.args.door_randomize_zozo_wor:  # -drzr
+            if self.args.door_randomize_zozo_wor:  # -drzr  ***
                 key = 'Zozo-WOR'  # not using _mapsafe here, it's for -dre only
                 room_sets.append(ROOM_SETS[key])
                 self.area_name.append(key)
@@ -501,25 +504,25 @@ class Doors():
                 # Select starting node
                 if area_id == 'All':
                     # Start in the root room
-                    string_rooms = [R for R in walks.rooms.rooms if type(R.id) is str]
-                    root_room = string_rooms[[sr.id.find('root') >= 0 for sr in string_rooms].index(True)]
-                    start_room_ids = [root_room.id]
+                    string_rooms = [R for R in walks.rooms.rooms if isinstance(R, str)]
+                    root_room_id = string_rooms[[sr.find('root') >= 0 for sr in string_rooms].index(True)]
+                    start_room_ids = [root_room_id]
                 elif area_id == 'DungeonCrawl':
                     # Try starting from the biggest remaining room?
-                    room_sizes = [(r.id, len(r.doors)) for r in walks.rooms.rooms]
+                    room_sizes = [(r, len(walks.rooms.get_room(r).doors)) for r in walks.rooms.rooms]
                     max_size = max([r[1] for r in room_sizes])
                     start_room_ids = [r[0] for r in room_sizes if r[1] == max_size]
 
-                elif len([r for r in walks.rooms.rooms if 'root' in str(r.id)]) > 0:
+                elif len([r for r in walks.rooms.rooms if 'root' in str(r)]) > 0:
                     # Choose a root room to begin
                     # This might fail due to forcing.
-                    start_room_ids = [r.id for r in walks.rooms.rooms if 'root' in str(r.id)]
+                    start_room_ids = [r for r in walks.rooms.rooms if 'root' in str(r)]
                 else:
                     # Choose a random room
-                    start_room_ids = [n.id for n in walks.net.nodes]
+                    start_room_ids = [n for n in walks.net.nodes]
 
                 start_room_id = random.choice(start_room_ids)
-                walks.active = walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
+                walks.active = start_room_id   # walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
                 # Connect the network
                 if self.timeout <= 0:

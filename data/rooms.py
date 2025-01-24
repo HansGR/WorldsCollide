@@ -460,7 +460,7 @@ room_data = {
     196 : [ [460, 1187], [ ], [ ], 1], #Crazy Old Man's House WoR
 
     # PHANTOM FOREST & TRAIN
-    197 : [ [1188, 461], [], [466-1000], 0],  # Phantom Forest North Room.  Exit 466 also puts you in here!
+    197 : [ [1188, 461], [], [6466], 0],  # Phantom Forest North Room.  Exit 466 also puts you in here!
     198 : [ [462, 463], [], [], 0], # Phantom Forest Healing Pool
     199 : [ [464, 465], [466], [], 0], # Phantom Forest Fork Room.  466 is a normal door behaving as a one-way (!) and 465 goes to world map BUT has an event tile exit....
     200 : [ [467, 468], [], [], 0],  # Phantom Forest Path to Phantom Train (0x087)
@@ -1228,3 +1228,20 @@ for r in room_data.keys():
         exit_world[p] = room_data[r][-1]
         exit_room[p] = r
 
+# Generate a list of doors that act as trapdoors
+doors_as_traps = []
+doors_as_traps_2 = []
+for r in room_data.keys():
+    traps = [t for t in room_data[r][1]]
+    for t in traps:
+        if isinstance(t, int):
+            if t < 2000:
+                doors_as_traps.append(t)
+    pits = [p for p in room_data[r][2]]
+    for p in pits:
+        if isinstance(p, int):
+            if p >= 6000:
+                doors_as_traps_2.append(p-6000)
+test = [d for d in doors_as_traps if d not in doors_as_traps_2] +  [d for d in doors_as_traps_2 if d not in doors_as_traps]
+if len(test) > 0:
+    print('BROKEN DOOR/TRAP pairs:', test)
