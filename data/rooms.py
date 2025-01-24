@@ -647,9 +647,9 @@ room_data = {
     '305r' : [ [4629], [ ], [ ], 1], #Zozo Armor
     306 : [ [630], [ ], [ ], ['clock2'], {}, 0], #Zozo Weapon WoB
     '306r' : [ [4630], [ ], [ ], ['clock2'], {}, 1], #Zozo Weapon WoR
-    307 : [ [631], [], [3062], [ ], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2061]}]}]}]}]}, 0], #Zozo Clock Puzzle Room West WoB
+    307 : [ [631], [], [3062], [ ], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2061]}, 0], #Zozo Clock Puzzle Room West WoB
     308 : [ [632], [2062], [], [ ], {'forced':[3061]}, 0], #Zozo Clock Puzzle Room East WoB
-    '307r': [[4631], [], [3064], [], {'clock1': [{'clock2': [{'clock3': [{'clock4': [{'clock5': [2063]}]}]}]}]}, 1],  # Zozo Clock Puzzle Room West WoR
+    '307r': [[4631], [], [3064], [], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2063]}, 1],  # Zozo Clock Puzzle Room West WoR
     '308r': [[4632], [2064], [], [], {'forced': [3063]}, 1],  # Zozo Clock Puzzle Room East WoR
     #'307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
     #'307r' : [ [4631, 4632],  [ ], [ ], 1],  #Zozo Clock Puzzle Room (complete)
@@ -798,7 +798,7 @@ room_data = {
     426 : [ [851], [], [], 1], # Doma Dream 3 Stooges Maze Southeast Section
     427 : [ [], [853], [6852], ['cd2'], {}, 1], # Doma Dream 3 Stooges Maze East Section
     428 : [ [855], [854], [6848, 6853], 1], # Doma Dream 3 Stooges Maze South Section
-    429 : [ [856], [], [], [], {'cd1': [{'cd2': [2070]}]}, 1], # Doma Dream 3 Stooges Room
+    429 : [ [856], [], [], [], {('cd1', 'cd2'): [2070]}, 1], # Doma Dream 3 Stooges Room
 
     # CYAN DREAM TRAIN: 0x08f exterior; 0x090 car 2; 0x141 car 3; 0x142 car 1
     208 : [ [477, 483], [2071], [ ], 1],  # Doma Dream Train Outside 3rd Section (front)  0x08f

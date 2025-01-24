@@ -16,6 +16,7 @@ class Network:
         self.net.add_nodes_from(room.id for room in self.rooms)
         self.keychain = set()
         self.map = [[], []]
+        self.protected = None
 
         self.active = None  # next(iter(self.rooms)).id  # Set first room's ID as active
         self.should_stop = None
@@ -31,16 +32,22 @@ class Network:
         result.should_stop = self.should_stop
         return result
 
-    def ForceConnections(self, forcing):
+    def ForceConnections(self, forcing, state='forced'):
         these_doors = self.rooms.doors + self.rooms.traps
-        self.protected = []
+        if self.protected is None:
+            self.protected = []
         for d in forcing.keys():
             if d in these_doors:
                 df = forcing[d][0]
-                if self.verbose:
-                    print('Forcing: ', d, df)
-                self.connect(d, df, state='forced')
+                #if self.verbose:
+                #    print('Forcing: ', d, df)
+                self.connect(d, df, state=state)
+                #if self.verbose:
+                #    print('forcing successful.')
+            self.protected.append(d)
             self.protected.extend(forcing[d])
+        if self.verbose:
+            print('added doors to protected: ', self.protected)
 
     def ApplyImmediateKeys(self, args):
         # Apply keys controlled by args
@@ -111,39 +118,55 @@ class Network:
         self.keychain.add(key)
 
         # unlock any doors or traps locked by key
-        for room_id in self.rooms.rooms:
-            #print('\t\t\t\t\t\tchecking room ', room_id)
+        room_list = [r for r in self.rooms.rooms]
+        if self.verbose:
+            print('assessing key ', key, 'in rooms: ', room_list)
+        for room_id in room_list:
+            print('\t\t\t\t\t\tchecking room ', room_id)
             room = self.rooms.get_room(room_id)
-            if key in room.locks.keys():
-                if self.verbose:
-                    print('\t\t\t\t\t\tApplying key:', key, 'in room', room.id)
-                locked = room.locks.pop(key)  # this also removes the item from room.locks
-                for item in locked:
-                    if isinstance(item, str):
-                        # This is a key.  Immediately apply it.
-                        #print('\t\t\t\t\t\t\tApplying a new key:', item)
-                        self.apply_key(item)
-                    elif isinstance(item, dict):
-                        # This is another locked item.
-                        #print('\t\t\t\t\t\t\tApplying a new lock:', item)
-                        room.add_locks(item)
-                        unlockable = [k for k in item.keys() if k in self.keychain]
-                        for k in unlockable:
-                            # unlock the nested lock, if we already have the key.
-                            #print('\t\t\t\t\t\t\talready have key ', k,', applying it')
-                            self.apply_key(k)
-                    elif item < 2000:
-                        # This is a door.
-                        #print('\t\t\t\t\t\t\tadding a door...', item)
-                        room.add_doors([item])
-                    else:
-                        # This is a trap.
-                        #print('\t\t\t\t\t\t\tadding a trap...', item)
-                        room.add_traps([item])
+            #if key in room.locks.keys():
+            room_keys = [k for k in room.locks.keys()]
+            for required_keys in room_keys:
+                if set(required_keys).issubset(self.keychain):
+                    if self.verbose:
+                        print('\t\t\t\t\t\tApplying key:', required_keys, 'in room', room.id)
+                    locked = room.locks.pop(required_keys)  # this also removes the item from room.locks
+                    for item in locked:
+                        if isinstance(item, str):
+                            # This is a key.  Immediately apply it.
+                            if self.verbose:
+                                print('\t\t\t\t\t\t\tApplying a new key:', item)
+                            self.apply_key(item)
+                        elif isinstance(item, dict):
+                            # This is another locked item.  Should not happen with tuple keys
+                            if self.verbose:
+                                print('\t\t\t\t\t\t\tApplying a new lock:', item)
+                            print('\t\t\t\t\t\t\tWARNING: found a nested lock in ', room_id,' : ', item)
+                            room.add_locks(item)
+                            unlockable = [k for k in item.keys() if set(k).issubset(self.keychain)]
+                            for k in unlockable:
+                                # unlock the nested lock, if we already have the key.
+                                if self.verbose:
+                                    print('\t\t\t\t\t\t\talready have key ', k,', applying it')
+                                self.apply_key(k)
+                        elif room.element_type(item) == 0:  # item < 2000
+                            # This is a door.
+                            if self.verbose:
+                                print('\t\t\t\t\t\t\tadding a door...', item)
+                            room.add_doors([item])
+                        elif room.element_type(item) == 1:
+                            # This is a trap.
+                            if self.verbose:
+                                print('\t\t\t\t\t\t\tadding a trap...', item)
+                            room.add_traps([item])
+                        else:
+                            # Error
+                            raise RoomError(f"Unknown item unlocked by key {required_keys} in room {room_id}: {item}")
 
             # Delete the key, we already have it.
             if key in room.keys:
-                #print('\t\t\t\t\tremoving key ', key, 'from', room.id)
+                if self.verbose:
+                    print('\t\t\t\t\tremoving key ', key, 'from', room.id)
                 room.remove(key)
 
     def get_loop(self, room_id):
@@ -314,7 +337,7 @@ class Network:
             print('\t', [(self.rooms.get_room(e).id, self.rooms.get_room(e).doors) for e in dead_ends])
 
         loop_flag = len(dead_ends) > 0
-        max_loop_number = 5
+        max_loop_number = 20
         loop_count = 0
         while loop_flag:
             if self.rooms.count[0] == 2:
@@ -434,7 +457,7 @@ class Network:
 
             if len(dead_ends) > 0 and self.verbose:
                 print('Current room ids: ', [r.id for r in self.rooms])
-                print("Attaching dead ends: ", len(dead_ends))
+                print("Attaching dead ends: ", len(dead_ends), '(loop', loop_count,')')
                 print('\t', [(self.rooms.get_room(e).id, self.rooms.get_room(e).doors[0]) for e in dead_ends])
 
     def _rename_node(self, old_id, new_id):
@@ -456,93 +479,111 @@ class Network:
         total_doors_out = 0
         total_doors_either = 0
 
+        dead_end_count = 0
+        doors_in_non_dead_ends = 0
+
         for room_id in self.net.nodes:
+            #if self.verbose:
+            #    print('\t\tbug hunting: room analysis', room_id)
             room = self.rooms.get_room(room_id)
-            self_count = room.full_count[:3]
+            self_count = self.count_unprotected(room_id)  #   room.full_count[:3]  #
 
             up_count = np.array([0, 0, 0])
             up_nodes = self.get_upstream_nodes(room_id)
             for up_id in up_nodes:
                 up_room = self.rooms.get_room(up_id)
-                up_count += up_room.full_count[:3]
+                up_count += self.count_unprotected(up_id)  #  up_room.full_count[:3]  #
 
             down_count = np.array([0, 0, 0])
             down_nodes = self.get_downstream_nodes(room_id)
             for down_id in down_nodes:
                 down_room = self.rooms.get_room(down_id)
-                down_count += down_room.full_count[:3]
+                down_count += self.count_unprotected(down_id)  #  down_room.full_count[:3]  #
 
-            # Look for the small number of cases in which a forced exit is still locked
-            locked_forced = [lf for lf in room.locked() if lf in forced_connections.keys()]  # locked forced traps
-            if 'forced' in room.locks.keys():
-                locked_protected = [lf for lf in room.locks['forced']]   # locked forced entrances
-            else:
-                locked_protected = []
-            for lf in locked_forced:
-                if self.verbose:
-                    print('\t\t\tFound locked forced connection:', lf, 'in', room_id)
-                [l_type, c_type] = [[0, 1][[True, False].index(lf < 2000)],
-                                    [0, 2][[True, False].index(lf < 2000)]]
-                fc = forced_connections[lf][0]
-                if self.verbose:
-                    print('\t\t\t\t-->', fc)
-                if fc in locked_protected:
-                    # Forced connection is in the same room.  Remove 1 entrance & 1 exit from here.
-                    if self.verbose:
-                        print('\t\t\t\tforced connection in same room!')
-                    self_count[l_type] -= 1
-                    self_count[c_type] -= 1
-                    locked_protected.remove(fc)
-                else:
-                    Rconn = self.rooms.get_room_from_element(fc)
-                    if self.verbose:
-                        print('\t\t\t\tforced connection in room:', Rconn.id)
-                    if Rconn.id in up_nodes:
-                        # Forced connection is upstream.  Remove 1 exit from here & 1 entrance from upstream
-                        self_count[l_type] -= 1
-                        up_count[c_type] -= 1
-                        if self.verbose:
-                            print('\t\t\t\t... in upstream')
-                    elif Rconn.id in down_nodes:
-                        # Forced connection is downstream.  Remove 1 exit from here & 1 entrance from downstream
-                        self_count[l_type] -= 1
-                        down_count[c_type] -= 1
-                        if self.verbose:
-                            print('\t\t\t\t... in downstream')
-            for lp in locked_protected:
-                if self.verbose:
-                    print('\t\t\tFound locked forced connection:', lp, 'in', room_id)
-                # already handled case where lf and lp are in the same room
-                [l_type, c_type] = [[0, 2][[True, False].index(lp < 2000)],
-                                    [0, 1][[True, False].index(lp < 2000)]]
-                fc = [lf for lf in forced_connections.keys() if lp in forced_connections[lf]][0]
-                if self.verbose:
-                    print('\t\t\t\t-->', fc)
-                Rconn = self.rooms.get_room_from_element(fc)
-                if self.verbose:
-                    print('\t\t\t\tForced connection is in room:', Rconn.id)
-                if Rconn.id in up_nodes:
-                    # Forced connection is upstream.  Remove 1 entrance from here & 1 exit from upstream
-                    self_count[l_type] -= 1
-                    up_count[c_type] -= 1
-                    if self.verbose:
-                        print('\t\t\t\t... in upstream')
-                elif Rconn.id in down_nodes:
-                    # Forced connection is downstream.  Remove 1 entrance from here & 1 exit from downstream
-                    self_count[l_type] -= 1
-                    down_count[c_type] -= 1
-                    if self.verbose:
-                        print('\t\t\t\t... in downstream')
+            #if self.verbose:
+            #    print('\t\tbug hunting 0:', self_count, up_count, down_count)
+
+            ### Using count_unprotected.  All forced exits should be protected, and therefore not counted.
+            # # Look for the small number of cases in which a forced exit is still locked
+            # locked_forced = [lf for lf in room.locked() if lf in forced_connections.keys()]  # locked forced traps
+            # if 'forced' in room.locks.keys():
+            #     locked_protected = [lf for lf in room.locks['forced']]   # locked forced entrances
+            # else:
+            #     locked_protected = []
+            # for lf in locked_forced:
+            #     if self.verbose:
+            #         print('\t\t\tFound locked forced connection:', lf, 'in', room_id)
+            #     [l_type, c_type] = [[0, 1][[True, False].index(room.element_type(lf) == 0)],
+            #                         [0, 2][[True, False].index(room.element_type(lf) == 0)]]
+            #     fc = forced_connections[lf][0]
+            #     if self.verbose:
+            #         print('\t\t\t\t-->', fc)
+            #     if fc in locked_protected:
+            #         # Forced connection is in the same room.  Remove 1 entrance & 1 exit from here.
+            #         if self.verbose:
+            #             print('\t\t\t\tforced connection in same room!')
+            #         self_count[l_type] -= 1
+            #         self_count[c_type] -= 1
+            #         locked_protected.remove(fc)
+            #     else:
+            #         Rconn = self.rooms.get_room_from_element(fc)
+            #         if self.verbose:
+            #             print('\t\t\t\tforced connection in room:', Rconn.id)
+            #         if Rconn.id in up_nodes:
+            #             # Forced connection is upstream.  Remove 1 exit from here & 1 entrance from upstream
+            #             self_count[l_type] -= 1
+            #             up_count[c_type] -= 1
+            #             if self.verbose:
+            #                 print('\t\t\t\t... in upstream')
+            #         elif Rconn.id in down_nodes:
+            #             # Forced connection is downstream.  Remove 1 exit from here & 1 entrance from downstream
+            #             self_count[l_type] -= 1
+            #             down_count[c_type] -= 1
+            #             if self.verbose:
+            #                 print('\t\t\t\t... in downstream')
+            # for lp in locked_protected:
+            #     if self.verbose:
+            #         print('\t\t\tFound locked forced connection:', lp, 'in', room_id)
+            #     # already handled case where lf and lp are in the same room
+            #     [l_type, c_type] = [[0, 2][[True, False].index(room.element_type(lp) == 0)],
+            #                         [0, 1][[True, False].index(room.element_type(lp) == 0)]]
+            #     fc = [lf for lf in forced_connections.keys() if lp in forced_connections[lf]][0]
+            #     if self.verbose:
+            #         print('\t\t\t\t-->', fc)
+            #     Rconn = self.rooms.get_room_from_element(fc)
+            #     if self.verbose:
+            #         print('\t\t\t\tForced connection is in room:', Rconn.id)
+            #     if Rconn.id in up_nodes:
+            #         # Forced connection is upstream.  Remove 1 entrance from here & 1 exit from upstream
+            #         self_count[l_type] -= 1
+            #         up_count[c_type] -= 1
+            #         if self.verbose:
+            #             print('\t\t\t\t... in upstream')
+            #     elif Rconn.id in down_nodes:
+            #         # Forced connection is downstream.  Remove 1 entrance from here & 1 exit from downstream
+            #         self_count[l_type] -= 1
+            #         down_count[c_type] -= 1
+            #         if self.verbose:
+            #             print('\t\t\t\t... in downstream')
 
             # Assess classifications
+            #if self.verbose:
+            #    print('\t\tbug hunting 1: ', up_count, self_count, down_count)
             door_in = (up_count[0] + self_count[0]) > 0
             door_out = (down_count[0] + self_count[0]) > 0
+            is_dead_end = (sum(up_count) == 0) and (sum(down_count) == 0) and (sum(self_count[1:3]) == 0) and (self_count[0] == 1)
+            if is_dead_end:
+                dead_end_count += 1
+            else:
+                doors_in_non_dead_ends += (up_count[0] + down_count[0] + self_count[0])
             # Handle special case (avoid double counting self exits)
             door_in_door_out = (door_in and down_count[0] > 0) or (door_out and up_count[0] > 0) or (self_count[0] > 1)
             pit_in = (up_count[2] + self_count[2]) > 0
             trap_out = (down_count[1] + self_count[1]) > 0
 
             # Count total doors in/out OF THIS NODE
+            #if self.verbose:
+            #    print('\t\tbug hunting 2: ', door_in, door_out, door_in_door_out, pit_in, trap_out)
             delta_in = 0
             if sum(up_count) == 0 and self_count[2] == 0:
                 # No guaranteed entrances.  One door must be an entrance.
@@ -554,14 +595,26 @@ class Network:
             # All remaining doors may be either
             delta_either = max([0, self_count[0] - delta_in - delta_out])
 
+            #if self.verbose:
+            #    print('\t\tbug hunting 3: ', delta_in, delta_out, delta_either)
+
             total_doors_in += delta_in
             total_doors_out += delta_out
             total_doors_either += delta_either
 
+            #if self.verbose:
+            #    print('\t\tbug hunting 4: ', total_doors_in, total_doors_out, total_doors_either)
             # For each node: [(door in, door out), (door in, trap out), (pit in, door out), (pit in, trap out)]
             classifications[room_id] = [door_in_door_out, door_in and trap_out, pit_in and door_out, pit_in and trap_out,
                                      [list(up_count), list(self_count), list(down_count)],
-                                     [delta_in, delta_out, delta_either]]
+                                     [delta_in, delta_out, delta_either],
+                                       is_dead_end ]
+
+            #if self.verbose:
+            #    print('\t\tbug hunting 5: ', classifications[room_id])
+
+        #if self.verbose:
+        #    print('\t\tbug hunting 6: room analysis complete.')
 
         # Assess logical parameters
         DiDo = [cl[0] for cl in classifications.values()].count(True) > 0
@@ -573,12 +626,18 @@ class Network:
         Rule_C = PiDo and not DiTo
         Rule_D = (total_doors_in + total_doors_either < total_doors_out) or \
                  (total_doors_out + total_doors_either < total_doors_in)
+        Rule_E = (dead_end_count > doors_in_non_dead_ends)
+
+        #if self.verbose:
+        #    print('\t\tbug hunting 7: ', DiDo, DiTo, PiDo, PiTo, Rule_A, Rule_B, Rule_C, Rule_D)
+
         return [
-            Rule_A or Rule_B or Rule_C or Rule_D,
-            [Rule_A, Rule_B, Rule_C, Rule_D],
+            Rule_A or Rule_B or Rule_C or Rule_D or Rule_E,
+            [Rule_A, Rule_B, Rule_C, Rule_D, Rule_E],
             [DiDo, DiTo, PiDo, PiTo],
             classifications,
-            [total_doors_in, total_doors_out, total_doors_either]
+            [total_doors_in, total_doors_out, total_doors_either],
+            [dead_end_count, doors_in_non_dead_ends]
         ]
 
     def connect_network(self):
@@ -590,20 +649,20 @@ class Network:
         if sum(net_state.rooms.count[:3]) == 0:
             return net_state
         else:
-            [invalidity, by_rules, classification, cl, td] = net_state.check_network_invalidity()
+            [invalidity, by_rules, classification, cl, td, dec] = net_state.check_network_invalidity()
             if self.verbose:
                 print('Network classification: ', classification)
             if invalidity:
                 if self.verbose:
                     print('\tInvalid! By rule: ',
-                          [['A','B','C','D'][i] for i in range(len(by_rules)) if by_rules[i]],
-                          'in/out/either = ', td)
+                          [['A','B','C','D','E'][i] for i in range(len(by_rules)) if by_rules[i]],
+                          'in/out/either = ', td, ', deadends/other doors = ', dec)
                     for k in cl.keys():
                         print('\t',k.id,': ', cl[k])
                 raise Exception('Invalid network state.')
             else:
                 if self.verbose:
-                    print('\tValid! in/out/either = ', td)
+                    print('\tValid! in/out/either = ', td, ', deadends/other doors = ', dec)
 
             # Get active room - now using ID instead of index
             R_active = self.rooms.get_room(self.active)
@@ -674,7 +733,7 @@ class Network:
                 # Collect possible entrances for d1
                 possible_entrances = []
                 if self.verbose:
-                    print('Possible entrances:')
+                    print('Possible entrances: (', len(net_state.net.nodes), ' rooms)')
                 for node_id in net_state.net.nodes:
                     node = self.rooms.get_room(node_id)
                     if d1_type == 0:
@@ -778,6 +837,16 @@ class Network:
             room = self.rooms.get_room(node)
             nc = room.count
             return nc[:3] == [1, 0, 0] and nc[4] == 0
+
+    def count_unprotected(self, room_id):
+        """Count including locked elements"""
+        r = self.rooms.get_room(room_id)
+        return np.array([
+            len([d for d in r.alldoors if d not in self.protected]),
+            len([d for d in r.alltraps if d not in self.protected]),
+            len([d for d in r.allpits if d not in self.protected]),
+        ]
+        )
 
 
 ## Coprogramming with Claude.ai to rewrite data classes
@@ -1115,14 +1184,17 @@ class Room:
     def add_locks(self, lock_dict):
         """Add locks with validation"""
         for key, locked_items in lock_dict.items():
-            if not isinstance(key, str):
-                raise LockError(f"Lock key must be string, got: {key}")
-            if key in self.elements['locks']:
+            #if not isinstance(key, str):
+            #    raise LockError(f"Lock key must be string, got: {key}")
+            if not isinstance(key, (list, tuple)):
+                key = (key,)
+            key_tuple = tuple(sorted(key))
+            if key_tuple in self.elements['locks']:
                 if self.verbose:
-                    print(f"Warning: Merging lock {key} in room {self.id}")
-                self.elements['locks'][key].extend(locked_items)
+                    print(f"Warning: Merging lock {key_tuple} in room {self.id}")
+                self.elements['locks'][key_tuple].extend(locked_items)
             else:
-                self.elements['locks'][key] = locked_items
+                self.elements['locks'][key_tuple] = locked_items
 
         # Notify parent collection of lock changes
         if self.rooms_ref is not None:
@@ -1191,14 +1263,14 @@ class Room:
             for key, items in lock_dict.items():
                 # Check direct containment
                 if element in items:
-                    return [key]
+                    return tuple(key)
                 # Check nested locks
                 for item in items:
                     if isinstance(item, dict):
                         nested_keys = find_in_locks(element, item)
                         if nested_keys:
-                            return [key] + nested_keys
-            return []
+                            return tuple(key) + nested_keys
+            return tuple()
 
         return find_in_locks(locked_element, self.elements['locks'])
 
@@ -1324,3 +1396,4 @@ class Room:
             len(self.locked('pits')),
             len(self.locked('keys'))
         ])
+
