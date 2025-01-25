@@ -122,7 +122,8 @@ class Network:
         if self.verbose:
             print('assessing key ', key, 'in rooms')   # : ', room_list)
         for room_id in room_list:
-            print('\t\t\t\t\t\tchecking room ', room_id)
+            if self.verbose:
+                print('\t\t\t\t\t\tchecking room ', room_id)
             room = self.rooms.get_room(room_id)
             #if key in room.locks.keys():
             room_keys = [k for k in room.locks.keys()]
