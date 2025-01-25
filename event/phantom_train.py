@@ -653,6 +653,76 @@ class PhantomTrain(Event):
             field.Branch(pt_check.start_address),
         ])
 
+        # Make the switches in the locomotive interior set event_bit.SET_PHANTOM_TRAIN_SWITCHES if correctly positioned.
+        # (This then also covers Doma Dream train without further hassle.)
+        # Include animation routine: Call subroutine $CB6AC3
+        pt_switches_bit = [
+            field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], "CLEAR_SWITCHES"),
+            field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+            field.Return(),
+            "CLEAR_SWITCHES",
+            field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+            field.Return()
+        ]
+        space = Write(Bank.CB, pt_switches_bit, "Set or Clear PT switches bit")
+        self.switch_check_addr = space.start_address
+
+        # Switches in Phantom Train:  map 0x092
+        # tiles: (7,7) 0xbb94a, (8,7) 0xbb972, (9,7) 0xbb99a:
+        # 		Switch 1: toggle event bit 0x184.  Multipurpose bits!
+        src_switch_1 = [
+            field.Call(0xbb94a),                 # Call switch #1
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_1, "PT Switch 1 edit")
+        event_switch_1 = self.maps.get_event(0x092, 7, 7)
+        event_switch_1.event_address = space.start_address - EVENT_CODE_START
+
+        # 		Switch 2: toggle event bit 0x185.
+        src_switch_2 = [
+            field.Call(0xbb972),                 # Call switch #2
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_2, "PT Switch 2 edit")
+        event_switch_2 = self.maps.get_event(0x092, 8, 7)
+        event_switch_2.event_address = space.start_address - EVENT_CODE_START
+
+        # 		Switch 3: toggle event bit 0x186.
+        src_switch_3 = [
+            field.Call(0xbb99a),                 # Call switch #3
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_3, "PT Switch 3 edit")
+        event_switch_3 = self.maps.get_event(0x092, 9, 7)
+        event_switch_3.event_address = space.start_address - EVENT_CODE_START
+
+        # Edit entrance event to show switches as solved if they were solved previously
+        # Entrance event: map 0x092, @ 0xba593
+        #   CB/A593: B2    Call subroutine $CBB90E
+        #   CB/A597: B2    Call subroutine $CBB922
+        #   CB/A59B: B2    Call subroutine $CBB936
+        #   CB/A59F: C0    If ($1E80($0A4) [$1E94, bit 4] is set), branch to $CB6A55
+        #   CB/A5A5: FE    Return
+        src = [
+            field.BranchIfEventBitClear(event_bit.SET_PHANTOM_TRAIN_SWITCHES, "NOT_SET"),
+            # Solved previously: make switches show the solution
+            field.ClearEventBit(0x184),  # 1st switch: off
+            field.SetEventBit(0x185),    # 2nd switch: on
+            field.ClearEventBit(0x186),  # 3rd switch: off
+            "NOT_SET",
+            field.Call(0xbb90e),     # Call first switch graphics check
+            field.Return(),          # Return to remainder of entrance event
+        ]
+        space = Write(Bank.CB, src, "PT Locomotive entrance event update if solved")
+        self.entrance_check_addr = space.start_address
+
+        space = Reserve(0xba593, 0xba596, "PT Locomotive entrance event set switches if solved")
+        space.write([field.Call(self.entrance_check_addr)])
+
+
     @staticmethod
     def initiation_script():
         # self-contained code to be called in door rando when trying to use Phantom Forest south exit

@@ -275,30 +275,32 @@ from instruction import field
 import instruction.field.entity as field_entity
 import data.event_bit as event_bit
 
-def set_locomotive_switches(bytes=True):
-    # Set single event bit 0x03E to check when initiating smokestack event
-    # CB/B9DC: C2    If ($1E80($185) [$1EB0, bit 5] is set) or ($1E80($186) [$1EB0, bit 6] is clear) or ($1E80($184) [$1EB0, bit 4] is clear), branch to $CBB9D0
-    # CB/B9D0: <smokestack doesn't work>
-    from memory.space import Write, Bank
-    pt_switches_bit = [
-        field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], "CLEAR_SWITCHES"),
-        field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
-        field.Return(),
-        "CLEAR_SWITCHES",
-        field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
-        field.Return()
-    ]
-    space = Write(Bank.CB, pt_switches_bit, "Set or Clear PT switches bit")
-
-    set_switches = [field.Call(space.start_address)]
-
-    if bytes:
-        set_switches_bytes = []
-        for f in set_switches:
-            set_switches_bytes += [f.opcode] + f.args
-        return set_switches_bytes
-    else:
-        return set_switches
+### locomotive switches now handled in phantom_train.py:
+### event_bit.SET_PHANTOM_TRAIN_SWITCHES is set or cleared when the switch event is called.
+# def set_locomotive_switches(bytes=True):
+#     # Set single event bit 0x03E to check when initiating smokestack event
+#     # CB/B9DC: C2    If ($1E80($185) [$1EB0, bit 5] is set) or ($1E80($186) [$1EB0, bit 6] is clear) or ($1E80($184) [$1EB0, bit 4] is clear), branch to $CBB9D0
+#     # CB/B9D0: <smokestack doesn't work>
+#     from memory.space import Write, Bank
+#     pt_switches_bit = [
+#         field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], "CLEAR_SWITCHES"),
+#         field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+#         field.Return(),
+#         "CLEAR_SWITCHES",
+#         field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+#         field.Return()
+#     ]
+#     space = Write(Bank.CB, pt_switches_bit, "Set or Clear PT switches bit")
+#
+#     set_switches = [field.Call(space.start_address)]
+#
+#     if bytes:
+#         set_switches_bytes = []
+#         for f in set_switches:
+#             set_switches_bytes += [f.opcode] + f.args
+#         return set_switches_bytes
+#     else:
+#         return set_switches
 
 
 def add_mtek_armor(bytes=False):
@@ -412,7 +414,8 @@ exit_event_patch = {
     2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end],
 
     # Phantom Train set correct "switches" bit if leaving locomotive
-    1545: lambda src, src_end: [src[:-1] + set_locomotive_switches(bytes=True) + src[-1:], src_end],
+    # Now handled at switches in locomotive: no need to check on entrance/exit
+    #1545: lambda src, src_end: [src[:-1] + set_locomotive_switches(bytes=True) + src[-1:], src_end],
 
     # Doma Cave one-way doors: remove MTek armor
     859: lambda src, src_end: [src, src_end[:5] + remove_mtek_armor(bytes=True) + src_end[5:]],
@@ -434,7 +437,9 @@ exit_door_patch = {
     1077: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
 
     # Phantom Train set correct "switches" bit if leaving locomotive
-    1545: set_locomotive_switches(bytes=False),
+    # Now handled in the switch events.  No need to set on entranec/exits
+    #1545: set_locomotive_switches(bytes=False),
+    #5545: set_locomotive_switches(bytes=False),  Dream train?? is actually 2072!
 
     # Doma Cave doors: remove MTek armor
     858: remove_mtek_armor(),

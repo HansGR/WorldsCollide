@@ -120,7 +120,7 @@ class Network:
         # unlock any doors or traps locked by key
         room_list = [r for r in self.rooms.rooms]
         if self.verbose:
-            print('assessing key ', key, 'in rooms: ', room_list)
+            print('assessing key ', key, 'in rooms')   # : ', room_list)
         for room_id in room_list:
             print('\t\t\t\t\t\tchecking room ', room_id)
             room = self.rooms.get_room(room_id)
@@ -481,6 +481,9 @@ class Network:
 
         dead_end_count = 0
         doors_in_non_dead_ends = 0
+        total_count = self.rooms.count
+        if self.verbose:
+            print('\t\tbug hunting: total count', total_count)
 
         for room_id in self.net.nodes:
             #if self.verbose:
@@ -500,8 +503,9 @@ class Network:
                 down_room = self.rooms.get_room(down_id)
                 down_count += self.count_unprotected(down_id)  #  down_room.full_count[:3]  #
 
-            #if self.verbose:
-            #    print('\t\tbug hunting 0:', self_count, up_count, down_count)
+            if self.verbose:
+                print('\t\tbug hunting 0. self:', self_count, '.', up_count,'in', len(up_nodes),': ', up_nodes, '; ',
+                      down_count, 'in', len(down_nodes), ': ', down_nodes)
 
             ### Using count_unprotected.  All forced exits should be protected, and therefore not counted.
             # # Look for the small number of cases in which a forced exit is still locked
@@ -626,6 +630,8 @@ class Network:
         Rule_C = PiDo and not DiTo
         Rule_D = (total_doors_in + total_doors_either < total_doors_out) or \
                  (total_doors_out + total_doors_either < total_doors_in)
+        # Note that Rule_E should not be necessary: there should be no way to form new dead ends that aren't the active
+        # room, which would be immediately connected.
         Rule_E = (dead_end_count > doors_in_non_dead_ends)
 
         #if self.verbose:
@@ -699,9 +705,12 @@ class Network:
             random.shuffle(possible_exits)  # randomize order
 
             forced_exits = [f for f in possible_exits if f in forced_connections.keys()]
-            for f in forced_exits:
-                possible_exits.remove(f)
-            possible_exits = possible_exits + forced_exits
+            #for f in forced_exits:
+            #    possible_exits.remove(f)
+            #possible_exits = possible_exits + forced_exits
+            # If there are any forced exits, only connect these.  Fail fast!
+            if len(forced_exits) > 0:
+                possible_exits = [forced_exits[0]]
 
             # Start trying exits
             while len(possible_exits) > 0:
