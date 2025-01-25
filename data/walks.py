@@ -639,7 +639,7 @@ class Network:
         #    print('\t\tbug hunting 7: ', DiDo, DiTo, PiDo, PiTo, Rule_A, Rule_B, Rule_C, Rule_D)
 
         return [
-            Rule_A or Rule_B or Rule_C or Rule_D or Rule_E,
+            Rule_A or Rule_B or Rule_C or Rule_D,
             [Rule_A, Rule_B, Rule_C, Rule_D, Rule_E],
             [DiDo, DiTo, PiDo, PiTo],
             classifications,
