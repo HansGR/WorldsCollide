@@ -120,45 +120,45 @@ class Network:
         # unlock any doors or traps locked by key
         room_list = [r for r in self.rooms.rooms]
         if self.verbose:
-            print('assessing key ', key, 'in rooms')   # : ', room_list)
+            print('\t\tassessing key ', key, 'in rooms')   # : ', room_list)
         for room_id in room_list:
-            if self.verbose:
-                print('\t\t\t\t\t\tchecking room ', room_id)
+            #if self.verbose:
+            #    print('\t\t\t\t\t\tchecking room ', room_id)
             room = self.rooms.get_room(room_id)
             #if key in room.locks.keys():
             room_keys = [k for k in room.locks.keys()]
             for required_keys in room_keys:
                 if set(required_keys).issubset(self.keychain):
                     if self.verbose:
-                        print('\t\t\t\t\t\tApplying key:', required_keys, 'in room', room.id)
+                        print('\t\t\tApplying key:', required_keys, 'in room', room.id)
                     locked = room.locks.pop(required_keys)  # this also removes the item from room.locks
                     for item in locked:
                         if isinstance(item, str):
                             # This is a key.  Immediately apply it.
                             if self.verbose:
-                                print('\t\t\t\t\t\t\tApplying a new key:', item)
+                                print('\t\t\tApplying a new key:', item)
                             self.apply_key(item)
                         elif isinstance(item, dict):
                             # This is another locked item.  Should not happen with tuple keys
                             if self.verbose:
-                                print('\t\t\t\t\t\t\tApplying a new lock:', item)
-                            print('\t\t\t\t\t\t\tWARNING: found a nested lock in ', room_id,' : ', item)
+                                print('\t\t\tApplying a new lock:', item)
+                            print('\t\t\tWARNING: found a nested lock in ', room_id,' : ', item)
                             room.add_locks(item)
                             unlockable = [k for k in item.keys() if set(k).issubset(self.keychain)]
                             for k in unlockable:
                                 # unlock the nested lock, if we already have the key.
                                 if self.verbose:
-                                    print('\t\t\t\t\t\t\talready have key ', k,', applying it')
+                                    print('\t\t\talready have key ', k,', applying it')
                                 self.apply_key(k)
                         elif room.element_type(item) == 0:  # item < 2000
                             # This is a door.
                             if self.verbose:
-                                print('\t\t\t\t\t\t\tadding a door...', item)
+                                print('\t\t\tadding a door...', item)
                             room.add_doors([item])
                         elif room.element_type(item) == 1:
                             # This is a trap.
                             if self.verbose:
-                                print('\t\t\t\t\t\t\tadding a trap...', item)
+                                print('\t\t\tadding a trap...', item)
                             room.add_traps([item])
                         else:
                             # Error
@@ -167,7 +167,7 @@ class Network:
             # Delete the key, we already have it.
             if key in room.keys:
                 if self.verbose:
-                    print('\t\t\t\t\tremoving key ', key, 'from', room.id)
+                    print('\t\t\tremoving key ', key, 'from', room.id)
                 room.remove(key)
 
     def get_loop(self, room_id):
@@ -348,14 +348,18 @@ class Network:
                 attachable_doors = [R1.doors[0]]
             else:
                 attachable_doors = []
+                attachable_nodes = []
                 for n in self.net.nodes:
                     if self.is_attachable(n):
+                        attachable_nodes.append(n)
                         this_room = self.rooms.get_room(n)
                         attachable_doors.extend([d for d in this_room.doors + this_room.locked('doors')])
-                if self.verbose:
-                    print("found attachable doors: ", attachable_doors)
                 random.shuffle(dead_ends)
                 random.shuffle(attachable_doors)
+
+                if self.verbose:
+                    print("found attachable nodes: ", len(attachable_nodes), attachable_nodes)
+                    print("...with attachable doors: ", len(attachable_doors), attachable_doors)
 
             for Rd_id in dead_ends:
                 Rd = self.rooms.get_room(Rd_id)
@@ -365,96 +369,122 @@ class Network:
                 if len(attachable_doors) > 0:
                     # select a door
                     dd = Rd.doors[0]
-                    # select an attachable node
-                    da = attachable_doors.pop(0)
-                    Ra = self.rooms.get_room_from_element(da)
 
                     #if self.verbose:
-                    #    print('\tConnecting: ' + str(dd) + '(' + str(Rd.id) + ') to ' + str(da) + '(' + str(Ra.id) + ')')
+                    #    print('\tnow on', dd, '(', Rd_id, '), ', len(attachable_doors), ' options remaining...')
 
-                    # Handle various bad cases if the dead end has a key:
-                    if len(Rd.keys) > 0 or len(Ra.keys) > 0:
-                        # 1. Verify the dead end doesn't contain the key to unlock this door
-                        flags = [False]
-                        if da in Ra.locked('doors'):
-                            ka = Ra.get_key(da)
-                            flags[0] = (ka in Rd.keys)
+                    is_valid = False
+                    da = None  # Safe initial values
+                    Ra = None
+                    while (not is_valid) and (len(attachable_doors) > 0):
+                        # select an attachable node
+                        da = attachable_doors.pop(0)
+                        Ra = self.rooms.get_room_from_element(da)
+                        #if self.verbose:
+                        #    print('\t\ttesting ', da, '(', Ra.id, '), ', len(attachable_doors), ' remaining...')
 
-                        # 2. Verify there is an exit from this room that isn't locked by keys in these 2 rooms
-                        flags.append(True)
-                        otherdoors = [d for d in Ra.alldoors if d is not da]
-                        available_keys = [k for k in Rd.keys] + [k for k in Ra.keys]
-                        for d in otherdoors:
-                            if d in Ra.locked('doors'):
-                                ka = Ra.get_key(d)
-                                is_internally_locked = [k in available_keys for k in ka]
-                                if is_internally_locked.count(True) == 0:
-                                    # It's not locked by a key in the room
+                        # Check for bad cases where the dead end has a key:
+                        if len(Rd.keys) > 0 or len(Ra.keys) > 0:
+                            # 1. Verify the dead end doesn't contain the key to unlock this door
+                            flags = [False]
+                            if da in Ra.locked('doors'):
+                                ka = Ra.get_key(da)
+                                flags[0] = (ka in Rd.keys)
+
+                            # 2. Verify there is an exit from this room that isn't locked by keys in these 2 rooms
+                            flags.append(True)
+                            otherdoors = [d for d in Ra.alldoors if d is not da]
+                            available_keys = [k for k in Rd.keys] + [k for k in Ra.keys]
+                            for d in otherdoors:
+                                if d in Ra.locked('doors'):
+                                    ka = Ra.get_key(d)
+                                    is_internally_locked = [k in available_keys for k in ka]
+                                    if is_internally_locked.count(True) == 0:
+                                        # It's not locked by a key in the room
+                                        flags[1] = False
+                                else:
+                                    # It's not locked
                                     flags[1] = False
-                            else:
-                                # It's not locked
-                                flags[1] = False
 
-                        if flags.count(True) > 0:
-                            # ERROR don't connect it!
-                            if self.verbose:
-                                print('\t\tCannot connect ' + str(dd) + ' to ' + str(da) + ': ')
-                                if flags[0]:
-                                    print('\t\t' + str(da) + ' is locked by key ' + str(ka) + ' which is in ' + str(Rd.id) + '!')
-                                elif flags[1]:
-                                    print('\t\tall other exits from ' + str(Ra.id) + ' are locked by a key in ' + str(Rd.id) + '!')
-                            attachable_doors.append(da)  # put the door back
-                            da = attachable_doors.pop(0) # get another
-                            Ra = self.rooms.get_room_from_element(da) # check again
+                            # Look at the results & fail if necessary.
+                            if flags.count(True) > 0:
+                                # ERROR don't connect it!
+                                if self.verbose:
+                                    print('\t\tCannot connect ' + str(dd) + ' to ' + str(da) + ': ')
+                                    if flags[0]:
+                                        print('\t\t' + str(da) + ' is locked by key ' + str(ka) + ' which is in ' + str(Rd.id) + '!')
+                                    elif flags[1]:
+                                        print('\t\tall other exits from ' + str(Ra.id) + ' are locked by a key in ' + str(Rd.id) + '!')
+                                da = None  # Safety in case we run out of exits
+                                Ra = None
 
-                    # Attach the doors
-                    if self.verbose:
-                        print('\tConnecting: ' + str(dd) + '(' + str(Rd.id) + ') to ' + str(da) + '(' + str(Ra.id) + ')')
-                    self.connect(dd, da, 'static')
+                        if da is not None:
+                            # This exit is acceptable, lets move on
+                            is_valid = True
+                            #if self.verbose:
+                            #    print('\t\t', da, '(', Ra.id, ') accepted. ')  # , len(attachable_doors), ' remaining...'
 
-                    # If there were any keys in the dead end, add them to the connected room
-                    if da in Ra.locked('doors'):
-                        # If we connected to a locked door, add the key to the locked items
-                        ka = Ra.get_key(da)
-                        for kd in Rd.keys:
-                            if self.verbose:
-                                print('\t\tMoving key' + str(kd) + ' to room ' + str(Ra.id) + ' behind lock ' + str(ka))
-                            Ra.locks[ka].append(kd)
-                    elif len(Rd.keys) > 0:
+                    if da is not None:
+                        # Attach the doors
                         if self.verbose:
-                            print('\t\tMoving keys to room ' + str(Ra.id) + ': ', Rd.keys)
-                        Ra.add_keys([k for k in Rd.keys])
+                            print('\tConnecting: ' + str(dd) + '(' + str(Rd.id) + ') to ' + str(da) + '(' + str(Ra.id) + ')')
+                        self.connect(dd, da, 'static')
 
-                    # Add the dead room name to the attached room
-                    old_id = Ra.id
-                    new_id = f"{Ra.id}_{Rd.id}"
-                    self.rooms.update_room_id(old_id, new_id)
-                    self._rename_node(old_id, new_id)
+                        # If there were any keys in the dead end, add them to the connected room
+                        if da in Ra.locked('doors'):
+                            # If we connected to a locked door, add the key to the locked items
+                            ka = Ra.get_key(da)
+                            for kd in Rd.keys:
+                                if self.verbose:
+                                    print('\t\tMoving key' + str(kd) + ' to room ' + str(Ra.id) + ' behind lock ' + str(ka))
+                                Ra.locks[ka].append(kd)
+                        elif len(Rd.keys) > 0:
+                            if self.verbose:
+                                print('\t\tMoving keys to room ' + str(Ra.id) + ': ', Rd.keys)
+                            Ra.add_keys([k for k in Rd.keys])
 
-                    # Remove the dead room from the network and list of rooms
-                    self.net.remove_node(Rd_id)
-                    self.rooms.remove(Rd)
+                        # Add the dead room name to the attached room
+                        old_id = Ra.id
+                        new_id = f"{Ra.id}_{Rd.id}"
+                        self.rooms.update_room_id(old_id, new_id)
+                        self._rename_node(old_id, new_id)
 
-                    # Check to see if the attached room is still attachable.
-                    if not self.is_attachable(Ra.id):
-                        # If not, remove any remaining doors.
-                        more_doors = [d for d in Ra.alldoors]
+                        # Remove the dead room from the network and list of rooms
+                        self.net.remove_node(Rd_id)
+                        self.rooms.remove(Rd)
+
+                        # Check to see if the attached room is still attachable.
+                        if not self.is_attachable(Ra.id):
+                            # If not, remove any remaining doors.
+                            more_doors = [d for d in Ra.alldoors]
+                            if self.verbose:
+                                print('\t' + str(Ra.id) + ' is no longer attachable. Removing doors:', more_doors)
+                            for d in more_doors:
+                                if d in attachable_doors:
+                                    attachable_doors.remove(d)
+
+                    else:
                         if self.verbose:
-                            print('\t' + str(Ra.id) + ' is no longer attachable. Removing doors:', more_doors)
-                        for d in more_doors:
-                            attachable_doors.remove(d)
+                            print('\tRan out of doors to connect',dd,'to.')
 
                 else:
                     # If no attachable doors, just end.  It'll probably get straightened out in the walk.
-                    return
+                    #return
+                    if self.verbose:
+                        print('Ran out of attachable rooms.  Moving on...')
 
             # having attached all the dead ends, see if we created any & attach them if we did.
             dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
+            if self.verbose:
+                print('End of loop', loop_count, '.  Remaining dead ends:', dead_ends)
+
             if len(dead_ends) > 0:
                 loop_count += 1
                 loop_flag = (loop_count <= max_loop_number)
             else:
                 loop_flag = False
+                if self.verbose:
+                    print('done attaching dead ends.\n')
 
             if len(dead_ends) > 0 and self.verbose:
                 print('Current room ids: ', [r.id for r in self.rooms])
@@ -482,31 +512,33 @@ class Network:
 
         dead_end_count = 0
         doors_in_non_dead_ends = 0
-        total_count = self.rooms.count
-        if self.verbose:
-            print('\t\tbug hunting: total count', total_count)
+        total_count = np.array([c for c in self.rooms.count])
+        #if self.verbose:
+        #    print('\t\tbug hunting: total count', total_count)
+        total_self_count = np.array([0, 0, 0])
 
         for room_id in self.net.nodes:
             #if self.verbose:
             #    print('\t\tbug hunting: room analysis', room_id)
             room = self.rooms.get_room(room_id)
             self_count = self.count_unprotected(room_id)  #   room.full_count[:3]  #
+            total_self_count += np.array(room.count[:3])
 
             up_count = np.array([0, 0, 0])
             up_nodes = self.get_upstream_nodes(room_id)
-            for up_id in up_nodes:
+            for up_id in set(up_nodes):   # for up_id in up_nodes:  don't doublecount?
                 up_room = self.rooms.get_room(up_id)
                 up_count += self.count_unprotected(up_id)  #  up_room.full_count[:3]  #
 
             down_count = np.array([0, 0, 0])
             down_nodes = self.get_downstream_nodes(room_id)
-            for down_id in down_nodes:
+            for down_id in set(down_nodes):   # for down_id in down_nodes:  don't doublecount?
                 down_room = self.rooms.get_room(down_id)
                 down_count += self.count_unprotected(down_id)  #  down_room.full_count[:3]  #
 
-            if self.verbose:
-                print('\t\tbug hunting 0. self:', self_count, '.', up_count,'in', len(up_nodes),': ', up_nodes, '; ',
-                      down_count, 'in', len(down_nodes), ': ', down_nodes)
+            #if self.verbose:
+            #    print('\t\tbug hunting 0. self:', self_count, '.', up_count,'in', len(up_nodes),': ', up_nodes, '; ',
+            #          down_count, 'in', len(down_nodes), ': ', down_nodes)
 
             ### Using count_unprotected.  All forced exits should be protected, and therefore not counted.
             # # Look for the small number of cases in which a forced exit is still locked
@@ -580,7 +612,9 @@ class Network:
             if is_dead_end:
                 dead_end_count += 1
             else:
-                doors_in_non_dead_ends += (up_count[0] + down_count[0] + self_count[0])
+                doors_in_non_dead_ends += self_count[0]  # (up_count[0] + down_count[0] + self_count[0])
+            exit_is_locked_internally = (len([d for d in room.locked() if room.element_type(d) == 0 and set(room.get_key(d)).issubset(room.keys)]) > 0)
+
             # Handle special case (avoid double counting self exits)
             door_in_door_out = (door_in and down_count[0] > 0) or (door_out and up_count[0] > 0) or (self_count[0] > 1)
             pit_in = (up_count[2] + self_count[2]) > 0
@@ -613,7 +647,7 @@ class Network:
             classifications[room_id] = [door_in_door_out, door_in and trap_out, pit_in and door_out, pit_in and trap_out,
                                      [list(up_count), list(self_count), list(down_count)],
                                      [delta_in, delta_out, delta_either],
-                                       is_dead_end ]
+                                       is_dead_end and exit_is_locked_internally ]
 
             #if self.verbose:
             #    print('\t\tbug hunting 5: ', classifications[room_id])
@@ -632,15 +666,19 @@ class Network:
         Rule_D = (total_doors_in + total_doors_either < total_doors_out) or \
                  (total_doors_out + total_doors_either < total_doors_in)
         # Note that Rule_E should not be necessary: there should be no way to form new dead ends that aren't the active
-        # room, which would be immediately connected.
+        # room, which would be immediately connected.  Also, Rule E is false if the last connection is a door.
         Rule_E = (dead_end_count > doors_in_non_dead_ends)
+        # If there are any dead ends with internally locked exits, fail immediately.
+        Rule_F = [cl[6] for cl in classifications.values()].count(True) > 0
 
         #if self.verbose:
         #    print('\t\tbug hunting 7: ', DiDo, DiTo, PiDo, PiTo, Rule_A, Rule_B, Rule_C, Rule_D)
+        if self.verbose and (sum(total_self_count == total_count[:3]) < 3):
+            print('WARNING: total count', total_count, 'not equal to total self count', total_self_count)
 
         return [
-            Rule_A or Rule_B or Rule_C or Rule_D,
-            [Rule_A, Rule_B, Rule_C, Rule_D, Rule_E],
+            Rule_A or Rule_B or Rule_C or Rule_D or Rule_F,
+            [Rule_A, Rule_B, Rule_C, Rule_D, Rule_E, Rule_F],
             [DiDo, DiTo, PiDo, PiTo],
             classifications,
             [total_doors_in, total_doors_out, total_doors_either],
@@ -662,7 +700,7 @@ class Network:
             if invalidity:
                 if self.verbose:
                     print('\tInvalid! By rule: ',
-                          [['A','B','C','D','E'][i] for i in range(len(by_rules)) if by_rules[i]],
+                          [['A','B','C','D','E','F'][i] for i in range(len(by_rules)) if by_rules[i]],
                           'in/out/either = ', td, ', deadends/other doors = ', dec)
                     for k in cl.keys():
                         print('\t',k.id,': ', cl[k])
@@ -851,12 +889,17 @@ class Network:
     def count_unprotected(self, room_id):
         """Count including locked elements"""
         r = self.rooms.get_room(room_id)
-        return np.array([
+        #if self.verbose:
+        #    print('\t\tcount unprotected rooms in', room_id)
+        unprotected = np.array([
             len([d for d in r.alldoors if d not in self.protected]),
             len([d for d in r.alltraps if d not in self.protected]),
             len([d for d in r.allpits if d not in self.protected]),
         ]
         )
+        #if self.verbose:
+        #    print('\t\t\t', unprotected)
+        return unprotected
 
 
 ## Coprogramming with Claude.ai to rewrite data classes

@@ -647,10 +647,14 @@ room_data = {
     '305r' : [ [4629], [ ], [ ], 1], #Zozo Armor
     306 : [ [630], [ ], [ ], ['clock2'], {}, 0], #Zozo Weapon WoB
     '306r' : [ [4630], [ ], [ ], ['clock2'], {}, 1], #Zozo Weapon WoR
-    307 : [ [631], [], [3062], [ ], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2061]}, 0], #Zozo Clock Puzzle Room West WoB
-    308 : [ [632], [2062], [], [ ], {'forced':[3061]}, 0], #Zozo Clock Puzzle Room East WoB
-    '307r': [[4631], [], [3064], [], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2063]}, 1],  # Zozo Clock Puzzle Room West WoR
-    '308r': [[4632], [2064], [], [], {'forced': [3063]}, 1],  # Zozo Clock Puzzle Room East WoR
+    '307_clock' : [ [631], [], [3062], [ ], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2061]}, 0], #Zozo Clock Puzzle Room West WoB INCLUDING clock logic.
+    '308_clock' : [ [632], [2062], [], [ ], {'forced':[3061]}, 0], #Zozo Clock Puzzle Room East WoB INCLUDING clock logic
+    307 : [ [631], [], [3062], [ ], {}, 0], #Zozo Clock Puzzle Room West WoB, assuming one-way passage  (delete 2061)
+    308 : [ [632], [2062], [], [ ], {}, 0], #Zozo Clock Puzzle Room East WoB, assuming one-way passage (delete 3061)
+    '307r_clock': [[4631], [], [3064], [], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2063]}, 1],  # Zozo Clock Puzzle Room West WoR INCLUDING clock logic
+    '308r_clock': [[4632], [2064], [], [], {'forced': [3063]}, 1],  # Zozo Clock Puzzle Room East WoR INCLUDING clock logic
+    '307r': [[4631], [], [3064], [], {}, 1],  # Zozo Clock Puzzle Room West WoR, assuming one-way passage (delete 2063)
+    '308r': [[4632], [2064], [], [], {}, 1],  # Zozo Clock Puzzle Room East WoR, assuming one-way passage (delete 3063)
     #'307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
     #'307r' : [ [4631, 4632],  [ ], [ ], 1],  #Zozo Clock Puzzle Room (complete)
     309 : [ [633], [ ], [ ], 0], #Zozo Cafe Chest Room
