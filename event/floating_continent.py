@@ -500,12 +500,13 @@ class FloatingContinent(Event):
                 field.RecruitAndSelectParty(character),
                 field.DeleteEntity(character),
                 field.HideEntity(character),
+                field.RefreshEntities(),    # Maybe this prevents the 'recruit an npc' later?
                 field.FadeInScreen(),
                 field.FinishCheck(),   # Must be done here: might return to the world map!
                 field.Call(0xa5806),   # complete jumping animation
                 #field.Call(0xa48d6),  Replicate up to map load
                 #Read(0xa48d6, 0xa48dc), # clear event bit, fade screen, wait for fade & animation.
-                field.ClearEventBit(0x2bc),
+                field.ClearEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
                 field.FadeOutScreen(speed=0x08),
                 field.WaitForFade(),
                 field.WaitForEntityAct(field_entity.PARTY0),
@@ -541,8 +542,10 @@ class FloatingContinent(Event):
         if self.MAP_SHUFFLE:
             escape_src = [
                 field.AddEsper(esper),
-                field.Dialog(self.espers.get_receive_esper_dialog(esper)),
                 field.FinishCheck(),
+                field.Dialog(self.espers.get_receive_esper_dialog(esper)),
+                field.FadeOutScreen(),
+                field.WaitForFade(),
             ] + GoToSwitchyard(self.exit_id, map='field')
         else:
             escape_src += [

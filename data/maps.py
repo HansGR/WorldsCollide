@@ -661,9 +661,11 @@ class Maps():
                     if self.doors.verbose:
                         print('attempting to update event exit info: ', e)
                     # Update the event addresses
-                    mapid = event_exit_info[e][5][0]
-                    ex = event_exit_info[e][5][1]
-                    ey = event_exit_info[e][5][2]
+                    #mapid = event_exit_info[e][5][0]
+                    #ex = event_exit_info[e][5][1]
+                    #ey = event_exit_info[e][5][2]
+                    mapid = SWITCHYARD_MAP
+                    [ex, ey] = switchyard_xy(e)
                     ev = self.get_event(mapid, ex, ey)
                     event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
                     if self.doors.verbose:
@@ -675,6 +677,11 @@ class Maps():
 
             # Connect two-way doors
             self.connect_exits()
+
+            #if self.doors.verbose:
+            #    print('Switchyard indexes:')
+            #    for s, id in enumerate(id_to_switchyard_xy):
+            #        print(s, id, id_to_switchyard_xy[id])
 
         # Move Event Trigger pointer & data location in ROM
         self.move_event_trigger_data()
