@@ -73,6 +73,10 @@ class AnimateAttack(_Instruction):
     def __init__(self):
         super().__init__(0x0a)
 
+class AnimateAttackRight(_Instruction):
+    def __init__(self):
+        super().__init__(0x4a)
+
 class AnimateAttacked(_Instruction):
     def __init__(self):
         super().__init__(0x0b)
@@ -89,6 +93,10 @@ class AnimateFrontRightHandUp(_Instruction):
     def __init__(self):
         super().__init__(0x19)
 
+class AnimateFrontRightHandWaving(_Instruction):
+    def __init__(self):
+        super().__init__(0x1a)
+
 class AnimateSurprised(_Instruction):
     def __init__(self):
         super().__init__(0x1f)
@@ -96,6 +104,22 @@ class AnimateSurprised(_Instruction):
 class AnimateStandingHeadDown(_Instruction):
     def __init__(self):
         super().__init__(0x20)
+
+class AnimateFaceLeftHeadDown(_Instruction):
+    def __init__(self):
+        super().__init__(0x22)
+
+class AnimateFaceRightHeadDown(_Instruction):
+    def __init__(self):
+        super().__init__(0x62)
+
+class AnimateTiltHeadLeft(_Instruction):
+    def __init__(self):
+        super().__init__(0x23)
+
+class AnimateTiltHeadRight(_Instruction):
+    def __init__(self):
+        super().__init__(0x63)
 
 class AnimateKnockedOut(_Instruction):
     def __init__(self):

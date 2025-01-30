@@ -20,6 +20,9 @@ class NarsheWOB(Event):
         self.security_checkpoint_mod()
         self.shop_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
     def end_terra_scenario(self):
         # delete the end of terra's scenario event in arvis' house
         self.maps.delete_event(0x01e, 66, 35)
@@ -85,3 +88,11 @@ class NarsheWOB(Event):
         space.write(
             field.Branch("INVOKE_SHOP"),
         )
+
+    def ruination_mod(self):
+        # Change destination of school door to esper gate
+        school_door_id = 392
+        school_door = self.maps.get_exit(school_door_id)  # (0x068, 108, 53)
+        school_door.dest_map = 0x0da
+        school_door.dest_x = 55
+        school_door.dest_y = 30

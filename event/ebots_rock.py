@@ -35,9 +35,9 @@ class EbotsRock(Event):
             if exit_id in self.maps.door_map.keys():
                 # self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # It's OK if this one returns to parent map.
                 self.exit_loc = self.maps.get_connection_location(exit_id, parent_map_ok=True)
-                conn_south = self.maps.door_map[exit_id]  # connecting exit south
-                conn_pair = exit_data[conn_south][0]  # original connecting exit
-                self.EXIT_IN_WOB = (exit_world[conn_pair] == 0)
+                #conn_south = self.maps.door_map[exit_id]  # connecting exit south
+                #conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.EXIT_IN_WOB = (self.exit_loc[-1] == 0)
                 # print('Updated Ebots Rock exit warp: ', self.exit_loc)
 
             # modify airship warp position
@@ -230,12 +230,21 @@ class EbotsRock(Event):
             space.write(
                 field.ClearEventBit(event_bit.IN_WOR)
             )
-        space.write(
-            field.FreeScreen(),
-            field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
-                          y = self.exit_loc[2]),
-            world.End(),
-        )
+        space.write(field.FreeScreen())
+        if self.args.door_randomize_dungeon_crawl and (self.exit_loc[0] in [0x0, 0x1]):
+            # If doing Dungeon Crawl & returning to world map, always summon the airship.
+            from event.switchyard import SummonAirship
+            space.write(
+                SummonAirship(self.exit_loc[0], x=self.exit_loc[1], y=self.exit_loc[2], fadeout=True)
+            )
+
+        else:
+            # Just exit normally.  Hidon Cave is always ring 0.
+            space.write(
+                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
+                              y = self.exit_loc[2]),
+                world.End(),
+            )
 
         space = Reserve(0xb73f1, 0xb73f9, "ebots rock load thamasa map", field.NOP())
 

@@ -664,8 +664,13 @@ class Maps():
                     #mapid = event_exit_info[e][5][0]
                     #ex = event_exit_info[e][5][1]
                     #ey = event_exit_info[e][5][2]
-                    mapid = SWITCHYARD_MAP
-                    [ex, ey] = switchyard_xy(e)
+                    if event_exit_info[e][5][0] is SWITCHYARD_MAP:
+                        mapid = SWITCHYARD_MAP
+                        [ex, ey] = switchyard_xy(e)
+                    else:
+                        mapid = event_exit_info[e][5][0]
+                        ex = event_exit_info[e][5][1]
+                        ey = event_exit_info[e][5][2]
                     ev = self.get_event(mapid, ex, ey)
                     event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
                     if self.doors.verbose:

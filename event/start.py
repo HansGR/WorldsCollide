@@ -1,4 +1,5 @@
 from event.event import *
+from event.ruination import *
 import random
 
 class Start(Event):
@@ -315,22 +316,27 @@ class Start(Event):
         self.start_items = space.start_address
 
     def start_game_mod(self):
-        src = [
-            # place airship on wob, right outside narshe, start on airship deck
-            field.LoadMap(0x00, direction.DOWN, default_music = False,
-                          x = 84, y = 34, fade_in = True, airship = True),
-            vehicle.SetPosition(84, 34),
-            vehicle.LoadMap(0x06, direction.DOWN, default_music = True,
-                            x = 16, y = 6, entrance_event = True),
+        if self.args.ruination_mode:
+            self.start_game = ruination_start_game_mod(self.dialogs, len(self.args.start_chars))
 
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.CenterScreen(),
-            ),
-            field.ShowEntity(field_entity.PARTY0),
-            field.RefreshEntities(),
-            field.FreeScreen(),
-            field.FadeInScreen(speed = 4),
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "start game")
-        self.start_game = space.start_address
+        else:
+            src = [
+                # place airship on wob, right outside narshe, start on airship deck
+                field.LoadMap(0x00, direction.DOWN, default_music = False,
+                              x = 84, y = 34, fade_in = True, airship = True),
+                vehicle.SetPosition(84, 34),
+                vehicle.LoadMap(0x06, direction.DOWN, default_music = True,
+                                x = 16, y = 6, entrance_event = True),
+
+                field.EntityAct(field_entity.PARTY0, True,
+                    field_entity.CenterScreen(),
+                ),
+                field.ShowEntity(field_entity.PARTY0),
+                field.RefreshEntities(),
+                field.FreeScreen(),
+                field.FadeInScreen(speed = 4),
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "start game")
+            self.start_game = space.start_address
+

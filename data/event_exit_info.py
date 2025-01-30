@@ -241,6 +241,9 @@ event_exit_info = {
     1559: [None, 7, 1, [None, None, None, None, True], 'Imperial Camp WoB west', [0x005, 1559 % 128, 1559 // 128], 'JMP'],  # New tile!  Goes to west exit of imperial camp!!!
     1560: [None, 7, 1, [None, None, None, None, False], 'Imperial Camp west to world map', [0x005, 1560 % 128, 1560 // 128], 'JMP'],  # New tile!  Goes to world map from west of imperial camp!!!
     1561: [None, 7, 1, [None, None, None, None, True], 'Veldt shore', [0x005, 1561 % 128, 1561 // 128], 'JMP'],  # Door going to veldt shore; doesn't go anywhere but helps logic.
+
+    # RUINATION TILES
+    1562: [None, 7, 1, [None, None, None, None, False], 'Esper World gate', [0x0da, 55, 29], 'JMP'],  # Door leaving esper world gate
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen

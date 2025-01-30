@@ -57,6 +57,8 @@ def parse(parser):
                        help="Randomize all currently-implemented doors across worlds")
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
+    doors.add_argument("-ruin", "--ruination-mode", action="store_true",
+                       help="Rogue-like mode with randomized dungeon and no airship")
 
     # Map shuffle
     doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
@@ -75,10 +77,20 @@ def process(args):
             or args.door_randomize_serpent_trench or args.door_randomize_burning_house \
             or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
             or args.door_randomize_phantom_train or args.door_randomize_cyans_dream or args.door_randomize_mt_kolts \
-            or args.door_randomize_veldt_cave:
+            or args.door_randomize_veldt_cave \
+            or args.ruination_mode:
         args.door_randomize = True
     else:
         args.door_randomize = False
+
+    if args.ruination_mode:
+        # Override:  ruination mode is incompatible with map shuffle and other door rando modes, and takes precedence
+        args.door_randomize_all = False
+        args.door_randomize_each = False
+        args.door_randomize_crossworld = False
+        args.door_randomize_dungeon_crawl = False
+        args.map_shuffle_separate = False
+        args.map_shuffle_crossworld = False
 
     if args.door_randomize_dungeon_crawl:
         # Override: dungeon crawl is incompatible with map shuffle and takes precedence
@@ -104,8 +116,12 @@ def flags(args):
         flags += " -mapx"
 
 
-    if args.door_randomize_all:
-        # -dra supercedes all
+    if args.ruination_mode:
+        # -ruin supercedes all
+        flags += " -ruin"
+
+    elif args.door_randomize_all:
+        # -dra supercedes all but -ruin
         flags += " -dra"
 
     elif args.door_randomize_crossworld:
@@ -201,7 +217,12 @@ def options(args):
         if not args.door_randomize:
             return opts
 
-    if args.door_randomize_all:
+    if args.ruination_mode:
+        opts += [
+            ("Ruination Mode", ""),
+        ]
+
+    elif args.door_randomize_all:
         opts += [
             ("Randomize All", args.door_randomize_all),
         ]

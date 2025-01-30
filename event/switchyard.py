@@ -120,29 +120,31 @@ def GoToSwitchyard(event_id, map='', use_fade=False):
 def SummonAirship(map_id, x, y, bytes=False, fadeout=False):
     # Return code that puts you in position [x,y] on world map map_id, with the airship there as well.
     if map_id not in [0x0, 0x1]:
-        # Not an airshippable map!
+        # Not an airshippable map!  Just load it as a failsafe
         return []
 
-    src = [
-        field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-    ]
-
-    if fadeout:
-        src += [
-            field.FadeLoadMap(map_id, direction.DOWN, default_music=False, x=x, y=y, fade_in=False, airship=True),
-        ]
     else:
-        src += [
-            field.LoadMap(map_id, direction.DOWN, default_music=False, x=x, y=y, fade_in=False, airship=True),
+        src = [
+            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
         ]
 
-    src += [
-        vehicle.SetPosition(x, y),
-        vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-        vehicle.LoadMap(map_id, direction.DOWN, default_music=True, x=x, y=y, fade_in=True),
-        world.Turn(direction.DOWN),
-        world.End()
-    ]
+        if fadeout:
+            src += [
+                field.FadeLoadMap(map_id, direction.DOWN, default_music=False, x=x, y=y, fade_in=False, airship=True),
+            ]
+        else:
+            src += [
+                field.LoadMap(map_id, direction.DOWN, default_music=False, x=x, y=y, fade_in=False, airship=True),
+            ]
+
+        src += [
+            vehicle.SetPosition(x, y),
+            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            vehicle.LoadMap(map_id, direction.DOWN, default_music=True, x=x, y=y, fade_in=True),
+            world.Turn(direction.DOWN),
+            world.End()
+        ]
+
     if bytes:
         return functions_to_bytes(src)
     else:
