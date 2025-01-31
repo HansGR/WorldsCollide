@@ -47,6 +47,20 @@ class EsperWorld(Event):
         # Delete event tile in gate cave: 0xaa78f -- 0xaa7f4
         self.maps.delete_event(self.map_gate_cave, 56, 49)
 
+        # Remove all NPCs from these maps:
+        # outside map
+        npc_ids = [i+0x10 for i in range(9, -1, -1)]
+        for id in npc_ids:
+            self.maps.remove_npc(self.map_outside, id)
+        # gate cave
+        npc_ids = [i+0x10 for i in range(18, -1, -1)]
+        for id in npc_ids:
+            self.maps.remove_npc(self.map_gate_cave, id)
+        # interiors
+        npc_ids = [i + 0x10 for i in range(8, -1, -1)]
+        for id in npc_ids:
+            self.maps.remove_npc(self.map_interiors, id)
+
         # Make door not interact in a funny way with characters
         from utils.compression import compress, decompress
 

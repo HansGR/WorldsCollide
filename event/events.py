@@ -2,7 +2,7 @@ from memory.space import Bank, Allocate
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
 import instruction.field as field
 from data.map_exit_extra import exit_data, door_to_eventname
-from data.warps import Warps
+from data.warps import Warps, WarpPoints
 
 class Events():
     def __init__(self, rom, args, data):
@@ -18,6 +18,8 @@ class Events():
         self.espers = data.espers
         self.shops = data.shops
         self.warps = Warps()
+        if self.args.ruination_mode:
+            self.warp_points = WarpPoints()
 
         events = self.mod()
 
@@ -85,6 +87,9 @@ class Events():
 
         # Write modified warps
         self.warps.mod()
+
+        if self.args.ruination_mode:
+            self.warp_points.mod(self.dialogs, self.maps)
 
         return events
 
