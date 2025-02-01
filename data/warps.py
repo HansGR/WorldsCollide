@@ -142,18 +142,35 @@ SAVE_POINT_DATA = {
     'AncientCastle':    [0x192, 22, 51, 0x10, 0x632, 0xc9aeb],
     'EbotsRock':        [0x195, 7, 5, 0x12, 0x632, 0xc9aeb],
     'KT_inferno':       [0x19a, 37, 17, 0x11, 0x632, 0xc9aeb],
-    'KT_statue2':       [0x19c, 82, 47, 0x10, 0x632, 0xc9aeb],
+    'KT_Poltrgeist':       [0x19c, 82, 47, 0x10, 0x632, 0xc9aeb],
 }
 
 
 AVAILABLE_NPC_BITS = [     # list of available NPC bits for warp points
-    0x337, 0x338, 0x339, 0x33a, 0x33b, 0x33c, 0x33d, 0x33e, 0x33f, 0x357, 0x35a, 0x35b, 0x35c, 0x35d  # Esper World npcs
+    0x337, 0x338, 0x339, 0x33a, 0x33b, 0x33c, 0x33d, 0x33e, 0x33f, 0x357, 0x35a, 0x35b, 0x35c, 0x35d,  # Esper World npcs
+    0x62d, 0x62e, 0x630  # Imperial castle NPCs
 ]
 NPC_OFF_BIT = 0x306      # An npc_bit that is always off in WC
 WARP_DIALOG_IDS = [i for i in range(1426, 1491)]  # how many do we need? 2x # warp points...
 WARP_POINTS = {
     # "name":  [map_id, x, y, "Location name"] for warp location in Esper World
-    "Narshe_school":  [0x0d9, 35, 22, "Narshe classroom"],  # list of save points to convert to warp points
+    #"Narshe_school":  [0x0d9, 35, 22, "Narshe classroom"],  # list of save points to convert to warp points
+    'Snowfield_WOR':    [0x0d9, 35, 22, "Narshe snowfield"],
+    'SF_prison_cell':   [0x0db, 7, 9, "South Figaro"],
+    'Mt_Kolts':         [0x0d9, 38, 40, "Mount Kolts"],
+    'Returners':        [0x0d9, 50, 42, "Returners Hideout"],
+    'Train_caboose':    [0x0db, 39, 52, "Phantom Train"],
+    'Owzer_basement':   [0x0d9, 28, 29, "Owzer's Mansion"],
+    'MTek_pit':         [0x0db, 19, 29, "Magitek Factory"],
+    'Zoneeater':        [0x0d9, 20, 30, "Zone Eater"],
+    'Daryl_tomb':       [0x0d9, 24, 35, "Daryl's Tomb"],
+    'Dream_stairs':     [0x0db, 47, 40, "Cyan's Dream"],
+    'Veldt_cave':       [0x0d9, 40, 37, "Cave on the Veldt"],
+    'EsperMtn':         [0x0db, 13, 50, "Esper Mountain"],
+    'AncientCastle':    [0x0db, 33, 10, "Ancient Castle"],
+    'KT_Doom':          [0x0d9, 26, 48, "Kefka's Tower left"],
+    'KT_Poltrgeist':    [0x0d9, 28, 46, "Kefka's Tower center"],
+	'KT_Goddess':       [0x0d9, 30, 48, "Kefka's Tower right"],
 }
 WARP_WORLD_MAPS = set([wp[0] for wp in WARP_POINTS.values()])
 
