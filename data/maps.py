@@ -492,11 +492,33 @@ class Maps():
             self.doors.print()
 
             # Create sorted map, so they are connected in order:
+            shared_exits_sets = []
+            for se in shared_exits.keys():
+                shared_exits_sets.append([se] + shared_exits[se])
+
             for m in self.doors.map[0]:
                 if m[0] not in self.door_map.keys():
                     self.door_map[m[0]] = m[1]
+                else:
+                    is_shared = len([ses for ses in shared_exits_sets if self.door_map[m[0]] in ses and m[1] in ses]) > 0
+                    if self.doors.verbose and not is_shared and not (self.door_map[m[0]] == m[1]):
+                        print('CONFLICTING EXITS: ', m[0], '-->', self.door_map[m[0]], ' vs ', m[1])
                 if m[1] not in self.door_map.keys():
                     self.door_map[m[1]] = m[0]
+                else:
+                    is_shared = len([ses for ses in shared_exits_sets if self.door_map[m[1]] in ses and m[0] in ses]) > 0
+                    if self.doors.verbose and not is_shared and not (self.door_map[m[1]] == m[0]):
+                        print('CONFLICTING EXITS: ', m[1], '-->', self.door_map[m[1]], ' vs ', m[0])
+
+            # Check reciprocity
+            for m in self.door_map.keys():
+                m2 = self.door_map[m]
+                mr = self.door_map[m2]
+                is_reciprocal = (m == mr)
+                is_shared = [ses for ses in shared_exits_sets if {m, mr}.issubset(ses)]
+                if not is_reciprocal and not is_shared:
+                    exception_text = 'INVALID DOOR MAP: ' + str(m) + " --> " + str(m2) + '; ' + str(m2) + " --> " + str(mr)
+                    raise Exception(exception_text)
 
             temp = [m for m in self.door_map.keys() if
                     m + 4000 in exit_data.keys() and m + 4000 not in self.door_map.keys()]
