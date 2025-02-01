@@ -149,6 +149,9 @@ class AncientCastle(Event):
         # to be used in event_exit_info.entrance_door_patch()
         src = [
             field.SetEventBit(event_bit.IN_WOR),
+            field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
+            field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
+            field.SetEventBit(event_bit.GOT_FALCON),
             field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION),
 
             # Set required bits for FC underground
@@ -162,11 +165,12 @@ class AncientCastle(Event):
 
             # ... or set Figaro Castle under the desert, heading toward South Figaro
             "DEFEATED_TENTACLES",
-            field.ReturnIfEventBitClear(event_bit.DEFEATED_TENTACLES_FIGARO),
+            field.BranchIfEventBitClear(event_bit.DEFEATED_TENTACLES_FIGARO, "ENDING"),
             field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_SF_DESERT_WOR),
             field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_KOHL_DESERT_WOR),
             field.SetEventBit(event_bit.FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR),  # 0x26f
-            field.ClearEventBit(event_bit.FIGARO_CASTLE_HEADING_TOWARD_KOHLINGEN) # Head toward SF upon exit
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_HEADING_TOWARD_KOHLINGEN), # Head toward SF upon exit
+            "ENDING",
         ]
 
         return src
