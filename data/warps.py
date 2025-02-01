@@ -194,7 +194,8 @@ class WarpPoints:
         # Edit two dialog items to say the right thing;
         # return their dialog IDs
         location_name = WARP_POINTS[name][3]
-        return ["<line>          " + location_name + "<line>       warp point activated!<end>",
+        leading_spaces = " "*round((36 - len(location_name))/2)   # 10 + 16 + 10 = 36 characters per line
+        return ["<line>" + leading_spaces + location_name + "<line>       warp point activated!<end>",
                 "Warp to " + location_name + "?<line><choice> Yes<line><choice> No<end>"]
 
 
