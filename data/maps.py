@@ -481,8 +481,13 @@ class Maps():
 
         # Make all maps warpable for -door-randomize-dungeon-crawl
         if self.args.debug or self.args.door_randomize_dungeon_crawl:
+            keep_no_warp = [
+                0x167, 0x168, 0x169, 0x16a, 0x16b, 0x16c, 0x16d, 0x16e, 0x16f, 0x170, 0x171, 0x172,  # Fanatics Tower
+                0x139, 0x13a, 0x13b, 0x13c, 0x13e,  # phoenix cave
+            ]
             for map_index, cur_map in enumerate(self.maps):
-                self.properties[map_index].warpable = 1
+                if map_index not in keep_no_warp:  # protect Phoenix Cave, Fanatics Tower
+                    self.properties[map_index].warpable = 1
 
         # Postprocess the door map
         self.door_map = {}
