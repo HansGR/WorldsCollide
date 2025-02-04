@@ -497,10 +497,11 @@ class FloatingContinent(Event):
             # ... shadow jumps off (we'll delete npc after character select & skip this)
             # CA/5801: B2    Call subroutine $CA48D6
             escape_src = [
+                #field.FadeOutScreen(),
+                #field.DeleteEntity(character),  # Maybe we don't need any of this?
+                #field.HideEntity(character),
+                #field.RefreshEntities(),    # Maybe this prevents the 'recruit an npc' later?
                 field.RecruitAndSelectParty(character),
-                field.DeleteEntity(character),
-                field.HideEntity(character),
-                field.RefreshEntities(),    # Maybe this prevents the 'recruit an npc' later?
                 field.FadeInScreen(),
                 field.FinishCheck(),   # Must be done here: might return to the world map!
                 field.Call(0xa5806),   # complete jumping animation
