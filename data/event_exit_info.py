@@ -130,6 +130,11 @@ event_exit_info = {
     # BAREN FALLS
     2076: [0, 0, 0, [False, True, False, False, False], 'Baren Falls one-way exit to veldt shore (forced, for now)', [0x09f, None, None], 'JMP'],  #
 
+    # KEFKA'S TOWER
+    2077: [None, 7, 1, [False, False, False, False, False], "Kefka's Tower single entrance left", [0x005, None, None], 'JMP'],  # Handle with a switchyard tile.  Custom for -ruination
+    2078: [None, 7, 1, [False, False, False, False, False], "Kefka's Tower single entrance mid", [0x005, None, None], 'JMP'],  # Handle with a switchyard tile.  Custom for -ruination
+    2079: [None, 7, 1, [False, False, False, False, False], "Kefka's Tower single entrance right", [0x005, None, None], 'JMP'],  # Handle with a switchyard tile.  Custom for -ruination
+
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
     #       WOR: Figaro Castle (@ Figaro & Kohlingen); Solitary Island Cliff

@@ -680,6 +680,7 @@ class Maps():
             used_exits = [m for m in self.door_map.keys()]
 
             used_events = [m[0] for m in self.doors.map[1]] \
+                          + [m[1] - 1000 for m in self.doors.map[1]] \
                           + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
                           + [m[1] for m in self.doors.map[0] if 2000 > m[1] >= 1500]
 

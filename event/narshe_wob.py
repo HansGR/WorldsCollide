@@ -107,7 +107,7 @@ class NarsheWOB(Event):
         school_door.dest_y = 30
 
         # (2) Make the bucket provide a limited number of heals
-        NARSHE_DIALOG_IDS = [i for i in range(1460, 1470)]
+        NARSHE_DIALOG_IDS = [i for i in range(1461, 1471)]
         # Based on Dragon number src: see e.g. CC/1F9F
         # Could use this memory space if needed  [0xc1f9f -- 0xc2047]
         # Could also use dragon dialogs:  [1498 -- 1506]
@@ -280,3 +280,7 @@ class NarsheWOB(Event):
         ghost_npc.x = 110
         ghost_npc.direction = direction.LEFT
 
+    # (4) Modify room aesthetics
+    # make it a bit darker?
+    # add torch flicker to the lights?
+    # Change the music to "esper world" or "world of ruin"?

@@ -1,5 +1,6 @@
 from event.event import *
 import args
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class KefkaTower(Event):
     def name(self):
@@ -45,7 +46,11 @@ class KefkaTower(Event):
         self.poltrgeist_battle_mod()
         self.kefka_battle_mod()
 
-        self.final_kefka_access_mod()
+        if self.args.ruination_mode:
+            self.ruination_mod()
+        else:
+            # Do not block final kefka access in ruination mode
+            self.final_kefka_access_mod()
         self.final_scenes_mod()
         self.exit_mod()
 
@@ -519,3 +524,136 @@ class KefkaTower(Event):
         # leaving with crane or warp stone
         # warp stone call trace: c0c670 -> ca0039 -> ca0108 -> ca014f -> cc0ff6 -> cc0f7d
         space = Reserve(0xc0fbf, 0xc0fc0, "kefka tower exit clear poltrgeist statue bit", asm.NOP())
+
+    def ruination_mod(self):
+        # (1) Create switchyard tiles & events for individual entrances to left, mid, right
+        # (1b) Add the switchyard event tile that handles entry to Phoenix Cave
+        self.left_entrance_id = 2077
+        self.mid_entrance_id = 2078
+        self.right_entrance_id = 2079
+
+        # Code for entry to KT animation begins at
+        # CA/030B: 6B    Load map $014E (Kefka's Tower, exterior) instantly, (upper bits $3400), place party at (11, 7), facing left
+        party_position = [[11, 0], [43, 7], [56, 9]]
+        load_position = [[11, 7], [43, 14], [56, 15]]
+
+        # Left Entrance
+        src = [
+            field.LoadMap(0x14e, x=load_position[0][0], y=load_position[0][1], direction=direction.LEFT,
+                          default_music=True, fade_in=False, entrance_event=True),
+            field.HoldScreen(),
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=party_position[0][0], y=party_position[0][1]),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            ),
+            field.UpdatePartyLeader(),
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.CAMERA, False,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 7),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 1),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 1),
+                            ),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(2),
+                            field_entity.Move(direction.DOWN, 8),
+                            field_entity.Move(direction.DOWN, 2),
+                            field_entity.AnimateSurprised(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.AnimateHighJump(),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 2),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 2),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.AnimateHighJump(),
+                            field_entity.Move(direction.DOWN, 2),
+                            field_entity.AnimateKneeling(),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(0),
+                            ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.FreeScreen(),
+            field.FreeMovement(),
+            field.Return()
+        ]
+
+        AddSwitchyardEvent(self.left_entrance_id, self.maps, src=src)
+
+        # Middle Entrance
+        src = [
+            field.LoadMap(0x14e, x=load_position[1][0], y=load_position[1][1], direction=direction.LEFT,
+                          default_music=True, fade_in=False, entrance_event=True),
+            field.HoldScreen(),
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=party_position[1][0], y=party_position[1][1]),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                            ),
+            field.UpdatePartyLeader(),
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.CAMERA, False,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 7),
+                            ),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(2),
+                            field_entity.Move(direction.DOWN, 8),
+                            field_entity.Move(direction.DOWN, 6),
+                            field_entity.AnimateKneeling(),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(0),
+                            ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.FreeScreen(),
+            field.FreeMovement(),
+            field.Return()
+        ]
+
+        AddSwitchyardEvent(self.mid_entrance_id, self.maps, src=src)
+
+        # Right Entrance
+        src = [
+            field.LoadMap(0x14e, x=load_position[2][0], y=load_position[2][1], direction=direction.LEFT,
+                          default_music=True, fade_in=False, entrance_event=True),
+            field.HoldScreen(),
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=party_position[2][0], y=party_position[2][1]),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            ),
+            field.UpdatePartyLeader(),
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.CAMERA, False,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 7),
+                            ),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.Move(direction.DOWN, 8),
+                            field_entity.Move(direction.DOWN, 5),
+                            field_entity.AnimateKneelingRight(),
+                            field_entity.EnableWalkingAnimation(),
+                            ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.FreeScreen(),
+            field.FreeMovement(),
+            field.Return()
+        ]
+
+        AddSwitchyardEvent(self.right_entrance_id, self.maps, src=src)
+
+        # (2) Disable the 'hook' npc (no going back that way!)
+        # In the entrance event we have:
+        #CC/119B: B2    Call subroutine $CC11AE  modify colors
+        #CC/119F: B2    Call subroutine $CC10E6  animate hook
+        space = Reserve(0xc119f, 0xc11a2, "Disable hook animation", field.NOP())
+
+

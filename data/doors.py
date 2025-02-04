@@ -125,6 +125,8 @@ ROOM_SETS = {
 ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
+ROOM_SETS['Ruination'] = ['ruin_hub', 'ruin_kt1', 'ruin_kt2', 'ruin_kt3']
+
 class Doors():
     verbose = False  # False  # True
     force_vanilla = False  # for debugging purposes
@@ -133,10 +135,12 @@ class Doors():
         # Hard overrides for testing
         self.OVERRIDE = [
             #[1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
+            #[1558, 10],  # Connect Ancient Castle spot to Sabin's House WOB
             #[56, 262],  # Connect Coliseum to Figaro Cave
             #[62, 1261]   # Connect Opera House to Thamasa
             #[1559, 1560]    # Imperial camp west force connection
             #[4, 1218],    # Narshe to esper world
+            #[4, 1557],  # Narshe to Floating Continent
             #[10, 674]    #  Sabin's house to Vector Castle interior
         ]
 
@@ -171,7 +175,13 @@ class Doors():
         room_sets = []
         protect_doors = {}
 
-        if self.args.door_randomize_crossworld: # -drx, old version of -drdc
+        if self.args.ruination_mode:
+            # Ruination mode overrides all others.
+            # It will probably have a custom sorting algorithm, but for now...
+            room_sets.append(ROOM_SETS['Ruination'])
+            self.area_name.append('Ruination')
+
+        elif self.args.door_randomize_crossworld: # -drx, old version of -drdc
             # Prioritize randomizing all doors.
             # Both options the same room list.  -dra uses drafting; -drdc does not.
             room_sets.append(ROOM_SETS['All'])

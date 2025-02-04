@@ -1,6 +1,7 @@
 from event.event import *
 
 ESPER_GATE_MAPID = 0x0da
+NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
 
 def ruination_start_game_mod(dialogs, party):
