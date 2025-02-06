@@ -328,3 +328,4 @@ def ruination_start_game_mod(dialogs, party):
     space = Write(Bank.CC, src, "start game ruination")
     return space.start_address
 
+
