@@ -720,6 +720,12 @@ room_require_event_bit = {
     #447: {npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN: False},  # Do we need to deconflict this?
     # No, just change entrance event to delete these NPCS.  We don't use them.
 
+    # Albrook make sure General Leo is turned off so you don't trigger the cutscene on the boat
+    # 1F2C:5, 1F20:7, 1F21:0, 1F20:6, 1F28:2, 1F22:3, 1F22:1, 1F24:2
+    # n, y0x507, n, y0x506, n0x542 (global in albrook.py), n, n, n
+    437: {0x507: False, 0x506: False},  # World of Balance   # bits shared with phantom train.
+    438: {0x507: False, 0x506: False},  # World of Ruin
+
 }
 
 # push room required event bits to door required event bits
