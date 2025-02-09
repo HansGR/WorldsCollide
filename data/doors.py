@@ -125,10 +125,10 @@ ROOM_SETS = {
 ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
-ROOM_SETS['Ruination'] = ['ruin_hub', 'ruin_kt1', 'ruin_kt2', 'ruin_kt3']
+ROOM_SETS['Ruination'] = ['ruin_hub_testing', 'ruin_kt1', 'ruin_kt_entry_1']  # 'ruin_kt1', 'ruin_kt2', 'ruin_hub'
 
 class Doors():
-    verbose = False  # False  # True
+    verbose = True  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
@@ -142,6 +142,7 @@ class Doors():
             #[4, 1218],    # Narshe to esper world
             #[4, 1557],  # Narshe to Floating Continent
             #[10, 674]    #  Sabin's house to Vector Castle interior
+            #[1563, 397]    #  Sabin's house to Vector Castle interior
         ]
 
         # self.rom = rom
@@ -180,6 +181,8 @@ class Doors():
             # It will probably have a custom sorting algorithm, but for now...
             room_sets.append(ROOM_SETS['Ruination'])
             self.area_name.append('Ruination')
+
+            self.forcing.pop(1079)
 
         elif self.args.door_randomize_crossworld: # -drx, old version of -drdc
             # Prioritize randomizing all doors.

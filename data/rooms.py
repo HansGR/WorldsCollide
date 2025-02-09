@@ -154,12 +154,16 @@ room_data = {
     'dc-76': [[5240], [2069], [3074], 1],       # Doma WOR
 
     # Ruination mode
-    #'ruin_hub': [ [], [393, 394, 395], [3097, 3098, 3099], 1],  # Narshe school, 3 doors
-    #'ruin_hub_testing': [ [], [393, 394], [3097, 3098], 1],  # Narshe school, 2 doors
-    #'ruin_kt1': [ [], [2097], [3077], 1],       # KT Left
-    #'ruin_kt2': [ [], [2098], [3078], 1],       # KT Mid
-    #'ruin_kt3': [ [], [2099], [3079], 1],       # KT Right
+    #'ruin_hub': [ [], [393, 394, 395], [3097, 3098, 3099], 1],  # Narshe school, 3 doors as oneways
+    #'ruin_hub': [ [393, 394, 395], [ ], [3097, 3098, 3099], 1],  # Narshe school, 3 doors
+    'ruin_hub_testing': [ [394], [], [3097], 1],  # Narshe school, 2 doors
+    'ruin_kt1': [ [], [2097], [3077], 1],       # KT Left
+    'ruin_kt2': [ [], [2098], [3078], 1],       # KT Mid
+    'ruin_kt3': [ [], [2099], [3079], 1],       # KT Right
     #'ruin_hub_2': [ [], [2077, 2078, 2079], [3097, 3098, 3099], 1],  # Narshe school, 3 doors
+    'ruin_kt_entry_1':  [ [1079], [2077], [ ], 1],  # The Sealed Gate
+    'ruin_kt_entry_2':  [ [1057], [2078], [ ], 1],  # Esper Mountain Terminus
+    'ruin_kt_entry_3':  [ [1564], [2079], [ ], 1],  # Daryl's Tomb staircase + Falcon
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin

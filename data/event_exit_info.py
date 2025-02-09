@@ -249,6 +249,8 @@ event_exit_info = {
 
     # RUINATION TILES
     1562: [None, 7, 1, [None, None, None, None, False], 'Esper World gate', [0x0da, 55, 29], 'JMP'],  # Door leaving esper world gate
+    1563: [0xa435d, 7, 1, [False, False, False, False, False], 'Daryls Tomb quickexit as door', [0x12b, 100, 7], 'JMP'],  # Door behind daryl's tomb itself.
+    1564: [None, 7, 1, [False, False, False, False, False], 'Daryls Tomb staircase top', [0x12d, 27, 7], 'JMP'],  # Door at top of Daryls tomb staircase. see CA/436B
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen

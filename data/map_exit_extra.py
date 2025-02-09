@@ -1375,6 +1375,8 @@ exit_data = {
     1558: [1082, "Figaro Castle prison to Ancient Cave"],
     1559: [1560, "Imperial base west entrance for dungeon crawl"],
     1560: [1559, "Imperial base west exit to world map for dungeon crawl"],
+    1563: [1564, "Darill's tomb door behind sarcophagus to staircase"],
+    1564: [1563, "Darill's tomb staircase top to tomb"],
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
@@ -1803,6 +1805,8 @@ event_door_connection_data = {
     1558: [0x191, 42, 5, 0, 0, 0, 2, 0, 35, 35, 0, 0],   # "Figaro castle prison to Ancient Cave"
     1559: [0x075, 1, 22, 0, 0, 0, 1, 0, 178, 71, 0, 0],  # "Imperial camp west entrance for dungeon crawl"
     1560: [0x000, 177, 71, 0, 0, 0, 3, 0, 0, 22, 0, 0],  # "Imperial camp exit west for dungeon crawl"
+    1563: [0x12d, 26, 8, 0, 0, 0, 3, 0, 100, 7, 0, 0],  # "Daryl's Tomb door behind sarcophagus"
+    1564: [0x12b, 100, 8, 0, 0, 0, 3, 0, 27, 7, 0, 0],  # "Daryl's Tomb staircase top exit"
 
     # Logical exits with different destinations
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'

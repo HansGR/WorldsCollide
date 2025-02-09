@@ -23,23 +23,30 @@ class SealedGate(Event):
         # arbitrarily using kefka npc for char/esper/item
         self.kefka_npc_id = 0x16
         self.kefka_npc = self.maps.get_npc(0x187, self.kefka_npc_id)
-
-        self.kefka_npc.x = 8
-        self.kefka_npc.y = 10
+        if self.args.ruination_mode:
+            self.kefka_npc.y = 30
+        else:
+            self.kefka_npc.x = 8
+            self.kefka_npc.y = 10
 
         self.world_map_mod()
         self.exit_shortcut_mod()
         self.ninja_mod()
 
         self.lightning_strike = 0xb3890
-        if self.reward.type == RewardType.CHARACTER:
-            self.character_mod(self.reward.id)
-        elif self.reward.type == RewardType.ESPER:
-            self.esper_mod(self.reward.id)
-        elif self.reward.type == RewardType.ITEM:
-            self.item_mod(self.reward.id)
 
-        self.log_reward(self.reward)
+        if self.args.ruination_mode:
+            # We will use this as an entry point to KT.  Don't set up the reward.
+            self.ruination_mod()
+        else:
+            if self.reward.type == RewardType.CHARACTER:
+                self.character_mod(self.reward.id)
+            elif self.reward.type == RewardType.ESPER:
+                self.esper_mod(self.reward.id)
+            elif self.reward.type == RewardType.ITEM:
+                self.item_mod(self.reward.id)
+
+            self.log_reward(self.reward)
 
     def world_map_mod(self):
         import instruction.asm as asm
@@ -184,3 +191,101 @@ class SealedGate(Event):
         space.write(
             field.Call(check_objectives),
         )
+
+    def ruination_mod(self):
+        SET_PARTY_LAYER2 = 0xb3980
+        SET_PARTY_LAYER0 = 0xb3995
+
+        map_id = 0x187
+
+        # Sealed Gate event edits:
+        # Move event tile up one square, to allow party to retreat
+        event_in = self.maps.get_event(map_id, 8, 21)
+        event_in.y -= 1
+        space = Reserve(0xb39e6, 0xb39e6, "sealed gate event moved up 1 tile", field_entity.Move(direction.UP, 4))
+
+        # Skip reform party & enable party to move thru things
+        space = Reserve(0xb39e8, 0xb39f8, "sealed gate skip split party", field.NOP())
+        # Skip party split animation
+        space = Reserve(0xb39fa, 0xb3a12, "sealed gate edits 2", field.NOP())
+        # Skip dialog "This is the sealed gate..."
+        space = Reserve(0xb3a23, 0xb3a25, "sealed gate edits 3", field.NOP())
+        # Skip party-dependent dialog options
+        space = Reserve(0xb3a32, 0xb3a35, "sealed gate edits 3a", field.NOP())
+        # Change terra movement to party movement
+        space = Reserve(0xb3a3d, 0xb3a3d, "sealed gate change animation 1", field.NOP())
+        space.write(field_entity.PARTY0)
+        # Skip split party move & dialog "Terra..."
+        space = Reserve(0xb3a42, 0xb3a56, "sealed gate edits 4", field.NOP())
+        # Change terra movement to party movement
+        space = Reserve(0xb3a63, 0xb3a63, "sealed gate change animation 2", field.NOP())
+        space.write(field_entity.PARTY0)
+        # Skip split party animation
+        space = Reserve(0xb3a94, 0xb3a9f, "sealed gate edits 5", field.NOP())
+        # Change terra movement to party movement
+        space = Reserve(0xb3aa0, 0xb3aa0, "sealed gate change animation 3", field.NOP())
+        space.write(field_entity.PARTY0)
+        # Skip dialog "Terra!  ... the gate... quickly!"
+        space = Reserve(0xb3aa4, 0xb3aac, "sealed gate edits 5", field.NOP())
+        # Change terra movement to party movement
+        space = Reserve(0xb3ab1, 0xb3ab1, "sealed gate change animation 4", field.NOP())
+        space.write(field_entity.PARTY0)
+        # Skip replace a party member with Kefka
+        space = Reserve(0xb3aba, 0xb3adb, "sealed gate edits 6", field.NOP())
+        # Modify invoked battle
+        space = Reserve(0xb3adc, 0xb3ae2, "sealed gate battle mod", field.NOP())
+
+        boss_pack_id = self.get_boss("Kefka (Narshe)")
+        space.write(field.InvokeBattleType(boss_pack_id, field.BattleType.BACK))
+
+        # Skip unreplace a party member with Kefka
+        space = Reserve(0xb3ae3, 0xb3ae5, "sealed gate edits 7", field.NOP())
+        space.write(field.SetEventBit(0x079))  # stop Sealed Gate event from repeating
+
+        # Skip replace character positions after battle
+        space = Reserve(0xb3aea, 0xb3afd, "sealed gate edits 8", field.NOP())
+        space.write([
+            field.HideEntity(0x17),
+            field.HideEntity(0x18),
+            #field.HideEntity(0x16),
+            field.RefreshEntities(),
+        ])
+        # Skip move characters after battle
+        space = Reserve(0xb3b06, 0xb3b11, "sealed gate edits 9", field.NOP())
+        # Change terra movement to party movement
+        space = Reserve(0xb3b12, 0xb3b12, "sealed gate change animation 5", field.NOP())
+        space.write(field_entity.PARTY0)
+        # Skip "Espers... please heed my call...""
+        space = Reserve(0xb3b16, 0xb3b1d, "sealed gate edits 10", field.NOP())
+        # Skip character animations
+        space = Reserve(0xb3b4d, 0xb3b5a, "sealed gate edits 11", field.NOP())
+        # End before second battle
+        space = Reserve(0xb3b66, 0xb3b76, "sealed gate edits 11", field.NOP())
+        space.write([
+            field.StopScreenShake(),
+            field.FreeScreen(),
+            field.Return()
+        ])
+
+        # Add to entrance event:  doors open if already did fight
+        # Change timing of screen shake to correspond with doors
+        # Move event tile back down; show "this is the sealed gate" text.  Add dialog option to open it?
+        # Recenter screen after doors open.
+        # Add exit tile at sealed gate to KT
+
+        # src = [
+        #     Read(0xb39be, 0xb39c8),  # copy original entrance event code
+        #
+        #     field.CreateEntity(self.kefka_npc_id),
+        #     field.ShowEntity(self.kefka_npc_id),
+        #     field.RefreshEntities(),
+        #     field.Return(),
+        # ]
+        # space = Write(Bank.CB, src, "sealed gate entrance event")
+        # entrance_event = space.start_address
+        #
+        # space = Reserve(0xb39be, 0xb39c8, "sealed gate call entrance event", field.NOP())
+        # space.write(
+        #     field.Call(entrance_event),
+        #     field.Return(),
+        # )

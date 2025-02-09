@@ -541,7 +541,7 @@ class Maps():
             # Patch all used exits
             # Also patch exits that are logical and have different destinations than their WOB companions ...
             # Actually just patch all exits in exit_data_patch, why not.  Should be safe.
-            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()]))  #  + [e for e in event_door_connection_data.keys()]
+            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()]))  + [e for e in event_door_connection_data.keys()]
             #print(exits_to_patch)
             self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=False)
             for e in self.exits.exit_original_data.keys():
