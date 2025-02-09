@@ -435,6 +435,8 @@ exit_event_patch = {
 from event.phantom_train import *
 phantom_train_initiate = PhantomTrain.initiation_script
 
+from event.sealed_gate import SET_PARTY_LAYER0, SET_PARTY_LAYER2
+
 exit_door_patch = {
     # For use with maps.create_exit_event() and maps.shared_map_exit_event()
 
@@ -469,6 +471,8 @@ exit_door_patch = {
     #1558: [field.SetParentMap(0x03d, direction.UP, 35, 39)],  # tile at [0x03d, 35, 35]
     1558: [field.SetEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION)],  # Set custom event bit to handle warping in this situation
 
+    # Sealed Gate:  party needs to be on Layer 2 on this map.  Reset to Layer0 on exit.
+    1079: [field.Call(SET_PARTY_LAYER0)],
 }
 
 entrance_event_patch = {
@@ -564,6 +568,8 @@ entrance_door_patch = {
     #1558: [[field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION)], False],  # Clear custom event bit to handle warping in this situation
     1558: [figaro_castle_underground_state, True],  # force status depending on DEFEATED_TENTACLES
 
+    # Sealed Gate:  Party must be Layer2 on this map
+    1079: [[field.Call(SET_PARTY_LAYER2)], False],
 }
 #for j in entrance_door_patch.keys():
 #    print(j, entrance_door_patch[j])

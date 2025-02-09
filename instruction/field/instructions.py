@@ -550,6 +550,20 @@ class FadeSongVolume(_Instruction):
     def __str__(self):
         return super().__str__(f"{self.args[1]}, {self.args[2]}")
 
+class FadeSoundEffect(_Instruction):
+    def __init__(self, fade_time, volume):
+        super().__init__(0xf6, 0x82, fade_time, volume)
+
+    def __str__(self):
+        return super().__str__(f"{self.args[1]}, {self.args[2]}")
+
+class StartSongAtVolume(_Instruction):
+    def __init__(self, song_id, volume):
+        super().__init__(0xf6, 0x10, song_id, volume)
+
+    def __str__(self):
+        return super().__str__(f"{self.args[1]}, {self.args[2]}")
+
 class FadeLoadMap(_LoadMap):
     # same as load map, except fades out screen
     def __init__(self, map_id, direction, default_music, x, y, fade_in = False, entrance_event = False,
