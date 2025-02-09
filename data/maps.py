@@ -489,6 +489,12 @@ class Maps():
                 if map_index not in keep_no_warp:  # protect Phoenix Cave, Fanatics Tower
                     self.properties[map_index].warpable = 1
 
+        # Make no maps warpable for -ruination-mode: all warping handled with warp points
+        elif self.args.ruination_mode:
+            for map_index, cur_map in enumerate(self.maps):
+                self.properties[map_index].warpable = 0
+
+
         # Postprocess the door map
         self.door_map = {}
         self.trap_map = {}

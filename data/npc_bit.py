@@ -156,6 +156,7 @@ GODDESS_STATUE_KEFKA_TOWER = 0x6b1
 POLTRGEIST_STATUE_KEFKA_TOWER = 0x6b2
 
 ALWAYS_OFF = 0x6ff
+ALWAYS_ON = 0x301
 
 def byte(npc_bit):
     return npc_bit // 8

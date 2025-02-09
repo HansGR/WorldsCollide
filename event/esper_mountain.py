@@ -60,8 +60,11 @@ class EsperMountain(Event):
 
         self.log_reward(self.reward)
 
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.args.ruination_mode:
             self.door_rando_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
     def entrance_event_mod(self):
         src = [
@@ -343,4 +346,64 @@ class EsperMountain(Event):
         space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 3", field.NOP())
         space.write(field.Call(space_delete.start_address))
 
+
+    def ruination_mod(self):
+        # Add warp point to KT in final room
+        map_id = 0x177
+
+        from data.npc import NPC
+        wpp = NPC()
+        wpp.x = 17
+        wpp.y = 20
+        wpp.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_ON)
+        wpp.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_ON)
+        wpp.palette = 1  # default = 6
+        wpp.sprite = 104  # 111 = save point
+        wpp.split_sprite = 1
+        wpp.const_sprite = 0
+        wpp.direction = direction.LEFT
+        wpp.no_face_on_trigger = 0
+        wpp.speed = 0  # 2 = save point
+        wpp.movement = 0
+        wpp.map_layer = 1
+        wpp.background_scrolls = 0
+        wpp.background_layer = 0
+
+        self.maps.append_npc(map_id, wpp)
+
+        # Create an event tile that does the warping action
+        kt_enter_id = 2078
+
+        warp_to_KT_text = 0x0667  # Still using ones from sealed gate
+        self.dialogs.set_text(warp_to_KT_text, "This will take us to Kefka's Tower. There's no coming back.<line><choice> Let's go<line><choice> Not just yet<end>")
+        not_allowed_dialog = 1293  # same as airship
+
+        from event.switchyard import GoToSwitchyard
+        src = [
+            field.ReturnIfEventBitSet(0x1B5),  # cleared on each step
+            field.PlaySoundEffect(0xd1),    # shing!
+            field.FlashScreen(field.Flash.RED),
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "ALLOW_WARP"),
+            field.Dialog(not_allowed_dialog),
+            "RETURN",
+            field.SetEventBit(0x1B5),
+            field.Return(),
+            "ALLOW_WARP",
+            field.DialogBranch(warp_to_KT_text, "DO_WARP", "RETURN"),
+            "DO_WARP",
+            field.Call(self.warps.warp_out_animation_addr)
+        ] + GoToSwitchyard(kt_enter_id)
+
+        from data.map_event import MapEvent
+        newevent = MapEvent()
+        newevent.x = wpp.x
+        newevent.y = wpp.y
+        space = Write(Bank.CC, src, "Warp point Esper Mtn to KT")
+        newevent.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(map_id, newevent)
+
+        # Change map music; turn off random encounters.
+        esper_terminus_properties = self.maps.properties[map_id]
+        esper_terminus_properties.song = 33
+        esper_terminus_properties.enable_random_encounters = 0
 

@@ -155,8 +155,8 @@ room_data = {
 
     # Ruination mode
     #'ruin_hub': [ [], [393, 394, 395], [3097, 3098, 3099], 1],  # Narshe school, 3 doors as oneways
-    #'ruin_hub': [ [393, 394, 395], [ ], [3097, 3098, 3099], 1],  # Narshe school, 3 doors
-    'ruin_hub_testing': [ [394], [], [3097], 1],  # Narshe school, 2 doors
+    'ruin_hub': [ [393, 394, 395], [ ], [3097, 3098, 3099], 1],  # Narshe school, 3 doors
+    #'ruin_hub_testing': [ [394], [], [3098], 1],  # Narshe school, 2 doors
     'ruin_kt1': [ [], [2097], [3077], 1],       # KT Left
     'ruin_kt2': [ [], [2098], [3078], 1],       # KT Mid
     'ruin_kt3': [ [], [2099], [3079], 1],       # KT Right

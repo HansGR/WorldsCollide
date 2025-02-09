@@ -39,11 +39,11 @@ class Network:
         for d in forcing.keys():
             if d in these_doors:
                 df = forcing[d][0]
-                #if self.verbose:
-                #    print('Forcing: ', d, df)
+                if self.verbose:
+                    print('Forcing: ', d, df)
                 self.connect(d, df, state=state)
-                #if self.verbose:
-                #    print('forcing successful.')
+                if self.verbose:
+                    print('forcing successful.')
             self.protected.append(d)
             self.protected.extend(forcing[d])
         if self.verbose:

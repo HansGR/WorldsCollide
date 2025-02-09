@@ -59,6 +59,11 @@ class Events():
             if self.verbose:
                 print('Added extra gating logic:', extra_gating)
 
+        if self.args.ruination_mode:
+            self.warp_points.mod(self.dialogs, self.maps)
+            # Share warp out animation code
+            self.warps.warp_out_animation_addr = self.warp_points.warp_out_animation_addr
+
         # select event rewards
         if self.args.character_gating:
             self.character_gating_mod(events, name_event, extra_gating)
@@ -87,9 +92,6 @@ class Events():
 
         # Write modified warps
         self.warps.mod()
-
-        if self.args.ruination_mode:
-            self.warp_points.mod(self.dialogs, self.maps)
 
         return events
 

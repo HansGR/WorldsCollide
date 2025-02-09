@@ -106,6 +106,9 @@ class NarsheWOB(Event):
         school_door.dest_x = 55
         school_door.dest_y = 30
 
+        # (1a) Delete event tile that handles WOB vs WOR exit (always go to same place)
+        self.maps.delete_event(school_map_id, school_door.x, school_door.y)
+
         # (2) Make the bucket provide a limited number of heals
         NARSHE_DIALOG_IDS = [i for i in range(1461, 1471)]
         # Based on Dragon number src: see e.g. CC/1F9F

@@ -125,10 +125,11 @@ ROOM_SETS = {
 ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
-ROOM_SETS['Ruination'] = ['ruin_hub_testing', 'ruin_kt1', 'ruin_kt_entry_1']  # 'ruin_kt1', 'ruin_kt2', 'ruin_hub'
+ROOM_SETS['Ruination'] = ['ruin_hub', 'ruin_kt1', 'ruin_kt2', 'ruin_kt3',
+                          'ruin_kt_entry_1', 'ruin_kt_entry_2', 'ruin_kt_entry_3']
 
 class Doors():
-    verbose = True  # False  # True
+    verbose = False  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
