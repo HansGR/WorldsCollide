@@ -139,23 +139,23 @@ room_data = {
 
     # Dungeon Crawl Rooms - mostly rooms that bridge towns, use ms- series if a dead end.
     'dc-4': [[1135, 1138], [], [], 0],          # Narshe WOB
-    'dc-1501': [[1184, 1560], [], [], 0],     # Imperial Camp + west exit
+    'dc-1501': [[1184, 1560], [], [], 0],       # Imperial Camp + west exit
     'dc-1504': [[1255, 1254], [2054], [3055], 0],     # Thamasa WOB + burning house
     'dc-1505': [[1228, 1229], [], [3028], 0],   # Vector + MTek
     'dc-13': [[1181], [2034], [], 0],           # Returner's Hideout + Lete
-    'dc-15': [[1196], [2076], [], 0],       # Baren Falls + one-way exit to Veldt
-    'dc-16': [[1199, 1200], [], [3053], 0],           # Nikeah + SerpentTrench dest.
-    'dc-20-21': [[1188, 465, 468], [], [], 0],          # Phantom Forest N, S, to train
+    'dc-15': [[1196], [2076], [], 0],           # Baren Falls + one-way exit to Veldt
+    'dc-16': [[1199, 1200], [], [3053], 0],     # Nikeah + SerpentTrench dest.
+    'dc-20-21': [[1188, 465, 468], [], [], 0],  # Phantom Forest N, S, to train
     'dc-23': [[523], [2044], [], 0],            # Crescent Mtn + SerpentTrench
     'dc-57': [[262], [], [], ['ac1'], {'ac1': [1558]}, 1],  # Cave to Figaro Castle, incl. key & entry to ancient castle, may want to change this.
     'dc-67': [[1143, 1146], [], [], 1],         # Narshe WOR
     'dc-73': [[5213, 593], [], [], 1],          # Jidoor WOR + Owzers
-    'dc-75': [[1261, 1260], [], [3075], 1],           # Thamasa WOR + Veldt Cave dest.
+    'dc-75': [[1261, 1260], [], [3075], 1],     # Thamasa WOR + Veldt Cave dest.
     'dc-76': [[5240], [2069], [3074], 1],       # Doma WOR
 
     # Ruination mode
     #'ruin_hub': [ [], [393, 394, 395], [3097, 3098, 3099], 1],  # Narshe school, 3 doors as oneways
-    'ruin_hub': [ [393, 394, 395], [ ], [3097, 3098, 3099], 1],  # Narshe school, 3 doors
+    'ruin_hub': [ [393, 394, 395], [ ], [3039, 3097, 3098, 3099], 1],  # Narshe school, 3 doors, incl. logical returns from KT and from Lete River
     #'ruin_hub_testing': [ [394], [], [3098], 1],  # Narshe school, 2 doors
     'ruin_kt1': [ [], [2097], [3077], 1],       # KT Left
     'ruin_kt2': [ [], [2098], [3078], 1],       # KT Mid
@@ -164,6 +164,21 @@ room_data = {
     'ruin_kt_entry_1':  [ [1079], [2077], [ ], 1],  # The Sealed Gate
     'ruin_kt_entry_2':  [ [1057], [2078], [ ], 1],  # Esper Mountain Terminus
     'ruin_kt_entry_3':  [ [1564], [2079], [ ], 1],  # Daryl's Tomb staircase + Falcon
+    'ruin-mtek3': [[ ], [2128], [3028], 0],   # MTek 3 destination with reward, logically forced to Vector
+    'ruin-vector': [[1228, 1229], [], [3128], 0],   # Vector with Mtek3 destination
+    'ruin-st-exit': [ [], [2153], [3053], 1],   # Serpent trench entry to nikeah with reward, logically forced to Nikeah WOR
+    'ruin-nikeah': [[5199, 5200], [], [3153], 1],  # WOR Nikeah + Serpent Trench exit
+    'ruin-daryl': [ [789], [], [], ['dtboss'], {'dtboss': [1563]}, 1], #Darill's Tomb Dullahan Room
+    'ruin-201' : [ [469], [2065], [3068], 0],   #Phantom Train Station + custom return from train
+    'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
+    'ruin-figarocastle': [[1558], [], [], ['fc1'], {'fc1': [1156, 1157, 1158, 1159]}, 1],  # Cave entrance to Figaro Castle, incl. key locking other entrances
+    'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff
+    'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
+    'ruin-baren': [ [1561], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
+    'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
+    'ruin-narshe': [[1143, 1146, 140, 143], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves
+    'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], ['zr1'], {"TERRA": 608}, 1], #Zozo 1F Outside WOR + Terra-locked 608
+
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
     1 : [ [i for i in range(45,80)] + [i for i in range(1507, 1510)], [ ], [3058], 1],  # World of Ruin
@@ -967,10 +982,10 @@ room_data = {
     525 : [ [1094], [ ], [ ], 1], #Ancient Castle East Side Single Chest Room
     526 : [ [1095], [ ], [ ], 1], #Ancient Castle West Side North Room
     527 : [ [1096], [ ], [ ], 1], #Ancient Castle East Side 2 Chest Room
-    528 : [ [1098, 1099, 1100, 1278], [ ], [ ], 1], #Ancient Castle Throne Room
+    528 : [ [1098, 1099, 1100, 1278], [ ], [ ], ['ac2'], {}, 1], #Ancient Castle Throne Room
     529 : [ [1276, 1277], [ ], [ ], 1], #Ancient Castle Entry Room
     530 : [ [1101, 1102, 1103, 1104, 1279], [ ], [ ], 1], #Ancient Castle Outside
-    531 : [ [1105, 1106], [ ], [ ], 1], #Ancient Castle Eastern Basement
+    531 : [ [1105], [ ], [ ], [], {'ac2': [1106]}, 1], #Ancient Castle Eastern Basement
     532 : [ [1107], [ ], [ ], 1], #Ancient Castle Dragon Room
 
     # COLISEUM
@@ -984,6 +999,8 @@ room_data = {
     'root-pc' : [ [1554], [], [], 1],  # Phoenix cave entry as door
     'branch-pc' : [ [1555], [], [], 1],   # Phoenix cave outside (with exit as door) treated as dead end
     536 : [ [1555, 857], [], [], 1],   # Phoenix cave outside (with exit as door)
+    537 : [ [828], [], [], 1],   # Phoenix cave interior entrance
+
 
     # FLOATING CONTINENT
     'root-fc-as-doors': [[1556], [], [], 0],  # Floating Continent entry as door
@@ -1031,10 +1048,12 @@ forced_connections = {
     2067: [3067],    # Phantom train roof jump event
 
     2076: [3076],   # Baren Falls --> Veldt (for now)
+    2176: [3176],   # Baren Falls --> Veldt, trickery (reward logic)
 
     2097: [3097],   # KT left, trickery
     2098: [3098],   # KT mid, trickery
     2099: [3099],   # KT right, trickery
+    2128: [3128],   # MTek 3 ending back to vector, trickery.
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -1150,6 +1169,10 @@ shared_exits = {
     5213: [5214, 5215],     # Jidoor WoR
 
     1194: [1195],   # Veldt shore, goes to world map.
+
+    #1092: [1093],   # Ancient Castle, exits from KatanaSoul room?
+    #1101: [1102],   # Ancient Castle, entrances to KatanaSoul room?
+
 }
 
 logical_links = [

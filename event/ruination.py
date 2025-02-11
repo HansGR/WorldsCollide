@@ -6,7 +6,7 @@ NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 # Ruination area data
 REWARD_ROOMS = {
     # TERRA
-    59: {"Whelk": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Whelk in Narshe Mines
+    'ruin-whelk': {"Whelk": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Whelk in Narshe Mines.  Move to WOR?
     'LeteRiver3': {"Lete River": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lete River boss
     313: {"Zozo": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Zozo WoB Ramuh reward
     #514: {"Sealed Gate": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Sealed Gate, not used in Ruination
@@ -15,7 +15,7 @@ REWARD_ROOMS = {
     # LOCKE
     34: {"Narshe WOR": [RewardType.ESPER, RewardType.ITEM]},   # Narshe WOR weapon shop.  Actually '25R' if interiors are randomized.
     104: {"South Figaro Cave": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # TunnelArmr spot
-    537: {"Phoenix Cave": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Phoenix Cave (interior 1st room).  For outside platform: 'branch-pc'
+    537: {"Phoenix Cave": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Phoenix Cave (interior 1st room).  For outside platform: 'branch-pc'.  Need to modify exit: warp to esper world?
 
     # EDGAR
     75: {"Figaro Castle WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle Throne Room
@@ -24,7 +24,7 @@ REWARD_ROOMS = {
 
     # SABIN
     'dc-1501': {"Imperial Camp": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Imperial Camp
-    'dc-15': {"Baren Falls": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Baren Falls
+    'ruin-baren-reward': {"Baren Falls": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Baren Falls, after boss but before shore
     220: {"Phantom Train": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Phantom Train Caboose... boss is room 202
     151: {"Mt. Kolts": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Mt Kolts
     395: {"Collapsing House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Tzen WoR Collapsing house
@@ -51,7 +51,7 @@ REWARD_ROOMS = {
     475: {"Veldt Cave WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Cave on the Veldt
     
     # GAU
-    'wor-veldt': {"Veldt Cave WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Veldt (WOR theme)
+    'wor-veldt': {"Veldt": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Veldt (WOR theme)
     'ruin-st-exit': {"Serpent Trench": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Serpent Trench, seeds logical separation from Nikeah.
     
     # SETZER
@@ -69,7 +69,7 @@ REWARD_ROOMS = {
     284: {"Owzer Mansion": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Owzer's Basement
     
     # MOG
-    23: {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lone Wolf
+    23: {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lone Wolf.  Move to WOR?
     48: {"Narshe Moogle Defense": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Moogle Defense WOR (need to update how this starts); 65 in WOB
 
     # UMARO
@@ -82,10 +82,79 @@ REWARD_ROOMS = {
     22: {"Narshe Battle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Kefka @ Narshe
     '41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},   # Tritoch
     'ms-wor-51': {"Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'ms-wob-33'
-    # Auction House
+    'dc-73': {"Auction House_1": [RewardType.ESPER, RewardType.ITEM],
+              "Auction House_2": [RewardType.ESPER, RewardType.ITEM]},   # Jidoor WoR.  WOB is 'ms-wob-28'
 
 }
 
+# List of named areas associated with each character
+CHARACTER_AREAS = {
+    'TERRA': ['Narshe', 'ReturnersHideout', 'Zozo', 'ZozoTower', 'Mobliz', 'SealedGate'],
+    'LOCKE': ['Kohlingen', 'PhoenixCave', 'SouthFigaroCave', 'Narshe'],
+    'EDGAR': ['FigaroCastle', 'AncientCastle', 'SouthFigaro'],
+    'SABIN': ['MtKolts', 'PhantomTrain', 'BarenFalls', 'ImperialCamp', 'Tzen'],
+    'CELES': ['SouthFigaro', 'OperaHouse', 'Vector', 'Cid'],  # 'Albrook'
+    'CYAN': ['Doma', 'Zozo', 'MtZozo', 'Maranda'],
+    'SHADOW': ['GauFatherHouse', 'FloatingContinent', 'VeldtCave', 'Thamasa'],
+    'GAU': ['Veldt', 'CrescentMtn', 'Nikeah'],
+    'SETZER': ['Kohlingen', 'DarylsTomb'],
+    'STRAGO': ['Thamasa', 'FanaticsTower', 'EbotsRock'],
+    'RELM': ['Jidoor', 'EsperMountain'],
+    'MOG': ['Narshe'],
+    'GOGO': ['ZoneEater'],
+    'UMARO': ['UmarosCave'],
+    'ALL': ['Coliseum', 'Albrook'],
+}
+AREA_TYPES = {
+    'TOWNS': ['Kohlingen', 'Jidoor', 'Maranda', 'Tzen', 'Albrook', 'Thamasa', 'Nikeah', 'Vector', 'SouthFigaro'],  # 'Mobliz', 'Narshe', # WOB only
+}
+
+# List of rooms associated with each named area
+RUIN_ROOM_SETS = {
+    'Doma': [421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
+                  432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'dc-76'],
+    'UmarosCave': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368],  # root is in Narshe
+    'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501],
+    'PhantomTrain': ['ruin-201', 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
+                     '207b', 212, 213, '215a', '215b', 216, 220, 221],
+    'SealedGate': [502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513],  # no worldmap connector '504a'; no sealed gate itself 514
+    'SouthFigaroCave': [100, 101, 102, 103, 104, 105],
+    'ReturnersHideout': ['ruin-returners', 'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3'],  # Need to add raft return to Esper World
+    'AncientCastle': [520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532],
+    'Jidoor': ['dc-73', 277, 278, 279, 280, 281, 282, 283, 284],   # Including Owzer's Mansion
+    'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 475, 'ruin-thamasa'],  # It's OK to double rooms, we will check to make sure they don't actually map twice.
+    'CrescentMtn': ['dc-23', '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'ruin-st-exit', 'ruin-nikeah'],
+    'BarenFalls': ['dc-15', 'ruin-baren-reward', 'ruin-baren'],
+    'Vector': [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'ruin-mtek3', 'ruin-vector'],
+    'DarylsTomb': [377, 378, 379, 380, 381, 382, 383, 384, 386, 'ruin-daryl', 388, 389, 390, 391, 392, 393],
+    'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
+    'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160],
+    'Narshe': ['ruin-narshe', 36, '37a', 38, 40, 41, 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 51],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense)
+    'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'branch-mz_mapsafe'],
+    'ZozoTower': [297, 298, 299, 300, 302, '303a', '303b', 304, 310, 311, 312, 313],
+    'MtZozo': [250, 251, 252, 253, 254, 255, 256, 'root-mz_mapsafe'],
+
+    'SouthFigaro': ['ms-wor-58'],
+    'GauFatherHouse': ['ms-wob-14'],  # use WOB for shadow check & vendor.  Change tileset, perhaps?
+    'Thamasa': ['ruin-thamasa'],  # including STRAGO-locked burning house
+    'Kohlingen': ['ms-wor-59'],
+    'Cid': ['ms-wor-48'],
+    'Mobliz': ['ms-wor-52'],
+    'Maranda': ['ms-wor-63'],
+    'FanaticsTower': ['ms-wor-69'],
+    'OperaHouse': ['ms-wob-40'],   # WOB for the opera scene.  Have code switch it to WOR after opera scene is complete.  Edit end of opera scene.
+    'EbotsRock': ['ms-wor-78'],
+    'Coliseum': ['ms-wor-56'],
+    'Tzen': ['ms-wor-51'],   # WOR only (collapsing house)
+    'Albrook': ['ms-wor-49'],
+    'Veldt': ['wor-veldt'],
+    'Nikeah': ['ruin-nikeah'],  # including Serpent Trench exit (post reward)
+    'PhoenixCave': ['ms-wor-1554'],  # Need to make red exit point go to Esper World, probably.
+    'FloatingContinent': ['ms-wob-1556'],
+    'ImperialCamp': ['dc-1501'],
+    'FigaroCastle': ['ruin-figarocastle'],  # Remove entrance from South Figaro Cave; just have somewhere connect into the basement & require Engine Room before unlocking Castle.
+
+}
 
 def ruination_start_game_mod(dialogs, party):
     # Write the event that starts the game in ruination mode
