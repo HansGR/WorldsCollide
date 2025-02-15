@@ -1,10 +1,13 @@
 from event.event import *
+from data.rooms import room_data
+from data.walks import *
+import random
 
 ESPER_GATE_MAPID = 0x0da
 NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
 # Ruination area data
-REWARD_ROOMS = {
+ROOM_REWARD = {
     # TERRA
     'ruin-whelk': {"Whelk": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Whelk in Narshe Mines.  Move to WOR?
     'LeteRiver3': {"Lete River": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lete River boss
@@ -40,7 +43,7 @@ REWARD_ROOMS = {
     'ms-wob-18': {"Doma WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Doma Siege
     429: {"Doma WOR_2": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 1: stooges
     193: {"Doma WOR_1": [RewardType.CHARACTER, RewardType.ESPER]},  # Doma Dream 2: Wrexsoul
-    '180R': {"Doma WOR_3": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 3: throne (gated by Wrexsoul, though it's not a character so this doesn't affect gating)
+    'dc-76': {"Doma WOR_3": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 3: throne (gated by Wrexsoul, though it's not a character so this doesn't affect gating)
     256: {"Mt. Zozo": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Mt Zozo
     
     # SHADOW
@@ -86,6 +89,7 @@ REWARD_ROOMS = {
               "Auction House_2": [RewardType.ESPER, RewardType.ITEM]},   # Jidoor WoR.  WOB is 'ms-wob-28'
 
 }
+
 
 # List of named areas associated with each character
 CHARACTER_AREAS = {
@@ -155,6 +159,107 @@ RUIN_ROOM_SETS = {
     'FigaroCastle': ['ruin-figarocastle'],  # Remove entrance from South Figaro Cave; just have somewhere connect into the basement & require Engine Room before unlocking Castle.
 
 }
+
+
+class ruination_map():
+    # Class to organize data for mapping out ruination mode branches
+    RewardsAvailable = [0, 0]   # [# possible characters, # possible espers]
+    PARTY = []
+    Requested = [3, 0]
+    branches = [None, None, None]
+    branch_checks = [ [], [], []]   # checks available on each branch
+    AreasUsed = set()   # use a set to avoid duplicates
+
+    def __init__(self, args, starting_party):
+        self.args = args
+        self.PARTY.extend(starting_party)  # use character names in all caps
+        #print(self.PARTY)
+
+        # Interpret unlock requirements as requested # characters & espers in the map
+        for o in args.objectives:
+            if o.result.name == "Unlock Final Kefka":
+                for c in o.conditions:
+                    #print(c.name, c.args)
+                    if c.name == "Characters":
+                        self.Requested[0] = c.args[0]
+                    if c.name == "Espers":
+                        self.Requested[1] = c.args[0]
+        #print(self.Requested)
+
+        # Assemble initial areas to use & distribute among starting branches
+        for character in self.PARTY:
+            self.AreasUsed.update(CHARACTER_AREAS[character])
+        #print(self.AreasUsed)
+
+        branch_areas = [[], [], []]
+        for area in self.AreasUsed:
+            this_index = random.randint(0, 2)
+            branch_areas[this_index].append(area)
+        #print(branch_areas)
+
+        branch_rooms = [ [], [], []]
+        for i, areas in enumerate(branch_areas):
+            for area in areas:
+                branch_rooms[i].extend(RUIN_ROOM_SETS[area])
+
+        # Collect which checks are available, including how many can be characters and how many espers
+        for room in ROOM_REWARD:
+            which_branch = next((i for i, branch in enumerate(branch_rooms) if room in branch), -1)
+            if which_branch >= 0:
+                for reward_id in ROOM_REWARD[room].keys():
+                    self.branch_checks[i].append(reward_id)
+                    this_type = ROOM_REWARD[room][reward_id]
+                    #print(reward_id, i, this_type.possible_types)
+                    if this_type.possible_types & RewardType.CHARACTER:
+                        self.RewardsAvailable[0] += 1
+                    if this_type.possible_types & RewardType.ESPER:
+                        self.RewardsAvailable[1] += 1
+        #print(self.RewardsAvailable)
+
+        # Create branches with starting areas
+        hub_id = 'ruin_hub'
+        hub = room_data[hub_id]
+        termini_id = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']
+        random.shuffle(termini_id)
+        for i, door_id in enumerate(hub[0]):
+            # Create a new hub room
+            hub_room_id = 'ruin_hub_' + str(i)
+            hub_room = [ [door_id], [], [], 1]  # data structure for hub room
+            room_data[hub_room_id] = hub_room
+            branch_areas[i].append(hub_room_id)
+            # Also include a ruin terminus
+            terminus = termini_id.pop()
+            branch_areas[i].append(terminus)
+
+            # Create branch
+            branch = Network(branch_areas[i])
+            branch.active = hub_room_id  # start in the hub room
+            self.branches[i] = branch
+            #print(branch.original_room_ids)
+
+    def generate_map_with_characters(self, reward_slots):
+        # Build out branches, always starting with the least connected
+        RewardsObtained = [0, 0]
+
+        while (RewardsObtained[0] < self.Requested[0] or RewardsObtained[1] < self.Requested[1]):
+            # Pick a branch with an active reward
+            active = random.choice([b for b in range(3) if len(self.branch_checks[b]) > 0])
+            branch = self.branches[active]
+
+            found_reward = False
+            while not found_reward:
+                # Attach hubs & trapdoors until none are left (create all branches)
+                # Stop if a reward was found.
+                available_doors = branch.get_available_hubs()
+
+            # If no reward was found, attach the reward dead end.
+
+            # Process reward & restart loop
+
+        # After satisfying conditions, attach all remaining trapdoors
+
+        # Attach all remaining dead ends, starting with Terminus.
+
 
 def ruination_start_game_mod(dialogs, party):
     # Write the event that starts the game in ruination mode

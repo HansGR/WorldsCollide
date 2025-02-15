@@ -3,6 +3,7 @@ from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_
 import instruction.field as field
 from data.map_exit_extra import exit_data, door_to_eventname
 from data.warps import Warps, WarpPoints
+from event.ruination import *
 
 class Events():
     def __init__(self, rom, args, data):
@@ -64,8 +65,13 @@ class Events():
             # Share warp out animation code
             self.warps.warp_out_animation_addr = self.warp_points.warp_out_animation_addr
 
+        # Write modified warps
+        self.warps.mod()
+
         # select event rewards
-        if self.args.character_gating:
+        if self.args.ruination_mode:
+            self.ruination_mod(events, name_event)
+        elif self.args.character_gating:
             self.character_gating_mod(events, name_event, extra_gating)
         else:
             self.open_world_mod(events)
@@ -89,9 +95,6 @@ class Events():
         if self.args.spoiler_log:
             from log import section
             section("Events", log_strings, [])
-
-        # Write modified warps
-        self.warps.mod()
 
         return events
 
@@ -212,6 +215,31 @@ class Events():
 
         # choose the rest of the rewards, items given to events after all characters/events assigned
         self.choose_item_possible_rewards(reward_slots)
+
+    def ruination_mod(self, events, name_event):
+        reward_slots = self.init_reward_slots(events)
+
+        # Update ROOM_REWARD data
+        for room in ROOM_REWARD.keys():
+            for name in ROOM_REWARD[room].keys():
+                event = [e for e in events if e.name() in name]
+                if len(event) > 0:
+                    if '_' not in name:
+                        ROOM_REWARD[room][name] = event[0].rewards[0]
+                    else:
+                        reward_index = int(name[name.find('_')+1:])
+                        ROOM_REWARD[room][name] = event[0].rewards[reward_index-1]
+
+        # Choose starting party
+        characters_available = [reward.id for reward in name_event["Start"].rewards]
+        #start_slots = [s for s in reward_slots if s.event.name() == "Start"]
+        party = [self.characters.DEFAULT_NAME[c] for c in characters_available]
+
+        # Initialize ruination_map object
+        ruin_map = ruination_map(self.args, party)
+
+        # Build out the map & distribute characters
+        ruin_map.generate_map_with_characters(reward_slots)
 
     def validate(self, events):
         char_esper_checks = []

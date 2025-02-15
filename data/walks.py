@@ -32,6 +32,12 @@ class Network:
         result.should_stop = self.should_stop
         return result
 
+    def add_room(self, room_id):
+        # Handler for adding a room after initialization
+        self.original_room_ids.append(room_id)
+        self.rooms.add_room(room_id)
+        self.net.add_node(room_id)
+
     def ForceConnections(self, forcing, state='forced'):
         these_doors = self.rooms.doors + self.rooms.traps
         if self.protected is None:
