@@ -239,7 +239,7 @@ class Events():
         ruin_map = ruination_map(self.args, party)
 
         # Build out the map & distribute characters
-        ruin_map.generate_map_with_characters(reward_slots)
+        self.maps.doors.map = ruin_map.generate_map_with_characters(reward_slots, self.characters, self.espers, self.items)
 
     def validate(self, events):
         char_esper_checks = []
