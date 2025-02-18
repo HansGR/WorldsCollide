@@ -41,7 +41,7 @@ class Network:
     def ForceConnections(self, forcing, state='forced'):
         these_doors = self.rooms.doors + self.rooms.traps
         if self.protected is None:
-            self.protected = []
+            self.protected = set()
         for d in forcing.keys():
             if d in these_doors:
                 df = forcing[d][0]
@@ -50,8 +50,8 @@ class Network:
                 self.connect(d, df, state=state)
                 if self.verbose:
                     print('forcing successful.')
-            self.protected.append(d)
-            self.protected.extend(forcing[d])
+            self.protected.add(d)
+            self.protected.update(forcing[d])
         if self.verbose:
             print('added doors to protected: ', self.protected)
 

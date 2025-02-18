@@ -7,6 +7,20 @@ import random
 ESPER_GATE_MAPID = 0x0da
 NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
+CHARACTER_LOCKED_REWARDS = {
+    # Only rewards that literally cannot be obtained without the character, and in areas that are accessible without them
+    'TERRA': ['ruin-whelk', 'Zozo'],  # Narshe, Zozo
+    'LOCKE': ["Narshe WOR"],        # Narshe weapon shop
+    'CELES': ["South Figaro"],   # South Figaro cell
+    'SETZER': ["Kohlingen"],   # Kohlingen inn
+    'STRAGO': ["Burning House"],  # Thamasa inn
+    'MOG':  ["Lone Wolf", "Narshe Moogle Defense"], # Narshe
+}
+REWARDS_LOCKED_BY_CHARACTER = dict()
+for clr in CHARACTER_LOCKED_REWARDS.keys():
+    for reward in CHARACTER_LOCKED_REWARDS[clr]:
+        REWARDS_LOCKED_BY_CHARACTER[reward] = clr
+
 # Ruination area data
 ROOM_REWARD = {
     # TERRA
@@ -91,6 +105,21 @@ ROOM_REWARD = {
 
 }
 
+# HOW to deal with cross-branch transport?
+#(1) don't allow it.  Force certain areas to be in the same branch:
+forced_same_branch = {
+    'Zozo': {'ZozoTower', 'MtZozo'},
+    'Thamasa': {'VeldtCave', 'EbotsRock'},
+    'Nikeah': {'CrescentMtn'}
+}
+for fsb in [f for f in forced_same_branch.keys()]:
+    other_values = forced_same_branch[fsb]
+    all_values = set([fsb]).union(other_values)
+    for value in other_values:
+        others = all_values.difference({value})
+        forced_same_branch[value] = others
+#(2) allow it.  Just don't track e.g. VeldtCave --> Thamasa, EbotsRock --> Thamasa.
+
 
 # List of named areas associated with each character
 CHARACTER_AREAS = {
@@ -174,8 +203,8 @@ class RuinationBranch(Network):
     def add_room(self, room_id):
         super().add_room(room_id)
         self.classify_rooms([room_id])
-        if self.verbose:
-            print('added room:', room_id)
+        #if self.verbose:
+        #    print('added room:', room_id)
         # We need a custom handler for return from Lete River!
         if room_id == 'LeteRiver3':
             # add pit 3039 to ruin_hub
@@ -199,6 +228,15 @@ class RuinationBranch(Network):
             if room in ROOM_REWARD.keys():
                 self.check_rooms.append(room)
                 #print('...added check room: ', room)
+
+    def has_a_hub(self):
+        # Check if this branch has a true hub (3+ doors+traps)
+        possible_hubs = [node for node in self.net.nodes if (node not in self.dead_ends)]
+        for node_id in possible_hubs:
+            node = self.rooms.get_room(node_id)
+            if len(node.doors) + len(node.traps) >= 3:
+                return True
+        return False
 
     def get_available_hubs(self, exclude=None):
         if exclude is None:
@@ -229,9 +267,9 @@ class RuinationBranch(Network):
                     if self.verbose:
                         print('skipping', hub_id, '(door-in-trap-out, excluded)')
                 else:
-                    hub_conns.update(hub.doors)
+                    hub_conns.update([d for d in hub.doors if d not in self.protected])
             elif element_type == 1:
-                hub_conns.update(hub.pits)
+                hub_conns.update([p for p in hub.pits if p not in self.protected])
         return hub_conns
 
     def get_all_check_connections(self, element_type=0):
@@ -325,7 +363,7 @@ class RuinationBranch(Network):
             delta.append((entrance_count - exit_count, node))
         if self.verbose:
             print('(2) delta values:', delta)
-        delta.sort()
+        delta.sort(key=lambda x: x[0])
         while len(delta) > 0:
             value = delta.pop()
             node = value[1]
@@ -333,34 +371,79 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
 
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
-            hub = self.rooms.get_room(hub_id)
-            upstream = self.get_upstream_nodes(hub_id)
+            upstream_doors = [d for d in hub.doors]
+            upstream_pits = [p for p in hub.pits]
+            for node in upstream:
+                uproom = self.rooms.get_room(node)
+                upstream_pits.extend([p for p in uproom.pits])
 
-            ### A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
-            # In such a case, we can look at unused rooms, find a converter, and go through it.
+            this_conn = None
             if len(room.traps) > 0:
                 this_exit = random.choice(list(room.traps))
-                upstream_pits = [p for p in hub.pits]
-                for node in upstream:
-                    uproom = self.rooms.get_room(node)
-                    upstream_pits.extend([p for p in uproom.pits])
-                this_conn = random.choice(upstream_pits)
-            elif len(room.doors) > 0:
+                if len(upstream_pits) > 0:
+                    this_conn = random.choice(upstream_pits)
+
+            if this_conn is None and len(room.doors) > 0:
                 this_exit = random.choice(list(room.doors))
-                upstream_doors = [d for d in hub.doors]
-                for node in upstream:
-                    uproom = self.rooms.get_room(node)
-                    upstream_doors.extend([d for d in uproom.doors])
-                this_conn = random.choice(upstream_doors)
-            else:
-                # Failure.
+                if len(upstream_doors) > 0:
+                    this_conn = random.choice(upstream_doors)
+
+            if this_conn is None:
+                # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
+                # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
+                available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
+                if len(room.traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
+                    # Need a pit-in, door-out converter
+                    pido = []
+                    if self.verbose:
+                        print('\t\tlooking for available pido nodes:')
+                    for node_id in available_nodes:
+                        node = self.rooms.get_room(node_id)
+                        if len(node.pits) > 0 and len(node.doors) > 0 and len(node.pits) > len(node.traps):
+                            pido.append(node_id)
+                            if self.verbose:
+                                print('\t\t\t', node_id, ': ', node.count)
+
+                    if len(pido) > 0:
+                        this_conn = random.choice(pido)
+
+                elif len(room.doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
+                    # Need a door-in, trap-out converter
+                    dito = []
+                    if self.verbose:
+                        print('\t\tlooking for available dito nodes:')
+                    for node_id in available_nodes:
+                        node = self.rooms.get_room(node_id)
+                        if len(node.traps) > 0 and len(node.doors) > 0 and len(node.traps) > len(node.pits):
+                            dito.append(node_id)
+                            if self.verbose:
+                                print('\t\t\t', node_id, ': ', node.count)
+
+                    if len(dito) > 0:
+                        this_conn = random.choice(dito)
+
+            if this_conn is None:
+                # There is no solution.
                 print('Found an inescapable downstream node!')
                 raise Exception
 
             if self.verbose:
                 print('(2) connecting', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
+
+            # Update hub, upstream, downstream, delta
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            upstream = self.get_upstream_nodes(hub_id)
+            downstream = self.get_downstream_nodes(hub_id)
+            delta = []
+            for node in downstream:
+                room = self.rooms.get_room(node)
+                entrance_count = len(room.doors) + len(room.pits)
+                exit_count = len(room.doors) + len(room.traps)
+                delta.append((entrance_count - exit_count, node))
+            if self.verbose:
+                print('(2) delta values:', delta)
+            delta.sort(key=lambda x: x[0])
 
         # (3) Connect any remaining trapdoors/pits
         # At this point, only the hub room should be remaining.
@@ -428,7 +511,7 @@ class ruination_map():
     Requested = [3, 0]
     branches = [RuinationBranch([]), RuinationBranch([]), RuinationBranch([])]
     branch_checks = [ [], [], []]   # checks available on each branch, stored locally
-    AreasUsed = set()   # use a set to avoid duplicates
+    AreasUsed = dict()   # use a dict to track 'AreaName': branch_id
     keychain = set()   # global keychain
 
     verbose = True
@@ -447,7 +530,8 @@ class ruination_map():
                         self.Requested[0] = c.args[0]
                     if c.name == "Espers":
                         self.Requested[1] = c.args[0]
-        #print(self.Requested)
+        if self.verbose:
+            print('Requested: ', self.Requested[0], 'characters, ', self.Requested[1], 'espers')
 
         # Assemble initial areas to use & distribute among starting branches
         initial_areas = set()
@@ -489,42 +573,65 @@ class ruination_map():
 
         #print(branch.original_room_ids)
 
-    def distribute_areas(self, areas, method = 'random'):
+    def distribute_areas(self, areas, method='random'):
         # Distribute new areas among the branches
         branch_areas = [ set(), set(), set()]
 
+        def _check_forced_same_branch(a):
+            # Helper function to assess if an area has a forced destination
+            if a in forced_same_branch.keys():
+                partners = forced_same_branch[a]
+                for partner in partners:
+                    if partner in self.AreasUsed.keys():
+                        branch_index = self.AreasUsed[partner]
+                        if self.verbose:
+                            print('Forced same branch:', a, partner, branch_index)
+                        return branch_index
+                return False
+            return False
+
         # Make sure we don't double-add areas
-        areas = [a for a in areas if a not in self.AreasUsed]
+        areas = [a for a in areas if a not in self.AreasUsed.keys()]
 
         if method == 'random':
             for area in areas:
-                this_index = random.randint(0, 2)
+                this_index = _check_forced_same_branch(area)
+                if this_index is False:
+                    this_index = random.randint(0, 2)
                 branch_areas[this_index].add(area)
+                self.AreasUsed[area] = this_index
         elif method == 'distribute':
             seed = random.randint(0, 2)
             use_index = [(i + seed) % 3 for i in range(len(areas))]
             random.shuffle(use_index)
             for area in areas:
-                this_index = use_index.pop()
+                this_index = _check_forced_same_branch(area)
+                if this_index is False:
+                    this_index = use_index.pop()
                 branch_areas[this_index].add(area)
+                self.AreasUsed[area] = this_index
         elif method == 'shortest':
             num_rooms = [len(b.original_room_ids) for b in self.branches]
             random.shuffle(areas)
             for area in areas:
-                if self.verbose:
-                    print('\t\t# rooms on each branch: ', num_rooms)
-                use_index = num_rooms.index(min(num_rooms))
-                branch_areas[use_index].add(area)
+                this_index = _check_forced_same_branch(area)
+                if this_index is False:
+                    if self.verbose:
+                        print('\t\t# rooms on each branch: ', num_rooms)
+                    this_index = num_rooms.index(min(num_rooms))
+                branch_areas[this_index].add(area)
+                self.AreasUsed[area] = this_index
                 area_room_num = len(RUIN_ROOM_SETS[area])
-                num_rooms[use_index] += area_room_num
+                num_rooms[this_index] += area_room_num
         elif method == 'least_checks':
             for area in areas:
-                shortest_index = [len(b) for b in self.branch_checks]
-                use_index = shortest_index.index(min(shortest_index))
-                branch_areas[use_index].add(area)
+                this_index = _check_forced_same_branch(area)
+                if this_index is False:
+                    shortest_index = [len(b) for b in self.branch_checks]
+                    this_index = shortest_index.index(min(shortest_index))
+                branch_areas[this_index].add(area)
+                self.AreasUsed[area] = this_index
 
-        # Add areas to global catalog
-        self.AreasUsed.update(areas)
 
         if self.verbose:
             print('Distributed areas:')
@@ -567,7 +674,8 @@ class ruination_map():
 
     def generate_map_with_characters(self, reward_slots, characters, espers, items):
         # Build out branches, always starting with the least connected
-        RewardsObtained = [0, 0]
+        self.RewardsObtained = [0, 0]
+        self.LockedRewards = dict()
 
         # Edit forced connections for ruination
         #for fc in ruination_extra_force:
@@ -578,13 +686,21 @@ class ruination_map():
         if self.verbose:
             print('Generating map with characters...')
 
-        while (RewardsObtained[0] < self.Requested[0] or RewardsObtained[1] < self.Requested[1]):
+        ### This approach fails if a branch has only dead ends on it.  For example: a branch could initially get just
+        # 'Gau Father House', 'Floating Continent', both of which are dead ends.
+        # In such a case, may need to throw in an optional hub room to get started... or just start on a different branch & assume it'll get sorted.
+
+        while (self.RewardsObtained[0] < self.Requested[0] or self.RewardsObtained[1] < self.Requested[1]):
             # Pick a branch with an active reward
             #branch_in_hub = ['ruin_hub_' in str(b.active) for b in self.branches]
             #if branch_in_hub.count(False) > 0:
             #    # One of the branches is not in the hub. Keep working on that one.
             #    branch_id = branch_in_hub.index(False)
-            branch_id = random.choice([b for b in range(3) if len(self.branch_checks[b]) > 0])
+            # Pick a branch that is not all dead ends.  Requires at least one true hub room
+            branch_is_viable = [b.has_a_hub() for b in self.branches]
+            if self.verbose:
+                print('Branch viability:', branch_is_viable)
+            branch_id = random.choice([b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b]])
             branch = self.branches[branch_id]
 
             # Update lists of dead ends
@@ -731,7 +847,7 @@ class ruination_map():
                 forced_exits = [e for e in all_exits if e in forced_connections.keys()]
                 if len(forced_exits) > 0:
                     this_exit = forced_exits.pop()
-                    this_conn = forced_connections[this_exit]
+                    this_conn = forced_connections[this_exit][0]
                     if self.verbose:
                         print('Found forced exit!', this_exit, '-->', this_conn)
                 else:
@@ -747,14 +863,37 @@ class ruination_map():
 
                 # Check if a reward was found
                 conn_room = branch.rooms.get_room_from_element(this_conn)
-                if conn_room.id in ROOM_REWARD.keys():
-                    # Stop if a reward was found
-                    found_reward = True
-                    rewards = [(k, ROOM_REWARD[conn_room.id][k]) for k in ROOM_REWARD[conn_room.id].keys()]
+                downstream = branch.get_downstream_nodes(conn_room.id)
+                if self.verbose:
+                    print('Looking for reward in room', conn_room, '...')
+                if conn_room.id in branch.check_rooms:
+                    reward_room = conn_room.id
+                elif len([n for n in downstream if n in branch.check_rooms]) > 0:
+                    # Reward room can be downstream if there's forced connections in/out
+                    reward_room = [n for n in downstream if n in branch.check_rooms][0]
+                else:
+                    reward_room = None
+
+                if reward_room is not None:
+                    rewards = [(k, ROOM_REWARD[reward_room][k]) for k in ROOM_REWARD[reward_room].keys()]
                     if self.verbose:
-                        print('Found a reward! ', [(r[0], r[1].possible_types) for r in rewards])
+                        print('Found a reward! ', [(r[0], r[1].possible_types) for r in rewards], 'in room', reward_room)
+
+                    # Check to see if the reward is locked; if so, bank it
+                    for r in rewards:
+                        if r[0] in REWARDS_LOCKED_BY_CHARACTER.keys():
+                            locker = REWARDS_LOCKED_BY_CHARACTER[r[0]]
+                            if locker not in self.keychain:
+                                # Bank this reward for later & keep going
+                                if locker not in self.LockedRewards.keys():
+                                    self.LockedRewards[locker] = []
+                                self.LockedRewards[locker].append((branch_id, [r]))   # (branch_id, [check_name, check_data])
+                            else:
+                                # Stop if a reward was found
+                                found_reward = True
+
                     # Remove check room from the list
-                    branch.check_rooms.remove(conn_room.id)
+                    branch.check_rooms.remove(reward_room)
 
                 # Actually connect them.  This also moves the active room to the new room.
                 if self.verbose:
@@ -762,63 +901,7 @@ class ruination_map():
                 branch.connect(this_exit, this_conn)
 
             ### Process reward & restart loop
-            # Identify reward & decide on reward type
-            for reward in rewards:
-                #reward_types = [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]
-                reward_name = reward[0]  #reward_name = slot.event.name()
-                slot = reward[1]
-                if self.verbose:
-                    print('Processing reward: ', reward_name)
-
-                if self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
-                    # This must be a character.
-                    if self.verbose:
-                        print('\tmust be a character')
-                    slot.id, slot.type = choose_reward(RewardType.CHARACTER, characters, espers, items)
-                    if self.verbose:
-                        print('\tgot ', characters.get_name(slot.id), '!')
-                else:
-                    # Just choose from among available types
-                    if self.verbose:
-                        print('\tchoosing from...', slot.possible_types)
-                    slot.id, slot.type = choose_reward(slot.possible_types, characters, espers, items)
-                    if self.verbose:
-                        if slot.type is RewardType.CHARACTER:
-                            print('\tgot', characters.get_name(slot.id), '!')
-                        elif slot.type is RewardType.ESPER:
-                            print('\tgot', espers.get_name(slot.id), '!')
-                        elif slot.type is RewardType.ITEM:
-                            print('\tgot', items.get_name(slot.id), '!')
-
-                # Update RewardsObtained
-                if slot.type is RewardType.CHARACTER:
-                    RewardsObtained[0] += 1
-                    # If a character, add new areas to the map
-                    new_char = characters.DEFAULT_NAME[slot.id]
-                    self.apply_key(new_char)   # apply new key to all branches
-                    new_areas = CHARACTER_AREAS[new_char]
-                    self.distribute_areas(new_areas, method='shortest')  # distribute areas among branches
-
-                elif slot.type is RewardType.ESPER:
-                    RewardsObtained[1] += 1
-
-                # Update RewardsAvailable
-                if slot.possible_types & RewardType.CHARACTER:
-                    self.RewardsAvailable[0] -= 1
-                if slot.possible_types & RewardType.ESPER:
-                    self.RewardsAvailable[1] -= 1
-
-                if self.verbose:
-                    print('\tUpdated Rewards Obtained: ', RewardsObtained[0], 'Characters, ', RewardsObtained[1], 'Espers')
-                    print('\tUpdated Rewards Available: ', self.RewardsAvailable[0], 'Characters, ', self.RewardsAvailable[1],
-                          'Espers')
-
-                # Update branch_checks
-                self.branch_checks[branch_id].remove(reward_name)
-                if self.verbose:
-                    print('\tUpdated branch checks available:')
-                    for i, bc in enumerate(self.branch_checks):
-                        print('\t', i, ': ', bc)
+            self.process_rewards(rewards, characters, espers, items, branch_id=branch_id)
 
         # After satisfying conditions, fully connect map
         for branch in self.branches:
@@ -839,6 +922,76 @@ class ruination_map():
 
         return map
 
+    def process_rewards(self, rewards, characters, espers, items, branch_id):
+        # Identify reward & decide on reward type
+        for reward in rewards:
+            # reward_types = [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]
+            reward_name = reward[0]  # reward_name = slot.event.name()
+            slot = reward[1]
+            if self.verbose:
+                print('Processing reward: ', reward_name)
+
+            if self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
+                # This must be a character.
+                if self.verbose:
+                    print('\tmust be a character')
+                slot.id, slot.type = choose_reward(RewardType.CHARACTER, characters, espers, items)
+                if self.verbose:
+                    print('\tgot ', characters.get_name(slot.id), '!')
+            else:
+                # Just choose from among available types
+                if self.verbose:
+                    print('\tchoosing from...', slot.possible_types)
+                slot.id, slot.type = choose_reward(slot.possible_types, characters, espers, items)
+                if self.verbose:
+                    if slot.type is RewardType.CHARACTER:
+                        print('\tgot', characters.get_name(slot.id), '!')
+                    elif slot.type is RewardType.ESPER:
+                        print('\tgot', espers.get_name(slot.id), '!')
+                    elif slot.type is RewardType.ITEM:
+                        print('\tgot', items.get_name(slot.id), '!')
+
+            # Update RewardsObtained
+            if slot.type is RewardType.CHARACTER:
+                self.RewardsObtained[0] += 1
+                # If a character, add new areas to the map
+                new_char = characters.DEFAULT_NAME[slot.id]
+                self.apply_key(new_char)  # apply new key to all branches
+                new_areas = CHARACTER_AREAS[new_char]
+                self.distribute_areas(new_areas, method='shortest')  # distribute areas among branches
+
+            elif slot.type is RewardType.ESPER:
+                self.RewardsObtained[1] += 1
+
+            # Update RewardsAvailable
+            if slot.possible_types & RewardType.CHARACTER:
+                self.RewardsAvailable[0] -= 1
+            if slot.possible_types & RewardType.ESPER:
+                self.RewardsAvailable[1] -= 1
+
+            if self.verbose:
+                print('\tUpdated Rewards Obtained: ', self.RewardsObtained[0], 'Characters, ', self.RewardsObtained[1], 'Espers')
+                print('\tUpdated Rewards Available: ', self.RewardsAvailable[0], 'Characters, ',
+                      self.RewardsAvailable[1],
+                      'Espers')
+
+            # Update branch_checks
+            self.branch_checks[branch_id].remove(reward_name)
+            if self.verbose:
+                print('\tUpdated branch checks available:')
+                for i, bc in enumerate(self.branch_checks):
+                    print('\t', i, ': ', bc)
+
+            # If a new character unlocks a reward we already found, apply it.
+            if slot.type is RewardType.CHARACTER:
+                this_char = characters.DEFAULT_NAME[slot.id]
+                if this_char in self.LockedRewards.keys():
+                    # self.LockedRewards[locker].append((branch_id, [r]))   # (branch_id, [check_name, check_data])
+                    value = self.LockedRewards.pop(this_char)
+                    for v in value:
+                        if self.verbose:
+                            print('\tUnlocked an available reward!', v[1][0], 'on branch', v[0])
+                        self.process_rewards(v[1], characters, espers, items, v[0])
 
 
 def ruination_start_game_mod(dialogs, party):

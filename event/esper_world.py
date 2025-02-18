@@ -90,7 +90,7 @@ class EsperWorld(Event):
         self.rom.set_bytes(tilemaps_start + tilemap_addr, compressed)
 
         ### This works, but looks funny for some reason.  Why?  They look identical except for Priority 1.
-        # Instead, can we set tileset 0xf, tiles 0x1d, 0x1f to not priority-1?
+        # Nevermind, it was just the boulder NPCs showing through.
 
 
         #print('Cleaned up Esper World')

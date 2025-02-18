@@ -384,40 +384,43 @@ class NarsheMoogleDefense(Event):
         space = Reserve(0xca8ff, 0xca8ff, "small pause before fade", field.NOP())
 
         # Change logic for moogle party selection to account for any party variation
-        self.add_moogles_to_parties()
+        if not self.args.ruination_mode:
+            self.add_moogles_to_parties()
 
-        # Add party size checks around the addition of parties 2 and 3 to the map
-        src = [
-            field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
-            Read(0xcaa23, 0xcaa26), # displaced code -- place party 2 on map
-            field.BranchIfPartyEmpty(3, "RETURN"),
-            Read(0xcaa27, 0xcaa2a), # displaced code -- place party 3 on map
-            "RETURN", 
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "Check for Party 2 and 3 sizes before placing")
-        place_parties = space.start_address
+            # Add party size checks around the addition of parties 2 and 3 to the map
+            src = [
+                field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
+                Read(0xcaa23, 0xcaa26), # displaced code -- place party 2 on map
+                field.BranchIfPartyEmpty(3, "RETURN"),
+                Read(0xcaa27, 0xcaa2a), # displaced code -- place party 3 on map
+                "RETURN",
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "Check for Party 2 and 3 sizes before placing")
+            place_parties = space.start_address
 
         space = Reserve(0xcaa23, 0xcaa2a, "place party 2 and 3 on map", field.NOP())
-        space.write(
-            field.Call(place_parties),
-        )
+        if not self.args.ruination_mode:
+            space.write(
+                field.Call(place_parties),
+            )
 
-        src = [
-            field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
-            Read(0xcaa3a, 0xcaa48), # displaced code -- position party 2 on map
-            field.BranchIfPartyEmpty(3, "RETURN"),
-            Read(0xcaa49, 0xcaa57), # displaced code -- position party 3 on map
-            "RETURN",
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "Position party 2")
-        position_parties = space.start_address
+            src = [
+                field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
+                Read(0xcaa3a, 0xcaa48), # displaced code -- position party 2 on map
+                field.BranchIfPartyEmpty(3, "RETURN"),
+                Read(0xcaa49, 0xcaa57), # displaced code -- position party 3 on map
+                "RETURN",
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "Position party 2")
+            position_parties = space.start_address
 
         space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
-        space.write(
-            field.Call(position_parties),
-        )
+        if not self.args.ruination_mode:
+            space.write(
+                field.Call(position_parties),
+            )
 
         # Clear use of event_bit.12E (TERRA_COLLAPSED_NARHSE_WOB) and event_bit.003 (moogle defense) at cc/aaab so that we can reuse 12E 
         # and so that 003 doesn't cause issues at WoB Narshe entrance
@@ -441,26 +444,28 @@ class NarsheMoogleDefense(Event):
             Read(0xcaded, 0xcadf2), # load map
 
             field.HideEntity(0x1B), # the exit block at top of map
-
-            field.SetParty(1),
-            field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
-            field.LoadRecruitedCharacters(),
         ]
-        for character_idx in range(self.characters.CHARACTER_COUNT):
+        if not self.args.ruination_mode:
             src += [
-                #only restore if character has not been recruited (meaning they were moogled)
-                field.BranchIfEventBitSet(event_bit.multipurpose(character_idx), f"SKIP_{character_idx}"), 
-                field.RemoveStatusEffects(character_idx, field.Status.FLOAT | field.Status.DARKNESS | field.Status.ZOMBIE | field.Status.POISON | field.Status.VANISH | field.Status.IMP | field.Status.PETRIFY | field.Status.DEATH),
-                field.RemoveDeath(character_idx), # added due to permadeath situations to make sure the corresponding party member is alive
-                field.RestoreHp(character_idx, 0x7f), # restore all HP
-                field.RestoreMp(character_idx, 0x7f), # restore all MP
-                # Restore character appearance, name, and properties
-                field.SetSprite(character_idx, self.characters.get_sprite(character_idx)),
-                field.SetPalette(character_idx, self.characters.get_palette(character_idx)),
-                field.SetName(character_idx, character_idx),
-                field.SetEquipmentAndCommands(character_idx, character_idx),
-                f"SKIP_{character_idx}",
+                field.SetParty(1),
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.LoadRecruitedCharacters(),
             ]
+            for character_idx in range(self.characters.CHARACTER_COUNT):
+                src += [
+                    #only restore if character has not been recruited (meaning they were moogled)
+                    field.BranchIfEventBitSet(event_bit.multipurpose(character_idx), f"SKIP_{character_idx}"),
+                    field.RemoveStatusEffects(character_idx, field.Status.FLOAT | field.Status.DARKNESS | field.Status.ZOMBIE | field.Status.POISON | field.Status.VANISH | field.Status.IMP | field.Status.PETRIFY | field.Status.DEATH),
+                    field.RemoveDeath(character_idx), # added due to permadeath situations to make sure the corresponding party member is alive
+                    field.RestoreHp(character_idx, 0x7f), # restore all HP
+                    field.RestoreMp(character_idx, 0x7f), # restore all MP
+                    # Restore character appearance, name, and properties
+                    field.SetSprite(character_idx, self.characters.get_sprite(character_idx)),
+                    field.SetPalette(character_idx, self.characters.get_palette(character_idx)),
+                    field.SetName(character_idx, character_idx),
+                    field.SetEquipmentAndCommands(character_idx, character_idx),
+                    f"SKIP_{character_idx}",
+                ]
         src += [
             # give Shadow Interceptor again
             field.AddStatusEffects(self.characters.SHADOW, field.Status.DOG_BLOCK),
@@ -540,9 +545,13 @@ class NarsheMoogleDefense(Event):
 
         self.marshal_npc_mod()
 
-        self.arvis_start_mod()
+        if not self.args.ruination_mode:
+            self.arvis_start_mod()
         self.event_start_mod()
         self.marshal_battle_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_start_mod()  # requires event_start_mod to be written.
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -553,6 +562,53 @@ class NarsheMoogleDefense(Event):
 
         self.log_reward(self.reward)
 
+    def ruination_start_mod(self):
+        # (1) Edit the mine entry event to show collapsed Terra, if we have mog
+        # Original entrance_event code is at 0xcab6f: handles wolf movement (if 0x12f is set)
+        src = [
+            field.BranchIfAny([event_bit.character_recruited(self.character_gate()), False,
+                               event_bit.FINISHED_MOOGLE_DEFENSE, True],
+                              "CONTINUE"),
+            field.SetEventBit(npc_bit.TERRA_COLLAPSED_NARSHE_WOB),  # Show collapsed "Terra"
+            field.ShowEntity(self.COLLAPSED_TERRA_NPC_ID),
+            "CONTINUE",
+            field.Branch(0xcab6f),
+        ]
+        space = Write(Bank.CC, src, "Ruination begin moogle defense in mines")
+        self.maps[self.WOB_MAP_ID]["entrance_event_address"] = space.start_address - EVENT_CODE_START
 
-
-
+        # (2) Edit the collapsed Terra NPC event to begin the encounter
+        self.moogle_defense_begin_addr = 0xCA7b8   # after Locke lands, walks to the left of Terra, kneels, blinks.
+        src = [
+            field.SetEventBit(npc_bit.MARSHAL_NARSHE_WOB),  # Show "Terra" in south caves and Marshal in battle
+            field.BranchIfEventBitSet(event_bit.FACING_RIGHT, "BEGIN_EVENT"),
+            field.BranchIfEventBitSet(event_bit.FACING_UP, "MOVE_LEFT_UP"),
+            field.BranchIfEventBitSet(event_bit.FACING_DOWN, "MOVE_LEFT_DOWN"),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.UP, 1),
+                            field_entity.Move(direction.LEFT, 1)
+                            ),
+            field.Branch("MOVE_LEFT_DOWN"),
+            "MOVE_LEFT_UP",
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.LEFT, 1),
+                            field_entity.Move(direction.UP, 1)
+                            ),
+            field.Branch("BEGIN_EVENT"),
+            "MOVE_LEFT_DOWN",
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.LEFT, 1),
+                            field_entity.Move(direction.DOWN, 1)
+                            ),
+            "BEGIN_EVENT",
+            field.FadeOutSong(0x40),
+            Read(0xca799, 0xca7b7),   # Animate kneeling, then blinking
+            field.StartSong(13),  # play song: Locke
+            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),  # keep song playing
+            field.Branch(self.moogle_defense_begin_addr)
+        ]
+        space = Write(Bank.CC, src, "Collapsed Terra starting moogle defense event")
+        self.terra_collapsed_npc.event_code_address = space.start_address - EVENT_CODE_START

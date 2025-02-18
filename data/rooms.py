@@ -180,7 +180,7 @@ room_data = {
     'ruin-baren': [ [1561], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
     'ruin-narshe': [[1143, 1146, 140, 143], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves
-    'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], ['zr1'], {"TERRA": [608]}, 1], #Zozo 1F Outside WOR + Terra-locked 608
+    'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608
 
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
@@ -1046,6 +1046,7 @@ forced_connections = {
     2046: [3046],    # Serpent Trench #1 continue to #2
     2049: [3049],    # Serpent Trench #2 continue to #3
     2053: [3053],    # Nikeah entry
+    2153: [3153],    # ST reward --> nikeah, trickery
 
     2055: [3055],    # Burning House defeating boss --> Thamasa Inn.  This *could* be randomized.
 

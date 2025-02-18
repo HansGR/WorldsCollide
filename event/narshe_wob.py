@@ -283,7 +283,8 @@ class NarsheWOB(Event):
         ghost_npc.x = 110
         ghost_npc.direction = direction.LEFT
 
-    # (4) Modify room aesthetics
-    # make it a bit darker?
-    # add torch flicker to the lights?
-    # Change the music to "esper world" or "world of ruin"?
+        # (4) Modify room aesthetics
+        # make it a bit darker?
+        # add torch flicker to the lights?
+        # Change the music to "esper world" or "world of ruin"?
+
