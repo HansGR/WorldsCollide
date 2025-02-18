@@ -180,8 +180,14 @@ class Doors():
         if self.args.ruination_mode:
             # Ruination mode overrides all others.
             # It will probably have a custom sorting algorithm, but for now...
-            room_sets.append(ROOM_SETS['Ruination'])
-            self.area_name.append('Ruination')
+            #room_sets.append(ROOM_SETS['Ruination'])
+            #self.area_name.append('Ruination')
+            # Door mapping is now done in events.ruination_mod()
+
+            # Split some town exits in ruination mode (same as for dungeon crawl mode):
+            for se in dungeon_crawl_split_exits.keys():
+                for exit in dungeon_crawl_split_exits[se]:
+                    shared_exits[se].remove(exit)
 
             self.forcing.pop(1079)
 

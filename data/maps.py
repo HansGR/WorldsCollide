@@ -494,7 +494,7 @@ class Maps():
             for map_index, cur_map in enumerate(self.maps):
                 self.properties[map_index].warpable = 0
 
-
+    def postprocess_door_map(self):
         # Postprocess the door map
         self.door_map = {}
         self.trap_map = {}
@@ -511,13 +511,15 @@ class Maps():
                 if m[0] not in self.door_map.keys():
                     self.door_map[m[0]] = m[1]
                 else:
-                    is_shared = len([ses for ses in shared_exits_sets if self.door_map[m[0]] in ses and m[1] in ses]) > 0
+                    is_shared = len(
+                        [ses for ses in shared_exits_sets if self.door_map[m[0]] in ses and m[1] in ses]) > 0
                     if self.doors.verbose and not is_shared and not (self.door_map[m[0]] == m[1]):
                         print('CONFLICTING EXITS: ', m[0], '-->', self.door_map[m[0]], ' vs ', m[1])
                 if m[1] not in self.door_map.keys():
                     self.door_map[m[1]] = m[0]
                 else:
-                    is_shared = len([ses for ses in shared_exits_sets if self.door_map[m[1]] in ses and m[0] in ses]) > 0
+                    is_shared = len(
+                        [ses for ses in shared_exits_sets if self.door_map[m[1]] in ses and m[0] in ses]) > 0
                     if self.doors.verbose and not is_shared and not (self.door_map[m[1]] == m[0]):
                         print('CONFLICTING EXITS: ', m[1], '-->', self.door_map[m[1]], ' vs ', m[0])
 
@@ -528,7 +530,8 @@ class Maps():
                 is_reciprocal = (m == mr)
                 is_shared = [ses for ses in shared_exits_sets if {m, mr}.issubset(ses)]
                 if not is_reciprocal and not is_shared:
-                    exception_text = 'INVALID DOOR MAP: ' + str(m) + " --> " + str(m2) + '; ' + str(m2) + " --> " + str(mr)
+                    exception_text = 'INVALID DOOR MAP: ' + str(m) + " --> " + str(m2) + '; ' + str(m2) + " --> " + str(
+                        mr)
                     raise Exception(exception_text)
 
             temp = [m for m in self.door_map.keys() if
@@ -547,8 +550,10 @@ class Maps():
             # Patch all used exits
             # Also patch exits that are logical and have different destinations than their WOB companions ...
             # Actually just patch all exits in exit_data_patch, why not.  Should be safe.
-            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()]))  + [e for e in event_door_connection_data.keys()]
-            #print(exits_to_patch)
+            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()])) + [e for
+                                                                                                                   e in
+                                                                                                                   event_door_connection_data.keys()]
+            # print(exits_to_patch)
             self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=False)
             for e in self.exits.exit_original_data.keys():
                 if len(self.exits.exit_original_data[e]) == 12:
@@ -575,32 +580,12 @@ class Maps():
 
                     this_data = dungeon_crawl_exit_destination_override[d]
                     self.exits.exit_original_data[safe_id] = this_data
-                    #print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
-
+                    # print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
 
             # Create a trapdoor map for reference
             for m in self.doors.map[1]:
                 if m[0] not in self.trap_map.keys():
                     self.trap_map[m[0]] = m[1]
-
-        # if self.args.map_shuffle:
-        #     # Modify the entrance events for maps 0x0 and 0x1 to correctly set the world bit.
-        #     # Note we also need to change the 'load map' calls on airship & warp stones to use the entrance event.
-        #     # THIS DOESN'T SEEM TO WORK.  Alas.  I guess entrance events just don't work on the world map.
-        #     src = [
-        #         vehicle.ClearEventBit(event_bit.IN_WOR),
-        #         world.End()
-        #     ]
-        #     space = Write(Bank.CA, src, "WOB entrance event update world bit")
-        #     self.maps[0x0]["entrance_event_address"] = space.start_address - EVENT_CODE_START
-        #
-        #     src = [
-        #         vehicle.SetEventBit(event_bit.IN_WOR),
-        #         world.End()
-        #     ]
-        #     space = Write(Bank.CA, src, "WOR entrance event update world bit")
-        #     self.maps[0x1]["entrance_event_address"] = space.start_address - EVENT_CODE_START
-
     def doorRandoOverride(self, newmap):
         from data.map_exit_extra import exit_data as ed
         for r in room_data.keys():
@@ -681,7 +666,9 @@ class Maps():
     def write(self):
         # self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
-        if self.args.door_randomize or self.args.map_shuffle:
+        if self.args.door_randomize or self.args.map_shuffle or self.args.ruination_mode:
+            self.postprocess_door_map()
+
             # Patch exits if necessary
             used_exits = [m for m in self.door_map.keys()]
 

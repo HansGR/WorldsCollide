@@ -1010,6 +1010,10 @@ room_data = {
     'branch-fc': [[1557], [], [], 0],  # Floating Continent outside at entry
 }
 
+ruination_dont_force = [
+    1079    # Cave to the Sealed Gate, now movable.  Quick exit always open?
+]
+
 # Lists of exits that must be connected
 forced_connections = {
     2005 : [3005],   # Umaro's Cave logical handler for pit trapdoor accessible from 2 rooms

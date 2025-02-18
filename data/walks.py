@@ -35,7 +35,7 @@ class Network:
     def add_room(self, room_id):
         # Handler for adding a room after initialization
         self.original_room_ids.append(room_id)
-        self.rooms.add_room(room_id)
+        self.rooms.add_room(Room(room_id, self.rooms))
         self.net.add_node(room_id)
 
     def ForceConnections(self, forcing, state='forced'):
@@ -69,54 +69,68 @@ class Network:
                     self.apply_key(k)
 
     def connect(self, d1, d2, state=None):
+        connect_verbose = False
         # Get rooms containing elements
         R1 = self.rooms.get_room_from_element(d1)
         R2 = self.rooms.get_room_from_element(d2)
 
-        #print('\t\t\tSelected rooms:', R1.id, R2.id)
+        if connect_verbose:
+            print('\t\t\tSelected rooms:', R1.id, R2.id)
         if R1 is not R2:
             self.net.add_edge(R1.id, R2.id)
-            #print('\t\t\t\tadded edge', R1.id, '--> ', R2.id)
+            if connect_verbose:
+                print('\t\t\t\tadded edge', R1.id, '--> ', R2.id)
             if R1.element_type(d1) == 0:
                 self.net.add_edge(R2.id, R1.id)
-                #print('\t\t\t\tadded edge', R2.id, '--> ', R1.id)
+                if connect_verbose:
+                    print('\t\t\t\tadded edge', R2.id, '--> ', R1.id)
 
         # Add to network map
         if R1.element_type(d1) == 0:
             self.map[0].append([d1, d2])
-            #print('\t\t\tadded to map:', self.map[0][-1])
+            if connect_verbose:
+                print('\t\t\tadded to map:', self.map[0][-1])
         else:
             self.map[1].append([d1, d2])
-            #print('\t\t\tadded to map:', self.map[1][-1])
+            if connect_verbose:
+                print('\t\t\tadded to map:', self.map[1][-1])
 
 
         # Remove elements from rooms
         R1.remove(d1)
-        #print('\t\t\tremoved', d1)
+        if connect_verbose:
+            print('\t\t\tremoved', d1)
         R2.remove(d2)
-        #print('\t\t\tremoved', d2)
+        if connect_verbose:
+            print('\t\t\tremoved', d2)
 
         if state != 'static':
             loop = self.get_loop(R1.id)
-            #print('\t\t\tlook for loop', loop)
+            if connect_verbose:
+                print('\t\t\tlook for loop', loop)
             if loop:
                 loop_room = self.compress_loop(loop)
-                #print('\t\t\tcompressed loop', loop_room.id)
+                if connect_verbose:
+                    print('\t\t\tcompressed loop', loop_room.id)
 
             if state != 'forced':
                 if loop:
                     # Need to change how we update active room
                     self.active = loop_room.id
-                    #print('\t\t\tactivated', loop_room.id)
+                    if connect_verbose:
+                        print('\t\t\tactivated', loop_room.id)
                     for k in loop_room.keys:
                         self.apply_key(k)
-                        #print('\t\t\tapplied key', k)
+                        if connect_verbose:
+                            print('\t\t\tapplied key', k)
                 else:
                     self.active = R2.id
-                    #print('\t\t\tactivated', R2.id)
+                    if connect_verbose:
+                        print('\t\t\tactivated', R2.id)
                     for k in R2.keys:
                         self.apply_key(k)
-                        #print('\t\t\tapplied key', k)
+                        if connect_verbose:
+                            print('\t\t\tapplied key', k)
 
     def apply_key(self, key):
         # Add the key to the keychain

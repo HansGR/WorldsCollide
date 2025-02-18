@@ -1,6 +1,6 @@
 from event.event import *
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
-from data.rooms import room_data
+from data.rooms import room_data, ruination_dont_force
 from data.walks import *
 import random
 
@@ -163,16 +163,275 @@ RUIN_ROOM_SETS = {
 
 RUIN_TERMINI = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']  # list of terminal rooms for branches
 
+
+class RuinationBranch(Network):
+    def __init__(self, rooms):
+        super().__init__(rooms)
+        self.dead_ends = []
+        self.check_rooms = []
+        self.classify_rooms(rooms)
+
+    def add_room(self, room_id):
+        super().add_room(room_id)
+        self.classify_rooms([room_id])
+        if self.verbose:
+            print('added room:', room_id)
+        # We need a custom handler for return from Lete River!
+        if room_id == 'LeteRiver3':
+            # add pit 3039 to ruin_hub
+            hub_room_id = [n for n in self.net.nodes if 'ruin_hub' in str(n)][0]
+            hub_room = self.rooms.get_room(hub_room_id)
+            hub_room.add_pits([3039])
+            if self.verbose:
+                print('CUSTOM add pit 3039 to', hub_room_id, '!', hub_room.count, hub_room.pits)
+            self.rooms.reindex_room(hub_room_id)
+
+    def classify_rooms(self, rooms):
+        for room in rooms:
+            if room in RUIN_TERMINI:
+                self.terminus = room
+                #print('...updated terminus: ', room)
+
+            if self.is_dead_end(room):
+                self.dead_ends.append(room)
+                #print('...added dead end: ', room)
+
+            if room in ROOM_REWARD.keys():
+                self.check_rooms.append(room)
+                #print('...added check room: ', room)
+
+    def get_available_hubs(self, exclude=None):
+        if exclude is None:
+            exclude = []
+        else:
+            exclude = list(exclude)
+            if self.verbose:
+                print('Excluding...', exclude)
+        available_hubs = [r for r in self.net.nodes if (r not in self.dead_ends and r not in exclude)]
+        if self.verbose:
+            print('Found available hubs:', available_hubs)
+        return available_hubs
+
+    def get_available_hub_connections(self, element_type=0, excluded=None, dito_ok=True):
+        if self.verbose:
+            print('Excluding...', excluded)
+        hub_ids = self.get_available_hubs(exclude=excluded)
+        hub_conns = set()
+        for hub_id in hub_ids:
+            hub = self.rooms.get_room(hub_id)
+            if element_type == 0:
+                # Don't include pit-in, door-out doors (these are effectively dead ends for this purpose)
+                if len(hub.doors) <= 1 and len(hub.traps) == 0:
+                    if self.verbose:
+                        print('skipping', hub_id, '(dead end or pit-in-door-out)')
+                # Only include door-in, trap-out doors if allowed.
+                elif (len(hub.doors) == 1 and len(hub.traps) >= 1 and len(hub.pits) == 0) and not dito_ok:
+                    if self.verbose:
+                        print('skipping', hub_id, '(door-in-trap-out, excluded)')
+                else:
+                    hub_conns.update(hub.doors)
+            elif element_type == 1:
+                hub_conns.update(hub.pits)
+        return hub_conns
+
+    def get_all_check_connections(self, element_type=0):
+        conns = set()
+        if self.verbose:
+            print('Looking for check rooms...', self.check_rooms)
+        for room_id in self.check_rooms:
+            room = self.rooms.get_room(room_id)
+            if element_type == 0:
+                conns.update(room.doors)
+            elif element_type == 1:
+                conns.update(room.pits)
+        return conns
+
+    def finalize_map(self):
+        print('Closing branch...')
+
+        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub = self.rooms.get_room(hub_id)
+        if self.verbose:
+            print('\thub:', hub_id, hub.count)
+
+        # (1) Count trapdoors/pits connected to hub.  If trapdoors > pits, connect traps to rooms with (# pits > # traps).
+        all_pits = [p for p in hub.pits]
+        all_traps = [t for t in hub.traps]
+
+        upstream = self.get_upstream_nodes(hub_id)
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            all_pits.extend([p for p in room.pits])
+            all_traps.extend([t for t in room.traps])
+
+        downstream = self.get_downstream_nodes(hub_id)
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            all_pits.extend([p for p in room.pits])
+            all_traps.extend([t for t in room.traps])
+
+        if self.verbose:
+            print('\tpits:', all_pits)
+            print('\ttraps:', all_traps)
+
+        while len(all_traps) > len(all_pits):
+            # Find unconnected rooms with more pits than traps
+            winner = ''
+            diff = 0
+            for n in self.net.nodes:
+                if n not in upstream and n not in downstream and n != hub_id:
+                    r = self.rooms.get_room(n)
+                    if (len(r.pits) - len(r.traps)) > diff:
+                        diff = len(r.pits) - len(r.traps)
+                        winner = n
+
+            # connect a hub trapdoor to this node
+            this_exit = random.choice(all_traps)
+            room = self.rooms.get_room(winner)
+            this_entr = random.choice(room.pits)
+            if self.verbose:
+                print('(1) selected', winner, ': ', room.traps, room.pits)
+                print('(1) connecting', this_exit, '-->', this_entr)
+
+            self.connect(this_exit, this_entr)
+
+            # Recollect data on pits/traps
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub = self.rooms.get_room(hub_id)
+            all_pits = [p for p in hub.pits]
+            all_traps = [t for t in hub.traps]
+
+            upstream = self.get_upstream_nodes(hub_id)
+            for node in upstream:
+                room = self.rooms.get_room(node)
+                all_pits.extend([p for p in room.pits])
+                all_traps.extend([t for t in room.traps])
+
+            downstream = self.get_downstream_nodes(hub_id)
+            for node in downstream:
+                room = self.rooms.get_room(node)
+                all_pits.extend([p for p in room.pits])
+                all_traps.extend([t for t in room.traps])
+
+        # (2) Connect any nodes downstream from the hub room to upstream or to the hub room
+        # There's a possible error mode where:  U (1 pit) --> Hub --> A (1 trap),  Hub --> B (1 trap, 1 pit).
+        # The only correct solution is A --> B --> U.  If we connect A --> U, we fail.
+        # So start by connecting downstream nodes with the most entrances
+        delta = []
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            entrance_count = len(room.doors) + len(room.pits)
+            exit_count = len(room.doors) + len(room.traps)
+            delta.append((entrance_count - exit_count, node))
+        if self.verbose:
+            print('(2) delta values:', delta)
+        delta.sort()
+        while len(delta) > 0:
+            value = delta.pop()
+            node = value[1]
+            room = self.rooms.get_room(node)
+            if self.verbose:
+                print('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
+
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub = self.rooms.get_room(hub_id)
+            upstream = self.get_upstream_nodes(hub_id)
+
+            ### A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
+            # In such a case, we can look at unused rooms, find a converter, and go through it.
+            if len(room.traps) > 0:
+                this_exit = random.choice(list(room.traps))
+                upstream_pits = [p for p in hub.pits]
+                for node in upstream:
+                    uproom = self.rooms.get_room(node)
+                    upstream_pits.extend([p for p in uproom.pits])
+                this_conn = random.choice(upstream_pits)
+            elif len(room.doors) > 0:
+                this_exit = random.choice(list(room.doors))
+                upstream_doors = [d for d in hub.doors]
+                for node in upstream:
+                    uproom = self.rooms.get_room(node)
+                    upstream_doors.extend([d for d in uproom.doors])
+                this_conn = random.choice(upstream_doors)
+            else:
+                # Failure.
+                print('Found an inescapable downstream node!')
+                raise Exception
+
+            if self.verbose:
+                print('(2) connecting', this_exit, '-->', this_conn)
+            self.connect(this_exit, this_conn)
+
+        # (3) Connect any remaining trapdoors/pits
+        # At this point, only the hub room should be remaining.
+        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub = self.rooms.get_room(hub_id)
+        remaining_pits = [p for p in hub.pits]
+        random.shuffle(remaining_pits)
+        if self.verbose:
+            print('(3) remaining traps:', hub.traps, '; pits: ', remaining_pits)
+        for this_exit in hub.traps:
+            this_conn = remaining_pits.pop()
+            if self.verbose:
+                print('(3) connecting:', this_exit, '-->', this_conn)
+            self.connect(this_exit, this_conn)
+
+        # (4) The terminus is currently always a dead end room.  Connect it.
+        remaining_doors = [d for d in hub.doors]
+        random.shuffle(remaining_doors)
+        if self.verbose:
+            print('(4) remaining doors:', remaining_doors)
+        this_exit = remaining_doors.pop()
+        terminus = self.rooms.get_room(self.terminus)
+        if self.terminus in self.dead_ends:
+            self.dead_ends.remove(self.terminus)
+        this_conn = terminus.doors.pop()
+        if self.verbose:
+            print('(4) connecting terminus:', this_exit , '-->', this_conn)
+        self.connect(this_exit, this_conn)
+
+        # (5) Count doors in hub.  Connect doors within hub until # doors < # dead ends
+        # Clean up dead ends first
+        for de in self.dead_ends:
+            if de not in self.net.nodes:
+                self.dead_ends.remove(de)
+
+        while len(remaining_doors) > len(self.dead_ends):
+            if self.verbose:
+                print('(5) doors in hub:', len(remaining_doors), '.  dead ends:', len(self.dead_ends))
+            this_exit = remaining_doors.pop()
+            this_conn = remaining_doors.pop()
+            if self.verbose:
+                print('(5) connecting doors in hub:', this_exit, '-->', this_conn)
+            self.connect(this_exit, this_conn)
+
+        # (6) Connect dead ends to all remaining doors.
+        random.shuffle(self.dead_ends)
+        if self.verbose:
+            print('(6) remaining dead ends:', self.dead_ends)
+        for this_exit in remaining_doors:
+            room_id = self.dead_ends.pop()
+            room = self.rooms.get_room(room_id)
+            this_conn = room.doors.pop()
+            if self.verbose:
+                print('(6) connecting dead ends:', this_exit, '-->', this_conn)
+            self.connect(this_exit, this_conn)
+
+        if self.verbose:
+            print('... closing branch complete!')
+
+
 class ruination_map():
     # Class to organize data for mapping out ruination mode branches
     RewardsAvailable = [0, 0]   # [# possible characters, # possible espers]
     PARTY = []
     Requested = [3, 0]
-    branches = [None, None, None]
+    branches = [RuinationBranch([]), RuinationBranch([]), RuinationBranch([])]
     branch_checks = [ [], [], []]   # checks available on each branch, stored locally
     AreasUsed = set()   # use a set to avoid duplicates
     keychain = set()   # global keychain
 
+    verbose = True
 
     def __init__(self, args, starting_party):
         self.args = args
@@ -191,9 +450,11 @@ class ruination_map():
         #print(self.Requested)
 
         # Assemble initial areas to use & distribute among starting branches
+        initial_areas = set()
         for character in self.PARTY:
-            self.AreasUsed.update(CHARACTER_AREAS[character])
-        #print(self.AreasUsed)
+            initial_areas.update(CHARACTER_AREAS[character])
+        if self.verbose:
+            print('Areas used: ', initial_areas)
 
         # Create branches with starting areas
         hub_id = 'ruin_hub'
@@ -213,11 +474,13 @@ class ruination_map():
             # Create branch
             branch = RuinationBranch(starting_rooms)
             branch.active = hub_room_id  # start in the hub room
+            branch.verbose = self.verbose
             self.branches[i] = branch
 
         # Distribute areas to the branches
-        self.distribute_areas(self.AreasUsed)
-        print(self.RewardsAvailable)
+        self.distribute_areas(initial_areas)
+        if self.verbose:
+            print('Rewards available: ', self.RewardsAvailable)
 
         # Apply keys to branches
         for branch in self.branches:
@@ -228,48 +491,68 @@ class ruination_map():
 
     def distribute_areas(self, areas, method = 'random'):
         # Distribute new areas among the branches
-        branch_areas = [ [], [], []]
+        branch_areas = [ set(), set(), set()]
 
-        if method is 'random':
+        # Make sure we don't double-add areas
+        areas = [a for a in areas if a not in self.AreasUsed]
+
+        if method == 'random':
             for area in areas:
                 this_index = random.randint(0, 2)
-                branch_areas[this_index].append(area)
-        elif method is 'distribute':
+                branch_areas[this_index].add(area)
+        elif method == 'distribute':
             seed = random.randint(0, 2)
-            use_index = [(i + seed) % 3 for i in range(len(self.AreasUsed))]
+            use_index = [(i + seed) % 3 for i in range(len(areas))]
             random.shuffle(use_index)
-            for area in self.AreasUsed:
-                this_index = use_index.pop()
-                branch_areas[this_index].append(area)
-        elif method is 'shortest':
             for area in areas:
-                shortest_index = [len(b.net.original_room_ids) for b in self.branches]
-                use_index = shortest_index.index(min(shortest_index))
-                branch_areas[use_index].append(area)
-        elif method is 'least_checks':
+                this_index = use_index.pop()
+                branch_areas[this_index].add(area)
+        elif method == 'shortest':
+            num_rooms = [len(b.original_room_ids) for b in self.branches]
+            random.shuffle(areas)
+            for area in areas:
+                if self.verbose:
+                    print('\t\t# rooms on each branch: ', num_rooms)
+                use_index = num_rooms.index(min(num_rooms))
+                branch_areas[use_index].add(area)
+                area_room_num = len(RUIN_ROOM_SETS[area])
+                num_rooms[use_index] += area_room_num
+        elif method == 'least_checks':
             for area in areas:
                 shortest_index = [len(b) for b in self.branch_checks]
                 use_index = shortest_index.index(min(shortest_index))
-                branch_areas[use_index].append(area)
+                branch_areas[use_index].add(area)
+
+        # Add areas to global catalog
+        self.AreasUsed.update(areas)
+
+        if self.verbose:
+            print('Distributed areas:')
+            for i, b in enumerate(branch_areas):
+                print('\t', i, ': ', b)
 
         # Expand to list of rooms to add to each branch
-        branch_rooms = [[], [], []]
+        branch_rooms = [set(), set(), set()]
         for i, areas in enumerate(branch_areas):
             for area in areas:
-                branch_rooms[i].extend(RUIN_ROOM_SETS[area])
+                branch_rooms[i].update(RUIN_ROOM_SETS[area])
 
         # Collect which checks are available, including how many can be characters and how many espers
         for room in ROOM_REWARD:
             which_branch = next((i for i, branch in enumerate(branch_rooms) if room in branch), -1)
             if which_branch >= 0:
                 for reward_id in ROOM_REWARD[room].keys():
-                    self.branch_checks[i].append(reward_id)
+                    self.branch_checks[which_branch].append(reward_id)
                     reward = ROOM_REWARD[room][reward_id]
                     # print(reward_id, i, this_type.possible_types)
                     if reward.possible_types & RewardType.CHARACTER:
                         self.RewardsAvailable[0] += 1
                     if reward.possible_types & RewardType.ESPER:
                         self.RewardsAvailable[1] += 1
+        if self.verbose:
+            print('Checks available:')
+            for i, b in enumerate(self.branch_checks):
+                print('\t', i, ': ', b)
 
         # Add rooms to the branches
         for i, branch in enumerate(self.branches):
@@ -286,60 +569,162 @@ class ruination_map():
         # Build out branches, always starting with the least connected
         RewardsObtained = [0, 0]
 
+        # Edit forced connections for ruination
+        #for fc in ruination_extra_force:
+        for fc in ruination_dont_force:
+            if fc in forced_connections.keys():
+                forced_connections.pop(fc)
+
+        if self.verbose:
+            print('Generating map with characters...')
+
         while (RewardsObtained[0] < self.Requested[0] or RewardsObtained[1] < self.Requested[1]):
             # Pick a branch with an active reward
+            #branch_in_hub = ['ruin_hub_' in str(b.active) for b in self.branches]
+            #if branch_in_hub.count(False) > 0:
+            #    # One of the branches is not in the hub. Keep working on that one.
+            #    branch_id = branch_in_hub.index(False)
             branch_id = random.choice([b for b in range(3) if len(self.branch_checks[b]) > 0])
             branch = self.branches[branch_id]
 
+            # Update lists of dead ends
+            for de in branch.dead_ends:
+                if de not in branch.net.nodes:
+                    branch.dead_ends.remove(de)
+                    if self.verbose:
+                        print('\ttrimmed dead end ', de)
+
+            if self.verbose:
+                print('Working on branch', branch_id, '(', self.branch_checks[branch_id], ')')
+                print('status: terminus', branch.terminus)
+                print('status: check rooms', branch.check_rooms)
+                print('status: dead ends', branch.dead_ends)
+
             # Force any forced connections before starting
+            if self.verbose:
+                print('Forcing connections...')
             branch.ForceConnections(forced_connections)
+
+            # Forcing connections can update the name of the active branch
+            if branch.active not in branch.net.nodes:
+                new_active = [n_id for n_id in branch.net.nodes if branch.active in str(n_id)]
+                if self.verbose:
+                    print('updating active room id: ', branch.active, '-->', new_active[0])
+                branch.active = new_active[0]
 
             # Apply any keys we have found in other branches
             for k in self.keychain.difference(branch.keychain):
                 branch.apply_key(k)
 
             found_reward = False
+            rewards = []
             while not found_reward:
                 # Attach hubs & trapdoors until none are left (create all branches)
 
                 # Choose an exit from the active room.
                 # Only allow trap doors if there is at least one entrance to the active room
                 active_room = branch.rooms.get_room(branch.active)
-                all_entrances = [active_room.doors()] + [active_room.pits()]
-                print('Active room: ', branch.active, '.  All entrances: ', all_entrances)
+                all_entrances = list(active_room.doors) + list(active_room.pits)
+                upstream = branch.get_upstream_nodes(branch.active)
+                if self.verbose:
+                    print('\tActive room: ', branch.active, '.  Upstream nodes: ', upstream,
+                          '\n\tAll entrances: ', all_entrances)
+                hub_is_upstream = len([n for n in upstream if 'ruin_hub_' in str(n)]) > 0
+                if hub_is_upstream:
+                    print('\tHub is upstream!')
+                for node in upstream:
+                    room = branch.rooms.get_room(node)
+                    all_entrances += list(room.doors) + list(room.pits)
+
                 allow_traps = len(all_entrances) >= 1
+                dito_ok = len(all_entrances) >= 2  # a door-in, trap-out room effectively replaces a door (entrance) with a trap (not entrance), so an extra entrance is required
+                if self.verbose and not allow_traps:
+                    print('\ttraps not allowed!')
+                elif self.verbose:
+                    print('\ttraps allowed!')
 
                 # Look at unconnected hubs.
-                new_hub_door_conns = branch.get_available_hub_connections(type=0, exclude=branch.active)
-                new_hub_pit_conns = branch.get_available_hub_connections(type=1, exclude=branch.active)
+                new_hub_door_conns = branch.get_available_hub_connections(element_type=0, excluded=[branch.active], dito_ok=dito_ok)
+                new_hub_pit_conns = branch.get_available_hub_connections(element_type=1, excluded=[branch.active])
+                # If hub is upstream, possibly allow connecting back to the hub (closing the loop)
+                if hub_is_upstream:
+                    # Requirements: total exits after connection > 0
+                    uppaths = branch.get_upstream_paths(branch.active)
+                    for path in uppaths:
+                        if self.verbose:
+                            print('\tchecking upstream path:', path)
+                        path_door_count = 0
+                        path_trap_count = 0
+                        tracker = [False, False]
+                        for node_id in path:
+                            node = branch.rooms.get_room(node_id)
+                            path_door_count += len(node.doors)
+                            path_trap_count += len(node.traps)
+                            if (path_door_count + path_trap_count) > 1:
+                                # We've met the condition for trapdoor connections.  Add pits.
+                                new_hub_pit_conns.update(node.pits)
+                                if self.verbose and tracker[0] is False:
+                                    print('\t\tTrapdoor condition met at', node_id)
+                                    tracker[0] = True
+                            if (path_door_count + path_trap_count) > 2:
+                                # We've met the condition for door connections.  Add doors.
+                                new_hub_door_conns.update(node.doors)
+                                if self.verbose and tracker[1] is False:
+                                    print('\t\tDoor condition met at', node_id)
+                                    tracker[1] = True
+
+                if self.verbose:
+                    print('\tCollected available hub connections:')
+                    print('\t\tdoors:', new_hub_door_conns)
+                    print('\t\tpits:', new_hub_pit_conns)
 
                 # Select which exits are permissable based on what is available.
                 # WE HAVE TO BE CAREFUL to not fully map a branch before we run out of checks.
-                # Imagine if a branch had only Serpent Trench on it.  hub --> crescent --> ST has no way back.
+                # Imagine if a branch had only Serpent Trench on it.  hub --> crescent --> ST --> nikeah has no way back
+                #   (This case would have to do hub --> nikeah --> crescent --> ST --> nikeah)
                 # (a) do this in a nested way, as before?
                 # (b) catch the errors in one pass?  Active room + upstream must always have entrances.
                 all_exits = []
                 available_connections = [[], []]
+                downstream = branch.get_downstream_nodes(branch.active)
+                if self.verbose:
+                    print('\tDownstream nodes: ', downstream)
                 if len(new_hub_door_conns) > 0:
-                    all_exits += [active_room.doors]
+                    all_exits += list(active_room.doors)
+                    for node_id in downstream:
+                        node = branch.rooms.get_room(node_id)
+                        all_exits += list(node.doors)
                     available_connections[0] += new_hub_door_conns
                 if len(new_hub_pit_conns) > 0 and allow_traps:
-                    all_exits += [active_room.traps]
+                    all_exits += list(active_room.traps)
+                    for node_id in downstream:
+                        node = branch.rooms.get_room(node_id)
+                        all_exits += list(node.traps)
                     available_connections[1] += new_hub_pit_conns
+                if self.verbose:
+                    print('\tCollected available active room exits:', len(all_exits))
+                    print('\t\t', all_exits)
 
                 # Handle failure modes: no exits available
                 if len(all_exits) == 0:
                     # I think the main way we get here is if there are no more hub rooms, and a check is in a dead end.
-                    check_door_cons = branch.get_all_check_connections(type=0)
-                    check_pit_cons = branch.get_all_check_connections(type=1)
+                    check_door_cons = branch.get_all_check_connections(element_type=0)
+                    check_pit_cons = branch.get_all_check_connections(element_type=1)
                     if len(check_door_cons) > 0:
-                        all_exits += [active_room.doors]
+                        all_exits += list(active_room.doors)
                         available_connections[0] += check_door_cons
+                        if self.verbose:
+                            print('\tInstead using rooms with checks (doors):', len(all_exits))
+                            print('\t\t', all_exits)
                     elif len(check_pit_cons) > 0 and allow_traps:
-                        all_exits += [active_room.traps]
+                        all_exits += list(active_room.traps)
                         available_connections[1] += check_pit_cons
+                        if self.verbose:
+                            print('\tInstead using rooms with checks (traps):', len(all_exits))
+                            print('\t\t', all_exits)
                     else:
-                        print('No legal exits!')
+                        if self.verbose:
+                            print('No legal exits found on branch!')
                         break  # hopefully another branch is valid & can add some units to this one.
 
                 # If any exits are forced, apply them
@@ -347,34 +732,63 @@ class ruination_map():
                 if len(forced_exits) > 0:
                     this_exit = forced_exits.pop()
                     this_conn = forced_connections[this_exit]
-                    print('Found forced exit!', this_exit, '-->', this_conn)
+                    if self.verbose:
+                        print('Found forced exit!', this_exit, '-->', this_conn)
                 else:
                     this_exit = random.choice(all_exits)
                     this_type = active_room.element_type(this_exit)
-                    print('All allowed exits:', all_exits, '.  Choose: ', this_exit, '(type ', this_type, ')')
+                    if self.verbose:
+                        print('All allowed exits:', all_exits, '.  Choose: ', this_exit, '(type ', this_type, ')')
+                    if this_exit in available_connections[this_type]:
+                        available_connections[this_type].remove(this_exit)
                     this_conn = random.choice(available_connections[this_type])
-                    print('Available connections:', available_connections[this_type], '. Choose: ', this_conn)
+                    if self.verbose:
+                        print('Available connections:', available_connections[this_type], '. Choose: ', this_conn)
 
                 # Check if a reward was found
                 conn_room = branch.rooms.get_room_from_element(this_conn)
                 if conn_room.id in ROOM_REWARD.keys():
                     # Stop if a reward was found
                     found_reward = True
-                    rewards = [ROOM_REWARD[k] for k in ROOM_REWARD[conn_room.id].keys()]
+                    rewards = [(k, ROOM_REWARD[conn_room.id][k]) for k in ROOM_REWARD[conn_room.id].keys()]
+                    if self.verbose:
+                        print('Found a reward! ', [(r[0], r[1].possible_types) for r in rewards])
+                    # Remove check room from the list
+                    branch.check_rooms.remove(conn_room.id)
 
-                # Actually connect them.
+                # Actually connect them.  This also moves the active room to the new room.
+                if self.verbose:
+                    print('Making connection: ', this_exit, '-->', this_conn)
                 branch.connect(this_exit, this_conn)
 
             ### Process reward & restart loop
             # Identify reward & decide on reward type
-            for slot in rewards:
+            for reward in rewards:
                 #reward_types = [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]
+                reward_name = reward[0]  #reward_name = slot.event.name()
+                slot = reward[1]
+                if self.verbose:
+                    print('Processing reward: ', reward_name)
+
                 if self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
                     # This must be a character.
+                    if self.verbose:
+                        print('\tmust be a character')
                     slot.id, slot.type = choose_reward(RewardType.CHARACTER, characters, espers, items)
+                    if self.verbose:
+                        print('\tgot ', characters.get_name(slot.id), '!')
                 else:
                     # Just choose from among available types
+                    if self.verbose:
+                        print('\tchoosing from...', slot.possible_types)
                     slot.id, slot.type = choose_reward(slot.possible_types, characters, espers, items)
+                    if self.verbose:
+                        if slot.type is RewardType.CHARACTER:
+                            print('\tgot', characters.get_name(slot.id), '!')
+                        elif slot.type is RewardType.ESPER:
+                            print('\tgot', espers.get_name(slot.id), '!')
+                        elif slot.type is RewardType.ITEM:
+                            print('\tgot', items.get_name(slot.id), '!')
 
                 # Update RewardsObtained
                 if slot.type is RewardType.CHARACTER:
@@ -394,41 +808,21 @@ class ruination_map():
                 if slot.possible_types & RewardType.ESPER:
                     self.RewardsAvailable[1] -= 1
 
+                if self.verbose:
+                    print('\tUpdated Rewards Obtained: ', RewardsObtained[0], 'Characters, ', RewardsObtained[1], 'Espers')
+                    print('\tUpdated Rewards Available: ', self.RewardsAvailable[0], 'Characters, ', self.RewardsAvailable[1],
+                          'Espers')
+
+                # Update branch_checks
+                self.branch_checks[branch_id].remove(reward_name)
+                if self.verbose:
+                    print('\tUpdated branch checks available:')
+                    for i, bc in enumerate(self.branch_checks):
+                        print('\t', i, ': ', bc)
+
         # After satisfying conditions, fully connect map
         for branch in self.branches:
-            terminus_id = branch.terminus
-            terminus_entrances = set(room_data[terminus_id][0] + room_data[terminus_id][2])
-
-            active_room = branch.rooms.get_room(branch.active)
-            print('Closing branch...\n\t', branch.active, active_room.doors, active_room.traps)
-            while (len(active_room.doors) + len(active_room.traps)) > 0:
-                # Connect trapdoors, if any
-                if len(active_room.traps) > 0:
-                    this_exit = random.choice(active_room.traps)
-                    all_pits = [p for p in branch.pits]
-                    if len(all_pits) > 0:
-                        if len(terminus_entrances.intersection(all_pits)) > 0:
-                            # Attach Terminus, if available
-                            this_conn = terminus_entrances.intersection(all_pits).pop()
-                        else:
-                            this_conn = random.choice(all_pits)
-                    else:
-                        # This shouldn't happen!
-                        raise Exception
-                else:
-                    this_exit = random.choice(active_room.doors)
-                    all_doors = [d for d in branch.doors if d is not this_exit]
-                    if len(terminus_entrances.intersection(all_doors)) > 0:
-                        # Attach Terminus, if available
-                        this_conn = terminus_entrances.intersection(all_doors).pop()
-                    else:
-                        this_conn = random.choice(all_doors)
-
-                # Connect them
-                branch.connect(this_exit, this_conn)
-
-                active_room = branch.rooms.get_room(branch.active)
-                print('\t', branch.active, active_room.doors, active_room.traps)
+            branch.finalize_map()
 
         # Wrap up: create & export a total map
         map = [[], []]
@@ -445,61 +839,7 @@ class ruination_map():
 
         return map
 
-class RuinationBranch(Network):
-    def __init__(self, rooms):
-        super().__init__(rooms)
-        self.dead_ends = []
-        self.check_rooms = []
-        self.classify_rooms(rooms)
 
-    def add_room(self, room_id):
-        super().add_room(room_id)
-        self.classify_rooms([room_id])
-        # We need a custom handler for return from Lete River!
-        if room_id is 'LeteRiver3':
-            # add pit 3039 to ruin_hub
-            hub_room_id = [n for n in self.net.nodes if 'ruin_hub' in n][0]
-            hub_room = self.rooms.get_room(hub_room_id)
-            hub_room.add_pits([3039])
-
-    def classify_rooms(self, rooms):
-        for room in rooms:
-            if room in RUIN_TERMINI:
-                self.terminus = room
-
-            if self.is_dead_end(room):
-                self.dead_ends.append(room)
-
-            if room in ROOM_REWARD.keys():
-                self.check_rooms.append(room)
-
-    def get_available_hubs(self, exclude=None):
-        if exclude is None:
-            exclude = []
-        else:
-            exclude = list(exclude)
-        return [r for r in self.net.nodes if r not in self.dead_ends and r not in exclude]
-
-    def get_available_hub_connections(self, conn_type=0):
-        hub_ids = self.get_available_hubs()
-        hub_conns = []
-        for hub_id in hub_ids:
-            hub = self.rooms.get_room(hub_id)
-            if conn_type == 0:
-                hub_conns.extend(hub.doors)
-            elif conn_type == 1:
-                hub_conns.extend(hub.pits)
-        return hub_conns
-
-    def get_all_check_connections(self, conn_type=0):
-        conns = []
-        for room_id in self.check_rooms:
-            room = self.rooms.get_room(room_id)
-            if conn_type == 0:
-                conns.extend(room.doors)
-            elif conn_type == 1:
-                conns.extend(room.pits)
-        return conns
 
 def ruination_start_game_mod(dialogs, party):
     # Write the event that starts the game in ruination mode

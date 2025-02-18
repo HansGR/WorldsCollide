@@ -241,6 +241,23 @@ class Events():
         # Build out the map & distribute characters
         self.maps.doors.map = ruin_map.generate_map_with_characters(reward_slots, self.characters, self.espers, self.items)
 
+        # Check state of reward_slots
+        print('REWARD STATE AFTER RUIN MAPPING:')
+        for slot in reward_slots:
+            print(slot.event.name(), slot.id, slot.type)
+
+        # For safety (?) distribute any remaining rewards
+        reward_slots = [slot for slot in reward_slots if slot.id is None]
+        self.choose_single_possible_type_rewards(reward_slots)
+        reward_slots = [slot for slot in reward_slots if not slot.single_possible_type()]
+        self.choose_char_esper_possible_rewards(reward_slots)
+        reward_slots = [slot for slot in reward_slots if slot.id is None]
+        self.choose_item_possible_rewards(reward_slots)
+
+        print('REWARD STATE FINAL:')
+        for slot in reward_slots:
+            print(slot.event.name(), slot.id, slot.type)
+
     def validate(self, events):
         char_esper_checks = []
         for event in events:
