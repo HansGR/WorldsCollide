@@ -384,7 +384,54 @@ class NarsheMoogleDefense(Event):
         space = Reserve(0xca8ff, 0xca8ff, "small pause before fade", field.NOP())
 
         # Change logic for moogle party selection to account for any party variation
-        if not self.args.ruination_mode:
+        if self.args.ruination_mode:
+            # Copy relevant part of "add moogles to parties"
+            space = Reserve(0xca905, 0xcaa03, "moogle defense party creation", field.NOP())
+            space.write(
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.SetEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
+                # cause locke's theme to keep playing through battles
+                field.Branch(space.end_address + 1),  # skip nops
+            )
+
+            # Instead of creating parties 2 and 3, just place some moogle NPCs.
+            space = Reserve(0xcaa23, 0xcaa2f, "place party 2 and 3 on map", field.NOP())
+            space.write(
+                field.CreateEntity(0x10),   # Create moogle #1
+                field.ShowEntity(0x10),     # Show moogle #1
+                field.CreateEntity(0x11),   # Create moogle #2
+                field.ShowEntity(0x11),     # Show moogle #2
+                field.RefreshEntities(),
+            )
+            # space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
+            space = Reserve(0xcaa3a, 0xcaa3d, "Moogle defense no 2nd party edit 1", field.NOP())
+            space = Reserve(0xcaa3e, 0xcaa3e, "Moogle defense 2nd party to npc 0x10", field.NOP())
+            space.write(0x10),
+            space = Reserve(0xcaa46, 0xcaa4c, "Moogle defense no 3rd party edit 1", field.NOP())
+            space = Reserve(0xcaa4d, 0xcaa4d, "Moogle defense 3nd party to npc 0x11", field.NOP())
+            space.write(0x11),
+            space = Reserve(0xcaa55, 0xcaa5b, "Moogle defense no other parties edit 1", field.NOP())
+            space.write(field.RefreshEntities()),
+
+            # Handle y-party switching: store value & disable until end of battle.
+            # We will use 0x1ca, which is set here but seems unused.
+            src = [
+                field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "IS_SET"),
+                field.ClearEventBit(0x1ca), # Store value is cleared
+                field.Return(),
+                "IS_SET",
+                field.SetEventBit(0x1ca),
+                field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+                field.Return()
+            ]
+            space = Write(Bank.CC, src, "Store Y-party-switch before moogle_defense")
+            self.handle_y_party_switch_addr = space.start_address
+
+            space = Reserve(0xcaa99, 0xcaa9c, "Moogle defense handle Y-party switch", field.NOP())
+            space.write(field.Call(self.handle_y_party_switch_addr))
+
+        else:
             self.add_moogles_to_parties()
 
             # Add party size checks around the addition of parties 2 and 3 to the map
@@ -399,8 +446,7 @@ class NarsheMoogleDefense(Event):
             space = Write(Bank.CC, src, "Check for Party 2 and 3 sizes before placing")
             place_parties = space.start_address
 
-        space = Reserve(0xcaa23, 0xcaa2a, "place party 2 and 3 on map", field.NOP())
-        if not self.args.ruination_mode:
+            space = Reserve(0xcaa23, 0xcaa2a, "place party 2 and 3 on map", field.NOP())
             space.write(
                 field.Call(place_parties),
             )
@@ -416,8 +462,7 @@ class NarsheMoogleDefense(Event):
             space = Write(Bank.CC, src, "Position party 2")
             position_parties = space.start_address
 
-        space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
-        if not self.args.ruination_mode:
+            space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
             space.write(
                 field.Call(position_parties),
             )
@@ -440,12 +485,31 @@ class NarsheMoogleDefense(Event):
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE), # allow song to change on map change
             field.ClearEventBit(npc_bit.MARSHAL_NARSHE_WOB), # Remove Marshal and "Terra" in south caves
             field.ClearEventBit(npc_bit.TERRA_COLLAPSED_NARSHE_WOB), # Remove collapsed Terra
+            field.SetEventBit(event_bit.FINISHED_MOOGLE_DEFENSE),
 
             Read(0xcaded, 0xcadf2), # load map
 
             field.HideEntity(0x1B), # the exit block at top of map
         ]
-        if not self.args.ruination_mode:
+        if self.args.ruination_mode:
+            # Skip restore moogled characters (they were never moogled).
+            #space = Reserve(0xcadf3, 0xcae01, "hide parties 1 and 2", field.NOP())
+
+            # Need to re-enable Y-party switch if required.  We stored the value of event_bit.ENABLE_Y_PARTY_SWITCHING in 0x1ca.
+            src += [
+                field.BranchIfEventBitClear(0x1ca, "IS_CLEAR"),
+                field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Store value is cleared
+                field.ClearEventBit(0x1ca),
+                "IS_CLEAR",
+            ]
+            # If recruited a character, allow party reform
+            if self.reward.type == RewardType.CHARACTER:
+                src += [
+                    # Does this work if we have multiple parties?  YES!  Works perfectly.
+                    field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                    field.UpdatePartyLeader(),
+                ]
+        else:
             src += [
                 field.SetParty(1),
                 field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
@@ -466,12 +530,16 @@ class NarsheMoogleDefense(Event):
                     field.SetEquipmentAndCommands(character_idx, character_idx),
                     f"SKIP_{character_idx}",
                 ]
+
+            src += [
+                # give Shadow Interceptor again
+                field.AddStatusEffects(self.characters.SHADOW, field.Status.DOG_BLOCK),
+
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.UpdatePartyLeader(),
+            ]
+
         src += [
-            # give Shadow Interceptor again
-            field.AddStatusEffects(self.characters.SHADOW, field.Status.DOG_BLOCK),
-            
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
             field.RefreshEntities(),
 
@@ -480,7 +548,6 @@ class NarsheMoogleDefense(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
 
-            field.SetEventBit(event_bit.FINISHED_MOOGLE_DEFENSE),
             field.FreeMovement(),
 
             # hide Arvis 
@@ -565,21 +632,34 @@ class NarsheMoogleDefense(Event):
     def ruination_start_mod(self):
         # (1) Edit the mine entry event to show collapsed Terra, if we have mog
         # Original entrance_event code is at 0xcab6f: handles wolf movement (if 0x12f is set)
-        src = [
-            field.BranchIfAny([event_bit.character_recruited(self.character_gate()), False,
-                               event_bit.FINISHED_MOOGLE_DEFENSE, True],
-                              "CONTINUE"),
+        if self.args.character_gating:
+            src = [
+                field.BranchIfAny([event_bit.character_recruited(self.character_gate()), False,
+                                   event_bit.FINISHED_MOOGLE_DEFENSE, True],
+                                  "CONTINUE"),
+                ]
+        else:
+            src = [
+                field.BranchIfEventBitSet(event_bit.FINISHED_MOOGLE_DEFENSE, "CONTINUE"),
+            ]
+        src += [
             field.SetEventBit(npc_bit.TERRA_COLLAPSED_NARSHE_WOB),  # Show collapsed "Terra"
+            field.CreateEntity(self.COLLAPSED_TERRA_NPC_ID),
             field.ShowEntity(self.COLLAPSED_TERRA_NPC_ID),
+            field.RefreshEntities(),
             "CONTINUE",
             field.Branch(0xcab6f),
         ]
         space = Write(Bank.CC, src, "Ruination begin moogle defense in mines")
-        self.maps[self.WOB_MAP_ID]["entrance_event_address"] = space.start_address - EVENT_CODE_START
+        self.maps.maps[self.WOB_MAP_ID]["entrance_event_address"] = space.start_address - EVENT_CODE_START
+        #print('wrote edited entrance event for map ', hex(self.WOB_MAP_ID), 'at', hex(space.start_address), ':')
+        #for s in src:
+        #    print(s.__str__())
 
         # (2) Edit the collapsed Terra NPC event to begin the encounter
         self.moogle_defense_begin_addr = 0xCA7b8   # after Locke lands, walks to the left of Terra, kneels, blinks.
         src = [
+            field.ReturnIfEventBitSet(npc_bit.MARSHAL_NARSHE_WOB),  # Don't do anything if in the battle.
             field.SetEventBit(npc_bit.MARSHAL_NARSHE_WOB),  # Show "Terra" in south caves and Marshal in battle
             field.BranchIfEventBitSet(event_bit.FACING_RIGHT, "BEGIN_EVENT"),
             field.BranchIfEventBitSet(event_bit.FACING_UP, "MOVE_LEFT_UP"),
@@ -611,4 +691,16 @@ class NarsheMoogleDefense(Event):
             field.Branch(self.moogle_defense_begin_addr)
         ]
         space = Write(Bank.CC, src, "Collapsed Terra starting moogle defense event")
-        self.terra_collapsed_npc.event_code_address = space.start_address - EVENT_CODE_START
+        self.terra_collapsed_npc.event_address = space.start_address - EVENT_CODE_START
+        #
+        #print('wrote edited start event at', hex(space.start_address), ':')
+        #for s in src:
+        #    print(s.__str__())
+
+        # Edit camera move so it doesn't go as far down
+        space = Reserve(0xcA7C5, 0xcA7C5, "Edit camera move before moogle defense", field.NOP())
+        space.write(field_entity.Move(direction=direction.DOWN, distance=5))
+
+        # Edit default music of the battlefield map (should be Narshe WOR, not Narshe WOB)
+        moogle_battle_map_properties = self.maps.properties[self.WOB_MAP_ID]
+        moogle_battle_map_properties.song = 79  # Dark World

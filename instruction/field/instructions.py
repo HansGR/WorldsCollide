@@ -73,6 +73,14 @@ class SetPartyMap(_Instruction):
     def __str__(self):
         return super().__str__(f"{self.args[0]} {hex(self.args[1])}")
 
+class ChangeNPCEventAddress(_Instruction):
+    def __init__(self, npc_id, destination):
+        destination_arg = (destination - EVENT_CODE_START).to_bytes(3, "little")
+        super().__init__(0x7a, npc_id, destination_arg)
+
+    def __str__(self):
+        return super().__str__(f"{self.args[0]} {hex(self.args[1])}")
+
 class UpdatePartyLeader(_Instruction):
     def __init__(self):
         super().__init__(0x47)
