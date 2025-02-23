@@ -61,18 +61,40 @@ class MtZozo(Event):
 
         src = [
             Read(0xaefb3, 0xaefb6), # woman laying down animate
-            field.BranchIfEventBitSet(event_bit.IN_WOR, "IN_WOR"),
-            field.EntityAct(drunk_npc_id, True,
-                field_entity.SetPosition(50, 36)
-            ),
-            field.Return(),
+            ]
+        if self.args.ruination_mode:
+            # There is no situation in which the player can get here without either Terra or Cyan.
+            # So we only need to block one of them (not both).
+            if self.args.character_gating:
+                src += [
+                    field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.TERRA), "HAVE_TERRA"),
+                    field.EntityAct(drunk_npc_id, True,
+                                    field_entity.SetPosition(38, 58)
+                                    ),
+                    field.Return(),
+                    "HAVE_TERRA",
+                    field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.CYAN), "HAVE_CYAN"),
+                    field.EntityAct(drunk_npc_id, True,
+                                    field_entity.SetPosition(50, 36)
+                                    ),
+                    "HAVE_CYAN",
+                    field.Return()
+                ]
 
-            "IN_WOR",    # block mt zozo with drunk
-            field.EntityAct(drunk_npc_id, True,
-                field_entity.SetPosition(38, 58),
-            ),
-            field.Return(),
-        ]
+        else:
+            src += [
+                field.BranchIfEventBitSet(event_bit.IN_WOR, "IN_WOR"),
+                field.EntityAct(drunk_npc_id, True,
+                    field_entity.SetPosition(50, 36)
+                ),
+                field.Return(),
+
+                "IN_WOR",    # block mt zozo with drunk
+                field.EntityAct(drunk_npc_id, True,
+                    field_entity.SetPosition(38, 58),
+                ),
+                field.Return(),
+            ]
         space = Write(Bank.CA, src, "zozo entrance event wor/wob check")
         wor_wob_check = space.start_address
 

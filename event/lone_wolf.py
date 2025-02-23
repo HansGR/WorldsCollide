@@ -34,6 +34,9 @@ class LoneWolf(Event):
         # invisible npc blocking bridge until player chooses either mog or lone wolf
         self.invisible_bridge_block_npc_id = 0x1d
 
+        if self.args.ruination_mode:
+            self.ruination_mod()  # Edit npc data prior to other modifications
+
         self.dialog_mod()
         self.chase_mod()
 
@@ -102,7 +105,7 @@ class LoneWolf(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
-        space = Reserve(0xcd67c, 0xcd6dc, "lone wolf add char", field.NOP())
+        space = Reserve(0xcd67c, 0xcd696, "lone wolf add char", field.NOP())
         space.write(
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.HideEntity(self.mog_npc_id),
@@ -112,7 +115,7 @@ class LoneWolf(Event):
             field.SetEventBit(event_bit.RECRUITED_MOG_WOB),
             field.RefreshEntities(),
             field.FadeInScreen(),
-            field.Branch(space.end_address + 1), # skip nops
+            field.Branch(0xcd6dd), # skip nops
         )
 
     def esper_item_mod(self, add_esper_item, sound_dialog_esper_item):
@@ -316,3 +319,121 @@ class LoneWolf(Event):
         space = Write(Bank.CC, src, "lone wolf new moogle room entrance event")
 
         self.maps.set_entrance_event(0x02c, space.start_address - EVENT_CODE_START)
+
+    def ruination_mod(self):
+        NARSHE_WOB_MAP = 0x014
+        NARSHE_WOR_MAP = 0x020
+        NARSHE_TREASURE_MAP = 0x01e
+        TRITOCH_WOB_MAP = 0x017
+        TRITOCH_WOR_MAP = 0x023
+
+        wor_lonewolf_npc_id = 0x10
+        wor_treasurehouse_npc_id = 0x14
+
+        # (1) Edit entrance event for Narshe treasure house
+        # Entrance event: 0xc395a:  just handles which song is playing.
+        # Tile event: (79, 17, 0xcd3ce)
+        space = Reserve(0xcd3ce, 0xcd3d3, "Remove Lone Wolf world check", field.NOP())
+
+        # Exit tile event: (79, 18, 0xc3933).  Since we're not using Narshe WOB, just delete the event tile & change exit to go to Narshe WOR
+        self.maps.delete_event(map_id=NARSHE_TREASURE_MAP, x=79, y=18)
+        treasure_exit_id = 128
+        treasure_exit = self.maps.get_exit(treasure_exit_id)
+        treasure_exit.dest_map = NARSHE_WOR_MAP
+
+        # (2) Remove lock from Narshe treasure house
+        treasure_blocker = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=wor_treasurehouse_npc_id)
+        treasure_blocker.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+        treasure_blocker.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+
+        # (3) Add Lone Wolf event to WOR Narshe
+        # event tile: (49, 37, 0xcd424)
+        old_event = self.maps.get_event(map_id=NARSHE_WOB_MAP, x=49, y=37)
+
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = old_event.x
+        new_event.y = old_event.y
+        new_event.event_address = old_event.event_address
+
+        self.maps.add_event(map_id=NARSHE_WOR_MAP, new_event=new_event)
+        self.maps.delete_event(map_id=NARSHE_WOB_MAP, x=old_event.x, y=old_event.y)
+
+        # (3a) Edit this event script to address the correct NPC id
+        space = Reserve(0xcd42d, 0xcd42e, "Edit Lone Wolf NPC_ID 1", wor_lonewolf_npc_id)
+        space = Reserve(0xcd43b, 0xcd43b, "Edit Lone Wolf NPC_ID 2", wor_lonewolf_npc_id)
+        space = Reserve(0xcd443, 0xcd443, "Edit Lone Wolf NPC_ID 3", wor_lonewolf_npc_id)
+        space = Reserve(0xcd44d, 0xcd44d, "Edit Lone Wolf NPC_ID 4", wor_lonewolf_npc_id)
+        space = Reserve(0xcd454, 0xcd454, "Edit Lone Wolf NPC_ID 5", wor_lonewolf_npc_id)
+
+        # (3b) Move Lone Wolf to the correct starting position
+        narshe_wor_lone_wolf = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=wor_lonewolf_npc_id)
+        narshe_wor_lone_wolf.x = 49
+        narshe_wor_lone_wolf.y = 32
+        from data.npc import NPC
+        narshe_wor_lone_wolf.speed = NPC.FASTEST
+        narshe_wor_lone_wolf.event_bit = npc_bit.event_bit(0x63f)
+        narshe_wor_lone_wolf.event_byte = npc_bit.event_byte(0x63f)
+
+        # (4) Add 2nd lone wolf event to WOR Narshe?  Skip for now, due to randomized maps.
+        # (5) Add 3rd lone wolf event to WOR Narshe?  Skip for now, due to randomized maps.
+
+        # (6) Copy Lone Wolf NPC and Mog NPC to WOR Tritoch Peak.  These should already be edited.
+        #lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.lone_wolf_npc_id)
+        new_lone_wolf_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=self.lone_wolf_npc)
+        self.lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=new_lone_wolf_npc_id)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.lone_wolf_npc_id)
+        self.lone_wolf_npc_id = new_lone_wolf_npc_id
+
+        #mog_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.mog_npc_id)
+        new_mog_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=self.mog_npc)
+        self.mog_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=new_mog_npc_id)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.mog_npc_id)
+        self.mog_npc_id = new_mog_npc_id
+
+        lonewolf_bridge_npc_id = 0x1a
+        lonewolf_bridge_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
+        wor_lonewolf_bridge_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=lonewolf_bridge_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
+
+        # (6a) Move event tiles to WOR
+        event_tile_xy = [(22, 20, 0xcd4a8),
+                         (8, 18, 0xcd4dd),
+                         (9, 18, 0xcd4fe),
+                         (10, 18, 0xcd4f1),
+                         (8, 19, 0xcd523),
+                         (10, 19, 0xcd523),
+                         (9, 20, 0xcd523)]
+        for xy in event_tile_xy:
+            old_event = self.maps.get_event(map_id=TRITOCH_WOB_MAP, x=xy[0], y=xy[1])
+            new_event = MapEvent()
+            new_event.x = old_event.x
+            new_event.y = old_event.y
+            new_event.event_address = old_event.event_address
+            self.maps.add_event(map_id=TRITOCH_WOR_MAP, new_event=new_event)
+            self.maps.delete_event(map_id=TRITOCH_WOB_MAP, x=old_event.x, y=old_event.y)
+
+        # (6b) Edit events to reference the correct npc IDs
+        # running on bridge animation: 0xcd4a8
+        addresses = [0xcd4b1, 0xcd4b3, 0xcd4b5, 0xcd4b9, 0xcd4c0, 0xcd4c5]  # Lone wolf bridge: 0x1a
+        for i, addr in enumerate(addresses):
+            space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
+
+        self.mog_addresses = [0xcd4cc, 0xcd4d0, 0xcd4d4, 0xcd514, 0xcd538, 0xcd53f, 0xcd543, 0xcd548, 0xcd54f, 0xcd557,
+                         0xcd573, 0xcd5ab, 0xcd5b5, 0xcd591, 0xcd5fc, 0xcd67c, 0xcd681, 0xcd685, 0xcd689, 0xcd68d,
+                         0xcd6b1, 0xcd6bb, 0xcd6c4, 0xcd6ca, 0xcd6cb, 0xcd6d4]  # mog: 0x1c
+                        # overwritten:  0xcd61f, 0xcd626, 0xcd62a, 0xcd62f, 0xcd648,
+        #                          0xcd674,
+        for i, addr in enumerate(self.mog_addresses):
+            space = Reserve(addr, addr, "edit lone wolf mog animation " + str(i), self.mog_npc_id)
+
+        self.lonewolf_addresses = [0xcd4ce, 0xcd4d2, 0xcd566, 0xcd569, 0xcd58f, 0xcd5c2, 0xcd5c5, 0xcd5dc,
+                              0xcd697, 0xcd69a, 0xcd6a7, 0xcd6aa]  # lonewolf: 0x1b
+                            # Overwritten:  0xcd5d2, 0xcd636, 0xcd65d, 0xcd661, 0xcd669
+        for i, addr in enumerate(self.lonewolf_addresses):
+            space = Reserve(addr, addr, "edit lone wolf animation " + str(i), self.lone_wolf_npc_id)
+
+        # (6c) edit event to only require seeing the first lone wolf animation
+        space = Reserve(0xcd4a8, 0xcd4af, "edit entry condition for LoneWolf", field.NOP())
+        space.write(field.BranchIfAny([event_bit.CHASING_LONE_WOLF1, False, 0x23D, True],
+                                      field.RETURN))
