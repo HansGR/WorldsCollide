@@ -62,7 +62,7 @@ class SerpentTrench(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.args.ruination_mode:
             self.door_rando_mod()
 
         self.log_reward(self.reward)
@@ -286,13 +286,22 @@ class SerpentTrench(Event):
 
         # (6c) Add the switchyard event tile that handles entry to Nikeah entrance animation
         event_id = 2053
-        from instruction.field.entity import Hide
-        src = [
-            field.LoadMap(0x000, direction=direction.UP, default_music=False,
-                          x=128, y=73, fade_in=True, entrance_event=True),
-            Hide(),
-            world.Branch(0xa8bed)
-        ]
+        if self.args.ruination_mode:
+            # In ruination mode, skip animation & set world to WOR
+            src = [
+                field.SetEventBit(event_bit.IN_WOR),
+                field.LoadMap(0x0bb, direction=direction.UP, default_music=True,
+                              x=24, y=11, fade_in=False, entrance_event=True),
+                field.Branch(0xa8c03)
+            ]
+        else:
+            from instruction.field.entity import Hide
+            src = [
+                field.LoadMap(0x000, direction=direction.UP, default_music=False,
+                              x=128, y=73, fade_in=True, entrance_event=True),
+                Hide(),
+                world.Branch(0xa8bed)
+            ]
         AddSwitchyardEvent(event_id, self.maps, src=src)
 
     def character_mod(self, character):

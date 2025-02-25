@@ -156,7 +156,11 @@ room_data = {
     # Ruination mode
     #'ruin_hub': [ [], [393, 394, 395], [3097, 3098, 3099], 1],  # Narshe school, 3 doors as oneways
     'ruin_hub': [ [393, 394, 395], [ ], [3039, 3097, 3098, 3099], 1],  # Narshe school, 3 doors, incl. logical returns from KT and from Lete River
+
     'ruin_hub_testing': [ [393, 394, 395], [], [3097, 3098, 3099], 1],  # Narshe school, 2 doors
+    'ruin_testing': [ [523, 5199, 5200], [], [], 1],   #  Room with 2 doors to test out checks in -ruin.
+    # e.g. moogle defense [[191, 192]],  # WOR Zozo [5224, 4600],  # Nikeah Serpent Trench []
+
     'ruin_kt1': [ [], [2097], [3077], 1],       # KT Left
     'ruin_kt2': [ [], [2098], [3078], 1],       # KT Mid
     'ruin_kt3': [ [], [2099], [3079], 1],       # KT Right
@@ -677,11 +681,11 @@ room_data = {
     306 : [ [630], [ ], [ ], ['clock2'], {}, 0], #Zozo Weapon WoB
     '306r' : [ [4630], [ ], [ ], ['clock2'], {}, 1], #Zozo Weapon WoR
     '307_clock' : [ [631], [], [3062], [ ], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2061]}, 0], #Zozo Clock Puzzle Room West WoB INCLUDING clock logic.
-    '308_clock' : [ [632], [2062], [], [ ], {'forced':[3061]}, 0], #Zozo Clock Puzzle Room East WoB INCLUDING clock logic
+    '308_clock' : [ [632], [2062], [3061], [ ], {}, 0], #Zozo Clock Puzzle Room East WoB INCLUDING clock logic
     307 : [ [631], [], [3062], [ ], {}, 0], #Zozo Clock Puzzle Room West WoB, assuming one-way passage  (delete 2061)
     308 : [ [632], [2062], [], [ ], {}, 0], #Zozo Clock Puzzle Room East WoB, assuming one-way passage (delete 3061)
     '307r_clock': [[4631], [], [3064], [], {('clock1', 'clock2', 'clock3', 'clock4', 'clock5'): [2063]}, 1],  # Zozo Clock Puzzle Room West WoR INCLUDING clock logic
-    '308r_clock': [[4632], [2064], [], [], {'forced': [3063]}, 1],  # Zozo Clock Puzzle Room East WoR INCLUDING clock logic
+    '308r_clock': [[4632], [2064], [3063], [], {}, 1],  # Zozo Clock Puzzle Room East WoR INCLUDING clock logic
     '307r': [[4631], [], [3064], [], {}, 1],  # Zozo Clock Puzzle Room West WoR, assuming one-way passage (delete 2063)
     '308r': [[4632], [2064], [], [], {}, 1],  # Zozo Clock Puzzle Room East WoR, assuming one-way passage (delete 3063)
     #'307a' : [ [631, 632],  [ ], [ ], 0],  #Zozo Clock Puzzle Room (complete)
@@ -799,7 +803,7 @@ room_data = {
     387 : [ [789], [2058], [ ], 1], #Darill's Tomb Dullahan Room
     388 : [ [790, 791], [ ], [ ], 1], #Darills' Tomb B3
     389 : [ [792], [ ], [ ], ['dt2'], {}, 1], #Darills' Tomb B3 Switch Puzzle Room
-    390 : [ [793, 794], [2059], [], ['dt3'], {'forced': [3060]}, 1], #Darills' Tomb B2 Switch Puzzle Room Left Side
+    390 : [ [793, 794], [2059], [3060], ['dt3'], {}, 1], #Darills' Tomb B2 Switch Puzzle Room Left Side
     391 : [ [], [], [3059], [], {'dt2': [795], 'dt3': [2060]}, 1], # Darills' Tomb B2 Switch Puzzle Room Right Side
     392 : [ [796], [], [], ['dt1'], {}, 1], # Darills' Tomb Right Side Secret Room
     393 : [ [797, 798], [ ], [ ], 1], #Darill's Tomb MIAB Hallway
