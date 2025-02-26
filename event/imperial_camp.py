@@ -4,6 +4,7 @@ from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 class ImperialCamp(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = args.door_randomize_dungeon_crawl or args.ruination_mode
         self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
@@ -27,7 +28,7 @@ class ImperialCamp(Event):
             field.ClearEventBit(npc_bit.MARANDA_SOLDIER_IMPERIAL_CAMP),
             field.ClearEventBit(npc_bit.DOMA_GENERAL_IMPERIAL_CAMP),
         )
-        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
+        if self.MAP_SHUFFLE or self.DOOR_RANDOMIZE:
             # Deactivate imperial camp by default.  It will be activated when needed.
             space.write(
                 field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
@@ -50,7 +51,7 @@ class ImperialCamp(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
-        if self.args.door_randomize_dungeon_crawl:
+        if self.DOOR_RANDOMIZE:
             self.dungeon_crawl_mod()
 
         self.log_reward(self.reward)
@@ -69,7 +70,7 @@ class ImperialCamp(Event):
         )
 
         # this does not get called anymore, use it for extra wob event tile space
-        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
+        if self.MAP_SHUFFLE or self.DOOR_RANDOMIZE:
             # Overwrite the entrance event to go to switchyard.
             # (1a) Change the entry event to load the switchyard location
             event_id = 1501  # ID of Imperial Camp event entrance
@@ -107,7 +108,7 @@ class ImperialCamp(Event):
                     field.ShowEntity(self.soldier_npc_id),
                     field.Return()
                 )
-            elif self.args.door_randomize_dungeon_crawl:
+            elif self.DOOR_RANDOMIZE:
                 # We will need to activate imperial camp at the Kefka tile.
                 space.write(field.Return())
 
@@ -149,7 +150,7 @@ class ImperialCamp(Event):
         space = Reserve(0xb0f2e, 0xb0f2e, "imperial camp first general leo scene", field.Return())
 
         # scene before first kefka fight where leo leaves and kefka orders river poisoned
-        if self.args.door_randomize_dungeon_crawl:
+        if self.DOOR_RANDOMIZE:
             # DEACTIVATED imperial camp state:
             # field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             # field.SetEventBit(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),

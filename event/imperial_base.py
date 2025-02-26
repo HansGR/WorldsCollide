@@ -24,7 +24,7 @@ class ImperialBase(Event):
 
     def mod(self):
         self.exit_location = [0x0, 164, 194]
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.ruination_mode:
             # modify exit position from "no terra" and "chucked out!" events
             exit_id = 1059
             if exit_id in self.maps.door_map.keys():
@@ -46,7 +46,16 @@ class ImperialBase(Event):
                 #field.BranchIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate()), SOLDIERS_BATTLE_ON_TOUCH),
                 field.ReturnIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate())),
             )
-            if self.DOOR_RANDOMIZE:
+            if self.args.ruination_mode:
+                src = [
+                    field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+                                      fade_in=True, default_music=True, entrance_event=True),
+                    field.Return()
+                ]
+                space = Reserve(0xb25fd, 0xb2605, "imperial base thrown out", field.NOP())
+                space.write(src)
+
+            elif self.DOOR_RANDOMIZE:
                 from event.switchyard import SummonAirship
                 space = Write(Bank.CB, SummonAirship(self.exit_location[0], self.exit_location[1],
                                                      self.exit_location[2], fadeout=True), "summon airship to imperial base")
@@ -84,7 +93,7 @@ class ImperialBase(Event):
             )
 
         # Modify where touching the soldiers sends you
-        if self.MAP_SHUFFLE:
+        if self.MAP_SHUFFLE or self.args.ruination_mode:
             # There are three apparent "chucked out!" routines.  Not sure which is used, let's patch all of them
             # src = [
             #     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
@@ -94,14 +103,21 @@ class ImperialBase(Event):
             # if self.MAP_CROSSWORLD and self.exit_location[0] == 0x1:
             #     # Prepend set world bit
             #     src = [field.SetEventBit(event_bit.IN_WOR)] + src
-            from data.warps import CUSTOM_WARP_HOOK
-            src = [
-                field.FadeOutScreen(),
-                field.WaitForFade(),
-                field.Call(CUSTOM_WARP_HOOK),
-                field.Return()
-            ]
-
+            if self.MAP_SHUFFLE:
+                from data.warps import CUSTOM_WARP_HOOK
+                src = [
+                    field.FadeOutScreen(),
+                    field.WaitForFade(),
+                    field.Call(CUSTOM_WARP_HOOK),
+                    field.Return()
+                ]
+            elif self.args.ruination_mode:
+                # Go back to wherever you came in
+                src = [
+                    field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
+                                      fade_in=True, default_music=True, entrance_event=True),
+                    field.Return()
+                ]
             space = Write(Bank.CB, src, 'Imperial base updated chucked out destination')
             chucked_address = space.start_address
 
@@ -117,5 +133,5 @@ class ImperialBase(Event):
             space.write(src)
 
             # CB/25B2: 6A    Load map $0000 (World of Balance) after fade out, (upper bits $3000), place party at (164, 194), facing left, flags $00
-            space = Reserve(0xb25b2, 0xb25b7, 'Chucked Out destination #1', field.NOP())
+            space = Reserve(0xb25b2, 0xb25b7, 'Chucked Out destination #3', field.NOP())
             space.write(src)

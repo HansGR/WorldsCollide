@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from event.event import *
 
 class LeteRiver(Event):
@@ -6,8 +8,11 @@ class LeteRiver(Event):
 
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = args.door_randomize_all or args.door_randomize_crossworld \
-                              or args.door_randomize_dungeon_crawl or args.door_randomize_lete_river
+        self.DOOR_RANDOMIZE = args.door_randomize_all \
+                              or args.door_randomize_crossworld \
+                              or args.door_randomize_dungeon_crawl \
+                              or args.door_randomize_lete_river \
+                              or args.ruination_mode
 
     def name(self):
         return "Lete River"
@@ -219,14 +224,97 @@ class LeteRiver(Event):
         self.remove_raft = space.start_address
 
     def exit_river_mod(self):
-        src = [
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x00, direction.LEFT, default_music = False, x = 93, y = 41, airship = True),
-            vehicle.SetPosition(93, 41),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x00, direction.LEFT, default_music = True, x = 93, y = 41),
-            world.End(),
-        ]
+        if self.args.ruination_mode:
+            # Add raft NPC to Esper World map
+            esper_world_map_id = 0x0d9
+            raft_npc = self.maps.get_npc(0x072, 0x11)
+            new_raft_npc = deepcopy(raft_npc)
+            new_raft_npc.x = 34
+            new_raft_npc.y = 52
+            new_raft_npc.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+            new_raft_npc.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+            self.esper_world_raft_npc_id = self.maps.append_npc(esper_world_map_id, new_raft_npc)
+
+            # Custom exit to Esper World:  See ref. lete river cave (CB/04B7)
+            src = [
+                field.LoadMap(esper_world_map_id, direction.UP, default_music=False, x=29, y=62, fade_in=False),
+                field.SetVehicle(field_entity.PARTY0, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY1, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY2, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY3, field.Vehicle.RAFT_AND_RIDER),
+                field.FadeInScreen(),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetSpeed(speed=field_entity.Speed.NORMAL),
+                                field_entity.Move(direction=direction.UP, distance=5),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.SetSpeed(speed=field_entity.Speed.SLOW),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                #field_entity.Move(direction=direction.UP, distance=1),
+                                ),
+                field.Call(0xb04aa),  # Remove Raft
+                field.CreateEntity(self.esper_world_raft_npc_id),
+                field.RefreshEntities(),
+                field.ShowEntity(self.esper_world_raft_npc_id),
+                Read(0xb04d0, 0xb04e2),  # Jump off raft
+                field.FreeMovement(),
+                field.EntityAct(self.esper_world_raft_npc_id, True,
+                                field_entity.SetSpeed(speed=field_entity.Speed.SLOW),
+                                field_entity.Move(direction=direction.RIGHT, distance=5),
+                                field_entity.SetSpeed(speed=field_entity.Speed.NORMAL),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.SetSpeed(speed=field_entity.Speed.FAST),
+                                field_entity.Move(direction=direction.RIGHT, distance=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.Move(direction=direction.RIGHT, distance=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.SetSpeed(speed=field_entity.Speed.FASTEST),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.Move(direction=direction.UP, distance=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.Hide()
+                                ),
+                field.HideEntity(self.esper_world_raft_npc_id),
+                field.DeleteEntity(self.esper_world_raft_npc_id),
+                field.RefreshEntities(),
+                field.Return()
+            ]
+        else:
+            # Exit to world map
+            src = [
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(0x00, direction.LEFT, default_music = False, x = 93, y = 41, airship = True),
+                vehicle.SetPosition(93, 41),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(0x00, direction.LEFT, default_music = True, x = 93, y = 41),
+                world.End(),
+            ]
         space = Write(Bank.CB, src, "lete river exit after ultros")
         self.exit_river = space.start_address
 

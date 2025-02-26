@@ -9,7 +9,7 @@ class PhoenixCave(Event):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle
         self.DOOR_RANDOMIZE = args.door_randomize_all or args.door_randomize_crossworld \
-                              or args.door_randomize_dungeon_crawl
+                              or args.door_randomize_dungeon_crawl or args.ruination_mode
 
     def name(self):
         return "Phoenix Cave"

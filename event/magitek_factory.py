@@ -10,7 +10,8 @@ class MagitekFactory(Event):
                           or args.door_randomize_all
                           or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+                          or args.door_randomize_each
+                          or args.ruination_mode)
         self.MAP_SHUFFLE = args.map_shuffle or args.door_randomize_dungeon_crawl
 
     def name(self):
@@ -83,6 +84,9 @@ class MagitekFactory(Event):
 
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
 
     def vector_mod(self):
@@ -380,15 +384,18 @@ class MagitekFactory(Event):
         if IS_CRANES:
             battle_type = field.BattleType.PINCER
 
-        this_world = self.airship_position[-1]
-        if this_world == 0 and not IS_CRANES:
-            battle_background = 48  # airship, right
-        elif this_world == 0 and IS_CRANES:
-            battle_background = 37  # airship, center
-        elif this_world == 1 and not IS_CRANES:
-            battle_background = 41  # airship WOR, right
+        if self.args.ruination_mode:
+            battle_background = 19  # Vector
         else:
-            battle_background = 37  # airship WOR, center (does not exist!)
+            this_world = self.airship_position[-1]
+            if this_world == 0 and not IS_CRANES:
+                battle_background = 48  # airship, right
+            elif this_world == 0 and IS_CRANES:
+                battle_background = 37  # airship, center
+            elif this_world == 1 and not IS_CRANES:
+                battle_background = 41  # airship WOR, right
+            else:
+                battle_background = 37  # airship WOR, center (does not exist!)
 
         space = Reserve(0xb40e5, 0xb40eb, "magitek factory invoke battle cranes", field.NOP())
         space.write(
@@ -411,13 +418,22 @@ class MagitekFactory(Event):
         space = Reserve(0xc8303, 0xc8304, "after magitek factory do not delete vector townspeople", field.NOP())
 
         space = Reserve(0xc8319, 0xc831f, "after magitek factory do not call go to zozo scenes", field.Return())
-        if self.airship_position[0] in [0x0, 0x1, 0x1ff]:
+        if self.args.ruination_mode:
+            # Just return to Vector
+            src = [
+                field.LoadMap(map_id=0x0f2, direction=direction.DOWN, default_music=True,
+                              x=51, y=40, fade_in=True),
+                field.Return()
+            ]
+        elif self.airship_position[0] in [0x0, 0x1, 0x1ff]:
+            # Return to airship
             src = [
                 field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
                           y=self.airship_position[2], airship=True, fade_in=True),
                 vehicle.End()
                 ]
         else:
+            # Return to wherever
             src = [
                 field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
                               y=self.airship_position[2], fade_in=True),
@@ -468,6 +484,9 @@ class MagitekFactory(Event):
         ]
         AddSwitchyardEvent(event_id, self.maps, src=src)
 
+    def ruination_mod(self):
+        # Edit ending: fight final boss in Vector, return to Vector.
+        pass
 
     # def reride_minecart_mod(src):
     #     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.

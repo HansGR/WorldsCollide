@@ -7,7 +7,8 @@ class MtZozo(Event):
                           or args.door_randomize_all
                           or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+                          or args.door_randomize_each
+                          or args.ruination_mode)
 
     def name(self):
         return "Mt. Zozo"

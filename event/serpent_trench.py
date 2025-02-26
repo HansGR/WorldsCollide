@@ -9,7 +9,8 @@ class SerpentTrench(Event):
                           or args.door_randomize_all
                           or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+                          or args.door_randomize_each
+                          or args.ruination_mode)
         self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
@@ -62,7 +63,7 @@ class SerpentTrench(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
-        if self.DOOR_RANDOMIZE or self.args.ruination_mode:
+        if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
         self.log_reward(self.reward)

@@ -12,6 +12,7 @@ class PhantomTrain(Event):
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
         self.MAP_SHUFFLE = args.map_shuffle
+        self.RUINATION_MODE = args.ruination_mode
 
     def name(self):
         return "Phantom Train"
@@ -56,7 +57,7 @@ class PhantomTrain(Event):
         self.phantom_train_mod()
         self.random_forest_mod()
 
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
             self.door_rando_mod()
 
         if self.args.character_gating:
@@ -90,14 +91,22 @@ class PhantomTrain(Event):
 
     def _load_world_map(self):
         src = [field.FadeOutSong(32)]
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
             # Send to switchyard tile
             event_id = 2068
             src += GoToSwitchyard(event_id)
 
-            # Add the switchyard event tile that handles exit 2068 --> the world map
-            airship_location = [0x0, 178, 93]
-            switchyard_src = SummonAirship(airship_location[0], airship_location[1], airship_location[2])
+            # Add the switchyard event tile that handles exit 2068
+            if self.DOOR_RANDOMIZE:
+                #  --> the world map
+                airship_location = [0x0, 178, 93]
+                switchyard_src = SummonAirship(airship_location[0], airship_location[1], airship_location[2])
+            else:
+                # in ruination mode: --> Phantom Train station
+                switchyard_src = [
+                    field.LoadMap(map_id=0x08c, x=70, y=11, direction=direction.DOWN, default_music=True, fade_in=True, entrance_event=True),
+                    field.Return()
+                ]
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
         elif self.MAP_SHUFFLE and self.airship_loc[0] not in [0x0, 0x1]:
