@@ -315,6 +315,12 @@ id_palette = {
     377 : "Lutz-HoxNorf-PS1",
     378 : "Yukari-HoxNorf-Touhou",
     379 : "Demi-HoxNorf-PS4",
+    380 : "Ike (Ranger)-HoxNorf-FE",
+    381 : "Bartz (Dancer)-HoxNorf-FF5",
+    382 : "Marisa2-HoxNorf-Touhou",
+    383 : "Tewi-HoxNorf-Touhou",
+    384 : "Bow-HoxNorf-Mario",
+    385 : "Megumin-HoxNorf-Konosuba",
 }
 
 def get_path(id_):
