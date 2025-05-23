@@ -250,13 +250,6 @@ class EnemyPacks():
 
         self.phunbaba3_safety_check(bosses_possible)
 
-        print(len(required_boss_formations))
-        print(len(required_statue_formations))
-        for boss in required_boss_formations:
-            print("Normal:", bosses.normal_formation_name[boss])
-        for boss in required_statue_formations:
-            print("Statue:", bosses.normal_formation_name[boss])
-
     def randomize_packs(self, packs, boss_percent, no_phunbaba3 = False):
         exclude_bosses = []
         if no_phunbaba3 or not self.args.shuffle_random_phunbaba3:
