@@ -456,16 +456,8 @@ class Maps():
         self.chests.mod()
         self.world_map.mod()
         self.doors.mod()
-        if self.doors.verbose:
-            print('Door connections:')
-            for m in self.doors.map[0]:
-                ma = [a for a in m]
-                ma.sort()
-                print('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + exit_data[ma[0]][1] + '<-->' + exit_data[ma[1]][
-                    1] + ')')
-            print('One-way connections:')
-            for m in self.doors.map[1]:
-                print('\t', m[0], " -> ", m[1])
+        if self.args.door_randomize or self.args.map_shuffle:
+            self.postprocess_door_map()
         self.events.mod()  # self.events.mod(self.doors, self)
         self.long_events.mod()  # LONG EVENTS
 
@@ -550,9 +542,8 @@ class Maps():
             # Patch all used exits
             # Also patch exits that are logical and have different destinations than their WOB companions ...
             # Actually just patch all exits in exit_data_patch, why not.  Should be safe.
-            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()])) + [e for
-                                                                                                                   e in
-                                                                                                                   event_door_connection_data.keys()]
+            exits_to_patch = list(set([m for m in self.door_map.keys()] + [e for e in exit_data_patch.keys()])) + \
+                             [e for e in event_door_connection_data.keys()]
             # print(exits_to_patch)
             self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=False)
             for e in self.exits.exit_original_data.keys():
@@ -570,13 +561,16 @@ class Maps():
                     map_shuffle_force_explicit.append(self.door_map[m])
 
             # If dungeon crawl mode, add override exits
-            if self.args.door_randomize_dungeon_crawl:
+            if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
                 safe_id = max([d for d in exit_data.keys() if d < 1500])
                 for d in dungeon_crawl_exit_destination_override.keys():
                     safe_id += 1  # get a new safe door id
 
                     # Update or add an entry for the new match
-                    exit_data[d] = [safe_id]
+                    if d in exit_data.keys():
+                        exit_data[d][0] = safe_id
+                    else:
+                        exit_data[d] = [safe_id, '(override for dungeon crawl)']
 
                     this_data = dungeon_crawl_exit_destination_override[d]
                     self.exits.exit_original_data[safe_id] = this_data
@@ -586,6 +580,17 @@ class Maps():
             for m in self.doors.map[1]:
                 if m[0] not in self.trap_map.keys():
                     self.trap_map[m[0]] = m[1]
+
+        if self.doors.verbose:
+            print('Door connections:')
+            for m in self.doors.map[0]:
+                ma = [a for a in m]
+                ma.sort()
+                print('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + exit_data[ma[0]][1] + '<-->' + exit_data[ma[1]][1] + ')')
+            print('One-way connections:')
+            for m in self.doors.map[1]:
+                print('\t', m[0], " -> ", m[1])
+
     def doorRandoOverride(self, newmap):
         from data.map_exit_extra import exit_data as ed
         for r in room_data.keys():
@@ -667,8 +672,6 @@ class Maps():
         # self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
         if self.args.door_randomize or self.args.map_shuffle or self.args.ruination_mode:
-            self.postprocess_door_map()
-
             # Patch exits if necessary
             used_exits = [m for m in self.door_map.keys()]
 

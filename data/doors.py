@@ -125,7 +125,8 @@ ROOM_SETS = {
 ROOM_SETS['All'] = [r for r in ROOM_SETS['WoB']] + [r for r in ROOM_SETS['WoR']]
 ROOM_SETS['MapShuffleXW'] = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
 
-ROOM_SETS['Ruination'] = ['ruin_hub_testing', 'ruin_kt1', 'ruin_kt2', 'ruin_kt3',
+ROOM_SETS['Ruination'] = ['ruin_hub_testing', 'ruin_testing',
+                          'ruin_kt1', 'ruin_kt2', 'ruin_kt3',
                           'ruin_kt_entry_1', 'ruin_kt_entry_2', 'ruin_kt_entry_3']
 
 class Doors():
@@ -180,8 +181,10 @@ class Doors():
         if self.args.ruination_mode:
             # Ruination mode overrides all others.
             # It will probably have a custom sorting algorithm, but for now...
-            #room_sets.append(ROOM_SETS['Ruination'])
-            #self.area_name.append('Ruination')
+            ruin_override = False
+            if ruin_override:
+                room_sets.append(ROOM_SETS['Ruination'])
+                self.area_name.append('Ruination')
             # Door mapping is now done in events.ruination_mod()
 
             # Split some town exits in ruination mode (same as for dungeon crawl mode):

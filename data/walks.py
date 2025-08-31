@@ -295,6 +295,23 @@ class Network:
             return temp
         return visited
 
+    def get_downstream_paths(self, room_id, visited=None):
+        """Return list of paths heading downstream from room_id"""
+        if visited is None:
+            visited = []
+
+        succ = [s for s in self.net.successors(room_id) if s not in visited]
+        if len(succ) > 0:
+            if len(succ) == 1:
+                s = succ[0]
+                return self.get_downstream_paths(s, visited + [s])
+            else:
+                temp = []
+                for s in succ:
+                    temp.append(self.get_downstream_paths(s, visited + [s]))
+                return self.flatten_paths(temp)
+        return self.flatten_paths([visited])
+
     def get_downstream_nodes(self, room_id, visited=None):
         """Get nodes downstream from room_id"""
         if visited is None:

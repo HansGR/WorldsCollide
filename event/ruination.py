@@ -522,6 +522,125 @@ class RuinationBranch(Network):
             print('... closing branch complete!')
 
     def extend_branch_path(self):
+        # We need to simplify the logic.  The method keeps failing and we need a more deterministic way of mapping.
+        # "More deterministic" means "simplest".  (A lot of the issues seem to be due to running out of valid
+        # trapdoors, which I don't entirely understand how that happens, but it's easier to diagnose if things
+        # are simpler.)
+        # (0) Get the current active room & look at the state of the branch
+        active_room = self.rooms.get_room(self.active)
+        upstream = self.get_upstream_nodes(self.active)
+        downstream = self.get_downstream_nodes(self.active)
+        if self.verbose:
+            print('\tActive room: ', self.active, '.\n\tUpstream nodes: ', upstream,
+                  '\n\tDownstream nodes: ', downstream)
+        hub_is_upstream = len([n for n in upstream if 'ruin_hub_' in str(n)]) > 0
+        if hub_is_upstream:
+            print('\tHub is upstream!')
+
+        all_entrances = list(active_room.doors) + list(active_room.pits)
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            all_entrances += list(room.doors) + list(room.pits)
+        if self.verbose:
+            print('\n\tAll entrances: ', all_entrances)
+
+        all_exits = list(active_room.doors) + list(active_room.traps)
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            all_exits += list(room.doors) + list(room.traps)
+
+        # (1) Look for forced exits.  Pick one of them if they exist.
+        forced_exits = [e for e in all_exits if e in forced_connections.keys()]
+        if len(forced_exits) > 0:
+            this_exit = forced_exits.pop()
+            this_conn = forced_connections[this_exit][0]
+            if self.verbose:
+                print('Found forced exit!', this_exit, '-->', this_conn)
+        else:
+            # (2) If not, pick exits only from the most downstream node.  They will need to get connected eventually,
+            # so we might as well connect one now.
+            if len(downstream) == 0:
+                available_exits = [list(active_room.doors), list(active_room.traps)]
+            else:
+                downstream_paths = self.get_downstream_paths(self.active)
+                path_lengths = [len(p) for p in downstream_paths]
+                longest_paths = [p for p in downstream_paths if len(p) == max(path_lengths)]
+                most_downstream_nodes = list(set([p[-1] for p in longest_paths]))
+                available_exits = [[], []]
+                for node in most_downstream_nodes:
+                    room = self.rooms.get_room(node)
+                    available_exits[0] += list(room.doors)
+                    available_exits[1] += list(room.traps)
+
+            # (2a) Always choose a trapdoor if available.  Choose a door if not.
+            if len(available_exits[1]) > 0:
+                this_exit = random.choice(available_exits[1])
+                this_type = 1
+            else:
+                this_exit = random.choice(available_exits[0])
+                this_type = 0
+
+            # (3) For the chosen exit, construct a list of viable entrances. Include new rooms and use the "trace
+            # upstream path" method satisfying the rule for upstream trapdoors and doors.
+            this_room = self.rooms.get_room_from_element(this_exit)
+            this_room_id = this_room.id
+            if self.verbose:
+                print('\tSelected exit: ', this_exit, 'in room', this_room_id)
+
+            uppaths = self.get_upstream_paths(this_room_id)
+            available_conns = set()
+            currently_used = [self.active] + list(downstream) + list(upstream)
+            if this_type == 0:
+                available_conns.update(self.get_available_hub_connections(element_type=0, excluded=currently_used,
+                                                                    dito_ok=True))
+            elif this_type == 1:
+                available_conns.update(self.get_available_hub_connections(element_type=1, excluded=currently_used))
+
+            for path in uppaths:
+                if self.verbose:
+                    print('\tchecking upstream path:', path)
+                path_door_count = 0
+                path_trap_count = 0
+                tracker = False
+                for node_id in path:
+                    node = self.rooms.get_room(node_id)
+                    path_door_count += len(node.doors)
+                    path_trap_count += len(node.traps)
+                    if this_type == 1:
+                        if (path_door_count + path_trap_count) > 1:
+                            # We've met the condition for trapdoor connections.  Add pits.
+                            available_conns.update(node.pits)
+                            if self.verbose and tracker is False:
+                                print('\t\tTrapdoor condition met at', node_id)
+                                tracker = True
+                            if self.verbose:
+                                print('\t\tAdding', node_id, node.pits)
+                    elif this_type == 0:
+                        if (path_door_count + path_trap_count) > 2:
+                            # We've met the condition for door connections.  Add doors.
+                            available_conns.update(node.doors)
+                            if self.verbose and tracker is False:
+                                print('\t\tDoor condition met at', node_id)
+                                tracker = True
+                            if self.verbose:
+                                print('\t\tAdding', node_id, node.doors)
+
+            if len(available_conns) > 0:
+                # select a connection from those available
+                this_conn = random.choice(list(available_conns))
+                conn_room = self.rooms.get_room_from_element(this_conn)
+                if self.verbose:
+                    print('All available connections:', available_conns)
+                    print('\tselected: ', this_conn, 'in room', conn_room.id)
+            else:
+                # No entrances are available.  Complain and quit.
+                this_exit = None
+                this_conn = None
+
+        return this_exit, this_conn
+
+
+    def extend_branch_path_old(self):
         # Extend this branch by (1) adding a node or (2) closing a loop, without terminating the branch.
         active_room = self.rooms.get_room(self.active)
         all_entrances = list(active_room.doors) + list(active_room.pits)
@@ -947,16 +1066,6 @@ class ruination_map():
                 # Attach hubs & trapdoors until none are left (create all branches)
 
                 # Choose an exit from the active room.
-                # We need to simplify the logic.  The method keeps failing and we need a more deterministic way of mapping.
-                # "More deterministic" means "simplest".  (A lot of the issues seem to be due to running out of valid
-                # trapdoors, which I don't entirely understand how that happens, but it's easier to diagnose if things
-                # are simpler.)
-                # (1) Look for forced exits.  Pick one of them if they exist.
-                # (2) If not, pick exits only from the most downstream node.  They will need to get connected eventually
-                # so we might as well connect one now.
-                # (2a) Always choose a trapdoor if available.  Choose a door if not.
-                # (3) For the chosen exit, construct a list of viable entrances. Include new rooms and use the "trace
-                # upstream path" method satisfying the rule for upstream trapdoors and doors.
                 this_exit, this_conn = branch.extend_branch_path()
 
                 if this_exit is None:

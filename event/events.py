@@ -70,7 +70,13 @@ class Events():
 
         # select event rewards
         if self.args.ruination_mode:
-            self.ruination_mod(events, name_event)
+            ruin_override = False
+            if ruin_override:
+                self.open_world_mod(events)   # OVERRIDE for testing
+            else:
+                self.ruination_mod(events, name_event)
+
+
         elif self.args.character_gating:
             self.character_gating_mod(events, name_event, extra_gating)
         else:
@@ -257,6 +263,9 @@ class Events():
         print('REWARD STATE FINAL:')
         for slot in reward_slots:
             print(slot.event.name(), slot.id, slot.type)
+
+        # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
+        self.maps.postprocess_door_map()
 
     def validate(self, events):
         char_esper_checks = []
