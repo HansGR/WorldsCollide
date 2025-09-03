@@ -65,9 +65,6 @@ class Events():
             # Share warp out animation code
             self.warps.warp_out_animation_addr = self.warp_points.warp_out_animation_addr
 
-        # Write modified warps
-        self.warps.mod()
-
         # select event rewards
         if self.args.ruination_mode:
             ruin_override = False
@@ -101,6 +98,9 @@ class Events():
         if self.args.spoiler_log:
             from log import section
             section("Events", log_strings, [])
+
+        # Write modified warps
+        self.warps.mod()
 
         return events
 
