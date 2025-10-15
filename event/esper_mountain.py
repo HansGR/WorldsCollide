@@ -1,10 +1,11 @@
 from event.event import *
 
 class EsperMountain(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_esper_mountain
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
 
@@ -59,8 +60,11 @@ class EsperMountain(Event):
 
         self.log_reward(self.reward)
 
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.args.ruination_mode:
             self.door_rando_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
     def entrance_event_mod(self):
         src = [
@@ -212,8 +216,194 @@ class EsperMountain(Event):
         ])
 
     def door_rando_mod(self):
-        # Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
+        # (1) Trapdoors in Esper Mountain: remove the check to see if the boss has been defeated yet.
         # e.g. "CB/EE8F: C0    If ($1E80($097) [$1E92, bit 7] is clear), branch to $CA5EB3 (simply returns)
         space = Reserve(0x0bee8f, 0x0bee94, "esper mountain trapdoor boss check 1", field.NOP())
         space = Reserve(0x0beebe, 0x0beec3, "esper mountain trapdoor boss check 2", field.NOP())
         space = Reserve(0x0beeec, 0x0beef1, "esper mountain trapdoor boss check 3", field.NOP())
+
+        # (2) Need to add NPCs to block exits while the animation is playing.
+        from data.npc import CreateInvisibleBlockNPCs
+
+        # (2a) Room #1
+        map_id = 0x177
+        door_locations = [[60, 16], [42, 26], [55, 32], [48, 9]]
+
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.entrance_relm_npc)
+        #print('NPCs created 1: ', [hex(a) for a in npc_id])
+
+        # Insert code to animation to create/delete them as needed
+        patch_in = [0xbef28, 0xbef2b]  # set event bit, create relm npc
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs esper mountain 1")
+        #print('Create NPCs 1 src:', src)
+
+        space = Reserve(patch_in[0], patch_in[1], "patch create npcs esper mtn 1", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xbef3e, 0xbef41]  # set event bit, clear event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs esper mountain 1")
+        #print('Delete NPCs 1 src:', src)
+
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 1", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+
+        # (2b) Room 2
+        map_id = 0x175
+        door_locations = [[16, 23], [25, 15]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.outside1_relm_npc)
+        #print('NPCs created 2: ', npc_id)
+
+        # Insert code to animation to create/delete them as needed
+        patch_in = [0xbef50, 0xbef53]  # set event bit, create relm npc
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs esper mountain 2")
+        #print('Create NPCs 2src:', src)
+
+        space = Reserve(patch_in[0], patch_in[1], "patch create npcs esper mtn 2", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xbef6c, 0xbef6f]  # set event bit, clear event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs esper mountain 2")
+        #print('Delete NPCs 2 src:', src)
+
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 2", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+
+        # (2c) Room 3 (same map as Room 1)
+        map_id = 0x177
+        door_locations = [[42, 63], [53, 62]]
+
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.entrance_relm_npc)
+        #print('NPCs created 3: ', [hex(a) for a in npc_id])
+
+        # Insert code to animation to create/delete them as needed
+        patch_in = [0xbef7e, 0xbef81]  # set event bit, create relm npc
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs esper mountain 1")
+        #print('Create NPCs 3 src:', src)
+
+        space = Reserve(patch_in[0], patch_in[1], "patch create npcs esper mtn 3", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xbefa0, 0xbefa3]  # set event bit, clear event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs esper mountain 3")
+        #print('Delete NPCs 3 src:', src)
+
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 3", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+
+    def ruination_mod(self):
+        # Add warp point to KT in final room
+        map_id = 0x177
+
+        from data.npc import NPC
+        wpp = NPC()
+        wpp.x = 17
+        wpp.y = 20
+        wpp.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_ON)
+        wpp.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_ON)
+        wpp.palette = 1  # default = 6
+        wpp.sprite = 104  # 111 = save point
+        wpp.split_sprite = 1
+        wpp.const_sprite = 0
+        wpp.direction = direction.LEFT
+        wpp.no_face_on_trigger = 0
+        wpp.speed = 0  # 2 = save point
+        wpp.movement = 0
+        wpp.map_layer = 1
+        wpp.background_scrolls = 0
+        wpp.background_layer = 0
+
+        self.maps.append_npc(map_id, wpp)
+
+        # Create an event tile that does the warping action
+        kt_enter_id = 2078
+
+        warp_to_KT_text = 0x0667  # Still using ones from sealed gate
+        self.dialogs.set_text(warp_to_KT_text, "This will take us to Kefka's Tower. There's no coming back.<line><choice> Let's go<line><choice> Not just yet<end>")
+        not_allowed_dialog = 1293  # same as airship
+
+        from event.switchyard import GoToSwitchyard
+        src = [
+            field.ReturnIfEventBitSet(0x1B5),  # cleared on each step
+            field.PlaySoundEffect(0xd1),    # shing!
+            field.FlashScreen(field.Flash.RED),
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "ALLOW_WARP"),
+            field.Dialog(not_allowed_dialog),
+            "RETURN",
+            field.SetEventBit(0x1B5),
+            field.Return(),
+            "ALLOW_WARP",
+            field.DialogBranch(warp_to_KT_text, "DO_WARP", "RETURN"),
+            "DO_WARP",
+            field.Call(self.warps.warp_out_animation_addr)
+        ] + GoToSwitchyard(kt_enter_id)
+
+        from data.map_event import MapEvent
+        newevent = MapEvent()
+        newevent.x = wpp.x
+        newevent.y = wpp.y
+        space = Write(Bank.CC, src, "Warp point Esper Mtn to KT")
+        newevent.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(map_id, newevent)
+
+        # Change map music; turn off random encounters.
+        esper_terminus_properties = self.maps.properties[map_id]
+        esper_terminus_properties.song = 33
+        esper_terminus_properties.enable_random_encounters = 0
+

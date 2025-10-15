@@ -1,12 +1,18 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class MagitekFactory(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_magitek_factory
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+        self.MAP_SHUFFLE = args.map_shuffle or args.door_randomize_dungeon_crawl
 
     def name(self):
         return "Magitek Factory"
@@ -29,6 +35,16 @@ class MagitekFactory(Event):
     def mod(self):
         self.setzer_npc_id = 0x18
         self.setzer_npc = self.maps.get_npc(0x0f0, self.setzer_npc_id)
+
+        self.airship_position = [0x00, 120, 188]
+        if self.MAP_SHUFFLE:
+            exit_id = 1228
+            if exit_id in self.maps.door_map.keys():
+                self.airship_position = self.maps.get_connection_location(exit_id)
+                # conn_id = self.maps.door_map[exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.airship_position = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
 
         self.vector_mod()
 
@@ -65,6 +81,12 @@ class MagitekFactory(Event):
 
         if self.DOOR_RANDOMIZE:
             self.mtek_1_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
 
     def vector_mod(self):
@@ -356,12 +378,24 @@ class MagitekFactory(Event):
 
     def crane_battle_mod(self):
         boss_pack_id = self.get_boss("Cranes")
+        IS_CRANES = (boss_pack_id == self.enemies.packs.get_id("Cranes"))
 
         battle_type = field.BattleType.FRONT
-        battle_background = 48 # airship, right
-        if boss_pack_id == self.enemies.packs.get_id("Cranes"):
+        if IS_CRANES:
             battle_type = field.BattleType.PINCER
-            battle_background = 37 # airship, center
+
+        if self.args.ruination_mode:
+            battle_background = 19  # Vector
+        else:
+            this_world = self.airship_position[-1]
+            if this_world == 0 and not IS_CRANES:
+                battle_background = 48  # airship, right
+            elif this_world == 0 and IS_CRANES:
+                battle_background = 37  # airship, center
+            elif this_world == 1 and not IS_CRANES:
+                battle_background = 41  # airship WOR, right
+            else:
+                battle_background = 37  # airship WOR, center (does not exist!)
 
         space = Reserve(0xb40e5, 0xb40eb, "magitek factory invoke battle cranes", field.NOP())
         space.write(
@@ -373,16 +407,39 @@ class MagitekFactory(Event):
         space.write(
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.IncrementEventWord(event_word.CHECKS_COMPLETE), # objectives finished after battle
+        )
+        if self.airship_position[0] == 0x1:
+            # Update world bit, if required
+            space.write(field.SetEventBit(event_bit.IN_WOR))
+        space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
 
         space = Reserve(0xc8303, 0xc8304, "after magitek factory do not delete vector townspeople", field.NOP())
 
         space = Reserve(0xc8319, 0xc831f, "after magitek factory do not call go to zozo scenes", field.Return())
-        space.write(
-            field.LoadMap(0x00, direction.DOWN, default_music = True, x = 120, y = 188, airship = True),
-            vehicle.End(),
-        )
+        if self.args.ruination_mode:
+            # Just return to Vector
+            src = [
+                field.LoadMap(map_id=0x0f2, direction=direction.DOWN, default_music=True,
+                              x=51, y=40, fade_in=True),
+                field.Return()
+            ]
+        elif self.airship_position[0] in [0x0, 0x1, 0x1ff]:
+            # Return to airship
+            src = [
+                field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
+                          y=self.airship_position[2], airship=True, fade_in=True),
+                vehicle.End()
+                ]
+        else:
+            # Return to wherever
+            src = [
+                field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
+                              y=self.airship_position[2], fade_in=True),
+                field.Return()
+            ]
+        space.write(src)
 
     def guardian_mod(self):
         # guardian is made up of 9 npcs, remove them all
@@ -412,6 +469,24 @@ class MagitekFactory(Event):
         space = Reserve(0xc77ce, 0xc77d3, "after MTek minecart do not change MTek1 pipeR2", field.NOP())
         space = Reserve(0xc77ec, 0xc77f1, "after MTek minecart do not change MTek1 pipeR3", field.NOP())
         space = Reserve(0xc781b, 0xc7820, "after MTek minecart do not change MTek1 pipeR4", field.NOP())
+
+    def map_shuffle_mod(self):
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1505  # ID of Vector event entrance
+
+        # We don't use Burning Vector so we can just write over the event bit check
+        space = Reserve(0xa5ecf, 0xa5edb, 'Vector WOB entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to Vector
+        src = [
+            field.LoadMap(0x0f2, direction=direction.UP, x=32, y=61, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
+
+    def ruination_mod(self):
+        # Edit ending: fight final boss in Vector, return to Vector.
+        pass
 
     # def reride_minecart_mod(src):
     #     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.

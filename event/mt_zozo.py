@@ -1,6 +1,15 @@
 from event.event import *
 
 class MtZozo(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_mt_zozo
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+
     def name(self):
         return "Mt. Zozo"
 
@@ -8,7 +17,10 @@ class MtZozo(Event):
         return self.characters.CYAN
 
     def init_rewards(self):
-        self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
+        if self.args.no_free_characters_espers:
+            self.reward = self.add_reward(RewardType.ITEM)
+        else:
+            self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def init_event_bits(self, space):
         space.write(
@@ -33,6 +45,9 @@ class MtZozo(Event):
         self.mod_rust_rid_salesman()
         self.chest_mod()
 
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -47,18 +62,40 @@ class MtZozo(Event):
 
         src = [
             Read(0xaefb3, 0xaefb6), # woman laying down animate
-            field.BranchIfEventBitSet(event_bit.IN_WOR, "IN_WOR"),
-            field.EntityAct(drunk_npc_id, True,
-                field_entity.SetPosition(50, 36)
-            ),
-            field.Return(),
+            ]
+        if self.args.ruination_mode:
+            # There is no situation in which the player can get here without either Terra or Cyan.
+            # So we only need to block one of them (not both).
+            if self.args.character_gating:
+                src += [
+                    field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.TERRA), "HAVE_TERRA"),
+                    field.EntityAct(drunk_npc_id, True,
+                                    field_entity.SetPosition(38, 58)
+                                    ),
+                    field.Return(),
+                    "HAVE_TERRA",
+                    field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.CYAN), "HAVE_CYAN"),
+                    field.EntityAct(drunk_npc_id, True,
+                                    field_entity.SetPosition(50, 36)
+                                    ),
+                    "HAVE_CYAN",
+                    field.Return()
+                ]
 
-            "IN_WOR",    # block mt zozo with drunk
-            field.EntityAct(drunk_npc_id, True,
-                field_entity.SetPosition(38, 58),
-            ),
-            field.Return(),
-        ]
+        else:
+            src += [
+                field.BranchIfEventBitSet(event_bit.IN_WOR, "IN_WOR"),
+                field.EntityAct(drunk_npc_id, True,
+                    field_entity.SetPosition(50, 36)
+                ),
+                field.Return(),
+
+                "IN_WOR",    # block mt zozo with drunk
+                field.EntityAct(drunk_npc_id, True,
+                    field_entity.SetPosition(38, 58),
+                ),
+                field.Return(),
+            ]
         space = Write(Bank.CA, src, "zozo entrance event wor/wob check")
         wor_wob_check = space.start_address
 
@@ -248,3 +285,23 @@ class MtZozo(Event):
             field.Dialog(self.items.get_receive_dialog(item)),
             field.HideEntity(self.cliff_cyan_npc_id),
         ])
+
+    def door_rando_mod(self):
+        # delete event tile entrance to Cyan's Cliff.  It will be handled by entrance_door_patch()
+        map_id = 0xb4
+        event_x = 44
+        event_y = 55
+        self.maps.delete_event(map_id, event_x, event_y)  # delete the original event
+
+    @staticmethod
+    def entrance_door_patch():
+        # self-contained code to be called in door rando upon entering into Cyan's Cliff (door 1204)
+        # replaces has_entrance_event;
+        # to be used in event_exit_info.entrance_door_patch()
+
+        # CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
+        src = [
+            field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, 0xc3fad),
+            field.Return()
+        ]
+        return src

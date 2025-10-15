@@ -45,6 +45,7 @@ def get_branch_code(event_bit, is_set, branch_addr, map_id):
         else:
             src = [field.BranchIfEventBitClear(event_bit, branch_addr)]
     return src
+
 def simple_parser(src):
     while len(src) > 0:
         opcode = src.pop(0)

@@ -1,6 +1,19 @@
+from copy import deepcopy
+
 from event.event import *
 
 class LeteRiver(Event):
+    BATTLE_1_INVOKE_ADDR = 0xb0498 # the event code that initiates fixed battle 1
+    BATTLE_2_INVOKE_ADDR = 0xb04a1 # the event code that initiated fixed battle 2
+
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = args.door_randomize_all \
+                              or args.door_randomize_crossworld \
+                              or args.door_randomize_dungeon_crawl \
+                              or args.door_randomize_lete_river \
+                              or args.ruination_mode
+
     def name(self):
         return "Lete River"
 
@@ -27,11 +40,15 @@ class LeteRiver(Event):
         if not self.args.fixed_encounters_original:
             self.fixed_battles_mod()
 
+        self.fixed_battle_location_mod()
         self.before_ultros_mod()
         self.ultros_mod()
         self.after_ultros_mod()
         self.remove_raft_mod()
         self.exit_river_mod()
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -63,7 +80,7 @@ class LeteRiver(Event):
         battle_background = 13 # raft, right
 
         # NOTE third fixed battle at 0xb09c8 is removed, it was part of terra/edgar/banon scenario
-        fixed_battles = [(pack1_id, 0xb0498), (pack2_id, 0xb04a1)]
+        fixed_battles = [(pack1_id, self.BATTLE_1_INVOKE_ADDR), (pack2_id, self.BATTLE_2_INVOKE_ADDR)]
         for pack_id_address in fixed_battles:
             pack_id = pack_id_address[0]
             start_address = pack_id_address[1]
@@ -75,8 +92,71 @@ class LeteRiver(Event):
                                        battle_background, check_game_over = False),
             )
 
+    def fixed_battle_location_mod(self):
+        # to eliminate randomness across runners of the same seed, this eliminates the 50% chance encounters and turns some of them into 100% encounters
+        # This causes this many encounters based on your first choice if you don't go up at the second choice:
+        # - Left: 4 Fights total
+        # - Straight: 5 Fights total
+        # - Right: 4 Fights total
+        # The Second Choice Up loop adds 2 fights
+
+        # This contrasts with vanilla, in which:
+        #  - Left/Right (with no Up Loop) can give you max 9 fights/min 2 fights
+        #  - Straight (with no Up loop) can give you max 10 fights/min 3 fights
+        #  - The Up loop adds 3 fights possibilities
+
+        # Change to make to each encounter
+        TO_NOOP = 0 # ensure no encounter
+        TO_BATTLE_1 = 1 # force battle 1
+        TO_BATTLE_2 = 2 # force battle 2
+        # this list stores all of the calls to the 50% chance encounter subroutine and the change that we're making
+        chance_encounter_calls = \
+            [ # There is a Forced battle 1 before Straight/Left/Right choice
+              # Straight
+                (0xB0690, TO_NOOP),
+                # Forced battle 1 here
+                (0xB06B4, TO_BATTLE_2),
+                (0xB06D0, TO_NOOP),
+                # Forced battle 1 here
+              # Left 
+                # Forced battle 1 here
+                (0xB071B, TO_NOOP),
+                (0xB0734, TO_BATTLE_2),
+                (0xB0744, TO_NOOP),
+              # Right
+                (0xB076A, TO_NOOP),
+                # Forced battle 1 here
+                (0xB07A0, TO_BATTLE_2),
+                (0xB07B6, TO_NOOP),
+              # After First Cave, before Up/Left choice
+                (0xB07DD, TO_NOOP),
+              # Up
+                (0xB0809, TO_BATTLE_1),
+                (0xB081E, TO_BATTLE_2),
+                (0xB082D, TO_NOOP),
+              # Left
+                (0xB084E, TO_BATTLE_2),
+              # After Second Cave, before Boss
+                (0xB0873, TO_NOOP),
+                (0xB08A8, TO_NOOP),
+             ]
+        
+        for chance_encounter_call in chance_encounter_calls:
+            start_address = chance_encounter_call[0]
+            end_address = start_address+3
+            action = chance_encounter_call[1]
+            space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
+            if action == TO_BATTLE_1:
+                space.write(
+                    field.Call(self.BATTLE_1_INVOKE_ADDR)
+                )
+            elif action == TO_BATTLE_2:
+                space.write(
+                    field.Call(self.BATTLE_2_INVOKE_ADDR)
+                )
+
     def before_ultros_mod(self):
-        space = Reserve(0xb05a5, 0xb05e3, "lete river heal party, here we go", field.NOP())
+        space = Reserve(0xb05a5, 0xb05e3, "lete river heal party, here we go", field.NOP()) # unused dialog 0166 -- Here we go! This raft'll take us to Narshe!
         if self.args.character_gating:
             space.write(
                 field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
@@ -103,7 +183,7 @@ class LeteRiver(Event):
             field.BranchIfEventBitSet(event_bit.RODE_RAFT_LETE_RIVER, 0xb092b),
         )
 
-        space = Reserve(0xb08ea, 0xb08ec, "lete river what is it?", field.NOP())
+        space = Reserve(0xb08ea, 0xb08ec, "lete river what is it?", field.NOP()) # unused dialog 0142 What? WHAT IS IT?
 
     def ultros_mod(self):
         boss_pack_id = self.get_boss("Ultros 1")
@@ -127,7 +207,7 @@ class LeteRiver(Event):
         space = Write(Bank.CB, src, "lete river after ultros")
         after_ultros = space.start_address
 
-        space = Reserve(0xb0916, 0xb091a, "lete river call after ultros", field.NOP())
+        space = Reserve(0xb0916, 0xb091a, "lete river call after ultros", field.NOP()) # unused dialog 0171 SABIN!!!
         space.write(
             field.Call(after_ultros),
         )
@@ -144,14 +224,97 @@ class LeteRiver(Event):
         self.remove_raft = space.start_address
 
     def exit_river_mod(self):
-        src = [
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x00, direction.LEFT, default_music = False, x = 93, y = 41, airship = True),
-            vehicle.SetPosition(93, 41),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x00, direction.LEFT, default_music = True, x = 93, y = 41),
-            world.End(),
-        ]
+        if self.args.ruination_mode:
+            # Add raft NPC to Esper World map
+            esper_world_map_id = 0x0d9
+            raft_npc = self.maps.get_npc(0x072, 0x11)
+            new_raft_npc = deepcopy(raft_npc)
+            new_raft_npc.x = 34
+            new_raft_npc.y = 52
+            new_raft_npc.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+            new_raft_npc.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+            self.esper_world_raft_npc_id = self.maps.append_npc(esper_world_map_id, new_raft_npc)
+
+            # Custom exit to Esper World:  See ref. lete river cave (CB/04B7)
+            src = [
+                field.LoadMap(esper_world_map_id, direction.UP, default_music=False, x=29, y=62, fade_in=False),
+                field.SetVehicle(field_entity.PARTY0, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY1, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY2, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY3, field.Vehicle.RAFT_AND_RIDER),
+                field.FadeInScreen(),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetSpeed(speed=field_entity.Speed.NORMAL),
+                                field_entity.Move(direction=direction.UP, distance=5),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.SetSpeed(speed=field_entity.Speed.SLOW),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                #field_entity.Move(direction=direction.UP, distance=1),
+                                ),
+                field.Call(0xb04aa),  # Remove Raft
+                field.CreateEntity(self.esper_world_raft_npc_id),
+                field.RefreshEntities(),
+                field.ShowEntity(self.esper_world_raft_npc_id),
+                Read(0xb04d0, 0xb04e2),  # Jump off raft
+                field.FreeMovement(),
+                field.EntityAct(self.esper_world_raft_npc_id, True,
+                                field_entity.SetSpeed(speed=field_entity.Speed.SLOW),
+                                field_entity.Move(direction=direction.RIGHT, distance=5),
+                                field_entity.SetSpeed(speed=field_entity.Speed.NORMAL),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.SetSpeed(speed=field_entity.Speed.FAST),
+                                field_entity.Move(direction=direction.RIGHT, distance=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.Move(direction=direction.RIGHT, distance=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.SetSpeed(speed=field_entity.Speed.FASTEST),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.Move(direction=direction.UP, distance=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.Hide()
+                                ),
+                field.HideEntity(self.esper_world_raft_npc_id),
+                field.DeleteEntity(self.esper_world_raft_npc_id),
+                field.RefreshEntities(),
+                field.Return()
+            ]
+        else:
+            # Exit to world map
+            src = [
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(0x00, direction.LEFT, default_music = False, x = 93, y = 41, airship = True),
+                vehicle.SetPosition(93, 41),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(0x00, direction.LEFT, default_music = True, x = 93, y = 41),
+                world.End(),
+            ]
         space = Write(Bank.CB, src, "lete river exit after ultros")
         self.exit_river = space.start_address
 
@@ -230,3 +393,24 @@ class LeteRiver(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Lete Section 1: Overwrite code for branches "LEFT", "RIGHT" to branch to the map load from "STRAIGHT"
+        # (STRAIGHT is the only one changed by door rando).
+        straight_mapload_addr = 0xb06eb
+        left_mapload_addr = 0xb0750
+        right_mapload_addr = 0xb07c0
+
+        straight_id = 2035
+        if straight_id in self.maps.trap_map.keys():
+            left_id = '2035a'
+            if left_id not in self.maps.trap_map.keys():
+                space = Reserve(left_mapload_addr, left_mapload_addr + 5, "Edit Lete River 1 Left destination", field.NOP())
+                space.write(field.Branch(straight_mapload_addr))
+                #print('patched ', left_id)
+
+            right_id = '2035b'
+            if right_id not in self.maps.trap_map.keys():
+                space = Reserve(right_mapload_addr, right_mapload_addr + 5, "Edit Lete River 1 Right destination", field.NOP())
+                space.write(field.Branch(straight_mapload_addr))
+                #print('patched ', right_id)

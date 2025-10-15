@@ -1,12 +1,16 @@
 from event.event import *
+from data.map_exit_extra import exit_data, special_airship_locations
+from data.rooms import exit_world
 
 class VeldtCaveWOR(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_veldt_cave
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Veldt Cave WOR"
@@ -26,6 +30,20 @@ class VeldtCaveWOR(Event):
 
         self.dr_exit_type = 'dog'  # 'behemoth'
 
+        self.airship_thamasa = [0x001, 251, 230]
+        if self.MAP_SHUFFLE:
+            # modify airship warp position
+            thamasa_id = 1261
+            if thamasa_id in self.maps.door_map.keys():
+                if self.maps.door_map[thamasa_id] in special_airship_locations.keys():
+                    self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
+                else:
+                    self.airship_thamasa = self.maps.get_connection_location(thamasa_id)
+                # conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_thamasa = [exit_world[conn_pair]] + self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                #print('Updated Veldt Cave airship teleport: ', self.airship_thamasa)
+
         self.dialog_mod()
 
         if self.args.character_gating:
@@ -44,6 +62,9 @@ class VeldtCaveWOR(Event):
 
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
+
+        #if self.MAP_SHUFFLE:
+        #    self.delete_exit_event_tiles()
 
     def dialog_mod(self):
         space = Reserve(0xb79cd, 0xb79d5, "veldt cave wor you're coming with us", field.NOP())
@@ -115,8 +136,9 @@ class VeldtCaveWOR(Event):
             event_id = 2075
             switchyard_src = [
                 field.FadeInSong(0x08, 0x30),
-                field.LoadMap(0x001, direction.DOWN, default_music=False, x=251, y=230, fade_in=False, airship=True),
-                vehicle.SetPosition(251, 231),
+                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                              y=self.airship_thamasa[2], fade_in=False, airship=True),
+                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
                 vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
                 # Always show interceptor in door rando
@@ -144,11 +166,17 @@ class VeldtCaveWOR(Event):
         else:
             src = [
                 field.FadeInSong(0x08, 0x30),
-                field.LoadMap(0x001, direction.DOWN, default_music=False, x=251, y=230, fade_in=False, airship=True),
-                vehicle.SetPosition(251, 231),
+                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                              y=self.airship_thamasa[2], fade_in=False, airship=True),
+                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
-
+                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True)
+            ]
+            if self.MAP_SHUFFLE:
+                # Explicitly set the parent map.  Otherwise the placement is weird...
+                src += [field.SetParentMap(map_id=self.airship_thamasa[0], x=self.airship_thamasa[1],
+                                           y=self.airship_thamasa[2]-1, direction=direction.DOWN)]
+            src += [
                 # make interceptor only appear until you leave the screen
                 field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
 
@@ -158,6 +186,7 @@ class VeldtCaveWOR(Event):
                 field.Return(),
             ]
             space.write(src)
+            # print([a.__str__() for a in src])
 
     def character_mod(self, character):
         self.shadow_npc.sprite = character
@@ -345,3 +374,11 @@ class VeldtCaveWOR(Event):
             space = Write(Bank.CB, src, "Veldt Cave Interceptor exit event")
             dog_npc.event_address = space.start_address - EVENT_CODE_START
 
+    # def delete_exit_event_tiles(self):
+    #     # Delete extra exit event tiles on WOR Thamasa map, so that long exit events work correctly
+    #     ### Actually handled by maps.door_rando_cleanup()
+    #     pass
+    #     #map_id = 0x158
+    #     #event_x_y = [[a, 48] for a in range(20, 26)] + [[0, b] for b in range(28, 32)]
+    #     #for xy in event_x_y:
+    #     #    self.maps.delete_short_event(map_id, xy[0], xy[1])

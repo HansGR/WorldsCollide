@@ -1,6 +1,12 @@
 from event.event import *
+from data.map_exit_extra import exit_data, special_airship_locations
+from data.rooms import exit_world
 
 class EbotsRock(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Ebot's Rock"
 
@@ -20,6 +26,32 @@ class EbotsRock(Event):
         )
 
     def mod(self):
+        self.exit_loc = [0x01, 249, 224]
+        self.airship_thamasa = [0x001, 251, 230]
+        self.EXIT_IN_WOB = False
+        if self.MAP_SHUFFLE:
+            # modify exit position
+            exit_id = 1546
+            if exit_id in self.maps.door_map.keys():
+                # self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # It's OK if this one returns to parent map.
+                self.exit_loc = self.maps.get_connection_location(exit_id, parent_map_ok=True)
+                #conn_south = self.maps.door_map[exit_id]  # connecting exit south
+                #conn_pair = exit_data[conn_south][0]  # original connecting exit
+                self.EXIT_IN_WOB = (self.exit_loc[-1] == 0)
+                # print('Updated Ebots Rock exit warp: ', self.exit_loc)
+
+            # modify airship warp position
+            thamasa_id = 1261
+            if thamasa_id in self.maps.door_map.keys():
+                if self.maps.door_map[thamasa_id] in special_airship_locations.keys():
+                    self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
+                else:
+                    self.airship_thamasa = self.maps.get_connection_location(thamasa_id)
+                # conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_thamasa = [exit_world[conn_pair]] + self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                #print('Updated Ebots Rock airship teleport: ', self.airship_thamasa)
+
         self.find_gungho_hurt_mod()
         self.chest_mod()
         self.hidon_mod()
@@ -98,6 +130,16 @@ class EbotsRock(Event):
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago character commands", field.NOP())
         space = Reserve(0xb7238, 0xb7239, "ebots rock enable collisions for strago", field.NOP())
 
+        if self.MAP_SHUFFLE:
+            # CB/723B: 6B    Load map $0001 (World of Ruin) instantly, (upper bits $0400), place party at (251, 231), facing up, party is in the airship
+            # CB/7241: C7    Place airship at position (250, 231)
+            space = Reserve(0xb723b, 0xb7243, "ebots rock airship move", field.NOP())
+            space.write(
+                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                              y=self.airship_thamasa[2], fade_in=False, airship=True),
+                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
+            )
+
         # NOTE: just finished moving airship to thamasa, use vehicle command to load map here
         space = Reserve(0xb7244, 0xb7249, "ebots rock after hidon load strago's room map", field.NOP())
         space.write(
@@ -112,10 +154,16 @@ class EbotsRock(Event):
             field.DisableEntityCollision(field_entity.PARTY0),
             field.EntityAct(field_entity.PARTY0, True,
                 field_entity.SetSpriteLayer(2)
-            ),
+            )
+        )
+        if self.MAP_SHUFFLE:
+            space.write(
+                field.SetParentMap(map_id=self.airship_thamasa[0], x=self.airship_thamasa[1],
+                                   y=self.airship_thamasa[2] - 1, direction=direction.DOWN)
+            )
+        space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
-
         # change strago npc to party
         space = Reserve(0xb7316, 0xb7316, "ebots rock dinner table strago")
         space.write(field_entity.PARTY0)
@@ -177,12 +225,26 @@ class EbotsRock(Event):
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago runs down", field.NOP())
 
         space = Reserve(0xb7238, 0xb73df, "ebots rock strago/relm/gungho events after hidon", field.NOP())
-        space.copy_from(0xb73e1, 0xb73f0) # event bits after hidon
-        space.write(
-            field.FreeScreen(),
-            field.LoadMap(0x01, direction.DOWN, default_music = True, x = 249, y = 224),
-            world.End(),
-        )
+        space.copy_from(0xb73e1, 0xb73f0)  # event bits after hidon
+        if self.EXIT_IN_WOB:
+            space.write(
+                field.ClearEventBit(event_bit.IN_WOR)
+            )
+        space.write(field.FreeScreen())
+        if self.args.door_randomize_dungeon_crawl and (self.exit_loc[0] in [0x0, 0x1]):
+            # If doing Dungeon Crawl & returning to world map, always summon the airship.
+            from event.switchyard import SummonAirship
+            space.write(
+                SummonAirship(self.exit_loc[0], x=self.exit_loc[1], y=self.exit_loc[2], fadeout=True)
+            )
+
+        else:
+            # Just exit normally.  Hidon Cave is always ring 0.
+            space.write(
+                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
+                              y = self.exit_loc[2]),
+                world.End(),
+            )
 
         space = Reserve(0xb73f1, 0xb73f9, "ebots rock load thamasa map", field.NOP())
 

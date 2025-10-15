@@ -1,11 +1,19 @@
 from event.event import *
 
 class AncientCastle(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.MAP_SHUFFLE = args.map_shuffle_separate or args.map_shuffle_crossworld
+
     def name(self):
         return "Ancient Castle"
 
     def character_gate(self):
-        return self.characters.EDGAR
+        if self.MAP_SHUFFLE:
+            # AC may be ungated in map shuffle.  We handle Edgar logic later.
+            return None
+        else:
+            return self.characters.EDGAR
 
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
@@ -29,6 +37,9 @@ class AncientCastle(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
         self.finish_check_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
         self.log_reward(self.reward)
 
@@ -117,3 +128,49 @@ class AncientCastle(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def map_shuffle_mod(self):
+        # Add a specified warp handler case: return to FC prison WOR
+        src_warp = [
+            field.SetEventBit(event_bit.IN_WOR),
+            field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION),
+            field.LoadMap(map_id=0x03d, x=35, y=36, direction=direction.DOWN,
+                          default_music=True, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src_warp, 'Ancient Castle warp handler code')
+        self.warps.add_warp(event_bit.ANCIENT_CASTLE_WARP_OPTION, space.start_address)
+
+    @staticmethod
+    def entrance_door_patch():
+        # self-contained code to be called in door rando BEFORE entering 1558 (figaro castle basement) from AC connection
+        # This is necessary in case tentacles have not been defeated when you go there (and also if you go when FC is buried)
+
+        # to be used in event_exit_info.entrance_door_patch()
+        src = [
+            field.SetEventBit(event_bit.IN_WOR),
+            field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
+            field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
+            field.SetEventBit(event_bit.GOT_FALCON),
+            field.ClearEventBit(event_bit.ANCIENT_CASTLE_WARP_OPTION),
+
+            # Set required bits for FC underground
+            field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
+            field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
+
+            # Set required flags for Engine Room Event...
+            field.BranchIfEventBitSet(event_bit.DEFEATED_TENTACLES_FIGARO, "DEFEATED_TENTACLES"),
+            field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
+            field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
+
+            # ... or set Figaro Castle under the desert, heading toward South Figaro
+            "DEFEATED_TENTACLES",
+            field.BranchIfEventBitClear(event_bit.DEFEATED_TENTACLES_FIGARO, "ENDING"),
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_SF_DESERT_WOR),
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_KOHL_DESERT_WOR),
+            field.SetEventBit(event_bit.FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR),  # 0x26f
+            field.ClearEventBit(event_bit.FIGARO_CASTLE_HEADING_TOWARD_KOHLINGEN), # Head toward SF upon exit
+            "ENDING",
+        ]
+
+        return src

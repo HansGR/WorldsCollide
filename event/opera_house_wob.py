@@ -1,7 +1,13 @@
 from constants.entities import SETZER
 from event.event import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class OperaHouseWOB(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.MAP_CROSSWORLD = args.map_shuffle_crossworld
+
     def name(self):
         return "Opera House"
 
@@ -43,6 +49,21 @@ class OperaHouseWOB(Event):
         self.celes_after_maria_npc.palette = self.characters.get_palette(self.characters.CELES)
         self.celes_after_maria_npc.unknown1 = 0 # this was set to 1 and prevented animating character
 
+        self.airship_loc = [0x06, 16, 6]
+        self.mod_world_src = []
+        if self.MAP_CROSSWORLD:
+            # modify airship & world:
+            exit_id = 658
+            if exit_id in self.maps.door_map.keys():
+                conn_id = self.maps.door_map[exit_id]  # connecting exit south
+                conn_pair = exit_data[conn_id][0]  # original connecting exit
+                if exit_world[conn_pair] == 0x1:
+                    # Modify to return to the falcon; update world bit
+                    self.airship_loc = [0x0b, 17, 8]
+                    self.mod_world_src += [field.SetEventBit(event_bit.IN_WOR)]
+
+        #print('OPERA HOUSE FIX: ', self.MAP_CROSSWORLD, self.airship_loc, self.mod_world_src)
+
         self.begin_performance_mod()
         self.performance_mod()
         self.end_performance_mod()
@@ -53,6 +74,9 @@ class OperaHouseWOB(Event):
         self.stage_fall_mod()
         self.ultros_battle_mod()
         self.after_battle_mod()
+
+        if not self.args.fixed_encounters_original:
+            self.fixed_battles_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -97,6 +121,25 @@ class OperaHouseWOB(Event):
             "BEGIN",
             field.Call(initialize),
         )
+
+    def fixed_battles_mod(self):
+        # The rafters have 5 fixed battles, all with the same pack (281)
+        # to increase the variety of encounters, we are adding 1 more and swapping 2 of the rats to it
+        # 414 is an otherwise unused encounter
+
+        replaced_encounters = [
+            (414, 0xAC37B), 
+            (414, 0xAC3B4),
+        ]
+        for pack_id_address in replaced_encounters:
+            pack_id = pack_id_address[0]
+            # first byte of the command is the pack_id
+            invoke_encounter_pack_address = pack_id_address[1]+1
+            space = Reserve(invoke_encounter_pack_address, invoke_encounter_pack_address, "rat invoke fixed battle (battle byte)")
+            space.write(
+                # subtrack 256 since WC stores fixed encounter IDs starting at 256
+                pack_id - 0x100
+            )
 
     def performance_mod(self):
         # change celes to party leader
@@ -357,26 +400,34 @@ class OperaHouseWOB(Event):
         self.setzer_npc.sprite = character
         self.setzer_npc.palette = self.characters.get_palette(character)
 
-        self.reward_mod([
+        reward_src = [
             field.RecruitAndSelectParty(character),
             field.StartSong(53),
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
-        ])
+        ] + self.mod_world_src + [
+            field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True,
+                          x = self.airship_loc[1], y = self.airship_loc[2], fade_in = True)
+        ]
+
+        self.reward_mod(reward_src)
 
     def esper_item_mod(self, esper_item_instructions):
         self.setzer_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.setzer_npc.palette = self.characters.get_palette(self.setzer_npc.sprite)
 
-        self.reward_mod([
+        reward_src = [
             field.RefreshEntities(),
             field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
             field.StartSong(53),
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+        ] + self.mod_world_src + [
+            field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
+                          y = self.airship_loc[2], fade_in = True),
             esper_item_instructions,
-        ])
+        ]
+
+        self.reward_mod(reward_src)
 
     def esper_mod(self, esper):
         self.esper_item_mod([

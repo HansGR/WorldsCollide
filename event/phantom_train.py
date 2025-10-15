@@ -1,13 +1,18 @@
 from event.event import *
 from event.switchyard import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class PhantomTrain(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_phantom_train
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
                           or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
+        self.RUINATION_MODE = args.ruination_mode
 
     def name(self):
         return "Phantom Train"
@@ -25,6 +30,18 @@ class PhantomTrain(Event):
         )
 
     def mod(self):
+        self.airship_loc = [0x0, 178, 93]
+        if self.MAP_SHUFFLE:
+            # modify airship position after completing check
+            exit_id = 465
+            if exit_id in self.maps.door_map.keys():
+                self.airship_loc = self.maps.get_connection_location(exit_id)
+                # conn_south = self.maps.door_map[exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_loc = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                #print('Updated Phantom Train airship exit: ', self.airship_loc)
+
         self._load_world_map()
         self.forest_spring_mod()
         self.ghost_shop_forest_mod()
@@ -40,7 +57,7 @@ class PhantomTrain(Event):
         self.phantom_train_mod()
         self.random_forest_mod()
 
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
             self.door_rando_mod()
 
         if self.args.character_gating:
@@ -74,28 +91,54 @@ class PhantomTrain(Event):
 
     def _load_world_map(self):
         src = [field.FadeOutSong(32)]
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
             # Send to switchyard tile
             event_id = 2068
             src += GoToSwitchyard(event_id)
 
-            # Add the switchyard event tile that handles exit to the world map
-            switchyard_src = SummonAirship(0x000, 178, 93)
+            # Add the switchyard event tile that handles exit 2068
+            if self.DOOR_RANDOMIZE:
+                #  --> the world map
+                airship_location = [0x0, 178, 93]
+                switchyard_src = SummonAirship(airship_location[0], airship_location[1], airship_location[2])
+            else:
+                # in ruination mode: --> Phantom Train station
+                switchyard_src = [
+                    field.LoadMap(map_id=0x08c, x=70, y=11, direction=direction.DOWN, default_music=True, fade_in=True, entrance_event=True),
+                    field.Return()
+                ]
             AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
 
+        elif self.MAP_SHUFFLE and self.airship_loc[0] not in [0x0, 0x1]:
+            # In map shuffle, only airship if returning to the world map
+            # Call warp code without animation
+            from data.warps import CUSTOM_WARP_HOOK
+            src += [
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.Call(CUSTOM_WARP_HOOK),
+                field.Return()
+            ]
+
         else:
+            if self.airship_loc[0] == 0x1:
+                # Set world bit before exit
+                src += [field.SetEventBit(event_bit.IN_WOR)]
+
             src += [
                 field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                field.LoadMap(0x00, direction.DOWN, default_music = False, x = 178, y = 94, airship = True),
-                vehicle.SetPosition(178, 94),
+                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = False, x = self.airship_loc[1],
+                              y = self.airship_loc[2], airship = True),
+                vehicle.SetPosition(self.airship_loc[1], self.airship_loc[2]),
                 vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x00, direction.DOWN, default_music = True, x = 178, y = 93),
+                vehicle.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
+                                y = self.airship_loc[2]),
                 world.Turn(direction.DOWN),
                 world.End(),
             ]
         #space = Write(Bank.CB, src, "phantom train move airship and return to world map")
         # Must be at a fixed address for DR!  Need 23 bytes.
-        space = Reserve(0xbba0c, 0xbba23, "phantom train move airship and return to world map", field.NOP())
+        space = Reserve(0xbba0c, 0xbba25, "phantom train move airship and return to world map", field.NOP())
         space.write(src)
         self.load_world_map = space.start_address
 
@@ -619,3 +662,83 @@ class PhantomTrain(Event):
             field.Branch(pt_check.start_address),
         ])
 
+        # Make the switches in the locomotive interior set event_bit.SET_PHANTOM_TRAIN_SWITCHES if correctly positioned.
+        # (This then also covers Doma Dream train without further hassle.)
+        # Include animation routine: Call subroutine $CB6AC3
+        pt_switches_bit = [
+            field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], "CLEAR_SWITCHES"),
+            field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+            field.Return(),
+            "CLEAR_SWITCHES",
+            field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+            field.Return()
+        ]
+        space = Write(Bank.CB, pt_switches_bit, "Set or Clear PT switches bit")
+        self.switch_check_addr = space.start_address
+
+        # Switches in Phantom Train:  map 0x092
+        # tiles: (7,7) 0xbb94a, (8,7) 0xbb972, (9,7) 0xbb99a:
+        # 		Switch 1: toggle event bit 0x184.  Multipurpose bits!
+        src_switch_1 = [
+            field.Call(0xbb94a),                 # Call switch #1
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_1, "PT Switch 1 edit")
+        event_switch_1 = self.maps.get_event(0x092, 7, 7)
+        event_switch_1.event_address = space.start_address - EVENT_CODE_START
+
+        # 		Switch 2: toggle event bit 0x185.
+        src_switch_2 = [
+            field.Call(0xbb972),                 # Call switch #2
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_2, "PT Switch 2 edit")
+        event_switch_2 = self.maps.get_event(0x092, 8, 7)
+        event_switch_2.event_address = space.start_address - EVENT_CODE_START
+
+        # 		Switch 3: toggle event bit 0x186.
+        src_switch_3 = [
+            field.Call(0xbb99a),                 # Call switch #3
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_3, "PT Switch 3 edit")
+        event_switch_3 = self.maps.get_event(0x092, 9, 7)
+        event_switch_3.event_address = space.start_address - EVENT_CODE_START
+
+        # Edit entrance event to show switches as solved if they were solved previously
+        # Entrance event: map 0x092, @ 0xba593
+        #   CB/A593: B2    Call subroutine $CBB90E
+        #   CB/A597: B2    Call subroutine $CBB922
+        #   CB/A59B: B2    Call subroutine $CBB936
+        #   CB/A59F: C0    If ($1E80($0A4) [$1E94, bit 4] is set), branch to $CB6A55
+        #   CB/A5A5: FE    Return
+        src = [
+            field.BranchIfEventBitClear(event_bit.SET_PHANTOM_TRAIN_SWITCHES, "NOT_SET"),
+            # Solved previously: make switches show the solution
+            field.ClearEventBit(0x184),  # 1st switch: off
+            field.SetEventBit(0x185),    # 2nd switch: on
+            field.ClearEventBit(0x186),  # 3rd switch: off
+            "NOT_SET",
+            field.Call(0xbb90e),     # Call first switch graphics check
+            field.Return(),          # Return to remainder of entrance event
+        ]
+        space = Write(Bank.CB, src, "PT Locomotive entrance event update if solved")
+        self.entrance_check_addr = space.start_address
+
+        space = Reserve(0xba593, 0xba596, "PT Locomotive entrance event set switches if solved")
+        space.write([field.Call(self.entrance_check_addr)])
+
+
+    @staticmethod
+    def initiation_script():
+        # self-contained code to be called in door rando when trying to use Phantom Forest south exit
+        # to be used in event_exit_info.entrance_door_patch()
+
+        # Since this event happens at a fixed location in the event script, let's just call that.
+        src = [
+            field.Branch(0xba3c4)
+        ]
+        return src

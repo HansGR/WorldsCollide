@@ -27,12 +27,12 @@ class Transitions:
     FREE_MEMORY = False
     verbose = False
 
-    def __init__(self, mapping, rom, exit_data, event_data, call_script_addr=None):
+    def __init__(self, mapping, rom, exit_data, event_data, include_script_data=None):
         self.transitions = []
         self.rom = rom
-        self.call_script_addr = call_script_addr
-        if self.call_script_addr is None:
-            self.call_script_addr = {}
+        self.include_script_data = include_script_data
+        if self.include_script_data is None:
+            self.include_script_data = {}
 
         for m in mapping:
             # Check reasons to overwrite this transition
@@ -49,6 +49,8 @@ class Transitions:
                 soo_flag = m[0] < min(shared_oneways[m[0]])
 
             if flags.count(True) > 0 and soo_flag:
+                if self.verbose:
+                    print('Making new transition: ', m[0], m[1])
                 new_trans = Transition(m[0], m[1], rom, exit_data, event_data)
                 self.transitions.append(new_trans)
 
@@ -100,7 +102,7 @@ class Transitions:
             # Perform common event patches
             ex_patch = []
             en_patch = []
-            t.patches = [False, False, False, False, False, False]
+            t.patches = [False, False, False, False, False, False, False]
             if t.exit.is_char_hidden and not t.entr.is_char_hidden:
                 t.patches[0] = 'unhide'
                 # Character is hidden during the transition (command [0x42, 0x31]) and not unhidden later.
@@ -158,21 +160,64 @@ class Transitions:
                         bitsrc = [field.ClearEventBit(k)]
                     ex_patch += [bitsrc[0].opcode] + bitsrc[0].args
 
-            if t.exit.id in self.call_script_addr.keys():
+            if t.exit.id in self.include_script_data.keys():
+                # This is attempting to look at an event script, read it, build a branch code based on what it says, and then load the door.
+                # Instead, I think we should just call the script, followed by loading the door.
+
                 # This is an event tile behaving as a door that needs to call an event script for its partner.
-                this_addr = self.call_script_addr[t.exit.id]
-                srcdata = self.rom.get_bytes(this_addr, 6)
-                [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+                #this_addr = self.call_script_addr[t.exit.id]
 
-                if branch_addr == 0x5eb3:
-                    # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
-                    branch_addr = this_addr + 6
-                    is_set = not is_set
+                # Instead instead, just include the required data here.
+                this_data = self.include_script_data[t.exit.id]
 
-                branch_src = get_branch_code(ebit, is_set, branch_addr, map_id=t.exit.dest_location[0])
+                # srcdata = self.rom.get_bytes(this_addr, 6)
+                # if self.verbose:
+                #     print([hex(a) for a in srcdata])
+                # [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+                # if self.verbose:
+                #     print(comm_type, is_set, ebit, branch_addr)
+                #
+                # if branch_addr == 0x5eb3:
+                #     # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+                #     branch_addr = this_addr + 6
+                #     is_set = not is_set
+                #
+                # branch_src = get_branch_code(ebit, is_set, branch_addr + EVENT_CODE_START, map_id=t.exit.dest_location[0])
+                # if self.verbose:
+                #     print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
+                # ex_patch += [branch_src[0].opcode] + branch_src[0].args
+
+                #branch_src = get_branch_code(event_bit.ALWAYS_CLEAR, is_set=False, branch_addr=this_addr, map_id=t.exit.dest_location[0])
+                #ex_patch += [branch_src[0].opcode] + branch_src[0].args
+
+                branch_src = this_data[0] # convert command script to bits?
+
+                if this_data[1]:
+                    # Include before load map
+                    ex_patch += branch_src
+                else:
+                    # Include after load map
+                    en_patch += branch_src
+
                 if self.verbose:
-                    print('ZAP ZAP ZAP: ', [branch_src[0].opcode] + branch_src[0].args)
-                ex_patch += [branch_src[0].opcode] + branch_src[0].args
+                    #print(t.exit.id, t.entr.id, ' incl. branch to ', hex(this_addr))
+                    print_src = []
+                    for b in branch_src:
+                        if isinstance(b, str) or isinstance(b, int):
+                            print_src += [b]
+                        else:
+                            print_src += [b.__str__()]
+                    print(t.exit.id, t.entr.id, ' incl. addl. data ', print_src)
+
+            # Check if updated parent map is required
+            if t.exit.do_update_parent_map:
+                t.patches[6] = 'update'
+                this_dir = t.exit.partner_destination[3]
+                bitsrc = [field.SetParentMap(map_id=t.exit.world,
+                                             x=t.exit.partner_destination[1] + direction.xy_shift_parent_map(this_dir)[0],
+                                             y=t.exit.partner_destination[2] + direction.xy_shift_parent_map(this_dir)[1],
+                                             direction=this_dir)]
+                en_patch += [bitsrc[0].opcode] + bitsrc[0].args
 
             # Add patched lines before map transition
             src = src[:-1] + ex_patch + src[-1:]
@@ -201,7 +246,15 @@ class Transitions:
         # Write modified events to the ROM
         for t in self.transitions:
             # Allocate space
-            space = Allocate(Bank.CC, len(t.src), "Exit Event Randomize: " + str(t.exit.id) + " --> " + str(t.entr.id))
+            src_len = 0
+            for s in t.src:
+                if isinstance(s, int):
+                    src_len += 1
+                elif isinstance(s, str):
+                    pass
+                else:
+                    src_len += s.__len__()
+            space = Allocate(Bank.CC, src_len, "Exit Event Randomize: " + str(t.exit.id) + " --> " + str(t.entr.id))
             new_event_address = space.start_address
 
             # Check for event address patches & implement if found
@@ -209,30 +262,38 @@ class Transitions:
                 t.src = event_address_patch[t.exit.id](t.src, new_event_address)
 
             space.write(t.src)
+            bit_src = space.rom.get_bytes(new_event_address, src_len)
 
             if self.verbose:
                 addr = [t.exit.event_addr, t.entr.event_addr]
                 for i in range(len(addr)):
-                    if addr[i] is int:
-                        addr[i] = hex(addr[i])
+                    if addr[i] is not None:
+                        addr[i] = str(hex(addr[i]))
                 print('Writing: ', t.exit.id, ' --> ', t.entr.id,
                       ':\n\toriginal memory addresses: ', str(addr[0]), ', ', str(addr[1]),
                       '\n\tpatches applied: ', t.patches,
                       '\n\tuse jump method: ', t.exit.use_jmp,
-                      '\n\tbitstring: ', [hex(s)[2:] for s in t.src])
+                      '\n\tbitstring: ', [hex(s)[2:] for s in bit_src])  # t.src
                 print('\n\tnew memory address: ', hex(new_event_address))
 
             if t.exit.use_jmp:
                 # Overwrite the Load Map command with a CALL SUBROUTINE & RETURN & NOP (B2 XX XX XX FE FD)
+                if t.exit.location[0] <= 0x2:
+                    # There doesn't appear to be an overworld "Call" routine (straight goto).
+                    # The closest is an overworld branch, which requires 7 bits.  Jmp commands must fit in 6.
+                    print('Warning: cannot use JMP routines on world map! ', t.exit.id ,' --> ', t.entr.id, '!')
+
                 jump_src = [0xb2] + list((new_event_address - EVENT_CODE_START).to_bytes(3, "little")) + [0xfe, 0xfd]
                 self.rom.set_bytes(t.exit.event_addr + t.exit.event_split - 1, jump_src)
 
-                if t.exit.id in multi_events.keys():
-                    # Patch sister event transitions
-                    for me in multi_events[t.exit.id]:
-                        this_addr = event_exit_info[me][0]
-                        this_split = event_exit_info[me][2]
-                        self.rom.set_bytes(this_addr + this_split - 1, jump_src)
+                ### No longer using multi_events.  Just patch the code to all branch to the main transition
+                ### in the appropriate event file.
+                # if t.exit.id in multi_events.keys():
+                #     # Patch sister event transitions
+                #     for me in multi_events[t.exit.id]:
+                #         this_addr = event_exit_info[me][0]
+                #         this_split = event_exit_info[me][2]
+                #         self.rom.set_bytes(this_addr + this_split - 1, jump_src)
 
             elif t.exit.event_addr is not None:
                 if t.exit.location[1] == 'NPC':
@@ -262,6 +323,8 @@ class Transitions:
                 new_event.y = t.exit.location[2]
                 new_event.event_address = new_event_address - EVENT_CODE_START
                 maps.add_event(t.exit.location[0], new_event)
+                if self.verbose:
+                    print('Added new map event: ', t.exit.location[0], new_event.x, new_event.y, hex(new_event_address))
 
                 # Note that if this is a door acting as a one-way, the door itself is not actually used.
 
@@ -270,26 +333,27 @@ class Transition:
     def __init__(self, exit_id, entr_id, rom, exit_data, event_data):
         # Import exit
         self.exit = EventExit(exit_id, rom, exit_data, event_data, is_event=(1500 < exit_id < 4000) )
+        from_world = self.exit.world in [0x0, 0x1, 0x2]
 
         # Import entrance
         if 4000 > entr_id >= 3000:
             # This is a pit associated with an event transition
-            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data, is_event=True)
+            self.entr = EventExit(entr_id - 1000, rom, exit_data, event_data, is_event=True, from_world=from_world)
         elif 1500 <= entr_id < 2000:
             # This is an event tile behaving as a normal door.
             partner_id = exit_partner[entr_id][0]
             if 1500 <= partner_id < 2000:
                 # If the vanilla partner is also an event tile, we can use its event code.
-                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=True, use_event_info=partner_id)
+                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=True, use_event_info=partner_id, from_world=from_world)
             else:
                 # The vanilla partner is a normal door.  Construct the exit script the same way we do for doors.
-                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+                self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
         elif entr_id > 6000:
             # This is the one-way exit of a normal door acting as a one-way.
-            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
         else:
             # This is a normal door
-            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False)
+            self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
 
 
 class EventExit:
@@ -305,11 +369,12 @@ class EventExit:
     dest_location = []
     world = -1
     use_jmp = False
+    do_update_parent_map = False
 
     exit_code = [0x6a]
     entr_code = []  # [exit_location[2], exit_location[6] << 4, exit_location[0], exit_location[1], 0x80, 0xfe]
 
-    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True, use_event_info=None):
+    def __init__(self, ID, rom=[], exit_data=[], event_data=[], is_event=True, use_event_info=None, from_world=False):
         self.id = ID
 
         if is_event:
@@ -329,6 +394,7 @@ class EventExit:
             self.is_song_override_on = event_info[3][1]
             self.is_screen_hold_on = event_info[3][2]
             self.is_on_raft = event_info[3][3]
+            self.do_update_parent_map = event_info[3][4]
             self.description = event_info[4]
             self.location = event_info[5]
             self.method = event_info[6]
@@ -336,12 +402,19 @@ class EventExit:
             if self.method == 'JMP':
                 self.use_jmp = True
 
+            #print(self.id, self.event_addr, self.event_length, self.event_split)
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
             self.entr_code = rom.get_bytes(self.event_addr + self.event_split,
                                            self.event_length - self.event_split)  # Second half of event
 
             dest_map = self.entr_code[0] + (((self.entr_code[1] % 0x10) % 0x4) << 8)  # extract destination map_id
             self.dest_location = [dest_map, self.entr_code[2], self.entr_code[3]]  # [map_id, x, y]
+
+            # Get partner connection info for Update Parent Map
+            if self.do_update_parent_map:
+                partner_id = exit_partner[ID][0]
+                partner_data = exit_data[partner_id]  # If partner isn't in exit_data, this shouldn't be a door connection.
+                self.partner_destination = partner_data[:3] + [partner_data[6]]  # [dest_map, dest_x, dest_y, facing]
 
         else:
             # Handle the small number of one-way entrances from doors.
@@ -379,11 +452,32 @@ class EventExit:
 
             # Use exit_location for the "exit" info
             self.location = exit_location[-1:] + exit_location[8:12]  # [map_id, x, y, size, direction]
+            #self.destination = exit_location[:3] + [exit_location[6]] # [dest_map, dest_x, dest_y, facing]
+            #print(self.id, exit_location, self.location, self.destination)
+
             self.world = exit_world[ID]            # which world is it in?
+
+            # If coming from a world map, the entrance location cannot be 'return to parent map'
+            if from_world and partner_data[0] in [0x1ff, 0x1fe]:
+                # update partner data to explicit map
+                partner_data[0] = self.world
 
             # Use partner_data for the "entrance" info
             self.dest_location = partner_data[0:3]  # [dest_map, dest_x, dest_y]
+
             # Load the map with facing & destination music; x coord; y coord; fade screen in & run entrance event, return
             self.entr_code = [partner_data[0] % 0x100,
                               (partner_data[0] // 0x100) + (partner_data[6] << 4),
-                              partner_data[1], partner_data[2], 0x80, 0xfe]
+                              partner_data[1], partner_data[2], 0x80]
+            if self.location[0] < 2:
+                self.entr_code += [0xff]  # world.End()
+            else:
+                self.entr_code += [0xfe]  # field.Return()
+
+            # if ID in entrance_door_patch.keys():
+            #     # This door additionally requires code to be executed after the load command
+            #     if entrance_door_patch[ID] is list:
+            #         self.entr_code += entrance_door_patch[ID]
+            #     else:
+            #         self.entr_code += entrance_door_patch[ID](self.args)
+

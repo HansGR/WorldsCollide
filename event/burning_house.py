@@ -3,12 +3,15 @@ from event.event import *
 # TODO: only trigger this event in wob
 
 class BurningHouse(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops)
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.DOOR_RANDOMIZE = (args.door_randomize_burning_house
                           or args.door_randomize_all
+                          or args.door_randomize_crossworld
                           or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+        self.MAP_SHUFFLE = args.map_shuffle
 
     def name(self):
         return "Burning House"
@@ -43,6 +46,8 @@ class BurningHouse(Event):
 
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
+            self.map_shuffle_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -156,6 +161,29 @@ class BurningHouse(Event):
         ]
         space = Write(Bank.CB, src, "burning house wake up")
         self.wake_up = space.start_address
+
+    def fixed_battles_mod(self):
+        # BH has 12 fixed encounters that all share the same pack ID
+        # to increase the variety of encounters, we are adding 1 more and swapping 6 of the flames to it
+        # 415 is an otherwise unused encounter
+
+        replaced_encounters = [
+            (415, 0xBE6FF), 
+            (415, 0xBE740),
+            (415, 0xBE70C),
+            (415, 0xBE733),
+            (415, 0xBE726),
+            (415, 0xBE74D),
+        ]
+        for pack_id_address in replaced_encounters:
+            pack_id = pack_id_address[0]
+            # first byte of the command is the pack_id
+            invoke_encounter_pack_address = pack_id_address[1]+1
+            space = Reserve(invoke_encounter_pack_address, invoke_encounter_pack_address, "flame invoke fixed battle (battle byte)")
+            space.write(
+                # subtrack 256 since WC stores fixed encounter IDs starting at 256
+                pack_id - 0x100
+            )
 
     def character_mod(self, character):
         shadow_npc_id = 0x1d
@@ -308,4 +336,39 @@ class BurningHouse(Event):
         new_event.event_address = self.delete_flameeater_npcs - EVENT_CODE_START
         self.maps.add_event(0x15f, new_event)
 
+        # Delete NPCs in Thamasa Inn to avoid softlocking.
+        # We don't use them, and they appear if npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN (0x507) is set
+        #thamasa_inn = 0x15a
+        strago_npc_id = 0x11
+        interceptor_npc_id = 0x12
+        src = [
+            field.DeleteEntity(strago_npc_id),
+            field.HideEntity(strago_npc_id),
+            field.DeleteEntity(interceptor_npc_id),
+            field.HideEntity(interceptor_npc_id),
+            field.Call(0xbd65f),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, 'Thamasa Inn Entrance Event hide npcs')
+        hide_addr = space.start_address
 
+        space = Reserve(0xbd6a3, 0xbd6a6, 'Thamasa Inn Entrance Event mod')
+        space.write(field.Call(hide_addr))
+
+
+    def map_shuffle_mod(self):
+        # Change the entrance on the worldmap to skip bit checks & just load the map
+        #enter_event = self.maps.get_event(0x0, 250, 128)
+        #enter_event.event_address = 0xbd308 - EVENT_CODE_START
+        from event.switchyard import GoToSwitchyard, AddSwitchyardEvent
+
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1504  # ID of Thamasa WoB entrance
+        space = Reserve(0xbd2ee, 0xbd30e, 'Thamasa WoB Entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x154, direction=direction.UP, x=23, y=46, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
