@@ -502,27 +502,21 @@ class Doors():
         # Check if there's a reverse edge (for two-way doors)
         has_reverse = walks.net.has_edge(room2, room1)
 
-        # Get room data
-        r1 = room_data.get(room1, [[], [], [], 0])
-        r2 = room_data.get(room2, [[], [], [], 0])
-
         # Search through two-way door mappings
-        for door_pair in walks.map[0]:
-            d1, d2 = door_pair
+        for d1, d2 in walks.map[0]:
+            r1 = walks.rooms.get_room_from_element(d1)
+            r2 = walks.rooms.get_room_from_element(d2)
 
-            # Check if this door pair connects the two rooms
-            if (d1 in r1[0] or d1 in r1[1]) and (d2 in r2[0] or d2 in r2[1] or d2 in r2[2]):
+            if (r1.id == room1 and r2.id == room2) or (r1.id == room2 and r2.id == room1):
                 arrow = "<-->" if has_reverse else "-->"
                 return f"DOOR {d1} ({get_door_name(d1)}) {arrow} DOOR {d2} ({get_door_name(d2)})"
-            elif (d2 in r1[0] or d2 in r1[1]) and (d1 in r2[0] or d1 in r2[1] or d1 in r2[2]):
-                arrow = "<-->" if has_reverse else "-->"
-                return f"DOOR {d2} ({get_door_name(d2)}) {arrow} DOOR {d1} ({get_door_name(d1)})"
 
         # Search through one-way exit mappings
-        for door_pair in walks.map[1]:
-            d1, d2 = door_pair
+        for d1, d2 in walks.map[1]:
+            r1 = walks.rooms.get_room_from_element(d1)
+            r2 = walks.rooms.get_room_from_element(d2)
 
-            if (d1 in r1[1]) and (d2 in r2[2]):  # d1 is exit, d2 is entrance
+            if r1.id == room1 and r2.id == room2:
                 return f"EXIT {d1} ({get_door_name(d1)}) --> ENTRANCE {d2} ({get_door_name(d2)})"
 
         return "(connection not found in map)"
