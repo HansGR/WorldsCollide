@@ -172,6 +172,22 @@ class DomaWOR(Event):
 
         space = Reserve(0xb997d, 0xb9984, "doma wor cyan kneeling", field.NOP())
         space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
+        if self.DOOR_RANDOMIZE:
+            # move the "Set Event Bit COMPLETED_DOMA_WOR (0x0DA)" AND FinishCheck to before the load map @ CB/99E1
+            # Need to call FinishCheck before warp since door randomization might send player elsewhere
+            src = [
+                field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            finish_before_warp = Write(Bank.CB, src, "doma wor finish check before warp")
+
+            # Reserve 4 bytes for Call instruction (need to expand from 2 bytes)
+            space = Reserve(0xb99dd, 0xb99e0, "doma wor finish before warp call", field.NOP())
+            space.write([field.Call(finish_before_warp.start_address)])
+
+            space = Reserve(0xb99e7, 0xb99e8, "doma wor moved set event bit for completed", field.NOP())
+
         space = Reserve(0xb99f6, 0xb99fa, "doma wor animate party knocked out", field.NOP())
 
         space = Reserve(0xb99fe, 0xb9a23, "doma wor change party members after elayne and owain scene", field.NOP())
@@ -265,17 +281,23 @@ class DomaWOR(Event):
         if(self.args.flashes_remove_most or self.args.flashes_remove_worst):
             space = Reserve(0xb9a47, 0xb9a48, "doma wor peak swordmanship flash", field.FlashScreen(field.Flash.NONE))
 
-        src = [
-            field.FinishCheck(),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "doma wor finish dream")
-        finish_dream_awaken = space.start_address
+        if not self.DOOR_RANDOMIZE:
+            # In vanilla mode, call FinishCheck after waking up
+            # In door randomizer, FinishCheck is called before the warp (see doma_mod)
+            src = [
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "doma wor finish dream")
+            finish_dream_awaken = space.start_address
 
-        space = Reserve(0xb9a49, 0xb9a4c, "doma wor peak swordsmanship dialog", field.NOP())
-        space.write(
-            field.Call(finish_dream_awaken),
-        )
+            space = Reserve(0xb9a49, 0xb9a4c, "doma wor peak swordsmanship dialog", field.NOP())
+            space.write(
+                field.Call(finish_dream_awaken),
+            )
+        else:
+            # In door randomizer mode, just NOP out this section since FinishCheck is already called
+            space = Reserve(0xb9a49, 0xb9a4c, "doma wor peak swordsmanship dialog", field.NOP())
 
         space = Reserve(0xb9a6f, 0xb9a6f, "doma wor learn all swdtechs", field.NOP())
 
