@@ -176,6 +176,7 @@ class DomaWOR(Event):
             # move the "Set Event Bit COMPLETED_DOMA_WOR (0x0DA)" AND FinishCheck to before the load map @ CB/99E1
             # Need to call FinishCheck before warp since door randomization might send player elsewhere
             src = [
+                Read(0xb99dd, 0xb99e0),  # Preserve: ClearEventBit(0x523) and Pause for 75 units
                 field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
                 field.FinishCheck(),
                 field.Return(),
