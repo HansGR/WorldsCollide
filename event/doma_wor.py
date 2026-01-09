@@ -641,7 +641,7 @@ class DomaWOR(Event):
                             field_entity.AnimateStandingHeadDown(),
                             field_entity.Pause(8),
             ),
-            field.Branch(0xb99D4),  # branch back to fade screen, load map etc.
+            field.Branch(0xb99D5),  # branch back to fade screen, load map etc.
         ]
         space = Write(Bank.CB, src, "Skip Wrexsoul fight if already done")
         # Update event tile
