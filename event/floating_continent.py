@@ -1,4 +1,6 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+ENTRY_EVENT_CODE_ADDR = 0xa48e3
 
 # TODO game can freeze, is this something i did or a bug in emulator/game?
 #      go through and when you get to the hole that brings you to three possible holes (including the one you came from)
@@ -8,6 +10,10 @@ from event.event import *
 #      going in that hole will freeze
 
 class FloatingContinent(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.MAP_SHUFFLE = args.map_shuffle or args.door_randomize_dungeon_crawl or args.ruination_mode
+
     def name(self):
         return "Floating Continent"
 
@@ -20,6 +26,9 @@ class FloatingContinent(Event):
         self.reward3 = self.add_reward(RewardType.CHARACTER | RewardType.ESPER)
 
     def mod(self):
+        self.entry_id = 1556
+        self.exit_id = 1557
+
         self.shadow_leaves_mod()
         self.airship_battle_mod()
         if not self.args.fixed_encounters_original:
@@ -58,6 +67,9 @@ class FloatingContinent(Event):
         self.log_reward(self.reward1)
         self.log_reward(self.reward2)
         self.log_reward(self.reward3)
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
 
     def shadow_leaves_mod(self):
         # remove shadow from party at floating continent (if return to airship or after atma)
@@ -114,15 +126,23 @@ class FloatingContinent(Event):
         )
 
         space = Reserve(0xa5a68, 0xa5a6a, "floating continent skip kefka, gestahl, statues ahead dialog", field.NOP())
+        if self.MAP_SHUFFLE:
+            space.write(field.SetEventBit(event_bit.DEFEATED_AIR_FORCE))
 
     def airship_fixed_battles_mod(self):
         # change iaf battles to front attacks, even if the original pack id happens to be the new random one
         # because other random formations in the pack may not work with pincer attacks
-        pack_id = 382 # sky armor / spit fire
+        
+        # adding an unused pack id (416) to increase variety of encounters
         battle_background = 48 # airship, right
 
-        start_addresses = [0xa5932, 0xa59fc, 0xa5a0d]
-        for start_address in start_addresses:
+        pack_start_addresses = [
+            (382, 0xa5932), #sky armor / spit fire
+            (416, 0xa59fc), #unused
+            (382, 0xa5a0d)] #sky armor / spit fire
+        for pack_start_address in pack_start_addresses:
+            pack_id = pack_start_address[0]
+            start_address = pack_start_address[1]
             space = Reserve(start_address, start_address + 2, "floating continent iaf invoke fixed battle")
             space.write(
                 field.InvokeBattleType(pack_id, field.BattleType.FRONT, battle_background, check_game_over = False),
@@ -154,9 +174,12 @@ class FloatingContinent(Event):
         battle_background = 7 # sky, falling
 
         space = Reserve(0xa5a3b, 0xa5a41, "floating continent invoke battle air force", field.NOP())
+        self.air_force_battle_src = [field.InvokeBattle(boss_pack_id, battle_background)]
         space.write(
-            field.InvokeBattle(boss_pack_id, battle_background),
+            self.air_force_battle_src
         )
+        self.air_force_battle_addr = space.start_address
+
 
     def ground_reward_position_mod(self):
         self.ground_shadow_npc.x = 11
@@ -425,8 +448,10 @@ class FloatingContinent(Event):
         space = Reserve(0xa57cd, 0xa57cd, "floating continent update character animates in at escape")
         space.write(npc_id)
         space = Reserve(0xa57e1, 0xa57e3, "floating continent skip shadow arrives at airship dialog", field.NOP())
-        space = Reserve(0xa57ea, 0xa57ea, "floating continent update character who follows party to escape")
-        space.write(npc_id)
+        if not (self.MAP_SHUFFLE and self.reward3.type == RewardType.CHARACTER):
+            # For map shuffle character reward, use this space to branch to exit animation (see below)
+            space = Reserve(0xa57ea, 0xa57ea, "floating continent update character who follows party to escape")
+            space.write(npc_id)
 
         space = Reserve(0xa48cc, 0xa48cf, "floating continent do not clear shadow bits if don't wait at airship", field.NOP())
 
@@ -435,26 +460,66 @@ class FloatingContinent(Event):
             field.StopScreenShake(),
             field.FreeScreen(),
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-
-            airship_instructions,
-            field.FinishCheck(),
-            field.Return(),
         ]
+        if self.MAP_SHUFFLE:
+            src += [
+                airship_instructions,  # airship instructions include load map.  FinishCheck is in there.
+                field.Return(),
+            ]
+            # We need to stop the screen from fading down before the reward is given.
+            space = Reserve(0xa48d8, 0xa48d9, 'keep screen up for reward map shuffle', field.NOP())
+        else:
+            src += [
+                airship_instructions,
+                field.FinishCheck(),
+                field.Return(),
+            ]
         space = Write(Bank.CA, src, "floating continent return to airship")
         airship_return = space.start_address
 
-        space = Reserve(0xa48dd, 0xa48e2, "floating continent return to airship", field.NOP())
+        return_addr = [0xa48dd, 0xa48e2]
+        if self.MAP_SHUFFLE and self.reward3.type == RewardType.CHARACTER:
+            # The objective check must be before we leave the screen. This is fine for espers & items, but...
+            # For characters, do it after the 2nd character lands
+            # CA/57E6: B2    Call subroutine $CA5806  character jumps off FC after shadow arrives
+            # ... shadow jumps off (we'll delete 0x03 after character select & skip this)
+            # CA/5801: B2    Call subroutine $CA48D6
+            return_addr = [0xa57e6, 0xa57eb]
+        space = Reserve(return_addr[0], return_addr[1], "floating continent return to airship", field.NOP())
         space.write(
             field.Branch(airship_return),
         )
 
     def escape_character_mod(self, character):
         space = Reserve(0xa579d, 0xa57b2, "floating continent wait dialogs", field.NOP())
-        self.escape_mod(character, [
-            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = False),
-            field.RecruitAndSelectParty(character),
-            field.FadeInScreen(),
-        ])
+        if self.MAP_SHUFFLE:
+            # CA/57E6: B2    Call subroutine $CA5806  character jumps off FC after shadow arrives
+            # ... shadow jumps off (we'll delete npc after character select & skip this)
+            # CA/5801: B2    Call subroutine $CA48D6
+            escape_src = [
+                #field.FadeOutScreen(),
+                #field.DeleteEntity(character),  # Maybe we don't need any of this?
+                #field.HideEntity(character),
+                #field.RefreshEntities(),    # Maybe this prevents the 'recruit an npc' later?
+                field.RecruitAndSelectParty(character),
+                field.FadeInScreen(),
+                field.FinishCheck(),   # Must be done here: might return to the world map!
+                field.Call(0xa5806),   # complete jumping animation
+                #field.Call(0xa48d6),  Replicate up to map load
+                #Read(0xa48d6, 0xa48dc), # clear event bit, fade screen, wait for fade & animation.
+                field.ClearEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
+                field.FadeOutScreen(speed=0x08),
+                field.WaitForFade(),
+                field.WaitForEntityAct(field_entity.PARTY0),
+                field.FreeScreen(),
+            ] + GoToSwitchyard(self.exit_id, map='field')
+        else:
+            escape_src = [
+                field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = False),
+                field.RecruitAndSelectParty(character),
+                field.FadeInScreen(),
+            ]
+        self.escape_mod(character, escape_src)
 
     def escape_esper_mod(self, esper):
         # use guest character to give esper reward
@@ -471,10 +536,234 @@ class FloatingContinent(Event):
             field.RefreshEntities(),
         )
 
-        self.escape_mod(guest_char_id, [
+        escape_src = [
             field.DeleteEntity(guest_char_id),
             field.RefreshEntities(),
-            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True, entrance_event = True),
-            field.AddEsper(esper),
-            field.Dialog(self.espers.get_receive_esper_dialog(esper)),
-        ])
+        ]
+        if self.MAP_SHUFFLE:
+            escape_src = [
+                field.AddEsper(esper),
+                field.FinishCheck(),
+                field.Dialog(self.espers.get_receive_esper_dialog(esper)),
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+            ] + GoToSwitchyard(self.exit_id, map='field')
+        else:
+            escape_src += [
+                field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True, entrance_event = True),
+                field.AddEsper(esper),
+                field.Dialog(self.espers.get_receive_esper_dialog(esper)),
+            ]
+        self.escape_mod(guest_char_id, escape_src)
+
+    def map_shuffle_mod(self):
+        # Modify entrance event to split between Boss #1 and Boss #2
+        src_after_boss1 = [
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpriteLayer(2),
+                            field_entity.AnimateSurprised(),
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.AnimateHighJump(),
+                            field_entity.Move(direction=direction.DOWN, distance=2),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction=direction.DOWN, distance=8),
+                            field_entity.SetSpriteLayer(0)
+                            ),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.SetEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
+            field.Call(field.HEAL_PARTY_HP_MP_STATUS),
+        ] + GoToSwitchyard(self.entry_id, map='field')
+        space = Write(Bank.CA, src_after_boss1, "Map Shuffle Split after FC boss 1")
+        self.boss_1_split_addr = space.start_address
+
+        space = Reserve(0xa5a27, 0xa5a35, "Animation fall off airship after ultros/chupon", field.NOP())
+        space.write(field.Branch(self.boss_1_split_addr))
+
+        # Write switchyard tile.  The event needs to be a straight LoadMap call.
+        # We will write one on the assumption that it is overwritten correctly.
+        # src = [field.Branch(ENTRY_EVENT_CODE_ADDR)]
+        src = [
+            field.LoadMap(0x18a, x=4, y=12, direction=direction.DOWN,
+                          default_music=True, fade_in=True, entrance_event=True),  # Failsafe
+            field.Return()
+        ]
+        AddSwitchyardEvent(self.entry_id, self.maps, src=src)
+
+        # Write the Floating Continent entry code:
+        # Get the connecting exit
+        self.parent_map = [0x000, 117, 162]
+        if self.exit_id in self.maps.door_map.keys():
+            if self.maps.door_map[1557] != 1556:  # Hack, don't update if connection is vanilla
+                self.parent_map = self.maps.get_connection_location(self.exit_id)
+        # Force update the parent map here
+        #src_addl = [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] - 1)]
+        src_addl = []
+        if self.parent_map[0] == 1:
+            # Update world
+            src_addl += [field.ClearEventBit(event_bit.IN_WOR)]
+
+        self.need_shadow_dialog = 0x0873
+        self.dialogs.set_text(self.need_shadow_dialog, "Gotta wait for SHADOW...<end>")
+
+        self.go_to_FC_dialog = 0x0851  # use "Kefka, Gestahl, and the Statues..."
+        self.dialogs.set_text(self.go_to_FC_dialog,
+                              "Land on the Floating Continent?<line><choice> Yes<line><choice> No<end>")
+
+        self.enter_fc_address = self.air_force_battle_addr + 29
+        # 0xa5a42 is modified earlier to:
+        # field.Call(self.enter_floating_continent_function),
+        # field.Call(self.delete_lights_function), # delete lights so airship shows up
+        # We need to replicate this & the character animation to avoid fading up the screen again.
+        # 0xa5a42 + 4 (Call takes 4 bits)
+        self.something_curious_dialog = 0x0850
+
+        # First, don't allow repeating the FC.  Show the "On That Day..." event instead & return to map.
+        src = [
+            field.BranchIfEventBitClear(event_bit.FINISHED_FLOATING_CONTINENT, "FC_OK"),   # No repeat FC
+            field.LoadMap(0x003, x=8, y=16, direction=direction.DOWN, default_music=True, fade_in=False, entrance_event=True),
+            field.FadeOutSong(0x1d),
+            field.Dialog(0x0877, wait_for_input=False, inside_text_box=False, top_of_screen=False),  # On that day...
+            field.Pause(seconds=2),
+            field.FadeInScreen(speed=0x08),
+            field.Pause(seconds=4),
+            field.FadeOutScreen(speed=0x10),
+            field.WaitForFade(),
+            field.FadeSongVolume(fade_time=0x1d, volume=0xC0), # [0xf3, 0x1d],    # fade in previous song
+        ] + GoToSwitchyard(self.exit_id, map='field') + [
+            "FC_OK",
+            field.LoadMap(0x18a, x=4, y=8, direction=direction.DOWN,
+                          default_music=True, fade_in=False, entrance_event=True),  # Read(0xa041c, 0xa0421)
+        ]
+        src += src_addl  # add parent map update, world bit update if necessary.
+        # Write the entrance animation & logic
+        src += [
+            field.HideEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, False,
+                            field_entity.SetPosition(x=0, y=0)),
+            field.FadeInScreen(),
+            field.WaitForFade(),
+        ]
+        if self.args.character_gating:
+            src += [
+                field.BranchIfEventBitSet(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
+                                            "HAVE_SHADOW"),
+                field.Dialog(self.need_shadow_dialog, wait_for_input=True),
+                field.Branch("LEAVE_FC"),
+                "HAVE_SHADOW",
+            ]
+        src += [
+            field.DialogBranch(self.go_to_FC_dialog, "GO_TO_FC", "LEAVE_FC"),
+            "GO_TO_FC",
+            # If already defeated Boss #2, just go to FC
+            field.BranchIfEventBitSet(event_bit.DEFEATED_AIR_FORCE, "SKIP_FC_BOSS2"),  # custom event bit
+            field.Dialog(self.something_curious_dialog, wait_for_input=True),
+            field.Branch(self.air_force_battle_addr),
+            "SKIP_FC_BOSS2",
+            field.HoldScreen(),
+            field.Call(self.delete_lights_function),  # Need to rewrite this to avoid blinking
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, False,
+                            field_entity.SetPosition(x=4, y=0),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction=direction.DOWN, distance=8),
+                            field_entity.Move(direction=direction.DOWN, distance=4),
+                            field_entity.AnimateKneeling()
+                            ),
+            field.Branch(self.enter_fc_address),
+            "LEAVE_FC",
+            field.HoldScreen(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.PlaySoundEffect(186),  # falling
+            field.EntityAct(field_entity.PARTY0, False,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.Move(direction=direction.DOWN, distance=8),
+                            field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                            field_entity.Move(direction=direction.DOWN, distance=8),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL)
+                            ),
+            field.EntityAct(field_entity.CAMERA, False,
+                           field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                           field_entity.Move(direction=direction.DOWN, distance=4),
+                           ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.WaitForEntityAct(field_entity.PARTY0),
+            field.HideEntity(field_entity.PARTY0),
+            field.FreeScreen(),
+        ] + GoToSwitchyard(self.exit_id, map='field')
+        # We need a fixed location to put this.  Bit length ~ 60 bits?
+        # look at 0xa48e3 (end of escape sequence)
+        space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 153, "Floating Continent entry code modified")
+        space.write(src)
+        #print('FC entrance event length: ', space.end_address - space.start_address)
+
+        # Write switchyard to handle return
+        # (2b) Add the switchyard tile that handles exit to the Falcon
+        # Note we will have to receive the reward before returning!  in escape_mod().
+        src = [
+            field.LoadMap(0x006, direction.DOWN, default_music = True, x = 16, y = 6, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(self.exit_id, self.maps, src=src)
+
+        # (2c) Need to set DEFEATED_AIR_FORCE after first entry.
+        # handled in airship_battle_mod().
+
+        # (3) Update post-IAF entry: use switchyard.
+        # CA/5986: B2    Call subroutine $CA5ABE (jump off airship animation)
+        # CA/598A: B2    Call subroutine $CA5A42 (land on FC, right after boss #2: 0xa5a3b).
+        iaf_skip_src = [
+            field.FreeScreen(),
+            field.SetEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
+        ] + GoToSwitchyard(self.entry_id, map='field')
+        space_iaf_skip = Write(Bank.CA, iaf_skip_src, 'IAF skip mod')
+        space = Reserve(0xa598a, 0xa598d, "Call load FC after boss 2 mod")
+        space.write(field.Call(space_iaf_skip.start_address))
+
+        # (4) Update airship return before atma wpn
+        # CA/5A96: 6B    Load map $0006 (Blackjack, upper deck (general use / "The world is groaning in pain")) instantly, (upper bits $0400), place party at (16, 6), facing up
+        # This includes the animation.
+        if self.maps.door_map[self.exit_id] == self.entry_id:
+            # Keep the animation if returning to the airship
+            pass
+        else:
+            # Use the switchyard exit
+            space = Reserve(0xa5a96, 0xa5a9c, "return to airship mid FC edit")
+            space.write(GoToSwitchyard(self.exit_id, map='field'))
+
+        # (5) Modify warp behavior
+        # We will add a new event bit to track special warp to Blackjack
+        src_warp = [
+            field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
+            field.ClearEventBit(event_bit.IN_WOR),
+            field.LoadMap(map_id=0x006, x=16, y=6, direction=direction.LEFT,
+                          default_music=True, fade_in=True, entrance_event=True),
+            field.Return()
+        ]
+        space = Write(Bank.CC, src_warp, "New FC warp code")
+        fc_warp_addr = space.start_address
+        self.warps.add_warp(event_bit.FLOATING_CONTINENT_WARP_OPTION, fc_warp_addr)
+
+
+    @staticmethod
+    def entrance_door_patch():
+        # self-contained code to be called in door rando after entering Floating Continent (1557)
+        # to be used in event_exit_info.entrance_door_patch()
+        return [field.Branch(ENTRY_EVENT_CODE_ADDR)]
+
+    @staticmethod
+    def return_door_patch():
+        # self-contained code to be called in door rando upon returning to airship (1556)
+        # to be used in event_exit_info.entrance_door_patch()
+        src = [
+            field.LoadMap(0x006, x=16, y=6, direction=direction.DOWN, default_music=True, fade_in=False, entrance_event=True),
+            field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
+            field.ShowEntity(field_entity.PARTY0),
+            field.HoldScreen(),
+            field.Branch(0xa5a9d),  # complete animation
+        ]
+        return src

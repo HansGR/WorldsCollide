@@ -1,11 +1,15 @@
 from memory.space import Bank, Allocate
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
 import instruction.field as field
+from data.map_exit_extra import exit_data, door_to_eventname
+from data.warps import Warps, WarpPoints
+from event.ruination import *
 
 class Events():
     def __init__(self, rom, args, data):
         self.rom = rom
         self.args = args
+        self.verbose = False
 
         self.dialogs = data.dialogs
         self.characters = data.characters
@@ -14,10 +18,14 @@ class Events():
         self.enemies = data.enemies
         self.espers = data.espers
         self.shops = data.shops
+        self.warps = Warps()
+        if self.args.ruination_mode:
+            self.warp_points = WarpPoints()
 
         events = self.mod()
 
         self.validate(events)
+
 
     def mod(self):
         # generate list of events from files
@@ -35,15 +43,46 @@ class Events():
             for event_name, event_class in inspect.getmembers(event_module, inspect.isclass):
                 if event_name.lower() != module_name.replace('_', '').lower():
                     continue
-                event = event_class(name_event, self.rom, self.args, self.dialogs, self.characters, self.items, self.maps, self.enemies, self.espers, self.shops)
+                event = event_class(name_event, self.rom, self.args, self.dialogs, self.characters, self.items, self.maps, self.enemies, self.espers, self.shops, self.warps)
                 events.append(event)
                 name_event[event.name()] = event
 
+        # Extra gating from map shuffle
+        extra_gating = {}
+        if self.args.map_shuffle:
+            ac_id = 1558
+            if ac_id in self.maps.door_map.keys():
+                conn_id = exit_data[self.maps.door_map[ac_id]][0]
+                if conn_id in door_to_eventname.keys():
+                    location_list = door_to_eventname[conn_id]
+                    for loc in location_list:
+                        extra_gating[loc] = self.characters.EDGAR
+            if self.verbose:
+                print('Added extra gating logic:', extra_gating)
+
+        if self.args.ruination_mode:
+            self.warp_points.mod(self.dialogs, self.maps)
+            # Share warp out animation code
+            self.warps.warp_out_animation_addr = self.warp_points.warp_out_animation_addr
+
         # select event rewards
-        if self.args.character_gating:
-            self.character_gating_mod(events, name_event)
+        if self.args.ruination_mode:
+            ruin_override = False
+            if ruin_override:
+                self.open_world_mod(events)   # OVERRIDE for testing
+            else:
+                self.ruination_mod(events, name_event)
+
+
+        elif self.args.character_gating:
+            self.character_gating_mod(events, name_event, extra_gating)
         else:
             self.open_world_mod(events)
+
+        #if self.verbose:
+        #    print('Character tree:')
+        #    for i in range(self.characters.CHARACTER_COUNT):
+        #        print(self.characters.DEFAULT_NAME[i],': ', self.characters.character_location[i], [self.characters.DEFAULT_NAME[p] for p in self.characters.character_paths[i]])
 
         # initialize event bits, mod events, log rewards
         log_strings = []
@@ -59,6 +98,9 @@ class Events():
         if self.args.spoiler_log:
             from log import section
             section("Events", log_strings, [])
+
+        # Write modified warps
+        self.warps.mod()
 
         return events
 
@@ -88,7 +130,7 @@ class Events():
         for slot in reward_slots:
             slot.id, slot.type = choose_reward(slot.possible_types, self.characters, self.espers, self.items)
 
-    def character_gating_mod(self, events, name_event):
+    def character_gating_mod(self, events, name_event, extra_gate={}):
         import random
         reward_slots = self.init_reward_slots(events)
 
@@ -98,6 +140,8 @@ class Events():
 
         # find characters that were assigned to start
         characters_available = [reward.id for reward in name_event["Start"].rewards]
+        #for c in characters_available:
+        #    self.characters.character_location[c] = 'Start'
 
         # find all the rewards that can be a character
         character_slots = []
@@ -115,7 +159,18 @@ class Events():
             unlocked_slot_iterations = []
             for slot in character_slots:
                 slot_empty = slot.id is None
-                gate_char_available = (slot.event.character_gate() in characters_available or slot.event.character_gate() is None)
+
+                # Extra gating logic from map shuffle:
+                extra_gate_flag = True
+                if slot.event.name() in extra_gate.keys():
+                    if extra_gate[slot.event.name()] not in characters_available:
+                        extra_gate_flag = False
+                        if self.verbose:
+                            print('Extra gate flag FALSE!: ', slot.event.name(), self.characters.get_available_count())
+
+                gate_char_available = (slot.event.character_gate() in characters_available or slot.event.character_gate() is None) \
+                                      and extra_gate_flag
+
                 enough_chars_available = len(characters_available) >= slot.event.characters_required()
                 if slot_empty and gate_char_available and enough_chars_available:
                     if slot in slot_iterations:
@@ -132,6 +187,7 @@ class Events():
             slot.type = RewardType.CHARACTER
             characters_available.append(slot.id)
             self.characters.set_character_path(slot.id, slot.event.character_gate())
+            #self.characters.character_location[slot.id] = slot.event.name()   # store where the character was found for map shuffle
             iteration += 1
 
         # get all reward slots still available
@@ -166,9 +222,54 @@ class Events():
         # choose the rest of the rewards, items given to events after all characters/events assigned
         self.choose_item_possible_rewards(reward_slots)
 
+    def ruination_mod(self, events, name_event):
+        reward_slots = self.init_reward_slots(events)
+
+        # Update ROOM_REWARD data
+        for room in ROOM_REWARD.keys():
+            for name in ROOM_REWARD[room].keys():
+                event = [e for e in events if e.name() in name]
+                if len(event) > 0:
+                    if '_' not in name:
+                        ROOM_REWARD[room][name] = event[0].rewards[0]
+                    else:
+                        reward_index = int(name[name.find('_')+1:])
+                        ROOM_REWARD[room][name] = event[0].rewards[reward_index-1]
+
+        # Choose starting party
+        characters_available = [reward.id for reward in name_event["Start"].rewards]
+        #start_slots = [s for s in reward_slots if s.event.name() == "Start"]
+        party = [self.characters.DEFAULT_NAME[c] for c in characters_available]
+
+        # Initialize ruination_map object
+        ruin_map = ruination_map(self.args, party)
+
+        # Build out the map & distribute characters
+        self.maps.doors.map = ruin_map.generate_map_with_characters(reward_slots, self.characters, self.espers, self.items)
+
+        # Check state of reward_slots
+        print('REWARD STATE AFTER RUIN MAPPING:')
+        for slot in reward_slots:
+            print(slot.event.name(), slot.id, slot.type)
+
+        # For safety (?) distribute any remaining rewards
+        reward_slots = [slot for slot in reward_slots if slot.id is None]
+        self.choose_single_possible_type_rewards(reward_slots)
+        reward_slots = [slot for slot in reward_slots if not slot.single_possible_type()]
+        self.choose_char_esper_possible_rewards(reward_slots)
+        reward_slots = [slot for slot in reward_slots if slot.id is None]
+        self.choose_item_possible_rewards(reward_slots)
+
+        print('REWARD STATE FINAL:')
+        for slot in reward_slots:
+            print(slot.event.name(), slot.id, slot.type)
+
+        # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
+        self.maps.postprocess_door_map()
+
     def validate(self, events):
         char_esper_checks = []
         for event in events:
             char_esper_checks += [r for r in event.rewards if r.possible_types == (RewardType.CHARACTER | RewardType.ESPER)]
 
-        assert len(char_esper_checks) == CHARACTER_ESPER_ONLY_REWARDS, "Number of char/esper only checks changed - Check usages of CHARACTER_ESPER_ONLY_REWARDS and ensure no breaking changes"
+        assert len(char_esper_checks) == CHARACTER_ESPER_ONLY_REWARDS, f"Number of char/esper only checks changed - Check usages of CHARACTER_ESPER_ONLY_REWARDS and ensure no breaking changes. Expected: {CHARACTER_ESPER_ONLY_REWARDS}, Actual: {len(char_esper_checks)}"

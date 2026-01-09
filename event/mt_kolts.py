@@ -1,6 +1,18 @@
 from event.event import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class MtKolts(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_mt_kolts
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Mt. Kolts"
 
@@ -12,6 +24,27 @@ class MtKolts(Event):
 
     def mod(self):
         self.vargas_npc_id = 0x10
+        self.airship_south = [0x0, 102, 101]
+        self.airship_north = [0x0, 98, 93]
+        if self.MAP_SHUFFLE:
+            # modify airship position: south
+            south_id = 1175
+            if south_id in self.maps.door_map.keys():
+                self.airship_south = self.maps.get_connection_location(south_id)
+                # conn_south = self.maps.door_map[south_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_south = [exit_world[conn_pair]] + \
+                #                      self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+
+            # modify airship position: north
+            north_id = 1178
+            if north_id in self.maps.door_map.keys():
+                self.airship_north = self.maps.get_connection_location(north_id)
+                # conn_north = self.maps.door_map[north_id]
+                # conn_pair = exit_data[conn_north][0]  # original connecting exit
+                # self.airship_north = [exit_world[conn_pair]] + \
+                #                      self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                #print('Updated Mt. Kolts airship teleports: ', self.airship_south, self.airship_north)
 
         self.dialog_mod()
 
@@ -21,6 +54,10 @@ class MtKolts(Event):
         self.shadow_vargas_mod()
         self.vargas_battle_mod()
         self.entrance_exit_mod()
+        self.vargas_trigger_mod()
+
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -73,71 +110,96 @@ class MtKolts(Event):
         space.write(0xff)
 
     def entrance_exit_mod(self):
-        # if vargas hasn't been defeated yet, block the back entrance (coming from returner's hideout)
-        src = [
-            field.ReturnIfEventBitSet(event_bit.DEFEATED_VARGAS),
-            field.SetMapTiles(layer = 2, x = 9, y = 47, w = 2, h = 3, tiles = [
-                              101, 101,
-                                1,  54,
-                                1,  70,
-            ]),
-            field.SetMapTiles(layer = 1, x = 8, y = 47, w = 3, h = 5, tiles = [
-                              102, 221, 223,
-                              160, 237, 239,
-                              176, 253, 255,
-                              192, 100, 102,
-                               64, 193, 194,
-            ]),
-            field.Return(),
-        ]
-        space = Write(Bank.CA, src, "mt kolts block back entrance")
-        block_back_entrance = space.start_address
+        if not self.DOOR_RANDOMIZE:
+            # if vargas hasn't been defeated yet, block the back entrance (coming from returner's hideout)
+            src = [
+                field.ReturnIfEventBitSet(event_bit.DEFEATED_VARGAS),
+                field.SetMapTiles(layer = 2, x = 9, y = 47, w = 2, h = 3, tiles = [
+                                  101, 101,
+                                    1,  54,
+                                    1,  70,
+                ]),
+                field.SetMapTiles(layer = 1, x = 8, y = 47, w = 3, h = 5, tiles = [
+                                  102, 221, 223,
+                                  160, 237, 239,
+                                  176, 253, 255,
+                                  192, 100, 102,
+                                   64, 193, 194,
+                ]),
+                field.Return(),
+            ]
+            space = Write(Bank.CA, src, "mt kolts block back entrance")
+            block_back_entrance = space.start_address
 
-        self.maps.set_entrance_event(0x64, block_back_entrance - EVENT_CODE_START)
+            self.maps.set_entrance_event(0x64, block_back_entrance - EVENT_CODE_START)
 
-        # move the airship, have it follow player on both sides of mt kolts
-        # NOTE: cannot use entrance events to load a map (i.e. the world map to move airship)
-        #       instead, replace exits leading to entrance/exit cliffs with events to move it
-        src = [
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.FadeLoadMap(0x00, direction.DOWN, default_music = False,
-                              x = 102, y = 101, fade_in = False, airship = True),
-            vehicle.SetPosition(102, 101),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x5f, direction.LEFT, default_music = True, x = 10, y = 26),
-            field.FadeInScreen(),
-            field.Return(),
-        ]
-        space = Write(Bank.CA, src, "mt kolts entrance move airship")
-        entrance_move_airship = space.start_address
+            if not self.MAP_SHUFFLE:
+                # move the airship, have it follow player on both sides of mt kolts
+                # NOTE: cannot use entrance events to load a map (i.e. the world map to move airship)
+                #       instead, replace exits leading to entrance/exit cliffs with events to move it
+                src = [
+                    field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    field.FadeLoadMap(self.airship_south[0], direction.DOWN, default_music = False,
+                                      x = self.airship_south[1], y = self.airship_south[2], fade_in = False, airship = True),
+                    vehicle.SetPosition(self.airship_south[1], y = self.airship_south[2]),
+                    vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    vehicle.LoadMap(0x5f, direction.LEFT, default_music = True, x = 10, y = 26),
+                    field.FadeInScreen(),
+                    field.Return(),
+                ]
+                space = Write(Bank.CA, src, "mt kolts entrance move airship")
+                entrance_move_airship = space.start_address
 
-        src = [
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.FadeLoadMap(0x00, direction.DOWN, default_music = False,
-                              x = 98, y = 93, fade_in = False, airship = True),
-            vehicle.SetPosition(98, 93),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x65, direction.DOWN, default_music = True, x = 10, y = 49),
-            field.FadeInScreen(),
-            field.Return(),
-        ]
-        space = Write(Bank.CA, src, "mt kolts exit move airship")
-        exit_move_airship = space.start_address
+                src = [
+                    field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    field.FadeLoadMap(self.airship_north[0], direction.DOWN, default_music = False,
+                                      x = self.airship_north[1], y = self.airship_north[2], fade_in = False, airship = True),
+                    vehicle.SetPosition(self.airship_north[1], y = self.airship_north[2]),
+                    vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    vehicle.LoadMap(0x65, direction.DOWN, default_music = True, x = 10, y = 49),
+                    field.FadeInScreen(),
+                    field.Return(),
+                ]
+                space = Write(Bank.CA, src, "mt kolts exit move airship")
+                exit_move_airship = space.start_address
+
+                from data.map_event import MapEvent
+                self.maps.delete_short_exit(0x64, 7, 13)
+                new_event = MapEvent()
+                new_event.x = 7
+                new_event.y = 13
+                new_event.event_address = entrance_move_airship - EVENT_CODE_START
+                self.maps.add_event(0x64, new_event)
+
+                self.maps.delete_short_exit(0x64, 17, 59)
+                new_event = MapEvent()
+                new_event.x = 17
+                new_event.y = 59
+                new_event.event_address = exit_move_airship - EVENT_CODE_START
+                self.maps.add_event(0x64, new_event)
+
+    def vargas_trigger_mod(self):
+        # Vargas appears on the map 0x62 via 2 tile triggers. With B-Dash, players can outpace him leading to soft-locks.
+        # Change the 2 event tile triggers to a different location.
+        old_event = self.maps.get_event(0x62, 10, 32) # get existing event
+
+        self.maps.delete_event(0x62, 10, 32) # vargas event tile (left)
+        self.maps.delete_event(0x62, 11, 32) # vargas event tile (right)
 
         from data.map_event import MapEvent
-        self.maps.delete_short_exit(0x64, 7, 13)
+        # add event tile to earlier on the path
         new_event = MapEvent()
-        new_event.x = 7
-        new_event.y = 13
-        new_event.event_address = entrance_move_airship - EVENT_CODE_START
-        self.maps.add_event(0x64, new_event)
+        new_event.x = 21
+        new_event.y = 19
+        new_event.event_address = old_event.event_address
+        self.maps.add_event(0x62, new_event)
 
-        self.maps.delete_short_exit(0x64, 17, 59)
+        # add event tile to bottom right of stairs
         new_event = MapEvent()
-        new_event.x = 17
-        new_event.y = 59
-        new_event.event_address = exit_move_airship - EVENT_CODE_START
-        self.maps.add_event(0x64, new_event)
+        new_event.x = 21
+        new_event.y = 20
+        new_event.event_address = old_event.event_address
+        self.maps.add_event(0x62, new_event)
 
     def character_mod(self, character):
         boss_pack_id = self.get_boss("Vargas")
@@ -247,10 +309,16 @@ class MtKolts(Event):
         space = Reserve(0xa8396, 0xa8396, "mt kolts after vargas terra")
         space.write(field_entity.PARTY2)
 
-        # remove dialogs
+        # remove dialogs. If door rando, force set "Saw Vargas" bits here
         space = Reserve(0xa8332, 0xa8334, "mt kolts SABIN!!", field.NOP())
+        if self.DOOR_RANDOMIZE:
+            space.write(field.SetEventBit(event_bit.SAW_VARGAS_SHADOW1))
         space = Reserve(0xa8354, 0xa8356, "mt kolts Big brother?", field.NOP())
+        if self.DOOR_RANDOMIZE:
+            space.write(field.SetEventBit(event_bit.SAW_VARGAS_SHADOW2))
         space = Reserve(0xa8379, 0xa837b, "mt kolts The brothers are reunited", field.NOP())
+        if self.DOOR_RANDOMIZE:
+            space.write(field.SetEventBit(event_bit.SAW_VARGAS_SHADOW3))
         space = Reserve(0xa838f, 0xa8391, "mt kolts Younger brother?", field.NOP())
         space = Reserve(0xa83a0, 0xa83a2, "mt kolts Bodybuilder?!", field.NOP())
 
@@ -259,19 +327,29 @@ class MtKolts(Event):
 
         # scene with vargas and sabin
         # replace with: vargas jumps on party and fight happens
-        space = Reserve(0xa82a3, 0xa82bf, "mt kolts invoke vargas battle", field.NOP())
-        space.write(
+        space = Reserve(0xa82a3, 0xa82c7, "mt kolts invoke vargas battle", field.NOP())
+        src = [
             field.Pause(1),
             field.InvokeBattle(boss_pack_id, 0x0b),
             field.HideEntity(self.vargas_npc_id),
             field.ClearEventBit(npc_bit.VARGAS_MT_KOLTS_EXIT),
             field.SetEventBit(event_bit.DEFEATED_VARGAS),
+        ]
+        if self.DOOR_RANDOMIZE:
+            src += [
+                field.SetEventBit(event_bit.SAW_VARGAS_SHADOW1),
+                field.SetEventBit(event_bit.SAW_VARGAS_SHADOW2),
+                field.SetEventBit(event_bit.SAW_VARGAS_SHADOW3),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.AnimateStandingFront())
+            ]
+        src += [
             field.FadeInScreen(),
-
             esper_item_instructions,
             field.FinishCheck(),
             field.Return(),
-        )
+        ]
+        space.write(src)
 
     def esper_mod(self, esper):
         self.esper_item_mod([
@@ -284,3 +362,39 @@ class MtKolts(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Make the character get jumped immediately if they come out of Vargas' door
+        # Note: "CB/79AA: B3    Call subroutine $CAC7FE, 3 times" causes the character to turn south & blink 3 times.
+        animate_blink_addr = 0xac7fe
+        src = [
+            field.ReturnIfEventBitSet(0x10A),    # Skip if it already happened
+            field.ReturnIfEventBitClear(0x1B3),  # must be facing left (i.e. just came out of door)
+            field.SetEventBit(0x10A),
+            field.SetEventBit(0x31C),
+            field.CreateEntity(0x10),
+            field.ShowEntity(0x10),
+            field.RefreshEntities(),
+            field.EntityAct(0x10, False,
+                            field_entity.SetPosition(x=24, y=31)),
+            field.Pause(0.5),
+            field.MultipleCalls(3, animate_blink_addr),
+            field.Pause(0.75),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.Turn(direction.RIGHT)),
+            field.Pause(0.25),
+            field.EntityAct(0x10, False,
+                            field_entity.AnimateHighJump(),
+                            field_entity.MoveDiagonal(direction.LEFT, 2, direction.DOWN, 1)),
+            field.EntityAct(field_entity.PARTY0, False,
+                            field_entity.AnimateSurprised()),
+            field.PauseUnits(32),
+            field.Branch(0xa82a4)
+        ]
+        space = Write(Bank.CA, src, "Vargas jumps you immediately at his door")
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 22
+        new_event.y = 32
+        new_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x62, new_event)

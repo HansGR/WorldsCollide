@@ -1,4 +1,5 @@
 from event.event import *
+from music.song_utils import get_character_theme
 
 class GauFatherHouse(Event):
     def name(self):
@@ -22,6 +23,9 @@ class GauFatherHouse(Event):
 
         self.merchant_mod()
         self.entrance_event_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -58,7 +62,14 @@ class GauFatherHouse(Event):
             field.Return(),
         )
 
+    def character_music_mod(self, character):
+        space = Reserve(0xb0b78, 0xb0b79, "Play Song Shadow")
+        space.write([
+            field.StartSong(get_character_theme(character)),
+        ])
+
     def character_mod(self, character):
+        self.character_music_mod(character)
         self.shadow_npc.sprite = character
         self.shadow_npc.palette = self.characters.get_palette(character)
 
@@ -108,3 +119,10 @@ class GauFatherHouse(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def ruination_mod(self):
+        map_id = 0x073
+
+        # Edit the palette to look like the WOR.
+        gau_father_properties = self.maps.properties[map_id]
+        gau_father_properties.paletteindex = 0x16

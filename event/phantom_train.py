@@ -1,6 +1,19 @@
 from event.event import *
+from event.switchyard import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class PhantomTrain(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_phantom_train
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each)
+        self.MAP_SHUFFLE = args.map_shuffle
+        self.RUINATION_MODE = args.ruination_mode
+
     def name(self):
         return "Phantom Train"
 
@@ -17,6 +30,18 @@ class PhantomTrain(Event):
         )
 
     def mod(self):
+        self.airship_loc = [0x0, 178, 93]
+        if self.MAP_SHUFFLE:
+            # modify airship position after completing check
+            exit_id = 465
+            if exit_id in self.maps.door_map.keys():
+                self.airship_loc = self.maps.get_connection_location(exit_id)
+                # conn_south = self.maps.door_map[exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_south][0]  # original connecting exit
+                # self.airship_loc = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
+                #print('Updated Phantom Train airship exit: ', self.airship_loc)
+
         self._load_world_map()
         self.forest_spring_mod()
         self.ghost_shop_forest_mod()
@@ -31,6 +56,9 @@ class PhantomTrain(Event):
         self.phantom_train_battle_mod()
         self.phantom_train_mod()
         self.random_forest_mod()
+
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
+            self.door_rando_mod()
 
         if self.args.character_gating:
             self.add_gating_condition()
@@ -62,17 +90,56 @@ class PhantomTrain(Event):
             self.shops.no_dried_meat_phantom_train()
 
     def _load_world_map(self):
-        src = [
-            field.FadeOutSong(32),
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x00, direction.DOWN, default_music = False, x = 178, y = 94, airship = True),
-            vehicle.SetPosition(178, 94),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x00, direction.DOWN, default_music = True, x = 178, y = 93),
-            world.Turn(direction.DOWN),
-            world.End(),
-        ]
-        space = Write(Bank.CB, src, "phantom train move airship and return to world map")
+        src = [field.FadeOutSong(32)]
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
+            # Send to switchyard tile
+            event_id = 2068
+            src += GoToSwitchyard(event_id)
+
+            # Add the switchyard event tile that handles exit 2068
+            if self.DOOR_RANDOMIZE:
+                #  --> the world map
+                airship_location = [0x0, 178, 93]
+                switchyard_src = SummonAirship(airship_location[0], airship_location[1], airship_location[2])
+            else:
+                # in ruination mode: --> Phantom Train station
+                switchyard_src = [
+                    field.LoadMap(map_id=0x08c, x=70, y=11, direction=direction.DOWN, default_music=True, fade_in=True, entrance_event=True),
+                    field.Return()
+                ]
+            AddSwitchyardEvent(event_id, self.maps, src=switchyard_src)
+
+        elif self.MAP_SHUFFLE and self.airship_loc[0] not in [0x0, 0x1]:
+            # In map shuffle, only airship if returning to the world map
+            # Call warp code without animation
+            from data.warps import CUSTOM_WARP_HOOK
+            src += [
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.Call(CUSTOM_WARP_HOOK),
+                field.Return()
+            ]
+
+        else:
+            if self.airship_loc[0] == 0x1:
+                # Set world bit before exit
+                src += [field.SetEventBit(event_bit.IN_WOR)]
+
+            src += [
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = False, x = self.airship_loc[1],
+                              y = self.airship_loc[2], airship = True),
+                vehicle.SetPosition(self.airship_loc[1], self.airship_loc[2]),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
+                                y = self.airship_loc[2]),
+                world.Turn(direction.DOWN),
+                world.End(),
+            ]
+        #space = Write(Bank.CB, src, "phantom train move airship and return to world map")
+        # Must be at a fixed address for DR!  Need 23 bytes.
+        space = Reserve(0xbba0c, 0xbba25, "phantom train move airship and return to world map", field.NOP())
+        space.write(src)
         self.load_world_map = space.start_address
 
     def esper_item_mod(self, esper_item_instructions):
@@ -174,8 +241,10 @@ class PhantomTrain(Event):
         ghost_shop_npc.set_event_address(0xbad44)
 
     def find_train_mod(self):
-        space = Reserve(0xba864, 0xba8e6, "phantom train skip find train event", field.NOP())
-        space.write(field.Return())
+        #space = Reserve(0xba864, 0xba8e6, "phantom train skip find train event", field.NOP())
+        #space.write(field.Return())
+        self.maps.delete_event(0x8c, 79, 11)
+
 
     def enter_train_mod(self):
         ghost_train_pack = self.enemies.packs.get_id("GhostTrain")
@@ -189,7 +258,7 @@ class PhantomTrain(Event):
         space = Reserve(0xba901, 0xba951, "phantom train skip enter event", field.NOP())
         space.write(
             # clear this event bit in case lump of metal chest already done
-            field.ClearEventBit(event_bit.LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN),
+            field.ClearEventBit(event_bit.PHANTOM_TRAIN_CAR_3),
             field.Branch(space.end_address + 1), # skip nops
         )
 
@@ -210,20 +279,23 @@ class PhantomTrain(Event):
         space = Reserve(0xba980, 0xba983, "phantom train do not remove npc/interceptor from gau's fathers' house", field.NOP())
 
         space = Reserve(0xba98c, 0xbaa25, "phantom train entered event", field.NOP())
-        space.write(
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.Move(direction.UP, 3),
-            ),
-            field.BranchIfEventBitClear(event_bit.DEFEATED_PHANTOM_TRAIN, "BOARD_TRAIN"),
+        src = [
+            field.EntityAct(field_entity.PARTY0, True, field_entity.Move(direction.UP, 3) )
+        ]
+        if not self.DOOR_RANDOMIZE:
+            # Move the "Invoke Phantom Train Battle" to the smokestack in Door Rando.
+            src += [
+                field.BranchIfEventBitClear(event_bit.DEFEATED_PHANTOM_TRAIN, "BOARD_TRAIN"),
 
-            # if already finished phantom train event, invoke battle with phantom train
-            field.PlaySoundEffect(146),
-            field.Pause(1.5),
-            field.InvokeBattleType(ghost_train_pack, field.BattleType.BACK, ghost_train_battle_background),
-            field.Branch(self.load_world_map),
+                # if already finished phantom train event, invoke battle with phantom train
+                field.PlaySoundEffect(146),
+                field.Pause(1.5),
+                field.InvokeBattleType(ghost_train_pack, field.BattleType.BACK, ghost_train_battle_background),
+                field.Branch(self.load_world_map),
 
-            "BOARD_TRAIN",
-        )
+                "BOARD_TRAIN",
+            ]
+        space.write(src)
         space.copy_from(0xbaa91, 0xbaaa4)
         space.write(
             field.Return(),
@@ -251,31 +323,32 @@ class PhantomTrain(Event):
     def escape_ghosts_mod(self):
         space = Reserve(0xbb267, 0xbb269, "phantom train ghost blocking exit no escape", field.NOP())
 
-        space = Reserve(0xbb276, 0xbb397, "phantom train ghosts surround party event", field.NOP())
-        space.write(
-            field.LoadMap(0x08e, direction.DOWN, default_music = True, x = 40, y = 9, fade_in = False),
-        )
-
-        # skip ghosts surrounding party cutscene and instead place every ghost in final position immediately when map loads
-        ghosts = [
-            (0x10, (37, 9), direction.RIGHT), (0x11, (36, 9), direction.RIGHT), (0x12, (35, 9), direction.RIGHT),
-            (0x13, (34, 9), direction.DOWN),  (0x14, (34, 8), direction.DOWN),  (0x15, (33, 8), direction.DOWN),
-            (0x18, (41, 9), direction.LEFT),  (0x19, (42, 9), direction.LEFT),
-            (0x1a, (43, 9), direction.DOWN),  (0x1b, (43, 8), direction.DOWN),  (0x1c, (44, 8), direction.DOWN),
-        ]
-        for ghost in ghosts:
+        if not self.DOOR_RANDOMIZE:
+            space = Reserve(0xbb276, 0xbb397, "phantom train ghosts surround party event", field.NOP())
             space.write(
-                field.ShowEntity(ghost[0]),
-                field.EntityAct(ghost[0], True,
-                    field_entity.SetPosition(ghost[1][0], ghost[1][1]),
-                    field_entity.Turn(ghost[2]),
-                ),
+                field.LoadMap(0x08e, direction.DOWN, default_music = True, x = 40, y = 9, fade_in = False),
             )
 
-        space.write(
-            field.FadeInScreen(),
-            field.Return(),
-        )
+            # skip ghosts surrounding party cutscene and instead place every ghost in final position immediately when map loads
+            ghosts = [
+                (0x10, (37, 9), direction.RIGHT), (0x11, (36, 9), direction.RIGHT), (0x12, (35, 9), direction.RIGHT),
+                (0x13, (34, 9), direction.DOWN),  (0x14, (34, 8), direction.DOWN),  (0x15, (33, 8), direction.DOWN),
+                (0x18, (41, 9), direction.LEFT),  (0x19, (42, 9), direction.LEFT),
+                (0x1a, (43, 9), direction.DOWN),  (0x1b, (43, 8), direction.DOWN),  (0x1c, (44, 8), direction.DOWN),
+            ]
+            for ghost in ghosts:
+                space.write(
+                    field.ShowEntity(ghost[0]),
+                    field.EntityAct(ghost[0], True,
+                        field_entity.SetPosition(ghost[1][0], ghost[1][1]),
+                        field_entity.Turn(ghost[2]),
+                    ),
+                )
+
+            space.write(
+                field.FadeInScreen(),
+                field.Return(),
+            )
 
         space = Reserve(0xbb3f4, 0xbb4d3, "phantom train ladder event, ghosts move closer", field.NOP())
         space.write(
@@ -313,12 +386,12 @@ class PhantomTrain(Event):
         space = Reserve(0xbb5b5, 0xbb5b5, "phantom train return before ghost follows event tiles", field.NOP())
 
         space = Reserve(0xbb5bc, 0xbb5ef, "phantom train escaping ghosts face ghosts", field.NOP())
-        space.write(
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.Turn(direction.RIGHT),
-            ),
-            field.Branch(space.end_address + 1), # skip nops
-        )
+        src = [field.EntityAct(field_entity.PARTY0, True, field_entity.Turn(direction.RIGHT) ) ]
+        if self.DOOR_RANDOMIZE:
+            # Initialize chasing ghost
+            src += [field.CreateEntity(0x10), field.RefreshEntities(), field.ShowEntity(0x10)]
+        src += [field.Branch(space.end_address + 1)]  # skip nops
+        space.write(src)
 
         space = Reserve(0xbb5fc, 0xbb639, "phantom train skip deciding to detach cars", field.NOP())
         space.write(
@@ -440,13 +513,13 @@ class PhantomTrain(Event):
             field.SetEventBit(npc_bit.GHOST_SHOP_PHANTOM_FOREST),
             field.ClearEventBit(npc_bit.PHANTOM_TRAIN_SAVE_POINT),
             field.ClearEventBit(npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN),
-            field.ClearEventBit(event_bit.SIEGFRIED_LUMP_OF_METAL_CHESTS),
+            field.ClearEventBit(event_bit.LUMP_OF_METAL_CHESTS),
             field.Branch(self.load_world_map),
         ]
         space = Write(Bank.CB, src, "phantom train ensure reward and exit forest")
         end_event = space.start_address
 
-        space = Reserve(0xbba06, 0xbba0b, "phantom train defeated call ensure reward and exit froest", field.NOP())
+        space = Reserve(0xbba06, 0xbba0b, "phantom train defeated call ensure reward and exit forest", field.NOP())
         space.write(
             field.Branch(end_event),
         )
@@ -501,3 +574,171 @@ class PhantomTrain(Event):
         space.write(
             field.BranchIfEventBitSet(event_bit.STOPPED_PHANTOM_TRAIN, random_destination),
         )
+
+    def door_rando_mod(self):
+        # change the platform entrance event so the exit is returnable
+        space = Reserve(0xba438, 0xba438, "Patch platform 1", field.NOP())
+        space.write([0x5c])  # Patch gate in existing program
+        #space = Reserve(0xba480, 0xba49e, "Patch platform 2", field.NOP())
+        src = [
+            field.SetMapTiles(1, 79, 12, 1, 4, [0x5c, 0x5c, 0x5c, 0x5c]),  # Patch rewalkable tiles
+            field.SetMapTiles(2, 24, 12, 1, 4, [0xe5, 0xe5, 0xe5, 0xe5]),  # Patch visual tiles
+            field.Call(0xb6ad3),
+            field.Return()
+        ]
+        patch_gate = Write(Bank.CB, src, "Patch Platform code")
+        space = Reserve(0xba4a7, 0xba4aa, "Patch platform", field.NOP())
+        space.write([field.Call(patch_gate.start_address)])
+
+        # Test the map patching code in the map 0x08c entrance event:  CB/A414 -- CB/A4A5
+        self.maps.delete_event(0x8c, 72, 11)  # allow the player to reach the left end of the platform
+
+        # Remove checks for 0x039 when exiting the reused train car.  Unnecessary.
+        space = Reserve(0xbaab5, 0xbaaba, "Phantom Train Reused Car right exit", field.NOP())
+        space.write([field.Branch(0xba76c)])
+        #space = Free(0xbaabb, 0xbaac3)
+        space = Reserve(0xbaaca, 0xbaacf, "Phantom Train Reused Car left exit", field.NOP())
+        space.write([field.Branch(0xba77f)])
+        # space = Free(0xbaad0, 0xbaad8)
+
+        # Remove "Car bits" setting when entering the reused train car.  These are handled by require_event_bit.
+        space = Reserve(0xba614, 0xba61b, "Phantom Train enter car 1 right bits set", field.NOP())
+        space = Reserve(0xba629, 0xba630, "Phantom Train enter car 1 left bits set", field.NOP())
+        space = Reserve(0xba6e5, 0xba6ee, "Phantom Train enter car 2 right bits set", field.NOP())
+        space = Reserve(0xba6f7, 0xba700, "Phantom Train enter car 2 left bits set", field.NOP())
+        space = Reserve(0xba683, 0xba68C, "Phantom Train enter car 3 south bits set", field.NOP())
+        # Would be nice to Free these & move the event tile pointers.
+
+        # Make Car 3 door ghost only trigger once (by removing the "clear bit 0x03d")
+        # CB/B27F: D1    Clear event bit $1E80($03D) [$1E87, bit 5]
+        #space = Reserve(0xbb27f, 0xbb280, "Phantom train door ghost bit reset", field.NOP())
+        # Actually, just truncate the event after the fight
+        space = Reserve(0xbb276, 0xbb282, "Phantom train door ghost warp", field.NOP())
+        space.write([
+            field.ClearEventBit(0x17b),     # I don't know if the event bit matters
+            field.FadeInScreen(),
+            field.DeleteEntity(0x10),       # remove ghost
+            field.PlaySoundEffect(0x2d),    # "poof" sound
+            field.RefreshEntities(),
+            field.Return()
+        ])
+
+        # Remove bit 0x17c check to allow roof jumping event
+        # CB/B4D5: C0    If ($1E80($17C) [$1EAF, bit 4] is clear), branch to $CA5EB3 (simply returns)
+        space = Reserve(0xbb4d5, 0xbb4da, "Phantom Train always allow roof jump", field.NOP())
+
+        # Remove unused checks for bit 0x180 when leaving Car 6/7
+        space = Reserve(0xba7b7, 0xba7bc, "Phantom Train unused car 6/7 replica", field.NOP())
+        # space = Free(0xba815, 0xba81d)
+        space = Reserve(0xba7cc, 0xba7d1, "Phantom Train unused car 6/7 replica", field.NOP())
+        # space = Free(0xba7a8, 0xba7b0)
+
+        # Remove "Car bits" setting when entering reused train car 6/7.  These are now handled in entrance event.
+        space = Reserve(0xba64e, 0xba655, "Phantom Train enter car 6 right bits set", field.NOP())
+        space = Reserve(0xba65d, 0xba664, "Phantom Train enter car 6 left bits set", field.NOP())
+        space = Reserve(0xba66c, 0xba675, "Phantom Train enter car 7 right bits set", field.NOP())
+        space = Reserve(0xba694, 0xba69d, "Phantom Train enter car 7 left bits set", field.NOP())
+
+        # Change smokestack event to check new event bit 0x03E;
+        # Move the "Invoke Phantom Train Battle" to the smokestack
+        ghost_train_pack = self.enemies.packs.get_id("GhostTrain")
+        ghost_train_battle_background = 33
+        src = [
+            field.BranchIfEventBitClear(event_bit.DEFEATED_PHANTOM_TRAIN, "FIGHT_BOSS"),
+
+            # if already finished phantom train event, invoke battle with phantom train
+            field.PlaySoundEffect(146),
+            field.Pause(1.5),
+            field.InvokeBattleType(ghost_train_pack, field.BattleType.BACK, ghost_train_battle_background),
+            field.Branch(self.load_world_map),
+
+            "FIGHT_BOSS",
+            field.BranchIfEventBitClear(event_bit.SET_PHANTOM_TRAIN_SWITCHES, 0xbb9d0),
+            field.Branch(0xbb9e6)
+        ]
+        pt_check = Write(Bank.CB, src, "Phantom Train check if defeated and switch state")
+        space = Reserve(0xbb9dc, 0xbb9e5, "Phantom Train initialize boss condition", field.NOP())
+        space.write([
+            field.Branch(pt_check.start_address),
+        ])
+
+        # Make the switches in the locomotive interior set event_bit.SET_PHANTOM_TRAIN_SWITCHES if correctly positioned.
+        # (This then also covers Doma Dream train without further hassle.)
+        # Include animation routine: Call subroutine $CB6AC3
+        pt_switches_bit = [
+            field.BranchIfAny([0x184, False, 0x185, True, 0x186, False], "CLEAR_SWITCHES"),
+            field.SetEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+            field.Return(),
+            "CLEAR_SWITCHES",
+            field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+            field.Return()
+        ]
+        space = Write(Bank.CB, pt_switches_bit, "Set or Clear PT switches bit")
+        self.switch_check_addr = space.start_address
+
+        # Switches in Phantom Train:  map 0x092
+        # tiles: (7,7) 0xbb94a, (8,7) 0xbb972, (9,7) 0xbb99a:
+        # 		Switch 1: toggle event bit 0x184.  Multipurpose bits!
+        src_switch_1 = [
+            field.Call(0xbb94a),                 # Call switch #1
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_1, "PT Switch 1 edit")
+        event_switch_1 = self.maps.get_event(0x092, 7, 7)
+        event_switch_1.event_address = space.start_address - EVENT_CODE_START
+
+        # 		Switch 2: toggle event bit 0x185.
+        src_switch_2 = [
+            field.Call(0xbb972),                 # Call switch #2
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_2, "PT Switch 2 edit")
+        event_switch_2 = self.maps.get_event(0x092, 8, 7)
+        event_switch_2.event_address = space.start_address - EVENT_CODE_START
+
+        # 		Switch 3: toggle event bit 0x186.
+        src_switch_3 = [
+            field.Call(0xbb99a),                 # Call switch #3
+            field.Call(self.switch_check_addr),  # Set/clear "solved" bit
+            field.Return()
+        ]
+        space = Write(Bank.CB, src_switch_3, "PT Switch 3 edit")
+        event_switch_3 = self.maps.get_event(0x092, 9, 7)
+        event_switch_3.event_address = space.start_address - EVENT_CODE_START
+
+        # Edit entrance event to show switches as solved if they were solved previously
+        # Entrance event: map 0x092, @ 0xba593
+        #   CB/A593: B2    Call subroutine $CBB90E
+        #   CB/A597: B2    Call subroutine $CBB922
+        #   CB/A59B: B2    Call subroutine $CBB936
+        #   CB/A59F: C0    If ($1E80($0A4) [$1E94, bit 4] is set), branch to $CB6A55
+        #   CB/A5A5: FE    Return
+        src = [
+            field.BranchIfEventBitClear(event_bit.SET_PHANTOM_TRAIN_SWITCHES, "NOT_SET"),
+            # Solved previously: make switches show the solution
+            field.ClearEventBit(0x184),  # 1st switch: off
+            field.SetEventBit(0x185),    # 2nd switch: on
+            field.ClearEventBit(0x186),  # 3rd switch: off
+            "NOT_SET",
+            field.Call(0xbb90e),     # Call first switch graphics check
+            field.Return(),          # Return to remainder of entrance event
+        ]
+        space = Write(Bank.CB, src, "PT Locomotive entrance event update if solved")
+        self.entrance_check_addr = space.start_address
+
+        space = Reserve(0xba593, 0xba596, "PT Locomotive entrance event set switches if solved")
+        space.write([field.Call(self.entrance_check_addr)])
+
+
+    @staticmethod
+    def initiation_script():
+        # self-contained code to be called in door rando when trying to use Phantom Forest south exit
+        # to be used in event_exit_info.entrance_door_patch()
+
+        # Since this event happens at a fixed location in the event script, let's just call that.
+        src = [
+            field.Branch(0xba3c4)
+        ]
+        return src

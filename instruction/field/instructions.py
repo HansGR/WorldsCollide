@@ -32,7 +32,9 @@ class MultipleCalls(_Instruction):
         return super().__str__(hex(self.address))
 
 class SelectParties(_Instruction):
-    def __init__(self, count, unmovable_characters = 0x0000):
+    def __init__(self, count, unmovable_characters = 0x0000, clear_party=False):
+        if clear_party:
+            count |= 0x80
         super().__init__(0x99, count, unmovable_characters.to_bytes(2, "little"))
 
     def __str__(self):
@@ -67,6 +69,14 @@ class SetParty(_Instruction):
 class SetPartyMap(_Instruction):
     def __init__(self, party, map_id):
         super().__init__(0x79, party, map_id.to_bytes(2, "little"))
+
+    def __str__(self):
+        return super().__str__(f"{self.args[0]} {hex(self.args[1])}")
+
+class ChangeNPCEventAddress(_Instruction):
+    def __init__(self, npc_id, destination):
+        destination_arg = (destination - EVENT_CODE_START).to_bytes(3, "little")
+        super().__init__(0x7a, npc_id, destination_arg)
 
     def __str__(self):
         return super().__str__(f"{self.args[0]} {hex(self.args[1])}")
@@ -421,6 +431,12 @@ class FlashScreen(_Instruction):
     def __str__(self):
         return super().__str__(self.args[0])
 
+class MosaicScreen(_Instruction):
+    def __init__(self, speed):
+        super().__init__(0x62, speed)
+    def __str__(self):
+        return super().__str__(self.args[0])
+
 class HoldScreen(_Instruction):
     def __init__(self):
         super().__init__(0x38)
@@ -484,6 +500,8 @@ class Pause(_Instruction):
             super().__init__(0x95)
         elif math.isclose(seconds, 4.00):       # 240 units
             super().__init__(0xb5, 16)          # 15 * 16 = 240
+        elif math.isclose(seconds, 8.00):       # 480 units
+            super().__init__(0xb5, 32)          # 15 * 32 = 480
         else:
             print("pause: invalid seconds")
 
@@ -536,6 +554,20 @@ class WaitForSong(_Instruction):
 class FadeSongVolume(_Instruction):
     def __init__(self, fade_time, volume):
         super().__init__(0xf6, 0x81, fade_time, volume)
+
+    def __str__(self):
+        return super().__str__(f"{self.args[1]}, {self.args[2]}")
+
+class FadeSoundEffect(_Instruction):
+    def __init__(self, fade_time, volume):
+        super().__init__(0xf6, 0x82, fade_time, volume)
+
+    def __str__(self):
+        return super().__str__(f"{self.args[1]}, {self.args[2]}")
+
+class StartSongAtVolume(_Instruction):
+    def __init__(self, song_id, volume):
+        super().__init__(0xf6, 0x10, song_id, volume)
 
     def __str__(self):
         return super().__str__(f"{self.args[1]}, {self.args[2]}")
