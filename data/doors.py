@@ -4,6 +4,7 @@ from random import randrange, choices
 from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors, \
     dungeon_crawl_split_exits
 from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door  # for door descriptions, WOR/WOB equivalent doors
+from data.event_exit_info import event_exit_info  # for one-way exit descriptions
 from data.walks import *
 
 ROOM_SETS = {
@@ -489,41 +490,40 @@ class Doors():
 
     def _find_connecting_doors(self, walks, room1, room2):
         """Find the door(s) connecting two rooms in the walks network map."""
+        # Helper to get door description from exit_data or event_exit_info
+        def get_door_name(door_id):
+            if door_id in exit_data:
+                return exit_data[door_id][1]
+            elif door_id in event_exit_info:
+                return event_exit_info[door_id][4]  # description is at index 4
+            else:
+                return f"Door {door_id}"
+
         # Check if there's a reverse edge (for two-way doors)
         has_reverse = walks.net.has_edge(room2, room1)
 
-        # Search through the door mappings
-        for door_pair in walks.map[0]:  # Two-way doors
+        # Get room data
+        r1 = room_data.get(room1, [[], [], [], 0])
+        r2 = room_data.get(room2, [[], [], [], 0])
+
+        # Search through two-way door mappings
+        for door_pair in walks.map[0]:
             d1, d2 = door_pair
-            r1 = room_data.get(room1, [[], [], [], 0])
-            r2 = room_data.get(room2, [[], [], [], 0])
 
             # Check if this door pair connects the two rooms
             if (d1 in r1[0] or d1 in r1[1]) and (d2 in r2[0] or d2 in r2[1] or d2 in r2[2]):
-                door1_name = exit_data.get(d1, [None, f"Door {d1}"])[1]
-                door2_name = exit_data.get(d2, [None, f"Door {d2}"])[1]
-                if has_reverse:
-                    return f"DOOR {d1} ({door1_name}) <--> DOOR {d2} ({door2_name})"
-                else:
-                    return f"DOOR {d1} ({door1_name}) --> DOOR {d2} ({door2_name})"
+                arrow = "<-->" if has_reverse else "-->"
+                return f"DOOR {d1} ({get_door_name(d1)}) {arrow} DOOR {d2} ({get_door_name(d2)})"
             elif (d2 in r1[0] or d2 in r1[1]) and (d1 in r2[0] or d1 in r2[1] or d1 in r2[2]):
-                door1_name = exit_data.get(d2, [None, f"Door {d2}"])[1]
-                door2_name = exit_data.get(d1, [None, f"Door {d1}"])[1]
-                if has_reverse:
-                    return f"DOOR {d2} ({door1_name}) <--> DOOR {d1} ({door2_name})"
-                else:
-                    return f"DOOR {d2} ({door1_name}) --> DOOR {d1} ({door2_name})"
+                arrow = "<-->" if has_reverse else "-->"
+                return f"DOOR {d2} ({get_door_name(d2)}) {arrow} DOOR {d1} ({get_door_name(d1)})"
 
-        # Check one-way doors
-        for door_pair in walks.map[1]:  # One-way exits
+        # Search through one-way exit mappings
+        for door_pair in walks.map[1]:
             d1, d2 = door_pair
-            r1 = room_data.get(room1, [[], [], [], 0])
-            r2 = room_data.get(room2, [[], [], [], 0])
 
             if (d1 in r1[1]) and (d2 in r2[2]):  # d1 is exit, d2 is entrance
-                door1_name = exit_data.get(d1, [None, f"Exit {d1}"])[1] if d1 in exit_data else f"Exit {d1}"
-                door2_name = exit_data.get(d2, [None, f"Entrance {d2}"])[1] if d2 in exit_data else f"Entrance {d2}"
-                return f"EXIT {d1} ({door1_name}) --> ENTRANCE {d2} ({door2_name})"
+                return f"EXIT {d1} ({get_door_name(d1)}) --> ENTRANCE {d2} ({get_door_name(d2)})"
 
         return "(connection not found in map)"
 
