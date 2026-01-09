@@ -171,8 +171,11 @@ class DomaWOR(Event):
             space = Reserve(0xb99a9, 0xb99aa, "doma wor sword appears flash 3", field.FlashScreen(field.Flash.NONE))
 
         space = Reserve(0xb997d, 0xb9984, "doma wor cyan kneeling", field.NOP())
-        space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
-        if self.DOOR_RANDOMIZE:
+
+        if not self.DOOR_RANDOMIZE:
+            # In vanilla mode, just NOP out the pause
+            space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
+        else:
             # move the "Set Event Bit COMPLETED_DOMA_WOR (0x0DA)" AND FinishCheck to before the load map @ CB/99E1
             # Need to call FinishCheck before warp since door randomization might send player elsewhere
             src = [
@@ -183,7 +186,7 @@ class DomaWOR(Event):
             ]
             finish_before_warp = Write(Bank.CB, src, "doma wor finish check before warp")
 
-            # Reserve 4 bytes for Call instruction (need to expand from 2 bytes)
+            # Reserve 4 bytes for Call instruction (expanding from ClearEventBit + Pause)
             space = Reserve(0xb99dd, 0xb99e0, "doma wor finish before warp call", field.NOP())
             space.write([field.Call(finish_before_warp.start_address)])
 
