@@ -7,17 +7,16 @@ This feature allows you to output the shortest route from any world map room to 
 To use this feature, you need to:
 
 1. Enable door randomization in dungeon crawl mode with `-drdc`
-2. Enable the debug output with `--debug-shortest-route`
-3. Specify the destination room with `--debug-route-destination <room_name_or_number>`
+2. Specify the destination room with `--debug-route-destination <room_name_or_number>`
 
-Example:
+Example with a numeric room ID:
 ```bash
-python3 wc.py -i ffiii.smc -drdc --debug-shortest-route --debug-route-destination "355"
+python3 wc.py -i ffiii.smc -drdc --debug-route-destination "355"
 ```
 
 Or with a room name:
 ```bash
-python3 wc.py -i ffiii.smc -drdc --debug-shortest-route --debug-route-destination "root-mf"
+python3 wc.py -i ffiii.smc -drdc --debug-route-destination "root-mf"
 ```
 
 ## Output Format

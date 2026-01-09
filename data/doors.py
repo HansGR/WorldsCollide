@@ -682,7 +682,7 @@ class Doors():
                 map[1].extend(fcm_oneways)
 
                 # Debug: print shortest route if requested
-                if self.args.debug_shortest_route and self.args.debug_route_destination:
+                if self.args.debug_route_destination:
                     # Convert destination to appropriate type
                     dest = self.args.debug_route_destination
                     try:

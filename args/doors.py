@@ -67,10 +67,8 @@ def parse(parser):
                        help="Randomize overworld entrances across worlds")
 
     # Debug options
-    doors.add_argument("--debug-shortest-route", action="store_true",
-                       help="Output the shortest route from world map to a specified room (use with -drdc)")
     doors.add_argument("--debug-route-destination", type=str, default=None,
-                       help="Specify the destination room name/number for --debug-shortest-route")
+                       help="Output the shortest route from world map to specified room (use with -drdc)")
 
 def process(args):
     #pass
