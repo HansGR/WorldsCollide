@@ -66,6 +66,10 @@ def parse(parser):
     doors.add_argument("-mapx", "--map-shuffle-crossworld", action="store_true",
                        help="Randomize overworld entrances across worlds")
 
+    # Debug options
+    doors.add_argument("--debug-route-destination", type=str, default=None,
+                       help="Output the shortest route from world map to specified room (use with -drdc)")
+
 def process(args):
     #pass
     if args.door_randomize_all or args.door_randomize_crossworld or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
