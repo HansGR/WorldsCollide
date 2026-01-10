@@ -420,9 +420,15 @@ class Doors():
         #    print(self.area_name)
         #    print(self.rooms)
 
-    def debug_print_shortest_route(self, walks, destination_room):
-        """Find and print the shortest route from any world map room to the destination room."""
+    def debug_print_shortest_route(self, door_map, destination_room):
+        """Find and print the shortest route from any world map room to the destination room.
+
+        Args:
+            door_map: The mapping result [[door_pairs], [oneway_pairs]]
+            destination_room: The target room ID (int or string)
+        """
         import networkx as nx
+        from data.rooms import room_data
 
         # Convert destination_room to appropriate type (try int first, then keep as string)
         try:
@@ -430,8 +436,46 @@ class Doors():
         except (ValueError, TypeError):
             pass  # Keep as string
 
+        # Build door-to-room mapping from room_data
+        door_to_room = {}
+        for room_id, data in room_data.items():
+            # data format: [doors, traps, pits, ...] or [doors, traps, pits, keys, locks, world]
+            doors = data[0] if len(data) > 0 else []
+            traps = data[1] if len(data) > 1 else []
+            pits = data[2] if len(data) > 2 else []
+
+            for door in doors:
+                door_to_room[door] = room_id
+            for trap in traps:
+                door_to_room[trap] = room_id
+            for pit in pits:
+                door_to_room[pit] = room_id
+
+        # Build a fresh network graph from the mapping
+        net = nx.DiGraph()
+        all_rooms = set()
+
+        # Add edges from two-way door pairs
+        for d1, d2 in door_map[0]:
+            r1 = door_to_room.get(d1)
+            r2 = door_to_room.get(d2)
+            if r1 and r2:
+                all_rooms.add(r1)
+                all_rooms.add(r2)
+                net.add_edge(r1, r2)
+                net.add_edge(r2, r1)  # Two-way connection
+
+        # Add edges from one-way pairs
+        for d1, d2 in door_map[1]:
+            r1 = door_to_room.get(d1)
+            r2 = door_to_room.get(d2)
+            if r1 and r2:
+                all_rooms.add(r1)
+                all_rooms.add(r2)
+                net.add_edge(r1, r2)  # One-way connection only
+
         # Get all world map rooms (wob-* and wor-*)
-        world_map_rooms = [room_id for room_id in walks.rooms.rooms
+        world_map_rooms = [room_id for room_id in all_rooms
                           if isinstance(room_id, str) and (room_id.startswith('wob-') or room_id.startswith('wor-'))]
 
         if not world_map_rooms:
@@ -439,9 +483,9 @@ class Doors():
             return
 
         # Validate destination room exists
-        if destination_room not in walks.rooms.rooms:
+        if destination_room not in all_rooms:
             print(f"DEBUG ERROR: Destination room '{destination_room}' not found in network.")
-            print(f"Available rooms: {sorted([str(r) for r in walks.rooms.rooms])}")
+            print(f"Available rooms: {sorted([str(r) for r in all_rooms])}")
             return
 
         # Find shortest path from any world map room to destination
@@ -451,7 +495,7 @@ class Doors():
 
         for wm_room in world_map_rooms:
             try:
-                path = nx.shortest_path(walks.net, source=wm_room, target=destination_room)
+                path = nx.shortest_path(net, source=wm_room, target=destination_room)
                 if len(path) < shortest_length:
                     shortest_path = path
                     shortest_length = len(path)
@@ -476,7 +520,7 @@ class Doors():
             next_room = shortest_path[i + 1]
 
             # Find the door(s) connecting these rooms
-            connecting_doors = self._find_connecting_doors(walks, current_room, next_room)
+            connecting_doors = self._find_connecting_doors(door_map, door_to_room, net, current_room, next_room)
 
             if connecting_doors:
                 door_desc = connecting_doors
@@ -488,8 +532,8 @@ class Doors():
         print(f"{shortest_path[-1]}: (destination)")
         print("="*80 + "\n")
 
-    def _find_connecting_doors(self, walks, room1, room2):
-        """Find the door(s) connecting two rooms in the walks network map."""
+    def _find_connecting_doors(self, door_map, door_to_room, net, room1, room2):
+        """Find the door(s) connecting two rooms using the door mapping."""
         # Helper to get door description from exit_data or event_exit_info
         def get_door_name(door_id):
             if door_id in exit_data:
@@ -500,23 +544,23 @@ class Doors():
                 return f"Door {door_id}"
 
         # Check if there's a reverse edge (for two-way doors)
-        has_reverse = walks.net.has_edge(room2, room1)
+        has_reverse = net.has_edge(room2, room1)
 
         # Search through two-way door mappings
-        for d1, d2 in walks.map[0]:
-            r1 = walks.rooms.get_room_from_element(d1)
-            r2 = walks.rooms.get_room_from_element(d2)
+        for d1, d2 in door_map[0]:
+            r1 = door_to_room.get(d1)
+            r2 = door_to_room.get(d2)
 
-            if (r1.id == room1 and r2.id == room2) or (r1.id == room2 and r2.id == room1):
+            if (r1 == room1 and r2 == room2) or (r1 == room2 and r2 == room1):
                 arrow = "<-->" if has_reverse else "-->"
                 return f"DOOR {d1} ({get_door_name(d1)}) {arrow} DOOR {d2} ({get_door_name(d2)})"
 
         # Search through one-way exit mappings
-        for d1, d2 in walks.map[1]:
-            r1 = walks.rooms.get_room_from_element(d1)
-            r2 = walks.rooms.get_room_from_element(d2)
+        for d1, d2 in door_map[1]:
+            r1 = door_to_room.get(d1)
+            r2 = door_to_room.get(d2)
 
-            if r1.id == room1 and r2.id == room2:
+            if r1 == room1 and r2 == room2:
                 return f"EXIT {d1} ({get_door_name(d1)}) --> ENTRANCE {d2} ({get_door_name(d2)})"
 
         return "(connection not found in map)"
@@ -675,18 +719,6 @@ class Doors():
                 map[0].extend(fcm_doors)
                 map[1].extend(fcm_oneways)
 
-                # Debug: print shortest route if requested
-                if self.args.debug_route_destination:
-                    # Convert destination to appropriate type
-                    dest = self.args.debug_route_destination
-                    try:
-                        dest = int(dest)
-                    except (ValueError, TypeError):
-                        pass  # Keep as string
-                    # Check if destination room is in this area
-                    if dest in fully_connected.rooms.rooms:
-                        self.debug_print_shortest_route(fully_connected, self.args.debug_route_destination)
-
         # Postprocess the mapping algorithm results
         # Patch out logical link
         ll = {}
@@ -789,6 +821,10 @@ class Doors():
                     print('\t',m)
                 elif m[1] in repeat_doors:
                     print('\t',m)
+
+        # Debug: print shortest route if requested (after all postprocessing)
+        if self.args.debug_route_destination:
+            self.debug_print_shortest_route(map, self.args.debug_route_destination)
 
         # Return map
         self.map = map
