@@ -78,9 +78,24 @@ Individual area flags: `-dru` (Umaro), `-drun` (Upper Narshe), `-drem` (Esper Mo
 - `doors_WOB_WOR` - Maps WoB doors to WoR equivalents
 - `eventname_to_door` - Maps event names to door IDs
 
+**data/event_exit_info.py** - One-way exit event metadata
+- `event_exit_info` dictionary: `exit_id -> [address, length, split, state, desc, location, type]`
+  - **address**: ROM address of the event code
+  - **length**: Total byte length of the event
+  - **split**: Byte offset where map load command begins
+  - **state**: `[char_hidden, song_override, screen_hold, on_raft, update_parent]` - transition flags
+  - **location**: `[map_id, x, y]` - destination coordinates
+  - **type**: `'JMP'` (patchable subroutine) or `None` (logical only)
+- Exit ID ranges:
+  - 2001-2099: Standard one-way exits (trapdoors, jumps, conveyor belts, etc.)
+  - 1501-1564: Event tiles that behave as doors (world map entrances, special triggers)
+  - 5xxx: WoR variants of shared-map exits
+- `event_return_map` - Maps switchyard exits back to their parent world map
+
 **data/transitions.py** - Event script patching for one-way connections
 - `Transitions` class handles event code modifications when connecting one-ways
 - Patches map load commands to redirect to new destinations
+- Uses `event_exit_info` to locate and modify exit event code
 
 ### Room Data Format
 
