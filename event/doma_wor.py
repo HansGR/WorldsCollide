@@ -17,8 +17,8 @@ class DomaWOR(Event):
         return self.characters.CYAN
 
     def init_rewards(self):
-        self.reward1 = self.add_reward(RewardType.ESPER | RewardType.ITEM)
-        self.reward2 = self.add_reward(RewardType.CHARACTER | RewardType.ESPER)
+        self.reward1 = self.add_reward(RewardType.CHARACTER | RewardType.ESPER)
+        self.reward2 = self.add_reward(RewardType.ESPER | RewardType.ITEM)
         self.reward3 = self.add_reward(RewardType.ESPER | RewardType.ITEM)
 
     def mod(self):
@@ -49,7 +49,7 @@ class DomaWOR(Event):
         self.mines_mod()
         self.doma_mod()
         self.wrexsoul_battle_mod()
-
+        
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
@@ -624,15 +624,15 @@ class DomaWOR(Event):
 
         # Place an event tile on [0x07e, 25, 17] that deletes Wrexsoul & Cyan NPCs if boss is defeated
         boss_npc_id = 0x18
-        cyan_npc_id = 0x17
-        magicite_npc_id = 0x24
+        #cyan_npc_id = 0x17
+        magicite_npc_id = 0x25  # 0x24 is a blank npc?
         src = [
             field.ReturnIfEventBitClear(event_bit.FINISHED_DOMA_WOR),
             field.ReturnIfEventBitSet(0x1b5),
             field.DeleteEntity(boss_npc_id),
             field.HideEntity(boss_npc_id),
-            field.DeleteEntity(cyan_npc_id),
-            field.HideEntity(cyan_npc_id),
+            field.DeleteEntity(self.cyan_throne_room_npc_id),
+            field.HideEntity(self.cyan_throne_room_npc_id),
             field.DeleteEntity(magicite_npc_id),
             field.HideEntity(magicite_npc_id),
             field.SetEventBit(0x1b5),
