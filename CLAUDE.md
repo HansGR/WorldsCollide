@@ -15,104 +15,149 @@ python3 wc.py -i ffiii.smc
 # Show all available flags and options
 python3 wc.py -h
 
-# Example with specific output file
-python3 wc.py -i ffiii.smc -o output.smc
+# Example with door randomization
+python3 wc.py -i ffiii.smc -drdc   # Dungeon crawl mode
+python3 wc.py -i ffiii.smc -dra    # Randomize all doors by world
+python3 wc.py -i ffiii.smc -maps   # Map shuffle (overworld entrances)
 
 # Debug mode (enables spoiler log)
 python3 wc.py -i ffiii.smc -debug
-
-# Output log to stdout instead of file
-python3 wc.py -i ffiii.smc -slog
 ```
 
-## Architecture
+## Door Randomizer System
+
+The door randomizer is the primary feature of this branch. It shuffles connections between rooms/areas to create new exploration experiences.
+
+### Door Randomizer Flags (args/doors.py)
+
+| Flag | Description |
+|------|-------------|
+| `-drdc` | **Dungeon Crawl** - Creates one giant connected dungeon across all areas |
+| `-dra` | **Randomize All** - Shuffles doors within each world (WoB/WoR separately) |
+| `-drx` | **Crossworld** - Shuffles all doors across both worlds |
+| `-dre` | **Each Area** - Randomizes each dungeon independently |
+| `-maps` | **Map Shuffle Separate** - Randomizes overworld entrances within each world |
+| `-mapx` | **Map Shuffle Crossworld** - Randomizes overworld entrances across worlds |
+| `-ruin` | **Ruination Mode** - Rogue-like mode with procedural dungeon, no airship |
+
+Individual area flags: `-dru` (Umaro), `-drun` (Upper Narshe), `-drem` (Esper Mountain), `-drob` (Owzer), `-drmf` (Magitek Factory), `-drsg` (Sealed Gate), `-drzb/-drzr` (Zozo WoB/WoR), `-drmz` (Mt Zozo), `-drlr` (Lete River), `-drze` (Zone Eater), `-drst` (Serpent Trench), `-drbh` (Burning House), `-drdt` (Daryl's Tomb), `-drpt` (Phantom Train), `-drcd` (Cyan's Dream), `-drmk` (Mt Kolts), `-drvc` (Veldt Cave)
+
+### Core Files
+
+**data/doors.py** - Main door randomizer orchestration
+- `ROOM_SETS` dictionary defines which rooms belong to each randomization mode
+- `Doors.__init__()` - Selects room sets based on flags, handles flag conflicts
+- `Doors.mod()` - Creates randomized connections using the Network walk algorithm
+- `Doors.map` - Output: `[[door_pairs], [oneway_pairs]]`
+
+**data/rooms.py** - Room and connection definitions
+- `room_data` dictionary: `room_id -> [doors, traps, pits, keys, locks, world]`
+  - **doors** (int < 2000): Two-way connections
+  - **traps** (2000-2999): One-way exits
+  - **pits** (3000+): One-way entrances
+  - **keys** (strings): Items that unlock locked elements
+  - **locks** (dict): `{key_tuple: [locked_elements]}`
+  - **world**: 0 = WoB, 1 = WoR
+- `forced_connections` - Connections that must always be made
+- `shared_exits` - Multiple exits that go to same destination
+- `shared_oneways` - One-way exits that share destinations
+- Root rooms (`'root-xx'`) serve as entry points for each area
+
+**data/walks.py** - Graph connectivity algorithm
+- `Network` class uses NetworkX directed graph to model room connections
+- `Room` class tracks doors/traps/pits/keys/locks per room
+- `Rooms` class manages collection with O(1) element lookups
+- Key algorithm steps:
+  1. `ForceConnections()` - Apply required connections
+  2. `attach_dead_ends()` - Connect dead-end rooms first
+  3. `connect_network()` - Recursive DFS to connect remaining rooms
+  4. Validates network: ensures all areas reachable, balanced entrances/exits
+
+**data/map_exit_extra.py** - Exit metadata
+- `exit_data` dictionary: `exit_id -> [partner_door_id, description]`
+- `doors_WOB_WOR` - Maps WoB doors to WoR equivalents
+- `eventname_to_door` - Maps event names to door IDs
+
+**data/transitions.py** - Event script patching for one-way connections
+- `Transitions` class handles event code modifications when connecting one-ways
+- Patches map load commands to redirect to new destinations
+
+### Room Data Format
+
+```python
+room_data = {
+    # Standard room: [doors, traps, pits, world]
+    364: [[1797, 1798], [], [], 1],  # Umaro's Cave room
+
+    # Room with keys and locks: [doors, traps, pits, keys, locks, world]
+    'ms-wor-57': [[262], [], [], ['ac1'], {'ac1': [1558]}, 1],
+
+    # Root room (entry point): provides entrance to area
+    'root-u': [[], [2010], [3009], 1],  # Umaro entry
+}
+```
+
+### Adding a New Area to Door Randomizer
+
+1. Define rooms in `data/rooms.py` with door/trap/pit IDs
+2. Add room set to `ROOM_SETS` in `data/doors.py`
+3. Create root room for entry point
+4. Add flag to `args/doors.py` if area should be individually toggleable
+5. Handle any special connections in `forced_connections` or `shared_exits`
+
+## General Architecture
 
 ### Execution Flow (wc.py)
 
 1. **Memory** - Loads ROM, initializes free space tracking
-2. **Data** - Reads and modifies game data (characters, items, spells, maps, enemies, etc.)
-3. **Events** - Modifies event scripts and distributes rewards (characters, espers, items)
-4. **Menus/Battle/Settings/BugFixes** - Apply additional modifications
-5. **Memory.write()** - Outputs the modified ROM
+2. **Data** - Reads/modifies game data; door randomization happens in `maps.mod()`
+3. **Events** - Modifies event scripts, distributes rewards
+4. **Memory.write()** - Outputs the modified ROM
 
 ### Key Modules
 
-**memory/** - ROM manipulation and space management
-- `space.py` - Core abstraction for managing ROM space. Use `Reserve(start, end, desc)` for fixed addresses, `Allocate(bank, size, desc)` for dynamic allocation. Banks are `Bank.C0` through `Bank.FF`.
-- `rom.py` - Low-level ROM read/write operations
-- `free.py` - Defines initially free ROM regions
+**memory/space.py** - ROM space management
+- `Reserve(start, end, desc)` - Reserve fixed address range
+- `Allocate(bank, size, desc)` - Allocate from bank's free space
+- Banks: `Bank.C0` through `Bank.FF`
 
-**data/** - Game data structures
-- `data.py` - Orchestrates all data modules; each module follows pattern: `__init__` reads data, `mod()` applies randomization, `write()` outputs changes
-- Major subsystems: `characters`, `items`, `spells`, `maps`, `enemies`, `espers`, `shops`, `chests`
-- `maps.py` - Complex module handling map exits, doors, NPCs, events, and door randomization
-- `event_bit.py`, `npc_bit.py` - Game flag/bit definitions used for event state
+**data/maps.py** - Map/exit handling, integrates door randomization
+- `Maps.__init__()` creates `Doors` instance
+- `Maps.mod()` calls `self.doors.mod()` to generate randomized map
+- `Maps.write()` writes exit data to ROM
 
-**event/** - Event scripting system
-- `event.py` - Base class for location events; subclasses implement specific locations (e.g., `narshe_wob.py`, `phantom_train.py`)
-- `events.py` - Loads all event modules, handles reward distribution logic (open world vs character gating)
-- `event_reward.py` - Reward types: `CHARACTER`, `ESPER`, `ITEM`
-- `ruination.py` - Alternative game mode with procedural map generation
-
-**instruction/** - SNES assembly and event scripting
-- `asm.py` - 65816 assembly instructions (NOP, LDA, STA, JSR, etc.)
-- `field/` - Field event instructions (dialogs, NPC movement, map transitions, etc.)
-- `c0.py` through `c4.py`, `f0.py` - Bank-specific instruction definitions
-
-**args/** - Command line flags organized by category
-- `arguments.py` - Main parser; flag groups: settings, objectives, characters, scaling, items, graphics, etc.
-- Each file (e.g., `characters.py`, `items.py`) defines `parse()`, `process()`, and `flags()` functions
-
-**constants/** - Game constant definitions (items, spells, espers, commands, etc.)
+**instruction/asm.py** - 65816 assembly instructions
+**instruction/field/** - Field event scripting commands
 
 ### Writing ROM Modifications
 
 ```python
-from memory.space import Bank, Reserve, Allocate, Write
+from memory.space import Bank, Reserve, Allocate
 import instruction.asm as asm
 import instruction.field as field
 
-# Reserve specific address range
+# Reserve specific address
 space = Reserve(0x0a1234, 0x0a1240, "description")
 space.write(asm.NOP(), asm.RTS())
 
-# Allocate from bank's free space
+# Allocate from bank
 space = Allocate(Bank.C2, 50, "description")
 space.write(
     asm.LDA(0x42, asm.IMM8),
     asm.STA(0x7e0000, asm.LNG),
 )
 
-# Field event scripting
+# Field event commands
 space.write(
-    field.Dialog(dialog_id),
-    field.AddItem(item_id),
+    field.LoadMap(map_id, x, y, direction),
     field.Return(),
 )
 ```
 
-### Event System Pattern
+## Important Notes
 
-Event classes in `event/` follow this structure:
-```python
-class LocationName(Event):
-    def name(self):
-        return "Location Name"
-
-    def character_gate(self):
-        return None  # or character ID for gated locations
-
-    def init_rewards(self):
-        self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER)
-
-    def mod(self):
-        # Modify event scripts, use self.reward.id and self.reward.type
-```
-
-## Important Implementation Notes
-
-- SNES addresses use `START_ADDRESS_SNES = 0xc00000` offset; `space.start_address_snes` gives SNES address
+- SNES addresses use `START_ADDRESS_SNES = 0xc00000` offset
 - ROM uses little-endian byte order
-- Event bits control game state; defined in `data/event_bit.py`
-- Door/exit randomization modifies `data/map_exit_extra.py` connections
-- Label system in Space allows forward references in assembly code
+- Door IDs < 2000 are two-way; 2000-2999 are one-way exits (traps); 3000+ are one-way entrances (pits)
+- The walk algorithm uses backtracking DFS with validity checks to ensure fully connected networks
+- Ruination mode (`-ruin`) is a separate system in `event/ruination.py` that overrides standard door randomization
