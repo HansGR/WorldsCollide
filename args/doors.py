@@ -101,6 +101,14 @@ def process(args):
         args.map_shuffle_separate = False
         args.map_shuffle_crossworld = False
 
+    # Door randomization (except ruination) is incompatible with character gating
+    # Force open world when door randomization is enabled
+    if args.door_randomize and not args.ruination_mode:
+        if args.character_gating:
+            print("Note: Door randomization is incompatible with character gating (-cg). Forcing open world mode.")
+        args.character_gating = False
+        args.open_world = True
+
     if args.map_shuffle_separate or args.map_shuffle_crossworld:
         args.map_shuffle = True
     else:
