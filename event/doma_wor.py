@@ -647,8 +647,10 @@ class DomaWOR(Event):
         self.maps.add_event(0x07e, new_event)
 
         # Skip Wrexsoul battle, if already fought
+        boss_event = self.maps.get_event(0x07E, 25, 11)
+        original_event_addr = boss_event.event_address + EVENT_CODE_START
         src = [
-            field.BranchIfEventBitClear(event_bit.FINISHED_DOMA_WOR, 0xb97D6), # branch to Wrexsoul battle
+            field.BranchIfEventBitClear(event_bit.FINISHED_DOMA_WOR, original_event_addr), # branch to Wrexsoul battle
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.SetSpeed(field_entity.Speed.SLOW),
                             field_entity.Move(direction.UP, 6),
@@ -665,7 +667,7 @@ class DomaWOR(Event):
             field.Branch(0xb99D5),  # branch back to fade screen, load map etc.
         ]
         space = Write(Bank.CB, src, "Skip Wrexsoul fight if already done")
+
         # Update event tile
-        boss_event = self.maps.get_event(0x07E, 25, 11)
         boss_event.event_address = space.start_address - EVENT_CODE_START
 
