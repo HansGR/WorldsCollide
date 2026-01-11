@@ -176,6 +176,7 @@ space.write(
 - Door IDs < 2000 are two-way; 2000-2999 are one-way exits (traps); 3000+ are one-way entrances (pits)
 - The walk algorithm uses backtracking DFS with validity checks to ensure fully connected networks
 - Ruination mode (`-ruin`) is a separate system in `event/ruination.py` that overrides standard door randomization
+- **FinishCheck timing for door rando**: When modifying events that give rewards (espers, items, characters) and then transition to another map, `field.FinishCheck()` must be called **before** any screen transitions (mosaic effects, map loads) that could be redirected by door randomization. Otherwise the check may not trigger properly if the player is warped to a different location.
 
 ## Resources
 - The event script begins at offset 0xa0000.  A full decompile of the event script is @https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link
