@@ -625,7 +625,7 @@ class DomaWOR(Event):
         # Place an event tile on [0x07e, 25, 17] that deletes Wrexsoul & Cyan NPCs if boss is defeated
         boss_npc_id = 0x18
         #cyan_npc_id = 0x17
-        magicite_npc_id = 0x25  # 0x24 is a blank npc?
+        magicite_npc_id = 0x1F  # 0x1E is a blank npc?
         src = [
             field.ReturnIfEventBitClear(event_bit.FINISHED_DOMA_WOR),
             field.ReturnIfEventBitSet(0x1b5),
