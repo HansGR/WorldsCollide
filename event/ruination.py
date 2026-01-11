@@ -633,9 +633,21 @@ class RuinationBranch(Network):
                     print('All available connections:', available_conns)
                     print('\tselected: ', this_conn, 'in room', conn_room.id)
             else:
-                # No entrances are available.  Complain and quit.
-                this_exit = None
-                this_conn = None
+                # No standard connections available - try fallback to check rooms
+                if self.verbose:
+                    print('\tNo standard connections available. Trying fallback...')
+
+                check_conns = self.get_all_check_connections(element_type=this_type)
+                if len(check_conns) > 0:
+                    this_conn = random.choice(list(check_conns))
+                    if self.verbose:
+                        print('\tFallback: using check room connection:', this_conn)
+                else:
+                    # No entrances are available.  Return failure.
+                    if self.verbose:
+                        print('\tNo fallback connections found either.')
+                    this_exit = None
+                    this_conn = None
 
         return this_exit, this_conn
 
@@ -813,20 +825,19 @@ class RuinationBranch(Network):
 
 class ruination_map():
     # Class to organize data for mapping out ruination mode branches
-    RewardsAvailable = [0, 0]   # [# possible characters, # possible espers]
-    PARTY = []
-    Requested = [3, 0]
-    branches = [RuinationBranch([]), RuinationBranch([]), RuinationBranch([])]
-    branch_checks = [ [], [], []]   # checks available on each branch, stored locally
-    AreasUsed = dict()   # use a dict to track 'AreaName': branch_id
-    keychain = set()   # global keychain
-
     verbose = True
 
     def __init__(self, args, starting_party):
+        # Instance attributes - each instance gets fresh state
+        self.RewardsAvailable = [0, 0]   # [# possible characters, # possible espers]
+        self.PARTY = list(starting_party)  # use character names in all caps
+        self.Requested = [3, 0]
+        self.branches = [None, None, None]  # Populated in branch creation loop below
+        self.branch_checks = [[], [], []]   # checks available on each branch, stored locally
+        self.AreasUsed = dict()   # use a dict to track 'AreaName': branch_id
+        self.keychain = set(starting_party)   # global keychain, initialized with party
+
         self.args = args
-        self.PARTY.extend(starting_party)  # use character names in all caps
-        self.keychain.update(self.PARTY)  # add party to the keychain
 
         # Interpret unlock requirements as requested # characters & espers in the map
         for o in args.objectives:
@@ -991,6 +1002,8 @@ class ruination_map():
         # Build out branches, always starting with the least connected
         self.RewardsObtained = [0, 0]
         self.LockedRewards = dict()
+        stuck_branches = set()  # Track branches that can't progress
+        max_retries_per_branch = 3  # Retry before declaring stuck
 
         # Edit forced connections for ruination
         #for fc in ruination_extra_force:
@@ -1006,7 +1019,7 @@ class ruination_map():
         # In such a case, may need to throw in an optional hub room to get started... or just start on a different branch & assume it'll get sorted.
 
         while (self.RewardsObtained[0] < self.Requested[0] or self.RewardsObtained[1] < self.Requested[1]):
-            # Pick a branch with an active reward
+            # Pick a branch with an active reward, excluding stuck branches
             #branch_in_hub = ['ruin_hub_' in str(b.active) for b in self.branches]
             #if branch_in_hub.count(False) > 0:
             #    # One of the branches is not in the hub. Keep working on that one.
@@ -1014,25 +1027,35 @@ class ruination_map():
             # Pick a branch that is not all dead ends.  Requires at least one true hub room
             branch_is_viable = [b.has_a_hub() for b in self.branches]
             if self.verbose:
-                print('Branch viability:', branch_is_viable)
-            viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b]]
+                print('Branch viability:', branch_is_viable, 'Stuck:', stuck_branches)
+            viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in stuck_branches]
             if len(viable_branches) > 0:
                 branch_id = random.choice(viable_branches)
                 branch = self.branches[branch_id]
             else:
-                # Try adding an available hub to a branch with checks to 'loosen it up'
+                # All branches with checks are stuck or non-viable - try to unstick one
                 checkable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0]
-                branch_id = random.choice(checkable_branches)
+                if len(checkable_branches) == 0:
+                    print("ERROR: No branches have remaining checks!")
+                    break
+
+                # Try adding an available hub to a branch with checks to 'loosen it up'
+                branch_id = checkable_branches[0]  # Pick first branch with checks
                 branch = self.branches[branch_id]
-                new_area = CHARACTER_AREAS['EXTRA'].pop()
-                if self.verbose:
-                    print('Adding extra area', new_area, 'to branch', branch_id)
-                for room in RUIN_ROOM_SETS[new_area]:
-                    # Add rooms to the branches
-                    branch.add_room(room)
+                if len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
+                    new_area = CHARACTER_AREAS['EXTRA'].pop()
+                    if self.verbose:
+                        print('Adding extra area', new_area, 'to unstick branch', branch_id)
+                    for room in RUIN_ROOM_SETS[new_area]:
+                        # Add rooms to the branches
+                        branch.add_room(room)
+                    stuck_branches.discard(branch_id)  # Give it another chance
+                else:
+                    print("ERROR: No extra areas available to unstick branches!")
+                    break
 
             # Update lists of dead ends
-            for de in branch.dead_ends:
+            for de in list(branch.dead_ends):  # Use list() to avoid modifying during iteration
                 if de not in branch.net.nodes:
                     branch.dead_ends.remove(de)
                     if self.verbose:
@@ -1062,6 +1085,7 @@ class ruination_map():
 
             found_reward = False
             rewards = []
+            retries = 0
             while not found_reward:
                 # Attach hubs & trapdoors until none are left (create all branches)
 
@@ -1069,7 +1093,16 @@ class ruination_map():
                 this_exit, this_conn = branch.extend_branch_path()
 
                 if this_exit is None:
-                    break   # hopefully another branch is valid & can add some units to this one.
+                    retries += 1
+                    if retries >= max_retries_per_branch:
+                        if self.verbose:
+                            print(f'Branch {branch_id} is stuck after {retries} retries')
+                        stuck_branches.add(branch_id)
+                        break
+                    else:
+                        if self.verbose:
+                            print(f'Branch {branch_id} failed to extend, retry {retries}/{max_retries_per_branch}')
+                        continue  # Try again with different random choices
 
                 # Check if a reward was found
                 rewards = branch.check_for_rewards(this_conn)
@@ -1099,8 +1132,12 @@ class ruination_map():
                     print('Making connection: ', this_exit, '-->', this_conn)
                 branch.connect(this_exit, this_conn)
 
-            ### Process reward & restart loop
-            self.process_rewards(rewards, characters, espers, items, branch_id=branch_id)
+            ### Process reward & restart loop - only if we actually found a reward
+            if found_reward and rewards:
+                self.process_rewards(rewards, characters, espers, items, branch_id=branch_id)
+            elif branch_id in stuck_branches:
+                if self.verbose:
+                    print(f'Skipping reward processing for stuck branch {branch_id}')
 
             # If not in the hub room, return to the hub room?
 
