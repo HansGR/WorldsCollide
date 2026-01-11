@@ -193,17 +193,13 @@ class DomaWOR(Event):
             space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
         else:
             # move the "Set Event Bit COMPLETED_DOMA_WOR (0x0DA)" to before the load map @ CB/99E1
-            # For CHARACTER rewards, also include FinishCheck here (before warp)
-            # For ESPER rewards, FinishCheck is in cyan_esper_mod (right after esper dialog at 0xb99b4)
+            # FinishCheck is handled in cyan_character_mod/cyan_esper_mod at 0xb99b4 (before mosaic)
             src = [
                 Read(0xb99dd, 0xb99de),  # Preserve: ClearEventBit(0x523)
                 field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
+                field.Return(),
             ]
-            # Only add FinishCheck here for character rewards
-            if self.reward1.type == RewardType.CHARACTER:
-                src.append(field.FinishCheck())
-            src.append(field.Return())
-            finish_before_warp = Write(Bank.CB, src, "doma wor finish check before warp")
+            finish_before_warp = Write(Bank.CB, src, "doma wor set event bit before warp")
 
             # Reserve 4 bytes for Call instruction (expanding from ClearEventBit + Pause)
             space = Reserve(0xb99dd, 0xb99e0, "doma wor finish before warp call", field.NOP())
@@ -262,9 +258,16 @@ class DomaWOR(Event):
         )
 
         space = Reserve(0xb99b4, 0xb99d4, "doma wor cyan touches sword", field.NOP())
-        space.write(
-            field.Branch(space.end_address + 1), # skip nops
-        )
+        if self.DOOR_RANDOMIZE:
+            # For door rando, FinishCheck must happen before the mosaic at 0xb99d5
+            space.write(
+                field.FinishCheck(),
+                field.Branch(space.end_address + 1), # skip nops
+            )
+        else:
+            space.write(
+                field.Branch(space.end_address + 1), # skip nops
+            )
 
     def random_cyan_npc_mod(self):
         sprite = self.characters.get_random_esper_item_sprite()
