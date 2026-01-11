@@ -192,19 +192,9 @@ class DomaWOR(Event):
             # In vanilla mode, just NOP out the pause
             space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
         else:
-            # move the "Set Event Bit COMPLETED_DOMA_WOR (0x0DA)" to before the load map @ CB/99E1
-            # FinishCheck is handled in cyan_character_mod/cyan_esper_mod at 0xb99b4 (before mosaic)
-            src = [
-                Read(0xb99dd, 0xb99de),  # Preserve: ClearEventBit(0x523)
-                field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
-                field.Return(),
-            ]
-            finish_before_warp = Write(Bank.CB, src, "doma wor set event bit before warp")
-
-            # Reserve 4 bytes for Call instruction (expanding from ClearEventBit + Pause)
-            space = Reserve(0xb99dd, 0xb99e0, "doma wor finish before warp call", field.NOP())
-            space.write([field.Call(finish_before_warp.start_address)])
-
+            # SetEventBit and FinishCheck are handled in cyan_character_mod/cyan_esper_mod at 0xb99b4
+            # Just preserve the ClearEventBit(0x523) here
+            space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
             space = Reserve(0xb99e7, 0xb99e8, "doma wor moved set event bit for completed", field.NOP())
 
         space = Reserve(0xb99f6, 0xb99fa, "doma wor animate party knocked out", field.NOP())
@@ -259,8 +249,9 @@ class DomaWOR(Event):
 
         space = Reserve(0xb99b4, 0xb99d4, "doma wor cyan touches sword", field.NOP())
         if self.DOOR_RANDOMIZE:
-            # For door rando, FinishCheck must happen before the mosaic at 0xb99d5
+            # For door rando, SetEventBit and FinishCheck must happen before the mosaic at 0xb99d5
             space.write(
+                field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
                 field.FinishCheck(),
                 field.Branch(space.end_address + 1), # skip nops
             )
@@ -298,11 +289,12 @@ class DomaWOR(Event):
 
         space = Reserve(0xb99b4, 0xb99d4, "doma wor cyan touches sword", field.NOP())
         if self.DOOR_RANDOMIZE:
-            # For door rando, FinishCheck must happen right after the esper dialog
+            # For door rando, SetEventBit and FinishCheck must happen right after the esper dialog
             # before the mosaic screen transition
             space.write(
                 field.AddEsper(esper),
                 field.Dialog(self.espers.get_receive_esper_dialog(esper)),
+                field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
                 field.FinishCheck(),
                 field.Branch(space.end_address + 1), # skip nops
             )
