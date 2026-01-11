@@ -175,8 +175,147 @@ space.write(
 - ROM uses little-endian byte order
 - Door IDs < 2000 are two-way; 2000-2999 are one-way exits (traps); 3000+ are one-way entrances (pits)
 - The walk algorithm uses backtracking DFS with validity checks to ensure fully connected networks
-- Ruination mode (`-ruin`) is a separate system in `event/ruination.py` that overrides standard door randomization
+- Ruination mode (`-ruin`) is a separate system in `event/ruination.py` that overrides standard door randomization (see detailed section below)
 - **FinishCheck timing for door rando**: When modifying events that give rewards (espers, items, characters) and then transition to another map, `field.FinishCheck()` must be called **before** any screen transitions (mosaic effects, map loads) that could be redirected by door randomization. Otherwise the check may not trigger properly if the player is warped to a different location. Additionally, the relevant event bit (e.g., `FINISHED_DOMA_WOR`) must be set **before** `FinishCheck()` is called, or objective detection will fail.
+
+## Ruination Mode (`-ruin`)
+
+Ruination Mode is an **in-development** roguelike-style door randomization mode. Unlike standard door randomization which shuffles existing connections, Ruination Mode creates a completely new dungeon topology with three independent branches emanating from a central hub.
+
+### Core Concept
+
+- **Hub**: Narshe School (3 exits, doors 393/394/395)
+- **Three Branches**: Each branch starts from one hub door and terminates at one of three endpoints:
+  - Sealed Gate → Kefka's Tower Left
+  - Esper Mountain → Kefka's Tower Middle
+  - Daryl's Tomb → Kefka's Tower Right
+- **Progression**: Finding characters unlocks new areas, which are distributed across all branches
+- **Goal**: Collect required characters/espers (from objectives) before accessing Kefka's Tower via airship
+
+### Key Files
+
+**event/ruination.py** - Main implementation (~1530 lines)
+- `RuinationBranch(Network)` - Extends Network class for individual branch management
+- `ruination_map` - Orchestrates all three branches, tracks rewards, distributes areas
+- `ruination_start_game_mod()` - Creates the opening cutscene at Esper Gate
+
+**data/rooms.py** - Custom ruination rooms (prefix `'ruin-'`)
+- `ruin_hub` - Narshe School hub with 3 doors + pit returns from KT/Lete River
+- `ruin_terminus_1/2/3` - Terminal rooms connecting to Kefka's Tower
+- Custom rooms for logical separation: `ruin-mtek3`, `ruin-st-exit`, `ruin-nikeah`, `ruin-daryl`, etc.
+
+**event/airship.py** - Modified to only allow Kefka's Tower access
+- `ruination_mod()` - Airship console only offers "Go to Kefka's Tower?" option
+
+### Data Structures
+
+**ROOM_REWARD** (ruination.py:25-106) - Maps room IDs to reward locations:
+```python
+ROOM_REWARD = {
+    'ruin-whelk': {"Whelk": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},
+    313: {"Zozo": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},
+    # ... 37 total reward locations
+}
+```
+
+**CHARACTER_AREAS** (ruination.py:125-142) - Maps characters to unlockable areas:
+```python
+CHARACTER_AREAS = {
+    'TERRA': ['Narshe', 'ReturnersHideout', 'Zozo', 'ZozoTower', 'Mobliz', 'SealedGate'],
+    'LOCKE': ['Kohlingen', 'PhoenixCave', 'SouthFigaroCave', 'Narshe'],
+    # ... one entry per character
+}
+```
+
+**RUIN_ROOM_SETS** (ruination.py:148-193) - Maps area names to room lists:
+```python
+RUIN_ROOM_SETS = {
+    'Doma': [421, 422, 423, ...],  # All rooms in Doma
+    'UmarosCave': [364, 365, 366, ...],
+    # ... 35 named areas
+}
+```
+
+**CHARACTER_LOCKED_REWARDS** (ruination.py:10-18) - Rewards requiring specific characters:
+```python
+CHARACTER_LOCKED_REWARDS = {
+    'TERRA': ['Whelk', 'Zozo'],
+    'LOCKE': ["Narshe WOR"],
+    'STRAGO': ["Burning House"],
+    # ...
+}
+```
+
+**forced_same_branch** (ruination.py:110-120) - Areas that must be on the same branch:
+```python
+forced_same_branch = {
+    'Zozo': {'ZozoTower', 'MtZozo'},
+    'Thamasa': {'VeldtCave', 'EbotsRock'},
+    'Nikeah': {'CrescentMtn'}
+}
+```
+
+### Algorithm Overview
+
+1. **Initialization** (`ruination_map.__init__`):
+   - Parse objectives to determine required characters/espers
+   - Create 3 `RuinationBranch` objects, each with one hub door and one terminus
+   - Distribute initial areas based on starting party characters
+
+2. **Map Generation** (`generate_map_with_characters`):
+   ```
+   while (characters_obtained < required OR espers_obtained < required):
+       select viable branch (has hub rooms AND has uncollected rewards)
+       while not found_reward:
+           extend_branch_path()  # Add one connection
+           check_for_rewards()   # See if we reached a reward
+       process_rewards()         # Assign character/esper, unlock new areas
+   finalize_map() for each branch
+   ```
+
+3. **Branch Extension** (`extend_branch_path`):
+   - Priority: forced connections > downstream traps > downstream doors
+   - Find valid entrances: available hub connections or upstream path with enough exits
+   - Connect exit to entrance, moving "active" room forward
+
+4. **Branch Finalization** (`finalize_map`):
+   - Balance trap/pit counts
+   - Connect downstream nodes back to upstream
+   - Connect terminus to hub
+   - Connect remaining dead-end rooms
+
+### Known Issues / Development Status
+
+1. **Branch mapping issues**: The main reported problem is that branch mapping "doesn't work quite right yet" - likely related to edge cases in `extend_branch_path()` where valid connections can't be found.
+
+2. **Dead-end-only branches** (ruination.py:1004-1006): If a branch gets only dead-end rooms initially (e.g., just 'Gau Father House' and 'Floating Continent'), it has no hub rooms and can get stuck. Current mitigation: add an "extra" hub room from `CHARACTER_AREAS['EXTRA']`.
+
+3. **`extend_branch_path_old()`**: An older, more complex version is kept for reference. Comments indicate "the method keeps failing" due to running out of valid trapdoors.
+
+4. **`ruination_dont_force`** (rooms.py:1017): Only contains door 1079 (Sealed Gate quick exit). More doors may need to be excluded from forced connections in ruination mode.
+
+### Testing Ruination Mode
+
+```sh
+# Basic ruination mode
+python3 wc.py -i ffiii.smc -ruin
+
+# With debug output
+python3 wc.py -i ffiii.smc -ruin -debug
+```
+
+The mode prints extensive debug output when `verbose = True` (default in ruination_map class), showing:
+- Branch viability checks
+- Connection decisions
+- Reward discoveries
+- Area distributions
+
+### Adding Content to Ruination Mode
+
+1. **New reward location**: Add entry to `ROOM_REWARD` with room ID and reward types
+2. **New area**: Add to `RUIN_ROOM_SETS` and associate with character(s) in `CHARACTER_AREAS`
+3. **Character lock**: Add to `CHARACTER_LOCKED_REWARDS` if reward requires specific character
+4. **Same-branch constraint**: Add to `forced_same_branch` if areas must stay together
 
 ## Resources
 - The event script begins at offset 0xa0000.  A full decompile of the event script is @https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link
