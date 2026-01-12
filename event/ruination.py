@@ -140,6 +140,11 @@ CHARACTER_AREAS = {
     'ALL': ['Coliseum', 'Albrook'],
     'EXTRA': ['ImperialCastle']
 }
+
+# All playable characters that can be obtained as rewards
+ALL_CHARACTERS = ['TERRA', 'LOCKE', 'EDGAR', 'SABIN', 'CELES', 'CYAN', 'SHADOW',
+                  'GAU', 'SETZER', 'STRAGO', 'RELM', 'MOG', 'GOGO', 'UMARO']
+
 AREA_TYPES = {
     'TOWNS': ['Kohlingen', 'Jidoor', 'Maranda', 'Tzen', 'Albrook', 'Thamasa', 'Nikeah', 'Vector', 'SouthFigaro'],  # 'Mobliz', 'Narshe', # WOB only
 }
@@ -909,10 +914,19 @@ class ruination_map():
         if self.verbose:
             print('Requested: ', self.Requested[0], 'characters, ', self.Requested[1], 'espers')
 
-        # Assemble initial areas to use & distribute among starting branches
+        # PRE-PLANNING PHASE: Determine which characters will be obtained and reserve areas
+        self.planned_characters, self.reserve_characters, self.dead_checks_allowed = \
+            self.pre_plan_character_acquisition()
+
+        if self.verbose:
+            print('Pre-plan: Will obtain characters:', self.planned_characters)
+            print('Pre-plan: Reserve characters (for extra areas):', self.reserve_characters)
+            print('Pre-plan: Dead checks allowed:', self.dead_checks_allowed)
+
+        # Assemble initial areas from starting party + planned characters
         initial_areas = set()
         for character in self.PARTY:
-            initial_areas.update(CHARACTER_AREAS[character])
+            initial_areas.update(CHARACTER_AREAS.get(character, []))
         if self.verbose:
             print('Areas used: ', initial_areas)
 
@@ -948,6 +962,128 @@ class ruination_map():
                 branch.apply_key(k)
 
         #print(branch.original_room_ids)
+
+    def pre_plan_character_acquisition(self):
+        """Pre-plan which characters will be obtained to ensure sufficient areas.
+
+        This method:
+        1. Identifies starting party (already in self.PARTY)
+        2. Randomly chooses additional characters up to the requested number
+        3. Checks that there are enough reward slots for required espers
+        4. Adds more characters if needed to get enough esper slots
+        5. Returns: (planned_characters, reserve_characters, dead_checks_allowed)
+        """
+        # Characters that can be obtained (not in starting party)
+        obtainable = [c for c in ALL_CHARACTERS if c not in self.PARTY]
+        random.shuffle(obtainable)
+
+        # How many more characters do we need beyond starting party?
+        characters_needed = max(0, self.Requested[0] - len(self.PARTY))
+
+        # Pick random characters to obtain
+        planned_characters = obtainable[:characters_needed]
+        remaining_characters = obtainable[characters_needed:]
+
+        # Calculate areas that will be used
+        planned_areas = set()
+        for char in self.PARTY:
+            planned_areas.update(CHARACTER_AREAS.get(char, []))
+        for char in planned_characters:
+            planned_areas.update(CHARACTER_AREAS.get(char, []))
+        # Always include 'ALL' areas
+        planned_areas.update(CHARACTER_AREAS.get('ALL', []))
+
+        # Count reward slots in planned areas
+        total_character_slots = 0
+        total_esper_slots = 0
+        total_checks = 0
+
+        for room_id, rewards in ROOM_REWARD.items():
+            # Check if this room is in any planned area
+            room_in_planned = False
+            for area_name in planned_areas:
+                if area_name in RUIN_ROOM_SETS and room_id in RUIN_ROOM_SETS[area_name]:
+                    room_in_planned = True
+                    break
+            # Also check if room_id itself is a planned area marker (like 'ruin-whelk')
+            if not room_in_planned and isinstance(room_id, str):
+                for area_name in planned_areas:
+                    if area_name in RUIN_ROOM_SETS:
+                        for r in RUIN_ROOM_SETS[area_name]:
+                            if str(r) == room_id or room_id in str(r):
+                                room_in_planned = True
+                                break
+
+            if room_in_planned:
+                for reward_name, reward_data in rewards.items():
+                    total_checks += 1
+                    if reward_data.possible_types & RewardType.CHARACTER:
+                        total_character_slots += 1
+                    if reward_data.possible_types & RewardType.ESPER:
+                        total_esper_slots += 1
+
+        if self.verbose:
+            print(f'Pre-plan: Planned areas have {total_checks} checks, '
+                  f'{total_character_slots} character slots, {total_esper_slots} esper slots')
+
+        # Check if we have enough esper slots
+        while total_esper_slots < self.Requested[1] and len(remaining_characters) > 0:
+            # Add another character to get more areas/esper slots
+            new_char = remaining_characters.pop(0)
+            planned_characters.append(new_char)
+            new_areas = CHARACTER_AREAS.get(new_char, [])
+
+            if self.verbose:
+                print(f'Pre-plan: Adding {new_char} to get more esper slots (areas: {new_areas})')
+
+            # Count new slots from this character's areas
+            for area_name in new_areas:
+                if area_name not in planned_areas and area_name in RUIN_ROOM_SETS:
+                    planned_areas.add(area_name)
+                    for room_id in RUIN_ROOM_SETS[area_name]:
+                        if room_id in ROOM_REWARD:
+                            for reward_name, reward_data in ROOM_REWARD[room_id].items():
+                                total_checks += 1
+                                if reward_data.possible_types & RewardType.CHARACTER:
+                                    total_character_slots += 1
+                                if reward_data.possible_types & RewardType.ESPER:
+                                    total_esper_slots += 1
+
+        # Calculate dead checks allowed
+        # Dead checks = total checks - characters needed - espers needed
+        dead_checks_allowed = total_checks - characters_needed - self.Requested[1]
+
+        # Reserve characters are those not planned to be obtained
+        reserve_characters = remaining_characters
+
+        return planned_characters, reserve_characters, max(0, dead_checks_allowed)
+
+    def get_reserve_area_rooms(self):
+        """Get rooms from reserve character areas for use when branches get stuck.
+
+        Returns a list of (area_name, room_list) tuples, prioritizing areas with
+        more rooms and hub potential (multiple doors/traps).
+        """
+        reserve_areas = []
+        for char in self.reserve_characters:
+            for area_name in CHARACTER_AREAS.get(char, []):
+                if area_name not in self.AreasUsed and area_name in RUIN_ROOM_SETS:
+                    rooms = RUIN_ROOM_SETS[area_name]
+                    # Count potential hub rooms (rooms with 2+ doors/traps)
+                    hub_potential = 0
+                    for room_id in rooms:
+                        if room_id in room_data:
+                            data = room_data[room_id]
+                            doors = len(data[0]) if len(data) > 0 else 0
+                            traps = len(data[1]) if len(data) > 1 else 0
+                            if doors + traps >= 2:
+                                hub_potential += 1
+                    reserve_areas.append((area_name, rooms, hub_potential, len(rooms)))
+
+        # Sort by hub potential (descending), then by room count (descending)
+        reserve_areas.sort(key=lambda x: (x[2], x[3]), reverse=True)
+
+        return [(a[0], a[1]) for a in reserve_areas]
 
     def distribute_areas(self, areas, method='random'):
         # Distribute new areas among the branches
@@ -1097,19 +1233,52 @@ class ruination_map():
                     print("ERROR: No branches have remaining checks!")
                     break
 
-                # Try adding an available hub to a branch with checks to 'loosen it up'
+                # Try adding rooms from reserve character areas to 'loosen up' the branch
                 branch_id = checkable_branches[0]  # Pick first branch with checks
                 branch = self.branches[branch_id]
-                if len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
+
+                # Get reserve areas sorted by hub potential
+                reserve_areas = self.get_reserve_area_rooms()
+
+                if len(reserve_areas) > 0:
+                    # Use the best reserve area (most hub potential)
+                    new_area, new_rooms = reserve_areas[0]
+                    if self.verbose:
+                        print(f'Adding reserve area {new_area} ({len(new_rooms)} rooms) to unstick branch {branch_id}')
+
+                    # Mark area as used
+                    self.AreasUsed[new_area] = branch_id
+
+                    # Remove from reserve characters' areas
+                    for char in list(self.reserve_characters):
+                        if new_area in CHARACTER_AREAS.get(char, []):
+                            # Remove this area from consideration
+                            break
+
+                    # Add rooms to the branch
+                    for room in new_rooms:
+                        branch.add_room(room)
+
+                    # Check if this area has any reward rooms
+                    for room in new_rooms:
+                        if room in ROOM_REWARD:
+                            for reward_id in ROOM_REWARD[room].keys():
+                                if reward_id not in self.branch_checks[branch_id]:
+                                    self.branch_checks[branch_id].append(reward_id)
+                                    if self.verbose:
+                                        print(f'\tAdded new check: {reward_id}')
+
+                    stuck_branches.discard(branch_id)  # Give it another chance
+                elif len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
+                    # Fallback to EXTRA areas if no reserve areas left
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
                     if self.verbose:
                         print('Adding extra area', new_area, 'to unstick branch', branch_id)
                     for room in RUIN_ROOM_SETS[new_area]:
-                        # Add rooms to the branches
                         branch.add_room(room)
-                    stuck_branches.discard(branch_id)  # Give it another chance
+                    stuck_branches.discard(branch_id)
                 else:
-                    print("ERROR: No extra areas available to unstick branches!")
+                    print("ERROR: No reserve areas available to unstick branches!")
                     break
 
             # Update lists of dead ends
