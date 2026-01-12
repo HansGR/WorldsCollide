@@ -22,6 +22,7 @@ As written, it will fail because it doesn't take into account the slots that wer
   - Healing Spring in Phantom Forest:  Randomize outcome from a list (incl. bad outcomes)
   - Free beds: heal only HP.
       - Sabin's house, Mobliz WoR relic shop, Narshe Weapon shop, Duncan's house, Gau's Dad's House, ...
+      - Include a 3/8 chance of being attacked in the night: forced back attack, selected boss or difficult mob, attacked before healing.
   - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it! 
 - Increase all inn costs by a multiplier (3x?)
 
