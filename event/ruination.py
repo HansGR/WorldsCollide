@@ -288,6 +288,47 @@ class RuinationBranch(Network):
                 conns.update(room.pits)
         return conns
 
+    def get_all_unconnected_entrances(self, element_type, currently_used):
+        """Get all available entrances from rooms not currently in the connected path.
+
+        This is more permissive than get_available_hub_connections - it includes
+        dead-end rooms and doesn't filter based on room topology.
+        """
+        entrances = set()
+        for room_id in self.net.nodes:
+            if room_id in currently_used:
+                continue
+            room = self.rooms.get_room(room_id)
+            if element_type == 0:
+                # For doors, add all doors from unconnected rooms
+                entrances.update([d for d in room.doors if d not in self.protected])
+            elif element_type == 1:
+                # For pits, add all pits from unconnected rooms
+                entrances.update([p for p in room.pits if p not in self.protected])
+        return entrances
+
+    def count_available_elements(self, currently_used):
+        """Count available exits and entrances not in the current path."""
+        available_traps = 0
+        available_doors_out = 0
+        available_pits = 0
+        available_doors_in = 0
+
+        for room_id in self.net.nodes:
+            if room_id in currently_used:
+                continue
+            room = self.rooms.get_room(room_id)
+            available_traps += len([t for t in room.traps if t not in self.protected])
+            available_pits += len([p for p in room.pits if p not in self.protected])
+            available_doors_out += len([d for d in room.doors if d not in self.protected])
+            available_doors_in += len([d for d in room.doors if d not in self.protected])
+
+        return {
+            'traps': available_traps,
+            'pits': available_pits,
+            'doors': available_doors_out  # doors can be both in and out
+        }
+
     def finalize_map(self):
         print('Closing branch...')
 
@@ -522,134 +563,151 @@ class RuinationBranch(Network):
             print('... closing branch complete!')
 
     def extend_branch_path(self):
-        # We need to simplify the logic.  The method keeps failing and we need a more deterministic way of mapping.
-        # "More deterministic" means "simplest".  (A lot of the issues seem to be due to running out of valid
-        # trapdoors, which I don't entirely understand how that happens, but it's easier to diagnose if things
-        # are simpler.)
+        """Extend the branch by connecting an exit to an entrance.
+
+        Improved algorithm:
+        1. First check what exits AND entrances are available
+        2. Choose exit type based on available entrances (don't blindly prefer traps)
+        3. If primary type fails, try alternate type
+        4. Expand search to all unconnected rooms, not just hubs
+        5. Multiple fallback strategies before giving up
+        """
         # (0) Get the current active room & look at the state of the branch
         active_room = self.rooms.get_room(self.active)
         upstream = self.get_upstream_nodes(self.active)
         downstream = self.get_downstream_nodes(self.active)
+        currently_used = [self.active] + list(downstream) + list(upstream)
+
         if self.verbose:
             print('\tActive room: ', self.active, '.\n\tUpstream nodes: ', upstream,
                   '\n\tDownstream nodes: ', downstream)
-        hub_is_upstream = len([n for n in upstream if 'ruin_hub_' in str(n)]) > 0
-        if hub_is_upstream:
-            print('\tHub is upstream!')
 
-        all_entrances = list(active_room.doors) + list(active_room.pits)
-        for node in upstream:
-            room = self.rooms.get_room(node)
-            all_entrances += list(room.doors) + list(room.pits)
-        if self.verbose:
-            print('\n\tAll entrances: ', all_entrances)
-
+        # Collect all available exits from current path
         all_exits = list(active_room.doors) + list(active_room.traps)
         for node in downstream:
             room = self.rooms.get_room(node)
             all_exits += list(room.doors) + list(room.traps)
 
-        # (1) Look for forced exits.  Pick one of them if they exist.
+        # (1) Look for forced exits first
         forced_exits = [e for e in all_exits if e in forced_connections.keys()]
         if len(forced_exits) > 0:
             this_exit = forced_exits.pop()
             this_conn = forced_connections[this_exit][0]
             if self.verbose:
                 print('Found forced exit!', this_exit, '-->', this_conn)
+            return this_exit, this_conn
+
+        # (2) Collect available exits from most downstream nodes
+        if len(downstream) == 0:
+            available_exits = [list(active_room.doors), list(active_room.traps)]
         else:
-            # (2) If not, pick exits only from the most downstream node.  They will need to get connected eventually,
-            # so we might as well connect one now.
-            if len(downstream) == 0:
-                available_exits = [list(active_room.doors), list(active_room.traps)]
-            else:
-                downstream_paths = self.get_downstream_paths(self.active)
-                path_lengths = [len(p) for p in downstream_paths]
-                longest_paths = [p for p in downstream_paths if len(p) == max(path_lengths)]
-                most_downstream_nodes = list(set([p[-1] for p in longest_paths]))
-                available_exits = [[], []]
-                for node in most_downstream_nodes:
-                    room = self.rooms.get_room(node)
-                    available_exits[0] += list(room.doors)
-                    available_exits[1] += list(room.traps)
+            downstream_paths = self.get_downstream_paths(self.active)
+            path_lengths = [len(p) for p in downstream_paths]
+            longest_paths = [p for p in downstream_paths if len(p) == max(path_lengths)]
+            most_downstream_nodes = list(set([p[-1] for p in longest_paths]))
+            available_exits = [[], []]
+            for node in most_downstream_nodes:
+                room = self.rooms.get_room(node)
+                available_exits[0] += list(room.doors)
+                available_exits[1] += list(room.traps)
 
-            # (2a) Always choose a trapdoor if available.  Choose a door if not.
-            if len(available_exits[1]) > 0:
-                this_exit = random.choice(available_exits[1])
-                this_type = 1
-            else:
-                this_exit = random.choice(available_exits[0])
-                this_type = 0
+        # (3) Count available entrances to decide exit type intelligently
+        available_pits = self.get_all_unconnected_entrances(element_type=1, currently_used=currently_used)
+        available_doors_in = self.get_all_unconnected_entrances(element_type=0, currently_used=currently_used)
 
-            # (3) For the chosen exit, construct a list of viable entrances. Include new rooms and use the "trace
-            # upstream path" method satisfying the rule for upstream trapdoors and doors.
+        if self.verbose:
+            print(f'\tAvailable exits: {len(available_exits[0])} doors, {len(available_exits[1])} traps')
+            print(f'\tAvailable entrances: {len(available_doors_in)} doors, {len(available_pits)} pits')
+
+        # (4) Choose exit type based on what entrances are available
+        # Only prefer traps if there are pits available to receive them
+        have_traps = len(available_exits[1]) > 0
+        have_doors = len(available_exits[0]) > 0
+        have_pits = len(available_pits) > 0
+        have_doors_in = len(available_doors_in) > 0
+
+        # Determine exit type order: try the type that has matching entrances first
+        if have_traps and have_pits:
+            exit_type_order = [1, 0]  # Try trap first, then door
+        elif have_doors and have_doors_in:
+            exit_type_order = [0, 1]  # Try door first, then trap
+        elif have_traps:
+            exit_type_order = [1, 0]
+        elif have_doors:
+            exit_type_order = [0, 1]
+        else:
+            # No exits available
+            if self.verbose:
+                print('\tNo exits available!')
+            return None, None
+
+        # (5) Try each exit type in order
+        for this_type in exit_type_order:
+            if len(available_exits[this_type]) == 0:
+                continue
+
+            this_exit = random.choice(available_exits[this_type])
             this_room = self.rooms.get_room_from_element(this_exit)
             this_room_id = this_room.id
+
             if self.verbose:
-                print('\tSelected exit: ', this_exit, 'in room', this_room_id)
+                type_name = 'trap' if this_type == 1 else 'door'
+                print(f'\tTrying {type_name} exit: {this_exit} in room {this_room_id}')
 
-            uppaths = self.get_upstream_paths(this_room_id)
+            # (6) Collect all possible entrances for this exit type
             available_conns = set()
-            currently_used = [self.active] + list(downstream) + list(upstream)
-            if this_type == 0:
-                available_conns.update(self.get_available_hub_connections(element_type=0, excluded=currently_used,
-                                                                    dito_ok=True))
-            elif this_type == 1:
-                available_conns.update(self.get_available_hub_connections(element_type=1, excluded=currently_used))
 
+            # Strategy A: Hub connections (non-dead-end unconnected rooms)
+            if this_type == 0:
+                available_conns.update(self.get_available_hub_connections(
+                    element_type=0, excluded=currently_used, dito_ok=True))
+            else:
+                available_conns.update(self.get_available_hub_connections(
+                    element_type=1, excluded=currently_used))
+
+            # Strategy B: Upstream path connections (with connectivity rules)
+            uppaths = self.get_upstream_paths(this_room_id)
             for path in uppaths:
-                if self.verbose:
-                    print('\tchecking upstream path:', path)
                 path_door_count = 0
                 path_trap_count = 0
-                tracker = False
                 for node_id in path:
                     node = self.rooms.get_room(node_id)
                     path_door_count += len(node.doors)
                     path_trap_count += len(node.traps)
-                    if this_type == 1:
-                        if (path_door_count + path_trap_count) > 1:
-                            # We've met the condition for trapdoor connections.  Add pits.
-                            available_conns.update(node.pits)
-                            if self.verbose and tracker is False:
-                                print('\t\tTrapdoor condition met at', node_id)
-                                tracker = True
-                            if self.verbose:
-                                print('\t\tAdding', node_id, node.pits)
-                    elif this_type == 0:
-                        if (path_door_count + path_trap_count) > 2:
-                            # We've met the condition for door connections.  Add doors.
-                            available_conns.update(node.doors)
-                            if self.verbose and tracker is False:
-                                print('\t\tDoor condition met at', node_id)
-                                tracker = True
-                            if self.verbose:
-                                print('\t\tAdding', node_id, node.doors)
+                    if this_type == 1 and (path_door_count + path_trap_count) > 1:
+                        available_conns.update(node.pits)
+                    elif this_type == 0 and (path_door_count + path_trap_count) > 2:
+                        available_conns.update(node.doors)
 
+            # Strategy C: All unconnected rooms (more permissive - includes dead ends)
+            if len(available_conns) == 0:
+                if self.verbose:
+                    print('\t\tExpanding search to all unconnected rooms...')
+                available_conns.update(self.get_all_unconnected_entrances(
+                    element_type=this_type, currently_used=currently_used))
+
+            # Strategy D: Check rooms specifically
+            if len(available_conns) == 0:
+                if self.verbose:
+                    print('\t\tTrying check rooms...')
+                available_conns.update(self.get_all_check_connections(element_type=this_type))
+
+            # If we found connections, use them
             if len(available_conns) > 0:
-                # select a connection from those available
                 this_conn = random.choice(list(available_conns))
-                conn_room = self.rooms.get_room_from_element(this_conn)
                 if self.verbose:
-                    print('All available connections:', available_conns)
-                    print('\tselected: ', this_conn, 'in room', conn_room.id)
+                    conn_room = self.rooms.get_room_from_element(this_conn)
+                    print(f'\tFound {len(available_conns)} connections, selected: {this_conn} in room {conn_room.id}')
+                return this_exit, this_conn
             else:
-                # No standard connections available - try fallback to check rooms
                 if self.verbose:
-                    print('\tNo standard connections available. Trying fallback...')
+                    type_name = 'trap' if this_type == 1 else 'door'
+                    print(f'\t\tNo entrances found for {type_name}, trying alternate type...')
 
-                check_conns = self.get_all_check_connections(element_type=this_type)
-                if len(check_conns) > 0:
-                    this_conn = random.choice(list(check_conns))
-                    if self.verbose:
-                        print('\tFallback: using check room connection:', this_conn)
-                else:
-                    # No entrances are available.  Return failure.
-                    if self.verbose:
-                        print('\tNo fallback connections found either.')
-                    this_exit = None
-                    this_conn = None
-
-        return this_exit, this_conn
+        # (7) All strategies exhausted
+        if self.verbose:
+            print('\tAll connection strategies exhausted. Branch extension failed.')
+        return None, None
 
 
     def extend_branch_path_old(self):
