@@ -1,6 +1,6 @@
-## Todo list for Claude (-ruin mode updates)
+# Todo list for Claude (-ruin mode updates)
 
-# Updates to branch mapping code
+## Updates to branch mapping code
 1. Revise check if there are enough esper slots (line 1030):
 As written, it will fail because it doesn't take into account the slots that were used for characters. For example: if requirements are 6 char and 9 espers, and the starting party is MOG, GOGO, UMARO, with added members RELM, GAU, SETZER, then we will have six characters, total_checks = 10, total_character_slots = 10, total_esper_slots = 10, and the check would pass. However, we actually used three of those checks to recruit three characters, so the actual remaining esper slots is just 7, and the check should fail.
 
@@ -12,7 +12,7 @@ As written, it will fail because it doesn't take into account the slots that wer
 ... correctly checks if 'ruin-whelk' (a ROOM_REWARD key) is in RUIN_ROOM_SETS['Narshe'] (which it is).  The second check (lines 1008-1015) is probably doing nothing, and should be removed.
 
 
-# Updates to overall behavior of -ruin
+## Updates to overall behavior of -ruin
 1. When Gau is a character, the item "dried meat" must be available for purchase in at least one shop.  Something similar is done in the original randomizer via the flag -sdm N (--shops-dried-meat), which enforces N shops with dried meat available.  For -ruin, we must ensure that this flag specifically makes this number of dried meat available in accessible item shops, as not all shops will be accessible in ruination mode.  Accessible shops are in WoR towns with item shops (Kohlingen, Nikeah, Thamasa, South Figaro, Albrook, Tzen, Jidoor... Maranda?), plus WoR Figaro Castle, Returners Hideout, Phantom Train shops.  Possibly also the merchant at Gau's Dad's House (if the WoB version is used).
 
 2. Ruination mode needs to get rid of the abundance of the standard game.
@@ -32,7 +32,7 @@ As written, it will fail because it doesn't take into account the slots that wer
 5. [low priority] Add a custom splash graphic for RUINATION - Final Fantasy 6 Roguelike
 
    
-# Updates to specific checks to work with -ruin
+## Updates to specific checks to work with -ruin
 1. Checks in the WoB that must be "moved" to WoR:
 - Lone Wolf (must be moved to WoR Narshe treasure hut; animation moved to WoR Narshe; event must be added to Narshe Peak with Tritoch & deconflicted from Tritoch event)
 - Moogle Defense (WoB room must be used, possibly with palatte swap; event must be initialized in the room, rather than at Arvis' house)
