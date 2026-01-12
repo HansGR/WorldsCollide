@@ -15,7 +15,7 @@ As written, it will fail because it doesn't take into account the slots that wer
 ## Updates to overall behavior of -ruin
 1. When Gau is a character, the item "dried meat" must be available for purchase in at least one shop.  Something similar is done in the original randomizer via the flag -sdm N (--shops-dried-meat), which enforces N shops with dried meat available.  For -ruin, we must ensure that this flag specifically makes this number of dried meat available in accessible item shops, as not all shops will be accessible in ruination mode.  Accessible shops may be in WoR towns with item shops (Kohlingen, Nikeah, Thamasa, South Figaro, Albrook, Tzen, Jidoor... Maranda?), plus WoR Figaro Castle, Returners Hideout, Phantom Train shops, and possibly the merchant at Gau's Dad's House (if the WoB version is used).  However, which shops are actually accessible depends on the branch mapping, which must be taken into account: the accessible shops must be used and NOT be gated by the Veldt check.  Probably this will require some modification of Veldt check to make sure that it is not added as a character check until some item shop has been added, and the list of pre-Veldt item shops must be recorded for forcing dried meat to be available.
 
-2. Ruination mode needs to get rid of the abundance of the standard game.
+2. Ruination mode needs to get rid of the abundance of healing options in the standard game.
 - Force '-gpm 0' (zero GP from all battles) for all -ruin seeds: only starting money + selling equipment.
 - Decide what to do with unlimited healing spots: either make them a limited resource, add a cost, or make them heal HP only (not MP).  Identify all unlimited heals and make a decision for each
   - Bucket in School: 3 uses (implemented)
