@@ -1063,21 +1063,38 @@ class ruination_map():
 
         Returns a list of (area_name, room_list) tuples, prioritizing areas with
         more rooms and hub potential (multiple doors/traps).
+
+        Always includes EXTRA areas (like ImperialCastle) so they can appear in seeds.
         """
         reserve_areas = []
+
+        # Helper to calculate hub potential for an area
+        def calc_hub_potential(rooms):
+            hub_potential = 0
+            for room_id in rooms:
+                if room_id in room_data:
+                    data = room_data[room_id]
+                    doors = len(data[0]) if len(data) > 0 else 0
+                    traps = len(data[1]) if len(data) > 1 else 0
+                    if doors + traps >= 2:
+                        hub_potential += 1
+            return hub_potential
+
+        # Add areas from reserve characters
         for char in self.reserve_characters:
             for area_name in CHARACTER_AREAS.get(char, []):
                 if area_name not in self.AreasUsed and area_name in RUIN_ROOM_SETS:
                     rooms = RUIN_ROOM_SETS[area_name]
-                    # Count potential hub rooms (rooms with 2+ doors/traps)
-                    hub_potential = 0
-                    for room_id in rooms:
-                        if room_id in room_data:
-                            data = room_data[room_id]
-                            doors = len(data[0]) if len(data) > 0 else 0
-                            traps = len(data[1]) if len(data) > 1 else 0
-                            if doors + traps >= 2:
-                                hub_potential += 1
+                    hub_potential = calc_hub_potential(rooms)
+                    reserve_areas.append((area_name, rooms, hub_potential, len(rooms)))
+
+        # Always include EXTRA areas (like ImperialCastle) if not already used
+        for area_name in CHARACTER_AREAS.get('EXTRA', []):
+            if area_name not in self.AreasUsed and area_name in RUIN_ROOM_SETS:
+                # Check if already added from reserve characters
+                if not any(a[0] == area_name for a in reserve_areas):
+                    rooms = RUIN_ROOM_SETS[area_name]
+                    hub_potential = calc_hub_potential(rooms)
                     reserve_areas.append((area_name, rooms, hub_potential, len(rooms)))
 
         # Sort by hub potential (descending), then by room count (descending)
