@@ -244,11 +244,6 @@ class Events():
         # Initialize ruination_map object
         ruin_map = ruination_map(self.args, party)
 
-        # Restrict available characters to only the planned ones (not starting party)
-        # Convert character names to IDs and exclude starting party members
-        planned_char_ids = [self.characters.DEFAULT_NAME.index(name) for name in ruin_map.planned_characters]
-        self.characters.available_characters = [char_id for char_id in planned_char_ids if char_id not in characters_available]
-
         # Build out the map & distribute characters
         self.maps.doors.map = ruin_map.generate_map_with_characters(reward_slots, self.characters, self.espers, self.items)
 
