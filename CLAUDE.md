@@ -194,9 +194,18 @@ Ruination Mode is an **in-development** roguelike-style door randomization mode.
 
 ### Key Files
 
+**event/events.py** - Entry point for ruination mode
+- `ruination_mod()` - Main orchestrator that:
+  1. Initializes `ruination_map` with starting party
+  2. **CRITICAL**: Restricts `characters.available_characters` to only `planned_characters` from pre-planning phase
+  3. Calls `generate_map_with_characters()` to build the dungeon map and assign rewards
+  4. This restriction ensures character selection respects the pre-planned set that accounts for esper slot requirements
+
 **event/ruination.py** - Main implementation (~1530 lines)
 - `RuinationBranch(Network)` - Extends Network class for individual branch management
 - `ruination_map` - Orchestrates all three branches, tracks rewards, distributes areas
+- `pre_plan_character_acquisition()` - Pre-plans which characters will be obtained before map generation
+- `generate_map_with_characters()` - Builds branch map and assigns character/esper/item rewards
 - `ruination_start_game_mod()` - Creates the opening cutscene at Esper Gate
 
 **data/rooms.py** - Custom ruination rooms (prefix `'ruin-'`)
@@ -259,10 +268,19 @@ forced_same_branch = {
 
 1. **Initialization** (`ruination_map.__init__`):
    - Parse objectives to determine required characters/espers
+   - Call `pre_plan_character_acquisition()` to determine which characters will be obtained
    - Create 3 `RuinationBranch` objects, each with one hub door and one terminus
    - Distribute initial areas based on starting party characters
 
-2. **Map Generation** (`generate_map_with_characters`):
+2. **Pre-Planning Phase** (`pre_plan_character_acquisition()`):
+   - Randomly selects characters to meet the objective requirements
+   - Calculates total reward slots in areas unlocked by starting party + planned characters
+   - Ensures sufficient esper slots exist (accounting for character slots that can't hold espers)
+   - Adds more characters if needed to unlock additional areas with esper slots
+   - Returns: `(planned_characters, reserve_characters, dead_checks_allowed)`
+   - **IMPORTANT**: The `planned_characters` list determines which characters can be assigned during map generation. The caller must restrict `characters.available_characters` to this list before calling `generate_map_with_characters()` (see events.py:247-250).
+
+3. **Map Generation** (`generate_map_with_characters`):
    ```
    while (characters_obtained < required OR espers_obtained < required):
        select viable branch (has hub rooms AND has uncollected rewards)
@@ -273,12 +291,12 @@ forced_same_branch = {
    finalize_map() for each branch
    ```
 
-3. **Branch Extension** (`extend_branch_path`):
+4. **Branch Extension** (`extend_branch_path`):
    - Priority: forced connections > downstream traps > downstream doors
    - Find valid entrances: available hub connections or upstream path with enough exits
    - Connect exit to entrance, moving "active" room forward
 
-4. **Branch Finalization** (`finalize_map`):
+5. **Branch Finalization** (`finalize_map`):
    - Balance trap/pit counts
    - Connect downstream nodes back to upstream
    - Connect terminus to hub
