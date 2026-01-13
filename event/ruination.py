@@ -1044,7 +1044,7 @@ class ruination_map():
 
         # Calculate dead checks allowed
         # Dead checks = total checks - characters needed - espers needed
-        dead_checks_allowed = total_checks - characters_needed - self.Requested[1]
+        dead_checks_allowed = total_checks - len(planned_characters) - self.Requested[1]
 
         # Reserve characters are those not planned to be obtained
         reserve_characters = remaining_characters
@@ -1222,7 +1222,7 @@ class ruination_map():
         # 'Gau Father House', 'Floating Continent', both of which are dead ends.
         # In such a case, may need to throw in an optional hub room to get started... or just start on a different branch & assume it'll get sorted.
 
-        while (self.RewardsObtained[0] < self.Requested[0] or self.RewardsObtained[1] < self.Requested[1]):
+        while (self.RewardsObtained[0] < len(self.planned_characters) or self.RewardsObtained[1] < self.Requested[1]):
             # Pick a branch with an active reward, excluding stuck branches
             #branch_in_hub = ['ruin_hub_' in str(b.active) for b in self.branches]
             #if branch_in_hub.count(False) > 0:
