@@ -1,8 +1,14 @@
 # Todo list for Claude (-ruin mode updates)
 
 ## Updates to branch mapping code (event/ruination.py)
-1. Revise check if there are enough esper slots (line 1020):
-As written, it will fail because it doesn't take into account the slots that were used for characters. For example: if requirements are 6 char and 9 espers, and the starting party is MOG, GOGO, UMARO, with added members RELM, GAU, SETZER, then we will have six characters, total_checks = 10, total_character_slots = 10, total_esper_slots = 10, and the check would pass. However, we actually used three of those checks to recruit three characters, so the actual remaining esper slots is just 7, and the check should fail.
+### COMPLETED (2026-01-13)
+1. ✅ **FIXED** - Esper slot check (line 1023): Now accounts for character slots when checking if enough esper slots exist. The check now compares `total_esper_slots < self.Requested[1] + len(planned_characters)`.
+
+2. ✅ **FIXED** - Dead checks calculation (line 1048): Now uses `len(planned_characters)` instead of stale `characters_needed` value, since the esper slot check loop may add more characters.
+
+3. ✅ **FIXED** - Loop termination condition (line 1229): Now compares `RewardsObtained[0]` against `len(self.planned_characters)` instead of `self.Requested[0]`. The latter includes starting party, but rewards only count characters obtained from checks.
+
+4. ✅ **FIXED** - Redundant RewardsAvailable decrement (line 1475): Removed duplicate decrement when unlocking character-locked rewards. The `process_rewards()` call already handles the decrement.
 
 
 
