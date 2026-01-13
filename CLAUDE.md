@@ -375,6 +375,150 @@ characters.available_characters.remove(char_id)  # Use set_unavailable() instead
 
 The `get_random_available()` method handles state management automatically, so reward assignment naturally maintains correct availability state.
 
+### Character Path Tracking in Ruination Mode
+
+Ruination mode tracks character dependencies using `characters.character_paths`, which records the transitive chain of characters required to unlock each character. This is essential for features like dried meat assignment that need to understand gating relationships.
+
+**How to set character paths:**
+
+Always use `slot.event.character_gate()` to get the gating character:
+
+```python
+# CORRECT: Use the event's character_gate() method
+characters.set_character_path(slot.id, slot.event.character_gate())
+```
+
+**DO NOT** try to track character dependencies manually:
+```python
+# WRONG: Don't track areas and try to reconstruct gating
+self.area_unlocker[area] = char_id  # Unnecessary complexity
+unlocker = self._find_area_containing_reward(reward_name)  # Reinventing the wheel
+```
+
+**Why `character_gate()` is correct:**
+- Each event object knows its own gating requirements via `character_gate()`
+- Returns `None` for starting party areas (no gate)
+- Returns character ID for gated areas (e.g., rewards in areas unlocked by finding Terra)
+- `set_character_path()` automatically builds the transitive dependency chain
+- This is the same pattern used in `character_gating_mod()` - the idiomatic approach
+
+**Example dependency chain:**
+```
+Starting party (Terra) → character_gate() returns None
+Find Locke in Narshe → character_gate() returns TERRA
+  → set_character_path(LOCKE, TERRA)
+  → character_paths[LOCKE] = [TERRA]
+
+Find Edgar in Phoenix Cave (unlocked by Locke) → character_gate() returns LOCKE
+  → set_character_path(EDGAR, LOCKE)
+  → character_paths[EDGAR] = [TERRA, LOCKE]  (transitive!)
+```
+
+**Key insight:** The event object is the source of truth for gating. Don't duplicate this information elsewhere.
+
+### Dried Meat Availability for Gau (Ruination Mode)
+
+**The Problem:**
+When Gau is assigned as a character reward, players need dried meat to recruit monsters on the Veldt. However, not all shops are accessible in ruination mode:
+- Only shops in areas included in the branch map are accessible
+- Gau unlocks Nikeah (which has item shops)
+- This could create a circular dependency if Nikeah is the only shop area
+
+**The Solution:**
+Track accessible shops during map generation and filter out Veldt-gated shops for dried meat assignment.
+
+**Implementation (event/ruination.py):**
+
+1. **AREA_SHOPS** constant maps area names to shop IDs:
+```python
+AREA_SHOPS = {
+    'Kohlingen': [67, 68, 69],
+    'Nikeah': [58, 59, 60, 61],
+    'Thamasa': [74, 75, 76, 77],
+    # ... etc for all shop-containing areas
+}
+```
+
+2. **Track accessible shops** in `ruination_map.__init__`:
+```python
+self.accessible_shops = []  # list of shop IDs that are accessible
+```
+
+3. **Populate during area distribution** in `distribute_areas()`:
+```python
+for area in areas:
+    branch_rooms[i].update(RUIN_ROOM_SETS[area])
+    if area in AREA_SHOPS:
+        for shop_id in AREA_SHOPS[area]:
+            if shop_id not in self.accessible_shops:
+                self.accessible_shops.append(shop_id)
+```
+
+4. **Filter Veldt-gated shops** using `get_non_veldt_gated_shops()`:
+```python
+def get_non_veldt_gated_shops(self, characters):
+    # Find character assigned to Veldt reward
+    veldt_char_id = None
+    if 'wor-veldt' in ROOM_REWARD:
+        for reward_name, reward_slot in ROOM_REWARD['wor-veldt'].items():
+            if reward_slot.type == RewardType.CHARACTER:
+                veldt_char_id = reward_slot.id
+                break
+
+    if veldt_char_id is None:
+        return self.accessible_shops[:]  # No Veldt character, all shops valid
+
+    # Find characters gated by Veldt character
+    veldt_gated_chars = set()
+    for char_id in range(len(characters.DEFAULT_NAME)):
+        if veldt_char_id in characters.character_paths[char_id]:
+            veldt_gated_chars.add(char_id)
+
+    # Collect areas unlocked by Veldt-gated characters
+    veldt_gated_areas = set()
+    for char_id in veldt_gated_chars:
+        char_name = characters.DEFAULT_NAME[char_id]
+        if char_name in CHARACTER_AREAS:
+            veldt_gated_areas.update(CHARACTER_AREAS[char_name])
+
+    # Collect shop IDs in Veldt-gated areas
+    veldt_gated_shops = set()
+    for area in veldt_gated_areas:
+        if area in AREA_SHOPS:
+            veldt_gated_shops.update(AREA_SHOPS[area])
+
+    # Return non-Veldt-gated shops
+    return [shop_id for shop_id in self.accessible_shops
+            if shop_id not in veldt_gated_shops]
+```
+
+5. **Assign dried meat** in `events.py` after map generation:
+```python
+# In ruination_mod(), after generate_map_with_characters()
+if self.args.shop_dried_meat > 0:
+    non_veldt_shops = ruin_map.get_non_veldt_gated_shops(self.characters)
+    self.shops.assign_dried_meats_ruination(non_veldt_shops)
+```
+
+6. **Ruination-specific assignment** in `data/shops.py`:
+```python
+def assign_dried_meats_ruination(self, accessible_shop_ids):
+    """Only assign dried meat to shops that are:
+    1. Accessible (in the ruination map)
+    2. NOT gated behind the Veldt reward
+    """
+    accessible_item_shops = [shop for shop in self.all_shops
+                             if shop.id in accessible_shop_ids
+                             and (shop.type == Shop.ITEM or shop.type == Shop.VENDOR)]
+    # ... assign dried meat to target_count shops
+```
+
+**Key Points:**
+- Uses `character_paths` to identify dependency chains (requires proper `set_character_path()` calls)
+- Works with any starting party configuration (even if Gau is in starting party)
+- Ensures dried meat is available before the Veldt is accessible
+- Respects the `-sdm N` flag for number of shops with dried meat
+
 ## Resources
 - The event script begins at offset 0xa0000.  A full decompile of the event script is @https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link
 - Event bits tracking various events in the game are listed in @~/data/event_bit.py
