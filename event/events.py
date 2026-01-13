@@ -245,7 +245,8 @@ class Events():
         ruin_map = ruination_map(self.args, party)
 
         # Build out the map & distribute characters
-        self.maps.doors.map = ruin_map.generate_map_with_characters(reward_slots, self.characters, self.espers, self.items)
+        # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)
+        self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
 
         # Check state of reward_slots
         print('REWARD STATE AFTER RUIN MAPPING:')

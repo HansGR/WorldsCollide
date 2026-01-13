@@ -1202,7 +1202,14 @@ class ruination_map():
         for branch in self.branches:
             branch.apply_key(key)
 
-    def generate_map_with_characters(self, reward_slots, characters, espers, items):
+    def generate_map_with_characters(self, characters, espers, items):
+        """Generate the ruination mode dungeon map and assign character/esper/item rewards.
+
+        Note: reward_slots (from events.py) are updated automatically through shared object references.
+        ROOM_REWARD dictionary is populated with Reward objects from event.rewards in events.py (lines 228-237).
+        When process_rewards() updates these Reward objects (slot.id, slot.type), the changes propagate
+        to reward_slots because they reference the same objects.
+        """
         # Build out branches, always starting with the least connected
         self.RewardsObtained = [0, 0]
         self.LockedRewards = dict()
