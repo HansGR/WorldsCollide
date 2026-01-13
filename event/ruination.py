@@ -917,6 +917,7 @@ class ruination_map():
         self.AreasUsed = dict()   # use a dict to track 'AreaName': branch_id
         self.keychain = set(starting_party)   # global keychain, initialized with party
         self.accessible_shops = []  # list of shop IDs that are accessible (for dried meat assignment)
+        self.area_unlocker = dict()  # tracks which character unlocked each area (for character_paths)
 
         self.args = args
 
@@ -1113,7 +1114,14 @@ class ruination_map():
 
         return [(a[0], a[1]) for a in reserve_areas]
 
-    def distribute_areas(self, areas, method='random'):
+    def distribute_areas(self, areas, method='random', unlocker_char=None):
+        """Distribute areas among branches and optionally track which character unlocked them.
+
+        Args:
+            areas: List of area names to distribute
+            method: Distribution method ('random', 'distribute', 'shortest', 'least_checks')
+            unlocker_char: Character ID that unlocked these areas (None for starting party areas)
+        """
         # Distribute new areas among the branches
         branch_areas = [ set(), set(), set()]
 
@@ -1140,6 +1148,8 @@ class ruination_map():
                     this_index = random.randint(0, 2)
                 branch_areas[this_index].add(area)
                 self.AreasUsed[area] = this_index
+                if unlocker_char is not None:
+                    self.area_unlocker[area] = unlocker_char
         elif method == 'distribute':
             seed = random.randint(0, 2)
             use_index = [(i + seed) % 3 for i in range(len(areas))]
@@ -1150,6 +1160,8 @@ class ruination_map():
                     this_index = use_index.pop()
                 branch_areas[this_index].add(area)
                 self.AreasUsed[area] = this_index
+                if unlocker_char is not None:
+                    self.area_unlocker[area] = unlocker_char
         elif method == 'shortest':
             num_rooms = [len(b.original_room_ids) for b in self.branches]
             random.shuffle(areas)
@@ -1161,6 +1173,8 @@ class ruination_map():
                     this_index = num_rooms.index(min(num_rooms))
                 branch_areas[this_index].add(area)
                 self.AreasUsed[area] = this_index
+                if unlocker_char is not None:
+                    self.area_unlocker[area] = unlocker_char
                 area_room_num = len(RUIN_ROOM_SETS[area])
                 num_rooms[this_index] += area_room_num
         elif method == 'least_checks':
@@ -1171,6 +1185,8 @@ class ruination_map():
                     this_index = shortest_index.index(min(shortest_index))
                 branch_areas[this_index].add(area)
                 self.AreasUsed[area] = this_index
+                if unlocker_char is not None:
+                    self.area_unlocker[area] = unlocker_char
 
 
         if self.verbose:
@@ -1261,12 +1277,11 @@ class ruination_map():
         # Find all characters that depend on the Veldt character
         veldt_gated_chars = set()
         for char_id in range(len(characters.DEFAULT_NAME)):
-            if char_id in characters.character_path:
-                # Check if veldt_char_id is in this character's dependency path
-                if veldt_char_id in characters.character_path[char_id]:
-                    veldt_gated_chars.add(char_id)
-                    if self.verbose:
-                        print(f'  {characters.DEFAULT_NAME[char_id]} is gated by Veldt character')
+            # Check if veldt_char_id is in this character's dependency path
+            if veldt_char_id in characters.character_paths[char_id]:
+                veldt_gated_chars.add(char_id)
+                if self.verbose:
+                    print(f'  {characters.DEFAULT_NAME[char_id]} is gated by Veldt character')
 
         # Collect areas unlocked by Veldt-gated characters
         veldt_gated_areas = set()
@@ -1529,6 +1544,32 @@ class ruination_map():
         assert(item_possible)
         return (items.get_good_random(), RewardType.ITEM)
 
+    def _find_area_containing_reward(self, reward_name):
+        """Find which area contains the given reward.
+
+        Args:
+            reward_name: The reward name (key in ROOM_REWARD)
+
+        Returns:
+            Area name if found, None otherwise
+        """
+        # Find the room containing this reward
+        reward_room = None
+        for room_id, rewards_dict in ROOM_REWARD.items():
+            if reward_name in rewards_dict:
+                reward_room = room_id
+                break
+
+        if reward_room is None:
+            return None
+
+        # Find which area contains this room
+        for area_name, room_list in RUIN_ROOM_SETS.items():
+            if reward_room in room_list:
+                return area_name
+
+        return None
+
     def process_rewards(self, rewards, characters, espers, items, branch_id, exclude_chars=None):
         # Identify reward & decide on reward type
         if exclude_chars is None:
@@ -1566,11 +1607,25 @@ class ruination_map():
             # Update RewardsObtained
             if slot.type is RewardType.CHARACTER:
                 self.RewardsObtained[0] += 1
+
+                # Set character path: this character depends on whichever character unlocked its area
+                reward_area = self._find_area_containing_reward(reward_name)
+                if reward_area and reward_area in self.area_unlocker:
+                    unlocker_char_id = self.area_unlocker[reward_area]
+                    characters.set_character_path(slot.id, unlocker_char_id)
+                    if self.verbose:
+                        unlocker_name = characters.DEFAULT_NAME[unlocker_char_id]
+                        new_char_name = characters.DEFAULT_NAME[slot.id]
+                        print(f'\tSet character path: {new_char_name} depends on {unlocker_name}')
+                elif self.verbose:
+                    print(f'\tNo unlocker found for {characters.DEFAULT_NAME[slot.id]} (starting area)')
+
                 # If a character, add new areas to the map
                 new_char = characters.DEFAULT_NAME[slot.id]
                 self.apply_key(new_char)  # apply new key to all branches
                 new_areas = CHARACTER_AREAS[new_char]
-                self.distribute_areas(new_areas, method='shortest')  # distribute areas among branches
+                # Pass the character ID as unlocker for these new areas
+                self.distribute_areas(new_areas, method='shortest', unlocker_char=slot.id)
 
             elif slot.type is RewardType.ESPER:
                 self.RewardsObtained[1] += 1
