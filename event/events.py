@@ -248,6 +248,11 @@ class Events():
         # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)
         self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
 
+        # Handle dried meat for Gau: ensure it's available in non-Veldt-gated shops
+        if self.args.shop_dried_meat > 0:
+            non_veldt_shops = ruin_map.get_non_veldt_gated_shops(self.characters)
+            self.shops.assign_dried_meats_ruination(non_veldt_shops)
+
         # Check state of reward_slots
         print('REWARD STATE AFTER RUIN MAPPING:')
         for slot in reward_slots:
