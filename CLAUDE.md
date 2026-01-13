@@ -419,10 +419,7 @@ Find Edgar in Phoenix Cave (unlocked by Locke) → character_gate() returns LOCK
 ### Dried Meat Availability for Gau (Ruination Mode)
 
 **The Problem:**
-When Gau is assigned as a character reward, players need dried meat to recruit monsters on the Veldt. However, not all shops are accessible in ruination mode:
-- Only shops in areas included in the branch map are accessible
-- Gau unlocks Nikeah (which has item shops)
-- This could create a circular dependency if Nikeah is the only shop area
+When Gau is assigned as a character reward, players may need a dried meat to recruit a character on the Veldt. Therefore, we must guarantee that dried meat is available for purchase at a shop that is accessible before the Veldt check is required by character gating logic.
 
 **The Solution:**
 Track accessible shops during map generation and filter out Veldt-gated shops for dried meat assignment.
