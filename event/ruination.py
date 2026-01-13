@@ -197,6 +197,23 @@ RUIN_ROOM_SETS = {
     'ImperialCastle': [331],  # Extra hub room if needed
 }
 
+# Maps ruination area names to shop IDs from data/shop_map_names.py
+# Used to track which shops are accessible in ruination mode for dried meat assignment
+AREA_SHOPS = {
+    'Kohlingen': [67, 68, 69],         # WOR shops (items/weapons/armor)
+    'Nikeah': [58, 59, 60, 61],        # WOR shops
+    'Thamasa': [74, 75, 76, 77],       # WOR shops
+    'SouthFigaro': [62, 63, 64, 65],   # WOR shops
+    'Albrook': [50, 51, 52, 53],       # WOR shops
+    'Tzen': [54, 55, 56, 57],          # WOR shops
+    'Jidoor': [78, 79, 80, 81],        # WOR shops (includes Owzer's mansion)
+    'Maranda': [82, 83],               # WOR shops
+    'FigaroCastle': [67, 86],          # WOR shops (left/right)
+    'ReturnersHideout': [38],          # Item shop
+    'PhantomTrain': [87],              # Vendor
+    'GauFatherHouse': [41],            # Vendor (WOB map used in ruination)
+}
+
 RUIN_TERMINI = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']  # list of terminal rooms for branches
 
 
@@ -899,6 +916,7 @@ class ruination_map():
         self.branch_checks = [[], [], []]   # checks available on each branch, stored locally
         self.AreasUsed = dict()   # use a dict to track 'AreaName': branch_id
         self.keychain = set(starting_party)   # global keychain, initialized with party
+        self.accessible_shops = []  # list of shop IDs that are accessible (for dried meat assignment)
 
         self.args = args
 
@@ -1165,6 +1183,11 @@ class ruination_map():
         for i, areas in enumerate(branch_areas):
             for area in areas:
                 branch_rooms[i].update(RUIN_ROOM_SETS[area])
+                # Track accessible shops from areas with shops
+                if area in AREA_SHOPS:
+                    for shop_id in AREA_SHOPS[area]:
+                        if shop_id not in self.accessible_shops:
+                            self.accessible_shops.append(shop_id)
 
         # Collect which checks are available, including how many can be characters and how many espers
         for room in ROOM_REWARD:
@@ -1201,6 +1224,76 @@ class ruination_map():
         self.keychain.add(key)
         for branch in self.branches:
             branch.apply_key(key)
+
+    def get_non_veldt_gated_shops(self, characters):
+        """Identify shops that are NOT gated behind the Veldt reward.
+
+        Uses characters.character_path to determine which characters depend on
+        the Veldt character. Shops in areas unlocked by those characters are
+        considered Veldt-gated and excluded from dried meat assignment.
+
+        Args:
+            characters: Characters object with character_path populated
+
+        Returns:
+            List of shop IDs that are NOT Veldt-gated
+        """
+        # Find which character was assigned to the Veldt reward
+        veldt_reward_room = 'wor-veldt'
+        veldt_char_id = None
+
+        if veldt_reward_room in ROOM_REWARD:
+            veldt_rewards = ROOM_REWARD[veldt_reward_room]
+            for reward_name, reward_slot in veldt_rewards.items():
+                if reward_slot.type == RewardType.CHARACTER:
+                    veldt_char_id = reward_slot.id
+                    veldt_char_name = characters.DEFAULT_NAME[veldt_char_id]
+                    if self.verbose:
+                        print(f'Veldt character: {veldt_char_name} (ID: {veldt_char_id})')
+                    break
+
+        # If no character at Veldt (or Veldt not in map), all accessible shops are valid
+        if veldt_char_id is None:
+            if self.verbose:
+                print('No character at Veldt, all accessible shops valid for dried meat')
+            return self.accessible_shops[:]
+
+        # Find all characters that depend on the Veldt character
+        veldt_gated_chars = set()
+        for char_id in range(len(characters.DEFAULT_NAME)):
+            if char_id in characters.character_path:
+                # Check if veldt_char_id is in this character's dependency path
+                if veldt_char_id in characters.character_path[char_id]:
+                    veldt_gated_chars.add(char_id)
+                    if self.verbose:
+                        print(f'  {characters.DEFAULT_NAME[char_id]} is gated by Veldt character')
+
+        # Collect areas unlocked by Veldt-gated characters
+        veldt_gated_areas = set()
+        for char_id in veldt_gated_chars:
+            char_name = characters.DEFAULT_NAME[char_id]
+            if char_name in CHARACTER_AREAS:
+                veldt_gated_areas.update(CHARACTER_AREAS[char_name])
+
+        if self.verbose and veldt_gated_areas:
+            print(f'Veldt-gated areas: {veldt_gated_areas}')
+
+        # Collect shop IDs in Veldt-gated areas
+        veldt_gated_shops = set()
+        for area in veldt_gated_areas:
+            if area in AREA_SHOPS:
+                veldt_gated_shops.update(AREA_SHOPS[area])
+
+        # Return non-Veldt-gated shops
+        non_veldt_shops = [shop_id for shop_id in self.accessible_shops
+                          if shop_id not in veldt_gated_shops]
+
+        if self.verbose:
+            print(f'Accessible shops: {len(self.accessible_shops)}')
+            print(f'Veldt-gated shops: {list(veldt_gated_shops)}')
+            print(f'Non-Veldt-gated shops: {len(non_veldt_shops)} - {non_veldt_shops}')
+
+        return non_veldt_shops
 
     def generate_map_with_characters(self, characters, espers, items):
         """Generate the ruination mode dungeon map and assign character/esper/item rewards.
