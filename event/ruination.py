@@ -1018,8 +1018,9 @@ class ruination_map():
             print(f'Pre-plan: Planned areas have {total_checks} checks, '
                   f'{total_character_slots} character slots, {total_esper_slots} esper slots')
 
-        # Check if we have enough esper slots
-        while total_esper_slots < self.Requested[1] and len(remaining_characters) > 0:
+        # Check if we have enough esper slots after accounting for character slots
+        # We need espers + planned characters, since character slots can't be used for espers
+        while total_esper_slots < self.Requested[1] + len(planned_characters) and len(remaining_characters) > 0:
             # Add another character to get more areas/esper slots
             new_char = remaining_characters.pop(0)
             planned_characters.append(new_char)
