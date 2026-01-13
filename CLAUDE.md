@@ -196,10 +196,10 @@ Ruination Mode is an **in-development** roguelike-style door randomization mode.
 
 **event/events.py** - Entry point for ruination mode
 - `ruination_mod()` - Main orchestrator that:
-  1. Initializes `ruination_map` with starting party
-  2. **CRITICAL**: Restricts `characters.available_characters` to only `planned_characters` from pre-planning phase
+  1. Populates `ROOM_REWARD` dictionary with actual Reward objects from `event.rewards` (lines 228-237)
+  2. Initializes `ruination_map` with starting party
   3. Calls `generate_map_with_characters()` to build the dungeon map and assign rewards
-  4. This restriction ensures character selection respects the pre-planned set that accounts for esper slot requirements
+  4. The `reward_slots` list is automatically updated via shared object references (see Reward Assignment section below)
 
 **event/ruination.py** - Main implementation (~1530 lines)
 - `RuinationBranch(Network)` - Extends Network class for individual branch management
@@ -278,7 +278,7 @@ forced_same_branch = {
    - Ensures sufficient esper slots exist (accounting for character slots that can't hold espers)
    - Adds more characters if needed to unlock additional areas with esper slots
    - Returns: `(planned_characters, reserve_characters, dead_checks_allowed)`
-   - **IMPORTANT**: The `planned_characters` list determines which characters can be assigned during map generation. The caller must restrict `characters.available_characters` to this list before calling `generate_map_with_characters()` (see events.py:247-250).
+   - **IMPORTANT**: The `planned_characters` list determines which characters can be assigned during map generation. Non-planned characters are passed as an exclusion list to `process_rewards()`.
 
 3. **Map Generation** (`generate_map_with_characters`):
    ```
@@ -334,6 +334,46 @@ The mode prints extensive debug output when `verbose = True` (default in ruinati
 2. **New area**: Add to `RUIN_ROOM_SETS` and associate with character(s) in `CHARACTER_AREAS`
 3. **Character lock**: Add to `CHARACTER_LOCKED_REWARDS` if reward requires specific character
 4. **Same-branch constraint**: Add to `forced_same_branch` if areas must stay together
+
+### Reward Assignment in Ruination Mode
+
+**How reward_slots gets updated:**
+
+Ruination mode uses shared object references to update rewards without passing `reward_slots` around:
+
+1. `events.py` populates `ROOM_REWARD` with actual `Reward` objects from `event.rewards` (lines 228-237)
+2. `check_for_rewards()` returns these same `Reward` objects (not copies)
+3. `process_rewards()` updates `slot.id` and `slot.type` on these objects
+4. Since Python passes objects by reference, changes propagate to:
+   - The event's `rewards` list
+   - `ROOM_REWARD` dictionary
+   - `reward_slots` list in events.py
+
+**Character selection pattern:**
+
+Use the `Characters` class interface properly (see `character_gating_mod()` for reference):
+
+```python
+# CORRECT: Use exclude parameter to restrict character selection
+non_planned_chars = [char_id for char_id in characters.available_characters
+                     if char_id not in planned_char_ids]
+slot.id = characters.get_random_available(exclude=non_planned_chars)
+slot.type = RewardType.CHARACTER
+```
+
+**DO NOT** directly manipulate `characters.available_characters`:
+```python
+# WRONG: Don't do this
+characters.available_characters = [...]  # Breaks encapsulation
+characters.available_characters.remove(char_id)  # Use set_unavailable() instead
+```
+
+**Key methods:**
+- `characters.get_random_available(exclude=[...])` - Returns character ID and automatically marks it unavailable
+- `characters.set_unavailable(char_id)` - Marks a character as unavailable
+- `characters.get_available_count()` - Returns number of available characters
+
+The `get_random_available()` method handles state management automatically, so reward assignment naturally maintains correct availability state.
 
 ## Resources
 - The event script begins at offset 0xa0000.  A full decompile of the event script is @https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link

@@ -1202,12 +1202,24 @@ class ruination_map():
         for branch in self.branches:
             branch.apply_key(key)
 
-    def generate_map_with_characters(self, reward_slots, characters, espers, items):
+    def generate_map_with_characters(self, characters, espers, items):
+        """Generate the ruination mode dungeon map and assign character/esper/item rewards.
+
+        Note: reward_slots (from events.py) are updated automatically through shared object references.
+        ROOM_REWARD dictionary is populated with Reward objects from event.rewards in events.py (lines 228-237).
+        When process_rewards() updates these Reward objects (slot.id, slot.type), the changes propagate
+        to reward_slots because they reference the same objects.
+        """
         # Build out branches, always starting with the least connected
         self.RewardsObtained = [0, 0]
         self.LockedRewards = dict()
         stuck_branches = set()  # Track branches that can't progress
         max_retries_per_branch = 3  # Retry before declaring stuck
+
+        # Calculate which characters to exclude from selection (non-planned characters)
+        planned_char_ids = [characters.DEFAULT_NAME.index(name) for name in self.planned_characters]
+        non_planned_chars = [char_id for char_id in characters.available_characters
+                            if char_id not in planned_char_ids]
 
         # Edit forced connections for ruination
         #for fc in ruination_extra_force:
@@ -1371,7 +1383,7 @@ class ruination_map():
 
             ### Process reward & restart loop - only if we actually found a reward
             if found_reward and rewards:
-                self.process_rewards(rewards, characters, espers, items, branch_id=branch_id)
+                self.process_rewards(rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
             elif branch_id in stuck_branches:
                 if self.verbose:
                     print(f'Skipping reward processing for stuck branch {branch_id}')
@@ -1397,8 +1409,38 @@ class ruination_map():
 
         return map
 
-    def process_rewards(self, rewards, characters, espers, items, branch_id):
+    def _choose_reward_with_exclusion(self, possible_types, characters, espers, items, exclude_chars):
+        """Choose a reward from possible types, excluding specified characters.
+
+        Similar to choose_reward() from event_reward.py, but with character exclusion support.
+        """
+        import random
+
+        all_types = [flag for flag in RewardType]
+        random.shuffle(all_types)
+
+        item_possible = False
+        for reward_type in all_types:
+            if reward_type & possible_types:
+                if reward_type == RewardType.CHARACTER and characters.get_available_count():
+                    # Check if any characters are available after exclusion
+                    available_after_exclusion = [c for c in characters.available_characters if c not in exclude_chars]
+                    if available_after_exclusion:
+                        return (characters.get_random_available(exclude=exclude_chars), reward_type)
+                elif reward_type == RewardType.ESPER and espers.available():
+                    return (espers.get_random_esper(), reward_type)
+                elif reward_type == RewardType.ITEM:
+                    item_possible = True
+
+        # No characters or espers available, must use item
+        assert(item_possible)
+        return (items.get_good_random(), RewardType.ITEM)
+
+    def process_rewards(self, rewards, characters, espers, items, branch_id, exclude_chars=None):
         # Identify reward & decide on reward type
+        if exclude_chars is None:
+            exclude_chars = []
+
         for reward in rewards:
             # reward_types = [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]
             reward_name = reward[0]  # reward_name = slot.event.name()
@@ -1410,14 +1452,16 @@ class ruination_map():
                 # This must be a character.
                 if self.verbose:
                     print('\tmust be a character')
-                slot.id, slot.type = choose_reward(RewardType.CHARACTER, characters, espers, items)
+                # Use characters.get_random_available with exclude parameter
+                slot.id = characters.get_random_available(exclude=exclude_chars)
+                slot.type = RewardType.CHARACTER
                 if self.verbose:
                     print('\tgot ', characters.get_name(slot.id), '!')
             else:
                 # Just choose from among available types
                 if self.verbose:
                     print('\tchoosing from...', slot.possible_types)
-                slot.id, slot.type = choose_reward(slot.possible_types, characters, espers, items)
+                slot.id, slot.type = self._choose_reward_with_exclusion(slot.possible_types, characters, espers, items, exclude_chars)
                 if self.verbose:
                     if slot.type is RewardType.CHARACTER:
                         print('\tgot', characters.get_name(slot.id), '!')
@@ -1474,7 +1518,7 @@ class ruination_map():
                             if new_reward[1].possible_types & RewardType.ESPER:
                                 self.RewardsAvailable[1] -= 1
                         # Then process them all
-                        self.process_rewards(unlocked_rewards, characters, espers, items, v[0])
+                        self.process_rewards(unlocked_rewards, characters, espers, items, v[0], exclude_chars)
 
 
 def ruination_start_game_mod(dialogs, party):
