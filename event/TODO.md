@@ -1,15 +1,9 @@
 # Todo list for Claude (-ruin mode updates)
 
-## Updates to branch mapping code
-1. Revise check if there are enough esper slots (line 1030):
+## Updates to branch mapping code (event/ruination.py)
+1. Revise check if there are enough esper slots (line 1020):
 As written, it will fail because it doesn't take into account the slots that were used for characters. For example: if requirements are 6 char and 9 espers, and the starting party is MOG, GOGO, UMARO, with added members RELM, GAU, SETZER, then we will have six characters, total_checks = 10, total_character_slots = 10, total_esper_slots = 10, and the check would pass. However, we actually used three of those checks to recruit three characters, so the actual remaining esper slots is just 7, and the check should fail.
 
-2. Clean up unnecessary code at line 1008:
-"planned_areas" is populated from CHARACTER_AREAS, and filled with items that are keys to RUIN_ROOM_SETS. None of these are also room names (the example 'ruin-whelk' does not appear).  The first check (lines 1004-1007) is correct and sufficient:
-
-  if area_name in RUIN_ROOM_SETS and room_id in RUIN_ROOM_SETS[area_name]:
-
-... correctly checks if 'ruin-whelk' (a ROOM_REWARD key) is in RUIN_ROOM_SETS['Narshe'] (which it is).  The second check (lines 1008-1015) is probably doing nothing, and should be removed.
 
 
 ## Updates to overall behavior of -ruin
