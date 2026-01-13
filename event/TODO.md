@@ -8,7 +8,7 @@
 
 3. ✅ **FIXED** - Loop termination condition (line 1229): Now compares `RewardsObtained[0]` against `len(self.planned_characters)` instead of `self.Requested[0]`. The latter includes starting party, but rewards only count characters obtained from checks.
 
-4. ✅ **FIXED** - Redundant RewardsAvailable decrement (line 1475): Removed duplicate decrement when unlocking character-locked rewards. The `process_rewards()` call already handles the decrement.
+4. generate_map_with_characters is called in event/events.ruination_mod() and outputs the door map for ruination mode.  However it currently runs with all remaining characters.  Update this to instead only choose the planned characters determined in pre_plan_character_acquisition().  
 
 
 
