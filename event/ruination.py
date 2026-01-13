@@ -1005,14 +1005,6 @@ class ruination_map():
                 if area_name in RUIN_ROOM_SETS and room_id in RUIN_ROOM_SETS[area_name]:
                     room_in_planned = True
                     break
-            # Also check if room_id itself is a planned area marker (like 'ruin-whelk')
-            if not room_in_planned and isinstance(room_id, str):
-                for area_name in planned_areas:
-                    if area_name in RUIN_ROOM_SETS:
-                        for r in RUIN_ROOM_SETS[area_name]:
-                            if str(r) == room_id or room_id in str(r):
-                                room_in_planned = True
-                                break
 
             if room_in_planned:
                 for reward_name, reward_data in rewards.items():
