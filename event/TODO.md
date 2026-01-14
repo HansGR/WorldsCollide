@@ -13,7 +13,13 @@
 
 
 ## Updates to overall behavior of -ruin
-1. When Gau is a character, the item "dried meat" must be available for purchase in at least one shop.  Something similar is done in the original randomizer via the flag -sdm N (--shops-dried-meat), which enforces N shops with dried meat available.  For -ruin, we must ensure that this flag specifically makes this number of dried meat available in accessible item shops, as not all shops will be accessible in ruination mode.  Accessible shops may be in WoR towns with item shops (Kohlingen, Nikeah, Thamasa, South Figaro, Albrook, Tzen, Jidoor... Maranda?), plus WoR Figaro Castle, Returners Hideout, Phantom Train shops, and possibly the merchant at Gau's Dad's House (if the WoB version is used).  However, which shops are actually accessible depends on the branch mapping, which must be taken into account: the accessible shops must be used and NOT be gated by the Veldt check.  Probably this will require some modification of Veldt check to make sure that it is not added as a character check until some item shop has been added, and the list of pre-Veldt item shops must be recorded for forcing dried meat to be available.
+### COMPLETED (2026-01-14)
+1. ✅ **FIXED** - Dried meat availability for Gau: The -sdm flag now correctly ensures dried meat is available in accessible, non-Veldt-gated shops in ruination mode. Implementation includes:
+   - Tracking of accessible shops during map generation (event/ruination.py:1190-1196)
+   - Filtering of Veldt-gated shops via character dependency paths (event/ruination.py:1234-1317)
+   - Assignment of dried meat to filtered shops (data/shops.py:215-274)
+   - Optimization: skips Veldt-gating logic when Gau is not in planned characters
+   - Fallback: uses all accessible shops with warning if no non-Veldt-gated shops exist
 
 2. Implement -ruin as a "meta-flag", that sets a default flagset which can subsequently be modified by calling other flags.  This bakes in some desired flags to -ruin while allowing the player flexibility to define other options.  The option of `-ruin minimum` could skip the defaults and require the player to choose everything.
 - Default flags include:
