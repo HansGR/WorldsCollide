@@ -65,29 +65,28 @@
      - `menus/save.py` already modifies save behavior in ruination mode (auto-save slot 1, wipe on death)
 
    **Implementation Strategy:**
-   1. **Store ruination flag in ROM:**
-      - Use unused ROM byte (e.g., from free space 0x00ff18-0x00ffaf per memory/free.py:9)
-      - Set flag during ROM build if `args.ruination_mode` is active
+   Since the ROM is built with `-ruin` flag, we simply modify the ROM code during build time - no runtime detection needed.
 
-   2. **Modify boot sequence** (menus/pregame.py:228-248):
-      - Check ruination flag at boot
-      - If ruination mode → always show custom pregame menu (skip load menu entirely)
-      - If normal mode → use existing logic (show load menu if saves exist)
+   1. **Modify boot sequence** (menus/pregame.py:228-248 in `invoke_load_game_mod()`):
+      - **If `args.ruination_mode`:** Always show pregame menu (skip load menu auto-invoke)
+      - **Otherwise:** Use existing logic (show load menu if saves exist)
 
-   3. **Create ruination-specific pregame menu:**
-      - **New options** (menus/pregame.py:18-23):
+   2. **Modify pregame menu options** (menus/pregame.py:15-47 in `draw_options_mod()`):
+      - **If `args.ruination_mode`:** Draw 4 options:
         1. "New Game" - starts new game
-        2. "Flags" - shows flags menu
-        3. "Config" - shows config menu
-        4. "Load Saved Game" - new option that:
-           - Tests save validity (JSR 0x7023)
-           - If save exists → initialize load menu (command 0x20) or directly load the game
-           - If no save → display error message or do nothing
-      - **Remove:** "Objectives" option
+        2. "Load Saved Game" - new option (see below)
+        3. "Flags" - shows flags menu
+        4. "Config" - shows config menu
+      - **Otherwise:** Draw standard 4 options (New Game, Objectives, Flags, Config)
+
+   3. **Implement "Load Saved Game" option** (menus/pregame.py:93-186 in `sustain_mod()`):
+      - Create new handler similar to existing option handlers
+      - Test save validity (JSR 0x7023)
+      - If save exists → initialize load menu (command 0x20) or directly load game
+      - If no save → play error sound or display message
 
    4. **Files to modify:**
-      - menus/pregame.py - main implementation (draw_options_mod, sustain_mod, invoke_load_game_mod)
-      - menus/pregame_track.py - may need updates if menu structure changes significantly
+      - menus/pregame.py - main implementation (wrap logic in `if args.ruination_mode:` checks)
       - menus/save.py - already handles ruination save behavior (lines 48-49)
 
    5. **Key ROM addresses/commands:**
