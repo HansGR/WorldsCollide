@@ -59,7 +59,7 @@ def parse(parser):
                          help = "Randomize doors in each currently-implemented area")
     doors.add_argument("-ruin", "--ruination-mode", nargs="?", const="default", default=None,
                        help="Rogue-like mode with randomized dungeon and no airship. "
-                            "Automatically sets recommended flags (use '-ruin minimum' to skip defaults, "
+                            "Automatically sets recommended flags (use '-ruin custom' to skip defaults, "
                             "'-no <flags>' to disable specific defaults)")
 
     # Map shuffle
@@ -133,8 +133,8 @@ def flags(args):
     if args.ruination_mode is not None:
         # -ruin supercedes all
         flags += " -ruin"
-        if args.ruination_mode == "minimum":
-            flags += " minimum"
+        if args.ruination_mode == "custom":
+            flags += " custom"
 
     elif args.door_randomize_all:
         # -dra supercedes all but -ruin
@@ -237,7 +237,7 @@ def options(args):
             return opts
 
     if args.ruination_mode is not None:
-        mode_desc = "Minimum" if args.ruination_mode == "minimum" else ""
+        mode_desc = "Custom" if args.ruination_mode == "custom" else ""
         opts += [
             ("Ruination Mode", mode_desc),
         ]

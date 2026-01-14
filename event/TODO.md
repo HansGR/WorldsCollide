@@ -19,11 +19,11 @@
    - Optimization: skips Veldt-gating logic when Gau is not in planned characters
    - Fallback: uses all accessible shops with warning if no non-Veldt-gated shops exist
 
-2. ✅ **IMPLEMENTED** - Implement -ruin as a "meta-flag", that sets a default flagset which can subsequently be modified by calling other flags.  This bakes in some desired flags to -ruin while allowing the player flexibility to define other options.  The option of `-ruin minimum` could skip the defaults and require the player to choose everything.
+2. ✅ **IMPLEMENTED** - Implement -ruin as a "meta-flag", that sets a default flagset which can subsequently be modified by calling other flags.  This bakes in some desired flags to -ruin while allowing the player flexibility to define other options.  The option of `-ruin custom` could skip the defaults and require the player to choose everything.
 - **Implementation**: args/ruin_preprocessor.py provides argument preprocessing that expands `-ruin` into ~70 default flags
 - **Usage**:
     - `-ruin` - Injects all default flags (recommended settings)
-    - `-ruin minimum` - Skips all defaults, requires manual flag selection
+    - `-ruin custom` - Skips all defaults, requires manual flag selection
     - `-ruin -no <flag1> <flag2> ...` - Disables specific default flags (e.g., `-ruin -no fst brl sal`)
     - `-ruin -sc1 TERRA` - Automatically removes default starting characters when user specifies their own
 - Default flags include:

@@ -154,14 +154,14 @@ def preprocess_ruin_flag(argv=None):
     # Mark that we've preprocessed
     _preprocessing_done = True
 
-    # Check for 'minimum' option
-    next_arg_is_minimum = (
+    # Check for 'custom' option
+    next_arg_is_custom = (
         ruin_index + 1 < len(argv) and
-        argv[ruin_index + 1] == 'minimum'
+        argv[ruin_index + 1] == 'custom'
     )
 
-    if next_arg_is_minimum:
-        # Don't inject defaults, but keep 'minimum' for the argument parser
+    if next_arg_is_custom:
+        # Don't inject defaults, but keep 'custom' for the argument parser
         return argv
 
     # Collect flags to disable via -no and remove -no from argv FIRST
