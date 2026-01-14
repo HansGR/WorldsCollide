@@ -46,7 +46,60 @@
   - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it! 
 - Increase all inn costs by a multiplier (3x?)
 
-4. Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
+4. ❌ **TODO** - Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
+
+   **Current Implementation (as of investigation):**
+   - **menus/pregame.py** (lines 228-248): `invoke_load_game_mod()` modifies boot behavior
+     - At ROM address 0x3017c-0x301b1: "load pregame menu if no saves else invoke load menu"
+     - Calls JSR 0x7023 to test save file validity
+     - If no saves → initialize pregame menu (command 0x2f)
+     - If saves exist → initialize load menu (command 0x20)
+   - **Current pregame menu** has 4 options (lines 18-23):
+     1. "New Game" - starts new game
+     2. "Objectives" - shows objectives menu
+     3. "Flags" - shows flags menu
+     4. "Config" - shows config menu
+   - **Ruination mode detection:**
+     - `args.ruination_mode` is Python build-time flag only
+     - ROM has no runtime flag to detect ruination mode
+     - `menus/save.py` already modifies save behavior in ruination mode (auto-save slot 1, wipe on death)
+
+   **Implementation Strategy:**
+   1. **Store ruination flag in ROM:**
+      - Use unused ROM byte (e.g., from free space 0x00ff18-0x00ffaf per memory/free.py:9)
+      - Set flag during ROM build if `args.ruination_mode` is active
+
+   2. **Modify boot sequence** (menus/pregame.py:228-248):
+      - Check ruination flag at boot
+      - If ruination mode → always show custom pregame menu (skip load menu entirely)
+      - If normal mode → use existing logic (show load menu if saves exist)
+
+   3. **Create ruination-specific pregame menu:**
+      - **New options** (menus/pregame.py:18-23):
+        1. "New Game" - starts new game
+        2. "Flags" - shows flags menu
+        3. "Config" - shows config menu
+        4. "Load Saved Game" - new option that:
+           - Tests save validity (JSR 0x7023)
+           - If save exists → initialize load menu (command 0x20) or directly load the game
+           - If no save → display error message or do nothing
+      - **Remove:** "Objectives" option
+
+   4. **Files to modify:**
+      - menus/pregame.py - main implementation (draw_options_mod, sustain_mod, invoke_load_game_mod)
+      - menus/pregame_track.py - may need updates if menu structure changes significantly
+      - menus/save.py - already handles ruination save behavior (lines 48-49)
+
+   5. **Key ROM addresses/commands:**
+      - 0x7023: subroutine to test save file validity
+      - 0x2f: initialize pregame menu command
+      - 0x20: initialize load menu command
+      - 0x26/0x27: menu command queue addresses
+
+   **Additional considerations:**
+   - The custom menu should be visually distinct or have a title indicating "Ruination Mode"
+   - "Load Saved Game" should handle the single-slot constraint gracefully
+   - May want to show a warning on "New Game" if a save exists (since it will be overwritten on first save)
 
 5. Decide what to do with Warp spell.  It could move the current party to Esper World, or reset all parties and move to Esper World, or do nothing since we have the Warp Points (but still usable in battle).
    
