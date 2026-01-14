@@ -24,24 +24,27 @@ This document describes how map-related data (NPCs, Events, and Exits) is read f
 
 ### Maps (data/maps.py)
 
-The `Maps` class manages 416 maps and their associations with NPCs, events, and exits.
+The `Maps` class manages 416 maps and their associations with NPCs, events, exits, properties, and chests.
 
 **Key Attributes:**
 - `maps`: List of 416 dictionaries, each containing:
   - `id`: Map index (0-415)
   - `name_index`: Index for map name lookup
-  - `entrance_event_address`: Address of event executed when entering map
+  - `entrance_event_address`: Address of event executed when entering map (stored separately, not in MapProperty)
   - `events_ptr`: Pointer to first event for this map
   - `npcs_ptr`: Pointer to first NPC for this map
   - `short_exits_ptr`: Pointer to first short exit for this map
   - `long_exits_ptr`: Pointer to first long exit for this map
+- `properties`: List of 416 `MapProperty` objects (see below)
+- `chests`: `Chests` object containing all chest data (see below)
 
 **ROM Addresses:**
 - Event pointers: `0x40000 + (map_id * 2)`
 - NPC pointers: `0x41a10 + (map_id * 2)`
 - Short exit pointers: `0x1fbb00 + (map_id * 2)`
 - Long exit pointers: `0x2df480 + (map_id * 2)`
-- Entrance events: `0x11fa00 + (map_id * 3)`
+- **Entrance events: `0x11fa00 + (map_id * 3)` (3-byte pointers, separate from MapProperty)**
+- **Map properties: `0x2d8f00 + (map_id * 33)` (33-byte records)**
 
 **Pointer System:**
 Each map has pointers that define ranges in the global arrays. For example:
@@ -176,6 +179,76 @@ Byte 6: dest_y
 **Purpose:**
 Long exits create a line of exit triggers (horizontal or vertical) rather than a single point. This is more efficient for doorways and corridors.
 
+### MapProperty (data/map_property.py)
+
+**Total Count:** 416 properties (one per map)
+**Data Size:** 33 bytes per property
+**ROM Start Address:** `0x2d8f00`
+
+**MapProperty Decoded Attributes:**
+- `name_index`: Index for looking up map name (byte 0)
+- `song`: Music track ID that plays on this map (byte 28)
+- `enable_random_encounters`: If 1, random battles can occur (bit 7 of byte 5)
+
+**Data Format (33 bytes):**
+```
+Byte 0: name_index
+Bytes 1-4: (undecoded - likely tileset, palette references)
+Byte 5: [bit 7: enable_random_encounters] [bits 0-6: unknown]
+Bytes 6-27: (undecoded - likely layer priorities, animation settings, tilemap references)
+Byte 28: song (music track ID)
+Bytes 29-32: (undecoded)
+```
+
+**Note:** Most MapProperty bytes are not yet decoded in the codebase. The raw 33-byte data is exported for future analysis. These bytes likely control:
+- Tileset selection
+- Palette references
+- Layer priorities and parallax scrolling
+- Animation settings
+- Tilemap pointers
+
+**Important:** Entrance event addresses are **NOT** stored in MapProperty. They're stored separately at ROM address `0x11fa00` as 3-byte pointers.
+
+### Chests (data/chests.py, data/chest.py)
+
+**Total Count:** 287 chests (IDs 0-286)
+**Data Size:** 5 bytes per chest
+**ROM Addresses:**
+- Chest pointers: `0x2d82f4` to `0x2d8633`
+- Chest data: `0x2d8634` to `0x2d8e5a`
+
+**Chest Attributes:**
+- `x`, `y`: Tile coordinates where chest is located (0-255)
+- `bit`: 9-bit flag (0-511) tracking if this chest has been opened
+- `type`: Type of chest contents:
+  - `0x08`: Empty
+  - `0x20`: Monster (battle)
+  - `0x40`: Item
+  - `0x80`: Gold
+  - `0xfe`: Unused
+- `contents`: Meaning depends on type:
+  - **Item**: Item ID (0-255)
+  - **Monster**: Monster pack ID - 256
+  - **Gold**: GP amount / 100 (so value 50 = 5000 GP)
+  - **Empty/Unused**: Ignored
+
+**Data Format (5 bytes):**
+```
+Byte 0: x coordinate
+Byte 1: y coordinate
+Byte 2: Bit flag bits 0-7
+Byte 3: [bit 0: bit flag bit 8] [bits 1-7: type]
+Byte 4: contents
+```
+
+**Organization:**
+Chests are organized by map using a pointer system similar to NPCs/events/exits. Each map has a pointer defining which chests belong to it. Some chests are duplicated across multiple maps (Mt. Kolts, Doma, Albrook, Kefka's Tower) and share the same "opened" bit flag.
+
+**Special Chests:**
+- Some chests are marked unreachable and excluded from randomization
+- Lone Wolf chest (ID 2) and Gem Box chest (ID 231) are handled specially
+- Duplicate chests share bit flags so opening one opens all duplicates
+
 ## Important Implementation Details
 
 ### Pointer-Based Architecture
@@ -222,9 +295,14 @@ python export_map_data.py -i path/to/ff3.smc
 
 **Output Files:**
 
-1. **maps_data.json** - All 416 maps with their NPCs, events, and exits grouped together
-   - Easy to understand which data belongs to which map
-   - Includes pointer information
+1. **maps_data.json** - All 416 maps with their complete data grouped together
+   - Map properties (name_index, song, random encounters, raw 33-byte data)
+   - Entrance event address (stored separately from properties)
+   - Chests (position, type, contents, opened bit flag)
+   - NPCs (position, sprite, movement, events)
+   - Events (position, event addresses)
+   - Exits (short and long, positions and destinations)
+   - Pointer information
    - Best for map-by-map analysis
 
 2. **npcs_raw.json** - All 2192 NPCs in global array order
@@ -240,6 +318,11 @@ python export_map_data.py -i path/to/ff3.smc
    - Indexed by position in global arrays
    - Useful for cross-referencing
 
+5. **chests_raw.json** - All 287 chests in global array order
+   - Indexed by chest ID
+   - Includes position, type, contents, and opened bit flag
+   - Useful for cross-referencing and chest analysis
+
 ## Reading the Exported Data
 
 Once you run the export script, you can upload the JSON files for reference. The data will be in a format that's easy to parse and understand, with:
@@ -247,3 +330,6 @@ Once you run the export script, you can upload the JSON files for reference. The
 - Hex addresses formatted as strings (e.g., "0x5eb3")
 - Clear structure showing relationships between maps and their data
 - Index values for cross-referencing between files
+- Map properties including music track, random encounter flag, and raw property bytes
+- Complete chest data with type strings and contents
+- All spatial data (NPC/event/exit/chest positions) for coordinate-based analysis

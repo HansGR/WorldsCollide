@@ -23,6 +23,7 @@ def export_map_data():
     print(f"Total Events: {len(data.maps.events.events)}")
     print(f"Total Short Exits: {len(data.maps.exits.short_exits)}")
     print(f"Total Long Exits: {len(data.maps.exits.long_exits)}")
+    print(f"Total Chests: {len(data.maps.chests.all_chests)}")
 
     # Export all data grouped by map
     print("\nExporting map data...")
@@ -38,19 +39,45 @@ def export_map_data():
     print("Exporting raw exit data...")
     export_exits(data.maps.exits)
 
+    print("Exporting raw chest data...")
+    export_chests(data.maps.chests)
+
     print("\nExport complete!")
     print("Files created:")
-    print("  - maps_data.json (all maps with their events, NPCs, exits)")
+    print("  - maps_data.json (all maps with their properties, chests, events, NPCs, exits)")
     print("  - npcs_raw.json (all NPCs indexed)")
     print("  - events_raw.json (all events indexed)")
     print("  - exits_raw.json (all exits indexed)")
+    print("  - chests_raw.json (all chests indexed)")
 
 def export_maps_with_data(maps):
-    """Export all maps with their associated events, NPCs, and exits."""
+    """Export all maps with their associated events, NPCs, exits, properties, and chests."""
     maps_data = []
 
     for map_id in range(maps.MAP_COUNT):
         map_info = maps.maps[map_id]
+        map_property = maps.properties[map_id]
+
+        # Get map properties
+        properties = {
+            "name_index": map_property.name_index,
+            "song": map_property.song,
+            "enable_random_encounters": bool(map_property.enable_random_encounters),
+            "raw_data": [hex(b) for b in map_property.data],  # All 33 bytes
+        }
+
+        # Get chests for this map
+        chests_list = []
+        for chest in maps.chests.map_chests[map_id]:
+            chests_list.append({
+                "id": chest.id,
+                "x": chest.x,
+                "y": chest.y,
+                "bit": chest.bit,
+                "type": chest.get_type_string(),
+                "type_raw": hex(chest.type),
+                "contents": chest.contents,
+            })
 
         # Get NPCs for this map
         npcs_list = []
@@ -136,12 +163,14 @@ def export_maps_with_data(maps):
             "map_id": map_id,
             "name_index": map_info["name_index"],
             "entrance_event_address": hex(map_info["entrance_event_address"]),
+            "properties": properties,
             "pointers": {
                 "events_ptr": hex(map_info["events_ptr"]),
                 "npcs_ptr": hex(map_info["npcs_ptr"]),
                 "short_exits_ptr": hex(map_info["short_exits_ptr"]),
                 "long_exits_ptr": hex(map_info["long_exits_ptr"]),
             },
+            "chests": chests_list,
             "npcs": npcs_list,
             "events": events_list,
             "short_exits": short_exits_list,
@@ -237,6 +266,26 @@ def export_exits(exits):
         json.dump(exits_data, f, indent=2)
 
     print(f"Exported {len(exits_data['short_exits'])} short exits and {len(exits_data['long_exits'])} long exits to exits_raw.json")
+
+def export_chests(chests):
+    """Export all chests as a raw indexed list."""
+    chests_data = []
+
+    for chest in chests.all_chests:
+        chests_data.append({
+            "id": chest.id,
+            "x": chest.x,
+            "y": chest.y,
+            "bit": chest.bit,
+            "type": chest.get_type_string(),
+            "type_raw": hex(chest.type),
+            "contents": chest.contents,
+        })
+
+    with open("chests_raw.json", "w") as f:
+        json.dump(chests_data, f, indent=2)
+
+    print(f"Exported {len(chests_data)} chests to chests_raw.json")
 
 if __name__ == "__main__":
     try:
