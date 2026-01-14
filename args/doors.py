@@ -57,8 +57,10 @@ def parse(parser):
                        help="Randomize all currently-implemented doors across worlds")
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
-    doors.add_argument("-ruin", "--ruination-mode", action="store_true",
-                       help="Rogue-like mode with randomized dungeon and no airship")
+    doors.add_argument("-ruin", "--ruination-mode", nargs="?", const="default", default=None,
+                       help="Rogue-like mode with randomized dungeon and no airship. "
+                            "Automatically sets recommended flags (use '-ruin minimum' to skip defaults, "
+                            "'-no <flags>' to disable specific defaults)")
 
     # Map shuffle
     doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
@@ -82,12 +84,12 @@ def process(args):
             or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
             or args.door_randomize_phantom_train or args.door_randomize_cyans_dream or args.door_randomize_mt_kolts \
             or args.door_randomize_veldt_cave \
-            or args.ruination_mode:
+            or args.ruination_mode is not None:
         args.door_randomize = True
     else:
         args.door_randomize = False
 
-    if args.ruination_mode:
+    if args.ruination_mode is not None:
         # Override:  ruination mode is incompatible with map shuffle and other door rando modes, and takes precedence
         args.door_randomize_all = False
         args.door_randomize_each = False
@@ -103,7 +105,7 @@ def process(args):
 
     # Door randomization (except ruination) is incompatible with character gating
     # Force open world when door randomization is enabled
-    if args.door_randomize and not args.ruination_mode:
+    if args.door_randomize and args.ruination_mode is None:
         if args.character_gating:
             print("Note: Door randomization is incompatible with character gating (-cg). Forcing open world mode.")
         args.character_gating = False
@@ -128,9 +130,11 @@ def flags(args):
         flags += " -mapx"
 
 
-    if args.ruination_mode:
+    if args.ruination_mode is not None:
         # -ruin supercedes all
         flags += " -ruin"
+        if args.ruination_mode == "minimum":
+            flags += " minimum"
 
     elif args.door_randomize_all:
         # -dra supercedes all but -ruin
@@ -232,9 +236,10 @@ def options(args):
         if not args.door_randomize:
             return opts
 
-    if args.ruination_mode:
+    if args.ruination_mode is not None:
+        mode_desc = "Minimum" if args.ruination_mode == "minimum" else ""
         opts += [
-            ("Ruination Mode", ""),
+            ("Ruination Mode", mode_desc),
         ]
 
     elif args.door_randomize_all:
