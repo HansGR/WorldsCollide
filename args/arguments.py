@@ -1,5 +1,9 @@
 class Arguments:
     def __init__(self):
+        # Preprocess -ruin meta-flag before parsing
+        from args.ruin_preprocessor import preprocess_arguments
+        preprocess_arguments()
+
         import importlib
         self.groups = [
             "settings",
