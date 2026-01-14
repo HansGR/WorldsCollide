@@ -1234,6 +1234,9 @@ class ruination_map():
     def get_non_veldt_gated_shops(self, characters):
         """Identify shops that are NOT gated behind the Veldt reward.
 
+        This is necessary to ensure dried meat is available BEFORE Gau is obtained,
+        since dried meat is required to recruit Gau on the Veldt.
+
         Uses characters.character_path to determine which characters depend on
         the Veldt character. Shops in areas unlocked by those characters are
         considered Veldt-gated and excluded from dried meat assignment.
@@ -1244,6 +1247,12 @@ class ruination_map():
         Returns:
             List of shop IDs that are NOT Veldt-gated
         """
+        # Quick check: if Gau is not in planned characters, no need for special Veldt handling
+        if 'GAU' not in self.planned_characters:
+            if self.verbose:
+                print('Gau not in planned characters, all accessible shops valid for dried meat')
+            return self.accessible_shops[:]
+
         # Find which character was assigned to the Veldt reward
         veldt_reward_room = 'wor-veldt'
         veldt_char_id = None
@@ -1297,6 +1306,13 @@ class ruination_map():
             print(f'Accessible shops: {len(self.accessible_shops)}')
             print(f'Veldt-gated shops: {list(veldt_gated_shops)}')
             print(f'Non-Veldt-gated shops: {len(non_veldt_shops)} - {non_veldt_shops}')
+
+        # Warn if no non-Veldt-gated shops exist when Gau is in the game
+        if not non_veldt_shops and 'GAU' in self.planned_characters:
+            print('WARNING: No non-Veldt-gated shops available for dried meat!')
+            print('  This may make Gau unrecrutable. Consider adjusting map generation.')
+            print(f'  Falling back to all {len(self.accessible_shops)} accessible shops.')
+            return self.accessible_shops[:]
 
         return non_veldt_shops
 
