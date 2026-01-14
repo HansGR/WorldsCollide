@@ -55,25 +55,52 @@
    
 ## Updates to specific checks to work with -ruin
 1. Checks in the WoB that must be "moved" to WoR:
-- Lone Wolf (must be moved to WoR Narshe treasure hut; animation moved to WoR Narshe; event must be added to Narshe Peak with Tritoch & deconflicted from Tritoch event)
-- Moogle Defense (WoB room must be used, possibly with palatte swap; event must be initialized in the room, rather than at Arvis' house)
-- Kefka at Narshe (deconflict with Ice Fields dragon.  Possibly: use WoB map until check is completed; then replace with WoR map when returning?)
-- Opera House (deconflict with OH dragon.  Probably same solution as for Kefka at Narshe)
-- Shadow's check at gau's dad's house (just use WoB gau's dad's house with pallete swap)
-- Whelk (must be moved to WoR Narshe.  Actually: just use WoB room, make that exit locked by Terra, do pallete swap if necessary)
-- Serpent Trench (must end at WoR Nikeah.  Probably just use WoB Nikeah docks with palette swap & music change.)
-- Doma Defense (Use WoB exterior doma map; lock entrance to Doma Dream behind this event)
-- TunnelArmr check (how to deconflict with Figaro Castle?)
+- ✅ **DONE** - Lone Wolf (must be moved to WoR Narshe treasure hut; animation moved to WoR Narshe; event must be added to Narshe Peak with Tritoch & deconflicted from Tritoch event)
+  - **Status**: Implemented in event/lone_wolf.py:323-440 (ruination_mod method)
+  - Moves Lone Wolf event to WOR Narshe, edits NPCs and event tiles for Tritoch Peak WOR
+- ✅ **DONE** - Moogle Defense (WoB room must be used, possibly with palatte swap; event must be initialized in the room, rather than at Arvis' house)
+  - **Status**: Implemented in event/narshe_moogle_defense.py:632-707 (ruination_start_mod method)
+  - Uses WOB map with custom entrance event, initializes event in the room
+- ❌ **TODO** - Kefka at Narshe (deconflict with Ice Fields dragon.  Possibly: use WoB map until check is completed; then replace with WoR map when returning?)
+  - **Status**: No ruination modifications found in event/narshe_battle.py
+- ❌ **TODO** - Opera House (deconflict with OH dragon.  Probably same solution as for Kefka at Narshe)
+  - **Status**: No ruination modifications found in event/opera_house_wob.py for ending location
+- ✅ **DONE** - Shadow's check at gau's dad's house (just use WoB gau's dad's house with pallete swap)
+  - **Status**: Implemented in event/gau_father_house.py:123-129 (ruination_mod method)
+  - Edits palette to look like WOR
+- ✅ **DONE** - Whelk (must be moved to WoR Narshe.  Actually: just use WoB room, make that exit locked by Terra, do pallete swap if necessary)
+  - **Status**: Implemented in event/whelk.py:167-172 (ruination_mod method)
+  - Modifies Whelk room palette to look like WOR
+- ✅ **DONE** - Serpent Trench (must end at WoR Nikeah.  Probably just use WoB Nikeah docks with palette swap & music change.)
+  - **Status**: Implemented in event/serpent_trench.py:290-306 (door_rando_mod method)
+  - Sets world to WOR and loads Nikeah entrance in ruination mode
+- ❌ **TODO** - Doma Defense (Use WoB exterior doma map; lock entrance to Doma Dream behind this event)
+  - **Status**: No ruination modifications found in event/doma_wob.py
+- ❌ **TODO** - TunnelArmr check (how to deconflict with Figaro Castle?)
+  - **Status**: No ruination modifications found in event/south_figaro_cave_wob.py
 
 2. Modify checks that go to the world map, or go to the airship, so that they don't break the ruination map:
-- Phantom Train (warp to train station?)
-- Opera House (end up in lobby, not on airship)
-- MTek 3 (end up in Vector, no battle on airship?)
-- Lete River (end up in Esper World, hardcoded)
-- Floating Continent (same solution as in -drdc)
-- Phoenix Cave (same solution as -drdc)
-- Kefka at Narshe (end on same screen)
-- 
+- ✅ **DONE** - Phantom Train (warp to train station?)
+  - **Status**: Implemented in event/phantom_train.py:94-110 (door_rando_mod method)
+  - In ruination mode, sends to Phantom Train station instead of world map
+- ❌ **TODO** - Opera House (end up in lobby, not on airship)
+  - **Status**: No ruination modifications found in event/opera_house_wob.py for ending location
+- ✅ **DONE** - MTek 3 (end up in Vector, no battle on airship?)
+  - **Status**: Implemented in event/magitek_factory.py:487-489, 421-442 (ruination_mod method and after_cranes_mod)
+  - Returns to Vector in ruination mode instead of airship
+- ✅ **DONE** - Lete River (end up in Esper World, hardcoded)
+  - **Status**: Implemented in event/lete_river.py:227-319 (exit_river_mod method)
+  - Hardcoded exit to Esper World with custom animation in ruination mode
+- ✅ **DONE** - Floating Continent (same solution as in -drdc)
+  - **Status**: Implemented in event/floating_continent.py (MAP_SHUFFLE flag includes ruination mode)
+  - Uses door randomization/map shuffle handling
+- ✅ **DONE** - Phoenix Cave (same solution as -drdc)
+  - **Status**: Implemented in event/phoenix_cave.py (DOOR_RANDOMIZE flag includes ruination mode)
+  - Uses door randomization handling
+- ❌ **TODO** - Kefka at Narshe (end on same screen)
+  - **Status**: Same as section 1 - no ruination modifications found
 
 3. Figaro Castle is a special case: there's a conflict between the WoR entrance via the tunnel at SF cave, since it is reused as an entrance to Ancient Castle. Solution: remove the custom underground entrance before engine check is complete.  Player will walk into Figaro Castle from the main door, and the player can walk down to basement & fight engine boss at will.  Remove "resurfacing" animation.  Require fighting engine boss before accessing whatever is behind Ancient Castle entrance.  (Note this solution also deconflicts with Locke's Tunnelarmr check, since that room is now not used as part of engine room check.)
+- ❌ **TODO** - Figaro Castle special handling
+  - **Status**: No specific ruination handling found in event/figaro_castle_wor.py (only has map_shuffle_mod)
 
