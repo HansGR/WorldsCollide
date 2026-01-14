@@ -140,6 +140,39 @@ characters.set_character_path(slot.id, slot.event.character_gate())
 3. Assign dried meat only to accessible, non-Veldt-gated shops
 4. Uses `character_paths` to identify Veldt-gated areas
 
+### Ruination Mode Starting Menu
+
+**Implementation** (menus/pregame.py):
+
+Ruination mode has a custom starting menu that differs from standard mode to accommodate single-slot save system.
+
+**Boot Sequence** (`invoke_load_game_mod()`):
+- **Ruination mode**: Always shows pregame menu (skips auto-load menu)
+- **Standard mode**: Shows load menu if saves exist, otherwise pregame menu
+- ROM address: 0x3017c-0x301b1
+
+**Menu Rendering** (`draw_options_mod()`, `initialize_mod()`):
+- Tests save validity at initialization (JSR 0x7023)
+- Creates two menu variants:
+  - **No save**: 3 options (New Game, Flags, Config)
+  - **Save exists**: 4 options (New Game, Load Saved Game, Flags, Config)
+- Uses memory flag at 0x1300 to track active menu layout (0 = no save, 1 = has save)
+
+**Menu Navigation** (`sustain_mod()`):
+- Two separate option jump tables (one for each menu layout)
+- "Load Saved Game" handler invokes load menu (command 0x20) for single-slot save
+- Runtime checks flag at 0x1300 to route button presses to correct table
+
+**Key Memory Locations**:
+- 0x1300: Menu layout flag (ruination mode only)
+- 0x7023: Save validity test subroutine (sets carry if save exists)
+- 0x2f: Initialize pregame menu command
+- 0x20: Initialize load menu command
+
+**Integration**:
+- Works with existing save system (menus/save.py) that auto-saves to slot 1 and wipes on death
+- Conditional logic uses `if args.ruination_mode:` checks at build time
+
 ## Resources
 
 - Event script decompile: https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link

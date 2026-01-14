@@ -46,9 +46,17 @@
   - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it! 
 - Increase all inn costs by a multiplier (3x?)
 
-4. ❌ **TODO** - Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
+4. ✅ **IMPLEMENTED** - Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
 
-   **Current Implementation (as of investigation):**
+   **Implementation (menus/pregame.py):**
+   - Boot sequence always shows pregame menu in ruination mode (no auto-load)
+   - Conditional menu rendering based on save detection:
+     - No save: 3 options (New Game, Flags, Config)
+     - Save exists: 4 options (New Game, Load Saved Game, Flags, Config)
+   - Uses memory flag at 0x1300 to track active menu layout
+   - "Load Saved Game" handler invokes load menu (command 0x20) for single-slot save
+
+   **Original Investigation Notes (for reference):**
    - **menus/pregame.py** (lines 228-248): `invoke_load_game_mod()` modifies boot behavior
      - At ROM address 0x3017c-0x301b1: "load pregame menu if no saves else invoke load menu"
      - Calls JSR 0x7023 to test save file validity
