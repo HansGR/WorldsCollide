@@ -1,7 +1,6 @@
 # Todo list for Claude (-ruin mode updates)
 
 ## Updates to branch mapping code (event/ruination.py)
-### COMPLETED (2026-01-13)
 1. ✅ **FIXED** - Esper slot check (line 1023): Now accounts for character slots when checking if enough esper slots exist. The check now compares `total_esper_slots < self.Requested[1] + len(planned_characters)`.
 
 2. ✅ **FIXED** - Dead checks calculation (line 1048): Now uses `len(planned_characters)` instead of stale `characters_needed` value, since the esper slot check loop may add more characters.
