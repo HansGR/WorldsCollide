@@ -12,7 +12,6 @@
 
 
 ## Updates to overall behavior of -ruin
-### COMPLETED (2026-01-14)
 1. ✅ **FIXED** - Dried meat availability for Gau: The -sdm flag now correctly ensures dried meat is available in accessible, non-Veldt-gated shops in ruination mode. Implementation includes:
    - Tracking of accessible shops during map generation (event/ruination.py:1190-1196)
    - Filtering of Veldt-gated shops via character dependency paths (event/ruination.py:1234-1317)
