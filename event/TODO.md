@@ -15,8 +15,20 @@
 ## Updates to overall behavior of -ruin
 1. When Gau is a character, the item "dried meat" must be available for purchase in at least one shop.  Something similar is done in the original randomizer via the flag -sdm N (--shops-dried-meat), which enforces N shops with dried meat available.  For -ruin, we must ensure that this flag specifically makes this number of dried meat available in accessible item shops, as not all shops will be accessible in ruination mode.  Accessible shops may be in WoR towns with item shops (Kohlingen, Nikeah, Thamasa, South Figaro, Albrook, Tzen, Jidoor... Maranda?), plus WoR Figaro Castle, Returners Hideout, Phantom Train shops, and possibly the merchant at Gau's Dad's House (if the WoB version is used).  However, which shops are actually accessible depends on the branch mapping, which must be taken into account: the accessible shops must be used and NOT be gated by the Veldt check.  Probably this will require some modification of Veldt check to make sure that it is not added as a character check until some item shop has been added, and the list of pre-Veldt item shops must be recorded for forcing dried meat to be available.
 
-2. Ruination mode needs to get rid of the abundance of healing options in the standard game.
-- Force '-gpm 0' (zero GP from all battles) for all -ruin seeds: only starting money + selling equipment.
+2. Implement -ruin as a "meta-flag", that sets a default flagset which can subsequently be modified by calling other flags.  This bakes in some desired flags to -ruin while allowing the player flexibility to define other options.  The option of `-ruin minimum` could skip the defaults and require the player to choose everything.
+- Default flags include:
+    - `-gpm 0` (zero GP from all battles: only starting money + selling equipment).
+    - `-oa 2.2.2.2.6.6.4.9.9`  (Unlock final kefka: 6 characters, 9 espers.  This information is used by the ruination mapping algorithm and sets the 'size' of the game)
+    - Party flags:  `-sc1 random -sc2 random -sc3 random -sal -eu -csrp 80 125`  (starting with 3 random characters, starting average level, equippable umaro, randomized stats between 80--125).  
+    - Command flags:  `-fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27`  (Standard Ultros League command settings)
+    - Battle flags:  `-xpm 3 -mpm 5 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd`
+    - Magic flags: `-esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125`
+    - Item flags:  `-gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms`
+    - Other flags: `-frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn`
+- We will need a way to turn off individual binary default flags.  Perhaps e.g.: `-ruin -no fst brl sal rec`
+- If the player subsequently defines ANY starting character, all default starting characters must be removed.  So `-ruin -sc1 GAU` would need to turn off -sc2 and -sc3, for example.  Similarly when customizing other sequence flags, like -sc1, -rec1, etc.
+
+4. Ruination mode needs to get rid of the abundance of healing options in the standard game.
 - Decide what to do with unlimited healing spots: either make them a limited resource, add a cost, or make them heal HP only (not MP).  Identify all unlimited heals and make a decision for each
   - Bucket in School: 3 uses (implemented)
   - Healing Spring in Phantom Forest:  Randomize outcome from a list (incl. bad outcomes)
@@ -26,11 +38,11 @@
   - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it! 
 - Increase all inn costs by a multiplier (3x?)
 
-3. Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
+4. Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
 
-4. Decide what to do with Warp spell.  It could move the current party to Esper World, or reset all parties and move to Esper World, or do nothing since we have the Warp Points (but still usable in battle).
+5. Decide what to do with Warp spell.  It could move the current party to Esper World, or reset all parties and move to Esper World, or do nothing since we have the Warp Points (but still usable in battle).
    
-5. [low priority] Add a custom splash graphic for RUINATION - Final Fantasy 6 Roguelike
+6. [low priority] Add a custom splash graphic for RUINATION - Final Fantasy 6 Roguelike
 
    
 ## Updates to specific checks to work with -ruin
