@@ -72,18 +72,33 @@
       - **Otherwise:** Use existing logic (show load menu if saves exist)
 
    2. **Modify pregame menu options** (menus/pregame.py:15-47 in `draw_options_mod()`):
-      - **If `args.ruination_mode`:** Draw 4 options:
-        1. "New Game" - starts new game
-        2. "Load Saved Game" - new option (see below)
-        3. "Flags" - shows flags menu
-        4. "Config" - shows config menu
+      - **If `args.ruination_mode`:** Two menu variants based on save detection:
+
+        **Approach A (Recommended): Conditional menu generation**
+        - Test save validity at menu initialization (JSR 0x7023)
+        - **If no save detected:** Draw 3 options:
+          1. "New Game" - starts new game
+          2. "Flags" - shows flags menu
+          3. "Config" - shows config menu
+        - **If save detected:** Draw 4 options:
+          1. "New Game" - starts new game
+          2. "Load Saved Game" - loads the save
+          3. "Flags" - shows flags menu
+          4. "Config" - shows config menu
+
+        **Approach B (Alternative): Grey out option**
+        - Always draw 4 options, but grey out "Load Saved Game" when no save exists
+        - Use `set_gray_text_color` (see menus/checks.py:34 for example)
+        - Make option unselectable by skipping cursor position
+        - More complex but provides consistent menu layout
+
       - **Otherwise:** Draw standard 4 options (New Game, Objectives, Flags, Config)
 
    3. **Implement "Load Saved Game" option** (menus/pregame.py:93-186 in `sustain_mod()`):
       - Create new handler similar to existing option handlers
-      - Test save validity (JSR 0x7023)
-      - If save exists → initialize load menu (command 0x20) or directly load game
-      - If no save → play error sound or display message
+      - For Approach A: Only exists when save is detected
+      - For Approach B: Check save validity, skip if greyed out
+      - When active: initialize load menu (command 0x20) or directly load game
 
    4. **Files to modify:**
       - menus/pregame.py - main implementation (wrap logic in `if args.ruination_mode:` checks)
