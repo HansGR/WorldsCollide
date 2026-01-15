@@ -1987,18 +1987,14 @@ def modify_inn_costs(rom, dialogs):
     """
     import re
 
-    # List of all inn/chocobo GP cost addresses in the ROM
+    # List of all inn GP cost addresses in the ROM
     # Format: (address, original_cost, dialog_id, description)
     # dialog_id is None for entries that share a dialog with another entry
+    # Note: Chocobo stables are handled separately by disable_chocobo_stables()
     inn_costs = [
         (0xa78a0, 80, 0x0B89, "South Figaro inn"),
-        (0xa7a4c, 80, 0x0B8E, "South Figaro chocobo"),
         (0xa8ef1, 150, 0x0B8A, "Nikeah inn WoB"),
-        # Note: Nikeah chocobo shares dialog 0x0B8E with South Figaro chocobo, but charges
-        # 150 GP instead of 80 GP. This is a vanilla bug. Dialog will show South Figaro's cost.
-        (0xa8fca, 150, None, "Nikeah chocobo"),
         (0xb449c, 250, 0x0112, "Jidoor inn"),
-        (0xb44e3, 250, 0x0113, "Jidoor chocobo"),
         (0xbd7ad, 1, 0x079D, "Thamasa inn"),
         (0xbd775, 1500, 0x0790, "Thamasa inn (strangers)"),
         (0xc5caf, 350, 0x062A, "Tzen inn"),
@@ -2033,5 +2029,46 @@ def modify_inn_costs(rom, dialogs):
 
         if rom.args.debug:
             print(f"Modified {description}: {original_cost} GP -> {new_cost} GP")
+
+
+def disable_chocobo_stables(rom, dialogs):
+    """
+    Disables the in-town chocobo stables for ruination mode.
+    Changes the chocobo keeper dialogs to explain chocobos won't go outside,
+    and patches the event code to just display the dialog and return (no choices).
+
+    Args:
+        rom: The ROM object to modify
+        dialogs: The Dialogs object to update dialog text
+    """
+    # Chocobo stable event addresses and their dialog IDs
+    # Format: (event_address, dialog_id, description)
+    chocobo_stables = [
+        (0xa7a36, 0x0B8E, "South Figaro chocobo"),
+        (0xa8fb4, 0x0B8E, "Nikeah chocobo"),  # Shares dialog with South Figaro
+        (0xb44cd, 0x0113, "Jidoor chocobo"),
+    ]
+
+    disabled_message = "The chocobos won't go outside anymore.<end>"
+
+    # Track which dialogs we've already updated
+    updated_dialogs = set()
+
+    for event_addr, dialog_id, description in chocobo_stables:
+        # Update dialog text (only once per unique dialog ID)
+        if dialog_id not in updated_dialogs:
+            dialogs.set_text(dialog_id, disabled_message)
+            updated_dialogs.add(dialog_id)
+
+            if rom.args.debug:
+                print(f"Updated dialog {dialog_id:#x} for {description}")
+
+        # Patch event code to: display dialog (4B), return (FE)
+        # Format: 4B [dialog_id_lo] [dialog_id_hi] FE
+        event_bytes = bytes([0x4B, dialog_id & 0xFF, dialog_id >> 8, 0xFE])
+        rom.set_bytes(event_addr, event_bytes)
+
+        if rom.args.debug:
+            print(f"Disabled {description} at {event_addr:#x}")
 
 
