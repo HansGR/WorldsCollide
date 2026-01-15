@@ -91,7 +91,18 @@ def export_maps_with_data(maps):
 
         if npc_count > 0:
             for i in range(npc_count):
-                npc = maps.npcs.npcs[first_npc_index + i]
+                try:
+                    npc = maps.npcs.npcs[first_npc_index + i]
+                except IndexError:
+                    print(f"\nError on map {map_id}:")
+                    print(f"  first_npc_index: {first_npc_index}")
+                    print(f"  npc_count: {npc_count}")
+                    print(f"  trying to access index: {first_npc_index + i}")
+                    print(f"  total NPCs available: {len(maps.npcs.npcs)}")
+                    print(f"  npcs_ptr: {hex(map_info['npcs_ptr'])}")
+                    if map_id + 1 < maps.MAP_COUNT:
+                        print(f"  next npcs_ptr: {hex(maps.maps[map_id + 1]['npcs_ptr'])}")
+                    raise
                 npcs_list.append({
                     "index": first_npc_index + i,
                     "npc_id": 0x10 + i,  # NPC IDs start at 0x10
