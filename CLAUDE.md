@@ -55,6 +55,111 @@ python3 wc.py -i ffiii.smc -debug  # Enable spoiler log
 - ROM uses little-endian byte order
 - **FinishCheck timing**: When modifying events that give rewards and then transition to another map, `field.FinishCheck()` must be called **before** any screen transitions. The relevant event bit must be set **before** `FinishCheck()` is called.
 
+## NPC and Event Editing
+
+### NPC ID Indexing
+
+**CRITICAL**: NPC IDs used in `maps.get_npc(map_id, npc_id)` are **offset by 0x10** from the map-local index:
+```python
+npc_id = map_local_index + 0x10
+```
+
+This is because **slots 0x00 through 0x0f are reserved for the 14 playable characters**.
+
+**Examples**:
+- Tritoch Peak Lone Wolf: map-local index 11 (0x0b) → `npc_id = 0x1b`
+- Tritoch Peak Mog: map-local index 12 (0x0c) → `npc_id = 0x1c`
+- Narshe WoB Lone Wolf: map-local index 25 (0x19) → `npc_id = 0x29`
+
+**Code reference** (data/maps.py:231):
+```python
+def get_npc_index(self, map_id, npc_id):
+    first_npc_index = (self.maps[map_id]["npcs_ptr"] - self.maps[0]["npcs_ptr"]) // NPC.DATA_SIZE
+    return first_npc_index + (npc_id - 0x10)
+```
+
+### NPC_BIT Calculation
+
+Each NPC has a visibility bit (NPC_BIT) that determines whether it appears when the map loads. NPC_BITs range from **0x300 to 0x6ff**.
+
+**Formula** (stored in each NPC):
+```python
+npc_bit = (event_byte + 0x60) * 8 + event_bit
+```
+
+**Reverse calculation** (data/npc_bit.py:170-176):
+```python
+def event_byte(npc_bit):
+    return (npc_bit // 8) - 0x60
+
+def event_bit(npc_bit):
+    return npc_bit % 8
+```
+
+**Example** (Narshe WoB Lone Wolf):
+- Stored: `event_byte=103, event_bit=7`
+- Calculated: `npc_bit = (103 + 0x60) * 8 + 7 = 1599 = 0x63f`
+
+**Special NPC_BITs** (data/npc_bit.py):
+- `ALWAYS_OFF = 0x6ff` - NPC never appears
+- `ALWAYS_ON = 0x301` - NPC always appears
+
+### Copying NPCs Between Maps
+
+When moving/copying NPCs between maps (e.g., in ruination mode), copy **all properties** from the source NPC:
+
+**Essential properties** (data/npc.py:9-33):
+- **Visual**: `sprite`, `palette`, `split_sprite`, `const_sprite`
+- **Behavior**: `direction`, `speed`, `movement`, `no_face_on_trigger`, `vehicle`
+- **Positioning**: `x`, `y`, `map_layer`, `background_layer`, `background_scrolls`
+- **Events**: `event_address`, `event_byte`, `event_bit`
+- **Unknown**: `unknown1`, `unknown2` (copy these too for safety)
+
+**Pattern**:
+```python
+# Load source NPC
+source_npc = self.maps.get_npc(source_map_id, source_npc_id)
+
+# Get or create destination NPC
+dest_npc = self.maps.get_npc(dest_map_id, dest_npc_id)
+
+# Copy all properties
+dest_npc.sprite = source_npc.sprite
+dest_npc.palette = source_npc.palette
+dest_npc.direction = source_npc.direction
+dest_npc.no_face_on_trigger = source_npc.no_face_on_trigger
+dest_npc.speed = source_npc.speed
+dest_npc.movement = source_npc.movement
+dest_npc.split_sprite = source_npc.split_sprite
+dest_npc.const_sprite = source_npc.const_sprite
+dest_npc.vehicle = source_npc.vehicle
+dest_npc.event_address = source_npc.event_address
+dest_npc.map_layer = source_npc.map_layer
+dest_npc.background_scrolls = source_npc.background_scrolls
+dest_npc.background_layer = source_npc.background_layer
+dest_npc.unknown1 = source_npc.unknown1
+dest_npc.unknown2 = source_npc.unknown2
+
+# Override position-specific properties
+dest_npc.x = new_x
+dest_npc.y = new_y
+dest_npc.event_bit = npc_bit.event_bit(new_npc_bit)
+dest_npc.event_byte = npc_bit.event_byte(new_npc_bit)
+```
+
+### Finding NPCs in Reference Data
+
+Reference JSON files are located in the remote `claude_ruination` branch under `claude_reference/`:
+- `npcs_raw.json` - All NPCs with properties (index, x, y, sprite, event_byte, event_bit, etc.)
+- `maps_data.json` - Maps with their NPCs listed (includes map-local index)
+
+**To find an NPC**:
+1. Locate the map in `maps_data.json` by map_id (e.g., Narshe WoB = 0x14 = 20 decimal)
+2. Find the NPC in that map's `npcs` array by position (x, y) or other properties
+3. Note the map-local index (array position) and sprite properties
+4. Calculate `npc_id = map_local_index + 0x10` for use in `get_npc()`
+5. Cross-reference global index in `npcs_raw.json` for full property details
+
 ## Ruination Mode (`-ruin`)
 
 Ruination Mode creates a roguelike-style dungeon with three independent branches emanating from a central hub.
