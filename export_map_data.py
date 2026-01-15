@@ -81,9 +81,15 @@ def export_maps_with_data(maps):
 
         # Get NPCs for this map
         npcs_list = []
-        npc_count = maps.get_npc_count(map_id)
+        first_npc_index = (map_info["npcs_ptr"] - maps.maps[0]["npcs_ptr"]) // 9
+        if map_id + 1 < maps.MAP_COUNT:
+            next_npc_index = (maps.maps[map_id + 1]["npcs_ptr"] - maps.maps[0]["npcs_ptr"]) // 9
+            npc_count = next_npc_index - first_npc_index
+        else:
+            # Last map: calculate from total NPCs
+            npc_count = len(maps.npcs.npcs) - first_npc_index
+
         if npc_count > 0:
-            first_npc_index = (map_info["npcs_ptr"] - maps.maps[0]["npcs_ptr"]) // 9
             for i in range(npc_count):
                 npc = maps.npcs.npcs[first_npc_index + i]
                 npcs_list.append({
@@ -110,9 +116,15 @@ def export_maps_with_data(maps):
 
         # Get events for this map
         events_list = []
-        event_count = maps.get_event_count(map_id)
+        first_event_id = (map_info["events_ptr"] - maps.maps[0]["events_ptr"]) // 5
+        if map_id + 1 < maps.MAP_COUNT:
+            next_event_id = (maps.maps[map_id + 1]["events_ptr"] - maps.maps[0]["events_ptr"]) // 5
+            event_count = next_event_id - first_event_id
+        else:
+            # Last map: calculate from total events
+            event_count = len(maps.events.events) - first_event_id
+
         if event_count > 0:
-            first_event_id = (map_info["events_ptr"] - maps.maps[0]["events_ptr"]) // 5
             for i in range(event_count):
                 event = maps.events.events[first_event_id + i]
                 events_list.append({
@@ -124,9 +136,15 @@ def export_maps_with_data(maps):
 
         # Get short exits for this map
         short_exits_list = []
-        short_exit_count = maps.get_short_exit_count(map_id)
+        first_exit_id = (map_info["short_exits_ptr"] - maps.maps[0]["short_exits_ptr"]) // 6
+        if map_id + 1 < maps.MAP_COUNT:
+            next_exit_id = (maps.maps[map_id + 1]["short_exits_ptr"] - maps.maps[0]["short_exits_ptr"]) // 6
+            short_exit_count = next_exit_id - first_exit_id
+        else:
+            # Last map: calculate from total short exits
+            short_exit_count = len(maps.exits.short_exits) - first_exit_id
+
         if short_exit_count > 0:
-            first_exit_id = (map_info["short_exits_ptr"] - maps.maps[0]["short_exits_ptr"]) // 6
             for i in range(short_exit_count):
                 exit = maps.exits.short_exits[first_exit_id + i]
                 short_exits_list.append({
@@ -141,9 +159,15 @@ def export_maps_with_data(maps):
 
         # Get long exits for this map
         long_exits_list = []
-        long_exit_count = maps.get_long_exit_count(map_id)
+        first_exit_id = (map_info["long_exits_ptr"] - maps.maps[0]["long_exits_ptr"]) // 7
+        if map_id + 1 < maps.MAP_COUNT:
+            next_exit_id = (maps.maps[map_id + 1]["long_exits_ptr"] - maps.maps[0]["long_exits_ptr"]) // 7
+            long_exit_count = next_exit_id - first_exit_id
+        else:
+            # Last map: calculate from total long exits
+            long_exit_count = len(maps.exits.long_exits) - first_exit_id
+
         if long_exit_count > 0:
-            first_exit_id = (map_info["long_exits_ptr"] - maps.maps[0]["long_exits_ptr"]) // 7
             for i in range(long_exit_count):
                 exit = maps.exits.long_exits[first_exit_id + i]
                 long_exits_list.append({
