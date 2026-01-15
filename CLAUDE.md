@@ -174,6 +174,11 @@ Ruination mode has a custom starting menu that differs from standard mode to acc
 - Conditional logic uses `if args.ruination_mode:` checks at build time
 
 ## Resources
-
-- Event script decompile: https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link
-- Event bits: data/event_bit.py
+- Event script decompile: @https://drive.google.com/file/d/1onKV8AgBBjj-pTVEJV57nH_ED2UAgtC6/view?usp=drive_link
+- Event bits: @data/event_bit.py
+- Original map, event, and npc JSON files: see MAP_DATA_STRUCTURES.md for information on these files.
+- - Chests data:  @https://drive.google.com/file/d/1XQQ0A3YWqgtBDxR84ib6q32lgXAsoGjA/view?usp=drive_link
+  - MapEvents data: @https://drive.google.com/file/d/1CONaDksmi3Qyis_DXl-vc06M6IrN-u4t/view?usp=drive_link
+  - MapExits data: @https://drive.google.com/file/d/1MIlD-nRo4r9aNGiLZzI94FV7rnyUJeW_/view?usp=drive_link
+  - Maps data: @https://drive.google.com/file/d/1O1Hs7EUsUM_a1LZtzVZZktgacy6sl5nn/view?usp=drive_link
+  - NPC data: @https://drive.google.com/file/d/1W2N0B99VtgR8-JyqDwtJLzj1HTjSnZ4K/view?usp=drive_link
