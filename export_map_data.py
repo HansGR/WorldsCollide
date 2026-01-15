@@ -89,20 +89,14 @@ def export_maps_with_data(maps):
             # Last map: calculate from total NPCs
             npc_count = len(maps.npcs.npcs) - first_npc_index
 
+        # Cap npc_count to not exceed available NPCs (pointers may include NPCs not yet written)
+        max_available = len(maps.npcs.npcs) - first_npc_index
+        if npc_count > max_available:
+            npc_count = max_available
+
         if npc_count > 0:
             for i in range(npc_count):
-                try:
-                    npc = maps.npcs.npcs[first_npc_index + i]
-                except IndexError:
-                    print(f"\nError on map {map_id}:")
-                    print(f"  first_npc_index: {first_npc_index}")
-                    print(f"  npc_count: {npc_count}")
-                    print(f"  trying to access index: {first_npc_index + i}")
-                    print(f"  total NPCs available: {len(maps.npcs.npcs)}")
-                    print(f"  npcs_ptr: {hex(map_info['npcs_ptr'])}")
-                    if map_id + 1 < maps.MAP_COUNT:
-                        print(f"  next npcs_ptr: {hex(maps.maps[map_id + 1]['npcs_ptr'])}")
-                    raise
+                npc = maps.npcs.npcs[first_npc_index + i]
                 npcs_list.append({
                     "index": first_npc_index + i,
                     "npc_id": 0x10 + i,  # NPC IDs start at 0x10
@@ -135,6 +129,11 @@ def export_maps_with_data(maps):
             # Last map: calculate from total events
             event_count = len(maps.events.events) - first_event_id
 
+        # Cap event_count to not exceed available events
+        max_available = len(maps.events.events) - first_event_id
+        if event_count > max_available:
+            event_count = max_available
+
         if event_count > 0:
             for i in range(event_count):
                 event = maps.events.events[first_event_id + i]
@@ -154,6 +153,11 @@ def export_maps_with_data(maps):
         else:
             # Last map: calculate from total short exits
             short_exit_count = len(maps.exits.short_exits) - first_exit_id
+
+        # Cap short_exit_count to not exceed available exits
+        max_available = len(maps.exits.short_exits) - first_exit_id
+        if short_exit_count > max_available:
+            short_exit_count = max_available
 
         if short_exit_count > 0:
             for i in range(short_exit_count):
@@ -177,6 +181,11 @@ def export_maps_with_data(maps):
         else:
             # Last map: calculate from total long exits
             long_exit_count = len(maps.exits.long_exits) - first_exit_id
+
+        # Cap long_exit_count to not exceed available exits
+        max_available = len(maps.exits.long_exits) - first_exit_id
+        if long_exit_count > max_available:
+            long_exit_count = max_available
 
         if long_exit_count > 0:
             for i in range(long_exit_count):
