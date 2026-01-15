@@ -29,11 +29,12 @@ class LoneWolf(Event):
             # So npc_id = 0x19 + 0x10 = 0x29
             NARSHE_WOB_LONE_WOLF_NPC_ID = 0x29
 
-            self.mog_npc_id = 0x1c
-            self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
-
+            # Load Narshe WoB Lone Wolf for property copying in ruination_mod()
             self.lone_wolf_npc_id = NARSHE_WOB_LONE_WOLF_NPC_ID
             self.lone_wolf_npc = self.maps.get_npc(NARSHE_WOB_MAP, self.lone_wolf_npc_id)
+
+            # DON'T initialize self.mog_npc here - ruination_mod() will set it
+            # after creating the WoR Tritoch Peak cliff scene NPCs
         else:
             self.mog_npc_id = 0x1c
             self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
@@ -392,7 +393,7 @@ class LoneWolf(Event):
         space = Reserve(0xcd454, 0xcd454, "Edit Lone Wolf NPC_ID 5", narshe_wor_lone_wolf_npc_id)
 
         # (3b) Setup Lone Wolf NPC on Narshe WoR
-        # Copy all properties from Narshe WoB Lone Wolf (self.lone_wolf_npc loaded at line 36)
+        # Copy all properties from Narshe WoB Lone Wolf (self.lone_wolf_npc loaded at line 34)
         narshe_wor_lone_wolf = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=narshe_wor_lone_wolf_npc_id)
 
         # Copy all visual and behavioral properties
