@@ -366,12 +366,29 @@ class LoneWolf(Event):
         space = Reserve(0xcd44d, 0xcd44d, "Edit Lone Wolf NPC_ID 4", wor_lonewolf_npc_id)
         space = Reserve(0xcd454, 0xcd454, "Edit Lone Wolf NPC_ID 5", wor_lonewolf_npc_id)
 
-        # (3b) Move Lone Wolf to the correct starting position
+        # (3b) Move Lone Wolf to the correct starting position and copy all properties from WoB Lone Wolf
         narshe_wor_lone_wolf = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=wor_lonewolf_npc_id)
+
+        # Copy all relevant properties from the WoB Lone Wolf NPC
+        narshe_wor_lone_wolf.sprite = self.lone_wolf_npc.sprite
+        narshe_wor_lone_wolf.palette = self.lone_wolf_npc.palette
+        narshe_wor_lone_wolf.direction = self.lone_wolf_npc.direction
+        narshe_wor_lone_wolf.no_face_on_trigger = self.lone_wolf_npc.no_face_on_trigger
+        narshe_wor_lone_wolf.speed = self.lone_wolf_npc.speed
+        narshe_wor_lone_wolf.movement = self.lone_wolf_npc.movement
+        narshe_wor_lone_wolf.split_sprite = self.lone_wolf_npc.split_sprite
+        narshe_wor_lone_wolf.const_sprite = self.lone_wolf_npc.const_sprite
+        narshe_wor_lone_wolf.vehicle = self.lone_wolf_npc.vehicle
+        narshe_wor_lone_wolf.event_address = self.lone_wolf_npc.event_address
+        narshe_wor_lone_wolf.map_layer = self.lone_wolf_npc.map_layer
+        narshe_wor_lone_wolf.background_scrolls = self.lone_wolf_npc.background_scrolls
+        narshe_wor_lone_wolf.background_layer = self.lone_wolf_npc.background_layer
+        narshe_wor_lone_wolf.unknown1 = self.lone_wolf_npc.unknown1
+        narshe_wor_lone_wolf.unknown2 = self.lone_wolf_npc.unknown2
+
+        # Set position-specific properties
         narshe_wor_lone_wolf.x = 49
         narshe_wor_lone_wolf.y = 32
-        from data.npc import NPC
-        narshe_wor_lone_wolf.speed = NPC.FASTEST
         narshe_wor_lone_wolf.event_bit = npc_bit.event_bit(0x63f)
         narshe_wor_lone_wolf.event_byte = npc_bit.event_byte(0x63f)
 
