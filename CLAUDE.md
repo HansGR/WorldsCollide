@@ -113,6 +113,7 @@ Ruination Mode creates a roguelike-style dungeon with three independent branches
 - `ruin_hub`, `ruin_terminus_1/2/3`, etc.
 
 ## Resources
+Note these files are LARGE.  Only access them when necessary and be smart about reading them.  Don't just load the entire file into context. 
 - Event script decompile: @./claude_reference/EventScriptTxt.txt
 - Event bits: @./data/event_bit.py
 - Original map, event, and npc JSON files: see MAP_DATA_STRUCTURES.md for information on these files.
