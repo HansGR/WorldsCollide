@@ -282,6 +282,9 @@ class Events():
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs)
 
+        # Modify Thamasa inn to charge 1 GP before burning house, normal price after
+        modify_thamasa_inn_ruination(self.rom, self.dialogs)
+
     def validate(self, events):
         char_esper_checks = []
         for event in events:
