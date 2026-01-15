@@ -22,11 +22,25 @@ class LoneWolf(Event):
         )
 
     def mod(self):
-        self.mog_npc_id = 0x1c
-        self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
+        # In ruination mode, Lone Wolf event is on Narshe WoB instead of Tritoch Peak
+        if self.args.ruination_mode:
+            NARSHE_WOB_MAP = 0x014
+            # Lone Wolf is at map-local index 25 (0x19), but npc_id is offset by 0x10
+            # So npc_id = 0x19 + 0x10 = 0x29
+            NARSHE_WOB_LONE_WOLF_NPC_ID = 0x29
 
-        self.lone_wolf_npc_id = 0x1b
-        self.lone_wolf_npc = self.maps.get_npc(0x017, self.lone_wolf_npc_id)
+            # Load Narshe WoB Lone Wolf for property copying in ruination_mod()
+            self.lone_wolf_npc_id = NARSHE_WOB_LONE_WOLF_NPC_ID
+            self.lone_wolf_npc = self.maps.get_npc(NARSHE_WOB_MAP, self.lone_wolf_npc_id)
+
+            # DON'T initialize self.mog_npc here - ruination_mod() will set it
+            # after creating the WoR Tritoch Peak cliff scene NPCs
+        else:
+            self.mog_npc_id = 0x1c
+            self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
+
+            self.lone_wolf_npc_id = 0x1b
+            self.lone_wolf_npc = self.maps.get_npc(0x017, self.lone_wolf_npc_id)
 
         self.mog_moogle_room_npc_id = 0x10
         self.mog_moogle_room_npc = self.maps.get_npc(0x02c, self.mog_moogle_room_npc_id)
@@ -321,14 +335,24 @@ class LoneWolf(Event):
         self.maps.set_entrance_event(0x02c, space.start_address - EVENT_CODE_START)
 
     def ruination_mod(self):
+        """
+        Ruination mode moves Lone Wolf event from WoB to WoR for both locations:
+        1. Initial chase: Narshe WoB -> Narshe WoR
+        2. Cliff scene: Tritoch Peak WoB -> Tritoch Peak WoR
+        """
         NARSHE_WOB_MAP = 0x014
         NARSHE_WOR_MAP = 0x020
         NARSHE_TREASURE_MAP = 0x01e
         TRITOCH_WOB_MAP = 0x017
         TRITOCH_WOR_MAP = 0x023
 
-        wor_lonewolf_npc_id = 0x10
-        wor_treasurehouse_npc_id = 0x14
+        # Tritoch Peak original NPC IDs (for copying the cliff scene to WoR)
+        tritoch_lone_wolf_npc_id = 0x1b
+        tritoch_mog_npc_id = 0x1c
+
+        # Narshe WoR NPC IDs
+        narshe_wor_lone_wolf_npc_id = 0x10
+        narshe_wor_treasurehouse_npc_id = 0x14
 
         # (1) Edit entrance event for Narshe treasure house
         # Entrance event: 0xc395a:  just handles which song is playing.
@@ -342,12 +366,13 @@ class LoneWolf(Event):
         treasure_exit.dest_map = NARSHE_WOR_MAP
 
         # (2) Remove lock from Narshe treasure house
-        treasure_blocker = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=wor_treasurehouse_npc_id)
+        treasure_blocker = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=narshe_wor_treasurehouse_npc_id)
         treasure_blocker.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
         treasure_blocker.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
 
-        # (3) Add Lone Wolf event to WOR Narshe
-        # event tile: (49, 37, 0xcd424)
+        # (3) Move Lone Wolf initial chase event from Narshe WoB to Narshe WoR
+        # Move event tile from (49, 37) on WoB to same position on WoR
+        # Event script address: 0xcd424
         old_event = self.maps.get_event(map_id=NARSHE_WOB_MAP, x=49, y=37)
 
         from data.map_event import MapEvent
@@ -359,44 +384,73 @@ class LoneWolf(Event):
         self.maps.add_event(map_id=NARSHE_WOR_MAP, new_event=new_event)
         self.maps.delete_event(map_id=NARSHE_WOB_MAP, x=old_event.x, y=old_event.y)
 
-        # (3a) Edit this event script to address the correct NPC id
-        space = Reserve(0xcd42d, 0xcd42e, "Edit Lone Wolf NPC_ID 1", wor_lonewolf_npc_id)
-        space = Reserve(0xcd43b, 0xcd43b, "Edit Lone Wolf NPC_ID 2", wor_lonewolf_npc_id)
-        space = Reserve(0xcd443, 0xcd443, "Edit Lone Wolf NPC_ID 3", wor_lonewolf_npc_id)
-        space = Reserve(0xcd44d, 0xcd44d, "Edit Lone Wolf NPC_ID 4", wor_lonewolf_npc_id)
-        space = Reserve(0xcd454, 0xcd454, "Edit Lone Wolf NPC_ID 5", wor_lonewolf_npc_id)
+        # (3a) Update event script to reference correct WoR NPC ID
+        # The event script has 5 references to the NPC that need updating
+        space = Reserve(0xcd42d, 0xcd42e, "Edit Lone Wolf NPC_ID 1", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd43b, 0xcd43b, "Edit Lone Wolf NPC_ID 2", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd443, 0xcd443, "Edit Lone Wolf NPC_ID 3", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd44d, 0xcd44d, "Edit Lone Wolf NPC_ID 4", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd454, 0xcd454, "Edit Lone Wolf NPC_ID 5", narshe_wor_lone_wolf_npc_id)
 
-        # (3b) Move Lone Wolf to the correct starting position
-        narshe_wor_lone_wolf = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=wor_lonewolf_npc_id)
-        narshe_wor_lone_wolf.x = 49
-        narshe_wor_lone_wolf.y = 32
-        from data.npc import NPC
-        narshe_wor_lone_wolf.speed = NPC.FASTEST
-        narshe_wor_lone_wolf.event_bit = npc_bit.event_bit(0x63f)
+        # (3b) Setup Lone Wolf NPC on Narshe WoR
+        # Copy all properties from Narshe WoB Lone Wolf (self.lone_wolf_npc loaded at line 34)
+        narshe_wor_lone_wolf = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=narshe_wor_lone_wolf_npc_id)
+
+        # Copy all visual and behavioral properties
+        narshe_wor_lone_wolf.sprite = self.lone_wolf_npc.sprite                    # 56 (Lone Wolf sprite)
+        narshe_wor_lone_wolf.palette = self.lone_wolf_npc.palette                  # 4
+        narshe_wor_lone_wolf.direction = self.lone_wolf_npc.direction              # 0 (UP)
+        narshe_wor_lone_wolf.no_face_on_trigger = self.lone_wolf_npc.no_face_on_trigger
+        narshe_wor_lone_wolf.speed = self.lone_wolf_npc.speed                      # 3 (FASTEST)
+        narshe_wor_lone_wolf.movement = self.lone_wolf_npc.movement                # 0 (NO_MOVE)
+        narshe_wor_lone_wolf.split_sprite = self.lone_wolf_npc.split_sprite
+        narshe_wor_lone_wolf.const_sprite = self.lone_wolf_npc.const_sprite
+        narshe_wor_lone_wolf.vehicle = self.lone_wolf_npc.vehicle
+        narshe_wor_lone_wolf.event_address = self.lone_wolf_npc.event_address      # 0x5eb3 (just return - chase triggered by event tile)
+        narshe_wor_lone_wolf.map_layer = self.lone_wolf_npc.map_layer
+        narshe_wor_lone_wolf.background_scrolls = self.lone_wolf_npc.background_scrolls
+        narshe_wor_lone_wolf.background_layer = self.lone_wolf_npc.background_layer
+        narshe_wor_lone_wolf.unknown1 = self.lone_wolf_npc.unknown1
+        narshe_wor_lone_wolf.unknown2 = self.lone_wolf_npc.unknown2
+
+        # Override position and visibility for WoR location
+        narshe_wor_lone_wolf.x = 49                                                # Same x as WoB
+        narshe_wor_lone_wolf.y = 32                                                # Same y as WoB
+        narshe_wor_lone_wolf.event_bit = npc_bit.event_bit(0x63f)                 # Same npc_bit as WoB
         narshe_wor_lone_wolf.event_byte = npc_bit.event_byte(0x63f)
 
         # (4) Add 2nd lone wolf event to WOR Narshe?  Skip for now, due to randomized maps.
         # (5) Add 3rd lone wolf event to WOR Narshe?  Skip for now, due to randomized maps.
 
-        # (6) Copy Lone Wolf NPC and Mog NPC to WOR Tritoch Peak.  These should already be edited.
-        #lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.lone_wolf_npc_id)
-        new_lone_wolf_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=self.lone_wolf_npc)
-        self.lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=new_lone_wolf_npc_id)
-        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.lone_wolf_npc_id)
-        self.lone_wolf_npc_id = new_lone_wolf_npc_id
+        # (6) Move cliff scene from Tritoch Peak WoB to WoR
+        # This is SEPARATE from the Narshe chase - it's the Mog/Lone Wolf choice on the cliff
 
-        #mog_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.mog_npc_id)
-        new_mog_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=self.mog_npc)
-        self.mog_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=new_mog_npc_id)
-        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=self.mog_npc_id)
-        self.mog_npc_id = new_mog_npc_id
+        # Copy Lone Wolf cliff NPC (0x1b on WoB -> new ID on WoR)
+        tritoch_lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_lone_wolf_npc_id)
+        tritoch_wor_lone_wolf_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=tritoch_lone_wolf_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_lone_wolf_npc_id)
 
+        # Copy Mog cliff NPC (0x1c on WoB -> new ID on WoR)
+        tritoch_mog_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_mog_npc_id)
+        tritoch_wor_mog_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=tritoch_mog_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_mog_npc_id)
+
+        # IMPORTANT: Update instance variables to point to Tritoch WoR NPCs
+        # These are used by character_mod(), esper_mod(), item_mod(), and other methods
+        # that modify the cliff scene reward and animations
+        self.lone_wolf_npc_id = tritoch_wor_lone_wolf_npc_id
+        self.mog_npc_id = tritoch_wor_mog_npc_id
+        self.lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_lone_wolf_npc_id)
+        self.mog_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_mog_npc_id)
+
+        # Copy bridge animation NPC (runs across bridge during cliff scene)
         lonewolf_bridge_npc_id = 0x1a
         lonewolf_bridge_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
         wor_lonewolf_bridge_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=lonewolf_bridge_npc)
         self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
 
-        # (6a) Move event tiles to WOR
+        # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
+        # These event tiles trigger the animations and dialog for the cliff scene
         event_tile_xy = [(22, 20, 0xcd4a8),
                          (8, 18, 0xcd4dd),
                          (9, 18, 0xcd4fe),
@@ -413,27 +467,30 @@ class LoneWolf(Event):
             self.maps.add_event(map_id=TRITOCH_WOR_MAP, new_event=new_event)
             self.maps.delete_event(map_id=TRITOCH_WOB_MAP, x=old_event.x, y=old_event.y)
 
-        # (6b) Edit events to reference the correct npc IDs
-        # running on bridge animation: 0xcd4a8
-        addresses = [0xcd4b1, 0xcd4b3, 0xcd4b5, 0xcd4b9, 0xcd4c0, 0xcd4c5]  # Lone wolf bridge: 0x1a
+        # (6b) Update cliff scene event scripts to reference WoR NPC IDs
+        # Event scripts contain hardcoded NPC IDs that need to be updated after copying to WoR
+
+        # Update bridge NPC references (6 locations in event script)
+        addresses = [0xcd4b1, 0xcd4b3, 0xcd4b5, 0xcd4b9, 0xcd4c0, 0xcd4c5]
         for i, addr in enumerate(addresses):
             space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
 
+        # Update Mog NPC references (26 locations in event script)
         self.mog_addresses = [0xcd4cc, 0xcd4d0, 0xcd4d4, 0xcd514, 0xcd538, 0xcd53f, 0xcd543, 0xcd548, 0xcd54f, 0xcd557,
                          0xcd573, 0xcd5ab, 0xcd5b5, 0xcd591, 0xcd5fc, 0xcd67c, 0xcd681, 0xcd685, 0xcd689, 0xcd68d,
-                         0xcd6b1, 0xcd6bb, 0xcd6c4, 0xcd6ca, 0xcd6cb, 0xcd6d4]  # mog: 0x1c
-                        # overwritten:  0xcd61f, 0xcd626, 0xcd62a, 0xcd62f, 0xcd648,
-        #                          0xcd674,
+                         0xcd6b1, 0xcd6bb, 0xcd6c4, 0xcd6ca, 0xcd6cb, 0xcd6d4]
         for i, addr in enumerate(self.mog_addresses):
-            space = Reserve(addr, addr, "edit lone wolf mog animation " + str(i), self.mog_npc_id)
+            space = Reserve(addr, addr, "edit lone wolf mog animation " + str(i), tritoch_wor_mog_npc_id)
 
+        # Update Lone Wolf NPC references (12 locations in event script)
         self.lonewolf_addresses = [0xcd4ce, 0xcd4d2, 0xcd566, 0xcd569, 0xcd58f, 0xcd5c2, 0xcd5c5, 0xcd5dc,
-                              0xcd697, 0xcd69a, 0xcd6a7, 0xcd6aa]  # lonewolf: 0x1b
-                            # Overwritten:  0xcd5d2, 0xcd636, 0xcd65d, 0xcd661, 0xcd669
+                              0xcd697, 0xcd69a, 0xcd6a7, 0xcd6aa]
         for i, addr in enumerate(self.lonewolf_addresses):
-            space = Reserve(addr, addr, "edit lone wolf animation " + str(i), self.lone_wolf_npc_id)
+            space = Reserve(addr, addr, "edit lone wolf animation " + str(i), tritoch_wor_lone_wolf_npc_id)
 
-        # (6c) edit event to only require seeing the first lone wolf animation
+        # (6c) Simplify cliff scene entry condition
+        # In ruination mode, only require seeing the first Narshe chase animation
+        # (instead of all three chase scenes from vanilla WoB)
         space = Reserve(0xcd4a8, 0xcd4af, "edit entry condition for LoneWolf", field.NOP())
         space.write(field.BranchIfAny([event_bit.CHASING_LONE_WOLF1, False, 0x23D, True],
                                       field.RETURN))
