@@ -11,36 +11,44 @@ import args
 def export_map_data():
     """Export map events, NPCs, and exits to JSON files."""
 
-    print("Loading ROM and data...")
+    print("Loading ROM and original data (no modifications)...")
     from memory.memory import Memory
     memory = Memory()
 
-    from data.data import Data
-    data = Data(memory.rom, args)
+    # Load Maps directly without going through Data to avoid mod() calls
+    from data.maps import Maps
+    from data.items import Items
+    import data.dialogs as dialogs
 
-    print(f"Loaded {len(data.maps.maps)} maps")
-    print(f"Total NPCs: {len(data.maps.npcs.npcs)}")
-    print(f"Total Events: {len(data.maps.events.events)}")
-    print(f"Total Short Exits: {len(data.maps.exits.short_exits)}")
-    print(f"Total Long Exits: {len(data.maps.exits.long_exits)}")
-    print(f"Total Chests: {len(data.maps.chests.all_chests)}")
+    # Items needs dialogs but we don't need to mod it for this export
+    items = Items(memory.rom, args, dialogs, None)  # Pass None for characters since we won't mod
+
+    maps = Maps(memory.rom, args, items)
+    # DON'T call maps.mod() - we want original data only
+
+    print(f"Loaded {len(maps.maps)} maps")
+    print(f"Total NPCs: {len(maps.npcs.npcs)}")
+    print(f"Total Events: {len(maps.events.events)}")
+    print(f"Total Short Exits: {len(maps.exits.short_exits)}")
+    print(f"Total Long Exits: {len(maps.exits.long_exits)}")
+    print(f"Total Chests: {len(maps.chests.all_chests)}")
 
     # Export all data grouped by map
-    print("\nExporting map data...")
-    export_maps_with_data(data.maps)
+    print("\nExporting original map data...")
+    export_maps_with_data(maps)
 
     # Export raw data tables for reference
     print("Exporting raw NPC data...")
-    export_npcs(data.maps.npcs)
+    export_npcs(maps.npcs)
 
     print("Exporting raw event data...")
-    export_events(data.maps.events)
+    export_events(maps.events)
 
     print("Exporting raw exit data...")
-    export_exits(data.maps.exits)
+    export_exits(maps.exits)
 
     print("Exporting raw chest data...")
-    export_chests(data.maps.chests)
+    export_chests(maps.chests)
 
     print("\nExport complete!")
     print("Files created:")
