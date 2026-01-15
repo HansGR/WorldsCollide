@@ -25,7 +25,9 @@ class LoneWolf(Event):
         # In ruination mode, Lone Wolf event is on Narshe WoB instead of Tritoch Peak
         if self.args.ruination_mode:
             NARSHE_WOB_MAP = 0x014
-            NARSHE_WOB_LONE_WOLF_NPC_ID = 0x19  # NPC index 25 (0x19) on Narshe WoB
+            # Lone Wolf is at map-local index 25 (0x19), but npc_id is offset by 0x10
+            # So npc_id = 0x19 + 0x10 = 0x29
+            NARSHE_WOB_LONE_WOLF_NPC_ID = 0x29
 
             self.mog_npc_id = 0x1c
             self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
