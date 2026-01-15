@@ -276,6 +276,9 @@ class Events():
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()
 
+        # Modify inn costs for ruination mode
+        modify_inn_costs(self.rom)
+
     def validate(self, events):
         char_esper_checks = []
         for event in events:

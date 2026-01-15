@@ -7,6 +7,10 @@ import random
 ESPER_GATE_MAPID = 0x0da
 NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
+# Inn cost multiplier for ruination mode
+# Change this value to adjust how much inn costs are multiplied
+INN_COST_MULTIPLIER = 2
+
 CHARACTER_LOCKED_REWARDS = {
     # Only rewards that literally cannot be obtained without the character, and in areas that are accessible without them
     'TERRA': ['Whelk', 'Zozo'],  # Narshe, Zozo
@@ -1967,5 +1971,45 @@ def ruination_start_game_mod(dialogs, party):
     ]
     space = Write(Bank.CC, src, "start game ruination")
     return space.start_address
+
+def modify_inn_costs(rom):
+    """
+    Modifies all inn costs in the game by multiplying them by INN_COST_MULTIPLIER.
+
+    Each inn event has a "Take GP" instruction (opcode 0x85) followed by a 2-byte
+    little-endian amount. This function finds all these locations and multiplies
+    the GP amount by the multiplier constant.
+
+    Args:
+        rom: The ROM object to modify
+    """
+    # List of all inn GP cost addresses in the ROM
+    # Format: (address, original_cost, description)
+    inn_costs = [
+        (0xa78a0, 80, "South Figaro inn"),
+        (0xa7a4c, 80, "South Figaro inn (alt)"),
+        (0xa8ef1, 150, "Nikeah inn WoB"),
+        (0xa8fca, 150, "Nikeah inn WoB (alt)"),
+        (0xb449c, 250, "Jidoor inn"),
+        (0xb44e3, 250, "Jidoor inn (alt)"),
+        (0xbd7ad, 1, "Thamasa inn"),
+        (0xbd775, 1500, "Thamasa inn (strangers)"),
+        (0xc5caf, 350, "Tzen inn"),
+        (0xc62b2, 300, "Albrook inn WOR"),
+        (0xc6593, 200, "Maranda inn"),
+        (0xc665f, 100, "Mobliz inn"),
+        (0xc69d6, 200, "Kohlingen inn"),
+        (0xcd2b3, 200, "Narshe inn"),
+    ]
+
+    for address, original_cost, description in inn_costs:
+        # Calculate new cost
+        new_cost = min(original_cost * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+
+        # Write the new cost as 2-byte little-endian
+        rom.set_bytes(address, new_cost.to_bytes(2, 'little'))
+
+        if rom.args.debug:
+            print(f"Modified {description}: {original_cost} GP -> {new_cost} GP")
 
 
