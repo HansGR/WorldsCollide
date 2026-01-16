@@ -2171,3 +2171,212 @@ def modify_free_bed_heals(maps, rom):
             if rom.args.debug:
                 print(f"Warning: No event found at {description} (map {map_id}, {x}, {y})")
 
+
+# Recovery Spring Effect Types
+class SpringEffect:
+    FULL_RECOVERY = 0    # HP + MP + Status
+    RECOVER_HP = 1       # HP only
+    RECOVER_MP = 2       # MP only
+    RECOVER_STATUS = 3   # Status only
+    POISON = 4           # Add poison to random party members
+    IMP = 5              # Add imp to random party members
+    ZOMBIE = 6           # Add zombie to random party members
+    STONE = 7            # Add petrify to random party members
+    REDUCE_TO_1_HP = 8   # Reduce all party members to 1 HP
+
+# Recovery spring locations grouped by area
+# Each area will have the same effect for all its tiles
+SPRING_LOCATIONS = {
+    'phantom_forest': [
+        (133, 9, 10),   # Phantom Forest Healing Pool
+        (133, 8, 10),
+        (133, 7, 10),
+        (133, 6, 10),
+        (133, 5, 9),
+    ],
+    'cave_south_figaro': [
+        (70, 47, 29),   # Cave to South Figaro (WoB)
+        (73, 47, 29),   # Cave to South Figaro (WoB variant)
+    ],
+}
+
+# Flash colors for each effect type
+SPRING_FLASH_COLORS = {
+    SpringEffect.FULL_RECOVERY: field.Flash.BLUE,
+    SpringEffect.RECOVER_HP: field.Flash.BLUE,
+    SpringEffect.RECOVER_MP: field.Flash.BLUE,
+    SpringEffect.RECOVER_STATUS: field.Flash.BLUE,
+    SpringEffect.POISON: field.Flash.GREEN,
+    SpringEffect.IMP: field.Flash.GREEN,
+    SpringEffect.ZOMBIE: field.Flash.RED | field.Flash.BLUE,  # Purple
+    SpringEffect.STONE: field.Flash.WHITE,  # Grey-ish
+    SpringEffect.REDUCE_TO_1_HP: field.Flash.RED,
+}
+
+# Dialog IDs for spring messages (using range 1480-1495)
+SPRING_DIALOG_BASE = 1480
+
+
+def modify_recovery_springs(maps, rom, dialogs):
+    """
+    Modifies recovery spring events for ruination mode.
+
+    Each spring location gets a randomly assigned effect at compile time.
+    Effects can be beneficial (healing) or harmful (status ailments).
+    Player is asked before drinking from the pool.
+
+    Args:
+        maps: The Maps object to modify event tiles
+        rom: The ROM object
+        dialogs: The Dialogs object for setting dialog text
+    """
+    import random as rng
+
+    # Status effects for healing
+    HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
+                   field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
+                   field.Status.DARKNESS)
+
+    PARTY = [field_entity.PARTY0, field_entity.PARTY1, field_entity.PARTY2, field_entity.PARTY3]
+
+    # All possible effects
+    ALL_EFFECTS = [
+        SpringEffect.FULL_RECOVERY,
+        SpringEffect.RECOVER_HP,
+        SpringEffect.RECOVER_MP,
+        SpringEffect.RECOVER_STATUS,
+        SpringEffect.POISON,
+        SpringEffect.IMP,
+        SpringEffect.ZOMBIE,
+        SpringEffect.STONE,
+        SpringEffect.REDUCE_TO_1_HP,
+    ]
+
+    # Result messages for each effect
+    EFFECT_MESSAGES = {
+        SpringEffect.FULL_RECOVERY: "HP, MP, and status restored!<end>",
+        SpringEffect.RECOVER_HP: "HP restored!<end>",
+        SpringEffect.RECOVER_MP: "MP restored!<end>",
+        SpringEffect.RECOVER_STATUS: "Status ailments cured!<end>",
+        SpringEffect.POISON: "The water was poisoned!<end>",
+        SpringEffect.IMP: "The water turned you into Imps!<end>",
+        SpringEffect.ZOMBIE: "The water was cursed!<end>",
+        SpringEffect.STONE: "The water is petrifying!<end>",
+        SpringEffect.REDUCE_TO_1_HP: "The water drained your strength!<end>",
+    }
+
+    dialog_id = SPRING_DIALOG_BASE
+
+    # Set up the "Drink from the pool?" dialog
+    drink_dialog_id = dialog_id
+    dialogs.set_text(drink_dialog_id, "Drink from the pool?<line><choice> Yes<line><choice> No<end>")
+    dialog_id += 1
+
+    # Process each spring location area
+    for area_name, locations in SPRING_LOCATIONS.items():
+        # Randomly choose an effect for this area
+        effect = rng.choice(ALL_EFFECTS)
+
+        # For negative status effects, randomly choose how many party members to affect (1-4)
+        if effect in [SpringEffect.POISON, SpringEffect.IMP, SpringEffect.ZOMBIE, SpringEffect.STONE]:
+            num_affected = rng.randint(1, 4)
+            # Randomly select which party members to affect
+            affected_members = rng.sample(PARTY, num_affected)
+        else:
+            affected_members = PARTY  # All members for other effects
+
+        # Set up result message dialog
+        result_dialog_id = dialog_id
+        dialogs.set_text(result_dialog_id, EFFECT_MESSAGES[effect])
+        dialog_id += 1
+
+        # Get flash color for this effect
+        flash_color = SPRING_FLASH_COLORS[effect]
+
+        # Build the effect instructions
+        effect_instructions = []
+
+        if effect == SpringEffect.FULL_RECOVERY:
+            for p in PARTY:
+                effect_instructions.append(field.RemoveStatusEffects(p, HEAL_STATUS))
+            for p in PARTY:
+                effect_instructions.append(field.RestoreHp(p, 0x7f))
+            for p in PARTY:
+                effect_instructions.append(field.RestoreMp(p, 0x7f))
+
+        elif effect == SpringEffect.RECOVER_HP:
+            for p in PARTY:
+                effect_instructions.append(field.RestoreHp(p, 0x7f))
+
+        elif effect == SpringEffect.RECOVER_MP:
+            for p in PARTY:
+                effect_instructions.append(field.RestoreMp(p, 0x7f))
+
+        elif effect == SpringEffect.RECOVER_STATUS:
+            for p in PARTY:
+                effect_instructions.append(field.RemoveStatusEffects(p, HEAL_STATUS))
+
+        elif effect == SpringEffect.POISON:
+            for p in affected_members:
+                effect_instructions.append(field.AddStatusEffects(p, field.Status.POISON))
+
+        elif effect == SpringEffect.IMP:
+            for p in affected_members:
+                effect_instructions.append(field.AddStatusEffects(p, field.Status.IMP))
+
+        elif effect == SpringEffect.ZOMBIE:
+            for p in affected_members:
+                effect_instructions.append(field.AddStatusEffects(p, field.Status.ZOMBIE))
+
+        elif effect == SpringEffect.STONE:
+            for p in affected_members:
+                effect_instructions.append(field.AddStatusEffects(p, field.Status.PETRIFY))
+
+        elif effect == SpringEffect.REDUCE_TO_1_HP:
+            # Subtract 2^14 HP (16384), which reduces to 1 HP minimum
+            for p in PARTY:
+                effect_instructions.append(field.RestoreHp(p, 0x80 | 0x0e))
+
+        # Build the full event code
+        src = [
+            # Ask player if they want to drink
+            field.DialogBranch(drink_dialog_id, "DRINK", "RETURN"),
+
+            "DRINK",
+            # Flash screen with appropriate color
+            field.FlashScreen(flash_color),
+            field.PlaySoundEffect(233),  # Spring sound
+            field.PauseUnits(30),
+
+            # Apply the effect
+            *effect_instructions,
+
+            # Show result message
+            field.Dialog(result_dialog_id),
+
+            # Enable movement and return
+            field.FreeMovement(),
+            field.Return(),
+
+            "RETURN",
+            field.Return(),
+        ]
+
+        space = Write(Bank.CC, src, f"ruination spring event {area_name}")
+        spring_event_address = space.start_address
+
+        if rom.args.debug:
+            effect_name = [k for k, v in vars(SpringEffect).items() if v == effect and not k.startswith('_')][0]
+            print(f"Spring {area_name}: effect={effect_name}, address={spring_event_address:#x}")
+
+        # Update all event tiles for this area to use the new event
+        for map_id, x, y in locations:
+            event = maps.get_event(map_id, x, y)
+            if event is not None:
+                event.event_address = spring_event_address - EVENT_CODE_START
+                if rom.args.debug:
+                    print(f"  Updated spring tile at map {map_id} ({x}, {y})")
+            else:
+                if rom.args.debug:
+                    print(f"  Warning: No event at map {map_id} ({x}, {y})")
+
