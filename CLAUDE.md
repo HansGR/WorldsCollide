@@ -55,6 +55,10 @@ python3 wc.py -i ffiii.smc -debug  # Enable spoiler log
 - ROM uses little-endian byte order
 - **FinishCheck timing**: When modifying events that give rewards and then transition to another map, `field.FinishCheck()` must be called **before** any screen transitions. The relevant event bit must be set **before** `FinishCheck()` is called.
 
+## Code Organization
+
+Event-specific modifications should be placed in their respective event files (e.g., `event/burning_house.py`, `event/lone_wolf.py`), not in top-level files like `event/events.py` or generic modules like `event/ruination.py`. This keeps related logic together, makes it easier to find later, and clarifies how changes interact with other modifications to the same event. For mode-specific changes (e.g., ruination mode), add a method like `ruination_mod()` or `ruination_inn_mod()` to the event class and call it conditionally from `mod()`.
+
 ## NPC and Event Editing
 
 ### NPC ID Indexing
