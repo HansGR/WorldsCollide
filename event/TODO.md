@@ -43,8 +43,14 @@
   - Free beds: heal only HP.
       - Sabin's house, Mobliz WoR relic shop, Narshe Weapon shop, Duncan's house, Gau's Dad's House, ...
       - Include a 3/8 chance of being attacked in the night: forced back attack, selected boss or difficult mob, attacked before healing.
-  - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it! 
-- Increase all inn costs by a multiplier (3x?)
+  - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it!
+- ✅ **IMPLEMENTED** - Increase all inn costs by a multiplier (2x). Implementation:
+  - Inn costs doubled via INN_COST_MULTIPLIER in event/ruination.py
+  - Dialog text updated to reflect new prices (modify_inn_costs function)
+  - In-town chocobo stables disabled (South Figaro, Nikeah, Jidoor) - NPCs now say "The chocobos won't go outside anymore."
+  - Thamasa inn has special handling (event/burning_house.py:ruination_inn_mod):
+    - 1 GP if burning house not done (to allow event access)
+    - Normal price (400 GP) after burning house completed
 
 4. ✅ **IMPLEMENTED** - Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
 

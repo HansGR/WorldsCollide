@@ -40,6 +40,9 @@ class BurningHouse(Event):
         if self.args.character_gating:
             self.add_gating_condition()
 
+        if self.args.ruination_mode:
+            self.ruination_inn_mod()
+
         self.enter_burning_house_mod()
         self.flame_eater_mod()
         self.wake_up_mod()
@@ -73,6 +76,41 @@ class BurningHouse(Event):
         space.write(
             field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGER_PRICE"),
         )
+
+    def ruination_inn_mod(self):
+        """
+        Modifies the Thamasa inn pricing for ruination mode.
+
+        - If burning house not done: charge 1 GP (to allow access to the event)
+        - If burning house done: charge normal inn price (200 GP * multiplier)
+
+        This patches the inn event to check DEFEATED_FLAME_EATER and branch accordingly.
+        """
+        from event.ruination import INN_COST_MULTIPLIER
+
+        # Normal inn price (same as other typical inns like Maranda/Kohlingen/Narshe)
+        THAMASA_NORMAL_PRICE = 200
+        new_price = min(THAMASA_NORMAL_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+
+        # Repurpose the "strangers" path as the normal price path (after burning house done)
+        NORMAL_PRICE_PATH = 0xbd769
+        NORMAL_PRICE_GP = 0xbd775
+        THAMASA_INN_DIALOG = 0x0790  # Was "strangers" dialog
+
+        # Patch event at 0xbd73f: If DEFEATED_FLAME_EATER is set, branch to normal price
+        space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
+        space.add_label("NORMAL_PRICE", NORMAL_PRICE_PATH)
+        space.write(
+            field.BranchIfEventBitSet(event_bit.DEFEATED_FLAME_EATER, "NORMAL_PRICE"),
+        )
+
+        # Update the normal price path dialog and cost
+        self.dialogs.set_text(THAMASA_INN_DIALOG,
+                              f"{new_price} GP per night.<line>Stay a while?<line>"
+                              f"<choice> Yes<line><choice> No<end>")
+
+        # Update the GP cost for normal price path
+        self.rom.set_bytes(NORMAL_PRICE_GP, new_price.to_bytes(2, 'little'))
 
     def enter_burning_house_mod(self):
         # wake up in middle of night, enter burning house, skip scene with villagers outside burning house

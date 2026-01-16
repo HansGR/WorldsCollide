@@ -1972,9 +1972,10 @@ def ruination_start_game_mod(dialogs, party):
     space = Write(Bank.CC, src, "start game ruination")
     return space.start_address
 
-def modify_inn_costs(rom):
+def modify_inn_costs(rom, dialogs):
     """
     Modifies all inn costs in the game by multiplying them by INN_COST_MULTIPLIER.
+    Also updates the associated dialog text to reflect the new prices.
 
     Each inn event has a "Take GP" instruction (opcode 0x85) followed by a 2-byte
     little-endian amount. This function finds all these locations and multiplies
@@ -1982,34 +1983,90 @@ def modify_inn_costs(rom):
 
     Args:
         rom: The ROM object to modify
+        dialogs: The Dialogs object to update dialog text
     """
+    import re
+
     # List of all inn GP cost addresses in the ROM
-    # Format: (address, original_cost, description)
+    # Format: (address, original_cost, dialog_id, description)
+    # dialog_id is None for entries that share a dialog with another entry
+    # Note: Chocobo stables are handled separately by disable_chocobo_stables()
+    # Note: Thamasa inn is handled separately by modify_thamasa_inn_ruination()
     inn_costs = [
-        (0xa78a0, 80, "South Figaro inn"),
-        (0xa7a4c, 80, "South Figaro inn (alt)"),
-        (0xa8ef1, 150, "Nikeah inn WoB"),
-        (0xa8fca, 150, "Nikeah inn WoB (alt)"),
-        (0xb449c, 250, "Jidoor inn"),
-        (0xb44e3, 250, "Jidoor inn (alt)"),
-        (0xbd7ad, 1, "Thamasa inn"),
-        (0xbd775, 1500, "Thamasa inn (strangers)"),
-        (0xc5caf, 350, "Tzen inn"),
-        (0xc62b2, 300, "Albrook inn WOR"),
-        (0xc6593, 200, "Maranda inn"),
-        (0xc665f, 100, "Mobliz inn"),
-        (0xc69d6, 200, "Kohlingen inn"),
-        (0xcd2b3, 200, "Narshe inn"),
+        (0xa78a0, 80, 0x0B89, "South Figaro inn"),
+        (0xa8ef1, 150, 0x0B8A, "Nikeah inn WoB"),
+        (0xb449c, 250, 0x0112, "Jidoor inn"),
+        (0xc5caf, 350, 0x062A, "Tzen inn"),
+        (0xc62b2, 300, 0x0649, "Albrook inn WOR"),
+        (0xc6593, 200, 0x060D, "Maranda inn"),
+        (0xc665f, 100, 0x064B, "Mobliz inn"),
+        (0xc69d6, 200, None, "Kohlingen inn"),  # Shares dialog 0x060D with Maranda
+        (0xcd2b3, 200, None, "Narshe inn"),  # Shares dialog 0x060D with Maranda
     ]
 
-    for address, original_cost, description in inn_costs:
+    # Track which dialogs we've already updated to avoid double-updating shared dialogs
+    updated_dialogs = set()
+
+    for address, original_cost, dialog_id, description in inn_costs:
         # Calculate new cost
         new_cost = min(original_cost * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
         # Write the new cost as 2-byte little-endian
         rom.set_bytes(address, new_cost.to_bytes(2, 'little'))
 
+        # Update dialog text if this entry has its own dialog ID
+        if dialog_id is not None and dialog_id not in updated_dialogs:
+            old_text = dialogs.dialogs[dialog_id].text
+            # Replace the GP amount in the dialog text
+            # Match patterns like "80 GP", "150 GP", "1500 GP", etc.
+            new_text = re.sub(r'\b' + str(original_cost) + r'\s*GP\b', f'{new_cost} GP', old_text)
+            dialogs.set_text(dialog_id, new_text)
+            updated_dialogs.add(dialog_id)
+
+            if rom.args.debug:
+                print(f"Updated dialog {dialog_id:#x} for {description}: {original_cost} GP -> {new_cost} GP")
+
         if rom.args.debug:
             print(f"Modified {description}: {original_cost} GP -> {new_cost} GP")
 
+
+def disable_chocobo_stables(rom, dialogs):
+    """
+    Disables the in-town chocobo stables for ruination mode.
+    Changes the chocobo keeper dialogs to explain chocobos won't go outside,
+    and patches the event code to just display the dialog and return (no choices).
+
+    Args:
+        rom: The ROM object to modify
+        dialogs: The Dialogs object to update dialog text
+    """
+    # Chocobo stable event addresses and their dialog IDs
+    # Format: (event_address, dialog_id, description)
+    chocobo_stables = [
+        (0xa7a36, 0x0B8E, "South Figaro chocobo"),
+        (0xa8fb4, 0x0B8E, "Nikeah chocobo"),  # Shares dialog with South Figaro
+        (0xb44cd, 0x0113, "Jidoor chocobo"),
+    ]
+
+    disabled_message = "The chocobos won't go outside anymore.<end>"
+
+    # Track which dialogs we've already updated
+    updated_dialogs = set()
+
+    for event_addr, dialog_id, description in chocobo_stables:
+        # Update dialog text (only once per unique dialog ID)
+        if dialog_id not in updated_dialogs:
+            dialogs.set_text(dialog_id, disabled_message)
+            updated_dialogs.add(dialog_id)
+
+            if rom.args.debug:
+                print(f"Updated dialog {dialog_id:#x} for {description}")
+
+        # Patch event code to: display dialog (4B), return (FE)
+        # Format: 4B [dialog_id_lo] [dialog_id_hi] FE
+        event_bytes = bytes([0x4B, dialog_id & 0xFF, dialog_id >> 8, 0xFE])
+        rom.set_bytes(event_addr, event_bytes)
+
+        if rom.args.debug:
+            print(f"Disabled {description} at {event_addr:#x}")
 

@@ -277,7 +277,10 @@ class Events():
         self.maps.postprocess_door_map()
 
         # Modify inn costs for ruination mode
-        modify_inn_costs(self.rom)
+        modify_inn_costs(self.rom, self.dialogs)
+
+        # Disable in-town chocobo stables for ruination mode
+        disable_chocobo_stables(self.rom, self.dialogs)
 
     def validate(self, events):
         char_esper_checks = []
