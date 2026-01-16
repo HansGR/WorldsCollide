@@ -2075,46 +2075,46 @@ def disable_chocobo_stables(rom, dialogs):
 # This should be a difficult encounter - can be adjusted as needed
 FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
 
-# Free bed locations for ruination mode
+# Vanilla free bed heal subroutine address (used by multiple bed event tiles)
+VANILLA_BED_HEAL_ADDRESS = 0xcd17
+
+# Existing free bed heal event tile locations
+# These all point to the vanilla subroutine at 0xcd17
 # Format: (map_id, x, y, description)
-# Coordinates are approximate and may need adjustment based on actual map layouts
 FREE_BED_LOCATIONS = [
-    (94, 81, 28, "Sabin's House"),  # Sabin's House Interior
-    # Additional locations can be added here:
-    # (map_id, x, y, "Duncan's House"),
-    # (map_id, x, y, "Gau's Dad's House"),
-    # (map_id, x, y, "Mobliz WoR relic shop"),
-    # (map_id, x, y, "Narshe Weapon shop"),
+    (24, 45, 51, "Narshe Weapon Shop"),
+    (94, 73, 31, "Sabin's House"),
+    (94, 81, 29, "Sabin's House"),
+    (94, 84, 29, "Sabin's House"),
+    (162, 29, 12, "Mobliz Relic Shop"),
 ]
 
 
-def add_free_bed_heals(maps, rom):
+def modify_free_bed_heals(maps, rom):
     """
-    Adds free bed heal event tiles to specified locations in ruination mode.
+    Modifies existing free bed heal events for ruination mode.
 
-    The bed heals:
+    Changes the bed heals to:
     - Have a 3/8 (37.5%) chance of triggering a back attack before healing
     - Heal only HP and status effects (NOT MP)
     - Use the standard bed animation (fade, Nighty Night song, unfade)
 
     Args:
-        maps: The Maps object to add event tiles to
+        maps: The Maps object to modify event tiles
         rom: The ROM object for debug output
     """
-    from data.map_event import MapEvent
     from instruction.field.custom import BranchChance
 
     # NIGHTY_NIGHT song ID
     NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
 
-    # Status effects to remove (same as HEAL_PARTY_HP_MP_STATUS but we skip MP)
+    # Status effects to remove (same as vanilla heal but we skip MP)
     # Remove: Death, Petrify, Imp, Vanish, Poison, Zombie, Darkness
-    # This matches what the vanilla heal subroutine does
     HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
                    field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
                    field.Status.DARKNESS)
 
-    # Create the bed heal event code
+    # Create the new bed heal event code
     # 5/8 chance to skip attack (so 3/8 chance of attack)
     src = [
         # Fade out current song
@@ -2155,20 +2155,19 @@ def add_free_bed_heals(maps, rom):
     ]
 
     space = Write(Bank.CC, src, "ruination free bed heal event")
-    bed_heal_address = space.start_address
+    new_bed_heal_address = space.start_address
 
     if rom.args.debug:
-        print(f"Created free bed heal event at {bed_heal_address:#x}")
+        print(f"Created modified bed heal event at {new_bed_heal_address:#x}")
 
-    # Add event tiles to all free bed locations
+    # Update existing bed event tiles to point to the new subroutine
     for map_id, x, y, description in FREE_BED_LOCATIONS:
-        event = MapEvent()
-        event.x = x
-        event.y = y
-        event.event_address = bed_heal_address - EVENT_CODE_START
-
-        maps.add_event(map_id, event)
-
-        if rom.args.debug:
-            print(f"Added free bed at {description} (map {map_id}, {x}, {y})")
+        event = maps.get_event(map_id, x, y)
+        if event is not None:
+            event.event_address = new_bed_heal_address - EVENT_CODE_START
+            if rom.args.debug:
+                print(f"Updated bed heal at {description} (map {map_id}, {x}, {y})")
+        else:
+            if rom.args.debug:
+                print(f"Warning: No event found at {description} (map {map_id}, {x}, {y})")
 

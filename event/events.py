@@ -282,8 +282,8 @@ class Events():
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs)
 
-        # Add free bed heal event tiles (HP-only heal with 3/8 monster attack chance)
-        add_free_bed_heals(self.maps, self.rom)
+        # Modify existing free bed heals (HP-only heal with 3/8 monster attack chance)
+        modify_free_bed_heals(self.maps, self.rom)
 
     def validate(self, events):
         char_esper_checks = []
