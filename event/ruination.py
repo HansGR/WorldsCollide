@@ -2070,3 +2070,105 @@ def disable_chocobo_stables(rom, dialogs):
         if rom.args.debug:
             print(f"Disabled {description} at {event_addr:#x}")
 
+
+# Battle pack for nighttime ambush at free beds
+# This should be a difficult encounter - can be adjusted as needed
+FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
+
+# Free bed locations for ruination mode
+# Format: (map_id, x, y, description)
+# Coordinates are approximate and may need adjustment based on actual map layouts
+FREE_BED_LOCATIONS = [
+    (94, 81, 28, "Sabin's House"),  # Sabin's House Interior
+    # Additional locations can be added here:
+    # (map_id, x, y, "Duncan's House"),
+    # (map_id, x, y, "Gau's Dad's House"),
+    # (map_id, x, y, "Mobliz WoR relic shop"),
+    # (map_id, x, y, "Narshe Weapon shop"),
+]
+
+
+def add_free_bed_heals(maps, rom):
+    """
+    Adds free bed heal event tiles to specified locations in ruination mode.
+
+    The bed heals:
+    - Have a 3/8 (37.5%) chance of triggering a back attack before healing
+    - Heal only HP and status effects (NOT MP)
+    - Use the standard bed animation (fade, Nighty Night song, unfade)
+
+    Args:
+        maps: The Maps object to add event tiles to
+        rom: The ROM object for debug output
+    """
+    from data.map_event import MapEvent
+    from instruction.field.custom import BranchChance
+
+    # NIGHTY_NIGHT song ID
+    NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
+
+    # Status effects to remove (same as HEAL_PARTY_HP_MP_STATUS but we skip MP)
+    # Remove: Death, Petrify, Imp, Vanish, Poison, Zombie, Darkness
+    # This matches what the vanilla heal subroutine does
+    HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
+                   field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
+                   field.Status.DARKNESS)
+
+    # Create the bed heal event code
+    # 5/8 chance to skip attack (so 3/8 chance of attack)
+    src = [
+        # Fade out current song
+        field.FadeOutSong(48),
+        field.PauseUnits(60),
+        field.FadeOutScreen(8),
+        field.WaitForFade(),
+
+        # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
+        BranchChance(0.625, "HEAL"),
+
+        # Monster attack! (back attack)
+        *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
+
+        "HEAL",
+        # Play Nighty Night song
+        field.StartSong(NIGHTY_NIGHT),
+
+        # Heal HP and status for all party members (NOT MP)
+        # Remove status effects
+        field.RemoveStatusEffects(field_entity.PARTY0, HEAL_STATUS),
+        field.RemoveStatusEffects(field_entity.PARTY1, HEAL_STATUS),
+        field.RemoveStatusEffects(field_entity.PARTY2, HEAL_STATUS),
+        field.RemoveStatusEffects(field_entity.PARTY3, HEAL_STATUS),
+        # Restore HP to max
+        field.RestoreHp(field_entity.PARTY0, 0x7f),
+        field.RestoreHp(field_entity.PARTY1, 0x7f),
+        field.RestoreHp(field_entity.PARTY2, 0x7f),
+        field.RestoreHp(field_entity.PARTY3, 0x7f),
+        # Note: No MP restoration!
+
+        # Stop temporary song and restore previous
+        field.WaitForSong(),
+        field.FadeInPreviousSong(32),
+        field.FadeInScreen(8),
+
+        field.Return(),
+    ]
+
+    space = Write(Bank.CC, src, "ruination free bed heal event")
+    bed_heal_address = space.start_address
+
+    if rom.args.debug:
+        print(f"Created free bed heal event at {bed_heal_address:#x}")
+
+    # Add event tiles to all free bed locations
+    for map_id, x, y, description in FREE_BED_LOCATIONS:
+        event = MapEvent()
+        event.x = x
+        event.y = y
+        event.event_address = bed_heal_address - EVENT_CODE_START
+
+        maps.add_event(map_id, event)
+
+        if rom.args.debug:
+            print(f"Added free bed at {description} (map {map_id}, {x}, {y})")
+
