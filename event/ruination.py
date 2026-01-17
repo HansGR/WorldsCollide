@@ -2071,6 +2071,167 @@ def disable_chocobo_stables(rom, dialogs):
             print(f"Disabled {description} at {event_addr:#x}")
 
 
+# Free inn base prices (before multiplier)
+RETURNERS_HIDEOUT_INN_PRICE = 100
+FIGARO_CASTLE_INN_PRICE = 150
+
+
+def modify_free_inns(maps, rom, dialogs):
+    """
+    Modifies the free inns at Returners Hideout and Figaro Castle to charge GP.
+
+    In ruination mode, these free healing locations should cost money like
+    regular inns. The prices are affected by INN_COST_MULTIPLIER.
+
+    Returners Hideout:
+    - Map 111 (0x6F), NPC ID 16, position (43, 55)
+    - Original event at 0xCAF64E displays "Take a nap? Yes/No"
+    - Calls $CACD3C for sleep animation (includes healing)
+
+    Figaro Castle:
+    - Map 59 (0x3B), event tile at (47, 52)
+    - Original event at 0xCA71BF checks conditions then displays "Need a rest? Yes/No"
+    - Calls $CACD31 for sleep animation (includes healing)
+
+    Args:
+        maps: The Maps object to modify NPCs and event tiles
+        rom: The ROM object for debug output
+        dialogs: The Dialogs object to update dialog text
+    """
+    from memory.space import Write, Bank
+    from instruction.event import EVENT_CODE_START
+    import data.event_bit as event_bit
+
+    # Calculate prices with multiplier
+    returners_price = min(RETURNERS_HIDEOUT_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+    figaro_price = min(FIGARO_CASTLE_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+
+    # =========================================================================
+    # RETURNERS HIDEOUT INN (Map 111, NPC ID 16)
+    # =========================================================================
+    # Original event flow at 0xCAF64E:
+    # - Display "Take a nap? Yes/No" (dialog 0x111)
+    # - If yes: movement animation, call $CACD3C (sleep), load inn map, call $CACF96 (wake)
+    #
+    # New event flow:
+    # - Display price dialog "100 GP per night! Take a nap? Yes/No"
+    # - If yes: take GP, then jump to original movement code at 0xCAF659
+    #
+    # Dialog ID 0x111 = 273 decimal
+    RETURNERS_DIALOG_ID = 0x111
+    RETURNERS_ORIGINAL_YES_CODE = 0xCAF659  # Original code after "Yes" selection
+
+    # Update dialog text to include price
+    dialogs.set_text(RETURNERS_DIALOG_ID,
+        f"{returners_price} GP per night!<line>Take a nap?<line><choice> Yes<line><choice> No<end>")
+
+    # Create new event code for Returners Hideout inn
+    returners_src = [
+        # Display price dialog with Yes/No choice
+        field.DialogBranch(RETURNERS_DIALOG_ID, "RETURNERS_YES", "RETURNERS_NO"),
+        field.Return(),
+
+        "RETURNERS_YES",
+        # Take GP - if not enough, event bit 0x1BE is set and no GP removed
+        field.RemoveGP(returners_price),
+        # Check if player didn't have enough GP (event bit 0x1BE)
+        field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "RETURNERS_NO_MONEY"),
+        # Player had enough GP, jump to original sleep code
+        field.Branch(RETURNERS_ORIGINAL_YES_CODE),
+
+        "RETURNERS_NO_MONEY",
+        # Clear the not enough GP bit for future use
+        field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+        "RETURNERS_NO",
+        field.Return(),
+    ]
+
+    space = Write(Bank.CC, returners_src, "Returners Hideout inn with price")
+    returners_new_event = space.start_address
+
+    # Update the NPC's event address
+    RETURNERS_MAP_ID = 111  # 0x6F
+    RETURNERS_NPC_ID = 0x10  # 16
+
+    returners_npc = maps.get_npc(RETURNERS_MAP_ID, RETURNERS_NPC_ID)
+    returners_npc.event_address = returners_new_event - EVENT_CODE_START
+
+    if rom.args.debug:
+        print(f"Returners Hideout inn: {RETURNERS_HIDEOUT_INN_PRICE} GP -> {returners_price} GP")
+        print(f"  New event at {returners_new_event:#x}")
+
+    # =========================================================================
+    # FIGARO CASTLE REST (Map 59, event tile at (47, 52))
+    # =========================================================================
+    # Original event flow at 0xCA71BF:
+    # - Check conditions (1B5 set OR 1B0 clear -> return)
+    # - Set event bit 1B5 (used once flag)
+    # - Display "Need a rest? Yes/No" (dialog 0xB80)
+    # - If yes: movement, check more conditions, call $CACD31 (sleep)
+    #
+    # New event flow:
+    # - Same condition checks at start
+    # - Display price dialog
+    # - If yes: take GP, then jump to original movement code
+    #
+    # Dialog ID 0xB80 = 2944 decimal
+    FIGARO_DIALOG_ID = 0xB80
+    FIGARO_ORIGINAL_YES_CODE = 0xCA71D9  # Original code after "Yes" selection
+
+    # Update dialog text to include price
+    dialogs.set_text(FIGARO_DIALOG_ID,
+        f"{figaro_price} GP per night!<line>Need a rest?<line><choice>(Yes)<line><choice>(No)<end>")
+
+    # Event bits for Figaro Castle rest
+    FIGARO_USED_ONCE_BIT = 0x1B5  # Set after first use
+    FIGARO_BANON_BIT = 0x1B0     # Banon scenario bit
+
+    # Create new event code for Figaro Castle rest
+    figaro_src = [
+        # Original condition checks - if 1B5 is set OR 1B0 is clear, just return
+        field.BranchIfEventBitSet(FIGARO_USED_ONCE_BIT, "FIGARO_RETURN"),
+        field.BranchIfEventBitClear(FIGARO_BANON_BIT, "FIGARO_RETURN"),
+
+        # Set the "used once" flag
+        field.SetEventBit(FIGARO_USED_ONCE_BIT),
+
+        # Display price dialog with Yes/No choice
+        field.DialogBranch(FIGARO_DIALOG_ID, "FIGARO_YES", "FIGARO_RETURN"),
+
+        "FIGARO_YES",
+        # Take GP - if not enough, event bit 0x1BE is set
+        field.RemoveGP(figaro_price),
+        # Check if player didn't have enough GP
+        field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "FIGARO_NO_MONEY"),
+        # Player had enough GP, jump to original movement/sleep code
+        field.Branch(FIGARO_ORIGINAL_YES_CODE),
+
+        "FIGARO_NO_MONEY",
+        # Clear the not enough GP bit for future use
+        field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+        "FIGARO_RETURN",
+        field.Return(),
+    ]
+
+    space = Write(Bank.CC, figaro_src, "Figaro Castle rest with price")
+    figaro_new_event = space.start_address
+
+    # Update the event tile's address
+    FIGARO_MAP_ID = 59  # 0x3B
+    FIGARO_EVENT_X = 47
+    FIGARO_EVENT_Y = 52
+
+    figaro_event = maps.get_event(FIGARO_MAP_ID, FIGARO_EVENT_X, FIGARO_EVENT_Y)
+    if figaro_event is not None:
+        figaro_event.event_address = figaro_new_event - EVENT_CODE_START
+        if rom.args.debug:
+            print(f"Figaro Castle rest: {FIGARO_CASTLE_INN_PRICE} GP -> {figaro_price} GP")
+            print(f"  New event at {figaro_new_event:#x}")
+    else:
+        if rom.args.debug:
+            print(f"Warning: Could not find Figaro Castle rest event at ({FIGARO_EVENT_X}, {FIGARO_EVENT_Y})")
+
+
 # Battle pack for nighttime ambush at free beds
 # This should be a difficult encounter - can be adjusted as needed
 FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
