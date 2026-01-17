@@ -51,6 +51,10 @@
   - Thamasa inn has special handling (event/burning_house.py:ruination_inn_mod):
     - 1 GP if burning house not done (to allow event access)
     - Normal price (400 GP) after burning house completed
+  - ✅ Free inns converted to paid inns (modify_free_inns function):
+    - Returners Hideout inn: Base price 100 GP (200 GP with 2x multiplier)
+    - Figaro Castle rest: Base price 150 GP (300 GP with 2x multiplier)
+    - Both affected by INN_COST_MULTIPLIER
 
 4. ✅ **IMPLEMENTED** - Change the starting menu to be -ruin specific.  In Ruination mode, there is only one save slot, and it gets wiped when you die.  Get rid of the "load a save file" menu; replace it with alternate starting menu (New Game, Flags, Config) with an added "Load Saved Game" option
 
