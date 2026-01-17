@@ -20,10 +20,11 @@ class FigaroCastleWOR(Event):
             # In ruination mode:
             # - Castle starts "above ground" (player enters from world map)
             # - Hide blocker NPCs that prevent leaving when underground
-            # - Prison door (1558 to Ancient Castle) is controlled by DEFEATED_TENTACLES
+            # - Prison door starts closed (opened after defeating Tentacles)
             space.write(
                 field.ClearEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),  # Hide blocker NPCs
                 field.ClearEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_ENTRANCE),    # Hide Siegfried (not entering via cave)
+                field.ClearEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),  # Jail cell door starts closed
                 field.SetEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_CHEST),
                 field.SetEventBit(npc_bit.THIEVES_FIGARO_CAVE_TURTLE),
                 field.ClearEventBit(npc_bit.GERAD_PRISON_FIGARO_CASTLE),
