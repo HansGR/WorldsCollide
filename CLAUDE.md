@@ -89,6 +89,30 @@ Reference JSON files are located in the remote `claude_ruination` branch under `
 4. Calculate `npc_id = map_local_index + 0x10` for use in `get_npc()`
 5. Cross-reference global index in `npcs_raw.json` for full property details
 
+## Finding Map IDs by Name
+
+To find a map ID when given a location name (e.g., "Sabin's House interior"):
+
+1. **Search `data/map_exit_extra.py`** for the location name in `exit_data`:
+   ```
+   grep "Sabin.*House" data/map_exit_extra.py
+   ```
+   This reveals door relationships like:
+   - `361: [362, "Sabin's House Door Outside"]` - door 361 leads to door 362
+
+2. **Identify the entrance door**: The "Door Outside" (361) is the entrance going INTO the building
+
+3. **Look up the entrance door in `exits_raw.json`**:
+   ```
+   grep -A5 '"index": 361' claude_reference/exits_raw.json
+   ```
+   The `dest_map` field shows where that door leads:
+   - `"dest_map": 94` means the interior is map 94
+
+**Example**: Sabin's House
+- Door 361 ("Outside") → `dest_map: 94` = Interior map ID
+- Door 362 ("Inside") → `dest_map: 93` = Exterior map ID
+
 ## Ruination Mode (`-ruin`)
 
 Ruination Mode creates a roguelike-style dungeon with three independent branches emanating from a central hub.

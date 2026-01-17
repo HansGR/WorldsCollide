@@ -2070,3 +2070,314 @@ def disable_chocobo_stables(rom, dialogs):
         if rom.args.debug:
             print(f"Disabled {description} at {event_addr:#x}")
 
+
+# Battle pack for nighttime ambush at free beds
+# This should be a difficult encounter - can be adjusted as needed
+FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
+
+# Vanilla free bed heal subroutine address (used by multiple bed event tiles)
+VANILLA_BED_HEAL_ADDRESS = 0xcd17
+
+# Existing free bed heal event tile locations
+# These all point to the vanilla subroutine at 0xcd17
+# Format: (map_id, x, y, description)
+FREE_BED_LOCATIONS = [
+    (24, 45, 51, "Narshe Weapon Shop"),
+    (94, 73, 31, "Sabin's House"),
+    (94, 81, 29, "Sabin's House"),
+    (94, 84, 29, "Sabin's House"),
+    (162, 29, 12, "Mobliz Relic Shop"),
+]
+
+
+def modify_free_bed_heals(maps, rom):
+    """
+    Modifies existing free bed heal events for ruination mode.
+
+    Changes the bed heals to:
+    - Have a 3/8 (37.5%) chance of triggering a back attack before healing
+    - Heal only HP and status effects (NOT MP)
+    - Use the standard bed animation (fade, Nighty Night song, unfade)
+
+    Args:
+        maps: The Maps object to modify event tiles
+        rom: The ROM object for debug output
+    """
+    from instruction.field.custom import BranchChance
+
+    # NIGHTY_NIGHT song ID
+    NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
+
+    # Status effects to remove (same as vanilla heal but we skip MP)
+    # Remove: Death, Petrify, Imp, Vanish, Poison, Zombie, Darkness
+    HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
+                   field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
+                   field.Status.DARKNESS)
+
+    # Create the new bed heal event code
+    # 5/8 chance to skip attack (so 3/8 chance of attack)
+    src = [
+        # Fade out current song
+        field.FadeOutSong(48),
+        field.PauseUnits(60),
+        field.FadeOutScreen(8),
+        field.WaitForFade(),
+
+        # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
+        BranchChance(0.625, "HEAL"),
+
+        # Monster attack! (back attack)
+        *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
+
+        "HEAL",
+        # Play Nighty Night song
+        field.StartSong(NIGHTY_NIGHT),
+
+        # Heal HP and status for all party members (NOT MP)
+        # Remove status effects
+        field.RemoveStatusEffects(field_entity.PARTY0, HEAL_STATUS),
+        field.RemoveStatusEffects(field_entity.PARTY1, HEAL_STATUS),
+        field.RemoveStatusEffects(field_entity.PARTY2, HEAL_STATUS),
+        field.RemoveStatusEffects(field_entity.PARTY3, HEAL_STATUS),
+        # Restore HP to max
+        field.RestoreHp(field_entity.PARTY0, 0x7f),
+        field.RestoreHp(field_entity.PARTY1, 0x7f),
+        field.RestoreHp(field_entity.PARTY2, 0x7f),
+        field.RestoreHp(field_entity.PARTY3, 0x7f),
+        # Note: No MP restoration!
+
+        # Stop temporary song and restore previous
+        field.WaitForSong(),
+        field.FadeInPreviousSong(32),
+        field.FadeInScreen(8),
+
+        field.Return(),
+    ]
+
+    space = Write(Bank.CC, src, "ruination free bed heal event")
+    new_bed_heal_address = space.start_address
+
+    if rom.args.debug:
+        print(f"Created modified bed heal event at {new_bed_heal_address:#x}")
+
+    # Update existing bed event tiles to point to the new subroutine
+    for map_id, x, y, description in FREE_BED_LOCATIONS:
+        event = maps.get_event(map_id, x, y)
+        if event is not None:
+            event.event_address = new_bed_heal_address - EVENT_CODE_START
+            if rom.args.debug:
+                print(f"Updated bed heal at {description} (map {map_id}, {x}, {y})")
+        else:
+            if rom.args.debug:
+                print(f"Warning: No event found at {description} (map {map_id}, {x}, {y})")
+
+
+# Recovery Spring Effect Types
+class SpringEffect:
+    FULL_RECOVERY = 0    # HP + MP + Status
+    RECOVER_HP = 1       # HP only
+    RECOVER_MP = 2       # MP only
+    RECOVER_STATUS = 3   # Status only
+    POISON = 4           # Add poison to random party members
+    IMP = 5              # Add imp to random party members
+    ZOMBIE = 6           # Add zombie to random party members
+    STONE = 7            # Add petrify to random party members
+    REDUCE_TO_1_HP = 8   # Reduce all party members to 1 HP
+
+# Recovery spring locations grouped by area
+# Each area will have the same effect for all its tiles
+SPRING_LOCATIONS = {
+    'phantom_forest': [
+        (133, 9, 10),   # Phantom Forest Healing Pool
+        (133, 8, 10),
+        (133, 7, 10),
+        (133, 6, 10),
+        (133, 5, 9),
+    ],
+    'cave_south_figaro': [
+        (70, 47, 29),   # Cave to South Figaro (WoB)
+        (73, 47, 29),   # Cave to South Figaro (WoB variant)
+    ],
+}
+
+# Flash colors for each effect type
+SPRING_FLASH_COLORS = {
+    SpringEffect.FULL_RECOVERY: field.Flash.BLUE,
+    SpringEffect.RECOVER_HP: field.Flash.BLUE,
+    SpringEffect.RECOVER_MP: field.Flash.BLUE,
+    SpringEffect.RECOVER_STATUS: field.Flash.BLUE,
+    SpringEffect.POISON: field.Flash.GREEN,
+    SpringEffect.IMP: field.Flash.GREEN,
+    SpringEffect.ZOMBIE: field.Flash.RED | field.Flash.BLUE,  # Purple
+    SpringEffect.STONE: field.Flash.WHITE,  # Grey-ish
+    SpringEffect.REDUCE_TO_1_HP: field.Flash.RED,
+}
+
+# Dialog IDs for spring messages (using range 1480-1495)
+SPRING_DIALOG_BASE = 1480
+
+
+def modify_recovery_springs(maps, rom, dialogs):
+    """
+    Modifies recovery spring events for ruination mode.
+
+    Each spring location gets a randomly assigned effect at compile time.
+    Effects can be beneficial (healing) or harmful (status ailments).
+    Player is asked before drinking from the pool.
+
+    Args:
+        maps: The Maps object to modify event tiles
+        rom: The ROM object
+        dialogs: The Dialogs object for setting dialog text
+    """
+    import random as rng
+
+    # Status effects for healing
+    HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
+                   field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
+                   field.Status.DARKNESS)
+
+    PARTY = [field_entity.PARTY0, field_entity.PARTY1, field_entity.PARTY2, field_entity.PARTY3]
+
+    # All possible effects
+    ALL_EFFECTS = [
+        SpringEffect.FULL_RECOVERY,
+        SpringEffect.RECOVER_HP,
+        SpringEffect.RECOVER_MP,
+        SpringEffect.RECOVER_STATUS,
+        SpringEffect.POISON,
+        SpringEffect.IMP,
+        SpringEffect.ZOMBIE,
+        SpringEffect.STONE,
+        SpringEffect.REDUCE_TO_1_HP,
+    ]
+
+    # Result messages for each effect
+    EFFECT_MESSAGES = {
+        SpringEffect.FULL_RECOVERY: "HP, MP, and status restored!<end>",
+        SpringEffect.RECOVER_HP: "HP restored!<end>",
+        SpringEffect.RECOVER_MP: "MP restored!<end>",
+        SpringEffect.RECOVER_STATUS: "Status ailments cured!<end>",
+        SpringEffect.POISON: "The water was poisoned!<end>",
+        SpringEffect.IMP: "The water turned you into Imps!<end>",
+        SpringEffect.ZOMBIE: "The water was cursed!<end>",
+        SpringEffect.STONE: "The water is petrifying!<end>",
+        SpringEffect.REDUCE_TO_1_HP: "The water drained your strength!<end>",
+    }
+
+    dialog_id = SPRING_DIALOG_BASE
+
+    # Set up the "Drink from the pool?" dialog
+    drink_dialog_id = dialog_id
+    dialogs.set_text(drink_dialog_id, "Drink from the pool?<line><choice> Yes<line><choice> No<end>")
+    dialog_id += 1
+
+    # Process each spring location area
+    for area_name, locations in SPRING_LOCATIONS.items():
+        # Randomly choose an effect for this area
+        effect = rng.choice(ALL_EFFECTS)
+
+        # Set up result message dialog
+        result_dialog_id = dialog_id
+        dialogs.set_text(result_dialog_id, EFFECT_MESSAGES[effect])
+        dialog_id += 1
+
+        # Get flash color for this effect
+        flash_color = SPRING_FLASH_COLORS[effect]
+
+        # Build the effect instructions
+        effect_instructions = []
+
+        if effect == SpringEffect.FULL_RECOVERY:
+            for p in PARTY:
+                effect_instructions.append(field.RemoveStatusEffects(p, HEAL_STATUS))
+            for p in PARTY:
+                effect_instructions.append(field.RestoreHp(p, 0x7f))
+            for p in PARTY:
+                effect_instructions.append(field.RestoreMp(p, 0x7f))
+
+        elif effect == SpringEffect.RECOVER_HP:
+            for p in PARTY:
+                effect_instructions.append(field.RestoreHp(p, 0x7f))
+
+        elif effect == SpringEffect.RECOVER_MP:
+            for p in PARTY:
+                effect_instructions.append(field.RestoreMp(p, 0x7f))
+
+        elif effect == SpringEffect.RECOVER_STATUS:
+            for p in PARTY:
+                effect_instructions.append(field.RemoveStatusEffects(p, HEAL_STATUS))
+
+        elif effect in [SpringEffect.POISON, SpringEffect.IMP, SpringEffect.ZOMBIE, SpringEffect.STONE]:
+            # Determine which status to apply
+            status_map = {
+                SpringEffect.POISON: field.Status.POISON,
+                SpringEffect.IMP: field.Status.IMP,
+                SpringEffect.ZOMBIE: field.Status.ZOMBIE,
+                SpringEffect.STONE: field.Status.PETRIFY,
+            }
+            status = status_map[effect]
+
+            # Always affect party leader
+            effect_instructions.append(field.AddStatusEffects(field_entity.PARTY0, status))
+            # 50% chance to affect each other party member (at runtime)
+            effect_instructions.extend([
+                field.BranchRandomly("SKIP_P1"),
+                field.AddStatusEffects(field_entity.PARTY1, status),
+                "SKIP_P1",
+                field.BranchRandomly("SKIP_P2"),
+                field.AddStatusEffects(field_entity.PARTY2, status),
+                "SKIP_P2",
+                field.BranchRandomly("SKIP_P3"),
+                field.AddStatusEffects(field_entity.PARTY3, status),
+                "SKIP_P3",
+            ])
+
+        elif effect == SpringEffect.REDUCE_TO_1_HP:
+            # Subtract 2^14 HP (16384), which reduces to 1 HP minimum
+            for p in PARTY:
+                effect_instructions.append(field.RestoreHp(p, 0x80 | 0x0e))
+
+        # Build the full event code
+        src = [
+            # Ask player if they want to drink
+            field.DialogBranch(drink_dialog_id, "DRINK", "RETURN"),
+
+            "DRINK",
+            # Flash screen with appropriate color
+            field.FlashScreen(flash_color),
+            field.PlaySoundEffect(233),  # Spring sound
+            field.PauseUnits(30),
+
+            # Apply the effect
+            *effect_instructions,
+
+            # Show result message
+            field.Dialog(result_dialog_id),
+
+            # Enable movement and return
+            field.FreeMovement(),
+            field.Return(),
+
+            "RETURN",
+            field.Return(),
+        ]
+
+        space = Write(Bank.CC, src, f"ruination spring event {area_name}")
+        spring_event_address = space.start_address
+
+        if rom.args.debug:
+            effect_name = [k for k, v in vars(SpringEffect).items() if v == effect and not k.startswith('_')][0]
+            print(f"Spring {area_name}: effect={effect_name}, address={spring_event_address:#x}")
+
+        # Update all event tiles for this area to use the new event
+        for map_id, x, y in locations:
+            event = maps.get_event(map_id, x, y)
+            if event is not None:
+                event.event_address = spring_event_address - EVENT_CODE_START
+                if rom.args.debug:
+                    print(f"  Updated spring tile at map {map_id} ({x}, {y})")
+            else:
+                if rom.args.debug:
+                    print(f"  Warning: No event at map {map_id} ({x}, {y})")
+

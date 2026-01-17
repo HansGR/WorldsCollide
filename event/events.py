@@ -282,6 +282,12 @@ class Events():
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs)
 
+        # Modify existing free bed heals (HP-only heal with 3/8 monster attack chance)
+        modify_free_bed_heals(self.maps, self.rom)
+
+        # Modify recovery springs with random effects
+        modify_recovery_springs(self.maps, self.rom, self.dialogs)
+
     def validate(self, events):
         char_esper_checks = []
         for event in events:
