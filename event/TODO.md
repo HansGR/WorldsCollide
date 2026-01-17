@@ -186,6 +186,15 @@
   - **Status**: Same as section 1 - no ruination modifications found
 
 3. Figaro Castle is a special case: there's a conflict between the WoR entrance via the tunnel at SF cave, since it is reused as an entrance to Ancient Castle. Solution: remove the custom underground entrance before engine check is complete.  Player will walk into Figaro Castle from the main door, and the player can walk down to basement & fight engine boss at will.  Remove "resurfacing" animation.  Require fighting engine boss before accessing whatever is behind Ancient Castle entrance.  (Note this solution also deconflicts with Locke's Tunnelarmr check, since that room is now not used as part of engine room check.)
-- ❌ **TODO** - Figaro Castle special handling
-  - **Status**: No specific ruination handling found in event/figaro_castle_wor.py (only has map_shuffle_mod)
+- ✅ **IMPLEMENTED** - Figaro Castle special handling
+  - **Status**: Implemented in event/figaro_castle_wor.py and data/rooms.py
+  - **Implementation details**:
+    - Modified `ruin-figarocastle` room to enter via world map doors (1156-1159) instead of Ancient Cave door (1558)
+    - Added key `fc-engine` to Engine Room (room 94) that unlocks door 1558 (Ancient Castle entrance)
+    - Added `FIGARO_CASTLE_EMERGED_WOR` event bit constant (0x0c7) to prevent emerge animation
+    - Set `PRISON_DOOR_OPEN_FIGARO_CASTLE` (0x2B7) after defeating Tentacles to graphically open jail cell door
+    - Cleared blocker NPCs (BLOCK_INSIDE_DOORS_FIGARO_CASTLE) at game start so player can leave freely
+    - Jail cell door starts closed and opens only after defeating Tentacles
+    - Engine room guy dialog changed to "The passage to the Ancient Castle is now open" after boss defeat
+    - No castle emerge/submerge animations in ruination mode
 
