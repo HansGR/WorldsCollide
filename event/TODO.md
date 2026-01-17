@@ -40,9 +40,9 @@
 - Decide what to do with unlimited healing spots: either make them a limited resource, add a cost, or make them heal HP only (not MP).  Identify all unlimited heals and make a decision for each
   - Bucket in School: 3 uses (implemented)
   - Healing Spring in Phantom Forest:  Randomize outcome from a list (incl. bad outcomes)
-  - Free beds: heal only HP.
-      - Sabin's house, Mobliz WoR relic shop, Narshe Weapon shop, Duncan's house, Gau's Dad's House, ...
-      - Include a 3/8 chance of being attacked in the night: forced back attack, selected boss or difficult mob, attacked before healing.
+  - ✅ Free beds: heal only HP (implemented in modify_free_beds function)
+      - Narshe Weapon Shop, Sabin's House (3 beds), Gau's Father's House, Mobliz WoR Relic Shop
+      - Includes a 3/8 chance of being attacked in the night (forced back attack before healing)
   - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it!
 - ✅ **IMPLEMENTED** - Increase all inn costs by a multiplier (2x). Implementation:
   - Inn costs doubled via INN_COST_MULTIPLIER in event/ruination.py
