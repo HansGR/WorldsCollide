@@ -144,6 +144,7 @@ Ruination Mode creates a roguelike-style dungeon with three independent branches
 Note these files are LARGE.  Only access them when necessary and be smart about reading them.  Don't just load the entire file into context. 
 - Event script decompile: ./claude_reference/EventScriptTxt.txt
 - Event bits: ./data/event_bit.py
+- Dialog decompile:  ./claude_reference/dialog_file.txt
 - Original map, event, and npc JSON files: see MAP_DATA_STRUCTURES.md for information on these files.
   - Chests data:  ./claude_reference/chests_raw.json
   - MapEvents data: ./claude_reference/events_raw.json
