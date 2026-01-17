@@ -16,7 +16,19 @@ class FigaroCastleWOR(Event):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def init_event_bits(self, space):
-        if self.args.character_gating:
+        if self.args.ruination_mode:
+            # In ruination mode:
+            # - Castle starts "above ground" (player enters from world map)
+            # - Hide blocker NPCs that prevent leaving when underground
+            # - Prison door (1558 to Ancient Castle) is controlled by DEFEATED_TENTACLES
+            space.write(
+                field.ClearEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),  # Hide blocker NPCs
+                field.ClearEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_ENTRANCE),    # Hide Siegfried (not entering via cave)
+                field.SetEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_CHEST),
+                field.SetEventBit(npc_bit.THIEVES_FIGARO_CAVE_TURTLE),
+                field.ClearEventBit(npc_bit.GERAD_PRISON_FIGARO_CASTLE),
+            )
+        elif self.args.character_gating:
             space.write(
                 field.SetEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_ENTRANCE),
             )
@@ -24,11 +36,13 @@ class FigaroCastleWOR(Event):
             space.write(
                 field.ClearEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_ENTRANCE),
             )
-        space.write(
-            field.SetEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_CHEST),
-            field.SetEventBit(npc_bit.THIEVES_FIGARO_CAVE_TURTLE),
-            field.ClearEventBit(npc_bit.GERAD_PRISON_FIGARO_CASTLE),
-        )
+
+        if not self.args.ruination_mode:
+            space.write(
+                field.SetEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_CHEST),
+                field.SetEventBit(npc_bit.THIEVES_FIGARO_CAVE_TURTLE),
+                field.ClearEventBit(npc_bit.GERAD_PRISON_FIGARO_CASTLE),
+            )
 
     def mod(self):
         self.siegfried_entrance_npc_id = 0x10
@@ -55,6 +69,9 @@ class FigaroCastleWOR(Event):
 
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
         self.log_reward(self.reward)
 
@@ -119,15 +136,22 @@ class FigaroCastleWOR(Event):
         self.gerad_engine_room_npc.palette = self.characters.get_palette(character)
 
         space = Reserve(0xa6aed, 0xa6bdb, "figaro castle wor scenes after tentacles", field.NOP())
-        space.write(
+        src = [
             field.HideEntity(self.gerad_engine_room_npc_id),
             field.RecruitAndSelectParty(character),
             field.StartSong(0x0a),
             field.FadeInScreen(),
             field.WaitForFade(),
+        ]
+        # In ruination mode, set the "emerged" bit to prevent the emerge animation from triggering
+        # when the player walks back through the switch room
+        if self.args.ruination_mode:
+            src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
+        src.extend([
             field.FreeScreen(),
             field.Branch(space.end_address + 1), # skip nops
-        )
+        ])
+        space.write(src)
 
     def gerad_npc_mod(self):
         random_sprite = self.characters.get_random_esper_item_sprite()
@@ -138,7 +162,7 @@ class FigaroCastleWOR(Event):
 
     def esper_item_mod(self, esper_item_instructions):
         space = Reserve(0xa6aed, 0xa6bdb, "figaro castle wor scenes after tentacles", field.NOP())
-        space.write(
+        src = [
             field.HideEntity(self.gerad_engine_room_npc_id),
             field.EntityAct(field_entity.CAMERA, True,
                 field_entity.Move(direction.DOWN, 4),
@@ -146,12 +170,17 @@ class FigaroCastleWOR(Event):
             field.StartSong(0x0a),
             field.FadeInScreen(),
             field.WaitForFade(),
-
             esper_item_instructions,
-
+        ]
+        # In ruination mode, set the "emerged" bit to prevent the emerge animation from triggering
+        # when the player walks back through the switch room
+        if self.args.ruination_mode:
+            src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
+        src.extend([
             field.FreeScreen(),
             field.Branch(space.end_address + 1), # skip nops
-        )
+        ])
+        space.write(src)
 
     def esper_mod(self, esper):
         self.gerad_npc_mod()
@@ -218,3 +247,21 @@ class FigaroCastleWOR(Event):
         airship_event = Write(Bank.CA, src, "summon airship to Figaro Castle WOR")
         space = Reserve(0xa6a13, 0xa6a18, field.NOP())  #  Load map $003D (Figaro Castle, switch room and prison (always)), position (06, 34), mode $00)
         space.write(world.Branch(airship_event.start_address))
+
+    def ruination_mod(self):
+        # In ruination mode, Figaro Castle is always above ground.
+        # After defeating Tentacles, the passage to the Ancient Castle opens.
+        # The engine room guy should not offer to travel between locations.
+
+        # Change dialog 2395 (0x095B) which was used for the emerge animation event
+        # to a message about the Ancient Castle passage being open
+        self.dialogs.set_text(2395, "The passage to the Ancient Castle is now open. Be careful in there!<end>")
+
+        # Patch the engine room guy's post-Tentacles event at CA/68E6
+        # Original: checks FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR and shows travel options
+        # New: just show the "passage is open" dialog and return
+        space = Reserve(0xa68e6, 0xa6907, "figaro castle wor engine room guy post-tentacles", field.NOP())
+        space.write(
+            field.Dialog(2395),
+            field.Return(),
+        )
