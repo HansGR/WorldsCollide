@@ -276,14 +276,11 @@ class Events():
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()
 
-        # Modify inn costs for ruination mode
-        modify_inn_costs(self.rom, self.dialogs)
+        # Modify inn costs for ruination mode (includes converting free inns to paid)
+        modify_inn_costs(self.maps, self.rom, self.dialogs)
 
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs)
-
-        # Modify free inns (Returners Hideout, Figaro Castle) to charge GP
-        modify_free_inns(self.maps, self.rom, self.dialogs)
 
         # Modify existing free bed heals (HP-only heal with 3/8 monster attack chance)
         modify_free_bed_heals(self.maps, self.rom)
