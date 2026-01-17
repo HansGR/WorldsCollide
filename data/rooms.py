@@ -178,7 +178,7 @@ room_data = {
     'ruin-daryl': [ [789], [], [], ['dtboss'], {'dtboss': [1563]}, 1], #Darill's Tomb Dullahan Room
     'ruin-201' : [ [469], [2065], [3068], 0],   #Phantom Train Station + custom return from train
     'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
-    'ruin-figarocastle': [[1558], [], [], ['fc1'], {'fc1': [1156, 1157, 1158, 1159]}, 1],  # Cave entrance to Figaro Castle, incl. key locking other entrances
+    'ruin-figarocastle': [[1156, 1157, 1158, 1159], [], [], [], {}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room key)
     'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff
     'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
     'ruin-baren': [ [1561], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
@@ -322,7 +322,7 @@ room_data = {
     91 : [ [245, 247], [ ], [ ], 1], #Figaro Castle B2 East Hallway
     92 : [ [246, 248], [ ], [ ], 1], #Figaro Castle B2 West Hallway
     93 : [ [249, 250, 251], [ ], [ ], 1], #Figaro Castle B2 4 Chest Room
-    94 : [ [252, 253], [ ], [ ], 1], #Figaro Castle Engine Room
+    94 : [ [252, 253], [ ], [ ], ['fc-engine'], {'fc-engine': [1558]}, 1], #Figaro Castle Engine Room (key unlocks Ancient Castle entrance)
     95 : [ [254], [ ], [ ], 1], #Figaro Castle Treasure Room Behind Engine Room
     96 : [ [255], [ ], [ ], 1], #Figaro Castle B1 Single Chest Room
 
