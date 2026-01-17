@@ -2277,14 +2277,6 @@ def modify_recovery_springs(maps, rom, dialogs):
         # Randomly choose an effect for this area
         effect = rng.choice(ALL_EFFECTS)
 
-        # For negative status effects, randomly choose how many party members to affect (1-4)
-        if effect in [SpringEffect.POISON, SpringEffect.IMP, SpringEffect.ZOMBIE, SpringEffect.STONE]:
-            num_affected = rng.randint(1, 4)
-            # Randomly select which party members to affect
-            affected_members = rng.sample(PARTY, num_affected)
-        else:
-            affected_members = PARTY  # All members for other effects
-
         # Set up result message dialog
         result_dialog_id = dialog_id
         dialogs.set_text(result_dialog_id, EFFECT_MESSAGES[effect])
@@ -2316,21 +2308,30 @@ def modify_recovery_springs(maps, rom, dialogs):
             for p in PARTY:
                 effect_instructions.append(field.RemoveStatusEffects(p, HEAL_STATUS))
 
-        elif effect == SpringEffect.POISON:
-            for p in affected_members:
-                effect_instructions.append(field.AddStatusEffects(p, field.Status.POISON))
+        elif effect in [SpringEffect.POISON, SpringEffect.IMP, SpringEffect.ZOMBIE, SpringEffect.STONE]:
+            # Determine which status to apply
+            status_map = {
+                SpringEffect.POISON: field.Status.POISON,
+                SpringEffect.IMP: field.Status.IMP,
+                SpringEffect.ZOMBIE: field.Status.ZOMBIE,
+                SpringEffect.STONE: field.Status.PETRIFY,
+            }
+            status = status_map[effect]
 
-        elif effect == SpringEffect.IMP:
-            for p in affected_members:
-                effect_instructions.append(field.AddStatusEffects(p, field.Status.IMP))
-
-        elif effect == SpringEffect.ZOMBIE:
-            for p in affected_members:
-                effect_instructions.append(field.AddStatusEffects(p, field.Status.ZOMBIE))
-
-        elif effect == SpringEffect.STONE:
-            for p in affected_members:
-                effect_instructions.append(field.AddStatusEffects(p, field.Status.PETRIFY))
+            # Always affect party leader
+            effect_instructions.append(field.AddStatusEffects(field_entity.PARTY0, status))
+            # 50% chance to affect each other party member (at runtime)
+            effect_instructions.extend([
+                field.BranchRandomly("SKIP_P1"),
+                field.AddStatusEffects(field_entity.PARTY1, status),
+                "SKIP_P1",
+                field.BranchRandomly("SKIP_P2"),
+                field.AddStatusEffects(field_entity.PARTY2, status),
+                "SKIP_P2",
+                field.BranchRandomly("SKIP_P3"),
+                field.AddStatusEffects(field_entity.PARTY3, status),
+                "SKIP_P3",
+            ])
 
         elif effect == SpringEffect.REDUCE_TO_1_HP:
             # Subtract 2^14 HP (16384), which reduces to 1 HP minimum
