@@ -2172,13 +2172,15 @@ FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
 VANILLA_BED_HEAL_ADDRESS = 0xcd17
 
 # Existing free bed heal event tile locations
-# These all point to the vanilla subroutine at 0xcd17
+# Most point to the vanilla subroutine at 0xcd17
+# Gau's Father's House has its own inline code but we treat it the same way
 # Format: (map_id, x, y, description)
 FREE_BED_LOCATIONS = [
     (24, 45, 51, "Narshe Weapon Shop"),
     (94, 73, 31, "Sabin's House"),
     (94, 81, 29, "Sabin's House"),
     (94, 84, 29, "Sabin's House"),
+    (116, 113, 9, "Gau's Father's House"),
     (162, 29, 12, "Mobliz Relic Shop"),
 ]
 
