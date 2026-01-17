@@ -143,10 +143,12 @@ class FigaroCastleWOR(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
         ]
-        # In ruination mode, set the "emerged" bit to prevent the emerge animation from triggering
-        # when the player walks back through the switch room
+        # In ruination mode, set bits to prevent emerge animation and open the jail cell door
+        # - FIGARO_CASTLE_EMERGED_WOR prevents the emerge animation from triggering
+        # - PRISON_DOOR_OPEN_FIGARO_CASTLE opens the jail cell door graphically
         if self.args.ruination_mode:
             src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
+            src.append(field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE))
         src.extend([
             field.FreeScreen(),
             field.Branch(space.end_address + 1), # skip nops
@@ -172,10 +174,12 @@ class FigaroCastleWOR(Event):
             field.WaitForFade(),
             esper_item_instructions,
         ]
-        # In ruination mode, set the "emerged" bit to prevent the emerge animation from triggering
-        # when the player walks back through the switch room
+        # In ruination mode, set bits to prevent emerge animation and open the jail cell door
+        # - FIGARO_CASTLE_EMERGED_WOR prevents the emerge animation from triggering
+        # - PRISON_DOOR_OPEN_FIGARO_CASTLE opens the jail cell door graphically
         if self.args.ruination_mode:
             src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
+            src.append(field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE))
         src.extend([
             field.FreeScreen(),
             field.Branch(space.end_address + 1), # skip nops
