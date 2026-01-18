@@ -609,22 +609,6 @@ class RuinationBranch(Network):
                 print('(6) connecting dead ends:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
 
-        # (7) If there are still unconnected dead ends (no hub doors available),
-        # connect them to each other in pairs
-        while len(self.dead_ends) >= 2:
-            room1_id = self.dead_ends.pop()
-            room2_id = self.dead_ends.pop()
-            room1 = self.rooms.get_room(room1_id)
-            room2 = self.rooms.get_room(room2_id)
-            if room1 is None or room2 is None:
-                continue
-            if len(room1.doors) > 0 and len(room2.doors) > 0:
-                this_exit = room1.doors.pop()
-                this_conn = room2.doors.pop()
-                if self.verbose:
-                    print('(7) connecting dead ends to each other:', this_exit, '-->', this_conn)
-                self.connect(this_exit, this_conn)
-
         if self.verbose:
             print('... closing branch complete!')
 
@@ -714,19 +698,35 @@ class RuinationBranch(Network):
 
             # Filter out exits that would strand pits in their source room
             # (using the last exit from a room that still has pits would trap players)
+            # Also filter out door exits from hub if it would leave hub with no doors
+            # (hub needs doors for connecting terminus and dead ends in finalize_map)
             safe_exits = []
             for exit_id in available_exits[this_type]:
                 exit_room = self.rooms.get_room_from_element(exit_id)
                 # Count remaining exits after using this one
                 remaining_exits = len(exit_room.doors) + len(exit_room.traps) - 1
-                if remaining_exits > 0 or len(exit_room.pits) == 0:
-                    safe_exits.append(exit_id)
-                elif self.verbose:
-                    print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
+
+                # Check 1: Would strand pits?
+                if remaining_exits == 0 and len(exit_room.pits) > 0:
+                    if self.verbose:
+                        print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
+                    continue
+
+                # Check 2: Would leave hub with no doors? (only for door exits)
+                # Hub needs at least 1 door for connecting terminus in finalize_map
+                # (it's OK if some dead ends don't get connected - they become optional areas)
+                if this_type == 0 and 'ruin_hub_' in str(exit_room.id):
+                    remaining_doors = len(exit_room.doors) - 1
+                    if remaining_doors < 1:
+                        if self.verbose:
+                            print(f'\t\tFiltering exit {exit_id} - hub needs at least 1 door for terminus')
+                        continue
+
+                safe_exits.append(exit_id)
 
             if len(safe_exits) == 0:
                 if self.verbose:
-                    print(f'\t\tNo safe {["door", "trap"][this_type]} exits (all would strand pits)')
+                    print(f'\t\tNo safe {["door", "trap"][this_type]} exits available')
                 continue
 
             this_exit = random.choice(safe_exits)
