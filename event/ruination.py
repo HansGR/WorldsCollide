@@ -448,6 +448,13 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
 
+            # Skip rooms with no exits (only pit entrances) - they can't connect upstream
+            # Their pits will be connected when traps are processed in step (3)
+            if len(room.doors) == 0 and len(room.traps) == 0:
+                if self.verbose:
+                    print('(2) skipping - room has no exits (pit-only)')
+                continue
+
             upstream_doors = [d for d in hub.doors]
             upstream_pits = [p for p in hub.pits]
             for node in upstream:
@@ -523,8 +530,8 @@ class RuinationBranch(Network):
             delta.sort(key=lambda x: x[0])
 
         # (3) Connect any remaining trapdoors/pits
-        # At this point, only the hub room should be remaining & possibly upstream pits.
-        # Recollect data on pits/traps
+        # At this point, only the hub room should be remaining & possibly upstream/downstream pits.
+        # Recollect data on pits/traps (including downstream pits from pit-only rooms skipped in step 2)
         while len(hub.traps) > 0:
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
@@ -532,6 +539,11 @@ class RuinationBranch(Network):
             remaining_traps = [t for t in hub.traps]
             upstream = self.get_upstream_nodes(hub_id)
             for node in upstream:
+                room = self.rooms.get_room(node)
+                remaining_pits.extend([p for p in room.pits])
+            # Also collect pits from downstream nodes (pit-only rooms skipped in step 2)
+            downstream = self.get_downstream_nodes(hub_id)
+            for node in downstream:
                 room = self.rooms.get_room(node)
                 remaining_pits.extend([p for p in room.pits])
 
