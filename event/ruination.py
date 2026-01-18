@@ -1645,6 +1645,8 @@ class ruination_map():
                         for new_reward in unlocked_rewards:
                             if self.verbose:
                                 print('\tUnlocked an available reward!', new_reward[0], 'on branch', v[0])
+                            # Add to branch_checks so it can be properly removed during processing
+                            self.branch_checks[v[0]].append(new_reward[0])
                             # First add this to rewards available (since it was never done)
                             if new_reward[1].possible_types & RewardType.CHARACTER:
                                 self.RewardsAvailable[0] -= 1
