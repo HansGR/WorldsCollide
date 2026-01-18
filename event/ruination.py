@@ -671,13 +671,15 @@ class RuinationBranch(Network):
 
         # Count total doors in the connected path (active + upstream + downstream)
         # This is used to ensure we never run out of doors
-        path_door_count = len(active_room.doors)
+        # Also collect the set of path doors for filtering
+        path_doors = set(active_room.doors)
         for node in upstream:
             room = self.rooms.get_room(node)
-            path_door_count += len(room.doors)
+            path_doors.update(room.doors)
         for node in downstream:
             room = self.rooms.get_room(node)
-            path_door_count += len(room.doors)
+            path_doors.update(room.doors)
+        path_door_count = len(path_doors)
 
         if self.verbose:
             print(f'\tTotal doors in connected path: {path_door_count}')
@@ -752,15 +754,15 @@ class RuinationBranch(Network):
             # Strategy B: Upstream path connections (with connectivity rules)
             uppaths = self.get_upstream_paths(this_room_id)
             for path in uppaths:
-                path_door_count = 0
-                path_trap_count = 0
+                local_door_count = 0
+                local_trap_count = 0
                 for node_id in path:
                     node = self.rooms.get_room(node_id)
-                    path_door_count += len(node.doors)
-                    path_trap_count += len(node.traps)
-                    if this_type == 1 and (path_door_count + path_trap_count) > 1:
+                    local_door_count += len(node.doors)
+                    local_trap_count += len(node.traps)
+                    if this_type == 1 and (local_door_count + local_trap_count) > 1:
                         available_conns.update(node.pits)
-                    elif this_type == 0 and (path_door_count + path_trap_count) > 2:
+                    elif this_type == 0 and (local_door_count + local_trap_count) > 2:
                         available_conns.update(node.doors)
 
             # Strategy C: All unconnected rooms (more permissive - includes dead ends)
@@ -778,6 +780,17 @@ class RuinationBranch(Network):
 
             # If we found connections, filter and use them
             if len(available_conns) > 0:
+                # If this is a door exit and we have < 3 doors in the path,
+                # don't allow connecting to another door in the path (would consume 2 doors at once)
+                if this_type == 0 and path_door_count < 3:
+                    filtered_conns = [c for c in available_conns if c not in path_doors]
+                    if len(filtered_conns) > 0:
+                        available_conns = set(filtered_conns)
+                        if self.verbose:
+                            print(f'\t\tFiltered out path doors (path has only {path_door_count} doors)')
+                    elif self.verbose:
+                        print(f'\t\tWarning: only path doors available, using any')
+
                 # If this is a door exit and we're down to our last door in the path,
                 # only connect to rooms with 2+ doors so we don't run out
                 if this_type == 0 and path_door_count == 1:
