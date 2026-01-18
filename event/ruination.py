@@ -669,6 +669,19 @@ class RuinationBranch(Network):
             print(f'\tAvailable exits: {len(available_exits[0])} doors, {len(available_exits[1])} traps')
             print(f'\tAvailable entrances: {len(available_doors_in)} doors, {len(available_pits)} pits')
 
+        # Count total doors in the connected path (active + upstream + downstream)
+        # This is used to ensure we never run out of doors
+        path_door_count = len(active_room.doors)
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            path_door_count += len(room.doors)
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            path_door_count += len(room.doors)
+
+        if self.verbose:
+            print(f'\tTotal doors in connected path: {path_door_count}')
+
         # (4) Choose exit type based on what entrances are available
         # Only prefer traps if there are pits available to receive them
         have_traps = len(available_exits[1]) > 0
@@ -698,38 +711,19 @@ class RuinationBranch(Network):
 
             # Filter out exits that would strand pits in their source room
             # (using the last exit from a room that still has pits would trap players)
-            # Also prefer to preserve hub doors for connecting terminus in finalize_map
             safe_exits = []
-            hub_door_fallbacks = []  # Hub doors we'd prefer not to use, but can if needed
             for exit_id in available_exits[this_type]:
                 exit_room = self.rooms.get_room_from_element(exit_id)
                 # Count remaining exits after using this one
                 remaining_exits = len(exit_room.doors) + len(exit_room.traps) - 1
 
-                # Check 1: Would strand pits? (hard filter - never allow)
+                # Would strand pits? (hard filter - never allow)
                 if remaining_exits == 0 and len(exit_room.pits) > 0:
                     if self.verbose:
                         print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
                     continue
 
-                # Check 2: Would leave hub with no doors? (soft filter - use as fallback)
-                # Hub needs at least 1 door for connecting terminus in finalize_map
-                # But if this is the only way to extend, we'll use it anyway
-                if this_type == 0 and 'ruin_hub_' in str(exit_room.id):
-                    remaining_doors = len(exit_room.doors) - 1
-                    if remaining_doors < 1:
-                        hub_door_fallbacks.append(exit_id)
-                        if self.verbose:
-                            print(f'\t\tHub door {exit_id} - prefer to save for terminus (fallback)')
-                        continue
-
                 safe_exits.append(exit_id)
-
-            # If no safe exits, fall back to hub doors if available
-            if len(safe_exits) == 0 and len(hub_door_fallbacks) > 0:
-                safe_exits = hub_door_fallbacks
-                if self.verbose:
-                    print(f'\t\tUsing hub door as fallback (only way to extend)')
 
             if len(safe_exits) == 0:
                 if self.verbose:
@@ -782,8 +776,23 @@ class RuinationBranch(Network):
                     print('\t\tTrying check rooms...')
                 available_conns.update(self.get_all_check_connections(element_type=this_type))
 
-            # If we found connections, use them
+            # If we found connections, filter and use them
             if len(available_conns) > 0:
+                # If this is a door exit and we're down to our last door in the path,
+                # only connect to rooms with 2+ doors so we don't run out
+                if this_type == 0 and path_door_count == 1:
+                    filtered_conns = []
+                    for conn in available_conns:
+                        conn_room = self.rooms.get_room_from_element(conn)
+                        if len(conn_room.doors) >= 2:
+                            filtered_conns.append(conn)
+                    if len(filtered_conns) > 0:
+                        available_conns = set(filtered_conns)
+                        if self.verbose:
+                            print(f'\t\tFiltered to rooms with 2+ doors (path has only 1 door left)')
+                    elif self.verbose:
+                        print(f'\t\tWarning: no rooms with 2+ doors, using any available')
+
                 this_conn = random.choice(list(available_conns))
                 if self.verbose:
                     conn_room = self.rooms.get_room_from_element(this_conn)
