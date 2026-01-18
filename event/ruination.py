@@ -1481,8 +1481,15 @@ class ruination_map():
                             # Remove this area from consideration
                             break
 
-                    # Add rooms to the branch
+                    # Add rooms to the branch (skip any that already exist in any branch)
+                    existing_rooms = set()
+                    for b in self.branches:
+                        existing_rooms.update(b.net.nodes)
                     for room in new_rooms:
+                        if room in existing_rooms:
+                            if self.verbose:
+                                print(f'\tSkipping room {room} - already exists')
+                            continue
                         branch.add_room(room)
 
                     # Check if this area has any reward rooms
@@ -1500,7 +1507,15 @@ class ruination_map():
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
                     if self.verbose:
                         print('Adding extra area', new_area, 'to unstick branch', branch_id)
+                    # Skip rooms that already exist
+                    existing_rooms = set()
+                    for b in self.branches:
+                        existing_rooms.update(b.net.nodes)
                     for room in RUIN_ROOM_SETS[new_area]:
+                        if room in existing_rooms:
+                            if self.verbose:
+                                print(f'\tSkipping room {room} - already exists')
+                            continue
                         branch.add_room(room)
                     stuck_branches.discard(branch_id)
                 else:
