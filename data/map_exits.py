@@ -176,7 +176,7 @@ class MapExits():
 
         for e in exit_list:
             if e in exit_data_patch.keys():
-                if e in self.exit_original_data.keys():
+                if e in self.exit_original_data.keys() and e < 4000:
                         # Update the "original data"
                         self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
                         # Copy the "original data" to the exit itself
@@ -184,6 +184,11 @@ class MapExits():
                         self.copy_exit_info(this_exit, e, type='all')
                         if verbose:
                             print('Patching: ', e, ':', self.exit_original_data[e])
+                elif e in self.exit_original_data.keys() and e >= 4000:
+                        # Logical exit already has an entry - just update it
+                        self.exit_original_data[e] = exit_data_patch[e](self.exit_original_data[e])
+                        if verbose:
+                            print('Patching logical (existing):', e, self.exit_original_data[e])
                 else:
                     if 6000 > e >= 4000:
                         # This is a logical exit.  Create an entry for it from its WOB pair.
