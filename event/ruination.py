@@ -564,8 +564,8 @@ class RuinationBranch(Network):
         if self.verbose:
             print('(4) remaining doors:', remaining_doors)
         terminus = self.rooms.get_room(self.terminus)
-        if terminus is not None:
-            # Terminus is still a separate room - connect it
+        if terminus is not None and len(remaining_doors) > 0:
+            # Terminus is still a separate room and we have doors to connect it
             this_exit = remaining_doors.pop()
             if self.terminus in self.dead_ends:
                 self.dead_ends.remove(self.terminus)
@@ -573,6 +573,12 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(4) connecting terminus:', this_exit , '-->', this_conn)
             self.connect(this_exit, this_conn)
+        elif terminus is not None and len(remaining_doors) == 0:
+            # Terminus exists but no hub doors available - add terminus to dead ends for step 6
+            if self.terminus not in self.dead_ends:
+                self.dead_ends.append(self.terminus)
+            if self.verbose:
+                print('(4) no hub doors to connect terminus, deferring to step 6')
         elif self.verbose:
             print('(4) terminus already merged into hub, skipping')
 
@@ -602,6 +608,22 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(6) connecting dead ends:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
+
+        # (7) If there are still unconnected dead ends (no hub doors available),
+        # connect them to each other in pairs
+        while len(self.dead_ends) >= 2:
+            room1_id = self.dead_ends.pop()
+            room2_id = self.dead_ends.pop()
+            room1 = self.rooms.get_room(room1_id)
+            room2 = self.rooms.get_room(room2_id)
+            if room1 is None or room2 is None:
+                continue
+            if len(room1.doors) > 0 and len(room2.doors) > 0:
+                this_exit = room1.doors.pop()
+                this_conn = room2.doors.pop()
+                if self.verbose:
+                    print('(7) connecting dead ends to each other:', this_exit, '-->', this_conn)
+                self.connect(this_exit, this_conn)
 
         if self.verbose:
             print('... closing branch complete!')
