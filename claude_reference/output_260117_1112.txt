@@ -1,0 +1,983 @@
+Version   1.4.2
+Generated 2026-01-17 23:11:51
+Input     FFIII.smc
+Output    ruin.smc
+Log       ruin.txt
+Seed      uf5u5b406jzv
+Flags     -oa 2.2.2.2.6.6.4.9.9 -sc1 random -sc2 random -sc3 random -sal -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 0 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125 -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms -frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn -ruin
+Hash      Fish, Old Man, Girl, Figaro Guard
+Requested:  6 characters,  9 espers
+Pre-plan: Planned areas have 18 checks, 15 character slots, 18 esper slots
+Pre-plan: Will obtain characters: ['STRAGO', 'TERRA', 'SABIN']
+Pre-plan: Reserve characters (for extra areas): ['MOG', 'SHADOW', 'CELES', 'GAU', 'EDGAR', 'UMARO', 'SETZER', 'RELM']
+Pre-plan: Dead checks allowed: 6
+Areas used:  {'MtZozo', 'Kohlingen', 'Doma', 'ZoneEater', 'PhoenixCave', 'SouthFigaroCave', 'Zozo', 'Narshe', 'Maranda'}
+Forced same branch: Zozo MtZozo 2
+Distributed areas:
+	 0 :  {'Maranda'}
+	 1 :  {'PhoenixCave'}
+	 2 :  {'MtZozo', 'Kohlingen', 'Doma', 'ZoneEater', 'SouthFigaroCave', 'Zozo', 'Narshe'}
+Checks available:
+	 0 :  []
+	 1 :  []
+	 2 :  ['South Figaro Cave', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3', 'Mt. Zozo', 'Zone Eater']
+Rewards available:  [4, 6]
+		assessing key  CYAN in rooms
+		assessing key  LOCKE in rooms
+		assessing key  GOGO in rooms
+		assessing key  CYAN in rooms
+		assessing key  LOCKE in rooms
+		assessing key  GOGO in rooms
+		assessing key  CYAN in rooms
+			Applying key: ('CYAN',) in room ruin-zozo
+			Applying a new key: zr1
+		assessing key  zr1 in rooms
+			Applying key: ('zr1',) in room 296r
+			adding a door... 618
+		assessing key  LOCKE in rooms
+		assessing key  GOGO in rooms
+Generating map with characters...
+Branch viability: [False, False, True] Stuck: set()
+Working on branch 2 ( ['South Figaro Cave', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3', 'Mt. Zozo', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms ['dc-76', 65, 104, 'ruin-whelk', 193, 'ms-wor-59', 256, 363, 429]
+status: dead ends ['ruin_hub_2', 'ruin_terminus_1', 41, 'branch-mz_mapsafe', 47, 'root-mz_mapsafe', '305r', 103, '221R', '295r', 184, 185, 189, 190, 192, 251, 256, '294r', '309r', 363, 426, '306r']
+Forcing connections...
+Forcing:  2064 3064
+forcing successful.
+Forcing:  2043 3043
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 140 doors, 21 pits
+	Trying door exit: 395 in room ruin_hub_2
+	Found 112 connections, selected: 4620 in room 301r
+Looking for reward in room 301r ...
+Making connection:  395 --> 4620
+		assessing key  clock1 in rooms
+			removing key  clock1 from 301r_ruin_hub_2
+	Active room:  301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 137 doors, 21 pits
+	Trying door exit: 4621 in room 301r_ruin_hub_2
+	Found 109 connections, selected: 1513 in room 105
+Looking for reward in room 105 ...
+Making connection:  4621 --> 1513
+	Active room:  105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 135 doors, 21 pits
+	Trying door exit: 1161 in room 105_301r_ruin_hub_2
+	Found 107 connections, selected: 1143 in room ruin-narshe
+Looking for reward in room ruin-narshe ...
+Making connection:  1161 --> 1143
+	Active room:  ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 131 doors, 21 pits
+	Trying door exit: 4622 in room ruin-narshe_105_301r_ruin_hub_2
+	Found 103 connections, selected: 726 in room 359
+Looking for reward in room 359 ...
+Making connection:  4622 --> 726
+	Active room:  359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 129 doors, 21 pits
+	Trying door exit: 1146 in room 359_ruin-narshe_105_301r_ruin_hub_2
+	Found 101 connections, selected: 142 in room 36
+Looking for reward in room 36 ...
+Making connection:  1146 --> 142
+	Active room:  36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 127 doors, 21 pits
+	Trying door exit: 140 in room 36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 99 connections, selected: 536 in room 252
+Looking for reward in room 252 ...
+Making connection:  140 --> 536
+	Active room:  252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 125 doors, 21 pits
+	Trying door exit: 143 in room 252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 97 connections, selected: 446 in room 191
+Looking for reward in room 191 ...
+Making connection:  143 --> 446
+	Active room:  191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 121 doors, 21 pits
+	Trying door exit: 450 in room 191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 93 connections, selected: 4604 in room ruin-zozo
+Looking for reward in room ruin-zozo ...
+Making connection:  450 --> 4604
+	Active room:  ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 116 doors, 21 pits
+	Trying door exit: 4601 in room ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 88 connections, selected: 481 in room 209
+Looking for reward in room 209 ...
+Making connection:  4601 --> 481
+	Active room:  209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 0 traps
+	Available entrances: 112 doors, 21 pits
+	Trying door exit: 4600 in room 209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 84 connections, selected: 1147 in room 38
+Looking for reward in room 38 ...
+Making connection:  4600 --> 1147
+	Active room:  38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 0 traps
+	Available entrances: 110 doors, 21 pits
+	Trying door exit: 478 in room 38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 82 connections, selected: 449 in room 188
+Looking for reward in room 188 ...
+Making connection:  478 --> 449
+	Active room:  188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 16 doors, 0 traps
+	Available entrances: 103 doors, 21 pits
+	Trying door exit: 440 in room 188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 75 connections, selected: 145 in room 37a
+Looking for reward in room 37a ...
+Making connection:  440 --> 145
+	Active room:  37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 16 doors, 0 traps
+	Available entrances: 101 doors, 20 pits
+	Trying door exit: 451 in room 37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 73 connections, selected: 727 in room 362
+Looking for reward in room 362 ...
+Making connection:  451 --> 727
+	Active room:  362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 16 doors, 0 traps
+	Available entrances: 99 doors, 20 pits
+	Trying door exit: 728 in room 362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 71 connections, selected: 863 in room 433
+Looking for reward in room 433 ...
+Making connection:  728 --> 863
+	Active room:  433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 16 doors, 0 traps
+	Available entrances: 97 doors, 19 pits
+	Trying door exit: 480 in room 433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 69 connections, selected: 266 in room 101
+Looking for reward in room 101 ...
+Making connection:  480 --> 266
+	Active room:  101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 17 doors, 0 traps
+	Available entrances: 94 doors, 19 pits
+	Trying door exit: 444 in room 101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 66 connections, selected: 618 in room 296r
+Looking for reward in room 296r ...
+Making connection:  444 --> 618
+	Active room:  296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 18 doors, 0 traps
+	Available entrances: 91 doors, 19 pits
+	Trying door exit: 448 in room 296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 63 connections, selected: 721 in room 357
+Looking for reward in room 357 ...
+Making connection:  448 --> 721
+	Active room:  357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 19 doors, 1 traps
+	Available entrances: 88 doors, 19 pits
+	Trying trap exit: 2042 in room 357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+	Found 19 connections, selected: 3071 in room 212R
+Looking for reward in room 212R ...
+Making connection:  2042 --> 3071
+	Active room:  212R .
+	Upstream nodes:  ['357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 88 doors, 18 pits
+	Trying trap exit: 2072 in room 212R
+	Found 20 connections, selected: 6853 in room 428
+Looking for reward in room 428 ...
+Making connection:  2072 --> 6853
+	Active room:  428 .
+	Upstream nodes:  ['212R', '357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 87 doors, 16 pits
+	Trying trap exit: 854 in room 428
+	Found 18 connections, selected: 6847 in room 423
+Looking for reward in room 423 ...
+Making connection:  854 --> 6847
+		assessing key  cd1 in rooms
+			removing key  cd1 from 423
+	Active room:  423 .
+	Upstream nodes:  [428, '212R', '357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 87 doors, 15 pits
+	Trying trap exit: 846 in room 423
+	Found 17 connections, selected: 6844 in room 422
+Looking for reward in room 422 ...
+Making connection:  846 --> 6844
+	Active room:  422 .
+	Upstream nodes:  [423, 428, '212R', '357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 87 doors, 14 pits
+	Trying trap exit: 845 in room 422
+	Found 16 connections, selected: 6845 in room 421
+Looking for reward in room 421 ...
+Making connection:  845 --> 6845
+	Active room:  421 .
+	Upstream nodes:  [422, 423, 428, '212R', '357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 2 traps
+	Available entrances: 87 doors, 12 pits
+	Trying trap exit: 844 in room 421
+	Found 14 connections, selected: 6852 in room 427
+Looking for reward in room 427 ...
+Making connection:  844 --> 6852
+		assessing key  cd2 in rooms
+			removing key  cd2 from 427
+			Applying key: ('cd1', 'cd2') in room 429
+			adding a trap... 2070
+	Active room:  427 .
+	Upstream nodes:  [421, 422, 423, 428, '212R', '357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 87 doors, 11 pits
+	Trying trap exit: 853 in room 427
+	Found 14 connections, selected: 6843 in room 425
+Looking for reward in room 425 ...
+Making connection:  853 --> 6843
+	Active room:  425 .
+	Upstream nodes:  [427, 421, 422, 423, 428, '212R', '357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 86 doors, 9 pits
+	Trying trap exit: 852 in room 425
+	Found 12 connections, selected: 6859 in room 357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2
+Looking for reward in room 357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2 ...
+Making connection:  852 --> 6859
+	Active room:  427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 1 traps
+	Available entrances: 86 doors, 9 pits
+	Trying trap exit: 843 in room 427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425
+	Found 9 connections, selected: 6854 in room 424
+Looking for reward in room 424 ...
+Making connection:  843 --> 6854
+	Active room:  424 .
+	Upstream nodes:  ['427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 86 doors, 7 pits
+	Trying trap exit: 849 in room 424
+	Found 11 connections, selected: 6849 in room 427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425
+Looking for reward in room 427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425 ...
+Making connection:  849 --> 6849
+	Active room:  427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 2 traps
+	Available entrances: 86 doors, 7 pits
+	Trying trap exit: 847 in room 427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424
+	Found 7 connections, selected: 6862 in room 430
+Looking for reward in room 430 ...
+Making connection:  847 --> 6862
+	Active room:  430 .
+	Upstream nodes:  ['427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 85 doors, 6 pits
+	Trying trap exit: 859 in room 430
+	Found 10 connections, selected: 3074 in room dc-76
+Looking for reward in room dc-76 ...
+Found a reward!  [('Doma WOR_3', <RewardType.ITEM|ESPER: 12>)] in room dc-76
+Making connection:  859 --> 3074
+Processing reward:  Doma WOR_3
+	choosing from... RewardType.ITEM|ESPER
+	got Maduin !
+	Updated Rewards Obtained:  0 Characters,  1 Espers
+	Updated Rewards Available:  4 Characters,  5 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  []
+	 2 :  ['South Figaro Cave', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Zozo', 'Zone Eater']
+Branch viability: [False, False, True] Stuck: set()
+	trimmed dead end  ruin_hub_2
+Working on branch 2 ( ['South Figaro Cave', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Zozo', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms [65, 104, 'ruin-whelk', 193, 'ms-wor-59', 256, 363, 429]
+status: dead ends ['ruin_terminus_1', 41, 'branch-mz_mapsafe', 47, 'root-mz_mapsafe', '305r', 103, '221R', '295r', 184, 185, 189, 190, 192, 251, 256, '294r', '309r', 363, 426, '306r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-76 .
+	Upstream nodes:  [430, '427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 84 doors, 5 pits
+	Trying trap exit: 2069 in room dc-76
+	Found 9 connections, selected: 3069 in room 427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424
+Looking for reward in room 427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424 ...
+Making connection:  2069 --> 3069
+	Active room:  430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 1 traps
+	Available entrances: 84 doors, 5 pits
+	Trying trap exit: 848 in room 430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76
+	Found 5 connections, selected: 3072 in room 432
+Looking for reward in room 432 ...
+Making connection:  848 --> 3072
+	Active room:  432 .
+	Upstream nodes:  ['430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 84 doors, 4 pits
+	Trying trap exit: 862 in room 432
+	Found 7 connections, selected: 6846 in room 430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76
+Looking for reward in room 430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76 ...
+Making connection:  862 --> 6846
+	Active room:  430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 84 doors, 4 pits
+	Trying door exit: 855 in room 430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432
+	Found 57 connections, selected: 484 in room 211
+Looking for reward in room 211 ...
+Making connection:  855 --> 484
+	Active room:  211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 82 doors, 4 pits
+	Trying door exit: 719 in room 211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432
+	Found 55 connections, selected: 1511 in room 359b
+Looking for reward in room 359b ...
+Making connection:  719 --> 1511
+	Active room:  359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 80 doors, 4 pits
+	Trying door exit: 4607 in room 359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432
+	Found 53 connections, selected: 860 in room 431
+Looking for reward in room 431 ...
+Making connection:  4607 --> 860
+	Active room:  431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 22 doors, 1 traps
+	Available entrances: 79 doors, 4 pits
+	Trying trap exit: 2073 in room 431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432
+	Found 4 connections, selected: 3042 in room 358
+Looking for reward in room 358 ...
+Making connection:  2073 --> 3042
+	Active room:  358 .
+	Upstream nodes:  ['431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432'] 
+	Downstream nodes:  ['358b']
+	Available exits: 1 doors, 0 traps
+	Available entrances: 78 doors, 3 pits
+	Trying door exit: 720 in room 358b
+	Found 74 connections, selected: 5240 in room 431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432
+Looking for reward in room 431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432 ...
+Making connection:  720 --> 5240
+	Active room:  358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 78 doors, 3 pits
+	Trying door exit: 5224 in room 358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 52 connections, selected: 164 in room 49
+Looking for reward in room 49 ...
+Making connection:  5224 --> 164
+	Active room:  49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 74 doors, 3 pits
+	Trying door exit: 454 in room 49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 48 connections, selected: 152 in room 44
+Looking for reward in room 44 ...
+Making connection:  454 --> 152
+	Active room:  44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 72 doors, 3 pits
+	Trying door exit: 141 in room 44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 46 connections, selected: 438 in room 186
+Looking for reward in room 186 ...
+Making connection:  141 --> 438
+	Active room:  186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 70 doors, 3 pits
+	Trying door exit: 850 in room 186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 44 connections, selected: 539 in room 253
+Looking for reward in room 253 ...
+Making connection:  850 --> 539
+	Active room:  253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 24 doors, 0 traps
+	Available entrances: 67 doors, 3 pits
+	Trying door exit: 718 in room 253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 41 connections, selected: 168 in room 51
+Looking for reward in room 51 ...
+Making connection:  718 --> 168
+	Active room:  51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 24 doors, 0 traps
+	Available entrances: 65 doors, 3 pits
+	Trying door exit: 537 in room 51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 39 connections, selected: 268 in room 102
+Looking for reward in room 102 ...
+Making connection:  537 --> 268
+	Active room:  102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 24 doors, 0 traps
+	Available entrances: 63 doors, 3 pits
+	Trying door exit: 265 in room 102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 37 connections, selected: 1211 in room ms-wor-59
+Looking for reward in room ms-wor-59 ...
+Found a reward!  [('Kohlingen', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ms-wor-59
+		reward is locked by SETZER . Saving for later.
+Making connection:  265 --> 1211
+	Active room:  ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 24 doors, 0 traps
+	Available entrances: 61 doors, 3 pits
+	Trying door exit: 167 in room ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 35 connections, selected: 483 in room 208
+Looking for reward in room 208 ...
+Making connection:  167 --> 483
+	Active room:  208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 24 doors, 1 traps
+	Available entrances: 59 doors, 3 pits
+	Trying trap exit: 2071 in room 208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+	Found 3 connections, selected: 3073 in room 188B
+Looking for reward in room 188B ...
+Making connection:  2071 --> 3073
+	Active room:  188B .
+	Upstream nodes:  ['208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 58 doors, 2 pits
+	Trying door exit: 443 in room 188B
+	Found 57 connections, selected: 151 in room 43
+Looking for reward in room 43 ...
+Making connection:  443 --> 151
+	Active room:  43_188B .
+	Upstream nodes:  ['208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 56 doors, 2 pits
+	Trying door exit: 150 in room 43_188B
+	Found 55 connections, selected: 723 in room 361
+Looking for reward in room 361 ...
+Making connection:  150 --> 723
+	Active room:  361_43_188B .
+	Upstream nodes:  ['208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 54 doors, 2 pits
+	Trying door exit: 722 in room 361_43_188B
+	Found 53 connections, selected: 533 in room 250
+Looking for reward in room 250 ...
+Making connection:  722 --> 533
+	Active room:  250_361_43_188B .
+	Upstream nodes:  ['208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 52 doors, 2 pits
+	Trying door exit: 531 in room 250_361_43_188B
+	Found 51 connections, selected: 149 in room 42
+Looking for reward in room 42 ...
+Making connection:  531 --> 149
+	Active room:  42_250_361_43_188B .
+	Upstream nodes:  ['208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 50 doors, 2 pits
+	Trying door exit: 148 in room 42_250_361_43_188B
+	Found 49 connections, selected: 437 in room 208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b
+Looking for reward in room 208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b ...
+Making connection:  148 --> 437
+	Active room:  208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 50 doors, 2 pits
+	Trying door exit: 486 in room 208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B
+	Found 25 connections, selected: 1148 in room 40
+Looking for reward in room 40 ...
+Making connection:  486 --> 1148
+	Active room:  40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 48 doors, 2 pits
+	Trying door exit: 441 in room 40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B
+	Found 23 connections, selected: 540 in room 254
+Looking for reward in room 254 ...
+Making connection:  441 --> 540
+	Active room:  254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 46 doors, 2 pits
+	Trying door exit: 267 in room 254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B
+	Found 21 connections, selected: 179 in room ruin-whelk
+Looking for reward in room ruin-whelk ...
+Found a reward!  [('Whelk', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-whelk
+		reward is locked by TERRA . Saving for later.
+Making connection:  267 --> 179
+	Active room:  ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 23 doors, 0 traps
+	Available entrances: 44 doors, 2 pits
+	Trying door exit: 541 in room ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B
+	Found 19 connections, selected: 456 in room 193
+Looking for reward in room 193 ...
+Found a reward!  [('Doma WOR_1', <RewardType.ESPER|CHARACTER: 6>)] in room 193
+Making connection:  541 --> 456
+Processing reward:  Doma WOR_1
+	choosing from... RewardType.ESPER|CHARACTER
+	got STRAGO !
+	Set character path: STRAGO depends on CYAN
+		assessing key  STRAGO in rooms
+		assessing key  STRAGO in rooms
+		assessing key  STRAGO in rooms
+		# rooms on each branch:  [3, 3, 86]
+		# rooms on each branch:  [4, 3, 86]
+Forced same branch: EbotsRock Thamasa 1
+Distributed areas:
+	 0 :  {'FanaticsTower'}
+	 1 :  {'Thamasa', 'EbotsRock'}
+	 2 :  set()
+Checks available:
+	 0 :  ["Fanatic's Tower"]
+	 1 :  ["Ebot's Rock"]
+	 2 :  ['South Figaro Cave', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Zozo', 'Zone Eater']
+	Updated Rewards Obtained:  1 Characters,  1 Espers
+	Updated Rewards Available:  5 Characters,  6 Espers
+	Updated branch checks available:
+	 0 :  ["Fanatic's Tower"]
+	 1 :  ["Ebot's Rock"]
+	 2 :  ['South Figaro Cave', 'Doma WOR_2', 'Mt. Zozo', 'Zone Eater']
+Branch viability: [False, False, True] Stuck: set()
+Working on branch 2 ( ['South Figaro Cave', 'Doma WOR_2', 'Mt. Zozo', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms [65, 104, 256, 363, 429]
+status: dead ends ['ruin_terminus_1', 41, 'branch-mz_mapsafe', 47, 'root-mz_mapsafe', '305r', 103, '221R', '295r', 184, 185, 189, 190, 192, 251, 256, '294r', '309r', 363, 426, '306r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 22 doors, 1 traps
+	Available entrances: 43 doors, 2 pits
+	Trying trap exit: 2074 in room 193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B
+	Found 2 connections, selected: 3070 in room 210
+Looking for reward in room 210 ...
+Making connection:  2074 --> 3070
+	Active room:  210 .
+	Upstream nodes:  ['193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 42 doors, 1 pits
+	Trying door exit: 482 in room 210
+	Found 40 connections, selected: 191 in room 65
+Looking for reward in room 65 ...
+Found a reward!  [('Narshe Moogle Defense', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 65
+		reward is locked by MOG . Saving for later.
+Making connection:  482 --> 191
+	Active room:  65_210 .
+	Upstream nodes:  ['193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 40 doors, 1 pits
+	Trying door exit: 192 in room 65_210
+	Found 38 connections, selected: 269 in room 193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B
+Looking for reward in room 193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B ...
+Making connection:  192 --> 269
+	Active room:  193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 40 doors, 1 pits
+	Trying door exit: 4606 in room 193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 16 connections, selected: 165 in room 50
+Looking for reward in room 50 ...
+Making connection:  4606 --> 165
+	Active room:  50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 38 doors, 1 pits
+	Trying door exit: 864 in room 50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 14 connections, selected: 272 in room 104
+Looking for reward in room 104 ...
+Found a reward!  [('South Figaro Cave', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 104
+Making connection:  864 --> 272
+Processing reward:  South Figaro Cave
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got SABIN !
+	Set character path: SABIN depends on CELES
+		assessing key  SABIN in rooms
+		assessing key  SABIN in rooms
+			Applying key: ('STRAGO',) in room ruin-thamasa
+			adding a trap... 2054
+		assessing key  SABIN in rooms
+		# rooms on each branch:  [4, 5, 86]
+		# rooms on each branch:  [20, 5, 86]
+		# rooms on each branch:  [20, 8, 86]
+		# rooms on each branch:  [20, 9, 86]
+		# rooms on each branch:  [20, 10, 86]
+Distributed areas:
+	 0 :  {'MtKolts'}
+	 1 :  {'ImperialCamp', 'PhantomTrain', 'BarenFalls', 'Tzen'}
+	 2 :  set()
+Checks available:
+	 0 :  ["Fanatic's Tower", 'Mt. Kolts']
+	 1 :  ["Ebot's Rock", 'Imperial Camp', 'Baren Falls', 'Phantom Train', 'Tzen']
+	 2 :  ['South Figaro Cave', 'Doma WOR_2', 'Mt. Zozo', 'Zone Eater']
+	Updated Rewards Obtained:  2 Characters,  1 Espers
+	Updated Rewards Available:  8 Characters,  10 Espers
+	Updated branch checks available:
+	 0 :  ["Fanatic's Tower", 'Mt. Kolts']
+	 1 :  ["Ebot's Rock", 'Imperial Camp', 'Baren Falls', 'Phantom Train', 'Tzen']
+	 2 :  ['Doma WOR_2', 'Mt. Zozo', 'Zone Eater']
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 2 ( ['Doma WOR_2', 'Mt. Zozo', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms [256, 363, 429]
+status: dead ends ['ruin_terminus_1', 41, 'branch-mz_mapsafe', 47, 'root-mz_mapsafe', '305r', 103, '221R', '295r', 184, 185, 189, 190, 192, 251, 256, '294r', '309r', 363, 426, '306r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 36 doors, 1 pits
+	Trying door exit: 479 in room 104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 12 connections, selected: 154 in room 45
+Looking for reward in room 45 ...
+Making connection:  479 --> 154
+	Active room:  45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 34 doors, 1 pits
+	Trying door exit: 858 in room 45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 10 connections, selected: 543 in room 255
+Looking for reward in room 255 ...
+Making connection:  858 --> 543
+	Active room:  255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 32 doors, 1 pits
+	Trying door exit: 162 in room 255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 8 connections, selected: 453 in room 187
+Looking for reward in room 187 ...
+Making connection:  162 --> 453
+	Active room:  187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 30 doors, 1 pits
+	Trying door exit: 538 in room 187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 6 connections, selected: 870 in room 436
+Looking for reward in room 436 ...
+Making connection:  538 --> 870
+	Active room:  436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 21 doors, 0 traps
+	Available entrances: 28 doors, 1 pits
+	Trying door exit: 452 in room 436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 4 connections, selected: 856 in room 429
+Looking for reward in room 429 ...
+Found a reward!  [('Doma WOR_2', <RewardType.ITEM|ESPER: 12>)] in room 429
+Making connection:  452 --> 856
+Processing reward:  Doma WOR_2
+	choosing from... RewardType.ITEM|ESPER
+	got Crusader !
+	Updated Rewards Obtained:  2 Characters,  2 Espers
+	Updated Rewards Available:  8 Characters,  9 Espers
+	Updated branch checks available:
+	 0 :  ["Fanatic's Tower", 'Mt. Kolts']
+	 1 :  ["Ebot's Rock", 'Imperial Camp', 'Baren Falls', 'Phantom Train', 'Tzen']
+	 2 :  ['Mt. Zozo', 'Zone Eater']
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 0 ( ["Fanatic's Tower", 'Mt. Kolts'] )
+status: terminus ruin_terminus_2
+status: check rooms ['ms-wor-69', 151]
+status: dead ends ['ruin_hub_0', 'ruin_terminus_2', 'ms-wor-69', 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 36 doors, 0 pits
+	Trying door exit: 393 in room ruin_hub_0
+	Found 31 connections, selected: 389 in room 159
+Looking for reward in room 159 ...
+Making connection:  393 --> 389
+	Active room:  159_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 33 doors, 0 pits
+	Trying door exit: 387 in room 159_ruin_hub_0
+	Found 28 connections, selected: 370 in room 150
+Looking for reward in room 150 ...
+Making connection:  387 --> 370
+	Active room:  150_159_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 31 doors, 0 pits
+	Trying door exit: 371 in room 150_159_ruin_hub_0
+	Found 26 connections, selected: 381 in room 155
+Looking for reward in room 155 ...
+Making connection:  371 --> 381
+	Active room:  155_150_159_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 29 doors, 0 pits
+	Trying door exit: 1179 in room 155_150_159_ruin_hub_0
+	Found 24 connections, selected: 377 in room 153
+Looking for reward in room 153 ...
+Making connection:  1179 --> 377
+	Active room:  153_155_150_159_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 25 doors, 0 pits
+	Trying door exit: 382 in room 153_155_150_159_ruin_hub_0
+	Found 20 connections, selected: 383 in room 156
+Looking for reward in room 156 ...
+Making connection:  382 --> 383
+	Active room:  156_153_155_150_159_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 23 doors, 0 pits
+	Trying door exit: 378 in room 156_153_155_150_159_ruin_hub_0
+	Found 18 connections, selected: 380 in room 154
+Looking for reward in room 154 ...
+Making connection:  378 --> 380
+	Active room:  154_156_153_155_150_159_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 21 doors, 0 pits
+	Trying door exit: 376 in room 154_156_153_155_150_159_ruin_hub_0
+	Found 16 connections, selected: 372 in room 151
+Looking for reward in room 151 ...
+Found a reward!  [('Mt. Kolts', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 151
+Making connection:  376 --> 372
+Processing reward:  Mt. Kolts
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Shiva !
+	Updated Rewards Obtained:  2 Characters,  3 Espers
+	Updated Rewards Available:  7 Characters,  8 Espers
+	Updated branch checks available:
+	 0 :  ["Fanatic's Tower"]
+	 1 :  ["Ebot's Rock", 'Imperial Camp', 'Baren Falls', 'Phantom Train', 'Tzen']
+	 2 :  ['Mt. Zozo', 'Zone Eater']
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 2 ( ['Mt. Zozo', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms [256, 363]
+status: dead ends ['ruin_terminus_1', 41, 'branch-mz_mapsafe', 47, 'root-mz_mapsafe', '305r', 103, '221R', '295r', 184, 185, 189, 190, 192, 251, 256, '294r', '309r', 363, 426, '306r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 20 doors, 1 traps
+	Available entrances: 27 doors, 1 pits
+	Trying trap exit: 2070 in room 429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+	Found 1 connections, selected: 3040 in room 356
+Looking for reward in room 356 ...
+Making connection:  2070 --> 3040
+	Active room:  356 .
+	Upstream nodes:  ['429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 26 doors, 0 pits
+	Trying door exit: 717 in room 356
+	Found 22 connections, selected: 477 in room 429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210
+Looking for reward in room 429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210 ...
+Making connection:  717 --> 477
+	Active room:  429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 19 doors, 1 traps
+	Available entrances: 26 doors, 0 pits
+	Trying door exit: 146 in room 429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356
+	Found 2 connections, selected: 263 in room 100
+Looking for reward in room 100 ...
+Making connection:  146 --> 263
+	Active room:  100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 19 doors, 1 traps
+	Available entrances: 24 doors, 0 pits
+	Trying door exit: 1212 in room 100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356
+		Expanding search to all unconnected rooms...
+	Found 24 connections, selected: 455 in room 192
+Looking for reward in room 192 ...
+Making connection:  1212 --> 455
+	Active room:  192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 18 doors, 1 traps
+	Available entrances: 23 doors, 0 pits
+	Trying door exit: 178 in room 192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356
+		Expanding search to all unconnected rooms...
+	Found 23 connections, selected: 851 in room 426
+Looking for reward in room 426 ...
+Making connection:  178 --> 851
+	Active room:  426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 17 doors, 1 traps
+	Available entrances: 22 doors, 0 pits
+	Trying door exit: 1149 in room 426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356
+		Expanding search to all unconnected rooms...
+	Found 22 connections, selected: 4632 in room 308r
+Looking for reward in room 308r ...
+Making connection:  1149 --> 4632
+	Active room:  308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356 .
+	Upstream nodes:  [] 
+	Downstream nodes:  ['307r']
+	Available exits: 1 doors, 0 traps
+	Available entrances: 20 doors, 0 pits
+	Trying door exit: 4631 in room 307r
+	Found 16 connections, selected: 868 in room 308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356
+Looking for reward in room 308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356 ...
+Making connection:  4631 --> 868
+	Active room:  308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 15 doors, 1 traps
+	Available entrances: 20 doors, 0 pits
+	Trying door exit: 725 in room 308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r
+		Expanding search to all unconnected rooms...
+	Found 20 connections, selected: 435 in room 184
+Looking for reward in room 184 ...
+Making connection:  725 --> 435
+	Active room:  184_308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 14 doors, 1 traps
+	Available entrances: 19 doors, 0 pits
+	Trying door exit: 147 in room 184_308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r
+		Expanding search to all unconnected rooms...
+	Found 19 connections, selected: 4502 in room 221R
+Looking for reward in room 221R ...
+Making connection:  147 --> 4502
+	Active room:  221R_184_308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 13 doors, 1 traps
+	Available entrances: 18 doors, 0 pits
+	Trying door exit: 271 in room 221R_184_308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r
+		Expanding search to all unconnected rooms...
+	Found 18 connections, selected: 724 in room 363
+Looking for reward in room 363 ...
+Found a reward!  [('Zone Eater', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 363
+Making connection:  271 --> 724
+Processing reward:  Zone Eater
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got TERRA !
+	Set character path: TERRA depends on GOGO
+		assessing key  TERRA in rooms
+		assessing key  TERRA in rooms
+		assessing key  TERRA in rooms
+			Applying key: ('TERRA',) in room 363_221R_184_308r_426_192_100_429_436_187_255_45_104_50_193_ruin-whelk_254_40_208_ms-wor-59_102_51_253_186_44_49_358_431_359b_211_430_427_421_422_423_428_212R_357_296r_101_433_362_37a_188_38_209_ruin-zozo_191_252_36_359_ruin-narshe_105_301r_ruin_hub_2_425_424_dc-76_432_358b_42_250_361_43_188B_65_210_356_307r
+			adding a door... 1155
+			adding a door... 608
+		# rooms on each branch:  [20, 32, 86]
+Forced same branch: ZozoTower MtZozo 2
+		# rooms on each branch:  [32, 32, 98]
+		# rooms on each branch:  [33, 32, 98]
+Distributed areas:
+	 0 :  {'Mobliz', 'SealedGate'}
+	 1 :  {'ReturnersHideout'}
+	 2 :  {'ZozoTower'}
+Checks available:
+	 0 :  ["Fanatic's Tower"]
+	 1 :  ["Ebot's Rock", 'Imperial Camp', 'Baren Falls', 'Phantom Train', 'Tzen', 'Lete River']
+	 2 :  ['Mt. Zozo', 'Zone Eater', 'Zozo']
+CUSTOM add pit 3039 to ruin_hub_1 ! [1, 0, 1, 0, 0] [3039]
+	Updated Rewards Obtained:  3 Characters,  3 Espers
+	Updated Rewards Available:  8 Characters,  9 Espers
+	Updated branch checks available:
+	 0 :  ["Fanatic's Tower"]
+	 1 :  ["Ebot's Rock", 'Imperial Camp', 'Baren Falls', 'Phantom Train', 'Tzen', 'Lete River']
+	 2 :  ['Mt. Zozo', 'Zozo']
+	Unlocked an available reward! Whelk on branch 2
+Processing reward:  Whelk
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Tritoch !
+	Updated Rewards Obtained:  3 Characters,  4 Espers
+	Updated Rewards Available:  6 Characters,  7 Espers
+
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 25, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 74, in mod
+    self.ruination_mod(events, name_event)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 249, in ruination_mod
+    self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 1510, in generate_map_with_characters
+    self.process_rewards(rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 1654, in process_rewards
+    self.process_rewards(unlocked_rewards, characters, espers, items, v[0], exclude_chars)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 1631, in process_rewards
+    self.branch_checks[branch_id].remove(reward_name)
+ValueError: list.remove(x): x not in list
