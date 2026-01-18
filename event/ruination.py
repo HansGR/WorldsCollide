@@ -698,31 +698,38 @@ class RuinationBranch(Network):
 
             # Filter out exits that would strand pits in their source room
             # (using the last exit from a room that still has pits would trap players)
-            # Also filter out door exits from hub if it would leave hub with no doors
-            # (hub needs doors for connecting terminus and dead ends in finalize_map)
+            # Also prefer to preserve hub doors for connecting terminus in finalize_map
             safe_exits = []
+            hub_door_fallbacks = []  # Hub doors we'd prefer not to use, but can if needed
             for exit_id in available_exits[this_type]:
                 exit_room = self.rooms.get_room_from_element(exit_id)
                 # Count remaining exits after using this one
                 remaining_exits = len(exit_room.doors) + len(exit_room.traps) - 1
 
-                # Check 1: Would strand pits?
+                # Check 1: Would strand pits? (hard filter - never allow)
                 if remaining_exits == 0 and len(exit_room.pits) > 0:
                     if self.verbose:
                         print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
                     continue
 
-                # Check 2: Would leave hub with no doors? (only for door exits)
+                # Check 2: Would leave hub with no doors? (soft filter - use as fallback)
                 # Hub needs at least 1 door for connecting terminus in finalize_map
-                # (it's OK if some dead ends don't get connected - they become optional areas)
+                # But if this is the only way to extend, we'll use it anyway
                 if this_type == 0 and 'ruin_hub_' in str(exit_room.id):
                     remaining_doors = len(exit_room.doors) - 1
                     if remaining_doors < 1:
+                        hub_door_fallbacks.append(exit_id)
                         if self.verbose:
-                            print(f'\t\tFiltering exit {exit_id} - hub needs at least 1 door for terminus')
+                            print(f'\t\tHub door {exit_id} - prefer to save for terminus (fallback)')
                         continue
 
                 safe_exits.append(exit_id)
+
+            # If no safe exits, fall back to hub doors if available
+            if len(safe_exits) == 0 and len(hub_door_fallbacks) > 0:
+                safe_exits = hub_door_fallbacks
+                if self.verbose:
+                    print(f'\t\tUsing hub door as fallback (only way to extend)')
 
             if len(safe_exits) == 0:
                 if self.verbose:
