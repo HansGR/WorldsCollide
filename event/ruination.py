@@ -2090,32 +2090,32 @@ def modify_inn_costs(maps, rom, dialogs):
         rom: The ROM object to modify
         dialogs: The Dialogs object to update dialog text
     """
-    import re
     from memory.space import Write, Bank
     from instruction.event import EVENT_CODE_START
     import data.event_bit as event_bit
 
     # List of all inn GP cost addresses in the ROM
-    # Format: (address, original_cost, dialog_id, description)
+    # Format: (address, original_cost, dialog_id, dialog_template, description)
     # dialog_id is None for entries that share a dialog with another entry
+    # dialog_template uses {price} as placeholder for the GP amount
     # Note: Chocobo stables are handled separately by disable_chocobo_stables()
     # Note: Thamasa inn is handled separately by modify_thamasa_inn_ruination()
     inn_costs = [
-        (0xa78a0, 80, 0x0B89, "South Figaro inn"),
-        (0xa8ef1, 150, 0x0B8A, "Nikeah inn WoB"),
-        (0xb449c, 250, 0x0112, "Jidoor inn"),
-        (0xc5caf, 350, 0x062A, "Tzen inn"),
-        (0xc62b2, 300, 0x0649, "Albrook inn WOR"),
-        (0xc6593, 200, 0x060D, "Maranda inn"),
-        (0xc665f, 100, 0x064B, "Mobliz inn"),
-        (0xc69d6, 200, None, "Kohlingen inn"),  # Shares dialog 0x060D with Maranda
-        (0xcd2b3, 200, None, "Narshe inn"),  # Shares dialog 0x060D with Maranda
+        (0xa78a0, 80, 0x0B89, "{price} GP per night.<line>Stay the night?<line><choice> Yes<line><choice> No<end>", "South Figaro inn"),
+        (0xa8ef1, 150, 0x0B8A, "{price} GP per night!<line>Sound good?<line><choice> Yes<line><choice> No<end>", "Nikeah inn WoB"),
+        (0xb449c, 250, 0x0112, "{price} GP per night.<line>Lights out?<line><choice> Yes<line><choice> No<end>", "Jidoor inn"),
+        (0xc5caf, 350, 0x062A, "{price} GP per night!<line>Rest a while?<line><choice> Yes<line><choice> No<end>", "Tzen inn"),
+        (0xc62b2, 300, 0x0649, "{price} GP if you wanna stay.<line>How 'bout it?<line><choice> Yes<line><choice> No<end>", "Albrook inn WOR"),
+        (0xc6593, 200, 0x060D, "{price} GP per night!<line>Need a rest?<line><choice> Sure<line><choice> Nope<end>", "Maranda inn"),
+        (0xc665f, 100, 0x064B, "You look tired!<line>{price} GP for a snooze.<line><choice> Yes<line><choice> No<end>", "Mobliz inn"),
+        (0xc69d6, 200, None, None, "Kohlingen inn"),  # Shares dialog 0x060D with Maranda
+        (0xcd2b3, 200, None, None, "Narshe inn"),  # Shares dialog 0x060D with Maranda
     ]
 
     # Track which dialogs we've already updated to avoid double-updating shared dialogs
     updated_dialogs = set()
 
-    for address, original_cost, dialog_id, description in inn_costs:
+    for address, original_cost, dialog_id, dialog_template, description in inn_costs:
         # Calculate new cost
         new_cost = min(original_cost * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
@@ -2124,10 +2124,7 @@ def modify_inn_costs(maps, rom, dialogs):
 
         # Update dialog text if this entry has its own dialog ID
         if dialog_id is not None and dialog_id not in updated_dialogs:
-            old_text = dialogs.dialogs[dialog_id].text
-            # Replace the GP amount in the dialog text
-            # Match patterns like "80 GP", "150 GP", "1500 GP", etc.
-            new_text = re.sub(r'\b' + str(original_cost) + r'\s*GP\b', f'{new_cost} GP', old_text)
+            new_text = dialog_template.format(price=new_cost)
             dialogs.set_text(dialog_id, new_text)
             updated_dialogs.add(dialog_id)
 
