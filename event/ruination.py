@@ -545,18 +545,24 @@ class RuinationBranch(Network):
             self.connect(this_exit, this_conn)
 
         # (4) The terminus is currently always a dead end room.  Connect it.
+        # However, the terminus may have been merged into the hub through loop compression.
+        # If so, we skip this step since the terminus is already connected.
         remaining_doors = [d for d in hub.doors]
         random.shuffle(remaining_doors)
         if self.verbose:
             print('(4) remaining doors:', remaining_doors)
-        this_exit = remaining_doors.pop()
         terminus = self.rooms.get_room(self.terminus)
-        if self.terminus in self.dead_ends:
-            self.dead_ends.remove(self.terminus)
-        this_conn = terminus.doors.pop()
-        if self.verbose:
-            print('(4) connecting terminus:', this_exit , '-->', this_conn)
-        self.connect(this_exit, this_conn)
+        if terminus is not None:
+            # Terminus is still a separate room - connect it
+            this_exit = remaining_doors.pop()
+            if self.terminus in self.dead_ends:
+                self.dead_ends.remove(self.terminus)
+            this_conn = terminus.doors.pop()
+            if self.verbose:
+                print('(4) connecting terminus:', this_exit , '-->', this_conn)
+            self.connect(this_exit, this_conn)
+        elif self.verbose:
+            print('(4) terminus already merged into hub, skipping')
 
         # (5) Count doors in hub.  Connect doors within hub until # doors < # dead ends
         # Clean up dead ends first
