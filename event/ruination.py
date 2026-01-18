@@ -669,6 +669,21 @@ class RuinationBranch(Network):
             print(f'\tAvailable exits: {len(available_exits[0])} doors, {len(available_exits[1])} traps')
             print(f'\tAvailable entrances: {len(available_doors_in)} doors, {len(available_pits)} pits')
 
+        # Count total doors in the connected path (active + upstream + downstream)
+        # This is used to ensure we never run out of doors
+        # Also collect the set of path doors for filtering
+        path_doors = set(active_room.doors)
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            path_doors.update(room.doors)
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            path_doors.update(room.doors)
+        path_door_count = len(path_doors)
+
+        if self.verbose:
+            print(f'\tTotal doors in connected path: {path_door_count}')
+
         # (4) Choose exit type based on what entrances are available
         # Only prefer traps if there are pits available to receive them
         have_traps = len(available_exits[1]) > 0
@@ -698,29 +713,17 @@ class RuinationBranch(Network):
 
             # Filter out exits that would strand pits in their source room
             # (using the last exit from a room that still has pits would trap players)
-            # Also filter out door exits from hub if it would leave hub with no doors
-            # (hub needs doors for connecting terminus and dead ends in finalize_map)
             safe_exits = []
             for exit_id in available_exits[this_type]:
                 exit_room = self.rooms.get_room_from_element(exit_id)
                 # Count remaining exits after using this one
                 remaining_exits = len(exit_room.doors) + len(exit_room.traps) - 1
 
-                # Check 1: Would strand pits?
+                # Would strand pits? (hard filter - never allow)
                 if remaining_exits == 0 and len(exit_room.pits) > 0:
                     if self.verbose:
                         print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
                     continue
-
-                # Check 2: Would leave hub with no doors? (only for door exits)
-                # Hub needs at least 1 door for connecting terminus in finalize_map
-                # (it's OK if some dead ends don't get connected - they become optional areas)
-                if this_type == 0 and 'ruin_hub_' in str(exit_room.id):
-                    remaining_doors = len(exit_room.doors) - 1
-                    if remaining_doors < 1:
-                        if self.verbose:
-                            print(f'\t\tFiltering exit {exit_id} - hub needs at least 1 door for terminus')
-                        continue
 
                 safe_exits.append(exit_id)
 
@@ -751,15 +754,15 @@ class RuinationBranch(Network):
             # Strategy B: Upstream path connections (with connectivity rules)
             uppaths = self.get_upstream_paths(this_room_id)
             for path in uppaths:
-                path_door_count = 0
-                path_trap_count = 0
+                local_door_count = 0
+                local_trap_count = 0
                 for node_id in path:
                     node = self.rooms.get_room(node_id)
-                    path_door_count += len(node.doors)
-                    path_trap_count += len(node.traps)
-                    if this_type == 1 and (path_door_count + path_trap_count) > 1:
+                    local_door_count += len(node.doors)
+                    local_trap_count += len(node.traps)
+                    if this_type == 1 and (local_door_count + local_trap_count) > 1:
                         available_conns.update(node.pits)
-                    elif this_type == 0 and (path_door_count + path_trap_count) > 2:
+                    elif this_type == 0 and (local_door_count + local_trap_count) > 2:
                         available_conns.update(node.doors)
 
             # Strategy C: All unconnected rooms (more permissive - includes dead ends)
@@ -775,8 +778,34 @@ class RuinationBranch(Network):
                     print('\t\tTrying check rooms...')
                 available_conns.update(self.get_all_check_connections(element_type=this_type))
 
-            # If we found connections, use them
+            # If we found connections, filter and use them
             if len(available_conns) > 0:
+                # If this is a door exit and we have < 3 doors in the path,
+                # don't allow connecting to another door in the path (would consume 2 doors at once)
+                if this_type == 0 and path_door_count < 3:
+                    filtered_conns = [c for c in available_conns if c not in path_doors]
+                    if len(filtered_conns) > 0:
+                        available_conns = set(filtered_conns)
+                        if self.verbose:
+                            print(f'\t\tFiltered out path doors (path has only {path_door_count} doors)')
+                    elif self.verbose:
+                        print(f'\t\tWarning: only path doors available, using any')
+
+                # If this is a door exit and we're down to our last door in the path,
+                # only connect to rooms with 2+ doors so we don't run out
+                if this_type == 0 and path_door_count == 1:
+                    filtered_conns = []
+                    for conn in available_conns:
+                        conn_room = self.rooms.get_room_from_element(conn)
+                        if len(conn_room.doors) >= 2:
+                            filtered_conns.append(conn)
+                    if len(filtered_conns) > 0:
+                        available_conns = set(filtered_conns)
+                        if self.verbose:
+                            print(f'\t\tFiltered to rooms with 2+ doors (path has only 1 door left)')
+                    elif self.verbose:
+                        print(f'\t\tWarning: no rooms with 2+ doors, using any available')
+
                 this_conn = random.choice(list(available_conns))
                 if self.verbose:
                     conn_room = self.rooms.get_room_from_element(this_conn)
