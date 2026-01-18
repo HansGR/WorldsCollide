@@ -2065,3 +2065,21 @@ added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062
 (2) delta values: [(0, 'ruin-baren-reward'), (1, '346_ruin-vector_353_ruin-baren_ruin-mtek3_352_189_355_354_351_349_347_355a'), (-1, '532_303b_525_504_526_313_312_527_510_509_506_311_522_523_304_521_531_529_512_528_524_502_507_530_298_520_503_300_505_302_299_297_508')]
 (2) selected 346_ruin-vector_353_ruin-baren_ruin-mtek3_352_189_355_354_351_349_347_355a (delta =  1 ):  [0, 0, 1, 0, 0] [] [] [3024]
 Found an inescapable downstream node!
+
+
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 25, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 74, in mod
+    self.ruination_mod(events, name_event)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 249, in ruination_mod
+    self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 1519, in generate_map_with_characters
+    branch.finalize_map()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 505, in finalize_map
+    raise Exception
+Exception
