@@ -690,7 +690,24 @@ class RuinationBranch(Network):
             if len(available_exits[this_type]) == 0:
                 continue
 
-            this_exit = random.choice(available_exits[this_type])
+            # Filter out exits that would strand pits in their source room
+            # (using the last exit from a room that still has pits would trap players)
+            safe_exits = []
+            for exit_id in available_exits[this_type]:
+                exit_room = self.rooms.get_room_from_element(exit_id)
+                # Count remaining exits after using this one
+                remaining_exits = len(exit_room.doors) + len(exit_room.traps) - 1
+                if remaining_exits > 0 or len(exit_room.pits) == 0:
+                    safe_exits.append(exit_id)
+                elif self.verbose:
+                    print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
+
+            if len(safe_exits) == 0:
+                if self.verbose:
+                    print(f'\t\tNo safe {["door", "trap"][this_type]} exits (all would strand pits)')
+                continue
+
+            this_exit = random.choice(safe_exits)
             this_room = self.rooms.get_room_from_element(this_exit)
             this_room_id = this_room.id
 
