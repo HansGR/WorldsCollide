@@ -115,7 +115,7 @@ class ImperialBase(Event):
                 # Go back to wherever you came in
                 src = [
                     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
-                                      fade_in=True, default_music=True, entrance_event=True),
+                                      fade_in=True, default_music=True, entrance_event=True, direction=direction.DOWN),
                     field.Return()
                 ]
             space = Write(Bank.CB, src, 'Imperial base updated chucked out destination')
