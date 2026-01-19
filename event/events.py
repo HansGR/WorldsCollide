@@ -280,7 +280,7 @@ class Events():
         modify_inn_costs(self.maps, self.rom, self.dialogs, self.args)
 
         # Disable in-town chocobo stables for ruination mode
-        disable_chocobo_stables(self.rom, self.dialogs)
+        disable_chocobo_stables(self.rom, self.dialogs, self.args)
 
         # Modify existing free bed heals (HP-only heal with 3/8 monster attack chance)
         modify_free_bed_heals(self.maps, self.rom)
