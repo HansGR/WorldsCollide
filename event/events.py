@@ -286,7 +286,7 @@ class Events():
         modify_free_bed_heals(self.maps, self.rom, self.args)
 
         # Modify recovery springs with random effects
-        modify_recovery_springs(self.maps, self.rom, self.dialogs)
+        modify_recovery_springs(self.maps, self.rom, self.dialogs, self.args)
 
     def validate(self, events):
         char_esper_checks = []

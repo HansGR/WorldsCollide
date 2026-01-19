@@ -2443,7 +2443,7 @@ SPRING_FLASH_COLORS = {
 SPRING_DIALOG_BASE = 1480
 
 
-def modify_recovery_springs(maps, rom, dialogs):
+def modify_recovery_springs(maps, rom, dialogs, args):
     """
     Modifies recovery spring events for ruination mode.
 
@@ -2455,6 +2455,7 @@ def modify_recovery_springs(maps, rom, dialogs):
         maps: The Maps object to modify event tiles
         rom: The ROM object
         dialogs: The Dialogs object for setting dialog text
+        args: Command line arguments (for debug flag)
     """
     import random as rng
 
