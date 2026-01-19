@@ -2246,7 +2246,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
         print(f"Warning: Could not find Figaro Castle rest event at (47, 52)")
 
 
-def disable_chocobo_stables(rom, dialogs):
+def disable_chocobo_stables(rom, dialogs, args):
     """
     Disables the in-town chocobo stables for ruination mode.
     Changes the chocobo keeper dialogs to explain chocobos won't go outside,
@@ -2255,6 +2255,7 @@ def disable_chocobo_stables(rom, dialogs):
     Args:
         rom: The ROM object to modify
         dialogs: The Dialogs object to update dialog text
+        args: Command line arguments (for debug flag)
     """
     # Chocobo stable event addresses and their dialog IDs
     # Format: (event_address, dialog_id, description)
