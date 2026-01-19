@@ -2075,7 +2075,7 @@ def ruination_start_game_mod(dialogs, party):
     space = Write(Bank.CC, src, "start game ruination")
     return space.start_address
 
-def modify_inn_costs(maps, rom, dialogs):
+def modify_inn_costs(maps, rom, dialogs, args):
     """
     Modifies all inn costs in the game by multiplying them by INN_COST_MULTIPLIER.
     Also updates the associated dialog text to reflect the new prices.
@@ -2089,6 +2089,7 @@ def modify_inn_costs(maps, rom, dialogs):
         maps: The Maps object to modify NPCs and event tiles
         rom: The ROM object to modify
         dialogs: The Dialogs object to update dialog text
+        args: Command line arguments
     """
     from memory.space import Write, Bank
     from instruction.event import EVENT_CODE_START
@@ -2128,10 +2129,10 @@ def modify_inn_costs(maps, rom, dialogs):
             dialogs.set_text(dialog_id, new_text)
             updated_dialogs.add(dialog_id)
 
-            if rom.args.debug:
+            if args.debug:
                 print(f"Updated dialog {dialog_id:#x} for {description}: {original_cost} GP -> {new_cost} GP")
 
-        if rom.args.debug:
+        if args.debug:
             print(f"Modified {description}: {original_cost} GP -> {new_cost} GP")
 
     # =========================================================================
@@ -2177,7 +2178,7 @@ def modify_inn_costs(maps, rom, dialogs):
     returners_npc = maps.get_npc(111, 0x10)
     returners_npc.event_address = space.start_address - EVENT_CODE_START
 
-    if rom.args.debug:
+    if args.debug:
         print(f"Returners Hideout inn: {RETURNERS_HIDEOUT_INN_PRICE} GP -> {returners_price} GP")
 
     # -------------------------------------------------------------------------
@@ -2217,9 +2218,9 @@ def modify_inn_costs(maps, rom, dialogs):
     figaro_event = maps.get_event(59, 47, 52)
     if figaro_event is not None:
         figaro_event.event_address = space.start_address - EVENT_CODE_START
-        if rom.args.debug:
+        if args.debug:
             print(f"Figaro Castle rest: {FIGARO_CASTLE_INN_PRICE} GP -> {figaro_price} GP")
-    elif rom.args.debug:
+    elif args.debug:
         print(f"Warning: Could not find Figaro Castle rest event at (47, 52)")
 
 
@@ -2252,7 +2253,7 @@ def disable_chocobo_stables(rom, dialogs):
             dialogs.set_text(dialog_id, disabled_message)
             updated_dialogs.add(dialog_id)
 
-            if rom.args.debug:
+            if args.debug:
                 print(f"Updated dialog {dialog_id:#x} for {description}")
 
         # Patch event code to: display dialog (4B), return (FE)
@@ -2260,7 +2261,7 @@ def disable_chocobo_stables(rom, dialogs):
         event_bytes = bytes([0x4B, dialog_id & 0xFF, dialog_id >> 8, 0xFE])
         rom.set_bytes(event_addr, event_bytes)
 
-        if rom.args.debug:
+        if args.debug:
             print(f"Disabled {description} at {event_addr:#x}")
 
 
@@ -2352,7 +2353,7 @@ def modify_free_bed_heals(maps, rom):
     space = Write(Bank.CC, src, "ruination free bed heal event")
     new_bed_heal_address = space.start_address
 
-    if rom.args.debug:
+    if args.debug:
         print(f"Created modified bed heal event at {new_bed_heal_address:#x}")
 
     # Update existing bed event tiles to point to the new subroutine
@@ -2360,10 +2361,10 @@ def modify_free_bed_heals(maps, rom):
         event = maps.get_event(map_id, x, y)
         if event is not None:
             event.event_address = new_bed_heal_address - EVENT_CODE_START
-            if rom.args.debug:
+            if args.debug:
                 print(f"Updated bed heal at {description} (map {map_id}, {x}, {y})")
         else:
-            if rom.args.debug:
+            if args.debug:
                 print(f"Warning: No event found at {description} (map {map_id}, {x}, {y})")
 
 
@@ -2561,7 +2562,7 @@ def modify_recovery_springs(maps, rom, dialogs):
         space = Write(Bank.CC, src, f"ruination spring event {area_name}")
         spring_event_address = space.start_address
 
-        if rom.args.debug:
+        if args.debug:
             effect_name = [k for k, v in vars(SpringEffect).items() if v == effect and not k.startswith('_')][0]
             print(f"Spring {area_name}: effect={effect_name}, address={spring_event_address:#x}")
 
@@ -2570,9 +2571,9 @@ def modify_recovery_springs(maps, rom, dialogs):
             event = maps.get_event(map_id, x, y)
             if event is not None:
                 event.event_address = spring_event_address - EVENT_CODE_START
-                if rom.args.debug:
+                if args.debug:
                     print(f"  Updated spring tile at map {map_id} ({x}, {y})")
             else:
-                if rom.args.debug:
+                if args.debug:
                     print(f"  Warning: No event at map {map_id} ({x}, {y})")
 

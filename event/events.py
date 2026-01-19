@@ -277,7 +277,7 @@ class Events():
         self.maps.postprocess_door_map()
 
         # Modify inn costs for ruination mode (includes converting free inns to paid)
-        modify_inn_costs(self.maps, self.rom, self.dialogs)
+        modify_inn_costs(self.maps, self.rom, self.dialogs, self.args)
 
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs)
