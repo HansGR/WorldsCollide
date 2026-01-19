@@ -476,10 +476,16 @@ class LoneWolf(Event):
             space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
 
         # Update Mog NPC references (26 locations in event script)
+        # Note: addresses 0xcd67c-0xcd68d are in the range that character_mod() overwrites,
+        # so skip them if the reward is a character to avoid space conflicts
         self.mog_addresses = [0xcd4cc, 0xcd4d0, 0xcd4d4, 0xcd514, 0xcd538, 0xcd53f, 0xcd543, 0xcd548, 0xcd54f, 0xcd557,
                          0xcd573, 0xcd5ab, 0xcd5b5, 0xcd591, 0xcd5fc, 0xcd67c, 0xcd681, 0xcd685, 0xcd689, 0xcd68d,
                          0xcd6b1, 0xcd6bb, 0xcd6c4, 0xcd6ca, 0xcd6cb, 0xcd6d4]
+        # Addresses that conflict with character_mod()'s Reserve(0xcd67c, 0xcd696)
+        char_mod_conflict_range = range(0xcd67c, 0xcd697)
         for i, addr in enumerate(self.mog_addresses):
+            if self.reward1.type == RewardType.CHARACTER and addr in char_mod_conflict_range:
+                continue  # Skip - character_mod() will overwrite this entire section
             space = Reserve(addr, addr, "edit lone wolf mog animation " + str(i), tritoch_wor_mog_npc_id)
 
         # Update Lone Wolf NPC references (12 locations in event script)
