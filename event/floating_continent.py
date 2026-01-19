@@ -727,7 +727,7 @@ class FloatingContinent(Event):
         # (4) Update airship return before atma wpn
         # CA/5A96: 6B    Load map $0006 (Blackjack, upper deck (general use / "The world is groaning in pain")) instantly, (upper bits $0400), place party at (16, 6), facing up
         # This includes the animation.
-        if self.maps.door_map[self.exit_id] == self.entry_id:
+        if self.exit_id in self.maps.door_map and self.maps.door_map[self.exit_id] == self.entry_id:
             # Keep the animation if returning to the airship
             pass
         else:
