@@ -81,7 +81,7 @@ class BurningHouse(Event):
         """
         Modifies the Thamasa inn pricing for ruination mode.
 
-        - If STRAGO not recruited: normal inn with normal price
+        - If STRAGO not recruited: "You're strangers" path with high price (1500 GP * multiplier)
         - If STRAGO recruited: always trigger burning house event (re-enterable)
 
         The burning house is made re-enterable by enter_burning_house_mod() which NOPs
@@ -89,29 +89,29 @@ class BurningHouse(Event):
         """
         from event.ruination import INN_COST_MULTIPLIER
 
-        # Normal inn price (same as other typical inns like Maranda/Kohlingen/Narshe)
-        THAMASA_NORMAL_PRICE = 200
-        new_price = min(THAMASA_NORMAL_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+        # Original "strangers" price, with multiplier applied
+        STRANGERS_BASE_PRICE = 1500
+        new_price = min(STRANGERS_BASE_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
-        # Normal price path (when STRAGO not recruited)
-        NORMAL_PRICE_PATH = 0xbd769
-        NORMAL_PRICE_GP = 0xbd775
-        THAMASA_INN_DIALOG = 0x0790
+        # Strangers price path (when STRAGO not recruited)
+        STRANGERS_PRICE_PATH = 0xbd769
+        STRANGERS_PRICE_GP = 0xbd775
+        STRANGERS_DIALOG = 0x0790
 
-        # Patch event at 0xbd73f: If STRAGO not recruited, branch to normal price
+        # Patch event at 0xbd73f: If STRAGO not recruited, branch to strangers price
         space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
-        space.add_label("NORMAL_PRICE", NORMAL_PRICE_PATH)
+        space.add_label("STRANGERS_PRICE", STRANGERS_PRICE_PATH)
         space.write(
-            field.BranchIfEventBitClear(event_bit.character_recruited(self.characters.STRAGO), "NORMAL_PRICE"),
+            field.BranchIfEventBitClear(event_bit.character_recruited(self.characters.STRAGO), "STRANGERS_PRICE"),
         )
 
-        # Update the normal price path dialog and cost
-        self.dialogs.set_text(THAMASA_INN_DIALOG,
-                              f"{new_price} GP per night.<line>Stay a while?<line>"
-                              f"<choice> Yes<line><choice> No<end>")
+        # Update dialog with original flavor, new price
+        self.dialogs.set_text(STRANGERS_DIALOG,
+                              f"You're strangers...<line>{new_price} GP if you wanna stay.<line>"
+                              f"<choice> (Well, okay.)<line><choice> (No way!)<end>")
 
-        # Update the GP cost for normal price path
-        self.rom.set_bytes(NORMAL_PRICE_GP, new_price.to_bytes(2, 'little'))
+        # Update the GP cost for strangers price path
+        self.rom.set_bytes(STRANGERS_PRICE_GP, new_price.to_bytes(2, 'little'))
 
         # Patch burning house trigger at 0xbd7c5: use character_recruited instead of MET_STRAGO_RELM
         # Original: If MET_STRAGO_RELM set -> branch to burning house (0xbdcc7)
