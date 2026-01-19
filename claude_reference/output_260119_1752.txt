@@ -1,0 +1,1484 @@
+Version   1.4.2
+Generated 2026-01-19 17:52:04
+Input     FFIII.smc
+Output    ruin.smc
+Log       ruin.txt
+Seed      l33a520557nn
+Flags     -oa 2.2.2.2.6.6.4.9.9 -sc1 random -sc2 random -sc3 random -sal -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 0 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125 -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms -frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn -ruin
+Hash      Boy, Suit Gau, Royal Guard, Royal Guard
+Requested:  6 characters,  9 espers
+Pre-plan: Planned areas have 13 checks, 11 character slots, 13 esper slots
+Pre-plan: Will obtain characters: ['CYAN', 'TERRA', 'LOCKE']
+Pre-plan: Reserve characters (for extra areas): ['SABIN', 'STRAGO', 'SETZER', 'RELM', 'CELES', 'SHADOW', 'GOGO', 'EDGAR']
+Pre-plan: Dead checks allowed: 1
+Areas used:  {'Veldt', 'UmarosCave', 'Narshe', 'CrescentMtn', 'Nikeah'}
+Forced same branch: Nikeah CrescentMtn 2
+Distributed areas:
+	 0 :  {'Veldt'}
+	 1 :  {'UmarosCave'}
+	 2 :  {'Nikeah', 'Narshe', 'CrescentMtn'}
+Checks available:
+	 0 :  ['Veldt']
+	 1 :  ["Umaro's Cave"]
+	 2 :  ['Serpent Trench', 'Narshe Moogle Defense']
+Rewards available:  [4, 4]
+		assessing key  MOG in rooms
+		assessing key  GAU in rooms
+		assessing key  UMARO in rooms
+		assessing key  MOG in rooms
+		assessing key  GAU in rooms
+		assessing key  UMARO in rooms
+		assessing key  MOG in rooms
+		assessing key  GAU in rooms
+		assessing key  UMARO in rooms
+Generating map with characters...
+Branch viability: [False, True, True] Stuck: set()
+Working on branch 2 ( ['Serpent Trench', 'Narshe Moogle Defense'] )
+status: terminus ruin_terminus_3
+status: check rooms [65, 'ruin-whelk', 'ruin-st-exit']
+status: dead ends ['ruin_hub_2', 'ruin_terminus_3', 41, 47]
+Forcing connections...
+Forcing:  2046 3046
+forcing successful.
+Forcing:  2049 3049
+forcing successful.
+Forcing:  2053 3053
+forcing successful.
+Forcing:  2153 3153
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 40 doors, 8 pits
+	Total doors in connected path: 1
+	Trying door exit: 395 in room ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 34 connections, selected: 164 in room 49
+Looking for reward in room 49 ...
+Making connection:  395 --> 164
+	Active room:  49_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 36 doors, 8 pits
+	Total doors in connected path: 3
+	Trying door exit: 162 in room 49_ruin_hub_2
+	Found 32 connections, selected: 148 in room 42
+Looking for reward in room 42 ...
+Making connection:  162 --> 148
+	Active room:  42_49_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 34 doors, 8 pits
+	Total doors in connected path: 3
+	Trying door exit: 149 in room 42_49_ruin_hub_2
+	Found 30 connections, selected: 523 in room dc-23
+Looking for reward in room dc-23 ...
+Making connection:  149 --> 523
+	Active room:  dc-23_42_49_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 1 traps
+	Available entrances: 33 doors, 8 pits
+	Total doors in connected path: 2
+	Trying trap exit: 2044 in room dc-23_42_49_ruin_hub_2
+	Found 8 connections, selected: 3048 in room 247a
+Looking for reward in room 247a ...
+Making connection:  2044 --> 3048
+	Active room:  247a .
+	Upstream nodes:  ['dc-23_42_49_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 32 doors, 7 pits
+	Total doors in connected path: 3
+	Trying door exit: 529 in room 247a
+	Found 29 connections, selected: 145 in room 37a
+Looking for reward in room 37a ...
+Making connection:  529 --> 145
+	Active room:  37a_247a .
+	Upstream nodes:  ['dc-23_42_49_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 3
+		Filtering exit 146 - would strand pits in 37a_247a
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 2 failed to extend, retry 1/3
+	Active room:  37a_247a .
+	Upstream nodes:  ['dc-23_42_49_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 3
+		Filtering exit 146 - would strand pits in 37a_247a
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 2 failed to extend, retry 2/3
+	Active room:  37a_247a .
+	Upstream nodes:  ['dc-23_42_49_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 3
+		Filtering exit 146 - would strand pits in 37a_247a
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 2 is stuck after 3 retries
+Skipping reward processing for stuck branch 2
+Branch viability: [False, True, True] Stuck: {2}
+Working on branch 1 ( ["Umaro's Cave"] )
+status: terminus ruin_terminus_1
+status: check rooms [368]
+status: dead ends ['ruin_hub_1', 'ruin_terminus_1']
+Forcing connections...
+Forcing:  2005 3005
+forcing successful.
+Forcing:  2006 3006
+forcing successful.
+Forcing:  2007 3007
+forcing successful.
+Forcing:  2008 3008
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 11 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 394 in room ruin_hub_1
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 7 connections, selected: 732 in room 365
+Looking for reward in room 365 ...
+Making connection:  394 --> 732
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 9 doors, 2 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 9 doors, 2 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 9 doors, 2 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [False, True, True] Stuck: {1, 2}
+Adding reserve area MtKolts (16 rooms) to unstick branch 0
+	Added new check: Mt. Kolts
+Working on branch 0 ( ['Veldt', 'Mt. Kolts'] )
+status: terminus ruin_terminus_2
+status: check rooms ['wor-veldt', 151]
+status: dead ends ['ruin_hub_0', 'ruin_terminus_2', 'wor-veldt', 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 34 doors, 0 pits
+	Total doors in connected path: 1
+	Trying door exit: 393 in room ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 29 connections, selected: 1178 in room 158
+Looking for reward in room 158 ...
+Making connection:  393 --> 1178
+	Active room:  158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 32 doors, 0 pits
+	Total doors in connected path: 1
+	Trying door exit: 1177 in room 158_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 27 connections, selected: 378 in room 153
+Looking for reward in room 153 ...
+Making connection:  1177 --> 378
+	Active room:  153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 28 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 377 in room 153_158_ruin_hub_0
+	Found 23 connections, selected: 379 in room 154
+Looking for reward in room 154 ...
+Making connection:  377 --> 379
+	Active room:  154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 26 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 385 in room 154_153_158_ruin_hub_0
+	Found 21 connections, selected: 363 in room 145
+Looking for reward in room 145 ...
+Making connection:  385 --> 363
+	Active room:  145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 24 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 376 in room 145_154_153_158_ruin_hub_0
+	Found 19 connections, selected: 391 in room 160
+Looking for reward in room 160 ...
+Making connection:  376 --> 391
+	Active room:  160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 22 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 380 in room 160_145_154_153_158_ruin_hub_0
+	Found 17 connections, selected: 370 in room 150
+Looking for reward in room 150 ...
+Making connection:  380 --> 370
+	Active room:  150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 20 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 1175 in room 150_160_145_154_153_158_ruin_hub_0
+	Found 15 connections, selected: 1176 in room 148
+Looking for reward in room 148 ...
+Making connection:  1175 --> 1176
+	Active room:  148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 18 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 371 in room 148_150_160_145_154_153_158_ruin_hub_0
+	Found 13 connections, selected: 384 in room 156
+Looking for reward in room 156 ...
+Making connection:  371 --> 384
+	Active room:  156_148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 16 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 383 in room 156_148_150_160_145_154_153_158_ruin_hub_0
+	Found 11 connections, selected: 373 in room 151
+Looking for reward in room 151 ...
+Found a reward!  [('Mt. Kolts', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 151
+Making connection:  383 --> 373
+Processing reward:  Mt. Kolts
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Fenrir !
+	Updated Rewards Obtained:  0 Characters,  1 Espers
+	Updated Rewards Available:  3 Characters,  3 Espers
+	Updated branch checks available:
+	 0 :  ['Veldt']
+	 1 :  ["Umaro's Cave"]
+	 2 :  ['Serpent Trench', 'Narshe Moogle Defense']
+Branch viability: [True, True, True] Stuck: {1, 2}
+	trimmed dead end  ruin_hub_0
+Working on branch 0 ( ['Veldt'] )
+status: terminus ruin_terminus_2
+status: check rooms ['wor-veldt']
+status: dead ends ['ruin_terminus_2', 'wor-veldt', 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  151_156_148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 14 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 368 in room 151_156_148_150_160_145_154_153_158_ruin_hub_0
+	Found 9 connections, selected: 375 in room 152
+Looking for reward in room 152 ...
+Making connection:  368 --> 375
+	Active room:  152_151_156_148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 12 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 374 in room 152_151_156_148_150_160_145_154_153_158_ruin_hub_0
+	Found 7 connections, selected: 366 in room 146
+Looking for reward in room 146 ...
+Making connection:  374 --> 366
+	Active room:  146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 10 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 390 in room 146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0
+	Found 5 connections, selected: 387 in room 159
+Looking for reward in room 159 ...
+Making connection:  390 --> 387
+	Active room:  159_146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 7 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 364 in room 159_146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0
+	Found 2 connections, selected: 381 in room 155
+Looking for reward in room 155 ...
+Making connection:  364 --> 381
+	Active room:  155_159_146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 5 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 1179 in room 155_159_146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0
+		Expanding search to all unconnected rooms...
+	Found 5 connections, selected: 61 in room wor-veldt
+Looking for reward in room wor-veldt ...
+Found a reward!  [('Veldt', <RewardType.ESPER|CHARACTER: 6>)] in room wor-veldt
+Making connection:  1179 --> 61
+Processing reward:  Veldt
+	choosing from... RewardType.ESPER|CHARACTER
+	got Phantom !
+	Updated Rewards Obtained:  0 Characters,  2 Espers
+	Updated Rewards Available:  2 Characters,  2 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ["Umaro's Cave"]
+	 2 :  ['Serpent Trench', 'Narshe Moogle Defense']
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area PhantomTrain (22 rooms) to unstick branch 1
+	Added new check: Phantom Train
+	trimmed dead end  ruin_hub_1
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220]
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221]
+Forcing connections...
+Forcing:  2067 3067
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 55 doors, 5 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 55 doors, 5 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 55 doors, 5 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area EsperMountain (13 rooms) to unstick branch 1
+	Added new check: Esper Mountain
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488]
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494]
+Forcing connections...
+Forcing:  2011 3011
+forcing successful.
+Forcing:  2012 3012
+forcing successful.
+Forcing:  2013 3013
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 77 doors, 8 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 77 doors, 8 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 77 doors, 8 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area Vector (12 rooms) to unstick branch 1
+	Added new check: Magitek Factory_1
+	Added new check: Magitek Factory_2
+	Added new check: Magitek Factory_3
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352]
+Forcing connections...
+Forcing:  2023 3023
+forcing successful.
+Forcing:  2128 3128
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 92 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 92 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 92 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area DarylsTomb (16 rooms) to unstick branch 1
+	Added new check: Daryl's Tomb
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb"] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392]
+Forcing connections...
+Forcing:  2059 3059
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 119 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 119 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 119 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area AncientCastle (13 rooms) to unstick branch 1
+	Added new check: Ancient Castle
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532]
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 149 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 149 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 149 doors, 14 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area VeldtCave (9 rooms) to unstick branch 1
+	Added new check: Veldt Cave WOR
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475]
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 165 doors, 15 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 165 doors, 15 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 165 doors, 15 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area Jidoor (9 rooms) to unstick branch 1
+	Added new check: Auction House_1
+	Added new check: Auction House_2
+	Added new check: Owzer Mansion
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284]
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 178 doors, 19 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 178 doors, 19 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 178 doors, 19 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area ZoneEater (9 rooms) to unstick branch 1
+	Added new check: Zone Eater
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363]
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363]
+Forcing connections...
+Forcing:  2043 3043
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 192 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 192 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 192 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area BarenFalls (3 rooms) to unstick branch 1
+	Added new check: Baren Falls
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363]
+Forcing connections...
+Forcing:  2076 3076
+forcing successful.
+Forcing:  2176 3176
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 194 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 194 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 194 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area ImperialCamp (1 rooms) to unstick branch 1
+	Added new check: Imperial Camp
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 196 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 196 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 196 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area Thamasa (1 rooms) to unstick branch 1
+	Skipping room ruin-thamasa - already exists
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 196 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 196 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 196 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area Kohlingen (1 rooms) to unstick branch 1
+	Added new check: Kohlingen
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 198 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 198 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 198 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area SouthFigaro (1 rooms) to unstick branch 1
+	Added new check: South Figaro
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 200 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 200 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 200 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area FigaroCastle (1 rooms) to unstick branch 1
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 201 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 201 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 201 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area ImperialCastle (1 rooms) to unstick branch 1
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 209 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 209 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 209 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area Tzen (1 rooms) to unstick branch 1
+	Added new check: Tzen
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 210 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 210 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 210 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area FanaticsTower (1 rooms) to unstick branch 1
+	Added new check: Fanatic's Tower
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower"] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 211 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 211 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 211 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area EbotsRock (1 rooms) to unstick branch 1
+	Added new check: Ebot's Rock
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower", "Ebot's Rock"] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 212 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 212 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 212 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area OperaHouse (1 rooms) to unstick branch 1
+	Added new check: Opera House
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower", "Ebot's Rock", 'Opera House'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 213 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 213 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 213 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area Cid (1 rooms) to unstick branch 1
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower", "Ebot's Rock", 'Opera House'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wor-48']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 214 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 214 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 214 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area GauFatherHouse (1 rooms) to unstick branch 1
+	Added new check: Gau Father House
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower", "Ebot's Rock", 'Opera House', 'Gau Father House'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wob-14']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wor-48', 'ms-wob-14']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 215 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 215 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 215 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding reserve area FloatingContinent (1 rooms) to unstick branch 1
+	Added new check: Floating Continent_1
+	Added new check: Floating Continent_2
+	Added new check: Floating Continent_3
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower", "Ebot's Rock", 'Opera House', 'Gau Father House', 'Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wob-14', 'ms-wob-1556']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wor-48', 'ms-wob-14', 'ms-wob-1556']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+Adding extra area ImperialCastle to unstick branch 1
+	Skipping room 331 - already exists
+Working on branch 1 ( ["Umaro's Cave", 'Phantom Train', 'Esper Mountain', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', "Daryl's Tomb", 'Ancient Castle', 'Veldt Cave WOR', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', 'Zone Eater', 'Baren Falls', 'Imperial Camp', 'Kohlingen', 'South Figaro', 'Tzen', "Fanatic's Tower", "Ebot's Rock", 'Opera House', 'Gau Father House', 'Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [368, 220, 488, 349, 354, 'ruin-mtek3', 'ruin-daryl', 532, 475, 'dc-73', 284, 363, 'ruin-baren-reward', 'dc-1501', 'ms-wor-59', 'ms-wor-58', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wob-14', 'ms-wob-1556']
+status: dead ends ['ruin_terminus_1', '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 352, 380, 384, 386, 389, 392, 525, 526, 527, 532, 468, 279, 284, 363, 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78', 'ms-wob-40', 'ms-wor-48', 'ms-wob-14', 'ms-wob-1556']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  365_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 21 pits
+	Total doors in connected path: 1
+		Filtering exit 733 - would strand pits in 365_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1, 2}
+ERROR: No reserve areas available to unstick branches!
+Closing branch...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: wor-veldt_155_159_146_152_151_156_148_150_160_145_154_153_158_ruin_hub_0 [3, 0, 0, 0, 0]
+	pits: []
+	traps: []
+(2) delta values: []
+(4) remaining doors: [372, 382, 389]
+(4) connecting terminus: 389 --> 1057
+(6) remaining dead ends: [157, 149, 147]
+(6) connecting dead ends: 372 --> 367
+(6) connecting dead ends: 382 --> 369
+... closing branch complete!
+Closing branch...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: 365_ruin_hub_1 [1, 0, 5, 0, 0]
+	pits: [3056, 3057, 3001, 3002, 3003]
+	traps: []
+(2) delta values: []
+(4) remaining doors: [733]
+(4) connecting terminus: 733 --> 1079
+(6) remaining dead ends: [493, 392, '215b', '206a', 468, 526, 212, 490, 221, 494, 380, 'ms-wor-69', '206b', 213, 532, 'ms-wor-78', 284, 363, 527, 352, '207a', 384, 386, 279, 'ms-wor-48', 'ruin-figarocastle', 'ms-wor-51', 'ms-wob-14', '215a', '203c', '207b', 389, 525, 'ms-wob-40', 'ms-wob-1556']
+... closing branch complete!
+Closing branch...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: dc-23_42_49_ruin_hub_2 [2, 0, 0, 0, 0]
+	pits: [3009]
+	traps: []
+(2) delta values: [(1, '37a_247a')]
+(2) selected 37a_247a (delta =  1 ):  [1, 0, 1, 0, 0] [146] [] [3009]
+(2) connecting 146 --> 161
+(2) delta values: []
+(4) remaining doors: [163]
+(4) connecting terminus: 163 --> 1564
+(6) remaining dead ends: [47, 41]
+... closing branch complete!
+Gau not in planned characters, all accessible shops valid for dried meat
+REWARD STATE AFTER RUIN MAPPING:
+Figaro Castle WOB None None
+Doma WOR None None
+Umaro's Cave None None
+8 Dragons None None
+Doma WOR None None
+8 Dragons None None
+Magitek Factory None None
+Auction House None None
+Collapsing House None None
+Veldt 20 RewardType.ESPER
+8 Dragons None None
+Imperial Camp None None
+Floating Continent None None
+Kefka's Tower None None
+Doom Gaze None None
+Mobliz WOR None None
+Tritoch None None
+8 Dragons None None
+Mt. Kolts 24 RewardType.ESPER
+Lete River None None
+Kohlingen None None
+8 Dragons None None
+Doma WOR None None
+Ancient Castle None None
+Tzen None None
+Gau Father House None None
+8 Dragons None None
+Phantom Train None None
+Narshe Moogle Defense None None
+Lone Wolf None None
+Owzer Mansion None None
+Zozo None None
+Auction House None None
+Daryl's Tomb None None
+South Figaro None None
+Magitek Factory None None
+Baren Falls None None
+Fanatic's Tower None None
+Opera House None None
+Whelk None None
+Mt. Zozo None None
+Lone Wolf None None
+Ebot's Rock None None
+Figaro Castle WOR None None
+8 Dragons None None
+Narshe Battle None None
+South Figaro Cave None None
+Doma WOB None None
+Zone Eater None None
+Burning House None None
+Narshe WOR None None
+Phoenix Cave None None
+Veldt Cave WOR None None
+Sealed Gate None None
+Serpent Trench None None
+Floating Continent None None
+Fanatic's Tower None None
+Narshe WOR None None
+Magitek Factory None None
+8 Dragons None None
+Esper Mountain None None
+Floating Continent None None
+REWARD STATE FINAL:
+Figaro Castle WOB 7 RewardType.CHARACTER
+Umaro's Cave 0 RewardType.CHARACTER
+Doma WOR 6 RewardType.ESPER
+Magitek Factory 5 RewardType.ESPER
+Auction House 21 RewardType.ESPER
+Collapsing House 7 RewardType.ESPER
+Imperial Camp 8 RewardType.ESPER
+Floating Continent 22 RewardType.ESPER
+Doom Gaze 17 RewardType.ESPER
+Mobliz WOR 9 RewardType.CHARACTER
+Tritoch 11 RewardType.ESPER
+Lete River 3 RewardType.ESPER
+Kohlingen 26 RewardType.ESPER
+Doma WOR 13 RewardType.ESPER
+Ancient Castle 8 RewardType.CHARACTER
+Tzen 25 RewardType.ESPER
+Gau Father House 2 RewardType.CHARACTER
+Phantom Train 0 RewardType.ESPER
+Narshe Moogle Defense 12 RewardType.ESPER
+Lone Wolf 4 RewardType.CHARACTER
+Owzer Mansion 23 RewardType.ESPER
+Zozo 9 RewardType.ESPER
+Daryl's Tomb 15 RewardType.ESPER
+South Figaro 6 RewardType.CHARACTER
+Baren Falls 10 RewardType.ESPER
+Opera House 3 RewardType.CHARACTER
+Whelk 18 RewardType.ESPER
+Mt. Zozo 14 RewardType.ESPER
+Ebot's Rock 19 RewardType.ESPER
+Figaro Castle WOR 2 RewardType.ESPER
+Narshe Battle 1 RewardType.ESPER
+South Figaro Cave 211 RewardType.ITEM
+Doma WOB 128 RewardType.ITEM
+Zone Eater 217 RewardType.ITEM
+Burning House 35 RewardType.ITEM
+Phoenix Cave 96 RewardType.ITEM
+Veldt Cave WOR 209 RewardType.ITEM
+Sealed Gate 9 RewardType.ITEM
+Serpent Trench 35 RewardType.ITEM
+Narshe WOR 211 RewardType.ITEM
+Magitek Factory 27 RewardType.ITEM
+Esper Mountain 209 RewardType.ITEM
+
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 25, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 92, in mod
+    event.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\lone_wolf.py", line 58, in mod
+    self.character_mod(self.reward1.id)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\lone_wolf.py", line 122, in character_mod
+    space = Reserve(0xcd67c, 0xcd696, "lone wolf add char", field.NOP())
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\memory\space.py", line 269, in Reserve
+    return Space(start_address, end_address, description, clear_value)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\memory\space.py", line 40, in __init__
+    raise RuntimeError(message)
+RuntimeError: [0x0cd67c - 0x0cd696] "lone wolf add char" conflicts with existing spaces:
+[0x0cd67c - 0x0cd67c] "edit lone wolf mog animation 15"
+[0x0cd681 - 0x0cd681] "edit lone wolf mog animation 16"
+[0x0cd685 - 0x0cd685] "edit lone wolf mog animation 17"
+[0x0cd689 - 0x0cd689] "edit lone wolf mog animation 18"
+[0x0cd68d - 0x0cd68d] "edit lone wolf mog animation 19"
