@@ -148,6 +148,9 @@ class Network:
             #if key in room.locks.keys():
             room_keys = [k for k in room.locks.keys()]
             for required_keys in room_keys:
+                # Check if key still exists - recursive apply_key calls may have already popped it
+                if required_keys not in room.locks:
+                    continue
                 if set(required_keys).issubset(self.keychain):
                     if self.verbose:
                         print('\t\t\tApplying key:', required_keys, 'in room', room.id)
