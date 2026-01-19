@@ -1,0 +1,1830 @@
+Version   1.4.2
+Generated 2026-01-19 11:23:58
+Input     FFIII.smc
+Output    ruin.smc
+Log       ruin.txt
+Seed      n0cpjd8uuq01
+Flags     -oa 2.2.2.2.6.6.4.9.9 -sc1 random -sc2 random -sc3 random -sal -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 0 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125 -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms -frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn -ruin
+Hash      Chancellor, Rachel, Banon, Arvis
+Requested:  6 characters,  9 espers
+Pre-plan: Planned areas have 22 checks, 17 character slots, 21 esper slots
+Pre-plan: Will obtain characters: ['CELES', 'TERRA', 'RELM']
+Pre-plan: Reserve characters (for extra areas): ['CYAN', 'SETZER', 'MOG', 'UMARO', 'EDGAR', 'GOGO', 'SABIN', 'STRAGO']
+Pre-plan: Dead checks allowed: 10
+Areas used:  {'Veldt', 'Nikeah', 'SouthFigaroCave', 'Kohlingen', 'GauFatherHouse', 'Thamasa', 'Narshe', 'FloatingContinent', 'CrescentMtn', 'VeldtCave', 'PhoenixCave'}
+Forced same branch: CrescentMtn Nikeah 2
+Forced same branch: VeldtCave Thamasa 1
+Distributed areas:
+	 0 :  {'Narshe', 'GauFatherHouse', 'Kohlingen', 'PhoenixCave'}
+	 1 :  {'VeldtCave', 'Thamasa', 'Veldt', 'FloatingContinent'}
+	 2 :  {'Nikeah', 'SouthFigaroCave', 'CrescentMtn'}
+Checks available:
+	 0 :  ['Gau Father House']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt']
+	 2 :  ['South Figaro Cave', 'Serpent Trench']
+Rewards available:  [7, 8]
+		assessing key  SHADOW in rooms
+		assessing key  LOCKE in rooms
+		assessing key  GAU in rooms
+		assessing key  SHADOW in rooms
+		assessing key  LOCKE in rooms
+		assessing key  GAU in rooms
+		assessing key  SHADOW in rooms
+		assessing key  LOCKE in rooms
+		assessing key  GAU in rooms
+Generating map with characters...
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 0 ( ['Gau Father House'] )
+status: terminus ruin_terminus_1
+status: check rooms [65, 'ms-wor-59', 'ms-wob-14', 'ruin-whelk']
+status: dead ends ['ruin_hub_0', 'ruin_terminus_1', 'ms-wor-1554', 41, 47, 'ms-wob-14']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 39 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 393 in room ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 34 connections, selected: 191 in room 65
+Looking for reward in room 65 ...
+Found a reward!  [('Narshe Moogle Defense', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 65
+		reward is locked by MOG . Saving for later.
+Making connection:  393 --> 191
+	Active room:  65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 37 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 192 in room 65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 32 connections, selected: 154 in room 45
+Looking for reward in room 45 ...
+Making connection:  192 --> 154
+	Active room:  45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 35 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 155 in room 45_65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 30 connections, selected: 151 in room 43
+Looking for reward in room 43 ...
+Making connection:  155 --> 151
+	Active room:  43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 33 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 150 in room 43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 28 connections, selected: 168 in room 51
+Looking for reward in room 51 ...
+Making connection:  150 --> 168
+	Active room:  51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 31 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 167 in room 51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 26 connections, selected: 148 in room 42
+Looking for reward in room 42 ...
+Making connection:  167 --> 148
+	Active room:  42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 29 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 149 in room 42_51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 24 connections, selected: 1148 in room 40
+Looking for reward in room 40 ...
+Making connection:  149 --> 1148
+	Active room:  40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 27 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 1149 in room 40_42_51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 22 connections, selected: 147 in room 38
+Looking for reward in room 38 ...
+Making connection:  1149 --> 147
+	Active room:  38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 25 doors, 1 pits
+	Total doors in connected path: 1
+	Trying door exit: 1147 in room 38_40_42_51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 20 connections, selected: 162 in room 49
+Looking for reward in room 49 ...
+Making connection:  1147 --> 162
+	Active room:  49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 21 doors, 1 pits
+	Total doors in connected path: 3
+	Trying door exit: 163 in room 49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 16 connections, selected: 143 in room ruin-narshe
+Looking for reward in room ruin-narshe ...
+Making connection:  163 --> 143
+	Active room:  ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 17 doors, 1 pits
+	Total doors in connected path: 5
+	Trying door exit: 164 in room ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 12 connections, selected: 1211 in room ms-wor-59
+Looking for reward in room ms-wor-59 ...
+Found a reward!  [('Kohlingen', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ms-wor-59
+		reward is locked by SETZER . Saving for later.
+Making connection:  164 --> 1211
+	Active room:  ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 15 doors, 1 pits
+	Total doors in connected path: 5
+	Trying door exit: 1143 in room ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 10 connections, selected: 178 in room ruin-whelk
+Looking for reward in room ruin-whelk ...
+Found a reward!  [('Whelk', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-whelk
+		reward is locked by TERRA . Saving for later.
+Making connection:  1143 --> 178
+	Active room:  ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 13 doors, 1 pits
+	Total doors in connected path: 5
+	Trying door exit: 140 in room ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 8 connections, selected: 142 in room 36
+Looking for reward in room 36 ...
+Making connection:  140 --> 142
+	Active room:  36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 11 doors, 1 pits
+	Total doors in connected path: 5
+	Trying door exit: 1212 in room 36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 6 connections, selected: 153 in room 44
+Looking for reward in room 44 ...
+Making connection:  1212 --> 153
+	Active room:  44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 9 doors, 1 pits
+	Total doors in connected path: 5
+	Trying door exit: 152 in room 44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 4 connections, selected: 145 in room 37a
+Looking for reward in room 37a ...
+Making connection:  152 --> 145
+	Active room:  37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 7 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 161 in room 37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 2 connections, selected: 166 in room 50
+Looking for reward in room 50 ...
+Making connection:  161 --> 166
+	Active room:  50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 5 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 1146 in room 50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Expanding search to all unconnected rooms...
+	Found 5 connections, selected: 158 in room 47
+Looking for reward in room 47 ...
+Making connection:  1146 --> 158
+	Active room:  47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 4 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 141 in room 47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Expanding search to all unconnected rooms...
+	Found 4 connections, selected: 1150 in room 41
+Looking for reward in room 41 ...
+Making connection:  141 --> 1150
+	Active room:  41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 3 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 165 in room 41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Expanding search to all unconnected rooms...
+	Found 3 connections, selected: 1555 in room ms-wor-1554
+Looking for reward in room ms-wor-1554 ...
+Making connection:  165 --> 1555
+	Active room:  ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 2 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 179 in room ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Expanding search to all unconnected rooms...
+		Filtered out path doors (path has only 2 doors)
+	Found 2 connections, selected: 1079 in room ruin_terminus_1
+Looking for reward in room ruin_terminus_1 ...
+Making connection:  179 --> 1079
+	Active room:  ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 1 doors, 0 pits
+	Total doors in connected path: 1
+		Filtering exit 146 - would strand pits in ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 1 doors, 0 pits
+	Total doors in connected path: 1
+		Filtering exit 146 - would strand pits in ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 1 doors, 0 pits
+	Total doors in connected path: 1
+		Filtering exit 146 - would strand pits in ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [False, True, True] Stuck: {0}
+Working on branch 2 ( ['South Figaro Cave', 'Serpent Trench'] )
+status: terminus ruin_terminus_3
+status: check rooms [104, 'ruin-st-exit']
+status: dead ends ['ruin_hub_2', 'ruin_terminus_3', 103]
+Forcing connections...
+Forcing:  2046 3046
+forcing successful.
+Forcing:  2049 3049
+forcing successful.
+Forcing:  2053 3053
+forcing successful.
+Forcing:  2153 3153
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 18 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 395 in room ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 13 connections, selected: 263 in room 100
+Looking for reward in room 100 ...
+Making connection:  395 --> 263
+	Active room:  100_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 16 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 264 in room 100_ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 11 connections, selected: 269 in room 102
+Looking for reward in room 102 ...
+Making connection:  264 --> 269
+	Active room:  102_100_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 14 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 268 in room 102_100_ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 9 connections, selected: 271 in room 104
+Looking for reward in room 104 ...
+Found a reward!  [('South Figaro Cave', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 104
+Making connection:  268 --> 271
+Processing reward:  South Figaro Cave
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got CELES !
+	Set character path: CELES depends on CELES
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+		# rooms on each branch:  [21, 13, 19]
+		# rooms on each branch:  [21, 14, 19]
+		# rooms on each branch:  [21, 15, 19]
+		# rooms on each branch:  [21, 16, 19]
+Distributed areas:
+	 0 :  set()
+	 1 :  {'OperaHouse', 'SouthFigaro', 'Cid', 'Vector'}
+	 2 :  set()
+Checks available:
+	 0 :  ['Gau Father House']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  ['South Figaro Cave', 'Serpent Trench']
+	Updated Rewards Obtained:  1 Characters,  0 Espers
+	Updated Rewards Available:  9 Characters,  12 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  ['Serpent Trench']
+Branch viability: [False, True, True] Stuck: {0}
+Working on branch 1 ( ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_2
+status: check rooms ['wor-veldt', 'ms-wob-1556', 475, 354, 'ms-wor-58', 'ruin-mtek3', 'ms-wob-40', 349]
+status: dead ends ['ruin_hub_1', 'ruin_terminus_2', 'wor-veldt', 'ms-wob-1556', 468, 352, 'ms-wor-48', 'ms-wob-40']
+Forcing connections...
+Forcing:  2023 3023
+forcing successful.
+Forcing:  2128 3128
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 38 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 394 in room ruin_hub_1
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 25 connections, selected: 712 in room 353
+Looking for reward in room 353 ...
+Making connection:  394 --> 712
+	Active room:  353_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 36 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 713 in room 353_ruin_hub_1
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 23 connections, selected: 1162 in room ms-wor-58
+Looking for reward in room ms-wor-58 ...
+Found a reward!  [('South Figaro', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ms-wor-58
+Making connection:  713 --> 1162
+Processing reward:  South Figaro
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got RELM !
+	Set character path: RELM depends on CELES
+		assessing key  RELM in rooms
+		assessing key  RELM in rooms
+		assessing key  RELM in rooms
+		# rooms on each branch:  [21, 28, 19]
+		# rooms on each branch:  [21, 28, 33]
+Distributed areas:
+	 0 :  {'Jidoor'}
+	 1 :  set()
+	 2 :  {'EsperMountain'}
+Checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  ['Serpent Trench', 'Esper Mountain']
+	Updated Rewards Obtained:  2 Characters,  0 Espers
+	Updated Rewards Available:  10 Characters,  14 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  ['Serpent Trench', 'Esper Mountain']
+Branch viability: [True, True, True] Stuck: {0}
+	trimmed dead end  ruin_hub_1
+Working on branch 1 ( ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_2
+status: check rooms ['wor-veldt', 'ms-wob-1556', 475, 354, 'ruin-mtek3', 'ms-wob-40', 349]
+status: dead ends ['ruin_terminus_2', 'wor-veldt', 'ms-wob-1556', 468, 352, 'ms-wor-48', 'ms-wob-40']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ms-wor-58_353_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 34 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 1163 in room ms-wor-58_353_ruin_hub_1
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 21 connections, selected: 983 in room 470
+Looking for reward in room 470 ...
+Making connection:  1163 --> 983
+	Active room:  470_ms-wor-58_353_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 32 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 982 in room 470_ms-wor-58_353_ruin_hub_1
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 19 connections, selected: 1260 in room ruin-thamasa
+Looking for reward in room ruin-thamasa ...
+Making connection:  982 --> 1260
+	Active room:  ruin-thamasa_470_ms-wor-58_353_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 1
+		Filtering exit 1261 - would strand pits in ruin-thamasa_470_ms-wor-58_353_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  ruin-thamasa_470_ms-wor-58_353_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 1
+		Filtering exit 1261 - would strand pits in ruin-thamasa_470_ms-wor-58_353_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  ruin-thamasa_470_ms-wor-58_353_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 1
+		Filtering exit 1261 - would strand pits in ruin-thamasa_470_ms-wor-58_353_ruin_hub_1
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {0, 1}
+	trimmed dead end  ruin_hub_2
+Working on branch 2 ( ['Serpent Trench', 'Esper Mountain'] )
+status: terminus ruin_terminus_3
+status: check rooms ['ruin-st-exit', 488]
+status: dead ends ['ruin_terminus_3', 103, 490, 493, 494, 501]
+Forcing connections...
+Forcing:  2011 3011
+forcing successful.
+Forcing:  2012 3012
+forcing successful.
+Forcing:  2013 3013
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  104_102_100_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 35 doors, 10 pits
+	Total doors in connected path: 1
+	Trying door exit: 272 in room 104_102_100_ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 23 connections, selected: 1043 in room 492
+Looking for reward in room 492 ...
+Making connection:  272 --> 1043
+	Active room:  492_104_102_100_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 33 doors, 10 pits
+	Total doors in connected path: 1
+	Trying door exit: 1042 in room 492_104_102_100_ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 21 connections, selected: 1046 in room 495
+Looking for reward in room 495 ...
+Making connection:  1042 --> 1046
+	Active room:  495_492_104_102_100_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 29 doors, 10 pits
+	Total doors in connected path: 3
+	Trying door exit: 1049 in room 495_492_104_102_100_ruin_hub_2
+	Found 20 connections, selected: 1054 in room 498
+Looking for reward in room 498 ...
+Making connection:  1049 --> 1054
+	Active room:  498_495_492_104_102_100_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  [496]
+	Available exits: 2 doors, 0 traps
+	Available entrances: 25 doors, 9 pits
+	Total doors in connected path: 5
+	Trying door exit: 1051 in room 496
+	Found 19 connections, selected: 1032 in room 488
+Looking for reward in room 488 ...
+Found a reward!  [('Esper Mountain', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 488
+Making connection:  1051 --> 1032
+Processing reward:  Esper Mountain
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Maduin !
+	Updated Rewards Obtained:  2 Characters,  1 Espers
+	Updated Rewards Available:  9 Characters,  13 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  ['Serpent Trench']
+Branch viability: [True, True, True] Stuck: {0, 1}
+Working on branch 2 ( ['Serpent Trench'] )
+status: terminus ruin_terminus_3
+status: check rooms ['ruin-st-exit']
+status: dead ends ['ruin_terminus_3', 103, 490, 493, 494, 501]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  488_496 .
+	Upstream nodes:  [499, 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 21 doors, 7 pits
+	Total doors in connected path: 7
+	Trying door exit: 1050 in room 488_496
+	Found 17 connections, selected: 5200 in room ruin-nikeah
+Looking for reward in room ruin-nikeah ...
+Making connection:  1050 --> 5200
+	Active room:  ruin-nikeah_488_496 .
+	Upstream nodes:  ['ruin-st-exit', '241d', 499, 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 19 doors, 6 pits
+	Total doors in connected path: 7
+	Trying door exit: 1033 in room ruin-nikeah_488_496
+	Found 15 connections, selected: 1034 in room 489
+Looking for reward in room 489 ...
+Making connection:  1033 --> 1034
+	Active room:  489_ruin-nikeah_488_496 .
+	Upstream nodes:  ['ruin-st-exit', '241d', 499, 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 17 doors, 6 pits
+	Total doors in connected path: 7
+	Trying door exit: 1036 in room 489_ruin-nikeah_488_496
+	Found 13 connections, selected: 265 in room 101
+Looking for reward in room 101 ...
+Making connection:  1036 --> 265
+	Active room:  101_489_ruin-nikeah_488_496 .
+	Upstream nodes:  ['ruin-st-exit', '241d', 499, 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 14 doors, 6 pits
+	Total doors in connected path: 8
+	Trying door exit: 267 in room 101_489_ruin-nikeah_488_496
+	Found 10 connections, selected: 523 in room dc-23
+Looking for reward in room dc-23 ...
+Making connection:  267 --> 523
+	Active room:  dc-23_101_489_ruin-nikeah_488_496 .
+	Upstream nodes:  ['ruin-st-exit', '241d', 499, 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 1 traps
+	Available entrances: 13 doors, 6 pits
+	Total doors in connected path: 7
+	Trying trap exit: 2044 in room dc-23_101_489_ruin-nikeah_488_496
+	Found 7 connections, selected: 3050 in room 247c
+Looking for reward in room 247c ...
+Making connection:  2044 --> 3050
+	Active room:  247c .
+	Upstream nodes:  ['dc-23_101_489_ruin-nikeah_488_496', 'ruin-st-exit', '241d', 'dc-23_101_489_ruin-nikeah_488_496', 499, 'dc-23_101_489_ruin-nikeah_488_496', 500, 'dc-23_101_489_ruin-nikeah_488_496', '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 13 doors, 5 pits
+	Total doors in connected path: 7
+	Trying trap exit: 2051 in room 247c
+	Found 9 connections, selected: 3016 in room 499
+Looking for reward in room 499 ...
+Making connection:  2051 --> 3016
+	Active room:  dc-23_101_489_ruin-nikeah_488_496_499_247c .
+	Upstream nodes:  ['ruin-st-exit', '241d', 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 13 doors, 5 pits
+	Total doors in connected path: 7
+	Trying door exit: 266 in room dc-23_101_489_ruin-nikeah_488_496_499_247c
+	Found 9 connections, selected: 1161 in room 105
+Looking for reward in room 105 ...
+Making connection:  266 --> 1161
+	Active room:  105_dc-23_101_489_ruin-nikeah_488_496_499_247c .
+	Upstream nodes:  ['ruin-st-exit', '241d', 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 11 doors, 5 pits
+	Total doors in connected path: 7
+	Trying door exit: 5199 in room 105_dc-23_101_489_ruin-nikeah_488_496_499_247c
+	Found 7 connections, selected: 1052 in room 497
+Looking for reward in room 497 ...
+Making connection:  5199 --> 1052
+	Active room:  497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c .
+	Upstream nodes:  ['ruin-st-exit', '241d', 500, '498_495_492_104_102_100_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 3 traps
+	Available entrances: 10 doors, 5 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2014 in room 497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c
+	Found 6 connections, selected: 3015 in room 498_495_492_104_102_100_ruin_hub_2
+Looking for reward in room 498_495_492_104_102_100_ruin_hub_2 ...
+Making connection:  2014 --> 3015
+	Active room:  498_495_492_104_102_100_ruin_hub_2_497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c .
+	Upstream nodes:  ['ruin-st-exit', '241d', 500] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 2 traps
+	Available entrances: 10 doors, 5 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2015 in room 498_495_492_104_102_100_ruin_hub_2_497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c
+	Found 5 connections, selected: 3051 in room 241c
+Looking for reward in room 241c ...
+Making connection:  2015 --> 3051
+	Active room:  241c .
+	Upstream nodes:  ['241b', '241a', '498_495_492_104_102_100_ruin_hub_2_497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c', 'ruin-st-exit', '241d', '498_495_492_104_102_100_ruin_hub_2_497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c', 500] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 10 doors, 2 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2052 in room 241c
+	Found 5 connections, selected: 3052 in room 241d
+Looking for reward in room 241d ...
+Found a reward!  [('Serpent Trench', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-st-exit
+Making connection:  2052 --> 3052
+Processing reward:  Serpent Trench
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got TERRA !
+	Set character path: TERRA depends on GAU
+		assessing key  TERRA in rooms
+			Applying key: ('TERRA',) in room ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+			adding a door... 1155
+		assessing key  TERRA in rooms
+		assessing key  TERRA in rooms
+		# rooms on each branch:  [30, 28, 33]
+		# rooms on each branch:  [30, 29, 33]
+		# rooms on each branch:  [30, 41, 33]
+		# rooms on each branch:  [36, 41, 33]
+Forced same branch: Zozo ZozoTower 1
+Distributed areas:
+	 0 :  {'ReturnersHideout'}
+	 1 :  {'ZozoTower', 'Mobliz', 'Zozo'}
+	 2 :  {'SealedGate'}
+Checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2', 'Lete River']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  ['Serpent Trench']
+CUSTOM add pit 3039 to ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 ! [2, 0, 2, 0, 0] [3009, 3039]
+	Updated Rewards Obtained:  3 Characters,  1 Espers
+	Updated Rewards Available:  10 Characters,  14 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2', 'Lete River']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  []
+	Unlocked an available reward! Whelk on branch 0
+Processing reward:  Whelk
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Phoenix !
+	Updated Rewards Obtained:  3 Characters,  2 Espers
+	Updated Rewards Available:  8 Characters,  12 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2', 'Lete River']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area Doma (33 rooms) to unstick branch 0
+	Added new check: Doma WOR_2
+	Added new check: Doma WOR_1
+	Added new check: Doma WOR_3
+	trimmed dead end  ruin_hub_0
+	trimmed dead end  ruin_terminus_1
+	trimmed dead end  ms-wor-1554
+	trimmed dead end  41
+	trimmed dead end  47
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Auction House_1', 'Auction House_2', 'Lete River', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 'dc-73', 284, 'LeteRiver3', 429, 193, 'dc-76']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+Forcing:  2039 3039
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  ['LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 59 doors, 26 pits
+	Total doors in connected path: 2
+	Trying door exit: 1155 in room ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 2 doors)
+	Found 45 connections, selected: 593 in room dc-73
+Looking for reward in room dc-73 ...
+Found a reward!  [('Auction House_1', <RewardType.ITEM|ESPER: 12>), ('Auction House_2', <RewardType.ITEM: 8>)] in room dc-73
+Making connection:  1155 --> 593
+Processing reward:  Auction House_1
+	choosing from... RewardType.ITEM|ESPER
+	got Golem !
+	Updated Rewards Obtained:  3 Characters,  3 Espers
+	Updated Rewards Available:  8 Characters,  11 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Auction House_2', 'Lete River', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  []
+Processing reward:  Auction House_2
+	choosing from... RewardType.ITEM
+	got Ice Shld !
+	Updated Rewards Obtained:  3 Characters,  3 Espers
+	Updated Rewards Available:  8 Characters,  11 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Lete River', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: {1}
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Lete River', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 'LeteRiver3', 429, 193, 'dc-76']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  ['LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 57 doors, 26 pits
+	Total doors in connected path: 2
+	Trying door exit: 5213 in room dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 2 doors)
+	Found 43 connections, selected: 453 in room 187
+Looking for reward in room 187 ...
+Making connection:  5213 --> 453
+	Active room:  187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  ['LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 55 doors, 26 pits
+	Total doors in connected path: 2
+	Trying door exit: 439 in room 187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+		Filtered out path doors (path has only 2 doors)
+	Found 41 connections, selected: 5240 in room dc-76
+Looking for reward in room dc-76 ...
+Found a reward!  [('Doma WOR_3', <RewardType.ITEM|ESPER: 12>)] in room dc-76
+Making connection:  439 --> 5240
+Processing reward:  Doma WOR_3
+	choosing from... RewardType.ITEM|ESPER
+	got Ifrit !
+	Updated Rewards Obtained:  3 Characters,  4 Espers
+	Updated Rewards Available:  8 Characters,  10 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Lete River', 'Doma WOR_2', 'Doma WOR_1']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: {1}
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Lete River', 'Doma WOR_2', 'Doma WOR_1'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 'LeteRiver3', 429, 193]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0 .
+	Upstream nodes:  ['LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 54 doors, 25 pits
+	Total doors in connected path: 1
+	Trying trap exit: 2069 in room dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0
+	Found 25 connections, selected: 3070 in room 210
+Looking for reward in room 210 ...
+Making connection:  2069 --> 3070
+	Active room:  210 .
+	Upstream nodes:  ['dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0', 'LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 53 doors, 24 pits
+	Total doors in connected path: 2
+	Trying door exit: 482 in room 210
+		Filtered out path doors (path has only 2 doors)
+	Found 40 connections, selected: 582 in room 278
+Looking for reward in room 278 ...
+Making connection:  482 --> 582
+	Active room:  278_210 .
+	Upstream nodes:  ['dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0', 'LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 50 doors, 23 pits
+	Total doors in connected path: 3
+	Trying door exit: 583 in room 278_210
+	Found 37 connections, selected: 588 in room 281
+Looking for reward in room 281 ...
+Making connection:  583 --> 588
+	Active room:  281_278_210 .
+	Upstream nodes:  ['dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0', 'LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 49 doors, 22 pits
+	Total doors in connected path: 2
+	Trying trap exit: 2019 in room 281_278_210
+	Found 22 connections, selected: 6847 in room 423
+Looking for reward in room 423 ...
+Making connection:  2019 --> 6847
+		assessing key  cd1 in rooms
+			removing key  cd1 from 423
+	Active room:  423 .
+	Upstream nodes:  ['281_278_210', 'dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0', 'LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 49 doors, 21 pits
+	Total doors in connected path: 2
+	Trying trap exit: 846 in room 423
+	Found 24 connections, selected: 6848 in room 428
+Looking for reward in room 428 ...
+Making connection:  846 --> 6848
+	Active room:  428 .
+	Upstream nodes:  [423, '281_278_210', 'dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0', 'LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 48 doors, 19 pits
+	Total doors in connected path: 3
+	Trying trap exit: 854 in room 428
+	Found 22 connections, selected: 3072 in room 432
+Looking for reward in room 432 ...
+Making connection:  854 --> 3072
+	Active room:  432 .
+	Upstream nodes:  [428, 423, '281_278_210', 'dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0', 'LeteRiver3'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 48 doors, 18 pits
+	Total doors in connected path: 3
+	Trying trap exit: 862 in room 432
+	Found 23 connections, selected: 3038 in room LeteRiver3
+Looking for reward in room LeteRiver3 ...
+Found a reward!  [('Lete River', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room LeteRiver3
+Making connection:  862 --> 3038
+Processing reward:  Lete River
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Shiva !
+	Updated Rewards Obtained:  3 Characters,  5 Espers
+	Updated Rewards Available:  7 Characters,  9 Espers
+	Updated branch checks available:
+	 0 :  ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1']
+	 1 :  ['Floating Continent_1', 'Floating Continent_2', 'Floating Continent_3', 'Veldt Cave WOR', 'Veldt', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: {1}
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 48 doors, 18 pits
+	Total doors in connected path: 3
+	Trying door exit: 146 in room 428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432
+	Found 35 connections, selected: 478 in room 209
+Looking for reward in room 209 ...
+Making connection:  146 --> 478
+	Active room:  209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 0 traps
+	Available entrances: 44 doors, 18 pits
+	Total doors in connected path: 5
+	Trying door exit: 479 in room 209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432
+	Found 31 connections, selected: 444 in room 191
+Looking for reward in room 191 ...
+Making connection:  479 --> 444
+	Active room:  191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 7 doors, 0 traps
+	Available entrances: 40 doors, 18 pits
+	Total doors in connected path: 7
+	Trying door exit: 480 in room 191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432
+	Found 27 connections, selected: 589 in room 282
+Looking for reward in room 282 ...
+Making connection:  480 --> 589
+	Active room:  282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 1 traps
+	Available entrances: 39 doors, 17 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2021 in room 282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432
+	Found 17 connections, selected: 3069 in room 424
+Looking for reward in room 424 ...
+Making connection:  2021 --> 3069
+	Active room:  424 .
+	Upstream nodes:  ['282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 39 doors, 15 pits
+	Total doors in connected path: 6
+	Trying trap exit: 848 in room 424
+	Found 21 connections, selected: 3071 in room 212R
+Looking for reward in room 212R ...
+Making connection:  848 --> 3071
+	Active room:  212R .
+	Upstream nodes:  [424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 39 doors, 14 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2072 in room 212R
+	Found 21 connections, selected: 3073 in room 188B
+Looking for reward in room 188B ...
+Making connection:  2072 --> 3073
+	Active room:  188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 38 doors, 13 pits
+	Total doors in connected path: 7
+	Trying door exit: 443 in room 188B
+	Found 32 connections, selected: 863 in room 433
+Looking for reward in room 433 ...
+Making connection:  443 --> 863
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 36 doors, 12 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 36 doors, 12 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 36 doors, 12 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area MtKolts (16 rooms) to unstick branch 0
+	Added new check: Mt. Kolts
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 68 doors, 12 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 68 doors, 12 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 68 doors, 12 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area PhantomTrain (22 rooms) to unstick branch 0
+	Added new check: Phantom Train
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221]
+Forcing connections...
+Forcing:  2067 3067
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 114 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 114 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 114 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area DarylsTomb (16 rooms) to unstick branch 0
+	Added new check: Daryl's Tomb
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb"] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392]
+Forcing connections...
+Forcing:  2059 3059
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 141 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 141 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 141 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area AncientCastle (13 rooms) to unstick branch 0
+	Added new check: Ancient Castle
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 171 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 171 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 171 doors, 15 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area UmarosCave (9 rooms) to unstick branch 0
+	Added new check: Umaro's Cave
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave"] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532]
+Forcing connections...
+Forcing:  2005 3005
+forcing successful.
+Forcing:  2006 3006
+forcing successful.
+Forcing:  2007 3007
+forcing successful.
+Forcing:  2008 3008
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 181 doors, 22 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 181 doors, 22 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 181 doors, 22 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area ZoneEater (9 rooms) to unstick branch 0
+	Added new check: Zone Eater
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363]
+Forcing connections...
+Forcing:  2043 3043
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 195 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 195 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 195 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area MtZozo (8 rooms) to unstick branch 0
+	Added new check: Mt. Zozo
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256]
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 209 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 209 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 209 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area BarenFalls (3 rooms) to unstick branch 0
+	Added new check: Baren Falls
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe']
+Forcing connections...
+Forcing:  2076 3076
+forcing successful.
+Forcing:  2176 3176
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 211 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 211 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 211 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area Maranda (1 rooms) to unstick branch 0
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 213 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 213 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 213 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area FigaroCastle (1 rooms) to unstick branch 0
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 214 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 214 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 214 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area ImperialCamp (1 rooms) to unstick branch 0
+	Added new check: Imperial Camp
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward', 'dc-1501']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 216 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area ImperialCastle (1 rooms) to unstick branch 0
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward', 'dc-1501']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 224 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 224 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 224 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area Tzen (1 rooms) to unstick branch 0
+	Added new check: Tzen
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls', 'Imperial Camp', 'Tzen'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward', 'dc-1501', 'ms-wor-51']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle', 'ms-wor-51']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 225 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 225 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 225 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area FanaticsTower (1 rooms) to unstick branch 0
+	Added new check: Fanatic's Tower
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls', 'Imperial Camp', 'Tzen', "Fanatic's Tower"] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward', 'dc-1501', 'ms-wor-51', 'ms-wor-69']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 226 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 226 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 226 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding reserve area EbotsRock (1 rooms) to unstick branch 0
+	Added new check: Ebot's Rock
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls', 'Imperial Camp', 'Tzen', "Fanatic's Tower", "Ebot's Rock"] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward', 'dc-1501', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 227 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 227 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 227 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+Adding extra area ImperialCastle to unstick branch 0
+	Skipping room 331 - already exists
+Working on branch 0 ( ['Gau Father House', 'Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Mt. Kolts', 'Phantom Train', "Daryl's Tomb", 'Ancient Castle', "Umaro's Cave", 'Zone Eater', 'Mt. Zozo', 'Baren Falls', 'Imperial Camp', 'Tzen', "Fanatic's Tower", "Ebot's Rock"] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-14', 284, 429, 193, 151, 220, 'ruin-daryl', 532, 368, 363, 256, 'ruin-baren-reward', 'dc-1501', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78']
+status: dead ends ['ms-wob-14', 279, 284, 426, '221R', 184, 185, 189, 190, 192, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 380, 384, 386, 389, 392, 525, 526, 527, 532, 363, 251, 256, 'root-mz_mapsafe', 'ruin-figarocastle', 'ms-wor-51', 'ms-wor-69', 'ms-wor-78']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 227 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 1/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 227 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 failed to extend, retry 2/3
+	Active room:  433_188B .
+	Upstream nodes:  ['212R', 424, '282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 227 doors, 24 pits
+	Total doors in connected path: 7
+		Filtering exit 864 - would strand pits in 433_188B
+		No safe door exits available
+	All connection strategies exhausted. Branch extension failed.
+Branch 0 is stuck after 3 retries
+Skipping reward processing for stuck branch 0
+Branch viability: [True, True, True] Stuck: {0, 1}
+ERROR: No reserve areas available to unstick branches!
+Closing branch...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: 282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432 [6, 0, 6, 0, 0]
+	pits: [3009, 3074, 6853, 3017, 3020, 3021, 6854, 6859]
+	traps: [849, 847]
+(2) delta values: [(-1, 424), (0, '212R'), (1, '433_188B')]
+(2) selected 433_188B (delta =  1 ):  [1, 0, 1, 0, 0] [864] [] [6859]
+(2) connecting 864 --> 585
+(2) delta values: []
+(4) remaining doors: [481, 450, 855, 446, 448]
+(4) terminus already merged into hub, skipping
+(6) remaining dead ends: ['ms-wor-69', '206a', 532, 363, 527, 384, 284, 192, 'ms-wor-51', 386, 526, 213, 190, '221R', 149, '215a', 251, 221, 147, 'ms-wob-14', 426, 212, 189, '207a', 'ms-wor-78', 392, 279, 'root-mz_mapsafe', 256, 185, 380, '207b', 'ruin-figarocastle', '215b', 525, '203c', 184, 157, 389, '206b']
+(6) connecting dead ends: 481 --> 1538
+(6) connecting dead ends: 450 --> 792
+		assessing key  dt2 in rooms
+			Applying key: ('dt2',) in room 391
+			adding a door... 795
+			removing key  dt2 from 389_206b_212R_424_282_191_209_428_423_281_278_210_dc-76_187_dc-73_ruin_terminus_1_ms-wor-1554_41_47_50_37a_44_36_ruin-whelk_ms-wor-59_ruin-narshe_49_38_40_42_51_43_45_65_ruin_hub_0_LeteRiver3_432_433_188B
+(6) connecting dead ends: 855 --> 386
+(6) connecting dead ends: 446 --> 435
+(6) connecting dead ends: 448 --> 1514
+... closing branch complete!
+Closing branch...
+Forcing:  2032 3032
+forcing successful.
+Forcing:  2033 3033
+forcing successful.
+Forcing:  2064 3064
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: ruin-thamasa_470_ms-wor-58_353_ruin_hub_1 [1, 0, 2, 0, 1]
+	pits: [3075, 3055]
+	traps: []
+(2) delta values: []
+(4) remaining doors: [1261]
+(4) connecting terminus: 1261 --> 1057
+(6) remaining dead ends: ['294r', 310, '306r', 'wor-veldt', 'ms-wob-40', '295r', 313, 'ms-wor-48', 468, '305r', 'branch-mz_mapsafe', '309r', 352, 'ms-wob-1556', 'ms-wor-52', 312]
+... closing branch complete!
+Closing branch...
+Forcing:  2029 3029
+forcing successful.
+Forcing:  2030 3030
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: 498_495_492_104_102_100_ruin_hub_2_497_105_dc-23_101_489_ruin-nikeah_488_496_499_247c_ruin-st-exit_241d_241c [5, 1, 0, 0, 0]
+	pits: [3047, 3044, 3014]
+	traps: [2016, 2048, 2045]
+(2) delta values: []
+(3) remaining traps: [2016] ; pits:  [3047, 3014, 3044]
+(3) connecting: 2016 --> 3044
+(4) remaining doors: [1053, 1055, 1513, 1048, 1047]
+(4) connecting terminus: 1047 --> 1564
+(6) remaining dead ends: [494, 513, 504, 490, 493, 511, 501, 103]
+(6) connecting dead ends: 1053 --> 270
+(6) connecting dead ends: 1055 --> 1057
+(6) connecting dead ends: 1513 --> 1074
+(6) connecting dead ends: 1048 --> 1044
+... closing branch complete!
+Gau not in planned characters, all accessible shops valid for dried meat
+REWARD STATE AFTER RUIN MAPPING:
+Zone Eater None None
+Esper Mountain 6 RewardType.ESPER
+Ebot's Rock None None
+Mt. Zozo None None
+Narshe WOR None None
+Opera House None None
+Magitek Factory None None
+Lone Wolf None None
+Magitek Factory None None
+Floating Continent None None
+Ancient Castle None None
+8 Dragons None None
+Narshe WOR None None
+Doma WOR None None
+Serpent Trench 0 RewardType.CHARACTER
+Figaro Castle WOB None None
+8 Dragons None None
+Doma WOR 1 RewardType.ESPER
+Doom Gaze None None
+Veldt Cave WOR None None
+Magitek Factory None None
+Veldt None None
+Mobliz WOR None None
+Phoenix Cave None None
+Doma WOR None None
+Gau Father House None None
+Owzer Mansion None None
+Lone Wolf None None
+8 Dragons None None
+South Figaro 8 RewardType.CHARACTER
+Auction House 97 RewardType.ITEM
+Narshe Battle None None
+Fanatic's Tower None None
+Tzen None None
+Tritoch None None
+Burning House None None
+Floating Continent None None
+Kohlingen None None
+Whelk 26 RewardType.ESPER
+Doma WOB None None
+Figaro Castle WOR None None
+8 Dragons None None
+Mt. Kolts None None
+Zozo None None
+Narshe Moogle Defense None None
+Fanatic's Tower None None
+Lete River 2 RewardType.ESPER
+Auction House 22 RewardType.ESPER
+Imperial Camp None None
+8 Dragons None None
+Collapsing House None None
+Kefka's Tower None None
+South Figaro Cave None None
+Phantom Train None None
+Baren Falls None None
+8 Dragons None None
+Floating Continent None None
+Umaro's Cave None None
+Sealed Gate None None
+8 Dragons None None
+Daryl's Tomb None None
+8 Dragons None None
+REWARD STATE FINAL:
+Zone Eater 5 RewardType.ESPER
+Ebot's Rock 5 RewardType.CHARACTER
+Mt. Zozo 12 RewardType.CHARACTER
+Opera House 24 RewardType.ESPER
+Magitek Factory 17 RewardType.ESPER
+Ancient Castle 21 RewardType.ESPER
+Narshe WOR 16 RewardType.ESPER
+Figaro Castle WOB 15 RewardType.ESPER
+Doom Gaze 20 RewardType.ESPER
+Veldt Cave WOR 13 RewardType.CHARACTER
+Magitek Factory 19 RewardType.ESPER
+Mobliz WOR 11 RewardType.ESPER
+Phoenix Cave 10 RewardType.CHARACTER
+Doma WOR 9 RewardType.ESPER
+Gau Father House 0 RewardType.ESPER
+Owzer Mansion 25 RewardType.ESPER
+Lone Wolf 8 RewardType.ESPER
+Narshe Battle 7 RewardType.ESPER
+Tzen 4 RewardType.ESPER
+Tritoch 10 RewardType.ESPER
+Burning House 3 RewardType.ESPER
+Kohlingen 14 RewardType.ESPER
+Doma WOB 23 RewardType.ESPER
+Figaro Castle WOR 18 RewardType.ESPER
+Mt. Kolts 162 RewardType.ITEM
+Zozo 211 RewardType.ITEM
+Narshe Moogle Defense 161 RewardType.ITEM
+Imperial Camp 162 RewardType.ITEM
+Collapsing House 156 RewardType.ITEM
+South Figaro Cave 28 RewardType.ITEM
+Phantom Train 211 RewardType.ITEM
+Baren Falls 104 RewardType.ITEM
+Floating Continent 217 RewardType.ITEM
+Umaro's Cave 96 RewardType.ITEM
+Sealed Gate 128 RewardType.ITEM
+Daryl's Tomb 98 RewardType.ITEM
+
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 25, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 74, in mod
+    self.ruination_mod(events, name_event)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 277, in ruination_mod
+    self.maps.postprocess_door_map()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\data\maps.py", line 527, in postprocess_door_map
+    raise Exception(exception_text)
+Exception: INVALID DOOR MAP: 1055 --> 1057; 1057 --> 1261
