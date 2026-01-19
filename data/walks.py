@@ -1258,6 +1258,9 @@ class Room:
         for element in elements:
             validated = self._validate_element(element, element_type)
             self.elements[element_type].add(validated)
+            # Update parent's element-to-room mapping
+            if self.rooms_ref is not None:
+                self.rooms_ref._element_to_room[validated] = self.id
 
     def add_doors(self, doors):
         self._add_elements('doors', doors)
