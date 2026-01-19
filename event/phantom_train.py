@@ -323,7 +323,7 @@ class PhantomTrain(Event):
     def escape_ghosts_mod(self):
         space = Reserve(0xbb267, 0xbb269, "phantom train ghost blocking exit no escape", field.NOP())
 
-        if not self.DOOR_RANDOMIZE:
+        if not self.DOOR_RANDOMIZE and not self.RUINATION_MODE:
             space = Reserve(0xbb276, 0xbb397, "phantom train ghosts surround party event", field.NOP())
             space.write(
                 field.LoadMap(0x08e, direction.DOWN, default_music = True, x = 40, y = 9, fade_in = False),
