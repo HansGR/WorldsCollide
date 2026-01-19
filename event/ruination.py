@@ -2315,7 +2315,7 @@ FREE_BED_LOCATIONS = [
 ]
 
 
-def modify_free_bed_heals(maps, rom):
+def modify_free_bed_heals(maps, rom, args):
     """
     Modifies existing free bed heal events for ruination mode.
 
@@ -2327,6 +2327,7 @@ def modify_free_bed_heals(maps, rom):
     Args:
         maps: The Maps object to modify event tiles
         rom: The ROM object for debug output
+        args: Command line arguments (for debug flag)
     """
     from instruction.field.custom import BranchChance
 
