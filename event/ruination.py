@@ -583,8 +583,8 @@ class RuinationBranch(Network):
             print('(4) terminus already merged into hub, skipping')
 
         # (5) Count doors in hub.  Connect doors within hub until # doors < # dead ends
-        # Clean up dead ends first
-        for de in self.dead_ends:
+        # Clean up dead ends first - use list() to avoid modifying during iteration
+        for de in list(self.dead_ends):
             if de not in self.net.nodes:
                 self.dead_ends.remove(de)
 
