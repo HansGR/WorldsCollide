@@ -58,7 +58,7 @@ class PreGameMenu:
             ]
 
             options_with_save = []
-            option_space = Allocate(Bank.C3, 41, "pregame options with save")
+            option_space = Allocate(Bank.C3, 46, "pregame options with save")
             for text_position in text_positions_with_save:
                 options_with_save.append(option_space.next_address)
                 option_space.write(
