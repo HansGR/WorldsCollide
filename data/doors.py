@@ -193,7 +193,7 @@ class Doors():
                 for exit in dungeon_crawl_split_exits[se]:
                     shared_exits[se].remove(exit)
 
-            self.forcing.pop(1079)
+            self.forcing.pop(1079)  # Final room --> Sealed gate connection.  Sealed gate is used differently in -ruin.
 
         elif self.args.door_randomize_crossworld: # -drx, old version of -drdc
             # Prioritize randomizing all doors.
