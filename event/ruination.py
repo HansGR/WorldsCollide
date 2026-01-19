@@ -1321,6 +1321,28 @@ class ruination_map():
         for branch in self.branches:
             branch.apply_key(key)
 
+        # If this is a character key that unlocks rewards, add those rewards to branch_checks
+        if key in CHARACTER_LOCKED_REWARDS:
+            unlocked_rewards = CHARACTER_LOCKED_REWARDS[key]
+            for reward_name in unlocked_rewards:
+                # Find which room has this reward
+                for room_id, rewards in ROOM_REWARD.items():
+                    if reward_name in rewards:
+                        # Find which branch has this room
+                        for branch_id, branch in enumerate(self.branches):
+                            if room_id in branch.net.nodes or room_id in branch.original_room_ids:
+                                if reward_name not in self.branch_checks[branch_id]:
+                                    self.branch_checks[branch_id].append(reward_name)
+                                    # Also update RewardsAvailable
+                                    reward_slot = ROOM_REWARD[room_id][reward_name]
+                                    if reward_slot.possible_types & RewardType.CHARACTER:
+                                        self.RewardsAvailable[0] += 1
+                                    if reward_slot.possible_types & RewardType.ESPER:
+                                        self.RewardsAvailable[1] += 1
+                                    if self.verbose:
+                                        print(f'\tUnlocked reward {reward_name} added to branch {branch_id} checks')
+                                break
+
     def get_non_veldt_gated_shops(self, characters):
         """Identify shops that are NOT gated behind the Veldt reward.
 
