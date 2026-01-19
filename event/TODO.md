@@ -141,28 +141,28 @@
 ## Updates to specific checks to work with -ruin
 1. Checks in the WoB that must be "moved" to WoR:
 - ✅ **DONE** - Lone Wolf (must be moved to WoR Narshe treasure hut; animation moved to WoR Narshe; event must be added to Narshe Peak with Tritoch & deconflicted from Tritoch event)
-  - **Status**: Implemented in event/lone_wolf.py:323-440 (ruination_mod method)
+  - **Status**: Implemented in event/lone_wolf.py:323-440 (ruination_mod method).  Needs testing.
   - Moves Lone Wolf event to WOR Narshe, edits NPCs and event tiles for Tritoch Peak WOR
 - ✅ **DONE** - Moogle Defense (WoB room must be used, possibly with palatte swap; event must be initialized in the room, rather than at Arvis' house)
-  - **Status**: Implemented in event/narshe_moogle_defense.py:632-707 (ruination_start_mod method)
+  - **Status**: Implemented in event/narshe_moogle_defense.py:632-707 (ruination_start_mod method).  Needs testing.
   - Uses WOB map with custom entrance event, initializes event in the room
-- ❌ **TODO** - Kefka at Narshe (deconflict with Ice Fields dragon.  Possibly: use WoB map until check is completed; then replace with WoR map when returning?)
-  - **Status**: No ruination modifications found in event/narshe_battle.py
 - ❌ **TODO** - Opera House (deconflict with OH dragon.  Probably same solution as for Kefka at Narshe)
   - **Status**: No ruination modifications found in event/opera_house_wob.py for ending location
 - ✅ **DONE** - Shadow's check at gau's dad's house (just use WoB gau's dad's house with pallete swap)
-  - **Status**: Implemented in event/gau_father_house.py:123-129 (ruination_mod method)
+  - **Status**: Implemented in event/gau_father_house.py:123-129 (ruination_mod method).  Needs testing.
   - Edits palette to look like WOR
 - ✅ **DONE** - Whelk (must be moved to WoR Narshe.  Actually: just use WoB room, make that exit locked by Terra, do pallete swap if necessary)
-  - **Status**: Implemented in event/whelk.py:167-172 (ruination_mod method)
+  - **Status**: Implemented in event/whelk.py:167-172 (ruination_mod method).  Needs testing.
   - Modifies Whelk room palette to look like WOR
 - ✅ **DONE** - Serpent Trench (must end at WoR Nikeah.  Probably just use WoB Nikeah docks with palette swap & music change.)
-  - **Status**: Implemented in event/serpent_trench.py:290-306 (door_rando_mod method)
+  - **Status**: Implemented in event/serpent_trench.py:290-306 (door_rando_mod method).  Needs testing.
   - Sets world to WOR and loads Nikeah entrance in ruination mode
 - ❌ **TODO** - Doma Defense (Use WoB exterior doma map; lock entrance to Doma Dream behind this event)
   - **Status**: No ruination modifications found in event/doma_wob.py
 - ❌ **TODO** - TunnelArmr check (how to deconflict with Figaro Castle?)
   - **Status**: No ruination modifications found in event/south_figaro_cave_wob.py
+- **PASS** - Kefka at Narshe (deconflict with Ice Fields dragon.  Possibly: use WoB map until check is completed; then replace with WoR map when returning?)
+  - **Status**: Not implemented in event/narshe_battle.py.  This is an option for future addition, but will not be in the initial release.
 
 2. Modify checks that go to the world map, or go to the airship, so that they don't break the ruination map:
 - ✅ **DONE** - Phantom Train (warp to train station?)
@@ -182,8 +182,6 @@
 - ✅ **DONE** - Phoenix Cave (same solution as -drdc)
   - **Status**: Implemented in event/phoenix_cave.py (DOOR_RANDOMIZE flag includes ruination mode)
   - Uses door randomization handling
-- ❌ **TODO** - Kefka at Narshe (end on same screen)
-  - **Status**: Same as section 1 - no ruination modifications found
 
 3. Figaro Castle is a special case: there's a conflict between the WoR entrance via the tunnel at SF cave, since it is reused as an entrance to Ancient Castle. Solution: remove the custom underground entrance before engine check is complete.  Player will walk into Figaro Castle from the main door, and the player can walk down to basement & fight engine boss at will.  Remove "resurfacing" animation.  Require fighting engine boss before accessing whatever is behind Ancient Castle entrance.  (Note this solution also deconflicts with Locke's Tunnelarmr check, since that room is now not used as part of engine room check.)
 - ✅ **IMPLEMENTED** - Figaro Castle special handling
