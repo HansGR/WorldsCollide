@@ -489,7 +489,10 @@ class RuinationBranch(Network):
                                 print('\t\t\t', node_id, ': ', node.count)
 
                     if len(pido) > 0:
-                        this_conn = random.choice(pido)
+                        pido_room_id = random.choice(pido)
+                        pido_room = self.rooms.get_room(pido_room_id)
+                        # Select a pit from the converter room as the connection target
+                        this_conn = random.choice(list(pido_room.pits))
 
                 elif len(room.doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
                     # Need a door-in, trap-out converter
@@ -504,7 +507,10 @@ class RuinationBranch(Network):
                                 print('\t\t\t', node_id, ': ', node.count)
 
                     if len(dito) > 0:
-                        this_conn = random.choice(dito)
+                        dito_room_id = random.choice(dito)
+                        dito_room = self.rooms.get_room(dito_room_id)
+                        # Select a door from the converter room as the connection target
+                        this_conn = random.choice(list(dito_room.doors))
 
             if this_conn is None:
                 # There is no solution.
