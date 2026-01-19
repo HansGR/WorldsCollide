@@ -81,10 +81,11 @@ class BurningHouse(Event):
         """
         Modifies the Thamasa inn pricing for ruination mode.
 
-        - If burning house not done: charge 1 GP (to allow access to the event)
-        - If burning house done: charge normal inn price (200 GP * multiplier)
+        - If STRAGO not recruited: normal inn with normal price
+        - If STRAGO recruited: always trigger burning house event (re-enterable)
 
-        This patches the inn event to check DEFEATED_FLAME_EATER and branch accordingly.
+        The burning house is made re-enterable by enter_burning_house_mod() which NOPs
+        the DEFEATED_FLAME_EATER check at 0xbd7bf when DOOR_RANDOMIZE is true.
         """
         from event.ruination import INN_COST_MULTIPLIER
 
@@ -92,16 +93,16 @@ class BurningHouse(Event):
         THAMASA_NORMAL_PRICE = 200
         new_price = min(THAMASA_NORMAL_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
-        # Repurpose the "strangers" path as the normal price path (after burning house done)
+        # Normal price path (when STRAGO not recruited)
         NORMAL_PRICE_PATH = 0xbd769
         NORMAL_PRICE_GP = 0xbd775
-        THAMASA_INN_DIALOG = 0x0790  # Was "strangers" dialog
+        THAMASA_INN_DIALOG = 0x0790
 
-        # Patch event at 0xbd73f: If DEFEATED_FLAME_EATER is set, branch to normal price
+        # Patch event at 0xbd73f: If STRAGO not recruited, branch to normal price
         space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
         space.add_label("NORMAL_PRICE", NORMAL_PRICE_PATH)
         space.write(
-            field.BranchIfEventBitSet(event_bit.DEFEATED_FLAME_EATER, "NORMAL_PRICE"),
+            field.BranchIfEventBitClear(event_bit.character_recruited(self.characters.STRAGO), "NORMAL_PRICE"),
         )
 
         # Update the normal price path dialog and cost
@@ -111,6 +112,16 @@ class BurningHouse(Event):
 
         # Update the GP cost for normal price path
         self.rom.set_bytes(NORMAL_PRICE_GP, new_price.to_bytes(2, 'little'))
+
+        # Patch burning house trigger at 0xbd7c5: use character_recruited instead of MET_STRAGO_RELM
+        # Original: If MET_STRAGO_RELM set -> branch to burning house (0xbdcc7)
+        # New: If STRAGO recruited -> branch to burning house
+        BURNING_HOUSE_EVENT = 0xbdcc7
+        space = Reserve(0xbd7c5, 0xbd7ca, "thamasa inn burning house trigger", field.NOP())
+        space.add_label("BURNING_HOUSE", BURNING_HOUSE_EVENT)
+        space.write(
+            field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.STRAGO), "BURNING_HOUSE"),
+        )
 
     def enter_burning_house_mod(self):
         # wake up in middle of night, enter burning house, skip scene with villagers outside burning house
