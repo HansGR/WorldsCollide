@@ -830,7 +830,8 @@ class Maps():
         map = self.door_map
 
         # Need to add modified world map exits if they weren't randomized (to print exit events)
-        if self.args.door_randomize:
+        # Skip for ruination mode - exit_data has been modified by dungeon_crawl override
+        if self.args.door_randomize and not self.args.ruination_mode:
             # Only do this if door_randomize, not map_shuffle
             for m in exit_make_explicit.keys():
                 if m not in map.keys():
