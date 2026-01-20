@@ -456,7 +456,8 @@ class Maps():
         self.chests.mod()
         self.world_map.mod()
         self.doors.mod()
-        if self.args.door_randomize or self.args.map_shuffle:
+        if (self.args.door_randomize or self.args.map_shuffle) and not self.args.ruination_mode:
+            # Skip for ruination mode - door map is constructed later in ruination_mod()
             self.postprocess_door_map()
         self.events.mod()  # self.events.mod(self.doors, self)
         self.long_events.mod()  # LONG EVENTS
