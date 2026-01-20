@@ -132,10 +132,8 @@
    - The custom menu should be visually distinct or have a title indicating "Ruination Mode"
    - "Load Saved Game" should handle the single-slot constraint gracefully
    - May want to show a warning on "New Game" if a save exists (since it will be overwritten on first save)
-
-5. Decide what to do with Warp spell.  It could move the current party to Esper World, or reset all parties and move to Esper World, or do nothing since we have the Warp Points (but still usable in battle).
    
-6. [low priority] Add a custom splash graphic for RUINATION - Final Fantasy 6 Roguelike
+5. [low priority] Add a custom splash graphic for RUINATION - Final Fantasy 6 Roguelike
 
    
 ## Updates to specific checks to work with -ruin
