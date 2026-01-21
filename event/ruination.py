@@ -196,7 +196,7 @@ RUIN_ROOM_SETS = {
     'PhoenixCave': ['ms-wor-1554'],  # Need to make red exit point go to Esper World, probably.
     'FloatingContinent': ['ms-wob-1556'],
     'ImperialCamp': ['dc-1501'],
-    'FigaroCastle': ['ruin-figarocastle'],  # Remove entrance from South Figaro Cave; just have somewhere connect into the basement & require Engine Room before unlocking Castle.
+    'FigaroCastle': ['ruin-figarocastle', 75, 'dc-57'],  # World map entrances + Throne Room (check) + Engine Room/Cave (check)
 
     'ImperialCastle': [331],  # Extra hub room if needed
 }
