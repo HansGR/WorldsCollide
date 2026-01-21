@@ -49,14 +49,6 @@ class Transitions:
                 soo_flag = m[0] < min(shared_oneways[m[0]])
 
             if flags.count(True) > 0 and soo_flag:
-                # Skip if entrance pit's corresponding trap has no event code (event_length = 0)
-                # This happens for logical/forced connections like 2055 (Burning House exit)
-                if 4000 > m[1] >= 3000:
-                    entr_trap_id = m[1] - 1000
-                    if entr_trap_id in event_data and event_data[entr_trap_id][1] == 0:
-                        if self.verbose:
-                            print(f'Skipping transition {m[0]} -> {m[1]}: entrance trap {entr_trap_id} has no event code')
-                        continue
                 if self.verbose:
                     print('Making new transition: ', m[0], m[1])
                 new_trans = Transition(m[0], m[1], rom, exit_data, event_data)
