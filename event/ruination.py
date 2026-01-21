@@ -1316,10 +1316,16 @@ class ruination_map():
             for i, b in enumerate(self.branch_checks):
                 print('\t', i, ': ', b)
 
-        # Add rooms to the branches
+        # Add rooms to the branches (skip rooms that already exist in ANY branch)
+        all_existing_rooms = set()
+        for branch in self.branches:
+            all_existing_rooms.update(branch.original_room_ids)
+
         for i, branch in enumerate(self.branches):
             for room in branch_rooms[i]:
-                branch.add_room(room)
+                if room not in all_existing_rooms:
+                    branch.add_room(room)
+                    all_existing_rooms.add(room)
 
     def apply_key(self, key):
         # Apply a key in all branches
