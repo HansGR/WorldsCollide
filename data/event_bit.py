@@ -226,6 +226,7 @@ UNLOCKED_FINAL_KEFKA = 0x094 # custom
 
 LUMP_OF_METAL_CHESTS = 0x187 # set after lump of metal chest in cyan's dream.  Deconflicted from siegfried.
 FOUGHT_SIEGFRIED = 0x188  # DR custom, set after siegfried chest in PT
+VECTOR_FULL_HEAL_USED = 0x149  # DR custom, set after using full heal in Vector once
 VELDT_WORLD_MUSIC = 0x1bb
 VELDT_REWARD_OBTAINED = 0x1bc # custom
 DISABLE_SPRINT = 0x1c1

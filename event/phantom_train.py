@@ -282,7 +282,7 @@ class PhantomTrain(Event):
         src = [
             field.EntityAct(field_entity.PARTY0, True, field_entity.Move(direction.UP, 3) )
         ]
-        if not self.DOOR_RANDOMIZE:
+        if not self.DOOR_RANDOMIZE and not self.RUINATION_MODE:
             # Move the "Invoke Phantom Train Battle" to the smokestack in Door Rando.
             src += [
                 field.BranchIfEventBitClear(event_bit.DEFEATED_PHANTOM_TRAIN, "BOARD_TRAIN"),
@@ -387,7 +387,7 @@ class PhantomTrain(Event):
 
         space = Reserve(0xbb5bc, 0xbb5ef, "phantom train escaping ghosts face ghosts", field.NOP())
         src = [field.EntityAct(field_entity.PARTY0, True, field_entity.Turn(direction.RIGHT) ) ]
-        if self.DOOR_RANDOMIZE:
+        if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
             # Initialize chasing ghost
             src += [field.CreateEntity(0x10), field.RefreshEntities(), field.ShowEntity(0x10)]
         src += [field.Branch(space.end_address + 1)]  # skip nops
