@@ -40,8 +40,8 @@ ROOM_REWARD = {
     537: {"Phoenix Cave": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Phoenix Cave (interior 1st room).  For outside platform: 'branch-pc'.  Need to modify exit: warp to esper world?
 
     # EDGAR
-    75: {"Figaro Castle WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle Throne Room
-    'dc-57': {"Figaro Castle WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle engine room (beginning of Cave).  Engine Room is 94; Control Room is 86.
+    'ruin-figarocastle': {"Figaro Castle WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM],
+                          "Figaro Castle WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle Throne Room + Engine Room checks
     532: {"Ancient Castle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Ancient Castle (dragon room).  AC starts at 520 or 'root-ac'.
 
     # SABIN
@@ -196,7 +196,7 @@ RUIN_ROOM_SETS = {
     'PhoenixCave': ['ms-wor-1554'],  # Need to make red exit point go to Esper World, probably.
     'FloatingContinent': ['ms-wob-1556'],
     'ImperialCamp': ['dc-1501'],
-    'FigaroCastle': ['ruin-figarocastle', 75, 'dc-57'],  # World map entrances + Throne Room (check) + Engine Room/Cave (check)
+    'FigaroCastle': ['ruin-figarocastle'],  # Figaro Castle world map entrances
 
     'ImperialCastle': [331],  # Extra hub room if needed
 }
