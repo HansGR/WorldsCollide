@@ -309,9 +309,9 @@ class RuinationBranch(Network):
         for room_id in self.check_rooms:
             room = self.rooms.get_room(room_id)
             if element_type == 0:
-                conns.update(room.doors)
+                conns.update([d for d in room.doors if d not in self.protected])
             elif element_type == 1:
-                conns.update(room.pits)
+                conns.update([p for p in room.pits if p not in self.protected])
         return conns
 
     def get_all_unconnected_entrances(self, element_type, currently_used):
@@ -767,9 +767,9 @@ class RuinationBranch(Network):
                     local_door_count += len(node.doors)
                     local_trap_count += len(node.traps)
                     if this_type == 1 and (local_door_count + local_trap_count) > 1:
-                        available_conns.update(node.pits)
+                        available_conns.update([p for p in node.pits if p not in self.protected])
                     elif this_type == 0 and (local_door_count + local_trap_count) > 2:
-                        available_conns.update(node.doors)
+                        available_conns.update([d for d in node.doors if d not in self.protected])
 
             # Strategy C: All unconnected rooms (more permissive - includes dead ends)
             if len(available_conns) == 0:
