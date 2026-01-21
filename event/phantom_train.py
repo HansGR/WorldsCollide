@@ -455,8 +455,12 @@ class PhantomTrain(Event):
         FILLING_MEAL_PRICE = 500
         CHEFS_SPECIAL_PRICE = 2000
 
-        # Dialog ID for the menu
+        # Dialog IDs
         MENU_DIALOG_ID = 653
+        NOT_ENOUGH_GP_DIALOG = 654
+        CHEAP_MEAL_DIALOG = 655
+        FILLING_MEAL_DIALOG = 656
+        CHEFS_SPECIAL_DIALOG = 657
 
         # Party members
         PARTY = [field_entity.PARTY0, field_entity.PARTY1, field_entity.PARTY2, field_entity.PARTY3]
@@ -473,77 +477,40 @@ class PhantomTrain(Event):
             f"<choice> Filling Meal ({FILLING_MEAL_PRICE} GP)<line>"
             f"<choice> Chef's Special ({CHEFS_SPECIAL_PRICE} GP)<end>")
 
-        # Result messages
-        NOT_ENOUGH_GP_DIALOG = 654
+        # Set common dialog texts
         self.dialogs.set_text(NOT_ENOUGH_GP_DIALOG, "You don't have enough GP!<end>")
-
-        CHEAP_MEAL_HP_DIALOG = 655
-        self.dialogs.set_text(CHEAP_MEAL_HP_DIALOG, "HP restored!<end>")
-
-        CHEAP_MEAL_MP_DIALOG = 656
-        self.dialogs.set_text(CHEAP_MEAL_MP_DIALOG, "MP restored!<end>")
-
-        CHEAP_MEAL_STATUS_DIALOG = 657
-        self.dialogs.set_text(CHEAP_MEAL_STATUS_DIALOG, "Status ailments cured!<end>")
-
-        CHEAP_MEAL_POISON_DIALOG = 658
-        self.dialogs.set_text(CHEAP_MEAL_POISON_DIALOG, "The food was poisoned!<end>")
-
-        CHEAP_MEAL_IMP_DIALOG = 659
-        self.dialogs.set_text(CHEAP_MEAL_IMP_DIALOG, "The food turned you into Imps!<end>")
-
-        CHEAP_MEAL_ZOMBIE_DIALOG = 660
-        self.dialogs.set_text(CHEAP_MEAL_ZOMBIE_DIALOG, "The food was cursed!<end>")
-
-        CHEAP_MEAL_STONE_DIALOG = 661
-        self.dialogs.set_text(CHEAP_MEAL_STONE_DIALOG, "The food is petrifying!<end>")
-
-        CHEAP_MEAL_DRAIN_DIALOG = 662
-        self.dialogs.set_text(CHEAP_MEAL_DRAIN_DIALOG, "The food drained your strength!<end>")
-
-        FILLING_MEAL_DIALOG = 663
         self.dialogs.set_text(FILLING_MEAL_DIALOG, "HP restored!<end>")
-
-        FILLING_MEAL_SICK_DIALOG = 664
-        self.dialogs.set_text(FILLING_MEAL_SICK_DIALOG, "HP restored, but you feel a bit sick...<end>")
-
-        CHEFS_SPECIAL_DIALOG = 665
         self.dialogs.set_text(CHEFS_SPECIAL_DIALOG, "HP, MP, and status restored!<end>")
 
         # Randomly pick the cheap meal effect at compile time (same as recovery springs, minus full heal)
-        CHEAP_MEAL_EFFECTS = [
-            "RECOVER_HP",
-            "RECOVER_MP",
-            "RECOVER_STATUS",
-            "POISON",
-            "IMP",
-            "ZOMBIE",
-            "STONE",
-            "REDUCE_TO_1_HP",
-        ]
-        cheap_meal_effect = rng.choice(CHEAP_MEAL_EFFECTS)
+        CHEAP_MEAL_EFFECTS = {
+            "RECOVER_HP": ("HP restored!<end>", field.FlashColor.WHITE),
+            "RECOVER_MP": ("MP restored!<end>", field.FlashColor.BLUE),
+            "RECOVER_STATUS": ("Status ailments cured!<end>", field.FlashColor.WHITE),
+            "POISON": ("The food was poisoned!<end>", field.FlashColor.GREEN),
+            "IMP": ("The food turned you into Imps!<end>", field.FlashColor.GREEN),
+            "ZOMBIE": ("The food was cursed!<end>", field.FlashColor.GREEN),
+            "STONE": ("The food is petrifying!<end>", field.FlashColor.RED),
+            "REDUCE_TO_1_HP": ("The food drained your strength!<end>", field.FlashColor.RED),
+        }
+        cheap_meal_effect = rng.choice(list(CHEAP_MEAL_EFFECTS.keys()))
+        cheap_meal_message, flash_color = CHEAP_MEAL_EFFECTS[cheap_meal_effect]
+        self.dialogs.set_text(CHEAP_MEAL_DIALOG, cheap_meal_message)
 
         # Build the cheap meal effect instructions
         cheap_meal_instructions = []
-        cheap_meal_dialog = None
 
         if cheap_meal_effect == "RECOVER_HP":
             for p in PARTY:
                 cheap_meal_instructions.append(field.RestoreHp(p, 0x7f))
-            cheap_meal_dialog = CHEAP_MEAL_HP_DIALOG
-            flash_color = field.FlashColor.WHITE
 
         elif cheap_meal_effect == "RECOVER_MP":
             for p in PARTY:
                 cheap_meal_instructions.append(field.RestoreMp(p, 0x7f))
-            cheap_meal_dialog = CHEAP_MEAL_MP_DIALOG
-            flash_color = field.FlashColor.BLUE
 
         elif cheap_meal_effect == "RECOVER_STATUS":
             for p in PARTY:
                 cheap_meal_instructions.append(field.RemoveStatusEffects(p, HEAL_STATUS))
-            cheap_meal_dialog = CHEAP_MEAL_STATUS_DIALOG
-            flash_color = field.FlashColor.WHITE
 
         elif cheap_meal_effect == "POISON":
             cheap_meal_instructions.append(field.AddStatusEffects(field_entity.PARTY0, field.Status.POISON))
@@ -558,8 +525,6 @@ class PhantomTrain(Event):
                 field.AddStatusEffects(field_entity.PARTY3, field.Status.POISON),
                 "SKIP_P3_POISON",
             ])
-            cheap_meal_dialog = CHEAP_MEAL_POISON_DIALOG
-            flash_color = field.FlashColor.GREEN
 
         elif cheap_meal_effect == "IMP":
             cheap_meal_instructions.append(field.AddStatusEffects(field_entity.PARTY0, field.Status.IMP))
@@ -574,8 +539,6 @@ class PhantomTrain(Event):
                 field.AddStatusEffects(field_entity.PARTY3, field.Status.IMP),
                 "SKIP_P3_IMP",
             ])
-            cheap_meal_dialog = CHEAP_MEAL_IMP_DIALOG
-            flash_color = field.FlashColor.GREEN
 
         elif cheap_meal_effect == "ZOMBIE":
             cheap_meal_instructions.append(field.AddStatusEffects(field_entity.PARTY0, field.Status.ZOMBIE))
@@ -590,8 +553,6 @@ class PhantomTrain(Event):
                 field.AddStatusEffects(field_entity.PARTY3, field.Status.ZOMBIE),
                 "SKIP_P3_ZOMBIE",
             ])
-            cheap_meal_dialog = CHEAP_MEAL_ZOMBIE_DIALOG
-            flash_color = field.FlashColor.GREEN
 
         elif cheap_meal_effect == "STONE":
             cheap_meal_instructions.append(field.AddStatusEffects(field_entity.PARTY0, field.Status.PETRIFY))
@@ -606,31 +567,31 @@ class PhantomTrain(Event):
                 field.AddStatusEffects(field_entity.PARTY3, field.Status.PETRIFY),
                 "SKIP_P3_STONE",
             ])
-            cheap_meal_dialog = CHEAP_MEAL_STONE_DIALOG
-            flash_color = field.FlashColor.RED
 
         elif cheap_meal_effect == "REDUCE_TO_1_HP":
             # Subtract 2^14 HP (16384), which reduces to 1 HP minimum
             for p in PARTY:
                 cheap_meal_instructions.append(field.RestoreHp(p, 0x80 | 0x0e))
-            cheap_meal_dialog = CHEAP_MEAL_DRAIN_DIALOG
-            flash_color = field.FlashColor.RED
+
+        # Build shared "not enough money" event first
+        not_enough_money_src = [
+            field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+            field.Dialog(NOT_ENOUGH_GP_DIALOG),
+            field.FreeMovement(),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, not_enough_money_src, "ruination restaurant not enough money")
+        not_enough_money_addr = space.start_address
 
         # Build CHEAP MEAL event code
         cheap_meal_src = [
             field.RemoveGP(CHEAP_MEAL_PRICE),
-            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "CHEAP_NO_MONEY"),
+            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, not_enough_money_addr),
             field.FlashScreen(flash_color),
             field.PlaySoundEffect(233),
             field.PauseUnits(30),
             *cheap_meal_instructions,
-            field.Dialog(cheap_meal_dialog),
-            field.FreeMovement(),
-            field.Return(),
-
-            "CHEAP_NO_MONEY",
-            field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-            field.Dialog(NOT_ENOUGH_GP_DIALOG),
+            field.Dialog(CHEAP_MEAL_DIALOG),
             field.FreeMovement(),
             field.Return(),
         ]
@@ -640,7 +601,7 @@ class PhantomTrain(Event):
         # Build FILLING MEAL event code (full HP, 1/4 chance poison or imp per character)
         filling_meal_src = [
             field.RemoveGP(FILLING_MEAL_PRICE),
-            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "FILLING_NO_MONEY"),
+            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, not_enough_money_addr),
             field.FlashScreen(field.FlashColor.WHITE),
             field.PlaySoundEffect(233),
             field.PauseUnits(30),
@@ -687,15 +648,7 @@ class PhantomTrain(Event):
             field.AddStatusEffects(field_entity.PARTY3, field.Status.IMP),
             "SKIP_P3_FILLING",
 
-            # Check if anyone got sick (check if any status was applied)
-            # We'll just show different message if not skipped all - simplified to always show generic message
             field.Dialog(FILLING_MEAL_DIALOG),
-            field.FreeMovement(),
-            field.Return(),
-
-            "FILLING_NO_MONEY",
-            field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-            field.Dialog(NOT_ENOUGH_GP_DIALOG),
             field.FreeMovement(),
             field.Return(),
         ]
@@ -707,18 +660,12 @@ class PhantomTrain(Event):
         FULL_HEAL_SUBROUTINE = 0xCACFBD
         chefs_special_src = [
             field.RemoveGP(CHEFS_SPECIAL_PRICE),
-            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "CHEF_NO_MONEY"),
+            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, not_enough_money_addr),
             field.FlashScreen(field.FlashColor.WHITE),
             field.PlaySoundEffect(233),
             field.PauseUnits(30),
             field.Call(FULL_HEAL_SUBROUTINE),
             field.Dialog(CHEFS_SPECIAL_DIALOG),
-            field.FreeMovement(),
-            field.Return(),
-
-            "CHEF_NO_MONEY",
-            field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-            field.Dialog(NOT_ENOUGH_GP_DIALOG),
             field.FreeMovement(),
             field.Return(),
         ]
