@@ -471,11 +471,11 @@ class PhantomTrain(Event):
                        field.Status.DARKNESS)
 
         # Set the dialog text for the 3-choice menu
+        # f"Care for something?<line>"
         self.dialogs.set_text(MENU_DIALOG_ID,
-            f"Care for something?<line>"
             f"<choice> Cheap Meal ({CHEAP_MEAL_PRICE} GP)<line>"
             f"<choice> Filling Meal ({FILLING_MEAL_PRICE} GP)<line>"
-            f"<choice> Chef's Special ({CHEFS_SPECIAL_PRICE} GP)<end>")
+            f"<choice> Chef's Special ({CHEFS_SPECIAL_PRICE} GP)<line><choice> No, thanks<end>")
 
         # Set common dialog texts
         # self.dialogs.set_text(NOT_ENOUGH_GP_DIALOG, "You don't have enough GP!<end>")
@@ -574,9 +574,11 @@ class PhantomTrain(Event):
                 cheap_meal_instructions.append(field.RestoreHp(p, 0x80 | 0x0e))
 
         # Build shared "not enough money" event first
+        waiter_leaves_addr = 0xbb03d
         not_enough_money_src = [
             field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
             field.Dialog(NOT_ENOUGH_GP_DIALOG),
+            field.Call(waiter_leaves_addr),
             field.FreeMovement(),
             field.Return(),
         ]
@@ -592,6 +594,7 @@ class PhantomTrain(Event):
             field.PauseUnits(30),
             *cheap_meal_instructions,
             field.Dialog(CHEAP_MEAL_DIALOG),
+            field.Call(waiter_leaves_addr),
             field.FreeMovement(),
             field.Return(),
         ]
@@ -649,6 +652,7 @@ class PhantomTrain(Event):
             "SKIP_P3_FILLING",
 
             field.Dialog(FILLING_MEAL_DIALOG),
+            field.Call(waiter_leaves_addr),
             field.FreeMovement(),
             field.Return(),
         ]
@@ -666,6 +670,7 @@ class PhantomTrain(Event):
             field.PauseUnits(30),
             field.Call(FULL_HEAL_SUBROUTINE),
             field.Dialog(CHEFS_SPECIAL_DIALOG),
+            field.Call(waiter_leaves_addr),
             field.FreeMovement(),
             field.Return(),
         ]
@@ -674,14 +679,26 @@ class PhantomTrain(Event):
 
         # Now patch the original restaurant dialog (at 0xBB032) to use our new menu
         # Original: CB/B032 displays dialog 0x028C and then branches at CB/B035
-        # We need to replace this with our 3-choice dialog and branch
-        space = Reserve(0xbb032, 0xbb03c, "phantom train ruination restaurant menu", field.NOP())
-        space.write(
+        # We need to replace this with our 4-choice dialog and branch
+        new_menu_src = [
             field.DialogBranch(MENU_DIALOG_ID,
                                dest1=cheap_meal_addr,
                                dest2=filling_meal_addr,
-                               dest3=chefs_special_addr),
+                               dest3=chefs_special_addr,
+                               dest4=waiter_leaves_addr),
+            field.Return()
+        ]
+        space = Write(Bank.CB, new_menu_src, "phantom train ruination restaurant menu")
+        new_menu_addr = space.start_address
+        
+        space = Reserve(0xbb032, 0xbb03b, "phantom train ruination restaurant redirect", field.NOP())
+        space.write(
+            field.DialogBranch(0x28C,
+                               dest1=new_menu_addr,
+                               dest2=waiter_leaves_addr)
         )
+        
+        
 
     def ziegfried_mod(self):
         space = Reserve(0xbb809, 0xbb862, "phantom train before ziegfried appears", field.NOP())
