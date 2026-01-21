@@ -626,7 +626,10 @@ class Maps():
             for m in self.doors.map[0]:
                 ma = [a for a in m]
                 ma.sort()
-                print('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + exit_data[ma[0]][1] + '<-->' + exit_data[ma[1]][1] + ')')
+                # Use door_descr if available, otherwise try exit_data, otherwise show ID
+                desc0 = self.doors.door_descr.get(ma[0], exit_data.get(ma[0], [None, f'ID:{ma[0]}'])[1])
+                desc1 = self.doors.door_descr.get(ma[1], exit_data.get(ma[1], [None, f'ID:{ma[1]}'])[1])
+                print('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + desc0 + '<-->' + desc1 + ')')
             print('One-way connections:')
             for m in self.doors.map[1]:
                 print('\t', m[0], " -> ", m[1])
