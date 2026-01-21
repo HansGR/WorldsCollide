@@ -489,10 +489,10 @@ class Maps():
 
     def postprocess_door_map(self):
         # Postprocess the door map
-        import traceback
+        #import traceback
         print("=== postprocess_door_map() CALLED ===")
-        print("Call stack:")
-        traceback.print_stack(limit=5)
+        #print("Call stack:")
+        #traceback.print_stack(limit=5)
         print(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
         print(f"exit_data[360][0] BEFORE processing: {exit_data[360][0]}")
 

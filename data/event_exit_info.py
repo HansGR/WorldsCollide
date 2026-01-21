@@ -277,6 +277,7 @@ event_return_map = {
     1556: 0x006,  # 'Floating Continent entry as door' Blackjack
     1559: 0x000,  # 'Imperial Camp WoB west'
     1560: 0x075,  # 'Imperial Camp new west exit to world map'
+    1561: 0x000,  # 'Veldt shore to WoB Veldt'
 }
 
 
