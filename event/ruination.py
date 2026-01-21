@@ -40,8 +40,8 @@ ROOM_REWARD = {
     537: {"Phoenix Cave": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Phoenix Cave (interior 1st room).  For outside platform: 'branch-pc'.  Need to modify exit: warp to esper world?
 
     # EDGAR
-    75: {"Figaro Castle WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle Throne Room
-    'dc-57': {"Figaro Castle WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle engine room (beginning of Cave).  Engine Room is 94; Control Room is 86.
+    'ruin-figarocastle': {"Figaro Castle WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM],
+                          "Figaro Castle WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Figaro Castle Throne Room + Engine Room checks
     532: {"Ancient Castle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Ancient Castle (dragon room).  AC starts at 520 or 'root-ac'.
 
     # SABIN
@@ -196,7 +196,7 @@ RUIN_ROOM_SETS = {
     'PhoenixCave': ['ms-wor-1554'],  # Need to make red exit point go to Esper World, probably.
     'FloatingContinent': ['ms-wob-1556'],
     'ImperialCamp': ['dc-1501'],
-    'FigaroCastle': ['ruin-figarocastle'],  # Remove entrance from South Figaro Cave; just have somewhere connect into the basement & require Engine Room before unlocking Castle.
+    'FigaroCastle': ['ruin-figarocastle'],  # Figaro Castle world map entrances
 
     'ImperialCastle': [331],  # Extra hub room if needed
 }
@@ -1316,10 +1316,16 @@ class ruination_map():
             for i, b in enumerate(self.branch_checks):
                 print('\t', i, ': ', b)
 
-        # Add rooms to the branches
+        # Add rooms to the branches (skip rooms that already exist in ANY branch)
+        all_existing_rooms = set()
+        for branch in self.branches:
+            all_existing_rooms.update(branch.original_room_ids)
+
         for i, branch in enumerate(self.branches):
             for room in branch_rooms[i]:
-                branch.add_room(room)
+                if room not in all_existing_rooms:
+                    branch.add_room(room)
+                    all_existing_rooms.add(room)
 
     def apply_key(self, key):
         # Apply a key in all branches
