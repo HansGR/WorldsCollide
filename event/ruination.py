@@ -2321,7 +2321,7 @@ FREE_BED_LOCATIONS = [
 ]
 
 
-def modify_free_bed_heals(maps, rom, args):
+def modify_free_bed_heals(maps, dialogs, args):
     """
     Modifies existing free bed heal events for ruination mode.
 
@@ -2346,9 +2346,25 @@ def modify_free_bed_heals(maps, rom, args):
                    field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
                    field.Status.DARKNESS)
 
+    free_bed_dialog_id = 443  # "Take a nap?" at Gau's Dad's House
+    free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
+    dialogs.set_text(free_bed_dialog_id, free_bed_dialog)
+
+    ambushed_dialog_id = 448  # Repurpose unused Dry Goods Merchant dialog
+    ambushed_dialog = "           Ambushed!"
+    dialogs.set_text(ambushed_dialog_id, ambushed_dialog)
+
     # Create the new bed heal event code
     # 5/8 chance to skip attack (so 3/8 chance of attack)
     src = [
+        # Include a trigger so this can only be done once per map load
+        field.ReturnIfEventBitSet(event_bit.multipurpose_map(0)),
+        field.SetEventBit(event_bit.multipurpose_map(0)),
+
+        # Ask if player wants to sleep for the night
+        field.DialogBranch(free_bed_dialog_id, dest1="CONTINUE", dest2="RETURN"),
+        "CONTINUE",
+
         # Fade out current song
         field.FadeOutSong(48),
         field.PauseUnits(60),
@@ -2359,6 +2375,7 @@ def modify_free_bed_heals(maps, rom, args):
         BranchChance(0.625, "HEAL"),
 
         # Monster attack! (back attack)
+        field.Dialog(ambushed_dialog_id),
         *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
 
         "HEAL",
@@ -2383,6 +2400,7 @@ def modify_free_bed_heals(maps, rom, args):
         field.FadeInPreviousSong(32),
         field.FadeInScreen(8),
 
+        "RETURN",
         field.Return(),
     ]
 
