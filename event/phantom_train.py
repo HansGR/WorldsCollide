@@ -457,7 +457,7 @@ class PhantomTrain(Event):
 
         # Dialog IDs
         MENU_DIALOG_ID = 653
-        NOT_ENOUGH_GP_DIALOG = 654
+        NOT_ENOUGH_GP_DIALOG = 2748
         CHEAP_MEAL_DIALOG = 655
         FILLING_MEAL_DIALOG = 656
         CHEFS_SPECIAL_DIALOG = 657
@@ -478,7 +478,7 @@ class PhantomTrain(Event):
             f"<choice> Chef's Special ({CHEFS_SPECIAL_PRICE} GP)<end>")
 
         # Set common dialog texts
-        self.dialogs.set_text(NOT_ENOUGH_GP_DIALOG, "You don't have enough GP!<end>")
+        # self.dialogs.set_text(NOT_ENOUGH_GP_DIALOG, "You don't have enough GP!<end>")
         self.dialogs.set_text(FILLING_MEAL_DIALOG, "HP restored!<end>")
         self.dialogs.set_text(CHEFS_SPECIAL_DIALOG, "HP, MP, and status restored!<end>")
 
@@ -490,7 +490,7 @@ class PhantomTrain(Event):
             "POISON": ("The food was poisoned!<end>", field.FlashColor.GREEN),
             "IMP": ("The food turned you into Imps!<end>", field.FlashColor.GREEN),
             "ZOMBIE": ("The food was cursed!<end>", field.FlashColor.GREEN),
-            "STONE": ("The food is petrifying!<end>", field.FlashColor.RED),
+            "STONE": ("The food is petrifying!<end>", field.FlashColor.WHITE),
             "REDUCE_TO_1_HP": ("The food drained your strength!<end>", field.FlashColor.RED),
         }
         cheap_meal_effect = rng.choice(list(CHEAP_MEAL_EFFECTS.keys()))
