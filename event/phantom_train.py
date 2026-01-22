@@ -484,14 +484,14 @@ class PhantomTrain(Event):
 
         # Randomly pick the cheap meal effect at compile time (same as recovery springs, minus full heal)
         CHEAP_MEAL_EFFECTS = {
-            "RECOVER_HP": ("HP restored!<end>", field.FlashColor.WHITE),
-            "RECOVER_MP": ("MP restored!<end>", field.FlashColor.BLUE),
-            "RECOVER_STATUS": ("Status ailments cured!<end>", field.FlashColor.WHITE),
-            "POISON": ("The food was poisoned!<end>", field.FlashColor.GREEN),
-            "IMP": ("The food turned you into Imps!<end>", field.FlashColor.GREEN),
-            "ZOMBIE": ("The food was cursed!<end>", field.FlashColor.GREEN),
-            "STONE": ("The food is petrifying!<end>", field.FlashColor.WHITE),
-            "REDUCE_TO_1_HP": ("The food drained your strength!<end>", field.FlashColor.RED),
+            "RECOVER_HP": ("HP restored!<end>", field.Flash.WHITE),
+            "RECOVER_MP": ("MP restored!<end>", field.Flash.BLUE),
+            "RECOVER_STATUS": ("Status ailments cured!<end>", field.Flash.WHITE),
+            "POISON": ("The food was poisoned!<end>", field.Flash.GREEN),
+            "IMP": ("The food turned you into Imps!<end>", field.Flash.GREEN),
+            "ZOMBIE": ("The food was cursed!<end>", field.Flash.GREEN),
+            "STONE": ("The food is petrifying!<end>", field.Flash.WHITE),
+            "REDUCE_TO_1_HP": ("The food drained your strength!<end>", field.Flash.RED),
         }
         cheap_meal_effect = rng.choice(list(CHEAP_MEAL_EFFECTS.keys()))
         cheap_meal_message, flash_color = CHEAP_MEAL_EFFECTS[cheap_meal_effect]
@@ -605,7 +605,7 @@ class PhantomTrain(Event):
         filling_meal_src = [
             field.RemoveGP(FILLING_MEAL_PRICE),
             field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, not_enough_money_addr),
-            field.FlashScreen(field.FlashColor.WHITE),
+            field.FlashScreen(field.Flash.WHITE),
             field.PlaySoundEffect(233),
             field.PauseUnits(30),
             # Restore HP
@@ -665,7 +665,7 @@ class PhantomTrain(Event):
         chefs_special_src = [
             field.RemoveGP(CHEFS_SPECIAL_PRICE),
             field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, not_enough_money_addr),
-            field.FlashScreen(field.FlashColor.WHITE),
+            field.FlashScreen(field.Flash.WHITE),
             field.PlaySoundEffect(233),
             field.PauseUnits(30),
             field.Call(FULL_HEAL_SUBROUTINE),
@@ -691,11 +691,13 @@ class PhantomTrain(Event):
         space = Write(Bank.CB, new_menu_src, "phantom train ruination restaurant menu")
         new_menu_addr = space.start_address
         
-        space = Reserve(0xbb032, 0xbb03b, "phantom train ruination restaurant redirect", field.NOP())
+        space = Reserve(0xbb032, 0xbb03c, "phantom train ruination restaurant redirect", field.NOP())
         space.write(
             field.DialogBranch(0x28C,
                                dest1=new_menu_addr,
-                               dest2=waiter_leaves_addr)
+                               dest2=waiter_leaves_addr,
+                               top_of_screen=False,
+                               wait_for_input=True)
         )
         
         

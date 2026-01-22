@@ -283,7 +283,7 @@ class Events():
         disable_chocobo_stables(self.rom, self.dialogs, self.args)
 
         # Modify existing free bed heals (HP-only heal with 3/8 monster attack chance)
-        modify_free_bed_heals(self.maps, self.rom, self.args)
+        modify_free_bed_heals(self.maps, self.dialogs, self.args)
 
         # Modify recovery springs with random effects
         modify_recovery_springs(self.maps, self.rom, self.dialogs, self.args)

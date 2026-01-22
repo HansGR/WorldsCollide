@@ -2332,7 +2332,7 @@ def modify_free_bed_heals(maps, dialogs, args):
 
     Args:
         maps: The Maps object to modify event tiles
-        rom: The ROM object for debug output
+        dialogs: The Dialogs object to modify dialog for these events
         args: Command line arguments (for debug flag)
     """
     from instruction.field.custom import BranchChance
