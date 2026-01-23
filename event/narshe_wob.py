@@ -284,7 +284,22 @@ class NarsheWOB(Event):
         ghost_npc.direction = direction.LEFT
 
         # (4) Modify room aesthetics
-        # make it a bit darker?
-        # add torch flicker to the lights?
-        # Change the music to "esper world" or "world of ruin"?
+        # Change the music to "esper world" (song = 33)
+        school_properties = self.maps.properties[school_map_id]
+        school_properties.song = 33
+
+        # Try palette animation for torch flicker effect
+        # Value 0x7 is used by torch/fire maps (maps 136, 156, 373)
+        # This may or may not work depending on palette color compatibility
+        school_properties.paletteanimationindex = 0x7
+
+        # Make it darker via entrance event with dark tint
+        # Create entrance event that applies dark tint
+        entrance_src = [
+            # Apply a dark tint to the background for a dimmer atmosphere
+            field.TintBackground(field.Tint.NIGHT),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, entrance_src, "Narshe school ruination entrance event")
+        self.maps.set_entrance_event(school_map_id, space.start_address - EVENT_CODE_START)
 
