@@ -181,7 +181,7 @@ room_data = {
     'ruin-figarocastle': [[1156, 1157, 1158, 1159], [], [], [], {}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room key)
     'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff
     'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
-    'ruin-baren': [ [1561], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
+    'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
     'ruin-narshe': [[1143, 1146, 140, 143], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves
     'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608

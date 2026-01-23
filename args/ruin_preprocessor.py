@@ -12,7 +12,7 @@ _preprocessing_done = False
 
 # Default flags for -ruin mode, organized by category
 RUIN_DEFAULT_FLAGS = {
-    'gpm': ['-gpm', '0'],
+    'settings': ['-cg'],
     'objectives': ['-oa', '2.2.2.2.6.6.4.9.9'],
 
     # Party flags
@@ -29,7 +29,7 @@ RUIN_DEFAULT_FLAGS = {
 
     # Battle flags
     'battle': [
-        '-xpm', '3', '-mpm', '5', '-nxppd', '-lsced', '2', '-hmced', '2',
+        '-xpm', '3', '-mpm', '5', '-gpm', '0', '-nxppd', '-lsced', '2', '-hmced', '2',
         '-xgced', '2', '-ase', '2', '-msl', '40', '-sed', '-bbs',
         '-drloc', 'shuffle', '-stloc', 'mix', '-be', '-bnu', '-res',
         '-fer', '0', '-escr', '100', '-dgne', '-wnz', '-mmnu', '-cmd'

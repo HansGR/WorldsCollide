@@ -1,6 +1,6 @@
 from event.event import *
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
-from data.rooms import room_data, ruination_dont_force
+from data.rooms import room_data, ruination_dont_force, shared_exits
 from data.walks import *
 import random
 
@@ -1653,6 +1653,17 @@ class ruination_map():
             map[0].extend([m for m in branch.map[0]])
             map[1].extend([m for m in branch.map[1]])
 
+        # Append shared doors to the map
+        for m in map[0]:
+            if m[0] in shared_exits.keys():
+                for se in shared_exits[m[0]]:
+                    # Send shared exits to the same destination
+                    map[0].append([se, m[1]])
+            if m[1] in shared_exits.keys():
+                for se in shared_exits[m[1]]:
+                    # Send shared exits to the same destination
+                    map[0].append([m[0], se])
+
         # Add mapping for connections to KT
         traps_to_kt = [2077, 2078, 2079]
         pits_into_kt = [t + 1000 for t in traps_to_kt]
@@ -2591,6 +2602,9 @@ def modify_recovery_springs(maps, rom, dialogs, args):
 
         # Build the full event code
         src = [
+            # Require pressing the "A" button to activate
+            field.BranchIfEventBitClear(event_bit=event_bit.PRESSING_A, destination="RETURN"),
+
             # Ask player if they want to drink
             field.DialogBranch(drink_dialog_id, "DRINK", "RETURN"),
 

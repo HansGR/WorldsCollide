@@ -37,11 +37,10 @@ class BurningHouse(Event):
         )
 
     def mod(self):
-        if self.args.character_gating:
-            self.add_gating_condition()
-
         if self.args.ruination_mode:
             self.ruination_inn_mod()
+        elif self.args.character_gating:
+            self.add_gating_condition()
 
         self.enter_burning_house_mod()
         self.flame_eater_mod()
@@ -102,7 +101,7 @@ class BurningHouse(Event):
         space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
         space.add_label("STRANGERS_PRICE", STRANGERS_PRICE_PATH)
         space.write(
-            field.BranchIfEventBitClear(event_bit.character_recruited(self.characters.STRAGO), "STRANGERS_PRICE"),
+            field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGERS_PRICE"),
         )
 
         # Update dialog with original flavor, new price

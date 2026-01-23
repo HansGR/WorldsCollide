@@ -41,7 +41,7 @@ class ImperialBase(Event):
         SOLDIER_BATTLE_EVENT = 0xb2583
 
         space = Reserve(0xb25d6, 0xb25f8, "imperial base entrance event conditions", field.NOP())
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
             space.write(
                 #field.BranchIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate()), SOLDIERS_BATTLE_ON_TOUCH),
                 field.ReturnIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate())),
@@ -49,7 +49,7 @@ class ImperialBase(Event):
             if self.args.ruination_mode:
                 src = [
                     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
-                                      fade_in=True, default_music=True, entrance_event=True),
+                                      fade_in=True, default_music=True, entrance_event=True, direction=direction.DOWN),
                     field.Return()
                 ]
                 space = Reserve(0xb25fd, 0xb2605, "imperial base thrown out", field.NOP())

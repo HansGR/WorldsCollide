@@ -190,24 +190,26 @@ class BarenFalls(Event):
         )
 
     def ruination_mod(self):
+        pass
+
         # Add the exit event(s) that go to switchyard tile for "door" exit 1561
-        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
-        event_id = 1561
-        switchyard_src = [
-            field.FadeLoadMap(map_id=0x0, direction=direction.DOWN, default_music=True, x=192, y=105, fade_in=True, airship=False),
-            field.Return(),
-        ]
-        AddSwitchyardEvent(event_id=event_id, maps=self.maps, src=switchyard_src)
-
-        src = [
-            GoToSwitchyard(event_id, map='field'),
-            field.Return()
-        ]
-        space = Write(Bank.CB, src, description='Veldt exit to world map id=1561')
-
-        # Update event_exit_info[1561] with this information
-        from data.event_exit_info import event_exit_info
-        event_exit_info[event_id][0:3] = [space.start_address, 7, 1]
+        # from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+        # event_id = 1561
+        # switchyard_src = [
+        #     field.FadeLoadMap(map_id=0x0, direction=direction.DOWN, default_music=True, x=192, y=105, fade_in=True, airship=False),
+        #     field.Return(),
+        # ]
+        # AddSwitchyardEvent(event_id=event_id, maps=self.maps, src=switchyard_src)
+        #
+        # src = [
+        #     GoToSwitchyard(event_id, map='field'),
+        #     field.Return()
+        # ]
+        # space = Write(Bank.CB, src, description='Veldt exit to world map id=1561')
+        #
+        # # Update event_exit_info[1561] with this information
+        # from data.event_exit_info import event_exit_info
+        # event_exit_info[event_id][0:3] = [space.start_address, 7, 1]
 
 
 
