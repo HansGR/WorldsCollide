@@ -431,6 +431,32 @@ class FlashScreen(_Instruction):
     def __str__(self):
         return super().__str__(self.args[0])
 
+class IncreaseColor(_Instruction):
+    """Increase color components by the specified intensity.
+
+    Used to create lighting effects like torch flicker.
+    color_component: byte specifying which colors to affect (e.g., 0x82 = blue, 0xEB = white)
+    intensity: how much to increase (1-15 typical)
+    """
+    def __init__(self, color_component, intensity):
+        super().__init__(0x56, color_component, intensity)
+
+    def __str__(self):
+        return super().__str__(f"color={hex(self.args[0])}, intensity={self.args[1]}")
+
+class DecreaseColor(_Instruction):
+    """Decrease color components by the specified intensity.
+
+    Used to create lighting effects like torch flicker.
+    color_component: byte specifying which colors to affect (e.g., 0x82 = blue, 0xEB = white)
+    intensity: how much to decrease (1-15 typical)
+    """
+    def __init__(self, color_component, intensity):
+        super().__init__(0x57, color_component, intensity)
+
+    def __str__(self):
+        return super().__str__(f"color={hex(self.args[0])}, intensity={self.args[1]}")
+
 class MosaicScreen(_Instruction):
     def __init__(self, speed):
         super().__init__(0x62, speed)
