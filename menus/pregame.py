@@ -18,15 +18,16 @@ class PreGameMenu:
 
         if args.ruination_mode:
             # Ruination mode: create two menu versions (with/without "Load Saved Game")
-            # Menu without save: New Game, Flags, Config
+            # Menu without save: New Game, Config, Flags, Objectives
             text_positions_no_save = [
                 ("New Game", 0x798f),
-                ("Flags", 0x7a0f),
-                ("Config", 0x7a8f),
+                ("Config", 0x7a0f),
+                ("Flags", 0x7a8f),
+                ("Objectives", 0x7b0f),
             ]
 
             options_no_save = []
-            option_space = Allocate(Bank.C3, 41, "pregame options no save")
+            option_space = Allocate(Bank.C3, 46, "pregame options no save")
             for text_position in text_positions_no_save:
                 options_no_save.append(option_space.next_address)
                 option_space.write(
@@ -49,16 +50,16 @@ class PreGameMenu:
             space = Write(Bank.C3, src, "pregame draw options no save")
             self.draw_options_no_save = space.start_address
 
-            # Menu with save: New Game, Load Saved Game, Flags, Config
+            # Menu with save: New Game, Load Saved Game, Flags, Objectives
             text_positions_with_save = [
                 ("New Game", 0x798f),
                 ("Load Saved Game", 0x7a0f),
                 ("Flags", 0x7a8f),
-                ("Config", 0x7b0f),
+                ("Objectives", 0x7b0f),
             ]
 
             options_with_save = []
-            option_space = Allocate(Bank.C3, 46, "pregame options with save")
+            option_space = Allocate(Bank.C3, 50, "pregame options with save")
             for text_position in text_positions_with_save:
                 options_with_save.append(option_space.next_address)
                 option_space.write(
@@ -225,12 +226,21 @@ class PreGameMenu:
         config = space.start_address
 
         if args.ruination_mode:
-            # Ruination mode: create "Load Saved Game" handler
+            # Ruination mode: create "Load Saved Game" handler - directly loads slot 0
             src = [
                 asm.LDA(0xff, asm.IMM8),
                 asm.STA(0x0205, asm.ABS),       # not a new game
-                asm.LDA(0x20, asm.IMM8),        # a = initialize load menu command
-                asm.STA(0x27, asm.DIR),         # add initialize load menu to queue
+                asm.LDA(0x00, asm.IMM8),        # slot 0
+                asm.STA(0x66, asm.DIR),         # set save slot in $66
+                asm.JSR(0x18ac, asm.ABS),       # back up SRAM data
+                asm.LDA(0x66, asm.DIR),         # load save slot from $66
+                asm.STA(0x0224, asm.ABS),       # set last viewed file
+                asm.JSR(0x1566, asm.ABS),       # load save file
+                asm.JSR(0x6915, asm.ABS),       # move party info
+                asm.JSR(0x6989, asm.ABS),       # set SRAM party
+                asm.JSR(0x1595, asm.ABS),       # move timer data
+                asm.LDA(0xff, asm.IMM8),        # exit menu command
+                asm.STA(0x27, asm.DIR),         # add exit menu to queue
                 asm.LDA(self.common.FADE_OUT_COMMAND, asm.IMM8),
                 asm.STA(0x26, asm.DIR),         # add fade out pregame menu to queue
                 asm.RTS(),
@@ -238,21 +248,22 @@ class PreGameMenu:
             space = Write(Bank.C3, src, "pregame load saved game option clicked")
             load_saved_game = space.start_address
 
-            # Options table for no save: New Game, Flags, Config
+            # Options table for no save: New Game, Config, Flags, Objectives
             src = [
                 (new_game & 0xffff).to_bytes(2, "little"),
-                (self.invoke_flags & 0xffff).to_bytes(2, "little"),
                 (config & 0xffff).to_bytes(2, "little"),
+                (self.invoke_flags & 0xffff).to_bytes(2, "little"),
+                (self.invoke_objectives & 0xffff).to_bytes(2, "little"),
             ]
             space = Write(Bank.C3, src, "pregame option click table no save")
             options_table_no_save = space.start_address
 
-            # Options table for with save: New Game, Load Saved Game, Flags, Config
+            # Options table for with save: New Game, Load Saved Game, Flags, Objectives
             src = [
                 (new_game & 0xffff).to_bytes(2, "little"),
                 (load_saved_game & 0xffff).to_bytes(2, "little"),
                 (self.invoke_flags & 0xffff).to_bytes(2, "little"),
-                (config & 0xffff).to_bytes(2, "little"),
+                (self.invoke_objectives & 0xffff).to_bytes(2, "little"),
             ]
             space = Write(Bank.C3, src, "pregame option click table with save")
             options_table_with_save = space.start_address
@@ -278,6 +289,8 @@ class PreGameMenu:
                 # if in a scroll area, sustain it
                 asm.LDA(0x0200, asm.ABS),
                 asm.CMP(self.common.flags.MENU_NUMBER, asm.IMM8),
+                asm.BEQ("SUSTAIN_SCROLL_AREA"),
+                asm.CMP(self.common.objectives.MENU_NUMBER, asm.IMM8),
                 asm.BEQ("SUSTAIN_SCROLL_AREA"),
             ]
 
