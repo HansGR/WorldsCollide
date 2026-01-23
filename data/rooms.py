@@ -183,7 +183,7 @@ room_data = {
     'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
     'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
-    'ruin-narshe': [[1143, 1146, 140, 143], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves
+    'ruin-narshe': [[1143, 1146, 140, 143, 144], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves & school
     'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608
 
 
