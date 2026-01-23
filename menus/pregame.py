@@ -226,13 +226,20 @@ class PreGameMenu:
         config = space.start_address
 
         if args.ruination_mode:
-            # Ruination mode: create "Load Saved Game" handler - directly loads slot 1
+            # Ruination mode: create "Load Saved Game" handler - directly loads slot 0
             src = [
                 asm.LDA(0xff, asm.IMM8),
                 asm.STA(0x0205, asm.ABS),       # not a new game
-                asm.LDA(0x01, asm.IMM8),
-                asm.STA(0x021f, asm.ABS),       # set save slot to 1
-                asm.LDA(0xff, asm.IMM8),        # a = exit menu command
+                asm.LDA(0x00, asm.IMM8),        # slot 0
+                asm.STA(0x66, asm.DIR),         # set save slot in $66
+                asm.JSR(0x18ac, asm.ABS),       # back up SRAM data
+                asm.LDA(0x66, asm.DIR),         # load save slot from $66
+                asm.STA(0x0224, asm.ABS),       # set last viewed file
+                asm.JSR(0x1566, asm.ABS),       # load save file
+                asm.JSR(0x6915, asm.ABS),       # move party info
+                asm.JSR(0x6989, asm.ABS),       # set SRAM party
+                asm.JSR(0x1595, asm.ABS),       # move timer data
+                asm.LDA(0xff, asm.IMM8),        # exit menu command
                 asm.STA(0x27, asm.DIR),         # add exit menu to queue
                 asm.LDA(self.common.FADE_OUT_COMMAND, asm.IMM8),
                 asm.STA(0x26, asm.DIR),         # add fade out pregame menu to queue
