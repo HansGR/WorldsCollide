@@ -718,6 +718,18 @@ class Maps():
             # Patch exits if necessary
             used_exits = [m for m in self.door_map.keys()]
 
+            # Build used_events list for event_exit_info runtime update.
+            # Event tiles with None addresses in event_exit_info (switchyard tiles) need their
+            # addresses updated at runtime by finding the event at their map location.
+            #
+            # IMPORTANT: When Transitions creates an entrance EventExit for an event tile (1500-2000),
+            # it checks if the vanilla partner is also an event tile. If so, it uses the partner's
+            # event code via use_event_info=partner_id. This means the PARTNER's event_exit_info
+            # must have a valid address, not just the entrance itself.
+            #
+            # Connections are stored as [exit_id, entrance_id]. We must include partners for BOTH:
+            # - m[1] partners: when the entrance is an event tile (e.g., [1515, 1560] -> partner of 1560)
+            # - m[0] partners: when the exit is an event tile (e.g., [1560, 1515] -> partner of 1560)
             used_events = [m[0] for m in self.doors.map[1]] \
                           + [m[1] - 1000 for m in self.doors.map[1]] \
                           + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
