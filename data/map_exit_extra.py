@@ -1366,18 +1366,18 @@ exit_data = {
     1545: [1532,  "Phantom Train Locomotive interior exit"],
     1546: [78,  "Ebot's Rock exit to World Map WoR"],
     1547: [1240,  "Doma entrance from World Map WoB"],
-    1552: [1553,  "Zone Eater engulf as door"],
-    1553: [1552,  "Zone Eater exit as door"],
-    1554: [1555,  "Phoenix cave entrance as door"],
-    1555: [1554,  "Phoenix cave exit as door"],
-    1556: [1557,  "Floating Continent entrance as door"],
-    1557: [1556,  "Floating Continent exit as door"],
+    1552: [None,  "Zone Eater engulf as door"],  # None: no vanilla event code
+    1553: [None,  "Zone Eater exit as door"],  # None: partner 1552 has no vanilla event code
+    1554: [None,  "Phoenix cave entrance as door"],  # None: no vanilla event code
+    1555: [None,  "Phoenix cave exit as door"],  # None: no vanilla event code
+    1556: [None,  "Floating Continent entrance as door"],  # None: no vanilla event code
+    1557: [None,  "Floating Continent exit as door"],  # None: no vanilla event code
     1558: [1082, "Figaro Castle prison to Ancient Cave"],
-    1559: [1560, "Imperial base west entrance for dungeon crawl"],
-    1560: [1559, "Imperial base west exit to world map for dungeon crawl"],
+    1559: [None, "Imperial base west entrance for dungeon crawl"],  # None partner: no vanilla event code
+    1560: [None, "Imperial base west exit to world map for dungeon crawl"],  # None partner: no vanilla event code
     1561: [1194, "Veldt WoB to Veldt Shore entrance"],
-    1563: [1564, "Darill's tomb door behind sarcophagus to staircase"],
-    1564: [1563, "Darill's tomb staircase top to tomb"],
+    1563: [None, "Darill's tomb door behind sarcophagus to staircase"],  # None: 1564 has no vanilla event code
+    1564: [None, "Darill's tomb staircase top to tomb"],  # None: use door data construction
 
     # WORLD OF RUIN (logical) DOORS:
     4502: [483, "Doma Dream Train Final Save Point Room"],
