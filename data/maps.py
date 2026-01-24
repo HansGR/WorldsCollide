@@ -723,6 +723,11 @@ class Maps():
                           + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
                           + [m[1] for m in self.doors.map[0] if 2000 > m[1] >= 1500]
 
+            # Also include vanilla partners of event tile entrances whose partners are also event tiles
+            # (used by Transitions when creating entrance EventExit with use_event_info=partner)
+            used_events += [exit_data[m[1]][0] for m in self.doors.map[0]
+                            if 2000 > m[1] >= 1500 and 1500 <= exit_data[m[1]][0] < 2000]
+
             for e in event_exit_info.keys():
                 if (e in used_events or e in used_exits) and event_exit_info[e][0] is None:
                     if self.doors.verbose:
