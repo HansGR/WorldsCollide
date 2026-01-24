@@ -342,11 +342,11 @@ class Transition:
         elif 1500 <= entr_id < 2000:
             # This is an event tile behaving as a normal door.
             partner_id = exit_partner[entr_id][0]
-            if 1500 <= partner_id < 2000 and event_data[partner_id][0] is not None:
-                # If the vanilla partner is also an event tile with valid event code, we can use it.
+            if 1500 <= partner_id < 2000:
+                # If the vanilla partner is also an event tile, we can use its event code.
                 self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=True, use_event_info=partner_id, from_world=from_world)
             else:
-                # The vanilla partner is a normal door OR has no event code.  Construct the exit script like we do for doors.
+                # The vanilla partner is a normal door.  Construct the exit script the same way we do for doors.
                 self.entr = EventExit(entr_id, rom, exit_data, event_data, is_event=False, from_world=from_world)
         elif entr_id > 6000:
             # This is the one-way exit of a normal door acting as a one-way.
