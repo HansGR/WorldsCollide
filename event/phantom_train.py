@@ -703,8 +703,8 @@ class PhantomTrain(Event):
         # Make the first waiter visit also branch to here, after arms animation.
         space = Reserve(0xbb1b6, 0xbb1be, description='phantom train restaurant override first event')  # CB/B1B6: 10    Begin action queue for character $10 (NPC $10), 5 bytes long (Wait until complete)
         src = [
-            field.SetEventBit(0x19d),
-            field.Branch(0xbb022),
+            field.SetEventBit(0x19d),  # Record that the first event happened
+            field.Branch(0xbb022),     # Go back to repeat event code
             field.Return()
         ]
         space.write(src)
