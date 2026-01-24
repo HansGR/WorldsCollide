@@ -1712,7 +1712,8 @@ class ruination_map():
             if self.verbose:
                 print('Processing reward: ', reward_name)
 
-            if self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
+            remaining_chars_needed = len(self.planned_characters) - self.RewardsObtained[0]
+            if remaining_chars_needed >= 1 and self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
                 # This must be a character.
                 if self.verbose:
                     print('\tmust be a character')
