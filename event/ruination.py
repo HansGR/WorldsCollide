@@ -815,7 +815,30 @@ class RuinationBranch(Network):
                 this_conn = random.choice(list(available_conns))
                 if self.verbose:
                     conn_room = self.rooms.get_room_from_element(this_conn)
-                    print(f'\tFound {len(available_conns)} connections, selected: {this_conn} in room {conn_room.id}')
+                    if conn_room:
+                        print(f'\tFound {len(available_conns)} connections, selected: {this_conn} in room {conn_room.id}')
+                    else:
+                        # Diagnostic output for indexing issue
+                        print(f'\tWarning: Found {len(available_conns)} connections, selected: {this_conn} but room not found in index!')
+                        print(f'\t\tElement in _element_to_room: {this_conn in self.rooms._element_to_room}')
+                        if this_conn in self.rooms._element_to_room:
+                            mapped_room_id = self.rooms._element_to_room[this_conn]
+                            print(f'\t\tMapped to room_id: {mapped_room_id}')
+                            print(f'\t\tRoom exists in self.rooms: {mapped_room_id in self.rooms.rooms}')
+                        # Try to find which room actually contains this element
+                        found_in_room = None
+                        for room_id in self.net.nodes:
+                            room = self.rooms.get_room(room_id)
+                            if room and this_conn in room.doors:
+                                print(f'\t\tElement found in room: {room_id} (doors: {room.doors})')
+                                found_in_room = room_id
+                                break
+                        # Set to False to suppress error and allow algorithm to continue
+                        if True:
+                            raise RuntimeError(
+                                f"Element-to-room indexing error: door {this_conn} not found in index. "
+                                f"Found in room: {found_in_room}. See diagnostic output above."
+                            )
                 return this_exit, this_conn
             else:
                 if self.verbose:
