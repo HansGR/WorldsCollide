@@ -140,6 +140,30 @@ Ruination Mode creates a roguelike-style dungeon with three independent branches
 **data/rooms.py** - Custom ruination rooms (prefix `'ruin-'`)
 - `ruin_hub`, `ruin_terminus_1/2/3`, etc.
 
+## Event Exit Info and Runtime Updates
+
+**Key concept**: Event tiles (IDs 1500-2000) that act as doors need connection data at runtime. Some are vanilla tiles with existing event code in the ROM; others are new "switchyard" tiles created for door randomization/ruination.
+
+### Data Structures
+
+- **`event_exit_info`** (data/event_exit_info.py): Contains `[event_addr, length, split, state, desc, location, method]` for each event tile. Switchyard tiles have `event_addr = None` because they don't exist in vanilla ROM.
+
+- **`event_door_connection_data`** (data/map_exit_extra.py): Contains door-style connection data `[dest_map, dest_x, dest_y, ...]` for event tiles acting as doors.
+
+- **`exit_data`** (data/map_exit_extra.py): Maps door IDs to their vanilla partners `[partner_id, description]`.
+
+### Runtime Update Flow (maps.py:write)
+
+1. **Build `used_events`**: Collects all event tile IDs that need their `event_exit_info` updated, INCLUDING vanilla partners of event tiles whose partners are also event tiles.
+
+2. **Update addresses**: For each event in `used_events` with `event_addr = None`, find the event at its switchyard location and update `event_exit_info[e][0]` with the actual address.
+
+3. **Transitions**: When `Transitions` creates entrance `EventExit` objects, if the entrance is an event tile (1500-2000) and its vanilla partner is also an event tile, it uses `use_event_info=partner_id` to get the partner's event code. **The partner's `event_exit_info` must have been updated first.**
+
+### Common Pitfall
+
+When adding new event tile connections, ensure BOTH sides' partners are included in `used_events` if they need runtime updates. Connections are stored as `[exit_id, entrance_id]`, so check both `m[0]` and `m[1]` partners.
+
 ## Resources
 Note these files are LARGE.  Only access them when necessary and be smart about reading them.  Don't just load the entire file into context. 
 - Event script decompile: ./claude_reference/EventScriptTxt.txt
