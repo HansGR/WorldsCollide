@@ -1375,6 +1375,7 @@ exit_data = {
     1558: [1082, "Figaro Castle prison to Ancient Cave"],
     1559: [1560, "Imperial base west entrance for dungeon crawl"],
     1560: [1559, "Imperial base west exit to world map for dungeon crawl"],
+    1561: [1194, "Veldt WoB to Veldt Shore entrance"],
     1563: [1564, "Darill's tomb door behind sarcophagus to staircase"],
     1564: [1563, "Darill's tomb staircase top to tomb"],
 
