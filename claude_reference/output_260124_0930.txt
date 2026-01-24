@@ -1,0 +1,2606 @@
+Version   1.4.2
+Generated 2026-01-24 09:28:35
+Input     FFIII.smc
+Output    ruin.smc
+Log       ruin.txt
+Seed      9a3akdc58dw6
+Flags     -cg -oa 2.2.2.2.6.6.4.9.9 -sc1 sabin -sal -stl 53 -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 0 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125 -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms -frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn -ruin
+Hash      Interceptor, Figaro Guard, Shopkeeper, Maduin
+Requested:  6 characters,  9 espers
+Pre-plan: Planned areas have 20 checks, 15 character slots, 19 esper slots
+Pre-plan: Will obtain characters: ['TERRA', 'CELES', 'MOG', 'RELM', 'GAU']
+Pre-plan: Reserve characters (for extra areas): ['CYAN', 'UMARO', 'SHADOW', 'SETZER', 'STRAGO', 'LOCKE', 'GOGO', 'EDGAR']
+Pre-plan: Dead checks allowed: 6
+Areas used:  {'BarenFalls', 'PhantomTrain', 'MtKolts', 'Tzen', 'ImperialCamp'}
+Distributed areas:
+	 0 :  {'PhantomTrain', 'Tzen'}
+	 1 :  {'BarenFalls'}
+	 2 :  {'MtKolts', 'ImperialCamp'}
+Checks available:
+	 0 :  ['Phantom Train', 'Tzen']
+	 1 :  ['Baren Falls']
+	 2 :  ['Imperial Camp', 'Mt. Kolts']
+Rewards available:  [4, 5]
+		assessing key  SABIN in rooms
+		assessing key  SABIN in rooms
+		assessing key  SABIN in rooms
+Generating map with characters...
+Branch viability: [True, False, True] Stuck: set()
+Working on branch 2 ( ['Imperial Camp', 'Mt. Kolts'] )
+status: terminus ruin_terminus_2
+status: check rooms ['dc-1501', 151]
+status: dead ends ['ruin_hub_2', 'ruin_terminus_2', 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 35 doors, 0 pits
+	Total doors in connected path: 1
+	Trying door exit: 395 in room ruin_hub_2
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 31 connections, selected: 389 in room 159
+Looking for reward in room 159 ...
+Making connection:  395 --> 389
+	Active room:  159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 32 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 1179 in room 159_ruin_hub_2
+		Filtered out path doors (path has only 2 doors)
+	Found 28 connections, selected: 370 in room 150
+Looking for reward in room 150 ...
+Making connection:  1179 --> 370
+	Active room:  150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 30 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 387 in room 150_159_ruin_hub_2
+		Filtered out path doors (path has only 2 doors)
+	Found 26 connections, selected: 1184 in room dc-1501
+Looking for reward in room dc-1501 ...
+Found a reward!  [('Imperial Camp', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room dc-1501
+Making connection:  387 --> 1184
+Processing reward:  Imperial Camp
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got RELM !
+	Set character path: RELM depends on SABIN
+		assessing key  RELM in rooms
+		assessing key  RELM in rooms
+		assessing key  RELM in rooms
+		# rooms on each branch:  [25, 5, 19]
+		# rooms on each branch:  [25, 14, 19]
+Distributed areas:
+	 0 :  set()
+	 1 :  {'EsperMountain', 'Jidoor'}
+	 2 :  set()
+Checks available:
+	 0 :  ['Phantom Train', 'Tzen']
+	 1 :  ['Baren Falls', 'Esper Mountain', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Imperial Camp', 'Mt. Kolts']
+	Updated Rewards Obtained:  1 Characters,  0 Espers
+	Updated Rewards Available:  5 Characters,  7 Espers
+	Updated branch checks available:
+	 0 :  ['Phantom Train', 'Tzen']
+	 1 :  ['Baren Falls', 'Esper Mountain', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Mt. Kolts']
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 0 ( ['Phantom Train', 'Tzen'] )
+status: terminus ruin_terminus_1
+status: check rooms [220, 'ms-wor-51']
+status: dead ends ['ruin_hub_0', 'ruin_terminus_1', '215b', '206b', '203c', '206a', '215a', '207a', '207b', 212, 213, 221, 'ms-wor-51']
+Forcing connections...
+Forcing:  2067 3067
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 48 doors, 3 pits
+	Total doors in connected path: 1
+	Trying door exit: 393 in room ruin_hub_0
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 33 connections, selected: 470 in room 202
+Looking for reward in room 202 ...
+Making connection:  393 --> 470
+	Active room:  202_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 8 doors, 0 traps
+	Available entrances: 39 doors, 3 pits
+	Total doors in connected path: 8
+	Trying door exit: 1532 in room 202_ruin_hub_0
+	Found 25 connections, selected: 469 in room ruin-201
+Looking for reward in room ruin-201 ...
+Making connection:  1532 --> 469
+	Active room:  ruin-201_202_ruin_hub_0 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 7 doors, 1 traps
+	Available entrances: 38 doors, 2 pits
+	Total doors in connected path: 7
+	Trying trap exit: 2065 in room ruin-201_202_ruin_hub_0
+	Found 2 connections, selected: 3066 in room 203b
+Looking for reward in room 203b ...
+Making connection:  2065 --> 3066
+	Active room:  203b .
+	Upstream nodes:  ['ruin-201_202_ruin_hub_0'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 36 doors, 1 pits
+	Total doors in connected path: 9
+	Trying door exit: 1523 in room 203b
+	Found 29 connections, selected: 500 in room 220
+Looking for reward in room 220 ...
+Found a reward!  [('Phantom Train', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 220
+Making connection:  1523 --> 500
+Processing reward:  Phantom Train
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Maduin !
+	Updated Rewards Obtained:  1 Characters,  1 Espers
+	Updated Rewards Available:  4 Characters,  6 Espers
+	Updated branch checks available:
+	 0 :  ['Tzen']
+	 1 :  ['Baren Falls', 'Esper Mountain', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Mt. Kolts']
+Branch viability: [True, True, True] Stuck: set()
+	trimmed dead end  ruin_hub_0
+Working on branch 0 ( ['Tzen'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wor-51']
+status: dead ends ['ruin_terminus_1', '215b', '206b', '203c', '206a', '215a', '207a', '207b', 212, 213, 221, 'ms-wor-51']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  220_203b .
+	Upstream nodes:  ['ruin-201_202_ruin_hub_0'] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 32 doors, 1 pits
+	Total doors in connected path: 11
+	Trying door exit: 1524 in room 220_203b
+	Found 25 connections, selected: 1533 in room 206
+Looking for reward in room 206 ...
+Making connection:  1524 --> 1533
+	Active room:  206_220_203b .
+	Upstream nodes:  ['ruin-201_202_ruin_hub_0'] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 28 doors, 1 pits
+	Total doors in connected path: 13
+	Trying door exit: 497 in room 206_220_203b
+	Found 21 connections, selected: 472 in room ruin-201_202_ruin_hub_0
+Looking for reward in room ruin-201_202_ruin_hub_0 ...
+Making connection:  497 --> 472
+	Active room:  ruin-201_202_ruin_hub_0_206_220_203b .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 0 traps
+	Available entrances: 28 doors, 1 pits
+	Total doors in connected path: 11
+	Trying door exit: 471 in room ruin-201_202_ruin_hub_0_206_220_203b
+	Found 14 connections, selected: 1522 in room 204c
+Looking for reward in room 204c ...
+Making connection:  471 --> 1522
+	Active room:  204c_ruin-201_202_ruin_hub_0_206_220_203b .
+	Upstream nodes:  [] 
+	Downstream nodes:  [205]
+	Available exits: 1 doors, 0 traps
+	Available entrances: 25 doors, 1 pits
+	Total doors in connected path: 12
+	Trying door exit: 1525 in room 205
+	Found 23 connections, selected: 474 in room 204
+Looking for reward in room 204 ...
+Making connection:  1525 --> 474
+	Active room:  204_205 .
+	Upstream nodes:  ['204c_ruin-201_202_ruin_hub_0_206_220_203b'] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 21 doors, 1 pits
+	Total doors in connected path: 14
+	Trying door exit: 476 in room 204_205
+	Found 19 connections, selected: 496 in room 204c_ruin-201_202_ruin_hub_0_206_220_203b
+Looking for reward in room 204c_ruin-201_202_ruin_hub_0_206_220_203b ...
+Making connection:  476 --> 496
+	Active room:  204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 1 traps
+	Available entrances: 21 doors, 1 pits
+	Total doors in connected path: 12
+	Trying trap exit: 2066 in room 204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205
+	Found 1 connections, selected: 3065 in room 203a
+Looking for reward in room 203a ...
+Making connection:  2066 --> 3065
+	Active room:  203a .
+	Upstream nodes:  ['204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 19 doors, 0 pits
+	Total doors in connected path: 14
+	Trying door exit: 1515 in room 203a
+	Found 18 connections, selected: 473 in room 204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205
+Looking for reward in room 204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205 ...
+Making connection:  1515 --> 473
+	Active room:  204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 19 doors, 0 pits
+	Total doors in connected path: 12
+	Trying door exit: 1521 in room 204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+	Found 6 connections, selected: 1542 in room 207
+Looking for reward in room 207 ...
+Making connection:  1521 --> 1542
+	Active room:  207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 14 doors, 0 traps
+	Available entrances: 15 doors, 0 pits
+	Total doors in connected path: 14
+	Trying door exit: 1534 in room 207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+	Found 2 connections, selected: 1520 in room 204b
+Looking for reward in room 204b ...
+Making connection:  1534 --> 1520
+	Active room:  204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 14 doors, 0 traps
+	Available entrances: 13 doors, 0 pits
+	Total doors in connected path: 14
+	Trying door exit: 1530 in room 204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+		Expanding search to all unconnected rooms...
+	Found 13 connections, selected: 489 in room 215a
+Looking for reward in room 215a ...
+Making connection:  1530 --> 489
+	Active room:  215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 13 doors, 0 traps
+	Available entrances: 12 doors, 0 pits
+	Total doors in connected path: 13
+	Trying door exit: 1528 in room 215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+		Expanding search to all unconnected rooms...
+	Found 12 connections, selected: 1527 in room 216
+Looking for reward in room 216 ...
+Making connection:  1528 --> 1527
+		assessing key  pt1 in rooms
+			Applying key: ('pt1',) in room 216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+			adding a door... 493
+			removing key  pt1 from 216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+	Active room:  216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 13 doors, 0 traps
+	Available entrances: 11 doors, 0 pits
+	Total doors in connected path: 13
+	Trying door exit: 1540 in room 216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+		Expanding search to all unconnected rooms...
+	Found 11 connections, selected: 1544 in room 207b
+Looking for reward in room 207b ...
+Making connection:  1540 --> 1544
+	Active room:  207b_216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 10 doors, 0 pits
+	Total doors in connected path: 12
+	Trying door exit: 1531 in room 207b_216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+		Expanding search to all unconnected rooms...
+	Found 10 connections, selected: 1243 in room ms-wor-51
+Looking for reward in room ms-wor-51 ...
+Found a reward!  [('Tzen', <RewardType.ITEM|ESPER: 12>)] in room ms-wor-51
+Making connection:  1531 --> 1243
+Processing reward:  Tzen
+	choosing from... RewardType.ITEM|ESPER
+	got Odin !
+	Updated Rewards Obtained:  1 Characters,  2 Espers
+	Updated Rewards Available:  4 Characters,  5 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Baren Falls', 'Esper Mountain', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Mt. Kolts']
+Branch viability: [True, True, True] Stuck: set()
+	trimmed dead end  ruin_hub_2
+Working on branch 2 ( ['Mt. Kolts'] )
+status: terminus ruin_terminus_2
+status: check rooms [151]
+status: dead ends ['ruin_terminus_2', 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 28 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 371 in room dc-1501_150_159_ruin_hub_2
+		Filtered out path doors (path has only 2 doors)
+	Found 24 connections, selected: 364 in room 146
+Looking for reward in room 146 ...
+Making connection:  371 --> 364
+	Active room:  146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 26 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 1560 in room 146_dc-1501_150_159_ruin_hub_2
+		Filtered out path doors (path has only 2 doors)
+	Found 22 connections, selected: 376 in room 153
+Looking for reward in room 153 ...
+Making connection:  1560 --> 376
+	Active room:  153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 22 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 385 in room 153_146_dc-1501_150_159_ruin_hub_2
+	Found 18 connections, selected: 373 in room 151
+Looking for reward in room 151 ...
+Found a reward!  [('Mt. Kolts', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 151
+Making connection:  385 --> 373
+Processing reward:  Mt. Kolts
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got ZoneSeek !
+	Updated Rewards Obtained:  1 Characters,  3 Espers
+	Updated Rewards Available:  3 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Baren Falls', 'Esper Mountain', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 1 ( ['Baren Falls', 'Esper Mountain', 'Owzer Mansion', 'Auction House_1', 'Auction House_2'] )
+status: terminus ruin_terminus_3
+status: check rooms ['ruin-baren-reward', 284, 'dc-73', 488]
+status: dead ends ['ruin_hub_1', 'ruin_terminus_3', 279, 284, 490, 493, 494]
+Forcing connections...
+Forcing:  2011 3011
+forcing successful.
+Forcing:  2012 3012
+forcing successful.
+Forcing:  2013 3013
+forcing successful.
+Forcing:  2076 3076
+forcing successful.
+Forcing:  2176 3176
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 38 doors, 7 pits
+	Total doors in connected path: 1
+	Trying door exit: 394 in room ruin_hub_1
+		Filtered out path doors (path has only 1 doors)
+		Filtered to rooms with 2+ doors (path has only 1 door left)
+	Found 25 connections, selected: 1049 in room 495
+Looking for reward in room 495 ...
+Making connection:  394 --> 1049
+	Active room:  495_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 34 doors, 7 pits
+	Total doors in connected path: 3
+	Trying door exit: 1047 in room 495_ruin_hub_1
+	Found 24 connections, selected: 1053 in room 498
+Looking for reward in room 498 ...
+Making connection:  1047 --> 1053
+	Active room:  498_495_ruin_hub_1 .
+	Upstream nodes:  [] 
+	Downstream nodes:  [496]
+	Available exits: 2 doors, 0 traps
+	Available entrances: 30 doors, 6 pits
+	Total doors in connected path: 5
+	Trying door exit: 1050 in room 496
+	Found 23 connections, selected: 585 in room 278
+Looking for reward in room 278 ...
+Making connection:  1050 --> 585
+	Active room:  278_496 .
+	Upstream nodes:  [499, 500, '498_495_ruin_hub_1'] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 25 doors, 3 pits
+	Total doors in connected path: 8
+	Trying door exit: 582 in room 278_496
+	Found 20 connections, selected: 1033 in room 488
+Looking for reward in room 488 ...
+Found a reward!  [('Esper Mountain', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 488
+Making connection:  582 --> 1033
+Processing reward:  Esper Mountain
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Bismark !
+	Updated Rewards Obtained:  1 Characters,  4 Espers
+	Updated Rewards Available:  2 Characters,  3 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Baren Falls', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+	trimmed dead end  ruin_hub_1
+Working on branch 1 ( ['Baren Falls', 'Owzer Mansion', 'Auction House_1', 'Auction House_2'] )
+status: terminus ruin_terminus_3
+status: check rooms ['ruin-baren-reward', 284, 'dc-73']
+status: dead ends ['ruin_terminus_3', 279, 284, 490, 493, 494]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  488_278_496 .
+	Upstream nodes:  [499, 500, '498_495_ruin_hub_1'] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 0 traps
+	Available entrances: 23 doors, 3 pits
+	Total doors in connected path: 8
+	Trying door exit: 583 in room 488_278_496
+	Found 18 connections, selected: 1054 in room 498_495_ruin_hub_1
+Looking for reward in room 498_495_ruin_hub_1 ...
+Making connection:  583 --> 1054
+	Active room:  498_495_ruin_hub_1_488_278_496 .
+	Upstream nodes:  [499, 500] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 23 doors, 3 pits
+	Total doors in connected path: 6
+	Trying door exit: 1046 in room 498_495_ruin_hub_1_488_278_496
+	Found 15 connections, selected: 1052 in room 497
+Looking for reward in room 497 ...
+Making connection:  1046 --> 1052
+	Active room:  497_498_495_ruin_hub_1_488_278_496 .
+	Upstream nodes:  [499, 500] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 3 traps
+	Available entrances: 22 doors, 3 pits
+	Total doors in connected path: 5
+	Trying trap exit: 2016 in room 497_498_495_ruin_hub_1_488_278_496
+	Found 3 connections, selected: 3019 in room 283
+Looking for reward in room 283 ...
+Making connection:  2016 --> 3019
+	Active room:  283 .
+	Upstream nodes:  ['497_498_495_ruin_hub_1_488_278_496', 499, '497_498_495_ruin_hub_1_488_278_496', 500] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 22 doors, 2 pits
+	Total doors in connected path: 5
+	Trying trap exit: 2020 in room 283
+	Found 6 connections, selected: 3021 in room 281
+Looking for reward in room 281 ...
+Making connection:  2020 --> 3021
+	Active room:  281 .
+	Upstream nodes:  [283, '497_498_495_ruin_hub_1_488_278_496', 499, 283, '497_498_495_ruin_hub_1_488_278_496', 500] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 21 doors, 1 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2019 in room 281
+	Found 5 connections, selected: 3014 in room 500
+Looking for reward in room 500 ...
+Making connection:  2019 --> 3014
+	Active room:  283_497_498_495_ruin_hub_1_488_278_496_500_281 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 2 traps
+	Available entrances: 21 doors, 1 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2014 in room 283_497_498_495_ruin_hub_1_488_278_496_500_281
+	Found 1 connections, selected: 3020 in room 282
+Looking for reward in room 282 ...
+Making connection:  2014 --> 3020
+	Active room:  282 .
+	Upstream nodes:  ['283_497_498_495_ruin_hub_1_488_278_496_500_281', 499] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 20 doors, 0 pits
+	Total doors in connected path: 7
+	Trying door exit: 589 in room 282
+	Found 18 connections, selected: 5213 in room dc-73
+Looking for reward in room dc-73 ...
+Found a reward!  [('Auction House_1', <RewardType.ITEM|ESPER: 12>), ('Auction House_2', <RewardType.ITEM: 8>)] in room dc-73
+Making connection:  589 --> 5213
+Processing reward:  Auction House_1
+	choosing from... RewardType.ITEM|ESPER
+	got Raiden !
+	Updated Rewards Obtained:  1 Characters,  5 Espers
+	Updated Rewards Available:  2 Characters,  2 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Baren Falls', 'Owzer Mansion', 'Auction House_2']
+	 2 :  []
+Processing reward:  Auction House_2
+	choosing from... RewardType.ITEM
+	got Thunder Shld !
+	Updated Rewards Obtained:  1 Characters,  5 Espers
+	Updated Rewards Available:  2 Characters,  2 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Baren Falls', 'Owzer Mansion']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 1 ( ['Baren Falls', 'Owzer Mansion'] )
+status: terminus ruin_terminus_3
+status: check rooms ['ruin-baren-reward', 284]
+status: dead ends ['ruin_terminus_3', 279, 284, 490, 493, 494]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-73_282 .
+	Upstream nodes:  ['283_497_498_495_ruin_hub_1_488_278_496_500_281', 499] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 18 doors, 0 pits
+	Total doors in connected path: 7
+	Trying door exit: 593 in room dc-73_282
+	Found 16 connections, selected: 580 in room 277
+Looking for reward in room 277 ...
+Making connection:  593 --> 580
+	Active room:  277_dc-73_282 .
+	Upstream nodes:  ['283_497_498_495_ruin_hub_1_488_278_496_500_281', 499] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 16 doors, 0 pits
+	Total doors in connected path: 7
+	Trying door exit: 581 in room 277_dc-73_282
+	Found 14 connections, selected: 1032 in room 283_497_498_495_ruin_hub_1_488_278_496_500_281
+Looking for reward in room 283_497_498_495_ruin_hub_1_488_278_496_500_281 ...
+Making connection:  581 --> 1032
+	Active room:  283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 2 traps
+	Available entrances: 16 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 1051 in room 283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+	Found 8 connections, selected: 586 in room 280
+Looking for reward in room 280 ...
+Making connection:  1051 --> 586
+	Active room:  280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 3 traps
+	Available entrances: 14 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 1048 in room 280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+	Found 6 connections, selected: 1034 in room 489
+Looking for reward in room 489 ...
+Making connection:  1048 --> 1034
+	Active room:  489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 3 traps
+	Available entrances: 12 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 587 in room 489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+	Found 4 connections, selected: 1042 in room 492
+Looking for reward in room 492 ...
+Making connection:  587 --> 1042
+	Active room:  492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 3 traps
+	Available entrances: 10 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 588 in room 492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+	Found 2 connections, selected: 1038 in room 491
+Looking for reward in room 491 ...
+Making connection:  588 --> 1038
+	Active room:  491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 3 traps
+	Available entrances: 8 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 1040 in room 491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+		Expanding search to all unconnected rooms...
+	Found 8 connections, selected: 1044 in room 493
+Looking for reward in room 493 ...
+Making connection:  1040 --> 1044
+	Active room:  493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 3 traps
+	Available entrances: 7 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 1036 in room 493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+		Expanding search to all unconnected rooms...
+	Found 7 connections, selected: 1564 in room ruin_terminus_3
+Looking for reward in room ruin_terminus_3 ...
+Making connection:  1036 --> 1564
+	Active room:  ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 3 traps
+	Available entrances: 6 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 1043 in room ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+		Expanding search to all unconnected rooms...
+	Found 6 connections, selected: 1037 in room 490
+Looking for reward in room 490 ...
+Making connection:  1043 --> 1037
+	Active room:  490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 3 traps
+	Available entrances: 5 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 1056 in room 490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282
+		Expanding search to all unconnected rooms...
+		Filtered out path doors (path has only 2 doors)
+	Found 5 connections, selected: 1196 in room dc-15
+Looking for reward in room dc-15 ...
+Found a reward!  [('Baren Falls', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-baren-reward
+Making connection:  1056 --> 1196
+Processing reward:  Baren Falls
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got MOG !
+	Set character path: MOG depends on SABIN
+		assessing key  MOG in rooms
+		assessing key  MOG in rooms
+		assessing key  MOG in rooms
+		# rooms on each branch:  [25, 27, 19]
+Distributed areas:
+	 0 :  set()
+	 1 :  set()
+	 2 :  {'Narshe'}
+Checks available:
+	 0 :  []
+	 1 :  ['Baren Falls', 'Owzer Mansion']
+	 2 :  ['Narshe Moogle Defense']
+	Updated Rewards Obtained:  2 Characters,  5 Espers
+	Updated Rewards Available:  2 Characters,  2 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Owzer Mansion']
+	 2 :  ['Narshe Moogle Defense']
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 2 ( ['Narshe Moogle Defense'] )
+status: terminus ruin_terminus_2
+status: check rooms [65, 'ruin-whelk']
+status: dead ends ['ruin_terminus_2', 147, 149, 157, 41, 47]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 0 traps
+	Available entrances: 55 doors, 1 pits
+	Total doors in connected path: 4
+	Trying door exit: 377 in room 151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 49 connections, selected: 164 in room 49
+Looking for reward in room 49 ...
+Making connection:  377 --> 164
+	Active room:  49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 51 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 378 in room 49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 45 connections, selected: 390 in room 160
+Looking for reward in room 160 ...
+Making connection:  378 --> 390
+	Active room:  160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 49 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 162 in room 160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 43 connections, selected: 1149 in room 40
+Looking for reward in room 40 ...
+Making connection:  162 --> 1149
+	Active room:  40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 47 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 372 in room 40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 41 connections, selected: 149 in room 42
+Looking for reward in room 42 ...
+Making connection:  372 --> 149
+	Active room:  42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 45 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 163 in room 42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 39 connections, selected: 374 in room 152
+Looking for reward in room 152 ...
+Making connection:  163 --> 374
+	Active room:  152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 43 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 391 in room 152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 37 connections, selected: 151 in room 43
+Looking for reward in room 43 ...
+Making connection:  391 --> 151
+	Active room:  43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 41 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 366 in room 43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 35 connections, selected: 147 in room 38
+Looking for reward in room 38 ...
+Making connection:  366 --> 147
+	Active room:  38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 39 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 1147 in room 38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 33 connections, selected: 142 in room 36
+Looking for reward in room 36 ...
+Making connection:  1147 --> 142
+	Active room:  36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 37 doors, 1 pits
+	Total doors in connected path: 6
+	Trying door exit: 148 in room 36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 31 connections, selected: 1143 in room ruin-narshe
+Looking for reward in room ruin-narshe ...
+Making connection:  148 --> 1143
+	Active room:  ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 32 doors, 1 pits
+	Total doors in connected path: 9
+	Trying door exit: 141 in room ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 26 connections, selected: 153 in room 44
+Looking for reward in room 44 ...
+Making connection:  141 --> 153
+	Active room:  44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 30 doors, 1 pits
+	Total doors in connected path: 9
+	Trying door exit: 150 in room 44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 24 connections, selected: 363 in room 145
+Looking for reward in room 145 ...
+Making connection:  150 --> 363
+	Active room:  145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 28 doors, 1 pits
+	Total doors in connected path: 9
+	Trying door exit: 143 in room 145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 22 connections, selected: 179 in room ruin-whelk
+Looking for reward in room ruin-whelk ...
+Found a reward!  [('Whelk', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-whelk
+		reward is locked by TERRA . Saving for later.
+Making connection:  143 --> 179
+	Active room:  ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 26 doors, 1 pits
+	Total doors in connected path: 9
+	Trying door exit: 1146 in room ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 20 connections, selected: 155 in room 45
+Looking for reward in room 45 ...
+Making connection:  1146 --> 155
+	Active room:  45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 24 doors, 1 pits
+	Total doors in connected path: 9
+	Trying door exit: 154 in room 45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 18 connections, selected: 145 in room 37a
+Looking for reward in room 37a ...
+Making connection:  154 --> 145
+	Active room:  37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 22 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 1175 in room 37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 16 connections, selected: 166 in room 50
+Looking for reward in room 50 ...
+Making connection:  1175 --> 166
+	Active room:  50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 20 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 375 in room 50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 14 connections, selected: 384 in room 156
+Looking for reward in room 156 ...
+Making connection:  375 --> 384
+	Active room:  156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 18 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 144 in room 156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 12 connections, selected: 382 in room 155
+Looking for reward in room 155 ...
+Making connection:  144 --> 382
+	Active room:  155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 16 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 140 in room 155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 10 connections, selected: 379 in room 154
+Looking for reward in room 154 ...
+Making connection:  140 --> 379
+	Active room:  154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 14 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 1148 in room 154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 8 connections, selected: 1178 in room 158
+Looking for reward in room 158 ...
+Making connection:  1148 --> 1178
+	Active room:  158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 12 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 161 in room 158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 6 connections, selected: 1176 in room 148
+Looking for reward in room 148 ...
+Making connection:  161 --> 1176
+	Active room:  148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 10 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 165 in room 148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 4 connections, selected: 167 in room 51
+Looking for reward in room 51 ...
+Making connection:  165 --> 167
+	Active room:  51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 8 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 1177 in room 51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 2 connections, selected: 192 in room 65
+Looking for reward in room 65 ...
+Found a reward!  [('Narshe Moogle Defense', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 65
+Making connection:  1177 --> 192
+Processing reward:  Narshe Moogle Defense
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Starlet !
+	Updated Rewards Obtained:  2 Characters,  6 Espers
+	Updated Rewards Available:  1 Characters,  1 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Owzer Mansion']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+	trimmed dead end  ruin_terminus_3
+	trimmed dead end  490
+	trimmed dead end  493
+Working on branch 1 ( ['Owzer Mansion'] )
+status: terminus ruin_terminus_3
+status: check rooms [284]
+status: dead ends [279, 284, 494]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282 .
+	Upstream nodes:  [499] 
+	Downstream nodes:  ['ruin-baren-reward', 'ruin-baren']
+	Available exits: 1 doors, 0 traps
+	Available entrances: 3 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 1194 in room ruin-baren
+		Warning: only path doors available, using any
+	Found 1 connections, selected: 1055 in room 499
+Looking for reward in room 499 ...
+Making connection:  1194 --> 1055
+	Active room:  ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 3 doors, 0 pits
+	Total doors in connected path: 0
+	Trying trap exit: 2015 in room ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren
+		Expanding search to all unconnected rooms...
+		Trying check rooms...
+Looking for check rooms... [284]
+		No entrances found for trap, trying alternate type...
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 1/3
+	Active room:  ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 3 doors, 0 pits
+	Total doors in connected path: 0
+	Trying trap exit: 2015 in room ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren
+		Expanding search to all unconnected rooms...
+		Trying check rooms...
+Looking for check rooms... [284]
+		No entrances found for trap, trying alternate type...
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 failed to extend, retry 2/3
+	Active room:  ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 3 doors, 0 pits
+	Total doors in connected path: 0
+	Trying trap exit: 2021 in room ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren
+		Expanding search to all unconnected rooms...
+		Trying check rooms...
+Looking for check rooms... [284]
+		No entrances found for trap, trying alternate type...
+	All connection strategies exhausted. Branch extension failed.
+Branch 1 is stuck after 3 retries
+Skipping reward processing for stuck branch 1
+Branch viability: [True, True, True] Stuck: {1}
+Adding reserve area Doma (33 rooms) to unstick branch 1
+	Added new check: Doma WOR_2
+	Added new check: Doma WOR_1
+	Added new check: Doma WOR_3
+Working on branch 1 ( ['Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_3
+status: check rooms [284, 429, 193, 'dc-76']
+status: dead ends [279, 284, 494, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 47 doors, 18 pits
+	Total doors in connected path: 0
+	Trying trap exit: 2015 in room ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren
+	Found 18 connections, selected: 6847 in room 423
+Looking for reward in room 423 ...
+Making connection:  2015 --> 6847
+		assessing key  cd1 in rooms
+			removing key  cd1 from 423
+	Active room:  423 .
+	Upstream nodes:  ['ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 47 doors, 17 pits
+	Total doors in connected path: 0
+	Trying trap exit: 846 in room 423
+	Found 20 connections, selected: 6849 in room 425
+Looking for reward in room 425 ...
+Making connection:  846 --> 6849
+	Active room:  425 .
+	Upstream nodes:  [423, 'ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 46 doors, 15 pits
+	Total doors in connected path: 1
+	Trying trap exit: 852 in room 425
+	Found 18 connections, selected: 3017 in room ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren
+Looking for reward in room ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren ...
+Making connection:  852 --> 3017
+	Active room:  423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 2 traps
+	Available entrances: 46 doors, 15 pits
+	Total doors in connected path: 1
+	Trying trap exit: 2021 in room 423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425
+	Found 15 connections, selected: 3069 in room 424
+Looking for reward in room 424 ...
+Making connection:  2021 --> 3069
+	Active room:  424 .
+	Upstream nodes:  ['423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 3 traps
+	Available entrances: 46 doors, 13 pits
+	Total doors in connected path: 1
+	Trying trap exit: 847 in room 424
+	Found 16 connections, selected: 6853 in room 428
+Looking for reward in room 428 ...
+Making connection:  847 --> 6853
+	Active room:  428 .
+	Upstream nodes:  [424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 45 doors, 11 pits
+	Total doors in connected path: 2
+	Trying trap exit: 854 in room 428
+	Found 15 connections, selected: 3071 in room 212R
+Looking for reward in room 212R ...
+Making connection:  854 --> 3071
+	Active room:  212R .
+	Upstream nodes:  [428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 45 doors, 10 pits
+	Total doors in connected path: 2
+	Trying trap exit: 2072 in room 212R
+	Found 14 connections, selected: 6852 in room 427
+Looking for reward in room 427 ...
+Making connection:  2072 --> 6852
+		assessing key  cd2 in rooms
+			removing key  cd2 from 427
+			Applying key: ('cd1', 'cd2') in room 429
+			adding a trap... 2070
+	Active room:  427 .
+	Upstream nodes:  ['212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 45 doors, 9 pits
+	Total doors in connected path: 2
+	Trying trap exit: 853 in room 427
+	Found 13 connections, selected: 3072 in room 432
+Looking for reward in room 432 ...
+Making connection:  853 --> 3072
+	Active room:  432 .
+	Upstream nodes:  [427, '212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 45 doors, 8 pits
+	Total doors in connected path: 2
+	Trying trap exit: 862 in room 432
+	Found 12 connections, selected: 3073 in room 188B
+Looking for reward in room 188B ...
+Making connection:  862 --> 3073
+	Active room:  188B .
+	Upstream nodes:  [432, 427, '212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 44 doors, 7 pits
+	Total doors in connected path: 3
+	Trying door exit: 443 in room 188B
+	Found 33 connections, selected: 445 in room 188
+Looking for reward in room 188 ...
+Making connection:  443 --> 445
+	Active room:  188_188B .
+	Upstream nodes:  [432, 427, '212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 0 traps
+	Available entrances: 37 doors, 7 pits
+	Total doors in connected path: 8
+	Trying door exit: 451 in room 188_188B
+	Found 26 connections, selected: 444 in room 191
+Looking for reward in room 191 ...
+Making connection:  451 --> 444
+	Active room:  191_188_188B .
+	Upstream nodes:  [432, 427, '212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 8 doors, 0 traps
+	Available entrances: 33 doors, 7 pits
+	Total doors in connected path: 10
+	Trying door exit: 441 in room 191_188_188B
+	Found 22 connections, selected: 478 in room 209
+Looking for reward in room 209 ...
+Making connection:  441 --> 478
+	Active room:  209_191_188_188B .
+	Upstream nodes:  [432, 427, '212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 10 doors, 0 traps
+	Available entrances: 29 doors, 7 pits
+	Total doors in connected path: 12
+	Trying door exit: 449 in room 209_191_188_188B
+	Found 18 connections, selected: 858 in room 430
+Looking for reward in room 430 ...
+Making connection:  449 --> 858
+	Active room:  430_209_191_188_188B .
+	Upstream nodes:  [432, 427, '212R', 428, 424, '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 1 traps
+	Available entrances: 28 doors, 6 pits
+	Total doors in connected path: 11
+	Trying trap exit: 859 in room 430_209_191_188_188B
+	Found 10 connections, selected: 6854 in room 424
+Looking for reward in room 424 ...
+Making connection:  859 --> 6854
+	Active room:  432_427_212R_428_424_430_209_191_188_188B .
+	Upstream nodes:  ['423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425'] 
+	Downstream nodes:  []
+	Available exits: 10 doors, 2 traps
+	Available entrances: 28 doors, 6 pits
+	Total doors in connected path: 11
+	Trying trap exit: 849 in room 432_427_212R_428_424_430_209_191_188_188B
+	Found 9 connections, selected: 3016 in room 423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425
+Looking for reward in room 423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425 ...
+Making connection:  849 --> 3016
+	Active room:  423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 2 traps
+	Available entrances: 28 doors, 6 pits
+	Total doors in connected path: 11
+	Trying trap exit: 2017 in room 423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B
+	Found 6 connections, selected: 3074 in room dc-76
+Looking for reward in room dc-76 ...
+Found a reward!  [('Doma WOR_3', <RewardType.ITEM|ESPER: 12>)] in room dc-76
+Making connection:  2017 --> 3074
+Processing reward:  Doma WOR_3
+	choosing from... RewardType.ITEM|ESPER
+	got Phantom !
+	Updated Rewards Obtained:  2 Characters,  7 Espers
+	Updated Rewards Available:  1 Characters,  0 Espers
+	Updated branch checks available:
+	 0 :  []
+	 1 :  ['Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 1 ( ['Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1'] )
+status: terminus ruin_terminus_3
+status: check rooms [284, 429, 193]
+status: dead ends [279, 284, 494, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  dc-76 .
+	Upstream nodes:  ['423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 1 traps
+	Available entrances: 27 doors, 5 pits
+	Total doors in connected path: 12
+	Trying trap exit: 2069 in room dc-76
+	Found 9 connections, selected: 6844 in room 422
+Looking for reward in room 422 ...
+Making connection:  2069 --> 6844
+	Active room:  422 .
+	Upstream nodes:  ['dc-76', '423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 27 doors, 4 pits
+	Total doors in connected path: 12
+	Trying trap exit: 845 in room 422
+	Found 8 connections, selected: 6862 in room 423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B
+Looking for reward in room 423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B ...
+Making connection:  845 --> 6862
+	Active room:  dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 1 traps
+	Available entrances: 27 doors, 4 pits
+	Total doors in connected path: 12
+	Trying trap exit: 848 in room dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422
+	Found 4 connections, selected: 6859 in room 433
+Looking for reward in room 433 ...
+Making connection:  848 --> 6859
+	Active room:  433 .
+	Upstream nodes:  ['dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422'] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 0 traps
+	Available entrances: 25 doors, 3 pits
+	Total doors in connected path: 14
+	Trying door exit: 863 in room 433
+	Found 25 connections, selected: 850 in room dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422
+Looking for reward in room dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422 ...
+Making connection:  863 --> 850
+	Active room:  dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 25 doors, 3 pits
+	Total doors in connected path: 12
+	Trying door exit: 446 in room dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+	Found 13 connections, selected: 437 in room 186
+Looking for reward in room 186 ...
+Making connection:  446 --> 437
+	Active room:  186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 23 doors, 3 pits
+	Total doors in connected path: 12
+	Trying door exit: 479 in room 186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+	Found 11 connections, selected: 453 in room 187
+Looking for reward in room 187 ...
+Making connection:  479 --> 453
+	Active room:  187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 21 doors, 3 pits
+	Total doors in connected path: 12
+	Trying door exit: 454 in room 187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+	Found 9 connections, selected: 870 in room 436
+Looking for reward in room 436 ...
+Making connection:  454 --> 870
+	Active room:  436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 19 doors, 3 pits
+	Total doors in connected path: 12
+	Trying door exit: 855 in room 436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+	Found 7 connections, selected: 484 in room 211
+Looking for reward in room 211 ...
+Making connection:  855 --> 484
+	Active room:  211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 12 doors, 0 traps
+	Available entrances: 17 doors, 3 pits
+	Total doors in connected path: 12
+	Trying door exit: 480 in room 211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+	Found 5 connections, selected: 456 in room 193
+Looking for reward in room 193 ...
+Found a reward!  [('Doma WOR_1', <RewardType.ESPER|CHARACTER: 6>)] in room 193
+Making connection:  480 --> 456
+Processing reward:  Doma WOR_1
+	must be a character
+	got  CELES !
+	Set character path: CELES depends on CYAN
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+		# rooms on each branch:  [25, 60, 35]
+		# rooms on each branch:  [26, 60, 35]
+		# rooms on each branch:  [27, 60, 35]
+		# rooms on each branch:  [28, 60, 35]
+Distributed areas:
+	 0 :  {'Cid', 'SouthFigaro', 'OperaHouse', 'Vector'}
+	 1 :  set()
+	 2 :  set()
+Checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  ['Owzer Mansion', 'Doma WOR_2', 'Doma WOR_1']
+	 2 :  []
+	Updated Rewards Obtained:  3 Characters,  7 Espers
+	Updated Rewards Available:  3 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  ['Owzer Mansion', 'Doma WOR_2']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 1 ( ['Owzer Mansion', 'Doma WOR_2'] )
+status: terminus ruin_terminus_3
+status: check rooms [284, 429]
+status: dead ends [279, 284, 494, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 1 traps
+	Available entrances: 16 doors, 3 pits
+	Total doors in connected path: 11
+	Trying trap exit: 2074 in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+	Found 3 connections, selected: 6845 in room 421
+Looking for reward in room 421 ...
+Making connection:  2074 --> 6845
+	Active room:  421 .
+	Upstream nodes:  ['193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 2 traps
+	Available entrances: 16 doors, 1 pits
+	Total doors in connected path: 11
+	Trying trap exit: 844 in room 421
+	Found 4 connections, selected: 3015 in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433
+Looking for reward in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433 ...
+Making connection:  844 --> 3015
+	Active room:  193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 1 traps
+	Available entrances: 16 doors, 1 pits
+	Total doors in connected path: 11
+	Trying trap exit: 843 in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421
+	Found 1 connections, selected: 3070 in room 210
+Looking for reward in room 210 ...
+Making connection:  843 --> 3070
+	Active room:  210 .
+	Upstream nodes:  ['193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 15 doors, 0 pits
+	Total doors in connected path: 12
+	Trying door exit: 482 in room 210
+	Found 15 connections, selected: 860 in room 431
+Looking for reward in room 431 ...
+Making connection:  482 --> 860
+	Active room:  431_210 .
+	Upstream nodes:  ['193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 14 doors, 0 pits
+	Total doors in connected path: 11
+	Trying trap exit: 2073 in room 431_210
+	Found 3 connections, selected: 6846 in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421
+Looking for reward in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421 ...
+Making connection:  2073 --> 6846
+	Active room:  193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 0 traps
+	Available entrances: 14 doors, 0 pits
+	Total doors in connected path: 11
+	Trying door exit: 481 in room 193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+	Found 3 connections, selected: 477 in room 208
+Looking for reward in room 208 ...
+Making connection:  481 --> 477
+	Active room:  208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 11 doors, 1 traps
+	Available entrances: 12 doors, 0 pits
+	Total doors in connected path: 11
+	Trying door exit: 483 in room 208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+	Found 1 connections, selected: 856 in room 429
+Looking for reward in room 429 ...
+Found a reward!  [('Doma WOR_2', <RewardType.ITEM|ESPER: 12>)] in room 429
+Making connection:  483 --> 856
+Processing reward:  Doma WOR_2
+	choosing from... RewardType.ITEM|ESPER
+	got Crusader !
+	Updated Rewards Obtained:  3 Characters,  8 Espers
+	Updated Rewards Available:  3 Characters,  3 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  ['Owzer Mansion']
+	 2 :  []
+Branch viability: [True, True, True] Stuck: set()
+Working on branch 1 ( ['Owzer Mansion'] )
+status: terminus ruin_terminus_3
+status: check rooms [284]
+status: dead ends [279, 284, 494, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 10 doors, 2 traps
+	Available entrances: 11 doors, 0 pits
+	Total doors in connected path: 10
+	Trying door exit: 439 in room 429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 11 connections, selected: 435 in room 184
+Looking for reward in room 184 ...
+Making connection:  439 --> 435
+	Active room:  184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 2 traps
+	Available entrances: 10 doors, 0 pits
+	Total doors in connected path: 9
+	Trying door exit: 5240 in room 184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 10 connections, selected: 447 in room 190
+Looking for reward in room 190 ...
+Making connection:  5240 --> 447
+	Active room:  190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 8 doors, 2 traps
+	Available entrances: 9 doors, 0 pits
+	Total doors in connected path: 8
+	Trying door exit: 440 in room 190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 9 connections, selected: 1045 in room 494
+Looking for reward in room 494 ...
+Making connection:  440 --> 1045
+	Active room:  494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 7 doors, 2 traps
+	Available entrances: 8 doors, 0 pits
+	Total doors in connected path: 7
+	Trying door exit: 452 in room 494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 8 connections, selected: 584 in room 279
+Looking for reward in room 279 ...
+Making connection:  452 --> 584
+	Active room:  279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 2 traps
+	Available entrances: 7 doors, 0 pits
+	Total doors in connected path: 6
+	Trying door exit: 448 in room 279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 7 connections, selected: 4502 in room 221R
+Looking for reward in room 221R ...
+Making connection:  448 --> 4502
+	Active room:  221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 5 doors, 2 traps
+	Available entrances: 6 doors, 0 pits
+	Total doors in connected path: 5
+	Trying door exit: 868 in room 221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 6 connections, selected: 442 in room 189
+Looking for reward in room 189 ...
+Making connection:  868 --> 442
+	Active room:  189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 2 traps
+	Available entrances: 5 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 438 in room 189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 5 connections, selected: 867 in room 435
+Looking for reward in room 435 ...
+Making connection:  438 --> 867
+		assessing key  cd3 in rooms
+			Applying key: ('cd3',) in room 435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+			adding a door... 865
+			removing key  cd3 from 435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+	Active room:  435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 4 doors, 2 traps
+	Available entrances: 4 doors, 0 pits
+	Total doors in connected path: 4
+	Trying door exit: 486 in room 435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 4 connections, selected: 436 in room 185
+Looking for reward in room 185 ...
+Making connection:  486 --> 436
+	Active room:  185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 3 doors, 2 traps
+	Available entrances: 3 doors, 0 pits
+	Total doors in connected path: 3
+	Trying door exit: 864 in room 185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+	Found 3 connections, selected: 455 in room 192
+Looking for reward in room 192 ...
+Making connection:  864 --> 455
+	Active room:  192_185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 2 doors, 2 traps
+	Available entrances: 2 doors, 0 pits
+	Total doors in connected path: 2
+	Trying door exit: 865 in room 192_185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+		Filtered out path doors (path has only 2 doors)
+	Found 2 connections, selected: 851 in room 426
+Looking for reward in room 426 ...
+Making connection:  865 --> 851
+	Active room:  426_192_185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 2 traps
+	Available entrances: 1 doors, 0 pits
+	Total doors in connected path: 1
+	Trying door exit: 450 in room 426_192_185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210
+		Expanding search to all unconnected rooms...
+		Filtered out path doors (path has only 1 doors)
+		Warning: no rooms with 2+ doors, using any available
+	Found 1 connections, selected: 591 in room 284
+Looking for reward in room 284 ...
+Found a reward!  [('Owzer Mansion', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room 284
+Making connection:  450 --> 591
+Processing reward:  Owzer Mansion
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got GAU !
+	Set character path: GAU depends on RELM
+		assessing key  GAU in rooms
+		assessing key  GAU in rooms
+		assessing key  GAU in rooms
+		# rooms on each branch:  [40, 60, 35]
+		# rooms on each branch:  [40, 60, 36]
+Forced same branch: CrescentMtn Nikeah 2
+Distributed areas:
+	 0 :  set()
+	 1 :  set()
+	 2 :  {'Nikeah', 'CrescentMtn', 'Veldt'}
+Checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  ['Owzer Mansion']
+	 2 :  ['Veldt', 'Serpent Trench']
+	Updated Rewards Obtained:  4 Characters,  8 Espers
+	Updated Rewards Available:  4 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  []
+	 2 :  ['Veldt', 'Serpent Trench']
+Branch viability: [True, False, True] Stuck: set()
+Working on branch 2 ( ['Veldt', 'Serpent Trench'] )
+status: terminus ruin_terminus_2
+status: check rooms ['ruin-st-exit', 'wor-veldt']
+status: dead ends ['ruin_terminus_2', 147, 149, 157, 41, 47, 'wor-veldt']
+Forcing connections...
+Forcing:  2046 3046
+forcing successful.
+Forcing:  2049 3049
+forcing successful.
+Forcing:  2053 3053
+forcing successful.
+Forcing:  2153 3153
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Active room:  65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 9 doors, 0 traps
+	Available entrances: 12 doors, 7 pits
+	Total doors in connected path: 9
+	Trying door exit: 168 in room 65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 4 connections, selected: 530 in room 247b
+Looking for reward in room 247b ...
+Making connection:  168 --> 530
+	Active room:  247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 .
+	Upstream nodes:  [] 
+	Downstream nodes:  []
+	Available exits: 8 doors, 1 traps
+	Available entrances: 11 doors, 7 pits
+	Total doors in connected path: 8
+	Trying trap exit: 2050 in room 247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+	Found 7 connections, selected: 3051 in room 241c
+Looking for reward in room 241c ...
+Making connection:  2050 --> 3051
+	Active room:  241c .
+	Upstream nodes:  ['241b', '241a', '247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 11 doors, 4 pits
+	Total doors in connected path: 8
+	Trying trap exit: 2052 in room 241c
+	Found 6 connections, selected: 3048 in room 247a
+Looking for reward in room 247a ...
+Making connection:  2052 --> 3048
+	Active room:  247a .
+	Upstream nodes:  ['241c', '241b', '241a', '241c', '247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2'] 
+	Downstream nodes:  []
+	Available exits: 1 doors, 0 traps
+	Available entrances: 10 doors, 3 pits
+	Total doors in connected path: 9
+	Trying door exit: 529 in room 247a
+	Found 11 connections, selected: 383 in room 247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2
+Looking for reward in room 247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2 ...
+Making connection:  529 --> 383
+	Active room:  241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a .
+	Upstream nodes:  ['241b', '241a'] 
+	Downstream nodes:  []
+	Available exits: 7 doors, 0 traps
+	Available entrances: 10 doors, 3 pits
+	Total doors in connected path: 7
+	Trying door exit: 146 in room 241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a
+	Found 3 connections, selected: 523 in room dc-23
+Looking for reward in room dc-23 ...
+Making connection:  146 --> 523
+	Active room:  dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a .
+	Upstream nodes:  ['241b', '241a'] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 1 traps
+	Available entrances: 9 doors, 3 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2044 in room dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a
+	Found 4 connections, selected: 3050 in room 247c
+Looking for reward in room 247c ...
+Making connection:  2044 --> 3050
+	Active room:  247c .
+	Upstream nodes:  ['dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a', '241b', '241a'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 9 doors, 2 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2051 in room 247c
+	Found 5 connections, selected: 3045 in room 246
+Looking for reward in room 246 ...
+Making connection:  2051 --> 3045
+	Active room:  246 .
+	Upstream nodes:  ['247c', 'dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a', '241b', '241a'] 
+	Downstream nodes:  []
+	Available exits: 0 doors, 1 traps
+	Available entrances: 9 doors, 1 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2047 in room 246
+	Found 4 connections, selected: 3047 in room 241b
+Looking for reward in room 241b ...
+Making connection:  2047 --> 3047
+	Active room:  247c_dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a_241b_246 .
+	Upstream nodes:  ['241a'] 
+	Downstream nodes:  []
+	Available exits: 6 doors, 1 traps
+	Available entrances: 9 doors, 1 pits
+	Total doors in connected path: 6
+	Trying trap exit: 2048 in room 247c_dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a_241b_246
+	Found 1 connections, selected: 3052 in room 241d
+Looking for reward in room 241d ...
+Found a reward!  [('Serpent Trench', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-st-exit
+Making connection:  2048 --> 3052
+Processing reward:  Serpent Trench
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got TERRA !
+	Set character path: TERRA depends on GAU
+		assessing key  TERRA in rooms
+		assessing key  TERRA in rooms
+		assessing key  TERRA in rooms
+			Applying key: ('TERRA',) in room 247c_dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a_241b_246
+			adding a door... 1155
+	Unlocked reward Whelk added to branch 2 checks
+		# rooms on each branch:  [40, 60, 47]
+		# rooms on each branch:  [51, 60, 47]
+		# rooms on each branch:  [51, 60, 53]
+		# rooms on each branch:  [63, 60, 53]
+Forced same branch: ZozoTower Zozo 0
+Distributed areas:
+	 0 :  {'Zozo', 'ZozoTower', 'SealedGate'}
+	 1 :  set()
+	 2 :  {'Mobliz', 'ReturnersHideout'}
+Checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 1 :  []
+	 2 :  ['Veldt', 'Serpent Trench', 'Whelk', 'Lete River']
+CUSTOM add pit 3039 to 247c_dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a_241b_246 ! [7, 0, 2, 0, 0] [3009, 3039]
+	Updated Rewards Obtained:  5 Characters,  8 Espers
+	Updated Rewards Available:  6 Characters,  6 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 1 :  []
+	 2 :  ['Veldt', 'Whelk', 'Lete River']
+	Unlocked an available reward! Whelk on branch 2
+Processing reward:  Whelk
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Stray !
+	Updated Rewards Obtained:  5 Characters,  9 Espers
+	Updated Rewards Available:  4 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House', 'Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3', 'Zozo']
+	 1 :  []
+	 2 :  ['Veldt', 'Lete River', 'Whelk']
+Closing branch...
+Forcing:  2023 3023
+forcing successful.
+Forcing:  2029 3029
+forcing successful.
+Forcing:  2030 3030
+forcing successful.
+Forcing:  2032 3032
+forcing successful.
+Forcing:  2033 3033
+forcing successful.
+Forcing:  2064 3064
+forcing successful.
+Forcing:  2128 3128
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: ms-wor-51_207b_216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a [11, 0, 1, 0, 1]
+	pits: [3068]
+	traps: []
+(2) delta values: []
+(4) remaining doors: [1535, 493, 1516, 1539, 1518, 1519, 501, 475, 1536, 1529, 1541]
+(4) connecting terminus: 1541 --> 1079
+(6) remaining dead ends: ['306r', '206b', 'branch-mz', 313, '215b', '305r', 511, 504, '206a', 312, 213, 352, 513, '309r', 221, '294r', '207a', '295r', 212, '203c', 'ms-wob-40', 310, 'ms-wor-48']
+(6) connecting dead ends: 1535 --> 1267
+(6) connecting dead ends: 493 --> 634
+(6) connecting dead ends: 1516 --> 658
+(6) connecting dead ends: 1539 --> 1514
+(6) connecting dead ends: 1518 --> 1545
+		assessing key  pt2 in rooms
+			Applying key: ('TERRA',) in room ruin-zozo
+			adding a door... 608
+			Applying key: ('pt2',) in room 212_203c_ms-wob-40_310_ms-wor-48_ruin_terminus_1_ms-wor-51_207b_216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+			adding a trap... 2068
+			removing key  pt2 from 212_203c_ms-wob-40_310_ms-wor-48_ruin_terminus_1_ms-wor-51_207b_216_215a_204b_207_204c_ruin-201_202_ruin_hub_0_206_220_203b_204_205_203a
+(6) connecting dead ends: 1519 --> 4605
+(6) connecting dead ends: 501 --> 1543
+(6) connecting dead ends: 475 --> 4603
+(6) connecting dead ends: 1536 --> 502
+(6) connecting dead ends: 1529 --> 4633
+... closing branch complete!
+Closing branch...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: 284_426_192_185_435_189_221R_279_494_190_184_429_208_193_211_436_187_186_dc-76_423_ruin-baren-reward_dc-15_490_ruin_terminus_3_493_491_492_489_280_283_497_498_495_ruin_hub_1_488_278_496_500_281_277_dc-73_282_499_ruin-baren_425_432_427_212R_428_424_430_209_191_188_188B_422_433_421_431_210 [0, 2, 2, 0, 0]
+	pits: [6848, 6843]
+	traps: [2070, 2071]
+(2) delta values: []
+(3) remaining traps: [2070, 2071] ; pits:  [6843, 6848]
+(3) connecting: 2071 --> 6848
+(3) remaining traps: [2070] ; pits:  [6843]
+(3) connecting: 2070 --> 6843
+(4) remaining doors: []
+(4) terminus already merged into hub, skipping
+(6) remaining dead ends: []
+... closing branch complete!
+Closing branch...
+Forcing:  2039 3039
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	hub: 247c_dc-23_241c_247b_65_51_148_158_154_155_156_50_37a_45_ruin-whelk_145_44_ruin-narshe_36_38_43_152_42_40_160_49_151_153_146_dc-1501_150_159_ruin_hub_2_247a_241b_246 [7, 0, 1, 0, 0]
+	pits: [3009, 3044, 3038]
+	traps: [2045]
+(2) delta values: [(0, '241d'), (0, 'ruin-st-exit'), (0, 'ruin-nikeah')]
+(2) selected ruin-nikeah (delta =  0 ):  [2, 0, 0, 0, 0] [5200, 5199] [] []
+(2) connecting 5199 --> 381
+(2) delta values: []
+(4) remaining doors: [1155, 191, 368, 178, 380, 152]
+(4) connecting terminus: 152 --> 1057
+(6) remaining dead ends: [41, 147, 'wor-veldt', 'ms-wor-52', 149, 47, 157]
+(6) connecting dead ends: 1155 --> 386
+(6) connecting dead ends: 191 --> 158
+(6) connecting dead ends: 368 --> 369
+(6) connecting dead ends: 178 --> 1192
+(6) connecting dead ends: 380 --> 61
+... closing branch complete!
+No character at Veldt, all accessible shops valid for dried meat
+REWARD STATE AFTER RUIN MAPPING:
+Ancient Castle None None
+8 Dragons None None
+Doma WOR 6 RewardType.CHARACTER
+Mt. Kolts 18 RewardType.ESPER
+Phantom Train 6 RewardType.ESPER
+Doma WOR 20 RewardType.ESPER
+Whelk 8 RewardType.ESPER
+Imperial Camp 8 RewardType.CHARACTER
+Magitek Factory None None
+Floating Continent None None
+8 Dragons None None
+Phoenix Cave None None
+Floating Continent None None
+Lone Wolf None None
+Tzen 11 RewardType.ESPER
+Umaro's Cave None None
+Figaro Castle WOR None None
+Lete River None None
+8 Dragons None None
+Doma WOB None None
+Lone Wolf None None
+8 Dragons None None
+Baren Falls 10 RewardType.CHARACTER
+Figaro Castle WOB None None
+Sealed Gate None None
+Owzer Mansion 11 RewardType.CHARACTER
+Zozo None None
+Magitek Factory None None
+South Figaro None None
+8 Dragons None None
+Gau Father House None None
+Zone Eater None None
+8 Dragons None None
+Narshe Moogle Defense 25 RewardType.ESPER
+Daryl's Tomb None None
+Veldt None None
+Burning House None None
+Doma WOR 15 RewardType.ESPER
+Ebot's Rock None None
+Esper Mountain 7 RewardType.ESPER
+Kefka's Tower None None
+Collapsing House None None
+Auction House 12 RewardType.ESPER
+Veldt Cave WOR None None
+South Figaro Cave None None
+Narshe Battle None None
+Fanatic's Tower None None
+8 Dragons None None
+Mobliz WOR None None
+Magitek Factory None None
+Narshe WOR None None
+Fanatic's Tower None None
+Opera House None None
+Kohlingen None None
+Auction House 98 RewardType.ITEM
+8 Dragons None None
+Serpent Trench 0 RewardType.CHARACTER
+Narshe WOR None None
+Floating Continent None None
+Doom Gaze None None
+Tritoch None None
+Mt. Zozo None None
+REWARD STATE FINAL:
+Ancient Castle 13 RewardType.CHARACTER
+Phoenix Cave 9 RewardType.CHARACTER
+Floating Continent 1 RewardType.ESPER
+Lone Wolf 4 RewardType.ESPER
+Umaro's Cave 24 RewardType.ESPER
+Figaro Castle WOR 16 RewardType.ESPER
+Lete River 17 RewardType.ESPER
+Doma WOB 1 RewardType.CHARACTER
+Figaro Castle WOB 23 RewardType.ESPER
+Sealed Gate 3 RewardType.ESPER
+Zozo 3 RewardType.CHARACTER
+Magitek Factory 22 RewardType.ESPER
+South Figaro 5 RewardType.ESPER
+Gau Father House 0 RewardType.ESPER
+Zone Eater 21 RewardType.ESPER
+Daryl's Tomb 10 RewardType.ESPER
+Burning House 13 RewardType.ESPER
+Ebot's Rock 26 RewardType.ESPER
+Collapsing House 19 RewardType.ESPER
+Veldt Cave WOR 9 RewardType.ESPER
+South Figaro Cave 14 RewardType.ESPER
+Narshe Battle 211 RewardType.ITEM
+Mobliz WOR 104 RewardType.ITEM
+Magitek Factory 211 RewardType.ITEM
+Opera House 211 RewardType.ITEM
+Kohlingen 211 RewardType.ITEM
+Narshe WOR 26 RewardType.ITEM
+Doom Gaze 128 RewardType.ITEM
+Tritoch 98 RewardType.ITEM
+Mt. Zozo 162 RewardType.ITEM
+=== postprocess_door_map() CALLED ===
+doors.map length: 2, doors.map[0] length: 130
+exit_data[360][0] BEFORE processing: 10
+Adding WoR exits for doors: [658]
+  WoR door 4658: exit_data[4658][0] = 62
+Patching event door: 1536 [153, 23, 11, 0, 0, 0, 0, 0, 9, 7, 0, 0]
+Patching event door: 1539 [141, 67, 8, 0, 0, 0, 1, 0, 26, 8, 0, 0]
+Patching event door: 1540 [141, 58, 8, 0, 0, 0, 3, 0, 1, 8, 0, 0]
+Patching event door: 1541 [153, 23, 11, 0, 0, 0, 0, 0, 19, 7, 0, 0]
+Patching event door: 1542 [153, 23, 28, 0, 0, 0, 0, 0, 9, 7, 0, 0]
+Patching event door: 1543 [151, 19, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0]
+Patching event door: 1544 [151, 9, 9, 0, 0, 0, 2, 0, 23, 29, 0, 0]
+Patching event door: 1545 [141, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0]
+Patching:  1047 : [511, 229, 131, 0, 0, 0, 2, 0, 55, 32, 0, 0, 375]
+Patching event door: 1564 [299, 100, 8, 0, 0, 0, 3, 0, 27, 7, 0, 0]
+Patching event door: 1528 [151, 25, 8, 0, 0, 0, 3, 0, 82, 8, 0, 0]
+Patching event door: 1535 [153, 8, 28, 0, 0, 0, 0, 0, 19, 7, 0, 0]
+Patching used logical: 4658 [511, 31, 184, 0, 0, 0, 2, 0, 60, 52, 0, 0, 237]
+Patching event door: 1529 [151, 2, 8, 0, 0, 0, 1, 0, 75, 8, 0, 0]
+Patching:  523 : [511, 214, 149, 0, 0, 0, 2, 0, 12, 26, 0, 0, 167]
+Patching used logical: 5199 [511, 145, 76, 0, 0, 0, 3, 0, 0, 0, 63, 128, 169]
+Patching:  15 : [166, 9, 13, 1, 0, 0, 0, 0, 185, 93, 0, 0, 0]
+Patching event door: 1527 [141, 117, 8, 0, 0, 0, 1, 0, 31, 7, 0, 0]
+Patching used logical: 5213 [511, 34, 157, 0, 0, 0, 2, 0, 0, 63, 31, 0, 198]
+Patching used logical: 5214 [511, 33, 156, 0, 0, 0, 3, 0, 0, 0, 63, 128, 198]
+Patching used logical: 5215 [511, 35, 157, 0, 0, 0, 1, 0, 32, 0, 63, 128, 198]
+Patching:  1135 : [511, 84, 34, 0, 0, 0, 2, 0, 0, 62, 43, 0, 20]
+Patching:  1143 : [511, 115, 34, 0, 0, 0, 2, 0, 15, 62, 28, 0, 32]
+Patching used logical: 5240 [511, 172, 76, 0, 0, 0, 2, 0, 16, 63, 31, 0, 285]
+Patching:  1162 : [511, 112, 95, 0, 0, 0, 3, 0, 0, 0, 47, 128, 74]
+Patching:  658 : [511, 45, 155, 0, 0, 0, 2, 0, 60, 52, 0, 0, 237]
+Patching event door: 1560 [0, 177, 71, 0, 0, 0, 3, 0, 0, 22, 0, 0]
+Patching:  1192 : [511, 237, 136, 0, 0, 0, 1, 0, 32, 16, 15, 128, 158]
+Patching:  1207 : [511, 32, 9, 0, 0, 0, 3, 0, 0, 8, 7, 128, 185]
+Patching:  1209 : [511, 27, 40, 0, 0, 0, 2, 0, 1, 31, 30, 0, 188]
+Patching:  1213 : [511, 27, 131, 0, 0, 0, 2, 0, 0, 63, 31, 0, 198]
+Patching:  1243 : [511, 129, 179, 0, 0, 0, 2, 0, 13, 31, 18, 0, 305]
+Patching:  1163 : [511, 114, 95, 0, 0, 0, 1, 0, 56, 0, 47, 128, 74]
+Patching:  1244 : [511, 120, 150, 0, 0, 0, 2, 0, 13, 31, 18, 0, 306]
+Patching:  1164 : [511, 113, 94, 0, 0, 0, 0, 0, 0, 1, 63, 0, 74]
+Patching:  1249 : [511, 140, 208, 0, 0, 0, 3, 0, 0, 0, 29, 128, 324]
+Patching:  1250 : [511, 140, 208, 0, 0, 0, 0, 0, 0, 1, 31, 0, 324]
+Patching:  1251 : [511, 140, 208, 0, 0, 0, 0, 0, 0, 0, 31, 0, 324]
+Patching:  1259 : [511, 251, 229, 0, 0, 0, 0, 0, 24, 1, 8, 0, 344]
+Patching:  1260 : [511, 250, 230, 0, 0, 0, 3, 0, 0, 0, 31, 128, 344]
+Patching:  1261 : [511, 251, 231, 0, 0, 0, 2, 0, 19, 48, 6, 0, 344]
+Patching:  1266 : [511, 77, 240, 0, 0, 0, 1, 0, 16, 1, 14, 128, 396]
+Patching:  1267 : [511, 75, 240, 0, 0, 0, 3, 0, 0, 1, 14, 128, 396]
+Patching:  1268 : [511, 76, 239, 0, 0, 0, 0, 0, 1, 1, 2, 0, 396]
+Patching:  1269 : [511, 76, 239, 0, 0, 0, 0, 0, 7, 0, 2, 0, 396]
+Patching:  1270 : [511, 76, 239, 0, 0, 0, 0, 0, 12, 1, 3, 0, 396]
+Patching:  1174 : [511, 90, 100, 0, 0, 0, 2, 0, 0, 15, 15, 0, 93]
+Patching:  1186 : [511, 140, 21, 0, 0, 0, 2, 0, 0, 15, 15, 0, 127]
+Patching:  1187 : [511, 178, 46, 0, 0, 0, 2, 0, 0, 15, 15, 0, 131]
+Patching:  360 : [511, 90, 100, 0, 0, 0, 0, 0, 7, 1, 0, 0, 93]
+Patching event door: 4502 [143, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0]
+Patching event door: 1523 [142, 50, 8, 0, 0, 0, 3, 0, 1, 7, 0, 0]
+Patching event door: 1524 [142, 59, 8, 0, 0, 0, 1, 0, 30, 7, 0, 0]
+Patching:  457 : [511, 140, 19, 0, 0, 0, 0, 0, 7, 1, 0, 0, 127]
+Patching event door: 1525 [149, 30, 7, 0, 0, 0, 3, 0, 10, 8, 0, 0]
+Patching event door: 1514 [142, 41, 9, 0, 0, 0, 2, 0, 26, 11, 0, 0]
+Patching event door: 1515 [142, 66, 8, 0, 0, 0, 3, 0, 1, 7, 0, 0]
+Patching event door: 1516 [142, 75, 8, 0, 0, 0, 1, 0, 30, 7, 0, 0]
+Patching event door: 1520 [145, 29, 7, 0, 0, 0, 3, 0, 58, 8, 0, 0]
+Patching event door: 1518 [145, 29, 7, 0, 0, 0, 3, 0, 74, 8, 0, 0]
+Patching event door: 1519 [145, 2, 7, 0, 0, 0, 1, 0, 67, 8, 0, 0]
+Patching event door: 1526 [149, 30, 7, 0, 0, 0, 3, 0, 116, 8, 0, 0]
+Patching event door: 1521 [145, 2, 7, 0, 0, 0, 1, 0, 51, 8, 0, 0]
+Patching event door: 1522 [145, 26, 9, 0, 0, 0, 0, 0, 41, 8, 0, 0]
+Patching event door: 1530 [151, 25, 8, 0, 0, 0, 3, 0, 66, 8, 0, 0]
+Patching event door: 1531 [151, 2, 8, 0, 0, 0, 1, 0, 59, 8, 0, 0]
+Patching event door: 1532 [146, 8, 12, 0, 0, 0, 0, 0, 38, 8, 0, 0]
+Patching event door: 1533 [141, 83, 8, 0, 0, 0, 1, 0, 26, 8, 0, 0]
+Patching event door: 1534 [141, 74, 8, 0, 0, 0, 3, 0, 1, 8, 0, 0]
+Patching event door: 1501 [117, 36, 2, 0, 0, 1, 2, 0, 179, 71, 0, 0]
+Patching event door: 1502 [55, 28, 42, 0, 0, 1, 0, 0, 64, 76, 0, 0]
+Patching event door: 1504 [340, 23, 46, 0, 0, 1, 0, 0, 250, 128, 0, 0]
+Patching event door: 1505 [242, 32, 61, 0, 0, 1, 0, 0, 120, 187, 0, 0]
+Patching event door: 1506 [69, 16, 42, 0, 0, 0, 0, 0, 75, 102, 0, 0]
+Patching event door: 1507 [55, 28, 42, 0, 0, 1, 0, 0, 64, 76, 0, 0]
+Patching event door: 1510 [279, 22, 4, 0, 0, 0, 2, 0, 54, 53, 0, 0]
+Patching event door: 1511 [277, 5, 28, 0, 0, 0, 2, 0, 26, 54, 0, 0]
+Patching event door: 1512 [300, 69, 8, 0, 0, 0, 2, 0, 56, 14, 0, 0]
+Patching event door: 1513 [70, 47, 39, 0, 0, 0, 0, 0, 10, 48, 0, 0]
+Patching event door: 1514 [142, 41, 9, 0, 0, 0, 2, 0, 26, 11, 0, 0]
+Patching event door: 1515 [142, 66, 8, 0, 0, 0, 3, 0, 1, 7, 0, 0]
+Patching event door: 1516 [142, 75, 8, 0, 0, 0, 1, 0, 30, 7, 0, 0]
+Patching event door: 1518 [145, 29, 7, 0, 0, 0, 3, 0, 74, 8, 0, 0]
+Patching event door: 1519 [145, 2, 7, 0, 0, 0, 1, 0, 67, 8, 0, 0]
+Patching event door: 1520 [145, 29, 7, 0, 0, 0, 3, 0, 58, 8, 0, 0]
+Patching event door: 1521 [145, 2, 7, 0, 0, 0, 1, 0, 51, 8, 0, 0]
+Patching event door: 1522 [145, 26, 9, 0, 0, 0, 0, 0, 41, 8, 0, 0]
+Patching event door: 1523 [142, 50, 8, 0, 0, 0, 3, 0, 1, 7, 0, 0]
+Patching event door: 1524 [142, 59, 8, 0, 0, 0, 1, 0, 30, 7, 0, 0]
+Patching event door: 1525 [149, 30, 7, 0, 0, 0, 3, 0, 10, 8, 0, 0]
+Patching event door: 1526 [149, 30, 7, 0, 0, 0, 3, 0, 116, 8, 0, 0]
+Patching event door: 1527 [141, 117, 8, 0, 0, 0, 1, 0, 31, 7, 0, 0]
+Patching event door: 1528 [151, 25, 8, 0, 0, 0, 3, 0, 82, 8, 0, 0]
+Patching event door: 1529 [151, 2, 8, 0, 0, 0, 1, 0, 75, 8, 0, 0]
+Patching event door: 1530 [151, 25, 8, 0, 0, 0, 3, 0, 66, 8, 0, 0]
+Patching event door: 1531 [151, 2, 8, 0, 0, 0, 1, 0, 59, 8, 0, 0]
+Patching event door: 1532 [146, 8, 12, 0, 0, 0, 0, 0, 38, 8, 0, 0]
+Patching event door: 1533 [141, 83, 8, 0, 0, 0, 1, 0, 26, 8, 0, 0]
+Patching event door: 1534 [141, 74, 8, 0, 0, 0, 3, 0, 1, 8, 0, 0]
+Patching event door: 1535 [153, 8, 28, 0, 0, 0, 0, 0, 19, 7, 0, 0]
+Patching event door: 1536 [153, 23, 11, 0, 0, 0, 0, 0, 9, 7, 0, 0]
+Patching event door: 1537 [151, 19, 9, 0, 0, 0, 2, 0, 8, 29, 0, 0]
+Patching event door: 1538 [151, 9, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0]
+Patching event door: 1539 [141, 67, 8, 0, 0, 0, 1, 0, 26, 8, 0, 0]
+Patching event door: 1540 [141, 58, 8, 0, 0, 0, 3, 0, 1, 8, 0, 0]
+Patching event door: 1541 [153, 23, 11, 0, 0, 0, 0, 0, 19, 7, 0, 0]
+Patching event door: 1542 [153, 23, 28, 0, 0, 0, 0, 0, 9, 7, 0, 0]
+Patching event door: 1543 [151, 19, 9, 0, 0, 0, 2, 0, 23, 12, 0, 0]
+Patching event door: 1544 [151, 9, 9, 0, 0, 0, 2, 0, 23, 29, 0, 0]
+Patching event door: 1545 [141, 38, 9, 0, 0, 0, 2, 0, 8, 13, 0, 0]
+Patching event door: 1546 [1, 249, 224, 0, 0, 0, 2, 0, 7, 24, 0, 0]
+Patching event door: 1547 [285, 33, 53, 0, 0, 0, 0, 0, 156, 85, 0, 0]
+Patching event door: 1552 [276, 10, 12, 0, 0, 0, 2, 0, 237, 50, 0, 0]
+Patching event door: 1553 [1, 237, 50, 0, 0, 0, 2, 0, 5, 6, 0, 0]
+Patching event door: 1554 [318, 8, 7, 0, 0, 0, 2, 0, 117, 156, 0, 0]
+Patching event door: 1555 [11, 16, 8, 0, 0, 0, 2, 0, 5, 6, 0, 0]
+Patching event door: 1556 [394, 4, 12, 0, 0, 0, 2, 0, 163, 176, 0, 0]
+Patching event door: 1557 [6, 16, 6, 0, 0, 0, 2, 0, 70, 29, 0, 0]
+Patching event door: 1558 [401, 42, 5, 0, 0, 0, 2, 0, 35, 35, 0, 0]
+Patching event door: 1559 [117, 1, 22, 0, 0, 0, 1, 0, 178, 71, 0, 0]
+Patching event door: 1560 [0, 177, 71, 0, 0, 0, 3, 0, 0, 22, 0, 0]
+Patching event door: 1563 [301, 26, 8, 0, 0, 0, 3, 0, 100, 7, 0, 0]
+Patching event door: 1564 [299, 100, 8, 0, 0, 0, 3, 0, 27, 7, 0, 0]
+Patching event door: 4502 [143, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0]
+Applying dungeon_crawl override, starting safe_id: 1280
+exit_data[360][0] AFTER dungeon_crawl override: 1291
+=== postprocess_door_map() FINISHED ===
+door_map has 238 entries
+Door connections:
+	393<-->470	(Narshe School Entrance Left<-->Phantom Train Outside Dining Room West  Door)
+	469<-->1532	(Phantom Train Entrance<-->Phantom Train Engine Door Outside)
+	500<-->1523	(Phantom Train Inside Caboose Middle Door<-->Phantom Train Car 2 Left Exit)
+	1524<-->1533	(Phantom Train Car 2 Right Exit<-->Phantom Train Car 6 Right Exit)
+	472<-->497	(Phantom Train Outside Front Cars Far Right Car West Door<-->Phantom Train Inside Caboose East Top Tile)
+	471<-->1522	(Phantom Train Outside Dining Room East Door<-->Phantom Train Car 3 South Door Outside)
+	474<-->1525	(Phantom Train Outside Caboose West<-->Phantom Train Car 4 Right Door Outside)
+	476<-->496	(Phantom Train Outside Caboose Middle<-->Phantom Train Inside Caboose West Top Tile)
+	473<-->1515	(Phantom Train Outside Final Save Point Room<-->Phantom Train Car 1 Left Exit)
+	1521<-->1542	(Phantom Train Car 2 Left Door Outside<-->Phantom Train Car 7 Left Cabin)
+	1520<-->1534	(Phantom Train Car 2 Right Door Outside<-->Phantom Train Car 6 Left Exit)
+	489<-->1530	(Phantom Train Inside Dining Room West Bottom Tile<-->Phantom Train Car 7 Right Door Outside)
+	1527<-->1528	(Phantom Train Car 4 Right Exit<-->Phantom Train Car 6 Right Door Outside)
+	1540<-->1544	(Phantom Train Car 7 Left Exit<-->Phantom Train Car 7 Left Cabin interior exit)
+	1243<-->1531	(Tzen South to World Map WoR<-->Phantom Train Car 7 Left Door Outside)
+	1079<-->1541	(Sealed Gate<-->Phantom Train Car 7 Right Cabin)
+	1267<-->1535	(Cid's House West to World Map<-->Phantom Train Car 6 Right Cabin)
+	493<-->634	(Phantom Train Inside Front Cars Far Right Car West Top Tile<-->Zozo Tower 6F Single Chest Room Inside)
+	658<-->1516	(Opera House Lobby to World Map<-->Phantom Train Car 1 Right Exit)
+	1514<-->1539	(Phantom Train Car 3 South Exit<-->Phantom Train Car 7 Right Exit)
+	1518<-->1545	(Phantom Train Car 1 Right Door Outside<-->Phantom Train Locomotive interior exit)
+	1519<-->4605	(Phantom Train Car 1 Left Door Outside<-->Zozo Cafe 2F Left Outside WOR)
+	501<-->1543	(Phantom Train Inside Caboose to Caboose Inner Room<-->Phantom Train Car 7 Right Cabin interior exit)
+	475<-->4603	(Phantom Train Outside Caboose East<-->Zozo Clock Puzzle Room 2F Outside WOR)
+	502<-->1536	(Phantom Train Final Save Point Room<-->Phantom Train Car 6 Left Cabin)
+	1529<-->4633	(Phantom Train Car 6 Left Door Outside<-->Zozo Cafe 3F Right Inside WOR)
+	394<-->1049	(Narshe School Entrance Middle<-->Esper Mountain Inside First Room East Door to Statue Path)
+	1047<-->1053	(Esper Mountain Inside to World Map<-->Esper Mountain Inside Second Room West Door)
+	585<-->1050	(Owzer's Basement First Room to Door Switch Room<-->Esper Mountain Inside Second Room Southwest Door)
+	582<-->1033	(Owzer's Basement Stairs Up<-->Esper Mountain 3 Statues Room Right Door)
+	583<-->1054	(Owzer's Basement Door to Single Chest Room<-->Esper Mountain Inside Second Room Northwest Door)
+	1046<-->1052	(Esper Mountain Inside First Room North Door to Outside Loop<-->Esper Mountain Inside Pit Room)
+	589<-->5213	(Owzer's Basement Save Point Room Right Door<-->Jidoor WoR to World Map South)
+	580<-->593	(Owzer's Behind Painting to Owzer's House WOR<-->Owzer's House Door to Behind Painting WOR)
+	581<-->1032	(Owzer's Behind Painting Stairs Down<-->Esper Mountain 3 Statues Room Left Door)
+	586<-->1051	(Owzer's Basement Switching Door Room South<-->Esper Mountain Inside Second Room Southeast Door)
+	1034<-->1048	(Esper Mountain Outside Bridge Room West Door Left Tile<-->Esper Mountain Inside First Room West Door to Outside Loop)
+	587<-->1042	(Owzer's Basement Switching Door Room Left Door<-->Esper Mountain Outside Statue Path South Door)
+	588<-->1038	(Owzer's Basement Behind Door Switch Room South Door<-->Esper Mountain Outside Path to Final Room East Door Left Tile)
+	1040<-->1044	(Esper Mountain Outside Path to Final Room West Door Left Tile<-->Esper Mountain Outside West Treasure Room)
+	1036<-->1564	(Esper Mountain Outside Bridge Room East Door<-->Darill's tomb staircase top to tomb)
+	1037<-->1043	(Esper Mountain Outside East Treasure Room<-->Esper Mountain Outside Statue Path North Door)
+	1056<-->1196	(Esper Mountain Inside Second Room North Door<-->Baren Falls Outside to World Map)
+	1055<-->1194	(Esper Mountain Inside Second Room East Door<-->Veldt Shore South to World Map)
+	443<-->445	(Doma Dream Right Side Bedroom<-->Doma Dream Main Room to Throne Room)
+	444<-->451	(Doma Dream 1F Door to Right Side Bedroom<-->Doma Dream 1F Main Room to Inner Room Right Door)
+	441<-->478	(Doma Dream Interior to 2F Outside<-->Doma Dream Train Outside Puzzle Room East)
+	449<-->858	(Doma Dream 1F Main Room to Inner Room Left Door<-->Doma Dream Cliffs Outside Loop West Door)
+	850<-->863	(Doma Dream 3 Stooges Maze Northeast Section Left Door<-->Doma Dream Caves Loop Room North)
+	437<-->446	(Doma Dream 2F Outside to Main Room<-->Doma Dream 1F Door to Side Bedroom)
+	453<-->479	(Doma Dream 3F Stairs to 2F<-->Doma Dream Train Outside Lump of Metal Room West)
+	454<-->870	(Doma Dream 2F Main Room to Cyan's Room<-->Doma Dream Train 1st Train Car East Door Top Tile)
+	484<-->855	(Doma Dream Train 2nd Car West Top Tile<-->Doma Dream 3 Stooges Maze South Section Door to Stooges Room)
+	456<-->480	(Doma Dream Throne Room<-->Doma Dream Train Outside Lump of Metal Room East)
+	482<-->860	(Doma Dream Train Outside First Room East<-->Doma Dream Cliffs Outside Final Room Top Tile)
+	477<-->481	(Doma Dream Train Outside Puzzle Room West<-->Doma Dream Train Outside First Room West)
+	483<-->856	(Doma Dream Train Outside Save Point Room<-->Doma Dream Stooges Room)
+	435<-->439	(Doma Dream 3F Outside to Inside<-->Doma Dream 3F Inside to 3F Outside)
+	447<-->5240	(Doma Dream Side Bedroom<-->Doma WoR to World Map)
+	440<-->1045	(Doma Dream Interior to Front Outside<-->Esper Mountain Outside Northwest Treasure Room)
+	452<-->584	(Doma Dream 2F Stairs to 3F<-->Owzer's Basement Single Chest Room)
+	448<-->4502	(Doma Dream 1F Inner Room Left Door To Main Room<-->Doma Dream Train Final Save Point Room)
+	442<-->868	(Doma Dream Treasure Room to 2F Outside<-->Doma Dream Train 1st Train Car West Door Top Tile)
+	438<-->867	(Doma Dream 2F Outside to Treasure Room<-->Doma Dream Train Switch Puzzle Room East Door)
+	436<-->486	(Doma Dream 1F Outside Main Door<-->Doma Dream Train 2nd Car East Top Tile)
+	455<-->864	(Doma Dream Cyan's Room<-->Doma Dream Caves Loop Room South)
+	851<-->865	(Doma Dream 3 Stooges Maze Southeast Section Door<-->Doma Dream Train Switch Puzzle Room West Door Top Tile)
+	450<-->591	(Doma Dream 1F Inner Room Right Door To Main Room<-->Owzer's Basement Chadarnook's Room)
+	389<-->395	(Mt. Kolts Back Side to Bridges Room<-->Narshe School Entrance Right)
+	370<-->1179	(Mt. Kolts Outside Bridge West<-->Mt. Kolts Back Side to West Cliff)
+	387<-->1184	(Mt. Kolts Back Side Middle Door Left Tile<-->Imperial Camp)
+	364<-->371	(Mt. Kolts 1F Outside West Door Left Tile<-->Mt. Kolts Outside Bridge East)
+	376<-->1560	(Mt. Kolts Split Room from 1F Outside<-->Imperial base west exit to world map for dungeon crawl)
+	373<-->385	(Mt. Kolts Vargas Area Exit After Boss<-->Mt. Kolts Split Room to Inside Single Treasure Room)
+	164<-->377	(Narshe South Caves from Arvis Inside WoR<-->Mt. Kolts Split Room to 1F Outside Single Treasure Room)
+	378<-->390	(Mt. Kolts Split Room to West Cliff<-->Mt. Kolts Save Point Room East)
+	162<-->1149	(Narshe South Caves to 3-Party Cave WoR<-->Snow Battlefield North WoR)
+	149<-->372	(Narshe Northern Mines 1F Stairs to 2F WoR<-->Mt. Kolts Vargas Area Entrance)
+	163<-->374	(Narshe South Caves to Moogle Cave WoR<-->Mt. Kolts First Room Inside to South Entrance)
+	151<-->391	(Narshe Northern Mines 2F Inside WoR<-->Mt. Kolts Save Point Room West)
+	147<-->366	(Narshe Northern Mines 3F East WoR<-->Mt. Kolts 1F Outside East Door)
+	142<-->1147	(Narshe South Caves Secret Passage 3F Outside WoR<-->Narshe Northern Mines 3F to Snow Battlefield WoR)
+	148<-->1143	(Narshe Northern Mines Side Room to Main Hallway WoR<-->Narshe To World Map WoR)
+	141<-->153	(Narshe South Caves Secret Passage 2F Outside WoR<-->Narshe Northern Mines 3F Inside East WoR)
+	150<-->363	(Narshe Northern Mines 2F Stairs to 1F WoR<-->Mt. Kolts South Entrance To Inside)
+	143<-->179	(Narshe South Caves from Arvis Outside WoR<-->Narshe Northern Mines Main Hallway Inside to Mines Outside WoB)
+	155<-->1146	(Narshe South Caves Secret Passage 1F North Inside WoR<-->Narshe Northern Mines Outside to Mines Main Hallway WoR)
+	145<-->154	(Narshe Northern Mines 2F Outside WoR<-->Narshe South Caves Secret Passage 1F South Inside WoR)
+	166<-->1175	(Narshe Checkpoint Room to South Caves Secret Passage 3F WoR<-->Mt. Kolts South Entrance to World Map)
+	375<-->384	(Mt. Kolts First Room Inside to 1F Outside<-->Mt. Kolts After Vargas Room South to Outside)
+	144<-->382	(Narshe School Outside WoR<-->Mt. Kolts Bridges Room East)
+	140<-->379	(Narshe South Caves Secret Passage Entrance Outside WoR<-->Mt. Kolts 2F Inside North)
+	1148<-->1178	(Snow Battlefield South WoR<-->Mt. Kolts North Exit to World Map)
+	161<-->1176	(Narshe South Caves to Checkpoint Room WoR<-->Mt. Kolts 2F Outside West Cliff to Back Side East)
+	165<-->167	(Narshe Checkpoint Room to South Caves WoR<-->Narshe South Caves Secret Passage 3F to Checkpoint Room WoR)
+	192<-->1177	(Narshe 3-Party Cave North WoB<-->Mt. Kolts North Exit to After Vargas Room)
+	168<-->530	(Narshe South Caves Secret Passage 3F Inside WoR<-->Serpent Trench Cave 2nd Part 2nd Room)
+	383<-->529	(Mt. Kolts After Vargas Room North<-->Serpent Trench Cave 2nd Part 1st Room)
+	146<-->523	(Narshe Northern Mines 3F West WoR<-->Crescent Mountain to World Map)
+	381<-->5199	(Mt. Kolts Bridges Room West<-->Nikeah West to WOR)
+	152<-->1057	(Narshe Northern Mines 3F Inside West WoR<-->Esper Mountain Inside Final Room Dead End)
+	386<-->1155	(Mt. Kolts Inside Single Treasure Room<-->Narshe Northern Mines Main Hallway to Tritoch Room WoB)
+	158<-->191	(Narshe Northern Mines Tritoch Room WoR<-->Narshe 3-Party Cave South WoB)
+	368<-->369	(Mt. Kolts 2F Outside West Cliff to Inside<-->Mt. Kolts 2F Outside Single Treasure Room)
+	178<-->1192	(Narshe Northern Mines Main Hallway to Side Room WoB<-->Mobliz East to World Map WoR)
+	61<-->380	(Cave in the Veldt WoR<-->Mt. Kolts 2F Inside South)
+	472<-->499	(Phantom Train Outside Front Cars Far Right Car West Door<-->Phantom Train Inside Caboose East Bottom Tile)
+	474<-->1526	(Phantom Train Outside Caboose West<-->Phantom Train Car 4 Right Door Outside no caboose)
+	476<-->498	(Phantom Train Outside Caboose Middle<-->Phantom Train Inside Caboose West Bottom Tile)
+	490<-->1530	(Phantom Train Inside Dining Room West Top Tile<-->Phantom Train Car 7 Right Door Outside)
+	1266<-->1535	(Cid's House East to World Map<-->Phantom Train Car 6 Right Cabin)
+	1268<-->1535	(Cid's House Northwest to World Map<-->Phantom Train Car 6 Right Cabin)
+	1269<-->1535	(Cid's House North to World Map<-->Phantom Train Car 6 Right Cabin)
+	1270<-->1535	(Cid's House Northeast to World Map<-->Phantom Train Car 6 Right Cabin)
+	494<-->634	(Phantom Train Inside Front Cars Far Right Car West Bottom Tile<-->Zozo Tower 6F Single Chest Room Inside)
+	589<-->5214	(Owzer's Basement Save Point Room Right Door<-->Jidoor WoR to World Map West)
+	589<-->5215	(Owzer's Basement Save Point Room Right Door<-->Jidoor WoR to World Map East)
+	1035<-->1048	(Esper Mountain Outside Bridge Room West Door Right Tile<-->Esper Mountain Inside First Room West Door to Outside Loop)
+	588<-->1039	(Owzer's Basement Behind Door Switch Room South Door<-->Esper Mountain Outside Path to Final Room East Door Right Tile)
+	1041<-->1044	(Esper Mountain Outside Path to Final Room West Door Right Tile<-->Esper Mountain Outside West Treasure Room)
+	1055<-->1195	(Esper Mountain Inside Second Room East Door<-->Veldt Shore East to World Map)
+	454<-->871	(Doma Dream 2F Main Room to Cyan's Room<-->Doma Dream Train 1st Train Car East Door Bottom Tile)
+	485<-->855	(Doma Dream Train 2nd Car West Bottom Tile<-->Doma Dream 3 Stooges Maze South Section Door to Stooges Room)
+	482<-->861	(Doma Dream Train Outside First Room East<-->Doma Dream Cliffs Outside Final Room Bottom Tile)
+	442<-->869	(Doma Dream Treasure Room to 2F Outside<-->Doma Dream Train 1st Train Car West Door Bottom Tile)
+	436<-->487	(Doma Dream 1F Outside Main Door<-->Doma Dream Train 2nd Car East Bottom Tile)
+	851<-->866	(Doma Dream 3 Stooges Maze Southeast Section Door<-->Doma Dream Train Switch Puzzle Room West Door Bottom Tile)
+	388<-->1184	(Mt. Kolts Back Side Middle Door Right Tile<-->Imperial Camp)
+	365<-->371	(Mt. Kolts 1F Outside West Door Right Tile<-->Mt. Kolts Outside Bridge East)
+	178<-->1193	(Narshe Northern Mines Main Hallway to Side Room WoB<-->Mobliz South to World Map WoR)
+One-way connections:
+	 2067  ->  3067
+	 2065  ->  3066
+	 2066  ->  3065
+	 2023  ->  3023
+	 2029  ->  3029
+	 2030  ->  3030
+	 2032  ->  3032
+	 2033  ->  3033
+	 2064  ->  3064
+	 2128  ->  3128
+	 2011  ->  3011
+	 2012  ->  3012
+	 2013  ->  3013
+	 2076  ->  3076
+	 2176  ->  3176
+	 2016  ->  3019
+	 2020  ->  3021
+	 2019  ->  3014
+	 2014  ->  3020
+	 2015  ->  6847
+	 846  ->  6849
+	 852  ->  3017
+	 2021  ->  3069
+	 847  ->  6853
+	 854  ->  3071
+	 2072  ->  6852
+	 853  ->  3072
+	 862  ->  3073
+	 859  ->  6854
+	 849  ->  3016
+	 2017  ->  3074
+	 2069  ->  6844
+	 845  ->  6862
+	 848  ->  6859
+	 2074  ->  6845
+	 844  ->  3015
+	 843  ->  3070
+	 2073  ->  6846
+	 2071  ->  6848
+	 2070  ->  6843
+	 2046  ->  3046
+	 2049  ->  3049
+	 2053  ->  3053
+	 2153  ->  3153
+	 2050  ->  3051
+	 2052  ->  3048
+	 2044  ->  3050
+	 2051  ->  3045
+	 2047  ->  3047
+	 2048  ->  3052
+	 2039  ->  3039
+	 2079  ->  3077
+	 2077  ->  3078
+	 2078  ->  3079
+attempting to update event exit info:  2045
+Updated event exit info:  2045 0xa8edd
+attempting to update event exit info:  2048
+Updated event exit info:  2048 0xac545
+attempting to update event exit info:  2052
+Updated event exit info:  2052 0xac55b
+attempting to update event exit info:  2053
+Updated event exit info:  2053 0xac562
+attempting to update event exit info:  2077
+Updated event exit info:  2077 0xa8d27
+attempting to update event exit info:  2078
+Updated event exit info:  2078 0xa8d5b
+attempting to update event exit info:  2079
+Updated event exit info:  2079 0xa8d85
+attempting to update event exit info:  1560
+Updated event exit info:  1560 0xa88b9
+attempting to update event exit info:  1564
+Updated event exit info:  1564 0xa673f
+Passed entrance door patch for  1516  -->  658
+Passed entrance door patch for  1541  -->  1079
+Connecting: 61 to 380
+looking for event at:  0x1 207 89 (type  short )
+source code at switchyard:  ['SetParentMap 1 (207, 89)', 'ClearEventBit 0xa4', 'LoadMap 100 (9, 36)', 'Return']
+Writing exit event: 61 (pair = 380 ) @  0x29e06
+	Reason:  [True, False, False, False, False]
+['LoadMap 5 (7, 1)', 'Return']
+Connecting: 62 to 4658
+looking for event at:  0x1 31 183 (type  short )
+source code at switchyard:  ['SetParentMap 1 (31, 183)', 'ClearEventBit 0x349', 'ClearEventBit 0x347', 'ClearEventBit 0x348', 'ClearEventBit 0x346', 'ClearEventBit 0x355', 'ClearEventBit 0x350', 'ClearEventBit 0x34f', 'ClearEventBit 0x34e', 'ClearEventBit 0x34d', 'ClearEventBit 0x34c', 'ClearEventBit 0x34b', 'SetEventBit 0x110', 'ClearEventBit 0x3f4', 'SetEventBit 0x332', 'SetEventBit 0x386', 'LoadMap 237 (60, 51)', 'ReturnIfEventBitSet 0x11c 0xa5eb3', 'ClearEventBit 0x332', 'SetEventBit 0x36f', 'SetEventBit 0x387', 'HideEntity 19', 'Return']
+Writing exit event: 62 (pair = 4658 ) @  0x29e0d
+	Reason:  [False, True, False, False, False]
+['LoadMap 5 (8, 1)', 'Return']
+Connecting: 140 to 379
+looking for event at:  0x20 15 56 (type  short )
+Writing exit event: 140 (pair = 379 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 141 to 153
+Connecting: 142 to 1147
+Connecting: 143 to 179
+looking for event at:  0x20 26 8 (type  short )
+Writing exit event: 143 (pair = 179 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 144 to 382
+looking for event at:  0x20 33 54 (type  short )
+Writing exit event: 144 (pair = 382 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 145 to 154
+Connecting: 146 to 523
+looking for event at:  0x21 24 10 (type  short )
+Writing exit event: 146 (pair = 523 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 147 to 366
+looking for event at:  0x21 31 10 (type  short )
+Writing exit event: 147 (pair = 366 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 148 to 1143
+looking for event at:  0x24 57 11 (type  short )
+Writing exit event: 148 (pair = 1143 ) @  0x29e14
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x68b', 'SetEventBit 0x6ad', 'ClearEventBit 0x600', 'Return']
+Connecting: 149 to 372
+looking for event at:  0x24 57 21 (type  short )
+Writing exit event: 149 (pair = 372 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 150 to 363
+looking for event at:  0x24 25 59 (type  short )
+Writing exit event: 150 (pair = 363 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 151 to 391
+looking for event at:  0x24 18 51 (type  short )
+Writing exit event: 151 (pair = 391 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 152 to 1057
+looking for event at:  0x24 107 12 (type  short )
+Writing exit event: 152 (pair = 1057 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 153 to 141
+Connecting: 154 to 145
+Connecting: 155 to 1146
+looking for event at:  0x24 21 9 (type  short )
+Writing exit event: 155 (pair = 1146 ) @  0x29e1b
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x68b', 'SetEventBit 0x6ad', 'ClearEventBit 0x600', 'Return']
+Connecting: 158 to 191
+looking for event at:  0x24 73 61 (type  short )
+Writing exit event: 158 (pair = 191 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 161 to 1176
+looking for event at:  0x26 37 24 (type  short )
+Writing exit event: 161 (pair = 1176 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 162 to 1149
+Connecting: 163 to 374
+looking for event at:  0x26 49 21 (type  short )
+Writing exit event: 163 (pair = 374 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 164 to 377
+looking for event at:  0x26 79 58 (type  short )
+Writing exit event: 164 (pair = 377 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 165 to 167
+Connecting: 166 to 1175
+looking for event at:  0x26 111 29 (type  short )
+Writing exit event: 166 (pair = 1175 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 167 to 165
+Connecting: 168 to 530
+looking for event at:  0x26 87 32 (type  short )
+Writing exit event: 168 (pair = 530 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 178 to 1192
+looking for event at:  0x2b 113 45 (type  short )
+Writing exit event: 178 (pair = 1192 ) @  0x29e22
+	Reason:  [True, True, False, False, False]
+['ClearEventBit 0x654', 'ClearEventBit 0x653', 'SetEventBit 0xa4', 'Return']
+Connecting: 179 to 143
+looking for event at:  0x2b 108 60 (type  short )
+Writing exit event: 179 (pair = 143 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 191 to 158
+looking for event at:  0x33 20 35 (type  short )
+Writing exit event: 191 (pair = 158 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 192 to 1177
+Connecting: 363 to 150
+looking for event at:  0x5f 11 26 (type  short )
+Writing exit event: 363 (pair = 150 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 364 to 371
+Connecting: 365 to 371
+Connecting: 366 to 147
+looking for event at:  0x60 22 21 (type  short )
+Writing exit event: 366 (pair = 147 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 368 to 369
+Connecting: 369 to 368
+Connecting: 370 to 1179
+Connecting: 371 to 364
+Connecting: 372 to 149
+looking for event at:  0x62 10 10 (type  short )
+Writing exit event: 372 (pair = 149 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 373 to 385
+Connecting: 374 to 163
+looking for event at:  0x64 7 13 (type  short )
+Writing exit event: 374 (pair = 163 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 375 to 384
+Connecting: 376 to 1560
+Connecting: 377 to 164
+looking for event at:  0x64 50 33 (type  short )
+Writing exit event: 377 (pair = 164 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 378 to 390
+Connecting: 379 to 140
+looking for event at:  0x64 7 29 (type  short )
+Writing exit event: 379 (pair = 140 ) @  0x29e29
+	Reason:  [True, True, False, False, False]
+['SetEventBit 0x68b', 'SetEventBit 0x6ad', 'ClearEventBit 0x600', 'SetEventBit 0xa4', 'Return']
+Connecting: 380 to 61
+looking for event at:  0x64 9 37 (type  short )
+Writing exit event: 380 (pair = 61 ) @  0x29e32
+	Reason:  [True, False, False, False, True]
+['SetEventBit 0xa4', 'SetEventBit 0x1cc', 'LoadMap 1 (207, 90)', 'SetPosition (207, 90)', 'ClearEventBit 0x1cc', 'LoadMap 1 (207, 90)', 'Turn 2', 'End', 'Return']
+Connecting: 381 to 5199
+looking for event at:  0x64 30 52 (type  short )
+Writing exit event: 381 (pair = 5199 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 382 to 144
+looking for event at:  0x64 58 45 (type  short )
+Writing exit event: 382 (pair = 144 ) @  0x29e4b
+	Reason:  [True, True, False, False, False]
+['SetEventBit 0x68b', 'SetEventBit 0x6ad', 'ClearEventBit 0x600', 'SetEventBit 0xa4', 'Return']
+Connecting: 383 to 529
+Connecting: 384 to 375
+Connecting: 385 to 373
+Connecting: 386 to 1155
+Connecting: 387 to 1184
+Connecting: 388 to 1184
+Connecting: 389 to 395
+Connecting: 390 to 378
+Connecting: 391 to 151
+looking for event at:  0x67 53 9 (type  short )
+Writing exit event: 391 (pair = 151 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 393 to 470
+Connecting: 394 to 1049
+Connecting: 395 to 389
+Connecting: 435 to 439
+Connecting: 436 to 486
+Connecting: 437 to 446
+Connecting: 438 to 867
+Connecting: 439 to 435
+Connecting: 440 to 1045
+looking for event at:  0x7e 10 50 (type  short )
+Writing exit event: 440 (pair = 1045 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 441 to 478
+Connecting: 442 to 868
+Connecting: 443 to 445
+Connecting: 444 to 451
+Connecting: 445 to 443
+looking for event at:  0x7e 10 34 (type  short )
+Writing exit event: 445 (pair = 443 ) @  0x22045
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x548', 'Return']
+Connecting: 446 to 437
+Connecting: 447 to 5240
+Connecting: 448 to 4502
+Connecting: 449 to 858
+looking for event at:  0x7e 5 43 (type  short )
+Writing exit event: 449 (pair = 858 ) @  0x29e54
+	Reason:  [False, True, False, False, False]
+['LoadMap 319 (6, 8)', 'Call 0x83c0', 'SetVehicle 49, 192', 'Return']
+Connecting: 450 to 591
+looking for event at:  0x7e 49 12 (type  short )
+Writing exit event: 450 (pair = 591 ) @  0x26cde
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x487', 'SetEventBit 0x488', 'Return']
+Connecting: 451 to 444
+Connecting: 452 to 584
+Connecting: 453 to 479
+Connecting: 454 to 870
+Connecting: 455 to 864
+looking for event at:  0x7e 28 37 (type  short )
+Writing exit event: 455 (pair = 864 ) @  0x29e62
+	Reason:  [False, True, False, False, False]
+['LoadMap 320 (22, 24)', 'Call 0x83c0', 'SetVehicle 49, 192', 'Return']
+Connecting: 456 to 480
+Connecting: 469 to 1532
+Connecting: 470 to 393
+Connecting: 471 to 1522
+looking for event at:  0x8d 100 8 (type  short )
+Writing exit event: 471 (pair = 1522 ) @  0x29e70
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x509', 'Return']
+Connecting: 472 to 497
+Connecting: 473 to 1515
+looking for event at:  0x8d 48 8 (type  short )
+Writing exit event: 473 (pair = 1515 ) @  0x29e73
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x509', 'ClearEventBit 0x507', 'SetEventBit 0x506', 'ClearEventBit 0x180', 'ClearEventBit 0x17e', 'Return']
+Connecting: 474 to 1525
+Connecting: 475 to 4603
+looking for event at:  0x8e 86 8 (type  short )
+Writing exit event: 475 (pair = 4603 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 476 to 496
+Connecting: 477 to 481
+Connecting: 478 to 441
+Connecting: 479 to 453
+Connecting: 480 to 456
+looking for event at:  0x8f 82 8 (type  short )
+Writing exit event: 480 (pair = 456 ) @  0x29e7e
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x548', 'Return']
+Connecting: 481 to 477
+Connecting: 482 to 860
+looking for event at:  0x8f 100 8 (type  short )
+Writing exit event: 482 (pair = 860 ) @  0x29e81
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x545', 'LoadMap 319 (24, 25)', 'Call 0x83c0', 'SetVehicle 49, 192', 'Return']
+Connecting: 483 to 856
+Connecting: 484 to 855
+Connecting: 485 to 855
+Connecting: 486 to 436
+Connecting: 487 to 436
+Connecting: 489 to 1530
+Connecting: 490 to 1530
+Connecting: 493 to 634
+Connecting: 494 to 634
+Connecting: 496 to 476
+looking for event at:  0x98 1 8 (type  short )
+Writing exit event: 496 (pair = 476 ) @  0x29e91
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x509', 'Return']
+Connecting: 497 to 472
+Connecting: 498 to 476
+looking for event at:  0x98 1 9 (type  short )
+Writing exit event: 498 (pair = 476 ) @  0x29e94
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x509', 'Return']
+Connecting: 499 to 472
+Connecting: 500 to 1523
+looking for event at:  0x98 9 12 (type  short )
+Writing exit event: 500 (pair = 1523 ) @  0x29e97
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x509', 'SetEventBit 0x507', 'ClearEventBit 0x506', 'ClearEventBit 0x180', 'SetEventBit 0x17e', 'Return']
+Connecting: 501 to 1543
+looking for event at:  0x98 8 7 (type  short )
+Writing exit event: 501 (pair = 1543 ) @  0x29ea2
+	Reason:  [False, True, False, False, False]
+['SetEventBit 0x17e', 'Return']
+Connecting: 502 to 1536
+looking for event at:  0x99 8 12 (type  short )
+Writing exit event: 502 (pair = 1536 ) @  0x29ea5
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x507', 'SetEventBit 0x506', 'ClearEventBit 0x17e', 'Return']
+Connecting: 523 to 146
+looking for event at:  0xa7 12 26 (type  short )
+Writing exit event: 523 (pair = 146 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 529 to 383
+Connecting: 530 to 168
+looking for event at:  0xaf 58 35 (type  short )
+Writing exit event: 530 (pair = 168 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 580 to 593
+Connecting: 581 to 1032
+looking for event at:  0xcf 124 52 (type  short )
+Writing exit event: 581 (pair = 1032 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 582 to 1033
+looking for event at:  0xcf 113 46 (type  short )
+Writing exit event: 582 (pair = 1033 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 583 to 1054
+looking for event at:  0xcf 104 46 (type  short )
+Writing exit event: 583 (pair = 1054 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 584 to 452
+Connecting: 585 to 1050
+looking for event at:  0xcf 106 46 (type  short )
+Writing exit event: 585 (pair = 1050 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 586 to 1051
+looking for event at:  0xcf 95 62 (type  short )
+Writing exit event: 586 (pair = 1051 ) @  0x29eac
+	Reason:  [True, False, True, False, False]
+['Call 0x12caa', 'ClearEventBit 0xa4', 'Return']
+Connecting: 587 to 1042
+looking for event at:  0xcf 88 50 (type  short )
+Writing exit event: 587 (pair = 1042 ) @  0x29eb3
+	Reason:  [True, False, True, False, False]
+['Call 0x12caa', 'ClearEventBit 0xa4', 'Return']
+Connecting: 588 to 1038
+looking for event at:  0xcf 90 62 (type  short )
+Writing exit event: 588 (pair = 1038 ) @  0x21fa2
+	Reason:  [True, False, False, False, False]
+Connecting: 589 to 5213
+Connecting: 591 to 450
+Connecting: 593 to 580
+Connecting: 634 to 493
+Connecting: 658 to 1516
+looking for event at:  0xed 60 52 (type  short )
+Writing exit event: 658 (pair = 1516 ) @  0x29eba
+	Reason:  [False, True, False, False, False]
+['ClearEventBit 0x509', 'ClearEventBit 0x507', 'SetEventBit 0x506', 'ClearEventBit 0x180', 'ClearEventBit 0x17e', 'Return']
+Connecting: 850 to 863
+looking for event at:  0x13d 23 41 (type  short )
+Writing exit event: 850 (pair = 863 ) @  0x29ec5
+	Reason:  [False, True, False, False, False]
+['LoadMap 320 (18, 12)', 'Call 0x83c0', 'SetVehicle 49, 192', 'Return']
+Connecting: 851 to 865
+Connecting: 855 to 484
+Connecting: 856 to 483
+Connecting: 858 to 449
+looking for event at:  0x13f 6 7 (type  short )
+Writing exit event: 858 (pair = 449 ) @  0x29ed3
+	Reason:  [False, False, True, False, False]
+['Call 0x7655', 'SetVehicle 49, 0', 'Return']
+Connecting: 860 to 482
+looking for event at:  0x13f 25 24 (type  short )
+Writing exit event: 860 (pair = 482 ) @  0x29edb
+	Reason:  [False, False, True, False, False]
+['Call 0x7655', 'SetVehicle 49, 0', 'Return']
+Connecting: 861 to 482
+looking for event at:  0x13f 25 25 (type  short )
+Writing exit event: 861 (pair = 482 ) @  0x29ee3
+	Reason:  [False, False, True, False, False]
+['Call 0x7655', 'SetVehicle 49, 0', 'Return']
+Connecting: 863 to 850
+looking for event at:  0x140 18 13 (type  short )
+Writing exit event: 863 (pair = 850 ) @  0x21a66
+	Reason:  [False, False, True, False, False]
+['Call 0x7655', 'SetVehicle 49, 0', 'Return']
+Connecting: 864 to 455
+looking for event at:  0x140 22 25 (type  short )
+Writing exit event: 864 (pair = 455 ) @  0x21a6e
+	Reason:  [False, False, True, False, False]
+['Call 0x7655', 'SetVehicle 49, 0', 'Return']
+Connecting: 865 to 851
+Connecting: 866 to 851
+Connecting: 867 to 438
+Connecting: 868 to 442
+Connecting: 869 to 442
+Connecting: 870 to 454
+Connecting: 871 to 454
+Connecting: 1032 to 581
+looking for event at:  0x173 10 9 (type  short )
+Writing exit event: 1032 (pair = 581 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1033 to 582
+looking for event at:  0x173 19 14 (type  short )
+Writing exit event: 1033 (pair = 582 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1034 to 1048
+Connecting: 1035 to 1048
+Connecting: 1036 to 1564
+looking for event at:  0x174 33 44 (type  short )
+Writing exit event: 1036 (pair = 1564 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1037 to 1043
+Connecting: 1038 to 588
+looking for event at:  0x174 50 16 (type  short )
+Writing exit event: 1038 (pair = 588 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1039 to 588
+looking for event at:  0x174 51 16 (type  short )
+Writing exit event: 1039 (pair = 588 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1040 to 1044
+Connecting: 1041 to 1044
+Connecting: 1042 to 587
+looking for event at:  0x175 16 23 (type  short )
+Writing exit event: 1042 (pair = 587 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1043 to 1037
+Connecting: 1044 to 1040
+Connecting: 1045 to 440
+looking for event at:  0x176 10 12 (type  short )
+Writing exit event: 1045 (pair = 440 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1046 to 1052
+Connecting: 1047 to 1053
+Connecting: 1048 to 1034
+Connecting: 1049 to 394
+Connecting: 1050 to 585
+looking for event at:  0x177 42 63 (type  short )
+Writing exit event: 1050 (pair = 585 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1051 to 586
+looking for event at:  0x177 53 62 (type  short )
+Writing exit event: 1051 (pair = 586 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1052 to 1046
+Connecting: 1053 to 1047
+Connecting: 1054 to 583
+looking for event at:  0x177 36 41 (type  short )
+Writing exit event: 1054 (pair = 583 ) @  0x21f9f
+	Reason:  [True, False, False, False, False]
+Connecting: 1055 to 1194
+
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 26, in main
+    data.write()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\data\data.py", line 88, in write
+    self.maps.write()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\data\maps.py", line 756, in write
+    self.connect_exits()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\data\maps.py", line 919, in connect_exits
+    if 1500 <= exitB_pairID < 4000:
+TypeError: '<=' not supported between instances of 'int' and 'NoneType'
