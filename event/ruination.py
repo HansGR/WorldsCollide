@@ -355,6 +355,74 @@ class RuinationBranch(Network):
             'doors': available_doors_out  # doors can be both in and out
         }
 
+    def validate_finalize_state(self, step_name, hub=None, remaining_doors=None,
+                                  dead_ends=None, all_traps=None, all_pits=None):
+        """Validate state during finalize_map and provide detailed diagnostics.
+
+        This helps diagnose issues where door/trap/pit counts don't balance properly.
+        """
+        issues = []
+
+        if hub is not None:
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_obj = self.rooms.get_room(hub_id)
+
+            # Count all elements in the hub network
+            hub_doors = [d for d in hub_obj.doors if d not in self.protected]
+            hub_traps = [t for t in hub_obj.traps if t not in self.protected]
+            hub_pits = [p for p in hub_obj.pits if p not in self.protected]
+
+            upstream = self.get_upstream_nodes(hub_id)
+            downstream = self.get_downstream_nodes(hub_id)
+
+            total_doors = len(hub_doors)
+            total_traps = len(hub_traps)
+            total_pits = len(hub_pits)
+
+            for node in upstream:
+                room = self.rooms.get_room(node)
+                total_doors += len([d for d in room.doors if d not in self.protected])
+                total_traps += len([t for t in room.traps if t not in self.protected])
+                total_pits += len([p for p in room.pits if p not in self.protected])
+
+            for node in downstream:
+                room = self.rooms.get_room(node)
+                total_doors += len([d for d in room.doors if d not in self.protected])
+                total_traps += len([t for t in room.traps if t not in self.protected])
+                total_pits += len([p for p in room.pits if p not in self.protected])
+
+            if self.verbose:
+                print(f'  [{step_name}] Hub network totals: doors={total_doors}, traps={total_traps}, pits={total_pits}')
+                print(f'  [{step_name}] Hub {hub_id}: doors={hub_doors}, traps={hub_traps}, pits={hub_pits}')
+                print(f'  [{step_name}] Upstream nodes: {list(upstream)}')
+                print(f'  [{step_name}] Downstream nodes: {list(downstream)}')
+
+        if remaining_doors is not None and dead_ends is not None:
+            door_count = len(remaining_doors)
+            dead_end_count = len(dead_ends)
+            excess = door_count - dead_end_count
+
+            if self.verbose:
+                print(f'  [{step_name}] remaining_doors={door_count}, dead_ends={dead_end_count}, excess={excess}')
+
+            if excess > 0 and excess % 2 == 1:
+                issues.append(f'Odd excess doors ({excess}): will have orphan door after pairing')
+
+        if all_traps is not None and all_pits is not None:
+            trap_count = len(all_traps)
+            pit_count = len(all_pits)
+
+            if self.verbose:
+                print(f'  [{step_name}] all_traps={trap_count}, all_pits={pit_count}')
+
+            if trap_count > pit_count:
+                issues.append(f'More traps ({trap_count}) than pits ({pit_count})')
+
+        if issues and self.verbose:
+            print(f'  [{step_name}] POTENTIAL ISSUES: {issues}')
+
+        return issues
+
     def finalize_map(self):
         print('Closing branch...')
 
@@ -620,13 +688,19 @@ class RuinationBranch(Network):
         elif self.verbose:
             print('(4) terminus already merged into hub, skipping')
 
-        # (5) Count doors in hub.  Connect doors within hub until # doors < # dead ends
+        # (5) Count doors in hub.  Connect doors within hub until # doors <= # dead ends
         # Clean up dead ends first - use list() to avoid modifying during iteration
         for de in list(self.dead_ends):
             if de not in self.net.nodes:
                 self.dead_ends.remove(de)
 
-        while len(remaining_doors) > len(self.dead_ends):
+        # Validate state before step 5
+        self.validate_finalize_state('pre-step5', hub=True,
+                                     remaining_doors=remaining_doors, dead_ends=self.dead_ends)
+
+        # We need at least 2 doors to connect a pair. If we have an odd excess
+        # (doors - dead_ends is odd), we'll end up with 1 orphan door.
+        while len(remaining_doors) > len(self.dead_ends) and len(remaining_doors) >= 2:
             if self.verbose:
                 print('(5) doors in hub:', len(remaining_doors), '.  dead ends:', len(self.dead_ends))
             this_exit = remaining_doors.pop()
@@ -635,7 +709,83 @@ class RuinationBranch(Network):
                 print('(5) connecting doors in hub:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
 
+        # (5b) Handle orphan door situation: we have more doors than dead ends but can't pair them
+        if len(remaining_doors) > len(self.dead_ends):
+            orphan_count = len(remaining_doors) - len(self.dead_ends)
+            if self.verbose:
+                print(f'(5b) orphan door situation: {orphan_count} excess door(s), searching for available rooms')
+
+            # Find rooms not yet in the network that can absorb the orphan doors
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            available_rooms = [n for n in self.net.nodes
+                             if n not in self.get_upstream_nodes(hub_id)
+                             and n not in self.get_downstream_nodes(hub_id)
+                             and n != hub_id]
+
+            for orphan_idx in range(orphan_count):
+                if len(remaining_doors) <= len(self.dead_ends):
+                    break
+
+                orphan_door = remaining_doors[-1]  # Peek at next orphan
+
+                # Look for a room with an unprotected door we can connect to
+                found_connection = False
+                for room_id in available_rooms:
+                    room = self.rooms.get_room(room_id)
+                    if room is None:
+                        continue
+                    unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+                    if len(unprotected_room_doors) > 0:
+                        this_exit = remaining_doors.pop()
+                        this_conn = random.choice(unprotected_room_doors)
+                        if self.verbose:
+                            print(f'(5b) connecting orphan door {this_exit} --> room {room_id} door {this_conn}')
+                        self.connect(this_exit, this_conn)
+                        # Add this room to dead_ends if it now has only one connection
+                        if room_id not in self.dead_ends and len(room.doors) == 1:
+                            self.dead_ends.append(room_id)
+                        found_connection = True
+                        break
+
+                if not found_connection:
+                    # No available room found - this is a problem state
+                    print(f'WARNING: Could not resolve orphan door {orphan_door}. '
+                          f'remaining_doors={remaining_doors}, dead_ends={self.dead_ends}')
+                    # Try adding it back as a dead end connection point
+                    # by finding any room with a door
+                    for node in self.net.nodes:
+                        room = self.rooms.get_room(node)
+                        if room and len(room.doors) > 0:
+                            unprotected = [d for d in room.doors if d not in self.protected]
+                            if unprotected:
+                                this_exit = remaining_doors.pop()
+                                this_conn = random.choice(unprotected)
+                                if self.verbose:
+                                    print(f'(5b) fallback: connecting orphan {this_exit} --> {this_conn} in {node}')
+                                self.connect(this_exit, this_conn)
+                                found_connection = True
+                                break
+
+                    if not found_connection:
+                        raise RuntimeError(
+                            f'finalize_map step 5b: Cannot resolve orphan door. '
+                            f'remaining_doors={remaining_doors}, dead_ends={self.dead_ends}, '
+                            f'available_rooms={available_rooms}'
+                        )
+
+        # Validate state before step 6
+        self.validate_finalize_state('pre-step6', hub=True,
+                                     remaining_doors=remaining_doors, dead_ends=self.dead_ends)
+
         # (6) Connect dead ends to all remaining doors.
+        # Pre-check: we need enough dead ends for remaining doors
+        if len(remaining_doors) > len(self.dead_ends):
+            raise RuntimeError(
+                f'finalize_map step 6: More remaining doors ({len(remaining_doors)}) than '
+                f'dead ends ({len(self.dead_ends)}). remaining_doors={remaining_doors}, '
+                f'dead_ends={self.dead_ends}. This indicates an imbalance from earlier steps.'
+            )
+
         random.shuffle(self.dead_ends)
         if self.verbose:
             print('(6) remaining dead ends:', self.dead_ends)
