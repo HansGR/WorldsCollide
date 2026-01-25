@@ -366,20 +366,21 @@ class RuinationBranch(Network):
             print('\thub:', hub_id, hub.count)
 
         # (1) Count trapdoors/pits connected to hub.  If trapdoors > pits, connect traps to rooms with (# pits > # traps).
-        all_pits = [p for p in hub.pits]
-        all_traps = [t for t in hub.traps]
+        # Filter out protected elements to avoid using forced connection destinations
+        all_pits = [p for p in hub.pits if p not in self.protected]
+        all_traps = [t for t in hub.traps if t not in self.protected]
 
         upstream = self.get_upstream_nodes(hub_id)
         for node in upstream:
             room = self.rooms.get_room(node)
-            all_pits.extend([p for p in room.pits])
-            all_traps.extend([t for t in room.traps])
+            all_pits.extend([p for p in room.pits if p not in self.protected])
+            all_traps.extend([t for t in room.traps if t not in self.protected])
 
         downstream = self.get_downstream_nodes(hub_id)
         for node in downstream:
             room = self.rooms.get_room(node)
-            all_pits.extend([p for p in room.pits])
-            all_traps.extend([t for t in room.traps])
+            all_pits.extend([p for p in room.pits if p not in self.protected])
+            all_traps.extend([t for t in room.traps if t not in self.protected])
 
         if self.verbose:
             print('\tpits:', all_pits)
@@ -396,37 +397,41 @@ class RuinationBranch(Network):
                     r = self.rooms.get_room(n)
                     if self.verbose:
                         print('\t',n, r.count, r.doors, r.traps, r.pits, r.keys, r.locks)
-                    if (len(r.pits) - len(r.traps)) > diff:
-                        diff = len(r.pits) - len(r.traps)
+                    # Use only unprotected pits and traps for comparison
+                    unprotected_pits = [p for p in r.pits if p not in self.protected]
+                    unprotected_traps = [t for t in r.traps if t not in self.protected]
+                    if (len(unprotected_pits) - len(unprotected_traps)) > diff:
+                        diff = len(unprotected_pits) - len(unprotected_traps)
                         winner = n
 
             # connect a hub trapdoor to this node
             this_exit = random.choice(all_traps)
             room = self.rooms.get_room(winner)
-            this_entr = random.choice(room.pits)
+            unprotected_room_pits = [p for p in room.pits if p not in self.protected]
+            this_entr = random.choice(unprotected_room_pits)
             if self.verbose:
                 print('(1) selected', winner, ': ', room.traps, room.pits)
                 print('(1) connecting', this_exit, '-->', this_entr)
 
             self.connect(this_exit, this_entr)
 
-            # Recollect data on pits/traps
+            # Recollect data on pits/traps (filtering protected elements)
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
-            all_pits = [p for p in hub.pits]
-            all_traps = [t for t in hub.traps]
+            all_pits = [p for p in hub.pits if p not in self.protected]
+            all_traps = [t for t in hub.traps if t not in self.protected]
 
             upstream = self.get_upstream_nodes(hub_id)
             for node in upstream:
                 room = self.rooms.get_room(node)
-                all_pits.extend([p for p in room.pits])
-                all_traps.extend([t for t in room.traps])
+                all_pits.extend([p for p in room.pits if p not in self.protected])
+                all_traps.extend([t for t in room.traps if t not in self.protected])
 
             downstream = self.get_downstream_nodes(hub_id)
             for node in downstream:
                 room = self.rooms.get_room(node)
-                all_pits.extend([p for p in room.pits])
-                all_traps.extend([t for t in room.traps])
+                all_pits.extend([p for p in room.pits if p not in self.protected])
+                all_traps.extend([t for t in room.traps if t not in self.protected])
 
         # (2) Connect any nodes downstream from the hub room to upstream or to the hub room
         # There's a possible error mode where:  U (1 pit) --> Hub --> A (1 trap),  Hub --> B (1 trap, 1 pit).
@@ -455,20 +460,22 @@ class RuinationBranch(Network):
                     print('(2) skipping - room has no exits (pit-only)')
                 continue
 
-            upstream_doors = [d for d in hub.doors]
-            upstream_pits = [p for p in hub.pits]
+            upstream_doors = [d for d in hub.doors if d not in self.protected]
+            upstream_pits = [p for p in hub.pits if p not in self.protected]
             for node in upstream:
                 uproom = self.rooms.get_room(node)
-                upstream_pits.extend([p for p in uproom.pits])
+                upstream_pits.extend([p for p in uproom.pits if p not in self.protected])
 
             this_conn = None
-            if len(room.traps) > 0:
-                this_exit = random.choice(list(room.traps))
+            unprotected_room_traps = [t for t in room.traps if t not in self.protected]
+            unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+            if len(unprotected_room_traps) > 0:
+                this_exit = random.choice(unprotected_room_traps)
                 if len(upstream_pits) > 0:
                     this_conn = random.choice(upstream_pits)
 
-            if this_conn is None and len(room.doors) > 0:
-                this_exit = random.choice(list(room.doors))
+            if this_conn is None and len(unprotected_room_doors) > 0:
+                this_exit = random.choice(unprotected_room_doors)
                 if len(upstream_doors) > 0:
                     this_conn = random.choice(upstream_doors)
 
@@ -476,14 +483,17 @@ class RuinationBranch(Network):
                 # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
                 # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
                 available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
-                if len(room.traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
+                if len(unprotected_room_traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
                     # Need a pit-in, door-out converter
                     pido = []
                     if self.verbose:
                         print('\t\tlooking for available pido nodes:')
                     for node_id in available_nodes:
                         node = self.rooms.get_room(node_id)
-                        if len(node.pits) > 0 and len(node.doors) > 0 and len(node.pits) > len(node.traps):
+                        unprotected_node_pits = [p for p in node.pits if p not in self.protected]
+                        unprotected_node_traps = [t for t in node.traps if t not in self.protected]
+                        unprotected_node_doors = [d for d in node.doors if d not in self.protected]
+                        if len(unprotected_node_pits) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_pits) > len(unprotected_node_traps):
                             pido.append(node_id)
                             if self.verbose:
                                 print('\t\t\t', node_id, ': ', node.count)
@@ -491,17 +501,21 @@ class RuinationBranch(Network):
                     if len(pido) > 0:
                         pido_room_id = random.choice(pido)
                         pido_room = self.rooms.get_room(pido_room_id)
-                        # Select a pit from the converter room as the connection target
-                        this_conn = random.choice(list(pido_room.pits))
+                        # Select an unprotected pit from the converter room as the connection target
+                        unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
+                        this_conn = random.choice(unprotected_pido_pits)
 
-                elif len(room.doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
+                elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
                     # Need a door-in, trap-out converter
                     dito = []
                     if self.verbose:
                         print('\t\tlooking for available dito nodes:')
                     for node_id in available_nodes:
                         node = self.rooms.get_room(node_id)
-                        if len(node.traps) > 0 and len(node.doors) > 0 and len(node.traps) > len(node.pits):
+                        unprotected_node_traps = [t for t in node.traps if t not in self.protected]
+                        unprotected_node_pits = [p for p in node.pits if p not in self.protected]
+                        unprotected_node_doors = [d for d in node.doors if d not in self.protected]
+                        if len(unprotected_node_traps) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_traps) > len(unprotected_node_pits):
                             dito.append(node_id)
                             if self.verbose:
                                 print('\t\t\t', node_id, ': ', node.count)
@@ -509,8 +523,9 @@ class RuinationBranch(Network):
                     if len(dito) > 0:
                         dito_room_id = random.choice(dito)
                         dito_room = self.rooms.get_room(dito_room_id)
-                        # Select a door from the converter room as the connection target
-                        this_conn = random.choice(list(dito_room.doors))
+                        # Select an unprotected door from the converter room as the connection target
+                        unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
+                        this_conn = random.choice(unprotected_dito_doors)
 
             if this_conn is None:
                 # There is no solution.
@@ -538,34 +553,38 @@ class RuinationBranch(Network):
         # (3) Connect any remaining trapdoors/pits
         # At this point, only the hub room should be remaining & possibly upstream/downstream pits.
         # Recollect data on pits/traps (including downstream pits from pit-only rooms skipped in step 2)
-        while len(hub.traps) > 0:
+        # Check unprotected traps to decide when to stop
+        unprotected_hub_traps = [t for t in hub.traps if t not in self.protected]
+        while len(unprotected_hub_traps) > 0:
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
-            remaining_pits = [p for p in hub.pits]
-            remaining_traps = [t for t in hub.traps]
+            remaining_pits = [p for p in hub.pits if p not in self.protected]
+            remaining_traps = [t for t in hub.traps if t not in self.protected]
             upstream = self.get_upstream_nodes(hub_id)
             for node in upstream:
                 room = self.rooms.get_room(node)
-                remaining_pits.extend([p for p in room.pits])
+                remaining_pits.extend([p for p in room.pits if p not in self.protected])
             # Also collect pits from downstream nodes (pit-only rooms skipped in step 2)
             downstream = self.get_downstream_nodes(hub_id)
             for node in downstream:
                 room = self.rooms.get_room(node)
-                remaining_pits.extend([p for p in room.pits])
+                remaining_pits.extend([p for p in room.pits if p not in self.protected])
 
             random.shuffle(remaining_pits)
             if self.verbose:
-                print('(3) remaining traps:', hub.traps, '; pits: ', remaining_pits)
+                print('(3) remaining traps:', remaining_traps, '; pits: ', remaining_pits)
             this_exit = remaining_traps.pop()
             this_conn = remaining_pits.pop()
             if self.verbose:
                 print('(3) connecting:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
+            # Update for next iteration check
+            unprotected_hub_traps = [t for t in hub.traps if t not in self.protected]
 
         # (4) The terminus is currently always a dead end room.  Connect it.
         # However, the terminus may have been merged into the hub through loop compression.
         # If so, we skip this step since the terminus is already connected.
-        remaining_doors = [d for d in hub.doors]
+        remaining_doors = [d for d in hub.doors if d not in self.protected]
         random.shuffle(remaining_doors)
         if self.verbose:
             print('(4) remaining doors:', remaining_doors)
@@ -575,7 +594,8 @@ class RuinationBranch(Network):
             this_exit = remaining_doors.pop()
             if self.terminus in self.dead_ends:
                 self.dead_ends.remove(self.terminus)
-            this_conn = terminus.doors.pop()
+            unprotected_terminus_doors = [d for d in terminus.doors if d not in self.protected]
+            this_conn = unprotected_terminus_doors.pop() if unprotected_terminus_doors else terminus.doors.pop()
             if self.verbose:
                 print('(4) connecting terminus:', this_exit , '-->', this_conn)
             self.connect(this_exit, this_conn)
@@ -610,7 +630,8 @@ class RuinationBranch(Network):
         for this_exit in remaining_doors:
             room_id = self.dead_ends.pop()
             room = self.rooms.get_room(room_id)
-            this_conn = room.doors.pop()
+            unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+            this_conn = unprotected_room_doors.pop() if unprotected_room_doors else room.doors.pop()
             if self.verbose:
                 print('(6) connecting dead ends:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
