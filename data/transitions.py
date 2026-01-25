@@ -36,13 +36,17 @@ class Transitions:
 
         for m in mapping:
             # Check reasons to overwrite this transition
-            flags = [(3000 > m[0] >= 2000) and (m[0] != m[1] - 1000),  # connecting two unequal one-ways...
-                     m[0] in exit_event_patch,                 # modifications to exit script
-                     m[1] - 1000 in entrance_event_patch,      # modifications to entrance script
-                     (1500 <= m[0] < 2000),                    # connecting a one-way acting as a door
-                     (m[0] < 1500),                            # connecting a door acting as a one-way
-                     (6000 < m[1])                             # connecting to the exit of a door acting as a one-way
-                     ]
+            flag_reasons = [
+                ((3000 > m[0] >= 2000) and (m[0] != m[1] - 1000), "non-matching trap/pit pair"),
+                (m[0] in exit_event_patch, "exit has event patch"),
+                (m[1] - 1000 in entrance_event_patch, "entrance has event patch"),
+                ((1500 <= m[0] < 2000), "event tile acting as door"),
+                ((m[0] < 1500), "door acting as one-way"),
+                ((6000 < m[1]), "connecting to door-as-one-way exit")
+            ]
+            flags = [f[0] for f in flag_reasons]
+            active_reasons = [f[1] for f in flag_reasons if f[0]]
+
             # If a shared_oneway, only write the lowest-valued one
             soo_flag = True
             if m[0] in shared_oneways:
@@ -50,9 +54,11 @@ class Transitions:
 
             if flags.count(True) > 0 and soo_flag:
                 if self.verbose:
-                    print('Making new transition: ', m[0], m[1])
+                    print(f'Making new transition: {m[0]} -> {m[1]} (reasons: {", ".join(active_reasons)})')
                 new_trans = Transition(m[0], m[1], rom, exit_data, event_data)
                 self.transitions.append(new_trans)
+            elif self.verbose and flags.count(True) > 0 and not soo_flag:
+                print(f'Skipping transition: {m[0]} -> {m[1]} (shared_oneway, not lowest)')
 
         if self.FREE_MEMORY:
             self.free()
@@ -406,6 +412,18 @@ class EventExit:
             self.exit_code = rom.get_bytes(self.event_addr, self.event_split)  # First half of event
             self.entr_code = rom.get_bytes(self.event_addr + self.event_split,
                                            self.event_length - self.event_split)  # Second half of event
+
+            # Validate entr_code before accessing - empty entr_code indicates missing/invalid event_exit_info
+            if len(self.entr_code) < 4:
+                print(f'\n*** ERROR: Invalid entr_code for event tile {ID} ***')
+                print(f'    event_addr={hex(self.event_addr) if self.event_addr else None}, '
+                      f'event_length={self.event_length}, event_split={self.event_split}')
+                print(f'    entr_code length={len(self.entr_code)} (need at least 4 bytes for map transition)')
+                print(f'    use_event_info={use_event_info}')
+                print(f'    This usually means:')
+                print(f'      1. A protected element was incorrectly used for a random connection, OR')
+                print(f'      2. event_exit_info[{use_event_info if use_event_info else ID}] has invalid data')
+                raise IndexError(f'entr_code is too short for event tile {ID}: got {len(self.entr_code)} bytes, need >= 4')
 
             dest_map = self.entr_code[0] + (((self.entr_code[1] % 0x10) % 0x4) << 8)  # extract destination map_id
             self.dest_location = [dest_map, self.entr_code[2], self.entr_code[3]]  # [map_id, x, y]
