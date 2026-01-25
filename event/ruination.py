@@ -360,6 +360,9 @@ class RuinationBranch(Network):
 
         self.ForceConnections(forced_connections)
 
+        if self.verbose:
+            print(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
+
         hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
         hub = self.rooms.get_room(hub_id)
         if self.verbose:
@@ -369,6 +372,12 @@ class RuinationBranch(Network):
         # Filter out protected elements to avoid using forced connection destinations
         all_pits = [p for p in hub.pits if p not in self.protected]
         all_traps = [t for t in hub.traps if t not in self.protected]
+
+        # Show what was filtered
+        filtered_pits = [p for p in hub.pits if p in self.protected]
+        filtered_traps = [t for t in hub.traps if t in self.protected]
+        if self.verbose and (filtered_pits or filtered_traps):
+            print(f'\t(hub) Filtered out protected - pits: {filtered_pits}, traps: {filtered_traps}')
 
         upstream = self.get_upstream_nodes(hub_id)
         for node in upstream:
@@ -410,8 +419,11 @@ class RuinationBranch(Network):
             unprotected_room_pits = [p for p in room.pits if p not in self.protected]
             this_entr = random.choice(unprotected_room_pits)
             if self.verbose:
-                print('(1) selected', winner, ': ', room.traps, room.pits)
-                print('(1) connecting', this_exit, '-->', this_entr)
+                protected_in_room = [p for p in room.pits if p in self.protected]
+                print(f'(1) selected {winner}: traps={room.traps}, pits={room.pits}')
+                if protected_in_room:
+                    print(f'    (filtered protected pits: {protected_in_room})')
+                print(f'(1) connecting {this_exit} --> {this_entr}')
 
             self.connect(this_exit, this_entr)
 
