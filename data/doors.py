@@ -131,10 +131,12 @@ ROOM_SETS['Ruination'] = ['ruin_hub_testing', 'ruin_testing',
                           'ruin_kt_entry_1', 'ruin_kt_entry_2', 'ruin_kt_entry_3']
 
 class Doors():
-    verbose = False  # False  # True
     force_vanilla = False  # for debugging purposes
 
     def __init__(self, args):
+        # Verbose output controlled by -debug flag
+        self.verbose = args.debug
+
         # Hard overrides for testing
         self.OVERRIDE = [
             #[1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
