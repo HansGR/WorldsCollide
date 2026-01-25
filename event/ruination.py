@@ -273,7 +273,9 @@ class RuinationBranch(Network):
             exclude = list(exclude)
             #if self.verbose:
             #    print('Excluding...', exclude)
-        available_hubs = [r for r in self.net.nodes if (r not in self.dead_ends and r not in exclude)]
+        # Exclude dead_ends and terminus (terminus is reserved for finalize_map step 4)
+        available_hubs = [r for r in self.net.nodes
+                         if (r not in self.dead_ends and r not in exclude and r != self.terminus)]
         #if self.verbose:
         #    print('Found available hubs:', available_hubs)
         return available_hubs
@@ -323,6 +325,9 @@ class RuinationBranch(Network):
         entrances = set()
         for room_id in self.net.nodes:
             if room_id in currently_used:
+                continue
+            # Don't connect into the terminus - it's reserved for finalize_map step 4
+            if room_id == self.terminus:
                 continue
             room = self.rooms.get_room(room_id)
             if element_type == 0:
