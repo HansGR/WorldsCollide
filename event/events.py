@@ -242,7 +242,8 @@ class Events():
         party = [self.characters.DEFAULT_NAME[c] for c in characters_available]
 
         # Initialize ruination_map object
-        ruin_map = ruination_map(self.args, party)
+        # Use -debug flag to enable verbose output for map generation diagnostics
+        ruin_map = ruination_map(self.args, party, verbose=self.args.debug)
 
         # Build out the map & distribute characters
         # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)
@@ -257,9 +258,10 @@ class Events():
             self.shops.assign_dried_meats_ruination(non_veldt_shops)
 
         # Check state of reward_slots
-        print('REWARD STATE AFTER RUIN MAPPING:')
-        for slot in reward_slots:
-            print(slot.event.name(), slot.id, slot.type)
+        if self.args.debug:
+            print('REWARD STATE AFTER RUIN MAPPING:')
+            for slot in reward_slots:
+                print(slot.event.name(), slot.id, slot.type)
 
         # For safety (?) distribute any remaining rewards
         reward_slots = [slot for slot in reward_slots if slot.id is None]

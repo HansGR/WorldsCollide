@@ -424,7 +424,8 @@ class RuinationBranch(Network):
         return issues
 
     def finalize_map(self):
-        print('Closing branch...')
+        if self.verbose:
+            print('Closing branch...')
 
         self.ForceConnections(forced_connections)
 
@@ -1045,7 +1046,7 @@ class RuinationBranch(Network):
                   '\n\tDownstream nodes: ', downstream,
                   '\n\tAll entrances: ', all_entrances)
         hub_is_upstream = len([n for n in upstream if 'ruin_hub_' in str(n)]) > 0
-        if hub_is_upstream:
+        if hub_is_upstream and self.verbose:
             print('\tHub is upstream!')
         for node in upstream:
             room = self.rooms.get_room(node)
@@ -1207,9 +1208,11 @@ class RuinationBranch(Network):
 
 class ruination_map():
     # Class to organize data for mapping out ruination mode branches
-    verbose = True
 
-    def __init__(self, args, starting_party):
+    def __init__(self, args, starting_party, verbose=False):
+        # Verbose flag controls debug output throughout map generation
+        self.verbose = verbose
+
         # Instance attributes - each instance gets fresh state
         self.RewardsAvailable = [0, 0]   # [# possible characters, # possible espers]
         self.PARTY = list(starting_party)  # use character names in all caps
