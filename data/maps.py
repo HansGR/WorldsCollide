@@ -490,11 +490,12 @@ class Maps():
     def postprocess_door_map(self):
         # Postprocess the door map
         #import traceback
-        print("=== postprocess_door_map() CALLED ===")
-        #print("Call stack:")
-        #traceback.print_stack(limit=5)
-        print(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
-        print(f"exit_data[360][0] BEFORE processing: {exit_data[360][0]}")
+        if self.doors.verbose:
+            print("=== postprocess_door_map() CALLED ===")
+            #print("Call stack:")
+            #traceback.print_stack(limit=5)
+            print(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
+            print(f"exit_data[360][0] BEFORE processing: {exit_data[360][0]}")
 
         self.door_map = {}
         self.trap_map = {}
@@ -536,14 +537,16 @@ class Maps():
 
             temp = [m for m in self.door_map.keys() if
                     m + 4000 in exit_data.keys() and m + 4000 not in self.door_map.keys()]
-            print(f"Adding WoR exits for doors: {temp}")
+            if self.doors.verbose:
+                print(f"Adding WoR exits for doors: {temp}")
             for m in temp:
                 # Add logical WoR exits to the map (with vanilla connections)
                 wor_door = m + 4000
                 wor_pair = exit_data[wor_door][0]
-                print(f"  WoR door {wor_door}: exit_data[{wor_door}][0] = {wor_pair}")
-                if wor_pair >= 1281 and wor_pair <= 1300:
-                    print(f"  WARNING: WoR pair {wor_pair} is in safe_id range!")
+                if self.doors.verbose:
+                    print(f"  WoR door {wor_door}: exit_data[{wor_door}][0] = {wor_pair}")
+                    if wor_pair >= 1281 and wor_pair <= 1300:
+                        print(f"  WARNING: WoR pair {wor_pair} is in safe_id range!")
                 self.door_map[m + 4000] = exit_data[m + 4000][0]
                 self.door_map[self.door_map[m + 4000]] = m + 4000
 
@@ -555,7 +558,7 @@ class Maps():
 
             # Check if any safe_id values ended up in door_map
             safe_ids_in_map = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
-            if safe_ids_in_map:
+            if safe_ids_in_map and self.doors.verbose:
                 print(f"WARNING: safe_id values in door_map after WoR exits: {safe_ids_in_map}")
 
             # Patch all used exits
@@ -584,7 +587,8 @@ class Maps():
             # If dungeon crawl mode, add override exits
             if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
                 safe_id = max([d for d in exit_data.keys() if d < 1500])
-                print(f"Applying dungeon_crawl override, starting safe_id: {safe_id}")
+                if self.doors.verbose:
+                    print(f"Applying dungeon_crawl override, starting safe_id: {safe_id}")
                 for d in dungeon_crawl_exit_destination_override.keys():
                     safe_id += 1  # get a new safe door id
 
@@ -597,7 +601,8 @@ class Maps():
                     this_data = dungeon_crawl_exit_destination_override[d]
                     self.exits.exit_original_data[safe_id] = this_data
                     # print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
-                print(f"exit_data[360][0] AFTER dungeon_crawl override: {exit_data[360][0]}")
+                if self.doors.verbose:
+                    print(f"exit_data[360][0] AFTER dungeon_crawl override: {exit_data[360][0]}")
 
             # Create a trapdoor map for reference
             for m in self.doors.map[1]:
@@ -607,17 +612,18 @@ class Maps():
         # Final debug check
         safe_ids_final = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
         safe_ids_as_values = [k for k, v in self.door_map.items() if 1281 <= v <= 1300]
-        print(f"=== postprocess_door_map() FINISHED ===")
-        print(f"door_map has {len(self.door_map)} entries")
-        if safe_ids_final:
+        if self.doors.verbose:
+            print(f"=== postprocess_door_map() FINISHED ===")
+            print(f"door_map has {len(self.door_map)} entries")
+        if safe_ids_final and self.doors.verbose:
             print(f"WARNING: safe_id keys in door_map: {safe_ids_final}")
             for sid in safe_ids_final:
                 print(f"  door_map[{sid}] = {self.door_map[sid]}")
-        if safe_ids_as_values:
+        if safe_ids_as_values and self.doors.verbose:
             print(f"WARNING: safe_id VALUES in door_map: {[(k, self.door_map[k]) for k in safe_ids_as_values]}")
-        if 1291 in self.door_map:
+        if 1291 in self.door_map and self.doors.verbose:
             print(f"CRITICAL: 1291 is in door_map! door_map[1291] = {self.door_map[1291]}")
-        if 1291 in self.door_map.values():
+        if 1291 in self.door_map.values() and self.doors.verbose:
             keys_with_1291 = [k for k, v in self.door_map.items() if v == 1291]
             print(f"CRITICAL: 1291 is a VALUE in door_map! Keys: {keys_with_1291}")
 

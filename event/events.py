@@ -271,9 +271,10 @@ class Events():
         reward_slots = [slot for slot in reward_slots if slot.id is None]
         self.choose_item_possible_rewards(reward_slots)
 
-        print('REWARD STATE FINAL:')
-        for slot in reward_slots:
-            print(slot.event.name(), slot.id, slot.type)
+        if self.args.debug:
+            print('REWARD STATE FINAL:')
+            for slot in reward_slots:
+                print(slot.event.name(), slot.id, slot.type)
 
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()
