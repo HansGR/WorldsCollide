@@ -158,7 +158,7 @@ exit_data = {
     141: [155, "Narshe South Caves Secret Passage 2F Outside WoR"],
     142: [168, "Narshe South Caves Secret Passage 3F Outside WoR"],
     143: [164, "Narshe South Caves from Arvis Outside WoR"],
-    144: [392, "Narshe School Outside WoR"],
+    144: [4392, "Narshe School Outside WoR"],
     1143: [67, "Narshe To World Map WoR"],
     1144: [1145, "Narshe To Northern Mines Outside WoR"],
     145: [151, "Narshe Northern Mines 2F Outside WoR"],
@@ -1380,6 +1380,7 @@ exit_data = {
     1564: [1563, "Darill's tomb staircase top to tomb"],
 
     # WORLD OF RUIN (logical) DOORS:
+    4392: [144, "Narshe School Entrance Inside to Narshe WoR"],
     4502: [483, "Doma Dream Train Final Save Point Room"],
     4525: [4527, "Nikeah Inn Outside WoR"],
     4526: [4528, "Nikeah Pub Outside WoR"],
