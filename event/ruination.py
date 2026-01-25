@@ -174,9 +174,9 @@ RUIN_ROOM_SETS = {
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
     'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160],
     'Narshe': ['ruin-narshe', 36, '37a', 38, 40, 41, 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 51],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense)
-    'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r', 'branch-mz'],  # 'branch-mz_mapsafe'
+    'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r'],
     'ZozoTower': [297, 298, 299, 300, 302, '303a', '303b', 304, 310, 311, 312, 313],
-    'MtZozo': [250, 251, 252, 253, 254, 255, 256, 'root-mz'],  # 'root-mz_mapsafe'
+    'MtZozo': [250, 251, 252, 253, 254, 255, 256],
 
     'SouthFigaro': ['ms-wor-58'],
     'GauFatherHouse': ['ms-wob-14'],  # use WOB for shadow check & vendor.  Change tileset, perhaps?
