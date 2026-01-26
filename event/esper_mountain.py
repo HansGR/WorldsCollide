@@ -355,8 +355,9 @@ class EsperMountain(Event):
         wpp = NPC()
         wpp.x = 17
         wpp.y = 20
-        wpp.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_ON)
-        wpp.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_ON)
+        # Use ESPER_MTN_WARP_POINT so NPC hides when terminus is used
+        wpp.event_byte = npc_bit.event_byte(npc_bit.ESPER_MTN_WARP_POINT)
+        wpp.event_bit = npc_bit.event_bit(npc_bit.ESPER_MTN_WARP_POINT)
         wpp.palette = 1  # default = 6
         wpp.sprite = 104  # 111 = save point
         wpp.split_sprite = 1
@@ -369,6 +370,8 @@ class EsperMountain(Event):
         wpp.background_scrolls = 0
         wpp.background_layer = 0
 
+        # Calculate entity ID before appending (0x10 + current NPC count)
+        warp_npc_entity = 0x10 + self.maps.get_npc_count(map_id)
         self.maps.append_npc(map_id, wpp)
 
         # Create an event tile that does the warping action
@@ -380,6 +383,8 @@ class EsperMountain(Event):
 
         from event.switchyard import GoToSwitchyard
         src = [
+            # If terminus already used, warp point is gone - return immediately
+            field.ReturnIfEventBitSet(event_bit.ESPER_MTN_TERMINUS_USED),
             field.ReturnIfEventBitSet(0x1B5),  # cleared on each step
             field.PlaySoundEffect(0xd1),    # shing!
             field.FlashScreen(field.Flash.RED),
@@ -391,6 +396,14 @@ class EsperMountain(Event):
             "ALLOW_WARP",
             field.DialogBranch(warp_to_KT_text, "DO_WARP", "RETURN"),
             "DO_WARP",
+            # Mark terminus as used before warping
+            field.SetEventBit(event_bit.ESPER_MTN_TERMINUS_USED),
+            # Set npc_bit to hide the warp point NPC on future visits
+            field.SetEventBit(npc_bit.ESPER_MTN_WARP_POINT),
+            # Make warp point visually disappear now
+            field.PlaySoundEffect(0x51),  # vanish sound
+            field.DeleteEntity(warp_npc_entity),
+            field.Pause(0.25),
             field.Call(self.warps.warp_out_animation_addr)
         ] + GoToSwitchyard(kt_enter_id)
 
