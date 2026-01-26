@@ -293,7 +293,7 @@ class SealedGate(Event):
             field.HoldScreen(),
             field.Pause(1.0),
 
-            # Mute song, play dramatic sound
+            # Mute song, play Kefka's laugh
             field.FadeSongVolume(0, 0x00),
             field.PlaySoundEffect(205),
             field.Pause(2.0),
@@ -320,30 +320,37 @@ class SealedGate(Event):
             field.WaitForFade(),
 
             # Boss battle
+            field.SetEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
             field.InvokeBattleType(boss_pack_id, field.BattleType.BACK),
 
             # After battle - set event bit to prevent repeat
             field.SetEventBit(event_bit.SEALED_GATE_OPENED),
+            field.ClearEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
 
-            # Hide the esper NPCs
+            # Hide the NPCs
             field.HideEntity(0x16),
             field.HideEntity(0x17),
             field.HideEntity(0x18),
             field.RefreshEntities(),
+
 
             # Play wind song and fade in
             field.StartSongAtVolume(0x39, 0x96),
             field.FadeInScreen(),
 
             # Party turns up toward the gate
-            field.EntityAct(field_entity.PARTY0, True,
+            field.EntityAct(field_entity.PARTY0, False,
                             field_entity.Turn(direction.UP)),
+            field.EntityAct(field_entity.CAMERA, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.UP, 6)),
 
             field.Pause(0.5),
 
             # Play gate opening sound
-            field.FadeSoundEffect(0, 0x64),
+            field.FadeSoundEffect(0, 0xf0),
             field.PlaySoundEffect(165),
+            field.ShakeScreen(intensity=3, permanent=1, layer1=True, layer2=True, layer3=True, sprite_layer=True),
             field.Pause(2.0),
 
             # Gate opens - move the gate NPCs (door pieces) apart
@@ -371,6 +378,7 @@ class SealedGate(Event):
 
             # Fade out sound effect
             field.FadeSoundEffect(40, 0x00),
+            field.StopScreenShake(),
 
             # Camera moves down a bit
             field.EntityAct(field_entity.CAMERA, True,
@@ -378,7 +386,7 @@ class SealedGate(Event):
                             field_entity.Move(direction.DOWN, 2)),
 
             # Set party back to layer 0 and free screen
-            field.Call(SET_PARTY_LAYER0),
+            #field.Call(SET_PARTY_LAYER0),
             field.FreeScreen(),
             field.Return(),
         ]
