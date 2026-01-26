@@ -226,9 +226,13 @@ class RuinationBranch(Network):
         super().__init__(rooms)
         self.dead_ends = []
         self.check_rooms = []
+        # Track ALL rooms ever added, including those later merged into compound rooms.
+        # This prevents re-adding a room that was already merged (and removed from net.nodes).
+        self.all_rooms_added = set(rooms)
         self.classify_rooms(rooms)
 
     def add_room(self, room_id):
+        self.all_rooms_added.add(room_id)
         super().add_room(room_id)
         self.classify_rooms([room_id])
         #if self.verbose:
@@ -1531,9 +1535,10 @@ class ruination_map():
                 print('\t', i, ': ', b)
 
         # Add rooms to the branches (skip rooms that already exist in ANY branch)
+        # Use all_rooms_added to include rooms that may have been merged into compound rooms
         all_existing_rooms = set()
         for branch in self.branches:
-            all_existing_rooms.update(branch.original_room_ids)
+            all_existing_rooms.update(branch.all_rooms_added)
 
         for i, branch in enumerate(self.branches):
             for room in branch_rooms[i]:
@@ -1730,9 +1735,10 @@ class ruination_map():
                             break
 
                     # Add rooms to the branch (skip any that already exist in any branch)
+                    # Use all_rooms_added to include rooms that may have been merged into compound rooms
                     existing_rooms = set()
                     for b in self.branches:
-                        existing_rooms.update(b.net.nodes)
+                        existing_rooms.update(b.all_rooms_added)
                     for room in new_rooms:
                         if room in existing_rooms:
                             if self.verbose:
@@ -1755,10 +1761,10 @@ class ruination_map():
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
                     if self.verbose:
                         print('Adding extra area', new_area, 'to unstick branch', branch_id)
-                    # Skip rooms that already exist
+                    # Skip rooms that already exist (use all_rooms_added to catch merged rooms)
                     existing_rooms = set()
                     for b in self.branches:
-                        existing_rooms.update(b.net.nodes)
+                        existing_rooms.update(b.all_rooms_added)
                     for room in RUIN_ROOM_SETS[new_area]:
                         if room in existing_rooms:
                             if self.verbose:
