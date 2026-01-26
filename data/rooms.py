@@ -184,7 +184,7 @@ room_data = {
     'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
     'ruin-narshe': [[1143, 1146, 140, 143, 144], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves & school
-    'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608
+    'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [4608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608
 
 
     0 : [ [i for i in range(45)] + [i for i in range(1501, 1507)], [ ], [3039], 0],  # World of Balance
@@ -672,6 +672,7 @@ room_data = {
     301 : [ [620, 621, 622], [ ], [ ], ['clock1'], {}, 0], #Zozo Cafe WoB
     '301r' : [ [4620, 4621, 4622], [ ], [ ], ['clock1'], {}, 1], #Zozo Cafe WoR
     302 : [ [623, 624], [ ], [ ], 0], #Zozo Relic 1st Room Inside
+    '302r' : [ [4623, 4624], [ ], [ ], 1], #Zozo Relic 1st Room Inside WoR (data only, for ruination mode connection)
     # 303 : [ [625, 626], [ ], [ ], None], #Zozo Relic 2nd Room Inside - Walking guys create a one-way gate
     '303a' : [ [625], [2033], [ ], ['clock3'], {},  0], #Zozo Relic 2nd Room Inside - entrance
     '303b' : [ [626], [ ], [3033], ['clock3'], {},  0], #Zozo Relic 2nd Room Inside - exit

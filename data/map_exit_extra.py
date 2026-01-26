@@ -1399,9 +1399,11 @@ exit_data = {
     4605: [4621, "Zozo Cafe 2F Left Outside WOR"],
     4606: [4622, "Zozo Cafe 2F Right Outside WOR"],
     4607: [4633, "Zozo Cafe 3F Right Outside WOR"],
+    4608: [4623, "Zozo Relic 1F Outside WOR"],
     4620: [4604, "Zozo Cafe 1F Inside WOR"],
     4621: [4605, "Zozo Cafe 2F Left Inside WOR"],
     4622: [4606, "Zozo Cafe 2F Right Inside WOR"],
+    4623: [4608, "Zozo Relic 1F Inside WOR"],  # logical only for ruination mode: Zozo Relic WoR interior is never used.
     4629: [4601, "Zozo Armor Inside WOR"],
     4630: [4600, "Zozo Weapon Inside WOR"],
     4631: [4602, "Zozo Clock Puzzle Room 1F Inside WOR"],
