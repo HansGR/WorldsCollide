@@ -31,6 +31,11 @@ class EsperMountain(Event):
             space.write(
                 field.ClearEventBit(event_bit.ESPER_MOUNTAIN_GATED),
             )
+        if self.args.ruination_mode:
+            # Set warp point NPC bit so it's visible initially (will be cleared when used)
+            space.write(
+                field.SetEventBit(npc_bit.ESPER_MTN_WARP_POINT),
+            )
 
     def mod(self):
         self.entrance_relm_npc_id = 0x1c
@@ -398,8 +403,8 @@ class EsperMountain(Event):
             "DO_WARP",
             # Mark terminus as used before warping
             field.SetEventBit(event_bit.ESPER_MTN_TERMINUS_USED),
-            # Set npc_bit to hide the warp point NPC on future visits
-            field.SetEventBit(npc_bit.ESPER_MTN_WARP_POINT),
+            # Clear npc_bit to hide the warp point NPC on future visits
+            field.ClearEventBit(npc_bit.ESPER_MTN_WARP_POINT),
             # Make warp point visually disappear now
             field.PlaySoundEffect(0x51),  # vanish sound
             field.DeleteEntity(warp_npc_entity),
