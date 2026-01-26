@@ -438,7 +438,38 @@ class SealedGate(Event):
                             field_entity.Move(direction.UP, 2)),
             field.Call(0xb38ac),  # lightning strike
             field.HideEntity(field_entity.PARTY0),
-            field.Pause(1),
+            field.Pause(0.5),
+
+            # Gate closes behind the player (reverse of opening animation)
+            field.PlaySoundEffect(165),  # gate rumble sound
+            field.ShakeScreen(intensity=3, permanent=1, layer1=True, layer2=True, layer3=True, sprite_layer=True),
+            field.Pause(0.5),
+
+            # Move gate NPCs back together (opposite of opening)
+            field.EntityAct(0x10, False,
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.Move(direction.RIGHT, 1)),
+            field.EntityAct(0x12, False,
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.Move(direction.RIGHT, 1)),
+            field.EntityAct(0x13, False,
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.Move(direction.RIGHT, 1)),
+            field.EntityAct(0x11, False,
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.Move(direction.LEFT, 1)),
+            field.EntityAct(0x14, False,
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.Move(direction.LEFT, 1)),
+            field.EntityAct(0x15, False,
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.Move(direction.LEFT, 1)),
+
+            # Wait for gate to close
+            field.Pause(1.5),
+            field.StopScreenShake(),
+            field.Pause(0.5),
+
             field.FadeOutScreen(),
             field.FreeScreen(),
         ] + GoToSwitchyard(kt_enter_id)
