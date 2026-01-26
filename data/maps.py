@@ -1013,6 +1013,10 @@ class Maps():
             if d not in map_shuffle_airship_warp:
                 require_event_flags[4] = False
 
+        # In ruination mode, never warp the airship to the player's location
+        if self.args.ruination_mode:
+            require_event_flags[4] = False
+
         if require_event_flags.count(True) > 0:
             # Need to use different commands for world maps vs field maps.
             # Look for an existing event on this exit tile
@@ -1282,6 +1286,10 @@ class Maps():
             # Don't airship warp if only doing map shuffle
             if d not in map_shuffle_airship_warp:
                 require_event_flags[4] = False
+
+        # In ruination mode, never warp the airship to the player's location
+        if self.args.ruination_mode:
+            require_event_flags[4] = False
 
         # if self.doors.verbose:
         #    print('Writing shared event at ' + str(d) + ' (ref = ' + str(d_ref) + ')')
