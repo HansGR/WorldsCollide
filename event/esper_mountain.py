@@ -370,6 +370,8 @@ class EsperMountain(Event):
         wpp.background_scrolls = 0
         wpp.background_layer = 0
 
+        # Calculate entity ID before appending (0x10 + current NPC count)
+        warp_npc_entity = 0x10 + self.maps.get_npc_count(map_id)
         self.maps.append_npc(map_id, wpp)
 
         # Create an event tile that does the warping action
@@ -396,8 +398,12 @@ class EsperMountain(Event):
             "DO_WARP",
             # Mark terminus as used before warping
             field.SetEventBit(event_bit.ESPER_MTN_TERMINUS_USED),
-            # Set npc_bit to hide the warp point NPC
+            # Set npc_bit to hide the warp point NPC on future visits
             field.SetEventBit(npc_bit.ESPER_MTN_WARP_POINT),
+            # Make warp point visually disappear now
+            field.PlaySoundEffect(0x51),  # vanish sound
+            field.DeleteEntity(warp_npc_entity),
+            field.Pause(0.25),
             field.Call(self.warps.warp_out_animation_addr)
         ] + GoToSwitchyard(kt_enter_id)
 
