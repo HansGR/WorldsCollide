@@ -473,6 +473,8 @@ class Airship(Event):
 
         self.attack_kt_event = space.next_address
         src = [
+            # Mark terminus as used - airship deck will be inaccessible after this
+            field.SetEventBit(event_bit.AIRSHIP_TERMINUS_USED),
             field.StartSong(76),
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.AnimateHandsUp(),
@@ -505,6 +507,8 @@ class Airship(Event):
         # Write event: "Takeoff falcon;  drop into Kefka's Tower."
         self.enter_kt_event = space.next_address
         src = [
+          # Mark terminus as used - airship deck will be inaccessible after this
+          field.SetEventBit(event_bit.AIRSHIP_TERMINUS_USED),
           field.StartSong(76),
           field.EntityAct(field_entity.PARTY0, True,
                           field_entity.AnimateHandsUp(),

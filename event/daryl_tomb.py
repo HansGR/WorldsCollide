@@ -265,6 +265,8 @@ class DarylTomb(Event):
 
         # (1c) Add bottom door tile that goes to the Falcon.  This one is not randomized.
         src = [
+            # If terminus was used, airship has departed - block access
+            field.ReturnIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED),
             field.FadeOutScreen(),
             Read(0xa46cd, 0xa46e8),  # Load falcon, modify graphics.
             field.FadeInScreen(speed=4),

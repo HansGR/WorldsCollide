@@ -409,6 +409,9 @@ class SealedGate(Event):
         no_return_text = 1293   # same as airship.py
 
         src = [
+            # Check if terminus already used - if so, return immediately
+            field.ReturnIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED),
+
             field.HoldScreen(),
             field.EntityAct(field_entity.CAMERA, True,
                             field_entity.SetSpeed(field_entity.Speed.SLOW),
@@ -426,6 +429,8 @@ class SealedGate(Event):
             "ALLOW_ENTRY",
             field.DialogBranch(dialog_entry_id, dest1="ENTER_KT", dest2="DO_NOT_ENTER"),
             "ENTER_KT",
+            # Mark terminus as used before entering KT
+            field.SetEventBit(event_bit.SEALED_GATE_TERMINUS_USED),
             field.EntityAct(field_entity.PARTY0, False,
                             field_entity.SetSpeed(field_entity.Speed.SLOW),
                             field_entity.Move(direction.UP, 3)),
@@ -455,6 +460,8 @@ class SealedGate(Event):
         src = [
             Read(patch_addr[0], patch_addr[1]),
             field.ReturnIfEventBitClear(event_bit.SEALED_GATE_OPENED),
+            # If terminus was used, keep gate closed (don't show open position)
+            field.ReturnIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED),
             field.EntityAct(0x10, False,
                             field_entity.SetPosition(6, 5)),
             field.EntityAct(0x12, False,

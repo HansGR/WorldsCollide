@@ -355,8 +355,9 @@ class EsperMountain(Event):
         wpp = NPC()
         wpp.x = 17
         wpp.y = 20
-        wpp.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_ON)
-        wpp.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_ON)
+        # Use ESPER_MTN_WARP_POINT so NPC hides when terminus is used
+        wpp.event_byte = npc_bit.event_byte(npc_bit.ESPER_MTN_WARP_POINT)
+        wpp.event_bit = npc_bit.event_bit(npc_bit.ESPER_MTN_WARP_POINT)
         wpp.palette = 1  # default = 6
         wpp.sprite = 104  # 111 = save point
         wpp.split_sprite = 1
@@ -380,6 +381,8 @@ class EsperMountain(Event):
 
         from event.switchyard import GoToSwitchyard
         src = [
+            # If terminus already used, warp point is gone - return immediately
+            field.ReturnIfEventBitSet(event_bit.ESPER_MTN_TERMINUS_USED),
             field.ReturnIfEventBitSet(0x1B5),  # cleared on each step
             field.PlaySoundEffect(0xd1),    # shing!
             field.FlashScreen(field.Flash.RED),
@@ -391,6 +394,10 @@ class EsperMountain(Event):
             "ALLOW_WARP",
             field.DialogBranch(warp_to_KT_text, "DO_WARP", "RETURN"),
             "DO_WARP",
+            # Mark terminus as used before warping
+            field.SetEventBit(event_bit.ESPER_MTN_TERMINUS_USED),
+            # Set npc_bit to hide the warp point NPC
+            field.SetEventBit(npc_bit.ESPER_MTN_WARP_POINT),
             field.Call(self.warps.warp_out_animation_addr)
         ] + GoToSwitchyard(kt_enter_id)
 
