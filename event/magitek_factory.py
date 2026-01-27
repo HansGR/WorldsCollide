@@ -111,7 +111,7 @@ class MagitekFactory(Event):
         space.write(
             field.HideEntity(sympathizer_npc_id),
         )
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
             space.write(
                 field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "NPC_QUEUES"),
             )
@@ -400,6 +400,11 @@ class MagitekFactory(Event):
                 battle_background = 41  # airship WOR, right
             else:
                 battle_background = 37  # airship WOR, center (does not exist!)
+
+        if self.args.ruination_mode:
+            # Remove full heal before crane battle
+            # CB/40E1: B2 Call subroutine $CACFBD (heals all HP/MP/Statuses)
+            space = Reserve(0xb40e1, 0xb40e4, "remove pre-crane battle full heal", field.NOP())
 
         space = Reserve(0xb40e5, 0xb40eb, "magitek factory invoke battle cranes", field.NOP())
         space.write(
