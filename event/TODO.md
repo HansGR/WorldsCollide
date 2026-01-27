@@ -144,8 +144,10 @@
 - ✅ **DONE** - Moogle Defense (WoB room must be used, possibly with palatte swap; event must be initialized in the room, rather than at Arvis' house)
   - **Status**: Implemented in event/narshe_moogle_defense.py:632-707 (ruination_start_mod method).  Needs testing.
   - Uses WOB map with custom entrance event, initializes event in the room
-- ❌ **TODO** - Opera House (deconflict with OH dragon.  Probably same solution as for Kefka at Narshe)
-  - **Status**: No ruination modifications found in event/opera_house_wob.py for ending location
+- ✅ **DONE** - Opera House (deconflict with OH dragon.  Probably same solution as for Kefka at Narshe)
+  - **Status**: Implemented in event/opera_house_wob.py (ruination_set_wor_opera_bits method)
+  - After reward, sets WoR NPC bits and places player in Opera House lobby (map 0xed) at (60, 44)
+  - WoB version plays normally; transitions to WoR state after completion
 - ✅ **DONE** - Shadow's check at gau's dad's house (just use WoB gau's dad's house with pallete swap)
   - **Status**: Implemented in event/gau_father_house.py:123-129 (ruination_mod method).  Needs testing.
   - Edits palette to look like WOR
@@ -166,8 +168,10 @@
 - ✅ **DONE** - Phantom Train (warp to train station?)
   - **Status**: Implemented in event/phantom_train.py:94-110 (door_rando_mod method)
   - In ruination mode, sends to Phantom Train station instead of world map
-- ❌ **TODO** - Opera House (end up in lobby, not on airship)
-  - **Status**: No ruination modifications found in event/opera_house_wob.py for ending location
+- ✅ **DONE** - Opera House (end up in lobby, not on airship)
+  - **Status**: Implemented in event/opera_house_wob.py (character_mod and esper_item_mod methods)
+  - In ruination mode, places player in Opera House lobby (map 0xed) at (60, 44) facing down
+  - Sets WoR NPC bits before loading lobby map
 - ✅ **DONE** - MTek 3 (end up in Vector, no battle on airship?)
   - **Status**: Implemented in event/magitek_factory.py:487-489, 421-442 (ruination_mod method and after_cranes_mod)
   - Returns to Vector in ruination mode instead of airship
