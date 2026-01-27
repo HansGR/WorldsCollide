@@ -400,14 +400,25 @@ class OperaHouseWOB(Event):
         self.setzer_npc.sprite = character
         self.setzer_npc.palette = self.characters.get_palette(character)
 
-        reward_src = [
-            field.RecruitAndSelectParty(character),
-            field.StartSong(53),
-            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-        ] + self.mod_world_src + [
-            field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True,
-                          x = self.airship_loc[1], y = self.airship_loc[2], fade_in = True)
-        ]
+        if self.args.ruination_mode:
+            # In ruination mode, place player in Opera House lobby instead of airship
+            reward_src = [
+                field.RecruitAndSelectParty(character),
+                field.StartSong(53),
+                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            ] + self.ruination_set_wor_opera_bits() + [
+                field.LoadMap(0xed, direction.DOWN, default_music=True,
+                              x=60, y=44, fade_in=True)
+            ]
+        else:
+            reward_src = [
+                field.RecruitAndSelectParty(character),
+                field.StartSong(53),
+                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            ] + self.mod_world_src + [
+                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True,
+                              x = self.airship_loc[1], y = self.airship_loc[2], fade_in = True)
+            ]
 
         self.reward_mod(reward_src)
 
@@ -415,17 +426,31 @@ class OperaHouseWOB(Event):
         self.setzer_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.setzer_npc.palette = self.characters.get_palette(self.setzer_npc.sprite)
 
-        reward_src = [
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.ShowEntity(field_entity.PARTY0),
-            field.StartSong(53),
-            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-        ] + self.mod_world_src + [
-            field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
-                          y = self.airship_loc[2], fade_in = True),
-            esper_item_instructions,
-        ]
+        if self.args.ruination_mode:
+            # In ruination mode, place player in Opera House lobby instead of airship
+            reward_src = [
+                field.RefreshEntities(),
+                field.UpdatePartyLeader(),
+                field.ShowEntity(field_entity.PARTY0),
+                field.StartSong(53),
+                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            ] + self.ruination_set_wor_opera_bits() + [
+                field.LoadMap(0xed, direction.DOWN, default_music=True,
+                              x=60, y=44, fade_in=True),
+                esper_item_instructions,
+            ]
+        else:
+            reward_src = [
+                field.RefreshEntities(),
+                field.UpdatePartyLeader(),
+                field.ShowEntity(field_entity.PARTY0),
+                field.StartSong(53),
+                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            ] + self.mod_world_src + [
+                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
+                              y = self.airship_loc[2], fade_in = True),
+                esper_item_instructions,
+            ]
 
         self.reward_mod(reward_src)
 
@@ -440,3 +465,23 @@ class OperaHouseWOB(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def ruination_set_wor_opera_bits(self):
+        """Set/clear NPC bits to transition Opera House from WoB to WoR state"""
+        return [
+            field.SetEventBit(npc_bit.MAN_AT_COUNTER_OPERA),
+            field.SetEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
+            field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_SITTING),
+            field.SetEventBit(event_bit.BEGAN_OPERA_DISRUPTION),
+            field.ClearEventBit(npc_bit.ULTROS_OPERA_CEILING),
+            field.ClearEventBit(npc_bit.RAT1_OPERA_CEILING),
+            field.ClearEventBit(npc_bit.RAT2_OPERA_CEILING),
+            field.ClearEventBit(npc_bit.RAT3_OPERA_CEILING),
+            field.ClearEventBit(npc_bit.RAT4_OPERA_CEILING),
+            field.ClearEventBit(npc_bit.RAT5_OPERA_CEILING),
+            field.ClearEventBit(npc_bit.CEILING_DOOR_OPERA_HOUSE),
+            field.ClearEventBit(npc_bit.DANCING_COUPLE1_OPERA),
+            field.ClearEventBit(npc_bit.DANCING_COUPLE2_OPERA),
+            field.ClearEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA),
+            field.ClearEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING),
+        ]
