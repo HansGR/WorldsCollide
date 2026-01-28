@@ -432,6 +432,32 @@ class RuinationBranch(Network):
 
         return issues
 
+    def collect_network_traps_and_pits(self):
+        """Collect all unconnected traps and pits from the entire connected network.
+
+        Returns tuple: (all_traps, all_pits) where each is a list of unconnected elements
+        from hub + upstream + downstream nodes.
+        """
+        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub = self.rooms.get_room(hub_id)
+
+        all_pits = [p for p in hub.pits if p not in self.protected]
+        all_traps = [t for t in hub.traps if t not in self.protected]
+
+        upstream = self.get_upstream_nodes(hub_id)
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            all_pits.extend([p for p in room.pits if p not in self.protected])
+            all_traps.extend([t for t in room.traps if t not in self.protected])
+
+        downstream = self.get_downstream_nodes(hub_id)
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            all_pits.extend([p for p in room.pits if p not in self.protected])
+            all_traps.extend([t for t in room.traps if t not in self.protected])
+
+        return all_traps, all_pits
+
     def finalize_map(self):
         if self.verbose:
             print('Closing branch...')
@@ -641,25 +667,11 @@ class RuinationBranch(Network):
             delta.sort(key=lambda x: x[0])
 
         # (3) Connect any remaining trapdoors/pits
-        # At this point, only the hub room should be remaining & possibly upstream/downstream pits.
-        # Recollect data on pits/traps (including downstream pits from pit-only rooms skipped in step 2)
-        # Check unprotected traps to decide when to stop
-        unprotected_hub_traps = [t for t in hub.traps if t not in self.protected]
-        while len(unprotected_hub_traps) > 0:
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
-            hub = self.rooms.get_room(hub_id)
-            remaining_pits = [p for p in hub.pits if p not in self.protected]
-            remaining_traps = [t for t in hub.traps if t not in self.protected]
-            upstream = self.get_upstream_nodes(hub_id)
-            for node in upstream:
-                room = self.rooms.get_room(node)
-                remaining_pits.extend([p for p in room.pits if p not in self.protected])
-            # Also collect pits from downstream nodes (pit-only rooms skipped in step 2)
-            downstream = self.get_downstream_nodes(hub_id)
-            for node in downstream:
-                room = self.rooms.get_room(node)
-                remaining_pits.extend([p for p in room.pits if p not in self.protected])
-
+        # Collect traps and pits from the ENTIRE network (hub + upstream + downstream).
+        # This is important because keys applied during connect() can unlock traps in any room,
+        # not just the hub. All unlocked traps must be connected to avoid "escape" routes.
+        remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+        while len(remaining_traps) > 0 and len(remaining_pits) > 0:
             random.shuffle(remaining_pits)
             if self.verbose:
                 print('(3) remaining traps:', remaining_traps, '; pits: ', remaining_pits)
@@ -668,8 +680,13 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(3) connecting:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
-            # Update for next iteration check
-            unprotected_hub_traps = [t for t in hub.traps if t not in self.protected]
+            # Re-collect from entire network - keys applied during connect() may unlock new traps
+            remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+
+        # If we still have traps but no pits, step 7 will handle them (finding unconnected rooms)
+        if len(remaining_traps) > 0:
+            if self.verbose:
+                print(f'(3) WARNING: {len(remaining_traps)} traps remaining with no pits, deferring to step 7')
 
         # (4) The terminus is currently always a dead end room.  Connect it.
         # However, the terminus may have been merged into the hub through loop compression.
@@ -807,6 +824,60 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(6) connecting dead ends:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
+
+        # (7) Check for newly unlocked traps after all connections
+        # Keys applied during steps 4-6 can unlock traps in rooms already in the network.
+        # These must be connected to avoid creating "escape" routes from the ruination map.
+        newly_unlocked_traps, available_pits = self.collect_network_traps_and_pits()
+        iteration = 0
+        max_iterations = 20  # Safety limit to prevent infinite loops
+        while len(newly_unlocked_traps) > 0 and iteration < max_iterations:
+            iteration += 1
+            if self.verbose:
+                print(f'(7) Found {len(newly_unlocked_traps)} newly unlocked traps after finalization, '
+                      f'iteration {iteration}: {newly_unlocked_traps}')
+
+            # Process each newly unlocked trap
+            while len(newly_unlocked_traps) > 0 and len(available_pits) > 0:
+                random.shuffle(available_pits)
+                this_exit = newly_unlocked_traps.pop()
+                this_conn = available_pits.pop()
+                if self.verbose:
+                    print(f'(7) connecting newly unlocked trap: {this_exit} --> {this_conn}')
+                self.connect(this_exit, this_conn)
+                # Re-collect - the connection may have unlocked more traps via keys
+                newly_unlocked_traps, available_pits = self.collect_network_traps_and_pits()
+
+            # If we have traps but no pits, we need to find rooms with pits to connect
+            if len(newly_unlocked_traps) > 0 and len(available_pits) == 0:
+                if self.verbose:
+                    print(f'(7) WARNING: {len(newly_unlocked_traps)} traps but no pits available!')
+                # Try to find unconnected rooms with pits
+                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                connected_nodes = set([hub_id])
+                connected_nodes.update(self.get_upstream_nodes(hub_id))
+                connected_nodes.update(self.get_downstream_nodes(hub_id))
+
+                for room_id in self.net.nodes:
+                    if room_id not in connected_nodes:
+                        room = self.rooms.get_room(room_id)
+                        unprotected_pits = [p for p in room.pits if p not in self.protected]
+                        if len(unprotected_pits) > 0:
+                            this_exit = newly_unlocked_traps.pop()
+                            this_conn = random.choice(unprotected_pits)
+                            if self.verbose:
+                                print(f'(7) connecting trap to unconnected room: {this_exit} --> {this_conn} (room {room_id})')
+                            self.connect(this_exit, this_conn)
+                            newly_unlocked_traps, available_pits = self.collect_network_traps_and_pits()
+                            break
+                else:
+                    # No room with pits found - this is an error state
+                    if len(newly_unlocked_traps) > 0:
+                        print(f'ERROR: Cannot connect remaining traps {newly_unlocked_traps}, no pits available!')
+                        raise RuntimeError(f'finalize_map step 7: Cannot connect newly unlocked traps {newly_unlocked_traps}')
+
+        if iteration >= max_iterations:
+            print(f'WARNING: Hit max iterations ({max_iterations}) in step 7 trap cleanup')
 
         if self.verbose:
             print('... closing branch complete!')
