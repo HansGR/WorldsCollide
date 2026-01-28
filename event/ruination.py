@@ -1288,15 +1288,9 @@ class ruination_map():
 
         self.args = args
 
-        # Interpret unlock requirements as requested # characters & espers in the map
-        for o in args.objectives:
-            if o.result.name == "Unlock Final Kefka":
-                for c in o.conditions:
-                    #print(c.name, c.args)
-                    if c.name == "Characters":
-                        self.Requested[0] = c.args[0]
-                    if c.name == "Espers":
-                        self.Requested[1] = c.args[0]
+        # Read character/esper requirements from args (extracted from flagstring in args/objectives.py)
+        self.Requested[0] = args.ruin_characters_required
+        self.Requested[1] = args.ruin_espers_required
         if self.verbose:
             print('Requested: ', self.Requested[0], 'characters, ', self.Requested[1], 'espers')
 
