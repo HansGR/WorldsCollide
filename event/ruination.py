@@ -432,30 +432,37 @@ class RuinationBranch(Network):
 
         return issues
 
-    def collect_network_traps_and_pits(self):
+    def collect_network_traps_and_pits(self, include_doors=False):
         """Collect all unconnected traps and pits from the entire connected network.
 
-        Returns tuple: (all_traps, all_pits) where each is a list of unconnected elements
-        from hub + upstream + downstream nodes.
+        Returns tuple: (all_traps, all_pits) or (all_traps, all_pits, all_doors) if include_doors=True.
+        Each is a list of unconnected elements from hub + upstream + downstream nodes.
         """
         hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
         hub = self.rooms.get_room(hub_id)
 
         all_pits = [p for p in hub.pits if p not in self.protected]
         all_traps = [t for t in hub.traps if t not in self.protected]
+        all_doors = [d for d in hub.doors if d not in self.protected] if include_doors else []
 
         upstream = self.get_upstream_nodes(hub_id)
         for node in upstream:
             room = self.rooms.get_room(node)
             all_pits.extend([p for p in room.pits if p not in self.protected])
             all_traps.extend([t for t in room.traps if t not in self.protected])
+            if include_doors:
+                all_doors.extend([d for d in room.doors if d not in self.protected])
 
         downstream = self.get_downstream_nodes(hub_id)
         for node in downstream:
             room = self.rooms.get_room(node)
             all_pits.extend([p for p in room.pits if p not in self.protected])
             all_traps.extend([t for t in room.traps if t not in self.protected])
+            if include_doors:
+                all_doors.extend([d for d in room.doors if d not in self.protected])
 
+        if include_doors:
+            return all_traps, all_pits, all_doors
         return all_traps, all_pits
 
     def finalize_map(self):
@@ -825,19 +832,23 @@ class RuinationBranch(Network):
                 print('(6) connecting dead ends:', this_exit, '-->', this_conn)
             self.connect(this_exit, this_conn)
 
-        # (7) Check for newly unlocked traps after all connections
-        # Keys applied during steps 4-6 can unlock traps in rooms already in the network.
+        # (7) Check for newly unlocked traps and doors after all connections
+        # Keys applied during steps 4-6 can unlock traps/doors in rooms already in the network.
         # These must be connected to avoid creating "escape" routes from the ruination map.
-        newly_unlocked_traps, available_pits = self.collect_network_traps_and_pits()
+        newly_unlocked_traps, available_pits, newly_unlocked_doors = self.collect_network_traps_and_pits(include_doors=True)
         iteration = 0
         max_iterations = 20  # Safety limit to prevent infinite loops
-        while len(newly_unlocked_traps) > 0 and iteration < max_iterations:
+        while (len(newly_unlocked_traps) > 0 or len(newly_unlocked_doors) > 0) and iteration < max_iterations:
             iteration += 1
             if self.verbose:
-                print(f'(7) Found {len(newly_unlocked_traps)} newly unlocked traps after finalization, '
-                      f'iteration {iteration}: {newly_unlocked_traps}')
+                print(f'(7) Found {len(newly_unlocked_traps)} traps and {len(newly_unlocked_doors)} doors '
+                      f'after finalization, iteration {iteration}')
+                if newly_unlocked_traps:
+                    print(f'    traps: {newly_unlocked_traps}')
+                if newly_unlocked_doors:
+                    print(f'    doors: {newly_unlocked_doors}')
 
-            # Process each newly unlocked trap
+            # Process newly unlocked traps first (connect to pits)
             while len(newly_unlocked_traps) > 0 and len(available_pits) > 0:
                 random.shuffle(available_pits)
                 this_exit = newly_unlocked_traps.pop()
@@ -845,8 +856,8 @@ class RuinationBranch(Network):
                 if self.verbose:
                     print(f'(7) connecting newly unlocked trap: {this_exit} --> {this_conn}')
                 self.connect(this_exit, this_conn)
-                # Re-collect - the connection may have unlocked more traps via keys
-                newly_unlocked_traps, available_pits = self.collect_network_traps_and_pits()
+                # Re-collect - the connection may have unlocked more elements via keys
+                newly_unlocked_traps, available_pits, newly_unlocked_doors = self.collect_network_traps_and_pits(include_doors=True)
 
             # If we have traps but no pits, we need to find rooms with pits to connect
             if len(newly_unlocked_traps) > 0 and len(available_pits) == 0:
@@ -858,6 +869,7 @@ class RuinationBranch(Network):
                 connected_nodes.update(self.get_upstream_nodes(hub_id))
                 connected_nodes.update(self.get_downstream_nodes(hub_id))
 
+                found_pit = False
                 for room_id in self.net.nodes:
                     if room_id not in connected_nodes:
                         room = self.rooms.get_room(room_id)
@@ -868,16 +880,70 @@ class RuinationBranch(Network):
                             if self.verbose:
                                 print(f'(7) connecting trap to unconnected room: {this_exit} --> {this_conn} (room {room_id})')
                             self.connect(this_exit, this_conn)
-                            newly_unlocked_traps, available_pits = self.collect_network_traps_and_pits()
+                            newly_unlocked_traps, available_pits, newly_unlocked_doors = self.collect_network_traps_and_pits(include_doors=True)
+                            found_pit = True
                             break
-                else:
-                    # No room with pits found - this is an error state
-                    if len(newly_unlocked_traps) > 0:
-                        print(f'ERROR: Cannot connect remaining traps {newly_unlocked_traps}, no pits available!')
-                        raise RuntimeError(f'finalize_map step 7: Cannot connect newly unlocked traps {newly_unlocked_traps}')
+
+                if not found_pit and len(newly_unlocked_traps) > 0:
+                    print(f'ERROR: Cannot connect remaining traps {newly_unlocked_traps}, no pits available!')
+                    raise RuntimeError(f'finalize_map step 7: Cannot connect newly unlocked traps {newly_unlocked_traps}')
+
+            # Process newly unlocked doors (connect to each other or to dead ends)
+            while len(newly_unlocked_doors) >= 2:
+                # Pair doors together
+                this_exit = newly_unlocked_doors.pop()
+                this_conn = newly_unlocked_doors.pop()
+                if self.verbose:
+                    print(f'(7) connecting newly unlocked doors: {this_exit} --> {this_conn}')
+                self.connect(this_exit, this_conn)
+                # Re-collect - the connection may have unlocked more elements via keys
+                newly_unlocked_traps, available_pits, newly_unlocked_doors = self.collect_network_traps_and_pits(include_doors=True)
+
+            # If we have an odd number of doors (1 remaining), connect to a dead end
+            if len(newly_unlocked_doors) == 1:
+                orphan_door = newly_unlocked_doors.pop()
+                if self.verbose:
+                    print(f'(7) orphan door {orphan_door}, looking for dead end to connect')
+
+                # First try dead ends list
+                if len(self.dead_ends) > 0:
+                    room_id = self.dead_ends.pop()
+                    room = self.rooms.get_room(room_id)
+                    unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+                    if unprotected_room_doors:
+                        this_conn = random.choice(unprotected_room_doors)
+                        if self.verbose:
+                            print(f'(7) connecting orphan door to dead end: {orphan_door} --> {this_conn} (room {room_id})')
+                        self.connect(orphan_door, this_conn)
+                        newly_unlocked_traps, available_pits, newly_unlocked_doors = self.collect_network_traps_and_pits(include_doors=True)
+                        continue
+
+                # Try to find any unconnected room with a door
+                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                connected_nodes = set([hub_id])
+                connected_nodes.update(self.get_upstream_nodes(hub_id))
+                connected_nodes.update(self.get_downstream_nodes(hub_id))
+
+                found_door = False
+                for room_id in self.net.nodes:
+                    if room_id not in connected_nodes:
+                        room = self.rooms.get_room(room_id)
+                        unprotected_doors = [d for d in room.doors if d not in self.protected]
+                        if len(unprotected_doors) > 0:
+                            this_conn = random.choice(unprotected_doors)
+                            if self.verbose:
+                                print(f'(7) connecting orphan door to unconnected room: {orphan_door} --> {this_conn} (room {room_id})')
+                            self.connect(orphan_door, this_conn)
+                            newly_unlocked_traps, available_pits, newly_unlocked_doors = self.collect_network_traps_and_pits(include_doors=True)
+                            found_door = True
+                            break
+
+                if not found_door:
+                    print(f'ERROR: Cannot connect orphan door {orphan_door}, no doors available!')
+                    raise RuntimeError(f'finalize_map step 7: Cannot connect orphan door {orphan_door}')
 
         if iteration >= max_iterations:
-            print(f'WARNING: Hit max iterations ({max_iterations}) in step 7 trap cleanup')
+            print(f'WARNING: Hit max iterations ({max_iterations}) in step 7 trap/door cleanup')
 
         if self.verbose:
             print('... closing branch complete!')
