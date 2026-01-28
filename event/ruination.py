@@ -1289,8 +1289,14 @@ class ruination_map():
         self.args = args
 
         # Read character/esper requirements from args (extracted from flagstring in args/objectives.py)
-        self.Requested[0] = args.ruin_characters_required
-        self.Requested[1] = args.ruin_espers_required
+        # These are stored as [min, max] ranges; pick a random value in the range
+        char_min, char_max = args.ruin_characters_required
+        esper_min, esper_max = args.ruin_espers_required
+        # Enforce minimum of 3 characters for ruination mode
+        char_min = max(char_min, 3)
+        char_max = max(char_max, 3)
+        self.Requested[0] = random.randint(char_min, char_max)
+        self.Requested[1] = random.randint(esper_min, esper_max)
         if self.verbose:
             print('Requested: ', self.Requested[0], 'characters, ', self.Requested[1], 'espers')
 

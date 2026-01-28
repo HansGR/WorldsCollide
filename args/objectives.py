@@ -46,8 +46,9 @@ def process(args):
 
     # Initialize ruination-specific character/esper requirements with defaults
     # These are read from the "Unlock Final Kefka" objective in ruination mode
-    args.ruin_characters_required = 3  # default
-    args.ruin_espers_required = 0      # default
+    # Stored as [min, max] ranges to support random selection within range
+    args.ruin_characters_required = [3, 3]  # default: 3 characters
+    args.ruin_espers_required = [0, 0]      # default: 0 espers
 
     args.objectives = []
     args.final_kefka_objective = False
@@ -123,9 +124,11 @@ def process(args):
                 if result.id == 2:
                     for condition in conditions:
                         if condition.name == "Characters":
-                            args.ruin_characters_required = condition.args[0]
+                            # Characters has min_max=True, so args is [min, max]
+                            args.ruin_characters_required = list(condition.args)
                         elif condition.name == "Espers":
-                            args.ruin_espers_required = condition.args[0]
+                            # Espers has min_max=True, so args is [min, max]
+                            args.ruin_espers_required = list(condition.args)
                 # Skip adding KT objectives to args.objectives in ruination mode
                 continue
 
