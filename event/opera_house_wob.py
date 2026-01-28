@@ -404,7 +404,7 @@ class OperaHouseWOB(Event):
             # In ruination mode, place player in Opera House lobby instead of airship
             reward_src = [
                 field.RecruitAndSelectParty(character),
-                field.StartSong(53),
+                field.StartSong(61),  # Spinach Rag
                 field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             ] + self.ruination_set_wor_opera_bits() + [
                 field.LoadMap(0xed, direction.DOWN, default_music=True,
@@ -432,7 +432,7 @@ class OperaHouseWOB(Event):
                 field.RefreshEntities(),
                 field.UpdatePartyLeader(),
                 field.ShowEntity(field_entity.PARTY0),
-                field.StartSong(53),
+                field.StartSong(61),  # Spinach Rag
                 field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             ] + self.ruination_set_wor_opera_bits() + [
                 field.LoadMap(0xed, direction.DOWN, default_music=True,
