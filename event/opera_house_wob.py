@@ -470,7 +470,7 @@ class OperaHouseWOB(Event):
         """Set/clear NPC bits to transition Opera House from WoB to WoR state"""
         return [
             field.SetEventBit(npc_bit.MAN_AT_COUNTER_OPERA),
-            field.SetEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
+            #field.SetEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
             field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_SITTING),
             field.SetEventBit(event_bit.BEGAN_OPERA_DISRUPTION),
             field.ClearEventBit(npc_bit.ULTROS_OPERA_CEILING),
@@ -484,4 +484,8 @@ class OperaHouseWOB(Event):
             field.ClearEventBit(npc_bit.DANCING_COUPLE2_OPERA),
             field.ClearEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA),
             field.ClearEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING),
+
+            field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
+            field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
+            field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
         ]
