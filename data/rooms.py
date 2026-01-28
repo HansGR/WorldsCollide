@@ -177,6 +177,7 @@ room_data = {
     'ruin-nikeah': [[5199, 5200], [], [3153], 1],  # WOR Nikeah + Serpent Trench exit
     'ruin-daryl': [ [789], [], [], ['dtboss'], {'dtboss': [1563]}, 1], #Darill's Tomb Dullahan Room
     'ruin-201' : [ [469], [2065], [3068], 0],   #Phantom Train Station + custom return from train
+    'ruin-phantomforest' : [ [1188, 465, 468], [], [], 0],   #Phantom Forest, all rooms + spring (internally randomized)
     'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
     'ruin-figarocastle': [[1156, 1157, 1158, 1159], [], [], [], {}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room key)
     'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff

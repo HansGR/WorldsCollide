@@ -568,6 +568,8 @@ class Maps():
             patch_exits = [e for e in exit_data_patch.keys() if e < 4000 or e in used_exits]
             exits_to_patch = list(set(list(used_exits) + patch_exits)) + \
                              [e for e in event_door_connection_data.keys()]
+            if self.args.ruination_mode and 978 not in exits_to_patch:
+                exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode. It's the only world-map door.
             # print(exits_to_patch)
             self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=False)
             for e in self.exits.exit_original_data.keys():
@@ -873,6 +875,7 @@ class Maps():
                     # that_room = [r for r in room_data.keys() if map[m] in room_data[r][0]]
                     # if len(that_room)> 0:
                     #    self.doors.door_rooms[map[m]] = that_room[0]
+
 
         # Build dictionary of maps with entrance events that will need to be called
         # self.exit_event_addr_to_call = {}

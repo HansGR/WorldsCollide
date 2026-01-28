@@ -430,8 +430,8 @@ class MagitekFactory(Event):
         if self.args.ruination_mode:
             # Just return to Vector
             src = [
-                field.LoadMap(map_id=0x0f2, direction=direction.DOWN, default_music=True,
-                              x=51, y=40, fade_in=True),
+                field.LoadMap(map_id=0x0f2, direction=direction.LEFT, default_music=True,
+                              x=51, y=40, fade_in=True, entrance_event=True),
                 field.Return()
             ]
         elif self.airship_position[0] in [0x0, 0x1, 0x1ff]:
