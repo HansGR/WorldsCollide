@@ -432,6 +432,39 @@ class RuinationBranch(Network):
 
         return issues
 
+    def collect_network_traps_and_pits(self, include_doors=False):
+        """Collect all unconnected traps and pits from the entire connected network.
+
+        Returns tuple: (all_traps, all_pits) or (all_traps, all_pits, all_doors) if include_doors=True.
+        Each is a list of unconnected elements from hub + upstream + downstream nodes.
+        """
+        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub = self.rooms.get_room(hub_id)
+
+        all_pits = [p for p in hub.pits if p not in self.protected]
+        all_traps = [t for t in hub.traps if t not in self.protected]
+        all_doors = [d for d in hub.doors if d not in self.protected] if include_doors else []
+
+        upstream = self.get_upstream_nodes(hub_id)
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            all_pits.extend([p for p in room.pits if p not in self.protected])
+            all_traps.extend([t for t in room.traps if t not in self.protected])
+            if include_doors:
+                all_doors.extend([d for d in room.doors if d not in self.protected])
+
+        downstream = self.get_downstream_nodes(hub_id)
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            all_pits.extend([p for p in room.pits if p not in self.protected])
+            all_traps.extend([t for t in room.traps if t not in self.protected])
+            if include_doors:
+                all_doors.extend([d for d in room.doors if d not in self.protected])
+
+        if include_doors:
+            return all_traps, all_pits, all_doors
+        return all_traps, all_pits
+
     def finalize_map(self):
         if self.verbose:
             print('Closing branch...')
@@ -441,75 +474,31 @@ class RuinationBranch(Network):
         if self.verbose:
             print(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
 
-        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
-        hub = self.rooms.get_room(hub_id)
-        if self.verbose:
-            print('\thub:', hub_id, hub.count)
+        # Wrap steps 1-6 in a loop. If keys unlock new traps/doors during finalization,
+        # we restart from step 1 to ensure proper topology-aware handling.
+        max_finalize_iterations = 10  # Safety limit to prevent infinite loops
+        finalize_iteration = 0
 
-        # (1) Count trapdoors/pits connected to hub.  If trapdoors > pits, connect traps to rooms with (# pits > # traps).
-        # Filter out protected elements to avoid using forced connection destinations
-        all_pits = [p for p in hub.pits if p not in self.protected]
-        all_traps = [t for t in hub.traps if t not in self.protected]
+        while finalize_iteration < max_finalize_iterations:
+            finalize_iteration += 1
+            if finalize_iteration > 1 and self.verbose:
+                print(f'\n=== Finalize iteration {finalize_iteration} (new elements were unlocked) ===\n')
 
-        # Show what was filtered
-        filtered_pits = [p for p in hub.pits if p in self.protected]
-        filtered_traps = [t for t in hub.traps if t in self.protected]
-        if self.verbose and (filtered_pits or filtered_traps):
-            print(f'\t(hub) Filtered out protected - pits: {filtered_pits}, traps: {filtered_traps}')
-
-        upstream = self.get_upstream_nodes(hub_id)
-        for node in upstream:
-            room = self.rooms.get_room(node)
-            all_pits.extend([p for p in room.pits if p not in self.protected])
-            all_traps.extend([t for t in room.traps if t not in self.protected])
-
-        downstream = self.get_downstream_nodes(hub_id)
-        for node in downstream:
-            room = self.rooms.get_room(node)
-            all_pits.extend([p for p in room.pits if p not in self.protected])
-            all_traps.extend([t for t in room.traps if t not in self.protected])
-
-        if self.verbose:
-            print('\tpits:', all_pits)
-            print('\ttraps:', all_traps)
-
-        while len(all_traps) > len(all_pits):
-            # Find unconnected rooms with more pits than traps
-            if self.verbose:
-                print('(1) assessing nodes for (more pits than traps):')
-            winner = ''
-            diff = 0
-            for n in self.net.nodes:
-                if n not in upstream and n not in downstream and n != hub_id:
-                    r = self.rooms.get_room(n)
-                    if self.verbose:
-                        print('\t',n, r.count, r.doors, r.traps, r.pits, r.keys, r.locks)
-                    # Use only unprotected pits and traps for comparison
-                    unprotected_pits = [p for p in r.pits if p not in self.protected]
-                    unprotected_traps = [t for t in r.traps if t not in self.protected]
-                    if (len(unprotected_pits) - len(unprotected_traps)) > diff:
-                        diff = len(unprotected_pits) - len(unprotected_traps)
-                        winner = n
-
-            # connect a hub trapdoor to this node
-            this_exit = random.choice(all_traps)
-            room = self.rooms.get_room(winner)
-            unprotected_room_pits = [p for p in room.pits if p not in self.protected]
-            this_entr = random.choice(unprotected_room_pits)
-            if self.verbose:
-                protected_in_room = [p for p in room.pits if p in self.protected]
-                print(f'(1) selected {winner}: traps={room.traps}, pits={room.pits}')
-                if protected_in_room:
-                    print(f'    (filtered protected pits: {protected_in_room})')
-                print(f'(1) connecting {this_exit} --> {this_entr}')
-
-            self.connect(this_exit, this_entr)
-
-            # Recollect data on pits/traps (filtering protected elements)
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
+            if self.verbose:
+                print('\thub:', hub_id, hub.count)
+
+            # (1) Count trapdoors/pits connected to hub.  If trapdoors > pits, connect traps to rooms with (# pits > # traps).
+            # Filter out protected elements to avoid using forced connection destinations
             all_pits = [p for p in hub.pits if p not in self.protected]
             all_traps = [t for t in hub.traps if t not in self.protected]
+
+            # Show what was filtered
+            filtered_pits = [p for p in hub.pits if p in self.protected]
+            filtered_traps = [t for t in hub.traps if t in self.protected]
+            if self.verbose and (filtered_pits or filtered_traps):
+                print(f'\t(hub) Filtered out protected - pits: {filtered_pits}, traps: {filtered_traps}')
 
             upstream = self.get_upstream_nodes(hub_id)
             for node in upstream:
@@ -523,113 +512,64 @@ class RuinationBranch(Network):
                 all_pits.extend([p for p in room.pits if p not in self.protected])
                 all_traps.extend([t for t in room.traps if t not in self.protected])
 
-        # (2) Connect any nodes downstream from the hub room to upstream or to the hub room
-        # There's a possible error mode where:  U (1 pit) --> Hub --> A (1 trap),  Hub --> B (1 trap, 1 pit).
-        # The only correct solution is A --> B --> U.  If we connect A --> U, we fail.
-        # So start by connecting downstream nodes with the most entrances
-        delta = []
-        for node in downstream:
-            room = self.rooms.get_room(node)
-            entrance_count = len(room.doors) + len(room.pits)
-            exit_count = len(room.doors) + len(room.traps)
-            delta.append((entrance_count - exit_count, node))
-        if self.verbose:
-            print('(2) delta values:', delta)
-        delta.sort(key=lambda x: x[0])
-        while len(delta) > 0:
-            value = delta.pop()
-            node = value[1]
-            room = self.rooms.get_room(node)
             if self.verbose:
-                print('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
+                print('\tpits:', all_pits)
+                print('\ttraps:', all_traps)
 
-            # Skip rooms with no exits (only pit entrances) - they can't connect upstream
-            # Their pits will be connected when traps are processed in step (3)
-            if len(room.doors) == 0 and len(room.traps) == 0:
+            while len(all_traps) > len(all_pits):
+                # Find unconnected rooms with more pits than traps
                 if self.verbose:
-                    print('(2) skipping - room has no exits (pit-only)')
-                continue
+                    print('(1) assessing nodes for (more pits than traps):')
+                winner = ''
+                diff = 0
+                for n in self.net.nodes:
+                    if n not in upstream and n not in downstream and n != hub_id:
+                        r = self.rooms.get_room(n)
+                        if self.verbose:
+                            print('\t',n, r.count, r.doors, r.traps, r.pits, r.keys, r.locks)
+                        # Use only unprotected pits and traps for comparison
+                        unprotected_pits = [p for p in r.pits if p not in self.protected]
+                        unprotected_traps = [t for t in r.traps if t not in self.protected]
+                        if (len(unprotected_pits) - len(unprotected_traps)) > diff:
+                            diff = len(unprotected_pits) - len(unprotected_traps)
+                            winner = n
 
-            upstream_doors = [d for d in hub.doors if d not in self.protected]
-            upstream_pits = [p for p in hub.pits if p not in self.protected]
-            for node in upstream:
-                uproom = self.rooms.get_room(node)
-                upstream_pits.extend([p for p in uproom.pits if p not in self.protected])
+                # connect a hub trapdoor to this node
+                this_exit = random.choice(all_traps)
+                room = self.rooms.get_room(winner)
+                unprotected_room_pits = [p for p in room.pits if p not in self.protected]
+                this_entr = random.choice(unprotected_room_pits)
+                if self.verbose:
+                    protected_in_room = [p for p in room.pits if p in self.protected]
+                    print(f'(1) selected {winner}: traps={room.traps}, pits={room.pits}')
+                    if protected_in_room:
+                        print(f'    (filtered protected pits: {protected_in_room})')
+                    print(f'(1) connecting {this_exit} --> {this_entr}')
 
-            this_conn = None
-            unprotected_room_traps = [t for t in room.traps if t not in self.protected]
-            unprotected_room_doors = [d for d in room.doors if d not in self.protected]
-            if len(unprotected_room_traps) > 0:
-                this_exit = random.choice(unprotected_room_traps)
-                if len(upstream_pits) > 0:
-                    this_conn = random.choice(upstream_pits)
+                self.connect(this_exit, this_entr)
 
-            if this_conn is None and len(unprotected_room_doors) > 0:
-                this_exit = random.choice(unprotected_room_doors)
-                if len(upstream_doors) > 0:
-                    this_conn = random.choice(upstream_doors)
+                # Recollect data on pits/traps (filtering protected elements)
+                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub = self.rooms.get_room(hub_id)
+                all_pits = [p for p in hub.pits if p not in self.protected]
+                all_traps = [t for t in hub.traps if t not in self.protected]
 
-            if this_conn is None:
-                # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
-                # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
-                available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
-                if len(unprotected_room_traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
-                    # Need a pit-in, door-out converter
-                    pido = []
-                    if self.verbose:
-                        print('\t\tlooking for available pido nodes:')
-                    for node_id in available_nodes:
-                        node = self.rooms.get_room(node_id)
-                        unprotected_node_pits = [p for p in node.pits if p not in self.protected]
-                        unprotected_node_traps = [t for t in node.traps if t not in self.protected]
-                        unprotected_node_doors = [d for d in node.doors if d not in self.protected]
-                        if len(unprotected_node_pits) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_pits) > len(unprotected_node_traps):
-                            pido.append(node_id)
-                            if self.verbose:
-                                print('\t\t\t', node_id, ': ', node.count)
+                upstream = self.get_upstream_nodes(hub_id)
+                for node in upstream:
+                    room = self.rooms.get_room(node)
+                    all_pits.extend([p for p in room.pits if p not in self.protected])
+                    all_traps.extend([t for t in room.traps if t not in self.protected])
 
-                    if len(pido) > 0:
-                        pido_room_id = random.choice(pido)
-                        pido_room = self.rooms.get_room(pido_room_id)
-                        # Select an unprotected pit from the converter room as the connection target
-                        unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
-                        this_conn = random.choice(unprotected_pido_pits)
+                downstream = self.get_downstream_nodes(hub_id)
+                for node in downstream:
+                    room = self.rooms.get_room(node)
+                    all_pits.extend([p for p in room.pits if p not in self.protected])
+                    all_traps.extend([t for t in room.traps if t not in self.protected])
 
-                elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
-                    # Need a door-in, trap-out converter
-                    dito = []
-                    if self.verbose:
-                        print('\t\tlooking for available dito nodes:')
-                    for node_id in available_nodes:
-                        node = self.rooms.get_room(node_id)
-                        unprotected_node_traps = [t for t in node.traps if t not in self.protected]
-                        unprotected_node_pits = [p for p in node.pits if p not in self.protected]
-                        unprotected_node_doors = [d for d in node.doors if d not in self.protected]
-                        if len(unprotected_node_traps) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_traps) > len(unprotected_node_pits):
-                            dito.append(node_id)
-                            if self.verbose:
-                                print('\t\t\t', node_id, ': ', node.count)
-
-                    if len(dito) > 0:
-                        dito_room_id = random.choice(dito)
-                        dito_room = self.rooms.get_room(dito_room_id)
-                        # Select an unprotected door from the converter room as the connection target
-                        unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
-                        this_conn = random.choice(unprotected_dito_doors)
-
-            if this_conn is None:
-                # There is no solution.
-                print('Found an inescapable downstream node!')
-                raise Exception
-
-            if self.verbose:
-                print('(2) connecting', this_exit, '-->', this_conn)
-            self.connect(this_exit, this_conn)
-
-            # Update hub, upstream, downstream, delta
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
-            upstream = self.get_upstream_nodes(hub_id)
-            downstream = self.get_downstream_nodes(hub_id)
+            # (2) Connect any nodes downstream from the hub room to upstream or to the hub room
+            # There's a possible error mode where:  U (1 pit) --> Hub --> A (1 trap),  Hub --> B (1 trap, 1 pit).
+            # The only correct solution is A --> B --> U.  If we connect A --> U, we fail.
+            # So start by connecting downstream nodes with the most entrances
             delta = []
             for node in downstream:
                 room = self.rooms.get_room(node)
@@ -639,174 +579,288 @@ class RuinationBranch(Network):
             if self.verbose:
                 print('(2) delta values:', delta)
             delta.sort(key=lambda x: x[0])
+            while len(delta) > 0:
+                value = delta.pop()
+                node = value[1]
+                room = self.rooms.get_room(node)
+                if self.verbose:
+                    print('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
 
-        # (3) Connect any remaining trapdoors/pits
-        # At this point, only the hub room should be remaining & possibly upstream/downstream pits.
-        # Recollect data on pits/traps (including downstream pits from pit-only rooms skipped in step 2)
-        # Check unprotected traps to decide when to stop
-        unprotected_hub_traps = [t for t in hub.traps if t not in self.protected]
-        while len(unprotected_hub_traps) > 0:
+                # Skip rooms with no exits (only pit entrances) - they can't connect upstream
+                # Their pits will be connected when traps are processed in step (3)
+                if len(room.doors) == 0 and len(room.traps) == 0:
+                    if self.verbose:
+                        print('(2) skipping - room has no exits (pit-only)')
+                    continue
+
+                upstream_doors = [d for d in hub.doors if d not in self.protected]
+                upstream_pits = [p for p in hub.pits if p not in self.protected]
+                for node in upstream:
+                    uproom = self.rooms.get_room(node)
+                    upstream_pits.extend([p for p in uproom.pits if p not in self.protected])
+
+                this_conn = None
+                unprotected_room_traps = [t for t in room.traps if t not in self.protected]
+                unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+                if len(unprotected_room_traps) > 0:
+                    this_exit = random.choice(unprotected_room_traps)
+                    if len(upstream_pits) > 0:
+                        this_conn = random.choice(upstream_pits)
+
+                if this_conn is None and len(unprotected_room_doors) > 0:
+                    this_exit = random.choice(unprotected_room_doors)
+                    if len(upstream_doors) > 0:
+                        this_conn = random.choice(upstream_doors)
+
+                if this_conn is None:
+                    # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
+                    # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
+                    available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
+                    if len(unprotected_room_traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
+                        # Need a pit-in, door-out converter
+                        pido = []
+                        if self.verbose:
+                            print('\t\tlooking for available pido nodes:')
+                        for node_id in available_nodes:
+                            node = self.rooms.get_room(node_id)
+                            unprotected_node_pits = [p for p in node.pits if p not in self.protected]
+                            unprotected_node_traps = [t for t in node.traps if t not in self.protected]
+                            unprotected_node_doors = [d for d in node.doors if d not in self.protected]
+                            if len(unprotected_node_pits) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_pits) > len(unprotected_node_traps):
+                                pido.append(node_id)
+                                if self.verbose:
+                                    print('\t\t\t', node_id, ': ', node.count)
+
+                        if len(pido) > 0:
+                            pido_room_id = random.choice(pido)
+                            pido_room = self.rooms.get_room(pido_room_id)
+                            # Select an unprotected pit from the converter room as the connection target
+                            unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
+                            this_conn = random.choice(unprotected_pido_pits)
+
+                    elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
+                        # Need a door-in, trap-out converter
+                        dito = []
+                        if self.verbose:
+                            print('\t\tlooking for available dito nodes:')
+                        for node_id in available_nodes:
+                            node = self.rooms.get_room(node_id)
+                            unprotected_node_traps = [t for t in node.traps if t not in self.protected]
+                            unprotected_node_pits = [p for p in node.pits if p not in self.protected]
+                            unprotected_node_doors = [d for d in node.doors if d not in self.protected]
+                            if len(unprotected_node_traps) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_traps) > len(unprotected_node_pits):
+                                dito.append(node_id)
+                                if self.verbose:
+                                    print('\t\t\t', node_id, ': ', node.count)
+
+                        if len(dito) > 0:
+                            dito_room_id = random.choice(dito)
+                            dito_room = self.rooms.get_room(dito_room_id)
+                            # Select an unprotected door from the converter room as the connection target
+                            unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
+                            this_conn = random.choice(unprotected_dito_doors)
+
+                if this_conn is None:
+                    # There is no solution.
+                    print('Found an inescapable downstream node!')
+                    raise Exception
+
+                if self.verbose:
+                    print('(2) connecting', this_exit, '-->', this_conn)
+                self.connect(this_exit, this_conn)
+
+                # Update hub, upstream, downstream, delta
+                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                upstream = self.get_upstream_nodes(hub_id)
+                downstream = self.get_downstream_nodes(hub_id)
+                delta = []
+                for node in downstream:
+                    room = self.rooms.get_room(node)
+                    entrance_count = len(room.doors) + len(room.pits)
+                    exit_count = len(room.doors) + len(room.traps)
+                    delta.append((entrance_count - exit_count, node))
+                if self.verbose:
+                    print('(2) delta values:', delta)
+                delta.sort(key=lambda x: x[0])
+
+            # (3) Connect any remaining trapdoors/pits
+            # Collect traps and pits from the ENTIRE network (hub + upstream + downstream).
+            # This is important because keys applied during connect() can unlock traps in any room,
+            # not just the hub. All unlocked traps must be connected to avoid "escape" routes.
+            remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+            while len(remaining_traps) > 0 and len(remaining_pits) > 0:
+                random.shuffle(remaining_pits)
+                if self.verbose:
+                    print('(3) remaining traps:', remaining_traps, '; pits: ', remaining_pits)
+                this_exit = remaining_traps.pop()
+                this_conn = remaining_pits.pop()
+                if self.verbose:
+                    print('(3) connecting:', this_exit, '-->', this_conn)
+                self.connect(this_exit, this_conn)
+                # Re-collect from entire network - keys applied during connect() may unlock new traps
+                remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+
+            # If we still have traps but no pits, we'll need to restart and find more rooms
+            if len(remaining_traps) > 0:
+                if self.verbose:
+                    print(f'(3) WARNING: {len(remaining_traps)} traps remaining with no pits')
+
+            # (4) The terminus is currently always a dead end room.  Connect it.
+            # However, the terminus may have been merged into the hub through loop compression.
+            # If so, we skip this step since the terminus is already connected.
+            # Re-fetch hub in case it changed during steps 1-3
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
-            remaining_pits = [p for p in hub.pits if p not in self.protected]
-            remaining_traps = [t for t in hub.traps if t not in self.protected]
-            upstream = self.get_upstream_nodes(hub_id)
-            for node in upstream:
-                room = self.rooms.get_room(node)
-                remaining_pits.extend([p for p in room.pits if p not in self.protected])
-            # Also collect pits from downstream nodes (pit-only rooms skipped in step 2)
-            downstream = self.get_downstream_nodes(hub_id)
-            for node in downstream:
-                room = self.rooms.get_room(node)
-                remaining_pits.extend([p for p in room.pits if p not in self.protected])
-
-            random.shuffle(remaining_pits)
+            remaining_doors = [d for d in hub.doors if d not in self.protected]
+            random.shuffle(remaining_doors)
             if self.verbose:
-                print('(3) remaining traps:', remaining_traps, '; pits: ', remaining_pits)
-            this_exit = remaining_traps.pop()
-            this_conn = remaining_pits.pop()
-            if self.verbose:
-                print('(3) connecting:', this_exit, '-->', this_conn)
-            self.connect(this_exit, this_conn)
-            # Update for next iteration check
-            unprotected_hub_traps = [t for t in hub.traps if t not in self.protected]
+                print('(4) remaining doors:', remaining_doors)
+            terminus = self.rooms.get_room(self.terminus)
+            if terminus is not None and len(remaining_doors) > 0:
+                # Terminus is still a separate room and we have doors to connect it
+                this_exit = remaining_doors.pop()
+                if self.terminus in self.dead_ends:
+                    self.dead_ends.remove(self.terminus)
+                unprotected_terminus_doors = [d for d in terminus.doors if d not in self.protected]
+                this_conn = unprotected_terminus_doors.pop() if unprotected_terminus_doors else terminus.doors.pop()
+                if self.verbose:
+                    print('(4) connecting terminus:', this_exit , '-->', this_conn)
+                self.connect(this_exit, this_conn)
+            elif terminus is not None and len(remaining_doors) == 0:
+                # Terminus exists but no hub doors available - add terminus to dead ends for step 6
+                if self.terminus not in self.dead_ends:
+                    self.dead_ends.append(self.terminus)
+                if self.verbose:
+                    print('(4) no hub doors to connect terminus, deferring to step 6')
+            elif self.verbose:
+                print('(4) terminus already merged into hub, skipping')
 
-        # (4) The terminus is currently always a dead end room.  Connect it.
-        # However, the terminus may have been merged into the hub through loop compression.
-        # If so, we skip this step since the terminus is already connected.
-        remaining_doors = [d for d in hub.doors if d not in self.protected]
-        random.shuffle(remaining_doors)
-        if self.verbose:
-            print('(4) remaining doors:', remaining_doors)
-        terminus = self.rooms.get_room(self.terminus)
-        if terminus is not None and len(remaining_doors) > 0:
-            # Terminus is still a separate room and we have doors to connect it
-            this_exit = remaining_doors.pop()
-            if self.terminus in self.dead_ends:
-                self.dead_ends.remove(self.terminus)
-            unprotected_terminus_doors = [d for d in terminus.doors if d not in self.protected]
-            this_conn = unprotected_terminus_doors.pop() if unprotected_terminus_doors else terminus.doors.pop()
-            if self.verbose:
-                print('(4) connecting terminus:', this_exit , '-->', this_conn)
-            self.connect(this_exit, this_conn)
-        elif terminus is not None and len(remaining_doors) == 0:
-            # Terminus exists but no hub doors available - add terminus to dead ends for step 6
-            if self.terminus not in self.dead_ends:
-                self.dead_ends.append(self.terminus)
-            if self.verbose:
-                print('(4) no hub doors to connect terminus, deferring to step 6')
-        elif self.verbose:
-            print('(4) terminus already merged into hub, skipping')
+            # (5) Count doors in hub.  Connect doors within hub until # doors <= # dead ends
+            # Clean up dead ends first - use list() to avoid modifying during iteration
+            for de in list(self.dead_ends):
+                if de not in self.net.nodes:
+                    self.dead_ends.remove(de)
 
-        # (5) Count doors in hub.  Connect doors within hub until # doors <= # dead ends
-        # Clean up dead ends first - use list() to avoid modifying during iteration
-        for de in list(self.dead_ends):
-            if de not in self.net.nodes:
-                self.dead_ends.remove(de)
+            # Validate state before step 5
+            self.validate_finalize_state('pre-step5', hub=True,
+                                         remaining_doors=remaining_doors, dead_ends=self.dead_ends)
 
-        # Validate state before step 5
-        self.validate_finalize_state('pre-step5', hub=True,
-                                     remaining_doors=remaining_doors, dead_ends=self.dead_ends)
+            # We need at least 2 doors to connect a pair. If we have an odd excess
+            # (doors - dead_ends is odd), we'll end up with 1 orphan door.
+            while len(remaining_doors) > len(self.dead_ends) and len(remaining_doors) >= 2:
+                if self.verbose:
+                    print('(5) doors in hub:', len(remaining_doors), '.  dead ends:', len(self.dead_ends))
+                this_exit = remaining_doors.pop()
+                this_conn = remaining_doors.pop()
+                if self.verbose:
+                    print('(5) connecting doors in hub:', this_exit, '-->', this_conn)
+                self.connect(this_exit, this_conn)
 
-        # We need at least 2 doors to connect a pair. If we have an odd excess
-        # (doors - dead_ends is odd), we'll end up with 1 orphan door.
-        while len(remaining_doors) > len(self.dead_ends) and len(remaining_doors) >= 2:
-            if self.verbose:
-                print('(5) doors in hub:', len(remaining_doors), '.  dead ends:', len(self.dead_ends))
-            this_exit = remaining_doors.pop()
-            this_conn = remaining_doors.pop()
-            if self.verbose:
-                print('(5) connecting doors in hub:', this_exit, '-->', this_conn)
-            self.connect(this_exit, this_conn)
+            # (5b) Handle orphan door situation: we have more doors than dead ends but can't pair them
+            if len(remaining_doors) > len(self.dead_ends):
+                orphan_count = len(remaining_doors) - len(self.dead_ends)
+                if self.verbose:
+                    print(f'(5b) orphan door situation: {orphan_count} excess door(s), searching for available rooms')
 
-        # (5b) Handle orphan door situation: we have more doors than dead ends but can't pair them
-        if len(remaining_doors) > len(self.dead_ends):
-            orphan_count = len(remaining_doors) - len(self.dead_ends)
-            if self.verbose:
-                print(f'(5b) orphan door situation: {orphan_count} excess door(s), searching for available rooms')
+                # Find rooms not yet in the network that can absorb the orphan doors
+                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                available_rooms = [n for n in self.net.nodes
+                                 if n not in self.get_upstream_nodes(hub_id)
+                                 and n not in self.get_downstream_nodes(hub_id)
+                                 and n != hub_id]
 
-            # Find rooms not yet in the network that can absorb the orphan doors
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
-            available_rooms = [n for n in self.net.nodes
-                             if n not in self.get_upstream_nodes(hub_id)
-                             and n not in self.get_downstream_nodes(hub_id)
-                             and n != hub_id]
-
-            for orphan_idx in range(orphan_count):
-                if len(remaining_doors) <= len(self.dead_ends):
-                    break
-
-                orphan_door = remaining_doors[-1]  # Peek at next orphan
-
-                # Look for a room with an unprotected door we can connect to
-                found_connection = False
-                for room_id in available_rooms:
-                    room = self.rooms.get_room(room_id)
-                    if room is None:
-                        continue
-                    unprotected_room_doors = [d for d in room.doors if d not in self.protected]
-                    if len(unprotected_room_doors) > 0:
-                        this_exit = remaining_doors.pop()
-                        this_conn = random.choice(unprotected_room_doors)
-                        if self.verbose:
-                            print(f'(5b) connecting orphan door {this_exit} --> room {room_id} door {this_conn}')
-                        self.connect(this_exit, this_conn)
-                        # Add this room to dead_ends if it now has only one connection
-                        if room_id not in self.dead_ends and len(room.doors) == 1:
-                            self.dead_ends.append(room_id)
-                        found_connection = True
+                for orphan_idx in range(orphan_count):
+                    if len(remaining_doors) <= len(self.dead_ends):
                         break
 
-                if not found_connection:
-                    # No available room found - this is a problem state
-                    print(f'WARNING: Could not resolve orphan door {orphan_door}. '
-                          f'remaining_doors={remaining_doors}, dead_ends={self.dead_ends}')
-                    # Try adding it back as a dead end connection point
-                    # by finding any room with a door
-                    for node in self.net.nodes:
-                        room = self.rooms.get_room(node)
-                        if room and len(room.doors) > 0:
-                            unprotected = [d for d in room.doors if d not in self.protected]
-                            if unprotected:
-                                this_exit = remaining_doors.pop()
-                                this_conn = random.choice(unprotected)
-                                if self.verbose:
-                                    print(f'(5b) fallback: connecting orphan {this_exit} --> {this_conn} in {node}')
-                                self.connect(this_exit, this_conn)
-                                found_connection = True
-                                break
+                    orphan_door = remaining_doors[-1]  # Peek at next orphan
+
+                    # Look for a room with an unprotected door we can connect to
+                    found_connection = False
+                    for room_id in available_rooms:
+                        room = self.rooms.get_room(room_id)
+                        if room is None:
+                            continue
+                        unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+                        if len(unprotected_room_doors) > 0:
+                            this_exit = remaining_doors.pop()
+                            this_conn = random.choice(unprotected_room_doors)
+                            if self.verbose:
+                                print(f'(5b) connecting orphan door {this_exit} --> room {room_id} door {this_conn}')
+                            self.connect(this_exit, this_conn)
+                            # Add this room to dead_ends if it now has only one connection
+                            if room_id not in self.dead_ends and len(room.doors) == 1:
+                                self.dead_ends.append(room_id)
+                            found_connection = True
+                            break
 
                     if not found_connection:
-                        raise RuntimeError(
-                            f'finalize_map step 5b: Cannot resolve orphan door. '
-                            f'remaining_doors={remaining_doors}, dead_ends={self.dead_ends}, '
-                            f'available_rooms={available_rooms}'
-                        )
+                        # No available room found - this is a problem state
+                        print(f'WARNING: Could not resolve orphan door {orphan_door}. '
+                              f'remaining_doors={remaining_doors}, dead_ends={self.dead_ends}')
+                        # Try adding it back as a dead end connection point
+                        # by finding any room with a door
+                        for node in self.net.nodes:
+                            room = self.rooms.get_room(node)
+                            if room and len(room.doors) > 0:
+                                unprotected = [d for d in room.doors if d not in self.protected]
+                                if unprotected:
+                                    this_exit = remaining_doors.pop()
+                                    this_conn = random.choice(unprotected)
+                                    if self.verbose:
+                                        print(f'(5b) fallback: connecting orphan {this_exit} --> {this_conn} in {node}')
+                                    self.connect(this_exit, this_conn)
+                                    found_connection = True
+                                    break
 
-        # Validate state before step 6
-        self.validate_finalize_state('pre-step6', hub=True,
-                                     remaining_doors=remaining_doors, dead_ends=self.dead_ends)
+                        if not found_connection:
+                            raise RuntimeError(
+                                f'finalize_map step 5b: Cannot resolve orphan door. '
+                                f'remaining_doors={remaining_doors}, dead_ends={self.dead_ends}, '
+                                f'available_rooms={available_rooms}'
+                            )
 
-        # (6) Connect dead ends to all remaining doors.
-        # Pre-check: we need enough dead ends for remaining doors
-        if len(remaining_doors) > len(self.dead_ends):
-            raise RuntimeError(
-                f'finalize_map step 6: More remaining doors ({len(remaining_doors)}) than '
-                f'dead ends ({len(self.dead_ends)}). remaining_doors={remaining_doors}, '
-                f'dead_ends={self.dead_ends}. This indicates an imbalance from earlier steps.'
-            )
+            # Validate state before step 6
+            self.validate_finalize_state('pre-step6', hub=True,
+                                         remaining_doors=remaining_doors, dead_ends=self.dead_ends)
 
-        random.shuffle(self.dead_ends)
-        if self.verbose:
-            print('(6) remaining dead ends:', self.dead_ends)
-        for this_exit in remaining_doors:
-            room_id = self.dead_ends.pop()
-            room = self.rooms.get_room(room_id)
-            unprotected_room_doors = [d for d in room.doors if d not in self.protected]
-            this_conn = unprotected_room_doors.pop() if unprotected_room_doors else room.doors.pop()
+            # (6) Connect dead ends to all remaining doors.
+            # Pre-check: we need enough dead ends for remaining doors
+            if len(remaining_doors) > len(self.dead_ends):
+                raise RuntimeError(
+                    f'finalize_map step 6: More remaining doors ({len(remaining_doors)}) than '
+                    f'dead ends ({len(self.dead_ends)}). remaining_doors={remaining_doors}, '
+                    f'dead_ends={self.dead_ends}. This indicates an imbalance from earlier steps.'
+                )
+
+            random.shuffle(self.dead_ends)
             if self.verbose:
-                print('(6) connecting dead ends:', this_exit, '-->', this_conn)
-            self.connect(this_exit, this_conn)
+                print('(6) remaining dead ends:', self.dead_ends)
+            for this_exit in remaining_doors:
+                room_id = self.dead_ends.pop()
+                room = self.rooms.get_room(room_id)
+                unprotected_room_doors = [d for d in room.doors if d not in self.protected]
+                this_conn = unprotected_room_doors.pop() if unprotected_room_doors else room.doors.pop()
+                if self.verbose:
+                    print('(6) connecting dead ends:', this_exit, '-->', this_conn)
+                self.connect(this_exit, this_conn)
+
+            # Check if any new elements were unlocked during this iteration.
+            # If so, restart from step 1 to handle them with proper topology-aware logic.
+            new_traps, new_pits, new_doors = self.collect_network_traps_and_pits(include_doors=True)
+            if len(new_traps) == 0 and len(new_doors) == 0:
+                break  # Done - no new elements to process
+
+            if self.verbose:
+                print(f'\nNew elements unlocked: {len(new_traps)} traps, {len(new_doors)} doors')
+                if new_traps:
+                    print(f'    traps: {new_traps}')
+                if new_doors:
+                    print(f'    doors: {new_doors}')
+                print('Restarting finalization from step 1...\n')
+
+        if finalize_iteration >= max_finalize_iterations:
+            print(f'WARNING: Hit max iterations ({max_finalize_iterations}) in finalize_map')
 
         if self.verbose:
             print('... closing branch complete!')
