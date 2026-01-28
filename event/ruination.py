@@ -2507,7 +2507,9 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # Original event at 0xCA71BF checks conditions then displays "Need a rest? Yes/No"
     # If yes: movement, check more conditions, call $CACD31 (sleep)
     # New: Same condition checks, display price, take GP, jump to original code
-    FIGARO_DIALOG_ID = 0xB80
+    # Note: We use dialog ID 1461 (0x5B5) instead of the original 0xB80 because
+    # 0xB80 is also used by a Doma Castle event.
+    FIGARO_DIALOG_ID = 1461
     FIGARO_ORIGINAL_YES_CODE = 0xCA71D9
     FIGARO_USED_ONCE_BIT = 0x1B5
     FIGARO_BANON_BIT = 0x1B0
