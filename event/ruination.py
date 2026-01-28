@@ -2595,6 +2595,9 @@ FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
 VANILLA_BED_HEAL_ADDRESS = 0xcd17
 
+# Address of the ruination bed heal routine (set by modify_free_bed_heals)
+RUINATION_BED_HEAL_ADDRESS = None
+
 # Existing free bed heal event tile locations
 # Most point to the vanilla subroutine at 0xcd17
 # Gau's Father's House has its own inline code but we treat it the same way
@@ -2694,6 +2697,10 @@ def modify_free_bed_heals(maps, dialogs, args):
 
     space = Write(Bank.CC, src, "ruination free bed heal event")
     new_bed_heal_address = space.start_address
+
+    # Export the address for use by other modules (e.g., doma_wor.py)
+    global RUINATION_BED_HEAL_ADDRESS
+    RUINATION_BED_HEAL_ADDRESS = new_bed_heal_address
 
     if args.debug:
         print(f"Created modified bed heal event at {new_bed_heal_address:#x}")

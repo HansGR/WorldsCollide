@@ -69,7 +69,10 @@ class DomaWOR(Event):
         self.log_reward(self.reward2)
 
     def sleep_mod(self):
-        NORMAL_SLEEP_ADDR = 0xb8294
+        if self.args.ruination_mode:
+            NORMAL_SLEEP_ADDR = self._create_ruination_bed_routine()
+        else:
+            NORMAL_SLEEP_ADDR = 0xb8294
 
         space = Reserve(0xb82b1, 0xb82c6, "doma wor check if event already done, in wor, have cyan and 4 party members", field.NOP())
         space.write(
@@ -104,6 +107,83 @@ class DomaWOR(Event):
             field.Call(field.ENABLE_COLLISIONS_FOR_PARTY_MEMBERS),
             field.Call(field.HIDE_PARTY_MEMBERS_EXCEPT_LEADER),
         )
+
+    def _create_ruination_bed_routine(self):
+        """
+        Creates a custom bed heal routine for Doma Castle in ruination mode.
+        Includes the Doma-specific bed animations (going to bed, party split,
+        map reload, party reform) combined with the ruination healing logic
+        (dialog, possible ambush, HP heal).
+        """
+        from event.ruination import FREE_BED_AMBUSH_PACK
+
+        # Dialog ID for "Sleep for the night?" - reuse the same one from ruination
+        FREE_BED_DIALOG_ID = 443
+
+        # Subroutine addresses from vanilla event code
+        SLEEP_SUBROUTINE = 0xCACD3C   # Party split to beds, fade, play nighty night
+        WAKE_SUBROUTINE = 0xCACF96    # Fade in, party reform, free screen
+
+        # Status effects to remove (same as ruination bed heal)
+        HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
+                       field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
+                       field.Status.DARKNESS)
+
+        src = [
+            # Ask if player wants to sleep BEFORE any animation
+            field.DialogBranch(FREE_BED_DIALOG_ID, dest1="CONTINUE", dest2="RETURN"),
+            "CONTINUE",
+
+            # Going to bed animation: move right 4, up 4, turn down
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetSpeed(field_entity.Speed.FAST),
+                field_entity.Move(direction.RIGHT, 4),
+                field_entity.Move(direction.UP, 4),
+                field_entity.Turn(direction.DOWN),
+            ),
+
+            # Call sleep subroutine: party splits to beds, fade out, play nighty night
+            field.Call(SLEEP_SUBROUTINE),
+
+            # Screen is now faded out - check for ambush
+            # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
+            field.BranchChance(0.625, "HEAL"),
+
+            # Monster attack! (back attack)
+            field.Dialog(448),  # "Ambushed!" dialog
+            *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
+
+            "HEAL",
+            # Heal HP and remove status effects for all party members
+            field.RemoveStatusEffects(field_entity.PARTY0, HEAL_STATUS),
+            field.RemoveStatusEffects(field_entity.PARTY1, HEAL_STATUS),
+            field.RemoveStatusEffects(field_entity.PARTY2, HEAL_STATUS),
+            field.RemoveStatusEffects(field_entity.PARTY3, HEAL_STATUS),
+            field.RestoreHp(field_entity.PARTY0, 0x7f),
+            field.RestoreHp(field_entity.PARTY1, 0x7f),
+            field.RestoreHp(field_entity.PARTY2, 0x7f),
+            field.RestoreHp(field_entity.PARTY3, 0x7f),
+
+            # Load map 0x7B (Doma Castle bedroom) at position (8, 8), facing down
+            # This happens while screen is still black
+            field.LoadMap(0x7B, direction.DOWN, default_music=False,
+                          x=8, y=8, fade_in=False, entrance_event=False),
+
+            # Set party position to (10, 6), turn down (waking up position)
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetPosition(10, 6),
+                field_entity.Turn(direction.DOWN),
+            ),
+
+            # Call wake subroutine: fade in screen, party reforms, free screen
+            field.Call(WAKE_SUBROUTINE),
+
+            "RETURN",
+            field.Return(),
+        ]
+
+        space = Write(Bank.CB, src, "doma wor ruination bed heal")
+        return space.start_address
 
     def stooges_mod(self):
         space = Reserve(0xb8b9d, 0xb8ba0, "doma wor back off", field.NOP())
