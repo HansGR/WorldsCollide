@@ -2591,6 +2591,7 @@ def disable_chocobo_stables(rom, dialogs, args):
 # Battle pack for nighttime ambush at free beds
 # This should be a difficult encounter - can be adjusted as needed
 FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
+FREE_BED_DIALOG_ID = 443  # "Take a nap?" at Gau's Dad's House
 
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
 VANILLA_BED_HEAL_ADDRESS = 0xcd17
@@ -2637,9 +2638,8 @@ def modify_free_bed_heals(maps, dialogs, args):
                    field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
                    field.Status.DARKNESS)
 
-    free_bed_dialog_id = 443  # "Take a nap?" at Gau's Dad's House
     free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
-    dialogs.set_text(free_bed_dialog_id, free_bed_dialog)
+    dialogs.set_text(FREE_BED_DIALOG_ID, free_bed_dialog)
 
     ambushed_dialog_id = 448  # Repurpose unused Dry Goods Merchant dialog
     ambushed_dialog = "           Ambushed!"
@@ -2653,7 +2653,7 @@ def modify_free_bed_heals(maps, dialogs, args):
         field.SetEventBit(event_bit.multipurpose_map(0)),
 
         # Ask if player wants to sleep for the night
-        field.DialogBranch(free_bed_dialog_id, dest1="CONTINUE", dest2="RETURN"),
+        field.DialogBranch(FREE_BED_DIALOG_ID, dest1="CONTINUE", dest2="RETURN"),
         "CONTINUE",
 
         # Fade out current song

@@ -115,13 +115,10 @@ class DomaWOR(Event):
         map reload, party reform) combined with the ruination healing logic
         (dialog, possible ambush, HP heal).
         """
-        from event.ruination import FREE_BED_AMBUSH_PACK
-
-        # Dialog ID for "Sleep for the night?" - reuse the same one from ruination
-        FREE_BED_DIALOG_ID = 443
+        from event.ruination import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
 
         # Subroutine addresses from vanilla event code
-        SLEEP_SUBROUTINE = 0xCACD3C   # Party split to beds, fade, play nighty night
+        SLEEP_SUBROUTINE = [0xacf67, 0xacf8e]   # Party split to beds, fade, play nighty night
         WAKE_SUBROUTINE = 0xCACF96    # Fade in, party reform, free screen
 
         # Status effects to remove (same as ruination bed heal)
@@ -143,7 +140,7 @@ class DomaWOR(Event):
             ),
 
             # Call sleep subroutine: party splits to beds, fade out, play nighty night
-            field.Call(SLEEP_SUBROUTINE),
+            field.Read(SLEEP_SUBROUTINE[0], SLEEP_SUBROUTINE[1]),
 
             # Screen is now faded out - check for ambush
             # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
