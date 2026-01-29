@@ -2507,7 +2507,9 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # Original event at 0xCA71BF checks conditions then displays "Need a rest? Yes/No"
     # If yes: movement, check more conditions, call $CACD31 (sleep)
     # New: Same condition checks, display price, take GP, jump to original code
-    FIGARO_DIALOG_ID = 0xB80
+    # Note: We use dialog ID 1461 (0x5B5) instead of the original 0xB80 because
+    # 0xB80 is also used by a Doma Castle event.
+    FIGARO_DIALOG_ID = 1461
     FIGARO_ORIGINAL_YES_CODE = 0xCA71D9
     FIGARO_USED_ONCE_BIT = 0x1B5
     FIGARO_BANON_BIT = 0x1B0
@@ -2592,6 +2594,9 @@ FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
 
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
 VANILLA_BED_HEAL_ADDRESS = 0xcd17
+
+# Address of the ruination bed heal routine (set by modify_free_bed_heals)
+RUINATION_BED_HEAL_ADDRESS = None
 
 # Existing free bed heal event tile locations
 # Most point to the vanilla subroutine at 0xcd17
@@ -2692,6 +2697,10 @@ def modify_free_bed_heals(maps, dialogs, args):
 
     space = Write(Bank.CC, src, "ruination free bed heal event")
     new_bed_heal_address = space.start_address
+
+    # Export the address for use by other modules (e.g., doma_wor.py)
+    global RUINATION_BED_HEAL_ADDRESS
+    RUINATION_BED_HEAL_ADDRESS = new_bed_heal_address
 
     if args.debug:
         print(f"Created modified bed heal event at {new_bed_heal_address:#x}")

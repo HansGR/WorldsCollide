@@ -110,7 +110,7 @@ class NarsheWOB(Event):
         self.maps.delete_event(school_map_id, school_door.x, school_door.y)
 
         # (2) Make the bucket provide a limited number of heals
-        NARSHE_DIALOG_IDS = [i for i in range(1461, 1471)]
+        NARSHE_DIALOG_IDS = [i for i in range(1462, 1471)]  # 1461 used by Figaro Castle inn
         # Based on Dragon number src: see e.g. CC/1F9F
         # Could use this memory space if needed  [0xc1f9f -- 0xc2047]
         # Could also use dragon dialogs:  [1498 -- 1506]
