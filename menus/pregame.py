@@ -440,8 +440,11 @@ class PreGameMenu:
 
         if args.ruination_mode:
             # In ruination mode, always show pregame menu (never auto-invoke load menu)
+            # Play song 79 (Dark World) instead of song 1 (The Prelude)
             space.write(
-                Read(0x30181, 0x30193),         # play song: the prelude
+                asm.LDA(0x4F, asm.IMM8),         # load song 79 (Dark World)
+                asm.STA(0x1301, asm.ABS),        # store to song ID
+                asm.JSL(0xC50004),               # play song
 
                 asm.LDA(self.INITIALIZE_PREGAME_MENU_COMMAND, asm.IMM8),
                 asm.STA(0x26, asm.DIR),         # add initialize pregame menu to queue
