@@ -39,6 +39,21 @@ import data.event_bit as event_bit
 from event.switchyard import *
 
 
+def find_room_for_door(door_id):
+    """Find the room containing a door, checking both regular doors and character-locked doors."""
+    # First check regular doors (room_data[r][0])
+    for r in room_data.keys():
+        if door_id in room_data[r][0]:
+            return r
+    # Then check character-locked doors (room_data[r][4] when present)
+    for r in room_data.keys():
+        if len(room_data[r]) == 6:
+            for locked_doors in room_data[r][4].values():
+                if door_id in locked_doors:
+                    return r
+    return None
+
+
 class Maps():
     MAP_COUNT = 416
 
@@ -550,11 +565,13 @@ class Maps():
                 self.door_map[m + 4000] = exit_data[m + 4000][0]
                 self.door_map[self.door_map[m + 4000]] = m + 4000
 
-                # Look up the rooms of these exits
-                this_room = [r for r in room_data.keys() if (m + 4000) in room_data[r][0]]
-                self.doors.door_rooms[m + 4000] = this_room[0]
-                that_room = [r for r in room_data.keys() if self.door_map[m + 4000] in room_data[r][0]]
-                self.doors.door_rooms[self.door_map[m + 4000]] = that_room[0]
+                # Look up the rooms of these exits (including character-locked doors)
+                this_room = find_room_for_door(m + 4000)
+                if this_room is not None:
+                    self.doors.door_rooms[m + 4000] = this_room
+                that_room = find_room_for_door(self.door_map[m + 4000])
+                if that_room is not None:
+                    self.doors.door_rooms[self.door_map[m + 4000]] = that_room
 
             # Check if any safe_id values ended up in door_map
             safe_ids_in_map = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
