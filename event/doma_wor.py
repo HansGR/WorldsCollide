@@ -163,14 +163,8 @@ class DomaWOR(Event):
 
             # Load map 0x7B (Doma Castle bedroom) at position (8, 8), facing down
             # This happens while screen is still black
-            field.LoadMap(0x7B, direction.DOWN, default_music=False,
-                          x=8, y=8, fade_in=False, entrance_event=False),
-
-            # Set party position to (10, 6), turn down (waking up position)
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.SetPosition(10, 6),
-                field_entity.Turn(direction.DOWN),
-            ),
+            #field.LoadMap(0x7B, direction.DOWN, default_music=False,
+            #              x=8, y=8, fade_in=False, entrance_event=False),
 
             # Call wake subroutine: fade in screen, party reforms, free screen
             field.Call(WAKE_SUBROUTINE),

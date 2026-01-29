@@ -444,7 +444,19 @@ class PreGameMenu:
             space.write(
                 asm.LDA(0x4F, asm.IMM8),         # load song 79 (Dark World)
                 asm.STA(0x1301, asm.ABS),        # store to song ID
-                asm.JSL(0xC50004),               # play song
+                asm.LDA(0x10, asm.IMM8),         # APU command
+                asm.STA(0x1300, asm.ABS),        # Set I/O port 0
+                asm.LDA(0x80, asm.IMM8),         # Volume specs
+                asm.STA(0x1302, asm.ABS),        # Set I/O port 2
+                asm.JSL(0xC50004),                 # play song
+
+                # C3/0181:	A901    	LDA #$01       ; Song: The Prelude
+                # C3/0183:	8D0113  	STA $1301      ; Set I/O port 1
+                # C3/0186:	A910    	LDA #$10       ; APU command
+                # C3/0188:	8D0013  	STA $1300      ; Set I/O port 0
+                # C3/018B:	A980    	LDA #$80       ; Volume specs
+                # C3/018D:	8D0213  	STA $1302      ; Set I/O port 2
+                # C3/0190:	220400C5	JSL $C50004    ; Play song
 
                 asm.LDA(self.INITIALIZE_PREGAME_MENU_COMMAND, asm.IMM8),
                 asm.STA(0x26, asm.DIR),         # add initialize pregame menu to queue
