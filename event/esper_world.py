@@ -10,6 +10,16 @@ class EsperWorld(Event):
             field.ClearEventBit(npc_bit.ESPER_WORLD_MADONNA)  # 0x357
         )
 
+        if self.args.ruination_mode:
+            # Clear all warp point NPC bits to ensure they start hidden
+            # These bits control visibility of warp point NPCs in the Esper World
+            # and must be cleared at game start so warp points only appear after activation
+            from data.warps import AVAILABLE_NPC_BITS
+            for bit in AVAILABLE_NPC_BITS:
+                space.write(
+                    field.ClearEventBit(bit)
+                )
+
     def mod(self):
         self.map_outside = 0x0d9   # Esper world hub
         self.map_gate_cave = 0x0da   # Esper gate
