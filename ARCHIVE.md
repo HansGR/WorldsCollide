@@ -4,6 +4,36 @@ This file contains useful reference information that has been moved from the Top
 
 ---
 
+## Ruination Mode - Conditional Area Checks
+
+After `ruin_map.generate_map_with_characters()` is called, `ruin_map.AreasUsed` contains all mapped areas as a dict of `{'AreaName': branch_id}`.
+
+**To check if an area is mapped:**
+```python
+if 'SouthFigaro' in ruin_map.AreasUsed:
+    # South Figaro is accessible in this seed
+```
+
+**Area names** (from `RUIN_ROOM_SETS` in ruination.py): `'SouthFigaro'`, `'Nikeah'`, `'Kohlingen'`, `'Jidoor'`, `'Veldt'`, `'Thamasa'`, `'Mobliz'`, `'Maranda'`, `'Albrook'`, `'Vector'`, `'Zozo'`, `'Narshe'`, `'OperaHouse'`, `'FigaroCastle'`, etc.
+
+---
+
+## Ruination Mode - Patching NPC Events
+
+To disable an NPC's dialog choice and make them just display a message:
+
+```python
+# Patch event to: display dialog (4B), return (FE)
+event_bytes = bytes([0x4B, dialog_id & 0xFF, dialog_id >> 8, 0xFE])
+rom.set_bytes(event_addr, event_bytes)
+```
+
+**Finding NPC event addresses**: Use `maps_data.json` - each map's `npcs` array contains `event_address` for each NPC. The event address is the offset from 0xCA0000 (e.g., `"event_address": "0x77d7"` = ROM address 0x0A77D7).
+
+See `disable_chocobo_stables()` and `fix_ferry_connections()` in `event/ruination.py` for examples.
+
+---
+
 ## Ruination Mode (`-ruin`) - Detailed Architecture
 
 Ruination Mode creates a roguelike-style dungeon with three independent branches emanating from a central hub.

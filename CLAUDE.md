@@ -46,7 +46,7 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 - **data/maps.py** - Map/exit handling, door randomization via `Doors` class
 - **data/doors.py** - Door randomizer orchestration
 - **data/rooms.py** - Room and connection definitions
-- **event/ruination.py** - Ruination mode implementation (~1530 lines)
+- **event/ruination.py** - Ruination mode implementation (~2980 lines)
 
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
