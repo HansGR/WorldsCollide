@@ -2617,7 +2617,7 @@ def fix_ferry_connections(rom, dialogs, ruin_map, args):
     # - South Figaro dock ferryman: event at ROM 0x0A77D7, uses dialog 812 (0x32C)
     # - Nikeah dock ferryman: event at ROM 0x0A8CBB, uses dialog 810 (0x32A)
 
-    disabled_message = "Some ships went out to map the sea, but no one returned.<end>"
+    disabled_message = "Some of us went out to map the sea, but no one returned.<end>"
 
     # Update both ferry dialogs
     dialogs.set_text(810, disabled_message)  # South Figaro-bound ferry dialog
