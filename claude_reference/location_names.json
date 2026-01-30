@@ -1,1243 +1,1378 @@
 [
   {
     "name_index": 0,
-    "name": "0G[07][3e][02][43]W[03][56][7a]",
-    "rom_address": "0x2EF100",
-    "raw_bytes": [
-      "0xb4",
-      "0x86",
-      "0x07",
-      "0x3e",
-      "0x02",
-      "0x43",
-      "0x96",
-      "0x03",
-      "0x56",
-      "0x7a"
-    ]
+    "name": "",
+    "pointer_address": "0x268400",
+    "string_address": "0xEF100",
+    "raw_bytes": []
   },
   {
     "name_index": 1,
-    "name": "d<line>T[40]h[fc][5d][f4]<skean icon>[18]",
-    "rom_address": "0x2EF10A",
+    "name": "INN",
+    "pointer_address": "0x268402",
+    "string_address": "0xEF101",
     "raw_bytes": [
-      "0x9d",
-      "0x01",
-      "0x93",
-      "0x40",
-      "0xa1",
-      "0xfc",
-      "0x5d",
-      "0xf4",
-      "0xe6",
-      "0x18"
+      "0x28",
+      "0x2d",
+      "0x2d"
     ]
   },
   {
     "name_index": 2,
-    "name": "[48][06][ec][02][36]<line>[13][2d][07]'",
-    "rom_address": "0x2EF114",
+    "name": "WEAPON SHOP",
+    "pointer_address": "0x268404",
+    "string_address": "0xEF105",
     "raw_bytes": [
-      "0x48",
-      "0x06",
-      "0xec",
-      "0x02",
       "0x36",
-      "0x01",
-      "0x13",
+      "0x24",
+      "0x20",
+      "0x2f",
+      "0x2e",
       "0x2d",
-      "0x07",
-      "0xc3"
+      "0x7f",
+      "0x32",
+      "0x27",
+      "0x2e",
+      "0x2f"
     ]
   },
   {
     "name_index": 3,
-    "name": "[32][23][f9]<line>[51]<brush icon>[14][03][12][08]",
-    "rom_address": "0x2EF11E",
+    "name": "ARMOR SHOP",
+    "pointer_address": "0x268406",
+    "string_address": "0xEF111",
     "raw_bytes": [
+      "0x20",
+      "0x31",
+      "0x2c",
+      "0x2e",
+      "0x31",
+      "0x7f",
       "0x32",
-      "0x23",
-      "0xf9",
-      "0x01",
-      "0x51",
-      "0xdd",
-      "0x14",
-      "0x03",
-      "0x12",
-      "0x08"
+      "0x27",
+      "0x2e",
+      "0x2f"
     ]
   },
   {
     "name_index": 4,
-    "name": "[26][29][13][17][11][4f][06][4a][0a][32]",
-    "rom_address": "0x2EF128",
+    "name": "ARSENAL",
+    "pointer_address": "0x268408",
+    "string_address": "0xEF11C",
     "raw_bytes": [
-      "0x26",
-      "0x29",
-      "0x13",
-      "0x17",
-      "0x11",
-      "0x4f",
-      "0x06",
-      "0x4a",
-      "0x0a",
-      "0x32"
-    ]
-  },
-  {
-    "name_index": 5,
-    "name": "[35][18][48][1d][2d]<line>[7c][2e][02][51]",
-    "rom_address": "0x2EF132",
-    "raw_bytes": [
-      "0x35",
-      "0x18",
-      "0x48",
-      "0x1d",
-      "0x2d",
-      "0x01",
-      "0x7c",
-      "0x2e",
-      "0x02",
-      "0x51"
-    ]
-  },
-  {
-    "name_index": 6,
-    "name": "[07][11][12][13][11][23][2d]<line>[3d][21]",
-    "rom_address": "0x2EF13C",
-    "raw_bytes": [
-      "0x07",
-      "0x11",
-      "0x12",
-      "0x13",
-      "0x11",
-      "0x23",
-      "0x2d",
-      "0x01",
-      "0x3d",
-      "0x21"
-    ]
-  },
-  {
-    "name_index": 7,
-    "name": "e[17][13][18][16][08][52][fd][0d][33]",
-    "rom_address": "0x2EF146",
-    "raw_bytes": [
-      "0x9e",
-      "0x17",
-      "0x13",
-      "0x18",
-      "0x16",
-      "0x08",
-      "0x52",
-      "0xfd",
-      "0x0d",
-      "0x33"
-    ]
-  },
-  {
-    "name_index": 8,
-    "name": "[4c][10][1a]i[03][17]x[30][08]j",
-    "rom_address": "0x2EF150",
-    "raw_bytes": [
-      "0x4c",
-      "0x10",
-      "0x1a",
-      "0xa2",
-      "0x03",
-      "0x17",
-      "0xb1",
-      "0x30",
-      "0x08",
-      "0xa3"
-    ]
-  },
-  {
-    "name_index": 9,
-    "name": "[07][31][3e][0f][3d][42][47][07][21][74]",
-    "rom_address": "0x2EF15A",
-    "raw_bytes": [
-      "0x07",
+      "0x20",
       "0x31",
-      "0x3e",
-      "0x0f",
-      "0x3d",
-      "0x42",
-      "0x47",
-      "0x07",
-      "0x21",
-      "0x74"
-    ]
-  },
-  {
-    "name_index": 10,
-    "name": "[75][76][3d][05]h[fd][58]\"[fd]<skean icon>",
-    "rom_address": "0x2EF164",
-    "raw_bytes": [
-      "0x75",
-      "0x76",
-      "0x3d",
-      "0x05",
-      "0xa1",
-      "0xfd",
-      "0x58",
-      "0xc2",
-      "0xfd",
-      "0xe6"
-    ]
-  },
-  {
-    "name_index": 11,
-    "name": "[1a]<gray magic icon>[0d][50][51][35]<end>[12][ee][03]",
-    "rom_address": "0x2EF16E",
-    "raw_bytes": [
-      "0x1a",
-      "0xea",
-      "0x0d",
-      "0x50",
-      "0x51",
-      "0x35",
-      "0x00",
-      "0x12",
-      "0xee",
-      "0x03"
-    ]
-  },
-  {
-    "name_index": 12,
-    "name": "p[22][f9]w[6e][50][28]j[02][17]",
-    "rom_address": "0x2EF178",
-    "raw_bytes": [
-      "0xa9",
-      "0x22",
-      "0xf9",
-      "0xb0",
-      "0x6e",
-      "0x50",
-      "0x28",
-      "0xa3",
-      "0x02",
-      "0x17"
-    ]
-  },
-  {
-    "name_index": 13,
-    "name": "[4a][02][13]<end>J[0d][39][05][3e][02]",
-    "rom_address": "0x2EF182",
-    "raw_bytes": [
-      "0x4a",
-      "0x02",
-      "0x13",
-      "0x00",
-      "0x89",
-      "0x0d",
-      "0x39",
-      "0x05",
-      "0x3e",
-      "0x02"
-    ]
-  },
-  {
-    "name_index": 14,
-    "name": "U[03][35][0d][30][08][2d]<end>[27][07]",
-    "rom_address": "0x2EF18C",
-    "raw_bytes": [
-      "0x94",
-      "0x03",
-      "0x35",
-      "0x0d",
-      "0x30",
-      "0x08",
-      "0x2d",
-      "0x00",
-      "0x27",
-      "0x07"
-    ]
-  },
-  {
-    "name_index": 15,
-    "name": "Q[46][06][3a][18][3c][0c][3f][07][13]",
-    "rom_address": "0x2EF196",
-    "raw_bytes": [
-      "0x90",
-      "0x46",
-      "0x06",
-      "0x3a",
-      "0x18",
-      "0x3c",
-      "0x0c",
-      "0x3f",
-      "0x07",
-      "0x13"
-    ]
-  },
-  {
-    "name_index": 16,
-    "name": "h [70][7e][17][3d]RU[04][33]",
-    "rom_address": "0x2EF1A0",
-    "raw_bytes": [
-      "0xa1",
-      "0xfe",
-      "0x70",
-      "0x7e",
-      "0x17",
-      "0x3d",
-      "0x91",
-      "0x94",
-      "0x04",
-      "0x33"
-    ]
-  },
-  {
-    "name_index": 17,
-    "name": "[42][3b][4b]Q[06][f0][02]",
-    "rom_address": "0x2EF1AA",
-    "raw_bytes": [
-      "0x42",
-      "0x3b",
-      "0x4b",
-      "0x90",
-      "0x06",
-      "0xf0",
-      "0x02",
-      "0xff",
-      "0x20",
-      "0x22"
-    ]
-  },
-  {
-    "name_index": 18,
-    "name": "[21][21]EFG[21]j[22]T[51]",
-    "rom_address": "0x2EF1B4",
-    "raw_bytes": [
-      "0x21",
-      "0x21",
-      "0x84",
-      "0x85",
-      "0x86",
-      "0x21",
-      "0xa3",
-      "0x22",
-      "0x93",
-      "0x51"
-    ]
-  },
-  {
-    "name_index": 19,
-    "name": "[fd]\" <tool icon>[2a][21][36][03][60]B",
-    "rom_address": "0x2EF1BE",
-    "raw_bytes": [
-      "0xfd",
-      "0xc2",
-      "0xfe",
-      "0xe5",
-      "0x2a",
-      "0x21",
-      "0x36",
-      "0x03",
-      "0x60",
-      "0x81"
-    ]
-  },
-  {
-    "name_index": 20,
-    "name": "[61][f1][0e]N[06][fa] [76][2a]R",
-    "rom_address": "0x2EF1C8",
-    "raw_bytes": [
-      "0x61",
-      "0xf1",
-      "0x0e",
-      "0x8d",
-      "0x06",
-      "0xfa",
-      "0xfe",
-      "0x76",
-      "0x2a",
-      "0x91"
-    ]
-  },
-  {
-    "name_index": 21,
-    "name": "[05][39][0e][50][0b][51][32][30][04][21]",
-    "rom_address": "0x2EF1D2",
-    "raw_bytes": [
-      "0x05",
-      "0x39",
-      "0x0e",
-      "0x50",
-      "0x0b",
-      "0x51",
       "0x32",
-      "0x30",
-      "0x04",
-      "0x21"
-    ]
-  },
-  {
-    "name_index": 22,
-    "name": "[3b][0e][2d][12][4c][0c][39][1b]C[35]",
-    "rom_address": "0x2EF1DC",
-    "raw_bytes": [
-      "0x3b",
-      "0x0e",
-      "0x2d",
-      "0x12",
-      "0x4c",
-      "0x0c",
-      "0x39",
-      "0x1b",
-      "0x82",
-      "0x35"
-    ]
-  },
-  {
-    "name_index": 23,
-    "name": "[05][32]V[02][4d][05][3c][0f]g",
-    "rom_address": "0x2EF1E6",
-    "raw_bytes": [
-      "0x05",
-      "0x32",
-      "0x95",
-      "0x02",
-      "0x4d",
-      "0x05",
-      "0x3c",
-      "0x0f",
-      "0xa0",
-      "0xfe"
-    ]
-  },
-  {
-    "name_index": 24,
-    "name": "[6a]Jx[7f][33][42][42][0a][0c][18]",
-    "rom_address": "0x2EF1F0",
-    "raw_bytes": [
-      "0x6a",
-      "0x89",
-      "0xb1",
-      "0x7f",
-      "0x33",
-      "0x42",
-      "0x42",
-      "0x0a",
-      "0x0c",
-      "0x18"
-    ]
-  },
-  {
-    "name_index": 25,
-    "name": "[5b][29][02][3a][f1]<line>[11]T[03]U",
-    "rom_address": "0x2EF1FA",
-    "raw_bytes": [
-      "0x5b",
-      "0x29",
-      "0x02",
-      "0x3a",
-      "0xf1",
-      "0x01",
-      "0x11",
-      "0x93",
-      "0x03",
-      "0x94"
-    ]
-  },
-  {
-    "name_index": 26,
-    "name": "VWf[0a]i[fb][f0]'",
-    "rom_address": "0x2EF204",
-    "raw_bytes": [
-      "0x95",
-      "0x96",
-      "0x9f",
-      "0x0a",
-      "0xa2",
-      "0xfb",
-      "0xf0",
-      "0xc3",
-      "0xff",
-      "0xe5"
-    ]
-  },
-  {
-    "name_index": 27,
-    "name": "[42][38][15][4f]<line>[0a][6d][6e][0c][04]",
-    "rom_address": "0x2EF20E",
-    "raw_bytes": [
-      "0x42",
-      "0x38",
-      "0x15",
-      "0x4f",
-      "0x01",
-      "0x0a",
-      "0x6d",
-      "0x6e",
-      "0x0c",
-      "0x04"
-    ]
-  },
-  {
-    "name_index": 28,
-    "name": "h",
-    "rom_address": "0x2EF218",
-    "raw_bytes": [
-      "0xa1",
-      "0xff",
-      "0x7a",
-      "0x09",
-      "0x20",
-      "0x4c",
-      "0x04",
-      "0xee",
-      "0x04",
-      "0x39"
-    ]
-  },
-  {
-    "name_index": 29,
-    "name": "[0d][36][13]M[07]D[42][42][eb][12]",
-    "rom_address": "0x2EF222",
-    "raw_bytes": [
-      "0x0d",
-      "0x36",
-      "0x13",
-      "0x8c",
-      "0x07",
-      "0x83",
-      "0x42",
-      "0x42",
-      "0xeb",
-      "0x12"
-    ]
-  },
-  {
-    "name_index": 30,
-    "name": "V[04][ed][0b][3b][17][ec][0b][32][32]",
-    "rom_address": "0x2EF22C",
-    "raw_bytes": [
-      "0x95",
-      "0x04",
-      "0xed",
-      "0x0b",
-      "0x3b",
-      "0x17",
-      "0xec",
-      "0x0b",
-      "0x32",
-      "0x32"
-    ]
-  },
-  {
-    "name_index": 31,
-    "name": "[39][0f][22][53]",
-    "rom_address": "0x2EF236",
-    "raw_bytes": [
-      "0x39",
-      "0x0f",
-      "0x22",
-      "0x53",
-      "0xff",
-      "0xcd",
-      "0x9c",
-      "0x0a",
-      "0x0b",
-      "0xfa"
-    ]
-  },
-  {
-    "name_index": 32,
-    "name": "<end>[29][02][34]U[07]X<end>[32]Y",
-    "rom_address": "0x2EF240",
-    "raw_bytes": [
-      "0x00",
-      "0x29",
-      "0x02",
-      "0x34",
-      "0x94",
-      "0x07",
-      "0x97",
-      "0x00",
-      "0x32",
-      "0x98"
-    ]
-  },
-  {
-    "name_index": 33,
-    "name": "[02][68]xf",
-    "rom_address": "0x2EF24A",
-    "raw_bytes": [
-      "0x02",
-      "0x68",
-      "0xb1",
-      "0x9f",
-      "0xff",
-      "0xc0",
-      "0xf9",
-      "0x64",
-      "0x1c",
-      "0x0f"
-    ]
-  },
-  {
-    "name_index": 34,
-    "name": "<helmet icon>[17][11][ec][16][33][0d][32][12][41]",
-    "rom_address": "0x2EF254",
-    "raw_bytes": [
-      "0xe3",
-      "0x17",
-      "0x11",
-      "0xec",
-      "0x16",
-      "0x33",
-      "0x0d",
-      "0x32",
-      "0x12",
-      "0x41"
-    ]
-  },
-  {
-    "name_index": 35,
-    "name": "[0b]<gambler icon>[fb][f8][1f][20]I[02][37][1b]",
-    "rom_address": "0x2EF25E",
-    "raw_bytes": [
-      "0x0b",
-      "0xe0",
-      "0xfb",
-      "0xf8",
-      "0x1f",
-      "0x20",
-      "0x88",
-      "0x02",
-      "0x37",
-      "0x1b"
-    ]
-  },
-  {
-    "name_index": 36,
-    "name": "[49][0f][32][22][13][17][0a][0b][0c]<black magic icon>",
-    "rom_address": "0x2EF268",
-    "raw_bytes": [
-      "0x49",
-      "0x0f",
-      "0x32",
-      "0x22",
-      "0x13",
-      "0x17",
-      "0x0a",
-      "0x0b",
-      "0x0c",
-      "0xe9"
-    ]
-  },
-  {
-    "name_index": 37,
-    "name": "[05][23][4d][19]I[02][48][07]/U",
-    "rom_address": "0x2EF272",
-    "raw_bytes": [
-      "0x05",
-      "0x23",
-      "0x4d",
-      "0x19",
-      "0x88",
-      "0x02",
-      "0x48",
-      "0x07",
-      "0xc0",
-      "0x94"
-    ]
-  },
-  {
-    "name_index": 38,
-    "name": "[04][3a][11][4d]<end>[53][f8]<dirk icon>[3a]",
-    "rom_address": "0x2EF27C",
-    "raw_bytes": [
-      "0x04",
-      "0x3a",
-      "0x11",
-      "0x4d",
-      "0x00",
-      "0x53",
-      "0xf8",
-      "0xd8",
-      "0x3a",
-      "0xff"
-    ]
-  },
-  {
-    "name_index": 39,
-    "name": "[31][27][25]r[3b][1a][44][03][1c][f5]",
-    "rom_address": "0x2EF286",
-    "raw_bytes": [
-      "0x31",
-      "0x27",
-      "0x25",
-      "0xab",
-      "0x3b",
-      "0x1a",
-      "0x44",
-      "0x03",
-      "0x1c",
-      "0xf5"
-    ]
-  },
-  {
-    "name_index": 40,
-    "name": "[0c][24]<gray magic icon>[0f][33][05][18]b<line>g",
-    "rom_address": "0x2EF290",
-    "raw_bytes": [
-      "0x0c",
       "0x24",
-      "0xea",
-      "0x0f",
-      "0x33",
-      "0x05",
-      "0x18",
-      "0x9b",
-      "0x01",
-      "0xa0"
-    ]
-  },
-  {
-    "name_index": 41,
-    "name": "e[07][54][fa]'[fa]<special icon>[1d][ec][08]",
-    "rom_address": "0x2EF29A",
-    "raw_bytes": [
-      "0x9e",
-      "0x07",
-      "0x54",
-      "0xfa",
-      "0xc3",
-      "0xfa",
-      "0xdf",
-      "0x1d",
-      "0xec",
-      "0x08"
-    ]
-  },
-  {
-    "name_index": 42,
-    "name": "[72][31][05][12][2f]<end>W[03][2a][2b]",
-    "rom_address": "0x2EF2A4",
-    "raw_bytes": [
-      "0x72",
-      "0x31",
-      "0x05",
-      "0x12",
-      "0x2f",
-      "0x00",
-      "0x96",
-      "0x03",
-      "0x2a",
+      "0x2d",
+      "0x20",
       "0x2b"
     ]
   },
   {
-    "name_index": 43,
-    "name": "[7d][fc]<line>h[08][53]<skean icon>[22][10][2c]",
-    "rom_address": "0x2EF2AE",
+    "name_index": 5,
+    "name": "RELICS",
+    "pointer_address": "0x26840A",
+    "string_address": "0xEF124",
     "raw_bytes": [
-      "0x7d",
-      "0xfc",
-      "0x01",
-      "0xa1",
-      "0x08",
-      "0x53",
-      "0xe6",
+      "0x31",
+      "0x24",
+      "0x2b",
+      "0x28",
       "0x22",
-      "0x10",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 6,
+    "name": "ITEM SHOP",
+    "pointer_address": "0x26840C",
+    "string_address": "0xEF12B",
+    "raw_bytes": [
+      "0x28",
+      "0x33",
+      "0x24",
+      "0x2c",
+      "0x7f",
+      "0x32",
+      "0x27",
+      "0x2e",
+      "0x2f"
+    ]
+  },
+  {
+    "name_index": 7,
+    "name": "CAFE",
+    "pointer_address": "0x26840E",
+    "string_address": "0xEF135",
+    "raw_bytes": [
+      "0x22",
+      "0x20",
+      "0x25",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 8,
+    "name": "ENGINE ROOM",
+    "pointer_address": "0x268410",
+    "string_address": "0xEF13A",
+    "raw_bytes": [
+      "0x24",
+      "0x2d",
+      "0x26",
+      "0x28",
+      "0x2d",
+      "0x24",
+      "0x7f",
+      "0x31",
+      "0x2e",
+      "0x2e",
       "0x2c"
     ]
   },
   {
-    "name_index": 44,
-    "name": "[0e]K[04][33][ec][18][22][1f][33][1a]",
-    "rom_address": "0x2EF2B8",
+    "name_index": 9,
+    "name": "BASEMENT 1",
+    "pointer_address": "0x268412",
+    "string_address": "0xEF146",
     "raw_bytes": [
-      "0x0e",
-      "0x8a",
-      "0x04",
-      "0x33",
-      "0xec",
-      "0x18",
-      "0x22",
-      "0x1f",
-      "0x33",
-      "0x1a"
-    ]
-  },
-  {
-    "name_index": 45,
-    "name": "[1b][1c][46][ec]<end>[2c][04][37]<end>[11]",
-    "rom_address": "0x2EF2C2",
-    "raw_bytes": [
-      "0x1b",
-      "0x1c",
-      "0x46",
-      "0xec",
-      "0x00",
-      "0x2c",
-      "0x04",
-      "0x37",
-      "0x00",
-      "0x11"
-    ]
-  },
-  {
-    "name_index": 46,
-    "name": "[32][36][1f][4e][02]M[07][31]L[07]",
-    "rom_address": "0x2EF2CC",
-    "raw_bytes": [
-      "0x32",
-      "0x36",
-      "0x1f",
-      "0x4e",
-      "0x02",
-      "0x8c",
-      "0x07",
-      "0x31",
-      "0x8b",
-      "0x07"
-    ]
-  },
-  {
-    "name_index": 47,
-    "name": "h[f8]<dirk icon>[3b][76] [39][27][25]L",
-    "rom_address": "0x2EF2D6",
-    "raw_bytes": [
-      "0xa1",
-      "0xf8",
-      "0xd8",
-      "0x3b",
-      "0x76",
-      "0xfe",
-      "0x39",
-      "0x27",
-      "0x25",
-      "0x8b"
-    ]
-  },
-  {
-    "name_index": 48,
-    "name": "[0a][6e][0c][31]O[06]<white magic icon>[41][06]U",
-    "rom_address": "0x2EF2E0",
-    "raw_bytes": [
-      "0x0a",
-      "0x6e",
-      "0x0c",
-      "0x31",
-      "0x8e",
-      "0x06",
-      "0xe8",
-      "0x41",
-      "0x06",
-      "0x94"
-    ]
-  },
-  {
-    "name_index": 49,
-    "name": "[07]b<line>RT[06][cf]ff/",
-    "rom_address": "0x2EF2EA",
-    "raw_bytes": [
-      "0x07",
-      "0x9b",
-      "0x01",
-      "0x91",
-      "0x93",
-      "0x06",
-      "0xcf",
-      "0x9f",
-      "0x9f",
-      "0xc0"
-    ]
-  },
-  {
-    "name_index": 50,
-    "name": "",
-    "rom_address": "0x2EF2F4",
-    "raw_bytes": [
-      "0xff",
-      "0xf9",
-      "0x67",
-      "0xf9",
-      "0xe6",
-      "0x0d",
-      "0x33",
-      "0x24",
-      "0x31",
-      "0x05"
-    ]
-  },
-  {
-    "name_index": 51,
-    "name": "[2a][05][13][18]g[35][03]<white magic icon><end>",
-    "rom_address": "0x2EF2FE",
-    "raw_bytes": [
-      "0x2a",
-      "0x05",
-      "0x13",
-      "0x18",
-      "0xa0",
-      "0x35",
-      "0x03",
-      "0xe8",
-      "0x00",
-      "0xfe"
-    ]
-  },
-  {
-    "name_index": 52,
-    "name": "[d1][22]<end>[4b][05][21][2d][17][33][43]",
-    "rom_address": "0x2EF308",
-    "raw_bytes": [
-      "0xd1",
-      "0x22",
-      "0x00",
-      "0x4b",
-      "0x05",
       "0x21",
-      "0x2d",
-      "0x17",
-      "0x33",
-      "0x43"
-    ]
-  },
-  {
-    "name_index": 53,
-    "name": "[18][3b]R[06][51]<end>[fb][03]O<line>",
-    "rom_address": "0x2EF312",
-    "raw_bytes": [
-      "0x18",
-      "0x3b",
-      "0x91",
-      "0x06",
-      "0x51",
-      "0x00",
-      "0xfb",
-      "0x03",
-      "0x8e",
-      "0x01"
-    ]
-  },
-  {
-    "name_index": 54,
-    "name": "[31][4b][05][68][43][1f]X[05]S[16]",
-    "rom_address": "0x2EF31C",
-    "raw_bytes": [
-      "0x31",
-      "0x4b",
-      "0x05",
-      "0x68",
-      "0x43",
-      "0x1f",
-      "0x97",
-      "0x05",
-      "0x92",
-      "0x16"
-    ]
-  },
-  {
-    "name_index": 55,
-    "name": "[42]<white magic icon><end>[42][42][53][fb][ec]<stars icon>[4a]",
-    "rom_address": "0x2EF326",
-    "raw_bytes": [
-      "0x42",
-      "0xe8",
-      "0x00",
-      "0x42",
-      "0x42",
-      "0x53",
-      "0xfb",
-      "0xec",
-      "0xde",
-      "0x4a"
-    ]
-  },
-  {
-    "name_index": 56,
-    "name": "[31][07][15]L[02][7e][7d][1c]<black magic icon>",
-    "rom_address": "0x2EF330",
-    "raw_bytes": [
-      "0xfe",
-      "0x31",
-      "0x07",
-      "0x15",
-      "0x8b",
-      "0x02",
-      "0x7e",
-      "0x7d",
-      "0x1c",
-      "0xe9"
-    ]
-  },
-  {
-    "name_index": 57,
-    "name": "[18][4c][04]<gray magic icon>[0c][13]a[0a]x[22]",
-    "rom_address": "0x2EF33A",
-    "raw_bytes": [
-      "0x18",
-      "0x4c",
-      "0x04",
-      "0xea",
-      "0x0c",
-      "0x13",
-      "0x9a",
-      "0x0a",
-      "0xb1",
-      "0x22"
-    ]
-  },
-  {
-    "name_index": 58,
-    "name": "[23][1f]<lance icon>vvv[cf]l[fb][5d]",
-    "rom_address": "0x2EF344",
-    "raw_bytes": [
-      "0x23",
-      "0x1f",
-      "0xda",
-      "0xaf",
-      "0xaf",
-      "0xaf",
-      "0xcf",
-      "0xa5",
-      "0xfb",
-      "0x5d"
-    ]
-  },
-  {
-    "name_index": 59,
-    "name": "[fc]<relic icon>[16]<end>[ed][23][f5][0e][33][0c]",
-    "rom_address": "0x2EF34E",
-    "raw_bytes": [
-      "0xfc",
-      "0xe7",
-      "0x16",
-      "0x00",
-      "0xed",
-      "0x23",
-      "0xf5",
-      "0x0e",
-      "0x33",
-      "0x0c"
-    ]
-  },
-  {
-    "name_index": 60,
-    "name": "[0b]<line>)[21][12][4c][08][4c][15]",
-    "rom_address": "0x2EF358",
-    "raw_bytes": [
-      "0xfe",
-      "0x0b",
-      "0x01",
-      "0xcc",
-      "0x21",
-      "0x12",
-      "0x4c",
-      "0x08",
-      "0x4c",
-      "0x15"
-    ]
-  },
-  {
-    "name_index": 61,
-    "name": "[5b][3b][3b][eb][12][13][18][f9][11][20]",
-    "rom_address": "0x2EF362",
-    "raw_bytes": [
-      "0x5b",
-      "0x3b",
-      "0x3b",
-      "0xeb",
-      "0x12",
-      "0x13",
-      "0x18",
-      "0xf9",
-      "0x11",
-      "0x20"
-    ]
-  },
-  {
-    "name_index": 62,
-    "name": "[42][0a][f2][f7][0c][42][27][16][2b][04]",
-    "rom_address": "0x2EF36C",
-    "raw_bytes": [
-      "0x42",
-      "0x0a",
-      "0xf2",
-      "0xf7",
-      "0x0c",
-      "0x42",
-      "0x27",
-      "0x16",
-      "0x2b",
-      "0x04"
-    ]
-  },
-  {
-    "name_index": 63,
-    "name": "[3b][3b][26][25]<white magic icon>[20][06],[fc][1a]",
-    "rom_address": "0x2EF376",
-    "raw_bytes": [
-      "0x3b",
-      "0x3b",
-      "0x26",
-      "0x25",
-      "0xe8",
       "0x20",
-      "0x06",
-      "0xc6",
-      "0xfc",
-      "0x1a"
+      "0x32",
+      "0x24",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x55"
     ]
   },
   {
-    "name_index": 64,
-    "name": "[40][13] [21][07][15][02]",
-    "rom_address": "0x2EF380",
+    "name_index": 10,
+    "name": "BASEMENT 2",
+    "pointer_address": "0x268414",
+    "string_address": "0xEF151",
     "raw_bytes": [
-      "0x40",
-      "0x13",
-      "0xfe",
       "0x21",
-      "0x07",
-      "0x15",
-      "0x02",
-      "0xff",
-      "0x2a",
-      "0x7d"
-    ]
-  },
-  {
-    "name_index": 65,
-    "name": "[7e][2c][2a][2c][4b][18][11][3b][22][0b]",
-    "rom_address": "0x2EF38A",
-    "raw_bytes": [
-      "0x7e",
+      "0x20",
+      "0x32",
+      "0x24",
       "0x2c",
-      "0x2a",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x56"
+    ]
+  },
+  {
+    "name_index": 11,
+    "name": "BASEMENT 3",
+    "pointer_address": "0x268416",
+    "string_address": "0xEF15C",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24",
       "0x2c",
-      "0x4b",
-      "0x18",
-      "0x11",
-      "0x3b",
-      "0x22",
-      "0x0b"
-    ]
-  },
-  {
-    "name_index": 66,
-    "name": "T<end>b[13][33]i[04]j[04]k",
-    "rom_address": "0x2EF394",
-    "raw_bytes": [
-      "0x93",
-      "0x00",
-      "0x9b",
-      "0x13",
+      "0x24",
+      "0x2d",
       "0x33",
-      "0xa2",
-      "0x04",
-      "0xa3",
-      "0x04",
-      "0xa4"
+      "0x7f",
+      "0x57"
     ]
   },
   {
-    "name_index": 67,
-    "name": "[fb]A;[fc]<relic icon>[3e][45][17][33][0d]",
-    "rom_address": "0x2EF39E",
+    "name_index": 12,
+    "name": "BASEMENT 4",
+    "pointer_address": "0x268418",
+    "string_address": "0xEF167",
     "raw_bytes": [
-      "0xfb",
-      "0x80",
-      "0xc8",
-      "0xfc",
-      "0xe7",
-      "0x3e",
-      "0x45",
-      "0x17",
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24",
+      "0x2c",
+      "0x24",
+      "0x2d",
       "0x33",
-      "0x0d"
+      "0x7f",
+      "0x58"
     ]
   },
   {
-    "name_index": 68,
-    "name": "O<line>",
-    "rom_address": "0x2EF3A8",
+    "name_index": 13,
+    "name": "1ST FLOOR",
+    "pointer_address": "0x26841A",
+    "string_address": "0xEF172",
     "raw_bytes": [
-      "0x8e",
-      "0x01",
-      "0xff",
-      "0x0b",
-      "0x53",
-      "0xb6",
-      "0x27",
-      "0x73",
+      "0x55",
+      "0x32",
+      "0x33",
+      "0x7f",
       "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
       "0x31"
     ]
   },
   {
-    "name_index": 69,
-    "name": "[3d][04][50]<end>[23][22][41]U<end>Y",
-    "rom_address": "0x2EF3B2",
+    "name_index": 14,
+    "name": "2ND FLOOR",
+    "pointer_address": "0x26841C",
+    "string_address": "0xEF17C",
     "raw_bytes": [
-      "0x3d",
-      "0x04",
-      "0x50",
-      "0x00",
+      "0x56",
+      "0x2d",
       "0x23",
-      "0x22",
-      "0x41",
-      "0x94",
-      "0x00",
-      "0x98"
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
     ]
   },
   {
-    "name_index": 70,
-    "name": "<black magic icon>[08]K[06][33][15][1c][20][4d][08]",
-    "rom_address": "0x2EF3BC",
+    "name_index": 15,
+    "name": "3RD FLOOR",
+    "pointer_address": "0x26841E",
+    "string_address": "0xEF186",
     "raw_bytes": [
-      "0xe9",
-      "0x08",
-      "0x8a",
-      "0x06",
+      "0x57",
+      "0x31",
+      "0x23",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 16,
+    "name": "4TH FLOOR",
+    "pointer_address": "0x268420",
+    "string_address": "0xEF190",
+    "raw_bytes": [
+      "0x58",
       "0x33",
-      "0x15",
-      "0x1c",
-      "0x20",
-      "0x4d",
-      "0x08"
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
     ]
   },
   {
-    "name_index": 71,
-    "name": "[3c][04][24][59][0a][37][02]S<line>[39]",
-    "rom_address": "0x2EF3C6",
+    "name_index": 17,
+    "name": "5TH FLOOR",
+    "pointer_address": "0x268422",
+    "string_address": "0xEF19A",
     "raw_bytes": [
-      "0x3c",
-      "0x04",
-      "0x24",
       "0x59",
-      "0x0a",
-      "0x37",
-      "0x02",
-      "0x92",
-      "0x01",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 18,
+    "name": "6TH FLOOR",
+    "pointer_address": "0x268424",
+    "string_address": "0xEF1A4",
+    "raw_bytes": [
+      "0x5a",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 19,
+    "name": "7TH FLOOR",
+    "pointer_address": "0x268426",
+    "string_address": "0xEF1AE",
+    "raw_bytes": [
+      "0x5b",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 20,
+    "name": "8TH FLOOR",
+    "pointer_address": "0x268428",
+    "string_address": "0xEF1B8",
+    "raw_bytes": [
+      "0x5c",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 21,
+    "name": "9TH FLOOR",
+    "pointer_address": "0x26842A",
+    "string_address": "0xEF1C2",
+    "raw_bytes": [
+      "0x5d",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 22,
+    "name": "10TH FLOOR",
+    "pointer_address": "0x26842C",
+    "string_address": "0xEF1CC",
+    "raw_bytes": [
+      "0x55",
+      "0x54",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 23,
+    "name": "CHOCOBO STABLE",
+    "pointer_address": "0x26842E",
+    "string_address": "0xEF1D7",
+    "raw_bytes": [
+      "0x22",
+      "0x27",
+      "0x2e",
+      "0x22",
+      "0x2e",
+      "0x21",
+      "0x2e",
+      "0x7f",
+      "0x32",
+      "0x33",
+      "0x20",
+      "0x21",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 24,
+    "name": "FIGARO CASTLE",
+    "pointer_address": "0x268430",
+    "string_address": "0xEF1E6",
+    "raw_bytes": [
+      "0x25",
+      "0x28",
+      "0x26",
+      "0x20",
+      "0x31",
+      "0x2e",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x32",
+      "0x33",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 25,
+    "name": "SOUTH FIGARO",
+    "pointer_address": "0x268432",
+    "string_address": "0xEF1F4",
+    "raw_bytes": [
+      "0x32",
+      "0x2e",
+      "0x34",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x28",
+      "0x26",
+      "0x20",
+      "0x31",
+      "0x2e"
+    ]
+  },
+  {
+    "name_index": 26,
+    "name": "RETURNERS' HIDEOUT",
+    "pointer_address": "0x268434",
+    "string_address": "0xEF201",
+    "raw_bytes": [
+      "0x31",
+      "0x24",
+      "0x33",
+      "0x34",
+      "0x31",
+      "0x2d",
+      "0x24",
+      "0x31",
+      "0x32",
+      "0x63",
+      "0x7f",
+      "0x27",
+      "0x28",
+      "0x23",
+      "0x24",
+      "0x2e",
+      "0x34",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 27,
+    "name": "ELDER'S HOUSE",
+    "pointer_address": "0x268436",
+    "string_address": "0xEF214",
+    "raw_bytes": [
+      "0x24",
+      "0x2b",
+      "0x23",
+      "0x24",
+      "0x31",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 28,
+    "name": "DUNCAN'S HOUSE",
+    "pointer_address": "0x268438",
+    "string_address": "0xEF222",
+    "raw_bytes": [
+      "0x23",
+      "0x34",
+      "0x2d",
+      "0x22",
+      "0x20",
+      "0x2d",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 29,
+    "name": "MT. KOLTS",
+    "pointer_address": "0x26843A",
+    "string_address": "0xEF231",
+    "raw_bytes": [
+      "0x2c",
+      "0x33",
+      "0x65",
+      "0x7f",
+      "0x2a",
+      "0x2e",
+      "0x2b",
+      "0x33",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 30,
+    "name": "KING'S ROOM",
+    "pointer_address": "0x26843C",
+    "string_address": "0xEF23B",
+    "raw_bytes": [
+      "0x2a",
+      "0x28",
+      "0x2d",
+      "0x26",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 31,
+    "name": "MOOGLE'S CAVE",
+    "pointer_address": "0x26843E",
+    "string_address": "0xEF247",
+    "raw_bytes": [
+      "0x2c",
+      "0x2e",
+      "0x2e",
+      "0x26",
+      "0x2b",
+      "0x24",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 32,
+    "name": "NARSHE",
+    "pointer_address": "0x268440",
+    "string_address": "0xEF255",
+    "raw_bytes": [
+      "0x2d",
+      "0x20",
+      "0x31",
+      "0x32",
+      "0x27",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 33,
+    "name": "AUCTION HOUSE",
+    "pointer_address": "0x268442",
+    "string_address": "0xEF25C",
+    "raw_bytes": [
+      "0x20",
+      "0x34",
+      "0x22",
+      "0x33",
+      "0x28",
+      "0x2e",
+      "0x2d",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 34,
+    "name": "OWZER'S HOUSE",
+    "pointer_address": "0x268444",
+    "string_address": "0xEF26A",
+    "raw_bytes": [
+      "0x2e",
+      "0x36",
+      "0x39",
+      "0x24",
+      "0x31",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 35,
+    "name": "BAREN FALLS",
+    "pointer_address": "0x268446",
+    "string_address": "0xEF278",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x31",
+      "0x24",
+      "0x2d",
+      "0x7f",
+      "0x25",
+      "0x20",
+      "0x2b",
+      "0x2b",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 36,
+    "name": "MOBLIZ",
+    "pointer_address": "0x268448",
+    "string_address": "0xEF284",
+    "raw_bytes": [
+      "0x2c",
+      "0x2e",
+      "0x21",
+      "0x2b",
+      "0x28",
       "0x39"
     ]
   },
   {
-    "name_index": 72,
-    "name": "[3a][50][05][27][20][07][6c][52] [1b]",
-    "rom_address": "0x2EF3D0",
+    "name_index": 37,
+    "name": "NIKEAH",
+    "pointer_address": "0x26844A",
+    "string_address": "0xEF28B",
     "raw_bytes": [
-      "0x3a",
-      "0x50",
-      "0x05",
+      "0x2d",
+      "0x28",
+      "0x2a",
+      "0x24",
+      "0x20",
+      "0x27"
+    ]
+  },
+  {
+    "name_index": 38,
+    "name": "TZEN",
+    "pointer_address": "0x26844C",
+    "string_address": "0xEF292",
+    "raw_bytes": [
+      "0x33",
+      "0x39",
+      "0x24",
+      "0x2d"
+    ]
+  },
+  {
+    "name_index": 39,
+    "name": "RETURNERS' HIDEOUT",
+    "pointer_address": "0x26844E",
+    "string_address": "0xEF297",
+    "raw_bytes": [
+      "0x31",
+      "0x24",
+      "0x33",
+      "0x34",
+      "0x31",
+      "0x2d",
+      "0x24",
+      "0x31",
+      "0x32",
+      "0x63",
+      "0x7f",
+      "0x27",
+      "0x28",
+      "0x23",
+      "0x24",
+      "0x2e",
+      "0x34",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 40,
+    "name": "LETE RIVER",
+    "pointer_address": "0x268450",
+    "string_address": "0xEF2AA",
+    "raw_bytes": [
+      "0x2b",
+      "0x24",
+      "0x33",
+      "0x24",
+      "0x7f",
+      "0x31",
+      "0x28",
+      "0x35",
+      "0x24",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 41,
+    "name": "IMPERIAL CAMP",
+    "pointer_address": "0x268452",
+    "string_address": "0xEF2B5",
+    "raw_bytes": [
+      "0x28",
+      "0x2c",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x28",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x2c",
+      "0x2f"
+    ]
+  },
+  {
+    "name_index": 42,
+    "name": "DOMA CASTLE",
+    "pointer_address": "0x268454",
+    "string_address": "0xEF2C3",
+    "raw_bytes": [
+      "0x23",
+      "0x2e",
+      "0x2c",
+      "0x20",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x32",
+      "0x33",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 43,
+    "name": "PHANTOM FOREST",
+    "pointer_address": "0x268456",
+    "string_address": "0xEF2CF",
+    "raw_bytes": [
+      "0x2f",
       "0x27",
       "0x20",
-      "0x07",
-      "0x6c",
-      "0x52",
-      "0xfe",
-      "0x1b"
+      "0x2d",
+      "0x33",
+      "0x2e",
+      "0x2c",
+      "0x7f",
+      "0x25",
+      "0x2e",
+      "0x31",
+      "0x24",
+      "0x32",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 44,
+    "name": "SERPENT TRENCH",
+    "pointer_address": "0x268458",
+    "string_address": "0xEF2DE",
+    "raw_bytes": [
+      "0x32",
+      "0x24",
+      "0x31",
+      "0x2f",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x33",
+      "0x31",
+      "0x24",
+      "0x2d",
+      "0x22",
+      "0x27"
+    ]
+  },
+  {
+    "name_index": 45,
+    "name": "KOHLINGEN",
+    "pointer_address": "0x26845A",
+    "string_address": "0xEF2ED",
+    "raw_bytes": [
+      "0x2a",
+      "0x2e",
+      "0x27",
+      "0x2b",
+      "0x28",
+      "0x2d",
+      "0x26",
+      "0x24",
+      "0x2d"
+    ]
+  },
+  {
+    "name_index": 46,
+    "name": "ZOZO",
+    "pointer_address": "0x26845C",
+    "string_address": "0xEF2F7",
+    "raw_bytes": [
+      "0x39",
+      "0x2e",
+      "0x39",
+      "0x2e"
+    ]
+  },
+  {
+    "name_index": 47,
+    "name": "JIDOOR",
+    "pointer_address": "0x26845E",
+    "string_address": "0xEF2FC",
+    "raw_bytes": [
+      "0x29",
+      "0x28",
+      "0x23",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 48,
+    "name": "OPERA HOUSE",
+    "pointer_address": "0x268460",
+    "string_address": "0xEF303",
+    "raw_bytes": [
+      "0x2e",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x20",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 49,
+    "name": "VECTOR",
+    "pointer_address": "0x268462",
+    "string_address": "0xEF30F",
+    "raw_bytes": [
+      "0x35",
+      "0x24",
+      "0x22",
+      "0x33",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 50,
+    "name": "IMPERIAL CASTLE",
+    "pointer_address": "0x268464",
+    "string_address": "0xEF316",
+    "raw_bytes": [
+      "0x28",
+      "0x2c",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x28",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x32",
+      "0x33",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 51,
+    "name": "MAGITEK RES. FACILITY",
+    "pointer_address": "0x268466",
+    "string_address": "0xEF326",
+    "raw_bytes": [
+      "0x2c",
+      "0x20",
+      "0x26",
+      "0x28",
+      "0x33",
+      "0x24",
+      "0x2a",
+      "0x7f",
+      "0x31",
+      "0x24",
+      "0x32",
+      "0x65",
+      "0x7f",
+      "0x25",
+      "0x20",
+      "0x22",
+      "0x28",
+      "0x2b",
+      "0x28",
+      "0x33",
+      "0x38"
+    ]
+  },
+  {
+    "name_index": 52,
+    "name": "MARANDA",
+    "pointer_address": "0x268468",
+    "string_address": "0xEF33C",
+    "raw_bytes": [
+      "0x2c",
+      "0x20",
+      "0x31",
+      "0x20",
+      "0x2d",
+      "0x23",
+      "0x20"
+    ]
+  },
+  {
+    "name_index": 53,
+    "name": "ALBROOK",
+    "pointer_address": "0x26846A",
+    "string_address": "0xEF344",
+    "raw_bytes": [
+      "0x20",
+      "0x2b",
+      "0x21",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2a"
+    ]
+  },
+  {
+    "name_index": 54,
+    "name": "IMPERIAL BASE",
+    "pointer_address": "0x26846C",
+    "string_address": "0xEF34C",
+    "raw_bytes": [
+      "0x28",
+      "0x2c",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x28",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 55,
+    "name": "SEALED GATE",
+    "pointer_address": "0x26846E",
+    "string_address": "0xEF35A",
+    "raw_bytes": [
+      "0x32",
+      "0x24",
+      "0x20",
+      "0x2b",
+      "0x24",
+      "0x23",
+      "0x7f",
+      "0x26",
+      "0x20",
+      "0x33",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 56,
+    "name": "THAMASA",
+    "pointer_address": "0x268470",
+    "string_address": "0xEF366",
+    "raw_bytes": [
+      "0x33",
+      "0x27",
+      "0x20",
+      "0x2c",
+      "0x20",
+      "0x32",
+      "0x20"
+    ]
+  },
+  {
+    "name_index": 57,
+    "name": "COLOSSEUM",
+    "pointer_address": "0x268472",
+    "string_address": "0xEF36E",
+    "raw_bytes": [
+      "0x22",
+      "0x2e",
+      "0x2b",
+      "0x2e",
+      "0x32",
+      "0x32",
+      "0x24",
+      "0x34",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 58,
+    "name": "DARILL'S TOMB/B1",
+    "pointer_address": "0x268474",
+    "string_address": "0xEF378",
+    "raw_bytes": [
+      "0x23",
+      "0x20",
+      "0x31",
+      "0x28",
+      "0x2b",
+      "0x2b",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x33",
+      "0x2e",
+      "0x2c",
+      "0x21",
+      "0x60",
+      "0x21",
+      "0x55"
+    ]
+  },
+  {
+    "name_index": 59,
+    "name": "THE FLOATING LAND",
+    "pointer_address": "0x268476",
+    "string_address": "0xEF38A",
+    "raw_bytes": [
+      "0x33",
+      "0x27",
+      "0x24",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x20",
+      "0x33",
+      "0x28",
+      "0x2d",
+      "0x26",
+      "0x7f",
+      "0x2b",
+      "0x20",
+      "0x2d",
+      "0x23"
+    ]
+  },
+  {
+    "name_index": 60,
+    "name": "ESPERVILLE",
+    "pointer_address": "0x268478",
+    "string_address": "0xEF39C",
+    "raw_bytes": [
+      "0x24",
+      "0x32",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x35",
+      "0x28",
+      "0x2b",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 61,
+    "name": "MT. ZOZO",
+    "pointer_address": "0x26847A",
+    "string_address": "0xEF3A7",
+    "raw_bytes": [
+      "0x2c",
+      "0x33",
+      "0x65",
+      "0x7f",
+      "0x39",
+      "0x2e",
+      "0x39",
+      "0x2e"
+    ]
+  },
+  {
+    "name_index": 62,
+    "name": "MAGITEK FACTORY",
+    "pointer_address": "0x26847C",
+    "string_address": "0xEF3B0",
+    "raw_bytes": [
+      "0x2c",
+      "0x20",
+      "0x26",
+      "0x28",
+      "0x33",
+      "0x24",
+      "0x2a",
+      "0x7f",
+      "0x25",
+      "0x20",
+      "0x22",
+      "0x33",
+      "0x2e",
+      "0x31",
+      "0x38"
+    ]
+  },
+  {
+    "name_index": 63,
+    "name": "MT. CRESCENT",
+    "pointer_address": "0x26847E",
+    "string_address": "0xEF3C0",
+    "raw_bytes": [
+      "0x2c",
+      "0x33",
+      "0x65",
+      "0x7f",
+      "0x22",
+      "0x31",
+      "0x24",
+      "0x32",
+      "0x22",
+      "0x24",
+      "0x2d",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 64,
+    "name": "CLASSROOM",
+    "pointer_address": "0x268480",
+    "string_address": "0xEF3CD",
+    "raw_bytes": [
+      "0x22",
+      "0x2b",
+      "0x20",
+      "0x32",
+      "0x32",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 65,
+    "name": "KEFKA'S TOWER",
+    "pointer_address": "0x268482",
+    "string_address": "0xEF3D7",
+    "raw_bytes": [
+      "0x2a",
+      "0x24",
+      "0x25",
+      "0x2a",
+      "0x20",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x33",
+      "0x2e",
+      "0x36",
+      "0x24",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 66,
+    "name": "ADV. BATTLE TACTICS",
+    "pointer_address": "0x268484",
+    "string_address": "0xEF3E5",
+    "raw_bytes": [
+      "0x20",
+      "0x23",
+      "0x35",
+      "0x65",
+      "0x7f",
+      "0x21",
+      "0x20",
+      "0x33",
+      "0x33",
+      "0x2b",
+      "0x24",
+      "0x7f",
+      "0x33",
+      "0x20",
+      "0x22",
+      "0x33",
+      "0x28",
+      "0x22",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 67,
+    "name": "BATTLE TACTICS",
+    "pointer_address": "0x268486",
+    "string_address": "0xEF3F9",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x33",
+      "0x33",
+      "0x2b",
+      "0x24",
+      "0x7f",
+      "0x33",
+      "0x20",
+      "0x22",
+      "0x33",
+      "0x28",
+      "0x22",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 68,
+    "name": "ENVIRONMENTAL SCIENCE",
+    "pointer_address": "0x268488",
+    "string_address": "0xEF408",
+    "raw_bytes": [
+      "0x24",
+      "0x2d",
+      "0x35",
+      "0x28",
+      "0x31",
+      "0x2e",
+      "0x2d",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x32",
+      "0x22",
+      "0x28",
+      "0x24",
+      "0x2d",
+      "0x22",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 69,
+    "name": "CAVE TO THE SEALED GATE",
+    "pointer_address": "0x26848A",
+    "string_address": "0xEF41E",
+    "raw_bytes": [
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24",
+      "0x7f",
+      "0x33",
+      "0x2e",
+      "0x7f",
+      "0x33",
+      "0x27",
+      "0x24",
+      "0x7f",
+      "0x32",
+      "0x24",
+      "0x20",
+      "0x2b",
+      "0x24",
+      "0x23",
+      "0x7f",
+      "0x26",
+      "0x20",
+      "0x33",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 70,
+    "name": "GENERAL STORE",
+    "pointer_address": "0x26848C",
+    "string_address": "0xEF436",
+    "raw_bytes": [
+      "0x26",
+      "0x24",
+      "0x2d",
+      "0x24",
+      "0x31",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x32",
+      "0x33",
+      "0x2e",
+      "0x31",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 71,
+    "name": "PHOENIX CAVE",
+    "pointer_address": "0x26848E",
+    "string_address": "0xEF444",
+    "raw_bytes": [
+      "0x2f",
+      "0x27",
+      "0x2e",
+      "0x24",
+      "0x2d",
+      "0x28",
+      "0x37",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 72,
+    "name": "CAVE IN THE VELDT",
+    "pointer_address": "0x268490",
+    "string_address": "0xEF451",
+    "raw_bytes": [
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24",
+      "0x7f",
+      "0x28",
+      "0x2d",
+      "0x7f",
+      "0x33",
+      "0x27",
+      "0x24",
+      "0x7f",
+      "0x35",
+      "0x24",
+      "0x2b",
+      "0x23",
+      "0x33"
     ]
   }
 ]
