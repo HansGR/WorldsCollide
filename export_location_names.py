@@ -17,7 +17,7 @@ import os
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from data.text.text2 import value_text
+import data.text as text
 
 # ROM constants for location names
 LOCATION_NAMES_START = 0x2EF100
@@ -27,18 +27,19 @@ LOCATION_NAME_COUNT = 73
 
 def decode_name(data):
     """Decode a location name from ROM bytes using text2 encoding."""
-    name = ""
-    for byte in data:
-        if byte == 0xFF:  # Padding/terminator
-            break
-        if byte in value_text:
-            char = value_text[byte]
-            if char == '\0':  # Null terminator
-                break
-            name += char
+    # Use the codebase's text decoding, same as spell names
+    name = text.get_string(data, text.TEXT2)
+    # Strip null terminators and clean up
+    name = name.rstrip('\0')
+    # Remove any special tags that might appear
+    first_pos = name.find('<')
+    while first_pos >= 0:
+        second_pos = name.find('>')
+        if second_pos >= 0:
+            name = name.replace(name[first_pos:second_pos + 1], "")
         else:
-            # Unknown byte, skip or represent as hex
-            name += f"[{byte:02x}]"
+            break
+        first_pos = name.find('<')
     return name.strip()
 
 
@@ -63,7 +64,7 @@ def export_location_names(rom_path):
 
     for i in range(LOCATION_NAME_COUNT):
         addr = LOCATION_NAMES_START + (i * LOCATION_NAME_SIZE) + offset
-        name_bytes = rom_data[addr:addr + LOCATION_NAME_SIZE]
+        name_bytes = list(rom_data[addr:addr + LOCATION_NAME_SIZE])
         name = decode_name(name_bytes)
 
         location_names.append({
