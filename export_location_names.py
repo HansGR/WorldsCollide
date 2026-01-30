@@ -2,9 +2,10 @@
 """
 Export FF6 location names from the ROM to JSON format.
 
-Location names are stored at ROM address 0x2EF100.
-There are 73 names, each 10 bytes long, using the text2 encoding table.
-The name_index in maps_data.json corresponds to the index in this table.
+Location name pointers are at ROM address 0x268400 (SNES $E68400).
+Location name strings are at ROM address 0x2EF100 (SNES $CEF100).
+Names use TXT1 encoding (DTE compressed) and are variable length.
+The name_index in maps_data.json corresponds to the index in the pointer table.
 
 Run: python3 export_location_names.py -i ffiii.smc
 Output: location_names.json
@@ -19,28 +20,28 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import data.text as text
 
-# ROM constants for location names
-LOCATION_NAMES_START = 0x2EF100
-LOCATION_NAME_SIZE = 10
+# ROM constants for location names (from ff3infov2.txt)
+# Pointers at $E68400-$E6877F, names at $CEF100-$CEF5FF
+LOCATION_NAME_PTRS_START = 0x268400  # SNES $E68400
+LOCATION_NAMES_BASE = 0x2EF100       # SNES $CEF100
 LOCATION_NAME_COUNT = 73
 
 
-def decode_name(data):
-    """Decode a location name from ROM bytes using text2 encoding."""
-    # Use the codebase's text decoding, same as spell names
-    name = text.get_string(data, text.TEXT2)
-    # Strip null terminators and clean up
-    name = name.rstrip('\0')
-    # Remove any special tags that might appear
-    first_pos = name.find('<')
-    while first_pos >= 0:
-        second_pos = name.find('>')
-        if second_pos >= 0:
-            name = name.replace(name[first_pos:second_pos + 1], "")
-        else:
+def read_pointer(rom_data, offset, ptr_offset):
+    """Read a 2-byte little-endian pointer and add base offset."""
+    addr = ptr_offset + (rom_data[offset] | (rom_data[offset + 1] << 8))
+    return addr
+
+
+def read_name_string(rom_data, start_addr, max_len=32):
+    """Read bytes until we hit a terminator (0x00) or max length."""
+    name_bytes = []
+    for i in range(max_len):
+        byte = rom_data[start_addr + i]
+        if byte == 0x00:  # End marker in TXT1
             break
-        first_pos = name.find('<')
-    return name.strip()
+        name_bytes.append(byte)
+    return name_bytes
 
 
 def export_location_names(rom_path):
@@ -54,23 +55,48 @@ def export_location_names(rom_path):
     # Check for header (512 bytes) - if ROM size % 0x8000 == 512, it has a header
     if len(rom_data) % 0x8000 == 512:
         print("ROM has 512-byte header, adjusting offset...")
-        offset = 512
+        header_offset = 512
     else:
-        offset = 0
+        header_offset = 0
 
     location_names = []
 
-    print(f"\nReading {LOCATION_NAME_COUNT} location names from 0x{LOCATION_NAMES_START:X}...")
+    print(f"\nReading {LOCATION_NAME_COUNT} location names...")
+    print(f"Pointer table at 0x{LOCATION_NAME_PTRS_START:X}")
+    print(f"Name strings base at 0x{LOCATION_NAMES_BASE:X}")
 
     for i in range(LOCATION_NAME_COUNT):
-        addr = LOCATION_NAMES_START + (i * LOCATION_NAME_SIZE) + offset
-        name_bytes = list(rom_data[addr:addr + LOCATION_NAME_SIZE])
-        name = decode_name(name_bytes)
+        # Read the 2-byte pointer for this name
+        ptr_addr = LOCATION_NAME_PTRS_START + (i * 2) + header_offset
+        # Pointers are relative to $CEF100, stored as offset from that base
+        ptr_value = rom_data[ptr_addr] | (rom_data[ptr_addr + 1] << 8)
+
+        # The actual string address
+        name_addr = LOCATION_NAMES_BASE + ptr_value + header_offset
+
+        # Read the variable-length name string
+        name_bytes = read_name_string(rom_data, name_addr)
+
+        # Decode using TEXT1 (DTE encoding)
+        name = text.get_string(name_bytes, text.TEXT1)
+        # Clean up the name
+        name = name.rstrip('\0')
+        # Remove any special tags
+        first_pos = name.find('<')
+        while first_pos >= 0:
+            second_pos = name.find('>')
+            if second_pos >= 0:
+                name = name.replace(name[first_pos:second_pos + 1], "")
+            else:
+                break
+            first_pos = name.find('<')
+        name = name.strip()
 
         location_names.append({
             "name_index": i,
             "name": name,
-            "rom_address": f"0x{LOCATION_NAMES_START + (i * LOCATION_NAME_SIZE):X}",
+            "pointer_address": f"0x{LOCATION_NAME_PTRS_START + (i * 2):X}",
+            "string_address": f"0x{LOCATION_NAMES_BASE + ptr_value:X}",
             "raw_bytes": [f"0x{b:02x}" for b in name_bytes]
         })
 
