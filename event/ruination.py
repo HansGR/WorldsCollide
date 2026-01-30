@@ -2588,6 +2588,62 @@ def disable_chocobo_stables(rom, dialogs, args):
             print(f"Disabled {description} at {event_addr:#x}")
 
 
+def fix_ferry_connections(rom, dialogs, ruin_map, args):
+    """
+    Fixes the ferry connection between South Figaro and Nikeah for ruination mode.
+
+    If both South Figaro and Nikeah are mapped, preserves the original ferry behavior.
+    If not both are mapped, changes the ferryman dialogs to indicate the ferry
+    is not running and removes the choice from the NPC events.
+
+    Args:
+        rom: The ROM object to modify
+        dialogs: The Dialogs object to update dialog text
+        ruin_map: The ruination_map object containing AreasUsed
+        args: Command line arguments (for debug flag)
+    """
+    # Check if both South Figaro and Nikeah are mapped
+    south_figaro_mapped = 'SouthFigaro' in ruin_map.AreasUsed
+    nikeah_mapped = 'Nikeah' in ruin_map.AreasUsed
+
+    if south_figaro_mapped and nikeah_mapped:
+        if args.debug:
+            print("Ferry: Both South Figaro and Nikeah are mapped - preserving ferry connection")
+        return
+
+    # Ferry connection data:
+    # - Dialog 810 (0x32A) = "South Figaro-bound ferry..." - used by Nikeah ferryman
+    # - Dialog 812 (0x32C) = "Nikeah-bound ferry..." - used by South Figaro ferryman
+    # - South Figaro dock ferryman: event at ROM 0x0A77D7, uses dialog 812 (0x32C)
+    # - Nikeah dock ferryman: event at ROM 0x0A8CBB, uses dialog 810 (0x32A)
+
+    disabled_message = "Some ships went out to map the sea, but no one returned.<end>"
+
+    # Update both ferry dialogs
+    dialogs.set_text(810, disabled_message)  # South Figaro-bound ferry dialog
+    dialogs.set_text(812, disabled_message)  # Nikeah-bound ferry dialog
+
+    # Patch South Figaro ferryman event to just display dialog and return
+    # Event at 0x0A77D7 - uses dialog 812 (0x32C)
+    south_figaro_event_addr = 0x0a77d7
+    south_figaro_dialog_id = 812  # 0x32C
+    event_bytes = bytes([0x4B, south_figaro_dialog_id & 0xFF, south_figaro_dialog_id >> 8, 0xFE])
+    rom.set_bytes(south_figaro_event_addr, event_bytes)
+
+    # Patch Nikeah ferryman event to just display dialog and return
+    # Event at 0x0A8CBB - uses dialog 810 (0x32A)
+    nikeah_event_addr = 0x0a8cbb
+    nikeah_dialog_id = 810  # 0x32A
+    event_bytes = bytes([0x4B, nikeah_dialog_id & 0xFF, nikeah_dialog_id >> 8, 0xFE])
+    rom.set_bytes(nikeah_event_addr, event_bytes)
+
+    if args.debug:
+        print(f"Ferry: South Figaro mapped={south_figaro_mapped}, Nikeah mapped={nikeah_mapped}")
+        print(f"Ferry: Disabled ferry connections - updated dialogs 810 and 812")
+        print(f"Ferry: Patched South Figaro ferryman at {south_figaro_event_addr:#x}")
+        print(f"Ferry: Patched Nikeah ferryman at {nikeah_event_addr:#x}")
+
+
 # Battle pack for nighttime ambush at free beds
 # This should be a difficult encounter - can be adjusted as needed
 FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter

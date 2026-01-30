@@ -291,6 +291,9 @@ class Events():
         # Modify recovery springs with random effects
         modify_recovery_springs(self.maps, self.rom, self.dialogs, self.args)
 
+        # Fix ferry connections between South Figaro and Nikeah
+        fix_ferry_connections(self.rom, self.dialogs, ruin_map, self.args)
+
     def validate(self, events):
         char_esper_checks = []
         for event in events:
