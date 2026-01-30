@@ -90,3 +90,21 @@ Reference JSON files are located in the remote `claude_ruination` branch under `
 
 - Door 361 ("Outside") → `dest_map: 94` = Interior map ID
 - Door 362 ("Inside") → `dest_map: 93` = Exterior map ID
+
+---
+
+## FF6 Text Encoding Types
+
+The codebase has three text encoding types in `data/text/`:
+
+- **TEXT1** (`text1.py`): DTE (Dual-Tile Encoding) compressed format. Used for dialog text and **location names**. Many byte values represent two characters for compression.
+
+- **TEXT2** (`text2.py`): Simple encoding for item names, spell names, esper names, etc. Single bytes map to single characters. Letters: A-Z = 0x80-0x99, a-z = 0x9A-0xB3, 0-9 = 0xB4-0xBD, space = 0xFE.
+
+- **TEXT3** (`text3.py`): Menu/battle text encoding. Similar structure to TEXT2 but with different special codes.
+
+**Usage**: Use `data.text.get_string(bytes, text.TEXT1)` or `text.TEXT2` to decode ROM data. Use `data.text.get_bytes(string, text.TEXT1)` to encode for writing.
+
+**ROM Data Types** (from ff3infov2.txt):
+- `TXT1` = TEXT1 encoding (DTE compressed)
+- `TXT2` = TEXT2 encoding (simple)

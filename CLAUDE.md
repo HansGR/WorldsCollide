@@ -57,8 +57,10 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 Each NPC has a visibility bit determining if it appears when the map loads. Formula: `npc_bit = (event_byte + 0x60) * 8 + event_bit`. Special values: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` (in `data/npc_bit.py`).
 
 ### 10. SNES Addressing
-- SNES addresses use `START_ADDRESS_SNES = 0xc00000` offset
+- **SNES to ROM conversion**: `ROM_address = SNES_address - 0xC00000`
+  - Example: SNES `$CEF100` → ROM `$0EF100` (not `$2EF100`!)
 - ROM uses little-endian byte order
+- The codebase constant `START_ADDRESS_SNES = 0xc00000` reflects this offset
 
 ---
 
@@ -85,9 +87,11 @@ python3 wc.py -i ffiii.smc -debug  # Enable spoiler log
 
 Note these files are LARGE. Only access them when necessary and be smart about reading them. Don't just load the entire file into context.
 
+- **ROM offset reference**: `./claude_reference/ff3infov2.txt` - Comprehensive FF6 ROM map with addresses for all data structures
 - Event script decompile: `./claude_reference/EventScriptTxt.txt`
 - Event bits: `./data/event_bit.py`
 - Dialog decompile: `./claude_reference/dialog_file.txt`
+- Location names: `./claude_reference/location_names.json` - Maps `name_index` to display names
 - Original map, event, and NPC JSON files: see `MAP_DATA_STRUCTURES.md`
   - Chests data: `./claude_reference/chests_raw.json`
   - MapEvents data: `./claude_reference/events_raw.json`
