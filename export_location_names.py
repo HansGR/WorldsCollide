@@ -22,8 +22,9 @@ import data.text as text
 
 # ROM constants for location names (from ff3infov2.txt)
 # Pointers at $E68400-$E6877F, names at $CEF100-$CEF5FF
-LOCATION_NAME_PTRS_START = 0x268400  # SNES $E68400
-LOCATION_NAMES_BASE = 0x2EF100       # SNES $CEF100
+# SNES to ROM conversion: subtract $C00000
+LOCATION_NAME_PTRS_START = 0x268400  # SNES $E68400 -> ROM $268400
+LOCATION_NAMES_BASE = 0x0EF100       # SNES $CEF100 -> ROM $0EF100
 LOCATION_NAME_COUNT = 73
 
 
