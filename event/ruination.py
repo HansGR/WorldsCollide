@@ -2,6 +2,7 @@ from event.event import *
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
 from data.rooms import room_data, ruination_dont_force, shared_exits
 from data.walks import *
+import networkx as nx
 import random
 
 
@@ -2065,6 +2066,20 @@ class ruination_map():
                     f"Branch {branch_id} hub room has unconnected exits after finalize_map: "
                     f"{len(unconnected_doors)} doors, {len(unconnected_traps)} traps. "
                     f"doors={unconnected_doors}, traps={unconnected_traps}",
+                    branch_id=branch_id
+                )
+                raise RuinationMappingError(diag)
+
+            # Verify terminus is reachable from hub (required for Kefka's Tower access)
+            terminus_id = branch.terminus
+            # Check if terminus exists as a separate node or was merged into hub
+            terminus_in_hub = terminus_id in str(hub_id)
+            terminus_reachable = terminus_in_hub or nx.has_path(branch.net, hub_id, terminus_id)
+
+            if not terminus_reachable:
+                diag = self._collect_mapping_diagnostics(
+                    f"Branch {branch_id} terminus '{terminus_id}' is not reachable from hub '{hub_id}'. "
+                    f"Players cannot reach Kefka's Tower from this branch.",
                     branch_id=branch_id
                 )
                 raise RuinationMappingError(diag)
