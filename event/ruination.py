@@ -2081,6 +2081,14 @@ class ruination_map():
                                         print(f'\tAdded new check: {reward_id}')
 
                     self.stuck_branches.pop(branch_id, None)  # Give it another chance
+
+                    # CRITICAL: Reset the active room to the hub so we can try a different path
+                    # Without this, the branch stays at the stuck position and immediately gets stuck again
+                    hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+                    branch.active = hub_id
+                    if self.verbose:
+                        print(f'\tReset branch {branch_id} active room to hub: {hub_id}')
+
                 elif len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
                     # Fallback to EXTRA areas if no reserve areas left
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
@@ -2097,6 +2105,13 @@ class ruination_map():
                             continue
                         branch.add_room(room)
                     self.stuck_branches.pop(branch_id, None)
+
+                    # CRITICAL: Reset the active room to the hub so we can try a different path
+                    hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+                    branch.active = hub_id
+                    if self.verbose:
+                        print(f'\tReset branch {branch_id} active room to hub: {hub_id}')
+
                 else:
                     # Collect diagnostic information
                     diag = self._collect_mapping_diagnostics(
