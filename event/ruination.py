@@ -2,7 +2,6 @@ from event.event import *
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
 from data.rooms import room_data, ruination_dont_force, shared_exits
 from data.walks import *
-import networkx as nx
 import random
 
 
@@ -2070,16 +2069,17 @@ class ruination_map():
                 )
                 raise RuinationMappingError(diag)
 
-            # Verify terminus is reachable from hub (required for Kefka's Tower access)
+            # Verify terminus was merged into hub (required for Kefka's Tower access)
+            # By the end of finalize_map, all connected rooms should be merged into
+            # the hub compound room via loop compression. If terminus is not in the
+            # hub ID string, something went wrong with the finalization.
             terminus_id = branch.terminus
-            # Check if terminus exists as a separate node or was merged into hub
-            terminus_in_hub = terminus_id in str(hub_id)
-            terminus_reachable = terminus_in_hub or nx.has_path(branch.net, hub_id, terminus_id)
+            terminus_merged = terminus_id in str(hub_id)
 
-            if not terminus_reachable:
+            if not terminus_merged:
                 diag = self._collect_mapping_diagnostics(
-                    f"Branch {branch_id} terminus '{terminus_id}' is not reachable from hub '{hub_id}'. "
-                    f"Players cannot reach Kefka's Tower from this branch.",
+                    f"Branch {branch_id} terminus '{terminus_id}' was not merged into hub '{hub_id}'. "
+                    f"This indicates a bug in finalize_map - terminus should always be merged.",
                     branch_id=branch_id
                 )
                 raise RuinationMappingError(diag)
