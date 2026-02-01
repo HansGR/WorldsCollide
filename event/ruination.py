@@ -1052,22 +1052,52 @@ class RuinationBranch(Network):
                 continue
 
             # Filter out exits that would strand pits in their source room
-            # (using the last exit from a room that still has pits would trap players)
+            # EXCEPTION: Trap exits that would strand pits can be allowed IF they connect
+            # to an upstream pit - this forms a loop, compression merges rooms, un-stranding the pits
             safe_exits = []
+            would_strand_exits = []  # Trap exits that would strand pits - may be rescued by upstream connection
+
             for exit_id in available_exits[this_type]:
                 exit_room = self.rooms.get_room_from_element(exit_id)
                 # Count remaining exits after using this one
                 remaining_exits = len(exit_room.doors) + len(exit_room.traps) - 1
 
-                # Would strand pits? (hard filter - never allow)
+                # Would strand pits?
                 if remaining_exits == 0 and len(exit_room.pits) > 0:
+                    if this_type == 1:  # Trap - might be rescued by upstream connection
+                        would_strand_exits.append(exit_id)
+                        if self.verbose:
+                            print(f'\t\tExit {exit_id} would strand pits in {exit_room.id} - may connect upstream')
+                    else:
+                        # Door exits that strand pits are always filtered
+                        if self.verbose:
+                            print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
+                        continue
+                else:
+                    safe_exits.append(exit_id)
+
+            # For trap exits that would strand pits, check if upstream pits exist
+            # These exits can ONLY be used if they connect to upstream pits (forming a loop)
+            upstream_pits_for_would_strand = set()
+            if this_type == 1 and len(would_strand_exits) > 0:
+                # Collect upstream pits (in hub or upstream of hub)
+                for path in self.get_upstream_paths(self.active):
+                    for node_id in path:
+                        node = self.rooms.get_room(node_id)
+                        upstream_pits_for_would_strand.update([p for p in node.pits if p not in self.protected])
+
+                if len(upstream_pits_for_would_strand) > 0:
                     if self.verbose:
-                        print(f'\t\tFiltering exit {exit_id} - would strand pits in {exit_room.id}')
-                    continue
+                        print(f'\t\tFound {len(upstream_pits_for_would_strand)} upstream pits for {len(would_strand_exits)} would-strand exits')
+                else:
+                    if self.verbose:
+                        print(f'\t\tNo upstream pits - filtering {len(would_strand_exits)} exits that would strand pits')
 
-                safe_exits.append(exit_id)
+            # Check if we have any usable exits
+            # would_strand_exits can only be used if upstream pits exist
+            usable_would_strand = would_strand_exits if len(upstream_pits_for_would_strand) > 0 else []
 
-            if len(safe_exits) == 0:
+            if len(safe_exits) == 0 and len(usable_would_strand) == 0:
                 if self.verbose:
                     print(f'\t\tNo safe {["door", "trap"][this_type]} exits available')
                 # Track that all exits of this type were filtered (would strand pits)
@@ -1075,51 +1105,67 @@ class RuinationBranch(Network):
                     all_exits_filtered = True
                 continue
 
-            this_exit = random.choice(safe_exits)
+            # Prefer safe exits; fall back to would-strand exits if none available
+            exit_is_would_strand = False
+            if len(safe_exits) > 0:
+                this_exit = random.choice(safe_exits)
+            else:
+                this_exit = random.choice(usable_would_strand)
+                exit_is_would_strand = True
+
             this_room = self.rooms.get_room_from_element(this_exit)
             this_room_id = this_room.id
 
             if self.verbose:
                 type_name = 'trap' if this_type == 1 else 'door'
-                print(f'\tTrying {type_name} exit: {this_exit} in room {this_room_id}')
+                strand_note = ' (would-strand, needs upstream)' if exit_is_would_strand else ''
+                print(f'\tTrying {type_name} exit: {this_exit} in room {this_room_id}{strand_note}')
 
             # (6) Collect all possible entrances for this exit type
             available_conns = set()
 
-            # Strategy A: Hub connections (non-dead-end unconnected rooms)
-            if this_type == 0:
-                available_conns.update(self.get_available_hub_connections(
-                    element_type=0, excluded=currently_used, dito_ok=True))
+            # If this is a would-strand exit, ONLY allow upstream pits (to form loop)
+            if exit_is_would_strand:
+                available_conns = upstream_pits_for_would_strand.copy()
+                if self.verbose:
+                    print(f'\t\tRestricting to {len(available_conns)} upstream pits only')
             else:
-                available_conns.update(self.get_available_hub_connections(
-                    element_type=1, excluded=currently_used))
+                # Normal exit - use all connection strategies
 
-            # Strategy B: Upstream path connections (with connectivity rules)
-            uppaths = self.get_upstream_paths(this_room_id)
-            for path in uppaths:
-                local_door_count = 0
-                local_trap_count = 0
-                for node_id in path:
-                    node = self.rooms.get_room(node_id)
-                    local_door_count += len(node.doors)
-                    local_trap_count += len(node.traps)
-                    if this_type == 1 and (local_door_count + local_trap_count) > 1:
-                        available_conns.update([p for p in node.pits if p not in self.protected])
-                    elif this_type == 0 and (local_door_count + local_trap_count) > 2:
-                        available_conns.update([d for d in node.doors if d not in self.protected])
+                # Strategy A: Hub connections (non-dead-end unconnected rooms)
+                if this_type == 0:
+                    available_conns.update(self.get_available_hub_connections(
+                        element_type=0, excluded=currently_used, dito_ok=True))
+                else:
+                    available_conns.update(self.get_available_hub_connections(
+                        element_type=1, excluded=currently_used))
 
-            # Strategy C: All unconnected rooms (more permissive - includes dead ends)
-            if len(available_conns) == 0:
-                if self.verbose:
-                    print('\t\tExpanding search to all unconnected rooms...')
-                available_conns.update(self.get_all_unconnected_entrances(
-                    element_type=this_type, currently_used=currently_used))
+                # Strategy B: Upstream path connections (with connectivity rules)
+                uppaths = self.get_upstream_paths(this_room_id)
+                for path in uppaths:
+                    local_door_count = 0
+                    local_trap_count = 0
+                    for node_id in path:
+                        node = self.rooms.get_room(node_id)
+                        local_door_count += len(node.doors)
+                        local_trap_count += len(node.traps)
+                        if this_type == 1 and (local_door_count + local_trap_count) > 1:
+                            available_conns.update([p for p in node.pits if p not in self.protected])
+                        elif this_type == 0 and (local_door_count + local_trap_count) > 2:
+                            available_conns.update([d for d in node.doors if d not in self.protected])
 
-            # Strategy D: Check rooms specifically
-            if len(available_conns) == 0:
-                if self.verbose:
-                    print('\t\tTrying check rooms...')
-                available_conns.update(self.get_all_check_connections(element_type=this_type))
+                # Strategy C: All unconnected rooms (more permissive - includes dead ends)
+                if len(available_conns) == 0:
+                    if self.verbose:
+                        print('\t\tExpanding search to all unconnected rooms...')
+                    available_conns.update(self.get_all_unconnected_entrances(
+                        element_type=this_type, currently_used=currently_used))
+
+                # Strategy D: Check rooms specifically
+                if len(available_conns) == 0:
+                    if self.verbose:
+                        print('\t\tTrying check rooms...')
+                    available_conns.update(self.get_all_check_connections(element_type=this_type))
 
             # If we found connections, filter and use them
             if len(available_conns) > 0:
@@ -2081,6 +2127,14 @@ class ruination_map():
                                         print(f'\tAdded new check: {reward_id}')
 
                     self.stuck_branches.pop(branch_id, None)  # Give it another chance
+
+                    # CRITICAL: Reset the active room to the hub so we can try a different path
+                    # Without this, the branch stays at the stuck position and immediately gets stuck again
+                    hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+                    branch.active = hub_id
+                    if self.verbose:
+                        print(f'\tReset branch {branch_id} active room to hub: {hub_id}')
+
                 elif len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
                     # Fallback to EXTRA areas if no reserve areas left
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
@@ -2097,6 +2151,13 @@ class ruination_map():
                             continue
                         branch.add_room(room)
                     self.stuck_branches.pop(branch_id, None)
+
+                    # CRITICAL: Reset the active room to the hub so we can try a different path
+                    hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+                    branch.active = hub_id
+                    if self.verbose:
+                        print(f'\tReset branch {branch_id} active room to hub: {hub_id}')
+
                 else:
                     # Collect diagnostic information
                     diag = self._collect_mapping_diagnostics(
