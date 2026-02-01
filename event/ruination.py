@@ -1619,6 +1619,17 @@ class ruination_map():
                     branch.add_room(room)
                     all_existing_rooms.add(room)
 
+        # If any stuck branch received new areas with hub potential, give it another chance
+        # This is critical for cases where a branch got stuck early but later received
+        # new areas when a character was obtained
+        if hasattr(self, 'stuck_branches'):
+            for i, branch in enumerate(self.branches):
+                if i in self.stuck_branches and len(branch_rooms[i]) > 0:
+                    if branch.has_a_hub():
+                        if self.verbose:
+                            print(f'\tUnsticking branch {i} - received new areas with hub potential')
+                        self.stuck_branches.discard(i)
+
     def apply_key(self, key):
         # Apply a key in all branches
         self.keychain.add(key)
@@ -1817,7 +1828,7 @@ class ruination_map():
         # Build out branches, always starting with the least connected
         self.RewardsObtained = [0, 0]
         self.LockedRewards = dict()
-        stuck_branches = set()  # Track branches that can't progress
+        self.stuck_branches = set()  # Track branches that can't progress (instance var for access in distribute_areas)
         max_retries_per_branch = 3  # Retry before declaring stuck
 
         # Calculate which characters to exclude from selection (non-planned characters)
@@ -1847,8 +1858,8 @@ class ruination_map():
             # Pick a branch that is not all dead ends.  Requires at least one true hub room
             branch_is_viable = [b.has_a_hub() for b in self.branches]
             if self.verbose:
-                print('Branch viability:', branch_is_viable, 'Stuck:', stuck_branches)
-            viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in stuck_branches]
+                print('Branch viability:', branch_is_viable, 'Stuck:', self.stuck_branches)
+            viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in self.stuck_branches]
             if len(viable_branches) > 0:
                 branch_id = random.choice(viable_branches)
                 branch = self.branches[branch_id]
@@ -1859,7 +1870,7 @@ class ruination_map():
                     # Collect diagnostic information
                     diag = self._collect_mapping_diagnostics(
                         "No branches have remaining checks",
-                        stuck_branches=stuck_branches,
+                        stuck_branches=self.stuck_branches,
                         branch_is_viable=branch_is_viable
                     )
                     raise RuinationMappingError(diag)
@@ -1907,7 +1918,7 @@ class ruination_map():
                                     if self.verbose:
                                         print(f'\tAdded new check: {reward_id}')
 
-                    stuck_branches.discard(branch_id)  # Give it another chance
+                    self.stuck_branches.discard(branch_id)  # Give it another chance
                 elif len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
                     # Fallback to EXTRA areas if no reserve areas left
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
@@ -1923,12 +1934,12 @@ class ruination_map():
                                 print(f'\tSkipping room {room} - already exists')
                             continue
                         branch.add_room(room)
-                    stuck_branches.discard(branch_id)
+                    self.stuck_branches.discard(branch_id)
                 else:
                     # Collect diagnostic information
                     diag = self._collect_mapping_diagnostics(
                         "No reserve areas available to unstick branches",
-                        stuck_branches=stuck_branches,
+                        stuck_branches=self.stuck_branches,
                         branch_is_viable=branch_is_viable,
                         branch_id=branch_id
                     )
@@ -1977,7 +1988,7 @@ class ruination_map():
                     if retries >= max_retries_per_branch:
                         if self.verbose:
                             print(f'Branch {branch_id} is stuck after {retries} retries')
-                        stuck_branches.add(branch_id)
+                        self.stuck_branches.add(branch_id)
                         break
                     else:
                         if self.verbose:
@@ -2015,7 +2026,7 @@ class ruination_map():
             ### Process reward & restart loop - only if we actually found a reward
             if found_reward and rewards:
                 self.process_rewards(rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
-            elif branch_id in stuck_branches:
+            elif branch_id in self.stuck_branches:
                 if self.verbose:
                     print(f'Skipping reward processing for stuck branch {branch_id}')
 
@@ -2025,7 +2036,7 @@ class ruination_map():
         if self.RewardsObtained[0] < len(self.planned_characters):
             diag = self._collect_mapping_diagnostics(
                 f"Exited main loop with insufficient characters: obtained {self.RewardsObtained[0]}, needed {len(self.planned_characters)}",
-                stuck_branches=stuck_branches,
+                stuck_branches=self.stuck_branches,
                 branch_is_viable=[b.has_a_hub() for b in self.branches]
             )
             raise RuinationMappingError(diag)
@@ -2033,7 +2044,7 @@ class ruination_map():
         if self.RewardsObtained[1] < self.Requested[1]:
             diag = self._collect_mapping_diagnostics(
                 f"Exited main loop with insufficient espers: obtained {self.RewardsObtained[1]}, needed {self.Requested[1]}",
-                stuck_branches=stuck_branches,
+                stuck_branches=self.stuck_branches,
                 branch_is_viable=[b.has_a_hub() for b in self.branches]
             )
             raise RuinationMappingError(diag)
