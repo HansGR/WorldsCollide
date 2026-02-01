@@ -4,6 +4,74 @@ This file contains useful reference information that has been moved from the Top
 
 ---
 
+## Ruination Mode - Mapping Algorithm Analysis
+
+### Overview
+
+The ruination mapping algorithm in `event/ruination.py` constructs a procedurally generated dungeon with **3 branches** from a central hub (Narshe school). Each branch terminates at a "terminus" room providing access to Kefka's Tower.
+
+### Algorithm Phases
+
+1. **Pre-Planning** (`pre_plan_character_acquisition`): Determines which characters will be obtained and ensures sufficient reward capacity before generation begins.
+
+2. **Initialization** (`__init__`): Creates 3 hub rooms, assigns termini, distributes starting party's areas to branches.
+
+3. **Main Generation Loop** (`generate_map_with_characters`): Iteratively extends branches via `extend_branch_path()`, processes rewards, distributes new areas when characters are obtained.
+
+4. **Finalization** (`finalize_map`): Closes all remaining connections in 6 steps:
+   - Step 1: Balance traps vs pits
+   - Step 2: Connect downstream nodes to upstream
+   - Step 3: Connect remaining traps to pits
+   - Step 4: Connect the terminus
+   - Step 5: Pair excess hub doors
+   - Step 6: Connect dead ends to remaining doors
+
+### Stuck Branch Conditions
+
+A branch becomes **stuck** when:
+
+1. **No hub rooms**: Branch has no rooms with 3+ doors+traps (detected by `has_a_hub()`)
+2. **extend_branch_path() fails 3 times**: Returns `(None, None)` when:
+   - No exits available from active room + downstream
+   - All exits fail to find matching entrances (no available doors/pits)
+3. **No recovery possible**: Both reserve areas (from unplanned characters) AND EXTRA areas are exhausted
+
+### Recovery Mechanisms
+
+1. **Retry logic**: Up to 3 retries per branch before marking as stuck
+2. **Reserve areas**: Areas from `reserve_characters` can be added to provide more hub rooms
+3. **EXTRA areas**: Fallback areas (like ImperialCastle) that can be added to any branch
+
+### Failure Modes (Now Raise Exceptions)
+
+- `RuinationMappingError`: Raised when:
+  - No branches have remaining checks
+  - No reserve areas available to unstick branches
+  - Insufficient characters/espers obtained after main loop
+  - `finalize_map` fails on any branch
+  - Unconnected exits remain after finalization
+
+- `RuntimeError` in `finalize_map`:
+  - Traps remaining with no pits (step 3)
+  - Max iterations exceeded (step 6 iteration loop)
+
+### Key Data Structures
+
+- **Room elements**: doors (0-1999, 4000-5999), traps (2000-2999), pits (3000-3999, 6000-7999), keys (strings), locks (dict)
+- **`stuck_branches`**: Set tracking branches that can't progress
+- **`branch.all_rooms_added`**: Tracks rooms including those merged via loop compression
+- **`protected`**: Set of elements from forced connections that shouldn't be used for random connections
+
+### Diagnostic Method
+
+`_collect_mapping_diagnostics()` provides detailed state dump when failures occur:
+- Rewards state (requested/obtained/available)
+- Per-branch state (active room, terminus, hub status, check rooms, dead ends, element counts)
+- Areas state (used areas, keychain, locked rewards)
+- Troubleshooting hints
+
+---
+
 ## Ruination Mode - Conditional Area Checks
 
 After `ruin_map.generate_map_with_characters()` is called, `ruin_map.AreasUsed` contains all mapped areas as a dict of `{'AreaName': branch_id}`.

@@ -4,6 +4,16 @@ from data.rooms import room_data, ruination_dont_force, shared_exits
 from data.walks import *
 import random
 
+
+class RuinationMappingError(Exception):
+    """Raised when ruination map generation fails in an unrecoverable way.
+
+    This exception indicates a bug or edge case that needs investigation.
+    The message contains diagnostic information for troubleshooting.
+    """
+    pass
+
+
 ESPER_GATE_MAPID = 0x0da
 NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
@@ -700,10 +710,12 @@ class RuinationBranch(Network):
                 # Re-collect from entire network - keys applied during connect() may unlock new traps
                 remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
 
-            # If we still have traps but no pits, we'll need to restart and find more rooms
+            # If we still have traps but no pits, this is an unrecoverable state
             if len(remaining_traps) > 0:
-                if self.verbose:
-                    print(f'(3) WARNING: {len(remaining_traps)} traps remaining with no pits')
+                raise RuntimeError(
+                    f"finalize_map step 3: {len(remaining_traps)} traps remaining with no pits to connect. "
+                    f"remaining_traps={remaining_traps}. This indicates insufficient pit entrances in the branch."
+                )
 
             # (4) The terminus is currently always a dead end room.  Connect it.
             # However, the terminus may have been merged into the hub through loop compression.
@@ -860,7 +872,14 @@ class RuinationBranch(Network):
                 print('Restarting finalization from step 1...\n')
 
         if finalize_iteration >= max_finalize_iterations:
-            print(f'WARNING: Hit max iterations ({max_finalize_iterations}) in finalize_map')
+            # Collect remaining element info for diagnostics
+            remaining_traps, remaining_pits, remaining_doors = self.collect_network_traps_and_pits(include_doors=True)
+            raise RuntimeError(
+                f"finalize_map hit max iterations ({max_finalize_iterations}). "
+                f"Remaining elements after {finalize_iteration} iterations: "
+                f"{len(remaining_doors)} doors, {len(remaining_traps)} traps, {len(remaining_pits)} pits. "
+                f"This suggests keys are continuously unlocking new elements in a loop."
+            )
 
         if self.verbose:
             print('... closing branch complete!')
@@ -1713,6 +1732,80 @@ class ruination_map():
 
         return non_veldt_shops
 
+    def _collect_mapping_diagnostics(self, reason, stuck_branches=None, branch_is_viable=None, branch_id=None):
+        """Collect detailed diagnostic information when mapping fails.
+
+        Returns a formatted string with all relevant state for troubleshooting.
+        """
+        lines = [
+            f"\n{'='*60}",
+            f"RUINATION MAPPING FAILURE: {reason}",
+            f"{'='*60}",
+            "",
+            "=== Rewards State ===",
+            f"  Requested: {self.Requested[0]} characters, {self.Requested[1]} espers",
+            f"  Obtained:  {self.RewardsObtained[0]} characters, {self.RewardsObtained[1]} espers",
+            f"  Available: {self.RewardsAvailable[0]} character slots, {self.RewardsAvailable[1]} esper slots",
+            f"  Planned characters: {self.planned_characters}",
+            f"  Reserve characters: {self.reserve_characters}",
+            f"  Dead checks allowed: {self.dead_checks_allowed}",
+            "",
+            "=== Branch State ===",
+        ]
+
+        if stuck_branches is not None:
+            lines.append(f"  Stuck branches: {stuck_branches}")
+        if branch_is_viable is not None:
+            lines.append(f"  Branch viability: {branch_is_viable}")
+        if branch_id is not None:
+            lines.append(f"  Current branch_id: {branch_id}")
+
+        lines.append("")
+
+        for i, branch in enumerate(self.branches):
+            lines.append(f"  Branch {i}:")
+            lines.append(f"    Active room: {branch.active}")
+            lines.append(f"    Terminus: {branch.terminus}")
+            lines.append(f"    Has hub: {branch.has_a_hub()}")
+            lines.append(f"    Check rooms: {branch.check_rooms}")
+            lines.append(f"    Dead ends: {branch.dead_ends}")
+            lines.append(f"    Nodes in network: {len(branch.net.nodes)}")
+            lines.append(f"    Rooms added (incl. merged): {len(branch.all_rooms_added)}")
+            lines.append(f"    Branch checks: {self.branch_checks[i]}")
+            lines.append(f"    Keychain: {branch.keychain}")
+
+            # Count available elements
+            total_doors = sum(len(branch.rooms.get_room(n).doors) for n in branch.net.nodes if branch.rooms.get_room(n))
+            total_traps = sum(len(branch.rooms.get_room(n).traps) for n in branch.net.nodes if branch.rooms.get_room(n))
+            total_pits = sum(len(branch.rooms.get_room(n).pits) for n in branch.net.nodes if branch.rooms.get_room(n))
+            lines.append(f"    Unconnected elements: {total_doors} doors, {total_traps} traps, {total_pits} pits")
+            lines.append("")
+
+        lines.append("=== Areas State ===")
+        lines.append(f"  Areas used: {dict(self.AreasUsed)}")
+        lines.append(f"  Global keychain: {self.keychain}")
+        lines.append(f"  Locked rewards waiting: {dict(self.LockedRewards)}")
+        lines.append("")
+
+        # Show available reserve areas
+        reserve_areas = self.get_reserve_area_rooms()
+        lines.append(f"  Reserve areas available: {len(reserve_areas)}")
+        for area_name, rooms in reserve_areas[:5]:  # Show first 5
+            lines.append(f"    {area_name}: {len(rooms)} rooms")
+
+        lines.append("")
+        lines.append("=== Troubleshooting Hints ===")
+        if stuck_branches and len(stuck_branches) == 3:
+            lines.append("  - All 3 branches stuck: likely insufficient hub rooms in initial area distribution")
+        if self.RewardsAvailable[0] == 0 and self.RewardsObtained[0] < len(self.planned_characters):
+            lines.append("  - No character slots remaining but characters still needed")
+        if not reserve_areas:
+            lines.append("  - No reserve areas: all character areas already used")
+
+        lines.append(f"{'='*60}")
+
+        return "\n".join(lines)
+
     def generate_map_with_characters(self, characters, espers, items):
         """Generate the ruination mode dungeon map and assign character/esper/item rewards.
 
@@ -1763,8 +1856,13 @@ class ruination_map():
                 # All branches with checks are stuck or non-viable - try to unstick one
                 checkable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0]
                 if len(checkable_branches) == 0:
-                    print("ERROR: No branches have remaining checks!")
-                    break
+                    # Collect diagnostic information
+                    diag = self._collect_mapping_diagnostics(
+                        "No branches have remaining checks",
+                        stuck_branches=stuck_branches,
+                        branch_is_viable=branch_is_viable
+                    )
+                    raise RuinationMappingError(diag)
 
                 # Try adding rooms from reserve character areas to 'loosen up' the branch
                 branch_id = checkable_branches[0]  # Pick first branch with checks
@@ -1827,8 +1925,14 @@ class ruination_map():
                         branch.add_room(room)
                     stuck_branches.discard(branch_id)
                 else:
-                    print("ERROR: No reserve areas available to unstick branches!")
-                    break
+                    # Collect diagnostic information
+                    diag = self._collect_mapping_diagnostics(
+                        "No reserve areas available to unstick branches",
+                        stuck_branches=stuck_branches,
+                        branch_is_viable=branch_is_viable,
+                        branch_id=branch_id
+                    )
+                    raise RuinationMappingError(diag)
 
             # Update lists of dead ends
             for de in list(branch.dead_ends):  # Use list() to avoid modifying during iteration
@@ -1917,9 +2021,68 @@ class ruination_map():
 
             # If not in the hub room, return to the hub room?
 
+        # Validate that we actually obtained enough rewards before finalizing
+        if self.RewardsObtained[0] < len(self.planned_characters):
+            diag = self._collect_mapping_diagnostics(
+                f"Exited main loop with insufficient characters: obtained {self.RewardsObtained[0]}, needed {len(self.planned_characters)}",
+                stuck_branches=stuck_branches,
+                branch_is_viable=[b.has_a_hub() for b in self.branches]
+            )
+            raise RuinationMappingError(diag)
+
+        if self.RewardsObtained[1] < self.Requested[1]:
+            diag = self._collect_mapping_diagnostics(
+                f"Exited main loop with insufficient espers: obtained {self.RewardsObtained[1]}, needed {self.Requested[1]}",
+                stuck_branches=stuck_branches,
+                branch_is_viable=[b.has_a_hub() for b in self.branches]
+            )
+            raise RuinationMappingError(diag)
+
         # After satisfying conditions, fully connect map
-        for branch in self.branches:
-            branch.finalize_map()
+        for branch_id, branch in enumerate(self.branches):
+            try:
+                branch.finalize_map()
+            except Exception as e:
+                diag = self._collect_mapping_diagnostics(
+                    f"finalize_map failed on branch {branch_id}: {str(e)}",
+                    branch_id=branch_id
+                )
+                raise RuinationMappingError(diag) from e
+
+        # Post-finalization validation: ensure hub room has no unconnected exits
+        # (It's OK if other rooms are unconnected - they just won't be accessible)
+        for branch_id, branch in enumerate(self.branches):
+            # Find the hub room for this branch
+            hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub = branch.rooms.get_room(hub_id)
+
+            # Check hub's unconnected exits (doors and traps only - pits are entrances)
+            unconnected_doors = [d for d in hub.doors if d not in branch.protected]
+            unconnected_traps = [t for t in hub.traps if t not in branch.protected]
+
+            if unconnected_doors or unconnected_traps:
+                diag = self._collect_mapping_diagnostics(
+                    f"Branch {branch_id} hub room has unconnected exits after finalize_map: "
+                    f"{len(unconnected_doors)} doors, {len(unconnected_traps)} traps. "
+                    f"doors={unconnected_doors}, traps={unconnected_traps}",
+                    branch_id=branch_id
+                )
+                raise RuinationMappingError(diag)
+
+            # Verify terminus was merged into hub (required for Kefka's Tower access)
+            # By the end of finalize_map, all connected rooms should be merged into
+            # the hub compound room via loop compression. If terminus is not in the
+            # hub ID string, something went wrong with the finalization.
+            terminus_id = branch.terminus
+            terminus_merged = terminus_id in str(hub_id)
+
+            if not terminus_merged:
+                diag = self._collect_mapping_diagnostics(
+                    f"Branch {branch_id} terminus '{terminus_id}' was not merged into hub '{hub_id}'. "
+                    f"This indicates a bug in finalize_map - terminus should always be merged.",
+                    branch_id=branch_id
+                )
+                raise RuinationMappingError(diag)
 
         # Wrap up: create & export a total map
         map = [[], []]
