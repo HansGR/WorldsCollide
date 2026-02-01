@@ -14,6 +14,65 @@ class RuinationMappingError(Exception):
     pass
 
 
+# Stuck reason constants - indicate WHY a branch cannot make progress
+class StuckReason:
+    """Reasons why a branch may be stuck and what connector types can fix it."""
+    NONE = 'none'                    # Not stuck
+    NO_EXITS = 'no_exits'            # No exits available at all
+    NO_SAFE_EXITS = 'no_safe_exits'  # All exits filtered (would strand pits)
+    NEED_PIDO = 'need_pido'          # Need pit-in, door-out room to receive trap
+    NEED_PITS = 'need_pits'          # Have traps but no pits to receive them
+    NEED_DOORS = 'need_doors'        # Have doors but no door entrances available
+    NO_HUB = 'no_hub'                # No hub rooms available
+
+
+def _room_has_pido_potential(room):
+    """Check if a room can act as a PIDO (pit-in, door-out) connector.
+
+    A PIDO room has at least one pit (to receive a trap connection) AND
+    at least one door (to connect back upstream).
+    """
+    return len(room.pits) > 0 and len(room.doors) > 0
+
+
+def _room_has_hub_potential(room):
+    """Check if a room has hub potential (3+ doors+traps)."""
+    return (len(room.doors) + len(room.traps)) >= 3
+
+
+def _analyze_area_connectors(area_name, rooms_collection):
+    """Analyze an area's rooms for connector potential.
+
+    Returns dict with:
+        - has_pido: True if area has any PIDO rooms
+        - has_hub: True if area has any hub rooms
+        - pido_count: Number of PIDO rooms
+        - hub_count: Number of hub rooms
+    """
+    if area_name not in RUIN_ROOM_SETS:
+        return {'has_pido': False, 'has_hub': False, 'pido_count': 0, 'hub_count': 0}
+
+    room_ids = RUIN_ROOM_SETS[area_name]
+    pido_count = 0
+    hub_count = 0
+
+    for room_id in room_ids:
+        room = rooms_collection.get_room(room_id)
+        if room is None:
+            continue
+        if _room_has_pido_potential(room):
+            pido_count += 1
+        if _room_has_hub_potential(room):
+            hub_count += 1
+
+    return {
+        'has_pido': pido_count > 0,
+        'has_hub': hub_count > 0,
+        'pido_count': pido_count,
+        'hub_count': hub_count
+    }
+
+
 ESPER_GATE_MAPID = 0x0da
 NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
@@ -239,6 +298,8 @@ class RuinationBranch(Network):
         # Track ALL rooms ever added, including those later merged into compound rooms.
         # This prevents re-adding a room that was already merged (and removed from net.nodes).
         self.all_rooms_added = set(rooms)
+        # Track why this branch got stuck (if it did) - used for smart area distribution
+        self.last_stuck_reason = StuckReason.NONE
         self.classify_rooms(rooms)
 
     def add_room(self, room_id):
@@ -976,9 +1037,16 @@ class RuinationBranch(Network):
             # No exits available
             if self.verbose:
                 print('\tNo exits available!')
+            self.last_stuck_reason = StuckReason.NO_EXITS
             return None, None
 
         # (5) Try each exit type in order
+        # Track stuck reason for diagnostics
+        all_exits_filtered = False
+        had_trap_exits = have_traps
+        no_pits_for_traps = False
+        no_doors_for_doors = False
+
         for this_type in exit_type_order:
             if len(available_exits[this_type]) == 0:
                 continue
@@ -1002,6 +1070,9 @@ class RuinationBranch(Network):
             if len(safe_exits) == 0:
                 if self.verbose:
                     print(f'\t\tNo safe {["door", "trap"][this_type]} exits available')
+                # Track that all exits of this type were filtered (would strand pits)
+                if len(available_exits[this_type]) > 0:
+                    all_exits_filtered = True
                 continue
 
             this_exit = random.choice(safe_exits)
@@ -1105,15 +1176,35 @@ class RuinationBranch(Network):
                                 f"Element-to-room indexing error: door {this_conn} not found in index. "
                                 f"Found in room: {found_in_room}. See diagnostic output above."
                             )
+                self.last_stuck_reason = StuckReason.NONE  # Successfully found a connection
                 return this_exit, this_conn
             else:
                 if self.verbose:
                     type_name = 'trap' if this_type == 1 else 'door'
                     print(f'\t\tNo entrances found for {type_name}, trying alternate type...')
+                # Track what type of entrance was missing
+                if this_type == 1:  # trap - needed pits
+                    no_pits_for_traps = True
+                else:  # door - needed doors
+                    no_doors_for_doors = True
 
-        # (7) All strategies exhausted
+        # (7) All strategies exhausted - determine stuck reason
+        if all_exits_filtered:
+            # All exits were filtered because they would strand pits
+            # Need a PIDO (pit-in, door-out) room to receive the trap AND connect back
+            self.last_stuck_reason = StuckReason.NEED_PIDO
+        elif had_trap_exits and no_pits_for_traps:
+            # Had trap exits but no pits to receive them
+            self.last_stuck_reason = StuckReason.NEED_PIDO
+        elif no_doors_for_doors:
+            # Had door exits but no door entrances available
+            self.last_stuck_reason = StuckReason.NEED_DOORS
+        else:
+            # Generic failure
+            self.last_stuck_reason = StuckReason.NO_SAFE_EXITS
+
         if self.verbose:
-            print('\tAll connection strategies exhausted. Branch extension failed.')
+            print(f'\tAll connection strategies exhausted. Branch extension failed. Reason: {self.last_stuck_reason}')
         return None, None
 
 
@@ -1526,6 +1617,47 @@ class ruination_map():
         # Make sure we don't double-add areas
         areas = [a for a in areas if a not in self.AreasUsed.keys()]
 
+        # PRIORITY DISTRIBUTION: If any branches are stuck, try to send them areas
+        # that have the right connector types to unstick them
+        if hasattr(self, 'stuck_branches') and len(self.stuck_branches) > 0:
+            # Analyze each area's connector potential
+            area_analysis = {}
+            for area in areas:
+                area_analysis[area] = _analyze_area_connectors(area, self.rooms)
+
+            # For each stuck branch, try to find and assign a helpful area
+            remaining_areas = list(areas)
+            for branch_id, stuck_reason in list(self.stuck_branches.items()):
+                if stuck_reason == StuckReason.NEED_PIDO:
+                    # Find an area with PIDO rooms
+                    for area in remaining_areas:
+                        forced_idx = _check_forced_same_branch(area)
+                        if forced_idx is not False and forced_idx != branch_id:
+                            continue  # Can't assign to this branch
+                        if area_analysis[area]['has_pido']:
+                            if self.verbose:
+                                print(f'\tPriority: Assigning {area} to stuck branch {branch_id} (has PIDO rooms)')
+                            branch_areas[branch_id].add(area)
+                            self.AreasUsed[area] = branch_id
+                            remaining_areas.remove(area)
+                            break
+                elif stuck_reason == StuckReason.NO_HUB:
+                    # Find an area with hub rooms
+                    for area in remaining_areas:
+                        forced_idx = _check_forced_same_branch(area)
+                        if forced_idx is not False and forced_idx != branch_id:
+                            continue  # Can't assign to this branch
+                        if area_analysis[area]['has_hub']:
+                            if self.verbose:
+                                print(f'\tPriority: Assigning {area} to stuck branch {branch_id} (has hub rooms)')
+                            branch_areas[branch_id].add(area)
+                            self.AreasUsed[area] = branch_id
+                            remaining_areas.remove(area)
+                            break
+
+            # Update areas list to only include remaining unassigned areas
+            areas = remaining_areas
+
         if method == 'random':
             for area in areas:
                 this_index = _check_forced_same_branch(area)
@@ -1618,6 +1750,44 @@ class ruination_map():
                 if room not in all_existing_rooms:
                     branch.add_room(room)
                     all_existing_rooms.add(room)
+
+        # If any stuck branch received new areas that could help unstick it, give it another chance
+        # This is critical for cases where a branch got stuck early but later received
+        # new areas when a character was obtained
+        if hasattr(self, 'stuck_branches'):
+            for i, branch in enumerate(self.branches):
+                if i in self.stuck_branches and len(branch_rooms[i]) > 0:
+                    stuck_reason = self.stuck_branches[i]
+                    should_unstick = False
+
+                    # Check if new areas can help based on stuck reason
+                    if stuck_reason == StuckReason.NEED_PIDO:
+                        # Branch needs a PIDO room - check if any new room has pits AND doors
+                        for room_id in branch_rooms[i]:
+                            room = self.rooms.get_room(room_id)
+                            if room and _room_has_pido_potential(room):
+                                if self.verbose:
+                                    print(f'\tFound PIDO room {room_id} for stuck branch {i}')
+                                should_unstick = True
+                                break
+                    elif stuck_reason == StuckReason.NO_HUB:
+                        # Branch needs a hub room - check if any new room is a hub
+                        for room_id in branch_rooms[i]:
+                            room = self.rooms.get_room(room_id)
+                            if room and _room_has_hub_potential(room):
+                                if self.verbose:
+                                    print(f'\tFound hub room {room_id} for stuck branch {i}')
+                                should_unstick = True
+                                break
+                    else:
+                        # For other reasons, check if branch now has a hub (general unsticking)
+                        if branch.has_a_hub():
+                            should_unstick = True
+
+                    if should_unstick:
+                        if self.verbose:
+                            print(f'\tUnsticking branch {i} - received helpful areas (was stuck: {stuck_reason})')
+                        self.stuck_branches.pop(i, None)
 
     def apply_key(self, key):
         # Apply a key in all branches
@@ -1754,7 +1924,7 @@ class ruination_map():
         ]
 
         if stuck_branches is not None:
-            lines.append(f"  Stuck branches: {stuck_branches}")
+            lines.append(f"  Stuck branches: {dict(stuck_branches) if isinstance(stuck_branches, dict) else stuck_branches}")
         if branch_is_viable is not None:
             lines.append(f"  Branch viability: {branch_is_viable}")
         if branch_id is not None:
@@ -1767,6 +1937,7 @@ class ruination_map():
             lines.append(f"    Active room: {branch.active}")
             lines.append(f"    Terminus: {branch.terminus}")
             lines.append(f"    Has hub: {branch.has_a_hub()}")
+            lines.append(f"    Last stuck reason: {branch.last_stuck_reason}")
             lines.append(f"    Check rooms: {branch.check_rooms}")
             lines.append(f"    Dead ends: {branch.dead_ends}")
             lines.append(f"    Nodes in network: {len(branch.net.nodes)}")
@@ -1817,7 +1988,9 @@ class ruination_map():
         # Build out branches, always starting with the least connected
         self.RewardsObtained = [0, 0]
         self.LockedRewards = dict()
-        stuck_branches = set()  # Track branches that can't progress
+        # Track stuck branches and WHY they're stuck (branch_id -> StuckReason)
+        # This allows distribute_areas to prioritize sending areas with the right connectors
+        self.stuck_branches = dict()
         max_retries_per_branch = 3  # Retry before declaring stuck
 
         # Calculate which characters to exclude from selection (non-planned characters)
@@ -1847,8 +2020,8 @@ class ruination_map():
             # Pick a branch that is not all dead ends.  Requires at least one true hub room
             branch_is_viable = [b.has_a_hub() for b in self.branches]
             if self.verbose:
-                print('Branch viability:', branch_is_viable, 'Stuck:', stuck_branches)
-            viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in stuck_branches]
+                print('Branch viability:', branch_is_viable, 'Stuck:', self.stuck_branches)
+            viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in self.stuck_branches]
             if len(viable_branches) > 0:
                 branch_id = random.choice(viable_branches)
                 branch = self.branches[branch_id]
@@ -1859,7 +2032,7 @@ class ruination_map():
                     # Collect diagnostic information
                     diag = self._collect_mapping_diagnostics(
                         "No branches have remaining checks",
-                        stuck_branches=stuck_branches,
+                        stuck_branches=self.stuck_branches,
                         branch_is_viable=branch_is_viable
                     )
                     raise RuinationMappingError(diag)
@@ -1907,7 +2080,7 @@ class ruination_map():
                                     if self.verbose:
                                         print(f'\tAdded new check: {reward_id}')
 
-                    stuck_branches.discard(branch_id)  # Give it another chance
+                    self.stuck_branches.pop(branch_id, None)  # Give it another chance
                 elif len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
                     # Fallback to EXTRA areas if no reserve areas left
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
@@ -1923,12 +2096,12 @@ class ruination_map():
                                 print(f'\tSkipping room {room} - already exists')
                             continue
                         branch.add_room(room)
-                    stuck_branches.discard(branch_id)
+                    self.stuck_branches.pop(branch_id, None)
                 else:
                     # Collect diagnostic information
                     diag = self._collect_mapping_diagnostics(
                         "No reserve areas available to unstick branches",
-                        stuck_branches=stuck_branches,
+                        stuck_branches=self.stuck_branches,
                         branch_is_viable=branch_is_viable,
                         branch_id=branch_id
                     )
@@ -1976,8 +2149,8 @@ class ruination_map():
                     retries += 1
                     if retries >= max_retries_per_branch:
                         if self.verbose:
-                            print(f'Branch {branch_id} is stuck after {retries} retries')
-                        stuck_branches.add(branch_id)
+                            print(f'Branch {branch_id} is stuck after {retries} retries. Reason: {branch.last_stuck_reason}')
+                        self.stuck_branches[branch_id] = branch.last_stuck_reason
                         break
                     else:
                         if self.verbose:
@@ -2015,7 +2188,7 @@ class ruination_map():
             ### Process reward & restart loop - only if we actually found a reward
             if found_reward and rewards:
                 self.process_rewards(rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
-            elif branch_id in stuck_branches:
+            elif branch_id in self.stuck_branches:
                 if self.verbose:
                     print(f'Skipping reward processing for stuck branch {branch_id}')
 
@@ -2025,7 +2198,7 @@ class ruination_map():
         if self.RewardsObtained[0] < len(self.planned_characters):
             diag = self._collect_mapping_diagnostics(
                 f"Exited main loop with insufficient characters: obtained {self.RewardsObtained[0]}, needed {len(self.planned_characters)}",
-                stuck_branches=stuck_branches,
+                stuck_branches=self.stuck_branches,
                 branch_is_viable=[b.has_a_hub() for b in self.branches]
             )
             raise RuinationMappingError(diag)
@@ -2033,7 +2206,7 @@ class ruination_map():
         if self.RewardsObtained[1] < self.Requested[1]:
             diag = self._collect_mapping_diagnostics(
                 f"Exited main loop with insufficient espers: obtained {self.RewardsObtained[1]}, needed {self.Requested[1]}",
-                stuck_branches=stuck_branches,
+                stuck_branches=self.stuck_branches,
                 branch_is_viable=[b.has_a_hub() for b in self.branches]
             )
             raise RuinationMappingError(diag)
