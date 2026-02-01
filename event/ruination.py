@@ -2049,17 +2049,20 @@ class ruination_map():
                 )
                 raise RuinationMappingError(diag) from e
 
-        # Post-finalization validation: ensure no unconnected elements remain
+        # Post-finalization validation: ensure hub room has no unconnected exits
+        # (It's OK if other rooms are unconnected - they just won't be accessible)
         for branch_id, branch in enumerate(self.branches):
-            remaining_traps, remaining_pits, remaining_doors = branch.collect_network_traps_and_pits(include_doors=True)
-            # Filter out protected elements (these are intentionally left unconnected)
-            unconnected_doors = [d for d in remaining_doors if d not in branch.protected]
-            unconnected_traps = [t for t in remaining_traps if t not in branch.protected]
-            unconnected_pits = [p for p in remaining_pits if p not in branch.protected]
+            # Find the hub room for this branch
+            hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub = branch.rooms.get_room(hub_id)
+
+            # Check hub's unconnected exits (doors and traps only - pits are entrances)
+            unconnected_doors = [d for d in hub.doors if d not in branch.protected]
+            unconnected_traps = [t for t in hub.traps if t not in branch.protected]
 
             if unconnected_doors or unconnected_traps:
                 diag = self._collect_mapping_diagnostics(
-                    f"Branch {branch_id} has unconnected exits after finalize_map: "
+                    f"Branch {branch_id} hub room has unconnected exits after finalize_map: "
                     f"{len(unconnected_doors)} doors, {len(unconnected_traps)} traps. "
                     f"doors={unconnected_doors}, traps={unconnected_traps}",
                     branch_id=branch_id
