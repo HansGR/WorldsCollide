@@ -544,55 +544,102 @@ class RuinationBranch(Network):
         Level 2 rooms are connected from level 1 rooms via trap->pit, etc.
 
         Also returns connection info: what trap/pit pairs connect each level.
+
+        Uses get_downstream_paths for efficient traversal.
         """
         levels = {hub_id: 0}
         connections = {}  # (from_room, to_room) -> (trap, pit)
 
         # Build a map of trap->pit connections from self.map[1]
         trap_to_pit = {}
+        pit_to_trap = {}
         for trap, pit in self.map[1]:
             trap_to_pit[trap] = pit
+            pit_to_trap[pit] = trap
 
-        # BFS through the network following trap->pit connections
-        visited = {hub_id}
-        current_level = [hub_id]
-        level_num = 0
+        # Use get_downstream_paths to get all paths from the hub
+        paths = self.get_downstream_paths(hub_id)
 
-        while current_level:
-            next_level = []
-            level_num += 1
+        for path in paths:
+            if not path:
+                continue
+            # Each path is a list of room_ids going downstream from hub
+            for i, room_id in enumerate(path):
+                if room_id not in levels:
+                    levels[room_id] = i + 1  # Level 1 for first room in path, etc.
 
-            for room_id in current_level:
-                room = self.rooms.get_room(room_id)
-                if room is None:
-                    continue
+                # Find the connection that got us here
+                if i == 0:
+                    prev_room = hub_id
+                else:
+                    prev_room = path[i - 1]
 
-                # Find all traps in this room (both connected and unconnected)
-                all_room_traps = list(room.traps)
-                # Also check the map for traps that were already connected from this room
-                for trap, pit in self.map[1]:
-                    trap_room = self.rooms.get_room_from_element(trap)
-                    # The trap might be in a compound room
-                    if trap_room is None:
-                        # Check if this trap was originally in this room
-                        if str(room_id) in str(trap):
-                            all_room_traps.append(trap)
-
-                # For each trap, find where it leads
-                for trap in all_room_traps:
-                    if trap in trap_to_pit:
-                        pit = trap_to_pit[trap]
-                        # Find the room containing this pit
-                        dest_room = self.rooms.get_room_from_element(pit)
-                        if dest_room is not None and dest_room.id not in visited:
-                            levels[dest_room.id] = level_num
-                            connections[(room_id, dest_room.id)] = (trap, pit)
-                            visited.add(dest_room.id)
-                            next_level.append(dest_room.id)
-
-            current_level = next_level
+                # Look for the trap->pit connection between prev_room and this room
+                if (prev_room, room_id) not in connections:
+                    # Find which trap/pit connected these rooms
+                    prev_room_obj = self.rooms.get_room(prev_room)
+                    curr_room_obj = self.rooms.get_room(room_id)
+                    if prev_room_obj and curr_room_obj:
+                        # Check all trap->pit connections to find the one linking these rooms
+                        for trap, pit in self.map[1]:
+                            trap_room = self.rooms.get_room_from_element(trap)
+                            pit_room = self.rooms.get_room_from_element(pit)
+                            # Handle compound rooms - check if IDs match or are substrings
+                            trap_matches = (trap_room and trap_room.id == prev_room) or \
+                                          (str(prev_room) in str(trap_room.id) if trap_room else False) or \
+                                          (str(trap_room.id) if trap_room else '') in str(prev_room)
+                            pit_matches = (pit_room and pit_room.id == room_id) or \
+                                         (str(room_id) in str(pit_room.id) if pit_room else False) or \
+                                         (str(pit_room.id) if pit_room else '') in str(room_id)
+                            if trap_matches and pit_matches:
+                                connections[(prev_room, room_id)] = (trap, pit)
+                                break
 
         return levels, connections
+
+    def get_local_upstream(self, room_id, hub_upstream):
+        """Get rooms that are upstream of a specific room but NOT upstream of the hub.
+
+        This identifies 'local upstream' created by forced connections in downstream rooms.
+        These are rooms reachable by going backwards from a downstream room that aren't
+        part of the hub's own upstream topology.
+
+        Returns a list of (room_id, connection_info) tuples.
+        """
+        local_upstream = []
+        room_upstream = self.get_upstream_nodes(room_id)
+
+        for up_room in room_upstream:
+            if up_room not in hub_upstream and 'ruin_hub_' not in str(up_room):
+                # This is local upstream - find how it connects
+                connection_info = None
+                # Check for trap->pit connections (this room's pit connects to up_room's trap)
+                for trap, pit in self.map[1]:
+                    pit_room = self.rooms.get_room_from_element(pit)
+                    trap_room = self.rooms.get_room_from_element(trap)
+                    if pit_room and trap_room:
+                        if (str(room_id) in str(pit_room.id) or pit_room.id == room_id) and \
+                           (str(up_room) in str(trap_room.id) or trap_room.id == up_room):
+                            connection_info = ('trap->pit', trap, pit)
+                            break
+                # Check for door connections
+                if connection_info is None:
+                    for door1, door2 in self.map[0]:
+                        d1_room = self.rooms.get_room_from_element(door1)
+                        d2_room = self.rooms.get_room_from_element(door2)
+                        if d1_room and d2_room:
+                            if (str(room_id) in str(d1_room.id) or d1_room.id == room_id) and \
+                               (str(up_room) in str(d2_room.id) or d2_room.id == up_room):
+                                connection_info = ('door', door1, door2)
+                                break
+                            elif (str(room_id) in str(d2_room.id) or d2_room.id == room_id) and \
+                                 (str(up_room) in str(d1_room.id) or d1_room.id == up_room):
+                                connection_info = ('door', door2, door1)
+                                break
+
+                local_upstream.append((up_room, connection_info))
+
+        return local_upstream
 
     def visualize_branch_topology(self):
         """Generate a text-based visualization of the branch's topology.
@@ -748,6 +795,21 @@ class RuinationBranch(Network):
                         lines.append(f"      Leads to:")
                         for dest, trap, pit in outgoing:
                             lines.append(f"        trap {trap} -> pit {pit} -> {dest}")
+
+                    # Show LOCAL upstream (rooms upstream of this room but NOT upstream of hub)
+                    # This captures forced connections that create escape routes back
+                    local_up = self.get_local_upstream(room_id, set(upstream))
+                    if local_up:
+                        lines.append(f"      LOCAL UPSTREAM (not hub's upstream):")
+                        for up_room, conn_info in local_up:
+                            if conn_info:
+                                conn_type, elem1, elem2 = conn_info
+                                if conn_type == 'trap->pit':
+                                    lines.append(f"        {up_room} via trap {elem1} -> pit {elem2}")
+                                else:
+                                    lines.append(f"        {up_room} via door {elem1} <-> {elem2}")
+                            else:
+                                lines.append(f"        {up_room} (connection unknown)")
         else:
             lines.append("  (No downstream rooms)")
 
@@ -763,6 +825,30 @@ class RuinationBranch(Network):
             for room_id in unconnected:
                 lines.append(format_room(room_id, "  "))
                 lines.append("")
+
+        # ===== PATH STRUCTURE (using Network methods) =====
+        lines.append("")
+        lines.append("-" * 70)
+        lines.append("PATH STRUCTURE (from get_downstream_paths / get_upstream_paths)")
+        lines.append("-" * 70)
+
+        # Show downstream paths from hub
+        down_paths = self.get_downstream_paths(hub_id)
+        lines.append(f"  Downstream paths from hub: {len(down_paths)}")
+        for i, path in enumerate(down_paths[:5]):  # Show first 5
+            path_str = " -> ".join(str(p)[:30] for p in path)
+            lines.append(f"    Path {i+1}: Hub -> {path_str}")
+        if len(down_paths) > 5:
+            lines.append(f"    ... and {len(down_paths) - 5} more paths")
+
+        # Show upstream paths to hub
+        up_paths = self.get_upstream_paths(hub_id)
+        lines.append(f"  Upstream paths to hub: {len(up_paths)}")
+        for i, path in enumerate(up_paths[:5]):  # Show first 5
+            path_str = " -> ".join(str(p)[:30] for p in path)
+            lines.append(f"    Path {i+1}: {path_str} -> Hub")
+        if len(up_paths) > 5:
+            lines.append(f"    ... and {len(up_paths) - 5} more paths")
 
         # ===== CONNECTION MAP SUMMARY =====
         lines.append("")
