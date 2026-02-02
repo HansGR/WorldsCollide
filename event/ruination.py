@@ -40,8 +40,12 @@ def _room_has_hub_potential(room):
     return (len(room.doors) + len(room.traps)) >= 3
 
 
-def _analyze_area_connectors(area_name, rooms_collection):
+def _analyze_area_connectors(area_name, rooms_collection=None):
     """Analyze an area's rooms for connector potential.
+
+    Args:
+        area_name: Name of the area to analyze
+        rooms_collection: Optional Rooms collection. If None, uses room_data directly.
 
     Returns dict with:
         - has_pido: True if area has any PIDO rooms
@@ -57,12 +61,28 @@ def _analyze_area_connectors(area_name, rooms_collection):
     hub_count = 0
 
     for room_id in room_ids:
-        room = rooms_collection.get_room(room_id)
-        if room is None:
-            continue
-        if _room_has_pido_potential(room):
+        # Get room data - either from collection or directly from room_data
+        if rooms_collection is not None:
+            room = rooms_collection.get_room(room_id)
+            if room is None:
+                continue
+            doors = room.doors
+            traps = room.traps
+            pits = room.pits
+        else:
+            # Use room_data directly
+            if room_id not in room_data:
+                continue
+            data = room_data[room_id]
+            doors = data[0] if len(data) > 0 else []
+            traps = data[1] if len(data) > 1 else []
+            pits = data[2] if len(data) > 2 else []
+
+        # Check PIDO potential (pit-in, door-out)
+        if len(pits) > 0 and len(doors) > 0:
             pido_count += 1
-        if _room_has_hub_potential(room):
+        # Check hub potential (3+ doors+traps)
+        if (len(doors) + len(traps)) >= 3:
             hub_count += 1
 
     return {
@@ -2446,7 +2466,7 @@ class ruination_map():
             # Analyze each area's connector potential
             area_analysis = {}
             for area in areas:
-                area_analysis[area] = _analyze_area_connectors(area, self.rooms)
+                area_analysis[area] = _analyze_area_connectors(area)
 
             # For each stuck branch, try to find and assign a helpful area
             remaining_areas = list(areas)
