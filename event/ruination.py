@@ -644,18 +644,17 @@ class RuinationBranch(Network):
     def visualize_branch_topology(self):
         """Generate a text-based visualization of the branch's topology.
 
-        Shows:
-        - Hub (Level 0) with its doors/traps/pits counts
-        - Upstream rooms (connected to hub via pits IN the hub)
-        - Downstream rooms organized by level with connections
-        - Unconnected rooms (not in hub, upstream, or downstream)
+        The branch has three regions:
+        - HUB: The central room (level 0), connected to Narshe school
+        - UPSTREAM: Rooms connected TO the hub via pits in the hub (forced connections only)
+        - DOWNSTREAM: Rooms the player reaches BY FALLING from hub via traps
 
         Returns a formatted string.
         """
         lines = []
         lines.append("")
         lines.append("=" * 70)
-        lines.append("BRANCH TOPOLOGY VISUALIZATION")
+        lines.append("BRANCH TOPOLOGY")
         lines.append("=" * 70)
 
         # Find the hub
@@ -674,157 +673,170 @@ class RuinationBranch(Network):
         # Get downstream levels
         levels, level_connections = self.get_downstream_levels(hub_id)
 
-        # Helper function to format room info (compact)
-        def format_room(room_id, indent="", show_elements=True):
+        # Helper to format room counts
+        def room_counts(room_id):
             room = self.rooms.get_room(room_id)
             if room is None:
-                return f"{indent}{room_id}: [NOT FOUND]"
+                return "?"
+            d = len([x for x in room.doors if x not in self.protected])
+            t = len([x for x in room.traps if x not in self.protected])
+            p = len([x for x in room.pits if x not in self.protected])
+            return f"{d}D/{t}T/{p}P"
 
-            doors = len([d for d in room.doors if d not in self.protected])
-            traps = len([t for t in room.traps if t not in self.protected])
-            pits = len([p for p in room.pits if p not in self.protected])
-            p_doors = len([d for d in room.doors if d in self.protected])
-            p_traps = len([t for t in room.traps if t in self.protected])
-            p_pits = len([p for p in room.pits if p in self.protected])
+        def short_name(room_id, max_len=35):
+            s = str(room_id)
+            return s[:max_len] + "..." if len(s) > max_len else s
 
-            # Truncate long room IDs
-            display_id = str(room_id)[:40] + ("..." if len(str(room_id)) > 40 else "")
-
-            # Flags
-            flags = []
-            if room_id in self.dead_ends:
-                flags.append("DE")
-            if room_id in self.check_rooms:
-                flags.append("CHK")
-            if room_id == self.terminus:
-                flags.append("TERM")
-            flag_str = f" [{','.join(flags)}]" if flags else ""
-
-            if show_elements:
-                # Compact: D=doors, T=traps, P=pits, (protected in parens)
-                elem_str = f"D:{doors}"
-                if p_doors:
-                    elem_str += f"(+{p_doors})"
-                elem_str += f" T:{traps}"
-                if p_traps:
-                    elem_str += f"(+{p_traps})"
-                elem_str += f" P:{pits}"
-                if p_pits:
-                    elem_str += f"(+{p_pits})"
-                return f"{indent}{display_id}{flag_str} | {elem_str}"
-            else:
-                return f"{indent}{display_id}{flag_str}"
-
-        # ===== HUB =====
+        # ===== LEGEND =====
         lines.append("")
-        lines.append(f"HUB: {format_room(hub_id)}")
+        lines.append("Format: room_name (doors/traps/pits free)")
+        lines.append("  * = check room (has reward),  ! = terminus")
+
+        # ===== HUB (Level 0) =====
+        lines.append("")
+        lines.append("-" * 70)
+        lines.append("LEVEL 0: HUB (player starts here, can always return)")
+        lines.append("-" * 70)
+        hub_marker = ""
+        if hub_id in self.check_rooms:
+            hub_marker += "*"
+        if hub_id == self.terminus:
+            hub_marker += "!"
+        lines.append(f"  {short_name(hub_id)} ({room_counts(hub_id)}){hub_marker}")
 
         # ===== UPSTREAM =====
         lines.append("")
-        lines.append(f"UPSTREAM ({len(upstream)} rooms) - via forced connections")
+        lines.append("-" * 70)
+        lines.append("UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)")
+        lines.append("-" * 70)
         if upstream:
             for room_id in upstream:
-                lines.append(f"  {format_room(room_id)}")
+                marker = ""
+                if room_id in self.check_rooms:
+                    marker += "*"
+                if room_id == self.terminus:
+                    marker += "!"
+                lines.append(f"  {short_name(room_id)} ({room_counts(room_id)}){marker}")
         else:
             lines.append("  (none)")
 
         # ===== DOWNSTREAM (by level) =====
         lines.append("")
-        lines.append(f"DOWNSTREAM ({len(downstream)} rooms) - via trap->pit")
+        lines.append("-" * 70)
+        lines.append("DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)")
+        lines.append("-" * 70)
         if downstream:
             max_level = max(levels.get(r, 0) for r in downstream) if downstream else 0
             for level in range(1, max_level + 1):
                 level_rooms = [r for r in downstream if levels.get(r, 0) == level]
                 if not level_rooms:
                     continue
-                lines.append(f"  Level {level}:")
+                lines.append(f"  LEVEL {level} (fell {level}x from hub):")
                 for room_id in level_rooms:
-                    # Find incoming connection
-                    entry = ""
+                    # Find how we got here
+                    entry_info = ""
                     for (from_room, to_room), (trap, pit) in level_connections.items():
                         if to_room == room_id:
-                            entry = f" <- {trap}->{pit}"
+                            from_name = short_name(from_room, 20)
+                            entry_info = f" <- fell from {from_name}"
                             break
-                    # Check for local upstream
+
+                    # Check for local upstream (escape routes not through hub)
                     local_up = self.get_local_upstream(room_id, set(upstream))
-                    local_str = f" [LOCAL_UP:{len(local_up)}]" if local_up else ""
-                    lines.append(f"    {format_room(room_id)}{entry}{local_str}")
+                    escape_info = ""
+                    if local_up:
+                        escape_info = f" [+{len(local_up)} escape route(s)]"
+
+                    marker = ""
+                    if room_id in self.check_rooms:
+                        marker += "*"
+                    if room_id == self.terminus:
+                        marker += "!"
+
+                    lines.append(f"    {short_name(room_id)} ({room_counts(room_id)}){marker}{entry_info}{escape_info}")
         else:
             lines.append("  (none)")
 
-        # ===== UNCONNECTED ROOMS (compact by classification) =====
+        # ===== UNCONNECTED ROOMS =====
         all_connected = set([hub_id]) | set(upstream) | set(downstream)
         unconnected = [n for n in self.net.nodes if n not in all_connected]
 
         if unconnected:
             lines.append("")
             lines.append("-" * 70)
-            lines.append(f"UNCONNECTED ({len(unconnected)} rooms)")
+            lines.append("UNCONNECTED: Rooms in network but not yet in topology")
             lines.append("-" * 70)
 
-            # Classify unconnected rooms
-            dead_ends = []      # 1 door only, no traps
-            connectors = []     # 2+ doors only, no traps/pits
-            trap_rooms = []     # has traps
-            pit_rooms = []      # has pits but no traps
-            hub_potential = []  # 3+ doors+traps
+            # CRITICAL: First show terminus and check rooms separately
+            unconnected_terminus = [r for r in unconnected if r == self.terminus]
+            unconnected_checks = [r for r in unconnected if r in self.check_rooms and r != self.terminus]
 
-            for room_id in unconnected:
-                room = self.rooms.get_room(room_id)
-                if room is None:
-                    continue
-                doors = len([d for d in room.doors if d not in self.protected])
-                traps = len([t for t in room.traps if t not in self.protected])
-                pits = len([p for p in room.pits if p not in self.protected])
+            if unconnected_terminus:
+                lines.append("  !! TERMINUS (must be connected!) !!:")
+                for room_id in unconnected_terminus:
+                    lines.append(f"    {short_name(room_id)} ({room_counts(room_id)})")
 
-                if doors + traps >= 3:
-                    hub_potential.append(room_id)
-                elif traps > 0:
-                    trap_rooms.append(room_id)
-                elif pits > 0 and doors > 0:
-                    pit_rooms.append(room_id)
-                elif doors == 1:
-                    dead_ends.append(room_id)
-                elif doors >= 2:
-                    connectors.append(room_id)
+            if unconnected_checks:
+                lines.append("  ** CHECK ROOMS (have rewards, should be connected) **:")
+                for room_id in unconnected_checks:
+                    lines.append(f"    {short_name(room_id)} ({room_counts(room_id)})")
 
-            def format_room_list(rooms, max_show=8):
-                if not rooms:
-                    return "(none)"
-                ids = [str(r)[:25] for r in rooms[:max_show]]
-                result = ", ".join(ids)
-                if len(rooms) > max_show:
-                    result += f", ... (+{len(rooms) - max_show} more)"
-                return result
+            # Classify the rest
+            other = [r for r in unconnected if r not in unconnected_terminus and r not in unconnected_checks]
+            if other:
+                dead_ends = []
+                connectors = []
+                trap_rooms = []
+                pit_rooms = []
+                hub_potential = []
 
-            if hub_potential:
-                lines.append(f"  HUB POTENTIAL (3+ doors+traps): {format_room_list(hub_potential)}")
-            if trap_rooms:
-                lines.append(f"  TRAP ROOMS (has traps): {format_room_list(trap_rooms)}")
-            if pit_rooms:
-                lines.append(f"  PIT+DOOR ROOMS: {format_room_list(pit_rooms)}")
-            if connectors:
-                lines.append(f"  CONNECTORS (2+ doors): {format_room_list(connectors)}")
-            if dead_ends:
-                lines.append(f"  DEAD ENDS (1 door): {format_room_list(dead_ends)}")
+                for room_id in other:
+                    room = self.rooms.get_room(room_id)
+                    if room is None:
+                        continue
+                    doors = len([d for d in room.doors if d not in self.protected])
+                    traps = len([t for t in room.traps if t not in self.protected])
+                    pits = len([p for p in room.pits if p not in self.protected])
 
-        # ===== PATH STRUCTURE =====
+                    if doors + traps >= 3:
+                        hub_potential.append(room_id)
+                    elif traps > 0:
+                        trap_rooms.append(room_id)
+                    elif pits > 0 and doors > 0:
+                        pit_rooms.append(room_id)
+                    elif doors == 1:
+                        dead_ends.append(room_id)
+                    elif doors >= 2:
+                        connectors.append(room_id)
+
+                def format_room_list(rooms, max_show=6):
+                    if not rooms:
+                        return ""
+                    ids = [short_name(r, 20) for r in rooms[:max_show]]
+                    result = ", ".join(ids)
+                    if len(rooms) > max_show:
+                        result += f", ... (+{len(rooms) - max_show})"
+                    return result
+
+                lines.append("  Other rooms:")
+                if hub_potential:
+                    lines.append(f"    Hub potential (3+ exits): {format_room_list(hub_potential)}")
+                if trap_rooms:
+                    lines.append(f"    Has traps: {format_room_list(trap_rooms)}")
+                if pit_rooms:
+                    lines.append(f"    Has pits+doors: {format_room_list(pit_rooms)}")
+                if connectors:
+                    lines.append(f"    Connectors (2+ doors): {format_room_list(connectors)}")
+                if dead_ends:
+                    lines.append(f"    Dead ends (1 door): {format_room_list(dead_ends)}")
+
+        # ===== SUMMARY =====
         lines.append("")
         lines.append("-" * 70)
-        lines.append("PATHS")
+        lines.append("SUMMARY")
         lines.append("-" * 70)
-        down_paths = self.get_downstream_paths(hub_id)
-        up_paths = self.get_upstream_paths(hub_id)
-        lines.append(f"  Downstream: {len(down_paths)} paths, Upstream: {len(up_paths)} paths")
-        for i, path in enumerate(down_paths[:3]):
-            path_str = " -> ".join(str(p)[:20] for p in path[:4])
-            if len(path) > 4:
-                path_str += f" ... (+{len(path)-4})"
-            lines.append(f"    Down {i+1}: Hub -> {path_str}")
-        if len(down_paths) > 3:
-            lines.append(f"    ... +{len(down_paths) - 3} more")
 
-        # ===== ELEMENT TOTALS =====
+        # Count totals
         total_doors = 0
         total_traps = 0
         total_pits = 0
@@ -835,15 +847,29 @@ class RuinationBranch(Network):
                 total_traps += len([t for t in room.traps if t not in self.protected])
                 total_pits += len([p for p in room.pits if p not in self.protected])
 
-        lines.append("")
-        lines.append(f"TOTALS: {total_doors} doors, {total_traps} traps, {total_pits} pits (free/unconnected)")
+        connected_count = 1 + len(upstream) + len(downstream)
+        lines.append(f"  Rooms: {len(self.net.nodes)} total, {connected_count} in topology, {len(unconnected)} unconnected")
+        lines.append(f"  Free exits: {total_doors} doors, {total_traps} traps, {total_pits} pits")
+        lines.append(f"  Connections: {len(self.map[0])} door-pairs, {len(self.map[1])} trap->pit")
+
+        # Warnings
         warnings = []
         if total_traps > total_pits:
-            warnings.append(f"traps > pits!")
+            warnings.append(f"traps ({total_traps}) > pits ({total_pits})")
         if total_doors % 2 == 1:
-            warnings.append(f"odd doors!")
+            warnings.append(f"odd doors ({total_doors})")
+        if unconnected:
+            unconnected_terminus = [r for r in unconnected if r == self.terminus]
+            unconnected_checks = [r for r in unconnected if r in self.check_rooms]
+            if unconnected_terminus:
+                warnings.append("TERMINUS not connected!")
+            if unconnected_checks:
+                warnings.append(f"{len(unconnected_checks)} check room(s) not connected!")
+
         if warnings:
-            lines.append(f"  WARNING: {', '.join(warnings)}")
+            lines.append("  WARNINGS:")
+            for w in warnings:
+                lines.append(f"    - {w}")
 
         lines.append("=" * 70)
         return "\n".join(lines)
