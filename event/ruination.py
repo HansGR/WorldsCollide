@@ -802,6 +802,11 @@ class RuinationBranch(Network):
         """Check if using this exit would strand pits (leave them unreachable).
 
         Returns True if using this exit would leave the room with pits but no exits.
+
+        NOTE: This method is kept for debugging but is no longer used in extend_branch_path.
+        The "would strand" check was too restrictive because it only evaluated the source
+        room, not the destination. The correct approach (now implemented) is to check each
+        potential CONNECTION to see if the destination provides a valid continuation path.
         """
         doors = [d for d in room.doors if d not in self.protected]
         traps = [t for t in room.traps if t not in self.protected]
@@ -869,8 +874,11 @@ class RuinationBranch(Network):
         room_level = topology['room_levels'].get(exit_room_id, 0)
         exit_room = self.rooms.get_room(exit_room_id)
 
-        # Check if this exit would strand pits in its source room
-        exit_would_strand = self.would_strand_pits(trap_exit, exit_room)
+        # NOTE: We intentionally do NOT pre-filter exits based on whether the source room
+        # would be "stranded" (left with no exits). Instead, we check each potential
+        # CONNECTION to see if the destination provides a valid continuation path.
+        # A trap exit from a room with no other exits is still valid if the destination
+        # room has its own exits (e.g., connecting to a PITO room that has traps).
 
         # Count doors available in hub/upstream (for rule 2a)
         hub_upstream_doors, _ = self.count_exits_in_region(hub_and_upstream)
@@ -1859,35 +1867,29 @@ class RuinationBranch(Network):
             exit_type_order = ['traps', 'doors']
 
         # === STEP 4: Try each exit type ===
+        # For each exit, check validity by evaluating the CONNECTION, not just the source room.
+        # An exit is valid if the destination has exits (either its own, or via loop formation).
         for exit_type in exit_type_order:
             exits = available_exits[exit_type]
             if len(exits) == 0:
                 continue
 
-            # Filter exits that would strand pits (violate core rule)
-            safe_exits = []
-            would_strand_exits = []
-
+            # Collect all exits with their rooms
+            all_exits = []
             for exit_id in exits:
                 exit_room = self.rooms.get_room_from_element(exit_id)
                 if exit_room is None:
                     continue
-
-                if self.would_strand_pits(exit_id, exit_room):
-                    # This exit would strand pits - may be rescued by loop formation
-                    would_strand_exits.append((exit_id, exit_room.id))
-                    if self.verbose:
-                        print(f'\t\tExit {exit_id} would strand pits in {exit_room.id}')
-                else:
-                    safe_exits.append((exit_id, exit_room.id))
+                all_exits.append((exit_id, exit_room.id))
 
             if self.verbose:
-                print(f'\t{exit_type}: {len(safe_exits)} safe, {len(would_strand_exits)} would-strand')
+                print(f'\t{exit_type}: {len(all_exits)} exits to evaluate')
 
-            # Try safe exits first
-            random.shuffle(safe_exits)
-            for exit_id, exit_room_id in safe_exits:
-                # Find valid targets using location-aware rules
+            # Shuffle and try each exit
+            random.shuffle(all_exits)
+            for exit_id, exit_room_id in all_exits:
+                # Find valid targets - this method checks if each potential destination
+                # would leave the branch with exits (handles unconnected rooms, loops, etc.)
                 if exit_type == 'traps':
                     valid_targets = self.get_valid_pit_targets(exit_id, exit_room_id, topology)
                 else:
@@ -1904,64 +1906,6 @@ class RuinationBranch(Network):
                         print(f'\t\tSelected: {exit_id} --> {this_conn} (room {conn_room_id})')
                     self.last_stuck_reason = StuckReason.NONE
                     return exit_id, this_conn
-
-            # Try would-strand exits only if they can form loops
-            if exit_type == 'traps' and len(would_strand_exits) > 0:
-                # Would-strand trap exits can only connect to upstream pits (forming a loop)
-                upstream_pits = set()
-                for up_id in hub_and_upstream:
-                    up_room = self.rooms.get_room(up_id)
-                    if up_room:
-                        upstream_pits.update([p for p in up_room.pits if p not in self.protected])
-
-                # Also check local upstream of the exit room
-                for exit_id, exit_room_id in would_strand_exits:
-                    local_upstream = self.get_upstream_nodes(exit_room_id)
-                    for lu_id in local_upstream:
-                        lu_room = self.rooms.get_room(lu_id)
-                        if lu_room:
-                            upstream_pits.update([p for p in lu_room.pits if p not in self.protected])
-
-                if len(upstream_pits) > 0:
-                    if self.verbose:
-                        print(f'\t\tFound {len(upstream_pits)} upstream pits for would-strand exits')
-
-                    random.shuffle(would_strand_exits)
-                    for exit_id, exit_room_id in would_strand_exits:
-                        # Verify the loop would have exits after compression
-                        for pit_id in upstream_pits:
-                            pit_room = self.rooms.get_room_from_element(pit_id)
-                            if pit_room is None:
-                                continue
-
-                            # Check if loop compression would leave exits
-                            # Collect all rooms that would be in the loop
-                            loop_rooms = {exit_room_id}
-                            paths = self.get_upstream_paths(exit_room_id)
-                            for path in paths:
-                                for node in path:
-                                    loop_rooms.add(node)
-                                    if node == pit_room.id or pit_room.id in str(node) or str(pit_room.id) in str(node):
-                                        break
-                            loop_rooms.add(pit_room.id)
-
-                            # Count exits in all loop rooms
-                            loop_doors = 0
-                            loop_traps = 0
-                            for r_id in loop_rooms:
-                                r = self.rooms.get_room(r_id)
-                                if r:
-                                    loop_doors += len([d for d in r.doors if d not in self.protected])
-                                    loop_traps += len([t for t in r.traps if t not in self.protected])
-
-                            # Subtract the trap we're using
-                            loop_traps -= 1
-
-                            if loop_doors + loop_traps > 0:
-                                if self.verbose:
-                                    print(f'\t\tWould-strand: {exit_id} --> {pit_id} (forms loop with {loop_doors}D/{loop_traps}T exits)')
-                                self.last_stuck_reason = StuckReason.NONE
-                                return exit_id, pit_id
 
         # === STEP 5: All strategies exhausted ===
         self._diagnose_stuck_reason(available_exits, topology)
