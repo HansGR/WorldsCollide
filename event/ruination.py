@@ -886,29 +886,44 @@ class RuinationBranch(Network):
             # Check if loop compression would leave exits
             # After connecting trap->pit, the rooms from exit_room up to pit_room compress
             # Need to check if the compressed room has exits
-            path_rooms = [exit_room_id]
+            #
+            # Example: Level 2 has trap 2005, Level A has pit 3003
+            # If Level A -> Level 2 already exists (via 2007->3007),
+            # then connecting 2005->3003 creates loop: Level 2 -> Level A -> Level 2
+            # All rooms in the loop (Level 2, Level A) compress into one room.
+            # We need exits > 0 after compression.
+
+            # Collect all rooms that would be in the loop
+            # Start with exit_room, then add all rooms on paths to pit_room (including pit_room)
+            loop_rooms = {exit_room_id}
             paths = self.get_upstream_paths(exit_room_id)
+            found_pit_room = False
             for path in paths:
                 for node in path:
-                    if node == pit_room.id:
+                    loop_rooms.add(node)
+                    # Check if this node IS the pit_room or CONTAINS the pit_room (compound room)
+                    if node == pit_room.id or pit_room.id in str(node) or str(pit_room.id) in str(node):
+                        found_pit_room = True
                         break
-                    path_rooms.append(node)
-                    if pit_room.id in str(node):
-                        break
+                if found_pit_room:
+                    break
 
-            # Count exits in path that would compress (excluding the trap we're using)
-            path_doors = 0
-            path_traps = 0
-            for p_id in set(path_rooms):
-                p_room = self.rooms.get_room(p_id)
-                if p_room:
-                    path_doors += len([d for d in p_room.doors if d not in self.protected])
-                    path_traps += len([t for t in p_room.traps if t not in self.protected])
+            # Always include the pit_room itself (it must be in the loop)
+            loop_rooms.add(pit_room.id)
+
+            # Count exits in all loop rooms (excluding the trap we're using)
+            loop_doors = 0
+            loop_traps = 0
+            for r_id in loop_rooms:
+                r = self.rooms.get_room(r_id)
+                if r:
+                    loop_doors += len([d for d in r.doors if d not in self.protected])
+                    loop_traps += len([t for t in r.traps if t not in self.protected])
 
             # Subtract the trap we're using
-            path_traps -= 1
+            loop_traps -= 1
 
-            if path_doors + path_traps > 0:
+            if loop_doors + loop_traps > 0:
                 valid_pits.append(pit_id)
 
         # === Check unconnected rooms ===
@@ -1895,14 +1910,31 @@ class RuinationBranch(Network):
                                 continue
 
                             # Check if loop compression would leave exits
-                            # (simplified check - full validation in get_valid_pit_targets)
-                            exit_room = self.rooms.get_room(exit_room_id)
-                            pit_room_exits = len(pit_room.doors) + len(pit_room.traps)
-                            exit_room_exits = len(exit_room.doors) + len(exit_room.traps) - 1  # -1 for exit we're using
+                            # Collect all rooms that would be in the loop
+                            loop_rooms = {exit_room_id}
+                            paths = self.get_upstream_paths(exit_room_id)
+                            for path in paths:
+                                for node in path:
+                                    loop_rooms.add(node)
+                                    if node == pit_room.id or pit_room.id in str(node) or str(pit_room.id) in str(node):
+                                        break
+                            loop_rooms.add(pit_room.id)
 
-                            if pit_room_exits + exit_room_exits > 0:
+                            # Count exits in all loop rooms
+                            loop_doors = 0
+                            loop_traps = 0
+                            for r_id in loop_rooms:
+                                r = self.rooms.get_room(r_id)
+                                if r:
+                                    loop_doors += len([d for d in r.doors if d not in self.protected])
+                                    loop_traps += len([t for t in r.traps if t not in self.protected])
+
+                            # Subtract the trap we're using
+                            loop_traps -= 1
+
+                            if loop_doors + loop_traps > 0:
                                 if self.verbose:
-                                    print(f'\t\tWould-strand: {exit_id} --> {pit_id} (forms loop with exits)')
+                                    print(f'\t\tWould-strand: {exit_id} --> {pit_id} (forms loop with {loop_doors}D/{loop_traps}T exits)')
                                 self.last_stuck_reason = StuckReason.NONE
                                 return exit_id, pit_id
 
