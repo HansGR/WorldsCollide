@@ -813,7 +813,9 @@ class RuinationBranch(Network):
         elif exit_id in traps:
             remaining_exits = len(doors) + len(traps) - 1
         else:
-            remaining_exits = len(doors) + len(traps)
+            # remaining_exits = len(doors) + len(traps)
+            # error, all exits are either doors or traps.
+            raise Exception
 
         # Would strand if: remaining exits = 0 AND pits > 0
         return remaining_exits == 0 and len(pits) > 0
@@ -1808,14 +1810,17 @@ class RuinationBranch(Network):
             print(f'\tAvailable exits: {len(available_exits["doors"])} doors, {len(available_exits["traps"])} traps')
 
         # === STEP 3: Determine exit order based on location ===
-        # In hub/upstream: prefer doors (maintain connectivity)
-        # In downstream: prefer traps (extend the tree), but only if valid targets exist
-        if active_level <= 0:
-            # We're in hub or upstream - prefer doors to maintain 2-way connectivity
-            exit_type_order = ['doors', 'traps']
-        else:
-            # We're downstream - prefer traps to extend, but check targets first
-            exit_type_order = ['traps', 'doors']
+        # ## Original logic:
+        # # In hub/upstream: prefer doors (maintain connectivity)
+        # # In downstream: prefer traps (extend the tree), but only if valid targets exist
+        # if active_level <= 0:
+        #     # We're in hub or upstream - prefer doors to maintain 2-way connectivity
+        #     exit_type_order = ['doors', 'traps']
+        # else:
+        #     # We're downstream - prefer traps to extend, but check targets first
+        #     exit_type_order = ['traps', 'doors']
+        # ## New logic HGR 260202_1824: Always prefer traps
+        exit_type_order = ['traps', 'doors']
 
         # Check if we have matching targets before committing to an order
         # This prevents trying traps when there are no pits available
