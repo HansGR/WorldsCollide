@@ -866,12 +866,14 @@ class RuinationBranch(Network):
         1. Can connect to PITO room (kicks the can down the road)
         2a. If unconnected door in hub/upstream, can connect to PIDO room
         3. Can connect to upstream pit ONLY IF loop compression leaves exits
+        GLOBAL: Never make a connection that leaves the branch with zero exits
 
         Returns list of valid pit IDs.
         """
         valid_pits = []
         hub_and_upstream = topology['hub_and_upstream']
-        room_level = topology['room_levels'].get(exit_room_id, 0)
+        room_levels = topology['room_levels']
+        room_level = room_levels.get(exit_room_id, 0)
         exit_room = self.rooms.get_room(exit_room_id)
 
         # NOTE: We intentionally do NOT pre-filter exits based on whether the source room
@@ -879,6 +881,16 @@ class RuinationBranch(Network):
         # CONNECTION to see if the destination provides a valid continuation path.
         # A trap exit from a room with no other exits is still valid if the destination
         # room has its own exits (e.g., connecting to a PITO room that has traps).
+
+        # === GLOBAL PROTECTION: Count total exits in connected branch ===
+        # Using this trap consumes 1 exit. We must ensure the branch still has exits after.
+        connected_rooms = set(room_levels.keys())
+        current_doors, current_traps = self.count_exits_in_region(connected_rooms)
+        current_total_exits = current_doors + current_traps
+        # After using this trap: current_total_exits - 1
+        # For the connection to be valid, we need: (current_total_exits - 1) + dest_room_exits > 0
+        # For loops (destination in connected branch): dest_room_exits = 0
+        # For new rooms: dest_room_exits = destination room's doors + traps
 
         # Count doors available in hub/upstream (for rule 2a)
         hub_upstream_doors, _ = self.count_exits_in_region(hub_and_upstream)
@@ -912,6 +924,12 @@ class RuinationBranch(Network):
                 _, total_pit_count = self.count_entrances_in_region(hub_and_upstream)
                 if total_pit_count <= 1:
                     continue  # Rule 0: don't use last entrance to hub/upstream
+
+            # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
+            # After using this trap, we lose 1 exit and gain 0 new exits.
+            # Only allow if the branch would still have exits.
+            if current_total_exits <= 1:
+                continue  # This is the last exit; can't connect to an already-connected room
 
             # Check if loop compression would leave exits
             # After connecting trap->pit, the rooms from exit_room up to pit_room compress
@@ -997,16 +1015,18 @@ class RuinationBranch(Network):
                 continue
 
         # === Connect to hub/upstream pits (forms loop, compresses to hub) ===
-        # This is always OK because loop compression merges into hub
-        for pit_id in hub_upstream_pits:
-            if pit_id in self.protected:
-                continue
-            # Rule 0 check: not the last entrance
-            _, total_pit_count = self.count_entrances_in_region(hub_and_upstream)
-            if total_pit_count <= 1:
-                continue
-            if pit_id not in valid_pits:
-                valid_pits.append(pit_id)
+        # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
+        # Only allow if the branch would still have exits after using this trap.
+        if current_total_exits > 1:
+            for pit_id in hub_upstream_pits:
+                if pit_id in self.protected:
+                    continue
+                # Rule 0 check: not the last entrance
+                _, total_pit_count = self.count_entrances_in_region(hub_and_upstream)
+                if total_pit_count <= 1:
+                    continue
+                if pit_id not in valid_pits:
+                    valid_pits.append(pit_id)
 
         return valid_pits
 
@@ -1016,11 +1036,19 @@ class RuinationBranch(Network):
         Rules applied:
         0. Never connect to last door in hub/upstream (until finalize)
         2b. If unconnected pit in hub/upstream, can connect to DITO room
+        GLOBAL: Never make a connection that leaves the branch with zero exits
 
         Returns list of valid door IDs.
         """
         valid_doors = []
         hub_and_upstream = topology['hub_and_upstream']
+        room_levels = topology['room_levels']
+
+        # === GLOBAL PROTECTION: Count total exits in connected branch ===
+        # Using this door consumes 1 exit. We must ensure the branch still has exits after.
+        connected_rooms = set(room_levels.keys())
+        current_doors, current_traps = self.count_exits_in_region(connected_rooms)
+        current_total_exits = current_doors + current_traps
 
         # Count pits available in hub/upstream (for rule 2b)
         _, hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
@@ -1060,21 +1088,26 @@ class RuinationBranch(Network):
 
             # Dead-end rooms with single door - only if we have other exits
             if room_type == 'DEAD_END':
-                # Check if we'd have exits remaining after this connection
-                # Door connections form loops which compress, so this is usually OK
-                valid_doors.extend(room_doors)
+                # GLOBAL PROTECTION: Dead-end rooms add no new exits.
+                # Using our door (-1) and connecting to a room with 0 other exits = -1 total.
+                # Only allow if we have other exits remaining.
+                if current_total_exits > 1:
+                    valid_doors.extend(room_doors)
 
         # === Connect to upstream/hub doors (forms loop) ===
-        for h_id in hub_and_upstream:
-            h_room = self.rooms.get_room(h_id)
-            if h_room:
-                h_doors = [d for d in h_room.doors if d not in self.protected]
-                # Rule 0: check not last entrance
-                total_doors, _ = self.count_exits_in_region(hub_and_upstream)
-                if total_doors > 1:  # Leave at least one
-                    for d in h_doors:
-                        if d != door_exit:  # Don't connect to self
-                            valid_doors.append(d)
+        # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
+        # Only allow if the branch would still have exits after using this door.
+        if current_total_exits > 1:
+            for h_id in hub_and_upstream:
+                h_room = self.rooms.get_room(h_id)
+                if h_room:
+                    h_doors = [d for d in h_room.doors if d not in self.protected]
+                    # Rule 0: check not last entrance
+                    total_doors, _ = self.count_exits_in_region(hub_and_upstream)
+                    if total_doors > 1:  # Leave at least one
+                        for d in h_doors:
+                            if d != door_exit:  # Don't connect to self
+                                valid_doors.append(d)
 
         return valid_doors
 
