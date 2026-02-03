@@ -1465,37 +1465,34 @@ class RuinationBranch(Network):
                     print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}, traps={unprotected_traps}')
                 break
 
-        # If no suitable room in network, check unused areas
+        # If no suitable room found, try relaxing requirements - look for any room with pit + door
         if suitable_room is None:
             if self.verbose:
-                print('\tNo suitable room in network, checking unused areas...')
+                print('\tNo ideal room found, trying rooms with just pit + door...')
+            for room_id in unconnected_rooms:
+                room = self.rooms.get_room(room_id)
+                if room is None:
+                    continue
+                unprotected_pits = [p for p in room.pits if p not in self.protected]
+                unprotected_doors = [d for d in room.doors if d not in self.protected]
 
-            reserve_areas = self.get_reserve_area_rooms()
-            for area_name, area_rooms in reserve_areas:
-                for room_id in area_rooms:
-                    if room_id in room_data:
-                        data = room_data[room_id]
-                        doors = list(data[0]) if len(data) > 0 else []
-                        traps = list(data[1]) if len(data) > 1 else []
-                        pits = list(data[2]) if len(data) > 2 else []
-
-                        # Need: at least 1 pit, at least 1 door, at least 1 other exit
-                        total_exits = len(doors) + len(traps)
-                        if len(pits) >= 1 and len(doors) >= 1 and total_exits >= 2:
-                            # Add this room to the network
-                            self.add_room(room_id)
-                            suitable_room = room_id
-                            if self.verbose:
-                                print(f'\tAdded suitable room from area {area_name}: {room_id}')
-                                print(f'\t  pits={pits}, doors={doors}, traps={traps}')
-                            break
-                if suitable_room is not None:
+                # Relaxed: just need pit and door (door will be added to network)
+                if len(unprotected_pits) >= 1 and len(unprotected_doors) >= 1:
+                    suitable_room = room_id
+                    if self.verbose:
+                        print(f'\tFound room with pit+door: {room_id}')
+                        print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}')
                     break
 
         if suitable_room is None:
-            if self.verbose:
-                print('\tWARNING: Could not find suitable room to inject door into network!')
-            return
+            # This is a serious issue - log diagnostic info
+            viz = self.visualize_branch_topology()
+            raise RuntimeError(
+                f"_inject_door_if_needed_for_terminus: Cannot find suitable room to inject door. "
+                f"Terminus={self.terminus}, unconnected_rooms={unconnected_rooms}, "
+                f"all_traps={all_traps}. Branch needs a room with at least 1 pit and 1 door.\n"
+                f"{viz}"
+            )
 
         # Connect the most downstream trap to this room's pit
         # Find the deepest trap in the downstream tree
