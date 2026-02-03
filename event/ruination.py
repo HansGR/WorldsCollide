@@ -1470,26 +1470,7 @@ class RuinationBranch(Network):
                     print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}, traps={unprotected_traps}')
                 break
 
-        # If no suitable room found, try relaxing requirements - look for any room with pit + door
-        if suitable_room is None:
-            if self.verbose:
-                print('\tNo ideal room found, trying rooms with just pit + door...')
-            for room_id in unconnected_rooms:
-                room = self.rooms.get_room(room_id)
-                if room is None:
-                    continue
-                unprotected_pits = [p for p in room.pits if p not in self.protected]
-                unprotected_doors = [d for d in room.doors if d not in self.protected]
-
-                # Relaxed: just need pit and door (door will be added to network)
-                if len(unprotected_pits) >= 1 and len(unprotected_doors) >= 1:
-                    suitable_room = room_id
-                    if self.verbose:
-                        print(f'\tFound room with pit+door: {room_id}')
-                        print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}')
-                    break
-
-        # If still no suitable room in network, check reserve areas
+        # If no suitable room in network, check reserve areas
         if suitable_room is None and reserve_areas is not None:
             if self.verbose:
                 print('\tNo suitable room in network, checking reserve areas...')
