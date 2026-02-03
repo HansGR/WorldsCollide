@@ -2630,7 +2630,7 @@ class ruination_map():
                     if stuck_reason == StuckReason.NEED_PIDO:
                         # Branch needs a PIDO room - check if any new room has pits AND doors
                         for room_id in branch_rooms[i]:
-                            room = self.rooms.get_room(room_id)
+                            room = branch.rooms.get_room(room_id)
                             if room and _room_has_pido_potential(room):
                                 if self.verbose:
                                     print(f'\tFound PIDO room {room_id} for stuck branch {i}')
@@ -2639,7 +2639,7 @@ class ruination_map():
                     elif stuck_reason == StuckReason.NO_HUB:
                         # Branch needs a hub room - check if any new room is a hub
                         for room_id in branch_rooms[i]:
-                            room = self.rooms.get_room(room_id)
+                            room = branch.rooms.get_room(room_id)
                             if room and _room_has_hub_potential(room):
                                 if self.verbose:
                                     print(f'\tFound hub room {room_id} for stuck branch {i}')
