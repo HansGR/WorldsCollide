@@ -993,7 +993,7 @@ class RuinationBranch(Network):
                 for node in path:
                     loop_rooms.add(node)
                     # Check if this node IS the pit_room or CONTAINS the pit_room (compound room)
-                    if node == pit_room.id or pit_room.id in str(node) or str(pit_room.id) in str(node):
+                    if node == pit_room.id or str(pit_room.id) in str(node):
                         found_pit_room = True
                         break
                 if found_pit_room:
