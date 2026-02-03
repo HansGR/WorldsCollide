@@ -1393,7 +1393,7 @@ class RuinationBranch(Network):
         lines.append("=" * 70)
         return "\n".join(lines)
 
-    def _inject_door_if_needed_for_terminus(self):
+    def _inject_door_if_needed_for_terminus(self, reserve_areas=None):
         """Inject a door into the network when needed to connect the terminus.
 
         This handles the edge case where finalize_map starts with:
@@ -1403,6 +1403,11 @@ class RuinationBranch(Network):
         Without doors, step (4) cannot connect the terminus. This method fixes
         the situation by finding a room with (pit, door, other_exit) and
         connecting a trap to its pit, which adds the room's door to the network.
+
+        Args:
+            reserve_areas: Optional list of (area_name, room_list) tuples from
+                          RuinationMapping.get_reserve_area_rooms() to search
+                          if no suitable room exists in the branch's network.
         """
         # Check if terminus still exists (hasn't been merged)
         terminus = self.rooms.get_room(self.terminus)
@@ -1465,12 +1470,11 @@ class RuinationBranch(Network):
                     print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}, traps={unprotected_traps}')
                 break
 
-        # If no suitable room in network, check unused areas
-        if suitable_room is None:
+        # If no suitable room in network, check reserve areas
+        if suitable_room is None and reserve_areas is not None:
             if self.verbose:
-                print('\tNo suitable room in network, checking unused areas...')
+                print('\tNo suitable room in network, checking reserve areas...')
 
-            reserve_areas = self.get_reserve_area_rooms()
             for area_name, area_rooms in reserve_areas:
                 for room_id in area_rooms:
                     if room_id in room_data:
@@ -1493,9 +1497,14 @@ class RuinationBranch(Network):
                     break
 
         if suitable_room is None:
-            if self.verbose:
-                print('\tWARNING: Could not find suitable room to inject door into network!')
-            return
+            # This is a serious issue - log diagnostic info
+            viz = self.visualize_branch_topology()
+            raise RuntimeError(
+                f"_inject_door_if_needed_for_terminus: Cannot find suitable room to inject door. "
+                f"Terminus={self.terminus}, unconnected_rooms={unconnected_rooms}, "
+                f"all_traps={all_traps}. Branch needs a room with at least 1 pit and 1 door.\n"
+                f"{viz}"
+            )
 
         # Connect the most downstream trap to this room's pit
         # Find the deepest trap in the downstream tree
@@ -1544,7 +1553,7 @@ class RuinationBranch(Network):
                 new_doors.extend([d for d in room.doors if d not in self.protected])
             print(f'\tAfter fix: network now has {len(new_doors)} doors')
 
-    def finalize_map(self):
+    def finalize_map(self, reserve_areas=None):
         if self.verbose:
             print('Closing branch...')
 
@@ -1557,7 +1566,7 @@ class RuinationBranch(Network):
         # This happens when the branch has only traps/pits with no remaining doors.
         # In this scenario, we need to inject a door into the network by connecting
         # a trap to a room that has: at least 1 pit, at least 1 door, and 1 other exit.
-        self._inject_door_if_needed_for_terminus()
+        self._inject_door_if_needed_for_terminus(reserve_areas)
 
         # Wrap steps 1-6 in a loop. If keys unlock new traps/doors during finalization,
         # we restart from step 1 to ensure proper topology-aware handling.
@@ -3272,9 +3281,10 @@ class ruination_map():
             raise RuinationMappingError(diag)
 
         # After satisfying conditions, fully connect map
+        reserve_areas = self.get_reserve_area_rooms()
         for branch_id, branch in enumerate(self.branches):
             try:
-                branch.finalize_map()
+                branch.finalize_map(reserve_areas)
             except Exception as e:
                 diag = self._collect_mapping_diagnostics(
                     f"finalize_map failed on branch {branch_id}: {str(e)}",
