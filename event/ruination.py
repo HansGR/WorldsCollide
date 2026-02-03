@@ -1393,6 +1393,157 @@ class RuinationBranch(Network):
         lines.append("=" * 70)
         return "\n".join(lines)
 
+    def _inject_door_if_needed_for_terminus(self):
+        """Inject a door into the network when needed to connect the terminus.
+
+        This handles the edge case where finalize_map starts with:
+        - The terminus hasn't been merged into the hub yet
+        - The hub/downstream network has traps but NO unprotected doors
+
+        Without doors, step (4) cannot connect the terminus. This method fixes
+        the situation by finding a room with (pit, door, other_exit) and
+        connecting a trap to its pit, which adds the room's door to the network.
+        """
+        # Check if terminus still exists (hasn't been merged)
+        terminus = self.rooms.get_room(self.terminus)
+        if terminus is None:
+            return  # Terminus already merged, no fix needed
+
+        # Get current hub and topology
+        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub = self.rooms.get_room(hub_id)
+        upstream = self.get_upstream_nodes(hub_id)
+        downstream = self.get_downstream_nodes(hub_id)
+
+        # Collect all unprotected doors from hub + upstream + downstream
+        all_doors = [d for d in hub.doors if d not in self.protected]
+        for node in upstream:
+            room = self.rooms.get_room(node)
+            all_doors.extend([d for d in room.doors if d not in self.protected])
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            all_doors.extend([d for d in room.doors if d not in self.protected])
+
+        # Collect all unprotected traps from hub + downstream (not upstream - traps go down)
+        all_traps = [t for t in hub.traps if t not in self.protected]
+        for node in downstream:
+            room = self.rooms.get_room(node)
+            all_traps.extend([t for t in room.traps if t not in self.protected])
+
+        # If we have doors or no traps, no fix needed
+        if len(all_doors) > 0 or len(all_traps) == 0:
+            return
+
+        if self.verbose:
+            print('\t=== NO DOORS FOR TERMINUS FIX ===')
+            print(f'\tTerminus {self.terminus} not merged, but network has no doors')
+            print(f'\tAvailable traps: {all_traps}')
+            print(f'\tSearching for room with pit, door, and another exit...')
+
+        # Find a suitable room: has pit (to receive trap), door (to add to network),
+        # and at least one other exit (door or trap) so connecting doesn't dead-end
+        connected_rooms = {hub_id} | set(upstream) | set(downstream)
+        unconnected_rooms = [n for n in self.net.nodes if n not in connected_rooms]
+
+        suitable_room = None
+
+        # First search in unconnected rooms already in the network
+        for room_id in unconnected_rooms:
+            room = self.rooms.get_room(room_id)
+            if room is None:
+                continue
+            unprotected_pits = [p for p in room.pits if p not in self.protected]
+            unprotected_doors = [d for d in room.doors if d not in self.protected]
+            unprotected_traps = [t for t in room.traps if t not in self.protected]
+
+            # Need: at least 1 pit, at least 1 door, at least 1 other exit (door or trap)
+            total_exits = len(unprotected_doors) + len(unprotected_traps)
+            if len(unprotected_pits) >= 1 and len(unprotected_doors) >= 1 and total_exits >= 2:
+                suitable_room = room_id
+                if self.verbose:
+                    print(f'\tFound suitable room in network: {room_id}')
+                    print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}, traps={unprotected_traps}')
+                break
+
+        # If no suitable room in network, check unused areas
+        if suitable_room is None:
+            if self.verbose:
+                print('\tNo suitable room in network, checking unused areas...')
+
+            reserve_areas = self.get_reserve_area_rooms()
+            for area_name, area_rooms in reserve_areas:
+                for room_id in area_rooms:
+                    if room_id in room_data:
+                        data = room_data[room_id]
+                        doors = list(data[0]) if len(data) > 0 else []
+                        traps = list(data[1]) if len(data) > 1 else []
+                        pits = list(data[2]) if len(data) > 2 else []
+
+                        # Need: at least 1 pit, at least 1 door, at least 1 other exit
+                        total_exits = len(doors) + len(traps)
+                        if len(pits) >= 1 and len(doors) >= 1 and total_exits >= 2:
+                            # Add this room to the network
+                            self.add_room(room_id)
+                            suitable_room = room_id
+                            if self.verbose:
+                                print(f'\tAdded suitable room from area {area_name}: {room_id}')
+                                print(f'\t  pits={pits}, doors={doors}, traps={traps}')
+                            break
+                if suitable_room is not None:
+                    break
+
+        if suitable_room is None:
+            if self.verbose:
+                print('\tWARNING: Could not find suitable room to inject door into network!')
+            return
+
+        # Connect the most downstream trap to this room's pit
+        # Find the deepest trap in the downstream tree
+        selected_trap = None
+        if len(downstream) > 0:
+            downstream_paths = self.get_downstream_paths(hub_id)
+            if downstream_paths:
+                max_depth = max(len(p) for p in downstream_paths)
+                # Search from deepest to shallowest for a room with traps
+                for depth in range(max_depth, 0, -1):
+                    candidates = []
+                    for path in downstream_paths:
+                        if len(path) >= depth:
+                            room_id = path[depth - 1]
+                            room = self.rooms.get_room(room_id)
+                            if room:
+                                room_traps = [t for t in room.traps if t not in self.protected]
+                                if room_traps:
+                                    candidates.extend(room_traps)
+                    if candidates:
+                        selected_trap = random.choice(candidates)
+                        break
+
+        # Fallback to any available trap
+        if selected_trap is None:
+            selected_trap = random.choice(all_traps)
+
+        # Connect to the suitable room's pit
+        suitable_room_obj = self.rooms.get_room(suitable_room)
+        suitable_pits = [p for p in suitable_room_obj.pits if p not in self.protected]
+        selected_pit = random.choice(suitable_pits)
+
+        if self.verbose:
+            print(f'\tConnecting trap {selected_trap} --> pit {selected_pit} (room {suitable_room})')
+
+        self.connect(selected_trap, selected_pit)
+
+        # Verify we now have doors
+        if self.verbose:
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub = self.rooms.get_room(hub_id)
+            new_doors = [d for d in hub.doors if d not in self.protected]
+            downstream = self.get_downstream_nodes(hub_id)
+            for node in downstream:
+                room = self.rooms.get_room(node)
+                new_doors.extend([d for d in room.doors if d not in self.protected])
+            print(f'\tAfter fix: network now has {len(new_doors)} doors')
+
     def finalize_map(self):
         if self.verbose:
             print('Closing branch...')
@@ -1401,6 +1552,12 @@ class RuinationBranch(Network):
 
         if self.verbose:
             print(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
+
+        # PRE-CHECK: Handle "no doors but terminus unconnected" edge case
+        # This happens when the branch has only traps/pits with no remaining doors.
+        # In this scenario, we need to inject a door into the network by connecting
+        # a trap to a room that has: at least 1 pit, at least 1 door, and 1 other exit.
+        self._inject_door_if_needed_for_terminus()
 
         # Wrap steps 1-6 in a loop. If keys unlock new traps/doors during finalization,
         # we restart from step 1 to ensure proper topology-aware handling.
