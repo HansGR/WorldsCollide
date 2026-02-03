@@ -523,11 +523,17 @@ class RuinationBranch(Network):
 
         return issues
 
-    def collect_network_traps_and_pits(self, include_doors=False):
+    def collect_network_traps_and_pits(self, include_doors=False, exclude_upstream_doors=False):
         """Collect all unconnected traps and pits from the entire connected network.
 
         Returns tuple: (all_traps, all_pits) or (all_traps, all_pits, all_doors) if include_doors=True.
         Each is a list of unconnected elements from hub + upstream + downstream nodes.
+
+        Args:
+            include_doors: If True, also return unconnected doors.
+            exclude_upstream_doors: If True (and include_doors=True), exclude doors from upstream
+                nodes. This is useful during finalization, where upstream rooms are inaccessible
+                (only connected TO the hub via one-way pits) and their doors don't need connecting.
         """
         hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
         hub = self.rooms.get_room(hub_id)
@@ -541,7 +547,8 @@ class RuinationBranch(Network):
             room = self.rooms.get_room(node)
             all_pits.extend([p for p in room.pits if p not in self.protected])
             all_traps.extend([t for t in room.traps if t not in self.protected])
-            if include_doors:
+            # Upstream doors are inaccessible at finalization time, so optionally exclude them
+            if include_doors and not exclude_upstream_doors:
                 all_doors.extend([d for d in room.doors if d not in self.protected])
 
         downstream = self.get_downstream_nodes(hub_id)
@@ -1775,7 +1782,10 @@ class RuinationBranch(Network):
 
             # Check if any new elements were unlocked during this iteration.
             # If so, restart from step 1 to handle them with proper topology-aware logic.
-            new_traps, new_pits, new_doors = self.collect_network_traps_and_pits(include_doors=True)
+            # Exclude upstream doors since upstream rooms are inaccessible at this point -
+            # they're only connected TO the hub via one-way pits and their doors don't matter.
+            new_traps, new_pits, new_doors = self.collect_network_traps_and_pits(
+                include_doors=True, exclude_upstream_doors=True)
             if len(new_traps) == 0 and len(new_doors) == 0:
                 break  # Done - no new elements to process
 
