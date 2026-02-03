@@ -26,6 +26,39 @@ The ruination mapping algorithm in `event/ruination.py` constructs a procedurall
    - Step 5: Pair excess hub doors
    - Step 6: Connect dead ends to remaining doors
 
+### Location-Aware Branch Extension Algorithm
+
+The `extend_branch_path()` method uses a **location-aware** algorithm that understands the branch's topology:
+
+**Branch Regions:**
+- **HUB (level 0)**: The central room connected to Narshe school - player can always return here
+- **UPSTREAM (level -1)**: Rooms connected TO the hub via pits (forced connections only)
+- **DOWNSTREAM (levels 1, 2, ...)**: Rooms reached by falling through traps from hub
+
+**Core Rule**: Never make a connection that leaves no exits at the current level.
+
+**Algorithm Steps:**
+1. **Analyze topology** via `classify_topology()` - identifies hub, upstream, and room levels
+2. **Check forced exits** - handle any forced connections first
+3. **Collect available exits** from the deepest downstream rooms
+4. **Determine exit order** - prefer traps, but adjust based on target availability
+5. **Validate each connection** using:
+   - `get_valid_pit_targets()` for trap→pit (checks PITO/PIDO/HUB room types, loop compression)
+   - `get_valid_door_targets()` for door→door (checks DIDO/HUB room types, dead-end restrictions)
+6. **Diagnose failure** if no valid connections found
+
+**Room Type Classifications** (for unconnected rooms):
+- **PITO**: Pit-in, trap-out - can extend downstream
+- **PIDO**: Pit-in, door-out - can reconnect to upstream
+- **DITO**: Door-in, trap-out - converts door path to trap
+- **DIDO**: Door-in, door-out - forms door loops
+- **DEAD_END**: Single door, no other exits - deferred to finalize_map unless has check
+- **HUB**: 3+ doors+traps - can become a hub
+
+**Dead-End Room Restriction** (added 2026-02): When the current level has only 1 door and 0 traps, dead-end rooms (with checks) are NOT valid targets. To connect to a dead-end, need either:
+- At least 2 doors at current level, OR
+- 1 door + 1 trap AND hub/upstream has a pit (loop can be closed)
+
 ### Stuck Branch Conditions
 
 A branch becomes **stuck** when:
@@ -115,7 +148,7 @@ Ruination Mode creates a roguelike-style dungeon with three independent branches
 
 ### Key Files and Functions
 
-**event/ruination.py** (~1530 lines) - Main implementation
+**event/ruination.py** (~4400 lines) - Main implementation
 - `ruination_map` - Orchestrates three branches, distributes areas, assigns rewards
 - `RuinationBranch(Network)` - Individual branch management
 - `pre_plan_character_acquisition()` - Pre-plans character distribution
