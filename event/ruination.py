@@ -1074,13 +1074,20 @@ class RuinationBranch(Network):
 
         return valid_pits
 
-    def get_valid_door_targets(self, door_exit, exit_room_id, topology):
+    def get_valid_door_targets(self, door_exit, exit_room_id, topology, available_doors=None, available_traps=None):
         """Get valid door targets for a door exit, respecting topology rules.
 
         Rules applied:
         0. Never connect to last door in hub/upstream (until finalize)
         2b. If unconnected pit in hub/upstream, can connect to DITO room
         GLOBAL: Never make a connection that leaves the branch with zero exits
+
+        Args:
+            door_exit: The door ID being used for exit
+            exit_room_id: The room containing the exit door
+            topology: Branch topology dict
+            available_doors: Count of available doors at current level (optional, for stricter check)
+            available_traps: Count of available traps at current level (optional, for stricter check)
 
         Returns list of valid door IDs.
         """
@@ -1138,7 +1145,20 @@ class RuinationBranch(Network):
                 # GLOBAL PROTECTION: Dead-end rooms add no new exits.
                 # Using our door (-1) and connecting to a room with 0 other exits = -1 total.
                 # Only allow if we have other exits remaining.
-                if current_total_exits > 1:
+                #
+                # When available_doors/available_traps are provided, use stricter check:
+                # - Need at least 2 doors at current level (one for dead-end, one remaining), OR
+                # - Need 1 door + trap AND hub/upstream has pit (loop can be closed)
+                if available_doors is not None and available_traps is not None:
+                    # Stricter current-level check
+                    has_enough_exits = (
+                        available_doors >= 2 or
+                        (available_doors >= 1 and available_traps >= 1 and hub_upstream_pits > 0)
+                    )
+                    if has_enough_exits:
+                        valid_doors.extend(room_doors)
+                elif current_total_exits > 1:
+                    # Fallback to original check if available counts not provided
                     valid_doors.extend(room_doors)
 
         # === Connect to upstream/hub doors (forms loop) ===
@@ -2144,7 +2164,11 @@ class RuinationBranch(Network):
                 if exit_type == 'traps':
                     valid_targets = self.get_valid_pit_targets(exit_id, exit_room_id, topology)
                 else:
-                    valid_targets = self.get_valid_door_targets(exit_id, exit_room_id, topology)
+                    valid_targets = self.get_valid_door_targets(
+                        exit_id, exit_room_id, topology,
+                        available_doors=len(available_exits['doors']),
+                        available_traps=len(available_exits['traps'])
+                    )
 
                 if self.verbose:
                     print(f'\t\tExit {exit_id}: {len(valid_targets)} valid targets')
