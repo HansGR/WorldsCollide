@@ -1143,8 +1143,9 @@ class RuinationBranch(Network):
 
         # === Connect to upstream/hub doors (forms loop) ===
         # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
-        # Only allow if the branch would still have exits after using this door.
-        if current_total_exits > 1:
+        # They consume TWO exits: the source door AND the target door in hub/upstream.
+        # Only allow if the branch would still have exits after using both doors.
+        if current_total_exits > 2:
             for h_id in hub_and_upstream:
                 h_room = self.rooms.get_room(h_id)
                 if h_room:
