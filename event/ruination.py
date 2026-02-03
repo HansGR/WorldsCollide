@@ -798,6 +798,41 @@ class RuinationBranch(Network):
 
         return 'OTHER'
 
+    def is_true_dead_end(self, room_id):
+        """Check if a room is a 'true dead end' that should be deferred to finalize_map.
+
+        A true dead end has:
+        - Only 1 door (no traps, no pits)
+        - No keys
+        - No locks
+        - No checks (rewards)
+
+        These rooms can be safely connected later in finalize_map, so we shouldn't
+        waste exits connecting them during extend_branch_path.
+        """
+        room = self.rooms.get_room(room_id)
+        if room is None:
+            return False
+
+        # Check room type first - must be DEAD_END (only 1 door, no traps, no pits)
+        room_type = self.classify_unconnected_room(room_id)
+        if room_type != 'DEAD_END':
+            return False
+
+        # Check for keys
+        if len(room.keys) > 0:
+            return False
+
+        # Check for locks
+        if len(room.locks) > 0:
+            return False
+
+        # Check for checks (rewards)
+        if room_id in self.check_rooms:
+            return False
+
+        return True
+
     def would_strand_pits(self, exit_id, room):
         """Check if using this exit would strand pits (leave them unreachable).
 
@@ -921,8 +956,9 @@ class RuinationBranch(Network):
 
             # If pit is in hub/upstream, check rule 0 (not last entrance)
             if pit_room.id in hub_and_upstream:
-                _, total_pit_count = self.count_entrances_in_region(hub_and_upstream)
-                if total_pit_count <= 1:
+                hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
+                total_entrances = hub_doors + hub_pits
+                if total_entrances <= 1:
                     continue  # Rule 0: don't use last entrance to hub/upstream
 
             # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
@@ -1021,9 +1057,10 @@ class RuinationBranch(Network):
             for pit_id in hub_upstream_pits:
                 if pit_id in self.protected:
                     continue
-                # Rule 0 check: not the last entrance
-                _, total_pit_count = self.count_entrances_in_region(hub_and_upstream)
-                if total_pit_count <= 1:
+                # Rule 0 check: not the last entrance (must have entrances remaining)
+                hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
+                total_entrances = hub_doors + hub_pits
+                if total_entrances <= 1:
                     continue
                 if pit_id not in valid_pits:
                     valid_pits.append(pit_id)
@@ -1086,8 +1123,11 @@ class RuinationBranch(Network):
                 valid_doors.extend(room_doors)
                 continue
 
-            # Dead-end rooms with single door - only if we have other exits
+            # Dead-end rooms with single door - skip true dead ends, defer to finalize_map
             if room_type == 'DEAD_END':
+                # Skip true dead ends (no keys, no locks, no checks) - connect them in finalize_map
+                if self.is_true_dead_end(room_id):
+                    continue
                 # GLOBAL PROTECTION: Dead-end rooms add no new exits.
                 # Using our door (-1) and connecting to a room with 0 other exits = -1 total.
                 # Only allow if we have other exits remaining.
@@ -1102,9 +1142,10 @@ class RuinationBranch(Network):
                 h_room = self.rooms.get_room(h_id)
                 if h_room:
                     h_doors = [d for d in h_room.doors if d not in self.protected]
-                    # Rule 0: check not last entrance
-                    total_doors, _ = self.count_exits_in_region(hub_and_upstream)
-                    if total_doors > 1:  # Leave at least one
+                    # Rule 0: check not last entrance (must have entrances remaining)
+                    hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
+                    total_entrances = hub_doors + hub_pits
+                    if total_entrances > 1:  # Leave at least one entrance
                         for d in h_doors:
                             if d != door_exit:  # Don't connect to self
                                 valid_doors.append(d)
