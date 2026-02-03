@@ -1,0 +1,1785 @@
+Version   1.4.2
+Generated 2026-02-03 07:14:44
+Input     FFIII.smc
+Output    ruin.smc
+Log       ruin.txt
+Seed      ctuq1zvx3hd2
+Flags     -cg -oa 2.0.0.2.3.3.4.3.3 -sc1 celes -sal -stl 53 -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 0 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125 -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms -frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn -ruin
+Hash      Suit Gau, Narshe Guard, Conductor, Woman
+Debug Mode
+Requested:  3 characters,  3 espers
+Pre-plan: Planned areas have 12 checks, 9 character slots, 12 esper slots
+Pre-plan: Will obtain characters: ['SHADOW', 'STRAGO']
+Pre-plan: Reserve characters (for extra areas): ['GOGO', 'LOCKE', 'RELM', 'TERRA', 'SABIN', 'GAU', 'MOG', 'CYAN', 'UMARO', 'EDGAR', 'SETZER']
+Pre-plan: Dead checks allowed: 7
+Areas used:  {'OperaHouse', 'Vector', 'SouthFigaro', 'Cid'}
+Distributed areas:
+	 0 :  {'Vector'}
+	 1 :  {'SouthFigaro'}
+	 2 :  {'OperaHouse', 'Cid'}
+Checks available:
+	 0 :  ['Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  ['South Figaro']
+	 2 :  ['Opera House']
+Rewards available:  [3, 5]
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+Generating map with characters...
+Branch viability: [True, False, False] Stuck: {}
+Working on branch 0 ( ['Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [354, 349, 'ruin-mtek3']
+status: dead ends ['ruin_hub_0', 'ruin_terminus_1', 352]
+Forcing connections...
+Forcing:  2023 3023
+forcing successful.
+Forcing:  2128 3128
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin_hub_0 (level 0)
+	Hub+Upstream: {'ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 393: 11 valid targets
+		Selected: 393 --> 705 (room 349)
+Looking for reward in room 349 ...
+Found a reward!  [('Magitek Factory_1', <RewardType.ITEM|ESPER: 12>)] in room 349
+Making connection:  393 --> 705
+Processing reward:  Magitek Factory_1
+	choosing from... RewardType.ITEM|ESPER
+	got Palidor !
+	Updated Rewards Obtained:  0 Characters,  1 Espers
+	Updated Rewards Available:  3 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  ['Magitek Factory_2', 'Magitek Factory_3']
+	 1 :  ['South Figaro']
+	 2 :  ['Opera House']
+Branch viability: [True, False, False] Stuck: {}
+	trimmed dead end  ruin_hub_0
+Working on branch 0 ( ['Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [354, 'ruin-mtek3']
+status: dead ends ['ruin_terminus_1', 352]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 349_ruin_hub_0 (level 0)
+	Hub+Upstream: {'349_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2026: 5 valid targets
+		Selected: 2026 --> 3022 (room 347)
+Looking for reward in room 347 ...
+Making connection:  2026 --> 3022
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 347 (level 1)
+	Hub+Upstream: {'349_ruin_hub_0'}
+	Upstream: ['349_ruin_hub_0'], Downstream: []
+	Available exits: 1 doors, 2 traps
+	Target availability: pits=True, doors=True
+	traps: 2 exits to evaluate
+		Exit 2025: 2 valid targets
+		Selected: 2025 --> 3027 (room 355a)
+Looking for reward in room 355a ...
+Making connection:  2025 --> 3027
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 355a (level 2)
+	Hub+Upstream: {'349_ruin_hub_0'}
+	Upstream: [347, '349_ruin_hub_0'], Downstream: []
+	Available exits: 0 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2028: 3 valid targets
+		Selected: 2028 --> 3026 (room 347)
+Looking for reward in room 347 ...
+Making connection:  2028 --> 3026
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 347_355a (level 1)
+	Hub+Upstream: {'349_ruin_hub_0'}
+	Upstream: ['349_ruin_hub_0'], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2024: 1 valid targets
+		Selected: 2024 --> 3025 (room 349_ruin_hub_0)
+Looking for reward in room 349_ruin_hub_0 ...
+Making connection:  2024 --> 3025
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'349_ruin_hub_0_347_355a'}
+	Upstream: [], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 2 exits to evaluate
+		Exit 704: 11 valid targets
+		Selected: 704 --> 709 (room 351)
+Looking for reward in room 351 ...
+Making connection:  704 --> 709
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'351_349_ruin_hub_0_347_355a'}
+	Upstream: [], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 2 exits to evaluate
+		Exit 706: 9 valid targets
+		Selected: 706 --> 1228 (room ruin-vector)
+Looking for reward in room ruin-vector ...
+Making connection:  706 --> 1228
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'ruin-mtek3', 'ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 2 exits to evaluate
+		Exit 1229: 7 valid targets
+		Selected: 1229 --> 712 (room 353)
+Looking for reward in room 353 ...
+Making connection:  1229 --> 712
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 2 exits to evaluate
+		Exit 713: 5 valid targets
+		Selected: 713 --> 716 (room 355)
+Looking for reward in room 355 ...
+Making connection:  713 --> 716
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2027: 2 valid targets
+		Selected: 2027 --> 3024 (room 355_353_ruin-vector_351_349_ruin_hub_0_347_355a)
+Looking for reward in room 355_353_ruin-vector_351_349_ruin_hub_0_347_355a ...
+Making connection:  2027 --> 3024
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 710: 3 valid targets
+		Selected: 710 --> 715 (room 354)
+Looking for reward in room 354 ...
+Found a reward!  [('Magitek Factory_2', <RewardType.ITEM|ESPER: 12>)] in room 354
+Making connection:  710 --> 715
+Processing reward:  Magitek Factory_2
+	choosing from... RewardType.ITEM|ESPER
+	got ZoneSeek !
+	Updated Rewards Obtained:  0 Characters,  2 Espers
+	Updated Rewards Available:  3 Characters,  3 Espers
+	Updated branch checks available:
+	 0 :  ['Magitek Factory_3']
+	 1 :  ['South Figaro']
+	 2 :  ['Opera House']
+Branch viability: [False, False, False] Stuck: {}
+Adding reserve area Doma (33 rooms) to unstick branch 0
+	Added new check: Doma WOR_2
+	Added new check: Doma WOR_1
+	Added new check: Doma WOR_3
+	Reset branch 0 active room to hub: 354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a
+Working on branch 0 ( ['Magitek Factory_3', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ruin-mtek3', 429, 193, 'dc-76']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 714: 30 valid targets
+		Selected: 714 --> 870 (room 436)
+Looking for reward in room 436 ...
+Making connection:  714 --> 870
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'ruin-mtek3', '436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 868: 28 valid targets
+		Selected: 868 --> 480 (room 209)
+Looking for reward in room 209 ...
+Making connection:  868 --> 480
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 481: 28 valid targets
+		Selected: 481 --> 445 (room 188)
+Looking for reward in room 188 ...
+Making connection:  481 --> 445
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'ruin-mtek3', '188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 8 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 8 exits to evaluate
+		Exit 452: 26 valid targets
+		Selected: 452 --> 440 (room 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a)
+Looking for reward in room 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a ...
+Making connection:  452 --> 440
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'ruin-mtek3', '188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 6 exits to evaluate
+		Exit 479: 24 valid targets
+		Selected: 479 --> 441 (room 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a)
+Looking for reward in room 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a ...
+Making connection:  479 --> 441
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'ruin-mtek3', '188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 4 exits to evaluate
+		Exit 478: 22 valid targets
+		Selected: 478 --> 864 (room 433)
+Looking for reward in room 433 ...
+Making connection:  478 --> 864
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'ruin-mtek3', '433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 4 exits to evaluate
+		Exit 454: 20 valid targets
+		Selected: 454 --> 486 (room 211)
+Looking for reward in room 211 ...
+Making connection:  454 --> 486
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {'211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'}
+	Upstream: ['ruin-mtek3'], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 4 exits to evaluate
+		Exit 484: 18 valid targets
+		Selected: 484 --> 703 (room 346)
+Looking for reward in room 346 ...
+Making connection:  484 --> 703
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a (level 0)
+	Hub+Upstream: {345, 'ruin-mtek3', '346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: [345, 'ruin-mtek3'], Downstream: []
+	Available exits: 3 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2022: 19 valid targets
+		Selected: 2022 --> 3071 (room 212R)
+Looking for reward in room 212R ...
+Making connection:  2022 --> 3071
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 212R (level 1)
+	Hub+Upstream: {345, 'ruin-mtek3', '346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 345, '346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'], Downstream: []
+	Available exits: 0 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2072: 18 valid targets
+		Selected: 2072 --> 6845 (room 421)
+Looking for reward in room 421 ...
+Making connection:  2072 --> 6845
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 421 (level 2)
+	Hub+Upstream: {345, 'ruin-mtek3', '346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a'}
+	Upstream: ['212R', '346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 345, '212R', '346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a', 'ruin-mtek3'], Downstream: []
+	Available exits: 0 doors, 2 traps
+	Target availability: pits=True, doors=True
+	traps: 2 exits to evaluate
+		Exit 844: 16 valid targets
+		Selected: 844 --> 6859 (room 346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a)
+Looking for reward in room 346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a ...
+Making connection:  844 --> 6859
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421 (level 0)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: [345, 'ruin-mtek3'], Downstream: []
+	Available exits: 3 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 843: 16 valid targets
+		Selected: 843 --> 6848 (room 428)
+Looking for reward in room 428 ...
+Making connection:  843 --> 6848
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 428 (level 1)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: ['212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 345, '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 'ruin-mtek3'], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 854: 14 valid targets
+		Selected: 854 --> 6849 (room 425)
+Looking for reward in room 425 ...
+Making connection:  854 --> 6849
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 425 (level 2)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: [428, '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 345, 428, '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 'ruin-mtek3'], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 852: 13 valid targets
+		Selected: 852 --> 6853 (room 428)
+Looking for reward in room 428 ...
+Making connection:  852 --> 6853
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 428_425 (level 1)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: ['212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 345, '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 'ruin-mtek3'], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 2 exits to evaluate
+		Exit 855: 18 valid targets
+		Selected: 855 --> 444 (room 191)
+Looking for reward in room 191 ...
+Making connection:  855 --> 444
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 191_428_425 (level 1)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: ['212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 345, '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 'ruin-mtek3'], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 4 exits to evaluate
+		Exit 446: 14 valid targets
+		Selected: 446 --> 860 (room 431)
+Looking for reward in room 431 ...
+Making connection:  446 --> 860
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 431_191_428_425 (level 1)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: ['212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 345, '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 'ruin-mtek3'], Downstream: []
+	Available exits: 3 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2073: 12 valid targets
+		Selected: 2073 --> 3069 (room 424)
+Looking for reward in room 424 ...
+Making connection:  2073 --> 3069
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 424 (level 2)
+	Hub+Upstream: {345, 'ruin-mtek3', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421'}
+	Upstream: ['431_191_428_425', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 345, '431_191_428_425', '212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421', 'ruin-mtek3'], Downstream: []
+	Available exits: 0 doors, 3 traps
+	Target availability: pits=True, doors=True
+	traps: 3 exits to evaluate
+		Exit 848: 11 valid targets
+		Selected: 848 --> 6846 (room 212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421)
+Looking for reward in room 212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421 ...
+Making connection:  848 --> 6846
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {'431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424', 345, 'ruin-mtek3'}
+	Upstream: [345, 'ruin-mtek3'], Downstream: []
+	Available exits: 6 doors, 2 traps
+	Target availability: pits=True, doors=True
+	traps: 2 exits to evaluate
+		Exit 847: 11 valid targets
+		Selected: 847 --> 6854 (room 431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424)
+Looking for reward in room 431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 ...
+Making connection:  847 --> 6854
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {'431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424', 345, 'ruin-mtek3'}
+	Upstream: [345, 'ruin-mtek3'], Downstream: []
+	Available exits: 6 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 849: 10 valid targets
+		Selected: 849 --> 3028 (room ruin-mtek3)
+Looking for reward in room ruin-mtek3 ...
+Found a reward!  [('Magitek Factory_3', <RewardType.ESPER|CHARACTER: 6>)] in room ruin-mtek3
+Making connection:  849 --> 3028
+Processing reward:  Magitek Factory_3
+	choosing from... RewardType.ESPER|CHARACTER
+	got Starlet !
+	Updated Rewards Obtained:  0 Characters,  3 Espers
+	Updated Rewards Available:  2 Characters,  2 Espers
+	Updated branch checks available:
+	 0 :  ['Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3']
+	 1 :  ['South Figaro']
+	 2 :  ['Opera House']
+Branch viability: [True, False, False] Stuck: {}
+Working on branch 0 ( ['Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [429, 193, 'dc-76']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, 'ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 6 exits to evaluate
+		Exit 863: 15 valid targets
+		Selected: 863 --> 450 (room ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424)
+Looking for reward in room ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 ...
+Making connection:  863 --> 450
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, 'ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 4 exits to evaluate
+		Exit 448: 13 valid targets
+		Selected: 448 --> 856 (room 429)
+Looking for reward in room 429 ...
+Found a reward!  [('Doma WOR_2', <RewardType.ITEM|ESPER: 12>)] in room 429
+Making connection:  448 --> 856
+Processing reward:  Doma WOR_2
+	choosing from... RewardType.ITEM|ESPER
+	got Sraphim !
+	Updated Rewards Obtained:  0 Characters,  4 Espers
+	Updated Rewards Available:  2 Characters,  1 Espers
+	Updated branch checks available:
+	 0 :  ['Doma WOR_1', 'Doma WOR_3']
+	 1 :  ['South Figaro']
+	 2 :  ['Opera House']
+Branch viability: [True, False, False] Stuck: {}
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, '429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 449: 11 valid targets
+		Selected: 449 --> 437 (room 186)
+Looking for reward in room 186 ...
+Making connection:  449 --> 437
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, '186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 850: 9 valid targets
+		Selected: 850 --> 439 (room 187)
+Looking for reward in room 187 ...
+Making connection:  850 --> 439
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, '187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 453: 7 valid targets
+		Selected: 453 --> 867 (room 435)
+Looking for reward in room 435 ...
+Making connection:  453 --> 867
+		assessing key  cd3 in rooms
+			Applying key: ('cd3',) in room 435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424
+			adding a door... 865
+			removing key  cd3 from 435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, '435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 865: 6 valid targets
+		Selected: 865 --> 438 (room 435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424)
+Looking for reward in room 435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 ...
+Making connection:  865 --> 438
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, '435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 451: 4 valid targets
+		Selected: 451 --> 483 (room 208)
+Looking for reward in room 208 ...
+Making connection:  451 --> 483
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 (level 0)
+	Hub+Upstream: {345, '208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [345], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2071: 9 valid targets
+		Selected: 2071 --> 3072 (room 432)
+Looking for reward in room 432 ...
+Making connection:  2071 --> 3072
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432 (level 1)
+	Hub+Upstream: {345, '208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: ['208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424', 345], Downstream: []
+	Available exits: 0 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 862: 8 valid targets
+		Selected: 862 --> 3073 (room 188B)
+Looking for reward in room 188B ...
+Making connection:  862 --> 3073
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 188B (level 2)
+	Hub+Upstream: {345, '208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424'}
+	Upstream: [432, '208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424', 345], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 443: 3 valid targets
+		Selected: 443 --> 477 (room 208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424)
+Looking for reward in room 208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424 ...
+Making connection:  443 --> 477
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [False, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Narshe (16 rooms) to unstick branch 0
+	Added new check: Whelk
+	Added new check: Narshe Moogle Defense
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area MtKolts (16 rooms) to unstick branch 0
+	Added new check: Mt. Kolts
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area PhantomTrain (22 rooms) to unstick branch 0
+	Added new check: Phantom Train
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221]
+Forcing connections...
+Forcing:  2067 3067
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area EsperMountain (13 rooms) to unstick branch 0
+	Added new check: Esper Mountain
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494]
+Forcing connections...
+Forcing:  2011 3011
+forcing successful.
+Forcing:  2012 3012
+forcing successful.
+Forcing:  2013 3013
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area DarylsTomb (16 rooms) to unstick branch 0
+	Added new check: Daryl's Tomb
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb"] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392]
+Forcing connections...
+Forcing:  2059 3059
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area AncientCastle (13 rooms) to unstick branch 0
+	Added new check: Ancient Castle
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area ZozoTower (12 rooms) to unstick branch 0
+	Added new check: Zozo
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313]
+Forcing connections...
+Forcing:  2032 3032
+forcing successful.
+Forcing:  2033 3033
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area SealedGate (12 rooms) to unstick branch 0
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513]
+Forcing connections...
+Forcing:  2029 3029
+forcing successful.
+Forcing:  2030 3030
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area ZoneEater (9 rooms) to unstick branch 0
+	Added new check: Zone Eater
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363]
+Forcing connections...
+Forcing:  2043 3043
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Jidoor (9 rooms) to unstick branch 0
+	Added new check: Auction House_1
+	Added new check: Auction House_2
+	Added new check: Owzer Mansion
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area UmarosCave (9 rooms) to unstick branch 0
+	Added new check: Umaro's Cave
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave"] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284]
+Forcing connections...
+Forcing:  2005 3005
+forcing successful.
+Forcing:  2006 3006
+forcing successful.
+Forcing:  2007 3007
+forcing successful.
+Forcing:  2008 3008
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area CrescentMtn (11 rooms) to unstick branch 0
+	Added new check: Serpent Trench
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284]
+Forcing connections...
+Forcing:  2046 3046
+forcing successful.
+Forcing:  2049 3049
+forcing successful.
+Forcing:  2053 3053
+forcing successful.
+Forcing:  2153 3153
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area MtZozo (7 rooms) to unstick branch 0
+	Added new check: Mt. Zozo
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area SouthFigaroCave (6 rooms) to unstick branch 0
+	Added new check: South Figaro Cave
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Zozo (10 rooms) to unstick branch 0
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104]
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+Forcing:  2064 3064
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area BarenFalls (3 rooms) to unstick branch 0
+	Added new check: Baren Falls
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+Forcing:  2076 3076
+forcing successful.
+Forcing:  2176 3176
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area ReturnersHideout (6 rooms) to unstick branch 0
+CUSTOM add pit 3039 to 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B ! [0, 0, 2, 0, 1] [6843, 3039]
+	Added new check: Lete River
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+Forcing:  2039 3039
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Kohlingen (1 rooms) to unstick branch 0
+	Added new check: Kohlingen
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area ImperialCamp (1 rooms) to unstick branch 0
+	Added new check: Imperial Camp
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Nikeah (1 rooms) to unstick branch 0
+	Skipping room ruin-nikeah - already exists
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Maranda (1 rooms) to unstick branch 0
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area FigaroCastle (1 rooms) to unstick branch 0
+	Added new check: Figaro Castle WOB
+	Added new check: Figaro Castle WOR
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area ImperialCastle (1 rooms) to unstick branch 0
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area PhoenixCave (1 rooms) to unstick branch 0
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle', 'ms-wor-1554']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Mobliz (1 rooms) to unstick branch 0
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle', 'ms-wor-1554', 'ms-wor-52']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Tzen (1 rooms) to unstick branch 0
+	Added new check: Tzen
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR', 'Tzen'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle', 'ms-wor-51']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle', 'ms-wor-1554', 'ms-wor-52', 'ms-wor-51']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding reserve area Veldt (1 rooms) to unstick branch 0
+	Added new check: Veldt
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR', 'Tzen', 'Veldt'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle', 'ms-wor-51', 'wor-veldt']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle', 'ms-wor-1554', 'ms-wor-52', 'ms-wor-51', 'wor-veldt']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+Adding extra area ImperialCastle to unstick branch 0
+	Skipping room 331 - already exists
+	Reset branch 0 active room to hub: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+Working on branch 0 ( ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR', 'Tzen', 'Veldt'] )
+status: terminus ruin_terminus_1
+status: check rooms [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle', 'ms-wor-51', 'wor-veldt']
+status: dead ends ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle', 'ms-wor-1554', 'ms-wor-52', 'ms-wor-51', 'wor-veldt']
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 1/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 failed to extend, retry 2/3
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B (level 0)
+	Hub+Upstream: {345, 'LeteRiver3', '432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B'}
+	Upstream: [345, 'LeteRiver3'], Downstream: []
+	Available exits: 0 doors, 0 traps
+	Target availability: pits=True, doors=True
+	Branch extension failed. Reason: no_exits
+Branch 0 is stuck after 3 retries. Reason: no_exits
+Skipping reward processing for stuck branch 0
+Branch viability: [True, False, False] Stuck: {0: 'no_exits'}
+
+
+
+python3.10.exe wc.py -i ../FFIII.smc -o ../ruin.smc -ruin -sc1 celes -stl 53 -oa 2.0.0.2.3.3.4.3.3 -debug > ../output.txt
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 25, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 74, in mod
+    self.ruination_mod(events, name_event)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 250, in ruination_mod
+    self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 3010, in generate_map_with_characters
+    raise RuinationMappingError(diag)
+event.ruination.RuinationMappingError:
+============================================================
+RUINATION MAPPING FAILURE: No reserve areas available to unstick branches
+============================================================
+
+=== Rewards State ===
+  Requested: 3 characters, 3 espers
+  Obtained:  0 characters, 4 espers
+  Available: 2 character slots, 1 esper slots
+  Planned characters: ['SHADOW', 'STRAGO']
+  Reserve characters: ['GOGO', 'LOCKE', 'RELM', 'TERRA', 'SABIN', 'GAU', 'MOG', 'CYAN', 'UMARO', 'EDGAR', 'SETZER']
+  Dead checks allowed: 7
+
+=== Branch State ===
+  Stuck branches: {0: 'no_exits'}
+  Branch viability: [True, False, False]
+  Current branch_id: 0
+
+  Branch 0:
+    Active room: 432_208_435_187_186_429_ruin-mtek3_431_191_428_425_212R_346_211_433_188_209_436_354_355_353_ruin-vector_351_349_ruin_hub_0_347_355a_421_424_188B
+    Terminus: ruin_terminus_1
+    Has hub: True
+    Last stuck reason: no_exits
+    Check rooms: [193, 'dc-76', 'ruin-whelk', 65, 151, 220, 488, 'ruin-daryl', 532, 313, 363, 'dc-73', 284, 368, 'ruin-st-exit', 256, 104, 'ruin-baren-reward', 'LeteRiver3', 'ms-wor-59', 'dc-1501', 'ruin-figarocastle', 'ms-wor-51', 'wor-veldt']
+    Dead ends: ['ruin_terminus_1', 352, 426, '221R', 184, 185, 189, 190, 192, 41, 47, 147, 149, 157, '203c', '206a', '206b', '207a', '207b', 212, 213, '215a', '215b', 221, 490, 493, 494, 380, 384, 386, 389, 392, 525, 526, 527, 532, 310, 312, 313, 504, 511, 513, 363, 279, 284, 251, 256, 103, '294r', '295r', '305r', '306r', '309r', 'ruin-figarocastle', 'ms-wor-1554', 'ms-wor-52', 'ms-wor-51', 'wor-veldt']
+    Nodes in network: 217
+    Rooms added (incl. merged): 246
+    Branch checks: ['Doma WOR_1', 'Doma WOR_3', 'Whelk', 'Narshe Moogle Defense', 'Mt. Kolts', 'Phantom Train', 'Esper Mountain', "Daryl's Tomb", 'Ancient Castle', 'Zozo', 'Zone Eater', 'Auction House_1', 'Auction House_2', 'Owzer Mansion', "Umaro's Cave", 'Serpent Trench', 'Mt. Zozo', 'South Figaro Cave', 'Baren Falls', 'Lete River', 'Kohlingen', 'Imperial Camp', 'Figaro Castle WOB', 'Figaro Castle WOR', 'Tzen', 'Veldt']
+    Keychain: {'CELES', 'cd3'}
+    Unconnected elements: 353 doors, 37 traps, 41 pits
+
+  Branch 1:
+    Active room: ruin_hub_1
+    Terminus: ruin_terminus_3
+    Has hub: False
+    Last stuck reason: none
+    Check rooms: ['ms-wor-58']
+    Dead ends: ['ruin_hub_1', 'ruin_terminus_3']
+    Nodes in network: 3
+    Rooms added (incl. merged): 3
+    Branch checks: ['South Figaro']
+    Keychain: {'CELES'}
+    Unconnected elements: 4 doors, 0 traps, 0 pits
+
+  Branch 2:
+    Active room: ruin_hub_2
+    Terminus: ruin_terminus_2
+    Has hub: False
+    Last stuck reason: none
+    Check rooms: ['ms-wob-40']
+    Dead ends: ['ruin_hub_2', 'ruin_terminus_2', 'ms-wob-40', 'ms-wor-48']
+    Nodes in network: 4
+    Rooms added (incl. merged): 4
+    Branch checks: ['Opera House']
+    Keychain: {'CELES'}
+    Unconnected elements: 4 doors, 0 traps, 0 pits
+
+
+=== Branch Topology Visualizations ===
+
+--- Branch 0 Topology ---
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  432_208_435_187_186_429_ruin-mtek3_... (0D/0T/1P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  345 (1D/0T/0P)
+  LeteRiver3 (0D/0T/1P)*
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_1 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    193 (1D/1T/0P)
+    dc-76 (1D/1T/1P)
+    ruin-whelk (2D/0T/0P)
+    65 (2D/0T/0P)
+    151 (2D/0T/0P)
+    220 (4D/0T/0P)
+    488 (2D/0T/0P)
+    ruin-daryl (1D/0T/0P)
+    532 (1D/0T/0P)
+    313 (1D/0T/0P)
+    363 (1D/0T/0P)
+    dc-73 (2D/0T/0P)
+    284 (1D/0T/0P)
+    368 (0D/1T/1P)
+    ruin-st-exit (0D/0T/0P)
+    256 (1D/0T/0P)
+    104 (2D/0T/0P)
+    ruin-baren-reward (0D/0T/0P)
+    ms-wor-59 (2D/0T/0P)
+    dc-1501 (2D/0T/0P)
+    ruin-figarocastle (1D/0T/0P)
+    ms-wor-51 (1D/0T/0P)
+    wor-veldt (1D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): ruin-narshe, 49, 153, 159, 202, 204, ... (+24)
+    Has traps: 422, 423, 427, 430, ruin-201, 356, ... (+17)
+    Has pits+doors: 210, 37a, 203a, 203b, 498, 499, ... (+4)
+    Connectors (2+ doors): 36, 38, 40, 42, 43, 44, ... (+54)
+    Dead ends (1 door): 352, 426, 221R, 184, 185, 189, ... (+58)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 217 total, 3 in topology, 214 unconnected
+  Free exits: 353 doors, 37 traps, 40 pits
+  Connections: 24 door-pairs, 41 trap->pit
+  WARNINGS:
+    - odd doors (353)
+    - TERMINUS not connected!
+    - 23 check room(s) not connected!
+======================================================================
+
+
+--- Branch 1 Topology ---
+  (Error generating visualization: argument of type 'NoneType' is not iterable)
+
+
+--- Branch 2 Topology ---
+  (Error generating visualization: argument of type 'NoneType' is not iterable)
+
+=== Areas State ===
+  Areas used: {'OperaHouse': 2, 'Vector': 0, 'SouthFigaro': 1, 'Cid': 2, 'Doma': 0, 'Narshe': 0, 'MtKolts': 0, 'PhantomTrain': 0, 'EsperMountain': 0, 'DarylsTomb': 0, 'AncientCastle': 0, 'ZozoTower': 0, 'SealedGate': 0, 'ZoneEater': 0, 'Jidoor': 0, 'UmarosCave': 0, 'CrescentMtn': 0, 'MtZozo': 0, 'SouthFigaroCave': 0, 'Zozo': 0, 'BarenFalls': 0, 'ReturnersHideout': 0, 'Kohlingen': 0, 'ImperialCamp': 0, 'Nikeah': 0, 'Maranda': 0, 'FigaroCastle': 0, 'ImperialCastle': 0, 'PhoenixCave': 0, 'Mobliz': 0, 'Tzen': 0, 'Veldt': 0}
+  Global keychain: {'CELES'}
+  Locked rewards waiting: {}
+
+  Reserve areas available: 0
+
+=== Troubleshooting Hints ===
+  - No reserve areas: all character areas already used
+============================================================
