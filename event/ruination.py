@@ -909,7 +909,7 @@ class RuinationBranch(Network):
         2a. If unconnected door in hub/upstream, can connect to PIDO room
         3. Can connect to upstream pit ONLY IF loop compression leaves exits
         GLOBAL: Never make a connection that leaves the branch with zero exits
-        ONLY-TRAP-PIT: If branch has exactly 1 trap and 1 pit in hub/upstream,
+        ONLY-TRAP-PIT: If branch has exactly 1 trap, 1 pit, and 0 doors,
                        don't connect them (must find unconnected room instead)
 
         Returns list of valid pit IDs.
@@ -941,9 +941,10 @@ class RuinationBranch(Network):
 
         # NEW FILTER: Check if this is the only trap and only pit scenario
         # If the branch has exactly 1 trap (exit) and exactly 1 pit (entrance) in hub/upstream,
-        # connecting them would strand the branch with no trap exits and no pit entrances.
+        # AND no doors, connecting them would strand the branch with no exits and no entrances.
+        # If there are doors, they provide both exits and entrances, so it's OK to connect.
         _, total_hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
-        is_only_trap_and_pit = (current_traps == 1 and total_hub_upstream_pits == 1)
+        is_only_trap_and_pit = (current_traps == 1 and total_hub_upstream_pits == 1 and current_doors == 0)
 
         # Get upstream pits of the exit room (for rule 3)
         local_upstream = self.get_upstream_nodes(exit_room_id)
