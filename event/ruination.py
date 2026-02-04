@@ -2037,6 +2037,18 @@ class RuinationBranch(Network):
                         self.dead_ends.extend(ordered_dead_ends)
                         break
 
+                # Check if this connection unlocked new elements via key application.
+                # If so, break IMMEDIATELY to preserve remaining entrances for the new elements.
+                check_traps, _, check_doors = self.collect_network_traps_and_pits(
+                    include_doors=True, exclude_upstream_doors=True)
+                if len(check_traps) > 0 or len(check_doors) > 0:
+                    if self.verbose:
+                        print(f'(6) Key unlocked new elements! Breaking early to preserve entrances.')
+                        print(f'    New traps: {check_traps}, New doors: {check_doors}')
+                    # Return unused dead ends to the pool
+                    self.dead_ends.extend(ordered_dead_ends)
+                    break
+
             # Check if any new elements were unlocked during this iteration.
             # If so, restart from step 1 to handle them with proper topology-aware logic.
             # Exclude upstream doors since upstream rooms are inaccessible at this point -
