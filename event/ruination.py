@@ -1945,6 +1945,9 @@ class RuinationBranch(Network):
                                          remaining_doors=remaining_doors, dead_ends=self.dead_ends)
 
             # (6) Connect dead ends to all remaining doors.
+            # SAFETY: Connect key-bearing dead ends FIRST so that if they unlock new traps,
+            # we still have keyless dead ends available. The LAST connection must be keyless.
+            #
             # Pre-check: we need enough dead ends for remaining doors
             if len(remaining_doors) > len(self.dead_ends):
                 viz = self.visualize_branch_topology()
@@ -1955,17 +1958,71 @@ class RuinationBranch(Network):
                     f'{viz}'
                 )
 
+            # Select exactly the number of dead ends we need
             random.shuffle(self.dead_ends)
+            needed_count = len(remaining_doors)
+            selected_dead_ends = [self.dead_ends.pop() for _ in range(needed_count)]
+
+            # Partition into key-bearing and keyless dead ends
+            dead_ends_with_keys = []
+            dead_ends_without_keys = []
+            for de_id in selected_dead_ends:
+                de_room = self.rooms.get_room(de_id)
+                if de_room and len(de_room.keys) > 0:
+                    dead_ends_with_keys.append(de_id)
+                else:
+                    dead_ends_without_keys.append(de_id)
+
             if self.verbose:
-                print('(6) remaining dead ends:', self.dead_ends)
+                print('(6) remaining dead ends:', selected_dead_ends)
+                print(f'(6) partitioned: {len(dead_ends_with_keys)} with keys, {len(dead_ends_without_keys)} without keys')
+
+            # CRITICAL: The last dead end connected must NOT have a key.
+            # If all selected dead ends have keys, we need to find a keyless one from remaining pool.
+            if len(dead_ends_without_keys) == 0 and len(self.dead_ends) > 0:
+                # Try to swap a key-bearing dead end for a keyless one from the remaining pool
+                for i, candidate_id in enumerate(self.dead_ends):
+                    candidate_room = self.rooms.get_room(candidate_id)
+                    if candidate_room and len(candidate_room.keys) == 0:
+                        # Found a keyless candidate - swap it in
+                        swapped_out = dead_ends_with_keys.pop()
+                        self.dead_ends.append(swapped_out)
+                        self.dead_ends.pop(i)
+                        dead_ends_without_keys.append(candidate_id)
+                        if self.verbose:
+                            print(f'(6) swapped key-bearing {swapped_out} for keyless {candidate_id}')
+                        break
+
+            if len(dead_ends_without_keys) == 0:
+                # All dead ends have keys - this is risky but we must proceed
+                if self.verbose:
+                    print('(6) WARNING: All available dead ends have keys!')
+
+            # Order: key-bearing first, keyless last (ensures last connection is safe)
+            ordered_dead_ends = dead_ends_with_keys + dead_ends_without_keys
+            random.shuffle(remaining_doors)
+
             for this_exit in remaining_doors:
-                room_id = self.dead_ends.pop()
+                room_id = ordered_dead_ends.pop(0)
                 room = self.rooms.get_room(room_id)
                 unprotected_room_doors = [d for d in room.doors if d not in self.protected]
                 this_conn = unprotected_room_doors.pop() if unprotected_room_doors else room.doors.pop()
                 if self.verbose:
-                    print('(6) connecting dead ends:', this_exit, '-->', this_conn)
+                    has_keys = room and len(room.keys) > 0
+                    print(f'(6) connecting dead ends: {this_exit} --> {this_conn} (has_keys={has_keys})')
                 self.connect(this_exit, this_conn)
+
+                # Check if this connection unlocked new elements via key application.
+                # If so, break IMMEDIATELY to preserve remaining entrances for the new elements.
+                check_traps, _, check_doors = self.collect_network_traps_and_pits(
+                    include_doors=True, exclude_upstream_doors=True)
+                if len(check_traps) > 0 or len(check_doors) > 0:
+                    if self.verbose:
+                        print(f'(6) Key unlocked new elements! Breaking early to preserve entrances.')
+                        print(f'    New traps: {check_traps}, New doors: {check_doors}')
+                    # Return unused dead ends to the pool
+                    self.dead_ends.extend(ordered_dead_ends)
+                    break
 
             # Check if any new elements were unlocked during this iteration.
             # If so, restart from step 1 to handle them with proper topology-aware logic.
