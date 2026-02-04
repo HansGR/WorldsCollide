@@ -909,6 +909,8 @@ class RuinationBranch(Network):
         2a. If unconnected door in hub/upstream, can connect to PIDO room
         3. Can connect to upstream pit ONLY IF loop compression leaves exits
         GLOBAL: Never make a connection that leaves the branch with zero exits
+        ONLY-TRAP-PIT: If branch has exactly 1 trap, 1 pit, and 0 doors,
+                       don't connect them (must find unconnected room instead)
 
         Returns list of valid pit IDs.
         """
@@ -937,6 +939,13 @@ class RuinationBranch(Network):
         # Count doors available in hub/upstream (for rule 2a)
         hub_upstream_doors, _ = self.count_exits_in_region(hub_and_upstream)
 
+        # NEW FILTER: Check if this is the only trap and only pit scenario
+        # If the branch has exactly 1 trap (exit) and exactly 1 pit (entrance) in hub/upstream,
+        # AND no doors, connecting them would strand the branch with no exits and no entrances.
+        # If there are doors, they provide both exits and entrances, so it's OK to connect.
+        _, total_hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
+        is_only_trap_and_pit = (current_traps == 1 and total_hub_upstream_pits == 1 and current_doors == 0)
+
         # Get upstream pits of the exit room (for rule 3)
         local_upstream = self.get_upstream_nodes(exit_room_id)
         local_upstream_pits = set()
@@ -960,6 +969,10 @@ class RuinationBranch(Network):
             pit_room = self.rooms.get_room_from_element(pit_id)
             if pit_room is None:
                 continue
+
+            # NEW FILTER: Skip if this is the only trap connecting to the only pit
+            if is_only_trap_and_pit:
+                continue  # Must find an unconnected room that adds entrances/exits
 
             # If pit is in hub/upstream, check rule 0 (not last entrance)
             if pit_room.id in hub_and_upstream:
@@ -1060,7 +1073,8 @@ class RuinationBranch(Network):
         # === Connect to hub/upstream pits (forms loop, compresses to hub) ===
         # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
         # Only allow if the branch would still have exits after using this trap.
-        if current_total_exits > 1:
+        # Also skip entirely if this is the only trap connecting to the only pit.
+        if current_total_exits > 1 and not is_only_trap_and_pit:
             for pit_id in hub_upstream_pits:
                 if pit_id in self.protected:
                     continue
