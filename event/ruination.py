@@ -906,7 +906,7 @@ class RuinationBranch(Network):
         Rules applied:
         0. Never connect to last entrance to hub/upstream
         1. Can connect to PITO room (kicks the can down the road)
-        2a. If unconnected door in hub/upstream, can connect to PIDO room
+        2a. Can connect to PIDO room if branch has exits after
         3. Can connect to upstream pit ONLY IF loop compression leaves exits
         GLOBAL: Never make a connection that leaves the branch with zero exits
         ONLY-TRAP-PIT: If branch has exactly 1 trap, 1 pit, and 0 doors,
@@ -1057,10 +1057,14 @@ class RuinationBranch(Network):
                 valid_pits.extend(room_pits)
                 continue
 
-            # === RULE 2a: PIDO rooms (if hub/upstream has doors) ===
+            # === RULE 2a: PIDO rooms ===
+            # A PIDO room (pit-in, door-out) can receive a trap if the branch still has exits after.
+            # After connecting: we lose 1 trap exit, but gain the new room's exits.
+            # New doors can then connect to other rooms (including DITO rooms whose traps
+            # can loop back to upstream pits), so we don't require hub to already have doors.
             if room_type == 'PIDO' or (len(room_pits) > 0 and len(room_doors) > 0 and len(room_traps) == 0):
-                if hub_upstream_doors > 0:
-                    # Hub/upstream has doors, so this PIDO room can connect back
+                exits_after_connection = (current_total_exits - 1) + len(room_doors)
+                if exits_after_connection > 0:
                     valid_pits.extend(room_pits)
                 continue
 
@@ -2111,7 +2115,8 @@ class RuinationBranch(Network):
         RULES:
         0. Never connect to the last entrance to hub/upstream (until finalize_map)
         1. Can connect downstream trap to unconnected pit-in, trap-out (PITO) room
-        2a. If unconnected door in hub/upstream, can connect downstream trap to PIDO room
+        2a. Can connect downstream trap to PIDO room if branch has exits after connection
+        (the PIDO room's doors count as new exits)
         2b. If unconnected pit in hub/upstream, can connect downstream door to DITO room
         3. Only connect downstream trap to pit in its local upstream (not hub's upstream)
            IF the resulting compressed loop has another exit
