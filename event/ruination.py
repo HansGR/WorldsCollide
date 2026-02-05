@@ -1218,6 +1218,240 @@ class RuinationBranch(Network):
 
         return valid_doors
 
+    def get_valid_pit_targets_v2(self, trap_exit, exit_room_id, topology):
+        """V2: Get valid pit targets by directly assessing each connection's result.
+
+        Instead of classifying room types and applying categorical rules, this method
+        directly evaluates whether each potential connection maintains branch invariants:
+        - Downstream of active room must have >= 1 exit after connection
+        - Hub+upstream must have >= 1 entrance after connection (for loop connections)
+
+        Rules:
+        A1. Unconnected target: target room must have exits (doors+traps) > 0.
+            (The consumed pit is not an exit, so target exits are unaffected.)
+        B1. Connected target: (target + target's downstream) must have at least one
+            exit that is not the selected exit (trap_exit).
+        C.  Hub/upstream target (loop): additionally, (exit room + exit room's upstream)
+            must have at least one entrance that is not the target pit.
+
+        Returns list of valid pit IDs.
+        """
+        valid_pits = []
+        hub_and_upstream = topology['hub_and_upstream']
+        room_levels = topology['room_levels']
+        currently_connected = set(room_levels.keys())
+
+        # Pre-compute upstream rooms for rule C (lazy, only if needed)
+        _upstream_room_cache = None
+
+        def get_exit_upstream_rooms():
+            nonlocal _upstream_room_cache
+            if _upstream_room_cache is None:
+                paths = self.get_upstream_paths(exit_room_id)
+                _upstream_room_cache = set()
+                for path in paths:
+                    _upstream_room_cache.update(path)
+            return _upstream_room_cache
+
+        for room_id in self.net.nodes:
+            if room_id == self.terminus:
+                continue
+
+            room = self.rooms.get_room(room_id)
+            if room is None:
+                continue
+
+            room_pits = [p for p in room.pits if p not in self.protected]
+            if not room_pits:
+                continue
+
+            is_connected = room_id in currently_connected
+
+            if not is_connected:
+                # === A1: Unconnected room ===
+                # Connection consumes trap_exit from exit room and a pit from target room.
+                # Pit is not an exit, so target room exits are unaffected.
+                # Legal if target room has at least one exit (door or trap).
+                target_exits = (
+                    len([d for d in room.doors if d not in self.protected])
+                    + len([t for t in room.traps if t not in self.protected])
+                )
+                if target_exits > 0:
+                    valid_pits.extend(room_pits)
+            else:
+                # === B1: Connected room ===
+                # (target room + target's downstream) must have at least one exit
+                # that is not the selected exit (trap_exit).
+                downstream_paths = self.get_downstream_paths(room_id)
+                downstream_rooms = set()
+                for path in downstream_paths:
+                    downstream_rooms.update(path)
+                check_region = {room_id} | downstream_rooms
+
+                # Count exits in region, excluding trap_exit
+                exits_count = 0
+                for rid in check_region:
+                    r = self.rooms.get_room(rid)
+                    if r:
+                        exits_count += len([d for d in r.doors
+                                            if d not in self.protected and d != trap_exit])
+                        exits_count += len([t for t in r.traps
+                                            if t not in self.protected and t != trap_exit])
+
+                if exits_count <= 0:
+                    continue
+
+                # === C: If target is in hub/upstream, also check entrance preservation ===
+                if room_id in hub_and_upstream:
+                    upstream_rooms = get_exit_upstream_rooms()
+                    entrance_region = {exit_room_id} | upstream_rooms
+
+                    for pit_id in room_pits:
+                        # Count entrances in region, excluding this specific target pit
+                        entrance_count = 0
+                        for rid in entrance_region:
+                            r = self.rooms.get_room(rid)
+                            if r:
+                                entrance_count += len([d for d in r.doors
+                                                       if d not in self.protected and d != pit_id])
+                                entrance_count += len([p for p in r.pits
+                                                       if p not in self.protected and p != pit_id])
+                        if entrance_count > 0:
+                            valid_pits.append(pit_id)
+                else:
+                    # Connected, not hub/upstream - B1 passed, all pits valid
+                    valid_pits.extend(room_pits)
+
+        return valid_pits
+
+    def get_valid_door_targets_v2(self, door_exit, exit_room_id, topology, available_doors=None, available_traps=None):
+        """V2: Get valid door targets by directly assessing each connection's result.
+
+        Instead of classifying room types and applying categorical rules, this method
+        directly evaluates whether each potential connection maintains branch invariants:
+        - Downstream of active room must have >= 1 exit after connection
+        - Hub+upstream must have >= 1 entrance after connection (for loop connections)
+
+        Rules:
+        A2. Unconnected target: (exit room + target room) must have exits > 0 after
+            both door_exit and target_door are consumed.
+        B2. Connected target: (exit room + target + target's downstream) must have
+            at least one exit after both door_exit and target_door are consumed.
+        C.  Hub/upstream target (loop): additionally, (exit room + exit room's upstream)
+            must have at least one entrance that is not the target door.
+
+        Note: available_doors and available_traps are accepted for signature compatibility
+        with v1 but are not used by v2 (the method computes what it needs directly).
+
+        Returns list of valid door IDs.
+        """
+        valid_doors = []
+        hub_and_upstream = topology['hub_and_upstream']
+        room_levels = topology['room_levels']
+        currently_connected = set(room_levels.keys())
+
+        # Pre-compute upstream rooms for rule C (lazy, only if needed)
+        _upstream_room_cache = None
+
+        def get_exit_upstream_rooms():
+            nonlocal _upstream_room_cache
+            if _upstream_room_cache is None:
+                paths = self.get_upstream_paths(exit_room_id)
+                _upstream_room_cache = set()
+                for path in paths:
+                    _upstream_room_cache.update(path)
+            return _upstream_room_cache
+
+        for room_id in self.net.nodes:
+            if room_id == self.terminus:
+                continue
+
+            room = self.rooms.get_room(room_id)
+            if room is None:
+                continue
+
+            room_doors = [d for d in room.doors if d not in self.protected]
+            if not room_doors:
+                continue
+
+            is_connected = room_id in currently_connected
+
+            if not is_connected:
+                # === A2: Unconnected room ===
+                # Connection consumes door_exit from exit room and target_door from target room.
+                # Both are doors (exits), so we check remaining exits after removing both.
+
+                # Skip true dead ends (deferred to finalize_map)
+                if self.is_true_dead_end(room_id):
+                    continue
+
+                for target_door in room_doors:
+                    if target_door == door_exit:
+                        continue
+
+                    exclude = {door_exit, target_door}
+                    exits_count = 0
+                    # Use a set to avoid double-counting if exit_room_id == room_id
+                    for rid in {exit_room_id, room_id}:
+                        r = self.rooms.get_room(rid)
+                        if r:
+                            exits_count += len([d for d in r.doors
+                                                if d not in self.protected and d not in exclude])
+                            exits_count += len([t for t in r.traps
+                                                if t not in self.protected and t not in exclude])
+
+                    if exits_count > 0:
+                        valid_doors.append(target_door)
+            else:
+                # === B2: Connected room ===
+                # (exit room + target room + target's downstream) must have at least one
+                # exit after both door_exit and target_door are consumed.
+                downstream_paths = self.get_downstream_paths(room_id)
+                downstream_rooms = set()
+                for path in downstream_paths:
+                    downstream_rooms.update(path)
+                check_region = {exit_room_id, room_id} | downstream_rooms
+
+                for target_door in room_doors:
+                    if target_door == door_exit:
+                        continue
+
+                    # Count exits in region, excluding both consumed doors
+                    exclude = {door_exit, target_door}
+                    exits_count = 0
+                    for rid in check_region:
+                        r = self.rooms.get_room(rid)
+                        if r:
+                            exits_count += len([d for d in r.doors
+                                                if d not in self.protected and d not in exclude])
+                            exits_count += len([t for t in r.traps
+                                                if t not in self.protected and t not in exclude])
+
+                    if exits_count <= 0:
+                        continue
+
+                    # === C: If target is in hub/upstream, check entrance preservation ===
+                    if room_id in hub_and_upstream:
+                        upstream_rooms = get_exit_upstream_rooms()
+                        entrance_region = {exit_room_id} | upstream_rooms
+
+                        # Count entrances in region, excluding the target door
+                        entrance_count = 0
+                        for rid in entrance_region:
+                            r = self.rooms.get_room(rid)
+                            if r:
+                                entrance_count += len([d for d in r.doors
+                                                       if d not in self.protected and d != target_door])
+                                entrance_count += len([p for p in r.pits
+                                                       if p not in self.protected and p != target_door])
+                        if entrance_count > 0:
+                            valid_doors.append(target_door)
+                    else:
+                        # Connected, not hub/upstream - B2 passed
+                        valid_doors.append(target_door)
+
+        return valid_doors
+
     def visualize_branch_topology(self):
         """Generate a text-based visualization of the branch's topology.
 
