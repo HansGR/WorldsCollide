@@ -1180,10 +1180,12 @@ class RuinationBranch(Network):
                     valid_doors.extend(room_doors)
 
         # === Connect to upstream/hub doors (forms loop) ===
-        # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
-        # They consume TWO exits: the source door AND the target door in hub/upstream.
-        # Only allow if the branch would still have exits after using both doors.
-        if current_total_exits > 2:
+        # Loop connections consume TWO exits: the source door AND the target door.
+        # CRITICAL: Only count exits from rooms that will be usable after the connection:
+        #   - Source-side: active path exits (available_doors + available_traps)
+        #   - Target-side: exits in the target room h_id (absorbed into hub after connection)
+        # Exits in OTHER upstream rooms are NOT usable by extend_branch_path, so don't count them.
+        if current_total_exits > 2:  # Quick pre-filter (necessary condition)
             for h_id in hub_and_upstream:
                 h_room = self.rooms.get_room(h_id)
                 if h_room:
@@ -1192,9 +1194,27 @@ class RuinationBranch(Network):
                     hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
                     total_entrances = hub_doors + hub_pits
                     if total_entrances > 1:  # Leave at least one entrance
+                        # Count exits from target room (will be absorbed after connection)
+                        h_exits_doors, h_exits_traps = self.count_exits_in_region({h_id})
+                        h_total_exits = h_exits_doors + h_exits_traps
+
                         for d in h_doors:
-                            if d != door_exit:  # Don't connect to self
-                                valid_doors.append(d)
+                            if d == door_exit:  # Don't connect to self
+                                continue
+                            # Per-target check: after consuming door_exit and d,
+                            # are there still usable exits?
+                            if available_doors is not None and available_traps is not None:
+                                if h_id == exit_room_id:
+                                    # Source and target in same room - exits overlap
+                                    remaining = (available_doors + available_traps) - 2
+                                else:
+                                    # Different rooms - independent exit pools
+                                    remaining = (available_doors + available_traps - 1) + (h_total_exits - 1)
+                                if remaining <= 0:
+                                    continue  # Would leave no usable exits
+                            elif current_total_exits <= 2:
+                                continue  # Fallback: not enough exits
+                            valid_doors.append(d)
 
         return valid_doors
 
