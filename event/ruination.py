@@ -940,11 +940,11 @@ class RuinationBranch(Network):
         hub_upstream_doors, _ = self.count_exits_in_region(hub_and_upstream)
 
         # NEW FILTER: Check if this is the only trap and only pit scenario
-        # If the branch has exactly 1 trap (exit) and exactly 1 pit (entrance) in hub/upstream,
+        # If the branch has exactly 1 trap (exit) and only pits in hub/upstream,
         # AND no doors, connecting them would strand the branch with no exits and no entrances.
         # If there are doors, they provide both exits and entrances, so it's OK to connect.
         _, total_hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
-        is_only_trap_and_pit = (current_traps == 1 and total_hub_upstream_pits == 1 and current_doors == 0)
+        is_only_trap_and_pits = (current_traps == 1 and total_hub_upstream_pits >= 1 and current_doors == 0)
 
         # Get upstream pits of the exit room (for rule 3)
         local_upstream = self.get_upstream_nodes(exit_room_id)
@@ -970,8 +970,8 @@ class RuinationBranch(Network):
             if pit_room is None:
                 continue
 
-            # NEW FILTER: Skip if this is the only trap connecting to the only pit
-            if is_only_trap_and_pit:
+            # NEW FILTER: Skip if this is the only trap connecting to an upstream pit
+            if is_only_trap_and_pits:
                 continue  # Must find an unconnected room that adds entrances/exits
 
             # If pit is in hub/upstream, check rule 0 (not last entrance)
@@ -1078,7 +1078,7 @@ class RuinationBranch(Network):
         # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
         # Only allow if the branch would still have exits after using this trap.
         # Also skip entirely if this is the only trap connecting to the only pit.
-        if current_total_exits > 1 and not is_only_trap_and_pit:
+        if current_total_exits > 1 and not is_only_trap_and_pits:
             for pit_id in hub_upstream_pits:
                 if pit_id in self.protected:
                     continue
