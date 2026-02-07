@@ -2190,6 +2190,7 @@ class RuinationBranch(Network):
 
                 # Update hub, upstream, downstream, delta
                 hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub = self.rooms.get_room(hub_id)
                 upstream = self.get_upstream_nodes(hub_id)
                 downstream = self.get_downstream_nodes(hub_id)
                 delta = []
