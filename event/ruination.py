@@ -2031,6 +2031,15 @@ class RuinationBranch(Network):
                     # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
                     # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
                     available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
+                    if self.verbose:
+                        print(f'\t(2) converter search: room_traps={unprotected_room_traps}, room_doors={unprotected_room_doors}')
+                        print(f'\t    upstream_doors={upstream_doors}, upstream_pits={upstream_pits}')
+                        print(f'\t    available_nodes in network: {len(available_nodes)}')
+                        if reserve_areas is not None:
+                            ra_summary = [(a, len(r)) for a, r in reserve_areas if len(r) > 0]
+                            print(f'\t    reserve_areas: {ra_summary}')
+                        else:
+                            print(f'\t    reserve_areas: None')
                     if len(unprotected_room_traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
                         # Need a pit-in, door-out converter
                         pido = []
@@ -2125,10 +2134,52 @@ class RuinationBranch(Network):
                                 if this_conn is not None:
                                     break
 
+                    elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) == 0:
+                        # Upstream has nothing at all - need to add any room with a door
+                        if self.verbose:
+                            print('\t\tupstream has no doors or pits, looking for a room with a door...')
+                        # Search network first
+                        for node_id in available_nodes:
+                            node = self.rooms.get_room(node_id)
+                            unprotected_node_doors = [d for d in node.doors if d not in self.protected]
+                            if len(unprotected_node_doors) > 0:
+                                this_conn = random.choice(unprotected_node_doors)
+                                if self.verbose:
+                                    print(f'\t\tfound door {this_conn} in network node {node_id}')
+                                break
+
+                        # Fallback: search reserve areas for any room with a door
+                        if this_conn is None and reserve_areas is not None:
+                            if self.verbose:
+                                print('\t\tno door-bearing room in network, checking reserve areas...')
+                            for area_name, area_rooms in reserve_areas:
+                                for rid in area_rooms:
+                                    if rid in self.net.nodes:
+                                        continue
+                                    if rid in room_data:
+                                        data = room_data[rid]
+                                        r_doors = list(data[0]) if len(data) > 0 else []
+                                        if len(r_doors) > 0:
+                                            self.add_room(rid)
+                                            area_rooms.remove(rid)
+                                            added_room = self.rooms.get_room(rid)
+                                            unprotected_added_doors = [d for d in added_room.doors if d not in self.protected]
+                                            this_conn = random.choice(unprotected_added_doors)
+                                            if self.verbose:
+                                                print(f'\t\tadded room with door from reserve area {area_name}: {rid}')
+                                            break
+                                if this_conn is not None:
+                                    break
+
                 if this_conn is None:
-                    # There is no solution.
-                    print('Found an inescapable downstream node!')
-                    raise Exception
+                    viz = self.visualize_branch_topology()
+                    raise RuntimeError(
+                        f"finalize_map step 2: Inescapable downstream node. "
+                        f"room_doors={unprotected_room_doors}, room_traps={unprotected_room_traps}, "
+                        f"upstream_doors={upstream_doors}, upstream_pits={upstream_pits}, "
+                        f"reserve_areas={'None' if reserve_areas is None else [(a, len(r)) for a, r in reserve_areas]}\n"
+                        f"{viz}"
+                    )
 
                 if self.verbose:
                     print('(2) connecting', this_exit, '-->', this_conn)
