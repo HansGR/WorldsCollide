@@ -1849,8 +1849,11 @@ class RuinationBranch(Network):
     def finalize_map(self, reserve_areas=None):
         if self.verbose:
             print('Closing branch...')
-            viz = self.visualize_branch_topology()
-            print(viz)
+            try:
+                viz = self.visualize_branch_topology()
+                print(viz)
+            except:
+                print('Could not visualise branch!')
 
         self.ForceConnections(forced_connections)
 
