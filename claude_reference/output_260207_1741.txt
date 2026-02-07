@@ -1,0 +1,964 @@
+Version   1.4.2
+Generated 2026-02-07 17:40:36
+Input     FFIII.smc
+Output    ruin.smc
+Log       ruin.txt
+Seed      u7i740052ta3
+Flags     -cg -oa 2.0.0.2.3.3.4.3.3 -sc1 celes -sal -stl 53 -eu -csrp 80 125 -fst -brl -slr 3 5 -lmprp 75 125 -lel -srr 25 35 -rnl -rnc -sdr 1 2 -das -dda -dns -sch -scis -com 98989898989898989898989898 -rec1 28 -rec2 27 -xpm 3 -mpm 5 -gpm 0 -nxppd -lsced 2 -hmced 2 -xgced 2 -ase 2 -msl 40 -sed -bbs -drloc shuffle -stloc mix -be -bnu -res -fer 0 -escr 100 -dgne -wnz -mmnu -cmd -esr 2 5 -elrt -ebr 82 -emprp 75 125 -nm1 random -rnl1 -rns1 -nm2 random -rnl2 -rns2 -nmmi -mmprp 75 125 -gp 5000 -smc 3 -sto 1 -ieor 33 -ieror 33 -ir stronger -csb 6 14 -mca -stra -saw -sisr 20 -sprp 75 125 -sdm 4 -npi -sebr -snsb -snee -snil -ccsr 20 -chrm 5 0 -cms -frw -wmhc -cor 100 -crr 100 -crvr 100 120 -crm -ari -anca -adeh -ame 1 -nmc -noshoes -u254 -nfps -fs -fe -fvd -fr -fj -fbs -fedc -fc -ond -etn -ruin
+Hash      Banon, Narshe Guard, Wolf, Chancellor
+Debug Mode
+Requested:  3 characters,  3 espers
+Pre-plan: Planned areas have 12 checks, 8 character slots, 11 esper slots
+Pre-plan: Will obtain characters: ['EDGAR', 'RELM']
+Pre-plan: Reserve characters (for extra areas): ['SABIN', 'UMARO', 'GOGO', 'TERRA', 'CYAN', 'SETZER', 'LOCKE', 'SHADOW', 'GAU', 'STRAGO', 'MOG']
+Pre-plan: Dead checks allowed: 7
+Areas used:  {'SouthFigaro', 'OperaHouse', 'Vector', 'Cid'}
+Distributed areas:
+	 0 :  {'SouthFigaro', 'OperaHouse', 'Cid'}
+	 1 :  {'Vector'}
+	 2 :  set()
+Checks available:
+	 0 :  ['South Figaro', 'Opera House']
+	 1 :  ['Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  []
+Rewards available:  [3, 5]
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+		assessing key  CELES in rooms
+Generating map with characters...
+Branch viability: [False, True, False] Stuck: {}
+Working on branch 1 ( ['Magitek Factory_1', 'Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_2
+status: check rooms [354, 'ruin-mtek3', 349]
+status: dead ends ['ruin_hub_1', 'ruin_terminus_2', 352]
+Forcing connections...
+Forcing:  2023 3023
+forcing successful.
+Forcing:  2128 3128
+forcing successful.
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin_hub_1 (level 0)
+	Hub+Upstream: {'ruin_hub_1'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 394: 13 valid targets
+		Selected: 394 --> 716 (room 355)
+Looking for reward in room 355 ...
+Making connection:  394 --> 716
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 355_ruin_hub_1 (level 0)
+	Hub+Upstream: {'355_ruin_hub_1'}
+	Upstream: [], Downstream: []
+	Available exits: 0 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2027: 5 valid targets
+		Selected: 2027 --> 3025 (room 349)
+Looking for reward in room 349 ...
+Found a reward!  [('Magitek Factory_1', <RewardType.ITEM|ESPER: 12>)] in room 349
+Making connection:  2027 --> 3025
+Processing reward:  Magitek Factory_1
+	choosing from... RewardType.ITEM|ESPER
+	got Crusader !
+	Updated Rewards Obtained:  0 Characters,  1 Espers
+	Updated Rewards Available:  3 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House']
+	 1 :  ['Magitek Factory_2', 'Magitek Factory_3']
+	 2 :  []
+Branch viability: [False, True, False] Stuck: {}
+	trimmed dead end  ruin_hub_1
+Working on branch 1 ( ['Magitek Factory_2', 'Magitek Factory_3'] )
+status: terminus ruin_terminus_2
+status: check rooms [354, 'ruin-mtek3']
+status: dead ends ['ruin_terminus_2', 352]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 349 (level 1)
+	Hub+Upstream: {'355_ruin_hub_1'}
+	Upstream: ['355_ruin_hub_1'], Downstream: []
+	Available exits: 2 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2026: 4 valid targets
+		Selected: 2026 --> 3024 (room 347)
+Looking for reward in room 347 ...
+Making connection:  2026 --> 3024
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 347 (level 2)
+	Hub+Upstream: {'355_ruin_hub_1'}
+	Upstream: [349, '355_ruin_hub_1'], Downstream: []
+	Available exits: 1 doors, 2 traps
+	Target availability: pits=True, doors=True
+	traps: 2 exits to evaluate
+		Exit 2024: 3 valid targets
+		Selected: 2024 --> 3022 (room 347)
+Looking for reward in room 347 ...
+Making connection:  2024 --> 3022
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 347 (level 2)
+	Hub+Upstream: {'355_ruin_hub_1'}
+	Upstream: [349, '355_ruin_hub_1'], Downstream: []
+	Available exits: 1 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2025: 2 valid targets
+		Selected: 2025 --> 3027 (room 355a)
+Looking for reward in room 355a ...
+Making connection:  2025 --> 3027
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 355a (level 3)
+	Hub+Upstream: {'355_ruin_hub_1'}
+	Upstream: [347, 349, '355_ruin_hub_1'], Downstream: []
+	Available exits: 0 doors, 1 traps
+	Target availability: pits=True, doors=True
+	traps: 1 exits to evaluate
+		Exit 2028: 1 valid targets
+		Selected: 2028 --> 3026 (room 347)
+Looking for reward in room 347 ...
+Making connection:  2028 --> 3026
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 347_355a (level 2)
+	Hub+Upstream: {'355_ruin_hub_1'}
+	Upstream: [349, '355_ruin_hub_1'], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 704: 11 valid targets
+		Selected: 704 --> 715 (room 354)
+Looking for reward in room 354 ...
+Found a reward!  [('Magitek Factory_2', <RewardType.ITEM|ESPER: 12>)] in room 354
+Making connection:  704 --> 715
+Processing reward:  Magitek Factory_2
+	choosing from... RewardType.ITEM|ESPER
+	got Ramuh !
+	Updated Rewards Obtained:  0 Characters,  2 Espers
+	Updated Rewards Available:  3 Characters,  3 Espers
+	Updated branch checks available:
+	 0 :  ['South Figaro', 'Opera House']
+	 1 :  ['Magitek Factory_3']
+	 2 :  []
+Branch viability: [False, False, False] Stuck: {}
+Adding reserve area Doma (33 rooms) to unstick branch 0
+	Added new check: Doma WOR_2
+	Added new check: Doma WOR_1
+	Added new check: Doma WOR_3
+	Reset branch 0 active room to hub: ruin_hub_0
+Working on branch 0 ( ['South Figaro', 'Opera House', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-40', 'ms-wor-58', 429, 193, 'dc-76']
+status: dead ends ['ruin_hub_0', 'ruin_terminus_1', 'ms-wor-48', 'ms-wob-40', 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin_hub_0 (level 0)
+	Hub+Upstream: {'ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 393: 35 valid targets
+		Selected: 393 --> 868 (room 436)
+Looking for reward in room 436 ...
+Making connection:  393 --> 868
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 870: 33 valid targets
+		Selected: 870 --> 863 (room 433)
+Looking for reward in room 433 ...
+Making connection:  870 --> 863
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 1 exits to evaluate
+		Exit 864: 31 valid targets
+		Selected: 864 --> 446 (room 191)
+Looking for reward in room 191 ...
+Making connection:  864 --> 446
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 448: 34 valid targets
+		Selected: 448 --> 1162 (room ms-wor-58)
+Looking for reward in room ms-wor-58 ...
+Found a reward!  [('South Figaro', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ms-wor-58
+Making connection:  448 --> 1162
+Processing reward:  South Figaro
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Bahamut !
+	Updated Rewards Obtained:  0 Characters,  3 Espers
+	Updated Rewards Available:  2 Characters,  2 Espers
+	Updated branch checks available:
+	 0 :  ['Opera House', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3']
+	 1 :  ['Magitek Factory_3']
+	 2 :  []
+Branch viability: [True, False, False] Stuck: {}
+	trimmed dead end  ruin_hub_0
+Working on branch 0 ( ['Opera House', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3'] )
+status: terminus ruin_terminus_1
+status: check rooms ['ms-wob-40', 429, 193, 'dc-76']
+status: dead ends ['ruin_terminus_1', 'ms-wor-48', 'ms-wob-40', 426, '221R', 184, 185, 189, 190, 192]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ms-wor-58_191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'ms-wor-58_191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 3 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 3 exits to evaluate
+		Exit 1163: 32 valid targets
+		Selected: 1163 --> 441 (room 188)
+Looking for reward in room 188 ...
+Making connection:  1163 --> 441
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 188_ms-wor-58_191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'188_ms-wor-58_191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 8 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 8 exits to evaluate
+		Exit 440: 30 valid targets
+		Selected: 440 --> 444 (room 188_ms-wor-58_191_433_436_ruin_hub_0)
+Looking for reward in room 188_ms-wor-58_191_433_436_ruin_hub_0 ...
+Making connection:  440 --> 444
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 188_ms-wor-58_191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'188_ms-wor-58_191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 6 exits to evaluate
+		Exit 451: 28 valid targets
+		Selected: 451 --> 484 (room 211)
+Looking for reward in room 211 ...
+Making connection:  451 --> 484
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 211_188_ms-wor-58_191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'211_188_ms-wor-58_191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 6 exits to evaluate
+		Exit 449: 26 valid targets
+		Selected: 449 --> 454 (room 211_188_ms-wor-58_191_433_436_ruin_hub_0)
+Looking for reward in room 211_188_ms-wor-58_191_433_436_ruin_hub_0 ...
+Making connection:  449 --> 454
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 211_188_ms-wor-58_191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'211_188_ms-wor-58_191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 4 exits to evaluate
+		Exit 452: 24 valid targets
+		Selected: 452 --> 445 (room 211_188_ms-wor-58_191_433_436_ruin_hub_0)
+Looking for reward in room 211_188_ms-wor-58_191_433_436_ruin_hub_0 ...
+Making connection:  452 --> 445
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 211_188_ms-wor-58_191_433_436_ruin_hub_0 (level 0)
+	Hub+Upstream: {'211_188_ms-wor-58_191_433_436_ruin_hub_0'}
+	Upstream: [], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=True, doors=True
+	doors: 2 exits to evaluate
+		Exit 486: 21 valid targets
+		Selected: 486 --> 456 (room 193)
+Looking for reward in room 193 ...
+Found a reward!  [('Doma WOR_1', <RewardType.ESPER|CHARACTER: 6>)] in room 193
+Making connection:  486 --> 456
+Processing reward:  Doma WOR_1
+	choosing from... RewardType.ESPER|CHARACTER
+	got EDGAR !
+	Set character path: EDGAR depends on CYAN
+		assessing key  EDGAR in rooms
+		assessing key  EDGAR in rooms
+		assessing key  EDGAR in rooms
+		# rooms on each branch:  [38, 14, 2]
+		# rooms on each branch:  [38, 14, 3]
+Distributed areas:
+	 0 :  set()
+	 1 :  set()
+	 2 :  {'AncientCastle', 'FigaroCastle'}
+Checks available:
+	 0 :  ['Opera House', 'Doma WOR_2', 'Doma WOR_1', 'Doma WOR_3']
+	 1 :  ['Magitek Factory_3']
+	 2 :  ['Figaro Castle WOB', 'Figaro Castle WOR', 'Ancient Castle']
+	Updated Rewards Obtained:  1 Characters,  3 Espers
+	Updated Rewards Available:  4 Characters,  4 Espers
+	Updated branch checks available:
+	 0 :  ['Opera House', 'Doma WOR_2', 'Doma WOR_3']
+	 1 :  ['Magitek Factory_3']
+	 2 :  ['Figaro Castle WOB', 'Figaro Castle WOR', 'Ancient Castle']
+Branch viability: [True, False, True] Stuck: {}
+Working on branch 2 ( ['Figaro Castle WOB', 'Figaro Castle WOR', 'Ancient Castle'] )
+status: terminus ruin_terminus_3
+status: check rooms ['ruin-figarocastle', 532]
+status: dead ends ['ruin_hub_2', 'ruin_terminus_3', 'ruin-figarocastle', 525, 526, 527, 532]
+Forcing connections...
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: ruin_hub_2 (level 0)
+	Hub+Upstream: {'ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 1 exits to evaluate
+		Exit 395: 25 valid targets
+		Selected: 395 --> 1275 (room 522)
+Looking for reward in room 522 ...
+Making connection:  395 --> 1275
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 1 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 1 exits to evaluate
+		Exit 1089: 23 valid targets
+		Selected: 1089 --> 1279 (room 530)
+Looking for reward in room 530 ...
+Making connection:  1089 --> 1279
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 4 exits to evaluate
+		Exit 1102: 24 valid targets
+		Selected: 1102 --> 1088 (room 521)
+Looking for reward in room 521 ...
+Making connection:  1102 --> 1088
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 6 exits to evaluate
+		Exit 1086: 22 valid targets
+		Selected: 1086 --> 1093 (room 524)
+Looking for reward in room 524 ...
+Making connection:  1086 --> 1093
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 6 exits to evaluate
+		Exit 1104: 20 valid targets
+		Selected: 1104 --> 1083 (room 520)
+Looking for reward in room 520 ...
+Making connection:  1104 --> 1083
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 8 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 8 exits to evaluate
+		Exit 1274: 18 valid targets
+		Selected: 1274 --> 1278 (room 528)
+Looking for reward in room 528 ...
+Making connection:  1274 --> 1278
+		assessing key  ac2 in rooms
+			Applying key: ('ac2',) in room 531
+			adding a door... 1106
+			removing key  ac2 from 528_520_524_521_530_522_ruin_hub_2
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 10 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 10 exits to evaluate
+		Exit 1085: 17 valid targets
+		Selected: 1085 --> 1098 (room 528_520_524_521_530_522_ruin_hub_2)
+Looking for reward in room 528_520_524_521_530_522_ruin_hub_2 ...
+Making connection:  1085 --> 1098
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 8 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 8 exits to evaluate
+		Exit 1101: 15 valid targets
+		Selected: 1101 --> 1092 (room 528_520_524_521_530_522_ruin_hub_2)
+Looking for reward in room 528_520_524_521_530_522_ruin_hub_2 ...
+Making connection:  1101 --> 1092
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 6 exits to evaluate
+		Exit 1084: 13 valid targets
+		Selected: 1084 --> 1106 (room 531)
+Looking for reward in room 531 ...
+Making connection:  1084 --> 1106
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 531_528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'531_528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 6 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 6 exits to evaluate
+		Exit 1100: 11 valid targets
+		Selected: 1100 --> 1099 (room 531_528_520_524_521_530_522_ruin_hub_2)
+Looking for reward in room 531_528_520_524_521_530_522_ruin_hub_2 ...
+Making connection:  1100 --> 1099
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 531_528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'531_528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 4 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 4 exits to evaluate
+		Exit 1103: 9 valid targets
+		Selected: 1103 --> 1105 (room 531_528_520_524_521_530_522_ruin_hub_2)
+Looking for reward in room 531_528_520_524_521_530_522_ruin_hub_2 ...
+Making connection:  1103 --> 1105
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 531_528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'531_528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 2 exits to evaluate
+		Exit 1087: 6 valid targets
+		Selected: 1087 --> 1090 (room 523)
+Looking for reward in room 523 ...
+Making connection:  1087 --> 1090
+	=== LOCATION-AWARE EXTENSION ===
+	Active room: 523_531_528_520_524_521_530_522_ruin_hub_2 (level 0)
+	Hub+Upstream: {'523_531_528_520_524_521_530_522_ruin_hub_2'}
+	Upstream: [], Downstream: []
+	Available exits: 2 doors, 0 traps
+	Target availability: pits=False, doors=True
+	doors: 2 exits to evaluate
+		Exit 1091: 4 valid targets
+		Selected: 1091 --> 1156 (room ruin-figarocastle)
+Looking for reward in room ruin-figarocastle ...
+Found a reward!  [('Figaro Castle WOB', <RewardType.ITEM|ESPER|CHARACTER: 14>), ('Figaro Castle WOR', <RewardType.ITEM|ESPER|CHARACTER: 14>)] in room ruin-figarocastle
+Making connection:  1091 --> 1156
+Processing reward:  Figaro Castle WOB
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got RELM !
+	Set character path: RELM depends on EDGAR
+		assessing key  RELM in rooms
+		assessing key  RELM in rooms
+		assessing key  RELM in rooms
+		# rooms on each branch:  [38, 14, 16]
+		# rooms on each branch:  [38, 23, 16]
+Distributed areas:
+	 0 :  set()
+	 1 :  {'Jidoor'}
+	 2 :  {'EsperMountain'}
+Checks available:
+	 0 :  ['Opera House', 'Doma WOR_2', 'Doma WOR_3']
+	 1 :  ['Magitek Factory_3', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Figaro Castle WOB', 'Figaro Castle WOR', 'Ancient Castle', 'Esper Mountain']
+	Updated Rewards Obtained:  2 Characters,  3 Espers
+	Updated Rewards Available:  5 Characters,  6 Espers
+	Updated branch checks available:
+	 0 :  ['Opera House', 'Doma WOR_2', 'Doma WOR_3']
+	 1 :  ['Magitek Factory_3', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Figaro Castle WOR', 'Ancient Castle', 'Esper Mountain']
+Processing reward:  Figaro Castle WOR
+	choosing from... RewardType.ITEM|ESPER|CHARACTER
+	got Unicorn !
+	Updated Rewards Obtained:  2 Characters,  4 Espers
+	Updated Rewards Available:  4 Characters,  5 Espers
+	Updated branch checks available:
+	 0 :  ['Opera House', 'Doma WOR_2', 'Doma WOR_3']
+	 1 :  ['Magitek Factory_3', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+	 2 :  ['Ancient Castle', 'Esper Mountain']
+Closing branch...
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  193_211_188_ms-wor-58_191_433_436_r... (1D/1T/1P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_1 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    ms-wob-40 (1D/0T/0P)
+    429 (1D/0T/0P)
+    dc-76 (1D/1T/1P)
+  Other rooms:
+    Hub potential (3+ exits): 424, 208, 209
+    Has traps: 421, 422, 423, 425, 427, 428, ... (+4)
+    Has pits+doors: 210, 188B
+    Connectors (2+ doors): 186, 187
+    Dead ends (1 door): ms-wor-48, 426, 221R, 435, 184, 185, ... (+3)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 31 total, 1 in topology, 30 unconnected
+  Free exits: 30 doors, 17 traps, 18 pits
+  Connections: 10 door-pairs, 0 trap->pit
+  WARNINGS:
+    - TERMINUS not connected!
+    - 3 check room(s) not connected!
+======================================================================
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Protected elements after ForceConnections: [2005, 2006, 2007, 2008, 2011, 2012, 2013, 2023, 2029, 2030, 2032, 2033, 2039, 2043, 2046, 2049, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2067, 2076, 2097, 2098, 2099, 2128, 2153, 2176, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3023, 3029, 3030, 3032, 3033, 3039, 3043, 3046, 3049, 3053, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 3067, 3076, 3097, 3098, 3099, 3128, 3153, 3176]
+	hub: 193_211_188_ms-wor-58_191_433_436_ruin_hub_0 [1, 1, 1, 0, 0]
+	pits: [6859]
+	traps: [2074]
+(2) delta values: []
+(3) remaining traps: [2074] ; pits:  [6859]
+(3) connecting: 2074 --> 6859
+(4) remaining doors: [450]
+(4) connecting terminus: 450 --> 1079
+  [pre-step5] Hub network totals: doors=0, traps=0, pits=0
+  [pre-step5] Hub ruin_terminus_1_193_211_188_ms-wor-58_191_433_436_ruin_hub_0: doors=[], traps=[], pits=[]
+  [pre-step5] Upstream nodes: []
+  [pre-step5] Downstream nodes: []
+  [pre-step5] remaining_doors=0, dead_ends=9, excess=-9
+  [pre-step6] Hub network totals: doors=0, traps=0, pits=0
+  [pre-step6] Hub ruin_terminus_1_193_211_188_ms-wor-58_191_433_436_ruin_hub_0: doors=[], traps=[], pits=[]
+  [pre-step6] Upstream nodes: []
+  [pre-step6] Downstream nodes: []
+  [pre-step6] remaining_doors=0, dead_ends=9, excess=-9
+(6) No remaining doors to connect, skipping step 6
+... closing branch complete!
+Closing branch...
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  355_ruin_hub_1 (0D/0T/0P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  LEVEL 1 (fell 1x from hub):
+    349 (2D/0T/0P) <- fell from 355_ruin_hub_1
+  LEVEL 2 (fell 2x from hub):
+    354_347_355a (1D/0T/0P) <- fell from 349 [+1 escape route(s)]
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_2 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    ruin-mtek3 (0D/0T/1P)
+    dc-73 (2D/0T/0P)
+    284 (1D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): 278, 280
+    Has traps: 346, 282, 281, 283
+    Connectors (2+ doors): 353, ruin-vector, 351, 277
+    Dead ends (1 door): 352, 345, 279
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 20 total, 3 in topology, 17 unconnected
+  Free exits: 26 doors, 5 traps, 5 pits
+  Connections: 2 door-pairs, 7 trap->pit
+  WARNINGS:
+    - TERMINUS not connected!
+    - 3 check room(s) not connected!
+======================================================================
+added doors to protected:  {2176, 2049, 3076, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2039, 2067, 3097, 3098, 3099, 2076, 2097, 2098, 2099, 3128, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3067, 3023, 2128, 3153, 2005, 2006, 2007, 2008, 3029, 3030, 2011, 2012, 2013, 3032, 3033, 3039, 3043, 3046, 2023, 3176, 3049, 2153, 2029, 2030, 3053, 2032, 2033, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 2043, 2046}
+	Protected elements after ForceConnections: [2005, 2006, 2007, 2008, 2011, 2012, 2013, 2023, 2029, 2030, 2032, 2033, 2039, 2043, 2046, 2049, 2053, 2055, 2059, 2060, 2061, 2062, 2063, 2064, 2067, 2076, 2097, 2098, 2099, 2128, 2153, 2176, 3005, 3006, 3007, 3008, 3011, 3012, 3013, 3023, 3029, 3030, 3032, 3033, 3039, 3043, 3046, 3049, 3053, 3055, 3059, 3060, 3061, 3062, 3063, 3064, 3067, 3076, 3097, 3098, 3099, 3128, 3153, 3176]
+	hub: 355_ruin_hub_1 [0, 0, 0, 0, 0]
+	pits: []
+	traps: []
+(2) delta values: [(0, 349), (0, '354_347_355a')]
+(2) selected 354_347_355a (delta =  0 ):  [1, 0, 0, 0, 0] [714] [] []
+	(2) converter search: room_traps=[], room_doors=[714]
+	    upstream_doors=[], upstream_pits=[]
+	    available_nodes in network: 15
+	    reserve_areas: [('Narshe', 16), ('Narshe', 16), ('Narshe', 16), ('MtKolts', 16), ('PhantomTrain', 22), ('DarylsTomb', 16), ('ZozoTower', 12), ('SealedGate', 12), ('VeldtCave', 9), ('UmarosCave', 9), ('ZoneEater', 9), ('CrescentMtn', 11), ('MtZozo', 7), ('SouthFigaroCave', 6), ('Zozo', 10), ('Zozo', 10), ('BarenFalls', 3), ('ReturnersHideout', 6), ('ImperialCamp', 1), ('Maranda', 1), ('Kohlingen', 1), ('Kohlingen', 1), ('Thamasa', 1), ('Nikeah', 1), ('Thamasa', 1), ('ImperialCastle', 1), ('Tzen', 1), ('Mobliz', 1), ('PhoenixCave', 1), ('GauFatherHouse', 1), ('FloatingContinent', 1), ('Veldt', 1), ('FanaticsTower', 1), ('EbotsRock', 1)]
+		upstream has no doors or pits, looking for a room with a door...
+		found door 712 in network node 353
+(2) connecting 714 --> 712
+(2) delta values: [(0, 349), (0, '353_354_347_355a')]
+(2) selected 353_354_347_355a (delta =  0 ):  [1, 0, 0, 0, 0] [713] [] []
+	(2) converter search: room_traps=[], room_doors=[713]
+	    upstream_doors=[], upstream_pits=[]
+	    available_nodes in network: 14
+	    reserve_areas: [('Narshe', 16), ('Narshe', 16), ('Narshe', 16), ('MtKolts', 16), ('PhantomTrain', 22), ('DarylsTomb', 16), ('ZozoTower', 12), ('SealedGate', 12), ('VeldtCave', 9), ('UmarosCave', 9), ('ZoneEater', 9), ('CrescentMtn', 11), ('MtZozo', 7), ('SouthFigaroCave', 6), ('Zozo', 10), ('Zozo', 10), ('BarenFalls', 3), ('ReturnersHideout', 6), ('ImperialCamp', 1), ('Maranda', 1), ('Kohlingen', 1), ('Kohlingen', 1), ('Thamasa', 1), ('Nikeah', 1), ('Thamasa', 1), ('ImperialCastle', 1), ('Tzen', 1), ('Mobliz', 1), ('PhoenixCave', 1), ('GauFatherHouse', 1), ('FloatingContinent', 1), ('Veldt', 1), ('FanaticsTower', 1), ('EbotsRock', 1)]
+		upstream has no doors or pits, looking for a room with a door...
+		found door 1229 in network node ruin-vector
+(2) connecting 713 --> 1229
+(2) delta values: [(0, 349), (0, 'ruin-vector_353_354_347_355a')]
+(2) selected ruin-vector_353_354_347_355a (delta =  0 ):  [1, 0, 0, 0, 0] [1228] [] []
+	(2) converter search: room_traps=[], room_doors=[1228]
+	    upstream_doors=[], upstream_pits=[]
+	    available_nodes in network: 13
+	    reserve_areas: [('Narshe', 16), ('Narshe', 16), ('Narshe', 16), ('MtKolts', 16), ('PhantomTrain', 22), ('DarylsTomb', 16), ('ZozoTower', 12), ('SealedGate', 12), ('VeldtCave', 9), ('UmarosCave', 9), ('ZoneEater', 9), ('CrescentMtn', 11), ('MtZozo', 7), ('SouthFigaroCave', 6), ('Zozo', 10), ('Zozo', 10), ('BarenFalls', 3), ('ReturnersHideout', 6), ('ImperialCamp', 1), ('Maranda', 1), ('Kohlingen', 1), ('Kohlingen', 1), ('Thamasa', 1), ('Nikeah', 1), ('Thamasa', 1), ('ImperialCastle', 1), ('Tzen', 1), ('Mobliz', 1), ('PhoenixCave', 1), ('GauFatherHouse', 1), ('FloatingContinent', 1), ('Veldt', 1), ('FanaticsTower', 1), ('EbotsRock', 1)]
+		upstream has no doors or pits, looking for a room with a door...
+		found door 702 in network node 345
+(2) connecting 1228 --> 702
+(2) delta values: [(0, 349), (0, '345_ruin-vector_353_354_347_355a'), (-1, 346)]
+(2) selected 346 (delta =  -1 ):  [1, 1, 0, 0, 0] [703] [2022] []
+	(2) converter search: room_traps=[2022], room_doors=[703]
+	    upstream_doors=[], upstream_pits=[]
+	    available_nodes in network: 12
+	    reserve_areas: [('Narshe', 16), ('Narshe', 16), ('Narshe', 16), ('MtKolts', 16), ('PhantomTrain', 22), ('DarylsTomb', 16), ('ZozoTower', 12), ('SealedGate', 12), ('VeldtCave', 9), ('UmarosCave', 9), ('ZoneEater', 9), ('CrescentMtn', 11), ('MtZozo', 7), ('SouthFigaroCave', 6), ('Zozo', 10), ('Zozo', 10), ('BarenFalls', 3), ('ReturnersHideout', 6), ('ImperialCamp', 1), ('Maranda', 1), ('Kohlingen', 1), ('Kohlingen', 1), ('Thamasa', 1), ('Nikeah', 1), ('Thamasa', 1), ('ImperialCastle', 1), ('Tzen', 1), ('Mobliz', 1), ('PhoenixCave', 1), ('GauFatherHouse', 1), ('FloatingContinent', 1), ('Veldt', 1), ('FanaticsTower', 1), ('EbotsRock', 1)]
+		upstream has no doors or pits, looking for a room with a door...
+		found door 703 in network node 346
+(2) connecting 703 --> 703
+(2) delta values: [(0, 349), (0, '345_ruin-vector_353_354_347_355a'), (-1, 346)]
+(2) selected 346 (delta =  -1 ):  [0, 1, 0, 0, 0] [] [2022] []
+	(2) converter search: room_traps=[2022], room_doors=[]
+	    upstream_doors=[], upstream_pits=[]
+	    available_nodes in network: 12
+	    reserve_areas: [('Narshe', 16), ('Narshe', 16), ('Narshe', 16), ('MtKolts', 16), ('PhantomTrain', 22), ('DarylsTomb', 16), ('ZozoTower', 12), ('SealedGate', 12), ('VeldtCave', 9), ('UmarosCave', 9), ('ZoneEater', 9), ('CrescentMtn', 11), ('MtZozo', 7), ('SouthFigaroCave', 6), ('Zozo', 10), ('Zozo', 10), ('BarenFalls', 3), ('ReturnersHideout', 6), ('ImperialCamp', 1), ('Maranda', 1), ('Kohlingen', 1), ('Kohlingen', 1), ('Thamasa', 1), ('Nikeah', 1), ('Thamasa', 1), ('ImperialCastle', 1), ('Tzen', 1), ('Mobliz', 1), ('PhoenixCave', 1), ('GauFatherHouse', 1), ('FloatingContinent', 1), ('Veldt', 1), ('FanaticsTower', 1), ('EbotsRock', 1)]
+
+
+
+
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 58, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 25, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 74, in mod
+    self.ruination_mod(events, name_event)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 250, in ruination_mod
+    self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 3942, in generate_map_with_characters
+    raise RuinationMappingError(diag) from e
+event.ruination.RuinationMappingError:
+============================================================
+RUINATION MAPPING FAILURE: finalize_map failed on branch 1: finalize_map step 2: Inescapable downstream node. room_doors=[], room_traps=[2022], upstream_doors=[], upstream_pits=[], reserve_areas=[('Narshe', 16), ('Narshe', 16), ('Narshe', 16), ('MtKolts', 16), ('PhantomTrain', 22), ('DarylsTomb', 16), ('ZozoTower', 12), ('SealedGate', 12), ('VeldtCave', 9), ('UmarosCave', 9), ('ZoneEater', 9), ('CrescentMtn', 11), ('MtZozo', 7), ('SouthFigaroCave', 6), ('Zozo', 10), ('Zozo', 10), ('BarenFalls', 3), ('ReturnersHideout', 6), ('ImperialCamp', 1), ('Maranda', 1), ('Kohlingen', 1), ('Kohlingen', 1), ('Thamasa', 1), ('Nikeah', 1), ('Thamasa', 1), ('ImperialCastle', 1), ('Tzen', 1), ('Mobliz', 1), ('PhoenixCave', 1), ('GauFatherHouse', 1), ('FloatingContinent', 1), ('Veldt', 1), ('FanaticsTower', 1), ('EbotsRock', 1)]
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  355_ruin_hub_1 (0D/0T/0P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  LEVEL 1 (fell 1x from hub):
+    349 (2D/0T/0P) <- fell from 355_ruin_hub_1
+  LEVEL 2 (fell 2x from hub):
+    345_ruin-vector_353_354_347_355a (0D/0T/0P) <- fell from 349 [+2 escape route(s)]
+  LEVEL 3 (fell 3x from hub):
+    346 (0D/1T/0P) <- fell from 345_ruin-vector_353_... [+4 escape route(s)]
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_2 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    ruin-mtek3 (0D/0T/1P)
+    dc-73 (2D/0T/0P)
+    284 (1D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): 278, 280
+    Has traps: 282, 281, 283
+    Connectors (2+ doors): 351, 277
+    Dead ends (1 door): 352, 279
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 17 total, 4 in topology, 13 unconnected
+  Free exits: 19 doors, 5 traps, 5 pits
+  Connections: 6 door-pairs, 7 trap->pit
+  WARNINGS:
+    - odd doors (19)
+    - TERMINUS not connected!
+    - 3 check room(s) not connected!
+======================================================================
+============================================================
+
+=== Rewards State ===
+  Requested: 3 characters, 3 espers
+  Obtained:  2 characters, 4 espers
+  Available: 4 character slots, 5 esper slots
+  Planned characters: ['EDGAR', 'RELM']
+  Reserve characters: ['SABIN', 'UMARO', 'GOGO', 'TERRA', 'CYAN', 'SETZER', 'LOCKE', 'SHADOW', 'GAU', 'STRAGO', 'MOG']
+  Dead checks allowed: 7
+
+=== Branch State ===
+  Current branch_id: 1
+
+  Branch 0:
+    Active room: ruin_terminus_1_193_211_188_ms-wor-58_191_433_436_ruin_hub_0
+    Terminus: ruin_terminus_1
+    Has hub: True
+    Last stuck reason: none
+    Check rooms: ['ms-wob-40', 429, 'dc-76']
+    Dead ends: ['ms-wor-48', 'ms-wob-40', 426, '221R', 184, 185, 189, 190, 192]
+    Nodes in network: 30
+    Rooms added (incl. merged): 38
+    Branch checks: ['Opera House', 'Doma WOR_2', 'Doma WOR_3']
+    Keychain: {'EDGAR', 'CELES', 'RELM'}
+    Unconnected elements: 28 doors, 16 traps, 17 pits
+
+  Branch 1:
+    Active room: 346
+    Terminus: ruin_terminus_2
+    Has hub: True
+    Last stuck reason: none
+    Check rooms: ['ruin-mtek3', 'dc-73', 284]
+    Dead ends: ['ruin_terminus_2', 352, 279, 284]
+    Nodes in network: 17
+    Rooms added (incl. merged): 23
+    Branch checks: ['Magitek Factory_3', 'Owzer Mansion', 'Auction House_1', 'Auction House_2']
+    Keychain: {'EDGAR', 'CELES', 'RELM'}
+    Unconnected elements: 19 doors, 5 traps, 5 pits
+
+  Branch 2:
+    Active room: ruin-figarocastle_523_531_528_520_524_521_530_522_ruin_hub_2
+    Terminus: ruin_terminus_3
+    Has hub: True
+    Last stuck reason: none
+    Check rooms: [532, 488]
+    Dead ends: ['ruin_hub_2', 'ruin_terminus_3', 'ruin-figarocastle', 525, 526, 527, 532, 490, 493, 494]
+    Nodes in network: 20
+    Rooms added (incl. merged): 29
+    Branch checks: ['Ancient Castle', 'Esper Mountain']
+    Keychain: {'EDGAR', 'ac2', 'CELES', 'RELM'}
+    Unconnected elements: 30 doors, 6 traps, 6 pits
+
+
+=== Branch Topology Visualizations ===
+
+--- Branch 0 Topology ---
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  ruin_terminus_1_193_211_188_ms-wor-... (0D/0T/0P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    ms-wob-40 (1D/0T/0P)
+    429 (1D/0T/0P)
+    dc-76 (1D/1T/1P)
+  Other rooms:
+    Hub potential (3+ exits): 424, 208, 209
+    Has traps: 421, 422, 423, 425, 427, 428, ... (+4)
+    Has pits+doors: 210, 188B
+    Connectors (2+ doors): 186, 187
+    Dead ends (1 door): ms-wor-48, 426, 221R, 435, 184, 185, ... (+3)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 30 total, 1 in topology, 29 unconnected
+  Free exits: 28 doors, 16 traps, 17 pits
+  Connections: 11 door-pairs, 1 trap->pit
+  WARNINGS:
+    - 3 check room(s) not connected!
+======================================================================
+
+
+--- Branch 1 Topology ---
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  355_ruin_hub_1 (0D/0T/0P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  LEVEL 1 (fell 1x from hub):
+    349 (2D/0T/0P) <- fell from 355_ruin_hub_1
+  LEVEL 2 (fell 2x from hub):
+    345_ruin-vector_353_354_347_355a (0D/0T/0P) <- fell from 349 [+2 escape route(s)]
+  LEVEL 3 (fell 3x from hub):
+    346 (0D/1T/0P) <- fell from 345_ruin-vector_353_... [+4 escape route(s)]
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_2 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    ruin-mtek3 (0D/0T/1P)
+    dc-73 (2D/0T/0P)
+    284 (1D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): 278, 280
+    Has traps: 282, 281, 283
+    Connectors (2+ doors): 351, 277
+    Dead ends (1 door): 352, 279
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 17 total, 4 in topology, 13 unconnected
+  Free exits: 19 doors, 5 traps, 5 pits
+  Connections: 6 door-pairs, 7 trap->pit
+  WARNINGS:
+    - odd doors (19)
+    - TERMINUS not connected!
+    - 3 check room(s) not connected!
+======================================================================
+
+
+--- Branch 2 Topology ---
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  ruin-figarocastle_523_531_528_520_5... (1D/0T/0P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_3 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    532 (1D/0T/0P)
+    488 (2D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): 495, 497
+    Has pits+doors: 498, 499, 500
+    Connectors (2+ doors): 529, 489, 491, 492, 496
+    Dead ends (1 door): 525, 526, 527, 490, 493, 494
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 20 total, 1 in topology, 19 unconnected
+  Free exits: 30 doors, 3 traps, 3 pits
+  Connections: 13 door-pairs, 0 trap->pit
+  WARNINGS:
+    - TERMINUS not connected!
+    - 2 check room(s) not connected!
+======================================================================
+
+=== Areas State ===
+  Areas used: {'SouthFigaro': 0, 'OperaHouse': 0, 'Vector': 1, 'Cid': 0, 'Doma': 0, 'FigaroCastle': 2, 'AncientCastle': 2, 'Jidoor': 1, 'EsperMountain': 2}
+  Global keychain: {'EDGAR', 'CELES', 'RELM'}
+  Locked rewards waiting: {}
+
+  Reserve areas available: 34
+    Narshe: 16 rooms
+    Narshe: 16 rooms
+    Narshe: 16 rooms
+    MtKolts: 16 rooms
+    PhantomTrain: 22 rooms
+
+=== Troubleshooting Hints ===
+============================================================
