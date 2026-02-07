@@ -1998,7 +1998,15 @@ class RuinationBranch(Network):
                 delta.append((entrance_count - exit_count, node))
             if self.verbose:
                 print('(2) delta values:', delta)
-            delta.sort(key=lambda x: x[0])
+            # Fix A: Sort so trap-bearing rooms are processed BEFORE door-only rooms.
+            # Since pop() takes from the end, trap-bearing rooms must sort last.
+            # Secondary sort by delta value within each group.
+            def _trap_priority(item):
+                r = self.rooms.get_room(item[1])
+                has_traps = 1 if len([t for t in r.traps if t not in self.protected]) > 0 else 0
+                return (has_traps, item[0])
+            delta.sort(key=_trap_priority)
+            restart_finalization = False
             while len(delta) > 0:
                 value = delta.pop()
                 node = value[1]
@@ -2029,9 +2037,46 @@ class RuinationBranch(Network):
                         this_conn = random.choice(upstream_pits)
 
                 if this_conn is None and len(unprotected_room_doors) > 0:
-                    this_exit = random.choice(unprotected_room_doors)
-                    if len(upstream_doors) > 0:
-                        this_conn = random.choice(upstream_doors)
+                    # Fix B: Before using a door-to-door connection, verify we aren't
+                    # consuming the last 2 doors in the branch. A door-to-door connection
+                    # uses 2 doors total (1 from downstream + 1 from upstream). If <= 2
+                    # doors remain, connect to a hub room (3+ doors) from reserve instead.
+                    _, _, all_branch_doors = self.collect_network_traps_and_pits(include_doors=True)
+                    total_branch_doors = len(all_branch_doors) + len(upstream_doors)
+                    if total_branch_doors <= 2 and reserve_areas is not None:
+                        if self.verbose:
+                            print(f'(2) Fix B: only {total_branch_doors} doors remain in branch, '
+                                  f'searching for hub room (3+ doors) in reserve...')
+                        hub_room_found = False
+                        for area_name, area_rooms in reserve_areas:
+                            for rid in list(area_rooms):
+                                if rid in self.net.nodes:
+                                    continue
+                                if rid in room_data:
+                                    data = room_data[rid]
+                                    r_doors = list(data[0]) if len(data) > 0 else []
+                                    if len(r_doors) >= 3:
+                                        self.add_room(rid)
+                                        area_rooms.remove(rid)
+                                        hub_room = self.rooms.get_room(rid)
+                                        unprotected_hub_doors = [d for d in hub_room.doors if d not in self.protected]
+                                        this_conn = random.choice(unprotected_hub_doors)
+                                        this_exit = random.choice(unprotected_room_doors)
+                                        if self.verbose:
+                                            print(f'(2) Fix B: added hub room {rid} from {area_name} '
+                                                  f'({len(r_doors)} doors), connecting {this_exit} --> {this_conn}')
+                                        self.connect(this_exit, this_conn)
+                                        hub_room_found = True
+                                        restart_finalization = True
+                                        break
+                            if hub_room_found:
+                                break
+                        if restart_finalization:
+                            break
+                    if this_conn is None:
+                        this_exit = random.choice(unprotected_room_doors)
+                        if len(upstream_doors) > 0:
+                            this_conn = random.choice(upstream_doors)
 
                 if this_conn is None:
                     # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
@@ -2204,7 +2249,13 @@ class RuinationBranch(Network):
                     delta.append((entrance_count - exit_count, node))
                 if self.verbose:
                     print('(2) delta values:', delta)
-                delta.sort(key=lambda x: x[0])
+                delta.sort(key=_trap_priority)
+
+            # If Fix B triggered a restart, skip remaining steps and go back to step 1
+            if restart_finalization:
+                if self.verbose:
+                    print('(2) Fix B: restarting finalization after adding hub room')
+                continue
 
             # Post-step-2 check: all downstream nodes should be merged into hub
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
@@ -2217,6 +2268,43 @@ class RuinationBranch(Network):
                     f"All downstream paths should be looped back into the hub.\n"
                     f"{viz}"
                 )
+
+            # Post-step-2 door check: verify at least one door remains for terminus connection.
+            # If no doors remain but traps and pits exist, we can rescue by adding a room
+            # from reserve_areas that has at least (1 trap, 1 pit, 1 door). Step (3) will
+            # then connect the trap, and the room's door becomes available for the terminus.
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub = self.rooms.get_room(hub_id)
+            post_step2_doors = [d for d in hub.doors if d not in self.protected]
+            terminus = self.rooms.get_room(self.terminus)
+            if len(post_step2_doors) == 0 and terminus is not None:
+                remaining_traps_check, remaining_pits_check = self.collect_network_traps_and_pits()
+                if (len(remaining_traps_check) > 0 or len(remaining_pits_check) > 0) and reserve_areas is not None:
+                    print(f'WARNING: No doors remain after step (2) but terminus {self.terminus} '
+                          f'still needs connecting. Searching reserve for rescue room '
+                          f'(needs 1+ trap, 1+ pit, 1+ door)...')
+                    rescue_found = False
+                    for area_name, area_rooms in reserve_areas:
+                        for rid in list(area_rooms):
+                            if rid in self.net.nodes:
+                                continue
+                            if rid in room_data:
+                                data = room_data[rid]
+                                r_doors = list(data[0]) if len(data) > 0 else []
+                                r_traps = list(data[1]) if len(data) > 1 else []
+                                r_pits = list(data[2]) if len(data) > 2 else []
+                                if len(r_traps) >= 1 and len(r_pits) >= 1 and len(r_doors) >= 1:
+                                    self.add_room(rid)
+                                    area_rooms.remove(rid)
+                                    print(f'WARNING: Added rescue room {rid} from {area_name} '
+                                          f'(doors={len(r_doors)}, traps={len(r_traps)}, pits={len(r_pits)}). '
+                                          f'Restarting finalization.')
+                                    rescue_found = True
+                                    break
+                        if rescue_found:
+                            break
+                    if rescue_found:
+                        continue  # Restart finalization from step 1
 
             # (3) Connect any remaining trapdoors/pits
             # Collect traps and pits from the ENTIRE network (hub + upstream + downstream).
