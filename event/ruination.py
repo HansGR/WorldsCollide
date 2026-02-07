@@ -2517,9 +2517,9 @@ class RuinationBranch(Network):
                 # Find valid targets - this method checks if each potential destination
                 # would leave the branch with exits (handles unconnected rooms, loops, etc.)
                 if exit_type == 'traps':
-                    valid_targets = self.get_valid_pit_targets(exit_id, exit_room_id, topology)
+                    valid_targets = self.get_valid_pit_targets_v2(exit_id, exit_room_id, topology)
                 else:
-                    valid_targets = self.get_valid_door_targets(
+                    valid_targets = self.get_valid_door_targets_v2(
                         exit_id, exit_room_id, topology,
                         available_doors=len(available_exits['doors']),
                         available_traps=len(available_exits['traps'])
