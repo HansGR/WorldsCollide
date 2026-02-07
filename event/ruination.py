@@ -2013,6 +2013,7 @@ class RuinationBranch(Network):
                 for node in upstream:
                     uproom = self.rooms.get_room(node)
                     upstream_pits.extend([p for p in uproom.pits if p not in self.protected])
+                    upstream_doors.extend([d for d in uproom.doors if d not in self.protected])
 
                 this_conn = None
                 unprotected_room_traps = [t for t in room.traps if t not in self.protected]
