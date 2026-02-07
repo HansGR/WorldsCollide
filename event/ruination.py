@@ -2190,6 +2190,7 @@ class RuinationBranch(Network):
 
                 # Update hub, upstream, downstream, delta
                 hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub = self.rooms.get_room(hub_id)
                 upstream = self.get_upstream_nodes(hub_id)
                 downstream = self.get_downstream_nodes(hub_id)
                 delta = []
@@ -2201,6 +2202,18 @@ class RuinationBranch(Network):
                 if self.verbose:
                     print('(2) delta values:', delta)
                 delta.sort(key=lambda x: x[0])
+
+            # Post-step-2 check: all downstream nodes should be merged into hub
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            remaining_downstream = self.get_downstream_nodes(hub_id)
+            if len(remaining_downstream) > 0:
+                viz = self.visualize_branch_topology()
+                raise RuntimeError(
+                    f"finalize_map step 2 post-check: {len(remaining_downstream)} downstream node(s) "
+                    f"remain after step 2: {remaining_downstream}. "
+                    f"All downstream paths should be looped back into the hub.\n"
+                    f"{viz}"
+                )
 
             # (3) Connect any remaining trapdoors/pits
             # Collect traps and pits from the ENTIRE network (hub + upstream + downstream).
