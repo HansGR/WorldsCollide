@@ -18,13 +18,7 @@ The ruination mapping algorithm in `event/ruination.py` constructs a procedurall
 
 3. **Main Generation Loop** (`generate_map_with_characters`): Iteratively extends branches via `extend_branch_path()`, processes rewards, distributes new areas when characters are obtained.
 
-4. **Finalization** (`finalize_map`): Closes all remaining connections in 6 steps:
-   - Step 1: Balance traps vs pits
-   - Step 2: Connect downstream nodes to upstream
-   - Step 3: Connect remaining traps to pits
-   - Step 4: Connect the terminus
-   - Step 5: Pair excess hub doors
-   - Step 6: Connect dead ends to remaining doors
+4. **Finalization** (`finalize_map`): Closes all remaining connections (see detailed section below)
 
 ### Location-Aware Branch Extension Algorithm
 
@@ -87,6 +81,64 @@ A branch becomes **stuck** when:
 - `RuntimeError` in `finalize_map`:
   - Traps remaining with no pits (step 3)
   - Max iterations exceeded (step 6 iteration loop)
+
+### finalize_map - Detailed Step-by-Step Reference
+
+`finalize_map()` (in `RuinationBranch`, ~lines 1849-2580) closes all remaining connections in a branch after the main generation loop. It runs as an **iteration loop** (max 10 iterations) because connecting rooms can apply keys that unlock new traps/doors, requiring a restart from step 1.
+
+**Pre-processing:**
+- `ForceConnections()` applies pre-defined forced connections (e.g., multi-room areas that must link internally)
+- `_inject_door_if_needed_for_terminus()` handles edge case where network has traps but no doors at all — finds a room with (pit, door, other_exit) and connects a trap to its pit to inject a door
+
+**Topology model** (critical for understanding steps 1-2):
+- **Hub (level 0)**: The central merged room. Player can always return here via normal doors.
+- **Upstream**: Rooms connected TO the hub via one-way pits (from hub's pit → upstream room). These are accessible from the hub but can only return by falling through their own traps.
+- **Downstream (levels 1, 2, ...)**: Rooms reached by falling through traps FROM the hub. These must be reconnected back to the hub/upstream to be escapable.
+
+**Step (1): Trap-to-pit balancing** (~lines 1884-1988)
+- Counts unprotected traps and pits in hub + upstream + downstream
+- If traps > pits, finds rooms with excess pits (more pits than traps) and connects traps to them
+- Ensures the hub doesn't have more one-way exits than one-way entrances
+
+**Step (2): Connect downstream nodes to upstream/hub** (~lines 1989-2270)
+- The core reconnection step. Each downstream room must be connected back to the hub or an upstream room so the player can escape.
+- Computes a **delta** for each downstream room: `(entrance_count - exit_count)`, processes highest delta first.
+- **Fix A (trap priority)**: Rooms with traps are processed BEFORE door-only rooms. This conserves doors for the terminus (step 4). Sort key: `(has_traps, delta)`.
+- For each downstream room:
+  - Prefer trap→upstream pit (one-way back)
+  - Fall back to door→upstream door (two-way connection)
+- **Fix B (door guard)**: Before making a door→door connection, counts total branch doors. If ≤ 2 remain, searches reserve areas for a **hub room** (3+ doors), adds it, connects, and restarts finalization. This prevents exhausting all doors before the terminus can be connected.
+- **Converter search**: When a downstream room has a trap but upstream has no pits (or vice versa), searches for converter rooms:
+  - **PIDO** (pit-in, door-out): Receives a trap, provides a door to upstream
+  - **DITO** (door-in, trap-out): Receives a door, provides a trap to connect to upstream pit
+  - Falls back to reserve areas if no converter exists in the network
+- **Post-step-2 checks**:
+  - Verifies all downstream nodes are merged into hub (raises `RuntimeError` if not)
+  - **Rescue check**: If no doors remain but terminus still needs connecting, searches reserve areas for a room with (1+ trap, 1+ pit, 1+ door), adds it, and restarts finalization with a WARNING. Step 3 will connect the trap/pit, and the door becomes available for step 4.
+
+**Step (3): Connect remaining traps to pits** (~lines 2309-2340)
+- Exhaustively pairs all remaining unlocked traps with pits via `collect_network_traps_and_pits()`
+- Re-collects after each connection (keys may unlock new traps)
+- Falls back to reserve areas if no pits available
+
+**Step (4): Connect the terminus** (~lines 2345-2373)
+- The terminus is the dead-end room that leads to Kefka's Tower
+- Uses one of the hub's remaining unprotected doors to connect to the terminus's door
+- If terminus was already merged into hub (via loop compression), skip
+- If no hub doors available, defers to step 6 (adds terminus to dead_ends list)
+
+**Step (5): Pair excess hub doors** (~lines 2375-2460)
+- Connects hub door pairs until `remaining_doors <= dead_ends`
+- **Step 5b**: Handles orphan doors (when doors - dead_ends is odd) by finding unconnected rooms with doors to absorb the excess
+
+**Step (6): Connect dead ends to remaining doors** (~lines 2465-2568)
+- Assigns each remaining hub door to a dead-end room
+- **Key safety**: Key-bearing dead ends are connected FIRST so if they unlock new traps, keyless dead ends remain available. The LAST connection must be keyless.
+- If new elements are unlocked during step 6, breaks early to preserve remaining entrances, then restarts from step 1.
+
+**Key invariant**: After finalization, the terminus MUST be merged into the hub. If not, `generate_map_with_characters()` raises `RuinationMappingError`.
+
+**Common failure pattern**: Step (2) consuming all doors via door→door connections, leaving none for step (4) to connect the terminus. Fixes A, B, and the rescue check address this.
 
 ### Key Data Structures
 
