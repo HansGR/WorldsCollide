@@ -1780,6 +1780,7 @@ class RuinationBranch(Network):
                         if len(pits) >= 1 and len(doors) >= 1 and total_exits >= 2:
                             # Add this room to the network
                             self.add_room(room_id)
+                            area_rooms.remove(room_id)
                             suitable_room = room_id
                             if self.verbose:
                                 print(f'\tAdded suitable room from area {area_name}: {room_id}')
@@ -1926,6 +1927,7 @@ class RuinationBranch(Network):
                         print('(1) no suitable node in network, checking reserve areas...')
                     best_diff = 0
                     best_rid = None
+                    best_area_rooms = None
                     for area_name, area_rooms in reserve_areas:
                         for rid in area_rooms:
                             if rid in self.net.nodes:
@@ -1939,8 +1941,10 @@ class RuinationBranch(Network):
                                     best_diff = rd
                                     best_rid = rid
                                     best_area = area_name
+                                    best_area_rooms = area_rooms
                     if best_rid is not None:
                         self.add_room(best_rid)
+                        best_area_rooms.remove(best_rid)
                         winner = best_rid
                         if self.verbose:
                             print(f'(1) added room from reserve area {best_area}: {best_rid}')
@@ -2064,6 +2068,7 @@ class RuinationBranch(Network):
                                         r_pits = list(data[2]) if len(data) > 2 else []
                                         if len(r_pits) > 0 and len(r_doors) > 0 and len(r_pits) > len(r_traps):
                                             self.add_room(rid)
+                                            area_rooms.remove(rid)
                                             pido_room = self.rooms.get_room(rid)
                                             unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
                                             this_conn = random.choice(unprotected_pido_pits)
@@ -2110,6 +2115,7 @@ class RuinationBranch(Network):
                                         r_pits = list(data[2]) if len(data) > 2 else []
                                         if len(r_traps) > 0 and len(r_doors) > 0 and len(r_traps) > len(r_pits):
                                             self.add_room(rid)
+                                            area_rooms.remove(rid)
                                             dito_room = self.rooms.get_room(rid)
                                             unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
                                             this_conn = random.choice(unprotected_dito_doors)
@@ -2164,7 +2170,7 @@ class RuinationBranch(Network):
                 if self.verbose:
                     print(f'(3) {len(remaining_traps)} traps remaining with no pits, checking reserve areas...')
                 for area_name, area_rooms in reserve_areas:
-                    for rid in area_rooms:
+                    for rid in list(area_rooms):
                         if rid in self.net.nodes:
                             continue
                         if rid in room_data:
@@ -2172,6 +2178,7 @@ class RuinationBranch(Network):
                             r_pits = list(data[2]) if len(data) > 2 else []
                             if len(r_pits) > 0:
                                 self.add_room(rid)
+                                area_rooms.remove(rid)
                                 if self.verbose:
                                     print(f'(3) added room with pits from reserve area {area_name}: {rid}')
                                 # Re-collect and continue connecting
@@ -3100,7 +3107,7 @@ class ruination_map():
         for char in self.reserve_characters:
             for area_name in CHARACTER_AREAS.get(char, []):
                 if area_name not in self.AreasUsed and area_name in RUIN_ROOM_SETS:
-                    rooms = RUIN_ROOM_SETS[area_name]
+                    rooms = list(RUIN_ROOM_SETS[area_name])
                     hub_potential = calc_hub_potential(rooms)
                     reserve_areas.append((area_name, rooms, hub_potential, len(rooms)))
 
@@ -3109,7 +3116,7 @@ class ruination_map():
             if area_name not in self.AreasUsed and area_name in RUIN_ROOM_SETS:
                 # Check if already added from reserve characters
                 if not any(a[0] == area_name for a in reserve_areas):
-                    rooms = RUIN_ROOM_SETS[area_name]
+                    rooms = list(RUIN_ROOM_SETS[area_name])
                     hub_potential = calc_hub_potential(rooms)
                     reserve_areas.append((area_name, rooms, hub_potential, len(rooms)))
 
