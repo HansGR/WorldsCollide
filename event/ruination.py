@@ -1408,16 +1408,21 @@ class RuinationBranch(Network):
 
                     exclude = {door_exit, target_door}
                     exits_count = 0
+                    entrances_count = 0
                     # Use a set to avoid double-counting if exit_room_id == room_id
                     for rid in {exit_room_id, room_id}:
                         r = self.rooms.get_room(rid)
                         if r:
-                            exits_count += len([d for d in r.doors
-                                                if d not in self.protected and d not in exclude])
-                            exits_count += len([t for t in r.traps
-                                                if t not in self.protected and t not in exclude])
+                            remaining_doors = len([d for d in r.doors
+                                                   if d not in self.protected and d not in exclude])
+                            remaining_traps = len([t for t in r.traps
+                                                   if t not in self.protected])
+                            remaining_pits = len([p for p in r.pits
+                                                  if p not in self.protected])
+                            exits_count += remaining_doors + remaining_traps
+                            entrances_count += remaining_doors + remaining_pits
 
-                    if exits_count > 0:
+                    if exits_count > 0 and entrances_count > 0:
                         valid_doors.append(target_door)
             else:
                 # === B2: Connected room ===
@@ -2098,7 +2103,7 @@ class RuinationBranch(Network):
                 if this_conn is None:
                     # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
                     # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
-                    available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id and n != value[1]]
+                    available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
                     if self.verbose:
                         print(f'\t(2) converter search: room_traps={unprotected_room_traps}, room_doors={unprotected_room_doors}')
                         print(f'\t    upstream_doors={upstream_doors}, upstream_pits={upstream_pits}')
