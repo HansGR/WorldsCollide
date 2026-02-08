@@ -1253,6 +1253,17 @@ class RuinationBranch(Network):
                     _upstream_room_cache.update(path)
             return _upstream_room_cache
 
+        # Pre-compute hub+upstream entrance count for rule A1 hub entrance check.
+        # If the exit room is in hub/upstream and hub has 0 entrances (doors+pits),
+        # connecting a trap to an unconnected room would create a downstream node
+        # that can never reconnect (finalize_map step 2 needs hub entrances).
+        exit_is_hub_upstream = exit_room_id in hub_and_upstream
+        if exit_is_hub_upstream:
+            hub_upstream_doors, hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
+            hub_upstream_entrances = hub_upstream_doors + hub_upstream_pits
+        else:
+            hub_upstream_entrances = None  # Not needed
+
         for room_id in self.net.nodes:
             if room_id == self.terminus:
                 continue
@@ -1277,6 +1288,12 @@ class RuinationBranch(Network):
                     + len([t for t in room.traps if t not in self.protected])
                 )
                 if target_exits > 0:
+                    # A1-hub check: If exit is from hub/upstream, hub must retain
+                    # at least 1 entrance (door or pit) so downstream nodes can
+                    # reconnect during finalize_map. Trap consumption doesn't
+                    # affect entrances, so we check the pre-computed count.
+                    if exit_is_hub_upstream and hub_upstream_entrances == 0:
+                        continue
                     valid_pits.extend(room_pits)
             else:
                 # === B1: Connected room ===
