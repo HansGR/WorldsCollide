@@ -1422,7 +1422,7 @@ class RuinationBranch(Network):
                             exits_count += remaining_doors + remaining_traps
                             entrances_count += remaining_doors + remaining_pits
 
-                    if exits_count > 0 and entrances_count > 0:
+                    if exits_count > 0 and (entrances_count > 0 or exit_room_id not in hub_and_upstream):
                         valid_doors.append(target_door)
             else:
                 # === B2: Connected room ===
