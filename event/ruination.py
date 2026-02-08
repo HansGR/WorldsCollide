@@ -2064,7 +2064,7 @@ class RuinationBranch(Network):
                     # uses 2 doors total (1 from downstream + 1 from upstream). If <= 2
                     # doors remain, connect to a hub room (3+ doors) from reserve instead.
                     _, _, all_branch_doors = self.collect_network_traps_and_pits(include_doors=True)
-                    total_branch_doors = len(all_branch_doors) + len(upstream_doors)
+                    total_branch_doors = len(all_branch_doors)
                     if total_branch_doors <= 2 and reserve_areas is not None:
                         if self.verbose:
                             print(f'(2) Fix B: only {total_branch_doors} doors remain in branch, '
