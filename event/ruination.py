@@ -2081,7 +2081,7 @@ class RuinationBranch(Network):
                 if this_conn is None:
                     # A thing can happen here where the downstream has only a door-out, but the upstream has only pit-in (or vice versa).
                     # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
-                    available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
+                    available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id and n != value[1]]
                     if self.verbose:
                         print(f'\t(2) converter search: room_traps={unprotected_room_traps}, room_doors={unprotected_room_doors}')
                         print(f'\t    upstream_doors={upstream_doors}, upstream_pits={upstream_pits}')
