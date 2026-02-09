@@ -2056,7 +2056,77 @@ class RuinationBranch(Network):
                 if len(unprotected_room_traps) > 0:
                     this_exit = random.choice(unprotected_room_traps)
                     if len(upstream_pits) > 0:
-                        this_conn = random.choice(upstream_pits)
+                        # Before connecting trap to hub/upstream pit, check if the
+                        # terminus still needs connecting. If so, verify that after
+                        # consuming this trap, the accessible network (hub + downstream,
+                        # NOT upstream — upstream is one-way inaccessible) still has
+                        # at least 1 exit for the terminus connection.
+                        terminus_room = self.rooms.get_room(self.terminus)
+                        if terminus_room is not None:
+                            accessible_exits = 0
+                            accessible_exits += len([d for d in hub.doors if d not in self.protected])
+                            accessible_exits += len([t for t in hub.traps if t not in self.protected])
+                            for ds_node in downstream:
+                                ds_room = self.rooms.get_room(ds_node)
+                                if ds_room:
+                                    accessible_exits += len([d for d in ds_room.doors if d not in self.protected])
+                                    accessible_exits += len([t for t in ds_room.traps if t not in self.protected])
+                            # Subtract 1 for the trap being consumed
+                            accessible_exits -= 1
+
+                            if accessible_exits <= 0:
+                                # Connecting to any hub/upstream pit would leave no
+                                # accessible exits for terminus. Find a converter room
+                                # (1+ pit, 1+ door, 1+ other exit) so the trap connects
+                                # to its pit, and its door can serve the terminus.
+                                if self.verbose:
+                                    print(f'(2) Terminus unconnected, trap connection would leave 0 accessible exits.')
+                                    print(f'    Searching for converter room (1+ pit, 1+ door, 1+ other exit)...')
+
+                                connected_set = {hub_id} | set(upstream) | set(downstream)
+                                # Search unconnected rooms in network
+                                for node_id in self.net.nodes:
+                                    if node_id in connected_set or node_id == self.terminus or node_id in self.dead_ends:
+                                        continue
+                                    n_room = self.rooms.get_room(node_id)
+                                    if n_room is None:
+                                        continue
+                                    n_pits = [p for p in n_room.pits if p not in self.protected]
+                                    n_doors = [d for d in n_room.doors if d not in self.protected]
+                                    n_traps = [t for t in n_room.traps if t not in self.protected]
+                                    if len(n_pits) >= 1 and len(n_doors) >= 1 and (len(n_doors) + len(n_traps)) >= 2:
+                                        this_conn = random.choice(n_pits)
+                                        if self.verbose:
+                                            print(f'    Found converter room {node_id} in network')
+                                        break
+
+                                # Fallback: search reserve areas
+                                if this_conn is None and reserve_areas is not None:
+                                    for area_name, area_rooms in reserve_areas:
+                                        for rid in list(area_rooms):
+                                            if rid in self.net.nodes:
+                                                continue
+                                            if rid in room_data:
+                                                data = room_data[rid]
+                                                r_doors = list(data[0]) if len(data) > 0 else []
+                                                r_traps = list(data[1]) if len(data) > 1 else []
+                                                r_pits = list(data[2]) if len(data) > 2 else []
+                                                if len(r_pits) >= 1 and len(r_doors) >= 1 and (len(r_doors) + len(r_traps)) >= 2:
+                                                    self.add_room(rid)
+                                                    area_rooms.remove(rid)
+                                                    added_room = self.rooms.get_room(rid)
+                                                    added_pits = [p for p in added_room.pits if p not in self.protected]
+                                                    this_conn = random.choice(added_pits)
+                                                    if self.verbose:
+                                                        print(f'    Added converter room {rid} from {area_name}')
+                                                    break
+                                        if this_conn is not None:
+                                            break
+                            else:
+                                this_conn = random.choice(upstream_pits)
+                        else:
+                            # Terminus already merged, no exit preservation needed
+                            this_conn = random.choice(upstream_pits)
 
                 if this_conn is None and len(unprotected_room_doors) > 0:
                     # Fix B: Before using a door-to-door connection, verify we aren't
