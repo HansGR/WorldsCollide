@@ -46,7 +46,10 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 - **data/maps.py** - Map/exit handling, door randomization via `Doors` class
 - **data/doors.py** - Door randomizer orchestration
 - **data/rooms.py** - Room and connection definitions
-- **event/ruination.py** - Ruination mode implementation (~4400 lines)
+- **event/ruination.py** - Ruination mode implementation (~4700 lines)
+  - `get_valid_door_targets_v2` / `get_valid_pit_targets_v2`: Connection validation (hub entrance invariants)
+  - `finalize_map`: Steps 1-6 close all connections; see ARCHIVE.md for detailed reference
+  - All `room_data` lookups in reserve area searches must filter by `self.protected`
 
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
