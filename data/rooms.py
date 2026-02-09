@@ -1263,7 +1263,7 @@ for r in room_data.keys():
         locked = [item for item in get_locked_items(room_data[r][4]) if type(item) is int]
 
     # Read in door world
-    these_doors = [d for d in room_data[r][0]] + [d for d in locked if d < 2000]
+    these_doors = [d for d in room_data[r][0]] + [d for d in locked if d < 2000 or 4000 <= d < 6000]
     for d in these_doors:
         exit_world[d] = room_data[r][-1]
         exit_room[d] = r
