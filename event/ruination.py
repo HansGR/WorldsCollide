@@ -2373,28 +2373,67 @@ class RuinationBranch(Network):
                 remaining_traps_check, remaining_pits_check = self.collect_network_traps_and_pits()
                 if (len(remaining_traps_check) > 0 or len(remaining_pits_check) > 0) and reserve_areas is not None:
                     print(f'WARNING: No doors remain after step (2) but terminus {self.terminus} '
-                          f'still needs connecting. Searching reserve for rescue room '
-                          f'(needs 1+ trap, 1+ pit, 1+ door)...')
+                          f'still needs connecting. Searching rescue room '
+                          f'(needs 1+ pit, 1+ door, 1+ other exit)...')
+
+                    # First, check if an unconnected room in the network already qualifies.
+                    # This handles rescue rooms added in a previous iteration that were never
+                    # connected (they're invisible to steps 1-3 which only see hub+upstream+downstream).
                     rescue_found = False
-                    for area_name, area_rooms in reserve_areas:
-                        for rid in list(area_rooms):
-                            if rid in self.net.nodes:
+                    connected_set = {hub_id} | set(self.get_upstream_nodes(hub_id)) | set(self.get_downstream_nodes(hub_id))
+                    hub_traps = [t for t in hub.traps if t not in self.protected]
+                    if len(hub_traps) > 0:
+                        for node_id in self.net.nodes:
+                            if node_id in connected_set or node_id == self.terminus:
                                 continue
-                            if rid in room_data:
-                                data = room_data[rid]
-                                r_doors = list(data[0]) if len(data) > 0 else []
-                                r_traps = list(data[1]) if len(data) > 1 else []
-                                r_pits = list(data[2]) if len(data) > 2 else []
-                                if len(r_traps) >= 1 and len(r_pits) >= 1 and len(r_doors) >= 1:
-                                    self.add_room(rid)
-                                    area_rooms.remove(rid)
-                                    print(f'WARNING: Added rescue room {rid} from {area_name} '
-                                          f'(doors={len(r_doors)}, traps={len(r_traps)}, pits={len(r_pits)}). '
-                                          f'Restarting finalization.')
-                                    rescue_found = True
-                                    break
-                        if rescue_found:
-                            break
+                            n_room = self.rooms.get_room(node_id)
+                            if n_room is None:
+                                continue
+                            n_pits = [p for p in n_room.pits if p not in self.protected]
+                            n_doors = [d for d in n_room.doors if d not in self.protected]
+                            n_traps = [t for t in n_room.traps if t not in self.protected]
+                            if len(n_pits) >= 1 and len(n_doors) >= 1 and (len(n_doors) + len(n_traps)) >= 2:
+                                this_trap = random.choice(hub_traps)
+                                this_pit = random.choice(n_pits)
+                                self.connect(this_trap, this_pit)
+                                print(f'WARNING: Connected hub trap {this_trap} to existing unconnected '
+                                      f'room {node_id} pit {this_pit}. Restarting finalization.')
+                                rescue_found = True
+                                break
+
+                    # Fallback: search reserve areas for a new rescue room, add and connect it.
+                    if not rescue_found:
+                        hub_traps = [t for t in hub.traps if t not in self.protected]  # refresh
+                        for area_name, area_rooms in reserve_areas:
+                            for rid in list(area_rooms):
+                                if rid in self.net.nodes:
+                                    continue
+                                if rid in room_data:
+                                    data = room_data[rid]
+                                    r_doors = list(data[0]) if len(data) > 0 else []
+                                    r_traps = list(data[1]) if len(data) > 1 else []
+                                    r_pits = list(data[2]) if len(data) > 2 else []
+                                    if len(r_pits) >= 1 and len(r_doors) >= 1 and (len(r_doors) + len(r_traps)) >= 2:
+                                        self.add_room(rid)
+                                        area_rooms.remove(rid)
+                                        added_room = self.rooms.get_room(rid)
+                                        added_pits = [p for p in added_room.pits if p not in self.protected]
+                                        if len(hub_traps) > 0:
+                                            this_trap = random.choice(hub_traps)
+                                            this_pit = random.choice(added_pits)
+                                            self.connect(this_trap, this_pit)
+                                            print(f'WARNING: Added rescue room {rid} from {area_name} '
+                                                  f'(doors={len(r_doors)}, traps={len(r_traps)}, pits={len(r_pits)}) '
+                                                  f'and connected trap {this_trap} to pit {this_pit}. '
+                                                  f'Restarting finalization.')
+                                        else:
+                                            print(f'WARNING: Added rescue room {rid} from {area_name} '
+                                                  f'(doors={len(r_doors)}, traps={len(r_traps)}, pits={len(r_pits)}). '
+                                                  f'Restarting finalization.')
+                                        rescue_found = True
+                                        break
+                            if rescue_found:
+                                break
                     if rescue_found:
                         continue  # Restart finalization from step 1
 
