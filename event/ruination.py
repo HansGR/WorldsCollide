@@ -1793,9 +1793,9 @@ class RuinationBranch(Network):
                 for room_id in area_rooms:
                     if room_id in room_data:
                         data = room_data[room_id]
-                        doors = list(data[0]) if len(data) > 0 else []
-                        traps = list(data[1]) if len(data) > 1 else []
-                        pits = list(data[2]) if len(data) > 2 else []
+                        doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
+                        traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
+                        pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
 
                         # Need: at least 1 pit, at least 1 door, at least 1 other exit
                         total_exits = len(doors) + len(traps)
@@ -1961,8 +1961,8 @@ class RuinationBranch(Network):
                                 continue
                             if rid in room_data:
                                 data = room_data[rid]
-                                r_pits = list(data[2]) if len(data) > 2 else []
-                                r_traps = list(data[1]) if len(data) > 1 else []
+                                r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
+                                r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
                                 rd = len(r_pits) - len(r_traps)
                                 if rd > best_diff:
                                     best_diff = rd
@@ -2108,9 +2108,9 @@ class RuinationBranch(Network):
                                                 continue
                                             if rid in room_data:
                                                 data = room_data[rid]
-                                                r_doors = list(data[0]) if len(data) > 0 else []
-                                                r_traps = list(data[1]) if len(data) > 1 else []
-                                                r_pits = list(data[2]) if len(data) > 2 else []
+                                                r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
+                                                r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
+                                                r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
                                                 if len(r_pits) >= 1 and len(r_doors) >= 1 and (len(r_doors) + len(r_traps)) >= 2:
                                                     self.add_room(rid)
                                                     area_rooms.remove(rid)
@@ -2146,7 +2146,7 @@ class RuinationBranch(Network):
                                     continue
                                 if rid in room_data:
                                     data = room_data[rid]
-                                    r_doors = list(data[0]) if len(data) > 0 else []
+                                    r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
                                     if len(r_doors) >= 3:
                                         self.add_room(rid)
                                         area_rooms.remove(rid)
@@ -2215,9 +2215,9 @@ class RuinationBranch(Network):
                                         continue
                                     if rid in room_data:
                                         data = room_data[rid]
-                                        r_doors = list(data[0]) if len(data) > 0 else []
-                                        r_traps = list(data[1]) if len(data) > 1 else []
-                                        r_pits = list(data[2]) if len(data) > 2 else []
+                                        r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
+                                        r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
+                                        r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
                                         if len(r_pits) > 0 and len(r_doors) > 0 and len(r_pits) > len(r_traps):
                                             self.add_room(rid)
                                             area_rooms.remove(rid)
@@ -2262,9 +2262,9 @@ class RuinationBranch(Network):
                                         continue
                                     if rid in room_data:
                                         data = room_data[rid]
-                                        r_doors = list(data[0]) if len(data) > 0 else []
-                                        r_traps = list(data[1]) if len(data) > 1 else []
-                                        r_pits = list(data[2]) if len(data) > 2 else []
+                                        r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
+                                        r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
+                                        r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
                                         if len(r_traps) > 0 and len(r_doors) > 0 and len(r_traps) > len(r_pits):
                                             self.add_room(rid)
                                             area_rooms.remove(rid)
@@ -2301,7 +2301,7 @@ class RuinationBranch(Network):
                                         continue
                                     if rid in room_data:
                                         data = room_data[rid]
-                                        r_doors = list(data[0]) if len(data) > 0 else []
+                                        r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
                                         if len(r_doors) > 0:
                                             self.add_room(rid)
                                             area_rooms.remove(rid)
@@ -2410,9 +2410,9 @@ class RuinationBranch(Network):
                                     continue
                                 if rid in room_data:
                                     data = room_data[rid]
-                                    r_doors = list(data[0]) if len(data) > 0 else []
-                                    r_traps = list(data[1]) if len(data) > 1 else []
-                                    r_pits = list(data[2]) if len(data) > 2 else []
+                                    r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
+                                    r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
+                                    r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
                                     if len(r_pits) >= 1 and len(r_doors) >= 1 and (len(r_doors) + len(r_traps)) >= 2:
                                         self.add_room(rid)
                                         area_rooms.remove(rid)
@@ -2464,7 +2464,7 @@ class RuinationBranch(Network):
                             continue
                         if rid in room_data:
                             data = room_data[rid]
-                            r_pits = list(data[2]) if len(data) > 2 else []
+                            r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
                             if len(r_pits) > 0:
                                 self.add_room(rid)
                                 area_rooms.remove(rid)
