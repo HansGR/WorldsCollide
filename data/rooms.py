@@ -1272,7 +1272,7 @@ for r in room_data.keys():
         #        exit_world[ds] = room_data[r][-1]
         #        exit_room[d]
 
-    # Read in one-way world
+    # Read in one-way world.  Note that technically some doors behave as traps, and this won't catch them if they are also locked.  This scenario may not exist yet but is logically possible.
     these_traps = [t for t in room_data[r][1]] + [t for t in locked if 2000 <= t < 3000]
     for t in these_traps:
         exit_world[t] = room_data[r][-1]
