@@ -140,6 +140,44 @@ A branch becomes **stuck** when:
 
 **Common failure pattern**: Step (2) consuming all doors via door→door connections, leaving none for step (4) to connect the terminus. Fixes A, B, and the rescue check address this.
 
+---
+
+## Ruination Mode - finalize_map Debug Patterns (2026-02-09)
+
+### Invariant: Hub must always retain entrances
+When `get_valid_door_targets_v2` Rule A2 evaluates a door merge for a room in hub/upstream, the merged result must have **both** exits (doors+traps) > 0 **and** entrances (doors+pits) > 0. A room with exits but no entrances creates downstream nodes that can never reconnect. This check only applies when `exit_room_id in hub_and_upstream`; downstream merges only need exits.
+
+Similarly, `get_valid_pit_targets_v2` Rule A1 must not create downstream nodes (via trap→pit to unconnected rooms) when hub+upstream already has 0 entrances.
+
+### Invariant: Upstream is inaccessible from hub
+Upstream rooms are connected TO the hub via one-way pits. The player can reach the hub FROM upstream, but NOT the reverse. Therefore:
+- Upstream doors cannot serve terminus connections
+- Upstream doors/traps must NOT be counted as "accessible exits" when checking if the terminus can be connected
+- Only hub + downstream exits are accessible
+
+### Step (2) terminus exit preservation
+Before connecting a downstream trap to a hub/upstream pit, step (2) must check: if the terminus is still unconnected, will consuming this trap leave 0 accessible exits (hub+downstream)? If so, reject all hub/upstream pits and instead find a converter room (1+ pit, 1+ door, 1+ other exit) from the network or reserves.
+
+### Reserve area searches must filter by self.protected
+All `room_data` lookups MUST filter elements by `self.protected` before evaluating suitability:
+```python
+# WRONG: list(data[0])
+# RIGHT: [d for d in data[0] if d not in self.protected]
+```
+Protected elements come from forced connections on other branches. A room may appear to have 3 pits in raw data but all 3 could be protected, causing `random.choice([])` → `IndexError`.
+
+### Rescue rooms must be CONNECTED, not just added
+`self.add_room(rid)` only adds a room to the network — it does NOT connect it to the topology. Unconnected rooms are invisible to `collect_network_traps_and_pits()` and to steps 1-3 (which only see hub+upstream+downstream). The rescue room logic must:
+1. Check for existing unconnected rooms in the network first (from prior iterations)
+2. Connect the hub's trap to the room's pit immediately via `self.connect()`
+3. Then restart finalization so step (2) can process the now-downstream room
+
+### collect_network_traps_and_pits already includes hub+upstream
+Do not add `upstream_doors` to `len(all_branch_doors)` from `collect_network_traps_and_pits(include_doors=True)` — that method already collects from hub + upstream + downstream. Adding upstream_doors again double-counts.
+
+### Break scope in if/else vs for/while
+A `break` inside an `if/else` block but outside a `for` loop breaks the nearest enclosing loop — which may be the outer `while` rather than just exiting the `if` block. This caused step (6)'s key-unlock detection to exit the finalize_map loop entirely instead of allowing a restart from step (1).
+
 ### Key Data Structures
 
 - **Room elements**: doors (0-1999, 4000-5999), traps (2000-2999), pits (3000-3999, 6000-7999), keys (strings), locks (dict)
