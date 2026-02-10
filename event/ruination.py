@@ -523,6 +523,29 @@ class RuinationBranch(Network):
 
         return issues
 
+    def _filter_pits_by_free_exits(self, pits):
+        """Filter out pits in rooms where all unconsumed exits were key-unlocked.
+
+        A pit whose room has no originally-free exits is unsafe: the player could
+        enter via a trap connection and be unable to leave without keys they haven't
+        obtained yet.
+        """
+        safe_pits = []
+        for p in pits:
+            room = self.rooms.get_room_from_element(p)
+            if room is None:
+                safe_pits.append(p)
+                continue
+            orig_free = (
+                len([d for d in room.doors if d not in self.protected
+                     and d not in self.initially_locked_exits])
+                + len([t for t in room.traps if t not in self.protected
+                       and t not in self.initially_locked_exits])
+            )
+            if orig_free > 0:
+                safe_pits.append(p)
+        return safe_pits
+
     def collect_network_traps_and_pits(self, include_doors=False, exclude_upstream_doors=False):
         """Collect all unconnected traps and pits from the entire connected network.
 
@@ -1288,6 +1311,18 @@ class RuinationBranch(Network):
                     + len([t for t in room.traps if t not in self.protected])
                 )
                 if target_exits > 0:
+                    # Check that at least one exit was originally free (not unlocked
+                    # by apply_key). If all exits were key-unlocked, the player could
+                    # enter via pit before obtaining the keys and be trapped.
+                    originally_free_exits = (
+                        len([d for d in room.doors if d not in self.protected
+                             and d not in self.initially_locked_exits])
+                        + len([t for t in room.traps if t not in self.protected
+                               and t not in self.initially_locked_exits])
+                    )
+                    if originally_free_exits == 0:
+                        continue  # All exits were key-unlocked; player could be trapped
+
                     # A1-hub check: If exit is from hub/upstream, hub must retain
                     # at least 1 entrance (door or pit) so downstream nodes can
                     # reconnect during finalize_map. Trap consumption doesn't
@@ -1387,7 +1422,8 @@ class RuinationBranch(Network):
             if room is None:
                 continue
 
-            room_doors = [d for d in room.doors if d not in self.protected]
+            room_doors = [d for d in room.doors
+                          if d not in self.protected and d not in self.initially_locked_exits]
             if not room_doors:
                 continue
 
@@ -1941,6 +1977,15 @@ class RuinationBranch(Network):
                         r = self.rooms.get_room(n)
                         if self.verbose:
                             print('\t',n, r.count, r.doors, r.traps, r.pits, r.keys, r.locks)
+                        # Skip rooms with no originally-free exits (all exits were key-unlocked)
+                        orig_free_exits = (
+                            len([d for d in r.doors if d not in self.protected
+                                 and d not in self.initially_locked_exits])
+                            + len([t for t in r.traps if t not in self.protected
+                                   and t not in self.initially_locked_exits])
+                        )
+                        if orig_free_exits == 0:
+                            continue
                         # Use only unprotected pits and traps for comparison
                         unprotected_pits = [p for p in r.pits if p not in self.protected]
                         unprotected_traps = [t for t in r.traps if t not in self.protected]
@@ -2441,7 +2486,9 @@ class RuinationBranch(Network):
             # Collect traps and pits from the ENTIRE network (hub + upstream + downstream).
             # This is important because keys applied during connect() can unlock traps in any room,
             # not just the hub. All unlocked traps must be connected to avoid "escape" routes.
+            # Filter out pits in rooms with no originally-free exits to prevent softlocks.
             remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+            remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
             while len(remaining_traps) > 0 and len(remaining_pits) > 0:
                 random.shuffle(remaining_pits)
                 if self.verbose:
@@ -2453,6 +2500,7 @@ class RuinationBranch(Network):
                 self.connect(this_exit, this_conn)
                 # Re-collect from entire network - keys applied during connect() may unlock new traps
                 remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+                remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
 
             # If we still have traps but no pits, try reserve areas for rooms with pits
             if len(remaining_traps) > 0 and reserve_areas is not None:
@@ -2472,6 +2520,7 @@ class RuinationBranch(Network):
                                     print(f'(3) added room with pits from reserve area {area_name}: {rid}')
                                 # Re-collect and continue connecting
                                 remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+                                remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
                                 while len(remaining_traps) > 0 and len(remaining_pits) > 0:
                                     random.shuffle(remaining_pits)
                                     this_exit = remaining_traps.pop()
@@ -2480,12 +2529,14 @@ class RuinationBranch(Network):
                                         print('(3) connecting:', this_exit, '-->', this_conn)
                                     self.connect(this_exit, this_conn)
                                     remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+                                    remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
                                 if len(remaining_traps) == 0:
                                     break
                     if len(remaining_traps) == 0:
                         break
                 # Re-collect final state
                 remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
+                remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
 
             # If we still have traps but no pits, this is an unrecoverable state
             if len(remaining_traps) > 0:
