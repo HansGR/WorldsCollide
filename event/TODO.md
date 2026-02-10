@@ -6,11 +6,11 @@
 
 The mapping algorithm applies keys when rooms are **connected** (during path building), but the player applies keys when rooms are **visited**. Since the player can explore rooms in any order, the algorithm's key ordering guarantee does not hold for the player. This can cause softlocks when a player enters a room (via a one-way pit) whose exits are all locked by keys found in other rooms they haven't visited yet.
 
-The risk only applies to **pit (one-way) entrances**, because doors are bidirectional -- the player can always retrace through a door. Pits are irreversible.
+The risk directly applies to **pit (one-way) entrances**, because players cannot return through pits.  However, it can indirectly apply to doors as well, if the connection to the door results in a downstream node whose only exit was once locked. 
 
 ### Catalog of All Keyed Rooms in RUIN_ROOM_SETS
 
-#### Character-Keyed Locks (no softlock risk -- characters are persistent party members)
+#### Character-Keyed Locks (consider addressing by changing the particular 'character-gating' logic)
 
 | Room | Area | Free Exits | Locked Exits | Key |
 |------|------|-----------|-------------|-----|
@@ -27,9 +27,9 @@ The risk only applies to **pit (one-way) entrances**, because doors are bidirect
 | 435 | Doma | 1 door | doors 865/866 (cd3) | Self (cd3) |
 | `ruin-daryl` | DarylsTomb | 1 door | door 1563 (dtboss) | Self (dtboss) |
 
-#### Non-Character Locks with Free Exits (key from other room -- low risk)
+#### Non-Character Locks with Free Exits (key from other room -- moderate risk)
 
-These rooms always have at least one free exit, so the player is never trapped.
+These rooms always have at least one free exit.  The player may be trapped if the last remaining exit in the downstream node is the initially-locked door, or if the locked door is physically impassible without the key (e.g. door 618 in Zozo). 
 
 | Room | Area | Free Exits | Locked Exits | Key Source |
 |------|------|-----------|-------------|-----------|
@@ -62,19 +62,21 @@ These rooms always have at least one free exit, so the player is never trapped.
 |------|------|-----------|-------------|------------|
 | **391** | **DarylsTomb** | **0 doors, 0 traps, 1 pit (entrance only)** | **door 795 (dt2), trap 2060 (dt3)** | **Room 389 (dt2), Room 390 (dt3)** |
 
-### Softlock Scenario (Room 391)
+### Special considerations for Room 391
 
-Room 391 is the only room in ruination mode with zero initially-free exits where all exits are locked by non-character keys from other rooms.
+Room 391 is the right-half of the physical map that also contains room 390.  It is only room in ruination mode with zero initially-free exits where all exits are locked by non-character keys from other rooms.  However, its pit and locked trap are both forced connections that create a bi-directional connection to room 390, **as long as** room 390 is entered first.  The danger with room 391 is as follows:
 
-1. During `extend_branch_path`, rooms 389 and 390 are connected. Their keys (dt2, dt3) are applied via `apply_key()`, which promotes room 391's locked elements to free: door 795 and trap 2060.
-2. `get_valid_pit_targets_v2` evaluates room 391. It checks `room.doors` (1 free) + `room.traps` (1 free) = 2 exits. Target accepted.
-3. Algorithm connects some trap to pit 3059 (room 391). Valid from the algorithm's perspective.
-4. Player enters the hub. They see a door (to some room) and a trap (leading to room 391). Player falls through the trap into room 391.
-5. The player hasn't visited rooms 389/390 yet. In the player's game state, dt2 and dt3 haven't been obtained. Room 391's exits are still locked. **SOFTLOCK.**
+1. During `extend_branch_path`, rooms 389 and 390 are connected to the hub. Their keys (dt2, dt3) are applied via `apply_key()`, which promotes room 391's locked elements to free: door 795 and trap 2060.
+2. Room 391 is now in the upstream and downstream of the hub, due to the forced connection.  The algorithm closes the loop, thinking door 795 is now available to the hub. 
+3. Subsequently, `extend_branch_path` connects another trap in the hub to a pit-in, door-out room, creating a downstream node with one door.  
+4. `get_valid_pit_targets_v2` evaluates door 795 as a target.  It closes the loop back to the hub, and is deemed valid.
+5. Algorithm connects the downstream node door to door 795.  Valid from the algorithm's perspective, as long as other hub exits are available.  The forced connections already exist, closing the loop back to the hub.
+6. Player enters the hub. They enter a trap (leading to the dounstream pido room). Player walks through the door into room 391.
+7. The player hasn't visited rooms 389/390 yet. In the player's game state, dt2 and dt3 haven't been obtained. Room 391's exits are still locked, and the player cannot return to the hub. **SOFTLOCK.**
 
 ### Proposed Solution: Track "Initially Locked" Exits
 
-When `apply_key()` unlocks an element (moves it from locks to free), record it in a set `initially_locked_exits`. When evaluating pit targets, require that the target room has at least one exit that was **originally free** (not just unlocked by key application during path building).
+When `apply_key()` unlocks an element (moves it from locks to free), record it in a set `initially_locked_exits`. When evaluating connections, DO NOT connect to initially locked doors as entrances: they must be used as exits only.  When evaluating traps, require that the target room has at least one exit that was **originally free** (not just unlocked by key application during path building).
 
 1. Add `self.initially_locked_exits = set()` to the Branch class.
 2. In `apply_key()` (walks.py:135), when an element is unlocked and added to the room, also add it to `self.initially_locked_exits`.
@@ -89,13 +91,13 @@ When `apply_key()` unlocks an element (moves it from locks to free), record it i
    if originally_free_exits == 0:
        continue  # All exits were key-unlocked; player could be trapped
    ```
-4. Apply the same check in finalize_map steps (1) and (3) when pairing traps with pits.
+4. In `get_valid_door_targets_v2` ... do not include doors in initially_locked_exits as valid targets.  
+5. Apply the same check in finalize_map steps (1) and (3) when pairing traps with pits.
 
 This correctly handles all cases:
-- Rooms with originally-free exits (383, 202, 429, 531, etc.) always pass
 - Self-unlocking rooms (216, 472, 435, ruin-daryl) always have >= 1 free exit
-- Room 391 is rejected as a pit target since all its exits are key-unlocked
-- Door connections don't need this check (doors are bidirectional, player can retrace)
+- Room 391, door 795 is rejected as a door target since it must be key-unlocked
+
 
 ---
 
