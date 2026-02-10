@@ -1,5 +1,104 @@
 # Todo list for Claude (-ruin mode updates)
 
+## Key/Lock Softlock Analysis (2026-02-10)
+
+### Summary
+
+The mapping algorithm applies keys when rooms are **connected** (during path building), but the player applies keys when rooms are **visited**. Since the player can explore rooms in any order, the algorithm's key ordering guarantee does not hold for the player. This can cause softlocks when a player enters a room (via a one-way pit) whose exits are all locked by keys found in other rooms they haven't visited yet.
+
+The risk only applies to **pit (one-way) entrances**, because doors are bidirectional -- the player can always retrace through a door. Pits are irreversible.
+
+### Catalog of All Keyed Rooms in RUIN_ROOM_SETS
+
+#### Character-Keyed Locks (no softlock risk -- characters are persistent party members)
+
+| Room | Area | Free Exits | Locked Exits | Key |
+|------|------|-----------|-------------|-----|
+| `ruin-thamasa` | VeldtCave | 2 doors, 2 pits | trap 2054 (STRAGO) | Character |
+| `ruin-whelk` | Narshe | 2 doors | door 1155 (TERRA) | Character |
+| `ruin-zozo` | Zozo | 5 doors | door 4608 (TERRA), key 'zr1' (CYAN) | Character |
+
+#### Self-Unlocking Rooms (key provided by same room -- no softlock risk)
+
+| Room | Area | Free Exits | Lock | Key Source |
+|------|------|-----------|------|-----------|
+| 216 | PhantomTrain | 1 door | doors 493/494 (pt1) | Self (pt1) |
+| 472 | VeldtCave | 1 door | door 989 (vc1) | Self (vc1) |
+| 435 | Doma | 1 door | doors 865/866 (cd3) | Self (cd3) |
+| `ruin-daryl` | DarylsTomb | 1 door | door 1563 (dtboss) | Self (dtboss) |
+
+#### Non-Character Locks with Free Exits (key from other room -- low risk)
+
+These rooms always have at least one free exit, so the player is never trapped.
+
+| Room | Area | Free Exits | Locked Exits | Key Source |
+|------|------|-----------|-------------|-----------|
+| 202 | PhantomTrain | 9 doors | trap 2068 (pt2) | Room 212 |
+| 383 | DarylsTomb | 1 door | door 1512 (dt1) | Room 392 |
+| 429 | Doma | 1 door | trap 2070 (cd1+cd2) | Rooms 423, 427 |
+| 531 | AncientCastle | 1 door | door 1106 (ac2) | Room 528 |
+| `296r` | Zozo | 2 doors | door 618 (zr1) | `ruin-zozo` + CYAN |
+
+#### Key-Providing Rooms (no softlock risk -- these rooms give keys, not locks)
+
+| Room | Area | Keys Provided | Free Exits |
+|------|------|-------------|-----------|
+| 212 | PhantomTrain | pt2 | 1 door |
+| 389 | DarylsTomb | dt2 | 1 door |
+| 390 | DarylsTomb | dt3 | 2 doors, 1 trap, 1 pit |
+| 392 | DarylsTomb | dt1 | 1 door |
+| `301r` | Zozo | clock1 | 3 doors |
+| `306r` | Zozo | clock2 | 1 door |
+| 299 | ZozoTower | clock5 | 2 doors |
+| `303a`/`303b` | ZozoTower | clock3 | 1 door + trap/pit |
+| 304 | ZozoTower | clock4 | 2 doors |
+| 423 | Doma | cd1 | 1 trap, 1 pit |
+| 427 | Doma | cd2 | 1 trap, 1 pit |
+| 528 | AncientCastle | ac2 | 4 doors |
+
+#### HIGH RISK -- All Exits Locked, Key From Other Rooms
+
+| Room | Area | Free Exits | Locked Exits | Key Sources |
+|------|------|-----------|-------------|------------|
+| **391** | **DarylsTomb** | **0 doors, 0 traps, 1 pit (entrance only)** | **door 795 (dt2), trap 2060 (dt3)** | **Room 389 (dt2), Room 390 (dt3)** |
+
+### Softlock Scenario (Room 391)
+
+Room 391 is the only room in ruination mode with zero initially-free exits where all exits are locked by non-character keys from other rooms.
+
+1. During `extend_branch_path`, rooms 389 and 390 are connected. Their keys (dt2, dt3) are applied via `apply_key()`, which promotes room 391's locked elements to free: door 795 and trap 2060.
+2. `get_valid_pit_targets_v2` evaluates room 391. It checks `room.doors` (1 free) + `room.traps` (1 free) = 2 exits. Target accepted.
+3. Algorithm connects some trap to pit 3059 (room 391). Valid from the algorithm's perspective.
+4. Player enters the hub. They see a door (to some room) and a trap (leading to room 391). Player falls through the trap into room 391.
+5. The player hasn't visited rooms 389/390 yet. In the player's game state, dt2 and dt3 haven't been obtained. Room 391's exits are still locked. **SOFTLOCK.**
+
+### Proposed Solution: Track "Initially Locked" Exits
+
+When `apply_key()` unlocks an element (moves it from locks to free), record it in a set `initially_locked_exits`. When evaluating pit targets, require that the target room has at least one exit that was **originally free** (not just unlocked by key application during path building).
+
+1. Add `self.initially_locked_exits = set()` to the Branch class.
+2. In `apply_key()` (walks.py:135), when an element is unlocked and added to the room, also add it to `self.initially_locked_exits`.
+3. In `get_valid_pit_targets_v2` Rule A1 (unconnected room check), add after the `target_exits > 0` check:
+   ```python
+   originally_free_exits = (
+       len([d for d in room.doors if d not in self.protected
+            and d not in self.initially_locked_exits])
+       + len([t for t in room.traps if t not in self.protected
+              and t not in self.initially_locked_exits])
+   )
+   if originally_free_exits == 0:
+       continue  # All exits were key-unlocked; player could be trapped
+   ```
+4. Apply the same check in finalize_map steps (1) and (3) when pairing traps with pits.
+
+This correctly handles all cases:
+- Rooms with originally-free exits (383, 202, 429, 531, etc.) always pass
+- Self-unlocking rooms (216, 472, 435, ruin-daryl) always have >= 1 free exit
+- Room 391 is rejected as a pit target since all its exits are key-unlocked
+- Door connections don't need this check (doors are bidirectional, player can retrace)
+
+---
+
 ## Updates to branch mapping code (event/ruination.py)
 1. ✅ **FIXED** - Esper slot check (line 1023): Now accounts for character slots when checking if enough esper slots exist. The check now compares `total_esper_slots < self.Requested[1] + len(planned_characters)`.
 
