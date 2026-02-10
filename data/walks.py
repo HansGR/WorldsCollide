@@ -21,6 +21,7 @@ class Network:
         self.active = None  # next(iter(self.rooms)).id  # Set first room's ID as active
         self.should_stop = None
         self.version = 'Claude'
+        self.initially_locked_exits = set()  # Exits unlocked by apply_key(); not free at start
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -178,11 +179,13 @@ class Network:
                             if self.verbose:
                                 print('\t\t\tadding a door...', item)
                             room.add_doors([item])
+                            self.initially_locked_exits.add(item)
                         elif room.element_type(item) == 1:
                             # This is a trap.
                             if self.verbose:
                                 print('\t\t\tadding a trap...', item)
                             room.add_traps([item])
+                            self.initially_locked_exits.add(item)
                         else:
                             # Error
                             raise RoomError(f"Unknown item unlocked by key {required_keys} in room {room_id}: {item}")
