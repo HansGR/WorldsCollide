@@ -523,29 +523,6 @@ class RuinationBranch(Network):
 
         return issues
 
-    def _filter_pits_by_free_exits(self, pits):
-        """Filter out pits in rooms where all unconsumed exits were key-unlocked.
-
-        A pit whose room has no originally-free exits is unsafe: the player could
-        enter via a trap connection and be unable to leave without keys they haven't
-        obtained yet.
-        """
-        safe_pits = []
-        for p in pits:
-            room = self.rooms.get_room_from_element(p)
-            if room is None:
-                safe_pits.append(p)
-                continue
-            orig_free = (
-                len([d for d in room.doors if d not in self.protected
-                     and d not in self.initially_locked_exits])
-                + len([t for t in room.traps if t not in self.protected
-                       and t not in self.initially_locked_exits])
-            )
-            if orig_free > 0:
-                safe_pits.append(p)
-        return safe_pits
-
     def collect_network_traps_and_pits(self, include_doors=False, exclude_upstream_doors=False):
         """Collect all unconnected traps and pits from the entire connected network.
 
@@ -2486,9 +2463,8 @@ class RuinationBranch(Network):
             # Collect traps and pits from the ENTIRE network (hub + upstream + downstream).
             # This is important because keys applied during connect() can unlock traps in any room,
             # not just the hub. All unlocked traps must be connected to avoid "escape" routes.
-            # Filter out pits in rooms with no originally-free exits to prevent softlocks.
+            # By this step, all downstream branches should be collapsed into the hub.
             remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
-            remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
             while len(remaining_traps) > 0 and len(remaining_pits) > 0:
                 random.shuffle(remaining_pits)
                 if self.verbose:
@@ -2500,12 +2476,14 @@ class RuinationBranch(Network):
                 self.connect(this_exit, this_conn)
                 # Re-collect from entire network - keys applied during connect() may unlock new traps
                 remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
-                remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
 
-            # If we still have traps but no pits, try reserve areas for rooms with pits
+            # If we still have traps but no pits, try reserve areas for rooms with pits.
+            # Adding a room creates a new downstream node that must be handled by steps 1-2,
+            # so restart finalization from step 1 after adding.
             if len(remaining_traps) > 0 and reserve_areas is not None:
                 if self.verbose:
                     print(f'(3) {len(remaining_traps)} traps remaining with no pits, checking reserve areas...')
+                rescue_found = False
                 for area_name, area_rooms in reserve_areas:
                     for rid in list(area_rooms):
                         if rid in self.net.nodes:
@@ -2517,26 +2495,14 @@ class RuinationBranch(Network):
                                 self.add_room(rid)
                                 area_rooms.remove(rid)
                                 if self.verbose:
-                                    print(f'(3) added room with pits from reserve area {area_name}: {rid}')
-                                # Re-collect and continue connecting
-                                remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
-                                remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
-                                while len(remaining_traps) > 0 and len(remaining_pits) > 0:
-                                    random.shuffle(remaining_pits)
-                                    this_exit = remaining_traps.pop()
-                                    this_conn = remaining_pits.pop()
-                                    if self.verbose:
-                                        print('(3) connecting:', this_exit, '-->', this_conn)
-                                    self.connect(this_exit, this_conn)
-                                    remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
-                                    remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
-                                if len(remaining_traps) == 0:
-                                    break
-                    if len(remaining_traps) == 0:
+                                    print(f'(3) added room with pits from reserve area {area_name}: {rid}. '
+                                          f'Restarting finalization.')
+                                rescue_found = True
+                                break
+                    if rescue_found:
                         break
-                # Re-collect final state
-                remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
-                remaining_pits = self._filter_pits_by_free_exits(remaining_pits)
+                if rescue_found:
+                    continue  # Restart finalization from step 1
 
             # If we still have traps but no pits, this is an unrecoverable state
             if len(remaining_traps) > 0:
@@ -2858,11 +2824,19 @@ class RuinationBranch(Network):
 
         # === STEP 2: Collect exits from the active path ===
         # Prioritize exits from the most downstream rooms (deepest in the tree)
+        # When the active node is downstream, exclude initially-locked exits: the player
+        # may not have obtained the keys yet, so following a locked exit could collapse
+        # it into the hub and connect other exits to dead ends, trapping the player.
         available_exits = {'doors': [], 'traps': []}
+        is_downstream = active_level > 0
 
         if len(downstream) == 0:
-            available_exits['doors'] = [d for d in active_room.doors if d not in self.protected]
-            available_exits['traps'] = [t for t in active_room.traps if t not in self.protected]
+            available_exits['doors'] = [d for d in active_room.doors
+                                        if d not in self.protected
+                                        and (not is_downstream or d not in self.initially_locked_exits)]
+            available_exits['traps'] = [t for t in active_room.traps
+                                        if t not in self.protected
+                                        and (not is_downstream or t not in self.initially_locked_exits)]
             exit_room_id = self.active
         else:
             # Get the most downstream nodes
@@ -2876,8 +2850,12 @@ class RuinationBranch(Network):
             for room_id in deepest_rooms:
                 room = self.rooms.get_room(room_id)
                 if room:
-                    available_exits['doors'].extend([d for d in room.doors if d not in self.protected])
-                    available_exits['traps'].extend([t for t in room.traps if t not in self.protected])
+                    available_exits['doors'].extend(
+                        [d for d in room.doors if d not in self.protected
+                         and (not is_downstream or d not in self.initially_locked_exits)])
+                    available_exits['traps'].extend(
+                        [t for t in room.traps if t not in self.protected
+                         and (not is_downstream or t not in self.initially_locked_exits)])
             exit_room_id = list(deepest_rooms)[0] if deepest_rooms else self.active
 
         if self.verbose:
