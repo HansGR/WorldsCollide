@@ -56,6 +56,9 @@ class MtKolts(Event):
         self.entrance_exit_mod()
         self.vargas_trigger_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
@@ -362,6 +365,19 @@ class MtKolts(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def ruination_mod(self):
+        # Add a 2nd event tile for the Vargas shadow animation on map 0x061
+        # The original tile at (34,24) only triggers from one direction;
+        # add a duplicate at (47,10) so it also triggers from the opposite entrance.
+        old_event = self.maps.get_event(0x061, 34, 24)
+
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 47
+        new_event.y = 10
+        new_event.event_address = old_event.event_address
+        self.maps.add_event(0x061, new_event)
 
     def door_rando_mod(self):
         # Make the character get jumped immediately if they come out of Vargas' door
