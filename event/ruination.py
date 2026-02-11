@@ -4286,38 +4286,59 @@ def ruination_start_game_mod(dialogs, party):
     src = [
         field.LoadMap(ESPER_GATE_MAPID, direction.DOWN, default_music=False,
                         x=55, y=33, entrance_event=True),
+    ]
 
-        field.CreateEntity(field_entity.PARTY1),
-        field.CreateEntity(field_entity.PARTY2),
-        field.CreateEntity(field_entity.PARTY3),
+    # Only create/position/show entities for party slots that have actual characters.
+    # Operating on empty party slots can alias to wrong characters due to stale data.
+    if party >= 2:
+        src += [field.CreateEntity(field_entity.PARTY1)]
+    if party >= 3:
+        src += [field.CreateEntity(field_entity.PARTY2)]
+    if party >= 4:
+        src += [field.CreateEntity(field_entity.PARTY3)]
 
+    src += [
         field.EntityAct(field_entity.PARTY0, True,
                         field_entity.SetPosition(54, 31),
                         field_entity.AnimateKnockedOut(),
                         field_entity.SetSpriteLayer(2),
                         field_entity.SetSpeed(field_entity.Speed.NORMAL),
                         ),
-        field.EntityAct(field_entity.PARTY1, True,
-                        field_entity.SetPosition(56, 32),
-                        field_entity.AnimateKnockedOut(),
-                        field_entity.SetSpeed(field_entity.Speed.NORMAL),
-                        ),
-        field.EntityAct(field_entity.PARTY2, True,
-                        field_entity.SetPosition(53, 33),
-                        field_entity.AnimateKnockedOut(),
-                        field_entity.SetSpeed(field_entity.Speed.NORMAL),
-                        ),
-        field.EntityAct(field_entity.PARTY3, True,
-                        field_entity.SetPosition(55, 35),
-                        field_entity.AnimateKnockedOut(),
-                        field_entity.SetSpeed(field_entity.Speed.NORMAL),
-                        ),
+    ]
+    if party >= 2:
+        src += [
+            field.EntityAct(field_entity.PARTY1, True,
+                            field_entity.SetPosition(56, 32),
+                            field_entity.AnimateKnockedOut(),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            ),
+        ]
+    if party >= 3:
+        src += [
+            field.EntityAct(field_entity.PARTY2, True,
+                            field_entity.SetPosition(53, 33),
+                            field_entity.AnimateKnockedOut(),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            ),
+        ]
+    if party >= 4:
+        src += [
+            field.EntityAct(field_entity.PARTY3, True,
+                            field_entity.SetPosition(55, 35),
+                            field_entity.AnimateKnockedOut(),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            ),
+        ]
 
-        field.ShowEntity(field_entity.PARTY0),
-        field.ShowEntity(field_entity.PARTY1),
-        field.ShowEntity(field_entity.PARTY2),
-        field.ShowEntity(field_entity.PARTY3),
+    src += [field.ShowEntity(field_entity.PARTY0)]
+    if party >= 2:
+        src += [field.ShowEntity(field_entity.PARTY1)]
+    if party >= 3:
+        src += [field.ShowEntity(field_entity.PARTY2)]
+    if party >= 4:
+        src += [field.ShowEntity(field_entity.PARTY3)]
 
+    src += [
         field.RefreshEntities(),
         field.Dialog(ruination_start_1, wait_for_input=False, inside_text_box=False, top_of_screen=False),
         field.HoldScreen(),
@@ -4582,11 +4603,15 @@ def ruination_start_game_mod(dialogs, party):
 
         ]
 
-    src += [
-        field.HideEntity(field_entity.PARTY1),
-        field.HideEntity(field_entity.PARTY2),
-        field.HideEntity(field_entity.PARTY3),
+    # Only hide party entities that were actually created
+    if party >= 2:
+        src += [field.HideEntity(field_entity.PARTY1)]
+    if party >= 3:
+        src += [field.HideEntity(field_entity.PARTY2)]
+    if party >= 4:
+        src += [field.HideEntity(field_entity.PARTY3)]
 
+    src += [
         field.EntityAct(field_entity.PARTY0, True,
                         field_entity.SetSpriteLayer(0),
                         ),
