@@ -142,6 +142,97 @@ A branch becomes **stuck** when:
 
 ---
 
+## Key/Lock Softlock Analysis & Fix (2026-02-10)
+
+### Problem
+
+The mapping algorithm applies keys when rooms are **connected** (during path building), but the player applies keys when rooms are **visited**. Since the player can explore rooms in any order, the algorithm's key ordering guarantee does not hold for the player. This can cause softlocks when a player enters a room (via a one-way pit) whose exits are all locked by keys found in other rooms they haven't visited yet.
+
+The risk directly applies to **pit (one-way) entrances**, because players cannot return through pits. However, it can indirectly apply to doors as well, if the connection to the door results in a downstream node whose only exit was once locked.
+
+### Catalog of All Keyed Rooms in RUIN_ROOM_SETS
+
+#### Character-Keyed Locks
+
+| Room | Area | Free Exits | Locked Exits | Key |
+|------|------|-----------|-------------|-----|
+| `ruin-thamasa` | VeldtCave | 2 doors, 2 pits | trap 2054 (STRAGO) | Character |
+| `ruin-whelk` | Narshe | 2 doors | door 1155 (TERRA) | Character |
+| `ruin-zozo` | Zozo | 5 doors | door 4608 (TERRA), key 'zr1' (CYAN) | Character |
+
+#### Self-Unlocking Rooms (key provided by same room -- no softlock risk)
+
+| Room | Area | Free Exits | Lock | Key Source |
+|------|------|-----------|------|-----------|
+| 216 | PhantomTrain | 1 door | doors 493/494 (pt1) | Self (pt1) |
+| 472 | VeldtCave | 1 door | door 989 (vc1) | Self (vc1) |
+| 435 | Doma | 1 door | doors 865/866 (cd3) | Self (cd3) |
+| `ruin-daryl` | DarylsTomb | 1 door | door 1563 (dtboss) | Self (dtboss) |
+
+#### Non-Character Locks with Free Exits (key from other room -- moderate risk)
+
+These rooms always have at least one free exit. The player may be trapped if the last remaining exit in the downstream node is the initially-locked door, or if the locked door is physically impassible without the key (e.g. door 618 in Zozo).
+
+| Room | Area | Free Exits | Locked Exits | Key Source |
+|------|------|-----------|-------------|-----------|
+| 202 | PhantomTrain | 9 doors | trap 2068 (pt2) | Room 212 |
+| 383 | DarylsTomb | 1 door | door 1512 (dt1) | Room 392 |
+| 429 | Doma | 1 door | trap 2070 (cd1+cd2) | Rooms 423, 427 |
+| 531 | AncientCastle | 1 door | door 1106 (ac2) | Room 528 |
+| `296r` | Zozo | 2 doors | door 618 (zr1) | `ruin-zozo` + CYAN |
+
+#### Key-Providing Rooms (no softlock risk -- these rooms give keys, not locks)
+
+| Room | Area | Keys Provided | Free Exits |
+|------|------|-------------|-----------|
+| 212 | PhantomTrain | pt2 | 1 door |
+| 389 | DarylsTomb | dt2 | 1 door |
+| 390 | DarylsTomb | dt3 | 2 doors, 1 trap, 1 pit |
+| 392 | DarylsTomb | dt1 | 1 door |
+| `301r` | Zozo | clock1 | 3 doors |
+| `306r` | Zozo | clock2 | 1 door |
+| 299 | ZozoTower | clock5 | 2 doors |
+| `303a`/`303b` | ZozoTower | clock3 | 1 door + trap/pit |
+| 304 | ZozoTower | clock4 | 2 doors |
+| 423 | Doma | cd1 | 1 trap, 1 pit |
+| 427 | Doma | cd2 | 1 trap, 1 pit |
+| 528 | AncientCastle | ac2 | 4 doors |
+
+#### HIGH RISK -- All Exits Locked, Key From Other Rooms
+
+| Room | Area | Free Exits | Locked Exits | Key Sources |
+|------|------|-----------|-------------|------------|
+| **391** | **DarylsTomb** | **0 doors, 0 traps, 1 pit (entrance only)** | **door 795 (dt2), trap 2060 (dt3)** | **Room 389 (dt2), Room 390 (dt3)** |
+
+### Room 391 Softlock Scenario
+
+Room 391 is the right-half of the physical map that also contains room 390. It is the only room in ruination mode with zero initially-free exits where all exits are locked by non-character keys from other rooms. The softlock scenario:
+
+1. During `extend_branch_path`, rooms 389 and 390 are connected to the hub. Their keys (dt2, dt3) are applied via `apply_key()`, promoting room 391's locked elements to free: door 795 and trap 2060.
+2. Room 391 is now in the upstream and downstream of the hub, due to the forced connection. The algorithm closes the loop, thinking door 795 is now available.
+3. Subsequently, `extend_branch_path` connects another trap in the hub to a pit-in, door-out room, creating a downstream node with one door.
+4. `get_valid_door_targets_v2` evaluates door 795 as a target. It closes the loop back to the hub, and is deemed valid.
+5. Algorithm connects the downstream node door to door 795. Valid from the algorithm's perspective.
+6. Player enters the hub, falls through a trap to the downstream room, walks through the door into room 391.
+7. The player hasn't visited rooms 389/390 yet. Keys dt2 and dt3 haven't been obtained. Room 391's exits are still locked. **SOFTLOCK.**
+
+### Solution: Track "Initially Locked" Exits (implemented 2026-02-11)
+
+When `apply_key()` unlocks an element (moves it from locks to free), it is recorded in `self.initially_locked_exits` (a set on the Network class in `data/walks.py`). The algorithm then enforces these rules:
+
+1. **`apply_key()`** (`data/walks.py`): When a door or trap is unlocked, adds it to `self.initially_locked_exits`.
+2. **`get_valid_door_targets_v2`**: Excludes doors in `initially_locked_exits` from the candidate target list (they can't serve as entrances the player can use without keys).
+3. **`get_valid_pit_targets_v2` Rule A1**: After checking `target_exits > 0`, requires at least one originally-free exit (not in `initially_locked_exits`). Rooms with only key-unlocked exits are skipped.
+4. **`finalize_map` step 1**: When selecting target rooms for trap-to-pit balancing, skips rooms with no originally-free exits.
+5. **`extend_branch_path` STEP 2**: When the active node is downstream (`active_level > 0`), initially-locked doors and traps are excluded from available exits. From the hub, they remain available since the player can visit key-providing rooms first.
+
+This correctly handles all cases:
+- Self-unlocking rooms (216, 472, 435, ruin-daryl) always have >= 1 free exit
+- Room 391's door 795 is rejected as a door target since it's initially-locked
+- Room 391 is rejected as a pit target since it has 0 originally-free exits
+
+---
+
 ## Ruination Mode - finalize_map Debug Patterns (2026-02-09)
 
 ### Invariant: Hub must always retain entrances

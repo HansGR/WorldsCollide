@@ -50,6 +50,7 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
   - `get_valid_door_targets_v2` / `get_valid_pit_targets_v2`: Connection validation (hub entrance invariants)
   - `finalize_map`: Steps 1-6 close all connections; see ARCHIVE.md for detailed reference
   - All `room_data` lookups in reserve area searches must filter by `self.protected`
+- **`initially_locked_exits`** (set on Network in `data/walks.py`): Tracks doors/traps unlocked by `apply_key()`. These exits are excluded as connection targets and from downstream available exits because the player may not have the key yet. See ARCHIVE.md "Key/Lock Softlock Analysis" for full details.
 
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
