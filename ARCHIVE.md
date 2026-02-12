@@ -286,6 +286,27 @@ A `break` inside an `if/else` block but outside a `for` loop breaks the nearest 
 
 ---
 
+## Ruination Mode - Duplicate Event Tiles for Reverse Entrances (2026-02)
+
+In vanilla FF6, some maps have animation event tiles (e.g., Vargas shadow appearances on Mt Kolts) placed near only one entrance. In ruination mode, players may enter rooms from the opposite side, missing the trigger entirely.
+
+**Fix pattern**: In the event file's `ruination_mod()`, copy the event tile to a second location near the alternate entrance:
+```python
+old_event = self.maps.get_event(map_id, orig_x, orig_y)
+new_event = MapEvent()
+new_event.x = new_x
+new_event.y = new_y
+new_event.event_address = old_event.event_address
+self.maps.add_event(map_id, new_event)
+```
+
+**Mt Kolts fixes** (`event/mt_kolts.py`):
+- Map 0x060: (14,12) → duplicate at (11,8)
+- Map 0x060: (16,22) → duplicate at (21,21)
+- Map 0x061: (34,24) → duplicate at (47,10)
+
+---
+
 ## Ruination Mode - Conditional Area Checks
 
 After `ruin_map.generate_map_with_characters()` is called, `ruin_map.AreasUsed` contains all mapped areas as a dict of `{'AreaName': branch_id}`.
