@@ -367,16 +367,31 @@ class MtKolts(Event):
         ])
 
     def ruination_mod(self):
-        # Add a 2nd event tile for the Vargas shadow animation on map 0x061
-        # The original tile at (34,24) only triggers from one direction;
-        # add a duplicate at (47,10) so it also triggers from the opposite entrance.
-        old_event = self.maps.get_event(0x061, 34, 24)
-
         from data.map_event import MapEvent
+
+        # Add duplicate event tiles for animations that only trigger from one direction.
+        # Map 0x060: copy event at (14,12) to (11,8)
+        old_event_060a = self.maps.get_event(0x060, 14, 12)
+        new_event = MapEvent()
+        new_event.x = 11
+        new_event.y = 8
+        new_event.event_address = old_event_060a.event_address
+        self.maps.add_event(0x060, new_event)
+
+        # Map 0x060: copy event at (16,22) to (21,21)
+        old_event_060b = self.maps.get_event(0x060, 16, 22)
+        new_event = MapEvent()
+        new_event.x = 21
+        new_event.y = 21
+        new_event.event_address = old_event_060b.event_address
+        self.maps.add_event(0x060, new_event)
+
+        # Map 0x061: copy event at (34,24) to (47,10)
+        old_event_061 = self.maps.get_event(0x061, 34, 24)
         new_event = MapEvent()
         new_event.x = 47
         new_event.y = 10
-        new_event.event_address = old_event.event_address
+        new_event.event_address = old_event_061.event_address
         self.maps.add_event(0x061, new_event)
 
     def door_rando_mod(self):
