@@ -4279,7 +4279,10 @@ def ruination_start_game_mod(dialogs, party):
 
     # For dialog, let's use the Maduin/Madonna conversation: $05A4 -- $05AA
     ruination_start_1 = 0x0590
-    dialogs.set_text(ruination_start_1, "After Kefka broke the world, we woke up here.<wait 60 frames><end>")
+    if party >= 2:
+        dialogs.set_text(ruination_start_1, "After Kefka broke the world, we woke up here.<wait 60 frames><end>")
+    else:
+        dialogs.set_text(ruination_start_1, "After Kefka broke the world, I woke up here.<wait 60 frames><end>")
     ruination_start_2 = 0x0591
     dialogs.set_text(ruination_start_2, "This new world is dark and full of monsters.<wait 30 frames> Let's find our friends and bring hope to the darkness.<end>")
 
