@@ -466,6 +466,13 @@ class Maps():
             asm.BRA("DISABLE SAVE")  # replace the vanilla BPL $2EBF to always branch)
         )
 
+    def _disable_map_name_popups(self):
+        # Disable "show map name" popup for all exits (short and long)
+        for exit in self.exits.short_exits:
+            exit.displaylocationname = 0
+        for exit in self.exits.long_exits:
+            exit.displaylocationname = 0
+
     def mod(self, characters):
         self.npcs.mod(characters)
         self.chests.mod()
@@ -501,6 +508,7 @@ class Maps():
         elif self.args.ruination_mode:
             for map_index, cur_map in enumerate(self.maps):
                 self.properties[map_index].warpable = 0
+            self._disable_map_name_popups()
 
     def postprocess_door_map(self):
         # Postprocess the door map
