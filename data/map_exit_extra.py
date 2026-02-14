@@ -1814,6 +1814,7 @@ event_door_connection_data = {
     1564: [0x12b, 100, 8, 0, 0, 0, 3, 0, 27, 7, 0, 0],  # "Daryl's Tomb staircase top exit"
 
     # Logical exits with different destinations
+    4392: [0x020, 33, 56, 0, 0, 0, 2, 0, 108, 53, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'
     4502: [0x08F, 48, 9, 0, 0, 0, 2, 0, 8, 12, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 }
