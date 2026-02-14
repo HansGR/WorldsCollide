@@ -704,5 +704,5 @@ class NarsheMoogleDefense(Event):
         # Edit default music of the battlefield map (should be Narshe WOR, not Narshe WOB)
         moogle_battle_map_properties = self.maps.properties[self.WOB_MAP_ID]
         moogle_battle_map_properties.song = 79  # Dark World
-        # Reskin to use WoR mines palette (map 43 = Narshe Northern Mines 2F Inside WoR)
-        moogle_battle_map_properties.paletteindex = self.maps.properties[43].paletteindex
+        # Reskin to use WoR mines palette = 0x15
+        moogle_battle_map_properties.paletteindex = 0x15

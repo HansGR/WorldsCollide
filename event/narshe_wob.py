@@ -306,9 +306,8 @@ class NarsheWOB(Event):
         # (5) Reskin the whelk room (map 59, WoB mines) to use WoR mines palette
         # The ruin-whelk room uses map 59 (Narshe Northern Mines Main Hallway WoB) which has
         # a different palette than the WoR mines rooms the player encounters elsewhere.
-        # Copy the palette from map 43 (Narshe Northern Mines 2F Inside WoR).
+        # Copy the palette from map 36 (Narshe Northern Mines 2F Inside WoR).
         whelk_map_id = 59
-        wor_mines_map_id = 43
         whelk_properties = self.maps.properties[whelk_map_id]
-        whelk_properties.paletteindex = self.maps.properties[wor_mines_map_id].paletteindex
+        whelk_properties.paletteindex = 0x15
 
