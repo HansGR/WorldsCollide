@@ -3759,6 +3759,12 @@
       "world": "['dt3']",
       "comment": "Darills' Tomb B2 Switch Puzzle Room Left Side"
     },
+    "391": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "[]",
+      "comment": "Darills' Tomb B2 Switch Puzzle Room Right Side"
+    },
     "392": {
       "map_id": 300,
       "map_name": "BASEMENT 3",
@@ -4716,18 +4722,6 @@
       "traps": [],
       "pits": []
     },
-    "391": {
-      "map_id": null,
-      "map_name": null,
-      "world": "[]",
-      "comment": "Darills' Tomb B2 Switch Puzzle Room Right Side",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [],
-      "pits": [
-        3059
-      ]
-    },
     "branch-fc": {
       "map_id": null,
       "map_name": null,
@@ -4898,7 +4892,7 @@
   },
   "summary": {
     "total_rooms": 801,
-    "resolved": 783,
-    "unresolved": 18
+    "resolved": 784,
+    "unresolved": 17
   }
 }
