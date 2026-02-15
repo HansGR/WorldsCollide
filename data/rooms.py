@@ -268,9 +268,9 @@ room_data = {
     61 : [ [181, 182], [ ], [ ], 1], #Narshe Moogle Cave WoR
     62 : [ [183, 184], [ ], [ ], 0], #Narshe South Caves Secret Passage 3F WoB
     63 : [ [185, 186], [ ], [ ], 0], #Narshe Checkpoint Room WoB
-    64 : [ [187, 188, 189, 190], [ ], [ ], 0], #Narshe South Caves WoB
+    64 : [ [187, 188, 190], [ ], [189], 0], #Narshe South Caves WoB
     65 : [ [191, 192], [ ], [ ], 0], #Narshe Moogle Defense WoB
-    66 : [ [193, 194], [ ], [ ], 0], #Narshe Moogle Cave WoB
+    66 : [ [193], [194], [ ], 0], #Narshe Moogle Cave WoB
 
     67 : [ [195, 196], [ ], [ ], 1], #Cave to South Figaro Siegfried Tunnel
 

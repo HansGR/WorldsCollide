@@ -310,4 +310,6 @@ class NarsheWOB(Event):
         whelk_map_id = 59
         whelk_properties = self.maps.properties[whelk_map_id]
         whelk_properties.paletteindex = 0x15
+        whelk_properties.song = 79  # Dark World
+
 
