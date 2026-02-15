@@ -96,6 +96,7 @@ Note these files are LARGE. Only access them when necessary and be smart about r
 - Event bits: `./data/event_bit.py`
 - Dialog decompile: `./claude_reference/dialog_file.txt`
 - Location names: `./claude_reference/location_names.json` - Maps `name_index` to display names
+- **Room-to-map reference**: `./claude_reference/room_map_reference.json` - Maps each room ID (from `data/rooms.py`) to its SNES map ID and map name. Covers 784/801 rooms. Unresolved rooms are Mobliz event rooms (no exits), switchyard-based virtual entries, and ruination logical rooms.
 - Original map, event, and NPC JSON files: see `MAP_DATA_STRUCTURES.md`
   - Chests data: `./claude_reference/chests_raw.json`
   - MapEvents data: `./claude_reference/events_raw.json`
