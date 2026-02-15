@@ -494,8 +494,14 @@ class Maps():
         if self.args.no_saves:
             self._disable_saves()
 
+        # Make no maps warpable for -ruination-mode: all warping handled with warp points
+        if self.args.ruination_mode:
+            for map_index, cur_map in enumerate(self.maps):
+                self.properties[map_index].warpable = 0
+            self._disable_map_name_popups()
+
         # Make all maps warpable for -door-randomize-dungeon-crawl
-        if self.args.debug or self.args.door_randomize_dungeon_crawl:
+        elif self.args.debug or self.args.door_randomize_dungeon_crawl:
             keep_no_warp = [
                 0x167, 0x168, 0x169, 0x16a, 0x16b, 0x16c, 0x16d, 0x16e, 0x16f, 0x170, 0x171, 0x172,  # Fanatics Tower
                 0x139, 0x13a, 0x13b, 0x13c, 0x13e,  # phoenix cave
@@ -503,12 +509,6 @@ class Maps():
             for map_index, cur_map in enumerate(self.maps):
                 if map_index not in keep_no_warp:  # protect Phoenix Cave, Fanatics Tower
                     self.properties[map_index].warpable = 1
-
-        # Make no maps warpable for -ruination-mode: all warping handled with warp points
-        elif self.args.ruination_mode:
-            for map_index, cur_map in enumerate(self.maps):
-                self.properties[map_index].warpable = 0
-            self._disable_map_name_popups()
 
     def postprocess_door_map(self):
         # Postprocess the door map
