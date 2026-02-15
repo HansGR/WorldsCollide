@@ -2109,17 +2109,35 @@
       "world": "[]",
       "comment": "Phantom Train Outside Front Section"
     },
+    "205b": {
+      "map_id": 141,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside after jump & disconnect"
+    },
     "204": {
       "map_id": 142,
       "map_name": "",
       "world": "WoB",
       "comment": "Phantom Train Outside Car 1 - Caboose"
     },
+    "204b": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside Car 1 - Car 2"
+    },
     "204c": {
       "map_id": 142,
       "map_name": "",
       "world": "WoB",
       "comment": "Phantom Train Outside Car 2 - Car 3"
+    },
+    "205": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside after jump"
     },
     "208": {
       "map_id": 143,
@@ -2145,6 +2163,30 @@
       "world": "WoR",
       "comment": "Doma Dream Train 2nd Car (\"Lump of metal\") 0x090"
     },
+    "203a": {
+      "map_id": 145,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Inside 1st Car"
+    },
+    "203b": {
+      "map_id": 145,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Inside 2nd Car"
+    },
+    "203c": {
+      "map_id": 145,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Inside 3rd Car"
+    },
+    "212": {
+      "map_id": 146,
+      "map_name": "",
+      "world": "['pt2']",
+      "comment": "Phantom Train Locomotive Interior"
+    },
     "212R": {
       "map_id": 146,
       "map_name": "",
@@ -2168,6 +2210,12 @@
       "map_name": "",
       "world": "WoB",
       "comment": "Phantom Train Dining Room Right"
+    },
+    "216": {
+      "map_id": 149,
+      "map_name": "",
+      "world": "['pt1']",
+      "comment": "Phantom Train Car 4 with Switch"
     },
     "206": {
       "map_id": 151,
@@ -3399,6 +3447,18 @@
       "world": "WoR",
       "comment": "Zone Eater Pit exit"
     },
+    "ms-wor-1552": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater"
+    },
+    "root-ze-as-doors": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "ZoneEater Engulf as doors"
+    },
     "361": {
       "map_id": 277,
       "map_name": "",
@@ -3710,6 +3770,12 @@
       "map_name": "BASEMENT 3",
       "world": "WoR",
       "comment": "Darill's Tomb MIAB Hallway"
+    },
+    "ruin_terminus_3": {
+      "map_id": 301,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Daryl's Tomb staircase + Falcon (KT connection will be patched separately)"
     },
     "395": {
       "map_id": 305,
@@ -4610,111 +4676,6 @@
       "world": "WoR",
       "comment": "Coliseum"
     },
-    "203a": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Inside 1st Car",
-      "note": "unresolved",
-      "doors": [
-        1515,
-        1516
-      ],
-      "traps": [],
-      "pits": [
-        3065
-      ]
-    },
-    "203b": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Inside 2nd Car",
-      "note": "unresolved",
-      "doors": [
-        1523,
-        1524
-      ],
-      "traps": [],
-      "pits": [
-        3066
-      ]
-    },
-    "203c": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Inside 3rd Car",
-      "note": "unresolved",
-      "doors": [
-        1514
-      ],
-      "traps": [],
-      "pits": []
-    },
-    "204b": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Outside Car 1 - Car 2",
-      "note": "unresolved",
-      "doors": [
-        1519,
-        1520
-      ],
-      "traps": [],
-      "pits": []
-    },
-    "205": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Outside after jump",
-      "note": "unresolved",
-      "doors": [
-        1525
-      ],
-      "traps": [],
-      "pits": [
-        3067
-      ]
-    },
-    "205b": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Outside after jump & disconnect",
-      "note": "unresolved",
-      "doors": [
-        1526
-      ],
-      "traps": [],
-      "pits": []
-    },
-    "212": {
-      "map_id": null,
-      "map_name": null,
-      "world": "['pt2']",
-      "comment": "Phantom Train Locomotive Interior",
-      "note": "unresolved",
-      "doors": [
-        1545
-      ],
-      "traps": [],
-      "pits": []
-    },
-    "216": {
-      "map_id": null,
-      "map_name": null,
-      "world": "['pt1']",
-      "comment": "Phantom Train Car 4 with Switch",
-      "note": "unresolved",
-      "doors": [
-        1527
-      ],
-      "traps": [],
-      "pits": []
-    },
     "233": {
       "map_id": null,
       "map_name": null,
@@ -4803,18 +4764,6 @@
       "traps": [],
       "pits": []
     },
-    "ms-wor-1552": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Zone Eater",
-      "note": "unresolved",
-      "doors": [
-        1553
-      ],
-      "traps": [],
-      "pits": []
-    },
     "root-em_mapsafe_each": {
       "map_id": null,
       "map_name": null,
@@ -4847,19 +4796,6 @@
       "note": "unresolved",
       "doors": [
         30618
-      ],
-      "traps": [],
-      "pits": []
-    },
-    "root-ze-as-doors": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "ZoneEater Engulf as doors",
-      "note": "unresolved",
-      "doors": [
-        1552,
-        1553
       ],
       "traps": [],
       "pits": []
@@ -4948,18 +4884,6 @@
         3079
       ]
     },
-    "ruin_terminus_3": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Daryl's Tomb staircase + Falcon (KT connection will be patched separately)",
-      "note": "unresolved",
-      "doors": [
-        1564
-      ],
-      "traps": [],
-      "pits": []
-    },
     "wob-airship": {
       "map_id": null,
       "map_name": null,
@@ -4974,7 +4898,7 @@
   },
   "summary": {
     "total_rooms": 801,
-    "resolved": 772,
-    "unresolved": 29
+    "resolved": 783,
+    "unresolved": 18
   }
 }
