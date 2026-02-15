@@ -172,6 +172,47 @@
       "map_name": "",
       "world": "WoR"
     },
+    "241a": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "1"
+    },
+    "241b": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "2"
+    },
+    "241c": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "3"
+    },
+    "241d": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "3 --> Nikeah transition"
+    },
+    "root-ze": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "ZoneEater Engulf"
+    },
+    "ruin_kt_entry_3": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Daryl's Tomb staircase + Falcon"
+    },
+    "wor-triangle": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoR"
+    },
     "2": {
       "map_id": 6,
       "map_name": "",
@@ -525,6 +566,12 @@
       "map_name": "",
       "world": "WoR",
       "comment": "Narshe Peak WoR incl. entrance to Umaro's cave"
+    },
+    "root-u": {
+      "map_id": 35,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Root map for -door-randomize-umaro"
     },
     "42": {
       "map_id": 36,
@@ -1714,6 +1761,42 @@
       "world": "WoB",
       "comment": "Lete River Jumpoff"
     },
+    "LeteRiver1": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River section 1"
+    },
+    "LeteRiver2": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River section 2"
+    },
+    "LeteRiver3": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River section 3 + boss"
+    },
+    "root-lr": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-lete"
+    },
+    "LeteCave1": {
+      "map_id": 114,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Lete River cave 1"
+    },
+    "LeteCave2": {
+      "map_id": 114,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Lete River cave 2"
+    },
     "173": {
       "map_id": 115,
       "map_name": "",
@@ -1839,6 +1922,12 @@
       "map_name": "KING'S ROOM",
       "world": "WoR",
       "comment": "Doma Inner Room"
+    },
+    "root-cd": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Root room for Cyan's Dream"
     },
     "183": {
       "map_id": 124,
@@ -2026,6 +2115,12 @@
       "world": "WoB",
       "comment": "Phantom Train Outside Car 1 - Caboose"
     },
+    "204c": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside Car 2 - Car 3"
+    },
     "208": {
       "map_id": 143,
       "map_name": "",
@@ -2049,6 +2144,12 @@
       "map_name": "",
       "world": "WoR",
       "comment": "Doma Dream Train 2nd Car (\"Lump of metal\") 0x090"
+    },
+    "212R": {
+      "map_id": 146,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train Locomotive Interior"
     },
     "213": {
       "map_id": 146,
@@ -2260,6 +2361,12 @@
       "world": "WoB",
       "comment": "Serpent Trench Cliff"
     },
+    "root-st": {
+      "map_id": 168,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-serpent-trench"
+    },
     "242": {
       "map_id": 169,
       "map_name": "NIKEAH",
@@ -2332,6 +2439,12 @@
       "world": "WoR",
       "comment": "Nikeah Chocobo Stable"
     },
+    "246": {
+      "map_id": 175,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cave 1"
+    },
     "247a": {
       "map_id": 175,
       "map_name": "",
@@ -2343,6 +2456,12 @@
       "map_name": "",
       "world": "WoB",
       "comment": "Serpent Trench Cave 2 Part B"
+    },
+    "247c": {
+      "map_id": 175,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cave 2 Part C"
     },
     "250": {
       "map_id": 176,
@@ -2679,6 +2798,12 @@
       "map_name": "OWZER'S HOUSE",
       "world": "WoR",
       "comment": "Owzer's Basement Save Point Room"
+    },
+    "283": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Floating Chest room"
     },
     "284": {
       "map_id": 208,
@@ -3262,6 +3387,12 @@
       "world": "WoR",
       "comment": "Zone Eater Bridge Guards Room"
     },
+    "358": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Pit entry"
+    },
     "358b": {
       "map_id": 276,
       "map_name": "",
@@ -3333,6 +3464,24 @@
       "map_name": "",
       "world": "WoR",
       "comment": "Umaro Cave 2nd Room - east"
+    },
+    "share_east": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave west shared pit logical room"
+    },
+    "share_west": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave west shared pit logical room"
+    },
+    "368": {
+      "map_id": 283,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave Umaro's Den"
     },
     "369": {
       "map_id": 284,
@@ -3854,6 +4003,12 @@
       "map_name": "INN",
       "world": "WoR",
       "comment": "Thamasa Inn"
+    },
+    "root-bh": {
+      "map_id": 346,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-burning-house"
     },
     "452": {
       "map_id": 347,
@@ -4510,22 +4665,6 @@
       "traps": [],
       "pits": []
     },
-    "204c": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Phantom Train Outside Car 2 - Car 3",
-      "note": "unresolved",
-      "doors": [
-        1521,
-        1522
-      ],
-      "traps": [
-        2066,
-        2067
-      ],
-      "pits": []
-    },
     "205": {
       "map_id": null,
       "map_name": null,
@@ -4563,20 +4702,6 @@
       ],
       "traps": [],
       "pits": []
-    },
-    "212R": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Doma Dream Train Locomotive Interior",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2072
-      ],
-      "pits": [
-        3071
-      ]
     },
     "216": {
       "map_id": null,
@@ -4630,136 +4755,6 @@
       "traps": [],
       "pits": []
     },
-    "241a": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "1",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2045,
-        2046
-      ],
-      "pits": [
-        3044
-      ]
-    },
-    "241b": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "2",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2048,
-        2049
-      ],
-      "pits": [
-        3046,
-        3047
-      ]
-    },
-    "241c": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "3",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2052
-      ],
-      "pits": [
-        3049,
-        3051
-      ]
-    },
-    "241d": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "3 --> Nikeah transition",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2053
-      ],
-      "pits": [
-        3052
-      ]
-    },
-    "246": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Serpent Trench Cave 1",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2047
-      ],
-      "pits": [
-        3045
-      ]
-    },
-    "247c": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Serpent Trench Cave 2 Part C",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2051
-      ],
-      "pits": [
-        3050
-      ]
-    },
-    "283": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Owzer's Basement Floating Chest room",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2020
-      ],
-      "pits": [
-        3019
-      ]
-    },
-    "358": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Zone Eater Pit entry",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2043
-      ],
-      "pits": [
-        3042
-      ]
-    },
-    "368": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Umaro Cave Umaro's Den",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2009
-      ],
-      "pits": [
-        3004
-      ]
-    },
     "391": {
       "map_id": null,
       "map_name": null,
@@ -4770,76 +4765,6 @@
       "traps": [],
       "pits": [
         3059
-      ]
-    },
-    "LeteCave1": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Lete River cave 1",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2036
-      ],
-      "pits": [
-        3035
-      ]
-    },
-    "LeteCave2": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Lete River cave 2",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2038
-      ],
-      "pits": [
-        3037
-      ]
-    },
-    "LeteRiver1": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Lete River section 1",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2035
-      ],
-      "pits": [
-        3034
-      ]
-    },
-    "LeteRiver2": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Lete River section 2",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2037
-      ],
-      "pits": [
-        3036
-      ]
-    },
-    "LeteRiver3": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Lete River section 3 + boss",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2039
-      ],
-      "pits": [
-        3038
       ]
     },
     "branch-fc": {
@@ -4890,34 +4815,6 @@
       "traps": [],
       "pits": []
     },
-    "root-bh": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Root map for -door-randomize-burning-house",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2054
-      ],
-      "pits": [
-        3055
-      ]
-    },
-    "root-cd": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Root room for Cyan's Dream",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2069
-      ],
-      "pits": [
-        3074
-      ]
-    },
     "root-em_mapsafe_each": {
       "map_id": null,
       "map_name": null,
@@ -4942,20 +4839,6 @@
       "traps": [],
       "pits": []
     },
-    "root-lr": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Root map for -door-randomize-lete",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2034
-      ],
-      "pits": [
-        3039
-      ]
-    },
     "root-mz_mapsafe": {
       "map_id": null,
       "map_name": null,
@@ -4967,48 +4850,6 @@
       ],
       "traps": [],
       "pits": []
-    },
-    "root-st": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoB",
-      "comment": "Root map for -door-randomize-serpent-trench",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2044
-      ],
-      "pits": [
-        3053
-      ]
-    },
-    "root-u": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Root map for -door-randomize-umaro",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2010
-      ],
-      "pits": [
-        3009
-      ]
-    },
-    "root-ze": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "ZoneEater Engulf",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2040
-      ],
-      "pits": [
-        3041
-      ]
     },
     "root-ze-as-doors": {
       "map_id": null,
@@ -5107,20 +4948,6 @@
         3079
       ]
     },
-    "ruin_kt_entry_3": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Daryl's Tomb staircase + Falcon",
-      "note": "unresolved",
-      "doors": [
-        1564
-      ],
-      "traps": [
-        2079
-      ],
-      "pits": []
-    },
     "ruin_terminus_3": {
       "map_id": null,
       "map_name": null,
@@ -5133,36 +4960,6 @@
       "traps": [],
       "pits": []
     },
-    "share_east": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Umaro Cave west shared pit logical room",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2056
-      ],
-      "pits": [
-        3005,
-        3006
-      ]
-    },
-    "share_west": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "comment": "Umaro Cave west shared pit logical room",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2057
-      ],
-      "pits": [
-        3007,
-        3008
-      ]
-    },
     "wob-airship": {
       "map_id": null,
       "map_name": null,
@@ -5173,24 +4970,11 @@
       ],
       "traps": [],
       "pits": []
-    },
-    "wor-triangle": {
-      "map_id": null,
-      "map_name": null,
-      "world": "WoR",
-      "note": "unresolved",
-      "doors": [],
-      "traps": [
-        2040
-      ],
-      "pits": [
-        3041
-      ]
     }
   },
   "summary": {
     "total_rooms": 801,
-    "resolved": 746,
-    "unresolved": 55
+    "resolved": 772,
+    "unresolved": 29
   }
 }
