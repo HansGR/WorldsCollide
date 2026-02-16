@@ -179,6 +179,20 @@ class NarsheWOB(Event):
         from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY, \
             REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES, REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES, \
             REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES
+        from constants.entities import CHARACTER_COUNT
+
+        # Build a safe version of REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES that
+        # preserves party assignments for away characters (character_available cleared).
+        remove_available_src = []
+        for char in range(CHARACTER_COUNT):
+            remove_available_src += [
+                field.BranchIfEventBitClear(event_bit.character_available(char), f"SKIP_{char}"),
+                field.RemoveCharacterFromParties(char),
+                f"SKIP_{char}",
+            ]
+        remove_available_src += [field.Return()]
+        space = Write(Bank.CA, remove_available_src, "Remove available characters from parties (preserve away)")
+        remove_available_addr = space.start_address
 
         src_party1 = [
             field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
@@ -236,7 +250,7 @@ class NarsheWOB(Event):
             "NOT_3_PARTIES",
             field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
             "1_PARTY",
-            field.Call(REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(remove_available_addr),  # only remove non-away characters
             field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
             # Place on map & load map
             field.Call(place_party_1_addr),
@@ -245,7 +259,7 @@ class NarsheWOB(Event):
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Disable y-party switching
             field.Return(),
             "2_PARTIES",
-            field.Call(REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(remove_available_addr),  # only remove non-away characters
             field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             # Place on map & load map
             field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
@@ -258,7 +272,7 @@ class NarsheWOB(Event):
             field.FreeMovement(),
             field.Return(),
             "3_PARTIES",
-            field.Call(REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(remove_available_addr),  # only remove non-away characters
             field.Call(REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES),
             # Place on map & load map
             field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
