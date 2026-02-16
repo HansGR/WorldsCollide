@@ -294,14 +294,34 @@ class NarsheWOB(Event):
         school_properties.paletteanimationindex = 0x7
 
         # Make it darker via entrance event with dark tint
-        # Create entrance event that applies dark tint
+        # Also restore away-party character availability when a party returns
         entrance_src = [
-            # Apply a dark tint to the background for a dimmer atmosphere
             field.TintBackground(field.Tint.NIGHT),
+            field.RestoreActivePartyAvailable(),  # idempotent: no-op if party isn't away
             field.Return(),
         ]
         space = Write(Bank.CA, entrance_src, "Narshe school ruination entrance event")
         self.maps.set_entrance_event(school_map_id, space.start_address - EVENT_CODE_START)
+
+        # (4b) Add event tiles on the three classroom doors to mark away parties
+        # When a party steps on these tiles, MarkActivePartyAway fires before the map exit
+        from data.map_event import MapEvent
+
+        away_src = [
+            field.MarkActivePartyAway(),  # idempotent: sets PARTY_N_AWAY, clears character_available
+            field.Return(),
+        ]
+        space = Write(Bank.CA, away_src, "Mark party away on branch door exit")
+        away_event_addr = space.start_address - EVENT_CODE_START
+
+        # Door coordinates from exits 393, 394, 395
+        branch_door_coords = [(93, 45), (99, 45), (108, 45)]
+        for x, y in branch_door_coords:
+            new_event = MapEvent()
+            new_event.x = x
+            new_event.y = y
+            new_event.event_address = away_event_addr
+            self.maps.add_event(school_map_id, new_event)
 
         # (5) Reskin the whelk room (map 59, WoB mines) to use WoR mines palette
         # The ruin-whelk room uses map 59 (Narshe Northern Mines Main Hallway WoB) which has

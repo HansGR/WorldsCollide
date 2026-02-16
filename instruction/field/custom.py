@@ -466,3 +466,152 @@ class LongCall(_Instruction):
         LongCall.__init__ = (lambda self, function_address, arg = 0 :
                              super().__init__(opcode, function_address.to_bytes(3, "little"), arg))
         self.__init__(function_address, arg)
+
+class MarkActivePartyAway(_Instruction):
+    """Sets PARTY_N_AWAY event bit for the active party, clears character_available
+    bits for all characters in the active party, and decrements CHARACTERS_AVAILABLE.
+
+    Idempotent: if the party is already away, does nothing.
+
+    PARTY_1/2/3_AWAY event bits (0x0dd-0x0df) are all in byte 0x1e9b at bits 5,6,7.
+    The party mask at $1A6D (0x01, 0x02, 0x04) shifted left 5 gives those bit positions."""
+    def __init__(self):
+        import data.event_word as event_word
+        import data.event_bit as event_bit
+        from constants.entities import CHARACTER_COUNT
+
+        character_party_start = 0x1850
+        current_party = 0x1a6d
+        char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
+        characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
+        party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+
+        src = [
+            # Compute party_away_mask = party_mask << 5
+            asm.LDA(current_party, asm.ABS),             # a = party mask (0x01, 0x02, or 0x04)
+            asm.ASL(),                                   # << 1
+            asm.ASL(),                                   # << 2
+            asm.ASL(),                                   # << 3
+            asm.ASL(),                                   # << 4
+            asm.ASL(),                                   # << 5  (0x20, 0x40, or 0x80)
+            asm.STA(0xee, asm.DIR),                      # store party_away_mask in direct page scratch
+
+            # Check if already away (idempotent guard)
+            asm.AND(party_away_byte, asm.ABS),           # test if bit already set
+            asm.BNE("DONE"),                             # already away, skip
+
+            # Set PARTY_N_AWAY event bit
+            asm.LDA(0xee, asm.DIR),                      # reload party_away_mask
+            asm.ORA(party_away_byte, asm.ABS),           # set the bit
+            asm.STA(party_away_byte, asm.ABS),
+
+            # Clear character_available for each character in the active party
+            asm.LDX(0x0000, asm.IMM16),
+
+            "LOOP_START",
+            asm.LDA(character_party_start, asm.ABS_X),   # a = character party flags
+            asm.AND(current_party, asm.ABS),              # is character in active party?
+            asm.BEQ("NEXT_CHAR"),                         # skip if not
+
+            # Clear character_available bit using same pattern as recruit_character
+            asm.PHX(),
+            asm.TDC(),                                    # clear A (both bytes) for clean $BAED call
+            asm.TXA(),                                    # a = character index
+            asm.JSR(0xbaed, asm.ABS),                     # x = a mod 8 (bit), y = a // 8 (byte)
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),   # a = bit mask
+            asm.EOR(0xff, asm.IMM8),                      # a = inverted mask
+            asm.AND(char_available_addr, asm.ABS_Y),      # clear the bit
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.DEC(characters_available_address, asm.ABS),
+            asm.PLX(),
+
+            "NEXT_CHAR",
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("LOOP_START"),
+
+            "DONE",
+            asm.LDA(0x01, asm.IMM8),                     # command size
+            asm.JMP(0x9b5c, asm.ABS),                    # next command
+        ]
+        space = Write(Bank.C0, src, "custom mark active party away")
+        address = space.start_address
+
+        opcode = 0x8a
+        _set_opcode_address(opcode, address)
+
+        MarkActivePartyAway.__init__ = lambda self: super().__init__(opcode)
+        self.__init__()
+
+class RestoreActivePartyAvailable(_Instruction):
+    """Clears PARTY_N_AWAY event bit for the active party, sets character_available
+    bits for all characters in the active party, and increments CHARACTERS_AVAILABLE.
+
+    Idempotent: if the party is not away, does nothing."""
+    def __init__(self):
+        import data.event_word as event_word
+        import data.event_bit as event_bit
+        from constants.entities import CHARACTER_COUNT
+
+        character_party_start = 0x1850
+        current_party = 0x1a6d
+        char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
+        characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
+        party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+
+        src = [
+            # Compute party_away_mask = party_mask << 5
+            asm.LDA(current_party, asm.ABS),             # a = party mask
+            asm.ASL(),
+            asm.ASL(),
+            asm.ASL(),
+            asm.ASL(),
+            asm.ASL(),                                   # a = 0x20, 0x40, or 0x80
+            asm.STA(0xee, asm.DIR),                      # store party_away_mask in direct page scratch
+
+            # Check if party is actually away (idempotent guard)
+            asm.AND(party_away_byte, asm.ABS),           # test if bit is set
+            asm.BEQ("DONE"),                             # not away, skip
+
+            # Clear PARTY_N_AWAY event bit
+            asm.LDA(0xee, asm.DIR),                      # reload party_away_mask
+            asm.EOR(0xff, asm.IMM8),                     # invert
+            asm.AND(party_away_byte, asm.ABS),           # clear the bit
+            asm.STA(party_away_byte, asm.ABS),
+
+            # Set character_available for each character in the active party
+            asm.LDX(0x0000, asm.IMM16),
+
+            "LOOP_START",
+            asm.LDA(character_party_start, asm.ABS_X),   # a = character party flags
+            asm.AND(current_party, asm.ABS),              # is character in active party?
+            asm.BEQ("NEXT_CHAR"),                         # skip if not
+
+            # Set character_available bit using same pattern as recruit_character
+            asm.PHX(),
+            asm.TDC(),                                    # clear A (both bytes) for clean $BAED call
+            asm.TXA(),                                    # a = character index
+            asm.JSR(0xbaed, asm.ABS),                     # x = a mod 8 (bit), y = a // 8 (byte)
+            asm.LDA(char_available_addr, asm.ABS_Y),      # a = character available byte
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),   # set the bit
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.INC(characters_available_address, asm.ABS),
+            asm.PLX(),
+
+            "NEXT_CHAR",
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("LOOP_START"),
+
+            "DONE",
+            asm.LDA(0x01, asm.IMM8),                     # command size
+            asm.JMP(0x9b5c, asm.ABS),                    # next command
+        ]
+        space = Write(Bank.C0, src, "custom restore active party available")
+        address = space.start_address
+
+        opcode = 0x8b
+        _set_opcode_address(opcode, address)
+
+        RestoreActivePartyAvailable.__init__ = lambda self: super().__init__(opcode)
+        self.__init__()
