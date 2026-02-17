@@ -342,6 +342,18 @@ class LeteRiver(Event):
         space = Reserve(0xb0920, 0xb0920, "lete river sabin floats away")
         space.write(character)
 
+        if self.args.ruin:
+            branch_refresh_src = [
+                field.SetupBranchPartySelect(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchPartySelect(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CB, branch_refresh_src, "lete river branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
         # change party to follow character instead of go the other way
         space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
         space.write(
@@ -359,7 +371,7 @@ class LeteRiver(Event):
             field.WaitForFade(),
 
             field.Call(self.remove_raft),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(refresh_addr),
             field.Call(self.exit_river),
             field.Return(),
         )

@@ -119,9 +119,21 @@ class LoneWolf(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
+        if self.args.ruin:
+            branch_refresh_src = [
+                field.SetupBranchPartySelect(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchPartySelect(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CC, branch_refresh_src, "lone wolf branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
         space = Reserve(0xcd67c, 0xcd696, "lone wolf add char", field.NOP())
         space.write(
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(refresh_addr),
             field.HideEntity(self.mog_npc_id),
             field.HideEntity(self.invisible_bridge_block_npc_id),
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),

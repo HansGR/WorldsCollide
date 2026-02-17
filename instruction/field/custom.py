@@ -728,3 +728,220 @@ class RemapPartiesToFreeSlots(_Instruction):
 
         RemapPartiesToFreeSlots.__init__ = lambda self: super().__init__(opcode)
         self.__init__()
+
+class SetupBranchPartySelect(_Instruction):
+    """Prepares the party select screen for branch recruitment in ruination mode.
+
+    When the active party is on a branch (has its AWAY bit set):
+    - Saves the current party mask to $e7 for FinalizeBranchPartySelect
+    - Clears $1850 for current party members (clean slate for SelectParties)
+    - Sets character_available only for current party members and the new recruit
+    - Recomputes CHARACTERS_AVAILABLE count
+
+    When not on a branch, this is a no-op.
+
+    Takes one argument: the character ID of the newly recruited character."""
+    def __init__(self, character):
+        import data.event_bit as event_bit
+        import data.event_word as event_word
+        from constants.entities import CHARACTER_COUNT
+
+        character_party_start = 0x1850
+        current_party = 0x1a6d
+        char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
+        characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
+        party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+
+        src = [
+            # Check if on branch: party_away_mask = $1A6D << 5, test against $1E9B
+            asm.LDA(current_party, asm.ABS),
+            asm.ASL(),
+            asm.ASL(),
+            asm.ASL(),
+            asm.ASL(),
+            asm.ASL(),                                       # 0x20, 0x40, or 0x80
+            asm.AND(party_away_byte, asm.ABS),               # test if party is away
+            asm.BEQ("DONE"),                                 # not on branch → no-op
+
+            # Save party mask for FinalizeBranchPartySelect
+            asm.LDA(current_party, asm.ABS),
+            asm.STA(0xe7, asm.DIR),
+
+            # Zero character_available and CHARACTERS_AVAILABLE
+            asm.STZ(char_available_addr, asm.ABS),           # chars 0-7 available = 0
+            asm.STZ(char_available_addr + 1, asm.ABS),       # chars 8-13 available = 0
+            asm.STZ(characters_available_address, asm.ABS),  # count = 0
+
+            # For each char: make available if in current party or is the new recruit
+            asm.LDX(0x0000, asm.IMM16),
+
+            "LOOP",
+            # Check if char is in current party
+            asm.LDA(character_party_start, asm.ABS_X),
+            asm.AND(current_party, asm.ABS),
+            asm.BNE("SET_AVAIL_PARTY"),                      # in current party → make available
+
+            # Check if char is the new recruit (argument at $eb)
+            asm.TXA(),                                       # A = char index (low byte)
+            asm.CMP(0xeb, asm.DIR),                          # compare with character argument
+            asm.BEQ("SET_AVAIL"),                            # is new recruit → make available
+
+            # Neither party member nor recruit → skip
+            asm.BRA("NEXT"),
+
+            "SET_AVAIL_PARTY",
+            # Clear $1850 for party members so SelectParties starts from a clean slate
+            asm.STZ(character_party_start, asm.ABS_X),
+
+            "SET_AVAIL",
+            # Set character_available bit
+            asm.PHX(),
+            asm.TDC(),
+            asm.TXA(),                                       # A = char index
+            asm.JSR(0xbaed, asm.ABS),                        # X = bit pos, Y = byte offset
+            asm.LDA(char_available_addr, asm.ABS_Y),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.INC(characters_available_address, asm.ABS),
+            asm.PLX(),
+
+            "NEXT",
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("LOOP"),
+
+            "DONE",
+            asm.LDA(0x02, asm.IMM8),                        # command size = 2 (opcode + arg)
+            asm.JMP(0x9b5c, asm.ABS),
+        ]
+        space = Write(Bank.C0, src, "custom setup branch party select")
+        address = space.start_address
+
+        opcode = 0x8d
+        _set_opcode_address(opcode, address)
+
+        SetupBranchPartySelect.__init__ = lambda self, character: super().__init__(opcode, character)
+        self.__init__(character)
+
+class FinalizeBranchPartySelect(_Instruction):
+    """Finalizes party selection after branch recruitment in ruination mode.
+
+    When $e7 is non-zero (set by SetupBranchPartySelect):
+    - Remaps characters assigned to slot 1 by SelectParties to the saved party slot ($e7)
+    - Recomputes character_available: available = recruited AND NOT in_away_party
+    - Recomputes CHARACTERS_AVAILABLE count
+    - Clears $e7
+
+    When $e7 is zero (not on branch or Setup wasn't called), this is a no-op.
+
+    No arguments."""
+    def __init__(self):
+        import data.event_bit as event_bit
+        import data.event_word as event_word
+        from constants.entities import CHARACTER_COUNT
+
+        character_party_start = 0x1850
+        char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
+        char_recruited_addr = event_bit.address(event_bit.character_recruited(0))  # 0x1edc
+        characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
+        party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+
+        src = [
+            # Check if we were on a branch
+            asm.LDA(0xe7, asm.DIR),
+            asm.BEQ("DONE"),                                 # 0 = not on branch → no-op
+
+            # Step 1: Remap characters from slot 1 → saved party slot
+            asm.LDX(0x0000, asm.IMM16),
+
+            "REMAP_LOOP",
+            asm.LDA(character_party_start, asm.ABS_X),
+            asm.CMP(0x01, asm.IMM8),                         # assigned to slot 1 by SelectParties?
+            asm.BNE("REMAP_NEXT"),
+            asm.LDA(0xe7, asm.DIR),                          # load saved party mask
+            asm.STA(character_party_start, asm.ABS_X),       # remap to original slot
+
+            "REMAP_NEXT",
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("REMAP_LOOP"),
+
+            # Step 2: Build away_party_mask at $e8
+            # P1 away (bit 5) → mask 0x01, P2 away (bit 6) → mask 0x02, P3 away (bit 7) → mask 0x04
+            asm.LDA(0x00, asm.IMM8),
+            asm.STA(0xe8, asm.DIR),                          # away_party_mask = 0
+
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.AND(0x20, asm.IMM8),                         # P1 away?
+            asm.BEQ("NO_P1_AWAY"),
+            asm.LDA(0x01, asm.IMM8),
+            asm.STA(0xe8, asm.DIR),
+            "NO_P1_AWAY",
+
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.AND(0x40, asm.IMM8),                         # P2 away?
+            asm.BEQ("NO_P2_AWAY"),
+            asm.LDA(0xe8, asm.DIR),
+            asm.ORA(0x02, asm.IMM8),
+            asm.STA(0xe8, asm.DIR),
+            "NO_P2_AWAY",
+
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.AND(0x80, asm.IMM8),                         # P3 away?
+            asm.BEQ("NO_P3_AWAY"),
+            asm.LDA(0xe8, asm.DIR),
+            asm.ORA(0x04, asm.IMM8),
+            asm.STA(0xe8, asm.DIR),
+            "NO_P3_AWAY",
+
+            # Step 3: Recompute character_available from scratch
+            asm.STZ(char_available_addr, asm.ABS),
+            asm.STZ(char_available_addr + 1, asm.ABS),
+            asm.STZ(characters_available_address, asm.ABS),
+
+            asm.LDX(0x0000, asm.IMM16),
+
+            "AVAIL_LOOP",
+            # Check if character is in an away party
+            asm.LDA(character_party_start, asm.ABS_X),
+            asm.AND(0xe8, asm.DIR),                          # AND with away_party_mask
+            asm.BNE("AVAIL_NEXT"),                           # in away party → not available
+
+            # Not in away party. Check if recruited.
+            asm.PHX(),
+            asm.TDC(),
+            asm.TXA(),
+            asm.JSR(0xbaed, asm.ABS),                        # X = bit pos, Y = byte offset
+            asm.LDA(char_recruited_addr, asm.ABS_Y),
+            asm.AND(c0.power_of_two_table, asm.LNG_X),
+            asm.BEQ("AVAIL_NOT_RECRUITED"),                  # not recruited → skip
+
+            # Set available
+            asm.LDA(char_available_addr, asm.ABS_Y),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.INC(characters_available_address, asm.ABS),
+
+            "AVAIL_NOT_RECRUITED",
+            asm.PLX(),
+
+            "AVAIL_NEXT",
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("AVAIL_LOOP"),
+
+            # Clear $e7 so future calls are no-ops
+            asm.STZ(0xe7, asm.DIR),
+
+            "DONE",
+            asm.LDA(0x01, asm.IMM8),                        # command size = 1 (opcode only)
+            asm.JMP(0x9b5c, asm.ABS),
+        ]
+        space = Write(Bank.C0, src, "custom finalize branch party select")
+        address = space.start_address
+
+        opcode = 0x8e
+        _set_opcode_address(opcode, address)
+
+        FinalizeBranchPartySelect.__init__ = lambda self: super().__init__(opcode)
+        self.__init__()

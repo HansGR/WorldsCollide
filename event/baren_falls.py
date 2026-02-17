@@ -124,11 +124,23 @@ class BarenFalls(Event):
             field.Branch(space.end_address + 1), # skip nop
         )
 
+        if self.args.ruin:
+            branch_refresh_src = [
+                field.SetupBranchPartySelect(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchPartySelect(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CB, branch_refresh_src, "baren falls branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
         space = Reserve(0xbc1e2, 0xbc1ee, "baren falls gau runs off", field.NOP())
         space.write(
             field.Pause(0.5),
             field.RecruitCharacter(character),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(refresh_addr),
             field.Branch(space.end_address + 1), # skip nop
         )
 

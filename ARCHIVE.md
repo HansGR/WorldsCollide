@@ -360,6 +360,34 @@ The remap only touches characters with character_available set, leaving away cha
 
 2. **Count overflow**: Without the cap, a player could create more parties than available slots (e.g., 3 new + 1 away = 4 total, but only 3 slots exist with SetPartyMap/SetParty support).
 
+### Branch Character Recruitment (2026-02)
+
+When a party on a branch recruits a character, the standard party select flow would show ALL available characters (including hub characters) and assign to slot 1. Two new opcodes fix this:
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0x8d` | `SetupBranchPartySelect` | Takes character ID argument. If active party is away: saves party mask to $e7, zeros character_available, re-sets it only for current party members and the new recruit, clears $1850 for party members (clean slate for SelectParties), recomputes CHARACTERS_AVAILABLE. No-op if not on branch. |
+| `0x8e` | `FinalizeBranchPartySelect` | No argument. If $e7 is non-zero: remaps slot 1 → saved party mask ($e7), recomputes character_available as `recruited AND NOT in_away_party`, recomputes CHARACTERS_AVAILABLE count, clears $e7. No-op if $e7 is zero. |
+
+**Execution flow (branch recruitment):**
+```
+RecruitCharacter(char)       → sets recruited + available for new char
+SetupBranchPartySelect(char) → restricts select screen to party + new char
+Call(REFRESH_CHARACTERS_AND_SELECT_PARTY) → shows party select screen
+FinalizeBranchPartySelect()  → remaps slot, restores correct available state
+```
+
+**After finalization**, the state is correct:
+- Selected chars: in original party slot, party is still away → character_available=0
+- Unselected former party members: $1850=0 (removed by SelectParties) → character_available=1 (available at hub)
+- Unselected new recruit: $1850=0 → character_available=1 (available at hub)
+- Hub characters: untouched $1850, character_available=1
+- Other away parties: untouched, character_available=0
+
+**Two integration patterns:**
+1. Events using `RecruitAndSelectParty(char)` (35+ events): Automatically wrapped in `instructions.py` when `args.ruin` is set
+2. Events with separate `RecruitCharacter` + `Call(REFRESH)` (6 events): Individually modified with branch-aware refresh subroutine (baren_falls, lone_wolf, mt_kolts, floating_continent, lete_river, narshe_moogle_defense)
+
 ---
 
 ## Ruination Mode - Duplicate Event Tiles for Reverse Entrances (2026-02)
