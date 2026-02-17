@@ -179,6 +179,20 @@ class NarsheWOB(Event):
         from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY, \
             REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES, REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES, \
             REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES
+        from constants.entities import CHARACTER_COUNT
+
+        # Build a safe version of REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES that
+        # preserves party assignments for away characters (character_available cleared).
+        remove_available_src = []
+        for char in range(CHARACTER_COUNT):
+            remove_available_src += [
+                field.BranchIfEventBitClear(event_bit.character_available(char), f"SKIP_{char}"),
+                field.RemoveCharacterFromParties(char),
+                f"SKIP_{char}",
+            ]
+        remove_available_src += [field.Return()]
+        space = Write(Bank.CA, remove_available_src, "Remove available characters from parties (preserve away)")
+        remove_available_addr = space.start_address
 
         src_party1 = [
             field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
@@ -236,7 +250,7 @@ class NarsheWOB(Event):
             "NOT_3_PARTIES",
             field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
             "1_PARTY",
-            field.Call(REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(remove_available_addr),  # only remove non-away characters
             field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
             # Place on map & load map
             field.Call(place_party_1_addr),
@@ -245,7 +259,7 @@ class NarsheWOB(Event):
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Disable y-party switching
             field.Return(),
             "2_PARTIES",
-            field.Call(REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(remove_available_addr),  # only remove non-away characters
             field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             # Place on map & load map
             field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
@@ -258,7 +272,7 @@ class NarsheWOB(Event):
             field.FreeMovement(),
             field.Return(),
             "3_PARTIES",
-            field.Call(REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(remove_available_addr),  # only remove non-away characters
             field.Call(REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES),
             # Place on map & load map
             field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
@@ -294,14 +308,34 @@ class NarsheWOB(Event):
         school_properties.paletteanimationindex = 0x7
 
         # Make it darker via entrance event with dark tint
-        # Create entrance event that applies dark tint
+        # Also restore away-party character availability when a party returns
         entrance_src = [
-            # Apply a dark tint to the background for a dimmer atmosphere
             field.TintBackground(field.Tint.NIGHT),
+            field.RestoreActivePartyAvailable(),  # idempotent: no-op if party isn't away
             field.Return(),
         ]
         space = Write(Bank.CA, entrance_src, "Narshe school ruination entrance event")
         self.maps.set_entrance_event(school_map_id, space.start_address - EVENT_CODE_START)
+
+        # (4b) Add event tiles on the three classroom doors to mark away parties
+        # When a party steps on these tiles, MarkActivePartyAway fires before the map exit
+        from data.map_event import MapEvent
+
+        away_src = [
+            field.MarkActivePartyAway(),  # idempotent: sets PARTY_N_AWAY, clears character_available
+            field.Return(),
+        ]
+        space = Write(Bank.CA, away_src, "Mark party away on branch door exit")
+        away_event_addr = space.start_address - EVENT_CODE_START
+
+        # Door coordinates from exits 393, 394, 395
+        branch_door_coords = [(93, 45), (99, 45), (108, 45)]
+        for x, y in branch_door_coords:
+            new_event = MapEvent()
+            new_event.x = x
+            new_event.y = y
+            new_event.event_address = away_event_addr
+            self.maps.add_event(school_map_id, new_event)
 
         # (5) Reskin the whelk room (map 59, WoB mines) to use WoR mines palette
         # The ruin-whelk room uses map 59 (Narshe Northern Mines Main Hallway WoB) which has
