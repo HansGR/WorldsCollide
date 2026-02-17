@@ -537,7 +537,7 @@ class MarkActivePartyAway(_Instruction):
         space = Write(Bank.C0, src, "custom mark active party away")
         address = space.start_address
 
-        opcode = 0x8a
+        opcode = 0x66
         _set_opcode_address(opcode, address)
 
         MarkActivePartyAway.__init__ = lambda self: super().__init__(opcode)
@@ -610,7 +610,7 @@ class RestoreActivePartyAvailable(_Instruction):
         space = Write(Bank.C0, src, "custom restore active party available")
         address = space.start_address
 
-        opcode = 0x8b
+        opcode = 0x67
         _set_opcode_address(opcode, address)
 
         RestoreActivePartyAvailable.__init__ = lambda self: super().__init__(opcode)
@@ -723,7 +723,7 @@ class RemapPartiesToFreeSlots(_Instruction):
         space = Write(Bank.C0, src, "custom remap parties to free slots")
         address = space.start_address
 
-        opcode = 0x8c
+        opcode = 0x68
         _set_opcode_address(opcode, address)
 
         RemapPartiesToFreeSlots.__init__ = lambda self: super().__init__(opcode)
@@ -817,7 +817,7 @@ class SetupBranchPartySelect(_Instruction):
         space = Write(Bank.C0, src, "custom setup branch party select")
         address = space.start_address
 
-        opcode = 0x8d
+        opcode = 0x9e
         _set_opcode_address(opcode, address)
 
         SetupBranchPartySelect.__init__ = lambda self, character: super().__init__(opcode, character)
@@ -940,7 +940,7 @@ class FinalizeBranchPartySelect(_Instruction):
         space = Write(Bank.C0, src, "custom finalize branch party select")
         address = space.start_address
 
-        opcode = 0x8e
+        opcode = 0x9f
         _set_opcode_address(opcode, address)
 
         FinalizeBranchPartySelect.__init__ = lambda self: super().__init__(opcode)
