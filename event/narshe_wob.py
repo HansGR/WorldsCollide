@@ -194,9 +194,10 @@ class NarsheWOB(Event):
         space = Write(Bank.CA, remove_available_src, "Remove available characters from parties (preserve away)")
         remove_available_addr = space.start_address
 
-        src_party1 = [
-            field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
-            field.SetParty(1),  # Make party 1 the active party
+        # Position subroutines: position PARTY0 at each location.
+        # These do NOT include SetParty/SetPartyMap - the caller handles those
+        # dynamically based on which party slots are free.
+        src_pos_center = [
             field.RefreshEntities(),
             field.UpdatePartyLeader(),
             field.EntityAct(field_entity.PARTY0, True,
@@ -207,11 +208,10 @@ class NarsheWOB(Event):
             field.UpdatePartyLeader(),
             field.Return()
         ]
-        space = Write(Bank.CA, src_party1, "Place party 1 reform school")
-        place_party_1_addr = space.start_address
+        space = Write(Bank.CA, src_pos_center, "Position party at center (reform school)")
+        pos_center_addr = space.start_address
 
-        src_party2 = [
-            field.SetParty(2),  # Make party 2 the active party
+        src_pos_upper_right = [
             field.RefreshEntities(),
             field.UpdatePartyLeader(),
             field.EntityAct(field_entity.PARTY0, True,
@@ -222,11 +222,10 @@ class NarsheWOB(Event):
             field.UpdatePartyLeader(),
             field.Return()
         ]
-        space = Write(Bank.CA, src_party2, "Place party 2 reform school")
-        place_party_2_addr = space.start_address
+        space = Write(Bank.CA, src_pos_upper_right, "Position party at upper-right (reform school)")
+        pos_upper_right_addr = space.start_address
 
-        src_party3 = [
-            field.SetParty(3),  # Make party 3 the active party
+        src_pos_lower_right = [
             field.RefreshEntities(),
             field.UpdatePartyLeader(),
             field.EntityAct(field_entity.PARTY0, True,
@@ -237,50 +236,126 @@ class NarsheWOB(Event):
             field.UpdatePartyLeader(),
             field.Return()
         ]
-        space = Write(Bank.CA, src_party3, "Place party 3 reform school")
-        place_party_3_addr = space.start_address
+        space = Write(Bank.CA, src_pos_lower_right, "Position party at lower-right (reform school)")
+        pos_lower_right_addr = space.start_address
 
         reform_src = [
             "START_OVER",
-            field.DialogBranch(reform_id, dest1 = "REFORM", dest2 = 0xc359d, dest3 = 0xc351e, dest4 = field.RETURN),
+            field.DialogBranch(reform_id, dest1="REFORM", dest2=0xc359d, dest3=0xc351e, dest4=field.RETURN),
+
+            # === Determine max new parties (3 - away_count) capped by CHARACTERS_AVAILABLE ===
             "REFORM",
+            # Check away parties to determine free slot count
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "CHECK_P1_AWAY"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "CHECK_P2_AWAY_NO_P1"),
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "MAX_2_NEW"),
+            field.Branch("MAX_3_NEW"),
+
+            "CHECK_P1_AWAY",  # P1 is away
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "MAX_1_NEW"),  # P1+P2 away
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "MAX_1_NEW"),  # P1+P3 away
+            field.Branch("MAX_2_NEW"),  # only P1 away
+
+            "CHECK_P2_AWAY_NO_P1",  # P2 away, P1 not
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "MAX_1_NEW"),  # P2+P3 away
+            # fallthrough: only P2 away
+
+            "MAX_2_NEW",  # exactly 1 away -> at most 2 new parties
             field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "1_PARTY"),
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 3, "NOT_3_PARTIES"),
-            field.DialogBranch(reform_id_3, dest1="1_PARTY", dest2="2_PARTIES", dest3="3_PARTIES", dest4=field.RETURN),
-            "NOT_3_PARTIES",
             field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
+
+            "MAX_1_NEW",  # 2 parties away -> force 1 new party
+            field.Branch("1_PARTY"),
+
+            "MAX_3_NEW",  # 0 away -> up to 3 new parties (original logic)
+            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "1_PARTY"),
+            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 3, "MAX_3_NOT_ENOUGH_FOR_3"),
+            field.DialogBranch(reform_id_3, dest1="1_PARTY", dest2="2_PARTIES", dest3="3_PARTIES", dest4=field.RETURN),
+            "MAX_3_NOT_ENOUGH_FOR_3",
+            field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
+
+            # === 1 PARTY: select 1 party, remap to first free slot ===
             "1_PARTY",
-            field.Call(remove_available_addr),  # only remove non-away characters
+            field.Call(remove_available_addr),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            # Place on map & load map
-            field.Call(place_party_1_addr),
+            field.RemapPartiesToFreeSlots(),
+            # Determine first free slot for SetPartyMap/SetParty
+            field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "1P_SLOT1"),
+            field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "1P_SLOT2"),
+            # P1 and P2 both away -> use slot 3
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Branch("1P_PLACE"),
+            "1P_SLOT2",
+            field.SetPartyMap(2, school_map_id),
+            field.SetParty(2),
+            field.Branch("1P_PLACE"),
+            "1P_SLOT1",
+            field.SetPartyMap(1, school_map_id),
+            field.SetParty(1),
+            # fallthrough
+            "1P_PLACE",
+            field.Call(pos_center_addr),
             field.FadeInScreen(),
             field.WaitForFade(),
-            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Disable y-party switching
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.Return(),
+
+            # === 2 PARTIES: select 2 parties, remap to free slots ===
             "2_PARTIES",
-            field.Call(remove_available_addr),  # only remove non-away characters
+            field.Call(remove_available_addr),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
-            # Place on map & load map
-            field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
-            field.SetPartyMap(2, school_map_id),  # Set party 2 on this map
-            field.Call(place_party_2_addr),
-            field.Call(place_party_1_addr),
+            field.RemapPartiesToFreeSlots(),
+            # Branch based on which party is away for correct slot assignment
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "2P_P1_AWAY"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "2P_P2_AWAY"),
+            # P3 away or none -> free slots 1, 2
+            field.SetPartyMap(1, school_map_id),
+            field.SetPartyMap(2, school_map_id),
+            field.SetParty(2),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(1),
+            field.Call(pos_center_addr),
+            field.Branch("2P_FINISH"),
+
+            "2P_P1_AWAY",  # P1 away -> free slots 2, 3
+            field.SetPartyMap(2, school_map_id),
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(2),
+            field.Call(pos_center_addr),
+            field.Branch("2P_FINISH"),
+
+            "2P_P2_AWAY",  # P2 away -> free slots 1, 3
+            field.SetPartyMap(1, school_map_id),
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(1),
+            field.Call(pos_center_addr),
+            # fallthrough
+
+            "2P_FINISH",
             field.FadeInScreen(),
             field.WaitForFade(),
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.FreeMovement(),
             field.Return(),
+
+            # === 3 PARTIES (only reachable when 0 away - no remap needed) ===
             "3_PARTIES",
-            field.Call(remove_available_addr),  # only remove non-away characters
+            field.Call(remove_available_addr),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES),
-            # Place on map & load map
-            field.SetPartyMap(1, school_map_id),  # Set party 1 on this map
-            field.SetPartyMap(2, school_map_id),  # Set party 2 on this map
-            field.SetPartyMap(3, school_map_id),  # Set party 3 on this map
-            field.Call(place_party_3_addr),
-            field.Call(place_party_2_addr),
-            field.Call(place_party_1_addr),
+            field.SetPartyMap(1, school_map_id),
+            field.SetPartyMap(2, school_map_id),
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Call(pos_lower_right_addr),
+            field.SetParty(2),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(1),
+            field.Call(pos_center_addr),
             field.FadeInScreen(),
             field.WaitForFade(),
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
