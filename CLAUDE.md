@@ -50,6 +50,8 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
   - `get_valid_door_targets_v2` / `get_valid_pit_targets_v2`: Connection validation (hub entrance invariants)
   - `finalize_map`: Steps 1-6 close all connections; see ARCHIVE.md for detailed reference
   - All `room_data` lookups in reserve area searches must filter by `self.protected`
+- **event/narshe_wob.py** `ruination_mod()` - Hub party formation: reform dialog, away-party cap, slot assignment, placement. See ARCHIVE.md "Party Formation & Away-Party System" for full details.
+- **instruction/field/custom.py** - Custom event opcodes (65816 ASM). Key ruination opcodes: `MarkActivePartyAway` (0x8a), `RestoreActivePartyAvailable` (0x8b), `RemapPartiesToFreeSlots` (0x8c). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass.
 - **`initially_locked_exits`** (set on Network in `data/walks.py`): Tracks doors/traps unlocked by `apply_key()`. These exits are excluded as connection targets and from downstream available exits because the player may not have the key yet. See ARCHIVE.md "Key/Lock Softlock Analysis" for full details.
 
 ### 8. Finding Map IDs by Name

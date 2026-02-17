@@ -286,6 +286,82 @@ A `break` inside an `if/else` block but outside a `for` loop breaks the nearest 
 
 ---
 
+## Ruination Mode - Party Formation & Away-Party System (2026-02)
+
+### Overview
+
+The ruination hub (Narshe school, map 0x068) allows the player to form up to 3 parties and send them down separate branches. The ghost NPC triggers party reform. Parties that leave the hub through branch doors are marked "away" and their characters become unavailable for new party formation until they return.
+
+### Key RAM / Event Addresses
+
+| Address | Purpose |
+|---------|---------|
+| `$1850+char` | Party assignment bitmask per character. Bit 0 = party 1, bit 1 = party 2, bit 2 = party 3 |
+| `$1A6D` | Active party mask (0x01, 0x02, or 0x04) |
+| `$1E9B` bits 5-7 | `PARTY_1/2/3_AWAY` event bits (0x0dd-0x0df) |
+| Event word 2 (`$1FC6`) | `CHARACTERS_AVAILABLE` counter |
+| `$1EDE-$1EDF` | `character_available` bitfield (chars 0-7 in $1EDE, 8-13 in $1EDF) |
+
+### Custom Event Opcodes (instruction/field/custom.py)
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0x8a` | `MarkActivePartyAway` | Sets PARTY_N_AWAY bit, clears character_available for party members, decrements CHARACTERS_AVAILABLE. Idempotent. Fired by event tiles on branch door exits. |
+| `0x8b` | `RestoreActivePartyAvailable` | Clears PARTY_N_AWAY bit, restores character_available, increments CHARACTERS_AVAILABLE. Idempotent. Fired by hub entrance event when a party returns. |
+| `0x8c` | `RemapPartiesToFreeSlots` | Remaps $1850 party assignments from SelectParties slots (always 1..count) to actual free slots. Uses character_available to distinguish new from away characters. |
+
+### Party Formation Flow (event/narshe_wob.py, reform_src)
+
+**Step 1 - Determine max new parties:**
+```
+free_slots = 3 - count(PARTY_N_AWAY bits set)
+max_new = min(free_slots, CHARACTERS_AVAILABLE-based cap)
+```
+- 0 away → up to 3 new parties (subject to character count)
+- 1 away → up to 2 new parties
+- 2 away → forced to 1 new party (no dialog)
+
+The branching checks each combination of PARTY_1/2/3_AWAY to classify into MAX_1_NEW, MAX_2_NEW, or MAX_3_NEW, then intersects with CHARACTERS_AVAILABLE.
+
+**Step 2 - Select parties:**
+1. `remove_available_addr` strips available (non-away) characters from all parties, preserving away characters' $1850 assignments
+2. `REFRESH_CHARACTERS_AND_SELECT_N_PARTIES` deletes all entities, creates entities for available characters only, calls `SelectParties(count)` (vanilla opcode 0x99)
+3. SelectParties always assigns to slots 1..count regardless of away parties
+
+**Step 3 - Remap to free slots (RemapPartiesToFreeSlots, opcode 0x8c):**
+1. Reads PARTY_N_AWAY bits from $1E9B to build a free_slots mapping in scratch RAM ($e8-$ea). For each party not away, stores its mask (0x01/0x02/0x04) at the next index.
+2. Iterates through all 14 characters. For each with `character_available` set AND `$1850+char != 0`:
+   - If $1850 == 0x01: replace with free_slots[0]
+   - If $1850 == 0x02: replace with free_slots[1]
+   - If $1850 == 0x04: replace with free_slots[2]
+3. Characters with character_available clear (away parties) are untouched.
+
+Example: P1 away → free_slots = [0x02, 0x04]. SelectParties(2) assigns to slots 1,2. Remap changes 0x01→0x02 and 0x02→0x04.
+
+**Step 4 - Placement:**
+Event script branches on away bits to determine which specific slots to use for `SetPartyMap(N, map_id)` and `SetParty(N)`, then calls position subroutines:
+- 1 party: center position (109, 49), Y-switching disabled
+- 2 parties: center + upper-right (110, 48), Y-switching enabled
+- 3 parties: center + upper-right + lower-right (110, 50), Y-switching enabled
+
+The last party placed becomes active (placed last so SetParty sticks).
+
+### Why character_available Is the Discriminator
+
+When away party P1 occupies slot 1 ($1850 = 0x01) and SelectParties also assigns a new party to slot 1 ($1850 = 0x01), both old and new characters share the same $1850 value. The `character_available` bit distinguishes them:
+- Away characters: character_available = 0 (cleared by MarkActivePartyAway)
+- Newly assigned characters: character_available = 1
+
+The remap only touches characters with character_available set, leaving away characters' $1850 intact.
+
+### Problems This Architecture Solved
+
+1. **Slot collision**: Without remap, the new party overwrites $1850 for the same slot number as an away party. When the away party returns, RestoreActivePartyAvailable can't find its characters because their party bit was cleared by the overwrite.
+
+2. **Count overflow**: Without the cap, a player could create more parties than available slots (e.g., 3 new + 1 away = 4 total, but only 3 slots exist with SetPartyMap/SetParty support).
+
+---
+
 ## Ruination Mode - Duplicate Event Tiles for Reverse Entrances (2026-02)
 
 In vanilla FF6, some maps have animation event tiles (e.g., Vargas shadow appearances on Mt Kolts) placed near only one entrance. In ruination mode, players may enter rooms from the opposite side, missing the trigger entirely.
