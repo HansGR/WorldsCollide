@@ -1,0 +1,243 @@
+Command : Byte widths, including command byte
+---------------------------------------------
+Note that throughout, A means first parameter, B means second, C means third, etc. Assume they are bytes except where it stated or is obviously not a byte.
+
+00-34 : 2 : Command corresponds to the object referenced; parameter AND $7F is the length of the action queue.
+          : Note that this also means a context switch to the movement script until the action queue is complete.
+          : Parameter AND $80 makes it asynchronous.
+35 : 2    : Parameter is the object referenced (there are conflicting reports of what this command does, though)
+36 : 2    : Parameter is the object referenced. Disables pass-through objects for A.
+37 : 3    : First parameter is the object referenced. Gives object A graphics set B.
+38 : 1    : Hold screen
+39 : 1    : Free screen
+3A : 1    : Enable movement while events execute
+3B : 1    : Postion party in "ready-to-go" stance
+3C : 5    : Set up party with A, B, C, D.
+3D : 2    : Create object A (description is dubious)
+3E : 2    : Delete object A (description is dubious)
+3F : 3    : Assign character B to party A (party 0 = remove from party)
+40 : 3    : Assign properties B to character A
+41 : 2    : Show object A
+42 : 2    : Hide object A
+43 : 3    : Assign palette B to character A
+44 : 3    : Place character A on vehicle B (high bit of B = character is shown)
+45 : 1    : Refresh objects (description is dubious)
+46 : 2    : Make party A the active party
+47 : 1    : Make character in slot 0 the lead character
+48 : 3    : Display message and continue executing commands. Message AND $3FFF is the message number. $8000 turns off the window. $4000 sets it to the bottom.
+          : Usage note! If the message contains a multiple-choice option, the number of options needs to be counted to properly proceed with following commands.
+          : The byte to look for is 0x15.
+49 : 1    : If dialogue message is open, wait for keypress and then dismiss. Note that command 4B is composed of 48 and 49 (hard coded).
+4A : 1    : Unknown/probably unused.
+4B : 3    : Display message and wait for button press. Message AND $3FFF is the message number. $8000 turns off the window. $4000 sets it to the bottom.
+          : Usage note! If the message contains a multiple-choice option, the number of options needs to be counted to properly proceed with following commands.
+          : The byte to look for is 0x15.
+4C : 3    : Center screen on party and invoke battle, enemy set A, background B. Background AND $80 disables mosaic. $40 disables swoosh sound.
+4D : 3    : Invoke battle, enemy set A, background B. Background AND $80 disables mosaic. $40 disables swoosh sound.
+4E : 1    : Invoke battle, random encounter as determined by zone
+4F : 1    : Exit the current location
+50 : 2    : Tint screen (cumulative) with color A
+51 : 4    : Modify (parameter A tells the type of modification) background color range B-C. (Description dubious, needs investigation).
+52 : 2    : Tint characters (cumulative) with color A
+53 : 4    : Modify (parameter A tells the type of modification) sprite color range B-C. (Description dubious, needs investigation).
+54 : 1    : End effects of commands for modified color components and screen flashes
+55 : 2    : Flash screen. Parameter gives color and intensity on high and low nibble, respectively. (Description dubious)
+56 : 2    : Increase color components. Parameter gives color and intensity on high and low nibble, respectively. (Description dubious)
+57 : 2    : Decrease color components. Parameter gives color and intensity on high and low nibble, respectively. (Description dubious)
+58 : 2    : Shake screen. Parameter's high nibble consists of flags for layers effects (sprite, 3, 2, 1). Low nibble has flags for intensity and permanence.
+59 : 2    : Unfade screen. Parameter probably the speed.
+5A : 2    : Fade screen. Parameter probably the speed.
+5B : 1    : Unknown/probably unused.
+5C : 1    : Pause execution until fade in/fade out complete.
+5D : 3    : Scroll layer 1. Word parameter is the speed (may have some unknown flags).
+5E : 3    : Scroll layer 2. Word parameter is the speed (may have some unknown flags).
+5F : 3    : Scroll layer 3. Word parameter is the speed (may have some unknown flags).
+60 : 3    : Change background layer A to palette B.
+61 : 4    : Colorize range [B,C] to color A. I'm not even sure what that means, needs investigation.
+62 : 2    : Mosaic screen. Parameter unknown.
+63 : 2    : Create spotlight effect with radius A.
+64 : 3    : Unknown command, parameters A and B.
+65 : 3    : Unknown command, parameters A and B.
+66 : 5    : Nonexistant. Unused in standard game. 
+67 : 5    : Nonexistant. Unused in standard game.
+68 : 5    : Nonexistant. Unused in standard game.
+69 : 5    : Nonexistant. Unused in standard game.
+6A : 6    : After fade in/out, load map (Map number is first 2 bytes AND $01FF). Position party at second two bytes. Final byte has some flags.
+          : Context change can also be triggered by this command.
+          : Note that the game ues maps $01FE and $01FF to mesn specific things, not actual maps. 
+6B : 6    : Instantly load map (Map number is first 2 bytes AND $01FF). Position party at second two bytes. Final byte has some flags.
+          : Context change can also be triggered by this command.
+          : Note that the game ues maps $01FE and $01FF to mesn specific things, not actual maps. 
+6C : 6    : Set parent map. Command is laid out as above, but this is the map to be on when exiting the current map.
+          : Note that the parent map seems to always be an overworld; ie. WoB or WoR. This command seems to be mainly used to change the location 
+          : where one will exit onto (like when Figaro castle moves, for instance). 
+6D : 2    : Nonexistant. Unused in standard game. 
+6E : 3    : Nonexistant. Unused in standard game. 
+6F : 6    : Nonexistant. Unused in standard game. 
+70 : 3    : Scroll layer 1. Parameters may indicate a direction, but this is unknown.
+71 : 3    : Scroll layer 2. Parameters may indicate a direction, but this is unknown.
+72 : 3    : Scroll layer 3. Parameters may indicate a direction, but this is unknown.
+73 : 5    : Replace current map's tiles at A,B with the following D x C chunk, refresh immediately. Upper 2 bits of B determine the layer.
+          : Note that the next bytes of size D x C are tile indexes in the tileset of the layer selected.
+74 : 5    : Replace current map's tiles at A,B with the following D x C chunk, wait for command $75 to refresh. Upper 2 bits of B determine the layer.
+          : Note that the next bytes of size D x C are tile indexes in the tileset of the layer selected.
+75 : 1    : Refresh map after alteration.
+76 : 3    : Nonexistant. Unused in standard game.
+77 : 2    : Perform level averaging for character in slot A.
+78 : 2    : Parameter is the object referenced. Enables pass-through objects for A. (This is the counterpart command to $36)
+79 : 4    : Place party A on map B (where B is a word, valid range is B AND $01FF, not sure if any flags exist for the high bits).
+7A : 5    : Change event trigger address for object A to B (where A is 1 byte, and B is 3 bytes). Allows NPC trigger events to be changed on the fly.
+7B : 1    : Restore backup party (in $7E:055D) to active status.
+7C : 2    : Enable event activation for object A if it contacts any party. Used in multi-party situations. If such an activation occurs, party is backed up
+          : to RAM $7E:055D for later restoration.
+7D : 2    : Disable event activation for object A if it contacts any party. Turns off the auto-switch action described above.
+7E : 3    : Move characters to (A, B).
+7F : 3    : Change actor in slot A to default name B.
+80 : 2    : Add item A to inventory.
+81 : 2    : Remove item A from inventory.
+82 : 1    : Store party 1 as backup party (in $7E:055D). Used as a failsafe before 3 party situations.
+83 : 1    : Nonexistant. Unknown/probably unused.
+84 : 3    : Give GP to party. Parameter is 2-byte value to add.
+85 : 3    : Take GP from party. Parameter is 2-byte value to subtract.
+86 : 2    : Give esper A to party.
+87 : 2    : Take esper A from party.
+88 : 4    : Remove actor A's statuses B. B is a 16-bit bitfield of statuses, where a clear bit means to remove it (set bit means ignore it).
+89 : 4    : Inflict actor A with statuses B. B is a 16-bit bitfield of statuses, where a set bit means to inflcit it (clear bit means ignore it).
+8A : 4    : Toggle actor A's statuses B. B is a 16-bit bitfield of statuses, where a set bit means to flip it (clear bit means ignore it).
+8B : 3    : Modify actor A's Hit Points. B is the amount, however, bit 0x80 tells it to subtract. The amount in 0x7F is a power of 2 to add/subtract.
+          : So, for instance, 8B 01 04 would Add (high bit clear) to Locke (character 01) 16 HP (2^4). Clear as mud?
+          : Caveats (1) if the parameter is 7F, it just sets the HP to maximum. (2) No matter how much is subtracted, it can't end up below 1 HP.
+8C : 3    : Modify actor A's Magic Points. B is the amount, however, bit 0x80 tells it to subtract. The amount in 0x7F is a power of 2 to add/subtract.
+          : This command appears to have been a copy/paste of the Hit Points, however, they did not code the powers of 2 part, so in reality, the only 
+          : thing this can do is set MP to max via the 7F second parameter. My Cure-Castin' Kid patch corrects this, permitting adding/subtracting of 
+          : MP just as with HP. Also note that there is no floor of 1 for MP.
+8D : 2    : Remove all equipment for actor A.
+8E : 1    : Invoke battle from monster-in-a-box data with current area's default background.
+8F : 1    : Unlock all SwdTechs.
+90 : 1    : Grant Sabin the Bum Rush.
+91 : 1    : Pause for 15 units (unverified if a unit equals a frame, but it is likely)
+92 : 1    : Pause for 30 units (unverified if a unit equals a frame, but it is likely)
+93 : 1    : Pause for 45 units (unverified if a unit equals a frame, but it is likely)
+94 : 1    : Pause for 60 units (unverified if a unit equals a frame, but it is likely)
+95 : 1    : Pause for 120 units (unverified if a unit equals a frame, but it is likely)
+96 : 1    : Restore screen from fade.
+97 : 1    : Fade screen to black.
+98 : 2    : Invoke name-change screen for actor A.
+99 : 4    : Invoke party selection screen (A groups). Forced party members in bitfield B/C.
+9A : 1    : Invoke Colisseum item selection screen.
+9B : 2    : Invoke shop A.
+9C : 2    : Place optimum equipment on actor A.
+9D : 1    : Invoke final battle Order selection screen.
+9E : 1    : Nonexistant. Unknown/probably unused.
+9F : 1    : Nonexistant. Unknown/probably unused.
+A0 : 6    : Set countdown timer. First two bytes are the number of units to set it to. Last 3 bytes AND $03FFFF are the address to jump to if timer expires.
+          : Add $CA0000 to that address to get the actual event address. There are actually 4 timers that can run simultaneously. The selection of which timer 
+          : is made by setting those bits in the last 3 bytes AND $0C0000. So there are timers 0-3 (0 is most often used). 
+          : The uppermost nibble contains four flags regarding the timer, as such:
+          : 0x80 - Countdown pauses while in menu or battle.
+          : 0x40 - Digits for the countdown display while on the map. This must be enabled in layer 3 for the current location or it will be garbage.
+          : 0x20 - Enables exit menu/battle on timer expiration.
+          : 0x10 - Countdown will override game clock display in menu.
+A1 : 2    : Reset timer A.
+A2 : 1    : Unknown, but used, command.
+A3 : 1    : Nonexistant. Unknown/probably unused.
+A4 : 1    : Nonexistant. Unknown/probably unused.
+A5 : 1    : Nonexistant. Unknown/probably unused.
+A6 : 1    : Delete any rotating pyramids.
+A7 : 2    : Create rotating pyramid over object A.
+A8 : 1    : Show cutscene with floating continent soaring into the sky.
+A9 : 1    : Show title screen. 
+AA : 1    : Show cutscene from into with Magiteks walking in snowfields.
+AB : 1    : Show game loading screen.
+AC : 1    : Unknown, but used, command.
+AD : 1    : Show cutscene with world tearing apart.
+AE : 1    : Show train ride out of Magitek Factory
+AF : 1    : Invoke Colisseum battle
+B0 : 2    : Execute following code A times (if A not $FF) or until button press (if $FF). Command $BC will detect a button press to break the loop.
+B1 : 1    : End block of repeating commands.
+B2 : 4    : Call subroutine. Address in parameter is offset from $CA0000.
+B3 : 5    : Repeatedly call subroutine A times. First byte is number of times, last 3 bytes are the address, offset as above.
+B4 : 2    : Pause for A units.
+B5 : 2    : Pause for 15 * A units. Which begs the question of why they needed those other commands ($91-$95).
+B6 : var. : Indexed branch based on prior dialogue selection (See notes about selections in $48 and $4B). The number of bytes following B6 will be 3 times
+          : the number of selections, as each address is 3 bytes offset from $CA0000. Not a problem if you read in the dialogue messages, but it is a problem 
+          : if you get the WRONG message. In practice, there are always at least 2 and never more than 6 selection points.
+B7 : 5    : If battle event bit ($7E:1DC9 + A/8) is set, branch to B (where B is a 3-byte event address as noted previously).
+B8 : 2    : Set battle event bit ($7E:1DC9 + A/8).
+B9 : 2    : Clear battle event bit ($7E:1DC9 + A/8).
+BA : 2    : Not sure, may play ending CGI A, needs investigation.
+BB : 1    : Not sure, something to do with the ending.
+BC : 3    : Return from subroutine if event bit A AND $7FFF is clear/set (bit $8000 determines which). That is to say, A is a word value indicating which event
+          : bit to check. Formula is $7E:1E80 + (A & $7FFF)/8. 
+BD : 4    : Pseudo-randomly jump to address 50% of the time. All three parameter bytes are the event offset to possibly jump to.
+BE : var. : Case select. Call one subroutine based on status of Case Word stored at $7E:1EB4-5. Here's how to decode this:
+          : Read first byte. This is the number of selections. Then, read 3 times that number of bytes. Each 3 bytes is an address (on $0FFFFF) and a Case Word 
+          : bit to check (on $F00000). If the bit is set, it calls the subroutine. Only one of the subroutines will be called (at most). 
+BF : 1    : Show cutscene with airship in the ending.
+C0 : 6    : Conditional branch. First two parameter bytes are the ID of the event bit to check (A). Last 3 bytes are the address to jump to (B). 
+          : If A AND $8000, it checks if the bit is set, otherwise, it checks if the bit is clear.
+C1 : 8    : Conditional branch. As above, but with 2 conditions (AND'ed together). 
+C2 : 10   : Conditional branch. As above, but with 3 conditions (AND'ed together). 
+C3 : 12   : Conditional branch. As above, but with 4 conditions (AND'ed together). 
+C4 : 14   : Conditional branch. As above, but with 5 conditions (AND'ed together). 
+C5 : 16   : Conditional branch. As above, but with 6 conditions (AND'ed together). 
+C6 : 18   : Conditional branch. As above, but with 7 conditions (AND'ed together). 
+C7 : 20   : Conditional branch. As above, but with 8 conditions (AND'ed together). 
+C8 : 6    : Conditional branch. Similar to the previous set, but actually this is the first of the ORs. Naturally, one OR is the same as one AND, so this 
+          : command, if it were ever used, would be exactly like $C0. Note that the high bit of each event bit is still whether it should be set or not.
+C9 : 8    : Conditional branch. As above, but with 2 conditions (OR'ed together). 
+CA : 10   : Conditional branch. As above, but with 3 conditions (OR'ed together). 
+CB : 12   : Conditional branch. As above, but with 4 conditions (OR'ed together). 
+CC : 14   : Conditional branch. As above, but with 5 conditions (OR'ed together). 
+CD : 16   : Conditional branch. As above, but with 6 conditions (OR'ed together). 
+CE : 18   : Conditional branch. As above, but with 7 conditions (OR'ed together). 
+CF : 20   : Conditional branch. As above, but with 8 conditions (OR'ed together). 
+D0 : 2    : Set event bit $7E1E80 + A/8 (1st set)
+D1 : 2    : Clear event bit $7E1E80 + A/8 (1st set)
+D2 : 2    : Set event bit $7E1EA0 + A/8 (2nd set)
+D3 : 2    : Clear event bit $7E1EA0 + A/8 (2nd set)
+D4 : 2    : Set event bit $7E1EC0 + A/8 (3rd set)
+D5 : 2    : Clear event bit $7E1EC0 + A/8 (3nd set)
+D6 : 2    : Set event bit $7E1EE0 + A/8 (4th set)
+D7 : 2    : Clear event bit $7E1EE0 + A/8 (4th set)
+D8 : 2    : Set event bit $7E1F00 + A/8 (5th set)
+D9 : 2    : Clear event bit $7E1F00 + A/8 (5th set)
+DA : 2    : Set event bit $7E1F20 + A/8 (6th set)
+DB : 2    : Clear event bit $7E1F20 + A/8 (6th set)
+DC : 2    : Set event bit $7E1F40 + A/8 (7th set)
+DD : 2    : Clear event bit $7E1F40 + A/8 (7th set)
+DE : 1    : Load Case Word with characers in the active party
+DF : 1    : Load Case Word with character that have been created (description is dubious, needs investigation)
+E0 : 1    : Load CaseWord with the characters encountered so far (description is dubious, needs investigation)
+E1 : 1    : Load CaseWord with the characters who are collected (excludes Veldt-jumped Gau)
+E2 : 1    : Set bit in Case Word corresponding to the character in the lead of the active party
+E3 : 1    : Load CaseWord with available characters (description is dubious, needs investigation)
+E4 : 1    : Set CaseWord bit corresponding to the number of the currently active party
+E5 : 1    : Unknown command
+E6 : 1    : Unknown command
+E7 : 2    : Show portrait for character A
+E8 : 4    : Set word ($1FC2 + 2*A) to B, where A is the first byte and B is the word composed of the last 2 bytes.
+E9 : 4    : Increment word ($1FC2 + 2*A) by B, where A is the first byte and B is the word composed of the last 2 bytes.
+EA : 4    : Decrement word ($1FC2 + 2*A) by B, where A is the first byte and B is the word composed of the last 2 bytes.
+EB : 4    : Compare word ($1FC2 + 2*A) to B, where A is the first byte and B is the word composed of the last 2 bytes.
+          : This will set event bit $1A0 for equal to, $1A1 for greater than, $1A2 for less than.
+EC : 1    : Unknown command
+ED : 3    : Nonexistant. Unused in standard game. 
+EE : 1    : Unknown command
+EF : 3    : Play song A with volume B. Song is actually A AND $7F. Bit 0x80 is unknown.
+F0 : 2    : Play song A, full volume.
+F1 : 3    : Fade in song A, with transition time B.
+F2 : 2    : Fade out current song with transition time A.
+F3 : 2    : Fade in previously faded out song with transition time A.
+F4 : 2    : Play sound effect A.
+F5 : 4    : Play sound effect A with transistion time B and speaker balance C ($80 is centered, values increase left to right).
+F6 : 4    : Song tweaking, with various subcommands on first parameter.
+F7 : 1    : End most recent loop of currently playing song.
+F8 : 1    : Unknown command.
+F9 : 2    : Pause execution until music passes through point A. (Needs investigation, I'm not sure how that actually works).
+FA : 1    : Stop temporarily played song.
+FB : 1    : Apply a special effect (echo?) to the currently playing sound effect.
+FC : 1    : Unknown/probably unused command.
+FD : 1    : Unknown/probably unused command.
+FE : 1    : Return
+FF : 1    : Return all?
