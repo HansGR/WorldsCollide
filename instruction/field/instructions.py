@@ -58,7 +58,7 @@ def RecruitAndSelectParty(character):
     from instruction.field.custom import RecruitCharacter
     from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY
     import args as _args
-    if _args.args.ruin:
+    if _args.ruination_mode is not None:
         from instruction.field.custom import SetupBranchPartySelect, FinalizeBranchPartySelect
         return (RecruitCharacter(character),
                 SetupBranchPartySelect(character),
