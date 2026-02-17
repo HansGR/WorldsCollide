@@ -57,6 +57,13 @@ class RemoveCharacterFromParties(_Instruction):
 def RecruitAndSelectParty(character):
     from instruction.field.custom import RecruitCharacter
     from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY
+    import args as _args
+    if _args.args.ruin:
+        from instruction.field.custom import SetupBranchPartySelect, FinalizeBranchPartySelect
+        return (RecruitCharacter(character),
+                SetupBranchPartySelect(character),
+                Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                FinalizeBranchPartySelect())
     return RecruitCharacter(character), Call(REFRESH_CHARACTERS_AND_SELECT_PARTY)
 
 class SetParty(_Instruction):

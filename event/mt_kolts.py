@@ -258,12 +258,22 @@ class MtKolts(Event):
         space = Reserve(0xa832b, 0xa832c, "mt kolts pause after vargas battle", field.NOP())
         space = Reserve(0xa8353, 0xa8353, "mt kolts pause before locke approaches sabin", field.NOP())
 
-        src = [
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            field.FadeInScreen(),
-            field.FinishCheck(),
-            field.Return(),
-        ]
+        if self.args.ruin:
+            src = [
+                field.SetupBranchPartySelect(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchPartySelect(),
+                field.FadeInScreen(),
+                field.FinishCheck(),
+                field.Return(),
+            ]
+        else:
+            src = [
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FadeInScreen(),
+                field.FinishCheck(),
+                field.Return(),
+            ]
         space = Write(Bank.CA, src, "mt kolts character receive reward")
         receive_reward = space.start_address
 

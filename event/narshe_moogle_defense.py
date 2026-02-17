@@ -504,9 +504,15 @@ class NarsheMoogleDefense(Event):
             ]
             # If recruited a character, allow party reform
             if self.reward.type == RewardType.CHARACTER:
-                src += [
-                    # Does this work if we have multiple parties?  YES!  Works perfectly.
+                branch_refresh_src = [
+                    field.SetupBranchPartySelect(self.reward.id),
                     field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                    field.FinalizeBranchPartySelect(),
+                    field.Return(),
+                ]
+                branch_refresh = Write(Bank.CA, branch_refresh_src, "moogle defense branch-aware refresh")
+                src += [
+                    field.Call(branch_refresh.start_address),
                     field.UpdatePartyLeader(),
                 ]
         else:

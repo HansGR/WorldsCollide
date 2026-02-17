@@ -193,6 +193,18 @@ class FloatingContinent(Event):
 
         space = Reserve(0xad9b5, 0xad9b7, "floating continent down with the empire dialog", field.NOP())
 
+        if self.args.ruin:
+            branch_refresh_src = [
+                field.SetupBranchPartySelect(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchPartySelect(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CA, branch_refresh_src, "floating continent branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
         space = Reserve(0xad9c0, 0xad9ed, "floating continent add character on ground", field.NOP())
         space.write(
             field.RecruitCharacter(character),
@@ -203,7 +215,7 @@ class FloatingContinent(Event):
             field.DeleteEntity(0x10),
             field.DeleteEntity(0x11),
             field.DeleteEntity(0x12),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(refresh_addr),
 
             # loading the map here instead of just fading in the screen prevents a graphics bug with
             # the save point when the player has already acquired around 8+ characters
