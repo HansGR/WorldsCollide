@@ -615,3 +615,116 @@ class RestoreActivePartyAvailable(_Instruction):
 
         RestoreActivePartyAvailable.__init__ = lambda self: super().__init__(opcode)
         self.__init__()
+
+class RemapPartiesToFreeSlots(_Instruction):
+    """After SelectParties assigns characters to party slots 1..count,
+    remaps those assignments to the actual free slots (not occupied by away parties).
+
+    Only modifies characters with character_available set (non-away characters).
+    When no parties are away, this is a no-op (maps 1->1, 2->2, 3->3).
+
+    Uses direct page scratch $e8-$eb during execution."""
+    def __init__(self):
+        import data.event_bit as event_bit
+        from constants.entities import CHARACTER_COUNT
+
+        character_party_start = 0x1850
+        char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
+        party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+
+        src = [
+            # Step 1: Build free_slots mapping at DP $e8..$ea
+            # free_slots[i] = party mask for the (i+1)th free slot
+            # X tracks the index into the free_slots array
+
+            asm.LDA(party_away_byte, asm.ABS),  # load away byte
+            asm.STA(0xeb, asm.DIR),              # save for later checks
+            asm.LDX(0x0000, asm.IMM16),          # free_slot_index = 0
+
+            # Check party 1 (away bit 5 = mask 0x20)
+            asm.AND(0x20, asm.IMM8),             # test P1 away
+            asm.BNE("SKIP_P1"),
+            asm.LDA(0x01, asm.IMM8),             # party 1 mask
+            asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x01
+            asm.INX(),
+            "SKIP_P1",
+
+            # Check party 2 (away bit 6 = mask 0x40)
+            asm.LDA(0xeb, asm.DIR),              # reload away byte
+            asm.AND(0x40, asm.IMM8),             # test P2 away
+            asm.BNE("SKIP_P2"),
+            asm.LDA(0x02, asm.IMM8),             # party 2 mask
+            asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x02
+            asm.INX(),
+            "SKIP_P2",
+
+            # Check party 3 (away bit 7 = mask 0x80)
+            asm.LDA(0xeb, asm.DIR),              # reload away byte
+            asm.AND(0x80, asm.IMM8),             # test P3 away
+            asm.BNE("SKIP_P3"),
+            asm.LDA(0x04, asm.IMM8),             # party 3 mask
+            asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x04
+            "SKIP_P3",
+
+            # Step 2: Remap characters' party assignments
+            # For each character: if character_available AND party != 0,
+            # remap their party mask using free_slots[]
+            asm.LDX(0x0000, asm.IMM16),          # character index
+
+            "CHAR_LOOP",
+            asm.PHX(),                            # save char index
+            asm.TDC(),                            # clear A (both bytes) for clean $BAED call
+            asm.TXA(),                            # A = char index
+            asm.JSR(0xbaed, asm.ABS),             # X = char mod 8, Y = char // 8
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),  # bit mask
+            asm.AND(char_available_addr, asm.ABS_Y),     # test character_available
+            asm.BEQ("CHAR_NEXT"),                 # not available -> skip (PLX at CHAR_NEXT)
+
+            # Character is available. Restore char index and check party assignment.
+            asm.PLX(),                            # restore char index
+            asm.LDA(character_party_start, asm.ABS_X),  # load party assignment
+            asm.BEQ("CHAR_NEXT_NO_PLX"),          # 0 = unassigned, skip
+
+            # Remap: check which SelectParties slot and replace with free_slots[]
+            asm.CMP(0x01, asm.IMM8),
+            asm.BNE("NOT_SLOT1"),
+            asm.LDA(0xe8, asm.DIR),               # free_slots[0]
+            asm.BRA("STORE_REMAP"),
+
+            "NOT_SLOT1",
+            asm.CMP(0x02, asm.IMM8),
+            asm.BNE("NOT_SLOT2"),
+            asm.LDA(0xe9, asm.DIR),               # free_slots[1]
+            asm.BRA("STORE_REMAP"),
+
+            "NOT_SLOT2",
+            # Must be 0x04 (party 3)
+            asm.LDA(0xea, asm.DIR),               # free_slots[2]
+
+            "STORE_REMAP",
+            asm.STA(character_party_start, asm.ABS_X),  # write remapped party
+
+            "CHAR_NEXT_NO_PLX",
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("CHAR_LOOP"),
+            asm.BRA("DONE"),
+
+            "CHAR_NEXT",
+            asm.PLX(),                            # restore char index
+            asm.INX(),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("CHAR_LOOP"),
+
+            "DONE",
+            asm.LDA(0x01, asm.IMM8),             # command size = 1 (opcode only)
+            asm.JMP(0x9b5c, asm.ABS),            # advance to next event command
+        ]
+        space = Write(Bank.C0, src, "custom remap parties to free slots")
+        address = space.start_address
+
+        opcode = 0x8c
+        _set_opcode_address(opcode, address)
+
+        RemapPartiesToFreeSlots.__init__ = lambda self: super().__init__(opcode)
+        self.__init__()
