@@ -342,7 +342,7 @@ class LeteRiver(Event):
         space = Reserve(0xb0920, 0xb0920, "lete river sabin floats away")
         space.write(character)
 
-        if self.args.ruin:
+        if self.args.ruination_mode is not None:
             branch_refresh_src = [
                 field.SetupBranchPartySelect(character),
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
