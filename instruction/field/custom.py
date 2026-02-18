@@ -687,7 +687,11 @@ class RemapPartiesToFreeSlots(_Instruction):
 
             # Character is available. Restore char index and check party assignment.
             asm.PLX(),                            # restore char index
-            asm.LDA(character_party_start, asm.ABS_X),  # load party assignment
+            asm.LDA(character_party_start, asm.ABS_X),  # load party assignment byte
+            asm.AND(0xf8, asm.IMM8),             # isolate non-party bits (enabled flag, etc.)
+            asm.STA(0xee, asm.DIR),              # save non-party bits for STORE_REMAP
+            asm.LDA(character_party_start, asm.ABS_X),  # reload full byte
+            asm.AND(0x07, asm.IMM8),             # isolate party bits (1, 2, or 3)
             asm.BEQ("CHAR_NEXT_NO_PLX"),          # 0 = unassigned, skip
 
             # Remap: check which SelectParties slot and replace with free_slots[]
@@ -707,6 +711,7 @@ class RemapPartiesToFreeSlots(_Instruction):
             asm.LDA(0xea, asm.DIR),               # free_slots[2]
 
             "STORE_REMAP",
+            asm.ORA(0xee, asm.DIR),               # merge with preserved non-party bits
             asm.STA(character_party_start, asm.ABS_X),  # write remapped party
 
             "CHAR_NEXT_NO_PLX",
@@ -862,9 +867,12 @@ class FinalizeBranchPartySelect(_Instruction):
 
             "REMAP_LOOP",
             asm.LDA(character_party_start, asm.ABS_X),
+            asm.AND(0x07, asm.IMM8),                         # isolate party bits
             asm.CMP(0x01, asm.IMM8),                         # assigned to slot 1 by SelectParties?
             asm.BNE("REMAP_NEXT"),
-            asm.LDA(0xe7, asm.DIR),                          # load saved party mask
+            asm.LDA(character_party_start, asm.ABS_X),       # reload full byte
+            asm.AND(0xf8, asm.IMM8),                         # clear party bits, keep flags
+            asm.ORA(0xe7, asm.DIR),                          # merge saved party index
             asm.STA(character_party_start, asm.ABS_X),       # remap to original slot
 
             "REMAP_NEXT",
