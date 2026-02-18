@@ -860,7 +860,10 @@ class FinalizeBranchPartySelect(_Instruction):
         src = [
             # Check if we were on a branch
             asm.LDA(0xe7, asm.DIR),
-            asm.BEQ("DONE"),                                 # 0 = not on branch → no-op
+            asm.BNE("NOT_DONE"),                                 # non-zero = on branch, continue
+            asm.LDA(0x01, asm.IMM8),                             # command size = 1 (early exit)
+            asm.JMP(0x9b5c, asm.ABS),                            # next command
+            "NOT_DONE",
 
             # Step 1: Remap characters from slot 1 → saved party slot
             asm.LDX(0x0000, asm.IMM16),
@@ -951,7 +954,6 @@ class FinalizeBranchPartySelect(_Instruction):
             # Clear $e7 so future calls are no-ops
             asm.STZ(0xe7, asm.DIR),
 
-            "DONE",
             asm.LDA(0x01, asm.IMM8),                        # command size = 1 (opcode only)
             asm.JMP(0x9b5c, asm.ABS),
         ]
