@@ -99,7 +99,7 @@ spaces = [
     (0x0c1f9f, 0x0c2047), # 8 dragons decrement count, receive crusader
     (0x0c2bf0, 0x0c3296), # kohlingen rachel scenes after phoenix cave
     (0x0c3971, 0x0c3af7), # recruit mog wor
-    (0x0c4ced, 0x0c5029), # mobliz wor esper terra and children scene
+    (0x0c4cf0, 0x0c5029), # mobliz wor esper terra and children scene
     (0x0c6150, 0x0c62a5), # locke/celes albrook inn night scene
     (0x0c6a2e, 0x0c6ce3), # locke/rachel lost memories flashback at rachel's house
     (0x0c6f8c, 0x0c704e), # hire shadow kohlingen inn
