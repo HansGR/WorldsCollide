@@ -299,6 +299,7 @@ class NarsheWOB(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.FreeMovement(),
             field.Return(),
 
             # === 2 PARTIES: select 2 parties, remap to free slots ===
@@ -404,7 +405,7 @@ class NarsheWOB(Event):
         away_event_addr = space.start_address - EVENT_CODE_START
 
         # Door coordinates from exits 393, 394, 395
-        branch_door_coords = [(93, 45), (99, 45), (108, 45)]
+        branch_door_coords = [(93, 45), (99, 45), (108, 45), (108, 53)]
         for x, y in branch_door_coords:
             new_event = MapEvent()
             new_event.x = x
