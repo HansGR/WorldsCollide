@@ -299,6 +299,7 @@ class NarsheWOB(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.FreeMovement(),
             field.Return(),
 
             # === 2 PARTIES: select 2 parties, remap to free slots ===
