@@ -474,7 +474,8 @@ class MarkActivePartyAway(_Instruction):
     Idempotent: if the party is already away, does nothing.
 
     PARTY_1/2/3_AWAY event bits (0x0dd-0x0df) are all in byte 0x1e9b at bits 5,6,7.
-    The party mask at $1A6D (0x01, 0x02, 0x04) shifted left 5 gives those bit positions."""
+    The party index at $1A6D (1, 2, 3) plus 4 gives the bit position (5, 6, 7),
+    which indexes into the power_of_two_table to get the mask (0x20, 0x40, 0x80)."""
     def __init__(self):
         import data.event_word as event_word
         import data.event_bit as event_bit
@@ -487,13 +488,15 @@ class MarkActivePartyAway(_Instruction):
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
 
         src = [
-            # Compute party_away_mask = party_mask << 5
-            asm.LDA(current_party, asm.ABS),             # a = party mask (0x01, 0x02, or 0x04)
-            asm.ASL(),                                   # << 1
-            asm.ASL(),                                   # << 2
-            asm.ASL(),                                   # << 3
-            asm.ASL(),                                   # << 4
-            asm.ASL(),                                   # << 5  (0x20, 0x40, or 0x80)
+            # Compute party_away_mask: convert party index (1,2,3) to bit mask (0x20,0x40,0x80)
+            # $1A6D stores party index (1, 2, 3), not a bitmask. Add 4 to get bit position
+            # (5, 6, 7), then look up the corresponding mask in the power_of_two_table.
+            asm.TDC(),                                   # clear full 16-bit accumulator for clean TAX
+            asm.LDA(current_party, asm.ABS),             # a = party index (1, 2, or 3)
+            asm.CLC(),
+            asm.ADC(0x04, asm.IMM8),                     # a = 5, 6, or 7  (bit position in away byte)
+            asm.TAX(),                                   # x = bit position index
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),  # a = 0x20, 0x40, or 0x80
             asm.STA(0xee, asm.DIR),                      # store party_away_mask in direct page scratch
 
             # Check if already away (idempotent guard)
@@ -509,9 +512,10 @@ class MarkActivePartyAway(_Instruction):
             asm.LDX(0x0000, asm.IMM16),
 
             "LOOP_START",
-            asm.LDA(character_party_start, asm.ABS_X),   # a = character party flags
-            asm.AND(current_party, asm.ABS),              # is character in active party?
-            asm.BEQ("NEXT_CHAR"),                         # skip if not
+            asm.LDA(character_party_start, asm.ABS_X),   # a = character data byte
+            asm.AND(0x07, asm.IMM8),                     # isolate party bits (index 1, 2, or 3)
+            asm.CMP(current_party, asm.ABS),             # is character in active party?
+            asm.BNE("NEXT_CHAR"),                         # skip if not
 
             # Clear character_available bit using same pattern as recruit_character
             asm.PHX(),
@@ -560,13 +564,13 @@ class RestoreActivePartyAvailable(_Instruction):
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
 
         src = [
-            # Compute party_away_mask = party_mask << 5
-            asm.LDA(current_party, asm.ABS),             # a = party mask
-            asm.ASL(),
-            asm.ASL(),
-            asm.ASL(),
-            asm.ASL(),
-            asm.ASL(),                                   # a = 0x20, 0x40, or 0x80
+            # Compute party_away_mask: convert party index (1,2,3) to bit mask (0x20,0x40,0x80)
+            asm.TDC(),                                   # clear full 16-bit accumulator for clean TAX
+            asm.LDA(current_party, asm.ABS),             # a = party index (1, 2, or 3)
+            asm.CLC(),
+            asm.ADC(0x04, asm.IMM8),                     # a = 5, 6, or 7  (bit position in away byte)
+            asm.TAX(),                                   # x = bit position index
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),  # a = 0x20, 0x40, or 0x80
             asm.STA(0xee, asm.DIR),                      # store party_away_mask in direct page scratch
 
             # Check if party is actually away (idempotent guard)
@@ -583,9 +587,10 @@ class RestoreActivePartyAvailable(_Instruction):
             asm.LDX(0x0000, asm.IMM16),
 
             "LOOP_START",
-            asm.LDA(character_party_start, asm.ABS_X),   # a = character party flags
-            asm.AND(current_party, asm.ABS),              # is character in active party?
-            asm.BEQ("NEXT_CHAR"),                         # skip if not
+            asm.LDA(character_party_start, asm.ABS_X),   # a = character data byte
+            asm.AND(0x07, asm.IMM8),                     # isolate party bits (index 1, 2, or 3)
+            asm.CMP(current_party, asm.ABS),             # is character in active party?
+            asm.BNE("NEXT_CHAR"),                         # skip if not
 
             # Set character_available bit using same pattern as recruit_character
             asm.PHX(),
@@ -634,7 +639,7 @@ class RemapPartiesToFreeSlots(_Instruction):
 
         src = [
             # Step 1: Build free_slots mapping at DP $e8..$ea
-            # free_slots[i] = party mask for the (i+1)th free slot
+            # free_slots[i] = party index for the (i+1)th free slot
             # X tracks the index into the free_slots array
 
             asm.LDA(party_away_byte, asm.ABS),  # load away byte
@@ -644,7 +649,7 @@ class RemapPartiesToFreeSlots(_Instruction):
             # Check party 1 (away bit 5 = mask 0x20)
             asm.AND(0x20, asm.IMM8),             # test P1 away
             asm.BNE("SKIP_P1"),
-            asm.LDA(0x01, asm.IMM8),             # party 1 mask
+            asm.LDA(0x01, asm.IMM8),             # party 1 index
             asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x01
             asm.INX(),
             "SKIP_P1",
@@ -653,7 +658,7 @@ class RemapPartiesToFreeSlots(_Instruction):
             asm.LDA(0xeb, asm.DIR),              # reload away byte
             asm.AND(0x40, asm.IMM8),             # test P2 away
             asm.BNE("SKIP_P2"),
-            asm.LDA(0x02, asm.IMM8),             # party 2 mask
+            asm.LDA(0x02, asm.IMM8),             # party 2 index
             asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x02
             asm.INX(),
             "SKIP_P2",
@@ -662,13 +667,13 @@ class RemapPartiesToFreeSlots(_Instruction):
             asm.LDA(0xeb, asm.DIR),              # reload away byte
             asm.AND(0x80, asm.IMM8),             # test P3 away
             asm.BNE("SKIP_P3"),
-            asm.LDA(0x04, asm.IMM8),             # party 3 mask
-            asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x04
+            asm.LDA(0x03, asm.IMM8),             # party 3 index
+            asm.STA(0xe8, asm.DIR_X),            # free_slots[idx] = 0x03
             "SKIP_P3",
 
             # Step 2: Remap characters' party assignments
-            # For each character: if character_available AND party != 0,
-            # remap their party mask using free_slots[]
+            # For each character: if character_available and party != 0,
+            # remap their party index using free_slots[]
             asm.LDX(0x0000, asm.IMM16),          # character index
 
             "CHAR_LOOP",
@@ -698,7 +703,7 @@ class RemapPartiesToFreeSlots(_Instruction):
             asm.BRA("STORE_REMAP"),
 
             "NOT_SLOT2",
-            # Must be 0x04 (party 3)
+            # Must be 0x03 (party 3)
             asm.LDA(0xea, asm.DIR),               # free_slots[2]
 
             "STORE_REMAP",
@@ -753,13 +758,13 @@ class SetupBranchPartySelect(_Instruction):
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
 
         src = [
-            # Check if on branch: party_away_mask = $1A6D << 5, test against $1E9B
-            asm.LDA(current_party, asm.ABS),
-            asm.ASL(),
-            asm.ASL(),
-            asm.ASL(),
-            asm.ASL(),
-            asm.ASL(),                                       # 0x20, 0x40, or 0x80
+            # Check if on branch: convert party index to away bit mask, test against $1E9B
+            asm.TDC(),                                       # clear full 16-bit accumulator for clean TAX
+            asm.LDA(current_party, asm.ABS),                 # a = party index (1, 2, or 3)
+            asm.CLC(),
+            asm.ADC(0x04, asm.IMM8),                         # a = 5, 6, or 7
+            asm.TAX(),                                       # x = bit position index
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),      # a = 0x20, 0x40, or 0x80
             asm.AND(party_away_byte, asm.ABS),               # test if party is away
             asm.BEQ("DONE"),                                 # not on branch → no-op
 
@@ -778,8 +783,9 @@ class SetupBranchPartySelect(_Instruction):
             "LOOP",
             # Check if char is in current party
             asm.LDA(character_party_start, asm.ABS_X),
-            asm.AND(current_party, asm.ABS),
-            asm.BNE("SET_AVAIL_PARTY"),                      # in current party → make available
+            asm.AND(0x07, asm.IMM8),                         # isolate party bits (index 1, 2, or 3)
+            asm.CMP(current_party, asm.ABS),                 # compare with active party index
+            asm.BEQ("SET_AVAIL_PARTY"),                      # in current party → make available
 
             # Check if char is the new recruit (argument at $eb)
             asm.TXA(),                                       # A = char index (low byte)
@@ -866,32 +872,29 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("REMAP_LOOP"),
 
-            # Step 2: Build away_party_mask at $e8
-            # P1 away (bit 5) → mask 0x01, P2 away (bit 6) → mask 0x02, P3 away (bit 7) → mask 0x04
-            asm.LDA(0x00, asm.IMM8),
-            asm.STA(0xe8, asm.DIR),                          # away_party_mask = 0
+            # Step 2: Build away-party lookup table at $e8..$eb
+            # $e8+N = 0 if party N is available, non-zero if away
+            asm.STZ(0xe8, asm.DIR),                          # party 0 (unassigned) - never away
+            asm.STZ(0xe9, asm.DIR),                          # party 1 - default available
+            asm.STZ(0xea, asm.DIR),                          # party 2 - default available
+            asm.STZ(0xeb, asm.DIR),                          # party 3 - default available
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x20, asm.IMM8),                         # P1 away?
             asm.BEQ("NO_P1_AWAY"),
-            asm.LDA(0x01, asm.IMM8),
-            asm.STA(0xe8, asm.DIR),
+            asm.INC(0xe9, asm.DIR),                          # mark party 1 away
             "NO_P1_AWAY",
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x40, asm.IMM8),                         # P2 away?
             asm.BEQ("NO_P2_AWAY"),
-            asm.LDA(0xe8, asm.DIR),
-            asm.ORA(0x02, asm.IMM8),
-            asm.STA(0xe8, asm.DIR),
+            asm.INC(0xea, asm.DIR),                          # mark party 2 away
             "NO_P2_AWAY",
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x80, asm.IMM8),                         # P3 away?
             asm.BEQ("NO_P3_AWAY"),
-            asm.LDA(0xe8, asm.DIR),
-            asm.ORA(0x04, asm.IMM8),
-            asm.STA(0xe8, asm.DIR),
+            asm.INC(0xeb, asm.DIR),                          # mark party 3 away
             "NO_P3_AWAY",
 
             # Step 3: Recompute character_available from scratch
@@ -902,9 +905,16 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.LDX(0x0000, asm.IMM16),
 
             "AVAIL_LOOP",
-            # Check if character is in an away party
+            # Check if character is in an away party using lookup table
             asm.LDA(character_party_start, asm.ABS_X),
-            asm.AND(0xe8, asm.DIR),                          # AND with away_party_mask
+            asm.AND(0x07, asm.IMM8),                         # isolate party index (0-3)
+            asm.PHX(),                                       # save char loop index
+            asm.PHA(),                                       # save party index on stack
+            asm.TDC(),                                       # clear 16-bit C (A=0, B=0)
+            asm.PLA(),                                       # A = party index, B still 0
+            asm.TAX(),                                       # X = clean 16-bit party index
+            asm.LDA(0xe8, asm.DIR_X),                        # 0 = available, non-zero = away
+            asm.PLX(),                                       # restore char loop index
             asm.BNE("AVAIL_NEXT"),                           # in away party → not available
 
             # Not in away party. Check if recruited.
