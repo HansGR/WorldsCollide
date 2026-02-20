@@ -647,7 +647,7 @@ class RemapPartiesToFreeSlots(_Instruction):
             # Check party 1 (away bit 5 = mask 0x20)
             asm.LDA(party_away_byte, asm.ABS),   # load away byte
             asm.AND(0x20, asm.IMM8),             # test P1 away
-            asm.BNE("SKIP_P1"),
+            asm.BNE("SKIP_P1"),                  # if P1 is away, "zero"=false --> BNE triggers
             asm.LDA(0x01, asm.IMM8),             # party 1 index
             asm.STA(0x10, asm.DIR_X),            # free_slots[idx] = 0x01
             asm.INX(),
