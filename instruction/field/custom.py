@@ -633,9 +633,10 @@ class RemapPartiesToFreeSlots(_Instruction):
         import data.event_bit as event_bit
         from constants.entities import CHARACTER_COUNT
 
-        character_party_start = 0x1850
+        character_party_start = 0x0867  # field RAM object data (0x1850, save ram)
         char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+        char_byte_len = 0x0029  # = 41 bytes per character in object data
 
         src = [
             # Step 1: Build free_slots mapping at DP $10..$12
@@ -674,8 +675,10 @@ class RemapPartiesToFreeSlots(_Instruction):
             # For each character: if character_available and party != 0,
             # remap their party index using free_slots[]
             asm.LDX(0x0000, asm.IMM16),          # character index
+            asm.LDY(0x00, asm.DIR),           # offset in object data
 
             "CHAR_LOOP",
+            asm.PHY(),                            # store offset
             asm.PHX(),                            # save char index
             asm.TDC(),                            # clear A (both bytes) for clean $BAED call
             asm.TXA(),                            # A = char index
@@ -686,10 +689,11 @@ class RemapPartiesToFreeSlots(_Instruction):
 
             # Character is available. Restore char index and check party assignment.
             asm.PLX(),                            # restore char index
-            asm.LDA(character_party_start, asm.ABS_X),  # load party assignment byte
+            asm.PLY(),                            # restore offset
+            asm.LDA(character_party_start, asm.ABS_Y),  # load party assignment byte
             asm.AND(0xf8, asm.IMM8),             # isolate non-party bits (enabled flag, etc.)
             asm.STA(0x13, asm.DIR),              # save non-party bits for STORE_REMAP
-            asm.LDA(character_party_start, asm.ABS_X),  # reload full byte
+            asm.LDA(character_party_start, asm.ABS_Y),  # reload full byte
             asm.AND(0x07, asm.IMM8),             # isolate party bits (1, 2, or 3)
             asm.BEQ("CHAR_NEXT_NO_PLX"),          # 0 = unassigned, skip
 
@@ -711,19 +715,27 @@ class RemapPartiesToFreeSlots(_Instruction):
 
             "STORE_REMAP",
             asm.ORA(0x13, asm.DIR),               # merge with preserved non-party bits
-            asm.STA(character_party_start, asm.ABS_X),  # write remapped party
+            asm.STA(character_party_start, asm.ABS_Y),  # write remapped party
 
             "CHAR_NEXT_NO_PLX",
-            asm.INX(),
+            asm.INX(),  # Increment character ID
+            asm.REP(0x21),  # reset carry, set A --> 16bit
+            asm.TYA(),  # Transfer Y --> A
+            asm.ADC(char_byte_len, asm.IMM16),  # Add with carry 0x29 = 41 (move to next character)
+            asm.TAY(),  # Transfer A --> Y
+            asm.TDC(),  # Transfer DP register to A
+            asm.SEP(0x20),  # (8 bit accum./memory)
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("CHAR_LOOP"),
             asm.BRA("DONE"),
 
             "CHAR_NEXT",
             asm.PLX(),                            # restore char index
-            asm.INX(),
-            asm.CPX(CHARACTER_COUNT, asm.IMM16),
-            asm.BNE("CHAR_LOOP"),
+            asm.PLY(),                            # restore object offset
+            asm.BRA("CHAR_NEXT_NO_PLX"),
+            #asm.INX(),
+            #asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            #asm.BNE("CHAR_LOOP"),
 
             "DONE",
             asm.LDA(0x01, asm.IMM8),             # command size = 1 (opcode only)
