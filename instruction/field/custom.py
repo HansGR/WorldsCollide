@@ -497,14 +497,14 @@ class MarkActivePartyAway(_Instruction):
             asm.ADC(0x04, asm.IMM8),                     # a = 5, 6, or 7  (bit position in away byte)
             asm.TAX(),                                   # x = bit position index
             asm.LDA(c0.power_of_two_table, asm.LNG_X),  # a = 0x20, 0x40, or 0x80
-            asm.STA(0xee, asm.DIR),                      # store party_away_mask in direct page scratch
+            asm.STA(0x0e, asm.DIR),                  # store party_away_mask in field RAM scratchpad $0E-$3F
 
             # Check if already away (idempotent guard)
             asm.AND(party_away_byte, asm.ABS),           # test if bit already set
             asm.BNE("DONE"),                             # already away, skip
 
             # Set PARTY_N_AWAY event bit
-            asm.LDA(0xee, asm.DIR),                      # reload party_away_mask
+            asm.LDA(0x0e, asm.DIR),                      # reload party_away_mask
             asm.ORA(party_away_byte, asm.ABS),           # set the bit
             asm.STA(party_away_byte, asm.ABS),
 
@@ -571,14 +571,14 @@ class RestoreActivePartyAvailable(_Instruction):
             asm.ADC(0x04, asm.IMM8),                     # a = 5, 6, or 7  (bit position in away byte)
             asm.TAX(),                                   # x = bit position index
             asm.LDA(c0.power_of_two_table, asm.LNG_X),  # a = 0x20, 0x40, or 0x80
-            asm.STA(0xee, asm.DIR),                      # store party_away_mask in direct page scratch
+            asm.STA(0x0e, asm.DIR),                      # store party_away_mask in field RAM scratchpad $0E-3F
 
             # Check if party is actually away (idempotent guard)
             asm.AND(party_away_byte, asm.ABS),           # test if bit is set
             asm.BEQ("DONE"),                             # not away, skip
 
             # Clear PARTY_N_AWAY event bit
-            asm.LDA(0xee, asm.DIR),                      # reload party_away_mask
+            asm.LDA(0x0e, asm.DIR),                      # reload party_away_mask
             asm.EOR(0xff, asm.IMM8),                     # invert
             asm.AND(party_away_byte, asm.ABS),           # clear the bit
             asm.STA(party_away_byte, asm.ABS),
