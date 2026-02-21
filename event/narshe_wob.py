@@ -299,7 +299,7 @@ class NarsheWOB(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
             # Skip clear y-party switching if parties are away
-            field.BranchIfAny(event_bit.PARTY_1_AWAY, true, event_bit.PARTY_2_AWAY, true, "FREE_AND_RETURN"),
+            field.BranchIfAny([event_bit.PARTY_1_AWAY, True, event_bit.PARTY_2_AWAY, True], "FREE_AND_RETURN"),
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             "FREE_AND_RETURN",
             field.FreeMovement(),
