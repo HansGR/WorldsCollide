@@ -37,13 +37,35 @@ def _delete_all_characters_mod():
     return space.start_address
 DELETE_ALL_CHARACTERS = _delete_all_characters_mod()
 
+def _create_recruited_characters_mod():
+    from constants.entities import CHARACTER_COUNT
+    from data import event_bit
+    src = []
+    for character in range(CHARACTER_COUNT):
+        src += [
+            field.BranchIfEventBitClear(event_bit.character_recruited(character), f"Skip{character}"),
+            field.CreateEntity(character),
+            f"Skip{character}",
+        ]
+    src += [
+        field.Return(),
+    ]
+    space = Write(Bank.CA, src, "field function create all recruited characters")
+    return space.start_address
+CREATE_RECRUITED_CHARACTERS = _create_recruited_characters_mod()
+
 def _refresh_characters_and_select_parties_mod(count):
     # create all available characters, select count parties, delete characters not placed into any party
+    import args as _args
     src = [
         field.Call(DELETE_ALL_CHARACTERS),
         field.Call(CREATE_AVAILABLE_CHARACTERS),
         field.RefreshEntities(),
         field.SelectParties(count),
+    ]
+    if _args.ruination_mode is not None:
+        src += [field.Call(CREATE_RECRUITED_CHARACTERS)]
+    src += [
         field.Call(DELETE_CHARACTERS_NOT_IN_ANY_PARTY),
         field.RefreshEntities(),
         field.Return(),
