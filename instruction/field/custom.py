@@ -790,7 +790,7 @@ class SetupBranchPartySelect(_Instruction):
 
             # Save party index to scratchpad for FinalizeBranchPartySelect
             asm.LDA(current_party, asm.ABS),
-            asm.STA(0x14, asm.DIR),
+            asm.STA(0x3f, asm.DIR),
 
             # Zero character_available and CHARACTERS_AVAILABLE
             asm.STZ(char_available_addr, asm.ABS),           # chars 0-7 available = 0
@@ -859,6 +859,10 @@ class SetupBranchPartySelect(_Instruction):
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("LOOP"),
 
+            # Set "current party" = 0x01 for party selection menu (stored true current party at $3F)
+            asm.LDA(0x01, asm.IMM8),
+            asm.STA(current_party, asm.ABS),
+
             "DONE",
             asm.LDA(0x02, asm.IMM8),                        # command size = 2 (opcode + arg)
             asm.JMP(0x9b5c, asm.ABS),
@@ -909,6 +913,10 @@ class FinalizeBranchPartySelect(_Instruction):
             #asm.JMP(0x9b5c, asm.ABS),                            # next command
             #"NOT_DONE",
 
+            # Step 0: Reload current party from storage
+            asm.LDA(0x3f, asm.DIR),
+            asm.STA(current_party, asm.ABS),
+
             # Step 1: Remap characters from slot 1 → saved party slot
             asm.LDX(0x0000, asm.IMM16),
             asm.LDY(0x00, asm.DIR),                          # Y = byte offset in field RAM (41 bytes/char)
@@ -945,27 +953,27 @@ class FinalizeBranchPartySelect(_Instruction):
 
             # Step 2: Build away-party lookup table at scratchpad $10..$13
             # $10+N = 0 if party N is available, non-zero if away
-            asm.STZ(0x10, asm.DIR),                          # party 0 (unassigned) - never away
-            asm.STZ(0x11, asm.DIR),                          # party 1 - default available
-            asm.STZ(0x12, asm.DIR),                          # party 2 - default available
-            asm.STZ(0x13, asm.DIR),                          # party 3 - default available
+            asm.STZ(0x30, asm.DIR),                          # party 0 (unassigned) - never away
+            asm.STZ(0x31, asm.DIR),                          # party 1 - default available
+            asm.STZ(0x32, asm.DIR),                          # party 2 - default available
+            asm.STZ(0x33, asm.DIR),                          # party 3 - default available
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x20, asm.IMM8),                         # P1 away?
             asm.BEQ("NO_P1_AWAY"),                               # if P1 is not away, "zero"=True --> BEQ triggers
-            asm.INC(0x11, asm.DIR),                          # mark party 1 away
+            asm.INC(0x31, asm.DIR),                          # mark party 1 away
             "NO_P1_AWAY",
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x40, asm.IMM8),                         # P2 away?
             asm.BEQ("NO_P2_AWAY"),
-            asm.INC(0x12, asm.DIR),                          # mark party 2 away
+            asm.INC(0x32, asm.DIR),                          # mark party 2 away
             "NO_P2_AWAY",
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x80, asm.IMM8),                         # P3 away?
             asm.BEQ("NO_P3_AWAY"),
-            asm.INC(0x13, asm.DIR),                          # mark party 3 away
+            asm.INC(0x33, asm.DIR),                          # mark party 3 away
             "NO_P3_AWAY",
 
             # Step 3: Recompute character_available from scratch
@@ -978,6 +986,7 @@ class FinalizeBranchPartySelect(_Instruction):
 
             "AVAIL_LOOP",
             # Check if character is in an away party using lookup table
+            # This seems to be failing.  Can we just directly probe the party away bit?
             asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0x07, asm.IMM8),                         # isolate party index (0-3)
             asm.PHX(),                                       # save char loop index
@@ -985,27 +994,28 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.TDC(),                                       # clear 16-bit C (A=0, B=0)
             asm.PLA(),                                       # A = party index, B still 0
             asm.TAX(),                                       # X = clean 16-bit party index
-            asm.LDA(0x10, asm.DIR_X),                        # 0 = available, non-zero = away
+            asm.LDA(0x30, asm.DIR_X),                        # 0 = available, non-zero = away
+            asm.CMP(0x01, asm.IMM8),
             asm.PLX(),                                       # restore char loop index
-            asm.BNE("AVAIL_NEXT"),                           # in away party → not available
+            asm.BEQ("AVAIL_NEXT"),                           # in away party → not available
 
-            # Not in away party. Check if recruited.
+            # Not in away party. Check if recruited. (??? non-recruited characters are in party 0 and can't be available.)
             asm.PHY(),                                       # save field RAM offset
             asm.PHX(),
-            asm.TDC(),
+            asm.TDC(),                                       # clear 16-bit C (A=0, B=0)
             asm.TXA(),
             asm.JSR(0xbaed, asm.ABS),                        # X = bit pos, Y = byte offset
-            asm.LDA(char_recruited_addr, asm.ABS_Y),
-            asm.AND(c0.power_of_two_table, asm.LNG_X),
-            asm.BEQ("AVAIL_NOT_RECRUITED"),                  # not recruited → skip
+            #asm.LDA(char_recruited_addr, asm.ABS_Y),
+            #asm.AND(c0.power_of_two_table, asm.LNG_X),
+            #asm.BEQ("AVAIL_NOT_RECRUITED"),                  # not recruited → skip
 
-            # Set available
+            # Set available - X,Y should be from bit/byte of JSR BAED.  Did that come back right?
             asm.LDA(char_available_addr, asm.ABS_Y),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),
             asm.STA(char_available_addr, asm.ABS_Y),
             asm.INC(characters_available_address, asm.ABS),
 
-            "AVAIL_NOT_RECRUITED",
+            #"AVAIL_NOT_RECRUITED",
             asm.PLX(),
             asm.PLY(),                                       # restore field RAM offset
 
@@ -1020,8 +1030,8 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("AVAIL_LOOP"),
 
-            # Clear scratchpad $14 so future calls are no-ops
-            asm.STZ(0x14, asm.DIR),
+            # Clear scratchpad $3f so future calls are no-ops
+            asm.STZ(0x3f, asm.ABS),
 
             asm.LDA(0x01, asm.IMM8),                        # command size = 1 (opcode only)
             asm.JMP(0x9b5c, asm.ABS),
