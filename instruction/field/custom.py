@@ -755,7 +755,10 @@ class SetupBranchPartySelect(_Instruction):
 
     When the active party is on a branch (has its AWAY bit set):
     - Saves the current party index to scratchpad $14 for FinalizeBranchPartySelect
-    - Clears field RAM party byte ($0867) for current party members (clean slate for SelectParties)
+    - Moves current party members to party 1 (so SelectParties assigns them correctly)
+    - Parks Party 1 members at party index 4 (a sentinel value unused by the game)
+      to hide them from SelectParties' post-menu routines ($714A/$6F67) which
+      overwrite map index and (x,y) position for characters matching $1A6D
     - Sets character_available only for current party members and the new recruit
     - Recomputes CHARACTERS_AVAILABLE count
 
@@ -805,13 +808,13 @@ class SetupBranchPartySelect(_Instruction):
             asm.CMP(current_party, asm.ABS),                 # compare with active party index
             asm.BEQ("SET_AVAIL_PARTY"),                      # in current party → make available
 
-            # Check if char is in Party 1
+            # Check if char is in Party 1 → park at index 4 to hide from post-menu routines
             asm.CMP(0x01, asm.IMM8),                     # compare with "party 1"
             asm.BNE("NEXT_CHECK"),
             asm.LDA(character_party_start, asm.ABS_Y),      # reload character data
-            asm.AND(0xf8, asm.IMM8),                    # isolate non-party bits (index 4-8)
-            asm.ORA(current_party, asm.ABS),                # set to current party
-            asm.STA(character_party_start, asm.ABS_Y),      # store swapped character data
+            asm.AND(0xf8, asm.IMM8),                    # isolate non-party bits (bits 3-7)
+            asm.ORA(0x04, asm.IMM8),                    # park at party index 4 (sentinel)
+            asm.STA(character_party_start, asm.ABS_Y),      # store parked character data
             asm.BRA("NEXT"),                                # Continue loop
 
             # Check if char is the new recruit (argument at $eb)
@@ -874,7 +877,7 @@ class FinalizeBranchPartySelect(_Instruction):
 
     When called (set by SetupBranchPartySelect):
     - Remaps characters assigned to slot 1 by SelectParties to the current party slot ($1A6D)
-    - Remaps characters in current party slot to slot 1
+    - Remaps characters parked at index 4 (by SetupBranchPartySelect) back to party 1
     - Recomputes character_available: available = recruited AND NOT in_away_party
     - Recomputes CHARACTERS_AVAILABLE count
     - Clears $14
@@ -922,21 +925,14 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.BRA("REMAP_NEXT"),
 
             "CHECK_SWAP",
-            asm.CMP(current_party, asm.ABS),                # compare party bits to "current party"
+            asm.CMP(0x04, asm.IMM8),                   # parked at index 4 by SetupBranchPartySelect?
             asm.BNE("REMAP_NEXT"),
             asm.LDA(character_party_start, asm.ABS_Y),  # reload full byte
             asm.AND(0xf8, asm.IMM8),                # clear party bits, keep flags
-            asm.ORA(0x01, asm.IMM8),                # set party 1
-            asm.STA(character_party_start, asm.ABS_Y),  # remap to original slot
+            asm.ORA(0x01, asm.IMM8),                # restore to party 1
+            asm.STA(character_party_start, asm.ABS_Y),  # write back
 
             "REMAP_NEXT",
-            # If character is the first one we've found in their party, we should make them visible, or party leader.
-            # Also, something is going on with characters "teleporting" with the party swap.  It's not an issue if
-            # recruiting into Party 1, but if recruiting into other parties, whichever parties "swap" for the party
-            # selection end up on the wrong map at the wrong position.
-            #    (x,y) = char_byte + (2, 5) respectively; map_index = char_byte + [39,40]
-            # The map change happens after closing the character select menu.  First position reset, then map update.
-            # Could be an ordering conflict with _refresh_characters_and_select_parties_mod?
             asm.INX(),
             asm.REP(0x21),                                   # A → 16-bit, carry clear
             asm.TYA(),                                       # A = field RAM offset
