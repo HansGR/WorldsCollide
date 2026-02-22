@@ -755,7 +755,7 @@ class SetupBranchPartySelect(_Instruction):
 
     When the active party is on a branch (has its AWAY bit set):
     - Saves the current party index to scratchpad $14 for FinalizeBranchPartySelect
-    - Clears $1850 for current party members (clean slate for SelectParties)
+    - Clears field RAM party byte ($0867) for current party members (clean slate for SelectParties)
     - Sets character_available only for current party members and the new recruit
     - Recomputes CHARACTERS_AVAILABLE count
 
@@ -767,7 +767,8 @@ class SetupBranchPartySelect(_Instruction):
         import data.event_word as event_word
         from constants.entities import CHARACTER_COUNT
 
-        character_party_start = 0x1850
+        character_party_start = 0x0867  # field RAM object data (41 bytes/char)
+        char_byte_len = 0x0029          # 41 bytes per character in object data
         current_party = 0x1a6d
         char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
         characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
@@ -795,10 +796,11 @@ class SetupBranchPartySelect(_Instruction):
 
             # For each char: make available if in current party or is the new recruit
             asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),                          # Y = byte offset in field RAM (41 bytes/char)
 
             "LOOP",
             # Check if char is in current party
-            asm.LDA(character_party_start, asm.ABS_X),
+            asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0x07, asm.IMM8),                         # isolate party bits (index 1, 2, or 3)
             asm.CMP(current_party, asm.ABS),                 # compare with active party index
             asm.BEQ("SET_AVAIL_PARTY"),                      # in current party → make available
@@ -812,11 +814,13 @@ class SetupBranchPartySelect(_Instruction):
             asm.BRA("NEXT"),
 
             "SET_AVAIL_PARTY",
-            # Clear $1850 for party members so SelectParties starts from a clean slate
-            asm.STZ(character_party_start, asm.ABS_X),
+            # Clear field RAM party byte for party members so SelectParties starts from a clean slate
+            asm.LDA(0x00, asm.IMM8),
+            asm.STA(character_party_start, asm.ABS_Y),
 
             "SET_AVAIL",
             # Set character_available bit
+            asm.PHY(),                                       # save field RAM offset
             asm.PHX(),
             asm.TDC(),
             asm.TXA(),                                       # A = char index
@@ -826,9 +830,16 @@ class SetupBranchPartySelect(_Instruction):
             asm.STA(char_available_addr, asm.ABS_Y),
             asm.INC(characters_available_address, asm.ABS),
             asm.PLX(),
+            asm.PLY(),                                       # restore field RAM offset
 
             "NEXT",
             asm.INX(),
+            asm.REP(0x21),                                   # A → 16-bit, carry clear
+            asm.TYA(),                                       # A = field RAM offset
+            asm.ADC(char_byte_len, asm.IMM16),               # advance by 41 bytes
+            asm.TAY(),                                       # Y = next char's field RAM offset
+            asm.TDC(),
+            asm.SEP(0x20),                                   # A → 8-bit
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("LOOP"),
 
@@ -864,7 +875,8 @@ class FinalizeBranchPartySelect(_Instruction):
         import data.event_word as event_word
         from constants.entities import CHARACTER_COUNT
 
-        character_party_start = 0x1850
+        character_party_start = 0x0867  # field RAM object data (41 bytes/char)
+        char_byte_len = 0x0029          # 41 bytes per character in object data
         char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
         char_recruited_addr = event_bit.address(event_bit.character_recruited(0))  # 0x1edc
         characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
@@ -880,19 +892,26 @@ class FinalizeBranchPartySelect(_Instruction):
 
             # Step 1: Remap characters from slot 1 → saved party slot
             asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),                          # Y = byte offset in field RAM (41 bytes/char)
 
             "REMAP_LOOP",
-            asm.LDA(character_party_start, asm.ABS_X),
+            asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0x07, asm.IMM8),                         # isolate party bits
             asm.CMP(0x01, asm.IMM8),                         # assigned to slot 1 by SelectParties?
             asm.BNE("REMAP_NEXT"),
-            asm.LDA(character_party_start, asm.ABS_X),       # reload full byte
+            asm.LDA(character_party_start, asm.ABS_Y),       # reload full byte
             asm.AND(0xf8, asm.IMM8),                         # clear party bits, keep flags
             asm.ORA(0x14, asm.DIR),                          # merge saved party index
-            asm.STA(character_party_start, asm.ABS_X),       # remap to original slot
+            asm.STA(character_party_start, asm.ABS_Y),       # remap to original slot
 
             "REMAP_NEXT",
             asm.INX(),
+            asm.REP(0x21),                                   # A → 16-bit, carry clear
+            asm.TYA(),                                       # A = field RAM offset
+            asm.ADC(char_byte_len, asm.IMM16),               # advance by 41 bytes
+            asm.TAY(),                                       # Y = next char's field RAM offset
+            asm.TDC(),
+            asm.SEP(0x20),                                   # A → 8-bit
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("REMAP_LOOP"),
 
@@ -927,10 +946,11 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.STZ(characters_available_address, asm.ABS),
 
             asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),                          # Y = byte offset in field RAM (41 bytes/char)
 
             "AVAIL_LOOP",
             # Check if character is in an away party using lookup table
-            asm.LDA(character_party_start, asm.ABS_X),
+            asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0x07, asm.IMM8),                         # isolate party index (0-3)
             asm.PHX(),                                       # save char loop index
             asm.PHA(),                                       # save party index on stack
@@ -942,6 +962,7 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.BNE("AVAIL_NEXT"),                           # in away party → not available
 
             # Not in away party. Check if recruited.
+            asm.PHY(),                                       # save field RAM offset
             asm.PHX(),
             asm.TDC(),
             asm.TXA(),
@@ -958,9 +979,16 @@ class FinalizeBranchPartySelect(_Instruction):
 
             "AVAIL_NOT_RECRUITED",
             asm.PLX(),
+            asm.PLY(),                                       # restore field RAM offset
 
             "AVAIL_NEXT",
             asm.INX(),
+            asm.REP(0x21),                                   # A → 16-bit, carry clear
+            asm.TYA(),                                       # A = field RAM offset
+            asm.ADC(char_byte_len, asm.IMM16),               # advance by 41 bytes
+            asm.TAY(),                                       # Y = next char's field RAM offset
+            asm.TDC(),
+            asm.SEP(0x20),                                   # A → 8-bit
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("AVAIL_LOOP"),
 
