@@ -454,6 +454,9 @@ class LoneWolf(Event):
         self.mog_npc_id = tritoch_wor_mog_npc_id
         self.lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_lone_wolf_npc_id)
         self.mog_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_mog_npc_id)
+        self.mog_npc.x = 9   # Patch some data? showed up in the wrong spot & looking weird
+        self.mog_npc.y = 16
+        self.mog_npc.split_sprite = 0
 
         # Copy bridge animation NPC (runs across bridge during cliff scene)
         lonewolf_bridge_npc_id = 0x1a

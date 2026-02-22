@@ -805,7 +805,17 @@ class SetupBranchPartySelect(_Instruction):
             asm.CMP(current_party, asm.ABS),                 # compare with active party index
             asm.BEQ("SET_AVAIL_PARTY"),                      # in current party → make available
 
+            # Check if char is in Party 1
+            asm.CMP(0x01, asm.IMM8),                     # compare with "party 1"
+            asm.BNE("NEXT_CHECK"),
+            asm.LDA(character_party_start, asm.ABS_Y),      # reload character data
+            asm.AND(0xf8, asm.IMM8),                    # isolate non-party bits (index 4-8)
+            asm.ORA(current_party, asm.ABS),                # set to current party
+            asm.STA(character_party_start, asm.ABS_Y),      # store swapped character data
+            asm.BRA("NEXT"),                                # Continue loop
+
             # Check if char is the new recruit (argument at $eb)
+            "NEXT_CHECK",
             asm.TXA(),                                       # A = char index (low byte)
             asm.CMP(0xeb, asm.DIR),                          # compare with character argument
             asm.BEQ("SET_AVAIL"),                            # is new recruit → make available
@@ -814,8 +824,11 @@ class SetupBranchPartySelect(_Instruction):
             asm.BRA("NEXT"),
 
             "SET_AVAIL_PARTY",
-            # Clear field RAM party byte for party members so SelectParties starts from a clean slate
-            asm.LDA(0x00, asm.IMM8),
+            # Move current party to party 1 for Select Parties
+            #asm.LDA(0x00, asm.IMM8),                   # # Clear field RAM party byte for party members so SelectParties starts from a clean slate
+            asm.LDA(character_party_start, asm.ABS_Y),  # reload character data
+            asm.AND(0xf8, asm.IMM8),                # isolate non-party bits (index 4-8)
+            asm.ORA(0x01, asm.IMM8),                # set to "party 1"
             asm.STA(character_party_start, asm.ABS_Y),
 
             "SET_AVAIL",
@@ -859,15 +872,17 @@ class SetupBranchPartySelect(_Instruction):
 class FinalizeBranchPartySelect(_Instruction):
     """Finalizes party selection after branch recruitment in ruination mode.
 
-    When scratchpad $14 is non-zero (set by SetupBranchPartySelect):
-    - Remaps characters assigned to slot 1 by SelectParties to the saved party slot ($14)
+    When called (set by SetupBranchPartySelect):
+    - Remaps characters assigned to slot 1 by SelectParties to the current party slot ($1A6D)
+    - Remaps characters in current party slot to slot 1
     - Recomputes character_available: available = recruited AND NOT in_away_party
     - Recomputes CHARACTERS_AVAILABLE count
     - Clears $14
 
     When $14 is zero (not on branch or Setup wasn't called), this is a no-op.
 
-    Uses scratchpad RAM $10-$14 during execution.
+    Uses scratchpad RAM $10-$14 during execution.  NOTE: scratchpad MUST ONLY be used immediately, it will not persist
+    between function calls!
 
     No arguments."""
     def __init__(self):
@@ -881,14 +896,15 @@ class FinalizeBranchPartySelect(_Instruction):
         char_recruited_addr = event_bit.address(event_bit.character_recruited(0))  # 0x1edc
         characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9b
+        current_party = 0x1a6d
 
         src = [
             # Check if we were on a branch (scratchpad $14 set by SetupBranchPartySelect)
-            asm.LDA(0x14, asm.DIR),
-            asm.BNE("NOT_DONE"),                                 # non-zero = on branch, continue
-            asm.LDA(0x01, asm.IMM8),                             # command size = 1 (early exit)
-            asm.JMP(0x9b5c, asm.ABS),                            # next command
-            "NOT_DONE",
+            #asm.LDA(0x14, asm.DIR),
+            #asm.BNE("NOT_DONE"),                                 # non-zero = on branch, continue
+            #asm.LDA(0x01, asm.IMM8),                             # command size = 1 (early exit)
+            #asm.JMP(0x9b5c, asm.ABS),                            # next command
+            #"NOT_DONE",
 
             # Step 1: Remap characters from slot 1 → saved party slot
             asm.LDX(0x0000, asm.IMM16),
@@ -898,13 +914,29 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0x07, asm.IMM8),                         # isolate party bits
             asm.CMP(0x01, asm.IMM8),                         # assigned to slot 1 by SelectParties?
-            asm.BNE("REMAP_NEXT"),
+            asm.BNE("CHECK_SWAP"),
             asm.LDA(character_party_start, asm.ABS_Y),       # reload full byte
             asm.AND(0xf8, asm.IMM8),                         # clear party bits, keep flags
-            asm.ORA(0x14, asm.DIR),                          # merge saved party index
+            asm.ORA(current_party, asm.ABS),                          # merge saved party index
             asm.STA(character_party_start, asm.ABS_Y),       # remap to original slot
+            asm.BRA("REMAP_NEXT"),
+
+            "CHECK_SWAP",
+            asm.CMP(current_party, asm.ABS),                # compare party bits to "current party"
+            asm.BNE("REMAP_NEXT"),
+            asm.LDA(character_party_start, asm.ABS_Y),  # reload full byte
+            asm.AND(0xf8, asm.IMM8),                # clear party bits, keep flags
+            asm.ORA(0x01, asm.IMM8),                # set party 1
+            asm.STA(character_party_start, asm.ABS_Y),  # remap to original slot
 
             "REMAP_NEXT",
+            # If character is the first one we've found in their party, we should make them visible, or party leader.
+            # Also, something is going on with characters "teleporting" with the party swap.  It's not an issue if
+            # recruiting into Party 1, but if recruiting into other parties, whichever parties "swap" for the party
+            # selection end up on the wrong map at the wrong position.
+            #    (x,y) = char_byte + (2, 5) respectively; map_index = char_byte + [39,40]
+            # The map change happens after closing the character select menu.  First position reset, then map update.
+            # Could be an ordering conflict with _refresh_characters_and_select_parties_mod?
             asm.INX(),
             asm.REP(0x21),                                   # A → 16-bit, carry clear
             asm.TYA(),                                       # A = field RAM offset
@@ -924,7 +956,7 @@ class FinalizeBranchPartySelect(_Instruction):
 
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0x20, asm.IMM8),                         # P1 away?
-            asm.BEQ("NO_P1_AWAY"),
+            asm.BEQ("NO_P1_AWAY"),                               # if P1 is not away, "zero"=True --> BEQ triggers
             asm.INC(0x11, asm.DIR),                          # mark party 1 away
             "NO_P1_AWAY",
 
