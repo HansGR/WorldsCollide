@@ -995,19 +995,23 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.PLA(),                                       # A = party index, B still 0
             asm.TAX(),                                       # X = clean 16-bit party index
             asm.LDA(0x30, asm.DIR_X),                        # 0 = available, non-zero = away
-            asm.CMP(0x01, asm.IMM8),
-            asm.PLX(),                                       # restore char loop index
-            asm.BEQ("AVAIL_NEXT"),                           # in away party → not available
+            #asm.CMP(0x01, asm.IMM8),
+            # Test 260222_2120: knocking out the next line DID make it make all characters available!  So the check is failing.
+            # Perhaps the PLX was removing the zero flag?
+            asm.BNE("AVAIL_NEXT"),                           # in away party → not available
+            # Test 260222_2231: this time it picked everyone except the two people in the active party (Edgar, Celes)
+            # Maybe we do need to check if recruited?  Yes!
 
-            # Not in away party. Check if recruited. (??? non-recruited characters are in party 0 and can't be available.)
-            asm.PHY(),                                       # save field RAM offset
-            asm.PHX(),
+            # Not in away party. Check if recruited.
+            asm.PLX(),                                      # restore char index
+            asm.PHY(),                                       # save field RAM offset Y
+            asm.PHX(),                                      # save char index X
             asm.TDC(),                                       # clear 16-bit C (A=0, B=0)
             asm.TXA(),
             asm.JSR(0xbaed, asm.ABS),                        # X = bit pos, Y = byte offset
-            #asm.LDA(char_recruited_addr, asm.ABS_Y),
-            #asm.AND(c0.power_of_two_table, asm.LNG_X),
-            #asm.BEQ("AVAIL_NOT_RECRUITED"),                  # not recruited → skip
+            asm.LDA(char_recruited_addr, asm.ABS_Y),
+            asm.AND(c0.power_of_two_table, asm.LNG_X),
+            asm.BEQ("AVAIL_NOT_RECRUITED"),                  # not recruited → skip
 
             # Set available - X,Y should be from bit/byte of JSR BAED.  Did that come back right?
             asm.LDA(char_available_addr, asm.ABS_Y),
@@ -1015,11 +1019,13 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.STA(char_available_addr, asm.ABS_Y),
             asm.INC(characters_available_address, asm.ABS),
 
-            #"AVAIL_NOT_RECRUITED",
+            "AVAIL_NOT_RECRUITED",
             asm.PLX(),
             asm.PLY(),                                       # restore field RAM offset
+            asm.PHX(),
 
             "AVAIL_NEXT",
+            asm.PLX(),  # restore char loop index
             asm.INX(),
             asm.REP(0x21),                                   # A → 16-bit, carry clear
             asm.TYA(),                                       # A = field RAM offset
