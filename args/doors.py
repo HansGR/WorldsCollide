@@ -69,8 +69,8 @@ def parse(parser):
                        help="Randomize overworld entrances across worlds")
 
     # Debug options
-    doors.add_argument("-debug_dest", "--debug-route-destination", type=str, default=None,
-                       help="Output the shortest route from world map to specified room (use with -drdc)")
+    doors.add_argument("-debug_dest", "--debug-route-destination", nargs='+', type=str, default=None,
+                       help="Output the shortest route to specified room(s). Supports multiple rooms. (use with -drdc or -ruin)")
 
 def process(args):
     #pass
@@ -136,6 +136,9 @@ def flags(args):
         if args.ruination_mode == "custom":
             flags += " custom"
 
+        if args.debug_route_destination:
+            flags += " -debug_dest " + " ".join(args.debug_route_destination)
+
     elif args.door_randomize_all:
         # -dra supercedes all but -ruin
         flags += " -dra"
@@ -149,7 +152,7 @@ def flags(args):
         flags += " -drdc"
 
         if args.debug_route_destination:
-            flags += " -debug_dest " + str(args.debug_route_destination)
+            flags += " -debug_dest " + " ".join(args.debug_route_destination)
 
     elif args.door_randomize_each:
         # -dre supercedes all but -dra, -drdc

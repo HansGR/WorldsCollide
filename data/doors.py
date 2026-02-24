@@ -816,7 +816,8 @@ class Doors():
 
         # Debug: print shortest route if requested (after all postprocessing)
         if self.args.debug_route_destination:
-            self.debug_print_shortest_route(map, self.args.debug_route_destination)
+            for dest in self.args.debug_route_destination:
+                self.debug_print_shortest_route(map, dest)
 
         # Return map
         self.map = map
