@@ -1,4 +1,4 @@
-Byte Addr, Description, Before recruit, During recruit, After recruit, Rec --> 1xY, … 2xY, … 3xY, Rec --> Menu
+Byte Addr, Description, Before recruit, During recruit, After recruit, Rec P2 --> Y switch P2->P3, … P3->P1, … P1->P2, Rec P2 -> Menu
 7E00AF, DP party XY, 1019, 1019, 1019, 326E, 316A, 316A, 1019
 7E1F66, Field XY scroll, 1411, 1019, 1019, 326E, 316A, 316A, 1019
 7E1FC0, Party XY pos, 1411, 1019, 1019, 326E, 316A, 316A, 1019
@@ -18,3 +18,9 @@ Byte Addr, Description, Before recruit, During recruit, After recruit, Rec --> 1
 7E095D, CELES obj, C2, 41, C2, C2, C2, C2, C2
 7E09D8, SETZER obj, 00, 03, 43, C3, C3, C3, 43
 7E0A01, MOG obj, C3, 40, 52, 52, 52, 52, 52
+
+
+NOTES
+- DP party XY and character obj X,Y bytes update when walking
+- Field XY scroll and Party XY position update on entering doors & menus
+- Character saved XY bytes updates when going thru doors, but update with the location on the previous map.  Also updates on menus.
