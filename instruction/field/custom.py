@@ -898,6 +898,7 @@ class FinalizeBranchPartySelect(_Instruction):
         from constants.entities import CHARACTER_COUNT
 
         character_party_start = 0x0867  # field RAM object data (41 bytes/char)
+        save_ram_party_start = 0x1850   # save RAM party data (1 byte/char, same verbbppp format)
         char_byte_len = 0x0029          # 41 bytes per character in object data
         char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
         char_recruited_addr = event_bit.address(event_bit.character_recruited(0))  # 0x1edc
@@ -930,6 +931,11 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.AND(0xf8, asm.IMM8),                         # clear party bits, keep flags
             asm.ORA(current_party, asm.ABS),                          # merge saved party index
             asm.STA(character_party_start, asm.ABS_Y),       # remap to original slot
+            # Mirror party bits to save RAM ($1850+X)
+            asm.LDA(save_ram_party_start, asm.ABS_X),       # load save RAM byte
+            asm.AND(0xf8, asm.IMM8),                         # clear party bits
+            asm.ORA(current_party, asm.ABS),                 # merge saved party index
+            asm.STA(save_ram_party_start, asm.ABS_X),        # write back to save RAM
             asm.BRA("REMAP_NEXT"),
 
             "CHECK_SWAP",
@@ -939,6 +945,11 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.AND(0xf8, asm.IMM8),                # clear party bits, keep flags
             asm.ORA(0x01, asm.IMM8),                # restore to party 1
             asm.STA(character_party_start, asm.ABS_Y),  # write back
+            # Mirror party bits to save RAM ($1850+X)
+            asm.LDA(save_ram_party_start, asm.ABS_X),  # load save RAM byte
+            asm.AND(0xf8, asm.IMM8),                # clear party bits
+            asm.ORA(0x01, asm.IMM8),                # restore to party 1
+            asm.STA(save_ram_party_start, asm.ABS_X),  # write back to save RAM
 
             "REMAP_NEXT",
             asm.INX(),
@@ -950,6 +961,66 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.SEP(0x20),                                   # A → 8-bit
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("REMAP_LOOP"),
+
+            # Step 1b: Set visible bit on party leader for each party (1-3)
+            # After remapping, other parties may have no visible character (bit 7 of $0867).
+            # For each party, find the enabled character with lowest battle order and set bit 7.
+            # Mirrors vanilla logic at C0/6D91-6DC7.
+            # Uses scratchpad: $10 = target party, $11 = best battle order,
+            #                  $12-$13 = best field RAM offset Y (16-bit)
+            asm.LDA(0x01, asm.IMM8),
+            asm.STA(0x10, asm.DIR),                              # $10 = target party (start at 1)
+
+            "VIS_PARTY_LOOP",
+            asm.LDA(0x20, asm.IMM8),
+            asm.STA(0x11, asm.DIR),                              # $11 = best battle order (init $20 = none)
+            asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),                              # Y = 0 (first object offset)
+
+            "VIS_CHAR_LOOP",
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x40, asm.IMM8),                             # enabled? (bit 6)
+            asm.BEQ("VIS_NEXT_CHAR"),
+
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x07, asm.IMM8),                             # isolate party bits
+            asm.CMP(0x10, asm.DIR),                              # matches target party?
+            asm.BNE("VIS_NEXT_CHAR"),
+
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x18, asm.IMM8),                             # isolate battle order bits
+            asm.CMP(0x11, asm.DIR),                              # < best so far?
+            asm.BCS("VIS_NEXT_CHAR"),                            # not better, skip
+            asm.STA(0x11, asm.DIR),                              # update best battle order
+            asm.STY(0x12, asm.DIR),                              # save winning Y offset (16-bit)
+
+            "VIS_NEXT_CHAR",
+            asm.INX(),
+            asm.REP(0x21),                                       # A → 16-bit, carry clear
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),                   # Y += $29
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),                                       # A → 8-bit
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("VIS_CHAR_LOOP"),
+
+            # Check if a match was found
+            asm.LDA(0x11, asm.DIR),
+            asm.CMP(0x20, asm.IMM8),                             # still $20 = no match?
+            asm.BEQ("VIS_NEXT_PARTY"),
+
+            # Set visible bit on the winning character
+            asm.LDY(0x12, asm.DIR),                              # Y = winning object offset
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.ORA(0x80, asm.IMM8),                             # set visible bit
+            asm.STA(character_party_start, asm.ABS_Y),
+
+            "VIS_NEXT_PARTY",
+            asm.INC(0x10, asm.DIR),                              # next party
+            asm.LDA(0x10, asm.DIR),
+            asm.CMP(0x04, asm.IMM8),                             # done with party 3?
+            asm.BNE("VIS_PARTY_LOOP"),
 
             # Step 2: Build away-party lookup table at scratchpad $10..$13
             # $10+N = 0 if party N is available, non-zero if away
