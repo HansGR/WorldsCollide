@@ -898,6 +898,7 @@ class FinalizeBranchPartySelect(_Instruction):
         from constants.entities import CHARACTER_COUNT
 
         character_party_start = 0x0867  # field RAM object data (41 bytes/char)
+        save_ram_party_start = 0x1850   # save RAM party data (1 byte/char, same verbbppp format)
         char_byte_len = 0x0029          # 41 bytes per character in object data
         char_available_addr = event_bit.address(event_bit.character_available(0))  # 0x1ede
         char_recruited_addr = event_bit.address(event_bit.character_recruited(0))  # 0x1edc
@@ -930,6 +931,11 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.AND(0xf8, asm.IMM8),                         # clear party bits, keep flags
             asm.ORA(current_party, asm.ABS),                          # merge saved party index
             asm.STA(character_party_start, asm.ABS_Y),       # remap to original slot
+            # Mirror party bits to save RAM ($1850+X)
+            asm.LDA(save_ram_party_start, asm.ABS_X),       # load save RAM byte
+            asm.AND(0xf8, asm.IMM8),                         # clear party bits
+            asm.ORA(current_party, asm.ABS),                 # merge saved party index
+            asm.STA(save_ram_party_start, asm.ABS_X),        # write back to save RAM
             asm.BRA("REMAP_NEXT"),
 
             "CHECK_SWAP",
@@ -939,6 +945,11 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.AND(0xf8, asm.IMM8),                # clear party bits, keep flags
             asm.ORA(0x01, asm.IMM8),                # restore to party 1
             asm.STA(character_party_start, asm.ABS_Y),  # write back
+            # Mirror party bits to save RAM ($1850+X)
+            asm.LDA(save_ram_party_start, asm.ABS_X),  # load save RAM byte
+            asm.AND(0xf8, asm.IMM8),                # clear party bits
+            asm.ORA(0x01, asm.IMM8),                # restore to party 1
+            asm.STA(save_ram_party_start, asm.ABS_X),  # write back to save RAM
 
             "REMAP_NEXT",
             asm.INX(),
