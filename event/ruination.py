@@ -4302,14 +4302,23 @@ class ruination_map():
 
         def find_room_on_branches(room_id):
             """Find which branch contains a room, handling compound IDs from merging."""
+            room_str = str(room_id)
             for branch_id, branch in enumerate(self.branches):
+                # Quick check: was this room ever added to this branch?
+                if room_id not in branch.all_rooms_added:
+                    continue
+                # Check if it's still a direct (unmerged) node
+                if room_id in branch.net.nodes:
+                    return branch_id, branch, room_id
+                # Room was merged into a compound node - find it.
+                # Compound IDs are built with '_' separator: f"{Ra.id}_{Rd.id}"
                 for node_id in branch.net.nodes:
-                    if node_id == room_id:
-                        return branch_id, branch, node_id
-                    # Check compound IDs (e.g., 'ruin_hub_0+421+422')
                     if isinstance(node_id, str):
-                        parts = str(node_id).split('+')
-                        if str(room_id) in parts:
+                        node_str = str(node_id)
+                        if (node_str == room_str or
+                                ('_' + room_str + '_') in node_str or
+                                node_str.startswith(room_str + '_') or
+                                node_str.endswith('_' + room_str)):
                             return branch_id, branch, node_id
             return None, None, None
 
