@@ -4280,14 +4280,18 @@ class ruination_map():
     def debug_print_shortest_route(self, destination_rooms):
         """Find and print the shortest route from hub to each destination room in ruination mode.
 
+        The branch networks are collapsed into single hub compounds by the mapping
+        algorithm (loop merging). To find actual paths between rooms, we rebuild
+        fresh networks from the original rooms and the door/trap connections
+        recorded in branch.map, mirroring the approach used in data/doors.py.
+
         Supports room IDs (int or string) and area names from RUIN_ROOM_SETS.
-        For each destination, identifies which branch it's on and prints the
-        shortest path from that branch's hub.
 
         Args:
             destination_rooms: List of target room IDs or area names (strings from argparse)
         """
         import networkx as nx
+        from data.walks import Network
         from data.map_exit_extra import exit_data
         from data.event_exit_info import event_exit_info
 
@@ -4300,56 +4304,64 @@ class ruination_map():
             else:
                 return f"Door {door_id}"
 
+        # Rebuild fresh networks for each branch from original rooms + connections.
+        # This gives us individual room nodes (not collapsed compounds) for pathfinding.
+        rebuilt = {}
+        for branch_id, branch in enumerate(self.branches):
+            walks = Network(list(branch.all_rooms_added))
+
+            # Add edges from two-way door pairs
+            for d1, d2 in branch.map[0]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if r1 and r2:
+                    walks.net.add_edge(r1.id, r2.id)
+                    walks.net.add_edge(r2.id, r1.id)
+
+            # Add edges from one-way pairs
+            for d1, d2 in branch.map[1]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if r1 and r2:
+                    walks.net.add_edge(r1.id, r2.id)
+
+            rebuilt[branch_id] = walks
+
         def find_room_on_branches(room_id):
-            """Find which branch contains a room, handling compound IDs from merging."""
-            room_str = str(room_id)
-            for branch_id, branch in enumerate(self.branches):
-                # Quick check: was this room ever added to this branch?
-                if room_id not in branch.all_rooms_added:
-                    continue
-                # Check if it's still a direct (unmerged) node
-                if room_id in branch.net.nodes:
-                    return branch_id, branch, room_id
-                # Room was merged into a compound node - find it.
-                # Compound IDs are built with '_' separator: f"{Ra.id}_{Rd.id}"
-                for node_id in branch.net.nodes:
-                    if isinstance(node_id, str):
-                        node_str = str(node_id)
-                        if (node_str == room_str or
-                                ('_' + room_str + '_') in node_str or
-                                node_str.startswith(room_str + '_') or
-                                node_str.endswith('_' + room_str)):
-                            return branch_id, branch, node_id
+            """Find which branch contains a room."""
+            for branch_id, walks in rebuilt.items():
+                if room_id in walks.net.nodes:
+                    return branch_id, walks, room_id
             return None, None, None
 
-        def find_hub(branch):
-            """Find the hub node ID for a branch."""
-            for node_id in branch.net.nodes:
+        def find_hub(walks):
+            """Find the hub node ID in a rebuilt network."""
+            for node_id in walks.net.nodes:
                 if 'ruin_hub_' in str(node_id):
                     return node_id
             return None
 
-        def find_connecting_info(branch, room1, room2):
-            """Find the exit IDs connecting two rooms in the branch map."""
+        def find_connecting_info(walks, door_map, room1, room2):
+            """Find the exit IDs connecting two rooms using the door mapping."""
             # Check door pairs (two-way)
-            for d1, d2 in branch.map[0]:
-                r1 = branch.rooms.get_room_from_element(d1)
-                r2 = branch.rooms.get_room_from_element(d2)
+            for d1, d2 in door_map[0]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
                 if not r1 or not r2:
                     continue
                 if r1.id == room1 and r2.id == room2:
-                    has_reverse = branch.net.has_edge(room2, room1)
+                    has_reverse = walks.net.has_edge(room2, room1)
                     arrow = "<-->" if has_reverse else "-->"
                     return f"{d1} ({get_door_name(d1)}) {arrow} {d2} ({get_door_name(d2)})"
                 if r1.id == room2 and r2.id == room1:
-                    has_reverse = branch.net.has_edge(room2, room1)
+                    has_reverse = walks.net.has_edge(room2, room1)
                     arrow = "<-->" if has_reverse else "-->"
                     return f"{d2} ({get_door_name(d2)}) {arrow} {d1} ({get_door_name(d1)})"
 
             # Check trap pairs (one-way)
-            for d1, d2 in branch.map[1]:
-                r1 = branch.rooms.get_room_from_element(d1)
-                r2 = branch.rooms.get_room_from_element(d2)
+            for d1, d2 in door_map[1]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
                 if not r1 or not r2:
                     continue
                 if r1.id == room1 and r2.id == room2:
@@ -4357,17 +4369,17 @@ class ruination_map():
 
             return "(connection not found in map)"
 
-        def print_route(destination_label, branch_id, branch, hub_id, target_node):
+        def print_route(destination_label, branch_id, walks, door_map, hub_id, target_node):
             """Print the route from hub to target node."""
             if target_node == hub_id:
                 print(f"\n{'='*80}")
-                print(f"DEBUG ROUTE: '{destination_label}' is in the hub compound on Branch {branch_id}")
+                print(f"DEBUG ROUTE: '{destination_label}' is in the hub on Branch {branch_id}")
                 print(f"  Hub: {hub_id}")
                 print(f"{'='*80}\n")
                 return
 
             try:
-                path = nx.shortest_path(branch.net, source=hub_id, target=target_node)
+                path = nx.shortest_path(walks.net, source=hub_id, target=target_node)
             except nx.NetworkXNoPath:
                 print(f"\n{'='*80}")
                 print(f"DEBUG ROUTE: No path from hub to '{destination_label}' on Branch {branch_id}")
@@ -4384,7 +4396,7 @@ class ruination_map():
             for i in range(len(path) - 1):
                 current_room = path[i]
                 next_room = path[i + 1]
-                connection = find_connecting_info(branch, current_room, next_room)
+                connection = find_connecting_info(walks, door_map, current_room, next_room)
                 print(f"  {current_room}: {connection}")
 
             print(f"  {path[-1]}: (destination)")
@@ -4403,8 +4415,9 @@ class ruination_map():
                 area_name = dest
                 if area_name in self.AreasUsed:
                     branch_id = self.AreasUsed[area_name]
-                    branch = self.branches[branch_id]
-                    hub_id = find_hub(branch)
+                    walks = rebuilt[branch_id]
+                    door_map = self.branches[branch_id].map
+                    hub_id = find_hub(walks)
 
                     if hub_id is None:
                         print(f"DEBUG ERROR: Hub not found on branch {branch_id}")
@@ -4414,26 +4427,22 @@ class ruination_map():
                     area_rooms = RUIN_ROOM_SETS[area_name]
                     best_path_len = float('inf')
                     best_room_id = None
-                    best_target_node = None
 
                     for room_id in area_rooms:
-                        _, _, target_node = find_room_on_branches(room_id)
-                        if target_node is not None and target_node != hub_id:
+                        if room_id in walks.net.nodes and room_id != hub_id:
                             try:
-                                path = nx.shortest_path(branch.net, source=hub_id, target=target_node)
+                                path = nx.shortest_path(walks.net, source=hub_id, target=room_id)
                                 if len(path) < best_path_len:
                                     best_path_len = len(path)
                                     best_room_id = room_id
-                                    best_target_node = target_node
                             except nx.NetworkXNoPath:
                                 continue
 
-                    if best_target_node is not None:
-                        print_route(f"{area_name} (room {best_room_id})", branch_id, branch, hub_id, best_target_node)
-                    elif any(find_room_on_branches(r)[2] == hub_id for r in area_rooms):
-                        # Area rooms are merged into hub
+                    if best_room_id is not None:
+                        print_route(f"{area_name} (room {best_room_id})", branch_id, walks, door_map, hub_id, best_room_id)
+                    elif any(r == hub_id for r in area_rooms):
                         print(f"\n{'='*80}")
-                        print(f"DEBUG ROUTE: Area '{area_name}' is in the hub compound on Branch {branch_id}")
+                        print(f"DEBUG ROUTE: Area '{area_name}' is in the hub on Branch {branch_id}")
                         print(f"  Hub: {hub_id}")
                         print(f"{'='*80}\n")
                     else:
@@ -4444,18 +4453,19 @@ class ruination_map():
                 continue
 
             # It's a room ID - find it on branches
-            branch_id, branch, target_node = find_room_on_branches(dest)
-            if branch is None:
+            branch_id, walks, target_node = find_room_on_branches(dest)
+            if walks is None:
                 print(f"DEBUG ERROR: Room '{dest}' not found on any branch.")
                 print(f"  Hint: use area names like {list(RUIN_ROOM_SETS.keys())[:5]}... or room IDs from RUIN_ROOM_SETS")
                 continue
 
-            hub_id = find_hub(branch)
+            door_map = self.branches[branch_id].map
+            hub_id = find_hub(walks)
             if hub_id is None:
                 print(f"DEBUG ERROR: Hub not found on branch {branch_id}")
                 continue
 
-            print_route(str(dest), branch_id, branch, hub_id, target_node)
+            print_route(str(dest), branch_id, walks, door_map, hub_id, target_node)
 
 
 def ruination_start_game_mod(dialogs, party):
