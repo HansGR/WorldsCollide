@@ -69,10 +69,11 @@ class DomaWOR(Event):
         self.log_reward(self.reward2)
 
     def sleep_mod(self):
-        if self.args.ruination_mode:
-            NORMAL_SLEEP_ADDR = self._create_ruination_bed_routine()
-        else:
-            NORMAL_SLEEP_ADDR = 0xb8294
+        # Revoking ruination mode modification here.  It doesn't work right and also isn't necessary.
+        #if self.args.ruination_mode:
+        #    NORMAL_SLEEP_ADDR = self._create_ruination_bed_routine()
+        #else:
+        NORMAL_SLEEP_ADDR = 0xb8294
 
         space = Reserve(0xb82b1, 0xb82c6, "doma wor check if event already done, in wor, have cyan and 4 party members", field.NOP())
         space.write(
