@@ -21,8 +21,11 @@ class NarsheMoogleDefense(Event):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def init_event_bits(self, space):
+        if not self.args.ruination_mode:
+            space.write(
+                field.SetEventBit(npc_bit.ARVIS_INTRO),  # show Arvis
+            )
         space.write(
-            field.SetEventBit(npc_bit.ARVIS_INTRO), # show Arvis
             field.ClearEventBit(npc_bit.MARSHAL_NARSHE_WOB), # do not show marshal
         )
 

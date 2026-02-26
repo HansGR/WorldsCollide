@@ -121,7 +121,7 @@ ROOM_REWARD = {
     'LeteRiver3': {"Lete River": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lete River boss
     313: {"Zozo": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Zozo WoB Ramuh reward
     #514: {"Sealed Gate": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Sealed Gate, not used in Ruination
-    229: {"Mobliz WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Mobliz WoR.  Actually '237R' if interiors randomized.
+    'ms-wor-52': {"Mobliz WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Mobliz WoR.  Actually '237R' if interiors randomized.
 
     # LOCKE
     34: {"Narshe WOR": [RewardType.ESPER, RewardType.ITEM]},   # Narshe WOR weapon shop.  Actually '25R' if interiors are randomized.
@@ -4946,7 +4946,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
 
     figaro_src = [
         field.BranchIfEventBitSet(FIGARO_USED_ONCE_BIT, "FIGARO_RETURN"),
-        field.BranchIfEventBitClear(FIGARO_BANON_BIT, "FIGARO_RETURN"),
+        #field.BranchIfEventBitClear(FIGARO_BANON_BIT, "FIGARO_RETURN"),
         field.SetEventBit(FIGARO_USED_ONCE_BIT),
         field.DialogBranch(FIGARO_DIALOG_ID, "FIGARO_YES", "FIGARO_RETURN"),
 

@@ -28,6 +28,7 @@ class FigaroCastleWOR(Event):
                 field.SetEventBit(npc_bit.SIEGFRIED_FIGARO_CAVE_CHEST),
                 field.SetEventBit(npc_bit.THIEVES_FIGARO_CAVE_TURTLE),
                 field.ClearEventBit(npc_bit.GERAD_PRISON_FIGARO_CASTLE),
+                field.ClearEventBit(0x049),     # Disable Sabin animation at Figaro inn?
             )
         elif self.args.character_gating:
             space.write(
