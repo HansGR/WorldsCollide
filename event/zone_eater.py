@@ -35,7 +35,7 @@ class ZoneEater(Event):
             self.engulf_id = 1552  # ID of engulf door
             self.exit_id = 1553  # ID of exit zone eater door
 
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
             self.add_gating_condition()
 
         if self.reward.type == RewardType.CHARACTER:
