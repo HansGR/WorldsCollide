@@ -298,7 +298,7 @@ The ruination hub (Narshe school, map 0x068) allows the player to form up to 3 p
 |---------|---------|
 | `$1850+char` | Party assignment bitmask per character. Bit 0 = party 1, bit 1 = party 2, bit 2 = party 3 |
 | `$1A6D` | Active party mask (0x01, 0x02, or 0x04) |
-| `$1E9B` bits 5-7 | `PARTY_1/2/3_AWAY` event bits (0x0dd-0x0df) |
+| `$1E9C` bits 1-3 | `PARTY_1/2/3_AWAY` event bits (0x0e1-0x0e3) |
 | Event word 2 (`$1FC6`) | `CHARACTERS_AVAILABLE` counter |
 | `$1EDE-$1EDF` | `character_available` bitfield (chars 0-7 in $1EDE, 8-13 in $1EDF) |
 
