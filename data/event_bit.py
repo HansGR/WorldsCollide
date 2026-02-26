@@ -197,9 +197,9 @@ FOUND_ANCIENT_CASTLE = 0x2df
 GOT_ODIN = 0x0c8
 SUPLEXED_TRAIN = 0x2b0 # custom, previously unused but set in nikeah entrance event
 
-PARTY_1_AWAY = 0x0dd # custom, ruination: party 1 is away in a branch
-PARTY_2_AWAY = 0x0de # custom, ruination: party 2 is away in a branch
-PARTY_3_AWAY = 0x0df # custom, ruination: party 3 is away in a branch
+PARTY_1_AWAY = 0x0e1 # custom, ruination: party 1 is away in a branch
+PARTY_2_AWAY = 0x0e2 # custom, ruination: party 2 is away in a branch
+PARTY_3_AWAY = 0x0e3 # custom, ruination: party 3 is away in a branch
 
 DEFEATED_NARSHE_DRAGON = 0x11a # custom
 DEFEATED_MT_ZOZO_DRAGON = 0x11b # custom
