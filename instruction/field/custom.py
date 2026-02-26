@@ -749,7 +749,7 @@ class SetupBranchPartySelect(_Instruction):
     """Prepares the party select screen for branch recruitment in ruination mode.
 
     When the active party is on a branch (has its AWAY bit set):
-    - Saves the current party index to scratchpad $14 for FinalizeBranchPartySelect
+    - Saves the current party index to persistent event RAM for FinalizeBranchPartySelect
     - Moves current party members to party 1 (so SelectParties assigns them correctly)
     - Parks Party 1 members at party index 4 (a sentinel value unused by the game)
       to hide them from SelectParties' post-menu routines ($714A/$6F67) which
@@ -781,9 +781,10 @@ class SetupBranchPartySelect(_Instruction):
             asm.AND(party_away_byte, asm.ABS),               # test if party is away
             asm.BEQ("DONE"),                                 # not on branch → no-op
 
-            # Save party index to scratchpad for FinalizeBranchPartySelect
+            # Save party index to persistent event RAM for FinalizeBranchPartySelect
+            # Uses low byte of SCRATCH event word ($1FFA) which survives battle transitions
             asm.LDA(current_party, asm.ABS),
-            asm.STA(0x3f, asm.DIR),
+            asm.STA(event_word.address(event_word.SCRATCH), asm.ABS),
 
             # Zero character_available and CHARACTERS_AVAILABLE
             asm.STZ(char_available_addr, asm.ABS),           # chars 0-7 available = 0
@@ -877,12 +878,12 @@ class FinalizeBranchPartySelect(_Instruction):
     - Remaps characters parked at index 4 (by SetupBranchPartySelect) back to party 1
     - Recomputes character_available: available = recruited AND NOT in_away_party
     - Recomputes CHARACTERS_AVAILABLE count
-    - Clears $14
+    - Clears the persistent party index storage
 
-    When $14 is zero (not on branch or Setup wasn't called), this is a no-op.
+    Party index is stored in persistent event RAM (SCRATCH event word) by SetupBranchPartySelect,
+    so this opcode can be called across battle boundaries (not limited to immediate use).
 
-    Uses scratchpad RAM $10-$14 during execution.  NOTE: scratchpad MUST ONLY be used immediately, it will not persist
-    between function calls!
+    Uses scratchpad RAM $30-$33 during execution for away-party lookup table.
 
     No arguments."""
     def __init__(self):
@@ -907,8 +908,9 @@ class FinalizeBranchPartySelect(_Instruction):
             #asm.JMP(0x9b5c, asm.ABS),                            # next command
             #"NOT_DONE",
 
-            # Step 0: Reload current party from storage
-            asm.LDA(0x3f, asm.DIR),
+            # Step 0: Reload current party from persistent event RAM (set by SetupBranchPartySelect)
+            # Uses low byte of SCRATCH event word ($1FFA) which survives battle transitions
+            asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
             asm.STA(current_party, asm.ABS),
 
             # Step 1: Remap characters from slot 1 → saved party slot
@@ -1100,8 +1102,8 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("AVAIL_LOOP"),
 
-            # Clear scratchpad $3f so future calls are no-ops
-            asm.STZ(0x3f, asm.ABS),
+            # Clear persistent event RAM so future calls start clean
+            asm.STZ(event_word.address(event_word.SCRATCH), asm.ABS),
 
             asm.LDA(0x01, asm.IMM8),                        # command size = 1 (opcode only)
             asm.JMP(0x9b5c, asm.ABS),
