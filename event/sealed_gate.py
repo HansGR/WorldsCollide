@@ -175,9 +175,10 @@ class SealedGate(Event):
     def exit_shortcut_mod(self):
         # change event bit which triggers shortcut exit since 0x79 is not set above
         space = Reserve(0xb2eb1, 0xb2eb6, "sealed gate exit shortcut event bit condition", field.NOP())
-        space.write(
-            field.ReturnIfEventBitClear(npc_bit.BLOCK_SEALED_GATE),
-        )
+        if not self.args.ruination_mode:
+            space.write(
+                field.ReturnIfEventBitClear(npc_bit.BLOCK_SEALED_GATE),
+            )
 
     def ninja_mod(self):
         src = [
@@ -194,6 +195,7 @@ class SealedGate(Event):
         )
 
     def ruination_mod(self):
+        # (1) New event at Sealed Gate (branch Terminus --> KT)
         map_id = 0x187
 
         # Set Kefka to not be shown at the beginning
@@ -400,7 +402,7 @@ class SealedGate(Event):
             field.Branch(new_event_addr),
         )
 
-        # Add exit tile at sealed gate to KT
+        # (2) Add exit tile at sealed gate to KT
         from event.switchyard import GoToSwitchyard
         kt_enter_id = 2077
 
@@ -482,11 +484,11 @@ class SealedGate(Event):
         new_event.event_address = space.start_address - EVENT_CODE_START
         self.maps.add_event(map_id, new_event)
 
-        # Set Sealed Gate map song to "wind" 0x39
+        # (3) Set Sealed Gate map song to "wind" 0x39
         sealed_gate_properties = self.maps.properties[map_id]
         sealed_gate_properties.song = 0x39
 
-        # Edit entrance event to show sealed gate as "open" if event already happened: CB/39BE
+        # (4) Edit entrance event to show sealed gate as "open" if event already happened: CB/39BE
         patch_addr = [0xb39c3, 0xb39c8]
         src = [
             Read(patch_addr[0], patch_addr[1]),
