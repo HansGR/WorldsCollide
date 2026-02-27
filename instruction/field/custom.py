@@ -623,9 +623,14 @@ class RemapPartiesToFreeSlots(_Instruction):
     Only modifies characters with character_available set (non-away characters).
     When no parties are away, this is a no-op (maps 1->1, 2->2, 3->3).
 
+    In split mode (SCRATCH bit 7 set by SetupBranchPartySelect(0xFF)):
+    after remapping, marks free_slots[0] and free_slots[1] as AWAY so the
+    hub party formation system knows both formed parties are out exploring.
+
     Uses scratchpad RAM $10-$13 during execution."""
     def __init__(self):
         import data.event_bit as event_bit
+        import data.event_word as event_word
         from constants.entities import CHARACTER_COUNT
 
         character_party_start = 0x0867  # field RAM object data (0x1850, save ram)
@@ -733,6 +738,28 @@ class RemapPartiesToFreeSlots(_Instruction):
             #asm.BNE("CHAR_LOOP"),
 
             "DONE",
+            # In split mode, mark both formed parties as AWAY
+            asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),  # load SCRATCH
+            asm.AND(0x80, asm.IMM8),              # check split flag (bit 7)
+            asm.BEQ("NO_MARK_AWAY"),              # not split mode → skip
+
+            # Mark free_slots[0] party as AWAY
+            asm.TDC(),                             # clear A:B for clean 16-bit TAX
+            asm.LDA(0x10, asm.DIR),                # A = free_slots[0] (party index 1-3)
+            asm.TAX(),                             # X = party index (16-bit clean)
+            asm.LDA(party_away_byte, asm.ABS),     # current away byte
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),  # set AWAY bit for this party
+            asm.STA(party_away_byte, asm.ABS),     # write back
+
+            # Mark free_slots[1] party as AWAY
+            asm.TDC(),                             # clear A:B
+            asm.LDA(0x11, asm.DIR),                # A = free_slots[1] (party index 1-3)
+            asm.TAX(),                             # X = party index (16-bit clean)
+            asm.LDA(party_away_byte, asm.ABS),     # current away byte
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),  # set AWAY bit for this party
+            asm.STA(party_away_byte, asm.ABS),     # write back
+
+            "NO_MARK_AWAY",
             asm.LDA(0x01, asm.IMM8),             # command size = 1 (opcode only)
             asm.JMP(0x9b5c, asm.ABS),            # advance to next event command
         ]
