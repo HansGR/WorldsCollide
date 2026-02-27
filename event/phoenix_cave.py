@@ -412,10 +412,6 @@ class PhoenixCave(Event):
         4. If not: FinalizeBranchPartySelect to undo, then free movement
         """
         return [
-            # Setup: restrict character_available to current party members.
-            # 0xFF = split mode: clears current party's AWAY bit, sets SCRATCH bit 7.
-            field.SetupBranchPartySelect(0xff),
-
             # Condition 1: current party has >= 2 characters
             # (CHARACTERS_AVAILABLE now reflects only the current party after Setup)
             field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "NO_SPLIT_UNDO"),
@@ -436,13 +432,16 @@ class PhoenixCave(Event):
 
             # Player declined or conditions not met: undo Setup and proceed with 1 party
             "NO_SPLIT_UNDO",
-            field.FinalizeBranchPartySelect(),
+            #field.FinalizeBranchPartySelect(),
             field.FreeMovement(),
             field.Return(),
 
             # Player chose to split
             "SPLIT_PARTY",
-            field.Call(0xacbaf),  # Recover party HP/MP before party select
+            # Setup: restrict character_available to current party members.
+            # 0xFF = split mode: clears current party's AWAY bit, sets SCRATCH bit 7.
+            field.SetupBranchPartySelect(0xff),
+            #field.Call(0xacbaf),  # Recover party HP/MP before party select
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             field.RemapPartiesToFreeSlots(),
             field.FinalizeBranchPartySelect(),
