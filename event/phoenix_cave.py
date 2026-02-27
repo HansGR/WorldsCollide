@@ -220,19 +220,21 @@ class PhoenixCave(Event):
 
         self.split_party_dialog = 2981     # use same as need_locke_dialog, since it is unused.
         self.dialogs.set_text(self.split_party_dialog, "Split the party to proceed?<line><choice> Yes<line><choice> No<end>")
-        src = [
-            field.LoadMap(0x13e, x=8, y=7, direction=direction.DOWN,
-                              default_music=True, fade_in=False, entrance_event=True),  # Read(0xa041c, 0xa0421)
+
+        pc_map_id = 0x13e  # Phoenix Cave exterior map
+
+        # Common entry code: load map, animate landing
+        src_entry_common = [
+            field.LoadMap(pc_map_id, x=8, y=7, direction=direction.DOWN,
+                              default_music=True, fade_in=False, entrance_event=True),
         ]
-        src += src_addl  # add parent map update, world bit update if necessary.
-        src += [
+        src_entry_common += src_addl  # add parent map update, world bit update if necessary.
+        src_entry_common += [
             field.HoldScreen(),
-            # Read(0xc20aa, 0xc20b0),  # set position & show characters
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.SetPosition(x=8, y=0),
                             ),
             field.ShowEntity(field_entity.PARTY0),
-            #Read(0xc20b3, 0xc20c4),  # restore from fade; drop party in; pause.
             field.FadeInScreen(),
             field.WaitForFade(),
             field.PlaySoundEffect(186),  # falling
@@ -248,54 +250,62 @@ class PhoenixCave(Event):
             field.PlaySoundEffect(181),  # landing
             field.Pause(0.5),  # 30 units (0.5 sec)
             field.FreeScreen(),
-            # Handle branching & dialog
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, self.characters_required(), "NEED_MORE_CHARACTERS"),
-            field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT_PARTY"),
-            "NEED_MORE_CHARACTERS",
-            field.Dialog(self.need_more_characters_dialog),
-            "NO_SPLIT_PARTY",
-            #field.SetEventBit(event_bit.PHOENIX_CAVE_WARP_OPTION),  # Read(0xa0426, 0xa0427)
-            field.Return(),
-            "SPLIT_PARTY",
-            field.Call(0xacbaf),  # Recover party in advance of party switch
-            field.SelectParties(2, clear_party=True),
-            #Read(0xc2090, 0xc209c),   # Set parties on map, make party 2 active
-            field.HoldScreen(),
-            field.SetPartyMap(1, 0x13e),  # Set party 1 on map 0x13e
-            field.SetPartyMap(2, 0x13e),  # Set party 2 on map 0x13e
-            field.SetParty(2),            # Make party 2 the active party
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=6, y=7),
-                            field_entity.AnimateKneeling()
-                            ),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            #Read(0xc20a6, 0xc20a9),   # Make party 1 active
-            field.SetParty(1),  # Make party 2 the active party
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=8, y=7),
-                            field_entity.AnimateKneeling()
-                            ),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            #Read(0xc20b0, 0xc20b4),   # fade up screen
-            field.FadeInScreen(),
-            field.WaitForFade(),
-            field.FreeScreen(),
-            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            field.FreeMovement(),
-            #field.SetEventBit(event_bit.PHOENIX_CAVE_WARP_OPTION),
-            field.Return()
         ]
-        # 121 bytes required, if crossworld
-        # This needs to be available as an entrance_door_patch.
-        #ENTRY_EVENT_CODE_ADDR = 0xc2bf0  # unused block in Rachel animation
-        space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 121, "Phoenix Cave entry code modified")
-        space.write(src)
+
+        if self.args.ruination_mode:
+            src = list(src_entry_common)
+            src += self._ruination_entry_src(pc_map_id)
+        else:
+            src = list(src_entry_common)
+            src += [
+                # Handle branching & dialog
+                field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, self.characters_required(), "NEED_MORE_CHARACTERS"),
+                field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT_PARTY"),
+                "NEED_MORE_CHARACTERS",
+                field.Dialog(self.need_more_characters_dialog),
+                "NO_SPLIT_PARTY",
+                field.Return(),
+                "SPLIT_PARTY",
+                field.Call(0xacbaf),  # Recover party in advance of party switch
+                field.SelectParties(2, clear_party=True),
+                field.HoldScreen(),
+                field.SetPartyMap(1, pc_map_id),
+                field.SetPartyMap(2, pc_map_id),
+                field.SetParty(2),            # Make party 2 the active party
+                field.RefreshEntities(),
+                field.UpdatePartyLeader(),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetPosition(x=6, y=7),
+                                field_entity.AnimateKneeling()
+                                ),
+                field.ShowEntity(field_entity.PARTY0),
+                field.UpdatePartyLeader(),
+                field.SetParty(1),
+                field.RefreshEntities(),
+                field.UpdatePartyLeader(),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetPosition(x=8, y=7),
+                                field_entity.AnimateKneeling()
+                                ),
+                field.ShowEntity(field_entity.PARTY0),
+                field.UpdatePartyLeader(),
+                field.FadeInScreen(),
+                field.WaitForFade(),
+                field.FreeScreen(),
+                field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+                field.FreeMovement(),
+                field.Return()
+            ]
+
+        # Write entry code. Ruination mode is too large for the 122-byte reserve,
+        # so write to Bank.CC and branch from the reserved address.
+        if self.args.ruination_mode:
+            entry_space = Write(Bank.CC, src, "Phoenix Cave ruination entry code")
+            space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 121, "Phoenix Cave entry code modified")
+            space.write(field.Branch(entry_space.start_address))
+        else:
+            space = Reserve(ENTRY_EVENT_CODE_ADDR, ENTRY_EVENT_CODE_ADDR + 121, "Phoenix Cave entry code modified")
+            space.write(src)
 
         # The Switchyard event needs to be a straight LoadMap call.  We will write one on the assumption that it is overwritten correctly.
         #src = [field.Branch(ENTRY_EVENT_CODE_ADDR)]
@@ -317,23 +327,35 @@ class PhoenixCave(Event):
 
         # Redo party starts at 0xc2109, but this is also called by warp out of KT
         # WC rewrites this in airship.return_to_airship().  We follow that data here, but do everything before the LoadMap.
-        # Add check to see if there is only one party, and don't Reform Party if so.
-        src_exit = [
-            field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, "SKIP_PARTY_REFORM"),
-            field.SetParty(1),
-            field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            field.UpdatePartyLeader(),
-            field.ShowEntity(field_entity.PARTY0),
-            field.RefreshEntities(),
-            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            "SKIP_PARTY_REFORM",
-            field.ClearEventBit(0x2a2),   # Party 1 is standing on a switch in Phoenix Cave 1
-            field.ClearEventBit(0x2a6),   # Party 2 is standing on a switch in Phoenix Cave 1
-            field.ClearEventBit(0x2a3),   # Party 1 is standing on a switch in Phoenix Cave 2
-            field.ClearEventBit(0x2a7),   # Party 2 is standing on a switch in Phoenix Cave 2
-            field.RefreshEntities(),
-        ] + GoToSwitchyard(self.exit_id, map='field')
+        if self.args.ruination_mode:
+            # Ruination mode: skip party reform, just clear switch bits and exit.
+            # Parties remain split — recombination handled elsewhere.
+            src_exit = [
+                field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+                field.ClearEventBit(0x2a2),   # Party 1 is standing on a switch in Phoenix Cave 1
+                field.ClearEventBit(0x2a6),   # Party 2 is standing on a switch in Phoenix Cave 1
+                field.ClearEventBit(0x2a3),   # Party 1 is standing on a switch in Phoenix Cave 2
+                field.ClearEventBit(0x2a7),   # Party 2 is standing on a switch in Phoenix Cave 2
+                field.RefreshEntities(),
+            ] + GoToSwitchyard(self.exit_id, map='field')
+        else:
+            # Add check to see if there is only one party, and don't Reform Party if so.
+            src_exit = [
+                field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, "SKIP_PARTY_REFORM"),
+                field.SetParty(1),
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.UpdatePartyLeader(),
+                field.ShowEntity(field_entity.PARTY0),
+                field.RefreshEntities(),
+                field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+                "SKIP_PARTY_REFORM",
+                field.ClearEventBit(0x2a2),   # Party 1 is standing on a switch in Phoenix Cave 1
+                field.ClearEventBit(0x2a6),   # Party 2 is standing on a switch in Phoenix Cave 1
+                field.ClearEventBit(0x2a3),   # Party 1 is standing on a switch in Phoenix Cave 2
+                field.ClearEventBit(0x2a7),   # Party 2 is standing on a switch in Phoenix Cave 2
+                field.RefreshEntities(),
+            ] + GoToSwitchyard(self.exit_id, map='field')
         space = Write(Bank.CC, src_exit, "Exit From Phoenix Cave")
         self.exit_address = space.start_address
 
@@ -378,6 +400,134 @@ class PhoenixCave(Event):
         space = Reserve(0xc1001, 0xc1004, 'Call Phoenix Cave warp mod')
         space.write(field.Call(warp_space.start_address))
         self.warps.add_warp(event_bit.PHOENIX_CAVE_WARP_OPTION, space.start_address)
+
+    def _ruination_entry_src(self, pc_map_id):
+        """Build the ruination-specific portion of the Phoenix Cave entry event.
+        Appended after the common landing animation code.
+
+        Flow:
+        1. SetupBranchPartySelect(0xFF) restricts available to current party only
+        2. Check conditions: CHARACTERS_AVAILABLE >= 2 AND at most 1 party away
+        3. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots
+        4. If not: FinalizeBranchPartySelect to undo, then free movement
+        """
+        return [
+            # Setup: restrict character_available to current party members.
+            # 0xFF = split mode: clears current party's AWAY bit, sets SCRATCH bit 7.
+            field.SetupBranchPartySelect(0xff),
+
+            # Condition 1: current party has >= 2 characters
+            # (CHARACTERS_AVAILABLE now reflects only the current party after Setup)
+            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "NO_SPLIT_UNDO"),
+
+            # Condition 2: at most 1 party away (need 2 free slots for the split).
+            # SetupBranchPartySelect already cleared the current party's AWAY bit,
+            # so these checks are purely about OTHER away parties.
+            field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "P1_OK"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "NO_SPLIT_UNDO"),
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "NO_SPLIT_UNDO"),
+            "P1_OK",
+            field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "P2_OK"),
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "NO_SPLIT_UNDO"),
+            "P2_OK",
+
+            # Both conditions met — ask the player
+            field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT_UNDO"),
+
+            # Player declined or conditions not met: undo Setup and proceed with 1 party
+            "NO_SPLIT_UNDO",
+            field.FinalizeBranchPartySelect(),
+            field.FreeMovement(),
+            field.Return(),
+
+            # Player chose to split
+            "SPLIT_PARTY",
+            field.Call(0xacbaf),  # Recover party HP/MP before party select
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
+            field.RemapPartiesToFreeSlots(),
+            field.FinalizeBranchPartySelect(),
+
+            # Determine which 2 slots are occupied based on AWAY bits.
+            # After split mode cleared the current party's AWAY bit, the only possible
+            # away party is one OTHER party. RemapPartiesToFreeSlots mapped to free slots:
+            #   P1 away → free=[2,3], P2 away → free=[1,3], P3 away or none → free=[1,2]
+            field.HoldScreen(),
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SLOTS_2_3"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SLOTS_1_3"),
+
+            # Party 3 away or no party away → slots 1, 2
+            field.SetPartyMap(1, pc_map_id),
+            field.SetPartyMap(2, pc_map_id),
+            field.SetParty(2),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=6, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.SetParty(1),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=8, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.Branch("SPLIT_FINISH"),
+
+            # Party 1 away → slots 2, 3
+            "SLOTS_2_3",
+            field.SetPartyMap(2, pc_map_id),
+            field.SetPartyMap(3, pc_map_id),
+            field.SetParty(3),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=6, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.SetParty(2),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=8, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.Branch("SPLIT_FINISH"),
+
+            # Party 2 away → slots 1, 3
+            "SLOTS_1_3",
+            field.SetPartyMap(1, pc_map_id),
+            field.SetPartyMap(3, pc_map_id),
+            field.SetParty(3),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=6, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.SetParty(1),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=8, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            # fallthrough
+
+            "SPLIT_FINISH",
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.FreeScreen(),
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.FreeMovement(),
+            field.Return(),
+        ]
 
     @staticmethod
     def entrance_door_patch():

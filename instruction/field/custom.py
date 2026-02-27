@@ -759,7 +759,13 @@ class SetupBranchPartySelect(_Instruction):
 
     When not on a branch, this is a no-op.
 
-    Takes one argument: the character ID of the newly recruited character."""
+    Takes one argument: the character ID of the newly recruited character.
+    Special: when character=0xFF, operates in "split mode" for splitting the current
+    party into two parties (e.g. Phoenix Cave). In split mode:
+    - Skips the AWAY check (works whether or not the party is away)
+    - Clears the current party's AWAY bit (freeing the slot for RemapPartiesToFreeSlots)
+    - Sets bit 7 in SCRATCH to signal FinalizeBranchPartySelect to skip slot-1 remap
+    - The 0xFF recruit argument naturally never matches any character (0-13)"""
     def __init__(self, character):
         import data.event_bit as event_bit
         import data.event_word as event_word
@@ -773,6 +779,11 @@ class SetupBranchPartySelect(_Instruction):
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9c
 
         src = [
+            # Check for split mode (argument = 0xFF)
+            asm.LDA(0xeb, asm.DIR),                          # A = character argument
+            asm.CMP(0xff, asm.IMM8),                         # split mode sentinel?
+            asm.BEQ("SPLIT_MODE"),                           # yes → skip AWAY check, clear AWAY bit
+
             # Check if on branch: convert party index to away bit mask, test against $1E9C
             asm.TDC(),                                       # clear full 16-bit accumulator for clean TAX
             asm.LDA(current_party, asm.ABS),                 # a = party index (1, 2, or 3) = bit position
@@ -780,13 +791,32 @@ class SetupBranchPartySelect(_Instruction):
             asm.LDA(c0.power_of_two_table, asm.LNG_X),      # a = 0x02, 0x04, or 0x08
             asm.AND(party_away_byte, asm.ABS),               # test if party is away
             asm.BEQ("DONE"),                                 # not on branch → no-op
+            asm.BRA("SAVE_PARTY"),                           # away → proceed with normal save
+
+            # Split mode: clear the current party's AWAY bit to free the slot,
+            # then save party index with bit 7 set to signal split mode to Finalize
+            "SPLIT_MODE",
+            asm.TDC(),                                       # clear full 16-bit accumulator for clean TAX
+            asm.LDA(current_party, asm.ABS),                 # a = party index (1, 2, or 3)
+            asm.TAX(),                                       # x = bit position index
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),      # a = away bit mask (0x02, 0x04, or 0x08)
+            asm.EOR(0xff, asm.IMM8),                         # invert mask
+            asm.AND(party_away_byte, asm.ABS),               # clear just this party's AWAY bit
+            asm.STA(party_away_byte, asm.ABS),               # write back
+            # Save party index | 0x80 to SCRATCH (bit 7 = split mode flag)
+            asm.LDA(current_party, asm.ABS),
+            asm.ORA(0x80, asm.IMM8),                         # set split mode flag
+            asm.STA(event_word.address(event_word.SCRATCH), asm.ABS),
+            asm.BRA("ZERO_AVAILABLE"),                       # skip normal save
 
             # Save party index to persistent event RAM for FinalizeBranchPartySelect
             # Uses low byte of SCRATCH event word ($1FFA) which survives battle transitions
+            "SAVE_PARTY",
             asm.LDA(current_party, asm.ABS),
             asm.STA(event_word.address(event_word.SCRATCH), asm.ABS),
 
             # Zero character_available and CHARACTERS_AVAILABLE
+            "ZERO_AVAILABLE",
             asm.STZ(char_available_addr, asm.ABS),           # chars 0-7 available = 0
             asm.STZ(char_available_addr + 1, asm.ABS),       # chars 8-13 available = 0
             asm.STZ(characters_available_address, asm.ABS),  # count = 0
@@ -880,10 +910,14 @@ class FinalizeBranchPartySelect(_Instruction):
     - Recomputes CHARACTERS_AVAILABLE count
     - Clears the persistent party index storage
 
+    When SCRATCH bit 7 is set (split mode, from SetupBranchPartySelect(0xFF)):
+    - Skips the slot-1 → original party remap (RemapPartiesToFreeSlots already handled it)
+    - Still restores sentinel-4 chars to party 1 and recomputes available
+
     Party index is stored in persistent event RAM (SCRATCH event word) by SetupBranchPartySelect,
     so this opcode can be called across battle boundaries (not limited to immediate use).
 
-    Uses scratchpad RAM $30-$33 during execution for away-party lookup table.
+    Uses scratchpad RAM $14 for split mode flag, $30-$33 for away-party lookup table.
 
     No arguments."""
     def __init__(self):
@@ -901,19 +935,18 @@ class FinalizeBranchPartySelect(_Instruction):
         current_party = 0x1a6d
 
         src = [
-            # Check if we were on a branch (scratchpad $14 set by SetupBranchPartySelect)
-            #asm.LDA(0x14, asm.DIR),
-            #asm.BNE("NOT_DONE"),                                 # non-zero = on branch, continue
-            #asm.LDA(0x01, asm.IMM8),                             # command size = 1 (early exit)
-            #asm.JMP(0x9b5c, asm.ABS),                            # next command
-            #"NOT_DONE",
-
             # Step 0: Reload current party from persistent event RAM (set by SetupBranchPartySelect)
             # Uses low byte of SCRATCH event word ($1FFA) which survives battle transitions
+            # Bit 7 may be set to indicate split mode (from SetupBranchPartySelect(0xFF))
             asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
-            asm.STA(current_party, asm.ABS),
+            asm.AND(0x80, asm.IMM8),                         # isolate split mode flag
+            asm.STA(0x14, asm.DIR),                          # $14 = 0x00 (normal) or 0x80 (split)
+            asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
+            asm.AND(0x7f, asm.IMM8),                         # mask off split flag
+            asm.STA(current_party, asm.ABS),                 # store clean party index
 
-            # Step 1: Remap characters from slot 1 → saved party slot
+            # Step 1: Remap characters from slot 1 → saved party slot (skipped in split mode),
+            #         and restore sentinel-4 chars to party 1 (always)
             asm.LDX(0x0000, asm.IMM16),
             asm.LDY(0x00, asm.DIR),                          # Y = byte offset in field RAM (41 bytes/char)
 
@@ -922,6 +955,9 @@ class FinalizeBranchPartySelect(_Instruction):
             asm.AND(0x07, asm.IMM8),                         # isolate party bits
             asm.CMP(0x01, asm.IMM8),                         # assigned to slot 1 by SelectParties?
             asm.BNE("CHECK_SWAP"),
+            # In split mode, RemapPartiesToFreeSlots already handled slot assignment → skip
+            asm.LDA(0x14, asm.DIR),                          # check split mode flag
+            asm.BNE("REMAP_NEXT"),                           # split mode → don't remap slot 1
             asm.LDA(character_party_start, asm.ABS_Y),       # reload full byte
             asm.AND(0xf8, asm.IMM8),                         # clear party bits, keep flags
             asm.ORA(current_party, asm.ABS),                          # merge saved party index
