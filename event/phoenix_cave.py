@@ -435,6 +435,8 @@ class PhoenixCave(Event):
 
             # Player declined or conditions not met: undo Setup and proceed with 1 party
             "NO_SPLIT_UNDO",
+            # NOTE: this does NOT correctly undo the setup!  Testing with Party1, characters in Party1 remain marked
+            # in "characters_available", and # characters available is not decremented.
             field.FinalizeBranchPartySelect(),
             field.FreeMovement(),
             field.Return(),
@@ -450,6 +452,8 @@ class PhoenixCave(Event):
             # After split mode cleared the current party's AWAY bit, the only possible
             # away party is one OTHER party. RemapPartiesToFreeSlots mapped to free slots:
             #   P1 away → free=[2,3], P2 away → free=[1,3], P3 away or none → free=[1,2]
+            # NOTE: This approach does not work if a party is formed but remains in the School!  Need another approach.
+            # We could claim more event_bits:  PARTY_N_FORMED, e.g. This might simplify other tasks too.
             field.HoldScreen(),
             field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SLOTS_2_3"),
             field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SLOTS_1_3"),
