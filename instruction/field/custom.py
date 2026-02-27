@@ -820,7 +820,7 @@ class SetupBranchPartySelect(_Instruction):
             asm.BEQ("DONE_LOCAL"),                                 # not on branch → no-op
             asm.BRA("SAVE_PARTY"),                           # away → proceed with normal save
 
-            "DONE_LOCAL",                                   # Can't branch all the way to the end.
+            "DONE_LOCAL",                                   # Can't branch all the way to the end,it's too far.
             asm.LDA(0x02, asm.IMM8),                        # command size = 2 (opcode + arg)
             asm.JMP(0x9b5c, asm.ABS),
 
