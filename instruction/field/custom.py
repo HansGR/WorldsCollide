@@ -817,8 +817,12 @@ class SetupBranchPartySelect(_Instruction):
             asm.TAX(),                                       # x = bit position index
             asm.LDA(c0.power_of_two_table, asm.LNG_X),      # a = 0x02, 0x04, or 0x08
             asm.AND(party_away_byte, asm.ABS),               # test if party is away
-            asm.BEQ("DONE"),                                 # not on branch → no-op
+            asm.BEQ("DONE_LOCAL"),                                 # not on branch → no-op
             asm.BRA("SAVE_PARTY"),                           # away → proceed with normal save
+
+            "DONE_LOCAL",                                   # Can't branch all the way to the end.
+            asm.LDA(0x02, asm.IMM8),                        # command size = 2 (opcode + arg)
+            asm.JMP(0x9b5c, asm.ABS),
 
             # Split mode: clear the current party's AWAY bit to free the slot,
             # then save party index with bit 7 set to signal split mode to Finalize
