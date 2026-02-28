@@ -1102,7 +1102,8 @@ class FinalizeBranchRecruit(_Instruction):
        Mirror to save RAM.
     3. If party7 exists (has_party2): find first unused party slot from scratchpad.
        Move party 7 → that slot. Write the slot ID to SCRATCH for the caller.
-       Mirror to save RAM.
+       Mirror to save RAM. If the active party is AWAY, set AWAY for the new
+       party too (so both parties from a swap/join are treated the same).
     4. Clear PARTY_N_AWAY for any now-unused party slots.
     5. Recompute character_available = recruited AND NOT in_away_party.
        Recompute CHARACTERS_AVAILABLE count.
@@ -1334,6 +1335,23 @@ class FinalizeBranchRecruit(_Instruction):
             asm.SEP(0x20),
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("P7_LOOP"),
+
+            # Mirror AWAY bit: if active party is AWAY, set AWAY for the new party too
+            asm.TDC(),
+            asm.LDA(0x14, asm.DIR),                          # A = original active party index
+            asm.TAX(),                                       # X = active party index (16-bit clean)
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),      # A = active party AWAY mask
+            asm.AND(party_away_byte, asm.ABS),               # test if active party is AWAY
+            asm.BEQ("STEP4_AFTER_SCRATCH"),                  # not away → skip
+
+            # Active party is AWAY: set AWAY for the new party's slot ($12)
+            asm.TDC(),
+            asm.LDA(0x12, asm.DIR),                          # A = new party slot
+            asm.TAX(),
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),      # set AWAY bit for new party
+            asm.STA(party_away_byte, asm.ABS),
+
             asm.BRA("STEP4_AFTER_SCRATCH"),                  # skip SCRATCH clear
 
             # === Step 4: Clear PARTY_N_AWAY for unused slots ===
