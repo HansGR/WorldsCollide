@@ -278,7 +278,7 @@ class NarsheWOB(Event):
             "1_PARTY",
             field.Call(remove_available_addr),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            field.RemapPartiesToFreeSlots(),
+            field.RemapPartiesToFreeSlots(0),
             # Determine first free slot for SetPartyMap/SetParty
             field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "1P_SLOT1"),
             field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "1P_SLOT2"),
@@ -309,7 +309,7 @@ class NarsheWOB(Event):
             "2_PARTIES",
             field.Call(remove_available_addr),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
-            field.RemapPartiesToFreeSlots(),
+            field.RemapPartiesToFreeSlots(0),
             # Branch based on which party is away for correct slot assignment
             field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "2P_P1_AWAY"),
             field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "2P_P2_AWAY"),

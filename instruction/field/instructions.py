@@ -59,11 +59,11 @@ def RecruitAndSelectParty(character):
     from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY
     import args as _args
     if _args.ruination_mode is not None:
-        from instruction.field.custom import SetupBranchPartySelect, FinalizeBranchPartySelect
+        from instruction.field.custom import SetupBranchRecruit, FinalizeBranchRecruit
         return (RecruitCharacter(character),
-                SetupBranchPartySelect(character),
+                SetupBranchRecruit(character),
                 Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
-                FinalizeBranchPartySelect())
+                FinalizeBranchRecruit())
     return RecruitCharacter(character), Call(REFRESH_CHARACTERS_AND_SELECT_PARTY)
 
 class SetParty(_Instruction):

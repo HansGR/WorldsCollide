@@ -195,9 +195,9 @@ class FloatingContinent(Event):
 
         if self.args.ruination_mode is not None:
             branch_refresh_src = [
-                field.SetupBranchPartySelect(character),
+                field.SetupBranchRecruit(character),
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-                field.FinalizeBranchPartySelect(),
+                field.FinalizeBranchRecruit(),
                 field.Return(),
             ]
             branch_refresh = Write(Bank.CA, branch_refresh_src, "floating continent branch-aware refresh")
