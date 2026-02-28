@@ -260,9 +260,9 @@ class MtKolts(Event):
 
         if self.args.ruination_mode is not None:
             src = [
-                field.SetupBranchPartySelect(character),
+                field.SetupBranchRecruit(character),
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-                field.FinalizeBranchPartySelect(),
+                field.FinalizeBranchRecruit(),
                 field.FadeInScreen(),
                 field.FinishCheck(),
                 field.Return(),

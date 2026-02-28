@@ -508,9 +508,9 @@ class NarsheMoogleDefense(Event):
             # If recruited a character, allow party reform
             if self.reward.type == RewardType.CHARACTER:
                 branch_refresh_src = [
-                    field.SetupBranchPartySelect(self.reward.id),
+                    field.SetupBranchRecruit(self.reward.id),
                     field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-                    field.FinalizeBranchPartySelect(),
+                    field.FinalizeBranchRecruit(),
                     field.Return(),
                 ]
                 branch_refresh = Write(Bank.CA, branch_refresh_src, "moogle defense branch-aware refresh")

@@ -405,22 +405,23 @@ class PhoenixCave(Event):
         Appended after the common landing animation code.
 
         Flow:
-        1. SetupBranchPartySelect(0xFF) restricts available to current party only
-        2. Check conditions: CHARACTERS_AVAILABLE >= 2 AND at most 1 party away
-        3. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots
-        4. If not: FinalizeBranchPartySelect to undo, then free movement
+        1. RestoreActivePartyAvailable clears AWAY bit explicitly
+        2. SetupBranchRecruit(0x0F) restricts available to current party only (no recruit)
+        3. Check conditions: CHARACTERS_AVAILABLE >= 2 AND at most 1 party away
+        4. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots(2)
+        5. If not: FinalizeBranchRecruit to undo, then free movement
         """
         return [
-            # Setup: restrict character_available to current party members.
-            # 0xFF = split mode: clears current party's AWAY bit, sets SCRATCH bit 7.
-            field.SetupBranchPartySelect(0xff),
+            # Setup: clear current party's AWAY bit, then restrict available to current party.
+            field.RestoreActivePartyAvailable(),
+            field.SetupBranchRecruit(0x0f),
 
             # Condition 1: current party has >= 2 characters
             # (CHARACTERS_AVAILABLE now reflects only the current party after Setup)
             field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "NO_SPLIT_UNDO"),
 
             # Condition 2: at most 1 party away (need 2 free slots for the split).
-            # SetupBranchPartySelect already cleared the current party's AWAY bit,
+            # RestoreActivePartyAvailable already cleared the current party's AWAY bit,
             # so these checks are purely about OTHER away parties.
             field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "P1_OK"),
             field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "NO_SPLIT_UNDO"),
@@ -437,7 +438,7 @@ class PhoenixCave(Event):
             "NO_SPLIT_UNDO",
             # NOTE: this does NOT correctly undo the setup!  Testing with Party1, characters in Party1 remain marked
             # in "characters_available", and # characters available is not decremented.
-            field.FinalizeBranchPartySelect(),
+            field.FinalizeBranchRecruit(),
             field.FreeMovement(),
             field.Return(),
 
@@ -445,12 +446,12 @@ class PhoenixCave(Event):
             "SPLIT_PARTY",
             #field.Call(0xacbaf),  # Recover party HP/MP before party select
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
-            field.RemapPartiesToFreeSlots(),
-            field.FinalizeBranchPartySelect(),
+            field.RemapPartiesToFreeSlots(2),
+            field.FinalizeBranchRecruit(),
 
             # Determine which 2 slots are occupied based on AWAY bits.
-            # After split mode cleared the current party's AWAY bit, the only possible
-            # away party is one OTHER party. RemapPartiesToFreeSlots mapped to free slots:
+            # After RestoreActivePartyAvailable cleared the current party's AWAY bit, the only possible
+            # away party is one OTHER party. RemapPartiesToFreeSlots(2) mapped to free slots:
             #   P1 away → free=[2,3], P2 away → free=[1,3], P3 away or none → free=[1,2]
             # NOTE: This approach does not work if a party is formed but remains in the School!  Need another approach.
             # We could claim more event_bits:  PARTY_N_FORMED, e.g. This might simplify other tasks too.
