@@ -811,6 +811,201 @@ class SetupBranchRecruit(_Instruction):
         characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9c
 
+        # Define helper functions
+        park_parties_src = [
+            # For each character:
+            #   - If in active party: move to P1, mark available
+            #   - If in P1: park at P4
+            #   - If in P2: park at P5
+            #   - If in P3: park at P6
+            # (Active party members get moved to P1 before parking check,
+            #  so if active=P1, they become P1 via SET_AVAIL_PARTY, not parked.)
+            asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),  # Y = field RAM offset
+
+            "LOOP",
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x07, asm.IMM8),  # isolate party bits
+            asm.CMP(current_party, asm.ABS),  # in active party?
+            asm.BEQ("SET_AVAIL_PARTY"),  # yes → move to P1, make available
+
+            # Not in active party. Park: P1→4, P2→5, P3→6
+            asm.CMP(0x01, asm.IMM8),
+            asm.BNE("CHECK_P2"),
+            asm.LDA(character_party_start, asm.ABS_Y),  # reload
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x04, asm.IMM8),  # P1 → P4
+            asm.STA(character_party_start, asm.ABS_Y),
+            asm.BRA("NEXT"),
+
+            "CHECK_P2",
+            asm.CMP(0x02, asm.IMM8),
+            asm.BNE("CHECK_P3"),
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x05, asm.IMM8),  # P2 → P5
+            asm.STA(character_party_start, asm.ABS_Y),
+            asm.BRA("NEXT"),
+
+            "CHECK_P3",
+            asm.CMP(0x03, asm.IMM8),
+            asm.BNE("NEXT"),  # party 0 or other → skip
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x06, asm.IMM8),  # P3 → P6
+            asm.STA(character_party_start, asm.ABS_Y),
+            asm.BRA("NEXT"),
+
+            "SET_AVAIL_PARTY",
+            # Move active party member to Party 1
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0xf8, asm.IMM8),  # keep non-party bits
+            asm.ORA(0x01, asm.IMM8),  # set to Party 1
+            asm.STA(character_party_start, asm.ABS_Y),
+
+            # Set character_available bit
+            asm.PHY(),
+            asm.PHX(),
+            asm.TDC(),
+            asm.TXA(),  # A = char index
+            asm.JSR(0xbaed, asm.ABS),  # X = bit pos, Y = byte offset
+            asm.LDA(char_available_addr, asm.ABS_Y),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.INC(characters_available_address, asm.ABS),
+            asm.PLX(),
+            asm.PLY(),
+
+            "NEXT",
+            asm.INX(),
+            asm.REP(0x21),  # A → 16-bit, carry clear
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),  # A → 8-bit
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("LOOP"),
+
+            asm.RTS(),
+        ]
+        space = Write(Bank.C0, park_parties_src, "Park Parties helper function")
+        _park_parties = space.start_address
+
+        recruit_single_char_src = [
+            asm.TDC(),
+            asm.LDA(0x14, asm.DIR),  # A = cccc
+            asm.JSR(0xbaed, asm.ABS),  # X = bit pos, Y = byte offset
+            # Set recruited
+            asm.LDA(char_recruited_addr, asm.ABS_Y),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),
+            asm.STA(char_recruited_addr, asm.ABS_Y),
+            # Set available
+            asm.LDA(char_available_addr, asm.ABS_Y),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.INC(characters_available_address, asm.ABS),
+
+            # Clear party bits in field RAM for cccc (set to party 0).
+            # Loop through characters to find cccc by index, then clear party bits.
+            asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),
+            "RECRUIT_FIND",
+            asm.TXA(),
+            asm.CMP(0x14, asm.DIR),  # X == cccc?
+            asm.BEQ("RECRUIT_CLEAR"),
+            asm.INX(),
+            asm.REP(0x21),
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),
+            asm.BRA("RECRUIT_FIND"),
+            "RECRUIT_CLEAR",
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0xf8, asm.IMM8),  # clear party bits (party 0)
+            asm.STA(character_party_start, asm.ABS_Y),
+
+            asm.RTS(),
+        ]
+        space = Write(Bank.C0, recruit_single_char_src, "Recruit Single Character helper function")
+        _recruit_single_char = space.start_address
+
+        include_char_party_src = [
+            # First, look up cccc's party index from save RAM ($1850+cccc)
+            asm.TDC(),
+            asm.LDA(0x14, asm.DIR),  # A = cccc
+            asm.TAX(),  # X = cccc (16-bit clean from TDC)
+            asm.LDA(save_ram_party_start, asm.ABS_X),  # load save RAM byte for cccc
+            asm.AND(0x07, asm.IMM8),  # isolate party index
+            asm.STA(0x10, asm.DIR),  # $10 = cccc's party index
+
+            # Determine target: if s=1, target=2 (Party 2); else target=0 (unassigned)
+            asm.LDA(0x13, asm.DIR),  # s flag
+            asm.BEQ("TARGET_ZERO"),
+            asm.LDA(0x02, asm.IMM8),  # target = Party 2
+            asm.BRA("SET_TARGET"),
+            "TARGET_ZERO",
+            asm.LDA(0x00, asm.IMM8),  # target = Party 0 (unassigned)
+            "SET_TARGET",
+            asm.STA(0x11, asm.DIR),  # $11 = target party for cccc's members
+
+            # Loop through all characters. For each in cccc's party ($10):
+            #   - Mark available
+            #   - Move to target party ($11)
+            asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),  # Y = field RAM offset
+
+            "PARTY_LOOP",
+            # Characters in cccc's party were parked (P_orig → P_orig+3).
+            # cccc's original party N is now at N+3 (parked in step 1).
+            # So we need to check if parked party index == $10 + 3.
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x07, asm.IMM8),  # isolate current party bits
+            asm.STA(0x15, asm.DIR),  # save current party value
+            asm.LDA(0x10, asm.DIR),  # A = cccc's original party
+            asm.CLC(),
+            asm.ADC(0x03, asm.IMM8),  # A = parked sentinel (orig + 3)
+            asm.CMP(0x15, asm.DIR),  # compare with char's current party
+            asm.BNE("PARTY_NEXT"),  # not in cccc's parked party → skip
+
+            # This character is in cccc's party. Move to target and mark available.
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0xf8, asm.IMM8),  # keep non-party bits
+            asm.ORA(0x11, asm.DIR),  # set to target party
+            asm.STA(character_party_start, asm.ABS_Y),
+
+            # Set character_available bit
+            asm.PHY(),
+            asm.PHX(),
+            asm.TDC(),
+            asm.TXA(),
+            asm.JSR(0xbaed, asm.ABS),
+            asm.LDA(char_available_addr, asm.ABS_Y),
+            asm.ORA(c0.power_of_two_table, asm.LNG_X),
+            asm.STA(char_available_addr, asm.ABS_Y),
+            asm.INC(characters_available_address, asm.ABS),
+            asm.PLX(),
+            asm.PLY(),
+
+            "PARTY_NEXT",
+            asm.INX(),
+            asm.REP(0x21),  # A → 16-bit, carry clear
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("PARTY_LOOP"),
+
+            asm.RTS(),
+        ]
+        space = Write(Bank.C0, include_char_party_src, "Include Character's Party helper function")
+        _include_char_party = space.start_address
+
+
         # Scratchpad usage:
         #   $10 = cccc's party index (looked up in step 3a)
         #   $11 = target party for cccc's members (0 or 2, based on s flag)
@@ -836,79 +1031,7 @@ class SetupBranchRecruit(_Instruction):
             asm.STZ(characters_available_address, asm.ABS),  # count = 0
 
             # === Step 1 & 2: Park parties and move active party to P1 ===
-            # For each character:
-            #   - If in active party: move to P1, mark available
-            #   - If in P1: park at P4
-            #   - If in P2: park at P5
-            #   - If in P3: park at P6
-            # (Active party members get moved to P1 before parking check,
-            #  so if active=P1, they become P1 via SET_AVAIL_PARTY, not parked.)
-            asm.LDX(0x0000, asm.IMM16),
-            asm.LDY(0x00, asm.DIR),                          # Y = field RAM offset
-
-            "LOOP",
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0x07, asm.IMM8),                         # isolate party bits
-            asm.CMP(current_party, asm.ABS),                 # in active party?
-            asm.BEQ("SET_AVAIL_PARTY"),                      # yes → move to P1, make available
-
-            # Not in active party. Park: P1→4, P2→5, P3→6
-            asm.CMP(0x01, asm.IMM8),
-            asm.BNE("CHECK_P2"),
-            asm.LDA(character_party_start, asm.ABS_Y),       # reload
-            asm.AND(0xf8, asm.IMM8),
-            asm.ORA(0x04, asm.IMM8),                         # P1 → P4
-            asm.STA(character_party_start, asm.ABS_Y),
-            asm.BRA("NEXT"),
-
-            "CHECK_P2",
-            asm.CMP(0x02, asm.IMM8),
-            asm.BNE("CHECK_P3"),
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0xf8, asm.IMM8),
-            asm.ORA(0x05, asm.IMM8),                         # P2 → P5
-            asm.STA(character_party_start, asm.ABS_Y),
-            asm.BRA("NEXT"),
-
-            "CHECK_P3",
-            asm.CMP(0x03, asm.IMM8),
-            asm.BNE("NEXT"),                                 # party 0 or other → skip
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0xf8, asm.IMM8),
-            asm.ORA(0x06, asm.IMM8),                         # P3 → P6
-            asm.STA(character_party_start, asm.ABS_Y),
-            asm.BRA("NEXT"),
-
-            "SET_AVAIL_PARTY",
-            # Move active party member to Party 1
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0xf8, asm.IMM8),                         # keep non-party bits
-            asm.ORA(0x01, asm.IMM8),                         # set to Party 1
-            asm.STA(character_party_start, asm.ABS_Y),
-
-            # Set character_available bit
-            asm.PHY(),
-            asm.PHX(),
-            asm.TDC(),
-            asm.TXA(),                                       # A = char index
-            asm.JSR(0xbaed, asm.ABS),                        # X = bit pos, Y = byte offset
-            asm.LDA(char_available_addr, asm.ABS_Y),
-            asm.ORA(c0.power_of_two_table, asm.LNG_X),
-            asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
-            asm.PLX(),
-            asm.PLY(),
-
-            "NEXT",
-            asm.INX(),
-            asm.REP(0x21),                                   # A → 16-bit, carry clear
-            asm.TYA(),
-            asm.ADC(char_byte_len, asm.IMM16),
-            asm.TAY(),
-            asm.TDC(),
-            asm.SEP(0x20),                                   # A → 8-bit
-            asm.CPX(CHARACTER_COUNT, asm.IMM16),
-            asm.BNE("LOOP"),
+            asm.JSR(_park_parties, asm.ABS),
 
             # === Step 3: Handle recruit / party inclusion ===
             asm.LDA(0x14, asm.DIR),                          # A = cccc
@@ -922,109 +1045,12 @@ class SetupBranchRecruit(_Instruction):
             # === Step 3b: p=0, single recruit ===
             # Make cccc recruited, available, and in party 0 (unassigned).
             # Set recruited and available bits
-            asm.TDC(),
-            asm.LDA(0x14, asm.DIR),                          # A = cccc
-            asm.JSR(0xbaed, asm.ABS),                        # X = bit pos, Y = byte offset
-            # Set recruited
-            asm.LDA(char_recruited_addr, asm.ABS_Y),
-            asm.ORA(c0.power_of_two_table, asm.LNG_X),
-            asm.STA(char_recruited_addr, asm.ABS_Y),
-            # Set available
-            asm.LDA(char_available_addr, asm.ABS_Y),
-            asm.ORA(c0.power_of_two_table, asm.LNG_X),
-            asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
-
-            # Clear party bits in field RAM for cccc (set to party 0).
-            # Loop through characters to find cccc by index, then clear party bits.
-            asm.LDX(0x0000, asm.IMM16),
-            asm.LDY(0x00, asm.DIR),
-            "RECRUIT_FIND",
-            asm.TXA(),
-            asm.CMP(0x14, asm.DIR),                          # X == cccc?
-            asm.BEQ("RECRUIT_CLEAR"),
-            asm.INX(),
-            asm.REP(0x21),
-            asm.TYA(),
-            asm.ADC(char_byte_len, asm.IMM16),
-            asm.TAY(),
-            asm.TDC(),
-            asm.SEP(0x20),
-            asm.BRA("RECRUIT_FIND"),
-            "RECRUIT_CLEAR",
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0xf8, asm.IMM8),                         # clear party bits (party 0)
-            asm.STA(character_party_start, asm.ABS_Y),
+            asm.JSR(_recruit_single_char, asm.ABS),
             asm.BRA("STEP4"),
 
             # === Step 3a: p=1, include cccc's party ===
             "INCLUDE_PARTY",
-            # First, look up cccc's party index from save RAM ($1850+cccc)
-            asm.TDC(),
-            asm.LDA(0x14, asm.DIR),                          # A = cccc
-            asm.TAX(),                                       # X = cccc (16-bit clean from TDC)
-            asm.LDA(save_ram_party_start, asm.ABS_X),        # load save RAM byte for cccc
-            asm.AND(0x07, asm.IMM8),                         # isolate party index
-            asm.STA(0x10, asm.DIR),                          # $10 = cccc's party index
-
-            # Determine target: if s=1, target=2 (Party 2); else target=0 (unassigned)
-            asm.LDA(0x13, asm.DIR),                          # s flag
-            asm.BEQ("TARGET_ZERO"),
-            asm.LDA(0x02, asm.IMM8),                         # target = Party 2
-            asm.BRA("SET_TARGET"),
-            "TARGET_ZERO",
-            asm.LDA(0x00, asm.IMM8),                         # target = Party 0 (unassigned)
-            "SET_TARGET",
-            asm.STA(0x11, asm.DIR),                          # $11 = target party for cccc's members
-
-            # Loop through all characters. For each in cccc's party ($10):
-            #   - Mark available
-            #   - Move to target party ($11)
-            asm.LDX(0x0000, asm.IMM16),
-            asm.LDY(0x00, asm.DIR),                          # Y = field RAM offset
-
-            "PARTY_LOOP",
-            # Characters in cccc's party were parked (P_orig → P_orig+3).
-            # cccc's original party N is now at N+3 (parked in step 1).
-            # So we need to check if parked party index == $10 + 3.
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0x07, asm.IMM8),                         # isolate current party bits
-            asm.STA(0x15, asm.DIR),                          # save current party value
-            asm.LDA(0x10, asm.DIR),                          # A = cccc's original party
-            asm.CLC(),
-            asm.ADC(0x03, asm.IMM8),                         # A = parked sentinel (orig + 3)
-            asm.CMP(0x15, asm.DIR),                          # compare with char's current party
-            asm.BNE("PARTY_NEXT"),                           # not in cccc's parked party → skip
-
-            # This character is in cccc's party. Move to target and mark available.
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0xf8, asm.IMM8),                         # keep non-party bits
-            asm.ORA(0x11, asm.DIR),                          # set to target party
-            asm.STA(character_party_start, asm.ABS_Y),
-
-            # Set character_available bit
-            asm.PHY(),
-            asm.PHX(),
-            asm.TDC(),
-            asm.TXA(),
-            asm.JSR(0xbaed, asm.ABS),
-            asm.LDA(char_available_addr, asm.ABS_Y),
-            asm.ORA(c0.power_of_two_table, asm.LNG_X),
-            asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
-            asm.PLX(),
-            asm.PLY(),
-
-            "PARTY_NEXT",
-            asm.INX(),
-            asm.REP(0x21),                                   # A → 16-bit, carry clear
-            asm.TYA(),
-            asm.ADC(char_byte_len, asm.IMM16),
-            asm.TAY(),
-            asm.TDC(),
-            asm.SEP(0x20),
-            asm.CPX(CHARACTER_COUNT, asm.IMM16),
-            asm.BNE("PARTY_LOOP"),
+            asm.JSR(_include_char_party, asm.ABS),
 
             # === Step 4: Store active party in SCRATCH, set current_party = 1 ===
             "STEP4",

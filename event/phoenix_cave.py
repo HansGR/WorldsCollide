@@ -34,6 +34,9 @@ class PhoenixCave(Event):
 
         self.end_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_tile_mod()
+
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -413,8 +416,8 @@ class PhoenixCave(Event):
         """
         return [
             # Setup: clear current party's AWAY bit, then restrict available to current party.
-            field.RestoreActivePartyAvailable(),
-            field.SetupBranchRecruit(0x0f),
+            #field.RestoreActivePartyAvailable(),
+            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
 
             # Condition 1: current party has >= 2 characters
             # (CHARACTERS_AVAILABLE now reflects only the current party after Setup)
@@ -436,8 +439,6 @@ class PhoenixCave(Event):
 
             # Player declined or conditions not met: undo Setup and proceed with 1 party
             "NO_SPLIT_UNDO",
-            # NOTE: this does NOT correctly undo the setup!  Testing with Party1, characters in Party1 remain marked
-            # in "characters_available", and # characters available is not decremented.
             field.FinalizeBranchRecruit(),
             field.FreeMovement(),
             field.Return(),
@@ -446,82 +447,115 @@ class PhoenixCave(Event):
             "SPLIT_PARTY",
             #field.Call(0xacbaf),  # Recover party HP/MP before party select
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
-            field.RemapPartiesToFreeSlots(2),
             field.FinalizeBranchRecruit(),
 
-            # Determine which 2 slots are occupied based on AWAY bits.
-            # After RestoreActivePartyAvailable cleared the current party's AWAY bit, the only possible
-            # away party is one OTHER party. RemapPartiesToFreeSlots(2) mapped to free slots:
-            #   P1 away → free=[2,3], P2 away → free=[1,3], P3 away or none → free=[1,2]
+            # Determine which 2 slots are occupied.
+            # Active party can be placed at position 1; Party named in event_word.SCRATCH can go in position 2.
             # NOTE: This approach does not work if a party is formed but remains in the School!  Need another approach.
             # We could claim more event_bits:  PARTY_N_FORMED, e.g. This might simplify other tasks too.
             field.HoldScreen(),
-            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SLOTS_2_3"),
-            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SLOTS_1_3"),
+
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=8, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+
+            field.BranchIfEventWordEqual(event_word.SCRATCH, 0x01, "SLOT_1"),
+            field.BranchIfEventWordEqual(event_word.SCRATCH, 0x02, "SLOT_2"),
+            field.BranchIfEventWordEqual(event_word.SCRATCH, 0x03, "SLOT_3"),
+            field.Branch("SPLIT_FINISH"),
+
+            "SLOT_1",
+            field.SetPartyMap(1, pc_map_id),
+            field.SetParty(1),
+            field.Branch("SPLIT_PLACEMENT"),
+
+            "SLOT_2",
+            field.SetPartyMap(2, pc_map_id),
+            field.SetParty(2),
+            field.Branch("SPLIT_PLACEMENT"),
+
+            "SLOT_3",
+            field.SetPartyMap(3, pc_map_id),
+            field.SetParty(3),
+            "SPLIT_PLACEMENT",
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=6, y=7),
+                            field_entity.AnimateKneeling()),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+
+            #field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SLOTS_2_3"),
+            #field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SLOTS_1_3"),
 
             # Party 3 away or no party away → slots 1, 2
-            field.SetPartyMap(1, pc_map_id),
-            field.SetPartyMap(2, pc_map_id),
-            field.SetParty(2),
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=6, y=7),
-                            field_entity.AnimateKneeling()),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            field.SetParty(1),
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=8, y=7),
-                            field_entity.AnimateKneeling()),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            field.Branch("SPLIT_FINISH"),
+            #field.SetPartyMap(1, pc_map_id),
+            #field.SetPartyMap(2, pc_map_id),
+            #field.SetParty(2),
+            #field.RefreshEntities(),
+            #field.UpdatePartyLeader(),
+            #field.EntityAct(field_entity.PARTY0, True,
+            #                field_entity.SetPosition(x=6, y=7),
+            #                field_entity.AnimateKneeling()),
+            #field.ShowEntity(field_entity.PARTY0),
+            #field.UpdatePartyLeader(),
+            #field.SetParty(1),
+            #field.RefreshEntities(),
+            #field.UpdatePartyLeader(),
+            #field.EntityAct(field_entity.PARTY0, True,
+            #                field_entity.SetPosition(x=8, y=7),
+            #                field_entity.AnimateKneeling()),
+            #field.ShowEntity(field_entity.PARTY0),
+            #field.UpdatePartyLeader(),
+            #field.Branch("SPLIT_FINISH"),
 
             # Party 1 away → slots 2, 3
-            "SLOTS_2_3",
-            field.SetPartyMap(2, pc_map_id),
-            field.SetPartyMap(3, pc_map_id),
-            field.SetParty(3),
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=6, y=7),
-                            field_entity.AnimateKneeling()),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            field.SetParty(2),
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=8, y=7),
-                            field_entity.AnimateKneeling()),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            field.Branch("SPLIT_FINISH"),
+            #"SLOTS_2_3",
+            #field.SetPartyMap(2, pc_map_id),
+            #field.SetPartyMap(3, pc_map_id),
+            #field.SetParty(3),
+            #field.RefreshEntities(),
+            #field.UpdatePartyLeader(),
+            #field.EntityAct(field_entity.PARTY0, True,
+            #                field_entity.SetPosition(x=6, y=7),
+            #                field_entity.AnimateKneeling()),
+            #field.ShowEntity(field_entity.PARTY0),
+            #field.UpdatePartyLeader(),
+            #field.SetParty(2),
+            #field.RefreshEntities(),
+            #field.UpdatePartyLeader(),
+            #field.EntityAct(field_entity.PARTY0, True,
+            #                field_entity.SetPosition(x=8, y=7),
+            #                field_entity.AnimateKneeling()),
+            #field.ShowEntity(field_entity.PARTY0),
+            #field.UpdatePartyLeader(),
+            #field.Branch("SPLIT_FINISH"),
 
             # Party 2 away → slots 1, 3
-            "SLOTS_1_3",
-            field.SetPartyMap(1, pc_map_id),
-            field.SetPartyMap(3, pc_map_id),
-            field.SetParty(3),
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=6, y=7),
-                            field_entity.AnimateKneeling()),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
-            field.SetParty(1),
-            field.RefreshEntities(),
-            field.UpdatePartyLeader(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(x=8, y=7),
-                            field_entity.AnimateKneeling()),
-            field.ShowEntity(field_entity.PARTY0),
-            field.UpdatePartyLeader(),
+            #"SLOTS_1_3",
+            #field.SetPartyMap(1, pc_map_id),
+            #field.SetPartyMap(3, pc_map_id),
+            #field.SetParty(3),
+            #field.RefreshEntities(),
+            #field.UpdatePartyLeader(),
+            #field.EntityAct(field_entity.PARTY0, True,
+            #                field_entity.SetPosition(x=6, y=7),
+            #                field_entity.AnimateKneeling()),
+            #field.ShowEntity(field_entity.PARTY0),
+            #field.UpdatePartyLeader(),
+            #field.SetParty(1),
+            #field.RefreshEntities(),
+            #field.UpdatePartyLeader(),
+            #field.EntityAct(field_entity.PARTY0, True,
+            #                field_entity.SetPosition(x=8, y=7),
+            #                field_entity.AnimateKneeling()),
+            #field.ShowEntity(field_entity.PARTY0),
+            #field.UpdatePartyLeader(),
             # fallthrough
 
             "SPLIT_FINISH",
@@ -532,6 +566,188 @@ class PhoenixCave(Event):
             field.FreeMovement(),
             field.Return(),
         ]
+
+    def ruination_tile_mod(self):
+        # Modify the tile events to activate if touched by party 3 (default: party 1/2 only).
+
+        # (1a) Remove party check on spikes 1
+        space = Reserve(0xc27b3, 0xc27d6, "Phoenix cave Spikes #1 edit", field.NOP)  # CC/27B3 -- CC/27D6
+        spikes_src = [
+            field.ReturnIfAny([0x2a4, True, 0x1b5, True]),
+            field.Call(0xc27d7),  # Do spikes event
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space.write(spikes_src)
+
+        # (1b) Remove party check on spikes 2
+        space = Reserve(0xc28e7, 0xc290a, "Phoenix cave Spikes #2 edit", field.NOP)  # CC/28E7 -- CC/290A
+        spikes_src = [
+            field.ReturnIfAny([0x2a9, True, 0x2c4, True]),
+            field.Call(0xc27d7),  # Do spikes event
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space.write(spikes_src)
+
+        # (1c) Remove party check on spikes 3
+        space = Reserve(0xc2963, 0xc2986, "Phoenix cave Spikes #3 edit", field.NOP)  # CC/2963 -- CC/2986
+        spikes_src = [
+            field.ReturnIfAny([0x2d1, True, 0x1b5, True]),
+            field.Call(0xc27d7),  # Do spikes event
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space.write(spikes_src)
+
+        # (1d) Remove party check on spikes 4
+        space = Reserve(0xc286a, 0xc2889, "Phoenix cave Spikes #3 edit", field.NOP)  # CC/286A--CC/2889
+        spikes_src = [
+            field.ReturnIfAny([0x1b5, True]),
+            field.Call(0xc27d7),  # Do spikes event
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space.write(spikes_src)
+
+        # (2a) Remove overly cautious party-requirement check on door button #2 (would only mess up if someone walked a third party in here, simplifies logic)
+        # We will repurpose $2A3 as "Party3 is standing on switch 1 in Phoenix Cave".
+        space = Reserve(0xc274d, 0xc275e, "Phoenix cave Door Button #2 edit", field.NOP)  # CC/274D-CC2770
+        door2_src = [
+            field.ReturnIfAny([0x2a7, True]),   # CC/2760: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A7) [$1ED4, bit 7] is set), branch to $CA5EB3 (simply returns)
+            field.SetEventBit(0x2a7),           # CC/2768: D4    Set event bit $1E80($2A7) [$1ED4, bit 7]
+            field.PlaySoundEffect(187),         # CC/276A: F4    Play sound effect 187
+            field.Call(0xc252b),                # CC/276C: B2    Call subroutine $CC252B
+            field.Return(),                     # CC/2770: FE    Return
+        ]
+        space.write(door2_src)
+
+        space = Reserve(0xc2771, 0xc2782, "Phoenix cave Door Button #2 release edit", field.NOP)  # CC/2771-CC/2794
+        door2_release_src = [
+            field.ReturnIfAny([0x2a7, False]),  # CC/2784: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A7) [$1ED4, bit 7] is clear), branch to $CA5EB3 (simply returns)
+            field.PlaySoundEffect(187),         # CC/278C: F4    Play sound effect 187
+            field.Call(0xc2533),                # CC/278E: B2    Call subroutine $CC2533
+            field.ClearEventBit(0x2a7),         # CC/2792: D5    Clear event bit $1E80($2A7) [$1ED4, bit 7]
+            field.Return()                      # CC/2794: FE    Return
+        ]
+        space.write(door2_release_src)
+
+        # (2b) Remove overly cautious party-requirement check on rock switch #1 (would only mess up if someone walked a third party in here, simplifies logic)
+        # Can repurpose $2D2 if needed.
+        space = Reserve(0xc2987, 0xc2998, "Phoenix cave Rock Button #1 edit", field.NOP)  # CC/2987-CC/29AA
+        rock1_src = [
+            field.ReturnIfAny([0x2d3, True]),   # CC/299A: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2D3) [$1EDA, bit 3] is set), branch to $CA5EB3 (simply returns)
+            field.SetEventBit(0x2d3),           # CC/29A2: D4    Set event bit $1E80($2D3) [$1EDA, bit 3]
+            field.PlaySoundEffect(187),         # CC/29A4: F4    Play sound effect 187
+            field.Call(0xc2670),                # CC/29A6: B2    Call subroutine $CC2670
+            field.Return(),
+        ]
+        space.write(rock1_src)
+
+        space = Reserve(0xc29ab, 0xc29ce, "Phoenix cave Rock Button #1 release edit", field.NOP)  # CC/29AB-CC/29CE
+        rock1_release_src = [
+            field.ReturnIfAny([0x2d3, False]),
+            field.PlaySoundEffect(187),
+            field.Call(0xc268e),
+            field.ClearEventBit(0x2d3),
+            field.Return()
+        ]
+        space.write(rock1_release_src)
+
+        # (3) Modify entry logic to actually check all three parties, egad.
+        # (3a) Modify button
+        # We need 18 bytes for the new info.  Can fit this into the unused slot from Door button #2.
+        space = Reserve(0xc275f, 0xc2770, "Phoenix cave Door Party3 edit", field.NOP)  # CC/274D-CC2770
+        party3_entry_src = [
+            field.LoadActiveParty(),  # CC/2717: E4    Set CaseWord bit corresponding to the number of the currently active party
+            field.ReturnIfAny([0x1a3, False, 0x2a3, True]),  # CC/2718: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A6) [$1ED4, bit 6] is set), branch to $CA5EB3 (simply returns)
+            field.SetEventBit(0x2a3),   # CC/2720: D4    Set event bit $1E80($2A6) [$1ED4, bit 6]
+            field.PlaySoundEffect(187), # CC/2722: F4    Play sound effect 187
+            field.Call(0xc251b),        # CC/2724: B2    Call subroutine $CC251B
+            field.Return()              # CC/2728: FE    Return
+        ]
+        space.write(party3_entry_src)
+        party3_addr = space.start_address
+
+        # Update Party2 to branch here if not satisfied
+        space = Reserve(0xc2718, 0xc271f, "Phoenix Cave Door Party2 branch edit", field.NOP())
+        space.write([field.BranchIfAny([0x1a2, False, 0x2a6, True], party3_addr)])
+
+        # (3b) Modify release
+        # We need 18 bytes for the new info.  Can fit this into the unused slot from Door button #2 release.
+        space = Reserve(0xc2783, 0xc2794, "Phoenix cave Door Party3 release edit", field.NOP)
+        party3_release_src = [
+            field.LoadActiveParty(),        # CC/2783: E4    Set CaseWord bit corresponding to the number of the currently active party
+            field.ReturnIfAny([0x1a3, False, 0x2a3, False]),  # CC/2784: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A7) [$1ED4, bit 7] is clear), branch to $CA5EB3 (simply returns)
+            field.PlaySoundEffect(187),
+            field.Call(0xc2533),
+            field.ClearEventBit(0x2a3),
+            field.Return()
+        ]
+        space.write(party3_release_src)
+        party3_clear_addr = space.start_address
+
+        # Update Party2 to branch here if not satisfied
+        space = Reserve(0xC2718, 0xc271F, "Phoenix Cave Door Party2 release branch edit", field.NOP())
+        space.write([field.BranchIfAny([0x1a2, False, 0x2a6, False], party3_addr)])  # CC/2718: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A6) [$1ED4, bit 6] is set), branch to $CA5EB3 (simply returns)
+
+        # (4) Modify Rock switch #2
+        # Let's just make this one a permanent.  No reason to complicate things this late in the maze.
+        space = Reserve(0xc29cf, 0xc29e2, "Phoenix Cave Rock Switch 2 edit", field.NOP())
+        rock2_src = [
+            # CC/29CF: E4    Set CaseWord bit corresponding to the number of the currently active party
+            field.ReturnIfEventBitSet(0x2d4),   # CC/29D0: C1    If ($1E80($1A1) [$1EB4, bit 1] is clear) or ($1E80($2D4) [$1EDA, bit 4] is set), branch to $CC29E3
+            field.SetEventBit(0x2d4),           # CC/29D8: D4    Set event bit $1E80($2D4) [$1EDA, bit 4]
+                                                # CC/29DA: D4    Set event bit $1E80($2AA) [$1ED5, bit 2]
+            field.PlaySoundEffect(187),         # CC/29DC: F4    Play sound effect 187
+            field.Call(0xc26ac),                # CC/29DE: B2    Call subroutine $CC26AC
+            field.Return() # CC/29E2: FE    Return
+        ]
+        space.write(rock2_src)
+
+        # (4b) delete 'reset' event tiles
+        # 55 (12,22; 0xc29f7)
+        # 56 (12,24; 0xc29f7)
+        # 57 (11,23; 0xc29f7)
+        undo_tile_xy = [[12,22], [12,24], [11,23]]
+        map_id = 0x13b
+        for t in undo_tile_xy:
+            self.maps.delete_event(map_id, t[0], t[1])
+
+        # (5) Modify final buttons:  Use multipurpose clear-if-party-steps bits $2C5, $2C9, $2CD.
+        # Should execute if any 2 of 2c5, 2c9, 2cd are set.
+        move_block_addr = 0xc2b28  # Last of the four implementations.  Won't touch this one.
+        space = Reserve(0xc2aac, 0xc2b27, "Phoenix Cave reimplement two-button ending", field.NOP())
+        final_check_src = [
+            field.ReturnIfEventBitSet(0x2d6),
+            field.LoadActiveParty(),
+            field.BranchIfEventBitClear(event_bit.multipurpose_party1_step(1), "PARTY2"),
+            field.SetEventBit(event_bit.multipurpose_party1_step(1)),  # 0x2c5
+            field.PlaySoundEffect(187),
+            field.BranchIfAny([event_bit.multipurpose_party2_step(1), True, event_bit.multipurpose_party3_step(1), True], "SUCCESS"),
+            field.Return(),
+            "PARTY2",
+            field.BranchIfEventBitClear(event_bit.multipurpose_party2_step(1), "PARTY3"),
+            field.SetEventBit(event_bit.multipurpose_party2_step(1)),  # 0x2c9
+            field.PlaySoundEffect(187), # click
+            field.BranchIfAny([event_bit.multipurpose_party1_step(1), True, event_bit.multipurpose_party3_step(1), True], "SUCCESS"),
+            field.Return(),
+            "PARTY3",
+            # Must be party 3. Fallthru.
+            field.SetEventBit(event_bit.multipurpose_party3_step(1)),  # 0x2c9
+            field.PlaySoundEffect(187),  # click
+            field.ReturnIfAll([event_bit.multipurpose_party1_step(1), False, event_bit.multipurpose_party2_step(1), False]),
+            "SUCCESS",
+            field.Call(move_block_addr),
+            field.Return()
+        ]
+        space.write(final_check_src)
+
+        # Make Button 2 also call the same code.  0xc2af0
+        # 62 (12,32; 0xc2af0)
+        button_2_event = self.maps.get_event(map_id, 12, 32)
+        button_2_event.event_address = space.start_address - EVENT_CODE_START
+
 
     @staticmethod
     def entrance_door_patch():
