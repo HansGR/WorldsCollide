@@ -205,6 +205,16 @@ class Start(Event):
                     field.AddCharacterToParty(character, 1),
                 ]
 
+        # In ruination mode, set each starting character's talk-event pointer
+        # to the party interaction script so they can be talked to by other parties.
+        if self.args.ruination_mode:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+            for reward in self.rewards:
+                if reward.type == RewardType.CHARACTER:
+                    char_id = reward.id
+                    addr = PARTY_INTERACTION_SCRIPT_ADDRS[char_id]
+                    src.append(field.ChangeNPCEventAddress(char_id, addr))
+
         src += [
             field.SetParty(1),
             field.RefreshEntities(),

@@ -84,6 +84,11 @@ class Events():
         #    for i in range(self.characters.CHARACTER_COUNT):
         #        print(self.characters.DEFAULT_NAME[i],': ', self.characters.character_location[i], [self.characters.DEFAULT_NAME[p] for p in self.characters.character_paths[i]])
 
+        # Create party interaction scripts before event mod loop so addresses
+        # are available for ChangeNPCEventAddress in individual event mods.
+        if self.args.ruination_mode:
+            create_party_interaction_scripts(self.dialogs)
+
         # initialize event bits, mod events, log rewards
         log_strings = []
         space = Allocate(Bank.CC, 400, "event/npc bit initialization", field.NOP())

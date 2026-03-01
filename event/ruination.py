@@ -4820,6 +4820,114 @@ def ruination_start_game_mod(dialogs, party):
     space = Write(Bank.CC, src, "start game ruination")
     return space.start_address
 
+
+# --- Party Interaction Scripts (talking to inactive party leaders) ---
+
+# Dialog IDs for character airship quotes (vanilla WoR airship dialog).
+# Order matches character IDs 0-13: Terra, Locke, Cyan, Shadow, Edgar, Sabin,
+# Celes, Strago, Relm, Setzer, Mog, Gau, Gogo, Umaro.
+CHARACTER_AIRSHIP_DIALOG_IDS = [
+    0x0B94, 0x0B95, 0x0B96, 0x0B97,  # Terra, Locke, Cyan, Shadow
+    0x0B98, 0x0B99, 0x0B9A, 0x0B9B,  # Edgar, Sabin, Celes, Strago
+    0x0B9C, 0x0B9D, 0x068B, 0x068D,  # Relm, Setzer, Mog, Gau
+    0x068F, 0x0690,                    # Gogo, Umaro
+]
+
+# Repurpose vanilla "Change party members?" dialog (0x0528 = 1320) for the choice menu.
+PARTY_INTERACT_CHOICE_DIALOG = 1320
+
+# Maps character ID -> ROM address of that character's party interaction event script.
+# Populated by create_party_interaction_scripts(); read by RecruitAndSelectParty and
+# NarsheWob/Start to emit ChangeNPCEventAddress instructions.
+PARTY_INTERACTION_SCRIPT_ADDRS = {}
+
+
+def create_party_interaction_scripts(dialogs):
+    """Create per-character event scripts for party interaction in ruination mode.
+
+    When the player talks to an inactive party's leader, the script:
+      1. Shows the leader's airship quote dialog
+      2. Offers a 3-option choice: Join forces / Swap members / Do nothing
+      3. Runs the appropriate party formation sequence
+
+    Also creates a shared finishing subroutine used by all 14 scripts.
+
+    Args:
+        dialogs: The Dialogs object for setting dialog text.
+    """
+    from instruction.field.functions import (
+        REFRESH_CHARACTERS_AND_SELECT_PARTY,
+        REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES,
+    )
+    from constants.entities import CHARACTER_COUNT
+
+    # Set the choice dialog text.
+    dialogs.set_text(PARTY_INTERACT_CHOICE_DIALOG,
+                     "<choice> Join forces<line>"
+                     "<choice> Swap members<line>"
+                     "<choice> Do nothing<end>")
+
+    # Shared finishing subroutine: called (via Branch) after SelectParties returns.
+    finish_src = [
+        field.FinalizeBranchRecruit(),
+        field.RefreshEntities(),
+        field.UpdatePartyLeader(),
+        field.FadeInScreen(),
+        field.WaitForFade(),
+        field.FreeMovement(),
+        field.Return(),
+    ]
+    space = Write(Bank.CA, finish_src, "party interact finish subroutine")
+    finish_addr = space.start_address
+
+    # Create one event script per character.
+    for char_id in range(CHARACTER_COUNT):
+        char_dialog = CHARACTER_AIRSHIP_DIALOG_IDS[char_id]
+        join_arg = char_id | 0x10   # 0b0001cccc: include party, merge into 1
+        swap_arg = char_id | 0x30   # 0b0011cccc: include party, 2-party swap
+
+        src = [
+            field.Dialog(char_dialog),
+            field.DialogBranch(PARTY_INTERACT_CHOICE_DIALOG,
+                               dest1="JOIN", dest2="SWAP", dest3=field.RETURN),
+
+            "JOIN",
+            field.SetupBranchRecruit(join_arg),
+            field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(finish_addr),
+
+            "SWAP",
+            field.SetupBranchRecruit(swap_arg),
+            field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
+            field.Branch(finish_addr),
+        ]
+        space = Write(Bank.CA, src, f"party interact script char {char_id}")
+        PARTY_INTERACTION_SCRIPT_ADDRS[char_id] = space.start_address
+
+    # Free the vanilla airship event scripts that we replaced.
+    # CA/3F13-CA/3F82 (112 bytes, 8 per character).
+    Free(0xa3f13, 0xa3f82)
+
+
+def set_party_interaction_pointers_src(char_ids=None):
+    """Return a list of ChangeNPCEventAddress instructions for the given characters.
+
+    Args:
+        char_ids: Iterable of character IDs, or None for all 14 characters.
+
+    Returns:
+        List of field instructions to include in an event script.
+    """
+    from constants.entities import CHARACTER_COUNT
+    if char_ids is None:
+        char_ids = range(CHARACTER_COUNT)
+    src = []
+    for char_id in char_ids:
+        addr = PARTY_INTERACTION_SCRIPT_ADDRS[char_id]
+        src.append(field.ChangeNPCEventAddress(char_id, addr))
+    return src
+
+
 def modify_inn_costs(maps, rom, dialogs, args):
     """
     Modifies all inn costs in the game by multiplying them by INN_COST_MULTIPLIER.

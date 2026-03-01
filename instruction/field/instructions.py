@@ -60,7 +60,10 @@ def RecruitAndSelectParty(character):
     import args as _args
     if _args.ruination_mode is not None:
         from instruction.field.custom import SetupBranchRecruit, FinalizeBranchRecruit
+        from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
         return (RecruitCharacter(character),
+                ChangeNPCEventAddress(character,
+                                     PARTY_INTERACTION_SCRIPT_ADDRS[character]),
                 SetupBranchRecruit(character),
                 Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
                 FinalizeBranchRecruit())
