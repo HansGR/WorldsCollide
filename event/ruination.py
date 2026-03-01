@@ -4924,7 +4924,12 @@ def set_party_interaction_pointers_src(char_ids=None):
     src = []
     for char_id in char_ids:
         addr = PARTY_INTERACTION_SCRIPT_ADDRS[char_id]
-        src.append(field.ChangeNPCEventAddress(char_id, addr))
+        char_src = [
+            field.BranchIfEventBitClear(event_bit.character_recruited(char_id), f"SKIP_{char_id}"),
+            field.ChangeNPCEventAddress(char_id, addr),
+            f"SKIP_{char_id}",
+        ]
+        src.append(char_src)
     return src
 
 
