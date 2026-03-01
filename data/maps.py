@@ -920,6 +920,10 @@ class Maps():
         #         # Delete the event tile
         #         self.delete_event(info[0], info[1], info[2])  # delete the original event
 
+        # In ruination mode, disable the entrance_door_patch for door 1558
+        if self.args.ruination_mode:
+            entrance_door_patch.pop(1558, None)
+
         # Bundle exit_door_patch and entrance_door_patch data for transitions
         for m in exit_door_patch.keys():
             if m in map.keys():
