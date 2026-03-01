@@ -1129,6 +1129,7 @@ shared_exits = {
     531: [532],    # Mt. Zozo, entrance to dragon room
 
     1156: [1157, 1158, 1159],     # Figaro Castle exits to world map
+    5156: [5157, 5158, 5159],     # Figaro Castle exits to world map (WoR)
     1157: [1158, 1159],     # Figaro Castle exits to world map
 
     1255: [1254, 1253],   # "Thamasa After Kefka WoB exits to world map"
