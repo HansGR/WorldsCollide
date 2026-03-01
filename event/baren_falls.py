@@ -125,7 +125,9 @@ class BarenFalls(Event):
         )
 
         if self.args.ruination_mode is not None:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
             branch_refresh_src = [
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
                 field.SetupBranchRecruit(character),
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
                 field.FinalizeBranchRecruit(),

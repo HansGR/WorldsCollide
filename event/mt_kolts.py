@@ -259,7 +259,9 @@ class MtKolts(Event):
         space = Reserve(0xa8353, 0xa8353, "mt kolts pause before locke approaches sabin", field.NOP())
 
         if self.args.ruination_mode is not None:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
             src = [
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
                 field.SetupBranchRecruit(character),
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
                 field.FinalizeBranchRecruit(),

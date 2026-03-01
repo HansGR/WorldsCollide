@@ -137,9 +137,12 @@ class MoblizWOR(Event):
         # In ruination mode, inject SetupBranchRecruit before Phunbaba 3 battle
         # to capture the full party before bababreath can blow members away.
         # After Setup, everyone is moved to P1, so AddCharacterToParty(char, 1) is correct.
+        # Also set the recruited character's talk-event pointer for party interaction.
         if self.args.ruination_mode:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
             space = Reserve(0xc4c09, 0xc4c1a, "mobliz wor setup branch recruit before phunbaba 3", field.NOP())
             space.write(
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
                 field.SetupBranchRecruit(character),
             )
 

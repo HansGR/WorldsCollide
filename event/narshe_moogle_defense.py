@@ -507,7 +507,9 @@ class NarsheMoogleDefense(Event):
             ]
             # If recruited a character, allow party reform
             if self.reward.type == RewardType.CHARACTER:
+                from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
                 branch_refresh_src = [
+                    field.ChangeNPCEventAddress(self.reward.id, PARTY_INTERACTION_SCRIPT_ADDRS[self.reward.id]),
                     field.SetupBranchRecruit(self.reward.id),
                     field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
                     field.FinalizeBranchRecruit(),
