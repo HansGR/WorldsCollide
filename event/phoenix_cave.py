@@ -680,7 +680,7 @@ class PhoenixCave(Event):
             field.LoadActiveParty(),        # CC/2783: E4    Set CaseWord bit corresponding to the number of the currently active party
             field.ReturnIfAny([0x1a3, False, 0x2a3, False]),  # CC/2784: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A7) [$1ED4, bit 7] is clear), branch to $CA5EB3 (simply returns)
             field.PlaySoundEffect(187),
-            field.Call(0xc2533),
+            field.Call(0xc2523),
             field.ClearEventBit(0x2a3),
             field.Return()
         ]
@@ -690,6 +690,28 @@ class PhoenixCave(Event):
         # Update Party2 to branch here if not satisfied
         space = Reserve(0xC273c, 0xc2743, "Phoenix Cave Door Party2 release branch edit", field.NOP())  # CC/273C: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A6) [$1ED4, bit 6] is clear), branch to $CA5EB3 (simply returns)
         space.write([field.BranchIfAny([0x1a2, False, 0x2a6, False], party3_clear_addr)])  # CC/2718: C1    If ($1E80($1A2) [$1EB4, bit 2] is clear) or ($1E80($2A6) [$1ED4, bit 6] is set), branch to $CA5EB3 (simply returns)
+
+        # Update entry event effect of 0x2a3 to match 0x2a6.  Block of code:
+        # CC/2458: C0    If ($1E80($2A2) [$1ED4, bit 2] is set), branch to $CC246E
+        # CC/245E: C0    If ($1E80($2A6) [$1ED4, bit 6] is set), branch to $CC246E
+        # CC/2464: B2    Call subroutine $CC2523
+        # CC/2468: C0    If ($1E80($22F) [$1EC5, bit 7] is clear), branch to $CC2472
+        # CC/246E: B2    Call subroutine $CC251B
+        # CC/2472: C0    If ($1E80($2A3) [$1ED4, bit 3] is set), branch to $CC2488
+        # CC/2478: C0    If ($1E80($2A7) [$1ED4, bit 7] is set), branch to $CC2488
+        # CC/247E: B2    Call subroutine $CC2533
+        # We will keep the same size, just rearrange some calls.
+        space = Reserve(0xc2458, 0xc2477, "Phoenix Cave Patch entry event drawings", field.NOP())
+        entry_patch_src = [
+            field.BranchIfAny([0x2a2, True, 0x2a6, True, 0x2a3, True], "SHOW_DOOR"),
+            field.Call(0xc2523),
+            field.Branch("SKIP_DOOR"),
+            "SHOW_DOOR",
+            field.Call(0xc251b),
+            "SKIP_DOOR",
+        ]
+        space.write(entry_patch_src)
+
 
         # (4) Modify Rock switch #2
         # Let's just make this one a permanent.  No reason to complicate things this late in the maze.
