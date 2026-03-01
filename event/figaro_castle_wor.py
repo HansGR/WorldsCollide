@@ -29,6 +29,11 @@ class FigaroCastleWOR(Event):
                 field.SetEventBit(npc_bit.THIEVES_FIGARO_CAVE_TURTLE),
                 field.ClearEventBit(npc_bit.GERAD_PRISON_FIGARO_CASTLE),
                 field.ClearEventBit(0x049),     # Disable Sabin animation at Figaro inn?
+
+                field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
+                field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
+                field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
+                field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
             )
         elif self.args.character_gating:
             space.write(
@@ -149,7 +154,7 @@ class FigaroCastleWOR(Event):
         # - FIGARO_CASTLE_EMERGED_WOR prevents the emerge animation from triggering
         # - PRISON_DOOR_OPEN_FIGARO_CASTLE opens the jail cell door graphically
         if self.args.ruination_mode:
-            src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
+            #src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
             src.append(field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE))
         src.extend([
             field.FreeScreen(),
@@ -180,7 +185,7 @@ class FigaroCastleWOR(Event):
         # - FIGARO_CASTLE_EMERGED_WOR prevents the emerge animation from triggering
         # - PRISON_DOOR_OPEN_FIGARO_CASTLE opens the jail cell door graphically
         if self.args.ruination_mode:
-            src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
+            #src.append(field.SetEventBit(event_bit.FIGARO_CASTLE_EMERGED_WOR))
             src.append(field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE))
         src.extend([
             field.FreeScreen(),
@@ -271,3 +276,16 @@ class FigaroCastleWOR(Event):
             field.Dialog(2395),
             field.Return(),
         )
+
+        # Turn off the soldier blocking the door
+        map_id = 0x3b
+        soldier_npc_id = 0x1a
+        soldier_npc = self.maps.get_npc(map_id, soldier_npc_id)
+        soldier_npc.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+        soldier_npc.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+
+        # Turn off temporary song override after engine room event
+        #space = Reserve(0xa6bea, 0xa6beb, 'Figaro Castle Engine Room no temp song override', field.NOP()) # CA/6BEA: D2    Set event bit $1E80($1CC) [$1EB9, bit 4]
+
+        # Edit bit setting in animation of castle re-emergence.
+        space = Reserve(0xa6A23, 0xa6A24, "Figaro Castle don't close prison door", field.NOP())

@@ -5057,16 +5057,19 @@ def modify_inn_costs(maps, rom, dialogs, args):
     dialogs.set_text(FIGARO_DIALOG_ID,
         f"{figaro_price} GP per night!<line>Need a rest?<line><choice>(Yes)<line><choice>(No)<end>")
 
-    figaro_src = [
-        field.BranchIfEventBitSet(FIGARO_USED_ONCE_BIT, "FIGARO_RETURN"),
-        #field.BranchIfEventBitClear(FIGARO_BANON_BIT, "FIGARO_RETURN"),
-        field.SetEventBit(FIGARO_USED_ONCE_BIT),
-        field.DialogBranch(FIGARO_DIALOG_ID, "FIGARO_YES", "FIGARO_RETURN"),
+    animation_src = [field.Read(0xa71d9, 0xa71dd), field.Branch(0xa71d4)]
+    space = Reserve(0xa71d9, 0xa71e8, "Figaro Castle Inn simplify", field.NOP())
+    space.write(animation_src)
+    animation_addr = space.start_address
 
+    figaro_src = [
+        field.BranchIfEventBitSet(event_bit.multipurpose_map(1), "FIGARO_RETURN"),
+        field.SetEventBit(event_bit.multipurpose_map(1)),
+        field.DialogBranch(FIGARO_DIALOG_ID, "FIGARO_YES", "FIGARO_RETURN"),
         "FIGARO_YES",
         field.RemoveGP(figaro_price),
         field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "FIGARO_NO_MONEY"),
-        field.Branch(FIGARO_ORIGINAL_YES_CODE),
+        field.Branch(animation_addr),
 
         "FIGARO_NO_MONEY",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
