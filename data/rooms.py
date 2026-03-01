@@ -746,6 +746,7 @@ room_data = {
     352 : [ [711], [ ], [ ], 0], #Magitek Factory Save Point Room
     353 : [ [712, 713], [ ], [ ], 0], #Magitek Factory Tube Hallway
     354 : [ [714, 715], [ ], [ ], 0], #Magitek Factory Number 024 Room
+    'ruin-mtek2' : [ [714], [ ], [ ], ['mtboss2'], {'mtboss2': [715]}, 0], #Magitek Factory Number 024 Room.  Try to force doors in a particular order.
     355 : [ [716], [2027], [ ], 0], #Magitek Factory Esper Tube Room
     '355a' : [ [], [2028], [3027], 0],  # Magitek Factory Minecart Room
 

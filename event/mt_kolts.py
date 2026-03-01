@@ -398,11 +398,11 @@ class MtKolts(Event):
         new_event.event_address = old_event_060b.event_address
         self.maps.add_event(0x060, new_event)
 
-        # Map 0x061: copy event at (34,24) to (47,10)
+        # Map 0x061: copy event at (34,24) to (47,11)
         old_event_061 = self.maps.get_event(0x061, 34, 24)
         new_event = MapEvent()
         new_event.x = 47
-        new_event.y = 10
+        new_event.y = 11
         new_event.event_address = old_event_061.event_address
         self.maps.add_event(0x061, new_event)
 

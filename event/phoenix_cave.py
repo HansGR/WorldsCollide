@@ -159,9 +159,12 @@ class PhoenixCave(Event):
 
         self.locke_holding_esper_mod()
 
-        self.reward_mod([
-            field.RecruitCharacter(character),
-        ])
+        if self.args.ruination_mode:
+            # In Ruination mode, we don't reform the party on exit.  Do it here.
+            reward_scr = [field.RecruitAndSelectParty(character)]
+        else:
+            reward_scr = [field.RecruitCharacter(character)]
+        self.reward_mod(reward_scr)
         space = Reserve(0xc2b76, 0xc2b7e, "phoenix cave open phoenix chest", field.NOP())
 
     def esper_item_mod(self, esper_item_instructions):

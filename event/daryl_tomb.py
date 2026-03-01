@@ -146,11 +146,15 @@ class DarylTomb(Event):
     def character_mod(self, character):
         self.daryl_sleeps_here_mod(self.characters.get_name(character))
 
+        src = [field.RecruitAndSelectParty(character),
+               field.FadeInScreen(),
+               field.Return()],
+        space = Write(Bank.CA, src, "daryl tomb character recruit jmp")
+        char_recruit_addr = space.start_address
+
         space = Reserve(0xa4328, 0xa4333, "daryl tomb open staircase entrance", field.NOP())
-        space.write(
-            field.RecruitAndSelectParty(character),
-            field.FadeInScreen(),
-        )
+        space.write(field.Call(char_recruit_addr))
+
 
     def esper_item_mod(self):
         space = Reserve(0xa4329, 0xa4333, "daryl tomb open staircase entrance", field.NOP())
