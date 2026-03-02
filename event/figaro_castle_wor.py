@@ -298,8 +298,9 @@ class FigaroCastleWOR(Event):
                 field_entity.Turn(direction.DOWN),
             ),
         )
-        # (No need to branch over ~ 10 NOPs?)
-        # space.write(field.Branch(0xa6a1f))
+        space.write(
+            field.Branch(space.end_address + 1), # skip nops (arguably not needed for ~ 20 NOPs?)
+        )
 
         # Edit bit setting in animation of castle re-emergence.
         space = Reserve(0xa6A23, 0xa6A24, "Figaro Castle don't close prison door", field.NOP())
