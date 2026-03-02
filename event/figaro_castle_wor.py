@@ -266,7 +266,7 @@ class FigaroCastleWOR(Event):
 
         # Set dialog $03D4 (980) to the after-event message about the tunnel
         # (Dialog $095B retains its original ROM text "Nonsense! It's been fixed!")
-        self.dialogs.set_text(980, "A tunnel out through the dungeon is now open. Be careful out there!<end>")
+        self.dialogs.set_text(980, "A tunnel out through the dungeon is now open. Be careful down there!<end>")
 
         # Patch the engine room guy's post-Tentacles event at CA/68E6
         # Original: checks FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR and shows travel options
@@ -288,22 +288,18 @@ class FigaroCastleWOR(Event):
         #space = Reserve(0xa6bea, 0xa6beb, 'Figaro Castle Engine Room no temp song override', field.NOP()) # CA/6BEA: D2    Set event bit $1E80($1CC) [$1EB9, bit 4]
 
         # Replace the "walk up 5 tiles fast" action (CA/6A05-CA/6A09) with
-        # "walk up 2 tiles and turn downward" to match the 2-tile walk down.
-        space = Reserve(0xa6a05, 0xa6a09, "figaro castle wor ruin npc walk back", field.NOP())
+        # "walk up 2 tiles fast and turn downward" to match the 2-tile walk down.
+        # Also skip the castle re-emergence map animation (CA/6A0A-CA/6A18).  
+        space = Reserve(0xa6a05, 0xa6a1E, "figaro castle wor ruin npc walk back", field.NOP())
         space.write(
             field.EntityAct(0x15, True,
+                field_entity.SetSpeed(field_entity.Speed.FAST),
                 field_entity.Move(direction.UP, 2),
                 field_entity.Turn(direction.DOWN),
             ),
         )
-
-        # Skip the castle re-emergence map animation (CA/6A0A-CA/6A12) by branching
-        # directly to the event bit setting at CA/6A1F.
-        # (CA/6A13-CA/6A18 is reserved by map_shuffle_mod; it is never reached.)
-        space = Reserve(0xa6a0a, 0xa6a12, "figaro castle wor ruin skip emerge animation", field.NOP())
-        space.write(
-            field.Branch(0xa6a1f),
-        )
+        # (No need to branch over ~ 10 NOPs?)
+        # space.write(field.Branch(0xa6a1f))
 
         # Edit bit setting in animation of castle re-emergence.
         space = Reserve(0xa6A23, 0xa6A24, "Figaro Castle don't close prison door", field.NOP())
