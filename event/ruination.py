@@ -4910,6 +4910,7 @@ CHARACTER_DIALOG_CHOICES = {
         "Now I know why I have these stupid muscles!<end>",
         "I have come to experience anew<line>the love of my brother!<end>",
         "Can't wage war on an empty stomach!<end>",
+        "...smash Kefka, and deliver peace unto the world! All right, count me in!<end>",
     ],
     CELES: [
         # former general, strong-willed, emotional depth
@@ -4921,6 +4922,7 @@ CHARACTER_DIALOG_CHOICES = {
         "I'm a GENERAL, not some opera floozy!<end>",
         "Come on, everybody!<line>We have to work together!<end>",
         #"He's alive...<line><LOCKE>'s still alive!!!<end>",
+        "I'll make you proud of me, Granddad...<end>",
     ],
     STRAGO: [
         # old sage, grandfather figure
