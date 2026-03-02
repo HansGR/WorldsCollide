@@ -4843,36 +4843,36 @@ from constants.entities import (
 CHARACTER_DIALOG_CHOICES = {
     TERRA: [
         # introspective, searching for meaning/love, determined
-        "General Leo...<line>I believe I understand what you're trying to say.<end>",
+        "General Leo...<line>I believe I understand what you were trying to say.<end>",  # edited
         "I know what love is...!<end>",
-        "I'll do it!<end>",
+        #"I'll do it!<end>",
         "People only seem to want power.<line>Do they really want to be like me?<end>",
-        "I'm hardly...normal...<end>",
-        "I can do it...<line>But why do I feel so wretched?<end>",
+        #"I'm hardly...normal...<end>",
+        #"I can do it...<line>But why do I feel so wretched?<end>",
         "I'm all right.<line>I'm sure peace is within our grasp!<end>",
-        "Now I must go to war.<line>We must fight for those who aren't even born yet!<end>",
-        "I want to know what love is...<line>now!<end>",
+        "We must fight for those who aren't even born yet!<end>",  # Now I must go to war.<line>
+        #"I want to know what love is...<line>now!<end>",
         "I can fight!<end>",
-        "Come with me!<end>",
-        "Everyone's calling me.<end>",
+        #"Come with me!<end>",
+        #"Everyone's calling me.<end>",
     ],
     LOCKE: [
         # treasure hunter, protective, devoted
         "I PREFER the term treasure hunting!<end>",
-        "That's TREASURE HUNTER!<end>",
+        #"That's TREASURE HUNTER!<end>",
         "I'll protect you!<end>",
         "Trust me! You'll be fine!<end>",
         "As long as there're people who need to be protected, I'll fight!<end>",
         "I have learned to celebrate life...<line>and the living.<end>",
         "Let's go!<line>We have work to do!!<end>",
-        "We haven't a second to lose!<end>",
-        "I promised I'd protect her.<line>I WILL NOT back out on my word.<end>",
+        #"We haven't a second to lose!<end>",
+        #"I promised I'd protect her.<line>I WILL NOT back out on my word.<end>",
     ],
     CYAN: [
         # honorable samurai, formal speech
-        "What an amazing device!<end>",
+        #"What an amazing device!<end>",
         "Thou musn't give up the fight!<end>",
-        "I am <CYAN>,<line>retainer to the King of Doma.<line>I am your worst nightmare...<end>",
+        #"I am <CYAN>,<line>retainer to the King of Doma.<line>I am your worst nightmare...<end>",
         "My family lives on inside of me.<end>",
         "I will avenge the people of Doma!!<end>",
         "I shall go with you!<end>",
@@ -4881,22 +4881,22 @@ CHARACTER_DIALOG_CHOICES = {
         # mysterious loner, terse
         "...<end>",
         "The Reaper is always just a step behind me...<end>",
-        "Leave 'em alone.<end>",
+        #"Leave 'em alone.<end>",
         "We meet again...<end>",
         "I know what friendship is...<line>and family...<end>",
-        "Go! There are people counting on you!<end>",
+        #"Go! There are people counting on you!<end>",
         "I can't help you.<line>You must look within for answers.<end>",
     ],
     EDGAR: [
         # charming king, flirtatious, witty
         "If something happens to me,<line>all the world's women will grieve!<end>",
         "It is my dream to build a kingdom<line>in which I can guarantee freedom, and dignity.<end>",
-        "First of all, your beauty<line>has captivated me!<end>",
-        "Guess my technique's getting a bit rusty...<end>",
-        "He'd slit his mama's throat for a nickel!<end>",
+        #"First of all, your beauty<line>has captivated me!<end>",
+        #"Guess my technique's getting a bit rusty...<end>",
+        #"He'd slit his mama's throat for a nickel!<end>",
         "It's time to break into Kefka's domain!<end>",
         "I finally think we're gonna pull this off!<end>",
-        "Bravo, Figaro!!!<end>",
+        #"Bravo, Figaro!!!<end>",
         "You can't keep track of 'em all!<end>",
     ],
     SABIN: [
@@ -4904,7 +4904,7 @@ CHARACTER_DIALOG_CHOICES = {
         "Think a 'bear' like me could help you in your fight?<end>",
         "Riiiiiight!<end>",
         "Let me have at it!<end>",
-        "Then let's just bust through!<end>",
+        #"Then let's just bust through!<end>",
         "Master Duncan's techniques mustn't fail me.<end>",
         "You think the end of the world<line>was gonna do me in?<end>",
         "Now I know why I have these stupid muscles!<end>",
@@ -4917,24 +4917,24 @@ CHARACTER_DIALOG_CHOICES = {
         "I'm free...<line>The Empire can't control me!<end>",
         "I've met someone who can accept me<line>for what I am.<end>",
         "I'm glad I made it this far...<line>I feel I have a lot to live for...<end>",
-        "I think you've been hustled,<line>Mr. Gambler.<end>",
+        #"I think you've been hustled,<line>Mr. Gambler.<end>",
         "I'm a GENERAL, not some opera floozy!<end>",
         "Come on, everybody!<line>We have to work together!<end>",
-        "He's alive...<line><LOCKE>'s still alive!!!<end>",
+        #"He's alive...<line><LOCKE>'s still alive!!!<end>",
     ],
     STRAGO: [
         # old sage, grandfather figure
-        "I have a special little Granddaughter!<end>",
+        #"I have a special little Granddaughter!<end>",
         "Hey everyone! Let me see the<line>light in your eyes! The old man,<line>here, hasn't given up yet!<end>",
         "I wanted to show my enemy the<line>true meaning of the word, 'hero'!<end>",
         "Fool! I may be old,<line>but I'm not powerless!<end>",
-        "I owe you for saving <RELM>.<line>I'll help you find your Espers.<end>",
+        #"I owe you for saving <RELM>.<line>I'll help you find your Espers.<end>",
         "In all my travels,<line>and in all my years...<end>",
     ],
     RELM: [
         # sassy young painter
         "Let's do it!<line>Let's go get that madman!<end>",
-        "And I have a brave Grandpa who'll<line>stand by me through it all.<end>",
+        #"And I have a brave Grandpa who'll<line>stand by me through it all.<end>",
         "Who is this puffed up<line>aerobics instructor, anyway?<end>",
         "Did you think I was gonna check out<line>before you, old man?!<end>",
         "Hey! Did you see me? I was awesome!<end>",
@@ -4949,7 +4949,7 @@ CHARACTER_DIALOG_CHOICES = {
         "Something good will come of it all!<end>",
         "Nothing to lose but my life...<end>",
         "When things fall, they fall!<line>It's all a matter of fate...<end>",
-        "There's nothing like flying!<end>",
+        #"There's nothing like flying!<end>",
         "I'm starting to feel lucky!!<end>",
         "Sometimes in life you just have to<line>FEEL your way through a situation!<end>",
     ],
@@ -4958,14 +4958,14 @@ CHARACTER_DIALOG_CHOICES = {
         "Kupoppo!!<end>",
         "I'm your boss, kupo!<line>You're gonna join us, kupo!!!<end>",
         "Kupo!<end>",
-        "I have my friends here!<end>",
+        #"I have my friends here!<end>",
     ],
     GAU: [
         # wild boy, broken speech, heartfelt
         "You my friends!<line>Me uwaooo all of you!<end>",
         "<GAU>...<line><GAU> do his best!<end>",
         "<GAU> hit hard!!!<end>",
-        "<GAU> become stronger on the Veldt.<end>",
+        #"<GAU> become stronger on the Veldt.<end>",
         "Fffatherrr...alive...<line>H...a...p...p...y...<end>",
         "<GAU> find short cut!<end>",
         "Awoooo...!<end>",
@@ -4973,11 +4973,16 @@ CHARACTER_DIALOG_CHOICES = {
     GOGO: [
         # mysterious mimic
         "This should be fun.<line>When do we leave?<end>",
+        "You seek to save the world? Then I guess that means I shall save the world as well.<end>",
+        "Lead on! I will copy your every move.<end>",
+        #"I have been idle for too many years... Perhaps I ought to mimic you.<end>",
         "...<end>",
     ],
     UMARO: [
         # barely speaks
         "Uhhhh...<end>",
+        "Oooh...<end>",
+        "Ughaaa!<end>",
     ],
 }
 
