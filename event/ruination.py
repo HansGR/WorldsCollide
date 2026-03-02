@@ -4843,6 +4843,7 @@ from constants.entities import (
 CHARACTER_DIALOG_CHOICES = {
     TERRA: [
         # introspective, searching for meaning/love, determined
+        "General Leo...<line>I believe I understand what you're trying to say.<end>",
         "I know what love is...!<end>",
         "I'll do it!<end>",
         "People only seem to want power.<line>Do they really want to be like me?<end>",
@@ -4869,6 +4870,7 @@ CHARACTER_DIALOG_CHOICES = {
     ],
     CYAN: [
         # honorable samurai, formal speech
+        "What an amazing device!<end>",
         "Thou musn't give up the fight!<end>",
         "I am <CYAN>,<line>retainer to the King of Doma.<line>I am your worst nightmare...<end>",
         "My family lives on inside of me.<end>",
@@ -4877,6 +4879,7 @@ CHARACTER_DIALOG_CHOICES = {
     ],
     SHADOW: [
         # mysterious loner, terse
+        "...<end>",
         "The Reaper is always just a step behind me...<end>",
         "Leave 'em alone.<end>",
         "We meet again...<end>",
