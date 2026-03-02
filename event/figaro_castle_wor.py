@@ -264,16 +264,16 @@ class FigaroCastleWOR(Event):
         # After defeating Tentacles, the passage to the Ancient Castle opens.
         # The engine room guy should not offer to travel between locations.
 
-        # Change dialog 2395 (0x095B) which was used for the emerge animation event
-        # to a message about the Ancient Castle passage being open
-        self.dialogs.set_text(2395, "The passage to the Ancient Castle is now open. Be careful in there!<end>")
+        # Set dialog $03D4 (980) to the after-event message about the tunnel
+        # (Dialog $095B retains its original ROM text "Nonsense! It's been fixed!")
+        self.dialogs.set_text(980, "A tunnel out through the dungeon is now open. Be careful out there!<end>")
 
         # Patch the engine room guy's post-Tentacles event at CA/68E6
         # Original: checks FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR and shows travel options
-        # New: just show the "passage is open" dialog and return
+        # New: just show the "tunnel is open" dialog and return
         space = Reserve(0xa68e6, 0xa6907, "figaro castle wor engine room guy post-tentacles", field.NOP())
         space.write(
-            field.Dialog(2395),
+            field.Dialog(980),
             field.Return(),
         )
 
@@ -286,6 +286,24 @@ class FigaroCastleWOR(Event):
 
         # Turn off temporary song override after engine room event
         #space = Reserve(0xa6bea, 0xa6beb, 'Figaro Castle Engine Room no temp song override', field.NOP()) # CA/6BEA: D2    Set event bit $1E80($1CC) [$1EB9, bit 4]
+
+        # Replace the "walk up 5 tiles fast" action (CA/6A05-CA/6A09) with
+        # "walk up 2 tiles and turn downward" to match the 2-tile walk down.
+        space = Reserve(0xa6a05, 0xa6a09, "figaro castle wor ruin npc walk back", field.NOP())
+        space.write(
+            field.EntityAct(0x15, True,
+                field_entity.Move(direction.UP, 2),
+                field_entity.Turn(direction.DOWN),
+            ),
+        )
+
+        # Skip the castle re-emergence map animation (CA/6A0A-CA/6A12) by branching
+        # directly to the event bit setting at CA/6A1F.
+        # (CA/6A13-CA/6A18 is reserved by map_shuffle_mod; it is never reached.)
+        space = Reserve(0xa6a0a, 0xa6a12, "figaro castle wor ruin skip emerge animation", field.NOP())
+        space.write(
+            field.Branch(0xa6a1f),
+        )
 
         # Edit bit setting in animation of castle re-emergence.
         space = Reserve(0xa6A23, 0xa6A24, "Figaro Castle don't close prison door", field.NOP())
