@@ -2,6 +2,7 @@ from event.event import *
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
 from data.rooms import room_data, ruination_dont_force, shared_exits
 from data.walks import *
+from data.characters import Characters
 import random
 
 
@@ -5040,7 +5041,8 @@ def create_party_interaction_scripts(dialogs):
         choices = CHARACTER_DIALOG_CHOICES.get(char_id)
         if choices:
             dialog_id = CHARACTER_AIRSHIP_DIALOG_IDS[char_id]
-            dialogs.set_text(dialog_id, random.choice(choices))
+            char_name = Characters.DEFAULT_NAME[char_id]
+            dialogs.set_text(dialog_id, f"<{char_name}>: {random.choice(choices)}")
 
     # Create one event script per character.
     for char_id in range(CHARACTER_COUNT):
