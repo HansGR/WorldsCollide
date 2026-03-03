@@ -243,21 +243,22 @@ class FigaroCastleWOR(Event):
         # in, they should be in FC (not wherever FC vanilla connects to).
 
         # Add a "summon airship" event to the emerging of the castle after the engine room event
-        airship_x = 106  # (106, 99) = cave at south figaro entrance
-        airship_y = 99   # (82, 86) = in the desert, right at FC
-        src = [
-            world.FadeScreen(),
-            #world.FadeLoadMap(0x1, direction.DOWN, default_music=False, x=airship_x, y=airship_y, fade_in=False, airship=True),
-            vehicle.SetPosition(airship_x, airship_y),
-            world.LoadMap(map_id=0x03d, x=6, y=34, fade_in=True, direction=direction.UP, default_music=True),
-            #field.SetParentMap(map_id=0x1, x=81, y=0),
-            field.FadeInScreen(),
-            field.Branch(0xa6a19),  # complete event
-            field.Return()
-        ]
-        airship_event = Write(Bank.CA, src, "summon airship to Figaro Castle WOR")
-        space = Reserve(0xa6a13, 0xa6a18, field.NOP())  #  Load map $003D (Figaro Castle, switch room and prison (always)), position (06, 34), mode $00)
-        space.write(world.Branch(airship_event.start_address))
+        if not self.args.ruination_mode:
+            airship_x = 106  # (106, 99) = cave at south figaro entrance
+            airship_y = 99   # (82, 86) = in the desert, right at FC
+            src = [
+                world.FadeScreen(),
+                #world.FadeLoadMap(0x1, direction.DOWN, default_music=False, x=airship_x, y=airship_y, fade_in=False, airship=True),
+                vehicle.SetPosition(airship_x, airship_y),
+                world.LoadMap(map_id=0x03d, x=6, y=34, fade_in=True, direction=direction.UP, default_music=True),
+                #field.SetParentMap(map_id=0x1, x=81, y=0),
+                field.FadeInScreen(),
+                field.Branch(0xa6a19),  # complete event
+                field.Return()
+            ]
+            airship_event = Write(Bank.CA, src, "summon airship to Figaro Castle WOR")
+            space = Reserve(0xa6a13, 0xa6a18, field.NOP())  #  Load map $003D (Figaro Castle, switch room and prison (always)), position (06, 34), mode $00)
+            space.write(world.Branch(airship_event.start_address))
 
     def ruination_mod(self):
         # In ruination mode, Figaro Castle is always above ground.
