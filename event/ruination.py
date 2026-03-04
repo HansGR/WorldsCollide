@@ -139,7 +139,8 @@ ROOM_REWARD = {
     'ruin-baren-reward': {"Baren Falls": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Baren Falls, after boss but before shore
     220: {"Phantom Train": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Phantom Train Caboose... boss is room 202
     151: {"Mt. Kolts": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Mt Kolts
-    395: {"Collapsing House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Tzen WoR Collapsing house
+    'ms-wor-51': {"Collapsing House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM], # Tzen WoR Collapsing house
+                  "Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'ms-wob-33'},
     
     # CELES
     'ms-wor-58': {"South Figaro": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # South Figaro Basement  World of Ruin;  WOB is 'ms-wob-6'.
@@ -193,7 +194,7 @@ ROOM_REWARD = {
     # UNGATED
     22: {"Narshe Battle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Kefka @ Narshe
     '41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},   # Tritoch
-    'ms-wor-51': {"Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'ms-wob-33'
+    #'ms-wor-51': {"Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'ms-wob-33'
     'dc-73': {"Auction House_1": [RewardType.ESPER, RewardType.ITEM],
               "Auction House_2": [RewardType.ESPER, RewardType.ITEM]},   # Jidoor WoR.  WOB is 'ms-wob-28'
 
@@ -2946,6 +2947,9 @@ class RuinationBranch(Network):
 
                 if self.verbose:
                     print(f'\t\tExit {exit_id}: {len(valid_targets)} valid targets')
+                    if False:
+                        print(valid_targets)
+
 
                 if len(valid_targets) > 0:
                     this_conn = random.choice(valid_targets)
@@ -4864,7 +4868,7 @@ CHARACTER_DIALOG_CHOICES = {
         "I'll protect you!<end>",
         "Trust me! You'll be fine!<end>",
         "As long as there're people who need to be protected, I'll fight!<end>",
-        "I have learned to celebrate life...<line>and the living.<end>",
+        "I have learned to celebrate life... and the living.<end>",  # <line>
         "Let's go!<line>We have work to do!!<end>",
         #"We haven't a second to lose!<end>",
         #"I promised I'd protect her.<line>I WILL NOT back out on my word.<end>",
@@ -4890,8 +4894,8 @@ CHARACTER_DIALOG_CHOICES = {
     ],
     EDGAR: [
         # charming king, flirtatious, witty
-        "If something happens to me,<line>all the world's women will grieve!<end>",
-        "It is my dream to build a kingdom<line>in which I can guarantee freedom, and dignity.<end>",
+        "If something happens to me, all the world's women will grieve!<end>",  # <line>
+        "It is my dream to build a kingdom in which I can guarantee freedom, and dignity.<end>", # <line>
         #"First of all, your beauty<line>has captivated me!<end>",
         #"Guess my technique's getting a bit rusty...<end>",
         #"He'd slit his mama's throat for a nickel!<end>",
@@ -4907,9 +4911,9 @@ CHARACTER_DIALOG_CHOICES = {
         "Let me have at it!<end>",
         #"Then let's just bust through!<end>",
         "Master Duncan's techniques mustn't fail me.<end>",
-        "You think the end of the world<line>was gonna do me in?<end>",
+        "You think the end of the world was gonna do me in?<end>", # <line>
         "Now I know why I have these stupid muscles!<end>",
-        "I have come to experience anew<line>the love of my brother!<end>",
+        "I have come to experience anew the love of my brother!<end>", # <line>
         "Can't wage war on an empty stomach!<end>",
         "...smash Kefka, and deliver peace unto the world! All right, count me in!<end>",
     ],
@@ -4918,7 +4922,7 @@ CHARACTER_DIALOG_CHOICES = {
         "I'm a soldier, not some love-starved twit!<end>",
         "I'm free...<line>The Empire can't control me!<end>",
         "I've met someone who can accept me<line>for what I am.<end>",
-        "I'm glad I made it this far...<line>I feel I have a lot to live for...<end>",
+        "I'm glad I made it this far... I feel I have a lot to live for...<end>", # <line>
         #"I think you've been hustled,<line>Mr. Gambler.<end>",
         "I'm a GENERAL, not some opera floozy!<end>",
         "Come on, everybody!<line>We have to work together!<end>",
@@ -4928,8 +4932,8 @@ CHARACTER_DIALOG_CHOICES = {
     STRAGO: [
         # old sage, grandfather figure
         #"I have a special little Granddaughter!<end>",
-        "Hey everyone! Let me see the<line>light in your eyes! The old man,<line>here, hasn't given up yet!<end>",
-        "I wanted to show my enemy the<line>true meaning of the word, 'hero'!<end>",
+        "Hey everyone! Let me see the light in your eyes! The old man, here, hasn't given up yet!<end>", # <line> #<line>
+        "I wanted to show my enemy the true meaning of the word, 'hero'!<end>",  # <line>
         "Fool! I may be old,<line>but I'm not powerless!<end>",
         #"I owe you for saving <RELM>.<line>I'll help you find your Espers.<end>",
         "In all my travels,<line>and in all my years...<end>",
@@ -4938,7 +4942,7 @@ CHARACTER_DIALOG_CHOICES = {
         # sassy young painter
         "Let's do it!<line>Let's go get that madman!<end>",
         #"And I have a brave Grandpa who'll<line>stand by me through it all.<end>",
-        "Who is this puffed up<line>aerobics instructor, anyway?<end>",
+        "Who is this puffed up aerobics instructor, anyway?<end>", #<line>
         "Did you think I was gonna check out<line>before you, old man?!<end>",
         "Hey! Did you see me? I was awesome!<end>",
         "I'm coming along, too.<end>",

@@ -203,11 +203,21 @@ class PhantomTrain(Event):
 
         space = Reserve(0xbaccf, 0xbacec, "phantom train hide character if recruited", field.NOP())
         inside_last_car_entrance_event = space.next_address
-        space.write(
-            field.ReturnIfEventBitClear(event_bit.character_available(character)),
-            field.HideEntity(ghost_npc_id),
-            field.Return(),
-        )
+        if self.args.ruination_mode:
+            # Pivot off recruited, not available (more consistent in Ruination).
+            space.write(
+                field.ReturnIfEventBitClear(event_bit.character_recruited(character)),
+                field.HideEntity(ghost_npc_id),
+                field.Return(),
+            )
+        else:
+            # Preserve original code
+            space.write(
+                field.ReturnIfEventBitClear(event_bit.character_available(character)),
+                field.HideEntity(ghost_npc_id),
+                field.Return(),
+            )
+
         self.maps.set_entrance_event(0x98, inside_last_car_entrance_event - EVENT_CODE_START)
 
     def forest_spring_mod(self):

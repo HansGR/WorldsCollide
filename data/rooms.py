@@ -1018,7 +1018,8 @@ room_data = {
 }
 
 ruination_dont_force = [
-    1079    # Cave to the Sealed Gate, now movable.  Quick exit always open?
+    1079,    # Cave to the Sealed Gate, now movable.  Quick exit always open?
+
 ]
 
 # Lists of exits that must be connected
