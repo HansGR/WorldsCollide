@@ -828,6 +828,13 @@ class RuinationBranch(Network):
         if room_type != 'DEAD_END':
             return False
 
+        # Check for downstream rooms (from forced connections in the graph).
+        # A room that leads to other rooms via forced connections is not truly
+        # a dead end, even if it has only one local door (e.g., dc-15 in Baren
+        # Falls has a forced trap leading to ruin-baren which has 2 door exits).
+        if len(list(self.net.successors(room_id))) > 0:
+            return False
+
         # Check for keys
         if len(room.keys) > 0:
             return False
@@ -1229,8 +1236,9 @@ class RuinationBranch(Network):
         - Hub+upstream must have >= 1 entrance after connection (for loop connections)
 
         Rules:
-        A1. Unconnected target: target room must have exits (doors+traps) > 0.
-            (The consumed pit is not an exit, so target exits are unaffected.)
+        A1. Unconnected target: target room (+ its downstream forced rooms) must have
+            exits (doors+traps) > 0. If exits are only in downstream rooms, hub+upstream
+            must also have an entrance. (The consumed pit is not an exit.)
         B1. Connected target: (target + target's downstream) must have at least one
             exit that is not the selected exit (trap_exit).
         C.  Hub/upstream target (loop): additionally, (exit room + exit room's upstream)
@@ -1256,15 +1264,11 @@ class RuinationBranch(Network):
             return _upstream_room_cache
 
         # Pre-compute hub+upstream entrance count for rule A1 hub entrance check.
-        # If the exit room is in hub/upstream and hub has 0 entrances (doors+pits),
-        # connecting a trap to an unconnected room would create a downstream node
-        # that can never reconnect (finalize_map step 2 needs hub entrances).
+        # Used both for the existing hub check (exit from hub/upstream) and for the
+        # downstream-only exit check (where hub must retain an entrance regardless).
         exit_is_hub_upstream = exit_room_id in hub_and_upstream
-        if exit_is_hub_upstream:
-            hub_upstream_doors, hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
-            hub_upstream_entrances = hub_upstream_doors + hub_upstream_pits
-        else:
-            hub_upstream_entrances = None  # Not needed
+        hub_upstream_doors, hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
+        hub_upstream_entrances = hub_upstream_doors + hub_upstream_pits
 
         for room_id in self.net.nodes:
             if room_id == self.terminus:
@@ -1309,6 +1313,32 @@ class RuinationBranch(Network):
                     if exit_is_hub_upstream and hub_upstream_entrances == 0:
                         continue
                     valid_pits.extend(room_pits)
+                elif target_exits == 0:
+                    # No local exits, but downstream rooms (from forced connections)
+                    # may have exits (same pattern as A2 downstream check for doors).
+                    downstream_paths = self.get_downstream_paths(room_id)
+                    downstream_rooms = set()
+                    for path in downstream_paths:
+                        downstream_rooms.update(path)
+                    if downstream_rooms:
+                        downstream_exits = 0
+                        downstream_free_exits = 0
+                        for rid in downstream_rooms - {room_id}:
+                            r = self.rooms.get_room(rid)
+                            if r:
+                                downstream_exits += (
+                                    len([d for d in r.doors if d not in self.protected])
+                                    + len([t for t in r.traps if t not in self.protected]))
+                                downstream_free_exits += (
+                                    len([d for d in r.doors if d not in self.protected
+                                         and d not in self.initially_locked_exits])
+                                    + len([t for t in r.traps if t not in self.protected
+                                           and t not in self.initially_locked_exits]))
+                        if downstream_exits > 0 and downstream_free_exits > 0:
+                            # Exits are only downstream (through forced connections),
+                            # so hub+upstream must retain an entrance for looping back.
+                            if hub_upstream_entrances > 0:
+                                valid_pits.extend(room_pits)
             else:
                 # === B1: Connected room ===
                 # (target room + target's downstream) must have at least one exit
@@ -1364,8 +1394,9 @@ class RuinationBranch(Network):
         - Hub+upstream must have >= 1 entrance after connection (for loop connections)
 
         Rules:
-        A2. Unconnected target: (exit room + target room) must have exits > 0 after
-            both door_exit and target_door are consumed.
+        A2. Unconnected target: (exit room + target room + target's downstream forced
+            rooms) must have exits > 0 after both door_exit and target_door are consumed.
+            If exits are only in downstream rooms, hub+upstream must also have an entrance.
         B2. Connected target: (exit room + target + target's downstream) must have
             at least one exit after both door_exit and target_door are consumed.
         C.  Hub/upstream target (loop): additionally, (exit room + exit room's upstream)
@@ -1393,6 +1424,20 @@ class RuinationBranch(Network):
                     _upstream_room_cache.update(path)
             return _upstream_room_cache
 
+        # Pre-compute hub+upstream entrance count (lazy, for downstream-only exit check)
+        _hub_entrance_cache = None
+
+        def get_hub_upstream_entrance_count():
+            nonlocal _hub_entrance_cache
+            if _hub_entrance_cache is None:
+                hub_d, hub_p = self.count_entrances_in_region(hub_and_upstream)
+                _hub_entrance_cache = hub_d + hub_p
+                # door_exit is not yet protected but will be consumed by the connection;
+                # subtract it from hub entrances if exit_room is in hub+upstream
+                if exit_room_id in hub_and_upstream:
+                    _hub_entrance_cache -= 1
+            return _hub_entrance_cache
+
         for room_id in self.net.nodes:
             if room_id == self.terminus:
                 continue
@@ -1412,10 +1457,17 @@ class RuinationBranch(Network):
                 # === A2: Unconnected room ===
                 # Connection consumes door_exit from exit room and target_door from target room.
                 # Both are doors (exits), so we check remaining exits after removing both.
+                # Also checks downstream rooms (from forced connections) for exits.
 
                 # Skip true dead ends (deferred to finalize_map)
                 if self.is_true_dead_end(room_id):
                     continue
+
+                # Check for downstream rooms (from forced connections in the graph)
+                downstream_paths = self.get_downstream_paths(room_id)
+                downstream_rooms = set()
+                for path in downstream_paths:
+                    downstream_rooms.update(path)
 
                 for target_door in room_doors:
                     if target_door == door_exit:
@@ -1439,6 +1491,26 @@ class RuinationBranch(Network):
 
                     if exits_count > 0 and (entrances_count > 0 or exit_room_id not in hub_and_upstream):
                         valid_doors.append(target_door)
+                    elif exits_count == 0 and downstream_rooms:
+                        # No local exits, but downstream rooms (from forced connections)
+                        # may have exits (e.g., Baren Falls: dc-15 -> ruin-baren-reward
+                        # -> ruin-baren which has 2 doors).
+                        downstream_exits = 0
+                        for rid in downstream_rooms - {exit_room_id, room_id}:
+                            r = self.rooms.get_room(rid)
+                            if r:
+                                downstream_exits += len([d for d in r.doors
+                                                         if d not in self.protected
+                                                         and d not in exclude])
+                                downstream_exits += len([t for t in r.traps
+                                                         if t not in self.protected
+                                                         and t not in exclude])
+                        if downstream_exits > 0:
+                            # Exits are only downstream (through forced one-way connections),
+                            # so this acts like a trap exit: hub+upstream must retain at
+                            # least one entrance for the branch to loop back.
+                            if get_hub_upstream_entrance_count() > 0:
+                                valid_doors.append(target_door)
             else:
                 # === B2: Connected room ===
                 # (exit room + target room + target's downstream) must have at least one
