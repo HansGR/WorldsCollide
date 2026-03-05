@@ -27,9 +27,10 @@ class Transitions:
     FREE_MEMORY = False
     verbose = False
 
-    def __init__(self, mapping, rom, exit_data, event_data, include_script_data=None):
+    def __init__(self, mapping, rom, exit_data, event_data, include_script_data=None, args=None):
         self.transitions = []
         self.rom = rom
+        self.args = args
         self.include_script_data = include_script_data
         if self.include_script_data is None:
             self.include_script_data = {}
@@ -231,7 +232,10 @@ class Transitions:
             # Add patched lines after map transition
             src_end = src_end[:5] + en_patch + src_end[5:]
 
-            if t.entr.dest_location[0] in [0x0, 0x1]:
+            summon_airship = t.entr.dest_location[0] in [0x0, 0x1]
+            if self.args is not None and self.args.ruination_mode:
+                summon_airship = False
+            if summon_airship:
                 # This is loading to a world map.  Summon the airship, and make everything happen before that.
                 get_airship_src = SummonAirship(t.entr.dest_location[0], t.entr.dest_location[1], t.entr.dest_location[2], bytes=True)
                 #print([hex(a)[2:] for a in get_airship_src])
