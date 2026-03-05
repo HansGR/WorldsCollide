@@ -800,7 +800,7 @@ class Maps():
                         print('Updated event exit info: ', e, hex(event_exit_info[e][0]))
 
             # Connect one-way event exits using the Transitions class
-            self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info)
+            self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info, args=self.args)
             self.transitions.write(maps=self)
 
             # Connect two-way doors
@@ -1009,7 +1009,7 @@ class Maps():
                 print('Connecting: ' + str(m) + ' to ' + str(map[m]))
             transition_map.append([m, map[m]])
         dt = Transitions(transition_map, self.rom, self.exits.exit_original_data, event_exit_info,
-                         self.exit_event_data_to_include)  # self.exit_event_addr_to_call
+                         self.exit_event_data_to_include, args=self.args)  # self.exit_event_addr_to_call
         dt.write(maps=self)
 
         # Connect logical WOR exits: 4000 <= m,  m_WOB = (m - 4000).
