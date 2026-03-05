@@ -257,8 +257,9 @@ class Events():
         # Handle dried meat for Gau: ensure it's available in non-Veldt-gated shops
         # This ensures dried meat is accessible BEFORE Gau is obtained (needed for Veldt recruitment)
         if self.args.shop_dried_meat > 0:
-            if self.args.debug and 'GAU' in ruin_map.planned_characters:
-                print(f'Gau is in planned characters, ensuring dried meat in {self.args.shop_dried_meat} non-Veldt-gated shops')
+            all_game_chars = set(ruin_map.PARTY) | set(ruin_map.planned_characters)
+            if self.args.debug and 'GAU' in all_game_chars:
+                print(f'Gau is in game characters, ensuring dried meat in {self.args.shop_dried_meat} non-Veldt-gated shops')
             non_veldt_shops = ruin_map.get_non_veldt_gated_shops(self.characters)
             self.shops.assign_dried_meats_ruination(non_veldt_shops)
 
