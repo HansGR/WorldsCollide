@@ -295,18 +295,18 @@ RUIN_ROOM_SETS = {
 # Maps ruination area names to shop IDs from data/shop_map_names.py
 # Used to track which shops are accessible in ruination mode for dried meat assignment
 AREA_SHOPS = {
-    'Kohlingen': [67, 68, 69],         # WOR shops (items/weapons/armor)
-    'Nikeah': [58, 59, 60, 61],        # WOR shops
-    'Thamasa': [74, 75, 76, 77],       # WOR shops
-    'SouthFigaro': [62, 63, 64, 65],   # WOR shops
-    'Albrook': [50, 51, 52, 53],       # WOR shops
-    'Tzen': [54, 55, 56, 57],          # WOR shops
-    'Jidoor': [78, 79, 80, 81],        # WOR shops (includes Owzer's mansion)
-    'Maranda': [82, 83],               # WOR shops
-    'FigaroCastle': [67, 86],          # WOR shops (left/right)
-    'ReturnersHideout': [38],          # Item shop
-    'PhantomTrain': [87],              # Vendor
-    'GauFatherHouse': [41],            # Vendor (WOB map used in ruination)
+    'Kohlingen': [65, 66, 67],         # WOR shops (items/weapons/armor)
+    'Nikeah': [56, 57, 58, 59],        # WOR shops
+    'Thamasa': [72, 73, 74, 75],       # WOR shops
+    'SouthFigaro': [60, 61, 62, 63],   # WOR shops
+    'Albrook': [48, 49, 50, 51],       # WOR shops
+    'Tzen': [52, 53, 54, 55],          # WOR shops
+    'Jidoor': [76, 77, 78, 79],        # WOR shops (includes Owzer's mansion)
+    'Maranda': [80, 81],               # WOR shops
+    'FigaroCastle': [64, 84],          # WOR shops (left/right)
+    'ReturnersHideout': [36],          # Item shop
+    'PhantomTrain': [85],              # Vendor
+    'GauFatherHouse': [39],            # Vendor (WOB map used in ruination)
 }
 
 RUIN_TERMINI = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']  # list of terminal rooms for branches
