@@ -266,11 +266,12 @@ class Shops():
                     random_index = random.randrange(random_shop.item_count)
                     random_shop.items[random_index] = dried_meat_id
                 no_dried_meat_shops.remove(random_shop)
+                dried_meat_shops.append(random_shop)
 
         # Debug output
         if self.args.debug:
             print(f"Ruination mode: Assigned dried meat to {min(target_count, len(accessible_item_shops))} shops")
-            print(f"  Accessible shops: {[shop.id for shop in accessible_item_shops]}")
+            print(f"  Dried meat shops: {[shop.name() for shop in dried_meat_shops]}")
 
     def remove_excluded_items(self):
         exclude = self.items.get_excluded()
