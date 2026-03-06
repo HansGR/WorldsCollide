@@ -268,11 +268,11 @@ RUIN_ROOM_SETS = {
     'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r'],
     'ZozoTower': [297, 298, 299, 300, 302, '303a', '303b', 304, 310, 311, 312, 313],
     'MtZozo': [250, 251, 252, 253, 254, 255, 256],
+    'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465],  # Burning House interior
 
     'SouthFigaro': ['ms-wor-58'],
     'GauFatherHouse': ['ms-wob-14'],  # use WOB for shadow check & vendor.  Change tileset, perhaps?
     'Thamasa': ['ruin-thamasa'],  # Thamasa town (burning house entrance gated by STRAGO)
-    'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465],  # Burning House interior dungeon
     'Kohlingen': ['ms-wor-59'],
     'Cid': ['ms-wor-48'],
     'Mobliz': ['ms-wor-52'],

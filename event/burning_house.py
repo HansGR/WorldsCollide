@@ -176,7 +176,14 @@ class BurningHouse(Event):
             field.Pause(1),
             field.StartSong(0xb8),
             field.WaitForSong(),
+        ]
+        if self.args.ruination_mode:
+            # Force waking up in WOR (we don't use WOB in ruination mode)
+            src += [
+                field.SetEventBit(event_bit.IN_WOR)
+            ]
 
+        src += [
             field.LoadMap(0x15a, direction.DOWN, default_music = True, x = 13, y = 16, fade_in = False, entrance_event = True),
             field.Call(field.UPDATE_LEADER_AND_SHOW_ALL_PARTY_MEMBERS),
             field.Call(field.DISABLE_COLLISIONS_FOR_PARTY_MEMBERS),
