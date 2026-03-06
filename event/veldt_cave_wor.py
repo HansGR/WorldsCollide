@@ -135,18 +135,27 @@ class VeldtCaveWOR(Event):
             # transition so the airship is moved.
             from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
             event_id = 2075
-            switchyard_src = [
-                field.FadeInSong(0x08, 0x30),
-                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
-                              y=self.airship_thamasa[2], fade_in=False, airship=True),
-                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
-                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-                vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
-                # Always show interceptor in door rando
-                #field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
-                field.FadeInScreen(),
-                field.Return(),
-            ]
+            if self.args.ruination_mode:
+                # In ruination mode, there is no airship. Skip the world map intermediate step
+                # and load Thamasa directly with default music.
+                switchyard_src = [
+                    field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    field.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, fade_in=True),
+                    field.Return(),
+                ]
+            else:
+                switchyard_src = [
+                    field.FadeInSong(0x08, 0x30),
+                    field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                                  y=self.airship_thamasa[2], fade_in=False, airship=True),
+                    vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
+                    vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                    vehicle.LoadMap(0x15d, direction.DOWN, default_music=True, x=61, y=13, update_parent_map=True),
+                    # Always show interceptor in door rando
+                    #field.ClearEventBit(npc_bit.INTERCEPTOR_STRAGO_ROOM),
+                    field.FadeInScreen(),
+                    field.Return(),
+                ]
             AddSwitchyardEvent(event_id=event_id, maps=self.maps, src=switchyard_src)
 
             space.write([
