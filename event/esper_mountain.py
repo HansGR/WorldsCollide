@@ -421,7 +421,22 @@ class EsperMountain(Event):
         self.maps.add_event(map_id, newevent)
 
         # Change map music; turn off random encounters.
-        esper_terminus_properties = self.maps.properties[map_id]
-        esper_terminus_properties.song = 33
-        esper_terminus_properties.enable_random_encounters = 0
+        #esper_terminus_properties = self.maps.properties[map_id]
+        #esper_terminus_properties.song = 33
+        #esper_terminus_properties.enable_random_encounters = 0
+
+        # Create an event tile at entry point (x,y) = (16,9) to play "esper world" song
+        src = [
+            field.ReturnIfEventBitSet(event_bit.multipurpose_map(1)),
+            field.SetEventBit(event_bit.multipurpose_map(1)),
+            field.StartSong(33),
+            field.Return()
+        ]
+        space = Write(Bank.CC, src, "Change Music Esper Mtn Terminus")
+        musicevent = MapEvent()
+        musicevent.x = 16
+        musicevent.y = 9
+        musicevent.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(map_id, musicevent)
+
 

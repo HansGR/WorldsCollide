@@ -270,6 +270,13 @@ class FloatingContinent(Event):
         # do not set the shadow npc even bit again (otherwise when you return character/esper would be there again)
         space = Reserve(0xa5ab5, 0xa5abc, "floating continent do not put shadow npc back on map", field.NOP())
 
+        # If ruination mode, don't show the airship
+        map_id = 0x18a
+        airship_npc_id = 0x23
+        airship_npc = self.maps.get_npc(map_id, airship_npc_id)
+        airship_npc.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+        airship_npc.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+
     def atma_battle_mod(self):
         boss_pack_id = self.get_boss("AtmaWeapon")
 
@@ -453,6 +460,14 @@ class FloatingContinent(Event):
     def escape_mod(self, npc_id, airship_instructions):
         space = Reserve(0xae3ec, 0xae3f0, "floating continent get outta here dialog", field.NOP())
 
+        if self.args.ruination_mode:
+            # Don't show airship
+            space = Reserve(0xa578e, 0xa579c, "floating continent ruination no airship NPC", field.NOP())
+            space.write([
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.Turn(direction.LEFT),
+                                ),
+            ])
         space = Reserve(0xa57c0, 0xa57c0, "floating continent update character created at escape")
         space.write(npc_id)
         space = Reserve(0xa57c2, 0xa57c2, "floating continent update character placed on map at escape")
@@ -706,7 +721,7 @@ class FloatingContinent(Event):
                            ),
             field.WaitForEntityAct(field_entity.CAMERA),
             field.WaitForEntityAct(field_entity.PARTY0),
-            field.HideEntity(field_entity.PARTY0),
+            #field.HideEntity(field_entity.PARTY0),
             field.FreeScreen(),
         ] + GoToSwitchyard(self.exit_id, map='field')
         # We need a fixed location to put this.  Bit length ~ 60 bits?
