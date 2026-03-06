@@ -173,7 +173,7 @@ ROOM_REWARD = {
     # 1: {"Doom Gaze": [RewardType.ESPER, RewardType.ITEM]},   # Doom Gaze, used elsewhere in -ruin
     
     # STRAGO
-    'ruin-thamasa': {"Burning House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Burning House
+    465: {"Burning House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Burning House (room 465, end of BurningHouse dungeon)
     'ms-wor-69': {"Fanatic's Tower": [RewardType.CHARACTER, RewardType.ESPER]},   # Fanatics Tower
     'ms-wor-78': {"Ebot's Rock": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Ebot's Rock
     
@@ -204,7 +204,7 @@ ROOM_REWARD = {
 #(1) don't allow it.  Force certain areas to be in the same branch:
 forced_same_branch = {
     'Zozo': {'ZozoTower', 'MtZozo'},
-    'Thamasa': {'VeldtCave', 'EbotsRock'},
+    'Thamasa': {'VeldtCave', 'EbotsRock', 'BurningHouse'},
     'Nikeah': {'CrescentMtn'}
 }
 for fsb in [f for f in forced_same_branch.keys()]:
@@ -227,7 +227,7 @@ CHARACTER_AREAS = {
     'SHADOW': ['GauFatherHouse', 'FloatingContinent', 'VeldtCave', 'Thamasa'],
     'GAU': ['Veldt', 'CrescentMtn', 'Nikeah'],
     'SETZER': ['Kohlingen', 'DarylsTomb'],
-    'STRAGO': ['Thamasa', 'FanaticsTower', 'EbotsRock'],
+    'STRAGO': ['Thamasa', 'BurningHouse', 'FanaticsTower', 'EbotsRock'],
     'RELM': ['Jidoor', 'EsperMountain'],
     'MOG': ['Narshe'],
     'GOGO': ['ZoneEater'],
@@ -271,7 +271,8 @@ RUIN_ROOM_SETS = {
 
     'SouthFigaro': ['ms-wor-58'],
     'GauFatherHouse': ['ms-wob-14'],  # use WOB for shadow check & vendor.  Change tileset, perhaps?
-    'Thamasa': ['ruin-thamasa'],  # including STRAGO-locked burning house
+    'Thamasa': ['ruin-thamasa'],  # Thamasa town (burning house entrance gated by STRAGO)
+    'BurningHouse': [457, 458, 459, 460, 461, 462, 463, 464, 465],  # Burning House interior dungeon
     'Kohlingen': ['ms-wor-59'],
     'Cid': ['ms-wor-48'],
     'Mobliz': ['ms-wor-52'],
