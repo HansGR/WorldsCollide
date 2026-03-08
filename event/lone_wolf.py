@@ -524,11 +524,17 @@ class LoneWolf(Event):
         self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
 
         # Copy invisible bridge blocker NPC (blocks bridge until player chooses mog or lone wolf)
-        bridge_block_npc_id = 0x1d
-        bridge_block_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        #bridge_block_npc_id = 0x1d
+        #bridge_block_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        from data.npc import InvisibleBlockNPC
+        bridge_block_npc = InvisibleBlockNPC(14, 20)
+        bridge_block_npc.event_bit = npc_bit.event_bit(0x641)
+        bridge_block_npc.event_byte = npc_bit.event_byte(0x641)
         wor_bridge_block_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc)
-        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        #self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
         self.invisible_bridge_block_npc_id = wor_bridge_block_npc_id
+        #bridge_block_wor_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=wor_bridge_block_npc_id)
+
 
         # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
         # These event tiles trigger the animations and dialog for the cliff scene
