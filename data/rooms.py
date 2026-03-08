@@ -254,7 +254,7 @@ room_data = {
     46 : [ [156, 157, 1151], [ ], [ ], 1], #Narshe Northern Mines Main Hallway WoR
     47 : [ [158], [ ], [ ], 1], #Narshe Northern Mines Tritoch Room WoR
     48 : [ [159, 160], [ ], [ ], 1], #Narshe Moogle Defense Cave WoR
-    49 : [ [161, 162, 163, 164], [ ], [ ], 1], #Narshe South Caves WoR
+    49 : [ [161, 162, 164], [ ], [6182], 1], #Narshe South Caves WoR.  Door 163 is inaccessible.
     50 : [ [165, 166], [ ], [ ], 1], #Narshe Checkpoint Room WoR
     51 : [ [167, 168], [ ], [ ], 1], #Narshe South Caves Secret Passage 3F WoR
 
@@ -265,7 +265,7 @@ room_data = {
 
     59 : [ [178, 179, 1155], [ ], [ ], 0], #Narshe Northern Mines Main Hallway WoB
     60 : [ [180], [ ], [ ], 0], #Narshe Northern Mines Tritoch Room WoB
-    61 : [ [181, 182], [ ], [ ], 1], #Narshe Moogle Cave WoR
+    61 : [ [181], [182], [ ], 1], #Narshe Moogle Cave WoR.  # 182 acts as a trap door --> rm 49
     62 : [ [183, 184], [ ], [ ], 0], #Narshe South Caves Secret Passage 3F WoB
     63 : [ [185, 186], [ ], [ ], 0], #Narshe Checkpoint Room WoB
     64 : [ [187, 188, 190], [ ], [6194], 0], #Narshe South Caves WoB.  Door 189 is inaccessible.

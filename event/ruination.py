@@ -182,7 +182,7 @@ ROOM_REWARD = {
     284: {"Owzer Mansion": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Owzer's Basement
     
     # MOG
-    23: {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lone Wolf.  Move to WOR?
+    '41a': {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lone Wolf.  Move to WOR?
     65: {"Narshe Moogle Defense": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Moogle Defense WOR (need to update how this starts); 65 in WOB
 
     # UMARO
@@ -264,7 +264,7 @@ RUIN_ROOM_SETS = {
     'DarylsTomb': [377, 378, 379, 380, 381, 382, 383, 384, 386, 'ruin-daryl', 388, 389, 390, 391, 392, 393],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
     'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160],
-    'Narshe': ['ruin-narshe', 36, '37a', 38, 40, 41, 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 51],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense)
+    'Narshe': ['ruin-narshe', 36, '37a', 38, 40, '41a', 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 51, 61],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense)
     'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r'],
     'ZozoTower': [297, 298, 299, 300, 302, '303a', '303b', 304, 310, 311, 312, 313],
     'MtZozo': [250, 251, 252, 253, 254, 255, 256],
