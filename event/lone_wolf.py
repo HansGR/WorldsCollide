@@ -459,6 +459,7 @@ class LoneWolf(Event):
         self.mog_npc.x = 9   # Patch some data? showed up in the wrong spot & looking weird
         self.mog_npc.y = 16
         self.mog_npc.split_sprite = 0
+        self.mog_npc.event_address = 0x2d5df  # tritoch_mog_npc.event_address  # 0xcd5df
 
         # Copy bridge animation NPC (runs across bridge during cliff scene)
         lonewolf_bridge_npc_id = 0x1a
