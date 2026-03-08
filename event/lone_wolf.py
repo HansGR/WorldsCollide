@@ -523,6 +523,13 @@ class LoneWolf(Event):
         wor_lonewolf_bridge_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=lonewolf_bridge_npc)
         self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
 
+        # Copy invisible bridge blocker NPC (blocks bridge until player chooses mog or lone wolf)
+        bridge_block_npc_id = 0x1d
+        bridge_block_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        wor_bridge_block_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        self.invisible_bridge_block_npc_id = wor_bridge_block_npc_id
+
         # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
         # These event tiles trigger the animations and dialog for the cliff scene
         event_tile_xy = [(22, 20, 0xcd4a8),
@@ -548,6 +555,12 @@ class LoneWolf(Event):
         addresses = [0xcd4b1, 0xcd4b3, 0xcd4b5, 0xcd4b9, 0xcd4c0, 0xcd4c5]
         for i, addr in enumerate(addresses):
             space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
+
+        # Update bridge blocker NPC references (3 locations in event script)
+        # 0xcd588: Create object, 0xcd58a: Show object, 0xcd6db: Hide object
+        bridge_block_addresses = [0xcd588, 0xcd58a, 0xcd6db]
+        for i, addr in enumerate(bridge_block_addresses):
+            space = Reserve(addr, addr, "edit lone wolf bridge blocker " + str(i), wor_bridge_block_npc_id)
 
         # Update Mog NPC references (26 locations in event script)
         # Note: addresses 0xcd67c-0xcd68d are in the range that character_mod() overwrites,
