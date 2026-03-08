@@ -113,8 +113,64 @@ class LoneWolf(Event):
         # move lone wolf falling up to make room for adding character
         # skip copying lone wolf take this dialog at [0xcd693,0xcd695]
         space = Reserve(0xcd61b, 0xcd67b, "lone wolf mog dialog and naming", field.NOP())
-        space.copy_from(0xcd67c, 0xcd692)
-        space.copy_from(0xcd696, 0xcd6bf)
+        if self.args.ruination_mode:
+            # Rewrite explicitly with updated NPC IDs (copy_from would use old hardcoded $1C/$1B)
+            # Range 1 (0xcd67c-0xcd692): Mog/character celebration animation
+            space.write(
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.AnimateHighJump(),
+                    field_entity.Turn(direction.RIGHT),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.UP),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.LEFT),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.DOWN),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.AnimateFrontRightHandUp(),
+                ),
+                field.Pause(1.5),
+                # Range 2 (0xcd696-0xcd6bf): Lone Wolf falls off cliff
+                field.DisableEntityCollision(self.lone_wolf_npc_id),
+                field.PlaySoundEffect(186),
+                field.EntityAct(self.lone_wolf_npc_id, True,
+                    field_entity.SetSpriteLayer(3),
+                    field_entity.DisableWalkingAnimation(),
+                    field_entity.SetSpeed(field_entity.Speed.FAST),
+                    field_entity.Turn(direction.RIGHT),
+                    field_entity.AnimateHighJump(),
+                    field_entity.Move(direction.RIGHT, 2),
+                    field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                    field_entity.Move(direction.DOWN, 4),
+                ),
+                field.HideEntity(self.lone_wolf_npc_id),
+                field.RefreshEntities(),
+                field.EnableEntityCollision(self.lone_wolf_npc_id),
+                field.EntityAct(field_entity.PARTY0, False,
+                    field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                    field_entity.MoveDiagonal(direction.RIGHT, 1, direction.DOWN, 1),
+                    field_entity.Move(direction.RIGHT, 2),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                    field_entity.Move(direction.RIGHT, 4),
+                ),
+                field.Pause(2.0),
+                field.EntityAct(field_entity.PARTY0, False,
+                    field_entity.Turn(direction.UP),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.DOWN),
+                ),
+                field.Pause(0.5),
+            )
+        else:
+            space.copy_from(0xcd67c, 0xcd692)
+            space.copy_from(0xcd696, 0xcd6bf)
         space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
@@ -467,6 +523,13 @@ class LoneWolf(Event):
         wor_lonewolf_bridge_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=lonewolf_bridge_npc)
         self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
 
+        # Copy invisible bridge blocker NPC (blocks bridge until player chooses mog or lone wolf)
+        bridge_block_npc_id = 0x1d
+        bridge_block_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        wor_bridge_block_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        self.invisible_bridge_block_npc_id = wor_bridge_block_npc_id
+
         # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
         # These event tiles trigger the animations and dialog for the cliff scene
         event_tile_xy = [(22, 20, 0xcd4a8),
@@ -492,6 +555,12 @@ class LoneWolf(Event):
         addresses = [0xcd4b1, 0xcd4b3, 0xcd4b5, 0xcd4b9, 0xcd4c0, 0xcd4c5]
         for i, addr in enumerate(addresses):
             space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
+
+        # Update bridge blocker NPC references (3 locations in event script)
+        # 0xcd588: Create object, 0xcd58a: Show object, 0xcd6db: Hide object
+        bridge_block_addresses = [0xcd588, 0xcd58a, 0xcd6db]
+        for i, addr in enumerate(bridge_block_addresses):
+            space = Reserve(addr, addr, "edit lone wolf bridge blocker " + str(i), wor_bridge_block_npc_id)
 
         # Update Mog NPC references (26 locations in event script)
         # Note: addresses 0xcd67c-0xcd68d are in the range that character_mod() overwrites,
