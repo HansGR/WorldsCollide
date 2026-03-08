@@ -189,11 +189,17 @@ class LoneWolf(Event):
         else:
             refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
 
+        hide_entities = [
+            field.HideEntity(self.mog_npc_id),
+            field.HideEntity(self.invisible_bridge_block_npc_id),
+        ]
+        if self.args.ruination_mode:
+            hide_entities.append(field.HideEntity(self.invisible_bridge_block_npc_id_2))
+
         space = Reserve(0xcd67c, 0xcd696, "lone wolf add char", field.NOP())
         space.write(
             field.Call(refresh_addr),
-            field.HideEntity(self.mog_npc_id),
-            field.HideEntity(self.invisible_bridge_block_npc_id),
+            hide_entities,
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.SetEventBit(npc_bit.MOG_MOOGLE_ROOM_WOR),
             field.SetEventBit(event_bit.RECRUITED_MOG_WOB),
@@ -261,14 +267,18 @@ class LoneWolf(Event):
         )
 
         # add pause after lone wolf jumps to wait for falling sound effect
-        src = [
+        hide_block_src = [
             field.HideEntity(self.lone_wolf_npc_id),
             field.RefreshEntities(),
             field.HideEntity(self.invisible_bridge_block_npc_id),
+        ]
+        if self.args.ruination_mode:
+            hide_block_src.append(field.HideEntity(self.invisible_bridge_block_npc_id_2))
+        hide_block_src.extend([
             field.RefreshEntities(),
             field.Return(),
-        ]
-        space = Write(Bank.CC, src, "lone wolf hide lone wolf and remove bridge block")
+        ])
+        space = Write(Bank.CC, hide_block_src, "lone wolf hide lone wolf and remove bridge block")
         hide_npcs = space.start_address
 
         space = Reserve(0xcd5d1, 0xcd5d6, "lone wolf hide npcs after fall", field.NOP())
@@ -278,19 +288,43 @@ class LoneWolf(Event):
         )
 
     def finish_check_mod(self):
-        src = [
-            field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
-            field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
-            field.FinishCheck(),
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "lone wolf finish check")
-        finish_check = space.start_address
+        if self.args.ruination_mode:
+            # Include HideEntity for both bridge blockers in the subroutine
+            # This covers the esper/item "saved mog" path where code flows through 0xcd6da
+            src = [
+                field.HideEntity(self.invisible_bridge_block_npc_id),
+                field.HideEntity(self.invisible_bridge_block_npc_id_2),
+                field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
+                field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "lone wolf finish check")
+            finish_check = space.start_address
 
-        space = Reserve(0xcd6dd, 0xcd6e0, "lone wolf finish saving mog", field.NOP())
-        space.write(
-            field.Call(finish_check),
-        )
+            # Extend reserve to cover HideEntity at 0xcd6da-0xcd6db + Call at 0xcd6dd-0xcd6e0
+            # Write NOPs first so Call starts at 0xcd6dd (Branch target from character_mod)
+            space = Reserve(0xcd6da, 0xcd6e0, "lone wolf finish saving mog", field.NOP())
+            space.write(
+                field.NOP(),
+                field.NOP(),
+                field.NOP(),
+                field.Call(finish_check),
+            )
+        else:
+            src = [
+                field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
+                field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "lone wolf finish check")
+            finish_check = space.start_address
+
+            space = Reserve(0xcd6dd, 0xcd6e0, "lone wolf finish saving mog", field.NOP())
+            space.write(
+                field.Call(finish_check),
+            )
 
         space = Reserve(0xcd5d7, 0xcd5da, "lone wolf finish saving gold hairpin", field.NOP())
         space.write(
@@ -531,9 +565,14 @@ class LoneWolf(Event):
         bridge_block_npc.event_bit = npc_bit.event_bit(0x641)
         bridge_block_npc.event_byte = npc_bit.event_byte(0x641)
         wor_bridge_block_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc)
-        #self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
         self.invisible_bridge_block_npc_id = wor_bridge_block_npc_id
-        #bridge_block_wor_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=wor_bridge_block_npc_id)
+
+        # Second bridge block NPC at (9, 12) to cover WoR event exit
+        bridge_block_npc_2 = InvisibleBlockNPC(9, 12)
+        bridge_block_npc_2.event_bit = npc_bit.event_bit(0x641)
+        bridge_block_npc_2.event_byte = npc_bit.event_byte(0x641)
+        wor_bridge_block_npc_id_2 = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc_2)
+        self.invisible_bridge_block_npc_id_2 = wor_bridge_block_npc_id_2
 
 
         # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
@@ -562,11 +601,19 @@ class LoneWolf(Event):
         for i, addr in enumerate(addresses):
             space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
 
-        # Update bridge blocker NPC references (3 locations in event script)
-        # 0xcd588: Create object, 0xcd58a: Show object, 0xcd6db: Hide object
-        bridge_block_addresses = [0xcd588, 0xcd58a, 0xcd6db]
-        for i, addr in enumerate(bridge_block_addresses):
-            space = Reserve(addr, addr, "edit lone wolf bridge blocker " + str(i), wor_bridge_block_npc_id)
+        # Update bridge blocker NPC references
+        # 0xcd587-0xcd58a: CreateEntity+ShowEntity (4 bytes) -> Call subroutine for both blockers
+        create_show_blockers_src = [
+            field.CreateEntity(wor_bridge_block_npc_id),
+            field.ShowEntity(wor_bridge_block_npc_id),
+            field.CreateEntity(wor_bridge_block_npc_id_2),
+            field.ShowEntity(wor_bridge_block_npc_id_2),
+            field.Return(),
+        ]
+        create_show_blockers = Write(Bank.CC, create_show_blockers_src, "lone wolf create show both bridge blockers")
+        space = Reserve(0xcd587, 0xcd58a, "lone wolf create/show bridge blockers", field.NOP())
+        space.write(field.Call(create_show_blockers.start_address))
+        # 0xcd6da-0xcd6db: HideEntity is handled in finish_check_mod() with extended reserve
 
         # Update Mog NPC references (26 locations in event script)
         # Note: addresses 0xcd67c-0xcd68d are in the range that character_mod() overwrites,
