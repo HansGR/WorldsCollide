@@ -434,6 +434,17 @@ class NarsheMoogleDefense(Event):
             space = Reserve(0xcaa99, 0xcaa9c, "Moogle defense handle Y-party switch", field.NOP())
             space.write(field.Call(self.handle_y_party_switch_addr))
 
+            # Reserve the vanilla post-battle gap between InvokeBattle and victory code.
+            # The vanilla code here switches active_party to 1 for the victory scene,
+            # which corrupts other parties' map data in ruination mode where the
+            # active party can be 1, 2, or 3.
+            space = Reserve(0xcadaf, 0xcade4, "moogle defense post-battle (ruination)", field.NOP())
+            space.write(
+                field.BranchIfBattleEventBitClear(battle_bit.PARTY_ANNIHILATED, space.end_address + 1),
+                field.Dialog(1744),
+                field.Call(field.GAME_OVER),
+            )
+
         else:
             self.add_moogles_to_parties()
 
