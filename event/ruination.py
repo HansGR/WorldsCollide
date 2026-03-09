@@ -182,7 +182,8 @@ ROOM_REWARD = {
     284: {"Owzer Mansion": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Owzer's Basement
     
     # MOG
-    '41a': {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Lone Wolf.  Move to WOR?
+    '41a': {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM],  # Lone Wolf.  Move to WOR?
+            "Tritoch": [RewardType.ESPER, RewardType.ITEM]},
     65: {"Narshe Moogle Defense": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Moogle Defense WOR (need to update how this starts); 65 in WOB
 
     # UMARO
@@ -193,7 +194,7 @@ ROOM_REWARD = {
     
     # UNGATED
     22: {"Narshe Battle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Kefka @ Narshe
-    '41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},   # Tritoch
+    #'41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},   # Tritoch
     #'ms-wor-51': {"Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'ms-wob-33'
     'dc-73': {"Auction House_1": [RewardType.ESPER, RewardType.ITEM],
               "Auction House_2": [RewardType.ESPER, RewardType.ITEM]},   # Jidoor WoR.  WOB is 'ms-wob-28'
