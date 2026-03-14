@@ -398,13 +398,9 @@ class NarsheMoogleDefense(Event):
                 field.Branch(space.end_address + 1),  # skip nops
             )
 
-            # NOP the vanilla SetPartyMap for party 1 - it overwrites party 1's
-            # save RAM map data to the battle map, corrupting whichever party
-            # happens to be in slot 1 (e.g. Strago).
-            space = Reserve(0xcaa1f, 0xcaa22, "place party 1 on map (ruination)", field.NOP())
-
             # Instead of creating parties 2 and 3, just place some moogle NPCs.
-            space = Reserve(0xcaa23, 0xcaa2f, "place party 2 and 3 on map", field.NOP())
+            # Remove the SetPartyMap call for all parties - the active party is already on the correct map, and the others should not be moved.
+            space = Reserve(0xcaa1f, 0xcaa2f, "place party 2 and 3 on map", field.NOP())
             space.write(
                 field.CreateEntity(0x10),   # Create moogle #1
                 field.ShowEntity(0x10),     # Show moogle #1
@@ -440,14 +436,13 @@ class NarsheMoogleDefense(Event):
             space.write(field.Call(self.handle_y_party_switch_addr))
 
             # Reserve the vanilla post-battle retry loop (0xCADAF-0xCADBE).
-            # On loss the vanilla code retries the battle; in ruination mode
-            # we replace it with a straightforward game-over check.
-            # Code from 0xCADBF onward must remain intact.
+            # On loss the vanilla code retries the battle; in ruination mode we replace it with a straightforward game-over check.
             space = Reserve(0xcadaf, 0xcadbe, "moogle defense post-battle retry loop (ruination)", field.NOP())
             space.write(
-                field.BranchIfBattleEventBitClear(battle_bit.PARTY_ANNIHILATED, space.end_address + 1),
+                field.BranchIfBattleEventBitClear(battle_bit.PARTY_ANNIHILATED, 0xcadbf),
                 field.Dialog(1744),
                 field.Call(field.GAME_OVER),
+                field.Return()
             )
 
         else:
