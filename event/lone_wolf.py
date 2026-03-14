@@ -275,6 +275,7 @@ class LoneWolf(Event):
         ]
         if self.args.ruination_mode:
             hide_block_src.append(field.HideEntity(self.invisible_bridge_block_npc_id_2))
+            hide_block_src.append(field.Call(self.restore_y_switch))   # restore y-switching after lone wolf event
         hide_block_src.extend([
             field.RefreshEntities(),
             field.Return(),
@@ -297,6 +298,7 @@ class LoneWolf(Event):
                 field.HideEntity(self.invisible_bridge_block_npc_id_2),
                 field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
                 field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
+                field.Call(self.restore_y_switch),
                 field.FinishCheck(),
                 field.Return(),
             ]
@@ -447,6 +449,8 @@ class LoneWolf(Event):
         start_src = [
             field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, "SKIP_SAVE"),
             field.SetEventBit(event_bit.multipurpose_map(2)),
+            field.CreateEntity(self.invisible_bridge_block_npc_id),  # Necessary to create & show now, so the player can't do a map transition.
+            field.ShowEntity(self.invisible_bridge_block_npc_id),
             "SKIP_SAVE",
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             # Original instructions from CC/D506-CC/D50F:
@@ -468,23 +472,17 @@ class LoneWolf(Event):
             field.Call(start_sub.start_address),
         )
 
-        # End subroutine: run original CC/D58E-CC/D593 instructions, then restore y-switch
+        # End subroutine: write restore y-switch code to be used in finish_check
         end_src = [
-            field.EnableEntityCollision(self.lone_wolf_npc_id),
-            field.EnableEntityCollision(self.mog_npc_id),
-            field.FreeMovement(),
             field.BranchIfEventBitClear(event_bit.multipurpose_map(2), "SKIP_RESTORE"),
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.ClearEventBit(event_bit.multipurpose_map(2)),
             "SKIP_RESTORE",
             field.Return(),
         ]
-        end_sub = Write(Bank.CC, end_src, "lone wolf y-switch restore")
+        space = Write(Bank.CC, end_src, "lone wolf y-switch restore")
+        self.restore_y_switch = space.start_address
 
-        space = Reserve(0xcd58e, 0xcd593, "lone wolf y-switch end hook", field.NOP())
-        space.write(
-            field.Call(end_sub.start_address),
-        )
 
     def ruination_mod(self):
         """
@@ -589,15 +587,20 @@ class LoneWolf(Event):
 
         # IMPORTANT: Update instance variables to point to Tritoch WoR NPCs
         # These are used by character_mod(), esper_mod(), item_mod(), and other methods
-        # that modify the cliff scene reward and animations
+        # that modify the cliff scene reward and animations.
+        # Patch npc data as appropriate.
         self.lone_wolf_npc_id = tritoch_wor_lone_wolf_npc_id
         self.mog_npc_id = tritoch_wor_mog_npc_id
         self.lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_lone_wolf_npc_id)
+        self.lone_wolf_npc.event_byte = npc_bit.event_byte(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
+        self.lone_wolf_npc.event_bit = npc_bit.event_bit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
         self.mog_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_mog_npc_id)
-        self.mog_npc.x = 9   # Patch some data? showed up in the wrong spot & looking weird
+        self.mog_npc.x = 9
         self.mog_npc.y = 16
         self.mog_npc.split_sprite = 0
         self.mog_npc.event_address = 0x2d5df  # tritoch_mog_npc.event_address  # 0xcd5df
+        self.mog_npc.event_byte = npc_bit.event_byte(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
+        self.mog_npc.event_bit = npc_bit.event_bit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
 
         # Copy bridge animation NPC (runs across bridge during cliff scene)
         lonewolf_bridge_npc_id = 0x1a
@@ -609,7 +612,7 @@ class LoneWolf(Event):
         #bridge_block_npc_id = 0x1d
         #bridge_block_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
         from data.npc import InvisibleBlockNPC
-        bridge_block_npc = InvisibleBlockNPC(14, 20)
+        bridge_block_npc = InvisibleBlockNPC(17, 20)  # original position (x += 3 to put graphical glitch off screen!)
         bridge_block_npc.event_bit = npc_bit.event_bit(0x641)
         bridge_block_npc.event_byte = npc_bit.event_byte(0x641)
         wor_bridge_block_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc)
@@ -621,7 +624,6 @@ class LoneWolf(Event):
         bridge_block_npc_2.event_byte = npc_bit.event_byte(0x641)
         wor_bridge_block_npc_id_2 = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc_2)
         self.invisible_bridge_block_npc_id_2 = wor_bridge_block_npc_id_2
-
 
         # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
         # These event tiles trigger the animations and dialog for the cliff scene

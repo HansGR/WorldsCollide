@@ -570,8 +570,10 @@ class Maps():
                     print(f"  WoR door {wor_door}: exit_data[{wor_door}][0] = {wor_pair}")
                     if wor_pair >= 1281 and wor_pair <= 1300:
                         print(f"  WARNING: WoR pair {wor_pair} is in safe_id range!")
-                self.door_map[m + 4000] = exit_data[m + 4000][0]
-                self.door_map[self.door_map[m + 4000]] = m + 4000
+                self.door_map[wor_door] = wor_pair
+                # Don't overwrite the mapping for wor_pair if it is mapped
+                if wor_pair not in exit_data.keys():
+                    self.door_map[wor_pair] = wor_door
 
                 # Look up the rooms of these exits (including character-locked doors)
                 this_room = find_room_for_door(m + 4000)
