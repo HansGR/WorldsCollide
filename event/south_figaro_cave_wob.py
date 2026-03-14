@@ -215,6 +215,8 @@ class SouthFigaroCaveWOB(Event):
 
         if not self.DOOR_RANDOMIZE:
             src += [field.ReturnIfEventBitClear(event_bit.THIRD_NOISE_FIGARO_CAVE)]
+        elif self.args.character_gating and self.args.ruination_mode:
+            src += [field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate()))]
 
         src += [
             # some replaced code from 0xa89b5 to 0xa89be

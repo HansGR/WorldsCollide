@@ -83,24 +83,31 @@ class FigaroCastleWOR(Event):
         self.log_reward(self.reward)
 
     def add_gating_condition(self):
-        if self.args.npc_dialog_tips:
-            self.dialogs.set_text(2379, "I won't budge from this spot until you have recruited <EDGAR>!<end>")
+        if self.args.ruination_mode:
+            # local gate: "That's dangerous!"
+            # set in ruination_mod()
+            pass
         else:
-            self.dialogs.set_text(2379, "SIGFRIED: Pretty dangerous from here on. Wait here.<end>")
+            # remote gate: Siegfried at SF cave
+            if self.args.npc_dialog_tips:
+                self.dialogs.set_text(2379, "I won't budge from this spot until you have recruited <EDGAR>!<end>")
+            else:
+                self.dialogs.set_text(2379, "SIGFRIED: Pretty dangerous from here on. Wait here.<end>")
 
-        space = Reserve(0xa7778, 0xa7781, "figaro cave siegfried enters", field.NOP())
-        space.write(
-            field.Return(),
-        )
+            space = Reserve(0xa7778, 0xa7781, "figaro cave siegfried enters", field.NOP())
+            space.write(
+                field.Return(),
+            )
 
-        entrance_event = space.next_address
-        space.write(
-            field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
-            field.HideEntity(self.siegfried_entrance_npc_id),
-            field.Return(),
-        )
+            entrance_event = space.next_address
+            space.write(
+                field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                field.HideEntity(self.siegfried_entrance_npc_id),
+                field.Return(),
+            )
 
-        self.maps.set_entrance_event(0x044, entrance_event - EVENT_CODE_START)
+            self.maps.set_entrance_event(0x044, entrance_event - EVENT_CODE_START)
+
 
     def figaro_cave_mod(self):
         space = Reserve(0xa77a3, 0xa77a5, "figaro cave siegfried on the hum", field.NOP())
@@ -264,10 +271,19 @@ class FigaroCastleWOR(Event):
         # In ruination mode, Figaro Castle is always above ground.
         # After defeating Tentacles, the passage to the Ancient Castle opens.
         # The engine room guy should not offer to travel between locations.
+        if self.args.character_gating:
+            # Replace "return if in WOR" with "return if Edgar is recruited".
+            # This should run the "That's Dangerous!" event if edgar is not recruited.
+            space = Reserve(0xa69d5, 0xa69da, "figaro castle wor engine room character gate", field.NOP())
+            src = [
+                field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
+            ]
+            space.write(src)
+
 
         # Set dialog $03D4 (980) to the after-event message about the tunnel
         # (Dialog $095B retains its original ROM text "Nonsense! It's been fixed!")
-        self.dialogs.set_text(980, "A tunnel out through the dungeon is now open. Be careful down there!<end>")
+        self.dialogs.set_text(980, "A tunnel from the dungeons is now open. Be careful down there!<end>")
 
         # Patch the engine room guy's post-Tentacles event at CA/68E6
         # Original: checks FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR and shows travel options

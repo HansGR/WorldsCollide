@@ -102,12 +102,13 @@ NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 INN_COST_MULTIPLIER = 2
 
 CHARACTER_LOCKED_REWARDS = {
-    # Only rewards that literally cannot be obtained without the character, and in areas that are accessible without them
-    'TERRA': ['Whelk', 'Zozo'],  # Narshe, Zozo
-    'LOCKE': ["Narshe WOR"],        # Narshe weapon shop
+    # Only rewards that literally cannot be obtained without the character, AND in areas that are accessible without them
+    'TERRA': ['Whelk', 'Zozo'],  # 'LeteRiver3', 'Mobliz WOR'
+    'LOCKE': ["Narshe WOR"],     # 'Phoenix Cave', 'South Figaro Cave'
+    #'EDGAR': ['Figaro Castle WOR', 'Figaro Castle WOB'],
     'CELES': ["South Figaro"],   # South Figaro cell
     'SETZER': ["Kohlingen"],   # Kohlingen inn
-    'STRAGO': ["Burning House"],  # Thamasa inn
+    'STRAGO': ["Burning House"],  # Thamasa inn.  Technically, BH is not tied to the inn anymore.
     'MOG':  ["Lone Wolf", "Narshe Moogle Defense"], # Narshe
 }
 REWARDS_LOCKED_BY_CHARACTER = dict()

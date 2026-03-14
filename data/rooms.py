@@ -175,11 +175,11 @@ room_data = {
     'ruin-vector': [[1228, 1229], [], [3128], 0],   # Vector with Mtek3 destination
     'ruin-st-exit': [ [], [2153], [3053], 1],   # Serpent trench entry to nikeah with reward, logically forced to Nikeah WOR
     'ruin-nikeah': [[5199, 5200], [], [3153], 1],  # WOR Nikeah + Serpent Trench exit
-    'ruin-daryl': [ [789], [], [], ['dtboss'], {'dtboss': [1563]}, 1], #Darill's Tomb Dullahan Room
+    'ruin-daryl': [ [789], [], [], ['dtboss'], {('dtboss', 'SETZER'): [1563]}, 1], #Darill's Tomb Dullahan Room
     'ruin-201' : [ [469], [2065], [3068], 0],   #Phantom Train Station + custom return from train
     'ruin-phantomforest' : [ [1188, 465, 468], [], [], 0],   #Phantom Forest, all rooms + spring (internally randomized)
     'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
-    'ruin-figarocastle': [[5156, 5157, 5158, 5159], [], [], ['fcer'], {'fcer': [1558]}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room key)
+    'ruin-figarocastle': [[5156, 5157, 5158, 5159], [], [], ['fcer'], {('EDGAR', 'fcer'): [1558]}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room, which is locked by Edgar)
     'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff
     'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
     'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)

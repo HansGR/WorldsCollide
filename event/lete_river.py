@@ -60,18 +60,23 @@ class LeteRiver(Event):
         self.log_reward(self.reward)
 
     def add_gating_condition(self):
-        src = [
-            field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
-            field.HideEntity(self.raft_npc_id),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "lete river entrance event character gate")
-        entrance_event_gate = space.start_address
+        if self.args.ruination_mode:
+            # Gate at the boss
+            pass
+        else:
+            # Gate at the 'boarding the raft' location
+            src = [
+                field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
+                field.HideEntity(self.raft_npc_id),
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "lete river entrance event character gate")
+            entrance_event_gate = space.start_address
 
-        space = Reserve(0xb0469, 0xb0473, "lete river entrance event", field.NOP())
-        space.write(
-            field.Call(entrance_event_gate),
-        )
+            space = Reserve(0xb0469, 0xb0473, "lete river entrance event", field.NOP())
+            space.write(
+                field.Call(entrance_event_gate),
+            )
 
     def fixed_battles_mod(self):
         # force front attacks to keep party on the raft
@@ -157,7 +162,7 @@ class LeteRiver(Event):
 
     def before_ultros_mod(self):
         space = Reserve(0xb05a5, 0xb05e3, "lete river heal party, here we go", field.NOP()) # unused dialog 0166 -- Here we go! This raft'll take us to Narshe!
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
             space.write(
                 field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
             )
@@ -179,9 +184,20 @@ class LeteRiver(Event):
         space = Reserve(0xb08c2, 0xb08da, "lete river take sabin's path to wob", field.NOP())
 
         space = Reserve(0xb08db, 0xb08e0, "lete river skip ultros battle if already fought", field.NOP())
-        space.write(
-            field.BranchIfEventBitSet(event_bit.RODE_RAFT_LETE_RIVER, 0xb092b),
-        )
+        continue_address = 0xb092b
+        if self.args.character_gating and self.args.ruination_mode:
+            # Do character gating at the boss:
+            src = [
+                field.BranchIfAny([event_bit.RODE_RAFT_LETE_RIVER, True,
+                                   event_bit.character_recruited(self.character_gate()), False],
+                                  continue_address),
+                field.Return()
+            ]
+            updated_rode_raft_check = Write(Bank.CB, src, "lete river ruination character gating at boss")
+            space.write(field.Call(updated_rode_raft_check.start_address))
+        else:
+            space.write(field.BranchIfEventBitSet(event_bit.RODE_RAFT_LETE_RIVER, continue_address))
+
 
         space = Reserve(0xb08ea, 0xb08ec, "lete river what is it?", field.NOP()) # unused dialog 0142 What? WHAT IS IT?
 

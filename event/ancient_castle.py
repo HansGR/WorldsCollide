@@ -41,6 +41,9 @@ class AncientCastle(Event):
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
 
+        if self.args.ruination_mode and self.args.character_gating:
+            self.add_ruin_character_gate()
+
         self.log_reward(self.reward)
 
     def dialog_mod(self):
@@ -140,6 +143,15 @@ class AncientCastle(Event):
         ]
         space = Write(Bank.CA, src_warp, 'Ancient Castle warp handler code')
         self.warps.add_warp(event_bit.ANCIENT_CASTLE_WARP_OPTION, space.start_address)
+
+    def add_ruin_character_gate(self):
+        # Add a local character gate for ruination mode (in place of unused GOT_ODIN check)
+        # Statue will just be unresponsive without EDGAR.
+        space = Reserve(0xc1f49, 0xc1f50, "Ancient Castle local character gate condition", field.NOP())
+        space.write([
+            field.ReturnIfAny([event_bit.character_recruited(self.character_gate()), False,
+                               event_bit.GOT_RAIDEN, True])
+        ])
 
     @staticmethod
     def entrance_door_patch():
