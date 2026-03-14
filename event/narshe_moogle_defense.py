@@ -398,6 +398,11 @@ class NarsheMoogleDefense(Event):
                 field.Branch(space.end_address + 1),  # skip nops
             )
 
+            # NOP the vanilla SetPartyMap for party 1 - it overwrites party 1's
+            # save RAM map data to the battle map, corrupting whichever party
+            # happens to be in slot 1 (e.g. Strago).
+            space = Reserve(0xcaa1f, 0xcaa22, "place party 1 on map (ruination)", field.NOP())
+
             # Instead of creating parties 2 and 3, just place some moogle NPCs.
             space = Reserve(0xcaa23, 0xcaa2f, "place party 2 and 3 on map", field.NOP())
             space.write(
