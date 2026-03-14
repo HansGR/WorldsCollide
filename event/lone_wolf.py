@@ -50,6 +50,7 @@ class LoneWolf(Event):
 
         if self.args.ruination_mode:
             self.ruination_mod()  # Edit npc data prior to other modifications
+            self.y_switch_cliff_mod()
 
         self.dialog_mod()
         self.chase_mod()
@@ -438,6 +439,53 @@ class LoneWolf(Event):
 
         self.maps.set_entrance_event(0x02c, space.start_address - EVENT_CODE_START)
 
+    def y_switch_cliff_mod(self):
+        """Disable y-party-switching during the Tritoch Peak cliff scene (CC/D4FE-CC/D593).
+        Saves the y-switch state to multipurpose_map(2) and restores it when the scene ends."""
+
+        # Start subroutine: save y-switch state and disable, then run original CC/D506-CC/D50F
+        start_src = [
+            field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, "SKIP_SAVE"),
+            field.SetEventBit(event_bit.multipurpose_map(2)),
+            "SKIP_SAVE",
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            # Original instructions from CC/D506-CC/D50F:
+            field.Pause(0.5),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.DisableWalkingAnimation(),
+                field_entity.Move(direction.DOWN, 1),
+                field_entity.EnableWalkingAnimation(),
+                field_entity.Turn(direction.UP),
+            ),
+            field.Pause(0.5),
+            field.Return(),
+        ]
+        start_sub = Write(Bank.CC, start_src, "lone wolf y-switch save and disable")
+
+        space = Reserve(0xcd506, 0xcd50f, "lone wolf y-switch start hook", field.NOP())
+        space.write(
+            field.Call(start_sub.start_address),
+        )
+
+        # End subroutine: run original CC/D58E-CC/D593 instructions, then restore y-switch
+        end_src = [
+            field.EnableEntityCollision(self.lone_wolf_npc_id),
+            field.EnableEntityCollision(self.mog_npc_id),
+            field.FreeMovement(),
+            field.BranchIfEventBitClear(event_bit.multipurpose_map(2), "SKIP_RESTORE"),
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.ClearEventBit(event_bit.multipurpose_map(2)),
+            "SKIP_RESTORE",
+            field.Return(),
+        ]
+        end_sub = Write(Bank.CC, end_src, "lone wolf y-switch restore")
+
+        space = Reserve(0xcd58e, 0xcd593, "lone wolf y-switch end hook", field.NOP())
+        space.write(
+            field.Call(end_sub.start_address),
+        )
+
     def ruination_mod(self):
         """
         Ruination mode moves Lone Wolf event from WoB to WoR for both locations:
@@ -618,8 +666,9 @@ class LoneWolf(Event):
         # Update Mog NPC references (26 locations in event script)
         # Note: addresses 0xcd67c-0xcd68d are in the range that character_mod() overwrites,
         # so skip them if the reward is a character to avoid space conflicts
+        # Note: 0xcd591 excluded - handled by y_switch_cliff_mod()
         self.mog_addresses = [0xcd4cc, 0xcd4d0, 0xcd4d4, 0xcd514, 0xcd538, 0xcd53f, 0xcd543, 0xcd548, 0xcd54f, 0xcd557,
-                         0xcd573, 0xcd5ab, 0xcd5b5, 0xcd591, 0xcd5fc,
+                         0xcd573, 0xcd5ab, 0xcd5b5, 0xcd5fc,
                          # 0xcD61F, 0xcD626, 0xcD62A, 0xcD62F, 0xcD648, 0xcD674,
                          0xcd67c, 0xcd681, 0xcd685, 0xcd689, 0xcd68d,
                          0xcd6b1, 0xcd6bb, 0xcd6c4, 0xcd6ca, 0xcd6cb, 0xcd6d4]
@@ -631,7 +680,8 @@ class LoneWolf(Event):
             space = Reserve(addr, addr, "edit lone wolf mog animation " + str(i), tritoch_wor_mog_npc_id)
 
         # Update Lone Wolf NPC references (12 locations in event script)
-        self.lonewolf_addresses = [0xcd4ce, 0xcd4d2, 0xcd566, 0xcd569, 0xcd58f, 0xcd5c2, 0xcd5c5, 0xcd5dc,
+        # Note: 0xcd58f excluded - handled by y_switch_cliff_mod()
+        self.lonewolf_addresses = [0xcd4ce, 0xcd4d2, 0xcd566, 0xcd569, 0xcd5c2, 0xcd5c5, 0xcd5dc,
                               0xcd697, 0xcd69a, 0xcd6a7, 0xcd6aa]
         for i, addr in enumerate(self.lonewolf_addresses):
             space = Reserve(addr, addr, "edit lone wolf animation " + str(i), tritoch_wor_lone_wolf_npc_id)
