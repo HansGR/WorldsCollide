@@ -376,6 +376,157 @@ class NarsheWOB(Event):
         ghost_npc.x = 110
         ghost_npc.direction = direction.LEFT
 
+        # (3b) NPC clue scripts: each branch NPC cycles through up to 3 clues
+        # about which areas are on their branch.
+        # AreasUsed is set by events.py ruination_mod() before event.mod() runs.
+        areas_used = getattr(self.args, 'ruination_areas_used', {})
+
+        # Map internal area names to player-friendly display names
+        AREA_DISPLAY_NAMES = {
+            'Doma': 'Doma Castle',
+            'UmarosCave': "Umaro's Cave",
+            'EsperMountain': 'Esper Mountain',
+            'PhantomTrain': 'Phantom Train',
+            'SealedGate': 'Sealed Gate',
+            'SouthFigaroCave': 'South Figaro Cave',
+            'ReturnersHideout': "Returner's Hideout",
+            'AncientCastle': 'Ancient Castle',
+            'Jidoor': "Owzer's Mansion",
+            'VeldtCave': 'Veldt Cave',
+            'CrescentMtn': 'Crescent Mountain',
+            'BarenFalls': 'Baren Falls',
+            'Vector': 'Magitek Factory',
+            'DarylsTomb': "Daryl's Tomb",
+            'ZoneEater': 'Zone Eater',
+            'MtKolts': 'Mt. Kolts',
+            'Narshe': 'Narshe Mines',
+            'Zozo': 'Zozo',
+            'ZozoTower': 'Zozo Tower',
+            'MtZozo': 'Mt. Zozo',
+            'BurningHouse': 'Burning House',
+            'SouthFigaro': 'South Figaro',
+            'GauFatherHouse': "Gau's Father's House",
+            'Thamasa': 'Thamasa',
+            'Kohlingen': 'Kohlingen',
+            'Cid': "Cid's Island",
+            'Mobliz': 'Mobliz',
+            'Maranda': 'Maranda',
+            'FanaticsTower': "Fanatic's Tower",
+            'OperaHouse': 'Opera House',
+            'EbotsRock': "Ebot's Rock",
+            'Coliseum': 'Coliseum',
+            'Tzen': 'Tzen',
+            'Albrook': 'Albrook',
+            'Veldt': 'Veldt',
+            'Nikeah': 'Nikeah',
+            'PhoenixCave': 'Phoenix Cave',
+            'FloatingContinent': 'Floating Continent',
+            'ImperialCamp': 'Imperial Camp',
+            'FigaroCastle': 'Figaro Castle',
+            'ImperialCastle': 'Imperial Castle',
+        }
+
+        # Build per-branch area lists (up to 3 areas per branch for clues)
+        branch_clue_areas = [[], [], []]
+        for area_name, branch_id in areas_used.items():
+            if branch_id in (0, 1, 2) and area_name in AREA_DISPLAY_NAMES:
+                branch_clue_areas[branch_id].append(AREA_DISPLAY_NAMES[area_name])
+
+        # Use dialog IDs 602-625 (0x25A-0x271) for clue messages
+        # 3 clue dialogs per branch × 3 branches = 9 dialogs
+        # Branch 0: 602, 603, 604  |  Branch 1: 605, 606, 607  |  Branch 2: 608, 609, 610
+        clue_dialog_ids = [[602, 603, 604], [605, 606, 607], [608, 609, 610]]
+
+        for branch_id in range(3):
+            areas = branch_clue_areas[branch_id]
+            for clue_idx in range(3):
+                dialog_id = clue_dialog_ids[branch_id][clue_idx]
+                if clue_idx < len(areas):
+                    area = areas[clue_idx]
+                    self.dialogs.set_text(dialog_id,
+                        f"I've heard that {area} lies down this path.<end>")
+                else:
+                    self.dialogs.set_text(dialog_id,
+                        "That's all I know about this path.<end>")
+
+        # multipurpose_map bits (cleared on map load, so cycle resets each visit):
+        # Branch 0: bits 1, 2   Branch 1: bits 3, 4   Branch 2: bits 5, 6
+        branch_cycle_bits = [
+            (event_bit.multipurpose_map(1), event_bit.multipurpose_map(2)),
+            (event_bit.multipurpose_map(3), event_bit.multipurpose_map(4)),
+            (event_bit.multipurpose_map(5), event_bit.multipurpose_map(6)),
+        ]
+
+        # Event bit 0x1B0 = player facing UP when talking to NPC
+        # Event bit 0x1B3 = player facing LEFT when talking to NPC
+        FACING_UP = 0x1B0
+        FACING_LEFT = 0x1B3
+
+        def build_cycle_src(branch_id):
+            """Build event script that cycles through 3 clue dialogs."""
+            bit_a, bit_b = branch_cycle_bits[branch_id]
+            d1, d2, d3 = clue_dialog_ids[branch_id]
+            pfx = f"B{branch_id}_"
+            return [
+                # State check: (bit_a, bit_b) = (0,0) → clue 1, (1,0) → clue 2, (x,1) → clue 3
+                field.BranchIfEventBitSet(bit_a, pfx + "STATE1"),
+                field.BranchIfEventBitSet(bit_b, pfx + "STATE2"),
+                # State 0: show clue 1, advance to state 1
+                field.Dialog(d1),
+                field.SetEventBit(bit_a),
+                field.Return(),
+                # State 1: show clue 2, advance to state 2
+                pfx + "STATE1",
+                field.BranchIfEventBitSet(bit_b, pfx + "STATE2"),
+                field.Dialog(d2),
+                field.ClearEventBit(bit_a),
+                field.SetEventBit(bit_b),
+                field.Return(),
+                # State 2: show clue 3, reset to state 0
+                pfx + "STATE2",
+                field.Dialog(d3),
+                field.ClearEventBit(bit_a),
+                field.ClearEventBit(bit_b),
+                field.Return(),
+            ]
+
+        # Reserve ROM space for all 3 NPC clue scripts in the school tutorial range.
+        # CC/33E1-CC/350B (0xc33e1-0xc350b) = 299 bytes, replaces vanilla tutorial dialogs.
+        space = Reserve(0xc33e1, 0xc350b, "NPC clue scripts for branches 0-2", field.NOP())
+
+        # Branch 0 NPC (left_npc_id = 0x13): simple cycle through clues
+        left_src = build_cycle_src(0)
+        left_space = space.next_address
+        space.write(left_src)
+
+        left_npc = self.maps.get_npc(school_map_id, left_npc_id)
+        left_npc.event_address = left_space - EVENT_CODE_START
+
+        # Branch 1 NPC (mid_npc_id = 0x15): simple cycle through clues
+        mid_src = build_cycle_src(1)
+        mid_space = space.next_address
+        space.write(mid_src)
+
+        mid_npc = self.maps.get_npc(school_map_id, mid_npc_id)
+        mid_npc.event_address = mid_space - EVENT_CODE_START
+
+        # Branch 2 NPC (right_npc_id = 0x11): facing UP → supply line, facing LEFT → cycle clues
+        right_cycle_src = build_cycle_src(2)
+        right_src = [
+            # Check facing direction: UP → supply line, LEFT → clue cycle
+            field.BranchIfEventBitSet(FACING_UP, "SUPPLY_LINE"),
+            field.BranchIfEventBitClear(FACING_LEFT, "SUPPLY_LINE"),
+        ] + right_cycle_src + [
+            "SUPPLY_LINE",
+            field.Dialog(601),
+            field.Return(),
+        ]
+        right_space = space.next_address
+        space.write(right_src)
+
+        right_npc = self.maps.get_npc(school_map_id, right_npc_id)
+        right_npc.event_address = right_space - EVENT_CODE_START
+
         # (4) Modify room aesthetics
         # Change the music to "esper world" (song = 33)
         school_properties = self.maps.properties[school_map_id]
