@@ -181,6 +181,7 @@ room_data = {
     'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
     'ruin-figarocastle': [[5156, 5157, 5158, 5159], [], [], ['fcer'], {('EDGAR', 'fcer'): [1558]}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room, which is locked by Edgar)
     'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff
+    'ruin-baren-falls': [[1196], [], [], [], {"SABIN": [2076]}, 0],           # Baren Falls + one-way exit to Veldt
     'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
     'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?

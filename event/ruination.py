@@ -261,7 +261,7 @@ RUIN_ROOM_SETS = {
     'Jidoor': ['dc-73', 277, 278, 279, 280, 281, 282, 283, 284],   # Including Owzer's Mansion
     'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 475, 'ruin-thamasa'],  # It's OK to double rooms, we will check to make sure they don't actually map twice.
     'CrescentMtn': ['dc-23', '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'ruin-st-exit', 'ruin-nikeah'],
-    'BarenFalls': ['dc-15', 'ruin-baren-reward', 'ruin-baren'],
+    'BarenFalls': ['ruin-baren-falls', 'ruin-baren-reward', 'ruin-baren'],  # 'dc-15'
     'Vector': [345, 346, 347, 349, 351, 352, 353, 'ruin-mtek2', 355, '355a', 'ruin-mtek3', 'ruin-vector'],
     'DarylsTomb': [377, 378, 379, 380, 381, 382, 383, 384, 386, 'ruin-daryl', 388, 389, 390, 391, 392, 393],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
