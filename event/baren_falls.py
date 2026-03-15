@@ -81,23 +81,55 @@ class BarenFalls(Event):
         space = Reserve(0xbc0cb, 0xbc0cc, "baren falls pause before starting song", field.NOP())
 
     def already_complete_mod(self):
-        # jumped after rizopas already defeated, exit to world map after battle
-        src = [
-            # move airship
-            field.StartSong(0),
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x000, direction.DOWN, default_music = False,
-                          x = 192, y = 105, fade_in = False, airship = True),
-            vehicle.SetPosition(192, 105),
-            vehicle.SetEventBit(event_bit.VELDT_WORLD_MUSIC),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        if self.args.ruination_mode:
+            # Wake up on shore
+            src = [
+                field.LoadMap(0x09f, direction.DOWN, default_music=True, x=10, y=11, fade_in=False),
+                field.StartSong(58),        # Windy shores
+                field.EntityAct(field_entity.PARTY0, True, [
+                    field_entity.AnimateKnockedOut()
+                ]),
+                field.FadeInScreen(),
+                field.WaitForFade(),
+                field.Pause(1),
+                field.EntityAct(field_entity.PARTY0, True, [
+                    field_entity.AnimateStandingHeadDown(),
+                    field_entity.Pause(8),
+                    field_entity.AnimateTiltHeadLeft(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateTiltHeadRight(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateTiltHeadLeft(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateTiltHeadRight(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateStandingFront(),
+                ]),
+                field.RefreshEntities(),
+                field.FreeScreen(),
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "baren falls exit function")
+            exit_function = space.start_address
 
-            # load world map
-            vehicle.LoadMap(0x000, direction.DOWN, default_music = True, x = 192, y = 105),
-            world.End(),
-        ]
-        space = Write(Bank.CB, src, "baren falls exit function")
-        exit_function = space.start_address
+        else:
+            # jumped after rizopas already defeated, exit to world map after battle
+            src = [
+                # move airship
+                field.StartSong(0),
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(0x000, direction.DOWN, default_music=False,
+                              x=192, y=105, fade_in=False, airship=True),
+                vehicle.SetPosition(192, 105),
+                vehicle.SetEventBit(event_bit.VELDT_WORLD_MUSIC),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+
+                # load world map
+                vehicle.LoadMap(0x000, direction.DOWN, default_music=True, x=192, y=105),
+                world.End(),
+            ]
+            space = Write(Bank.CB, src, "baren falls exit function")
+            exit_function = space.start_address
 
         space = Reserve(0xbc203, 0xbc209, "baren falls rizopas already defeated, load wob", field.NOP())
         space.write(
