@@ -382,7 +382,7 @@ class NarsheWOB(Event):
         areas_used = getattr(self.args, 'ruination_areas_used', {})
 
         # Map internal area names to player-friendly display names
-        # Todo: replace the names with clue dialogs customized to each area
+        # Done: replace the names with clue dialogs customized to each area
         AREA_DISPLAY_NAMES = {
             'Doma': 'Doma Castle',
             'UmarosCave': "Umaro's Cave",
@@ -474,8 +474,8 @@ class NarsheWOB(Event):
         # Build per-branch area lists (up to 3 areas per branch for clues)
         branch_clue_areas = [[], [], []]
         for area_name, branch_id in areas_used.items():
-            if branch_id in (0, 1, 2) and area_name in AREA_DISPLAY_NAMES:
-                branch_clue_areas[branch_id].append(AREA_DISPLAY_NAMES[area_name])
+            if branch_id in (0, 1, 2) and area_name in AREA_CLUES:    # AREA_DISPLAY_NAMES
+                branch_clue_areas[branch_id].append(AREA_CLUES[area_name])   # AREA_DISPLAY_NAMES
         import random
 
         for bca in branch_clue_areas:
@@ -493,7 +493,8 @@ class NarsheWOB(Event):
                 dialog_id = clue_dialog_ids[branch_id][clue_idx]
                 if clue_idx < len(areas):
                     clue = areas[clue_idx]
-                    self.dialogs.set_text(dialog_id, f"I've heard that {clue} lies down this path.<end>")  # todo: replace with actual clues
+                    #self.dialogs.set_text(dialog_id, f"I've heard that {clue} lies down this path.<end>")  # replace generic hint with actual clues
+                    self.dialogs.set_text(dialog_id, clue)
                 else:
                     self.dialogs.set_text(dialog_id,
                         "That's all I know about this path.<end>")
