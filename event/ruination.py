@@ -3314,6 +3314,10 @@ class ruination_map():
         self.branch_checks = [[], [], []]   # checks available on each branch, stored locally
         self.AreasUsed = dict()   # use a dict to track 'AreaName': branch_id
         self.keychain = set(starting_party)   # global keychain, initialized with party
+        if args.open_world:
+            self.keychain.update(ALL_CHARACTERS)  # open world: all characters immediately accessible
+            CHARACTER_LOCKED_REWARDS.clear()      # open world: no character-locked checks
+            REWARDS_LOCKED_BY_CHARACTER.clear()
         self.accessible_shops = []  # list of shop IDs that are accessible (for dried meat assignment)
 
         self.args = args
