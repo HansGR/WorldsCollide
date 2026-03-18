@@ -35,8 +35,11 @@ class ZoneEater(Event):
             self.engulf_id = 1552  # ID of engulf door
             self.exit_id = 1553  # ID of exit zone eater door
 
-        if self.args.character_gating and not self.args.ruination_mode:
-            self.add_gating_condition()
+        if self.args.character_gating:
+            if self.DOOR_RANDOMIZE:
+                self.add_local_gating_condition()
+            else:
+                self.add_gating_condition()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -51,6 +54,39 @@ class ZoneEater(Event):
         self.log_reward(self.reward)
 
     def add_gating_condition(self):
+        chest_bridge_npc_id = 0x11
+        chest_bridge_npc = self.maps.get_npc(0x114, chest_bridge_npc_id)
+
+        import copy
+        from data.npc import NPC
+        gate_npc = copy.deepcopy(chest_bridge_npc) # copy bottom left npc to drop towards end of bottom level
+        gate_npc.x = 30
+        gate_npc.y = 28
+        gate_npc.direction = direction.RIGHT
+        gate_npc.movement = NPC.NO_MOVE # instead of completely random, restrict it to bridge in entrance event
+
+        gate_npc_id = self.maps.append_npc(0x114, gate_npc)
+
+        # use extra space after recruiting gogo
+        enable_npc_touch_events = 0xb8200
+        space = Reserve(enable_npc_touch_events, 0xb824b, "zone eater enable npc touch events", field.NOP())
+        space.copy_from(0xb7dc2, 0xb7dc7) # enable touch events for original npcs
+        space.write(
+            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "HIDE_GATE_NPC"),
+            field.EnableTouchEvent(gate_npc_id),
+            field.Return(),
+
+            "HIDE_GATE_NPC",
+            field.HideEntity(gate_npc_id),
+            field.Return(),
+        )
+
+        space = Reserve(0xb7dc2, 0xb7dc7, "zone eater entrance event", field.NOP())
+        space.write(
+            field.Call(enable_npc_touch_events),
+        )
+
+    def add_local_gating_condition(self):
         from instruction.event import EVENT_CODE_START
 
         src = [
