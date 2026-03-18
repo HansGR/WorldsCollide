@@ -51,37 +51,15 @@ class ZoneEater(Event):
         self.log_reward(self.reward)
 
     def add_gating_condition(self):
-        chest_bridge_npc_id = 0x11
-        chest_bridge_npc = self.maps.get_npc(0x114, chest_bridge_npc_id)
+        from instruction.event import EVENT_CODE_START
 
-        import copy
-        from data.npc import NPC
-        gate_npc = copy.deepcopy(chest_bridge_npc) # copy bottom left npc to drop towards end of bottom level
-        gate_npc.x = 30
-        gate_npc.y = 28
-        gate_npc.direction = direction.RIGHT
-        gate_npc.movement = NPC.NO_MOVE # instead of completely random, restrict it to bridge in entrance event
-
-        gate_npc_id = self.maps.append_npc(0x114, gate_npc)
-
-        # use extra space after recruiting gogo
-        enable_npc_touch_events = 0xb8200
-        space = Reserve(enable_npc_touch_events, 0xb824b, "zone eater enable npc touch events", field.NOP())
-        space.copy_from(0xb7dc2, 0xb7dc7) # enable touch events for original npcs
-        space.write(
-            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "HIDE_GATE_NPC"),
-            field.EnableTouchEvent(gate_npc_id),
+        src = [
+            field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
+            field.HideEntity(self.gogo_npc_id),
             field.Return(),
-
-            "HIDE_GATE_NPC",
-            field.HideEntity(gate_npc_id),
-            field.Return(),
-        )
-
-        space = Reserve(0xb7dc2, 0xb7dc7, "zone eater entrance event", field.NOP())
-        space.write(
-            field.Call(enable_npc_touch_events),
-        )
+        ]
+        space = Write(Bank.CB, src, "zone eater gogo room entrance event character gate")
+        self.maps.set_entrance_event(0x116, space.start_address - EVENT_CODE_START)
 
     def character_mod(self, character):
         self.gogo_npc.sprite = character
