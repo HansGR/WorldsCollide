@@ -177,6 +177,7 @@ room_data = {
     'ruin-nikeah': [[5199, 5200], [], [3153], 1],  # WOR Nikeah + Serpent Trench exit
     'ruin-daryl': [ [789], [], [], ['dtboss'], {('dtboss', 'SETZER'): [1563]}, 1], #Darill's Tomb Dullahan Room
     'ruin-201' : [ [469], [2065], [3068], 0],   #Phantom Train Station + custom return from train
+    'ruin-202' : [ [470, 471, 472, 473, 1528, 1529, 1530, 1531, 1532], [ ], [ ], [], {('pt2','SABIN'): [2068]}, 0], #Phantom Train Outside Front Section with character gating
     'ruin-phantomforest' : [ [1188, 465, 468], [], [], 0],   #Phantom Forest, all rooms + spring (internally randomized)
     'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
     'ruin-figarocastle': [[5156, 5157, 5158, 5159], [], [], ['fcer'], {('EDGAR', 'fcer'): [1558]}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room, which is locked by Edgar)

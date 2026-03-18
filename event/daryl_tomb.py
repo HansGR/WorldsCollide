@@ -57,7 +57,7 @@ class DarylTomb(Event):
         self.log_reward(self.reward)
 
     def entrance_mod(self):
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
             space = Reserve(0xa3f91, 0xa3f97, "daryl tomb require setzer in party", field.NOP())
             space.write(
                 field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
@@ -315,3 +315,18 @@ class DarylTomb(Event):
         space = Write(Bank.CA, src, "staircase entry event")
 
         self.maps.maps[map_id]["entrance_event_address"] = space.start_address - EVENT_CODE_START
+
+        # (2) Add character gating on the boss, if necessary
+        if self.args.character_gating:
+            check_hook = [0xa42fc, 0xa4301]
+            src = [
+                field.ReturnIfAny([event_bit.DEFEATED_DULLAHAN, True,
+                                   event_bit.character_recruited(self.character_gate()), False]),
+                field.Branch(check_hook[1]+1)
+            ]
+            space = Write(Bank.CA, src, "Daryls Tomb local character gating condition")
+            char_gate_check_addr = space.start_address
+
+            space = Reserve(check_hook[0], check_hook[1], "Daryls Tomb add local character gate check", field.NOP())
+            space.write(field.Branch(char_gate_check_addr))
+

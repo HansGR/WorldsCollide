@@ -252,7 +252,7 @@ RUIN_ROOM_SETS = {
                   432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 193, 'dc-76'],
     'UmarosCave': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368],  # root is in Narshe
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500],  # 501 excluded: shares exit 1057 with ruin_terminus_2
-    'PhantomTrain': ['ruin-201', 202, '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
+    'PhantomTrain': ['ruin-201', 'ruin-202', '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
                      '207b', 212, 213, '215a', '215b', 216, 220, 221], # 'ruin-phantomforest' if you want to include the forest + healing spring
     'SealedGate': [502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513],  # no worldmap connector '504a'; no sealed gate itself 514
     'SouthFigaroCave': [100, 101, 102, 103, 104, 105],
