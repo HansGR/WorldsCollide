@@ -35,8 +35,11 @@ class ZoneEater(Event):
             self.engulf_id = 1552  # ID of engulf door
             self.exit_id = 1553  # ID of exit zone eater door
 
-        if self.args.character_gating and not self.args.ruination_mode:
-            self.add_gating_condition()
+        if self.args.character_gating:
+            if self.DOOR_RANDOMIZE:
+                self.add_local_gating_condition()
+            else:
+                self.add_gating_condition()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -82,6 +85,17 @@ class ZoneEater(Event):
         space.write(
             field.Call(enable_npc_touch_events),
         )
+
+    def add_local_gating_condition(self):
+        from instruction.event import EVENT_CODE_START
+
+        src = [
+            field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
+            field.HideEntity(self.gogo_npc_id),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "zone eater gogo room entrance event character gate")
+        self.maps.set_entrance_event(0x116, space.start_address - EVENT_CODE_START)
 
     def character_mod(self, character):
         self.gogo_npc.sprite = character
