@@ -60,7 +60,7 @@ class PhantomTrain(Event):
         if self.DOOR_RANDOMIZE or self.RUINATION_MODE:
             self.door_rando_mod()
 
-        if self.args.character_gating:
+        if self.args.character_gating and not (self.RUINATION_MODE or self.DOOR_RANDOMIZE):
             self.add_gating_condition()
 
         if self.reward.type == RewardType.CHARACTER:
@@ -164,8 +164,13 @@ class PhantomTrain(Event):
 
         space = Reserve(0xbaca0, 0xbacec, "phantom train hide ghost if got esper/item", field.NOP())
         inside_last_car_entrance_event = space.next_address
+
+        return_conditions = [event_bit.GOT_PHANTOM_TRAIN_REWARD, False]
+        if self.args.character_gating and (self.RUINATION_MODE or self.DOOR_RANDOMIZE):
+            # Add local character gating condition
+            return_conditions += [event_bit.character_recruited(self.character_gate()), True]
         space.write(
-            field.ReturnIfEventBitClear(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+            field.ReturnIfAll(return_conditions),
             field.HideEntity(ghost_npc_id),
             field.Return(),
         )
@@ -204,9 +209,13 @@ class PhantomTrain(Event):
         space = Reserve(0xbaccf, 0xbacec, "phantom train hide character if recruited", field.NOP())
         inside_last_car_entrance_event = space.next_address
         if self.args.ruination_mode:
-            # Pivot off recruited, not available (more consistent in Ruination).
+            # Pivot off got reward, instead of character available (more consistent).
+            return_conditions = [event_bit.GOT_PHANTOM_TRAIN_REWARD, False]
+            if self.args.character_gating:
+                return_conditions += [event_bit.character_recruited(self.character_gate()), True]
+
             space.write(
-                field.ReturnIfEventBitClear(event_bit.character_recruited(character)),
+                field.ReturnIfAll(return_conditions),
                 field.HideEntity(ghost_npc_id),
                 field.Return(),
             )
@@ -759,8 +768,10 @@ class PhantomTrain(Event):
 
         space = Reserve(0xba6b9, 0xba6bb, "phantom train gotta stop this thing", field.NOP())
         space = Reserve(0xbb9e6, 0xbb9e8, "phantom train press this switch", field.NOP())
-        space = Reserve(0xbb9f4, 0xbb9f6, "phantom train so you've been slowing", field.NOP())
-        space = Reserve(0xbb9fb, 0xbb9fe, "phantom train sound and delay before fight", field.NOP())
+        if not (self.DOOR_RANDOMIZE or self.RUINATION_MODE) or not self.args.character_gating:
+            # Use this space for local character gating if necessary
+            space = Reserve(0xbb9f4, 0xbb9f6, "phantom train so you've been slowing", field.NOP())
+            space = Reserve(0xbb9fb, 0xbb9fe, "phantom train sound and delay before fight", field.NOP())
 
         src = []
         if self.reward.type == RewardType.CHARACTER:
@@ -944,6 +955,26 @@ class PhantomTrain(Event):
         space.write([
             field.Branch(pt_check.start_address),
         ])
+
+        # If character gating, introduce local branch to deny fight if you don't have Sabin
+        # This is more complicated than it has to be but gives the player more information
+        if (self.DOOR_RANDOMIZE or self.RUINATION_MODE) and self.args.character_gating:
+            smokestack_dialog_id = 723  # Repurpose "So! You've been slowing my progress!"
+            self.dialogs.set_text(smokestack_dialog_id, "PHANTOM TRAIN: You weaklings can't slow my progress!<end>")
+            src = [
+                field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "CHAR_GATED"),
+                field.SetEventBit(event_bit.STOPPED_PHANTOM_TRAIN),
+                field.ClearEventBit(0x179),
+                field.Branch(0xbb9ff),
+                "CHAR_GATED",
+                field.Dialog(smokestack_dialog_id),
+                field.Return()
+            ]
+            space = Write(Bank.CB, src, "Phantom Train local gating condition at smokestack")
+            character_gate_check_addr = space.start_address
+
+            space = Reserve(0xbb9f4, 0xbb9fe, "phantom train local gating condition at locomotive", field.NOP())
+            space.write(field.Branch(character_gate_check_addr))
 
         # Make the switches in the locomotive interior set event_bit.SET_PHANTOM_TRAIN_SWITCHES if correctly positioned.
         # (This then also covers Doma Dream train without further hassle.)
