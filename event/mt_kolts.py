@@ -410,9 +410,15 @@ class MtKolts(Event):
         # Make the character get jumped immediately if they come out of Vargas' door
         # Note: "CB/79AA: B3    Call subroutine $CAC7FE, 3 times" causes the character to turn south & blink 3 times.
         animate_blink_addr = 0xac7fe
+
+        # field.ReturnIfEventBitSet(0x10A),    # Skip if it already happened
+        # field.ReturnIfEventBitClear(0x1B3),  # must be facing left (i.e. just came out of door)
+        return_bits = [0x10a, True, event_bit.FACING_LEFT, False]
+        if self.args.character_gating:
+            return_bits += [event_bit.character_recruited(self.character_gate()), False]
+
         src = [
-            field.ReturnIfEventBitSet(0x10A),    # Skip if it already happened
-            field.ReturnIfEventBitClear(0x1B3),  # must be facing left (i.e. just came out of door)
+            field.ReturnIfAny(return_bits),
             field.SetEventBit(0x10A),
             field.SetEventBit(0x31C),
             field.CreateEntity(0x10),
