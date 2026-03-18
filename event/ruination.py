@@ -4090,6 +4090,7 @@ class ruination_map():
 
             found_reward = False
             rewards = []
+            accessible_rewards = []
             retries = 0
             while not found_reward:
                 # Attach hubs & trapdoors until none are left (create all branches)
@@ -4114,6 +4115,7 @@ class ruination_map():
 
                 if rewards is not None:
                     # Check to see if the reward is locked; if so, bank it
+                    accessible_rewards = []
                     for r in rewards:
                         if r[0] in REWARDS_LOCKED_BY_CHARACTER.keys():
                             locker = REWARDS_LOCKED_BY_CHARACTER[r[0]]
@@ -4127,9 +4129,11 @@ class ruination_map():
                                     print('\t\treward is locked by', locker, '. Saving for later.')
                             else:
                                 # We have the locking character, so reward is accessed.
+                                accessible_rewards.append(r)
                                 found_reward = True
                         else:
                             # There is no potential character lock, so reward is accessed.
+                            accessible_rewards.append(r)
                             found_reward = True
 
                 # Actually connect them.  This also moves the active room to the new room.
@@ -4138,8 +4142,8 @@ class ruination_map():
                 branch.connect(this_exit, this_conn)
 
             ### Process reward & restart loop - only if we actually found a reward
-            if found_reward and rewards:
-                self.process_rewards(rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
+            if found_reward and accessible_rewards:
+                self.process_rewards(accessible_rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
             elif branch_id in self.stuck_branches:
                 if self.verbose:
                     print(f'Skipping reward processing for stuck branch {branch_id}')
