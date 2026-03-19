@@ -166,13 +166,17 @@ class BurningHouse(Event):
                         event_bit.character_recruited(self.character_gate()),
                         "FIGHT",
                     ),
-                    # Kick-out: surprised animation, then low jump down 2 tiles toward exit
+                    # Kick-out: shake + sound, surprised animation, low jump down 2 tiles
+                    field.PlaySoundEffect(137),
+                    field.ShakeScreen(intensity=3, permanent=True,
+                                      layer1=True, layer2=True, layer3=True, sprite_layer=True),
                     field.EntityAct(field_entity.PARTY0, True,
                                     field_entity.AnimateSurprised(),
                                     field_entity.Pause(8),
                                     field_entity.AnimateLowJump(),
                                     field_entity.Move(direction.DOWN, 2),
                                     ),
+                    field.StopScreenShake(),
                     field.FreeScreen(),
                     field.Return(),
                     "FIGHT",
