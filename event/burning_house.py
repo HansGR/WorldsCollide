@@ -160,8 +160,13 @@ class BurningHouse(Event):
             ]
 
             if self.args.character_gating:
-                # Write kick-out sequence: surprised animation, then low jump down 2 tiles
-                kick_out_src = [
+                # If Strago recruited, skip to boss fight; otherwise kick-out animation
+                src += [
+                    field.BranchIfEventBitSet(
+                        event_bit.character_recruited(self.character_gate()),
+                        "FIGHT",
+                    ),
+                    # Kick-out: surprised animation, then low jump down 2 tiles toward exit
                     field.EntityAct(field_entity.PARTY0, True,
                                     field_entity.AnimateSurprised(),
                                     field_entity.Pause(8),
@@ -170,15 +175,8 @@ class BurningHouse(Event):
                                     ),
                     field.FreeScreen(),
                     field.Return(),
+                    "FIGHT",
                 ]
-                kick_out_space = Write(Bank.CB, kick_out_src, "Burning House character gate kick-out")
-
-                src.append(
-                    field.BranchIfEventBitClear(
-                        event_bit.character_recruited(self.character_gate()),
-                        kick_out_space.start_address,
-                    )
-                )
 
             src.append(field.InvokeBattle(boss_pack_id))
             space.write(src)
