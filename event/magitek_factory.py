@@ -233,9 +233,20 @@ class MagitekFactory(Event):
         boss_pack_id = self.get_boss("Number 024")
 
         space = Reserve(0xc79ed, 0xc79f3, "magitek factory number 024 battle", field.NOP())
-        space.write(
-            field.InvokeBattle(boss_pack_id),
-        )
+        if self.args.character_gating and self.DOOR_RANDOMIZE:
+            src = [
+                field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                field.InvokeBattle(boss_pack_id),
+                field.Branch(0xc79f4),  # continue to post-battle hide/reward
+            ]
+            gate_space = Write(Bank.CC, src, "magitek factory number 024 local gate")
+            space.write(
+                field.Branch(gate_space.start_address),
+            )
+        else:
+            space.write(
+                field.InvokeBattle(boss_pack_id),
+            )
 
         # use some of the receive ifrit/shiva magicite space
         space = Reserve(0xc79d0, 0xc79ec, "magitek factory ifrit/shiva magicite", field.NOP())
