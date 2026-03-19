@@ -371,12 +371,12 @@ class BurningHouse(Event):
         shadow_npc_id = 0x1d
         if self.args.character_gating:
             # With character gating: hide NPCs if boss defeated OR Strago not yet recruited.
-            # Only permanently mark as cleared (bit 0x1b5) when the boss is defeated.
-            # When hidden due to character gate, NPCs reappear once Strago is recruited.
             src = [
                 field.ReturnIfEventBitSet(0x1b5),
-                field.BranchIfEventBitSet(event_bit.DEFEATED_FLAME_EATER, "DO_HIDE"),
-                field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "DO_HIDE"),
+                field.BranchIfAny([
+                    event_bit.DEFEATED_FLAME_EATER, True,
+                    event_bit.character_recruited(self.character_gate()), False,
+                ], "DO_HIDE"),
                 field.Return(),
                 "DO_HIDE",
                 field.DeleteEntity(boss_npc_id),
@@ -385,9 +385,7 @@ class BurningHouse(Event):
                 field.HideEntity(relm_npc_id),
                 field.DeleteEntity(shadow_npc_id),
                 field.HideEntity(shadow_npc_id),
-                field.BranchIfEventBitClear(event_bit.DEFEATED_FLAME_EATER, "HIDE_DONE"),
                 field.SetEventBit(0x1b5),
-                "HIDE_DONE",
                 field.Return()
             ]
         else:
