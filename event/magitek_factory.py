@@ -52,6 +52,9 @@ class MagitekFactory(Event):
 
         self.vector_mod()
 
+        if self.args.character_gating and self.DOOR_RANDOMIZE:
+            self.add_local_gating_condition()
+
         if self.reward1.type == RewardType.ESPER:
             self.ifrit_shiva_esper_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ITEM:
@@ -111,7 +114,7 @@ class MagitekFactory(Event):
         space.write(
             field.HideEntity(sympathizer_npc_id),
         )
-        if self.args.character_gating and not self.args.ruination_mode:
+        if self.args.character_gating and not self.DOOR_RANDOMIZE:
             space.write(
                 field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "NPC_QUEUES"),
             )
@@ -138,6 +141,37 @@ class MagitekFactory(Event):
         self.maps.delete_event(0x0f2, 56, 39)
         self.maps.delete_event(0x0f2, 57, 39)
         self.maps.delete_event(0x0f2, 58, 39)
+
+    def add_local_gating_condition(self):
+        # In door rando, gate Ifrit NPC locally: red glow + return if Celes not recruited.
+        # Shiva is implicitly gated because her script requires event bit $060,
+        # which is only set after the Ifrit battle sequence.
+        IFRIT_EVENT_START = 0xc7937
+        IFRIT_FIRST_INSTR_END = 0xc793c  # 6-byte conditional branch
+        CONTINUE_ADDRESS = 0xc793d        # next instruction after displaced one
+
+        src = [
+            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
+        ]
+        if self.args.flashes_remove_most or self.args.flashes_remove_worst:
+            src.append(field.FlashScreen(field.Flash.NONE))
+        else:
+            src.append(field.FlashScreen(field.Flash.RED))
+        src += [
+            field.Return(),
+
+            "GATE_MET",
+            Read(IFRIT_EVENT_START, IFRIT_FIRST_INSTR_END),  # displaced: if $060 set, branch to $CC7986
+            field.Branch(CONTINUE_ADDRESS),
+        ]
+        space = Write(Bank.CC, src, "magitek factory ifrit local gating condition")
+        gate_address = space.start_address
+
+        space = Reserve(IFRIT_EVENT_START, IFRIT_FIRST_INSTR_END,
+                        "magitek factory ifrit local gating branch", field.NOP())
+        space.write(
+            field.Branch(gate_address),
+        )
 
     def ifrit_shiva_mod(self, esper_item_instructions):
         ifrit_npc_id = 0x14
