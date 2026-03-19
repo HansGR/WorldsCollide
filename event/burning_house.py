@@ -369,18 +369,38 @@ class BurningHouse(Event):
         boss_npc_id = 0x18
         relm_npc_id = 0x1b
         shadow_npc_id = 0x1d
-        src = [
-            field.ReturnIfEventBitClear(event_bit.DEFEATED_FLAME_EATER),
-            field.ReturnIfEventBitSet(0x1b5),
-            field.DeleteEntity(boss_npc_id),
-            field.HideEntity(boss_npc_id),
-            field.DeleteEntity(relm_npc_id),
-            field.HideEntity(relm_npc_id),
-            field.DeleteEntity(shadow_npc_id),
-            field.HideEntity(shadow_npc_id),
-            field.SetEventBit(0x1b5),
-            field.Return()
-        ]
+        if self.args.character_gating:
+            # With character gating: hide NPCs if boss defeated OR Strago not yet recruited.
+            src = [
+                field.ReturnIfEventBitSet(0x1b5),
+                field.BranchIfAny([
+                    event_bit.DEFEATED_FLAME_EATER, True,
+                    event_bit.character_recruited(self.character_gate()), False,
+                ], "DO_HIDE"),
+                field.Return(),
+                "DO_HIDE",
+                field.DeleteEntity(boss_npc_id),
+                field.HideEntity(boss_npc_id),
+                field.DeleteEntity(relm_npc_id),
+                field.HideEntity(relm_npc_id),
+                field.DeleteEntity(shadow_npc_id),
+                field.HideEntity(shadow_npc_id),
+                field.SetEventBit(0x1b5),
+                field.Return()
+            ]
+        else:
+            src = [
+                field.ReturnIfEventBitClear(event_bit.DEFEATED_FLAME_EATER),
+                field.ReturnIfEventBitSet(0x1b5),
+                field.DeleteEntity(boss_npc_id),
+                field.HideEntity(boss_npc_id),
+                field.DeleteEntity(relm_npc_id),
+                field.HideEntity(relm_npc_id),
+                field.DeleteEntity(shadow_npc_id),
+                field.HideEntity(shadow_npc_id),
+                field.SetEventBit(0x1b5),
+                field.Return()
+            ]
         space = Write(Bank.CB, src, "Burning House Delete NPCs if Boss Cleared")
         self.delete_flameeater_npcs = space.start_address
 
