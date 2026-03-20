@@ -294,14 +294,23 @@ class MtZozo(Event):
         self.maps.delete_event(map_id, event_x, event_y)  # delete the original event
 
     @staticmethod
-    def entrance_door_patch():
+    def entrance_door_patch(args):
         # self-contained code to be called in door rando upon entering into Cyan's Cliff (door 1204)
         # replaces has_entrance_event;
         # to be used in event_exit_info.entrance_door_patch()
 
+        CYAN = 2
+
         # CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
-        src = [
-            field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, 0xc3fad),
-            field.Return()
-        ]
+        if args.character_gating:
+            src = [
+                field.BranchIfAll([event_bit.FINISHED_MT_ZOZO, False,
+                                   event_bit.character_recruited(CYAN), True], 0xc3fad),
+                field.Return()
+            ]
+        else:
+            src = [
+                field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, 0xc3fad),
+                field.Return()
+            ]
         return src
