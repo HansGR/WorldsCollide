@@ -595,9 +595,17 @@ Then update `ROOM_REWARD` and `RUIN_ROOM_SETS` in `event/ruination.py` to refere
 
 ### Progress Tracker
 
-Checks updated to local character gating:
+Locally gated (ruination-specific, added for door rando):
 - [x] **CYAN — Mt. Zozo** (room 256): `entrance_door_patch` in `event/mt_zozo.py`
 - [x] **CYAN — Doma WOR Wrexsoul** (ruin-wrexsoul): In-event gate in `event/doma_wor.py` + room variant
+- [x] **TERRA — Lete River** (LeteRiver3): Boss not fought if Terra not recruited
+- [x] **LOCKE — South Figaro Cave** (room 104): Boss not fought if Locke not recruited
+- [x] **EDGAR — Ancient Castle** (room 532): Statue unresponsive if Edgar not recruited
+- [x] **SABIN — Imperial Camp** (dc-1501): Already locally gated in door rando mode
+- [x] **SABIN — Mt. Kolts** (room 151): Vargas doesn't attack if no Sabin
+- [x] **SHADOW — Floating Continent** (ms-wob-1556): Need Shadow to land on floating continent
+- [x] **UMARO — Umaro's Cave** (room 368): Event at Bone statue gated
+- [x] **GOGO — Zone Eater** (room 363): NPC hidden if Gogo not recruited
 
 Checks with existing room-level gating in `data/rooms.py` (predate this effort, may need in-event gating review):
 - [~] **TERRA — Whelk** (ruin-whelk): Room locks door 1155 behind TERRA
@@ -611,32 +619,30 @@ Checks with existing room-level gating in `data/rooms.py` (predate this effort, 
 - [~] **STRAGO — Burning House** (ruin-bh): Room locks trap 2055 behind STRAGO
 - [~] **STRAGO — Thamasa** (ruin-thamasa): Room locks trap 2054 behind STRAGO
 
-Checks NOT YET updated (reward is in the room but no local gate exists):
-- [ ] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
-- [ ] **CYAN — Doma WOR stooges** (room 429): Doma Dream 1
-- [ ] **TERRA — Lete River** (LeteRiver3)
-- [ ] **TERRA — Mobliz WOR** (ms-wor-52)
-- [ ] **LOCKE — Narshe WOR** (ruin-narshe)
-- [ ] **LOCKE — South Figaro Cave** (room 104)
-- [ ] **LOCKE — Phoenix Cave** (ms-wor-1554)
-- [ ] **EDGAR — Ancient Castle** (room 532)
-- [ ] **SABIN — Imperial Camp** (dc-1501)
-- [ ] **SABIN — Mt. Kolts** (room 151)
-- [ ] **SABIN — Collapsing House** (ms-wor-51)
-- [ ] **CELES — South Figaro** (ms-wor-58)
-- [ ] **CELES — Opera House** (ms-wob-40)
-- [ ] **CELES — Magitek Factory 3** (ruin-mtek3)
-- [ ] **SHADOW — Gau Father House** (ms-wob-14)
-- [ ] **SHADOW — Floating Continent** (ms-wob-1556)
+Locally gated in standard Worlds Collide (no ruination-specific work needed):
+- [x] **TERRA — Mobliz WOR** (ms-wor-52)
+- [x] **LOCKE — Narshe WOR** (ruin-narshe)
+- [x] **LOCKE — Phoenix Cave** (ms-wor-1554)
+- [x] **SABIN — Collapsing House** (ms-wor-51)
+- [x] **CELES — South Figaro** (ms-wor-58)
+- [x] **CELES — Opera House** (ms-wob-40)
+- [x] **SHADOW — Gau Father House** (ms-wob-14)
+- [x] **GAU — Veldt** (wor-veldt)
+- [x] **SETZER — Kohlingen** (ms-wor-59)
+- [x] **STRAGO — Fanatic's Tower** (ms-wor-69)
+- [x] **STRAGO — Ebot's Rock** (ms-wor-78)
+- [x] **RELM — Esper Mountain** (room 488)
+
+Not yet locally gated (need gating or decision to ungate):
 - [ ] **SHADOW — Veldt Cave WOR** (room 475)
-- [ ] **GAU — Veldt** (wor-veldt)
+- [ ] **CYAN — Doma WOR stooges** (room 429): Doma Dream 1
+- [ ] **CELES — Magitek Factory 3** (ruin-mtek3)
 - [ ] **GAU — Serpent Trench** (ruin-st-exit)
-- [ ] **SETZER — Kohlingen** (ms-wor-59)
-- [ ] **STRAGO — Fanatic's Tower** (ms-wor-69)
-- [ ] **STRAGO — Ebot's Rock** (ms-wor-78)
-- [ ] **RELM — Esper Mountain** (room 488)
+
+Need verification of local gating:
 - [ ] **RELM — Owzer Mansion** (room 284)
 - [ ] **MOG — Lone Wolf** (41a)
 - [ ] **MOG — Narshe Moogle Defense** (room 65)
-- [ ] **UMARO — Umaro's Cave** (room 368)
-- [ ] **GOGO — Zone Eater** (room 363)
+
+Not currently used in ruination mode:
+- [-] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
