@@ -47,7 +47,7 @@ class VeldtCaveWOR(Event):
 
         self.dialog_mod()
 
-        if self.args.character_gating and not self.args.ruination_mode:
+        if self.args.character_gating and not self.args.ruination_mode and not self.DOOR_RANDOMIZE:
             self.add_gating_condition()
 
         self.srbehemoth_battle_mod()
@@ -276,7 +276,86 @@ class VeldtCaveWOR(Event):
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
 
+    def local_character_gating_mod(self):
+        dog_npc_id = 0x15
+        multipurpose_bit = event_bit.multipurpose_map(0)
+        gate_char = self.character_gate()
+
+        # Write 'character gated' script: move dog to block passage, set multipurpose bit
+        gated_src = [
+            field.CreateEntity(dog_npc_id),
+            field.ShowEntity(dog_npc_id),
+            field.EntityAct(dog_npc_id, True,
+                            field_entity.SetPosition(58, 19)),
+            field.SetEventBit(multipurpose_bit),
+            field.Return(),
+        ]
+        gated_space = Write(Bank.CB, gated_src, "Veldt Cave character gated script")
+
+        # Write new gate check that replaces the beginning of the event at 0xb7a18
+        new_check_src = [
+            field.ReturnIfEventBitSet(multipurpose_bit),
+            field.ReturnIfEventBitSet(event_bit.DEFEATED_SR_BEHEMOTH),
+            field.BranchIfEventBitClear(event_bit.character_recruited(gate_char), gated_space.start_address),
+            field.Branch(0xb7a1e),  # gate passed, continue to actual event
+        ]
+        check_space = Write(Bank.CB, new_check_src, "Veldt Cave local gate check")
+
+        # Replace original 6-byte check at 0xb7a18 with branch to new code
+        space = Reserve(0xb7a18, 0xb7a1d, "veldt cave boss event redirect for local gating", field.NOP())
+        space.write(field.Branch(check_space.start_address))
+
+        # Event tile 1 at (58, 18): bark, dog faces up + low jump, player surprised + pushed right, faces left
+        from data.map_event import MapEvent
+        tile1_src = [
+            field.ReturnIfEventBitClear(multipurpose_bit),
+            field.PlaySoundEffect(0x97),  # bark
+            field.EntityAct(dog_npc_id, True,
+                            field_entity.Turn(direction.UP),
+                            field_entity.AnimateLowJump()),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.AnimateSurprised(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.Move(direction.RIGHT, 1),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.Turn(direction.LEFT)),
+            field.Return(),
+        ]
+        tile1_space = Write(Bank.CB, tile1_src, "Veldt Cave gate tile - push right")
+        tile1_event = MapEvent()
+        tile1_event.x = 58
+        tile1_event.y = 18
+        tile1_event.event_address = tile1_space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x161, tile1_event)
+
+        # Event tile 2 at (59, 19): bark, dog faces right + low jump, player surprised + pushed up, faces down
+        tile2_src = [
+            field.ReturnIfEventBitClear(multipurpose_bit),
+            field.PlaySoundEffect(0x97),  # bark
+            field.EntityAct(dog_npc_id, True,
+                            field_entity.Turn(direction.RIGHT),
+                            field_entity.AnimateLowJump()),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.AnimateSurprised(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.Move(direction.UP, 1),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.Turn(direction.DOWN)),
+            field.Return(),
+        ]
+        tile2_space = Write(Bank.CB, tile2_src, "Veldt Cave gate tile - push up")
+        tile2_event = MapEvent()
+        tile2_event.x = 59
+        tile2_event.y = 19
+        tile2_event.event_address = tile2_space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x161, tile2_event)
+
     def door_rando_mod(self):
+        if self.args.character_gating:
+            self.local_character_gating_mod()
+
         # Add event tile to delete dog, if not yet seen: [0x161, 39, 45]
         interceptor_npc = 0x11
         src = [
