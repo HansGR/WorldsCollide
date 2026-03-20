@@ -639,7 +639,7 @@ Not yet locally gated (need gating or decision to ungate):
 - [ ] **GAU — Serpent Trench** (ruin-st-exit)
 
 Need verification of local gating:
-- [ ] **RELM — Owzer Mansion** (room 284)
+- [x] **RELM — Owzer Mansion** (room 284): Locally gated at Chadarnook painting interaction (tint black + rejection animation)
 - [ ] **MOG — Lone Wolf** (41a):  currently gated in ruin-narshe, could cause conflicts
 - [ ] **MOG — Narshe Moogle Defense** (room 65)
 

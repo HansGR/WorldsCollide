@@ -50,6 +50,9 @@ class OwzerMansion(Event):
         self.log_reward(self.reward)
 
         if self.DOOR_RANDOMIZE:
+            if self.args.character_gating:
+                self.add_local_gating_condition()
+
             # Remove warp-to-Jidoor from end of Chadarnook cutscene
             space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
             src = [
@@ -74,6 +77,46 @@ class OwzerMansion(Event):
         space = Reserve(0xb4d9d, 0xb4d9f, "owzer mansion where is the stone", field.NOP())
         space = Reserve(0xb4dde, 0xb4de0, "owzer mansion this is magicite", field.NOP())
         space = Reserve(0xb4df5, 0xb4df7, "owzer mansion i have to go", field.NOP())
+
+    def add_local_gating_condition(self):
+        # In door rando, gate Chadarnook battle locally: tint black + rejection if Relm not recruited.
+        # Inject at 0xb4d00 (the already-defeated check), before hold screen / camera movement.
+        DEFEATED_CHECK_START = 0xb4d00
+        DEFEATED_CHECK_END = 0xb4d05      # 6-byte conditional branch
+        CONTINUE_ADDRESS = 0xb4d06        # hold screen, camera, then battle
+
+        src = [
+            # Relocated: if already defeated Chadarnook, branch to post-battle cutscene
+            Read(DEFEATED_CHECK_START, DEFEATED_CHECK_END),
+
+            # Local gate: check if Relm is recruited
+            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
+
+            # Relm not recruited: rejection animation
+            field.Repeat(15, field.TintBackground(field.Tint.BLACK)),
+            field.PlaySoundEffect(174),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.AnimateAttacked(),
+                            field_entity.Move(direction.DOWN, 2),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.Turn(direction.UP),
+            ),
+            field.Repeat(15, field.TintBackground(field.Tint.BLACK, invert=True)),
+            field.Return(),
+
+            "GATE_MET",
+            field.Branch(CONTINUE_ADDRESS),
+        ]
+        space = Write(Bank.CB, src, "owzer mansion chadarnook local gating condition")
+        gate_address = space.start_address
+
+        space = Reserve(DEFEATED_CHECK_START, DEFEATED_CHECK_END,
+                        "owzer mansion local gate branch", field.NOP())
+        space.write(
+            field.Branch(gate_address),
+        )
 
     def add_gating_condition(self):
         src = [
