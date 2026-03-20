@@ -641,7 +641,7 @@ Not yet locally gated (need gating or decision to ungate):
 Need verification of local gating:
 - [x] **RELM — Owzer Mansion** (room 284): Locally gated at Chadarnook painting interaction (tint black + rejection animation)
 - [ ] **MOG — Lone Wolf** (41a):  currently gated in ruin-narshe, could cause conflicts
-- [ ] **MOG — Narshe Moogle Defense** (room 65)
+- [x] **MOG — Narshe Moogle Defense** (room 65): Arvis NPC hidden if Mog not recruited (narshe_moogle_defense.py:278-282)
 
 Not currently used in ruination mode:
 - [-] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
