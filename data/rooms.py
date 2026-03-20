@@ -743,12 +743,12 @@ room_data = {
     347 : [ [704], [2024, 2025], [3022, 3024, 3026], 0], #Magitek Factory Lower Room
 
     349 : [ [705, 706], [2026], [3025], 0], #Magitek Factory Garbage Room
-    'ruin-mtek1' : [ [705], [2026], [3025], [], {'CELES': [706]}, 0], #Magitek Factory Garbage Room
+    'ruin-mtek1' : [ [705], [2026], [3025], ['mtboss1'], {('mtboss1','CELES'): [706]}, 0], #Magitek Factory Garbage Room
     351 : [ [709, 710], [ ], [ ], 0], #Magitek Factory Stairwell
     352 : [ [711], [ ], [ ], 0], #Magitek Factory Save Point Room
     353 : [ [712, 713], [ ], [ ], 0], #Magitek Factory Tube Hallway
     354 : [ [714, 715], [ ], [ ], 0], #Magitek Factory Number 024 Room
-    'ruin-mtek2' : [ [714], [ ], [ ], ['mtboss2'], {'mtboss2': [715]}, 0], #Magitek Factory Number 024 Room.  Try to force doors in a particular order.
+    'ruin-mtek2' : [ [714], [ ], [ ], ['mtboss2'], {('mtboss2','CELES'): [715]}, 0], #Magitek Factory Number 024 Room.  Try to force doors in a particular order.
     355 : [ [716], [2027], [ ], 0], #Magitek Factory Esper Tube Room
     '355a' : [ [], [2028], [3027], 0],  # Magitek Factory Minecart Room
 
@@ -914,6 +914,7 @@ room_data = {
     462 : [ [969], [ ], [ ], 0], #Burning House 1st Chest Room
     463 : [ [971], [ ], [ ], 0], #Burning House 2nd Chest Room
     464 : [ [973, 974], [ ], [ ], 0], #Burning House Sixth Room
+    'ruin-bh' : [ [975], [ ], [ ], [ ], {'STRAGO': [2055]}, 0], #Burning House Final Room
     465 : [ [975], [2055], [ ], 0], #Burning House Final Room
 
     # CAVE ON THE VELDT

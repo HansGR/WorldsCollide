@@ -153,10 +153,6 @@ class BurningHouse(Event):
                                 field_entity.SetSpeed(field_entity.Speed.NORMAL),
                                 field_entity.Move(direction.UP, 1),
                                 ),
-                field.EntityAct(0x18, True,
-                                field_entity.SetSpeed(field_entity.Speed.NORMAL),
-                                field_entity.Move(direction.DOWN, 2),
-                                ),
             ]
 
             if self.args.character_gating:
@@ -172,9 +168,13 @@ class BurningHouse(Event):
                                       layer1=True, layer2=True, layer3=True, sprite_layer=True),
                     field.EntityAct(field_entity.PARTY0, True,
                                     field_entity.AnimateSurprised(),
+                                    field_entity.DisableWalkingAnimation(),
                                     field_entity.Pause(8),
                                     field_entity.AnimateLowJump(),
                                     field_entity.Move(direction.DOWN, 2),
+                                    field_entity.AnimateLowJump(),
+                                    field_entity.Move(direction.DOWN, 1),
+                                    field_entity.EnableWalkingAnimation(),
                                     ),
                     field.StopScreenShake(),
                     field.FreeScreen(),
@@ -182,7 +182,13 @@ class BurningHouse(Event):
                     "FIGHT",
                 ]
 
-            src.append(field.InvokeBattle(boss_pack_id))
+            src.append([
+                field.EntityAct(0x18, True,
+                                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                                field_entity.Move(direction.DOWN, 2),
+                                ),
+                field.InvokeBattle(boss_pack_id)
+            ])
             space.write(src)
         else:
             space = Reserve(0xbe793, 0xbe799, "burning house invoke battle flame eater", field.NOP())
