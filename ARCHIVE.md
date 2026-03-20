@@ -545,3 +545,98 @@ The codebase has three text encoding types in `data/text/`:
 **ROM Data Types** (from ff3infov2.txt):
 - `TXT1` = TEXT1 encoding (DTE compressed)
 - `TXT2` = TEXT2 encoding (simple)
+
+---
+
+## Local Character Gating (Door Rando)
+
+In standard (non-door-rando) modes, character gating is enforced at the area level (e.g., you can't enter Mt. Zozo without Cyan). In door rando modes, the player can reach any room through randomized connections, so gating must be enforced **locally** — inside the room where the reward is given.
+
+### Implementation Patterns
+
+There are three complementary mechanisms:
+
+**1. `entrance_door_patch` (for entrance-event-based checks)**
+Used when the reward is triggered by an entrance event (map load). The patch is a static method on the event class that takes `args` and returns event code. When `args.character_gating` is true, use `BranchIfAll` to combine the "not finished" and "character recruited" checks:
+```python
+@staticmethod
+def entrance_door_patch(args):
+    CYAN = 2
+    if args.character_gating:
+        src = [
+            field.BranchIfAll([event_bit.FINISHED_MT_ZOZO, False,
+                               event_bit.character_recruited(CYAN), True], continue_addr),
+            field.Return()
+        ]
+    else:
+        src = [
+            field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, continue_addr),
+            field.Return()
+        ]
+    return src
+```
+In `event_exit_info.py`, store as a callable (not called): `mt_zozo_cliff_check = MtZozo.entrance_door_patch`. The `maps.py` consumption sites detect callables and pass `self.args` at runtime.
+
+**2. In-event gating (for boss/NPC-triggered checks)**
+Used when the reward is behind a boss fight or NPC interaction triggered by an event tile. Add the gate check to the existing door-rando event code. Pattern: check with `BranchIfAll`, and if the gate character is missing, play a rejection animation and return. Example rejection animation (from Wrexsoul):
+- `FlashScreen(Flash.WHITE)` + `PlaySoundEffect(174)`
+- `DisableWalkingAnimation`, `SetSpeed(FAST)`, `AnimateAttacked`, `Move(DOWN, 2)`
+- `EnableWalkingAnimation`, `Turn(UP)`, `FreeScreen`, `Return`
+
+**3. `ruin-*` room variants in `data/rooms.py`**
+Create a copy of the room with the reward exit locked behind a character gate. This tells the ruination mapping algorithm that the exit is only available when the character is recruited. Format: move the gated exit from the normal list to the lock dict:
+```python
+# Original:
+193 : [ [456], [2074], [ ], 1],  # Doma Dream Throne Room
+# Ruination variant with Cyan gate:
+'ruin-wrexsoul' : [ [456], [ ], [ ], [], {'CYAN': [2074]}, 1],
+```
+Then update `ROOM_REWARD` and `RUIN_ROOM_SETS` in `event/ruination.py` to reference the new room key.
+
+### Progress Tracker
+
+Checks updated to local character gating:
+- [x] **CYAN — Mt. Zozo** (room 256): `entrance_door_patch` in `event/mt_zozo.py`
+- [x] **CYAN — Doma WOR Wrexsoul** (ruin-wrexsoul): In-event gate in `event/doma_wor.py` + room variant
+
+Checks with existing room-level gating in `data/rooms.py` (predate this effort, may need in-event gating review):
+- [~] **TERRA — Whelk** (ruin-whelk): Room locks door 1155 behind TERRA
+- [~] **TERRA — Zozo** (ruin-zozo): Room locks door 4608 behind TERRA
+- [~] **SABIN — Baren Falls** (ruin-baren-falls): Room locks trap 2076 behind SABIN
+- [~] **SABIN — Phantom Train** (ruin-202): Room locks trap 2068 behind SABIN
+- [~] **CELES — Magitek Factory 1** (ruin-mtek1): Room locks door 706 behind CELES+boss
+- [~] **CELES — Magitek Factory 2** (ruin-mtek2): Room locks door 715 behind CELES+boss
+- [~] **EDGAR — Figaro Castle** (ruin-figarocastle): Room locks door 1558 behind EDGAR+engine room
+- [~] **SETZER — Daryl's Tomb** (ruin-daryl): Room locks door 1563 behind SETZER+boss
+- [~] **STRAGO — Burning House** (ruin-bh): Room locks trap 2055 behind STRAGO
+- [~] **STRAGO — Thamasa** (ruin-thamasa): Room locks trap 2054 behind STRAGO
+
+Checks NOT YET updated (reward is in the room but no local gate exists):
+- [ ] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
+- [ ] **CYAN — Doma WOR stooges** (room 429): Doma Dream 1
+- [ ] **TERRA — Lete River** (LeteRiver3)
+- [ ] **TERRA — Mobliz WOR** (ms-wor-52)
+- [ ] **LOCKE — Narshe WOR** (ruin-narshe)
+- [ ] **LOCKE — South Figaro Cave** (room 104)
+- [ ] **LOCKE — Phoenix Cave** (ms-wor-1554)
+- [ ] **EDGAR — Ancient Castle** (room 532)
+- [ ] **SABIN — Imperial Camp** (dc-1501)
+- [ ] **SABIN — Mt. Kolts** (room 151)
+- [ ] **SABIN — Collapsing House** (ms-wor-51)
+- [ ] **CELES — South Figaro** (ms-wor-58)
+- [ ] **CELES — Opera House** (ms-wob-40)
+- [ ] **CELES — Magitek Factory 3** (ruin-mtek3)
+- [ ] **SHADOW — Gau Father House** (ms-wob-14)
+- [ ] **SHADOW — Floating Continent** (ms-wob-1556)
+- [ ] **SHADOW — Veldt Cave WOR** (room 475)
+- [ ] **GAU — Veldt** (wor-veldt)
+- [ ] **GAU — Serpent Trench** (ruin-st-exit)
+- [ ] **SETZER — Kohlingen** (ms-wor-59)
+- [ ] **STRAGO — Fanatic's Tower** (ms-wor-69)
+- [ ] **STRAGO — Ebot's Rock** (ms-wor-78)
+- [ ] **RELM — Esper Mountain** (room 488)
+- [ ] **RELM — Owzer Mansion** (room 284)
+- [ ] **MOG — Lone Wolf** (41a)
+- [ ] **MOG — Narshe Moogle Defense** (room 65)
+- [ ] **UMARO — Umaro's Cave** (room 368)
+- [ ] **GOGO — Zone Eater** (room 363)
