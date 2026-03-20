@@ -743,7 +743,7 @@ room_data = {
     347 : [ [704], [2024, 2025], [3022, 3024, 3026], 0], #Magitek Factory Lower Room
 
     349 : [ [705, 706], [2026], [3025], 0], #Magitek Factory Garbage Room
-
+    'ruin-mtek1' : [ [705], [2026], [3025], [], {'CELES': [706]}, 0], #Magitek Factory Garbage Room
     351 : [ [709, 710], [ ], [ ], 0], #Magitek Factory Stairwell
     352 : [ [711], [ ], [ ], 0], #Magitek Factory Save Point Room
     353 : [ [712, 713], [ ], [ ], 0], #Magitek Factory Tube Hallway

@@ -153,10 +153,14 @@ class MagitekFactory(Event):
         src = [
             field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
         ]
-        if self.args.flashes_remove_most or self.args.flashes_remove_worst:
-            src.append(field.FlashScreen(field.Flash.NONE))
-        else:
-            src.append(field.FlashScreen(field.Flash.RED))
+        # if self.args.flashes_remove_most or self.args.flashes_remove_worst:
+        src.append([
+            field.Repeat(10, field.TintBackground(field.Tint.RED)),
+            field.Pause(0.25),
+            field.Repeat(10, field.TintBackground(field.Tint.RED, invert=True)),
+        ])
+        # src.append(field.FlashScreen(field.Flash.RED))
+
         src += [
             field.Return(),
 

@@ -146,7 +146,7 @@ ROOM_REWARD = {
     # CELES
     'ms-wor-58': {"South Figaro": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # South Figaro Basement  World of Ruin;  WOB is 'ms-wob-6'.
     'ms-wob-40': {"Opera House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Opera Disturbance WOB
-    349: {"Magitek Factory_1": [RewardType.ESPER, RewardType.ITEM]},  # Magitek Factory 1
+    'ruin-mtek1': {"Magitek Factory_1": [RewardType.ESPER, RewardType.ITEM]},  # Magitek Factory 1
     'ruin-mtek2': {"Magitek Factory_2": [RewardType.ESPER, RewardType.ITEM]},  # Magitek Factory 2
     'ruin-mtek3': {"Magitek Factory_3": [RewardType.CHARACTER, RewardType.ESPER]},  # Magitek Factory 3, needs logical separation from Vector.  2nd boss where?
     
@@ -262,7 +262,7 @@ RUIN_ROOM_SETS = {
     'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 475, 'ruin-thamasa'],  # It's OK to double rooms, we will check to make sure they don't actually map twice.
     'CrescentMtn': ['dc-23', '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'ruin-st-exit', 'ruin-nikeah'],
     'BarenFalls': ['ruin-baren-falls', 'ruin-baren-reward', 'ruin-baren'],  # 'dc-15'
-    'Vector': [345, 346, 347, 349, 351, 352, 353, 'ruin-mtek2', 355, '355a', 'ruin-mtek3', 'ruin-vector'],
+    'Vector': [345, 346, 347, 'ruin-mtek1', 351, 352, 353, 'ruin-mtek2', 355, '355a', 'ruin-mtek3', 'ruin-vector'],  # 349
     'DarylsTomb': [377, 378, 379, 380, 381, 382, 383, 384, 386, 'ruin-daryl', 388, 389, 390, 391, 392, 393],
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
     'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160],
