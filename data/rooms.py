@@ -870,7 +870,7 @@ room_data = {
     191 : [ [444, 446, 448, 450], [ ], [ ], 1],  # Doma Dream Inner Room
     192 : [ [455], [ ], [ ], 1],  # Doma Dream Cyan's Room
     193 : [ [456], [2074], [ ], 1],  # Doma Dream Throne Room
-    'ruin-doma-dream' : [ [456], [ ], [ ], [], {'CYAN': [2074]}, 1],  # Doma Dream Throne Room with Cyan gate on Wrexsoul exit
+    'ruin-wrexsoul' : [ [456], [ ], [ ], [], {'CYAN': [2074]}, 1],  # Doma Dream Throne Room with Cyan gate on Wrexsoul exit
 
     # ALBROOK:
     437: [ [872, 873, 874, 875, 876, 877, 1245, 1246, 1247, 1248], [], [], 0],   # Albrook WoB, outside (0x143)
