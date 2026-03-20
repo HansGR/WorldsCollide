@@ -286,7 +286,8 @@ class VeldtCaveWOR(Event):
             field.CreateEntity(dog_npc_id),
             field.ShowEntity(dog_npc_id),
             field.EntityAct(dog_npc_id, True,
-                            field_entity.SetPosition(58, 19)),
+                            field_entity.SetPosition(58, 19),
+                            field_entity.Turn(direction.RIGHT)),
             field.SetEventBit(multipurpose_bit),
             field.Return(),
         ]

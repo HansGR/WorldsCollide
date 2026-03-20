@@ -930,6 +930,7 @@ room_data = {
     472 : [ [988], [ ], [ ], ['vc1'], {'vc1': [989]}, 1], #Veldt Cave Fourth Room Left Side
     #473 : [ [], [ ], [ ], 1], #Veldt Cave Fourth Room Right Side
     474 : [ [990, 992], [ ], [ ], 1], #Veldt Cave Fifth Room
+    'ruin-cotv' : [ [991], [ ], [ ], [ ], {'SHADOW': [2075]}, 1], #Veldt Cave Final Room
     475 : [ [991], [2075], [ ], 1], #Veldt Cave Final Room
 
     # FANATIC'S TOWER

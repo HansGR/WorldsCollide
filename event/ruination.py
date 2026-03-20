@@ -162,7 +162,7 @@ ROOM_REWARD = {
     'ms-wob-1556': {"Floating Continent_1": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM],   # Floating Continent 1
                     "Floating Continent_2": [RewardType.ESPER, RewardType.ITEM],   # Floating Continent 2
                     "Floating Continent_3": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Floating Continent 3
-    475: {"Veldt Cave WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Cave on the Veldt
+    'ruin-cotv': {"Veldt Cave WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Cave on the Veldt
     
     # GAU
     'wor-veldt': {"Veldt": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Veldt (WOR theme)
@@ -259,7 +259,7 @@ RUIN_ROOM_SETS = {
     'ReturnersHideout': ['ruin-returners', 'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3'],  # Need to add raft return to Esper World
     'AncientCastle': [520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532],
     'Jidoor': ['dc-73', 277, 278, 279, 280, 281, 282, 283, 284],   # Including Owzer's Mansion
-    'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 475, 'ruin-thamasa'],  # It's OK to double rooms, we will check to make sure they don't actually map twice.
+    'VeldtCave': [467, 468, 469, 470, 471, 472, 474, 'ruin-cotv', 'ruin-thamasa'],  # It's OK to double rooms, we will check to make sure they don't actually map twice. 475
     'CrescentMtn': ['dc-23', '241a', 246, '241b', '247a', '247b', '247c', '241c', '241d', 'ruin-st-exit', 'ruin-nikeah'],
     'BarenFalls': ['ruin-baren-falls', 'ruin-baren-reward', 'ruin-baren'],  # 'dc-15'
     'Vector': [345, 346, 347, 'ruin-mtek1', 351, 352, 353, 'ruin-mtek2', 355, '355a', 'ruin-mtek3', 'ruin-vector'],  # 349
