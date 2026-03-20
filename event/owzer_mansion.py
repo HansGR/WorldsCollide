@@ -93,17 +93,17 @@ class OwzerMansion(Event):
             field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
 
             # Relm not recruited: rejection animation
-            field.Repeat(15, field.TintBackground(field.Tint.BLACK)),
-            field.PlaySoundEffect(174),
+            field.Repeat(10, field.TintBackground(field.Tint.BLACK)),
+            field.PlaySoundEffect(0x1f),  # Demi sound
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.DisableWalkingAnimation(),
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
+                            field_entity.SetSpeed(field_entity.Speed.SLOW),  # SLOWEST?
                             field_entity.AnimateAttacked(),
                             field_entity.Move(direction.DOWN, 2),
                             field_entity.EnableWalkingAnimation(),
                             field_entity.Turn(direction.UP),
             ),
-            field.Repeat(15, field.TintBackground(field.Tint.BLACK, invert=True)),
+            field.Repeat(10, field.TintBackground(field.Tint.BLACK, invert=True)),
             field.Return(),
 
             "GATE_MET",
