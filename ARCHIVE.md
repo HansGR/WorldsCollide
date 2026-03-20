@@ -606,20 +606,18 @@ Locally gated (ruination-specific, added for door rando):
 - [x] **SHADOW — Floating Continent** (ms-wob-1556): Need Shadow to land on floating continent
 - [x] **UMARO — Umaro's Cave** (room 368): Event at Bone statue gated
 - [x] **GOGO — Zone Eater** (room 363): NPC hidden if Gogo not recruited
-
-Checks with existing room-level gating in `data/rooms.py` (predate this effort, may need in-event gating review):
-- [~] **TERRA — Whelk** (ruin-whelk): Room locks door 1155 behind TERRA
-- [~] **TERRA — Zozo** (ruin-zozo): Room locks door 4608 behind TERRA
-- [~] **SABIN — Baren Falls** (ruin-baren-falls): Room locks trap 2076 behind SABIN
-- [~] **SABIN — Phantom Train** (ruin-202): Room locks trap 2068 behind SABIN
-- [~] **CELES — Magitek Factory 1** (ruin-mtek1): Room locks door 706 behind CELES+boss
-- [~] **CELES — Magitek Factory 2** (ruin-mtek2): Room locks door 715 behind CELES+boss
-- [~] **EDGAR — Figaro Castle** (ruin-figarocastle): Room locks door 1558 behind EDGAR+engine room
-- [~] **SETZER — Daryl's Tomb** (ruin-daryl): Room locks door 1563 behind SETZER+boss
-- [~] **STRAGO — Burning House** (ruin-bh): Room locks trap 2055 behind STRAGO
-- [~] **STRAGO — Thamasa** (ruin-thamasa): Room locks trap 2054 behind STRAGO
+- [x] **SABIN — Phantom Train** (ruin-202): NPC in caboose hidden & can't fight boss if Sabin not recruited
+- [x] **CELES — Magitek Factory 1** (ruin-mtek1): Can't fight boss if Celes not recruited
+- [x] **CELES — Magitek Factory 2** (ruin-mtek2): Can't fight boss if Celes not recruited
+- [x] **EDGAR — Figaro Castle Engine Room** (ruin-figarocastle): Can't enter engine room if Edgar not recruited
+- [x] **SETZER — Daryl's Tomb** (ruin-daryl): Can't fight boss if Setzer not recruited
+- [x] **STRAGO — Burning House** (ruin-bh): Can't fight boss if Strago not recruited
 
 Locally gated in standard Worlds Collide (no ruination-specific work needed):
+- [x] **TERRA — Whelk** (ruin-whelk)
+- [x] **TERRA — Zozo** (ruin-zozo)
+- [x] **SABIN — Baren Falls** (ruin-baren-falls)
+- [x] **EDGAR — Figaro Castle Throne** (ruin-figarocastle)
 - [x] **TERRA — Mobliz WOR** (ms-wor-52)
 - [x] **LOCKE — Narshe WOR** (ruin-narshe)
 - [x] **LOCKE — Phoenix Cave** (ms-wor-1554)
