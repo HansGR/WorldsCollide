@@ -517,7 +517,7 @@ from event.doma_wob import *
 doma_siege_patch = DomaWOB.entrance_door_patch
 
 from event.mt_zozo import *
-mt_zozo_cliff_check = MtZozo.entrance_door_patch()
+mt_zozo_cliff_check = MtZozo.entrance_door_patch
 
 from event.phoenix_cave import *
 phoenix_cave_animation = PhoenixCave.entrance_door_patch()
