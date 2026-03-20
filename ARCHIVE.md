@@ -601,6 +601,7 @@ Locally gated (ruination-specific, added for door rando):
 - [x] **CYAN — Mt. Zozo** (room 256): `entrance_door_patch` in `event/mt_zozo.py`
 - [x] **CYAN — Doma WOR Wrexsoul** (ruin-wrexsoul): In-event gate in `event/doma_wor.py` + room variant
 - [x] **SHADOW — Floating Continent** (ms-wob-1556): Need Shadow to land on floating continent
+- [X] **SHADOW — Veldt Cave WOR** (room ruin-cotv):  Interceptor animation if Shadow not recruited
 - [x] **EDGAR — Ancient Castle** (room 532): Statue unresponsive if Edgar not recruited
 - [x] **EDGAR — Figaro Castle Engine Room** (ruin-figarocastle): Can't enter engine room if Edgar not recruited
 - [x] **SABIN — Imperial Camp** (dc-1501): Already locally gated in door rando mode
@@ -612,6 +613,7 @@ Locally gated (ruination-specific, added for door rando):
 - [x] **RELM — Owzer Mansion** (room 284): Locally gated at Chadarnook painting interaction (tint black + rejection animation)
 - [x] **SETZER — Daryl's Tomb** (ruin-daryl): Can't fight boss if Setzer not recruited
 - [x] **MOG — Narshe Moogle Defense** (room 65): Collapsed Terra NPC hidden if Mog not recruited via map entrance event (narshe_moogle_defense.py:657-671, ruination_start_mod). Non-ruin path gates via Arvis NPC (lines 278-282).
+- [X] **MOG — Lone Wolf** (ruin-lonewolf):  Gated in ruin-narshe.  Mapping logic protected by logical reward room. 
 - [x] **GOGO — Zone Eater** (room 363): NPC hidden if Gogo not recruited
 - [x] **UMARO — Umaro's Cave** (room 368): Event at Bone statue gated
 
@@ -636,12 +638,8 @@ Locally gated in standard Worlds Collide (no ruination-specific work needed):
 Not yet locally gated (need gating or decision to ungate):
 - [ ] **CYAN — Doma WOR stooges** (room 429): Doma Dream 1
 - [ ] **CYAN — Doma WOR throne** (room dc-76): Doma Dream 3 (currently gated by Wrexsoul event)
-- [ ] **SHADOW — Veldt Cave WOR** (room 475)
 - [ ] **CELES — Magitek Factory 3** (ruin-mtek3)
 - [ ] **GAU — Serpent Trench** (ruin-st-exit)
-
-Need verification of local gating:
-- [ ] **MOG — Lone Wolf** (41a):  currently gated in ruin-narshe, could cause conflicts
 
 Not currently used in ruination mode:
 - [-] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
