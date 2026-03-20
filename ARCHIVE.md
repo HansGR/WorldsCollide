@@ -609,7 +609,9 @@ Locally gated (ruination-specific, added for door rando):
 - [x] **CELES — Magitek Factory 1** (ruin-mtek1): Can't fight boss if Celes not recruited
 - [x] **CELES — Magitek Factory 2** (ruin-mtek2): Can't fight boss if Celes not recruited
 - [x] **STRAGO — Burning House** (ruin-bh): Can't fight boss if Strago not recruited
+- [x] **RELM — Owzer Mansion** (room 284): Locally gated at Chadarnook painting interaction (tint black + rejection animation)
 - [x] **SETZER — Daryl's Tomb** (ruin-daryl): Can't fight boss if Setzer not recruited
+- [x] **MOG — Narshe Moogle Defense** (room 65): Collapsed Terra NPC hidden if Mog not recruited via map entrance event (narshe_moogle_defense.py:657-671, ruination_start_mod). Non-ruin path gates via Arvis NPC (lines 278-282).
 - [x] **GOGO — Zone Eater** (room 363): NPC hidden if Gogo not recruited
 - [x] **UMARO — Umaro's Cave** (room 368): Event at Bone statue gated
 
@@ -639,9 +641,7 @@ Not yet locally gated (need gating or decision to ungate):
 - [ ] **GAU — Serpent Trench** (ruin-st-exit)
 
 Need verification of local gating:
-- [x] **RELM — Owzer Mansion** (room 284): Locally gated at Chadarnook painting interaction (tint black + rejection animation)
 - [ ] **MOG — Lone Wolf** (41a):  currently gated in ruin-narshe, could cause conflicts
-- [ ] **MOG — Narshe Moogle Defense** (room 65)
 
 Not currently used in ruination mode:
 - [-] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
