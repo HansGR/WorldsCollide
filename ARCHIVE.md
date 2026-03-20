@@ -545,3 +545,102 @@ The codebase has three text encoding types in `data/text/`:
 **ROM Data Types** (from ff3infov2.txt):
 - `TXT1` = TEXT1 encoding (DTE compressed)
 - `TXT2` = TEXT2 encoding (simple)
+
+---
+
+## Local Character Gating (Door Rando)
+
+In standard (non-door-rando) modes, character gating is enforced at the area level (e.g., you can't enter Mt. Zozo without Cyan). In door rando modes, the player can reach any room through randomized connections, so gating must be enforced **locally** — inside the room where the reward is given.
+
+### Implementation Patterns
+
+There are three complementary mechanisms:
+
+**1. `entrance_door_patch` (for entrance-event-based checks)**
+Used when the reward is triggered by an entrance event (map load). The patch is a static method on the event class that takes `args` and returns event code. When `args.character_gating` is true, use `BranchIfAll` to combine the "not finished" and "character recruited" checks:
+```python
+@staticmethod
+def entrance_door_patch(args):
+    CYAN = 2
+    if args.character_gating:
+        src = [
+            field.BranchIfAll([event_bit.FINISHED_MT_ZOZO, False,
+                               event_bit.character_recruited(CYAN), True], continue_addr),
+            field.Return()
+        ]
+    else:
+        src = [
+            field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, continue_addr),
+            field.Return()
+        ]
+    return src
+```
+In `event_exit_info.py`, store as a callable (not called): `mt_zozo_cliff_check = MtZozo.entrance_door_patch`. The `maps.py` consumption sites detect callables and pass `self.args` at runtime.
+
+**2. In-event gating (for boss/NPC-triggered checks)**
+Used when the reward is behind a boss fight or NPC interaction triggered by an event tile. Add the gate check to the existing door-rando event code. Pattern: check with `BranchIfAll`, and if the gate character is missing, play a rejection animation and return. Example rejection animation (from Wrexsoul):
+- `FlashScreen(Flash.WHITE)` + `PlaySoundEffect(174)`
+- `DisableWalkingAnimation`, `SetSpeed(FAST)`, `AnimateAttacked`, `Move(DOWN, 2)`
+- `EnableWalkingAnimation`, `Turn(UP)`, `FreeScreen`, `Return`
+
+**3. `ruin-*` room variants in `data/rooms.py`**
+Create a copy of the room with the reward exit locked behind a character gate. This tells the ruination mapping algorithm that the exit is only available when the character is recruited. Format: move the gated exit from the normal list to the lock dict:
+```python
+# Original:
+193 : [ [456], [2074], [ ], 1],  # Doma Dream Throne Room
+# Ruination variant with Cyan gate:
+'ruin-wrexsoul' : [ [456], [ ], [ ], [], {'CYAN': [2074]}, 1],
+```
+Then update `ROOM_REWARD` and `RUIN_ROOM_SETS` in `event/ruination.py` to reference the new room key.
+
+### Progress Tracker
+
+Locally gated (ruination-specific, added for door rando):
+- [x] **CYAN — Mt. Zozo** (room 256): `entrance_door_patch` in `event/mt_zozo.py`
+- [x] **CYAN — Doma WOR Wrexsoul** (ruin-wrexsoul): In-event gate in `event/doma_wor.py` + room variant
+- [x] **TERRA — Lete River** (LeteRiver3): Boss not fought if Terra not recruited
+- [x] **LOCKE — South Figaro Cave** (room 104): Boss not fought if Locke not recruited
+- [x] **EDGAR — Ancient Castle** (room 532): Statue unresponsive if Edgar not recruited
+- [x] **SABIN — Imperial Camp** (dc-1501): Already locally gated in door rando mode
+- [x] **SABIN — Mt. Kolts** (room 151): Vargas doesn't attack if no Sabin
+- [x] **SHADOW — Floating Continent** (ms-wob-1556): Need Shadow to land on floating continent
+- [x] **UMARO — Umaro's Cave** (room 368): Event at Bone statue gated
+- [x] **GOGO — Zone Eater** (room 363): NPC hidden if Gogo not recruited
+- [x] **SABIN — Phantom Train** (ruin-202): NPC in caboose hidden & can't fight boss if Sabin not recruited
+- [x] **CELES — Magitek Factory 1** (ruin-mtek1): Can't fight boss if Celes not recruited
+- [x] **CELES — Magitek Factory 2** (ruin-mtek2): Can't fight boss if Celes not recruited
+- [x] **EDGAR — Figaro Castle Engine Room** (ruin-figarocastle): Can't enter engine room if Edgar not recruited
+- [x] **SETZER — Daryl's Tomb** (ruin-daryl): Can't fight boss if Setzer not recruited
+- [x] **STRAGO — Burning House** (ruin-bh): Can't fight boss if Strago not recruited
+
+Locally gated in standard Worlds Collide (no ruination-specific work needed):
+- [x] **TERRA — Whelk** (ruin-whelk)
+- [x] **TERRA — Zozo** (ruin-zozo)
+- [x] **SABIN — Baren Falls** (ruin-baren-falls)
+- [x] **EDGAR — Figaro Castle Throne** (ruin-figarocastle)
+- [x] **TERRA — Mobliz WOR** (ms-wor-52)
+- [x] **LOCKE — Narshe WOR** (ruin-narshe)
+- [x] **LOCKE — Phoenix Cave** (ms-wor-1554)
+- [x] **SABIN — Collapsing House** (ms-wor-51)
+- [x] **CELES — South Figaro** (ms-wor-58)
+- [x] **CELES — Opera House** (ms-wob-40)
+- [x] **SHADOW — Gau Father House** (ms-wob-14)
+- [x] **GAU — Veldt** (wor-veldt)
+- [x] **SETZER — Kohlingen** (ms-wor-59)
+- [x] **STRAGO — Fanatic's Tower** (ms-wor-69)
+- [x] **STRAGO — Ebot's Rock** (ms-wor-78)
+- [x] **RELM — Esper Mountain** (room 488)
+
+Not yet locally gated (need gating or decision to ungate):
+- [ ] **SHADOW — Veldt Cave WOR** (room 475)
+- [ ] **CYAN — Doma WOR stooges** (room 429): Doma Dream 1
+- [ ] **CELES — Magitek Factory 3** (ruin-mtek3)
+- [ ] **GAU — Serpent Trench** (ruin-st-exit)
+
+Need verification of local gating:
+- [ ] **RELM — Owzer Mansion** (room 284)
+- [ ] **MOG — Lone Wolf** (41a)
+- [ ] **MOG — Narshe Moogle Defense** (room 65)
+
+Not currently used in ruination mode:
+- [-] **CYAN — Doma WOB** (ms-wob-18): Doma Siege

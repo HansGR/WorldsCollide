@@ -54,6 +54,7 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 - **instruction/field/custom.py** - Custom event opcodes (65816 ASM). Key ruination opcodes: `MarkActivePartyAway` (0x8a), `RestoreActivePartyAvailable` (0x8b), `RemapPartiesToFreeSlots` (0x8c), `SetupBranchPartySelect` (0x8d), `FinalizeBranchPartySelect` (0x8e). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass.
 - **instruction/field/instructions.py** `RecruitAndSelectParty` - In ruin mode, wraps recruitment with `SetupBranchPartySelect`/`FinalizeBranchPartySelect` to restrict party select to current party + new recruit on branches. See ARCHIVE.md "Branch Character Recruitment".
 - **`initially_locked_exits`** (set on Network in `data/walks.py`): Tracks doors/traps unlocked by `apply_key()`. These exits are excluded as connection targets and from downstream available exits because the player may not have the key yet. See ARCHIVE.md "Key/Lock Softlock Analysis" for full details.
+- **Local character gating** (door rando): In door rando, character gates must be enforced inside the reward room, not at the area entrance. Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating (rejection animation), and `ruin-*` room variants with lock dicts. See ARCHIVE.md "Local Character Gating (Door Rando)" for patterns and progress tracker.
 
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
