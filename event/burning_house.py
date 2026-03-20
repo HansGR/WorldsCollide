@@ -143,22 +143,52 @@ class BurningHouse(Event):
     def flame_eater_mod(self):
         boss_pack_id = self.get_boss("FlameEater")
 
-        space = Reserve(0xbe793, 0xbe799, "burning house invoke battle flame eater", field.NOP())
-        space.write(
-            field.InvokeBattle(boss_pack_id),
-        )
-
         if self.DOOR_RANDOMIZE:
-            # Add a Return if flame eater was defeated
-            space = Reserve(0xbe767, 0xbe78d, "burning house approach flame eater dialog", field.NOP())
-            space.write(
+            # Reserve the entire approach + boss animation + battle invoke area
+            space = Reserve(0xbe767, 0xbe799, "burning house flame eater approach and battle", field.NOP())
+
+            src = [
                 field.ReturnIfEventBitSet(event_bit.DEFEATED_FLAME_EATER),
                 field.EntityAct(field_entity.PARTY0, True,
                                 field_entity.SetSpeed(field_entity.Speed.NORMAL),
                                 field_entity.Move(direction.UP, 1),
                                 ),
-            )
+                field.EntityAct(0x18, True,
+                                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                                field_entity.Move(direction.DOWN, 2),
+                                ),
+            ]
+
+            if self.args.character_gating:
+                # If Strago recruited, skip to boss fight; otherwise kick-out animation
+                src += [
+                    field.BranchIfEventBitSet(
+                        event_bit.character_recruited(self.character_gate()),
+                        "FIGHT",
+                    ),
+                    # Kick-out: shake + sound, surprised animation, low jump down 2 tiles
+                    field.PlaySoundEffect(137),
+                    field.ShakeScreen(intensity=3, permanent=True,
+                                      layer1=True, layer2=True, layer3=True, sprite_layer=True),
+                    field.EntityAct(field_entity.PARTY0, True,
+                                    field_entity.AnimateSurprised(),
+                                    field_entity.Pause(8),
+                                    field_entity.AnimateLowJump(),
+                                    field_entity.Move(direction.DOWN, 2),
+                                    ),
+                    field.StopScreenShake(),
+                    field.FreeScreen(),
+                    field.Return(),
+                    "FIGHT",
+                ]
+
+            src.append(field.InvokeBattle(boss_pack_id))
+            space.write(src)
         else:
+            space = Reserve(0xbe793, 0xbe799, "burning house invoke battle flame eater", field.NOP())
+            space.write(
+                field.InvokeBattle(boss_pack_id),
+            )
             # split party, "Is this the source of our blaze...?"
             space = Reserve(0xbe76c, 0xbe78d, "burning house approach flame eater dialog", field.NOP())
 
@@ -369,38 +399,18 @@ class BurningHouse(Event):
         boss_npc_id = 0x18
         relm_npc_id = 0x1b
         shadow_npc_id = 0x1d
-        if self.args.character_gating:
-            # With character gating: hide NPCs if boss defeated OR Strago not yet recruited.
-            src = [
-                field.ReturnIfEventBitSet(0x1b5),
-                field.BranchIfAny([
-                    event_bit.DEFEATED_FLAME_EATER, True,
-                    event_bit.character_recruited(self.character_gate()), False,
-                ], "DO_HIDE"),
-                field.Return(),
-                "DO_HIDE",
-                field.DeleteEntity(boss_npc_id),
-                field.HideEntity(boss_npc_id),
-                field.DeleteEntity(relm_npc_id),
-                field.HideEntity(relm_npc_id),
-                field.DeleteEntity(shadow_npc_id),
-                field.HideEntity(shadow_npc_id),
-                field.SetEventBit(0x1b5),
-                field.Return()
-            ]
-        else:
-            src = [
-                field.ReturnIfEventBitClear(event_bit.DEFEATED_FLAME_EATER),
-                field.ReturnIfEventBitSet(0x1b5),
-                field.DeleteEntity(boss_npc_id),
-                field.HideEntity(boss_npc_id),
-                field.DeleteEntity(relm_npc_id),
-                field.HideEntity(relm_npc_id),
-                field.DeleteEntity(shadow_npc_id),
-                field.HideEntity(shadow_npc_id),
-                field.SetEventBit(0x1b5),
-                field.Return()
-            ]
+        src = [
+            field.ReturnIfEventBitClear(event_bit.DEFEATED_FLAME_EATER),
+            field.ReturnIfEventBitSet(0x1b5),
+            field.DeleteEntity(boss_npc_id),
+            field.HideEntity(boss_npc_id),
+            field.DeleteEntity(relm_npc_id),
+            field.HideEntity(relm_npc_id),
+            field.DeleteEntity(shadow_npc_id),
+            field.HideEntity(shadow_npc_id),
+            field.SetEventBit(0x1b5),
+            field.Return()
+        ]
         space = Write(Bank.CB, src, "Burning House Delete NPCs if Boss Cleared")
         self.delete_flameeater_npcs = space.start_address
 
