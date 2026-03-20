@@ -183,8 +183,8 @@ ROOM_REWARD = {
     284: {"Owzer Mansion": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Owzer's Basement
     
     # MOG
-    '41a': {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM],  # Lone Wolf.  Move to WOR?
-            "Tritoch": [RewardType.ESPER, RewardType.ITEM]},
+    '41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},
+    'ruin-lonewolf': {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Lone Wolf reward gated by lw1 key from ruin-narshe
     65: {"Narshe Moogle Defense": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Moogle Defense WOR (need to update how this starts); 65 in WOB
 
     # UMARO

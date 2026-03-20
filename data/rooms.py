@@ -186,7 +186,8 @@ room_data = {
     'ruin-baren-reward': [ [ ], [2176], [3076], 0],  # End for Baren Falls with reward, logically forced to Veldt Shore
     'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
-    'ruin-narshe': [[1143, 1146, 140, 143, 144], [], [], 1],         # Narshe WOR, incl. secret passage & entrance to south caves & school
+    'ruin-narshe': [[1143, 1146, 140, 143, 144], [], [], ['lw1'], {}, 1],         # Narshe WOR, incl. secret passage & entrance to south caves & school.  Key 'lw1' unlocks Lone Wolf reward.
+    'ruin-lonewolf': [[], [], [3180], 1],             # Lone Wolf reward room, logical only.  Forced connection from Narshe Peak (41a).
     'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [4608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608
 
 
@@ -248,7 +249,7 @@ room_data = {
     39 : [ [1145, 1146], [ ], [ ], 1], #Narshe Northern Mines 1st Floor Outside WoR
     40 : [ [1148, 1149], [ ], [ ], 1], #Snow Battlefield WoR
     41 : [ [1150], [ ], [ ], 1], #Narshe Peak WoR
-    '41a' : [ [1150], [2010], [], 1], # Narshe Peak WoR incl. entrance to Umaro's cave
+    '41a' : [ [1150], [2010], [], [], {'lw1': [2180]}, 1], # Narshe Peak WoR incl. entrance to Umaro's cave.  Lone Wolf reward (2180) locked by lw1 key from ruin-narshe.
     42 : [ [148, 149], [ ], [ ], 1], #Narshe Northern Mines 1F Side/East Room WoR
     43 : [ [150, 151], [ ], [ ], 1], #Narshe Northern Mines 2F Inside WoR
     44 : [ [152, 153], [ ], [ ], 1], #Narshe Northern Mines 3F Inside WoR
@@ -1074,6 +1075,8 @@ forced_connections = {
     2098: [3098],   # KT mid, trickery
     2099: [3099],   # KT right, trickery
     2128: [3128],   # MTek 3 ending back to vector, trickery.
+
+    2180: [3180],   # Narshe Peak (41a) --> Lone Wolf reward room (ruin-lonewolf), logical only.
 }
 
 # Add forced connections for virtual doors (-dra)
