@@ -173,6 +173,7 @@ room_data = {
     'ruin_terminus_3':  [ [1564], [], [ ], 1],  # Daryl's Tomb staircase + Falcon (KT connection will be patched separately)
     'ruin-mtek3': [[ ], [2128], [3028], 0],   # MTek 3 destination with reward, logically forced to Vector
     'ruin-vector': [[1228, 1229], [], [3128], 0],   # Vector with Mtek3 destination
+    'ruin-st-entr': [[523], [ ], [], [ ], {'GAU': [2044]},  0],            # Crescent Mtn + SerpentTrench. Not sure we want to keep GAU lock on this...
     'ruin-st-exit': [ [], [2153], [3053], 1],   # Serpent trench entry to nikeah with reward, logically forced to Nikeah WOR
     'ruin-nikeah': [[5199, 5200], [], [3153], 1],  # WOR Nikeah + Serpent Trench exit
     'ruin-daryl': [ [789], [], [], ['dtboss'], {('dtboss', 'SETZER'): [1563]}, 1], #Darill's Tomb Dullahan Room
