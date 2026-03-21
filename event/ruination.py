@@ -4499,6 +4499,28 @@ class ruination_map():
                 return "Item"
             return "?"
 
+        # Capture rewards assigned after map generation (e.g., by safety code in events.py)
+        # ROOM_REWARD entries are shared Reward objects updated by both ruination map gen
+        # and the post-ruination reward distribution in events.py
+        logged_names = {e['name'] for e in self.reward_log}
+        for room_id, rewards in ROOM_REWARD.items():
+            for reward_name, slot in rewards.items():
+                if reward_name not in logged_names and slot.id is not None and slot.type is not None:
+                    # Determine which branch this room is on (if any)
+                    branch_id = -1
+                    for bid, walks in rebuilt.items():
+                        if room_id in walks.net.nodes:
+                            branch_id = bid
+                            break
+                    self.reward_log.append({
+                        'order': len(self.reward_log) + 1,
+                        'name': reward_name,
+                        'branch': branch_id,
+                        'type': slot.type,
+                        'reward_id': slot.id,
+                        'reward_room': room_id,
+                    })
+
         # Build the log output
         log_lines = []
 
