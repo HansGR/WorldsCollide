@@ -3323,6 +3323,10 @@ class ruination_map():
             REWARDS_LOCKED_BY_CHARACTER.clear()
         self.accessible_shops = []  # list of shop IDs that are accessible (for dried meat assignment)
 
+        # Spoiler log tracking: ordered list of reward acquisitions
+        # Each entry: {'order': int, 'name': str, 'branch': int, 'type': RewardType, 'reward_id': int, 'reward_room': room_id}
+        self.reward_log = []
+
         self.args = args
 
         # Read character/esper requirements from args (extracted from flagstring in args/objectives.py)
@@ -4342,6 +4346,22 @@ class ruination_map():
                       self.RewardsAvailable[1],
                       'Espers')
 
+            # Track this reward for spoiler log
+            # Find which room this reward is in
+            reward_room = None
+            for room_id, room_rewards in ROOM_REWARD.items():
+                if reward_name in room_rewards:
+                    reward_room = room_id
+                    break
+            self.reward_log.append({
+                'order': len(self.reward_log) + 1,
+                'name': reward_name,
+                'branch': branch_id,
+                'type': slot.type,
+                'reward_id': slot.id,
+                'reward_room': reward_room,
+            })
+
             # Update branch_checks
             self.branch_checks[branch_id].remove(reward_name)
             if self.verbose:
@@ -4369,6 +4389,197 @@ class ruination_map():
                                 self.RewardsAvailable[1] -= 1
                         # Then process them all
                         self.process_rewards(unlocked_rewards, characters, espers, items, v[0], exclude_chars)
+
+    def generate_spoiler_log(self, characters, espers, items):
+        """Generate a ruination-specific spoiler log for the -sl flag.
+
+        Outputs:
+        - Characters: order obtained, branch, check name, shortest path from hub
+        - Other rewards: branch, order obtained
+        - Branch terminus rooms: shortest path from hub
+        """
+        import networkx as nx
+        from data.walks import Network
+        from data.map_exit_extra import exit_data
+        from data.event_exit_info import event_exit_info
+
+        def get_door_name(door_id):
+            if door_id in exit_data:
+                return exit_data[door_id][1]
+            elif door_id in event_exit_info:
+                return event_exit_info[door_id][4]
+            else:
+                return f"Door {door_id}"
+
+        # Rebuild fresh networks for pathfinding (same approach as debug_print_shortest_route)
+        rebuilt = {}
+        for branch_id, branch in enumerate(self.branches):
+            walks = Network(list(branch.all_rooms_added))
+            for d1, d2 in branch.map[0]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if r1 and r2:
+                    walks.net.add_edge(r1.id, r2.id)
+                    walks.net.add_edge(r2.id, r1.id)
+            for d1, d2 in branch.map[1]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if r1 and r2:
+                    walks.net.add_edge(r1.id, r2.id)
+            rebuilt[branch_id] = walks
+
+        def find_hub(walks):
+            for node_id in walks.net.nodes:
+                if 'ruin_hub_' in str(node_id):
+                    return node_id
+            return None
+
+        def format_path(walks, door_map, hub_id, target_node):
+            """Return a list of strings describing the path from hub to target."""
+            if target_node == hub_id:
+                return ["  (in hub)"]
+            try:
+                path = nx.shortest_path(walks.net, source=hub_id, target=target_node)
+            except nx.NetworkXNoPath:
+                return ["  (no path found)"]
+
+            lines = [f"  Path: {len(path)} rooms"]
+            for i in range(len(path) - 1):
+                current_room = path[i]
+                next_room = path[i + 1]
+                connection = find_connecting_info(walks, door_map, current_room, next_room)
+                lines.append(f"    {current_room}: {connection}")
+            lines.append(f"    {path[-1]}: (destination)")
+            return lines
+
+        def find_connecting_info(walks, door_map, room1, room2):
+            for d1, d2 in door_map[0]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if not r1 or not r2:
+                    continue
+                if r1.id == room1 and r2.id == room2:
+                    has_reverse = walks.net.has_edge(room2, room1)
+                    arrow = "<-->" if has_reverse else "-->"
+                    return f"{d1} ({get_door_name(d1)}) {arrow} {d2} ({get_door_name(d2)})"
+                if r1.id == room2 and r2.id == room1:
+                    has_reverse = walks.net.has_edge(room2, room1)
+                    arrow = "<-->" if has_reverse else "-->"
+                    return f"{d2} ({get_door_name(d2)}) {arrow} {d1} ({get_door_name(d1)})"
+            for d1, d2 in door_map[1]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if not r1 or not r2:
+                    continue
+                if r1.id == room1 and r2.id == room2:
+                    return f"TRAP {d1} ({get_door_name(d1)}) --> PIT {d2} ({get_door_name(d2)})"
+            return "(connection not found)"
+
+        def find_room_on_branches(room_id):
+            for branch_id, walks in rebuilt.items():
+                if room_id in walks.net.nodes:
+                    return branch_id, walks, room_id
+            return None, None, None
+
+        def get_reward_name(entry, characters, espers, items):
+            if entry['type'] == RewardType.CHARACTER:
+                return characters.get_name(entry['reward_id'])
+            elif entry['type'] == RewardType.ESPER:
+                return espers.get_name(entry['reward_id'])
+            elif entry['type'] == RewardType.ITEM:
+                return items.get_name(entry['reward_id'])
+            return f"ID {entry['reward_id']}"
+
+        def get_type_label(reward_type):
+            if reward_type == RewardType.CHARACTER:
+                return "Char"
+            elif reward_type == RewardType.ESPER:
+                return "Esper"
+            elif reward_type == RewardType.ITEM:
+                return "Item"
+            return "?"
+
+        # Build the log output
+        log_lines = []
+
+        # Starting party
+        log_lines.append(f"Starting Party: {', '.join(self.PARTY)}")
+        log_lines.append("")
+
+        # Separate character rewards from other rewards
+        char_rewards = [e for e in self.reward_log if e['type'] == RewardType.CHARACTER]
+        other_rewards = [e for e in self.reward_log if e['type'] != RewardType.CHARACTER]
+
+        # Number characters starting from the starting party size + 1
+        starting_count = len(self.PARTY)
+
+        # --- Character Rewards ---
+        log_lines.append("Character Rewards:")
+        log_lines.append(f"  {'#':<4} {'Character':<14} {'Branch':<8} {'Check':<28}")
+
+        char_number = starting_count + 1
+        for entry in char_rewards:
+            char_name = characters.get_name(entry['reward_id'])
+            check_name = entry['name']
+            branch = entry['branch']
+
+            log_lines.append(f"  {char_number:<4} {char_name:<14} {branch:<8} {check_name:<28}")
+
+            # Find path to reward room
+            reward_room = entry['reward_room']
+            if reward_room is not None:
+                bid, walks, target = find_room_on_branches(reward_room)
+                if walks is not None:
+                    hub_id = find_hub(walks)
+                    if hub_id is not None:
+                        door_map = self.branches[bid].map
+                        path_lines = format_path(walks, door_map, hub_id, target)
+                        log_lines.extend(path_lines)
+
+            char_number += 1
+
+        log_lines.append("")
+
+        # --- Other Rewards ---
+        log_lines.append("Other Rewards:")
+        log_lines.append(f"  {'#':<4} {'Type':<8} {'Reward':<20} {'Branch':<8} {'Check':<28}")
+        for entry in other_rewards:
+            reward_name = get_reward_name(entry, characters, espers, items)
+            type_label = get_type_label(entry['type'])
+            log_lines.append(f"  {entry['order']:<4} {type_label:<8} {reward_name:<20} {entry['branch']:<8} {entry['name']:<28}")
+
+        log_lines.append("")
+
+        # --- Terminus Routes ---
+        log_lines.append("Branch Terminus Routes:")
+        for branch_id, branch in enumerate(self.branches):
+            terminus = branch.terminus
+            walks = rebuilt[branch_id]
+            hub_id = find_hub(walks)
+            if hub_id is None:
+                log_lines.append(f"  Branch {branch_id}: hub not found")
+                continue
+
+            log_lines.append(f"  Branch {branch_id} terminus: {terminus}")
+
+            # The terminus may have been merged into a compound room; search for it
+            target_node = None
+            if terminus in walks.net.nodes:
+                target_node = terminus
+            else:
+                for node_id in walks.net.nodes:
+                    if terminus in str(node_id):
+                        target_node = node_id
+                        break
+
+            if target_node is not None:
+                door_map = self.branches[branch_id].map
+                path_lines = format_path(walks, door_map, hub_id, target_node)
+                log_lines.extend(path_lines)
+            else:
+                log_lines.append("    (terminus not found in network)")
+
+        return log_lines
 
     def debug_print_shortest_route(self, destination_rooms):
         """Find and print the shortest route from hub to each destination room in ruination mode.
