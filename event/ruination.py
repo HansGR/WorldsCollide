@@ -255,7 +255,7 @@ RUIN_ROOM_SETS = {
     'PhantomTrain': ['ruin-201', 'ruin-202', '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
                      '207b', 212, 213, '215a', '215b', 216, 220, 221], # 'ruin-phantomforest' if you want to include the forest + healing spring
     'SealedGate': [502, 503, 504, 505, 506, 507, 508, 509, 510, 511, 512, 513],  # no worldmap connector '504a'; no sealed gate itself 514
-    'SouthFigaroCave': [100, 101, 102, 103, 104, 105],
+    'SouthFigaroCave': [100, 101, 102, 103, 104],  # Removed outside hallway (105)
     'ReturnersHideout': ['ruin-returners', 'LeteRiver1', 'LeteCave1', 'LeteRiver2', 'LeteCave2', 'LeteRiver3'],  # Need to add raft return to Esper World
     'AncientCastle': [520, 521, 522, 523, 524, 525, 526, 527, 528, 529, 530, 531, 532],
     'Jidoor': ['dc-73', 277, 278, 279, 280, 281, 282, 283, 284],   # Including Owzer's Mansion
@@ -264,9 +264,12 @@ RUIN_ROOM_SETS = {
     'BarenFalls': ['ruin-baren-falls', 'ruin-baren-reward', 'ruin-baren'],  # 'dc-15'
     'Vector': [345, 346, 347, 'ruin-mtek1', 351, 352, 353, 'ruin-mtek2', 355, '355a', 'ruin-mtek3', 'ruin-vector'],  # 349
     'DarylsTomb': [377, 378, 379, 380, 381, 382, 383, 384, 386, 'ruin-daryl', 388, 389, 390, 391, 392, 393],
+            # Hallways: 377, 378.
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
-    'MtKolts': [145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160],
-    'Narshe': ['ruin-narshe', 36, '37a', 38, 40, '41a', 'ruin-lonewolf', 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 51, 61],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense) + Lone Wolf reward room
+    'MtKolts': [146, 147, 148, 149, 150, 151, 152, 153, 155, 156, 157, 159, 160],
+            # Hallways: 145, 146 (anim), 148, 150 (anim), 152, 154, 155, 158.  Removed: 145, 154, 158.
+    'Narshe': ['ruin-narshe', '37a', 38, 40, '41a', 'ruin-lonewolf', 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 61],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense) + Lone Wolf reward room
+            # Hallways: 36, 38, 42, 43, 44, 45, 50, 51.  Removed: 36, 51
     'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r'],
     'ZozoTower': [297, 298, 299, 300, 302, '303a', '303b', 304, 310, 311, 312, 313],
     'MtZozo': [250, 251, 252, 253, 254, 255, 256],
