@@ -251,7 +251,7 @@ class DarylTomb(Event):
         # (1a) Add top door tile that goes back into the tomb
         door_exit_id = 1564
         src = [
-            field.FadeLoadMap(0x12b, x=100, y=8, direction=direction.DOWN, fade_in=True, entrance_event=True,
+            field.FadeLoadMap(0x12b, x=100, y=9, direction=direction.DOWN, fade_in=True, entrance_event=True,
                               default_music=True),
             field.Return()
         ]
