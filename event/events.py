@@ -291,6 +291,17 @@ class Events():
             log_lines = ruin_map.generate_spoiler_log(self.characters, self.espers, self.items)
             section("Ruination Rewards", log_lines, [])
 
+            # Generate graphical map image alongside spoiler log
+            try:
+                import os
+                import args as wc_args
+                name, ext = os.path.splitext(wc_args.output_file)
+                map_image_path = f"{name}_ruination_map.png"
+                ruin_map.generate_map_image(map_image_path, self.characters, self.espers, self.items)
+                print(f"Ruination map: {os.path.basename(map_image_path)}")
+            except Exception as e:
+                print(f"Warning: Could not generate ruination map image: {e}")
+
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()
 
