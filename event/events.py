@@ -285,6 +285,12 @@ class Events():
             for slot in reward_slots:
                 print(slot.event.name(), slot.id, slot.type)
 
+        # Generate ruination spoiler log if -sl flag is set
+        if self.args.spoiler_log:
+            from log import section
+            log_lines = ruin_map.generate_spoiler_log(self.characters, self.espers, self.items)
+            section("Ruination Rewards", log_lines, [])
+
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()
 
