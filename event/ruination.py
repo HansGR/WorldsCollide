@@ -4603,6 +4603,298 @@ class ruination_map():
 
         return log_lines
 
+    def generate_map_image(self, image_path, characters=None, espers=None, items=None):
+        """Generate a graphical map of the ruination room network as a PNG image.
+
+        Draws all three branches with:
+        - Color-coded nodes by area (from RUIN_ROOM_SETS)
+        - Solid lines for two-way door connections
+        - Dashed arrows for one-way trap/pit connections
+        - Star markers for reward rooms, diamond for terminus, hexagon for hub
+        - A legend showing area colors and symbols
+        """
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as mpatches
+        import matplotlib.lines as mlines
+        import networkx as nx
+        from data.walks import Network
+        from data.map_exit_extra import exit_data
+        from data.event_exit_info import event_exit_info
+
+        # Build reverse lookup: room_id -> area name
+        room_to_area = {}
+        for area_name, room_ids in RUIN_ROOM_SETS.items():
+            for rid in room_ids:
+                room_to_area[rid] = area_name
+
+        # Area color palette - distinct colors for major areas
+        area_colors = {
+            'Narshe': '#4A90D9',
+            'Doma': '#D94A4A',
+            'UmarosCave': '#7B68EE',
+            'EsperMountain': '#2ECC71',
+            'PhantomTrain': '#8B4513',
+            'SealedGate': '#FF6347',
+            'SouthFigaroCave': '#DAA520',
+            'ReturnersHideout': '#3CB371',
+            'AncientCastle': '#CD853F',
+            'Jidoor': '#DDA0DD',
+            'VeldtCave': '#556B2F',
+            'CrescentMtn': '#4682B4',
+            'BarenFalls': '#00CED1',
+            'Vector': '#DC143C',
+            'DarylsTomb': '#9370DB',
+            'ZoneEater': '#FF8C00',
+            'MtKolts': '#6B8E23',
+            'Zozo': '#B8860B',
+            'ZozoTower': '#BDB76B',
+            'MtZozo': '#808000',
+            'BurningHouse': '#FF4500',
+            'SouthFigaro': '#F4A460',
+            'GauFatherHouse': '#8FBC8F',
+            'Thamasa': '#E9967A',
+            'Kohlingen': '#87CEEB',
+            'Cid': '#ADD8E6',
+            'Mobliz': '#98FB98',
+            'Maranda': '#FFB6C1',
+            'FanaticsTower': '#BA55D3',
+            'OperaHouse': '#FF69B4',
+            'EbotsRock': '#A0522D',
+            'Coliseum': '#C0C0C0',
+            'Tzen': '#FFDEAD',
+            'Albrook': '#B0E0E6',
+            'Veldt': '#9ACD32',
+            'Nikeah': '#5F9EA0',
+            'PhoenixCave': '#FF7F50',
+            'FloatingContinent': '#6495ED',
+            'ImperialCamp': '#DB7093',
+            'FigaroCastle': '#F0E68C',
+            'ImperialCastle': '#778899',
+        }
+        default_color = '#AAAAAA'
+
+        def get_node_color(node_id):
+            if 'ruin_hub_' in str(node_id):
+                return '#FFD700'  # Gold for hub
+            area = room_to_area.get(node_id)
+            if area:
+                return area_colors.get(area, default_color)
+            # For compound rooms, check if any component matches
+            node_str = str(node_id)
+            for rid, area in room_to_area.items():
+                if str(rid) in node_str:
+                    return area_colors.get(area, default_color)
+            return default_color
+
+        def get_node_area(node_id):
+            if 'ruin_hub_' in str(node_id):
+                return 'Hub'
+            area = room_to_area.get(node_id)
+            if area:
+                return area
+            node_str = str(node_id)
+            for rid, a in room_to_area.items():
+                if str(rid) in node_str:
+                    return a
+            return 'Unknown'
+
+        def is_reward_room(node_id):
+            return node_id in ROOM_REWARD
+
+        def is_hub(node_id):
+            return 'ruin_hub_' in str(node_id)
+
+        def is_terminus(node_id):
+            return node_id in RUIN_TERMINI or 'terminus' in str(node_id)
+
+        def get_reward_label(node_id):
+            if node_id in ROOM_REWARD:
+                names = list(ROOM_REWARD[node_id].keys())
+                return '\n'.join(names)
+            return ''
+
+        def get_node_label(node_id):
+            if is_hub(node_id):
+                return 'HUB'
+            if is_terminus(node_id):
+                return 'TERMINUS'
+            reward = get_reward_label(node_id)
+            if reward:
+                return reward
+            # Use area name as fallback label
+            area = get_node_area(node_id)
+            if area != 'Unknown':
+                return area
+            return str(node_id)[:15]
+
+        def get_door_name(door_id):
+            if door_id in exit_data:
+                return exit_data[door_id][1]
+            elif door_id in event_exit_info:
+                return event_exit_info[door_id][4]
+            return f"Door {door_id}"
+
+        # Rebuild networks (same as spoiler log)
+        rebuilt = {}
+        for branch_id, branch in enumerate(self.branches):
+            walks = Network(list(branch.all_rooms_added))
+            for d1, d2 in branch.map[0]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if r1 and r2:
+                    walks.net.add_edge(r1.id, r2.id, edge_type='door')
+                    walks.net.add_edge(r2.id, r1.id, edge_type='door')
+            for d1, d2 in branch.map[1]:
+                r1 = walks.rooms.get_room_from_element(d1)
+                r2 = walks.rooms.get_room_from_element(d2)
+                if r1 and r2:
+                    walks.net.add_edge(r1.id, r2.id, edge_type='trap')
+            rebuilt[branch_id] = walks
+
+        branch_names = ['Branch 0 (Left)', 'Branch 1 (Center)', 'Branch 2 (Right)']
+
+        # Create figure with 3 subplots (one per branch) + legend
+        fig, axes = plt.subplots(1, 3, figsize=(30, 18))
+        fig.suptitle('Ruination Mode - Room Network Map', fontsize=20, fontweight='bold', y=0.98)
+
+        for branch_id in range(3):
+            ax = axes[branch_id]
+            walks = rebuilt[branch_id]
+            branch = self.branches[branch_id]
+            G = walks.net
+
+            if len(G.nodes) == 0:
+                ax.set_title(f'{branch_names[branch_id]}\n(empty)', fontsize=14)
+                ax.axis('off')
+                continue
+
+            # Compute layout - use kamada_kawai for cleaner graphs, fall back to spring
+            try:
+                pos = nx.kamada_kawai_layout(G)
+            except Exception:
+                pos = nx.spring_layout(G, k=2.0, iterations=100, seed=42)
+
+            # Classify nodes
+            hub_nodes = [n for n in G.nodes if is_hub(n)]
+            terminus_nodes = [n for n in G.nodes if is_terminus(n)]
+            reward_nodes = [n for n in G.nodes if is_reward_room(n) and n not in hub_nodes and n not in terminus_nodes]
+            regular_nodes = [n for n in G.nodes if n not in hub_nodes and n not in terminus_nodes and n not in reward_nodes]
+
+            # Classify edges
+            door_edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('edge_type') == 'door']
+            trap_edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('edge_type') == 'trap']
+
+            # For door edges, deduplicate bidirectional pairs for drawing
+            door_edge_pairs = set()
+            door_edges_deduped = []
+            for u, v in door_edges:
+                pair = tuple(sorted([str(u), str(v)]))
+                if pair not in door_edge_pairs:
+                    door_edge_pairs.add(pair)
+                    door_edges_deduped.append((u, v))
+
+            # Draw edges - doors as solid lines
+            if door_edges_deduped:
+                nx.draw_networkx_edges(G, pos, edgelist=door_edges_deduped, ax=ax,
+                                       edge_color='#555555', width=1.5, style='solid',
+                                       arrows=False, alpha=0.7)
+
+            # Draw edges - traps as dashed arrows
+            if trap_edges:
+                nx.draw_networkx_edges(G, pos, edgelist=trap_edges, ax=ax,
+                                       edge_color='#CC0000', width=2.0, style='dashed',
+                                       arrows=True, arrowstyle='->', arrowsize=20,
+                                       alpha=0.8, connectionstyle='arc3,rad=0.1')
+
+            # Draw nodes by category
+            node_colors_regular = [get_node_color(n) for n in regular_nodes]
+            if regular_nodes:
+                nx.draw_networkx_nodes(G, pos, nodelist=regular_nodes, ax=ax,
+                                       node_color=node_colors_regular, node_size=300,
+                                       node_shape='o', edgecolors='black', linewidths=1.0)
+
+            node_colors_reward = [get_node_color(n) for n in reward_nodes]
+            if reward_nodes:
+                nx.draw_networkx_nodes(G, pos, nodelist=reward_nodes, ax=ax,
+                                       node_color=node_colors_reward, node_size=600,
+                                       node_shape='*', edgecolors='black', linewidths=1.5)
+
+            if hub_nodes:
+                nx.draw_networkx_nodes(G, pos, nodelist=hub_nodes, ax=ax,
+                                       node_color='#FFD700', node_size=800,
+                                       node_shape='H', edgecolors='black', linewidths=2.0)
+
+            if terminus_nodes:
+                nx.draw_networkx_nodes(G, pos, nodelist=terminus_nodes, ax=ax,
+                                       node_color='#FF1493', node_size=700,
+                                       node_shape='D', edgecolors='black', linewidths=2.0)
+
+            # Labels - only for hub, terminus, and reward rooms to avoid clutter
+            labels = {}
+            for n in hub_nodes + terminus_nodes + reward_nodes:
+                labels[n] = get_node_label(n)
+
+            # For regular nodes, show area abbreviation
+            for n in regular_nodes:
+                area = get_node_area(n)
+                if area != 'Unknown':
+                    # Use first 3 chars as abbreviation
+                    labels[n] = area[:3]
+
+            nx.draw_networkx_labels(G, pos, labels, ax=ax, font_size=6,
+                                    font_weight='bold', verticalalignment='center')
+
+            # Title with room count
+            n_rooms = len(G.nodes)
+            n_rewards = len(reward_nodes)
+            n_doors = len(door_edges_deduped)
+            n_traps = len(trap_edges)
+            ax.set_title(f'{branch_names[branch_id]}\n{n_rooms} rooms, {n_rewards} rewards, '
+                         f'{n_doors} doors, {n_traps} traps',
+                         fontsize=13, fontweight='bold')
+            ax.axis('off')
+
+        # Build legend
+        # Area color patches
+        areas_used = set()
+        for branch_id in range(3):
+            for n in rebuilt[branch_id].net.nodes:
+                areas_used.add(get_node_area(n))
+
+        legend_handles = []
+        # Symbol legend
+        legend_handles.append(mlines.Line2D([], [], color='#FFD700', marker='H', linestyle='None',
+                              markersize=12, markeredgecolor='black', label='Hub'))
+        legend_handles.append(mlines.Line2D([], [], color='#FF1493', marker='D', linestyle='None',
+                              markersize=10, markeredgecolor='black', label='Terminus'))
+        legend_handles.append(mlines.Line2D([], [], color='white', marker='*', linestyle='None',
+                              markersize=14, markeredgecolor='black', label='Reward'))
+        legend_handles.append(mlines.Line2D([], [], color='#555555', linestyle='solid',
+                              linewidth=2, label='Door (two-way)'))
+        legend_handles.append(mlines.Line2D([], [], color='#CC0000', linestyle='dashed',
+                              linewidth=2, label='Trap/Pit (one-way)'))
+        legend_handles.append(mlines.Line2D([], [], linestyle='None', label=''))  # spacer
+
+        # Area color legend - sort alphabetically, only include used areas
+        for area_name in sorted(areas_used):
+            if area_name in ('Hub', 'Unknown'):
+                continue
+            color = area_colors.get(area_name, default_color)
+            legend_handles.append(mpatches.Patch(facecolor=color, edgecolor='black',
+                                  label=area_name))
+
+        fig.legend(handles=legend_handles, loc='lower center', ncol=6,
+                   fontsize=9, frameon=True, fancybox=True, shadow=True,
+                   bbox_to_anchor=(0.5, 0.0))
+
+        plt.tight_layout(rect=[0, 0.08, 1, 0.96])
+        plt.savefig(image_path, dpi=150, bbox_inches='tight',
+                    facecolor='white', edgecolor='none')
+        plt.close(fig)
+        return image_path
+
     def debug_print_shortest_route(self, destination_rooms):
         """Find and print the shortest route from hub to each destination room in ruination mode.
 
