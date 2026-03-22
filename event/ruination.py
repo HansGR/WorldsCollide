@@ -99,7 +99,7 @@ NARSHE_SCHOOL_DOOR_IDS = [393, 394, 395]
 
 # Inn cost multiplier for ruination mode
 # Change this value to adjust how much inn costs are multiplied
-INN_COST_MULTIPLIER = 2
+INN_COST_MULTIPLIER = 3
 
 CHARACTER_LOCKED_REWARDS = {
     # Only rewards that literally cannot be obtained without the character, AND in areas that are accessible without them

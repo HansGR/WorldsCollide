@@ -27,7 +27,7 @@ class OwzerMansion(Event):
         if(self.args.flashes_remove_most):
             self.flash_mod()
 
-        if self.args.character_gating:
+        if self.args.character_gating and not self.DOOR_RANDOMIZE:
             self.add_gating_condition()
 
         if not self.args.fixed_encounters_original:
