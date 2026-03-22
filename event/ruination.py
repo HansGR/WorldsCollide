@@ -4765,6 +4765,14 @@ class ruination_map():
             branch = self.branches[branch_id]
             G = walks.net
 
+            # Remove disconnected nodes (no edges)
+            connected_nodes = set()
+            for u, v in G.edges():
+                connected_nodes.add(u)
+                connected_nodes.add(v)
+            disconnected = [n for n in G.nodes if n not in connected_nodes]
+            G.remove_nodes_from(disconnected)
+
             if len(G.nodes) == 0:
                 ax.set_title(f'{branch_names[branch_id]}\n(empty)', fontsize=14)
                 ax.axis('off')
@@ -4831,20 +4839,33 @@ class ruination_map():
                                        node_color='#FF1493', node_size=700,
                                        node_shape='D', edgecolors='black', linewidths=2.0)
 
-            # Labels - only for hub, terminus, and reward rooms to avoid clutter
-            labels = {}
-            for n in hub_nodes + terminus_nodes + reward_nodes:
-                labels[n] = get_node_label(n)
+            # Labels - two-line format: AREA on top, room# below, centered
+            # Position labels just below nodes so they don't overlap the marker
+            # Compute offset in data coords based on axis range
+            all_y = [p[1] for p in pos.values()]
+            y_range = max(all_y) - min(all_y) if len(all_y) > 1 else 1.0
+            label_offset = y_range * 0.04
 
-            # For regular nodes, show area abbreviation
-            for n in regular_nodes:
+            for n in G.nodes:
+                x, y = pos[n]
                 area = get_node_area(n)
-                if area != 'Unknown':
-                    # Use first 3 chars as abbreviation
-                    labels[n] = area[:3]
+                room_id = str(n)
 
-            nx.draw_networkx_labels(G, pos, labels, ax=ax, font_size=6,
-                                    font_weight='bold', verticalalignment='center')
+                if is_hub(n):
+                    line1 = 'HUB'
+                elif is_terminus(n):
+                    line1 = 'TERMINUS'
+                elif is_reward_room(n):
+                    # Show reward name(s) as the area line
+                    reward_names = list(ROOM_REWARD[n].keys())
+                    line1 = reward_names[0] if len(reward_names) == 1 else '/'.join(reward_names[:2])
+                else:
+                    line1 = area if area != 'Unknown' else ''
+
+                line2 = room_id
+                label = f"{line1}\n{line2}" if line1 else line2
+                ax.text(x, y - label_offset, label, fontsize=5.5, fontweight='bold',
+                        ha='center', va='top', multialignment='center')
 
             # Title with room count
             n_rooms = len(G.nodes)
