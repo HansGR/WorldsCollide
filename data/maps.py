@@ -951,11 +951,8 @@ class Maps():
                 existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
                 # An event already exists.  It will need to be modified.
 
-                # Read in existing event code
-                start_address = existing_event.event_address + EVENT_CODE_START
-                src = [self.rom.get_byte(start_address)]
-                while src[-1] != 0xfe:
-                    src.append(self.rom.get_byte(start_address + len(src)))
+                # Add Call to existing event code
+                src = [field.Call(existing_event.event_address + EVENT_CODE_START), field.Return()]
 
                 if self.doors.verbose:
                     print('WARNING: found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ',
