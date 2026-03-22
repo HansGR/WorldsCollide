@@ -151,7 +151,7 @@ class Kohlingen(Event):
 
     def ruination_mod(self):
         # (1) Disable the "change party" Kohlingen NPC (this messes with Ruination mode)
-        map_id = 0x0bf
+        map_id = 0x0bd
         change_party_npc_id = 0x18
         change_party_npc = self.maps.get_npc(map_id, change_party_npc_id)
         change_party_npc.event_address = 0xc5BED - EVENT_CODE_START   # Dialog: "How can ya make a GP in a world like this?"
