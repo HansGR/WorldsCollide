@@ -5,7 +5,6 @@ def delete_nops(src):
     sp = simple_parser(src)
     out = []
     for o, p in sp:
-        # print('\t', hex(o)[2:], [hex(a)[2:] for a in p])
         if isinstance(o, int):
             if o != 0xfd:
                 out.append(o)
@@ -46,45 +45,76 @@ def get_branch_code(event_bit, is_set, branch_addr, map_id):
             src = [field.BranchIfEventBitClear(event_bit, branch_addr)]
     return src
 
+def _op_length_at(data, idx):
+    """Get the param length of the opcode at data[idx]. Raises on unknown/variable opcodes."""
+    byte = data[idx]
+    if byte not in OP_LENGTH:
+        raise Exception('Unknown opcode: ' + hex(byte))
+    length = OP_LENGTH[byte]
+    if length == 'var':
+        raise Exception('Nested variable-length opcode in block: ' + hex(byte))
+    return length
+
+def _scan_block_end(data, start):
+    """Parse forward through event commands inside a 0xB0 repeat block,
+    using OP_LENGTH to correctly skip over multi-byte instructions.
+    Returns the number of bytes from start to consume (inclusive of terminator and its params)."""
+    i = start
+    while i < len(data):
+        byte = data[i]
+        if byte == 0xb1:
+            # 0xB1 (end repeat): 0 params
+            return (i - start) + 1
+        if byte == 0xbc:
+            # 0xBC (conditional end repeat): 2 params
+            return (i - start) + 3
+        param_len = _op_length_at(data, i)
+        i += 1 + param_len
+    raise Exception('Repeat block terminator (0xB1/0xBC) not found')
+
 def simple_parser(src):
-    while len(src) > 0:
-        opcode = src.pop(0)
+    src = list(src)  # copy to avoid mutating caller's list
+    idx = 0
+    while idx < len(src):
+        opcode = src[idx]
+        idx += 1
         if isinstance(opcode, int):
+            if opcode not in OP_LENGTH:
+                raise Exception('Unknown opcode: ' + hex(opcode))
             split = OP_LENGTH[opcode]
 
             if split == 'var':
                 if opcode < 0x35:
-                    # Character action queues; search for termination (0xff)
-                    split = src.index(0xff)+1
+                    # Character action queues; search for 0xFF terminator.
+                    # Action sub-commands are mostly 1-byte with small values,
+                    # so 0xFF as data is unlikely but possible in theory.
+                    split = src.index(0xff, idx) - idx + 1
 
                 elif opcode == 0x73 or opcode == 0x74:
                     # Replace background; get split from tile size
-                    tilesize = src[2]*src[3]
+                    tilesize = src[idx + 2] * src[idx + 3]
                     split = 4 + tilesize
 
                 elif opcode == 0xb0:
-                    # Repeating block of commands; look for 0xb1 (terminate) or 0xbc (terminate if event bit is set, 2 params)
-                    inds = [len(src) for i in range(2)]
-                    if 0xb1 in src:
-                        inds[0] = src.index(0xb1)+1
-                    if 0xbc in src:
-                        inds[1] = src.index(0xbc)+3
-                    split = min(inds)
+                    # Repeating block: parse forward using OP_LENGTH to find
+                    # 0xB1/0xBC as actual opcodes rather than raw byte scanning
+                    split = _scan_block_end(src, idx)
 
                 elif opcode == 0xb6:
-                    # Dialog box with choices; there's no way to determine how many options there are locally in the event,
-                    # and most of them are 2.  Here's hoping.
+                    # Dialog box with choices; the option count depends on the
+                    # preceding dialog and can't be determined locally.
+                    # Default to 2 (the most common case).
                     num_options = 2
-                    split = 3*num_options
+                    split = 3 * num_options
 
                 else:
-                    raise Exception('Unimplemented variable opcode: ', opcode)
+                    raise Exception('Unimplemented variable opcode: ' + hex(opcode))
 
-            params = src[:split]
-            src = src[split:]
+            params = src[idx:idx + split]
+            idx += split
 
         else:
-            # This is probably a Field class object.  just move on.
+            # This is a Field/instruction class object. Just move on.
             params = []
 
         yield opcode, params
@@ -93,7 +123,10 @@ def functions_to_bytes(src):
     # Taking a WC function string, return a byte string
     src_out = []
     for f in src:
-        src_out += [f.opcode] + f.args
+        if isinstance(f, int):
+            src_out.append(f)
+        else:
+            src_out += [f.opcode] + f.args
     return src_out
 
 OP_LENGTH = {
@@ -143,15 +176,20 @@ OP_LENGTH = {
     0x61: 3, # Colorize a colour range to a specific colour
     0x62: 1, # Mosaic the screen
     0x63: 1, # Create a spotlight around the character
+    0x69: 5, # WC custom: UpdateWorldReturnToParentMap (replaces vanilla unused opcode)
     0x6A: 5, # Fade out, and load a new map
     0x6B: 5, # Load a new map
     0x6C: 5, # Set the world map and position the party will be returned to when they exit to the world map
+    0x6D: 1, # WC custom: SetParentWorld (replaces vanilla unused opcode)
+    0x6E: 2, # WC custom: InvokeBattleType (replaces vanilla unused opcode)
+    0x6F: 1, # WC custom: RemoveDeath (replaces vanilla unused opcode)
     0x70: 2, # Same as 5D?  If you have any further insight please let me know
     0x71: 2, # Same as 5E?  If you have any further insight please let me know
     0x72: 2, # Same as 5F?  If you have any further insight please let me know
     0x73: 'var', # Replace a portion of the background.  The background will refresh immediately after the command is executed
     0x74: 'var', # Replace a portion of the background.  The background will not refresh immediately after the command is executed.
     0x75: 0, # Reloads the background.  Useful if it has been modified with command 74
+    0x76: 1, # WC custom: RecruitCharacter (replaces vanilla unused opcode)
     0x77: 1, # Perform level averaging on a character
     0x78: 1, # Allow a character to pass through sprites
     0x79: 2, # Place a party on a map
@@ -161,7 +199,9 @@ OP_LENGTH = {
     0x7E: 2, # Move party to a position and fade in the screen
     0x7F: 2, # Assign a name to a character
     0x80: 1, # Add an item to your inventory
+    0x81: 1, # Remove an item from your inventory
     0x82: 0, # Set party 1 as the backup party.
+    0x83: 1, # WC custom: LoadEsperFound (replaces vanilla unused opcode)
     0x84: 2, # Give Gil to the party
     0x85: 2, # Take Gil from the party
     0x86: 1, # Gives Esper to the party
@@ -173,7 +213,7 @@ OP_LENGTH = {
     0x8C: 2, # Boost a character's MP to maximum
     0x8D: 1, # Remove all equipment from a character and place it in your inventory
     0x8E: 0, # Invoke a battle based on the chest opened.
-    0x8F: 0, # Unlocks all of Cyan's SwdTech skills
+    0x8F: 4, # WC custom: LongCall (3-byte address + 1-byte arg; replaces vanilla SwdTech unlock)
     0x90: 0, # Unlock Bum Rush
     0x91: 0, # Pause the event for 15 units.
     0x92: 0, # Pause the event for 30 units.
@@ -188,9 +228,13 @@ OP_LENGTH = {
     0x9B: 1, # Invoke a shop screen
     0x9C: 1, # Give a character optimum equipment
     0x9D: 0, # Invoke the screen before the final battle where you choose your party order
+    0x9E: 3, # WC custom: SetYNPCGraphics (sprite, palette, vehicle)
+    0x9F: 1, # WC custom: YNPCEffect
     0xA0: 5, # Invoke a timer
     0xA1: 1, # Use this to reset a timer, clearing it from the display and preventing it from triggering
     0xA2: 0, # Unknown, but used, command.
+    0xA3: 2, # WC custom: SetEquipmentAndCommands (to_character, from_character)
+    0xA5: 4, # WC custom: BranchChance (1-byte chance + 3-byte destination)
     0xA6: 0, # Eliminate the rotating pyramid
     0xA7: 1, # Create a rotating pyramid around a character
     0xA8: 0, # Show the cutscene where the Floating Continent flies into the sky
@@ -253,6 +297,7 @@ OP_LENGTH = {
     0xE2: 0, # Set CaseWord bits depending on who is in the lead of the current party
     0xE3: 0, # Set CaseWord bits depending on who is in any of the three parties
     0xE4: 0, # Set CaseWord bits depending on which party is currently active
+    0xE5: 0, # WC custom: LoadPartiesWithCharacters
     0xE8: 3, # Set the value of an event word
     0xE9: 3, # Increment the value in an event word
     0xEA: 3, # Decrement the value in an event word
