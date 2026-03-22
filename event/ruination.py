@@ -4839,12 +4839,28 @@ class ruination_map():
                                        node_color='#FF1493', node_size=700,
                                        node_shape='D', edgecolors='black', linewidths=2.0)
 
-            # Labels - two-line format: AREA on top, room# below, centered
-            # Position labels just below nodes so they don't overlap the marker
-            # Compute offset in data coords based on axis range
+            # Labels - multi-line format centered below each node:
+            #   Regular: AREA / room#    Reward: AREA / room# / reward_name
+            # Build reward room -> actual reward name lookup from reward_log
+            reward_name_lookup = {}
+            if characters and espers and items:
+                for entry in self.reward_log:
+                    room = entry.get('reward_room')
+                    if room is not None:
+                        if entry['type'] == RewardType.CHARACTER:
+                            name = characters.get_name(entry['reward_id'])
+                        elif entry['type'] == RewardType.ESPER:
+                            name = espers.get_name(entry['reward_id'])
+                        elif entry['type'] == RewardType.ITEM:
+                            name = items.get_name(entry['reward_id'])
+                        else:
+                            name = None
+                        if name:
+                            reward_name_lookup.setdefault(room, []).append(name)
+
             all_y = [p[1] for p in pos.values()]
             y_range = max(all_y) - min(all_y) if len(all_y) > 1 else 1.0
-            label_offset = y_range * 0.04
+            label_offset = y_range * 0.025
 
             for n in G.nodes:
                 x, y = pos[n]
@@ -4856,15 +4872,19 @@ class ruination_map():
                 elif is_terminus(n):
                     line1 = 'TERMINUS'
                 elif is_reward_room(n):
-                    # Show reward name(s) as the area line
                     reward_names = list(ROOM_REWARD[n].keys())
                     line1 = reward_names[0] if len(reward_names) == 1 else '/'.join(reward_names[:2])
                 else:
                     line1 = area if area != 'Unknown' else ''
 
-                line2 = room_id
-                label = f"{line1}\n{line2}" if line1 else line2
-                ax.text(x, y - label_offset, label, fontsize=5.5, fontweight='bold',
+                lines = [line1, room_id] if line1 else [room_id]
+
+                # Add actual reward name(s) as 3rd line for reward rooms
+                if is_reward_room(n) and n in reward_name_lookup:
+                    lines.append(', '.join(reward_name_lookup[n]))
+
+                label = '\n'.join(lines)
+                ax.text(x, y - label_offset, label, fontsize=7, fontweight='bold',
                         ha='center', va='top', multialignment='center')
 
             # Title with room count
