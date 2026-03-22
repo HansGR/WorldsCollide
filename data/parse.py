@@ -55,6 +55,16 @@ def _op_length_at(data, idx):
         raise Exception('Nested variable-length opcode in block: ' + hex(byte))
     return length
 
+def _infer_dialog_choice_count(data, idx):
+    """Infer the number of choices for a 0xB6 DialogBranch by trying
+    candidate counts (2-6) and checking if the byte after the params
+    is a valid opcode. Returns the best candidate, defaulting to 2."""
+    for n in range(2, 7):
+        end = idx + 3 * n
+        if end < len(data) and data[end] in OP_LENGTH:
+            return n
+    return 2
+
 def _scan_block_end(data, start):
     """Parse forward through event commands inside a 0xB0 repeat block,
     using OP_LENGTH to correctly skip over multi-byte instructions.
@@ -101,10 +111,9 @@ def simple_parser(src):
                     split = _scan_block_end(src, idx)
 
                 elif opcode == 0xb6:
-                    # Dialog box with choices; the option count depends on the
-                    # preceding dialog and can't be determined locally.
-                    # Default to 2 (the most common case).
-                    num_options = 2
+                    # Dialog box with choices; infer count by checking which
+                    # candidate (2-6 options) puts us at a valid next opcode.
+                    num_options = _infer_dialog_choice_count(src, idx)
                     split = 3 * num_options
 
                 else:
