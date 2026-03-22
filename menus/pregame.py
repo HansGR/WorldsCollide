@@ -438,24 +438,24 @@ class PreGameMenu:
         space = Reserve(0x3017c, 0x301b1, "load pregame menu if no saves else invoke load menu")
         space.add_label("FIELD_MENU_MAIN_LOOP", 0x301ba)
 
-        if args.no_saves == 'lite' or args.ruination_mode:
-            # Always show pregame menu (never auto-invoke load menu)
-            if args.ruination_mode:
-                # Play song 79 (Dark World) instead of The Prelude
-                song_src = [
-                    asm.LDA(0x4F, asm.IMM8),         # load song 79 (Dark World)
-                    asm.STA(0x1301, asm.ABS),        # store to song ID
-                    asm.LDA(0x10, asm.IMM8),         # APU command
-                    asm.STA(0x1300, asm.ABS),        # Set I/O port 0
-                    asm.LDA(0x80, asm.IMM8),         # Volume specs
-                    asm.STA(0x1302, asm.ABS),        # Set I/O port 2
-                    asm.JSL(0xC50004),               # play song
-                ]
-            else:
-                song_src = [
-                    Read(0x30181, 0x30193),           # play song: the prelude
-                ]
+        if args.ruination_mode:
+            # Play song 79 (Dark World) instead of The Prelude
+            song_src = [
+                asm.LDA(0x4F, asm.IMM8),         # load song 79 (Dark World)
+                asm.STA(0x1301, asm.ABS),        # store to song ID
+                asm.LDA(0x10, asm.IMM8),         # APU command
+                asm.STA(0x1300, asm.ABS),        # Set I/O port 0
+                asm.LDA(0x80, asm.IMM8),         # Volume specs
+                asm.STA(0x1302, asm.ABS),        # Set I/O port 2
+                asm.JSL(0xC50004),               # play song
+            ]
+        else:
+            song_src = [
+                Read(0x30181, 0x30193),           # play song: the prelude
+            ]
 
+        if args.no_saves == 'lite':
+            # Always show pregame menu (never auto-invoke load menu)
             space.write(
                 *song_src,
 
@@ -466,7 +466,7 @@ class PreGameMenu:
         else:
             # Standard behavior: show load menu if saves exist, pregame menu otherwise
             space.write(
-                Read(0x30181, 0x30193),         # play song: the prelude
+                *song_src,
 
                 asm.JSR(0x7023, asm.ABS),       # test save file validity
                 asm.BCC("INVOKE_PREGAME_MENU"), # branch if no valid saves
