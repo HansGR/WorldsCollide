@@ -149,9 +149,23 @@ def _character_data_offset_mod():
 character_data_offset = _character_data_offset_mod()
 
 def _average_level_mod():
-    # set character in $eb to average level of available characters
+    # set character in $eb to average level of recruited characters
+    # vanilla code averages over character_available ($1ede), but in ruination mode
+    # away-party characters are marked unavailable, so the average only counts the
+    # current party. Patch to use character_recruited ($1edc) instead, so all
+    # recruited characters contribute to the average regardless of away-party status.
+    # (In normal mode recruited == available, so this is safe for all modes.)
+    avg_level_bytes = list(Read(0x9f32, 0x9f6c))
+    patched = False
+    for i in range(len(avg_level_bytes) - 2):
+        if avg_level_bytes[i] == 0xAE and avg_level_bytes[i+1] == 0xDE and avg_level_bytes[i+2] == 0x1E:
+            avg_level_bytes[i+1] = 0xDC  # $1ede (available) -> $1edc (recruited)
+            patched = True
+            break
+    assert patched, "Failed to find LDX $1ede in vanilla average_level code"
+
     src = [
-        Read(0x9f32, 0x9f6c), # set character to average level
+        avg_level_bytes, # set character to average level (patched to use recruited chars)
         # updating magic/skills now requires that the character has been recruited
         # but recruiting before performing level averaging will include the recruited character in the average
         # so skip copying update magic/skills call and expect users to call it separately later
