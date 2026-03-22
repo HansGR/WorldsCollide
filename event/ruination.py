@@ -4528,9 +4528,30 @@ class ruination_map():
         log_lines.append(f"Starting Party: {', '.join(self.PARTY)}")
         log_lines.append("")
 
-        # Separate character rewards from other rewards
-        char_rewards = [e for e in self.reward_log if e['type'] == RewardType.CHARACTER]
-        other_rewards = [e for e in self.reward_log if e['type'] != RewardType.CHARACTER]
+        # Determine which rewards are accessible (on a branch with a path from the hub)
+        def is_accessible(entry):
+            if entry['branch'] == -1:
+                return False
+            reward_room = entry.get('reward_room')
+            if reward_room is None:
+                return False
+            bid, walks, target = find_room_on_branches(reward_room)
+            if walks is None:
+                return False
+            hub_id = find_hub(walks)
+            if hub_id is None:
+                return False
+            if target == hub_id:
+                return True
+            try:
+                nx.shortest_path(walks.net, source=hub_id, target=target)
+                return True
+            except nx.NetworkXNoPath:
+                return False
+
+        # Separate character rewards from other rewards, filtering out inaccessible ones
+        char_rewards = [e for e in self.reward_log if e['type'] == RewardType.CHARACTER and is_accessible(e)]
+        other_rewards = [e for e in self.reward_log if e['type'] != RewardType.CHARACTER and is_accessible(e)]
 
         # Number characters starting from the starting party size + 1
         starting_count = len(self.PARTY)
