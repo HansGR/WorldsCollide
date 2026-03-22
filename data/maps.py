@@ -491,7 +491,7 @@ class Maps():
         self.exits.mod()  # self.exits.mod(self.doors.map[0], self)
         self._fix_imperial_camp_boxes()
         self._fix_Cid_timer_glitch()
-        if self.args.no_saves:
+        if self.args.no_saves == 'full':
             self._disable_saves()
 
         # Make no maps warpable for -ruination-mode: all warping handled with warp points

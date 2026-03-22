@@ -45,5 +45,5 @@ class SaveMenu:
 
 
     def mod(self):
-        if args.ruination_mode:
+        if args.no_saves == 'lite':
             self.save_and_quit()
