@@ -65,6 +65,20 @@ def _infer_dialog_choice_count(data, idx):
             return n
     return 2
 
+def _scan_action_queue_end(data, start):
+    """Parse forward through action queue sub-commands using ACTION_OP_LENGTH
+    to find the 0xFF terminator as an opcode, not as a data byte.
+    Returns the number of bytes from start to consume (inclusive of 0xFF)."""
+    i = start
+    while i < len(data):
+        byte = data[i]
+        if byte == 0xff:
+            return (i - start) + 1
+        if byte not in ACTION_OP_LENGTH:
+            raise Exception('Unknown action queue opcode: ' + hex(byte) + ' at offset ' + str(i))
+        i += 1 + ACTION_OP_LENGTH[byte]
+    raise Exception('Action queue terminator (0xFF) not found')
+
 def _scan_block_end(data, start):
     """Parse forward through event commands inside a 0xB0 repeat block,
     using OP_LENGTH to correctly skip over multi-byte instructions.
@@ -95,10 +109,9 @@ def simple_parser(src):
 
             if split == 'var':
                 if opcode < 0x35:
-                    # Character action queues; search for 0xFF terminator.
-                    # Action sub-commands are mostly 1-byte with small values,
-                    # so 0xFF as data is unlikely but possible in theory.
-                    split = src.index(0xff, idx) - idx + 1
+                    # Character action queues; parse sub-commands using
+                    # ACTION_OP_LENGTH to find the 0xFF terminator safely.
+                    split = _scan_action_queue_end(src, idx)
 
                 elif opcode == 0x73 or opcode == 0x74:
                     # Replace background; get split from tile size
@@ -329,3 +342,37 @@ OP_LENGTH = {
 }
 for i in range(0x35):
     OP_LENGTH[i] = 'var'
+
+# Action queue sub-command lengths (used inside 0x00-0x34 action queues).
+# Reference: https://www.ff6hacking.com/wiki/doku.php?id=ff3:ff3us:doc:asm:codes:movement_codes
+# Custom actions processed from jump table at $C0/7807, beginning at action $C6.
+ACTION_OP_LENGTH = {}
+for i in range(0x00, 0x80):  # 00-7F: Graphical actions (and flipped variants 40-7F)
+    ACTION_OP_LENGTH[i] = 0
+for i in range(0x80, 0xA0):  # 80-9F: Directional movement (direction + distance encoded in opcode)
+    ACTION_OP_LENGTH[i] = 0
+for i in range(0xA0, 0xAC):  # A0-AB: Diagonal movement
+    ACTION_OP_LENGTH[i] = 0
+for i in range(0xC0, 0xC5):  # C0-C4: Speed (slowest to fastest)
+    ACTION_OP_LENGTH[i] = 0
+ACTION_OP_LENGTH[0xC6] = 0   # Set entity to walk when moving
+ACTION_OP_LENGTH[0xC7] = 0   # Set entity to stay still when moving
+ACTION_OP_LENGTH[0xC8] = 1   # Set entity layering priority (xx)
+ACTION_OP_LENGTH[0xC9] = 1   # Place entity on vehicle (xx)
+for i in range(0xCC, 0xD0):  # CC-CF: Turn (up, right, down, left)
+    ACTION_OP_LENGTH[i] = 0
+ACTION_OP_LENGTH[0xD0] = 0   # (unknown/unused)
+ACTION_OP_LENGTH[0xD1] = 0   # Hide entity
+ACTION_OP_LENGTH[0xD5] = 2   # Set position (xx, yy)
+ACTION_OP_LENGTH[0xD7] = 0   # Center entity on screen
+ACTION_OP_LENGTH[0xDC] = 0   # Make entity jump (low)
+ACTION_OP_LENGTH[0xDD] = 0   # Make entity jump (high)
+ACTION_OP_LENGTH[0xE0] = 1   # Pause for xx/60 seconds
+for i in range(0xE1, 0xE7):  # E1-E6: Set/clear event bits ($1E80+xx ranges)
+    ACTION_OP_LENGTH[i] = 1
+ACTION_OP_LENGTH[0xF9] = 3   # Jump out of queue to address (3-byte addr)
+ACTION_OP_LENGTH[0xFA] = 1   # Randomly branch backward xx bytes
+ACTION_OP_LENGTH[0xFB] = 1   # Randomly branch forward xx bytes
+ACTION_OP_LENGTH[0xFC] = 1   # Branch backward xx bytes
+ACTION_OP_LENGTH[0xFD] = 1   # Branch forward xx bytes
+# 0xFF = End queue (handled as terminator in _scan_action_queue_end)
