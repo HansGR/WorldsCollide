@@ -150,24 +150,8 @@ character_data_offset = _character_data_offset_mod()
 
 def _average_level_mod():
     # set character in $eb to average level of available characters
-    # in ruination mode, patch to use character_recruited ($1edc) instead of
-    # character_available ($1ede), because away-party characters are marked
-    # unavailable and would otherwise be excluded from the average
-    if args.ruination_mode is not None:
-        avg_level_bytes = list(Read(0x9f32, 0x9f6c))
-        patched = False
-        for i in range(len(avg_level_bytes) - 2):
-            if avg_level_bytes[i] == 0xAE and avg_level_bytes[i+1] == 0xDE and avg_level_bytes[i+2] == 0x1E:
-                avg_level_bytes[i+1] = 0xDC  # $1ede (available) -> $1edc (recruited)
-                patched = True
-                break
-        assert patched, "Failed to find LDX $1ede in vanilla average_level code"
-        level_calc_bytes = avg_level_bytes
-    else:
-        level_calc_bytes = Read(0x9f32, 0x9f6c)
-
     src = [
-        level_calc_bytes, # set character to average level
+        Read(0x9f32, 0x9f6c), # set character to average level
         # updating magic/skills now requires that the character has been recruited
         # but recruiting before performing level averaging will include the recruited character in the average
         # so skip copying update magic/skills call and expect users to call it separately later
@@ -185,6 +169,17 @@ def _average_level_mod():
 
     # free remaining space
     Free(space.next_address, 0x9f77)
+
+    # In ruination mode, the averaging subroutine at $9F78 loads character_available
+    # ($1ede) to determine which characters to include. Away-party characters have
+    # their available bit cleared, so only the current party's levels are counted.
+    # Patch to use character_recruited ($1edc) so all recruited characters contribute.
+    if args.ruination_mode is not None:
+        space = Reserve(0x9f78, 0x9f7a, "average level: use recruited instead of available")
+        space.write(
+            asm.LDX(0x1edc, asm.ABS),
+        )
+
     return average_level
 average_level = _average_level_mod()
 
