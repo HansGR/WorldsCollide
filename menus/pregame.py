@@ -16,8 +16,8 @@ class PreGameMenu:
     def draw_options_mod(self):
         import data.text as text
 
-        if args.ruination_mode:
-            # Ruination mode: create two menu versions (with/without "Load Saved Game")
+        if args.no_saves == 'lite':
+            # Lite saves mode: create two menu versions (with/without "Load Saved Game")
             # Menu without save: New Game, Config, Flags, Objectives
             text_positions_no_save = [
                 ("New Game", 0x798f),
@@ -119,8 +119,8 @@ class PreGameMenu:
             self.draw_options = space.start_address
 
     def initialize_mod(self):
-        if args.ruination_mode:
-            # In ruination mode, check for save and call appropriate draw function
+        if args.no_saves == 'lite':
+            # In lite saves mode, check for save and call appropriate draw function
             src = [
                 asm.JSL(self.common.initialize + START_ADDRESS_SNES),
 
@@ -225,8 +225,8 @@ class PreGameMenu:
         space = Write(Bank.C3, src, "pregame config option clicked")
         config = space.start_address
 
-        if args.ruination_mode:
-            # Ruination mode: create "Load Saved Game" handler - directly loads slot 0
+        if args.no_saves == 'lite':
+            # Lite saves mode: create "Load Saved Game" handler - directly loads slot 0
             src = [
                 asm.LDA(0xff, asm.IMM8),
                 asm.STA(0x0205, asm.ABS),       # not a new game
@@ -281,8 +281,8 @@ class PreGameMenu:
             space = Write(Bank.C3, src, "pregame option click table")
             options_table = space.start_address
 
-        if args.ruination_mode:
-            # Ruination mode: choose options table based on save flag
+        if args.no_saves == 'lite':
+            # Lite saves mode: choose options table based on save flag
             src = [
                 asm.JSR(self.common.refresh_sprites, asm.ABS),
 
@@ -438,25 +438,10 @@ class PreGameMenu:
         space = Reserve(0x3017c, 0x301b1, "load pregame menu if no saves else invoke load menu")
         space.add_label("FIELD_MENU_MAIN_LOOP", 0x301ba)
 
-        if args.ruination_mode:
-            # In ruination mode, always show pregame menu (never auto-invoke load menu)
-            # Play song 79 (Dark World) instead of song 1 (The Prelude)
+        if args.no_saves == 'lite':
+            # In lite saves mode, always show pregame menu (never auto-invoke load menu)
             space.write(
-                asm.LDA(0x4F, asm.IMM8),         # load song 79 (Dark World)
-                asm.STA(0x1301, asm.ABS),        # store to song ID
-                asm.LDA(0x10, asm.IMM8),         # APU command
-                asm.STA(0x1300, asm.ABS),        # Set I/O port 0
-                asm.LDA(0x80, asm.IMM8),         # Volume specs
-                asm.STA(0x1302, asm.ABS),        # Set I/O port 2
-                asm.JSL(0xC50004),                 # play song
-
-                # C3/0181:	A901    	LDA #$01       ; Song: The Prelude
-                # C3/0183:	8D0113  	STA $1301      ; Set I/O port 1
-                # C3/0186:	A910    	LDA #$10       ; APU command
-                # C3/0188:	8D0013  	STA $1300      ; Set I/O port 0
-                # C3/018B:	A980    	LDA #$80       ; Volume specs
-                # C3/018D:	8D0213  	STA $1302      ; Set I/O port 2
-                # C3/0190:	220400C5	JSL $C50004    ; Play song
+                Read(0x30181, 0x30193),         # play song: the prelude
 
                 asm.LDA(self.INITIALIZE_PREGAME_MENU_COMMAND, asm.IMM8),
                 asm.STA(0x26, asm.DIR),         # add initialize pregame menu to queue
