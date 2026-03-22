@@ -155,13 +155,16 @@ def _average_level_mod():
     # unavailable and would otherwise be excluded from the average
     if args.ruination_mode is not None:
         avg_level_bytes = list(Read(0x9f32, 0x9f6c))
+        # Patch reference to character_available ($1ede) -> character_recruited ($1edc)
+        # The address appears as little-endian bytes [0xDE, 0x1E] after an opcode byte.
+        # Search for this address pair regardless of which load opcode precedes it.
         patched = False
-        for i in range(len(avg_level_bytes) - 2):
-            if avg_level_bytes[i] == 0xAE and avg_level_bytes[i+1] == 0xDE and avg_level_bytes[i+2] == 0x1E:
-                avg_level_bytes[i+1] = 0xDC  # $1ede (available) -> $1edc (recruited)
+        for i in range(len(avg_level_bytes) - 1):
+            if avg_level_bytes[i] == 0xDE and avg_level_bytes[i+1] == 0x1E:
+                avg_level_bytes[i] = 0xDC  # $1ede -> $1edc
                 patched = True
                 break
-        assert patched, "Failed to find LDX $1ede in vanilla average_level code"
+        assert patched, "Failed to find $1ede reference in vanilla average_level code"
         level_calc_bytes = avg_level_bytes
     else:
         level_calc_bytes = Read(0x9f32, 0x9f6c)
