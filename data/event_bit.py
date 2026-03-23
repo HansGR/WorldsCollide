@@ -245,6 +245,7 @@ PHOENIX_CAVE_WARP_OPTION = 0x2bf
 FLOATING_CONTINENT_WARP_OPTION = 0x2c1
 ANCIENT_CASTLE_WARP_OPTION = 0x2c2
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
+SAVED_Y_PARTY_SWITCHING = 0x0bb
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
 
 CAN_ENTER_GALLERY = 0x243   # Able to climb stairs to enter Owzer's gallery.
