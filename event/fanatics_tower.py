@@ -217,12 +217,18 @@ class FanaticsTower(Event):
     def ruination_mod(self):
         from data.map_event import MapEvent
 
-        # Disable Y-party switching when entering Fanatics Tower exterior (before going inside)
+        # Save ENABLE_Y_PARTY_SWITCHING to SAVED_Y_PARTY_SWITCHING, then clear it
         src = [
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            field.Branch("DONE_SAVE"),
+            "Y_WAS_ON",
+            field.SetEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            "DONE_SAVE",
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.Return(),
         ]
-        space = Write(Bank.CB, src, "fanatics tower disable y-party switching")
+        space = Write(Bank.CB, src, "fanatics tower save and disable y-party switching")
         disable_y_switch_event = space.start_address
 
         new_event = MapEvent()
@@ -231,12 +237,18 @@ class FanaticsTower(Event):
         new_event.event_address = disable_y_switch_event - EVENT_CODE_START
         self.maps.add_event(0x16a, new_event)
 
-        # Re-enable Y-party switching when heading toward exit inside tower
+        # Restore ENABLE_Y_PARTY_SWITCHING from SAVED_Y_PARTY_SWITCHING
         src = [
+            field.BranchIfEventBitSet(event_bit.SAVED_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.Branch("DONE_RESTORE"),
+            "Y_WAS_ON",
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            "DONE_RESTORE",
+            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
             field.Return(),
         ]
-        space = Write(Bank.CB, src, "fanatics tower enable y-party switching")
+        space = Write(Bank.CB, src, "fanatics tower restore y-party switching")
         enable_y_switch_event = space.start_address
 
         new_event = MapEvent()
