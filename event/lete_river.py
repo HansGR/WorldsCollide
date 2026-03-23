@@ -191,10 +191,10 @@ class LeteRiver(Event):
                 field.BranchIfAny([event_bit.RODE_RAFT_LETE_RIVER, True,
                                    event_bit.character_recruited(self.character_gate()), False],
                                   continue_address),
-                field.Return()
+                field.Branch(space.end_address + 1)  # branch back if not.
             ]
             updated_rode_raft_check = Write(Bank.CB, src, "lete river ruination character gating at boss")
-            space.write(field.Call(updated_rode_raft_check.start_address))
+            space.write(field.Branch(updated_rode_raft_check.start_address))
         else:
             space.write(field.BranchIfEventBitSet(event_bit.RODE_RAFT_LETE_RIVER, continue_address))
 
