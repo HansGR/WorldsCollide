@@ -494,22 +494,22 @@ class Maps():
         if self.args.no_saves == 'full':
             self._disable_saves()
 
-        # Ruination mode: disable warping on Kefka's Tower maps (warp stones go to Esper World)
-        # Warping remains disabled on vanilla no-warp maps (Phoenix Cave, Fanatics Tower)
-        # Ancient Castle maps are made warpable (they are no-warp in vanilla)
+        # Ruination mode: warp stones/spell send player to Esper World
+        # Make all maps warpable EXCEPT Kefka's Tower and Phoenix Cave
         if self.args.ruination_mode:
-            kefkas_tower_maps = [
+            no_warp_maps = set([
                 0x11F, 0x123, 0x124, 0x125, 0x126, 0x127, 0x128, 0x12F, 0x130,  # KT interior
                 0x149, 0x14B, 0x14D, 0x14E, 0x14F,                                # KT mid
                 0x150, 0x151, 0x152, 0x153,                                        # KT upper
                 0x160, 0x162, 0x163, 0x164, 0x165,                                 # KT rooms
                 0x199, 0x19A, 0x19B, 0x19C,                                        # KT factory/final
-            ]
-            ancient_castle_maps = [0x191, 0x192, 0x196, 0x197, 0x198]
-            for map_id in kefkas_tower_maps:
-                self.properties[map_id].warpable = 0
-            for map_id in ancient_castle_maps:
-                self.properties[map_id].warpable = 1
+                0x139, 0x13B, 0x13C,                                               # Phoenix Cave
+            ])
+            for map_index in range(len(self.maps)):
+                if map_index in no_warp_maps:
+                    self.properties[map_index].warpable = 0
+                else:
+                    self.properties[map_index].warpable = 1
             self._disable_map_name_popups()
 
         # Make all maps warpable for -door-randomize-dungeon-crawl
