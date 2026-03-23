@@ -129,6 +129,21 @@ class Start(Event):
             for bit in CUSTOM_WARP_BITS:
                 self.warps.add_bit(bit, 'clear')
 
+        elif self.args.ruination_mode:
+            # Ruination mode: warps should send you to the starting position in the Esper World
+            # Warps should also NOT clear or set any bits!  Just the map transition.
+            # Note that warping out of Kefka's Tower should then be prohibited, except via warp points.
+            warp_to_esper_world_src = [
+                field.LoadMap(0xda, direction.DOWN, default_music=True,
+                              x=55, y=33, fade_in=True, airship=False),
+                field.ClearEventBit(event_bit.IN_WOR),  # we're going back to WoB
+                field.Return(),  # return
+            ]
+            self.warps.add_warp_override(warp_to_esper_world_src)
+
+            # Note that custom warps will be disallowed (Phoenix Cave, Kefka's Tower)
+
+
         elif self.args.map_shuffle:
             # In Map Shuffle, parent map is well-defined, but sometimes the parent world is different.
             # Update the world bit and return to parent map.
