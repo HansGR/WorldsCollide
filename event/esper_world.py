@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from event.event import *
 
 class EsperWorld(Event):
@@ -28,6 +30,9 @@ class EsperWorld(Event):
         self.cleanup_esper_world()
         self.add_ruination_exit()
 
+        if self.args.ruination_mode:
+            self.add_save_point()
+
     def add_ruination_exit(self):
         # Add the north exit from the Esper world gate room
         exit_id = 1562
@@ -46,6 +51,23 @@ class EsperWorld(Event):
         new_event.y = 29
         new_event.event_address = self.go_to_hub - EVENT_CODE_START
         self.maps.add_event(0x0da, new_event)
+
+    def add_save_point(self):
+        from data.map_event import MapEvent
+
+        # Copy the save point NPC from map 0x009 (Scenario) at npc_id 0x15
+        save_npc = deepcopy(self.maps.get_npc(0x009, 0x15))
+        save_npc.x = 55
+        save_npc.y = 44
+        self.maps.append_npc(self.map_gate_cave, save_npc)
+
+        # Copy the save point event tile from map 0x009 at (8, 6)
+        save_event_src = self.maps.get_event(0x009, 8, 6)
+        save_event = MapEvent()
+        save_event.x = 55
+        save_event.y = 44
+        save_event.event_address = save_event_src.event_address
+        self.maps.add_event(self.map_gate_cave, save_event)
 
     def cleanup_esper_world(self):
         # Turn off the entrance events for these rooms
