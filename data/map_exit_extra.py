@@ -1811,7 +1811,7 @@ event_door_connection_data = {
     1560: [0x000, 177, 71, 0, 0, 0, 3, 0, 0, 22, 0, 0],  # "Imperial camp exit west for dungeon crawl"
     1561: [0x09f, 5, 13, 0, 0, 0, 1, 0, 0, 22, 0, 0],  # "Veldt shore exit to Veldt for ruination mode"
     1563: [0x12d, 25, 9, 0, 0, 0, 3, 0, 100, 7, 0, 0],  # "Daryl's Tomb door behind sarcophagus"
-    1564: [0x12b, 100, 8, 0, 0, 0, 3, 0, 27, 7, 0, 0],  # "Daryl's Tomb staircase top exit"
+    1564: [0x12b, 100, 9, 0, 0, 0, 3, 0, 27, 7, 0, 0],  # "Daryl's Tomb staircase top exit"
 
     # Logical exits with different destinations
     4392: [0x020, 33, 56, 0, 0, 0, 2, 0, 108, 53, 0, 0],  #  'Doma Dream Train Save point room interior (logical)'

@@ -55,7 +55,7 @@ RUIN_DEFAULT_FLAGS = {
         '-frw', '-wmhc', '-cor', '100', '-crr', '100', '-crvr', '100', '120',
         '-crm', '-ari', '-anca', '-adeh', '-ame', '1', '-nmc', '-noshoes',
         '-u254', '-nfps', '-fs', '-fe', '-fvd', '-fr', '-fj', '-fbs',
-        '-fedc', '-fc', '-ond', '-etn'
+        '-fedc', '-fc', '-ond', '-etn', '-move', 'bd'
     ]
 }
 
@@ -68,7 +68,7 @@ FLAGS_WITH_ARGS = {
     '-esr': 2, '-ebr': 1, '-emprp': 2, '-nm1': 1, '-nm2': 1, '-mmprp': 2,
     '-gp': 1, '-smc': 1, '-sto': 1, '-ieor': 1, '-ieror': 1, '-ir': 1,
     '-csb': 2, '-sisr': 1, '-sprp': 2, '-sdm': 1, '-ccsr': 1, '-chrm': 2,
-    '-cor': 1, '-crr': 1, '-crvr': 2, '-ame': 1
+    '-cor': 1, '-crr': 1, '-crvr': 2, '-ame': 1, '-move': 1,
 }
 
 # Starting character related flags that should be removed together
