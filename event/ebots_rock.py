@@ -6,6 +6,11 @@ class EbotsRock(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle
+        self.DOOR_RANDOMIZE = (args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
 
     def name(self):
         return "Ebot's Rock"
@@ -29,16 +34,14 @@ class EbotsRock(Event):
         self.exit_loc = [0x01, 249, 224]
         self.airship_thamasa = [0x001, 251, 230]
         self.EXIT_IN_WOB = False
+        self.MOVE_AIRSHIP_TO_THAMASA = True
+
         if self.MAP_SHUFFLE:
             # modify exit position
             exit_id = 1546
             if exit_id in self.maps.door_map.keys():
-                # self.exit_loc = self.maps.exits.exit_original_data[conn_pair][:3]  # It's OK if this one returns to parent map.
                 self.exit_loc = self.maps.get_connection_location(exit_id, parent_map_ok=True)
-                #conn_south = self.maps.door_map[exit_id]  # connecting exit south
-                #conn_pair = exit_data[conn_south][0]  # original connecting exit
                 self.EXIT_IN_WOB = (self.exit_loc[-1] == 0)
-                # print('Updated Ebots Rock exit warp: ', self.exit_loc)
 
             # modify airship warp position
             thamasa_id = 1261
@@ -47,10 +50,33 @@ class EbotsRock(Event):
                     self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
                 else:
                     self.airship_thamasa = self.maps.get_connection_location(thamasa_id)
-                # conn_south = self.maps.door_map[thamasa_id]  # connecting exit south
-                # conn_pair = exit_data[conn_south][0]  # original connecting exit
-                # self.airship_thamasa = [exit_world[conn_pair]] + self.maps.exits.exit_original_data[conn_pair][1:3]   # [dest_map, dest_x, dest_y]
-                #print('Updated Ebots Rock airship teleport: ', self.airship_thamasa)
+
+        elif self.DOOR_RANDOMIZE:
+            # Dungeon crawl / ruination: entry point may not be the world map.
+            # Update exit_loc from door 1546's randomized connection.
+            exit_id = 1546
+            if exit_id in self.maps.door_map.keys():
+                self.exit_loc = self.maps.get_connection_location(exit_id)
+                self.EXIT_IN_WOB = (self.exit_loc[3] == 0)
+
+            if self.args.ruination_mode:
+                # Ruination: no airship movement needed.
+                self.MOVE_AIRSHIP_TO_THAMASA = False
+            else:
+                # Dungeon crawl: move airship to Thamasa's world map connection
+                # only if Thamasa actually connects to a world map.
+                thamasa_id = 1261
+                if thamasa_id in self.maps.door_map.keys():
+                    thamasa_loc = self.maps.get_connection_location(thamasa_id)
+                    if thamasa_loc[0] in [0x0, 0x1]:
+                        if self.maps.door_map[thamasa_id] in special_airship_locations.keys():
+                            self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
+                        else:
+                            self.airship_thamasa = thamasa_loc[:3]
+                    else:
+                        self.MOVE_AIRSHIP_TO_THAMASA = False
+                else:
+                    self.MOVE_AIRSHIP_TO_THAMASA = False
 
         self.find_gungho_hurt_mod()
         self.chest_mod()
@@ -130,15 +156,16 @@ class EbotsRock(Event):
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago character commands", field.NOP())
         space = Reserve(0xb7238, 0xb7239, "ebots rock enable collisions for strago", field.NOP())
 
-        if self.MAP_SHUFFLE:
-            # CB/723B: 6B    Load map $0001 (World of Ruin) instantly, (upper bits $0400), place party at (251, 231), facing up, party is in the airship
-            # CB/7241: C7    Place airship at position (250, 231)
+        if self.MAP_SHUFFLE or self.DOOR_RANDOMIZE:
+            # Vanilla code here moves the airship to Thamasa on the world map.
+            # NOP it out and only rewrite if we actually need to move the airship.
             space = Reserve(0xb723b, 0xb7243, "ebots rock airship move", field.NOP())
-            space.write(
-                field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
-                              y=self.airship_thamasa[2], fade_in=False, airship=True),
-                vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
-            )
+            if self.MOVE_AIRSHIP_TO_THAMASA:
+                space.write(
+                    field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                                  y=self.airship_thamasa[2], fade_in=False, airship=True),
+                    vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
+                )
 
         # NOTE: just finished moving airship to thamasa, use vehicle command to load map here
         space = Reserve(0xb7244, 0xb7249, "ebots rock after hidon load strago's room map", field.NOP())
@@ -156,7 +183,7 @@ class EbotsRock(Event):
                 field_entity.SetSpriteLayer(2)
             )
         )
-        if self.MAP_SHUFFLE:
+        if self.MOVE_AIRSHIP_TO_THAMASA:
             space.write(
                 field.SetParentMap(map_id=self.airship_thamasa[0], x=self.airship_thamasa[1],
                                    y=self.airship_thamasa[2] - 1, direction=direction.DOWN)
@@ -231,15 +258,22 @@ class EbotsRock(Event):
                 field.ClearEventBit(event_bit.IN_WOR)
             )
         space.write(field.FreeScreen())
-        if self.args.door_randomize_dungeon_crawl and (self.exit_loc[0] in [0x0, 0x1]):
-            # If doing Dungeon Crawl & returning to world map, always summon the airship.
+        if self.DOOR_RANDOMIZE and (self.exit_loc[0] in [0x0, 0x1]):
+            # Door rando returning to world map: summon the airship.
             from event.switchyard import SummonAirship
             space.write(
                 SummonAirship(self.exit_loc[0], x=self.exit_loc[1], y=self.exit_loc[2], fadeout=True)
             )
-
+        elif self.DOOR_RANDOMIZE:
+            # Door rando returning to interior room (ruination, or dungeon crawl
+            # where Ebot's Rock was reached from a non-world-map room).
+            space.write(
+                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music=True,
+                              x=self.exit_loc[1], y=self.exit_loc[2], fade_in=True, entrance_event=True),
+                field.Return(),
+            )
         else:
-            # Just exit normally.  Hidon Cave is always ring 0.
+            # Vanilla or map shuffle: exit to world map.
             space.write(
                 field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
                               y = self.exit_loc[2]),
