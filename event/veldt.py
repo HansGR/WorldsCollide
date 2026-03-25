@@ -38,7 +38,7 @@ class Veldt(Event):
             self.char = self.reward.id
             self.sprite = self.reward.id
         else:
-            import random
+            import rng as random
             self.sprite = random.choice([14, 15, 19, 20])
 
         self.leap_mod()

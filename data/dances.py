@@ -141,7 +141,7 @@ class Dances:
         )
 
     def start_random_dances(self):
-        import random
+        import rng as random
 
         number_initial_dances = random.randint(self.args.start_dances_random_min, self.args.start_dances_random_max)
         initial_dances = random.sample(range(self.DANCE_COUNT), number_initial_dances)
@@ -156,7 +156,7 @@ class Dances:
         for dance in self.dances:
             abilities.extend(dance.dances)
 
-        import random
+        import rng as random
         random.shuffle(abilities)
 
         for dance_index, dance in enumerate(self.dances):

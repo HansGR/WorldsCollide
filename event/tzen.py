@@ -13,9 +13,9 @@ class Tzen(Event):
         )
 
     def mod(self):
-        from random import randint
-        self.wob_price = randint(1, field.RemoveGP.MAX)
-        self.wor_price = randint(1, field.RemoveGP.MAX)
+        import rng as random
+        self.wob_price = random.randint(1, field.RemoveGP.MAX)
+        self.wor_price = random.randint(1, field.RemoveGP.MAX)
 
         if self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)

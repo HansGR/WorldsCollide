@@ -28,8 +28,8 @@ class Chest():
         return data
 
     def randomize_gold(self):
-        from random import randint
-        self.contents = randint(1, self.MAX_GOLD_VALUE)
+        import rng as random
+        self.contents = random.randint(1, self.MAX_GOLD_VALUE)
 
     def contains(self, contents_type, contents):
         return self.type == contents_type and self.contents == contents

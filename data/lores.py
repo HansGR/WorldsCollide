@@ -140,7 +140,7 @@ class Lores:
         )
 
     def start_random_lores(self):
-        import random
+        import rng as random
 
         self.init_data.clear_all()
 
@@ -154,18 +154,18 @@ class Lores:
         for lore in self.lores:
             mp.append(lore.mp)
 
-        import random
+        import rng as random
         random.shuffle(mp)
         for lore in self.lores:
             lore.mp = mp.pop()
 
     def random_mp_value(self):
-        import random
+        import rng as random
         for lore in self.lores:
             lore.mp = random.randint(self.args.lores_mp_random_value_min, self.args.lores_mp_random_value_max)
 
     def random_mp_percent(self):
-        import random
+        import rng as random
         for lore in self.lores:
             mp_percent = random.randint(self.args.lores_mp_random_percent_min,
                                         self.args.lores_mp_random_percent_max) / 100.0
@@ -188,7 +188,8 @@ class Lores:
         return new_desc
 
     def random_lx_levels(self, dialogs):
-        import random, re
+        import rng as random
+        import re
         LX_LORE_IDX = [Lores.L_5_DOOM, Lores.L_4_FLARE, Lores.L_3_MUDDLE, Lores.L_PEARL]
         LQ_EFFECT = 29 # the AbilityData.effect setting for L?
         NO_EFFECT = 255 # The AbilityData.effect setting for no effect

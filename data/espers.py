@@ -3,7 +3,7 @@ from data.ability_data import AbilityData
 from data.structures import DataArray
 
 import data.espers_asm as espers_asm
-import random
+import rng as random
 
 class Espers():
     ESPER_COUNT = 27

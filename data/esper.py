@@ -127,12 +127,12 @@ class Esper(AbilityData):
         self.bonus = bonus
 
     def randomize_rates(self):
-        import random
+        import rng as random
         for spell_index in range(self.spell_count):
             self.spells[spell_index].rate = random.choice(self.LEARN_RATES)
 
     def randomize_bonus(self):
-        import random
+        import rng as random
         # exclude lvl percent bonuses
         possible = [self.HP_10_PERCENT, self.HP_30_PERCENT, self.HP_50_PERCENT, self.MP_10_PERCENT,
                     self.MP_30_PERCENT, self.MP_50_PERCENT, self.HP_100_PERCENT, self.STRENGTH_1, self.STRENGTH_2,

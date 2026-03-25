@@ -39,7 +39,7 @@ class Rages():
             self.abilities.append(ability)
 
     def start_random_rages(self):
-        import random
+        import rng as random
 
         self.init_data.clear_all()
         possible_rages = [x for x in range(self.RAGE_COUNT) if x != self.PUGS_RAGE_ID]

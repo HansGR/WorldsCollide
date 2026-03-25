@@ -4,7 +4,7 @@ from objectives._conditions_complete import ConditionsComplete
 from objectives._check_complete import CheckComplete
 
 import args
-import random
+import rng as random
 
 class Objective:
     def __init__(self, id):

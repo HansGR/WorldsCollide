@@ -15,7 +15,7 @@ class Battle(battle_result.Result):
 class Result(ObjectiveResult):
     NAME = "High Tier Item"
     def __init__(self):
-        import random
+        import rng as random
         from data.items import Items
 
         random_item = random.choice(Items.GOOD)

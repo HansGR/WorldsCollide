@@ -55,7 +55,7 @@ class EnemyScripts():
         # randomize time until rizopas appears to prevent doing nothing until 60 seconds passes
         piranha_script = self.get_script("Piranha")
 
-        import random
+        import rng as random
         random_time = random.randint(5, 55) # average of 30
 
         original_time = 60

@@ -1,7 +1,7 @@
 from data.chest import Chest
 import data.chests_asm as chests_asm
 from data.structures import DataArrays
-import random
+import rng as random
 
 class Chests():
     PTRS_START = 0x2d82f4

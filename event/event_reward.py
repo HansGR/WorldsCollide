@@ -31,7 +31,7 @@ class Reward:
         return result + " (" + ', '.join(possible_strings) + ")"
 
 def choose_reward(possible_types, characters, espers, items):
-    import random
+    import rng as random
 
     all_types = [flag for flag in RewardType]
     random.shuffle(all_types)

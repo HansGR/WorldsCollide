@@ -61,14 +61,14 @@ class EnemyPacks():
 
     # Statue locations that become available for the general boss pool
     def _replaceable_statues(self):
-        import random
+        import rng as random
         statues = list(bosses.statue_pack_name)
         random.shuffle(statues)
         return statues if self.args.statue_boss_location == bosses.BossLocations.MIX else []
 
     # Dragon locations that become available for the general boss pool
     def _replaceable_dragons(self):
-        import random
+        import rng as random
         statues = list(bosses.dragon_pack_name)
         random.shuffle(statues)
         return statues if self.args.dragon_boss_location == bosses.BossLocations.MIX else []
@@ -81,7 +81,7 @@ class EnemyPacks():
             for statue in statues:
                 self.event_boss_replacements[statue] = statue
         elif self.args.statue_boss_location == bosses.BossLocations.SHUFFLE:
-            import random
+            import rng as random
             replacements = statues.copy()
             random.shuffle(statues)
             random.shuffle(replacements)
@@ -100,7 +100,7 @@ class EnemyPacks():
             for dragon in dragons:
                 self.event_boss_replacements[dragon] = dragon
         elif self.args.dragon_boss_location == bosses.BossLocations.SHUFFLE:
-            import random
+            import rng as random
             replacements = dragons.copy()
             random.shuffle(dragons)
             random.shuffle(replacements)
@@ -112,7 +112,7 @@ class EnemyPacks():
             pass
 
     def phunbaba3_safety_check(self, bosses_possible):
-        import random
+        import rng as random
 
         # bababreath in the mine cart ride causes a bug, if phunbaba3 was assigned to the
         # number 128 location then randomly choose a different boss to swap it with
@@ -134,7 +134,7 @@ class EnemyPacks():
             self.event_boss_replacements[swap_target] = self.PHUNBABA3
 
     def shuffle_event_bosses(self):
-        import random
+        import rng as random
 
         bosses_to_replace = self._replaceable_bosses()
         bosses_possible = bosses_to_replace.copy()
@@ -240,7 +240,7 @@ class EnemyPacks():
         if self.args.dragon_boss_location != bosses.BossLocations.MIX:
             exclude_bosses += self.formations.ALL_DRAGONS
 
-        import random
+        import rng as random
         for pack_id in packs:
             if random.random() < boss_percent:
                 for formation_index in range(self.packs[pack_id].FORMATION_COUNT):

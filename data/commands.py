@@ -1,6 +1,6 @@
 from multiprocessing.sharedctypes import Value
 from constants.commands import *
-import random
+import rng as random
 import args
 
 class Commands:

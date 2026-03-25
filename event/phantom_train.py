@@ -149,7 +149,7 @@ class PhantomTrain(Event):
 
     def ghost_shop_forest_mod(self):
         # select a location at random where ghost shop will appear in forest
-        import random
+        import rng as random
         from collections import namedtuple
         ForestPos = namedtuple("ForestPos", ["map_id", "x", "y"])
         possible_positions = [ForestPos(0x84, 10, 9), ForestPos(0x84, 17, 9), ForestPos(0x84, 27, 10),

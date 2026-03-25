@@ -89,11 +89,11 @@ class EnemyFormations():
         return False
 
     def get_random_normal(self):
-        import random
+        import rng as random
         return random.choice(self.normal)
 
     def get_random_boss(self, exclude = None):
-        import random
+        import rng as random
         if exclude is None:
             return random.choice(self.bosses)
 
@@ -101,7 +101,7 @@ class EnemyFormations():
         return random.choice(possible_bosses)
 
     def get_random_dragon(self):
-        import random
+        import rng as random
         return random.choice(self.dragons)
 
     def set_chadarnook_position_left_screen(self):
@@ -115,7 +115,7 @@ class EnemyFormations():
 
         # Enemy id's are the same as rage IDs.
         from constants.rages import rage_id
-        import random
+        import rng as random
         possible_minions = [
             rage_id["Red Wolf"],
             rage_id["Covert"],

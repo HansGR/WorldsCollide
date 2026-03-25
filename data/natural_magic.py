@@ -113,7 +113,7 @@ class NaturalMagic:
             )
 
     def mod_learners(self):
-        import random
+        import rng as random
         from data.characters import Characters
         possible_learners = list(range(Characters.CHARACTER_COUNT - 2)) # exclude gogo/umaro
 
@@ -171,7 +171,7 @@ class NaturalMagic:
                     celes_spell.level = 0
 
     def randomize_levels1(self):
-        import random
+        import rng as random
         levels = random.sample(range(1, 100), len(self.terra_spells))
         sorted_levels = sorted(levels)
 
@@ -179,7 +179,7 @@ class NaturalMagic:
             spell.level = sorted_levels[index]
 
     def randomize_levels2(self):
-        import random
+        import rng as random
         levels = random.sample(range(1, 100), len(self.celes_spells))
         sorted_levels = sorted(levels)
 

@@ -1,4 +1,5 @@
-import args, random
+import args
+import rng as random
 from data.item import Item
 
 from constants.items import good_items

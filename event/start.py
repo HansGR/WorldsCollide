@@ -1,5 +1,5 @@
 from event.event import *
-import random
+import rng as random
 
 class Start(Event):
     def name(self):

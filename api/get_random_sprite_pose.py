@@ -1,6 +1,6 @@
 
 def get_random_sprite_pose():
-  import random
+  import rng as random
   from graphics.sprites.sprites import id_sprite
   from graphics.palettes.palettes import id_palette
 

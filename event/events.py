@@ -63,7 +63,7 @@ class Events():
         return events
 
     def init_reward_slots(self, events):
-        import random
+        import rng as random
         reward_slots = []
         for event in events:
             event.init_rewards()
@@ -89,7 +89,7 @@ class Events():
             slot.id, slot.type = choose_reward(slot.possible_types, self.characters, self.espers, self.items)
 
     def character_gating_mod(self, events, name_event):
-        import random
+        import rng as random
         reward_slots = self.init_reward_slots(events)
 
         # for every event with only one reward type possible, assign random rewards
@@ -148,7 +148,7 @@ class Events():
         return
 
     def open_world_mod(self, events):
-        import random
+        import rng as random
         reward_slots = self.init_reward_slots(events)
 
         # first choose all the rewards that only have a single type possible

@@ -157,7 +157,8 @@ class Zozo(Event):
         )
 
     def randomize_clock_mod(self):
-        import random, copy
+        import rng as random
+        import copy
         from collections import namedtuple
 
         # original clues:

@@ -1,7 +1,7 @@
 from memory.space import START_ADDRESS_SNES, Bank, Reserve, Allocate, Write, Read
 import instruction.asm as asm
 import args
-import random
+import rng as random
 
 def _divide_mod():
     # 16 bit a = 16 bit a // 8 bit x

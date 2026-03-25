@@ -383,7 +383,7 @@ class FloatingContinent(Event):
 
     def timer_mod(self):
         if self.args.event_timers_random:
-            import random
+            import rng as random
 
             # randomize timer between 5 and 8 minutes
             seconds = random.randint(300, 480)

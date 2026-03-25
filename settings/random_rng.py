@@ -8,7 +8,7 @@ class RandomRNG:
             self.mod()
 
     def mod(self):
-        import random
+        import rng as random
         rng_table = list(range(256))
         random.shuffle(rng_table)
 

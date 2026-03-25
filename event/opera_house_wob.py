@@ -161,7 +161,7 @@ class OperaHouseWOB(Event):
         )
 
         if self.args.event_timers_random:
-            import random
+            import rng as random
 
             # randomize timer between 4 and 7 minutes
             seconds = random.randint(240, 420)

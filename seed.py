@@ -9,6 +9,6 @@ def seed_rng(seed = None, flags = ""):
     if seed is None:
         seed = generate_seed()
 
-    import random
-    random.seed(seed + flags)
+    import rng
+    rng.seed(seed + flags)
     return seed

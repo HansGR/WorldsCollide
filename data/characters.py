@@ -67,7 +67,7 @@ class Characters():
         if exclude is None:
             exclude = []
 
-        import random
+        import rng as random
         possible_characters = [character_id for character_id in self.available_characters if character_id not in exclude]
         random_character = random.choice(possible_characters)
         self.set_unavailable(random_character)
@@ -89,7 +89,7 @@ class Characters():
         characters_asm.set_starting_level(self.args.start_level)
 
     def stats_random_percent(self):
-        import random
+        import rng as random
         stats = ["init_extra_hp", "init_extra_mp", "init_vigor", "init_speed", "init_stamina", "init_magic",
                  "init_attack", "init_defense", "init_magic_defense", "init_evasion", "init_magic_evasion"]
         for character in self.characters:
@@ -192,7 +192,7 @@ class Characters():
     def get_random_esper_item_sprite(self):
         sprites = [self.SOLDIER, self.IMP, self.MERCHANT, self.GHOST]
 
-        import random
+        import rng as random
         return sprites[random.randrange(len(sprites))]
 
     def get_palette(self, character):

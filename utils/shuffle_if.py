@@ -4,7 +4,7 @@ def shuffle_if(lst, condition):
     indices, elements = zip(*[(i, e) for i, e in enumerate(lst) if condition(e)])
     indices = list(indices)
 
-    import random
+    import rng as random
     random.shuffle(indices)
 
     for i, e in zip(indices, elements):

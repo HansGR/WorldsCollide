@@ -1,5 +1,5 @@
 from objectives.conditions._objective_condition import *
-import random
+import rng as random
 
 class Condition(ObjectiveCondition):
     NAME = "Espers"

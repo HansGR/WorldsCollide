@@ -45,14 +45,14 @@ class Spells:
         if exclude is None:
             exclude = []
 
-        import random
+        import rng as random
         possible_spell_ids = [spell.id for spell in self.spells if spell.id not in exclude]
         count = min(len(possible_spell_ids), count)
         return random.sample(possible_spell_ids, count)
 
     def get_replacement(self, spell_id, exclude):
         ''' get a random spell from the same tier as the given spell_id '''
-        import random
+        import rng as random
         from data.esper_spell_tiers import tiers
 
         same_tier = next((tier for tier in tiers if spell_id in tier), [])
@@ -77,18 +77,18 @@ class Spells:
         for spell in self.spells:
             mp.append(spell.mp)
 
-        import random
+        import rng as random
         random.shuffle(mp)
         for spell in self.spells:
             spell.mp = mp.pop()
 
     def random_mp_value(self):
-        import random
+        import rng as random
         for spell in self.spells:
             spell.mp = random.randint(self.args.magic_mp_random_value_min, self.args.magic_mp_random_value_max)
 
     def random_mp_percent(self):
-        import random
+        import rng as random
         for spell in self.spells:
             mp_percent = random.randint(self.args.magic_mp_random_percent_min,
                                         self.args.magic_mp_random_percent_max) / 100.0

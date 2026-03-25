@@ -6,7 +6,7 @@ from constants.objectives.results import name_type
 from memory.space import Bank, START_ADDRESS_SNES, Write
 import instruction.field as field
 import instruction.asm as asm
-import random
+import rng as random
 
 class ObjectiveResult:
     def __init__(self, field_class, battle_class, *args):

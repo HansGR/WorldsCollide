@@ -53,7 +53,7 @@ class Shops():
         }
         type_items[Shop.ITEM].extend(type_items[Shop.VENDOR])
 
-        import random
+        import rng as random
         import collections
         for shop_type in range(1, Shop.SHOP_TYPE_COUNT - 1): # skip EMPTY and VENDOR shop types
             frequencies = collections.Counter(item for item in type_items[shop_type])
@@ -80,7 +80,7 @@ class Shops():
 
     def random_tiered(self):
         def get_item(item_type, exclude = None):
-            import random
+            import rng as random
             from utils.weighted_random import weighted_random
             from data.shop_item_tiers import tiers, weights
 
@@ -121,7 +121,7 @@ class Shops():
         for shop in self.shops:
             total_item_count += shop.item_count
 
-        import random
+        import rng as random
         random_percent = self.args.shop_inventory_shuffle_random_percent / 100.0
         num_random_items = int(total_item_count * random_percent)
         sorted_random_indices = sorted(random.sample(range(total_item_count), num_random_items), reverse = True)
@@ -155,7 +155,7 @@ class Shops():
                 no_dried_meat_shops.append(shop)
         number_shops_with_dried_meat = len(dried_meat_shops)
 
-        import random
+        import rng as random
         if number_shops_with_dried_meat > self.args.shop_dried_meat:
             # too many shops have dried meat, randomly remove extras
             for index in range(self.args.shop_dried_meat, number_shops_with_dried_meat):
@@ -188,7 +188,7 @@ class Shops():
         # possible shops the dried meat can be moved to
         possible_shops = self.type_shops[Shop.ITEM] + self.type_shops[Shop.VENDOR]
 
-        import random
+        import rng as random
         random.shuffle(possible_shops)
 
         for random_shop in possible_shops:

@@ -1,6 +1,6 @@
 # not a "real" distribution, the discretization and clamping skew it
 def truncated_discrete_distribution(mean, stddev, minimum = None, maximum = None):
-    import random
+    import rng as random
     result = round(random.gauss(mean, stddev))
     if minimum and result < minimum:
         return truncated_discrete_distribution(mean, stddev, minimum, maximum)
