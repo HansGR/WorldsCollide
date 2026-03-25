@@ -54,18 +54,20 @@ class EsperWorld(Event):
 
     def add_save_point(self):
         from data.map_event import MapEvent
+        X = 55
+        Y = 44
 
         # Copy the save point NPC from map 0x009 (Scenario) at npc_id 0x15
         save_npc = deepcopy(self.maps.get_npc(0x009, 0x15))
-        save_npc.x = 55
-        save_npc.y = 44
+        save_npc.x = X
+        save_npc.y = Y
         self.maps.append_npc(self.map_gate_cave, save_npc)
 
         # Copy the save point event tile from map 0x009 at (8, 6)
         save_event_src = self.maps.get_event(0x009, 8, 6)
         save_event = MapEvent()
-        save_event.x = 55
-        save_event.y = 44
+        save_event.x = X
+        save_event.y = Y
         save_event.event_address = save_event_src.event_address
         self.maps.add_event(self.map_gate_cave, save_event)
 

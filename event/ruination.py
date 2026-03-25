@@ -5223,9 +5223,9 @@ def ruination_start_game_mod(dialogs, party):
         field.EntityAct(field_entity.PARTY0, True,
                         field_entity.Pause(60),
                         field_entity.AnimateKneeling(),
-                        field_entity.Pause(30),
+                        field_entity.Pause(20),
                         field_entity.AnimateStandingHeadDown(),
-                        field_entity.Pause(15),
+                        field_entity.Pause(10),
                         # Shaking head (see e.g. CA/FCC6)
                         field_entity.AnimateTiltHeadLeft(),
                         field_entity.Pause(8),
