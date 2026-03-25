@@ -164,11 +164,15 @@ class EbotsRock(Event):
                     vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
                 )
 
-        # NOTE: just finished moving airship to thamasa, use vehicle command to load map here
         space = Reserve(0xb7244, 0xb7249, "ebots rock after hidon load strago's room map", field.NOP())
-        space.write(
-            vehicle.LoadMap(0x15d, direction.UP, default_music = False, x = 45, y = 21, fade_in = False, update_parent_map = True),
-        )
+        if self.MOVE_AIRSHIP_TO_THAMASA:
+            space.write(
+                vehicle.LoadMap(0x15d, direction.UP, default_music=False, x=45, y=21, fade_in=False, update_parent_map=True),
+            )
+        else:
+            space.write(
+                field.LoadMap(0x15d, direction.UP, default_music=False, x=45, y=21, fade_in=False, entrance_event=True),
+            )
 
         space = Reserve(0xb724e, 0xb7315, "ebots rock after hidon bedroom scene and that evening", field.NOP())
         space.write(
