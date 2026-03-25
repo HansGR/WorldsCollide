@@ -6,10 +6,7 @@ class EbotsRock(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
         self.MAP_SHUFFLE = args.map_shuffle
-        self.DOOR_RANDOMIZE = (args.door_randomize_all
-                          or args.door_randomize_crossworld
-                          or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each
+        self.DOOR_RANDOMIZE = (args.door_randomize_dungeon_crawl
                           or args.ruination_mode)
 
     def name(self):
@@ -57,7 +54,7 @@ class EbotsRock(Event):
             exit_id = 1546
             if exit_id in self.maps.door_map.keys():
                 self.exit_loc = self.maps.get_connection_location(exit_id)
-                self.EXIT_IN_WOB = (self.exit_loc[3] == 0)
+                self.EXIT_IN_WOB = (self.exit_loc[-1] == 0)
 
             if self.args.ruination_mode:
                 # Ruination: no airship movement needed.
