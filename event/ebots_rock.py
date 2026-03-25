@@ -171,7 +171,7 @@ class EbotsRock(Event):
             )
         else:
             space.write(
-                field.LoadMap(0x15d, direction.UP, default_music=False, x=45, y=21, fade_in=False, entrance_event=True),
+                field.LoadMap(0x15d, direction.UP, default_music=False, x=45, y=21, fade_in=False, entrance_event=False),
             )
 
         space = Reserve(0xb724e, 0xb7315, "ebots rock after hidon bedroom scene and that evening", field.NOP())
