@@ -29,9 +29,9 @@ class Objectives(scroll_area.ScrollArea):
                 scroll_area.Line(" Door rando by: DoctorDT", f0.set_user_text_color),
                 scroll_area.Line(" Special Thanks:", f0.set_user_text_color),
                 scroll_area.Line("  asilverthorn, Franklin,", f0.set_user_text_color),
-                scroll_area.Line("  Jexvrok, NobodyWar,", f0.set_user_text_color),
-                scroll_area.Line("  WRJones and the", f0.set_user_text_color),
-                scroll_area.Line("  WC community", f0.set_user_text_color),
+                scroll_area.Line("  Jefe01, Jexvrok,", f0.set_user_text_color),
+                scroll_area.Line("  NobodyWar, WRJones", f0.set_user_text_color),
+                scroll_area.Line("  and the WC community", f0.set_user_text_color),
             ]
 
         for oi, objective in enumerate(objectives):
