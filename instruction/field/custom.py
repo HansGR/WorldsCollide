@@ -4,6 +4,8 @@ import instruction.asm as asm
 import instruction.c0 as c0
 from enum import IntEnum
 
+# Remaining unused opcodes: 0x4a, 0x5b, 0xa4, 0xe6, 0xfc, 0xfd
+# Also used in y_npc/instructions.py: 0x9e (SetYNPCGraphics), 0x9f (YNPCEffect)
 def _set_opcode_address(opcode, address):
     FIRST_OPCODE = 0x35
     opcode_table_address = 0x098c4 + (opcode - FIRST_OPCODE) * 2
