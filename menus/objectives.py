@@ -21,6 +21,7 @@ class Objectives(scroll_area.ScrollArea):
             import version
             wc_version = "v" + version.__version__.split(' ')[0]
             credits_lines = [
+                scroll_area.Line("", f0.set_user_text_color),
                 scroll_area.Line("Credits", f0.set_blue_text_color),
                 #scroll_area.Line("", f0.set_user_text_color),
                 scroll_area.Line("Final Fantasy 6 roguelike", f0.set_user_text_color),
@@ -35,6 +36,7 @@ class Objectives(scroll_area.ScrollArea):
                 scroll_area.Line("  Jefe01, Jexvrok,", f0.set_user_text_color),
                 scroll_area.Line("  NobodyWar, WRJones", f0.set_user_text_color),
                 scroll_area.Line("  and the WC community", f0.set_user_text_color),
+                #scroll_area.Line("", f0.set_user_text_color),
             ]
 
         for oi, objective in enumerate(objectives):
@@ -66,13 +68,14 @@ class Objectives(scroll_area.ScrollArea):
                     self.lines.append(scroll_area.Line(completed_line, f0.set_user_text_color))
             self.lines.append(scroll_area.Line("", f0.set_user_text_color))
 
-        if args.ruination_mode:
-            # append credits after objectives (keep trailing blank as separator)
-            self.lines.extend(credits_lines)
         if len(self.lines) == 0:
             self.lines.append(scroll_area.Line("No Objectives", f0.set_blue_text_color))
         else:
             del self.lines[-1] # exclude final empty line
+            
+        if args.ruination_mode:
+            # append credits after objectives (keep trailing blank as separator)
+            self.lines.extend(credits_lines)
 
         super().__init__()
 
