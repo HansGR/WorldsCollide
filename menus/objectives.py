@@ -16,6 +16,15 @@ class Objectives(scroll_area.ScrollArea):
 
         self.lines = []
         self.line_color_addresses = []
+
+        if args.ruination_mode:
+            import version
+            wc_version = "v" + version.__version__.split(' ')[0]
+            self.lines.append(scroll_area.Line("Credits", f0.set_blue_text_color))
+            self.lines.append(scroll_area.Line(" Made in FFVI", f0.set_user_text_color))
+            self.lines.append(scroll_area.Line(" Worlds Collide " + wc_version, f0.set_user_text_color))
+            self.lines.append(scroll_area.Line("", f0.set_user_text_color))
+
         for oi, objective in enumerate(objectives):
             result_line = objective.letter + " " + str(objective.result)
             self.lines.append(scroll_area.Line(result_line, f0.set_blue_text_color))
