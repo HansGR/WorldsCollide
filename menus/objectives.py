@@ -23,14 +23,14 @@ class Objectives(scroll_area.ScrollArea):
             credits_lines = [
                 scroll_area.Line("Credits", f0.set_blue_text_color),
                 scroll_area.Line(" Final Fantasy VI roguelike", f0.set_user_text_color),
-                scroll_area.Line(" made in FFVI", f0.set_user_text_color),
-                scroll_area.Line(" Worlds Collide (" + wc_version + ")", f0.set_user_text_color),
+                scroll_area.Line("made in FFVI Worlds Collide", f0.set_user_text_color),
+                scroll_area.Line(("(" + wc_version + ")").rjust(scroll_area.WIDTH), f0.set_user_text_color),
                 scroll_area.Line(" Original code: AtmaTek", f0.set_user_text_color),
                 scroll_area.Line(" Door rando by: DoctorDT", f0.set_user_text_color),
                 scroll_area.Line(" Special Thanks:", f0.set_user_text_color),
                 scroll_area.Line("  Franklin, Jexvrok,", f0.set_user_text_color),
-                scroll_area.Line("  WRJones and the", f0.set_user_text_color),
-                scroll_area.Line("  WC community", f0.set_user_text_color),
+                scroll_area.Line("  NobodyWar, WRJones", f0.set_user_text_color),
+                scroll_area.Line("  and the WC community", f0.set_user_text_color),
             ]
 
         for oi, objective in enumerate(objectives):
