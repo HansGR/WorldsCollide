@@ -22,11 +22,14 @@ class Objectives(scroll_area.ScrollArea):
             wc_version = "v" + version.__version__.split(' ')[0]
             credits_lines = [
                 scroll_area.Line("Credits", f0.set_blue_text_color),
-                scroll_area.Line(" Final Fantasy VI roguelike", f0.set_user_text_color),
+                scroll_area.Line("", f0.set_user_text_color),
+                scroll_area.Line("a FFVI roguelike", f0.set_user_text_color),
                 scroll_area.Line("made in FFVI Worlds Collide", f0.set_user_text_color),
                 scroll_area.Line(("(" + wc_version + ")").rjust(scroll_area.WIDTH), f0.set_user_text_color),
+                scroll_area.Line("", f0.set_user_text_color),
                 scroll_area.Line(" Original code: AtmaTek", f0.set_user_text_color),
                 scroll_area.Line(" Door rando by: DoctorDT", f0.set_user_text_color),
+                scroll_area.Line("", f0.set_user_text_color),
                 scroll_area.Line(" Special Thanks:", f0.set_user_text_color),
                 scroll_area.Line("  asilverthorn, Franklin,", f0.set_user_text_color),
                 scroll_area.Line("  Jefe01, Jexvrok,", f0.set_user_text_color),
