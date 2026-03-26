@@ -4,10 +4,12 @@ import instruction.asm as asm
 import instruction.c0 as c0
 from enum import IntEnum
 
+# Remaining unused opcodes: 0x4a, 0x5b, 0xa4, 0xe6, 0xfc, 0xfd
+# Also used in y_npc/instructions.py: 0x9e (SetYNPCGraphics), 0x9f (YNPCEffect)
 def _set_opcode_address(opcode, address):
     FIRST_OPCODE = 0x35
     opcode_table_address = 0x098c4 + (opcode - FIRST_OPCODE) * 2
-    space = Reserve(opcode_table_address, opcode_table_address + 1, "field opcode table, {opcode} {hex(address)}")
+    space = Reserve(opcode_table_address, opcode_table_address + 1, f"field opcode table, {opcode} {hex(address)}")
     space.write(
         (address & 0xffff).to_bytes(2, "little"),
     )
@@ -1075,7 +1077,7 @@ class SetupBranchRecruit(_Instruction):
         space = Write(Bank.C0, src, "custom setup branch recruit")
         address = space.start_address
 
-        opcode = 0x9e
+        opcode = 0xec
         _set_opcode_address(opcode, address)
 
         SetupBranchRecruit.__init__ = lambda self, argument: super().__init__(opcode, argument)
@@ -1524,7 +1526,7 @@ class FinalizeBranchRecruit(_Instruction):
         space = Write(Bank.C0, src, "custom finalize branch recruit")
         address = space.start_address
 
-        opcode = 0x9f
+        opcode = 0xed
         _set_opcode_address(opcode, address)
 
         FinalizeBranchRecruit.__init__ = lambda self: super().__init__(opcode)
