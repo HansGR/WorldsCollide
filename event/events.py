@@ -233,7 +233,12 @@ class Events():
         # Update ROOM_REWARD data
         for room in ROOM_REWARD.keys():
             for name in ROOM_REWARD[room].keys():
-                event = [e for e in events if e.name() in name]
+                # Extract base event name: "Auction House_1" -> "Auction House", "Veldt Cave WOR" -> "Veldt Cave WOR"
+                if '_' in name and name.rsplit('_', 1)[1].isdigit():
+                    base_name = name.rsplit('_', 1)[0]
+                else:
+                    base_name = name
+                event = [e for e in events if e.name() == base_name]
                 if len(event) > 0:
                     if '_' not in name:
                         ROOM_REWARD[room][name] = event[0].rewards[0]
