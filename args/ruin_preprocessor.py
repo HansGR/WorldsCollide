@@ -10,6 +10,81 @@ import sys
 # Global flag to track if preprocessing has been done
 _preprocessing_done = False
 
+# Mutually exclusive flag groups from argparse definitions.
+# When a user specifies a flag from one of these groups, any default ruin flag
+# in the same group must be removed to avoid argparse conflicts.
+MUTUALLY_EXCLUSIVE_GROUPS = [
+    # settings.py - mode
+    {'-open', '-cg'},
+    # scaling.py - level scaling
+    {'-lsa', '-lsh', '-lsce', '-lsced', '-lsc', '-lsbd', '-lst'},
+    # scaling.py - hp/mp scaling
+    {'-hma', '-hmh', '-hmce', '-hmced', '-hmc', '-hmt', '-hmbd'},
+    # scaling.py - xp/gp scaling
+    {'-xga', '-xgh', '-xgce', '-xgced', '-xgc', '-xgt', '-xgbd'},
+    # scaling.py - ability scaling
+    {'-ase', '-asr'},
+    # bosses.py - boss battles
+    {'-bbs', '-bbr'},
+    # bosses.py - dragons
+    {'-drloc', '-bmbd'},
+    # bosses.py - statues
+    {'-stloc'},
+    # encounters.py - random encounters
+    {'-res', '-rer', '-rechu'},
+    # encounters.py - fixed encounters
+    {'-fer'},
+    # encounters.py - escapable
+    {'-escr'},
+    # espers.py - esper spells
+    {'-esrr', '-ess', '-essrr', '-esr', '-esrt'},
+    # espers.py - esper learn rates
+    {'-elr', '-elrt'},
+    # espers.py - esper bonuses
+    {'-ebs', '-ebr'},
+    # espers.py - esper mp
+    {'-emps', '-emprv', '-emprp'},
+    # espers.py - esper equipable
+    {'-eer', '-eebr'},
+    # lores.py - lores mp
+    {'-lmps', '-lmprv', '-lmprp'},
+    # misc_magic.py - magic mp
+    {'-mmps', '-mmprv', '-mmprp'},
+    # items.py - item equipable
+    {'-ier', '-iebr', '-ietr', '-ieor', '-iesr'},
+    # items.py - item equipable relic
+    {'-ierr', '-ierbr', '-iertr', '-ieror', '-iersr'},
+    # shops.py - shop inventory
+    {'-sisr', '-sirt', '-sie'},
+    # shops.py - shop prices
+    {'-sprv', '-sprp'},
+    # shops.py - shop sell fraction
+    {'-ssf4', '-ssf8', '-ssf0'},
+    # chests.py - chest contents
+    {'-ccsr', '-ccrt', '-ccrs', '-cce'},
+    # coliseum.py - coliseum opponents
+    {'-cor', '-cosr'},
+    # coliseum.py - coliseum rewards
+    {'-crr', '-crsr'},
+    # steal.py - steal chances
+    {'-sch', '-sca'},
+    # graphics.py - flash removal
+    {'-frw', '-frm'},
+    # challenges.py - ultima
+    {'-nu', '-u254'},
+    # misc.py - event timers
+    {'-etr', '-etn'},
+    # misc.py - y npc
+    {'-ymascot', '-ycreature', '-yimperial', '-ymain', '-yreflect',
+     '-ystone', '-yvxz', '-ysketch', '-yrandom', '-yremove'},
+]
+
+# Build a lookup: flag -> set of all flags in its exclusive group
+_FLAG_TO_GROUP = {}
+for group in MUTUALLY_EXCLUSIVE_GROUPS:
+    for flag in group:
+        _FLAG_TO_GROUP[flag] = group
+
 # Default flags for -ruin mode, organized by category
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
@@ -124,6 +199,26 @@ def check_user_specified_starting_chars(argv, ruin_index):
                 return True
     return False
 
+def get_user_exclusive_flags(argv, ruin_index):
+    """
+    Scan user-specified args (after -ruin) for flags belonging to mutually
+    exclusive groups. Returns the set of all default flags that must be
+    suppressed to avoid argparse conflicts.
+    """
+    flags_to_suppress = set()
+    user_args = set(arg for arg in argv[ruin_index + 1:] if arg.startswith('-'))
+
+    for user_flag in user_args:
+        group = _FLAG_TO_GROUP.get(user_flag)
+        if group is None:
+            continue
+        # Suppress all OTHER flags in this group (the user's flag wins)
+        for group_flag in group:
+            if group_flag != user_flag:
+                flags_to_suppress.add(group_flag)
+
+    return flags_to_suppress
+
 def preprocess_ruin_flag(argv=None):
     """
     Preprocess command-line arguments to expand -ruin meta-flag.
@@ -177,18 +272,21 @@ def preprocess_ruin_flag(argv=None):
     # Check if user specified any starting character flags
     user_specified_chars = check_user_specified_starting_chars(argv, ruin_index)
 
-    # Build list of default flags to inject (excluding disabled ones)
+    # Find default flags that conflict with user-specified mutually exclusive flags
+    exclusive_suppressed = get_user_exclusive_flags(argv, ruin_index)
+
+    # Build list of default flags to inject (excluding disabled and conflicting ones)
     defaults_to_inject = []
     for category, flags in RUIN_DEFAULT_FLAGS.items():
         # Skip starting_chars if user specified their own
         if category == 'starting_chars' and user_specified_chars:
             continue
 
-        # Add flags from this category, skipping disabled ones
+        # Add flags from this category, skipping disabled and conflicting ones
         i = 0
         while i < len(flags):
             flag = flags[i]
-            if flag not in flags_to_disable:
+            if flag not in flags_to_disable and flag not in exclusive_suppressed:
                 # Add the flag
                 defaults_to_inject.append(flag)
                 # Add its arguments if any
