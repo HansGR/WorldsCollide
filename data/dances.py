@@ -65,7 +65,13 @@ class Dances:
         from memory.space import START_ADDRESS_SNES
         import instruction.c0 as c0
 
-        character_available = START_ADDRESS_SNES + c0.character_available
+        # In ruination mode, away-party characters have their character_available bit
+        # cleared. Use character_recruited instead so characters on branches can still
+        # learn dances after battle.
+        if self.args.ruination_mode is not None:
+            character_check = START_ADDRESS_SNES + c0.character_recruited
+        else:
+            character_check = START_ADDRESS_SNES + c0.character_available
 
         # NOTE: dances are learned by being in the party
         #       on the veldt, the character to possibly appear is added to the party and hidden
@@ -79,7 +85,7 @@ class Dances:
             asm.LDA(0x3ed9, asm.ABS_X),         # a = character id
             asm.CMP(0xff, asm.IMM8),            # no character in this slot?
             asm.BEQ("LOOP_INCREMENT"),          # branch to next slot if no character in this slot
-            asm.JSL(character_available),
+            asm.JSL(character_check),
             asm.CMP(0x00, asm.IMM8),            # compare result with 0
             asm.BEQ("LOOP_INCREMENT"),          # branch if character not available
         )
