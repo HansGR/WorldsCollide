@@ -1115,7 +1115,7 @@ class FinalizeBranchRecruit(_Instruction):
     Uses scratchpad RAM:
       $10 = has_party2 flag, $11 = parties_used bitmask,
       $12-$13 = temp, $14 = original party index,
-      $30-$33 = away-party lookup table.
+      $30-$33 = away-party lookup table, $37 = initial party_away_byte snapshot.
 
     No arguments."""
     def __init__(self):
@@ -1144,6 +1144,10 @@ class FinalizeBranchRecruit(_Instruction):
             asm.STA(0x10, asm.DIR),                          # $10 = has_party2 (0x00 or 0x08)
 
             asm.STZ(0x11, asm.DIR),                          # $11 = parties_used bitmask (clear)
+
+            # Save initial AWAY state so Step 4 won't clear bits for already-away parties
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.STA(0x37, asm.DIR),                          # $37 = initial party_away_byte snapshot
 
             # If has_party2: park Party 2 members at slot 7
             asm.LDA(0x10, asm.DIR),
@@ -1362,11 +1366,17 @@ class FinalizeBranchRecruit(_Instruction):
             asm.STZ(event_word.address(event_word.SCRATCH), asm.ABS),
 
             "STEP4_AFTER_SCRATCH",
-            # For each party 1-3: if not in parties_used, clear its AWAY bit
+            # For each party 1-3: if not in parties_used AND not already AWAY
+            # at the start of this opcode, clear its AWAY bit.
+            # Already-away parties are protected: their members are on a branch
+            # and should remain AWAY regardless of parties_used detection.
             asm.LDA(0x11, asm.DIR),                          # parties_used
             asm.AND(0x02, asm.IMM8),                         # P1 used?
             asm.BNE("P1_USED"),
-            # P1 not used: clear AWAY bit 1
+            asm.LDA(0x37, asm.DIR),                          # initial AWAY snapshot
+            asm.AND(0x02, asm.IMM8),                         # P1 was already AWAY?
+            asm.BNE("P1_USED"),                              # yes → preserve its AWAY bit
+            # P1 not used and was not already AWAY: clear AWAY bit 1
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0xfd, asm.IMM8),                         # clear bit 1
             asm.STA(party_away_byte, asm.ABS),
@@ -1375,6 +1385,9 @@ class FinalizeBranchRecruit(_Instruction):
             asm.LDA(0x11, asm.DIR),
             asm.AND(0x04, asm.IMM8),                         # P2 used?
             asm.BNE("P2_USED"),
+            asm.LDA(0x37, asm.DIR),                          # initial AWAY snapshot
+            asm.AND(0x04, asm.IMM8),                         # P2 was already AWAY?
+            asm.BNE("P2_USED"),                              # yes → preserve
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0xfb, asm.IMM8),                         # clear bit 2
             asm.STA(party_away_byte, asm.ABS),
@@ -1383,6 +1396,9 @@ class FinalizeBranchRecruit(_Instruction):
             asm.LDA(0x11, asm.DIR),
             asm.AND(0x08, asm.IMM8),                         # P3 used?
             asm.BNE("P3_USED"),
+            asm.LDA(0x37, asm.DIR),                          # initial AWAY snapshot
+            asm.AND(0x08, asm.IMM8),                         # P3 was already AWAY?
+            asm.BNE("P3_USED"),                              # yes → preserve
             asm.LDA(party_away_byte, asm.ABS),
             asm.AND(0xf7, asm.IMM8),                         # clear bit 3
             asm.STA(party_away_byte, asm.ABS),
