@@ -838,6 +838,11 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x04, asm.IMM8),  # P1 → P4
             asm.STA(character_party_start, asm.ABS_Y),
+            # Mirror to save RAM so $7077 bulk copy won't un-park
+            asm.LDA(save_ram_party_start, asm.ABS_X),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x04, asm.IMM8),
+            asm.STA(save_ram_party_start, asm.ABS_X),
             asm.BRA("NEXT"),
 
             "CHECK_P2",
@@ -847,6 +852,11 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x05, asm.IMM8),  # P2 → P5
             asm.STA(character_party_start, asm.ABS_Y),
+            # Mirror to save RAM so $7077 bulk copy won't un-park
+            asm.LDA(save_ram_party_start, asm.ABS_X),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x05, asm.IMM8),
+            asm.STA(save_ram_party_start, asm.ABS_X),
             asm.BRA("NEXT"),
 
             "CHECK_P3",
@@ -856,6 +866,11 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x06, asm.IMM8),  # P3 → P6
             asm.STA(character_party_start, asm.ABS_Y),
+            # Mirror to save RAM so $7077 bulk copy won't un-park
+            asm.LDA(save_ram_party_start, asm.ABS_X),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x06, asm.IMM8),
+            asm.STA(save_ram_party_start, asm.ABS_X),
             asm.BRA("NEXT"),
 
             "SET_AVAIL_PARTY",
@@ -864,6 +879,11 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),  # keep non-party bits
             asm.ORA(0x01, asm.IMM8),  # set to Party 1
             asm.STA(character_party_start, asm.ABS_Y),
+            # Mirror to save RAM
+            asm.LDA(save_ram_party_start, asm.ABS_X),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x01, asm.IMM8),
+            asm.STA(save_ram_party_start, asm.ABS_X),
 
             # Set character_available bit
             asm.PHY(),
@@ -928,6 +948,10 @@ class SetupBranchRecruit(_Instruction):
             asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0xf8, asm.IMM8),  # clear party bits (party 0)
             asm.STA(character_party_start, asm.ABS_Y),
+            # Mirror to save RAM
+            asm.LDA(save_ram_party_start, asm.ABS_X),
+            asm.AND(0xf8, asm.IMM8),
+            asm.STA(save_ram_party_start, asm.ABS_X),
 
             asm.RTS(),
         ]
@@ -977,6 +1001,11 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),  # keep non-party bits
             asm.ORA(0x11, asm.DIR),  # set to target party
             asm.STA(character_party_start, asm.ABS_Y),
+            # Mirror to save RAM
+            asm.LDA(save_ram_party_start, asm.ABS_X),
+            asm.AND(0xf8, asm.IMM8),
+            asm.ORA(0x11, asm.DIR),
+            asm.STA(save_ram_party_start, asm.ABS_X),
 
             # Set character_available bit
             asm.PHY(),
