@@ -37,12 +37,15 @@ class Airship(Event):
             fly_kt_text_1 = "We can attack Kefka's Tower from the air.<page>Ready? There's no going back.<line><choice> Take off<line><choice> Not just yet<end>"
             fly_kt_text_2 = "Go to Kefka's Tower?<line><choice> Take off<line><choice> Not just yet<end>"
             fly_kt_text_3 = "There's no returning from Kefka's Tower. We need to split the party first.<end>"
+            fly_kt_text_4 = "Another group has already gone to Kefka's Tower. Three parties must be formed before sending another.<end>"
 
             self.dialogs.set_text(fly_wor_fc_cancel_dialog, fly_kt_text_1)
             self.dialogs.set_text(fly_wor_cancel_dialog, fly_kt_text_2)
             self.dialogs.set_text(fly_wob_dg_cancel_dialog, fly_kt_text_3)
+            need_three_parties_text = 1294  # ruination: another terminus used but < 3 parties formed
+            self.dialogs.set_text(need_three_parties_text, fly_kt_text_4)
 
-            space = Allocate(Bank.CA, 230, "airship controls dialog/choices", field.NOP())
+            space = Allocate(Bank.CA, 270, "airship controls dialog/choices", field.NOP())
 
             self.doom_gaze_mod(space)
             self.ruination_mod(space)
@@ -67,11 +70,28 @@ class Airship(Event):
                                    dest2=field.RETURN),
             )
 
+            cannot_fly_kt_need_three = space.next_address
+            space.write(
+                field.Dialog(need_three_parties_text),
+                field.Return()
+            )
+
+            # New entry point from the Reserve block: checks THREE_PARTIES_CREATED
+            # before proceeding to the doom gaze / direct-entry branches.
+            check_three_kt = space.next_address
+            space.write(
+                field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "CHECK_DOOM_AIR"),
+                field.BranchIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED, cannot_fly_kt_need_three),
+                field.BranchIfEventBitSet(event_bit.ESPER_MTN_TERMINUS_USED, cannot_fly_kt_need_three),
+                "CHECK_DOOM_AIR",
+                field.BranchIfBattleEventBitClear(battle_bit.DEFEATED_DOOM_GAZE, fly_kt),
+                field.Branch(fly_kt_direct),
+            )
+
             space = Reserve(0xaf53a, 0xaf559, "airship controls ruination mode", field.NOP())
             space.write(
                 field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, cannot_fly_kt),
-                field.BranchIfBattleEventBitClear(battle_bit.DEFEATED_DOOM_GAZE, fly_kt),
-                field.Branch(fly_kt_direct),
+                field.Branch(check_three_kt),
             )
 
         else:

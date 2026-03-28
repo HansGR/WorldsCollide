@@ -1519,6 +1519,64 @@ class FinalizeBranchRecruit(_Instruction):
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("AVAIL_LOOP"),
 
+            # === Step 6: Set/clear THREE_PARTIES_CREATED (event_bit 0x0e0, bit 0 of party_away_byte) ===
+            # Loop through all characters. For each enabled character, note which party slot it occupies.
+            # If all three party slots (1, 2, 3) have at least one enabled character → set the bit.
+            # $34 = party 1 seen, $35 = party 2 seen, $36 = party 3 seen
+            asm.STZ(0x34, asm.DIR),
+            asm.STZ(0x35, asm.DIR),
+            asm.STZ(0x36, asm.DIR),
+            asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),
+
+            "COUNT_3PC_LOOP",
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x40, asm.IMM8),                         # enabled? (bit 6)
+            asm.BEQ("COUNT_3PC_NEXT"),
+            asm.LDA(character_party_start, asm.ABS_Y),
+            asm.AND(0x07, asm.IMM8),                         # isolate party bits (0=none, 1-3=party slot)
+            asm.CMP(0x01, asm.IMM8),
+            asm.BNE("COUNT_3PC_CHK_P2"),
+            asm.INC(0x34, asm.DIR),
+            asm.BRA("COUNT_3PC_NEXT"),
+            "COUNT_3PC_CHK_P2",
+            asm.CMP(0x02, asm.IMM8),
+            asm.BNE("COUNT_3PC_CHK_P3"),
+            asm.INC(0x35, asm.DIR),
+            asm.BRA("COUNT_3PC_NEXT"),
+            "COUNT_3PC_CHK_P3",
+            asm.CMP(0x03, asm.IMM8),
+            asm.BNE("COUNT_3PC_NEXT"),
+            asm.INC(0x36, asm.DIR),
+
+            "COUNT_3PC_NEXT",
+            asm.INX(),
+            asm.REP(0x21),
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("COUNT_3PC_LOOP"),
+
+            # If all three party slots have chars → set THREE_PARTIES_CREATED (bit 0), else clear it
+            asm.LDA(0x34, asm.DIR),
+            asm.BEQ("CLEAR_3PC"),                            # party 1 empty
+            asm.LDA(0x35, asm.DIR),
+            asm.BEQ("CLEAR_3PC"),                            # party 2 empty
+            asm.LDA(0x36, asm.DIR),
+            asm.BEQ("CLEAR_3PC"),                            # party 3 empty
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.ORA(0x01, asm.IMM8),                         # set bit 0 = THREE_PARTIES_CREATED
+            asm.STA(party_away_byte, asm.ABS),
+            asm.BRA("DONE_3PC"),
+            "CLEAR_3PC",
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.AND(0xFE, asm.IMM8),                         # clear bit 0 = THREE_PARTIES_CREATED
+            asm.STA(party_away_byte, asm.ABS),
+            "DONE_3PC",
+
             "DONE",
             asm.LDA(0x01, asm.IMM8),                        # command size = 1
             asm.JMP(0x9b5c, asm.ABS),
