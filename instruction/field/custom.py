@@ -1067,6 +1067,13 @@ class SetupBranchRecruit(_Instruction):
             asm.STA(event_word.address(event_word.SCRATCH), asm.ABS),
             "NO_P2_FLAG",
 
+            # Save party_away_byte before setting current_party = 1.
+            # Vanilla SelectParties clears bit current_party of $1E9C,
+            # which would destroy PARTY_N_AWAY for whichever party index
+            # we temporarily use. We restore it in FinalizeBranchRecruit.
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.STA(event_word.address(event_word.SCRATCH) + 1, asm.ABS),  # SCRATCH high byte ($1FFB)
+
             asm.LDA(0x01, asm.IMM8),
             asm.STA(current_party, asm.ABS),                 # set active party to 1
 
@@ -1090,9 +1097,12 @@ class FinalizeBranchRecruit(_Instruction):
     """Finalizes party selection after SetupBranchRecruit in ruination mode.
 
     Reads SCRATCH to determine the original active party and flags.
-    SCRATCH layout: 0000hppp
-      bits 0-2 (ppp): original active party index (1-3)
-      bit 3 (h): has_party2 flag (Party 2 was populated by Setup)
+    SCRATCH layout:
+      Low byte ($1FFA): 0000hppp
+        bits 0-2 (ppp): original active party index (1-3)
+        bit 3 (h): has_party2 flag (Party 2 was populated by Setup)
+      High byte ($1FFB): saved party_away_byte ($1E9C) from before
+        SelectParties ran (vanilla clears bit current_party of $1E9C)
 
     Steps:
     0. Load SCRATCH. Extract party index and has_party2 flag.
@@ -1133,9 +1143,12 @@ class FinalizeBranchRecruit(_Instruction):
         current_party = 0x1a6d
 
         src = [
-            # === DIAGNOSTIC: save $1E9C at entry ===
-            asm.LDA(party_away_byte, asm.ABS),
-            asm.STA(0x1ea8, asm.ABS),                            # $1EA8 = party_away_byte at entry
+            # Restore party_away_byte saved by SetupBranchRecruit.
+            # Vanilla SelectParties clears bit current_party of $1E9C,
+            # which destroys PARTY_N_AWAY for the temporary current_party
+            # that SetupBranchRecruit set.
+            asm.LDA(event_word.address(event_word.SCRATCH) + 1, asm.ABS),  # SCRATCH high byte ($1FFB)
+            asm.STA(party_away_byte, asm.ABS),
 
             # === Step 0: Load SCRATCH, extract flags ===
             asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
@@ -1214,53 +1227,6 @@ class FinalizeBranchRecruit(_Instruction):
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("REMAP_P1_LOOP"),
 
-            # === DIAGNOSTIC: save state between Step 1 and Step 2 ===
-            # $1EA0 = parties_used after Step 1
-            # $1EA1 = parties_used after Step 2 (written later)
-            # $1EA2 = parties_used after Step 3 (written later)
-            # $1EA3 = count of chars with field_ram party==4
-            # $1EA4 = count of chars with field_ram party==5
-            # $1EA5 = count of chars with field_ram party==6
-            # $1EA6 = original active party ($14)
-            # $1EA7 = has_party2 ($10)
-            asm.LDA(0x11, asm.DIR),
-            asm.STA(0x1ea0, asm.ABS),                            # parties_used after Step 1
-            asm.LDA(0x14, asm.DIR),
-            asm.STA(0x1ea6, asm.ABS),                            # original active party
-            asm.LDA(0x10, asm.DIR),
-            asm.STA(0x1ea7, asm.ABS),                            # has_party2
-            # Count chars at parked slots 4, 5, 6
-            asm.STZ(0x1ea3, asm.ABS),
-            asm.STZ(0x1ea4, asm.ABS),
-            asm.STZ(0x1ea5, asm.ABS),
-            asm.LDX(0x0000, asm.IMM16),
-            asm.LDY(0x00, asm.DIR),
-            "DIAG_LOOP",
-            asm.LDA(character_party_start, asm.ABS_Y),
-            asm.AND(0x07, asm.IMM8),
-            asm.CMP(0x04, asm.IMM8),
-            asm.BNE("DIAG_NOT4"),
-            asm.INC(0x1ea3, asm.ABS),
-            "DIAG_NOT4",
-            asm.CMP(0x05, asm.IMM8),
-            asm.BNE("DIAG_NOT5"),
-            asm.INC(0x1ea4, asm.ABS),
-            "DIAG_NOT5",
-            asm.CMP(0x06, asm.IMM8),
-            asm.BNE("DIAG_NOT6"),
-            asm.INC(0x1ea5, asm.ABS),
-            "DIAG_NOT6",
-            asm.INX(),
-            asm.REP(0x21),
-            asm.TYA(),
-            asm.ADC(char_byte_len, asm.IMM16),
-            asm.TAY(),
-            asm.TDC(),
-            asm.SEP(0x20),
-            asm.CPX(CHARACTER_COUNT, asm.IMM16),
-            asm.BNE("DIAG_LOOP"),
-            # === END DIAGNOSTIC ===
-
             # === Step 2: Restore parked parties 4→1, 5→2, 6→3 ===
             asm.LDX(0x0000, asm.IMM16),
             asm.LDY(0x00, asm.DIR),
@@ -1327,10 +1293,6 @@ class FinalizeBranchRecruit(_Instruction):
             asm.SEP(0x20),
             asm.CPX(CHARACTER_COUNT, asm.IMM16),
             asm.BNE("RESTORE_LOOP"),
-
-            # DIAGNOSTIC: parties_used after Step 2
-            asm.LDA(0x11, asm.DIR),
-            asm.STA(0x1ea1, asm.ABS),
 
             # === Step 3: If has_party2, find unused slot and move party 7 there ===
             asm.LDA(0x10, asm.DIR),                          # has_party2?
@@ -1417,9 +1379,6 @@ class FinalizeBranchRecruit(_Instruction):
             asm.STZ(event_word.address(event_word.SCRATCH), asm.ABS),
 
             "STEP4_AFTER_SCRATCH",
-            # DIAGNOSTIC: parties_used after Step 3 (or after Step 2 if no party2)
-            asm.LDA(0x11, asm.DIR),
-            asm.STA(0x1ea2, asm.ABS),
             # For each party 1-3: if not in parties_used, clear its AWAY bit
             asm.LDA(0x11, asm.DIR),                          # parties_used
             asm.AND(0x02, asm.IMM8),                         # P1 used?
