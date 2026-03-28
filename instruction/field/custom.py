@@ -814,9 +814,18 @@ class SetupBranchRecruit(_Instruction):
         party_away_byte = event_bit.address(event_bit.PARTY_1_AWAY)  # 0x1e9c
 
         # Define helper functions
-        # Inner body: classify one character and park or set available.
-        # Called with X = char index, Y = field RAM offset.
-        park_one_char_src = [
+        park_parties_src = [
+            # For each character:
+            #   - If in active party: move to P1, mark available
+            #   - If in P1: park at P4
+            #   - If in P2: park at P5
+            #   - If in P3: park at P6
+            # (Active party members get moved to P1 before parking check,
+            #  so if active=P1, they become P1 via SET_AVAIL_PARTY, not parked.)
+            asm.LDX(0x0000, asm.IMM16),
+            asm.LDY(0x00, asm.DIR),  # Y = field RAM offset
+
+            "LOOP",
             asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0x07, asm.IMM8),  # isolate party bits
             asm.CMP(current_party, asm.ABS),  # in active party?
@@ -834,7 +843,7 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x04, asm.IMM8),
             asm.STA(save_ram_party_start, asm.ABS_X),
-            asm.RTS(),
+            asm.BRA("NEXT"),
 
             "CHECK_P2",
             asm.CMP(0x02, asm.IMM8),
@@ -848,11 +857,11 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x05, asm.IMM8),
             asm.STA(save_ram_party_start, asm.ABS_X),
-            asm.RTS(),
+            asm.BRA("NEXT"),
 
             "CHECK_P3",
             asm.CMP(0x03, asm.IMM8),
-            asm.BNE("DONE"),  # party 0 or other → skip
+            asm.BNE("NEXT"),  # party 0 or other → skip
             asm.LDA(character_party_start, asm.ABS_Y),
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x06, asm.IMM8),  # P3 → P6
@@ -862,7 +871,7 @@ class SetupBranchRecruit(_Instruction):
             asm.AND(0xf8, asm.IMM8),
             asm.ORA(0x06, asm.IMM8),
             asm.STA(save_ram_party_start, asm.ABS_X),
-            asm.RTS(),
+            asm.BRA("NEXT"),
 
             "SET_AVAIL_PARTY",
             # Move active party member to Party 1
@@ -889,26 +898,7 @@ class SetupBranchRecruit(_Instruction):
             asm.PLX(),
             asm.PLY(),
 
-            "DONE",
-            asm.RTS(),
-        ]
-        space = Write(Bank.C0, park_one_char_src, "Park One Character helper function")
-        _park_one_char = space.start_address
-
-        park_parties_src = [
-            # For each character:
-            #   - If in active party: move to P1, mark available
-            #   - If in P1: park at P4
-            #   - If in P2: park at P5
-            #   - If in P3: park at P6
-            # (Active party members get moved to P1 before parking check,
-            #  so if active=P1, they become P1 via SET_AVAIL_PARTY, not parked.)
-            asm.LDX(0x0000, asm.IMM16),
-            asm.LDY(0x00, asm.DIR),  # Y = field RAM offset
-
-            "LOOP",
-            asm.JSR(_park_one_char, asm.ABS),
-
+            "NEXT",
             asm.INX(),
             asm.REP(0x21),  # A → 16-bit, carry clear
             asm.TYA(),
