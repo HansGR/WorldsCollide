@@ -610,9 +610,10 @@ class Maps():
             exits_to_patch = list(set(list(used_exits) + patch_exits)) + \
                              [e for e in event_door_connection_data.keys()]
             force_explicit = False
-            if self.args.ruination_mode and 978 not in exits_to_patch:
-                exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode. It's the only world-map door.
-                force_explicit = True
+            if self.args.ruination_mode:
+                if 978 not in exits_to_patch:
+                    exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode.
+                force_explicit = True  # Always force explicit in ruination mode, even if 978 is already in exits_to_patch
             # print(exits_to_patch)
             self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=force_explicit)
             for e in self.exits.exit_original_data.keys():
@@ -1377,10 +1378,9 @@ class Maps():
         else:
             # This is a logical exit without tweaks.  Can use vanilla connection info.
             conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
-        if d in map_shuffle_force_explicit:
-            # Update conn_data to not return to parent map
-            if conn_data[0] in [0x1ff, 0x1fe]:
-                conn_data[0] = self.exits.exit_original_data[d_ref][-1]
+        # Update conn_data to not return to parent map (resolve 0x1FF to actual destination)
+        if conn_data[0] in [0x1ff, 0x1fe]:
+            conn_data[0] = self.exits.exit_original_data[d_ref][-1]
 
         if require_event_flags[4]:
             wor_src = SummonAirship(that_world, conn_data[1], conn_data[2])
