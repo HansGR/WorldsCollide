@@ -298,6 +298,20 @@ class NarsheWOB(Event):
             field.Call(pos_center_addr),
             field.FadeInScreen(),
             field.WaitForFade(),
+            # Update THREE_PARTIES_CREATED: set only if 2 parties are already away (2 away + 1 new = 3 total)
+            field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "NO_P1_1P"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "THREE_TOTAL_1P"),
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "THREE_TOTAL_1P"),
+            field.Branch("NOT_THREE_1P"),
+            "NO_P1_1P",
+            field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "NOT_THREE_1P"),
+            field.BranchIfEventBitClear(event_bit.PARTY_3_AWAY, "NOT_THREE_1P"),
+            "THREE_TOTAL_1P",
+            field.SetEventBit(event_bit.THREE_PARTIES_CREATED),
+            field.Branch("1P_3PC_DONE"),
+            "NOT_THREE_1P",
+            field.ClearEventBit(event_bit.THREE_PARTIES_CREATED),
+            "1P_3PC_DONE",
             # Skip clear y-party switching if parties are away
             field.BranchIfAny([event_bit.PARTY_1_AWAY, True, event_bit.PARTY_2_AWAY, True, event_bit.PARTY_3_AWAY, True], "FREE_AND_RETURN"),
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
@@ -343,6 +357,13 @@ class NarsheWOB(Event):
             "2P_FINISH",
             field.FadeInScreen(),
             field.WaitForFade(),
+            # Update THREE_PARTIES_CREATED: set if any party was already away (1 away + 2 new = 3 total)
+            field.BranchIfAny([event_bit.PARTY_1_AWAY, True, event_bit.PARTY_2_AWAY, True, event_bit.PARTY_3_AWAY, True], "THREE_TOTAL_2P"),
+            field.ClearEventBit(event_bit.THREE_PARTIES_CREATED),
+            field.Branch("2P_3PC_DONE"),
+            "THREE_TOTAL_2P",
+            field.SetEventBit(event_bit.THREE_PARTIES_CREATED),
+            "2P_3PC_DONE",
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.FreeMovement(),
             field.Return(),
@@ -363,6 +384,7 @@ class NarsheWOB(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.SetEventBit(event_bit.THREE_PARTIES_CREATED),  # 3 parties formed, always 0 away at this branch
             field.FreeMovement(),
             field.Return(),
         ]

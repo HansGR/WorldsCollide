@@ -385,6 +385,8 @@ class EsperMountain(Event):
         warp_to_KT_text = 0x0667  # Still using ones from sealed gate
         self.dialogs.set_text(warp_to_KT_text, "This will take us to Kefka's Tower. There's no coming back.<line><choice> Let's go<line><choice> Not just yet<end>")
         not_allowed_dialog = 1293  # same as airship
+        need_three_parties_text = 1294  # ruination: another terminus used but < 3 parties formed
+        self.dialogs.set_text(need_three_parties_text, "Another group has already gone to Kefka's Tower. Three parties must be formed before sending another.<end>")
 
         from event.switchyard import GoToSwitchyard
         src = [
@@ -393,11 +395,20 @@ class EsperMountain(Event):
             field.ReturnIfEventBitSet(0x1B5),  # cleared on each step
             field.PlaySoundEffect(0xd1),    # shing!
             field.FlashScreen(field.Flash.RED),
-            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "ALLOW_WARP"),
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "HAVE_SWITCH"),
             field.Dialog(not_allowed_dialog),
             "RETURN",
             field.SetEventBit(0x1B5),
             field.Return(),
+            # Check if three parties are formed when another terminus is already in use
+            "HAVE_SWITCH",
+            field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "ALLOW_WARP"),
+            field.BranchIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED, "NEED_THREE"),
+            field.BranchIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED, "NEED_THREE"),
+            field.Branch("ALLOW_WARP"),
+            "NEED_THREE",
+            field.Dialog(need_three_parties_text),
+            field.Branch("RETURN"),
             "ALLOW_WARP",
             field.DialogBranch(warp_to_KT_text, "DO_WARP", "RETURN"),
             "DO_WARP",

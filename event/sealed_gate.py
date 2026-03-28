@@ -409,6 +409,8 @@ class SealedGate(Event):
         dialog_entry_id = 0x0666
         self.dialogs.set_text(dialog_entry_id, "Enter Kefka's Tower? There's no going back.<line><choice> Let's go<line><choice> Not just yet<end>")
         no_return_text = 1293   # same as airship.py
+        need_three_parties_text = 1294  # ruination: another terminus used but < 3 parties formed
+        self.dialogs.set_text(need_three_parties_text, "Another group has already gone to Kefka's Tower. Three parties must be formed before sending another.<end>")
 
         src = [
             # Check if terminus already used - if so, return immediately
@@ -418,7 +420,7 @@ class SealedGate(Event):
             field.EntityAct(field_entity.CAMERA, True,
                             field_entity.SetSpeed(field_entity.Speed.SLOW),
                             field_entity.Move(direction.UP, 2)),
-            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "ALLOW_ENTRY"),
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "HAVE_SWITCH"),
             field.Dialog(no_return_text),
             "DO_NOT_ENTER",
             field.EntityAct(field_entity.CAMERA, True,
@@ -428,6 +430,15 @@ class SealedGate(Event):
                             field_entity.SetSpeed(field_entity.Speed.SLOW),
                             field_entity.Move(direction.DOWN, 2)),
             field.Return(),
+            # Check if three parties are formed when another terminus is already in use
+            "HAVE_SWITCH",
+            field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "ALLOW_ENTRY"),
+            field.BranchIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED, "NEED_THREE"),
+            field.BranchIfEventBitSet(event_bit.ESPER_MTN_TERMINUS_USED, "NEED_THREE"),
+            field.Branch("ALLOW_ENTRY"),
+            "NEED_THREE",
+            field.Dialog(need_three_parties_text),
+            field.Branch("DO_NOT_ENTER"),
             "ALLOW_ENTRY",
             field.DialogBranch(dialog_entry_id, dest1="ENTER_KT", dest2="DO_NOT_ENTER"),
             "ENTER_KT",
