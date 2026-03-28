@@ -1133,6 +1133,10 @@ class FinalizeBranchRecruit(_Instruction):
         current_party = 0x1a6d
 
         src = [
+            # === DIAGNOSTIC: save $1E9C at entry ===
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.STA(0x1ea8, asm.ABS),                            # $1EA8 = party_away_byte at entry
+
             # === Step 0: Load SCRATCH, extract flags ===
             asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
             asm.AND(0x07, asm.IMM8),                         # isolate original party index
