@@ -1067,6 +1067,13 @@ class SetupBranchRecruit(_Instruction):
             asm.STA(event_word.address(event_word.SCRATCH), asm.ABS),
             "NO_P2_FLAG",
 
+            # Save party_away_byte before setting current_party = 1.
+            # Vanilla SelectParties clears bit current_party of $1E9C,
+            # which would destroy PARTY_N_AWAY for whichever party index
+            # we temporarily use. We restore it in FinalizeBranchRecruit.
+            asm.LDA(party_away_byte, asm.ABS),
+            asm.STA(event_word.address(event_word.SCRATCH) + 1, asm.ABS),  # SCRATCH high byte ($1FFB)
+
             asm.LDA(0x01, asm.IMM8),
             asm.STA(current_party, asm.ABS),                 # set active party to 1
 
@@ -1090,9 +1097,12 @@ class FinalizeBranchRecruit(_Instruction):
     """Finalizes party selection after SetupBranchRecruit in ruination mode.
 
     Reads SCRATCH to determine the original active party and flags.
-    SCRATCH layout: 0000hppp
-      bits 0-2 (ppp): original active party index (1-3)
-      bit 3 (h): has_party2 flag (Party 2 was populated by Setup)
+    SCRATCH layout:
+      Low byte ($1FFA): 0000hppp
+        bits 0-2 (ppp): original active party index (1-3)
+        bit 3 (h): has_party2 flag (Party 2 was populated by Setup)
+      High byte ($1FFB): saved party_away_byte ($1E9C) from before
+        SelectParties ran (vanilla clears bit current_party of $1E9C)
 
     Steps:
     0. Load SCRATCH. Extract party index and has_party2 flag.
@@ -1133,6 +1143,13 @@ class FinalizeBranchRecruit(_Instruction):
         current_party = 0x1a6d
 
         src = [
+            # Restore party_away_byte saved by SetupBranchRecruit.
+            # Vanilla SelectParties clears bit current_party of $1E9C,
+            # which destroys PARTY_N_AWAY for the temporary current_party
+            # that SetupBranchRecruit set.
+            asm.LDA(event_word.address(event_word.SCRATCH) + 1, asm.ABS),  # SCRATCH high byte ($1FFB)
+            asm.STA(party_away_byte, asm.ABS),
+            
             # === Step 0: Load SCRATCH, extract flags ===
             asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
             asm.AND(0x07, asm.IMM8),                         # isolate original party index
