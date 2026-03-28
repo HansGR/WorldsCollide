@@ -610,9 +610,10 @@ class Maps():
             exits_to_patch = list(set(list(used_exits) + patch_exits)) + \
                              [e for e in event_door_connection_data.keys()]
             force_explicit = False
-            if self.args.ruination_mode and 978 not in exits_to_patch:
-                exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode. It's the only world-map door.
-                force_explicit = True
+            if self.args.ruination_mode:
+                if 978 not in exits_to_patch:
+                    exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode.
+                force_explicit = True  # Always force explicit in ruination mode, even if 978 is already in exits_to_patch
             # print(exits_to_patch)
             self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=force_explicit)
             for e in self.exits.exit_original_data.keys():
