@@ -237,6 +237,7 @@ AIRSHIP_TERMINUS_USED = 0x14B  # Ruination: set after using Falcon terminus to K
 ESPER_MTN_TERMINUS_USED = 0x14C  # Ruination: set after using Esper Mountain terminus to KT
 VELDT_WORLD_MUSIC = 0x1bb
 VELDT_REWARD_OBTAINED = 0x1bc # custom
+GAU_LEAPT = 0x1bd # custom, tracks whether the leap_char has leapt on the Veldt
 DISABLE_SPRINT = 0x1c1
 DISABLE_MENU_ACCESS = 0x1c2
 TEMP_SONG_OVERRIDE = 0x1cc
