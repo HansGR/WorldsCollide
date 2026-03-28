@@ -654,6 +654,9 @@ require_event_bit = {
     # Phoenix Cave return to Falcon, unset warp bit
     1554: {event_bit.PHOENIX_CAVE_WARP_OPTION: False},
 
+    # Exit from Cave on the Veldt, require Veldt music
+    61: {event_bit.VELDT_WORLD_MUSIC: True},
+
 }
 
 room_require_event_bit = {
