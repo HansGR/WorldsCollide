@@ -260,8 +260,9 @@ def preprocess_ruin_flag(argv=None):
         return argv
 
     # Collect flags to disable via -no and remove -no from argv FIRST
+    # Handle multiple -no groups: e.g. "-no flag1 -no flag2" or "-no flag1 flag2"
     flags_to_disable = set()
-    if '-no' in argv:
+    while '-no' in argv:
         no_index = argv.index('-no')
         argv.pop(no_index)  # Remove -no itself first
         # Collect and remove all following non-flag arguments
