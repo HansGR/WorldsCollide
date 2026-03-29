@@ -412,9 +412,8 @@ class PhoenixCave(Event):
 
         Flow:
         1. Check conditions: THREE_PARTIES_CREATED is clear AND current party has >= 2 characters
-        2. SetupBranchRecruit restricts available to current party only (no recruit)
-        3. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots(2)
-        4. If not: FinalizeBranchRecruit to undo, then free movement
+        2. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots(2)
+        3. If not: free movement
         """
         return [
             # Condition 1: three parties not already created
@@ -423,26 +422,17 @@ class PhoenixCave(Event):
             # Condition 2: current party has >= 2 characters
             field.BranchIfPartySize(1, "NO_SPLIT"),
 
-            # Setup: restrict available to current party.
-            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
-
             # Both conditions met — ask the player
-            field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT_UNDO"),
+            field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT"),
 
-            # Conditions not met: no setup to undo, just proceed with 1 party
+            # Conditions not met or player declined
             "NO_SPLIT",
-            field.FreeMovement(),
-            field.Return(),
-
-            # Player declined or conditions not met after setup: undo Setup and proceed with 1 party
-            "NO_SPLIT_UNDO",
-            field.FinalizeBranchRecruit(),
             field.FreeMovement(),
             field.Return(),
 
             # Player chose to split
             "SPLIT_PARTY",
-            #field.Call(0xacbaf),  # Recover party HP/MP before party select
+            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             field.FinalizeBranchRecruit(),
 
