@@ -87,7 +87,7 @@ class DarylTomb(Event):
             # Create a door at Daryl's Tomb quick exit going to staircase.  Don't reset turtles.
             door_exit_id = 1563
             src = [
-                field.FadeLoadMap(0x12d, x=27, y=7, direction=direction.LEFT, fade_in=True, entrance_event=True, default_music=True),
+                field.FadeLoadMap(0x12d, x=25, y=9, direction=direction.LEFT, fade_in=True, entrance_event=True, default_music=True),
                 field.Return()
             ]
 
