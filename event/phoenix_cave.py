@@ -411,25 +411,30 @@ class PhoenixCave(Event):
         Appended after the common landing animation code.
 
         Flow:
-        1. SetupBranchRecruit restricts available to current party only (no recruit)
-        2. Check conditions: THREE_PARTIES_CREATED is clear AND current party has >= 2 characters
+        1. Check conditions: THREE_PARTIES_CREATED is clear AND current party has >= 2 characters
+        2. SetupBranchRecruit restricts available to current party only (no recruit)
         3. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots(2)
         4. If not: FinalizeBranchRecruit to undo, then free movement
         """
         return [
-            # Setup: restrict available to current party.
-            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
-
             # Condition 1: three parties not already created
-            field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "NO_SPLIT_UNDO"),
+            field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "NO_SPLIT"),
 
             # Condition 2: current party has >= 2 characters
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "NO_SPLIT_UNDO"),
+            field.BranchIfPartySize(1, "NO_SPLIT"),
+
+            # Setup: restrict available to current party.
+            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
 
             # Both conditions met — ask the player
             field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT_UNDO"),
 
-            # Player declined or conditions not met: undo Setup and proceed with 1 party
+            # Conditions not met: no setup to undo, just proceed with 1 party
+            "NO_SPLIT",
+            field.FreeMovement(),
+            field.Return(),
+
+            # Player declined or conditions not met after setup: undo Setup and proceed with 1 party
             "NO_SPLIT_UNDO",
             field.FinalizeBranchRecruit(),
             field.FreeMovement(),
