@@ -506,6 +506,7 @@ class Maps():
                 0x139, 0x13A, 0x13B, 0x13C, 0x13E,                                  # Phoenix Cave
                 0x167, 0x168, 0x169, 0x16A, 0x16B, 0x16C, 0x16D, 0x16E, 0x16F,  # Fanatics Tower
                 0x170, 0x171, 0x172,                                              # Fanatics Tower (cont.)
+                0x033,                                                              # Narshe Moogle Defense
             ])
             for map_index in range(len(self.maps)):
                 if map_index in no_warp_maps:
