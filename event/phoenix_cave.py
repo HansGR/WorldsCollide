@@ -411,44 +411,28 @@ class PhoenixCave(Event):
         Appended after the common landing animation code.
 
         Flow:
-        1. RestoreActivePartyAvailable clears AWAY bit explicitly
-        2. SetupBranchRecruit(0x0F) restricts available to current party only (no recruit)
-        3. Check conditions: CHARACTERS_AVAILABLE >= 2 AND at most 1 party away
-        4. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots(2)
-        5. If not: FinalizeBranchRecruit to undo, then free movement
+        1. Check conditions: THREE_PARTIES_CREATED is clear AND current party has >= 2 characters
+        2. If conditions met: ask player, split into 2 parties with RemapPartiesToFreeSlots(2)
+        3. If not: free movement
         """
         return [
-            # Setup: clear current party's AWAY bit, then restrict available to current party.
-            #field.RestoreActivePartyAvailable(),
-            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
+            # Condition 1: three parties not already created
+            field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "NO_SPLIT"),
 
-            # Condition 1: current party has >= 2 characters
-            # (CHARACTERS_AVAILABLE now reflects only the current party after Setup)
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "NO_SPLIT_UNDO"),
-
-            # Condition 2: at most 1 party away (need 2 free slots for the split).
-            # RestoreActivePartyAvailable already cleared the current party's AWAY bit,
-            # so these checks are purely about OTHER away parties.
-            field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "P1_OK"),
-            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "NO_SPLIT_UNDO"),
-            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "NO_SPLIT_UNDO"),
-            "P1_OK",
-            field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "P2_OK"),
-            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "NO_SPLIT_UNDO"),
-            "P2_OK",
+            # Condition 2: current party has >= 2 characters
+            field.BranchIfPartySize(1, "NO_SPLIT"),
 
             # Both conditions met — ask the player
-            field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT_UNDO"),
+            field.DialogBranch(self.split_party_dialog, "SPLIT_PARTY", "NO_SPLIT"),
 
-            # Player declined or conditions not met: undo Setup and proceed with 1 party
-            "NO_SPLIT_UNDO",
-            field.FinalizeBranchRecruit(),
+            # Conditions not met or player declined
+            "NO_SPLIT",
             field.FreeMovement(),
             field.Return(),
 
             # Player chose to split
             "SPLIT_PARTY",
-            #field.Call(0xacbaf),  # Recover party HP/MP before party select
+            field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             field.FinalizeBranchRecruit(),
 
