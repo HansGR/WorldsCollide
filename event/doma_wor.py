@@ -84,7 +84,8 @@ class DomaWOR(Event):
             space.write(
                 field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOR, NORMAL_SLEEP_ADDR),
             )
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
+            # we don't want to gate going to sleep in ruination mode, it's not in the mapping logic.
             space.write(
                 field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), NORMAL_SLEEP_ADDR),
             )
