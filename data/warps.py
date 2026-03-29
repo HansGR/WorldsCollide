@@ -172,6 +172,26 @@ WARP_POINTS = {
     'KT_Poltrgeist':    [0x0d9, 28, 46, "Kefka's Tower center"],
 	'KT_Goddess':       [0x0d9, 30, 48, "Kefka's Tower right"],
 }
+
+# World each warp point destination is in (0 = WoB, 1 = WoR)
+WARP_POINT_WORLD = {
+    'Snowfield_WOR':    1,
+    'SF_prison_cell':   0,
+    'Mt_Kolts':         0,
+    'Returners':        0,
+    'Train_caboose':    0,
+    'Owzer_basement':   1,
+    'MTek_pit':         0,
+    'Zoneeater':        1,
+    'Daryl_tomb':       1,
+    'Dream_stairs':     1,
+    'Veldt_cave':       1,
+    'EsperMtn':         0,
+    'AncientCastle':    1,
+    'KT_Doom':          1,
+    'KT_Poltrgeist':    1,
+    'KT_Goddess':       1,
+}
 WARP_WORLD_MAPS = set([wp[0] for wp in WARP_POINTS.values()])
 
 class WarpPoints:
@@ -276,6 +296,7 @@ class WarpPoints:
             field.DialogBranch(self.warp_to_esper_world_dialog, "DO_WARP", "RETURN"),
             "DO_WARP",
             field.Call(self.warp_out_animation_addr),
+            field.ClearEventBit(event_bit.IN_WOR),  # Esper World is WoB
             field.FadeLoadMap(map_id=destination[0], x=destination[1], y=destination[2], direction=direction.DOWN,
                               default_music=True, entrance_event=True, fade_in=False),
             field.Call(self.warp_in_animation_addr),
@@ -293,6 +314,11 @@ class WarpPoints:
         return src
 
     def _warp_point_pair_code(self, warp_point):
+        dest_world = WARP_POINT_WORLD.get(warp_point.name, 0)
+        if dest_world == 1:
+            world_bit_cmd = field.SetEventBit(event_bit.IN_WOR)
+        else:
+            world_bit_cmd = field.ClearEventBit(event_bit.IN_WOR)
         src = [
             field.ReturnIfEventBitClear(warp_point.npc_bit),
             field.ReturnIfEventBitClear(event_bit.PRESSING_A),
@@ -301,6 +327,7 @@ class WarpPoints:
             field.DialogBranch(warp_point.warp_to_point_dialog_id, "DO_WARP", "RETURN"),
             "DO_WARP",
             field.Call(self.warp_out_animation_addr),
+            world_bit_cmd,
             field.FadeLoadMap(map_id=warp_point.map_id, x=warp_point.x, y=warp_point.y, direction=direction.DOWN,
                               default_music=True, entrance_event=True, fade_in=False),
             field.Call(self.warp_in_animation_addr),
