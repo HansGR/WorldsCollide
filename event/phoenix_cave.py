@@ -434,12 +434,8 @@ class PhoenixCave(Event):
             "SPLIT_PARTY",
             field.SetupBranchRecruit(0x2f),  # Setup for 2 parties
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
-            field.FinalizeBranchRecruit(),
 
-            # Determine which 2 slots are occupied.
-            # Active party can be placed at position 1; Party named in event_word.SCRATCH can go in position 2.
-            # NOTE: This approach does not work if a party is formed but remains in the School!  Need another approach.
-            # We could claim more event_bits:  PARTY_N_FORMED, e.g. This might simplify other tasks too.
+            # Place the two parties on the map. (Parties should always be Party1 and Party2 after SetupBranchRecruit.)
             field.HoldScreen(),
 
             field.RefreshEntities(),
@@ -450,25 +446,9 @@ class PhoenixCave(Event):
             field.ShowEntity(field_entity.PARTY0),
             field.UpdatePartyLeader(),
 
-            field.BranchIfEventWordEqual(event_word.SCRATCH, 0x01, "SLOT_1"),
-            field.BranchIfEventWordEqual(event_word.SCRATCH, 0x02, "SLOT_2"),
-            field.BranchIfEventWordEqual(event_word.SCRATCH, 0x03, "SLOT_3"),
-            field.Branch("SPLIT_FINISH"),
-
-            "SLOT_1",
-            field.SetPartyMap(1, pc_map_id),
-            field.SetParty(1),
-            field.Branch("SPLIT_PLACEMENT"),
-
-            "SLOT_2",
             field.SetPartyMap(2, pc_map_id),
             field.SetParty(2),
-            field.Branch("SPLIT_PLACEMENT"),
 
-            "SLOT_3",
-            field.SetPartyMap(3, pc_map_id),
-            field.SetParty(3),
-            "SPLIT_PLACEMENT",
             field.RefreshEntities(),
             field.UpdatePartyLeader(),
             field.EntityAct(field_entity.PARTY0, True,
@@ -477,7 +457,10 @@ class PhoenixCave(Event):
             field.ShowEntity(field_entity.PARTY0),
             field.UpdatePartyLeader(),
 
-            "SPLIT_FINISH",
+            # Finalize the party split
+            field.FinalizeBranchRecruit(),
+
+            # Complete animation
             field.FadeInScreen(),
             field.WaitForFade(),
             field.FreeScreen(),
