@@ -3468,7 +3468,7 @@ class ruination_map():
             for trap_id in exits_traps:
                 # Find any room with an available pit
                 target_rooms = [r_id for r_id in maze_net.net.nodes
-                                if r_id != maze_net.active and r_id != start_room_id]
+                                if r_id != maze_net.active]
                 random.shuffle(target_rooms)
                 for target_id in target_rooms:
                     target = maze_net.rooms.get_room(target_id)
@@ -3487,7 +3487,7 @@ class ruination_map():
             random.shuffle(exits_doors)
             for door_id in exits_doors:
                 target_rooms = [r_id for r_id in maze_net.net.nodes
-                                if r_id != maze_net.active and r_id != start_room_id]
+                                if r_id != maze_net.active]
                 random.shuffle(target_rooms)
                 for target_id in target_rooms:
                     target = maze_net.rooms.get_room(target_id)
@@ -3503,7 +3503,7 @@ class ruination_map():
             if not connected:
                 # Try connecting from any room that still has exits
                 any_connected = False
-                all_rooms = [r_id for r_id in maze_net.net.nodes if r_id != start_room_id]
+                all_rooms = list(maze_net.net.nodes)
                 random.shuffle(all_rooms)
                 for room_id in all_rooms:
                     room = maze_net.rooms.get_room(room_id)
