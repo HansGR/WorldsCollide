@@ -6286,7 +6286,7 @@ def modify_free_bed_heals(maps, dialogs, args):
         BranchChance(0.625, "HEAL"),
 
         # Monster attack! (back attack)
-        field.Dialog(ambushed_dialog_id),
+        #field.Dialog(ambushed_dialog_id),   # Turn off dialog, not really needed.
         *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
 
         "HEAL",
