@@ -153,24 +153,24 @@ AVAILABLE_NPC_BITS = [     # list of available NPC bits for warp points
 NPC_OFF_BIT = 0x306      # An npc_bit that is always off in WC
 WARP_DIALOG_IDS = [i for i in range(1426, 1426+2*len(AVAILABLE_NPC_BITS)+1)]  # how many do we need? 2x # warp points...  # range(1426, 1491)
 WARP_POINTS = {
-    # "name":  [map_id, x, y, "Location name"] for warp location in Esper World
-    #"Narshe_school":  [0x0d9, 35, 22, "Narshe classroom"],  # list of save points to convert to warp points
-    'Snowfield_WOR':    [0x0d9, 35, 22, "Narshe snowfield"],
-    'SF_prison_cell':   [0x0db, 7, 9, "South Figaro"],
-    'Mt_Kolts':         [0x0d9, 38, 40, "Mount Kolts"],
-    'Returners':        [0x0d9, 50, 42, "Returners Hideout"],
-    'Train_caboose':    [0x0db, 39, 52, "Phantom Train"],
-    'Owzer_basement':   [0x0d9, 28, 29, "Owzer's Mansion"],
-    'MTek_pit':         [0x0db, 19, 29, "Magitek Factory"],
-    'Zoneeater':        [0x0d9, 20, 30, "Zone Eater"],
-    'Daryl_tomb':       [0x0d9, 24, 35, "Daryl's Tomb"],
-    'Dream_stairs':     [0x0db, 47, 40, "Cyan's Dream"],
-    'Veldt_cave':       [0x0d9, 40, 37, "Cave on the Veldt"],
-    'EsperMtn':         [0x0db, 13, 50, "Esper Mountain"],
-    'AncientCastle':    [0x0db, 33, 10, "Ancient Castle"],
-    'KT_Doom':          [0x0d9, 26, 48, "Kefka's Tower left"],
-    'KT_Poltrgeist':    [0x0d9, 28, 46, "Kefka's Tower center"],
-	'KT_Goddess':       [0x0d9, 30, 48, "Kefka's Tower right"],
+    # "name":  [map_id, x, y, "Location name", world] for warp location in Esper World
+    #           world: 0 = WoB, 1 = WoR
+    'Snowfield_WOR':    [0x0d9, 35, 22, "Narshe snowfield", 1],
+    'SF_prison_cell':   [0x0db, 7, 9, "South Figaro", 0],
+    'Mt_Kolts':         [0x0d9, 38, 40, "Mount Kolts", 0],
+    'Returners':        [0x0d9, 50, 42, "Returners Hideout", 0],
+    'Train_caboose':    [0x0db, 39, 52, "Phantom Train", 0],
+    'Owzer_basement':   [0x0d9, 28, 29, "Owzer's Mansion", 1],
+    'MTek_pit':         [0x0db, 19, 29, "Magitek Factory", 0],
+    'Zoneeater':        [0x0d9, 20, 30, "Zone Eater", 1],
+    'Daryl_tomb':       [0x0d9, 24, 35, "Daryl's Tomb", 1],
+    'Dream_stairs':     [0x0db, 47, 40, "Cyan's Dream", 1],
+    'Veldt_cave':       [0x0d9, 40, 37, "Cave on the Veldt", 1],
+    'EsperMtn':         [0x0db, 13, 50, "Esper Mountain", 0],
+    'AncientCastle':    [0x0db, 33, 10, "Ancient Castle", 1],
+    'KT_Doom':          [0x0d9, 26, 48, "Kefka's Tower left", 1],
+    'KT_Poltrgeist':    [0x0d9, 28, 46, "Kefka's Tower center", 1],
+    'KT_Goddess':       [0x0d9, 30, 48, "Kefka's Tower right", 1],
 }
 WARP_WORLD_MAPS = set([wp[0] for wp in WARP_POINTS.values()])
 
@@ -276,6 +276,7 @@ class WarpPoints:
             field.DialogBranch(self.warp_to_esper_world_dialog, "DO_WARP", "RETURN"),
             "DO_WARP",
             field.Call(self.warp_out_animation_addr),
+            field.ClearEventBit(event_bit.IN_WOR),  # Esper World is WoB
             field.FadeLoadMap(map_id=destination[0], x=destination[1], y=destination[2], direction=direction.DOWN,
                               default_music=True, entrance_event=True, fade_in=False),
             field.Call(self.warp_in_animation_addr),
@@ -293,6 +294,11 @@ class WarpPoints:
         return src
 
     def _warp_point_pair_code(self, warp_point):
+        dest_world = WARP_POINTS[warp_point.name][4]
+        if dest_world == 1:
+            world_bit_cmd = field.SetEventBit(event_bit.IN_WOR)
+        else:
+            world_bit_cmd = field.ClearEventBit(event_bit.IN_WOR)
         src = [
             field.ReturnIfEventBitClear(warp_point.npc_bit),
             field.ReturnIfEventBitClear(event_bit.PRESSING_A),
@@ -301,6 +307,7 @@ class WarpPoints:
             field.DialogBranch(warp_point.warp_to_point_dialog_id, "DO_WARP", "RETURN"),
             "DO_WARP",
             field.Call(self.warp_out_animation_addr),
+            world_bit_cmd,
             field.FadeLoadMap(map_id=warp_point.map_id, x=warp_point.x, y=warp_point.y, direction=direction.DOWN,
                               default_music=True, entrance_event=True, fade_in=False),
             field.Call(self.warp_in_animation_addr),
