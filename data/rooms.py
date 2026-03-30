@@ -844,8 +844,8 @@ room_data = {
     428 : [ [855], [854], [6848, 6853], 1], # Doma Dream 3 Stooges Maze South Section
     429 : [ [856], [], [], [], {('cd1', 'cd2'): [2070]}, 1], # Doma Dream 3 Stooges Room
 
-    # Composite room for isolated Dream Maze (-rdm iso): one pit entrance from 421, locked trap exit from 429
-    'ruin-stooge-maze' : [ [], [], [6845], [], {('cd1', 'cd2'): [2070]}, 1], # Dream Maze (isolated)
+    # Composite room for isolated Dream Maze (-maze iso): one pit entrance from 421, unlocked trap exit from 429
+    'ruin-stooge-maze' : [ [], [2070], [6845], 1], # Dream Maze (isolated)
 
     # CYAN DREAM TRAIN: 0x08f exterior; 0x090 car 2; 0x141 car 3; 0x142 car 1
     208 : [ [477, 483], [2071], [ ], 1],  # Doma Dream Train Outside 3rd Section (front)  0x08f

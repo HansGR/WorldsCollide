@@ -3443,16 +3443,11 @@ class ruination_map():
         maze_net = Network(maze_rooms)
         maze_net.protected = set()
 
-        # Initial connection: the composite room's pit entrance (6845) leads into 421.
-        # Room 421 has pits [6845, 6846]. Use 6845 as the entry point.
-        # We need a "start" room to represent the entrance. Create a temporary one
-        # with a single trap that connects to 421's pit.
-        start_room_id = '_maze_entry'
-        room_data[start_room_id] = [[], [2900], [], 1]  # temporary room with one trap (unused ID)
-        maze_net.add_room(start_room_id)
-        maze_net.connect(2900, 6845)  # trap from entry -> pit in room 421
-        # 2900 is a placeholder trap ID; it won't appear in the final map since
-        # the composite room already has pit 6845 as its entrance.
+        # Initial connection: connect 429's locked trap (2070) back to 421's pit (6845).
+        # This closes the loop so the Network becomes fully connected internally.
+        # The branch mapping algorithm will handle where 2070 actually exits to,
+        # so we filter this connection from the result.
+        maze_net.connect(2070, 6845)
 
         # Now run a simple randomization loop: connect exits to entrances
         # until no more connections can be made
@@ -3550,16 +3545,14 @@ class ruination_map():
                 if not any_connected:
                     break  # No more connections possible
 
-        # Filter out the placeholder entry connection from the map
+        # Filter out the initial 2070->6845 connection from the map.
+        # The branch mapper controls where 2070 exits to (via ruin-stooge-maze).
         result_map = [[], []]
         for d1, d2 in maze_net.map[0]:
             result_map[0].append([d1, d2])
         for d1, d2 in maze_net.map[1]:
-            if d1 != 2900:  # Skip placeholder entry trap
+            if not (d1 == 2070 and d2 == 6845):
                 result_map[1].append([d1, d2])
-
-        # Clean up temporary room
-        del room_data[start_room_id]
 
         if self.verbose:
             print(f'Isolated maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
