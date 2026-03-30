@@ -152,6 +152,7 @@ room_data = {
     'dc-73': [[5213, 593], [], [], 1],          # Jidoor WOR + Owzers
     'dc-75': [[1261, 1260], [], [3075], 1],     # Thamasa WOR + Veldt Cave dest.
     'dc-76': [[5240], [2069], [3074], 1],       # Doma WOR
+    'ruin-doma': [[4418], [2069], [3074], 1],    # Doma WOR interior (ruination split: indoor stays WoR)
 
     # Ruination mode
     #'ruin_hub': [ [], [393, 394, 395], [3097, 3098, 3099], 1],  # Narshe school, 3 doors as oneways
@@ -1083,6 +1084,8 @@ forced_connections = {
 
     2180: [3180],   # Narshe Peak (41a) --> Lone Wolf reward room (ruin-lonewolf), logical only.
     2181: [3181],   # Lone Wolf reward room (ruin-lonewolf) --> Narshe Peak (41a), return.
+
+    4418: [744],    # Doma WOR Main Room --> Doma WoB Outside (ruination: splits indoor WoR from outdoor WoB for siege)
 }
 
 # Add forced connections for virtual doors (-dra)

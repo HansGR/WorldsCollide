@@ -256,13 +256,14 @@ class DomaWOB(Event):
 
 
     @staticmethod
-    def entrance_door_patch(args):
+    def entrance_door_patch(args, exit_event_x=33, exit_event_y=53):
         # self-contained code to be called in door rando after entering Doma WoB
         # to be used in event_exit_info.entrance_door_patch()
+        # exit_event_x/y: LOAD_DOMA coords (normal Doma load when siege complete or gated)
+        #   Default (33,53) for door 1240 (world map entrance)
+        #   Use (28,33) for door 744 (inside main door, ruination mode)
         enter_event_x = 33
         enter_event_y = 42
-        exit_event_x = 33
-        exit_event_y = 53
         CYAN = 2
 
         src_field = []
