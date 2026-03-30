@@ -156,7 +156,7 @@ WARP_POINTS = {
     # "name":  [map_id, x, y, "Location name", world] for warp location in Esper World
     #           world: 0 = WoB, 1 = WoR
     'Snowfield_WOR':    [0x0d9, 35, 22, "Narshe snowfield", 1],
-    'SF_prison_cell':   [0x0db, 7, 9, "South Figaro", 0],
+    'SF_prison_cell':   [0x0db, 7, 9, "South Figaro", 1],
     'Mt_Kolts':         [0x0d9, 38, 40, "Mount Kolts", 0],
     'Returners':        [0x0d9, 50, 42, "Returners Hideout", 0],
     'Train_caboose':    [0x0db, 39, 52, "Phantom Train", 0],
