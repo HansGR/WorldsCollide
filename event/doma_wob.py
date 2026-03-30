@@ -266,7 +266,7 @@ class DomaWOB(Event):
         enter_event_y = 42
         CYAN = 2
 
-        src_field = []
+        src_field = [field.ClearEventBit(event_bit.IN_WOR)]
         src_world = []
 
         if args.character_gating:
@@ -280,7 +280,7 @@ class DomaWOB(Event):
         src_field += [field.LoadMap(0x78, direction.UP, default_music=True,
                           x=enter_event_x, y=enter_event_y, fade_in=False), field.Return()]
         src_world += [world.LoadMap(0x78, direction.UP, default_music=True,
-                          x=enter_event_x, y=enter_event_y, fade_in=False), field.Return()]
+                          x=enter_event_x, y=enter_event_y, fade_in=False), field.ClearEventBit(event_bit.IN_WOR), field.Return()]
 
         src_field += [
             "LOAD_DOMA",
@@ -292,6 +292,7 @@ class DomaWOB(Event):
             "LOAD_DOMA",
             world.LoadMap(0x11d, direction.UP, default_music = True, x = exit_event_x, y = exit_event_y,
                           fade_in = True, entrance_event = True),
+            field.ClearEventBit(event_bit.IN_WOR),
             field.Return()
         ]
 

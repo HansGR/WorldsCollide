@@ -475,7 +475,8 @@ exit_data = {
     416: [None, "Doma Poisoning Event - 2F Outside to Treasure Room"],
     1185: [None, "Doma Poisoning Event - Outside to World Map"],
     417: [413, "Doma 3F Inside to 3F Outside"],
-    418: [414, "Doma Interior to Front Outside"],
+    #418: [414, "Doma Interior to Front Outside"],
+    418: [744, "Doma Interior to Front Outside"],
     419: [415, "Doma Interior to 2F Outside"],
     420: [746, "Doma Treasure Room to 2F Outside"],
     421: [422, "Doma Right Side Bedroom"],
@@ -1420,6 +1421,8 @@ exit_data = {
     5214: [73, "Jidoor WoR to World Map West"],
     5215: [74, "Jidoor WoR to World Map East"],
     5240: [76, "Doma WoR to World Map"],
+    4418: [4744, "Doma WoR Interior to Front Outside"],
+    4744: [4418, "Doma WoR 1F Outside Main Door"],
 }
 
 # Create functions to update values:
