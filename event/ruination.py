@@ -225,7 +225,7 @@ CHARACTER_AREAS = {
     'EDGAR': ['FigaroCastle', 'AncientCastle', 'SouthFigaro'],
     'SABIN': ['MtKolts', 'PhantomTrain', 'BarenFalls', 'ImperialCamp', 'Tzen'],
     'CELES': ['SouthFigaro', 'OperaHouse', 'Vector', 'Cid'],  # 'Albrook'
-    'CYAN': ['Doma', 'Zozo', 'MtZozo', 'Maranda'],
+    'CYAN': ['Doma', 'DreamMaze', 'Zozo', 'MtZozo', 'Maranda'],
     'SHADOW': ['GauFatherHouse', 'FloatingContinent', 'VeldtCave', 'Thamasa'],
     'GAU': ['Veldt', 'CrescentMtn', 'Nikeah'],
     'SETZER': ['Kohlingen', 'DarylsTomb'],
@@ -248,8 +248,9 @@ AREA_TYPES = {
 
 # List of rooms associated with each named area
 RUIN_ROOM_SETS = {
-    'Doma': [421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
+    'Doma': [208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
                   432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 'ruin-wrexsoul', 'dc-76'],
+    'DreamMaze': [421, 422, 423, 424, 425, 426, 427, 428, 429],
     'UmarosCave': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368],  # root is in Narshe
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500],  # 501 excluded: shares exit 1057 with ruin_terminus_2
     'PhantomTrain': ['ruin-201', 'ruin-202', '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
@@ -3329,6 +3330,9 @@ class ruination_map():
 
         self.args = args
 
+        # Apply Dream Maze configuration based on -rdm flag
+        self._configure_dream_maze(args)
+
         # Read character/esper requirements from args (extracted from flagstring in args/objectives.py)
         # These are stored as [min, max] ranges; pick a random value in the range
         char_min, char_max = args.ruin_characters_required
@@ -3389,6 +3393,38 @@ class ruination_map():
                 branch.apply_key(k)
 
         #print(branch.original_room_ids)
+
+    def _configure_dream_maze(self, args):
+        """Configure Dream Maze handling based on -rdm flag.
+
+        Default (no flag): Doma and DreamMaze are forced to the same branch.
+        'sep': DreamMaze is separated from Doma and gated by ALL instead of CYAN.
+        'iso': DreamMaze is replaced by a single composite room (ruin-stooge-maze).
+        """
+        dream_maze_mode = getattr(args, 'ruin_dream_maze', None)
+
+        if dream_maze_mode == 'sep':
+            # Separate: move DreamMaze from CYAN to ALL gating
+            if 'DreamMaze' in CHARACTER_AREAS['CYAN']:
+                CHARACTER_AREAS['CYAN'].remove('DreamMaze')
+            if 'DreamMaze' not in CHARACTER_AREAS['ALL']:
+                CHARACTER_AREAS['ALL'].append('DreamMaze')
+            # No forced_same_branch entry, so they can be on different branches
+
+        elif dream_maze_mode == 'iso':
+            # Isolate: replace the nine maze rooms with a single composite room
+            RUIN_ROOM_SETS['DreamMaze'] = ['ruin-stooge-maze']
+            # Update ROOM_REWARD: move 429's reward to ruin-stooge-maze
+            if 429 in ROOM_REWARD:
+                ROOM_REWARD['ruin-stooge-maze'] = ROOM_REWARD.pop(429)
+            # Still forced to same branch as Doma (CYAN gated)
+            forced_same_branch['Doma'] = forced_same_branch.get('Doma', set()) | {'DreamMaze'}
+            forced_same_branch['DreamMaze'] = {'Doma'}
+
+        else:
+            # Default: force Doma and DreamMaze to same branch (preserves current behavior)
+            forced_same_branch['Doma'] = forced_same_branch.get('Doma', set()) | {'DreamMaze'}
+            forced_same_branch['DreamMaze'] = {'Doma'}
 
     def pre_plan_character_acquisition(self):
         """Pre-plan which characters will be obtained to ensure sufficient areas.
@@ -4654,6 +4690,7 @@ class ruination_map():
         area_colors = {
             'Narshe': '#4A90D9',
             'Doma': '#D94A4A',
+            'DreamMaze': '#E06666',
             'UmarosCave': '#7B68EE',
             'EsperMountain': '#2ECC71',
             'PhantomTrain': '#8B4513',

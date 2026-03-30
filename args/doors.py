@@ -62,6 +62,11 @@ def parse(parser):
                             "Automatically sets recommended flags (use '-ruin custom' to skip defaults, "
                             "'-no <flags>' to disable specific defaults)")
 
+    doors.add_argument("-rdm", "--ruin-dream-maze", default=None, choices=["sep", "iso"],
+                       help="Dream Maze handling in ruination mode: "
+                            "'sep' separates maze from Doma Dream (gated by ALL instead of CYAN), "
+                            "'iso' isolates maze as a single composite room")
+
     # Map shuffle
     doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
                        help="Randomize overworld entrances in each world")
