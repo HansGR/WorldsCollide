@@ -549,6 +549,7 @@ entrance_door_patch = {
 
     # Doma siege entrance patch
     1240: [doma_siege_patch, True],
+    744: [lambda args: doma_siege_patch(args, exit_event_x=28, exit_event_y=33), True],  # Doma siege via inside door (ruination)
 
     # Figaro Castle WoR tentacles bit check patch (on entering SF Cave for map shuffle)
     262: [tentacles_bit_check(), False],
