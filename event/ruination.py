@@ -225,7 +225,7 @@ CHARACTER_AREAS = {
     'EDGAR': ['FigaroCastle', 'AncientCastle', 'SouthFigaro'],
     'SABIN': ['MtKolts', 'PhantomTrain', 'BarenFalls', 'ImperialCamp', 'Tzen'],
     'CELES': ['SouthFigaro', 'OperaHouse', 'Vector', 'Cid'],  # 'Albrook'
-    'CYAN': ['Doma', 'Zozo', 'MtZozo', 'Maranda'],
+    'CYAN': ['Doma', 'DreamMaze', 'Zozo', 'MtZozo', 'Maranda'],
     'SHADOW': ['GauFatherHouse', 'FloatingContinent', 'VeldtCave', 'Thamasa'],
     'GAU': ['Veldt', 'CrescentMtn', 'Nikeah'],
     'SETZER': ['Kohlingen', 'DarylsTomb'],
@@ -248,8 +248,9 @@ AREA_TYPES = {
 
 # List of rooms associated with each named area
 RUIN_ROOM_SETS = {
-    'Doma': [421, 422, 423, 424, 425, 426, 427, 428, 429, 208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
+    'Doma': [208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
                   432, 433, 184, 185, 186, 187, 188, '188B', 189, 190, 191, 192, 'ruin-wrexsoul', 'dc-76'],
+    'DreamMaze': [421, 422, 423, 424, 425, 426, 427, 428, 429],
     'UmarosCave': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368],  # root is in Narshe
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500],  # 501 excluded: shares exit 1057 with ruin_terminus_2
     'PhantomTrain': ['ruin-201', 'ruin-202', '203a', '203b', '203c', 204, '204b', '204c', 205, 206, '206a', '206b', 207, '207a',
@@ -3329,6 +3330,9 @@ class ruination_map():
 
         self.args = args
 
+        # Apply Dream Maze configuration based on -rdm flag
+        self._configure_dream_maze(args)
+
         # Read character/esper requirements from args (extracted from flagstring in args/objectives.py)
         # These are stored as [min, max] ranges; pick a random value in the range
         char_min, char_max = args.ruin_characters_required
@@ -3389,6 +3393,175 @@ class ruination_map():
                 branch.apply_key(k)
 
         #print(branch.original_room_ids)
+
+    def _configure_dream_maze(self, args):
+        """Configure Dream Maze handling based on -maze flag.
+
+        Default (no flag): Doma and DreamMaze are forced to the same branch.
+        'sep': DreamMaze is separated from Doma and gated by ALL instead of CYAN.
+        'iso': DreamMaze is replaced by a single composite room (ruin-stooge-maze),
+               but the nine maze rooms are internally randomized.
+        """
+        dream_maze_mode = getattr(args, 'ruin_dream_maze', None)
+        self.isolated_maze_map = None  # Will hold internal maze connections for iso mode
+
+        if dream_maze_mode == 'sep':
+            # Separate: move DreamMaze from CYAN to ALL gating
+            if 'DreamMaze' in CHARACTER_AREAS['CYAN']:
+                CHARACTER_AREAS['CYAN'].remove('DreamMaze')
+            if 'DreamMaze' not in CHARACTER_AREAS['ALL']:
+                CHARACTER_AREAS['ALL'].append('DreamMaze')
+            # No forced_same_branch entry, so they can be on different branches
+
+        elif dream_maze_mode == 'iso':
+            # Isolate: replace the nine maze rooms with a single composite room
+            RUIN_ROOM_SETS['DreamMaze'] = ['ruin-stooge-maze']
+            # Update ROOM_REWARD: move 429's reward to ruin-stooge-maze
+            if 429 in ROOM_REWARD:
+                ROOM_REWARD['ruin-stooge-maze'] = ROOM_REWARD.pop(429)
+            # Still forced to same branch as Doma (CYAN gated)
+            forced_same_branch['Doma'] = forced_same_branch.get('Doma', set()) | {'DreamMaze'}
+            forced_same_branch['DreamMaze'] = {'Doma'}
+            # Randomize internal maze connections
+            self.isolated_maze_map = self._randomize_isolated_maze()
+
+        else:
+            # Default: force Doma and DreamMaze to same branch (preserves current behavior)
+            forced_same_branch['Doma'] = forced_same_branch.get('Doma', set()) | {'DreamMaze'}
+            forced_same_branch['DreamMaze'] = {'Doma'}
+
+    def _randomize_isolated_maze(self):
+        """Randomize the internal connections of the Stooges Maze (rooms 421-429).
+
+        Creates a standalone Network with the maze rooms, connects the locked trap
+        in 429 to a starting pit in 421, then randomly maps all remaining exits
+        until the maze is fully connected. Returns the connection map.
+        """
+        maze_rooms = [421, 422, 423, 424, 425, 426, 427, 428, 429]
+
+        # Create a standalone network for the maze
+        maze_net = Network(maze_rooms)
+        maze_net.protected = set()
+
+        # Initial connection: connect 429's locked trap (2070) back to 421's pit (6845).
+        # This closes the loop so the Network becomes fully connected internally.
+        # The branch mapping algorithm will handle where 2070 actually exits to,
+        # so we filter this connection from the result.
+        maze_net.connect(2070, 6845)
+
+        # Now run a simple randomization loop: connect exits to entrances
+        # until no more connections can be made
+        max_iterations = 200
+        for _ in range(max_iterations):
+            active_room = maze_net.rooms.get_room(maze_net.active)
+            if active_room is None:
+                break
+
+            # Collect available exits from the active room
+            exits_doors = list(active_room.doors)
+            exits_traps = list(active_room.traps)
+
+            connected = False
+
+            # Try traps first (prefer extending deeper into maze)
+            random.shuffle(exits_traps)
+            for trap_id in exits_traps:
+                # Find any room with an available pit
+                target_rooms = [r_id for r_id in maze_net.net.nodes
+                                if r_id != maze_net.active and r_id != start_room_id]
+                random.shuffle(target_rooms)
+                for target_id in target_rooms:
+                    target = maze_net.rooms.get_room(target_id)
+                    if target and len(target.pits) > 0:
+                        pit_id = random.choice(list(target.pits))
+                        maze_net.connect(trap_id, pit_id)
+                        connected = True
+                        break
+                if connected:
+                    break
+
+            if connected:
+                continue
+
+            # Try doors
+            random.shuffle(exits_doors)
+            for door_id in exits_doors:
+                target_rooms = [r_id for r_id in maze_net.net.nodes
+                                if r_id != maze_net.active and r_id != start_room_id]
+                random.shuffle(target_rooms)
+                for target_id in target_rooms:
+                    target = maze_net.rooms.get_room(target_id)
+                    if target and len(target.doors) > 0:
+                        target_door = random.choice(list(target.doors))
+                        if target_door != door_id:
+                            maze_net.connect(door_id, target_door)
+                            connected = True
+                            break
+                if connected:
+                    break
+
+            if not connected:
+                # Try connecting from any room that still has exits
+                any_connected = False
+                all_rooms = [r_id for r_id in maze_net.net.nodes if r_id != start_room_id]
+                random.shuffle(all_rooms)
+                for room_id in all_rooms:
+                    room = maze_net.rooms.get_room(room_id)
+                    if room is None:
+                        continue
+
+                    # Try traps -> pits
+                    for trap_id in list(room.traps):
+                        for target_id in all_rooms:
+                            if target_id == room_id:
+                                continue
+                            target = maze_net.rooms.get_room(target_id)
+                            if target and len(target.pits) > 0:
+                                pit_id = random.choice(list(target.pits))
+                                maze_net.connect(trap_id, pit_id)
+                                any_connected = True
+                                break
+                        if any_connected:
+                            break
+
+                    if any_connected:
+                        break
+
+                    # Try doors -> doors
+                    for door_id in list(room.doors):
+                        for target_id in all_rooms:
+                            if target_id == room_id:
+                                continue
+                            target = maze_net.rooms.get_room(target_id)
+                            if target and len(target.doors) > 0:
+                                target_door = random.choice(list(target.doors))
+                                if target_door != door_id:
+                                    maze_net.connect(door_id, target_door)
+                                    any_connected = True
+                                    break
+                        if any_connected:
+                            break
+
+                if not any_connected:
+                    break  # No more connections possible
+
+        # Filter out the initial 2070->6845 connection from the map.
+        # The branch mapper controls where 2070 exits to (via ruin-stooge-maze).
+        result_map = [[], []]
+        for d1, d2 in maze_net.map[0]:
+            result_map[0].append([d1, d2])
+        for d1, d2 in maze_net.map[1]:
+            if not (d1 == 2070 and d2 == 6845):
+                result_map[1].append([d1, d2])
+
+        if self.verbose:
+            print(f'Isolated maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
+            for d1, d2 in result_map[0]:
+                print(f'\tdoor: {d1} <-> {d2}')
+            for d1, d2 in result_map[1]:
+                print(f'\ttrap: {d1} -> {d2}')
+
+        return result_map
 
     def pre_plan_character_acquisition(self):
         """Pre-plan which characters will be obtained to ensure sufficient areas.
@@ -4238,6 +4411,11 @@ class ruination_map():
                     # Send shared exits to the same destination
                     map[0].append([m[0], se])
 
+        # Add isolated maze internal connections (if -maze iso)
+        if self.isolated_maze_map is not None:
+            map[0].extend(self.isolated_maze_map[0])
+            map[1].extend(self.isolated_maze_map[1])
+
         # Add mapping for connections to KT
         traps_to_kt = [2077, 2078, 2079]
         pits_into_kt = [t + 1000 for t in traps_to_kt]
@@ -4654,6 +4832,7 @@ class ruination_map():
         area_colors = {
             'Narshe': '#4A90D9',
             'Doma': '#D94A4A',
+            'DreamMaze': '#E06666',
             'UmarosCave': '#7B68EE',
             'EsperMountain': '#2ECC71',
             'PhantomTrain': '#8B4513',
