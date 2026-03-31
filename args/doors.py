@@ -62,8 +62,9 @@ def parse(parser):
                             "Automatically sets recommended flags (use '-ruin custom' to skip defaults, "
                             "'-no <flags>' to disable specific defaults)")
 
-    doors.add_argument("-maze", "--ruin-dream-maze", default=None, choices=["sep", "iso"],
+    doors.add_argument("-maze", "--ruin-dream-maze", default=None, choices=["full", "sep", "iso"],
                        help="Dream Maze handling in ruination mode: "
+                            "'full' includes maze in Doma Dream (default), "
                             "'sep' separates maze from Doma Dream (gated by ALL instead of CYAN), "
                             "'iso' isolates maze as a single composite room (internally randomized)")
 
