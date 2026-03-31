@@ -373,8 +373,7 @@ class LeteRiver(Event):
             refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
 
         # change party to follow character instead of go the other way
-        space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
-        space.write(
+        post_boss_src = [
             field.EntityAct(field_entity.PARTY0, True,
                 field_entity.Pause(2),
                 field_entity.SetSpeed(field_entity.Speed.NORMAL),
@@ -392,7 +391,46 @@ class LeteRiver(Event):
             field.Call(refresh_addr),
             field.Call(self.exit_river),
             field.Return(),
-        )
+        ]
+
+        if self.args.character_gating and self.args.ruination_mode:
+            # Recruitment animation in Bank.CB - only reached via fall-through after defeating boss
+            recruitment_space = Write(Bank.CB, post_boss_src, "lete river character recruitment after boss")
+
+            # After boss fall-through: 0xb091b branch to recruitment code
+            space = Reserve(0xb091b, 0xb092a, "lete river branch to recruitment after boss", field.NOP())
+            space.write(
+                field.Branch(recruitment_space.start_address),
+            )
+
+            # No-reward exit at 0xb092b: reached by gating skip (no Terra or already completed)
+            # Same river animation as recruitment path, just without the Call(refresh_addr)
+            no_reward_src = [
+                field.EntityAct(field_entity.PARTY0, True,
+                    field_entity.Pause(2),
+                    field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                    field_entity.Move(direction.UP, 3),
+                    field_entity.MoveDiagonal(direction.UP, 2, direction.RIGHT, 1),
+                    field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1),
+                    field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1),
+                    field_entity.SetSpeed(field_entity.Speed.FAST),
+                    field_entity.Move(direction.UP, 8),
+                ),
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.Call(self.remove_raft),
+                field.Call(self.exit_river),
+                field.Return(),
+            ]
+            no_reward_space = Write(Bank.CB, no_reward_src, "lete river no reward exit")
+
+            space = Reserve(0xb092b, 0xb094d, "lete river no reward exit branch", field.NOP())
+            space.write(
+                field.Branch(no_reward_space.start_address),
+            )
+        else:
+            space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
+            space.write(*post_boss_src)
 
     def esper_item_mod(self, esper_item_instructions):
         space = Reserve(0xb08f8, 0xb0915, "lete river show sabin on river", field.NOP())
