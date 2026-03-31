@@ -4366,7 +4366,7 @@ class ruination_map():
             if area_name in self.AreasUsed or area_name not in RUIN_ROOM_SETS:
                 continue
             target_branch_id = branch_order[i % 3]
-            if random.random() < 1 / 8:
+            if random.random() < 1 / 2:
                 branch = self.branches[target_branch_id]
                 all_existing_rooms = set()
                 for b in self.branches:
