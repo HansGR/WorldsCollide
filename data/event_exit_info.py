@@ -668,6 +668,7 @@ room_require_event_bit = {
     # Narshe WoR NPC bits
     34: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True},
     39: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # north entrance from caves
+    'ruin-narshe': {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # ruination mode
 
     # Mobliz WoB NPC bits
     228: {npc_bit.MOBLIZ_CITIZENS: True, npc_bit.MOBLIZ_SOLDIERS_LETTER: True},
