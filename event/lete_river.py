@@ -394,25 +394,23 @@ class LeteRiver(Event):
         ]
 
         if self.args.character_gating and self.args.ruination_mode:
-            # Write a "no reward" exit for when character gating rejects (no Terra)
-            no_reward_src = [
+            # Recruitment animation in Bank.CB - only reached via fall-through after defeating boss
+            recruitment_space = Write(Bank.CB, post_boss_src, "lete river character recruitment after boss")
+
+            # After boss fall-through: 0xb091b branch to recruitment code
+            space = Reserve(0xb091b, 0xb092a, "lete river branch to recruitment after boss", field.NOP())
+            space.write(
+                field.Branch(recruitment_space.start_address),
+            )
+
+            # No-reward exit at 0xb092b: reached by gating skip (no Terra or already completed)
+            space = Reserve(0xb092b, 0xb094d, "lete river no reward exit", field.NOP())
+            space.write(
                 field.FadeOutScreen(),
                 field.WaitForFade(),
                 field.Call(self.remove_raft),
                 field.Call(self.exit_river),
                 field.Return(),
-            ]
-            no_reward_space = Write(Bank.CB, no_reward_src, "lete river gating rejected no reward exit")
-
-            # Guard: if boss wasn't beaten (bit not set), skip recruitment
-            guarded_src = [
-                field.BranchIfEventBitClear(event_bit.RODE_RAFT_LETE_RIVER, no_reward_space.start_address),
-            ] + post_boss_src
-            guarded_space = Write(Bank.CB, guarded_src, "lete river post boss with gating guard")
-
-            space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
-            space.write(
-                field.Branch(guarded_space.start_address),
             )
         else:
             space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
