@@ -4,6 +4,54 @@ This file contains useful reference information that has been moved from the Top
 
 ---
 
+## Field Object Data Structure (41 bytes per object, $0867-$1068)
+
+50 objects total: $00-$0F = characters, $10-$2F = NPCs, $30 = camera, $31 = showing character.
+
+### Key offsets within each object:
+
+| Offset | Size | Description |
+|--------|------|-------------|
+| $00 | 1 | Settings: `verbbppp` — v=Visible, e=Enabled, r=Battle Row, bb=Battle Order, ppp=Party |
+| $01 | 1 | Sprite settings: `vvvddoom` — v=Vehicle, d=facing dir, o=layer priority, m=walk anim |
+| $02-$04 | 3 | X position (sub-pixel): `tttttttt ttttpppp xxxxxxxx` — tile=(byte0<<4\|byte1>>4) |
+| $05-$07 | 3 | Y position (sub-pixel): same format as X |
+| $12 | 1 | Character/NPC index (matches slot number for characters) |
+| $13 | 1 | **Tile X position** — authoritative tile coordinate used by collision engine |
+| $14 | 1 | **Tile Y position** — authoritative tile coordinate used by collision engine |
+
+**Critical:** Offsets $02-$07 are the sub-pixel *rendering* position. Offsets $13-$14 are the *tile-level collision* position. If these desync (e.g., entity not properly deleted before map transition), the object creates an **invisible collision block** at its tile position with no visible sprite.
+
+### Tile Properties (field RAM $A3-$B9)
+
+Adjacent tile indices (BG1) around the party object:
+```
++----+----+----+
+| A3 | A4 | A5 |
++----+----+----+
+| A6 | A7 | A8 |
++----+----+----+
+| A9 |*AA*| AB |  <-- party object
++----+----+----+
+| AC | AD | AE |
++----+----+----+
+```
+
+- **$AF-$B0**: Party tile position (X, Y)
+- **$B2**: Party z-level (`------lu`, l=lower, u=upper)
+- **$B6-$B7**: Tile properties from A7 (tile above party) — byte 1 + byte 2
+- **$B8-$B9**: Tile properties from AA (party's tile) — byte 1 + byte 2
+
+**Tile properties byte 1** (`lrdbtslu`): l/r=stair dirs, d=door, b/t=sprite priority, s=solid/bridge, l=passable-lower-z, u=passable-upper-z. `$F7`=always impassable.
+
+**Tile properties byte 2** (`nu--btrl`): n=NPC can move, u=always face up, b/t/r/l=directional passability.
+
+### Debugging invisible blocks
+
+Check in order: (1) NPC objects $10-$2F enabled at target tile, (2) character objects $00-$0F with tile position ($13-$14) at target tile, (3) tile passability via $B6-$B9. A desynced character (rendering pos != tile pos) is the hardest to spot — look for enabled objects where offsets $02-$07 don't match $13-$14.
+
+---
+
 ## Ruination Mode - Mapping Algorithm Analysis
 
 ### Overview
