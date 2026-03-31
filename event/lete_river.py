@@ -404,13 +404,29 @@ class LeteRiver(Event):
             )
 
             # No-reward exit at 0xb092b: reached by gating skip (no Terra or already completed)
-            space = Reserve(0xb092b, 0xb094d, "lete river no reward exit", field.NOP())
-            space.write(
+            # Same river animation as recruitment path, just without the Call(refresh_addr)
+            no_reward_src = [
+                field.EntityAct(field_entity.PARTY0, True,
+                    field_entity.Pause(2),
+                    field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                    field_entity.Move(direction.UP, 3),
+                    field_entity.MoveDiagonal(direction.UP, 2, direction.RIGHT, 1),
+                    field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1),
+                    field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1),
+                    field_entity.SetSpeed(field_entity.Speed.FAST),
+                    field_entity.Move(direction.UP, 8),
+                ),
                 field.FadeOutScreen(),
                 field.WaitForFade(),
                 field.Call(self.remove_raft),
                 field.Call(self.exit_river),
                 field.Return(),
+            ]
+            no_reward_space = Write(Bank.CB, no_reward_src, "lete river no reward exit")
+
+            space = Reserve(0xb092b, 0xb094d, "lete river no reward exit branch", field.NOP())
+            space.write(
+                field.Branch(no_reward_space.start_address),
             )
         else:
             space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
