@@ -41,6 +41,9 @@ class AncientCastle(Event):
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
         if self.args.ruination_mode and self.args.character_gating:
             self.add_ruin_character_gate()
 
@@ -143,6 +146,19 @@ class AncientCastle(Event):
         ]
         space = Write(Bank.CA, src_warp, 'Ancient Castle warp handler code')
         self.warps.add_warp(event_bit.ANCIENT_CASTLE_WARP_OPTION, space.start_address)
+
+    def ruination_mod(self):
+        # In ruination mode, the entrance_door_patch for exit 1558 is disabled (maps.py),
+        # so GOT_FALCON is never set before the exit event runs. Without it, the
+        # BranchIfEventBitSet(GOT_FALCON) at 0xa5f25 falls through to load Cave to South
+        # Figaro instead of Ancient Castle, causing a softlock.
+        #
+        # Fix: overwrite the 2-byte event-bit field (0xa5f26-0xa5f27) to encode
+        # BranchIfEventBitClear(ALWAYS_CLEAR) instead. Both Set and Clear use opcode 0xc0;
+        # the distinction is bit 15 of the event-bit argument. ALWAYS_CLEAR (0x176) without
+        # the 0x8000 flag = always-branch, so the exit unconditionally loads Ancient Castle.
+        space = Reserve(0xa5f26, 0xa5f27, "ruination: always branch to Ancient Castle from prison exit")
+        space.write(event_bit.ALWAYS_CLEAR.to_bytes(2, "little"))
 
     def add_ruin_character_gate(self):
         # Add a local character gate for ruination mode (in place of unused GOT_ODIN check)
