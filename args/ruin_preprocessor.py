@@ -130,7 +130,7 @@ RUIN_DEFAULT_FLAGS = {
         '-frw', '-wmhc', '-cor', '100', '-crr', '100', '-crvr', '100', '120',
         '-crm', '-ari', '-anca', '-adeh', '-ame', '1', '-nmc', '-noshoes',
         '-u254', '-nfps', '-fs', '-fe', '-fvd', '-fr', '-fj', '-fbs',
-        '-fedc', '-fc', '-ond', '-etn', '-move', 'bd', '-sl'
+        '-fedc', '-fc', '-ond', '-etn', '-move', 'bd', '-sl', '-maze', 'iso',
     ]
 }
 
