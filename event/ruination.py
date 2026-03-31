@@ -4356,6 +4356,32 @@ class ruination_map():
             )
             raise RuinationMappingError(diag)
 
+        # Add CHARACTER_AREAS['ALL'] areas (dead ends like Coliseum, Albrook)
+        # with a 1/8 chance per branch, in random order
+        all_areas = list(CHARACTER_AREAS.get('ALL', []))
+        random.shuffle(all_areas)
+        branch_order = list(range(3))
+        random.shuffle(branch_order)
+        for i, area_name in enumerate(all_areas):
+            if area_name in self.AreasUsed or area_name not in RUIN_ROOM_SETS:
+                continue
+            target_branch_id = branch_order[i % 3]
+            if random.random() < 1 / 8:
+                branch = self.branches[target_branch_id]
+                all_existing_rooms = set()
+                for b in self.branches:
+                    all_existing_rooms.update(b.all_rooms_added)
+                for room in RUIN_ROOM_SETS[area_name]:
+                    if room not in all_existing_rooms:
+                        branch.add_room(room)
+                self.AreasUsed[area_name] = target_branch_id
+                if area_name in AREA_SHOPS:
+                    for shop_id in AREA_SHOPS[area_name]:
+                        if shop_id not in self.accessible_shops:
+                            self.accessible_shops.append(shop_id)
+                if self.verbose:
+                    print(f'Added ALL area {area_name} to branch {target_branch_id}')
+
         # After satisfying conditions, fully connect map
         reserve_areas = self.get_reserve_area_rooms()
         for branch_id, branch in enumerate(self.branches):
