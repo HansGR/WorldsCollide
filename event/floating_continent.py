@@ -565,10 +565,6 @@ class FloatingContinent(Event):
             field.RefreshEntities(),
         )
 
-        escape_src = [
-            field.DeleteEntity(guest_char_id),
-            field.RefreshEntities(),
-        ]
         if self.MAP_SHUFFLE:
             escape_src = [
                 field.DeleteEntity(guest_char_id),
@@ -580,7 +576,9 @@ class FloatingContinent(Event):
                 field.WaitForFade(),
             ] + GoToSwitchyard(self.exit_id, map='field')
         else:
-            escape_src += [
+            escape_src = [
+                field.DeleteEntity(guest_char_id),
+                field.RefreshEntities(),
                 field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True, entrance_event = True),
                 field.AddEsper(esper),
                 field.Dialog(self.espers.get_receive_esper_dialog(esper)),
