@@ -3443,11 +3443,19 @@ class ruination_map():
         maze_net = Network(maze_rooms)
         maze_net.protected = set()
 
-        # Initial connection: connect 429's locked trap (2070) back to 421's pit (6845).
+        # Pick a random entry pit. Exclude 6847 and 6852 (key rooms 423/427)
+        # since the player must always be able to revisit those rooms.
+        entry_pits = [6845, 6846, 6844, 6854, 3069, 6849, 6843, 6848, 6853]
+        entry_pit = random.choice(entry_pits)
+
+        # Update the composite room's pit to match the chosen entry
+        room_data['ruin-stooge-maze'][2] = [entry_pit]
+
+        # Initial connection: connect 429's locked trap (2070) back to the entry pit.
         # This closes the loop so the Network becomes fully connected internally.
         # The branch mapping algorithm will handle where 2070 actually exits to,
         # so we filter this connection from the result.
-        maze_net.connect(2070, 6845)
+        maze_net.connect(2070, entry_pit)
 
         # Now run a simple randomization loop: connect exits to entrances
         # until no more connections can be made
@@ -3545,13 +3553,13 @@ class ruination_map():
                 if not any_connected:
                     break  # No more connections possible
 
-        # Filter out the initial 2070->6845 connection from the map.
+        # Filter out the initial 2070->entry_pit connection from the map.
         # The branch mapper controls where 2070 exits to (via ruin-stooge-maze).
         result_map = [[], []]
         for d1, d2 in maze_net.map[0]:
             result_map[0].append([d1, d2])
         for d1, d2 in maze_net.map[1]:
-            if not (d1 == 2070 and d2 == 6845):
+            if not (d1 == 2070 and d2 == entry_pit):
                 result_map[1].append([d1, d2])
 
         if self.verbose:
