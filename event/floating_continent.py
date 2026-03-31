@@ -571,6 +571,8 @@ class FloatingContinent(Event):
         ]
         if self.MAP_SHUFFLE:
             escape_src = [
+                field.DeleteEntity(guest_char_id),
+                field.RefreshEntities(),
                 field.AddEsper(esper),
                 field.FinishCheck(),
                 field.Dialog(self.espers.get_receive_esper_dialog(esper)),
