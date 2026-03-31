@@ -4357,7 +4357,8 @@ class ruination_map():
             raise RuinationMappingError(diag)
 
         # Add CHARACTER_AREAS['ALL'] areas (dead ends like Coliseum, Albrook)
-        # with a 1/8 chance per branch, in random order
+        # with a chance per branch, in random order
+        ADD_ALL_PERCENT = 1
         all_areas = list(CHARACTER_AREAS.get('ALL', []))
         random.shuffle(all_areas)
         branch_order = list(range(3))
@@ -4366,7 +4367,7 @@ class ruination_map():
             if area_name in self.AreasUsed or area_name not in RUIN_ROOM_SETS:
                 continue
             target_branch_id = branch_order[i % 3]
-            if random.random() < 1 / 2:
+            if random.random() < ADD_ALL_PERCENT:
                 branch = self.branches[target_branch_id]
                 all_existing_rooms = set()
                 for b in self.branches:
