@@ -117,10 +117,18 @@ class FigaroCastleWOR(Event):
         space = Reserve(0xa776e, 0xa776f, "figaro cave set gerad prison npc bit", field.NOP())
 
     def figaro_prison_mod(self):
-        # normally, cannot access cave to ancient castle until get falcon,
-        # change the condition to check if defeated tentacles
-        space = Reserve(0xa5f26, 0xa5f26, "figaro castle wor ancient castle cave check")
-        space.write(event_bit.DEFEATED_TENTACLES_FIGARO),
+        if self.args.ruination_mode:
+            # In ruination mode, the prison cell is gated by defeating the tentacles opening the cell door.
+            # The actual door code should always go to Ancient Castle.
+            # Because we are overwriting both bytes, this changes from "BranchIfEventBitSet" to "BranchIfEventBitClear"
+            # (and therefore, branch always)
+            space = Reserve(0xa5f26, 0xa5f27, "ruination: always branch to Ancient Castle from prison exit")
+            space.write(event_bit.ALWAYS_CLEAR.to_bytes(2, "little"))
+        else:
+            # normally, cannot access cave to ancient castle until get falcon,
+            # change the condition to check if defeated tentacles
+            space = Reserve(0xa5f26, 0xa5f26, "figaro castle wor ancient castle cave check")
+            space.write(event_bit.DEFEATED_TENTACLES_FIGARO),
 
         # this leaves event bit 0x26e unused and free for other things
         space = Reserve(0xa6a2c, 0xa6a47, "figaro castle wor gerad wounded soldier", field.NOP())
