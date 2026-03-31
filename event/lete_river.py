@@ -373,8 +373,7 @@ class LeteRiver(Event):
             refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
 
         # change party to follow character instead of go the other way
-        space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
-        space.write(
+        post_boss_src = [
             field.EntityAct(field_entity.PARTY0, True,
                 field_entity.Pause(2),
                 field_entity.SetSpeed(field_entity.Speed.NORMAL),
@@ -392,7 +391,32 @@ class LeteRiver(Event):
             field.Call(refresh_addr),
             field.Call(self.exit_river),
             field.Return(),
-        )
+        ]
+
+        if self.args.character_gating and self.args.ruination_mode:
+            # Write a "no reward" exit for when character gating rejects (no Terra)
+            no_reward_src = [
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.Call(self.remove_raft),
+                field.Call(self.exit_river),
+                field.Return(),
+            ]
+            no_reward_space = Write(Bank.CB, no_reward_src, "lete river gating rejected no reward exit")
+
+            # Guard: if boss wasn't beaten (bit not set), skip recruitment
+            guarded_src = [
+                field.BranchIfEventBitClear(event_bit.RODE_RAFT_LETE_RIVER, no_reward_space.start_address),
+            ] + post_boss_src
+            guarded_space = Write(Bank.CB, guarded_src, "lete river post boss with gating guard")
+
+            space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
+            space.write(
+                field.Branch(guarded_space.start_address),
+            )
+        else:
+            space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
+            space.write(*post_boss_src)
 
     def esper_item_mod(self, esper_item_instructions):
         space = Reserve(0xb08f8, 0xb0915, "lete river show sabin on river", field.NOP())
