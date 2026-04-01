@@ -191,6 +191,7 @@ class LeteRiver(Event):
                 field.BranchIfAny([event_bit.RODE_RAFT_LETE_RIVER, True,
                                    event_bit.character_recruited(self.character_gate()), False],
                                   continue_address),
+                field.SetEventBit(event_bit.multipurpose_map(3)),  # Store character gating result to recruit character
                 field.Branch(space.end_address + 1)  # branch back if not.
             ]
             updated_rode_raft_check = Write(Bank.CB, src, "lete river ruination character gating at boss")
@@ -360,7 +361,13 @@ class LeteRiver(Event):
 
         if self.args.ruination_mode is not None:
             from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
-            branch_refresh_src = [
+            branch_refresh_src = []
+            if self.args.character_gating:
+                # Skip recruiting character if we don't have Terra
+                branch_refresh_src += [
+                    field.ReturnIfEventBitClear(event_bit.multipurpose_map(3))  # Set upon fighting ultros only
+                ]
+            branch_refresh_src += [
                 field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
                 field.SetupBranchRecruit(character),
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),

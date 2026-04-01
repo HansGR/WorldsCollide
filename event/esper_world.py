@@ -57,14 +57,14 @@ class EsperWorld(Event):
         X = 55
         Y = 44
 
-        # Copy the save point NPC from map 0x009 (Scenario) at npc_id 0x15
-        save_npc = deepcopy(self.maps.get_npc(0x009, 0x15))
+        # Copy the save point NPC from map 0x06b (Narshe school) at npc_id 0x10:    [0x06b, 60, 32, 0x10, 0x690, 0xc9aeb],
+        save_npc = deepcopy(self.maps.get_npc(0x06b, 0x10))
         save_npc.x = X
         save_npc.y = Y
         self.maps.append_npc(self.map_gate_cave, save_npc)
 
         # Copy the save point event tile from map 0x009 at (8, 6)
-        save_event_src = self.maps.get_event(0x009, 8, 6)
+        save_event_src = self.maps.get_event(0x06b, 60, 32)
         save_event = MapEvent()
         save_event.x = X
         save_event.y = Y
