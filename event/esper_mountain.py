@@ -351,6 +351,18 @@ class EsperMountain(Event):
         space = Reserve(patch_out[0], patch_out[1], "patch delete npcs esper mtn 3", field.NOP())
         space.write(field.Call(space_delete.start_address))
 
+        # If character gating mode, add entrance event to the statues room so that it applies the character gating locally
+        if self.args.character_gating:
+            src = [
+                field.ReturnIfEventBitSet(event_bit.DEFEATED_ULTROS_ESPER_MOUNTAIN),
+                field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                field.ClearEventBit(event_bit.ESPER_MOUNTAIN_GATED),
+                field.Return()
+            ]
+            space = Write(Bank.CB, src, "Esper Mountain Statue Room local character gating")
+            self.maps.set_entrance_event(0x173, space.start_address - EVENT_CODE_START)
+
+
 
     def ruination_mod(self):
         # Add warp point to KT in final room
