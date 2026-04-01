@@ -239,6 +239,37 @@ class NarsheWOB(Event):
         space = Write(Bank.CA, src_pos_lower_right, "Position party at lower-right (reform school)")
         pos_lower_right_addr = space.start_address
 
+        # Subroutine: sync PARTY_N_IN_WOR for all non-away parties from current IN_WOR.
+        # Called after party creation so the Y-party switch code has correct per-party state.
+        sync_in_wor_src = [
+            field.BranchIfEventBitClear(event_bit.IN_WOR, "WOR_CLEAR"),
+            # IN_WOR is set: set PARTY_N_IN_WOR for each non-away party
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SKIP_P1_S"),
+            field.SetEventBit(event_bit.PARTY_1_IN_WOR),
+            "SKIP_P1_S",
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SKIP_P2_S"),
+            field.SetEventBit(event_bit.PARTY_2_IN_WOR),
+            "SKIP_P2_S",
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "SKIP_P3_S"),
+            field.SetEventBit(event_bit.PARTY_3_IN_WOR),
+            "SKIP_P3_S",
+            field.Return(),
+            "WOR_CLEAR",
+            # IN_WOR is clear: clear PARTY_N_IN_WOR for each non-away party
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SKIP_P1_C"),
+            field.ClearEventBit(event_bit.PARTY_1_IN_WOR),
+            "SKIP_P1_C",
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SKIP_P2_C"),
+            field.ClearEventBit(event_bit.PARTY_2_IN_WOR),
+            "SKIP_P2_C",
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "SKIP_P3_C"),
+            field.ClearEventBit(event_bit.PARTY_3_IN_WOR),
+            "SKIP_P3_C",
+            field.Return(),
+        ]
+        space = Write(Bank.CA, sync_in_wor_src, "Sync PARTY_N_IN_WOR from IN_WOR (reform)")
+        sync_in_wor_addr = space.start_address
+
         reform_src = [
             "START_OVER",
             field.DialogBranch(reform_id, dest1="REFORM", dest2=0xc359d, dest3=0xc351e, dest4=field.RETURN),
@@ -312,6 +343,7 @@ class NarsheWOB(Event):
             "NOT_THREE_1P",
             field.ClearEventBit(event_bit.THREE_PARTIES_CREATED),
             "1P_3PC_DONE",
+            field.Call(sync_in_wor_addr),
             # Skip clear y-party switching if parties are away
             field.BranchIfAny([event_bit.PARTY_1_AWAY, True, event_bit.PARTY_2_AWAY, True, event_bit.PARTY_3_AWAY, True], "FREE_AND_RETURN"),
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
@@ -364,6 +396,7 @@ class NarsheWOB(Event):
             "THREE_TOTAL_2P",
             field.SetEventBit(event_bit.THREE_PARTIES_CREATED),
             "2P_3PC_DONE",
+            field.Call(sync_in_wor_addr),
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.FreeMovement(),
             field.Return(),
@@ -385,6 +418,7 @@ class NarsheWOB(Event):
             field.WaitForFade(),
             field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
             field.SetEventBit(event_bit.THREE_PARTIES_CREATED),  # 3 parties formed, always 0 away at this branch
+            field.Call(sync_in_wor_addr),
             field.FreeMovement(),
             field.Return(),
         ]

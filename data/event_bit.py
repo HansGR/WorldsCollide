@@ -201,6 +201,9 @@ THREE_PARTIES_CREATED = 0x0e0 # custom, ruination: all three parties have charac
 PARTY_1_AWAY = 0x0e1 # custom, ruination: party 1 is away in a branch
 PARTY_2_AWAY = 0x0e2 # custom, ruination: party 2 is away in a branch
 PARTY_3_AWAY = 0x0e3 # custom, ruination: party 3 is away in a branch
+PARTY_1_IN_WOR = 0x0e4 # custom, ruination: party 1's saved IN_WOR state for Y-switch
+PARTY_2_IN_WOR = 0x0e5 # custom, ruination: party 2's saved IN_WOR state for Y-switch
+PARTY_3_IN_WOR = 0x0e6 # custom, ruination: party 3's saved IN_WOR state for Y-switch
 
 DEFEATED_NARSHE_DRAGON = 0x11a # custom
 DEFEATED_MT_ZOZO_DRAGON = 0x11b # custom
@@ -258,7 +261,7 @@ DEFEATED_PAINTING_3 = 0x254  # beat 2nd painting in Owzer's Basement
 
 from constants.objectives import MAX_OBJECTIVES
 for index in range(MAX_OBJECTIVES):
-    globals()["OBJECTIVE" + str(index)] = 0xe4 + index
+    globals()["OBJECTIVE" + str(index)] = 0xe7 + index
 
 def byte(event_bit):
     return event_bit // 8
@@ -303,4 +306,4 @@ def multipurpose_party3_step(index):
 
 def objective(index):
     assert index >= 0 and index <= MAX_OBJECTIVES
-    return 0xe4 + index
+    return 0xe7 + index
