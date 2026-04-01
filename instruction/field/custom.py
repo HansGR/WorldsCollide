@@ -1376,19 +1376,19 @@ class FinalizeBranchRecruit(_Instruction):
             asm.TDC(),
             asm.LDA(0x12, asm.DIR),                          # A = new party slot (1-3)
             asm.CLC(),
-            asm.ADC(0x04, asm.IMM8),                         # index 5-7 for PARTY_N_IN_WOR bits
+            asm.ADC(0x03, asm.IMM8),                         # index 4-6 for PARTY_N_IN_WOR bits
             asm.TAX(),
             asm.LDA(event_bit.address(event_bit.IN_WOR), asm.ABS),
             asm.AND(1 << event_bit.bit(event_bit.IN_WOR), asm.IMM8),  # isolate IN_WOR
             asm.BEQ("CLEAR_NEW_IN_WOR"),
             # IN_WOR set → set PARTY_N_IN_WOR for new party
             asm.LDA(c0.power_of_two_table, asm.LNG_X),
-            asm.TSB(event_bit.address(event_bit.PARTY_1_IN_WOR), asm.ABS),  # $1E9B
+            asm.TSB(party_away_byte, asm.ABS),               # same byte as PARTY_N_AWAY ($1E9C)
             asm.BRA("STEP4_AFTER_SCRATCH"),
             "CLEAR_NEW_IN_WOR",
             # IN_WOR clear → clear PARTY_N_IN_WOR for new party
             asm.LDA(c0.power_of_two_table, asm.LNG_X),
-            asm.TRB(event_bit.address(event_bit.PARTY_1_IN_WOR), asm.ABS),  # $1E9B
+            asm.TRB(party_away_byte, asm.ABS),               # same byte as PARTY_N_AWAY ($1E9C)
 
             asm.BRA("STEP4_AFTER_SCRATCH"),                  # skip SCRATCH clear
 

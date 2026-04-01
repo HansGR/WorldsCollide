@@ -355,7 +355,7 @@ def _y_party_switch_in_wor_mod():
 
     Hooks C0/6D77-6D8C: replaces the map-pointer save + party increment
     with a JSR to a new routine that also persists IN_WOR into per-party
-    event bits PARTY_N_IN_WOR (0x0dd-0x0df, all in byte $1E9B bits 5-7).
+    event bits PARTY_N_IN_WOR (0x0e4-0x0e6, all in byte $1E9C bits 4-6).
     """
     import data.event_bit as event_bit
 
@@ -363,7 +363,7 @@ def _y_party_switch_in_wor_mod():
     party_map_save  = 0x1ff3      # $1FF3,Y = saved map pointer per party
     in_wor_addr     = event_bit.address(event_bit.IN_WOR)         # $1E94
     in_wor_bit_mask = 1 << event_bit.bit(event_bit.IN_WOR)       # 0x10 (bit 4)
-    party_state_byte = event_bit.address(event_bit.PARTY_1_IN_WOR)  # $1E9B
+    party_state_byte = event_bit.address(event_bit.PARTY_1_IN_WOR)  # $1E9C
 
     src = [
         # --- Original: save current party's map pointer ---
@@ -373,10 +373,10 @@ def _y_party_switch_in_wor_mod():
         asm.STA(party_map_save, asm.ABS_Y),
 
         # --- Save IN_WOR → PARTY_N_IN_WOR for old party ---
-        # Party index (1-3) + 4 = power_of_two index (5-7) → masks 0x20/0x40/0x80
+        # Party index (1-3) + 3 = power_of_two index (4-6) → masks 0x10/0x20/0x40
         asm.TYA(),
         asm.CLC(),
-        asm.ADC(0x04, asm.IMM8),
+        asm.ADC(0x03, asm.IMM8),
         asm.TAX(),
         asm.LDA(in_wor_addr, asm.ABS),
         asm.AND(in_wor_bit_mask, asm.IMM8),
@@ -404,7 +404,7 @@ def _y_party_switch_in_wor_mod():
 
         # --- Restore IN_WOR from PARTY_N_IN_WOR for new party ---
         asm.CLC(),
-        asm.ADC(0x04, asm.IMM8),           # A still has new party index
+        asm.ADC(0x03, asm.IMM8),           # A still has new party index
         asm.TAX(),
         asm.LDA(power_of_two_table, asm.LNG_X),
         asm.AND(party_state_byte, asm.ABS),
