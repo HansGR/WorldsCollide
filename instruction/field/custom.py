@@ -1361,7 +1361,7 @@ class FinalizeBranchRecruit(_Instruction):
             asm.TAX(),                                       # X = active party index (16-bit clean)
             asm.LDA(c0.power_of_two_table, asm.LNG_X),      # A = active party AWAY mask
             asm.AND(party_away_byte, asm.ABS),               # test if active party is AWAY
-            asm.BEQ("STEP4_AFTER_SCRATCH"),                  # not away → skip
+            asm.BEQ("SYNC_IN_WOR"),                          # not away → skip AWAY mirror
 
             # Active party is AWAY: set AWAY for the new party's slot ($12)
             asm.TDC(),
@@ -1370,6 +1370,25 @@ class FinalizeBranchRecruit(_Instruction):
             asm.LDA(party_away_byte, asm.ABS),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),      # set AWAY bit for new party
             asm.STA(party_away_byte, asm.ABS),
+
+            # === Mirror IN_WOR bit: copy IN_WOR to PARTY_N_IN_WOR for new party ($12) ===
+            "SYNC_IN_WOR",
+            asm.TDC(),
+            asm.LDA(0x12, asm.DIR),                          # A = new party slot (1-3)
+            asm.CLC(),
+            asm.ADC(0x04, asm.IMM8),                         # index 5-7 for PARTY_N_IN_WOR bits
+            asm.TAX(),
+            asm.LDA(event_bit.address(event_bit.IN_WOR), asm.ABS),
+            asm.AND(1 << event_bit.bit(event_bit.IN_WOR), asm.IMM8),  # isolate IN_WOR
+            asm.BEQ("CLEAR_NEW_IN_WOR"),
+            # IN_WOR set → set PARTY_N_IN_WOR for new party
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),
+            asm.TSB(event_bit.address(event_bit.PARTY_1_IN_WOR), asm.ABS),  # $1E9B
+            asm.BRA("STEP4_AFTER_SCRATCH"),
+            "CLEAR_NEW_IN_WOR",
+            # IN_WOR clear → clear PARTY_N_IN_WOR for new party
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),
+            asm.TRB(event_bit.address(event_bit.PARTY_1_IN_WOR), asm.ABS),  # $1E9B
 
             asm.BRA("STEP4_AFTER_SCRATCH"),                  # skip SCRATCH clear
 

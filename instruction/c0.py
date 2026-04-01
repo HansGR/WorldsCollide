@@ -345,3 +345,92 @@ def _add_item_mod():
     space = Write(Bank.C0, src, "c0 add item")
     return space.start_address
 add_item = _add_item_mod()
+
+def _y_party_switch_in_wor_mod():
+    """Patch Y-party switch to save/restore IN_WOR per-party.
+
+    Without this, switching parties via Y leaves IN_WOR at whatever the
+    previous party set it to.  Maps shared between WoB/WoR (e.g. Zozo)
+    then behave as if the party is in the wrong world.
+
+    Hooks C0/6D77-6D8C: replaces the map-pointer save + party increment
+    with a JSR to a new routine that also persists IN_WOR into per-party
+    event bits PARTY_N_IN_WOR (0x0dd-0x0df, all in byte $1E9B bits 5-7).
+    """
+    import data.event_bit as event_bit
+
+    current_party   = 0x1a6d
+    party_map_save  = 0x1ff3      # $1FF3,Y = saved map pointer per party
+    in_wor_addr     = event_bit.address(event_bit.IN_WOR)         # $1E94
+    in_wor_bit_mask = 1 << event_bit.bit(event_bit.IN_WOR)       # 0x10 (bit 4)
+    party_state_byte = event_bit.address(event_bit.PARTY_1_IN_WOR)  # $1E9B
+
+    src = [
+        # --- Original: save current party's map pointer ---
+        asm.LDA(current_party, asm.ABS),
+        asm.TAY(),
+        asm.LDA(0xb2, asm.DIR),
+        asm.STA(party_map_save, asm.ABS_Y),
+
+        # --- Save IN_WOR → PARTY_N_IN_WOR for old party ---
+        # Party index (1-3) + 4 = power_of_two index (5-7) → masks 0x20/0x40/0x80
+        asm.TYA(),
+        asm.CLC(),
+        asm.ADC(0x04, asm.IMM8),
+        asm.TAX(),
+        asm.LDA(in_wor_addr, asm.ABS),
+        asm.AND(in_wor_bit_mask, asm.IMM8),
+        asm.BNE("SET_OLD"),
+
+        # IN_WOR is clear → clear PARTY_N_IN_WOR
+        asm.LDA(power_of_two_table, asm.LNG_X),
+        asm.TRB(party_state_byte, asm.ABS),
+        asm.BRA("INC_PARTY"),
+
+        "SET_OLD",
+        # IN_WOR is set → set PARTY_N_IN_WOR
+        asm.LDA(power_of_two_table, asm.LNG_X),
+        asm.TSB(party_state_byte, asm.ABS),
+
+        # --- Original: increment active party (wrap 3→1) ---
+        "INC_PARTY",
+        asm.LDA(current_party, asm.ABS),
+        asm.INC(),
+        asm.CMP(0x04, asm.IMM8),
+        asm.BNE("NO_WRAP"),
+        asm.LDA(0x01, asm.IMM8),
+        "NO_WRAP",
+        asm.STA(current_party, asm.ABS),
+
+        # --- Restore IN_WOR from PARTY_N_IN_WOR for new party ---
+        asm.CLC(),
+        asm.ADC(0x04, asm.IMM8),           # A still has new party index
+        asm.TAX(),
+        asm.LDA(power_of_two_table, asm.LNG_X),
+        asm.AND(party_state_byte, asm.ABS),
+        asm.BEQ("CLEAR_IN_WOR"),
+
+        # New party's bit is set → set IN_WOR
+        asm.LDA(in_wor_bit_mask, asm.IMM8),
+        asm.TSB(in_wor_addr, asm.ABS),
+        asm.BRA("DONE"),
+
+        "CLEAR_IN_WOR",
+        asm.LDA(in_wor_bit_mask, asm.IMM8),
+        asm.TRB(in_wor_addr, asm.ABS),
+
+        "DONE",
+        asm.RTS(),
+    ]
+    space = Write(Bank.C0, src, "c0 y-party switch save/restore IN_WOR")
+    new_routine = space.start_address
+
+    # Replace original C0/6D77-6D8C with JSR to new routine + free the rest
+    hook_start = 0x6d77
+    hook_end   = 0x6d8c   # inclusive: STA $1A6D is 3 bytes at 6D8A-6D8C
+    space = Reserve(hook_start, hook_start + 2, "y-party switch jsr to in_wor routine")
+    space.write(asm.JSR(new_routine, asm.ABS))
+    Free(hook_start + 3, hook_end)
+
+if args.ruination_mode is not None:
+    _y_party_switch_in_wor_mod()
