@@ -353,28 +353,37 @@ def _y_party_switch_in_wor_mod():
     previous party set it to.  Maps shared between WoB/WoR (e.g. Zozo)
     then behave as if the party is in the wrong world.
 
-    Hooks C0/6D77-6D8C: replaces the map-pointer save + party increment
-    with a JSR to a new routine that also persists IN_WOR into per-party
-    event bits PARTY_N_IN_WOR (0x0e4-0x0e6, all in byte $1E9C bits 4-6).
+    Hook strategy — leave the original C0/6D77-6E87 completely intact:
+
+      Entry hook at C0/6D71: replace STZ $0762 (3 bytes) with
+        JSR save_in_wor.  save_in_wor does the original STZ $0762
+        plus saves IN_WOR into the departing party's PARTY_N_IN_WOR.
+        The existing BRA $6D77 at C0/6D74 is untouched.
+
+      Exit hooks at C0/6E37 and C0/6E7B: replace the 10-byte
+        LDA $1A6D / TAY / LDA $1FF3,Y / AND #$03 / STA $0744
+        sequences (before the RTS) with JSR restore_and_exit.
+        restore_and_exit restores IN_WOR from the new party's
+        PARTY_N_IN_WOR, then does the original facing-restore code.
+        Remaining bytes are NOP-filled so execution slides to the
+        original RTS at C0/6E43 / C0/6E87.
     """
     import data.event_bit as event_bit
 
-    current_party   = 0x1a6d
-    party_map_save  = 0x1ff3      # $1FF3,Y = saved map pointer per party
-    in_wor_addr     = event_bit.address(event_bit.IN_WOR)         # $1E94
-    in_wor_bit_mask = 1 << event_bit.bit(event_bit.IN_WOR)       # 0x10 (bit 4)
-    party_state_byte = event_bit.address(event_bit.PARTY_1_IN_WOR)  # $1E9C
+    current_party    = 0x1a6d
+    in_wor_addr      = event_bit.address(event_bit.IN_WOR)          # $1E94
+    in_wor_bit_mask  = 1 << event_bit.bit(event_bit.IN_WOR)        # 0x10 (bit 4)
+    party_state_byte = event_bit.address(event_bit.PARTY_1_IN_WOR) # $1E9C
 
-    src = [
-        # --- Original: save current party's map pointer ---
+    # --- Save routine: called at entry before the switch begins ---
+    # Replaces original STZ $0762 at C0/6D71.
+    # At this point $1A6D still holds the OLD party index.
+    save_src = [
+        asm.STZ(0x0762, asm.ABS),           # original instruction
+
+        # Save IN_WOR → PARTY_N_IN_WOR for old party
+        # Party index (1-3) + 3 = power_of_two index (4-6)
         asm.LDA(current_party, asm.ABS),
-        asm.TAY(),
-        asm.LDA(0xb2, asm.DIR),
-        asm.STA(party_map_save, asm.ABS_Y),
-
-        # --- Save IN_WOR → PARTY_N_IN_WOR for old party ---
-        # Party index (1-3) + 3 = power_of_two index (4-6) → masks 0x10/0x20/0x40
-        asm.TYA(),
         asm.CLC(),
         asm.ADC(0x03, asm.IMM8),
         asm.TAX(),
@@ -382,55 +391,62 @@ def _y_party_switch_in_wor_mod():
         asm.AND(in_wor_bit_mask, asm.IMM8),
         asm.BNE("SET_OLD"),
 
-        # IN_WOR is clear → clear PARTY_N_IN_WOR
         asm.LDA(power_of_two_table, asm.LNG_X),
         asm.TRB(party_state_byte, asm.ABS),
-        asm.BRA("INC_PARTY"),
+        asm.RTS(),
 
         "SET_OLD",
-        # IN_WOR is set → set PARTY_N_IN_WOR
         asm.LDA(power_of_two_table, asm.LNG_X),
         asm.TSB(party_state_byte, asm.ABS),
+        asm.RTS(),
+    ]
+    save_space = Write(Bank.C0, save_src, "c0 y-party switch save IN_WOR")
+    save_addr = save_space.start_address
 
-        # --- Original: increment active party (wrap 3→1) ---
-        "INC_PARTY",
+    # --- Exit routine: restores IN_WOR then does original facing restore ---
+    # Replaces the identical 10-byte sequences at C0/6E37-6E40 and C0/6E7B-6E84.
+    # At this point $1A6D holds the NEW party index.
+    exit_src = [
+        # Restore IN_WOR from PARTY_N_IN_WOR for new party
         asm.LDA(current_party, asm.ABS),
-        asm.INC(),
-        asm.CMP(0x04, asm.IMM8),
-        asm.BNE("NO_WRAP"),
-        asm.LDA(0x01, asm.IMM8),
-        "NO_WRAP",
-        asm.STA(current_party, asm.ABS),
-
-        # --- Restore IN_WOR from PARTY_N_IN_WOR for new party ---
         asm.CLC(),
-        asm.ADC(0x03, asm.IMM8),           # A still has new party index
+        asm.ADC(0x03, asm.IMM8),
         asm.TAX(),
         asm.LDA(power_of_two_table, asm.LNG_X),
         asm.AND(party_state_byte, asm.ABS),
-        asm.BEQ("CLEAR_IN_WOR"),
+        asm.BEQ("CLEAR_WOR"),
 
-        # New party's bit is set → set IN_WOR
         asm.LDA(in_wor_bit_mask, asm.IMM8),
         asm.TSB(in_wor_addr, asm.ABS),
-        asm.BRA("DONE"),
+        asm.BRA("ORIG_EXIT"),
 
-        "CLEAR_IN_WOR",
+        "CLEAR_WOR",
         asm.LDA(in_wor_bit_mask, asm.IMM8),
         asm.TRB(in_wor_addr, asm.ABS),
 
-        "DONE",
+        # Original exit: restore facing from saved party data
+        "ORIG_EXIT",
+        Read(0x6e37, 0x6e42),               # LDA $1A6D / TAY / LDA $1FF3,Y / AND #$03 / STA $0744
         asm.RTS(),
     ]
-    space = Write(Bank.C0, src, "c0 y-party switch save/restore IN_WOR")
-    new_routine = space.start_address
+    exit_space = Write(Bank.C0, exit_src, "c0 y-party switch restore IN_WOR + exit")
+    exit_addr = exit_space.start_address
 
-    # Replace original C0/6D77-6D8C with JSR to new routine + free the rest
-    hook_start = 0x6d77
-    hook_end   = 0x6d8c   # inclusive: STA $1A6D is 3 bytes at 6D8A-6D8C
-    space = Reserve(hook_start, hook_start + 2, "y-party switch jsr to in_wor routine")
-    space.write(asm.JSR(new_routine, asm.ABS))
-    Free(hook_start + 3, hook_end)
+    # --- Hook entry: C0/6D71, replace STZ $0762 with JSR save_addr ---
+    # BRA $6D77 at C0/6D74 is untouched.
+    space = Reserve(0x6d71, 0x6d73, "y-party switch entry hook: save IN_WOR")
+    space.write(asm.JSR(save_addr, asm.ABS))
+
+    # --- Hook exit 1 (same-map): C0/6E37-6E42, JSR + NOP sled to RTS at 6E43 ---
+    space = Reserve(0x6e37, 0x6e42, "y-party switch same-map exit hook", asm.NOP())
+    space.write(asm.JSR(exit_addr, asm.ABS))
+    # Remaining 9 bytes (6E3A-6E42) are NOP-filled; RTS at 6E43 is untouched.
+    # BEQ $6E43 at C0/6DD7 still hits the original RTS.
+
+    # --- Hook exit 2 (different-map): C0/6E7B-6E86, JSR + NOP sled to RTS at 6E87 ---
+    space = Reserve(0x6e7b, 0x6e86, "y-party switch diff-map exit hook", asm.NOP())
+    space.write(asm.JSR(exit_addr, asm.ABS))
+    # Remaining 9 bytes (6E7E-6E86) are NOP-filled; RTS at 6E87 is untouched.
 
 if args.ruination_mode is not None:
     _y_party_switch_in_wor_mod()
