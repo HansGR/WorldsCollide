@@ -258,7 +258,7 @@ DEFEATED_PAINTING_3 = 0x254  # beat 2nd painting in Owzer's Basement
 
 from constants.objectives import MAX_OBJECTIVES
 for index in range(MAX_OBJECTIVES):
-    globals()["OBJECTIVE" + str(index)] = 0xe0 + index
+    globals()["OBJECTIVE" + str(index)] = 0xe4 + index
 
 def byte(event_bit):
     return event_bit // 8
@@ -303,4 +303,4 @@ def multipurpose_party3_step(index):
 
 def objective(index):
     assert index >= 0 and index <= MAX_OBJECTIVES
-    return 0xe0 + index
+    return 0xe4 + index
