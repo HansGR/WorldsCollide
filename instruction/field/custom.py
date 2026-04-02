@@ -525,7 +525,7 @@ class MarkActivePartyAway(_Instruction):
             asm.EOR(0xff, asm.IMM8),                      # a = inverted mask
             asm.AND(char_available_addr, asm.ABS_Y),      # clear the bit
             asm.STA(char_available_addr, asm.ABS_Y),
-            asm.DEC(characters_available_address, asm.ABS),
+            #asm.DEC(characters_available_address, asm.ABS),  # Don't decrement characters_available.  This should track recruited characters, not "available" ones.
             asm.PLX(),
 
             "NEXT_CHAR",
@@ -597,7 +597,7 @@ class RestoreActivePartyAvailable(_Instruction):
             asm.LDA(char_available_addr, asm.ABS_Y),      # a = character available byte
             asm.ORA(c0.power_of_two_table, asm.LNG_X),   # set the bit
             asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
+            #asm.INC(characters_available_address, asm.ABS),  # This event word should track characters recruited, not 'available'
             asm.PLX(),
 
             "NEXT_CHAR",
@@ -874,7 +874,7 @@ class SetupBranchRecruit(_Instruction):
             asm.LDA(char_available_addr, asm.ABS_Y),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),
             asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
+            #asm.INC(characters_available_address, asm.ABS),   # Dont touch event_word.CHARACTERS_AVAILABLE.  This should track recruitment, not party selectability.
             asm.PLX(),
             asm.PLY(),
 
@@ -898,6 +898,7 @@ class SetupBranchRecruit(_Instruction):
             asm.TDC(),
             asm.LDA(0x14, asm.DIR),  # A = cccc
             asm.JSR(0xbaed, asm.ABS),  # X = bit pos, Y = byte offset
+
             # Set recruited
             asm.LDA(char_recruited_addr, asm.ABS_Y),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),
@@ -906,7 +907,9 @@ class SetupBranchRecruit(_Instruction):
             asm.LDA(char_available_addr, asm.ABS_Y),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),
             asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
+            ### SetupBranchRecruit(character) should always be called following field.RecruitCharacter(character)
+            # So incrementing character here is redundant.
+            #asm.INC(characters_available_address, asm.ABS),
 
             # Clear party bits in field RAM for cccc (set to party 0).
             # Loop through characters to find cccc by index, then clear party bits.
@@ -987,7 +990,7 @@ class SetupBranchRecruit(_Instruction):
             asm.LDA(char_available_addr, asm.ABS_Y),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),
             asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
+            #asm.INC(characters_available_address, asm.ABS),
             asm.PLX(),
             asm.PLY(),
 
@@ -1030,7 +1033,7 @@ class SetupBranchRecruit(_Instruction):
             # Zero character_available and CHARACTERS_AVAILABLE
             asm.STZ(char_available_addr, asm.ABS),           # chars 0-7 available = 0
             asm.STZ(char_available_addr + 1, asm.ABS),       # chars 8-13 available = 0
-            asm.STZ(characters_available_address, asm.ABS),  # count = 0
+            #asm.STZ(characters_available_address, asm.ABS),  # count = 0.  This tracks recruitment, not 'availability'
 
             # === Step 1 & 2: Park parties and move active party to P1 ===
             asm.JSR(_park_parties, asm.ABS),
@@ -1515,7 +1518,7 @@ class FinalizeBranchRecruit(_Instruction):
             # Recompute character_available from scratch
             asm.STZ(char_available_addr, asm.ABS),
             asm.STZ(char_available_addr + 1, asm.ABS),
-            asm.STZ(characters_available_address, asm.ABS),
+            #asm.STZ(characters_available_address, asm.ABS),   # This tracks recruitment, not availability.
 
             asm.LDX(0x0000, asm.IMM16),
             asm.LDY(0x00, asm.DIR),
@@ -1545,7 +1548,7 @@ class FinalizeBranchRecruit(_Instruction):
             asm.LDA(char_available_addr, asm.ABS_Y),
             asm.ORA(c0.power_of_two_table, asm.LNG_X),
             asm.STA(char_available_addr, asm.ABS_Y),
-            asm.INC(characters_available_address, asm.ABS),
+            #asm.INC(characters_available_address, asm.ABS),  # this tracks recruitment, not availability.
 
             "AVAIL_NOT_RECRUITED",
             asm.PLX(),
