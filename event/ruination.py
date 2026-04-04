@@ -297,6 +297,8 @@ RUIN_ROOM_SETS = {
     'ImperialCamp': ['dc-1501'],
     'FigaroCastle': ['ruin-figarocastle'],  # Figaro Castle world map entrances
 
+    'DuncanHouse': ['ruin-duncan'],  # Duncan's House (Bum Rush); conditionally added when a Blitz character is planned
+
     'ImperialCastle': [331],  # Extra hub room if needed
 }
 
@@ -3307,7 +3309,7 @@ class RuinationBranch(Network):
 class ruination_map():
     # Class to organize data for mapping out ruination mode branches
 
-    def __init__(self, args, starting_party, verbose=False):
+    def __init__(self, args, starting_party, verbose=False, characters=None):
         # Verbose flag controls debug output throughout map generation
         self.verbose = verbose
 
@@ -3324,6 +3326,7 @@ class ruination_map():
             CHARACTER_LOCKED_REWARDS.clear()      # open world: no character-locked checks
             REWARDS_LOCKED_BY_CHARACTER.clear()
         self.accessible_shops = []  # list of shop IDs that are accessible (for dried meat assignment)
+        self.characters_data = characters  # Characters object for querying commands (e.g. Blitz)
 
         if args.no_free_characters_espers:
             # Restrict affected checks to ITEM only, matching the non-ruination event behavior
@@ -3374,10 +3377,31 @@ class ruination_map():
             print('Pre-plan: Reserve characters (for extra areas):', self.reserve_characters)
             print('Pre-plan: Dead checks allowed:', self.dead_checks_allowed)
 
+        # Check if any planned or starting party character has Blitz; if so, 50% chance to include Duncan's House
+        self.include_duncan_house = False
+        self.duncan_house_character = None
+        if self.characters_data is not None:
+            blitz_char_ids = self.characters_data.get_characters_with_command("Blitz")
+            blitz_char_names = [self.characters_data.DEFAULT_NAME[cid] for cid in blitz_char_ids]
+            # Check starting party first, then planned characters
+            party_blitz = [c for c in self.PARTY if c in blitz_char_names]
+            planned_blitz = [c for c in self.planned_characters if c in blitz_char_names]
+            all_blitz = party_blitz + planned_blitz
+            if all_blitz and random.random() < 0.5:
+                self.duncan_house_character = all_blitz[0]
+                self.include_duncan_house = True
+            if self.verbose:
+                print(f'Blitz characters: {blitz_char_names}')
+                print(f'Duncan\'s House: {"included" if self.include_duncan_house else "not included"}'
+                      + (f' (character: {self.duncan_house_character})' if self.include_duncan_house else ''))
+
         # Assemble initial areas from starting party + planned characters
         initial_areas = set()
         for character in self.PARTY:
             initial_areas.update(CHARACTER_AREAS.get(character, []))
+        # If Duncan's House is included and the Blitz character is in the starting party, add it now
+        if self.include_duncan_house and self.duncan_house_character in self.PARTY:
+            initial_areas.add('DuncanHouse')
         if self.verbose:
             print('Areas used: ', initial_areas)
 
@@ -4561,7 +4585,12 @@ class ruination_map():
                 # If a character, add new areas to the map
                 new_char = characters.DEFAULT_NAME[slot.id]
                 self.apply_key(new_char)  # apply new key to all branches
-                new_areas = CHARACTER_AREAS[new_char]
+                new_areas = list(CHARACTER_AREAS[new_char])
+                # Add Duncan's House if this is the Blitz character
+                if self.include_duncan_house and new_char == self.duncan_house_character:
+                    new_areas.append('DuncanHouse')
+                    if self.verbose:
+                        print(f'\tAdding DuncanHouse to {new_char}\'s areas (Blitz character)')
                 self.distribute_areas(new_areas, method='shortest')
 
             elif slot.type is RewardType.ESPER:
