@@ -495,6 +495,7 @@ room_data = {
     # DUNCAN'S HOUSE
     194 : [ [458, 457, 1186], [ ], [ ], 1], #Duncan's House Outside
     195 : [ [459], [ ], [ ], 1], #Duncan's House
+    'ruin-duncan': [[457, 1186], [], [], 1],  # Duncan's House Outside (door 458 to interior stays vanilla)
 
     196 : [ [460, 1187], [ ], [ ], 1], #Crazy Old Man's House WoR
 

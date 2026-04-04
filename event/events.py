@@ -253,7 +253,7 @@ class Events():
 
         # Initialize ruination_map object
         # Use -debug flag to enable verbose output for map generation diagnostics
-        ruin_map = ruination_map(self.args, party, verbose=self.args.debug)
+        ruin_map = ruination_map(self.args, party, verbose=self.args.debug, characters=self.characters)
 
         # Build out the map & distribute characters
         # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)
