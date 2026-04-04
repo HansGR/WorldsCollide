@@ -3325,6 +3325,25 @@ class ruination_map():
             REWARDS_LOCKED_BY_CHARACTER.clear()
         self.accessible_shops = []  # list of shop IDs that are accessible (for dried meat assignment)
 
+        if args.no_free_characters_espers:
+            # Restrict affected checks to ITEM only, matching the non-ruination event behavior
+            NFCE_RESTRICTED = {
+                'ms-wor-51': ["Collapsing House"],
+                'ruin-figarocastle': ["Figaro Castle WOB"],
+                'ms-wob-14': ["Gau Father House"],
+                'ms-wor-59': ["Kohlingen"],
+                256: ["Mt. Zozo"],
+                'ruin-narshe': ["Narshe WOR"],
+                'ms-wor-58': ["South Figaro"],
+                'ruin-lonewolf': ["Lone Wolf"],
+                'dc-73': ["Auction House_1", "Auction House_2"],
+            }
+            for room_key, reward_names in NFCE_RESTRICTED.items():
+                if room_key in ROOM_REWARD:
+                    for name in reward_names:
+                        if name in ROOM_REWARD[room_key]:
+                            ROOM_REWARD[room_key][name] = [RewardType.ITEM]
+
         # Spoiler log tracking: ordered list of reward acquisitions
         # Each entry: {'order': int, 'name': str, 'branch': int, 'type': RewardType, 'reward_id': int, 'reward_room': room_id}
         self.reward_log = []
