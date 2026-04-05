@@ -271,6 +271,12 @@ class Events():
             non_veldt_shops = ruin_map.get_non_veldt_gated_shops(self.characters)
             self.shops.assign_dried_meats_ruination(non_veldt_shops)
 
+        # Enable limited inventory for ruination shops if flag is set
+        if self.args.shop_limited_inventory:
+            self.shops.enable_limited_shops(ruin_map.accessible_shops)
+            if self.args.debug:
+                print(f'Limited inventory enabled for {len(ruin_map.accessible_shops)} shops')
+
         # Check state of reward_slots
         if self.args.debug:
             print('REWARD STATE AFTER RUIN MAPPING:')
