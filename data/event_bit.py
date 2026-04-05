@@ -13,6 +13,10 @@ DEFEATED_WHELK = 0x135
 NAMED_EDGAR = 0x004
 NAMED_SABIN = 0x005
 PRISON_DOOR_OPEN_FIGARO_CASTLE = 0x2b7
+FIGARO_CASTLE_HEADING_TOWARD_KOHLINGEN = 0x2b9
+FIGARO_CASTLE_IN_SF_DESERT_WOR = 0x106
+FIGARO_CASTLE_IN_KOHL_DESERT_WOR = 0x0dc
+FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR = 0x26f
 MET_KEFKA_FIGARO_CASTLE = 0x006
 FIRST_NOISE_FIGARO_CAVE = 0x0ae
 SECOND_NOISE_FIGARO_CAVE = 0x0af
@@ -52,11 +56,13 @@ CHASING_KEFKA2_IMPERIAL_CAMP = 0x02e
 CHASING_KEFKA3_IMPERIAL_CAMP = 0x02f
 FINISHED_CHASING_KEFKA_IMPERIAL_CAMP = 0x155
 FINISHED_IMPERIAL_CAMP = 0x037
-LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN = 0x180 # used for both door ghost in wob and lump of metal chest in wor
+PHANTOM_TRAIN_CAR_3 = 0x180 # previously used for both PT car 3 in wob and lump of metal chest in wor.  Previously called LUMP_CHEST_DOOR_GHOST_PHANTOM_TRAIN
 GOT_PHANTOM_TRAIN_REWARD = 0x192 # custom, used to be phantom forest recovery spring
 FOUND_PHANTOM_TRAIN = 0x038
+LOCKED_ON_PHANTOM_TRAIN = 0x039
 STOPPED_PHANTOM_TRAIN = 0x03a
 DEFEATED_PHANTOM_TRAIN = 0x03b
+SET_PHANTOM_TRAIN_SWITCHES = 0x03e
 NAMED_GAU = 0x03f
 FOUND_DIVING_HELMET = 0x041
 FINISHED_SABIN_SCENARIO = 0x044
@@ -82,6 +88,7 @@ SETZER_ABDUCTED_CELES = 0x05c
 TOSSED_CELES_SETZER_COIN = 0x05d
 DEFEATED_NINJA_CAVE_TO_SEALED_GATE = 0x075 # custom
 TERRA_AGREED_TO_OPEN_SEALED_GATE = 0x076
+SEALED_GATE_OPENED = 0x079
 DEFEATED_NUMBER_024 = 0x05f # custom, used to be saw kefka throw ifrit/shiva in trash
 DEFEATED_IFRIT_SHIVA_MAGITEK_FACTORY = 0x060
 GOT_IFRIT_SHIVA = 0x061
@@ -105,15 +112,28 @@ LEO_BURIED_THAMASA = 0x09c
 FINISHED_THAMASA_KEFKA = 0x09d
 CONTINENT_IS_FLOATING = 0x09e
 LEARNED_TO_FLY_AIRSHIP = 0x16f
+FACING_UP = 0x1b0
+FACING_RIGHT = 0x1b1
+FACING_DOWN = 0x1b2
+FACING_LEFT = 0x1b3
+PRESSING_A = 0x1b4
+NOT_ENOUGH_GP = 0x1be  # set by RemoveGP when player has insufficient GP
+SAVE_ENABLED = 0x1bf
 AIRSHIP_VISIBLE = 0x1b9
 AIRSHIP_FLYING = 0x246
 GOT_FALCON = 0x0cd
+SAW_DREAM_TRAIN_ESCAPE = 0x197  
+SAW_DREAM_CAVE_CHASE = 0x163  # DR custom
+SAW_DREAM_BRIDGE_ESCAPE = 0x164  # DR custom
+LUMP_OF_METAL_CHEST = 0x165  # DR custom, deconflicted from 0x180
 WON_AN_AUCTION = 0x166 # custom
 AUCTION_BOUGHT_ESPER1 = 0x16c # normally zoneseek
 AUCTION_BOUGHT_ESPER2 = 0x16d # normally golem
 WON_A_COLISEUM_MATCH = 0x1ef # custom, used to be shadow available at coliseum
 BOUGHT_ESPER_TZEN = 0x27c # normally sraphim
 RECRUITED_SHADOW_FLOATING_CONTINENT = 0x02a
+DEFEATED_IAF = 0x0a0  # skips IAF event to enter Floating Continent
+DEFEATED_AIR_FORCE = 0x0c0   # used in map shuffle to skip FC boss #2
 DEFEATED_ATMAWEAPON = 0x0a1 # custom
 DEFEATED_ATMA = 0x0a2 # custom
 LEFT_SHADOW_FLOATING_CONTINENT = 0x0a3
@@ -125,6 +145,7 @@ CID_DIED = 0x0b4
 FINISHED_FEEDING_CID = 0x0b9 # custom
 BOARDED_CRIMSON_ROBBERS_BOAT_NIKEAH = 0x0ac
 DEFEATED_TENTACLES_FIGARO = 0x0c6
+FIGARO_CASTLE_EMERGED_WOR = 0x0c7  # Set after castle emerges; prevents emerge animation from re-triggering
 LIGHT_JUDGEMENT_TZEN = 0x27d
 FINISHED_COLLAPSING_HOUSE = 0x28a
 HELPED_INJURED_LAD = 0x28d
@@ -143,8 +164,11 @@ GOT_BOTH_REWARDS_LONE_WOLF = 0x241
 MET_LONE_WOLF_WOR = 0x29b
 RECRUITED_MOG_WOB = 0x29f
 RECRUITED_UMARO_WOR = 0x07e
+DARYL_TOMB_WATER1_HIGH = 0x2b3
 DARYL_TOMB_TURTLE1_MOVED = 0x2b4
+DARYL_TOMB_WATER2_HIGH = 0x2b5
 DARYL_TOMB_TURTLE2_MOVED = 0x2b6
+DARYL_TOMB_DOOR_SWITCH = 0x2b8
 DEFEATED_DULLAHAN = 0x2b2
 RUST_RID_FOR_SALE = 0x298
 GOT_RUST_RID = 0x1db
@@ -173,6 +197,14 @@ FOUND_ANCIENT_CASTLE = 0x2df
 GOT_ODIN = 0x0c8
 SUPLEXED_TRAIN = 0x2b0 # custom, previously unused but set in nikeah entrance event
 
+THREE_PARTIES_CREATED = 0x0e0 # custom, ruination: all three parties have characters (bit 0 of party-state byte 0x1E9C)
+PARTY_1_AWAY = 0x0e1 # custom, ruination: party 1 is away in a branch
+PARTY_2_AWAY = 0x0e2 # custom, ruination: party 2 is away in a branch
+PARTY_3_AWAY = 0x0e3 # custom, ruination: party 3 is away in a branch
+PARTY_1_IN_WOR = 0x0e4 # custom, ruination: party 1's saved IN_WOR state for Y-switch
+PARTY_2_IN_WOR = 0x0e5 # custom, ruination: party 2's saved IN_WOR state for Y-switch
+PARTY_3_IN_WOR = 0x0e6 # custom, ruination: party 3's saved IN_WOR state for Y-switch
+
 DEFEATED_NARSHE_DRAGON = 0x11a # custom
 DEFEATED_MT_ZOZO_DRAGON = 0x11b # custom
 DEFEATED_OPERA_HOUSE_DRAGON = 0x11c # custom
@@ -200,18 +232,36 @@ LEFT_RIGHT_DOORS_KEFKA_TOWER = 0x0d0    # doors to doom/goddess opened on balcon
 UNLOCKED_KT_SKIP = 0x093 # custom
 UNLOCKED_FINAL_KEFKA = 0x094 # custom
 
-SIEGFRIED_LUMP_OF_METAL_CHESTS = 0x187 # set after siegfried chest in phantom train and lump of metal chest in cyan's dream
+LUMP_OF_METAL_CHESTS = 0x187 # set after lump of metal chest in cyan's dream.  Deconflicted from siegfried.
+FOUGHT_SIEGFRIED = 0x188  # DR custom, set after siegfried chest in PT
+VECTOR_FULL_HEAL_USED = 0x149  # DR custom, set after using full heal in Vector once
+SEALED_GATE_TERMINUS_USED = 0x14A  # Ruination: set after using Sealed Gate terminus to KT
+AIRSHIP_TERMINUS_USED = 0x14B  # Ruination: set after using Falcon terminus to KT
+ESPER_MTN_TERMINUS_USED = 0x14C  # Ruination: set after using Esper Mountain terminus to KT
 VELDT_WORLD_MUSIC = 0x1bb
 VELDT_REWARD_OBTAINED = 0x1bc # custom
+GAU_LEAPT = 0x1bd # custom, tracks whether the leap_char has leapt on the Veldt
 DISABLE_SPRINT = 0x1c1
 DISABLE_MENU_ACCESS = 0x1c2
 TEMP_SONG_OVERRIDE = 0x1cc
+CONTINUE_MUSIC_DURING_BATTLE = 0x2bc
+KT_WARP_OPTION = 0x2be
+PHOENIX_CAVE_WARP_OPTION = 0x2bf
+FLOATING_CONTINENT_WARP_OPTION = 0x2c1
+ANCIENT_CASTLE_WARP_OPTION = 0x2c2
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
+SAVED_Y_PARTY_SWITCHING = 0x0bb
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
+
+CAN_ENTER_GALLERY = 0x243   # Able to climb stairs to enter Owzer's gallery.
+DEFEATED_PAINTING_1 = 0x252  # beat 1st painting in Owzer's Mansion
+# DEFEATED_CHADARNOOK = 0x253  # defined above, this is just for reference
+BRIGHTEN_OWZER_BASEMENT = 0x24c  # walked thru the entrance that drops you in floating chest room
+DEFEATED_PAINTING_3 = 0x254  # beat 2nd painting in Owzer's Basement
 
 from constants.objectives import MAX_OBJECTIVES
 for index in range(MAX_OBJECTIVES):
-    globals()["OBJECTIVE" + str(index)] = 0xe0 + index
+    globals()["OBJECTIVE" + str(index)] = 0xe7 + index
 
 def byte(event_bit):
     return event_bit // 8
@@ -256,4 +306,4 @@ def multipurpose_party3_step(index):
 
 def objective(index):
     assert index >= 0 and index <= MAX_OBJECTIVES
-    return 0xe0 + index
+    return 0xe7 + index

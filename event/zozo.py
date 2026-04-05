@@ -47,9 +47,13 @@ class Zozo(Event):
         self.log_reward(self.reward)
 
         self.set_clock_mod()
-        if self.args.random_clock:
-            time = self.randomize_clock_mod()
-            self.log_change("6:10:50", time)
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
+        # always randomize clock
+        time = self.randomize_clock_mod()
+        self.log_change("6:10:50", time)
 
     def add_gating_condition(self):
         src = [
@@ -288,3 +292,15 @@ class Zozo(Event):
                 del options[digit_index].values[value_index]
 
         return time_string
+
+    def ruination_mod(self):
+        # (1) remove NPC in WOR if Terra has been recruited
+        ZOZO_MAP_ID = 0xdd
+
+        if self.args.character_gating:
+            # Entrance event = 0xaef85
+            # Where is this npc moved?  NPC_id = 0x18, is moved to (50,36) in WOB and (38, 58) in WOR.
+            # It's handled in mt_zozo.py
+            pass
+
+

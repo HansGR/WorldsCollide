@@ -1,6 +1,14 @@
 from event.event import *
+from data.map_exit_extra import exit_data, special_airship_locations
+from data.rooms import exit_world
 
 class EbotsRock(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.MAP_SHUFFLE = args.map_shuffle
+        self.DOOR_RANDOMIZE = (args.door_randomize_dungeon_crawl
+                          or args.ruination_mode)
+
     def name(self):
         return "Ebot's Rock"
 
@@ -20,10 +28,59 @@ class EbotsRock(Event):
         )
 
     def mod(self):
+        self.exit_loc = [0x01, 249, 224]
+        self.airship_thamasa = [0x001, 251, 230]
+        self.EXIT_IN_WOB = False
+        self.MOVE_AIRSHIP_TO_THAMASA = True
+
+        if self.MAP_SHUFFLE:
+            # modify exit position
+            exit_id = 1546
+            if exit_id in self.maps.door_map.keys():
+                self.exit_loc = self.maps.get_connection_location(exit_id, parent_map_ok=True)
+                self.EXIT_IN_WOB = (self.exit_loc[-1] == 0)
+
+            # modify airship warp position
+            thamasa_id = 1261
+            if thamasa_id in self.maps.door_map.keys():
+                if self.maps.door_map[thamasa_id] in special_airship_locations.keys():
+                    self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
+                else:
+                    self.airship_thamasa = self.maps.get_connection_location(thamasa_id)
+
+        elif self.DOOR_RANDOMIZE:
+            # Dungeon crawl / ruination: entry point may not be the world map.
+            # Update exit_loc from door 1546's randomized connection.
+            exit_id = 1546
+            if exit_id in self.maps.door_map.keys():
+                self.exit_loc = self.maps.get_connection_location(exit_id)
+                self.EXIT_IN_WOB = (self.exit_loc[-1] == 0)
+
+            if self.args.ruination_mode:
+                # Ruination: no airship movement needed.
+                self.MOVE_AIRSHIP_TO_THAMASA = False
+            else:
+                # Dungeon crawl: move airship to Thamasa's world map connection
+                # only if Thamasa actually connects to a world map.
+                thamasa_id = 1261
+                if thamasa_id in self.maps.door_map.keys():
+                    thamasa_loc = self.maps.get_connection_location(thamasa_id)
+                    if thamasa_loc[0] in [0x0, 0x1]:
+                        if self.maps.door_map[thamasa_id] in special_airship_locations.keys():
+                            self.airship_thamasa = special_airship_locations[self.maps.door_map[thamasa_id]]
+                        else:
+                            self.airship_thamasa = thamasa_loc[:3]
+                    else:
+                        self.MOVE_AIRSHIP_TO_THAMASA = False
+                else:
+                    self.MOVE_AIRSHIP_TO_THAMASA = False
+
         self.find_gungho_hurt_mod()
         self.chest_mod()
         self.hidon_mod()
         self.hidon_battle_mod()
+
+        self.warp_to_chest_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -96,11 +153,26 @@ class EbotsRock(Event):
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago character commands", field.NOP())
         space = Reserve(0xb7238, 0xb7239, "ebots rock enable collisions for strago", field.NOP())
 
-        # NOTE: just finished moving airship to thamasa, use vehicle command to load map here
+        if self.MAP_SHUFFLE or self.DOOR_RANDOMIZE:
+            # Vanilla code here moves the airship to Thamasa on the world map.
+            # NOP it out and only rewrite if we actually need to move the airship.
+            space = Reserve(0xb723b, 0xb7243, "ebots rock airship move", field.NOP())
+            if self.MOVE_AIRSHIP_TO_THAMASA:
+                space.write(
+                    field.LoadMap(self.airship_thamasa[0], direction.DOWN, default_music=False, x=self.airship_thamasa[1],
+                                  y=self.airship_thamasa[2], fade_in=False, airship=True),
+                    vehicle.SetPosition(self.airship_thamasa[1], self.airship_thamasa[2]),
+                )
+
         space = Reserve(0xb7244, 0xb7249, "ebots rock after hidon load strago's room map", field.NOP())
-        space.write(
-            vehicle.LoadMap(0x15d, direction.UP, default_music = False, x = 45, y = 21, fade_in = False, update_parent_map = True),
-        )
+        if self.MOVE_AIRSHIP_TO_THAMASA:
+            space.write(
+                vehicle.LoadMap(0x15d, direction.UP, default_music=False, x=45, y=21, fade_in=False, update_parent_map=True),
+            )
+        else:
+            space.write(
+                field.LoadMap(0x15d, direction.UP, default_music=False, x=45, y=21, fade_in=False, entrance_event=False),
+            )
 
         space = Reserve(0xb724e, 0xb7315, "ebots rock after hidon bedroom scene and that evening", field.NOP())
         space.write(
@@ -110,10 +182,16 @@ class EbotsRock(Event):
             field.DisableEntityCollision(field_entity.PARTY0),
             field.EntityAct(field_entity.PARTY0, True,
                 field_entity.SetSpriteLayer(2)
-            ),
+            )
+        )
+        if self.MOVE_AIRSHIP_TO_THAMASA:
+            space.write(
+                field.SetParentMap(map_id=self.airship_thamasa[0], x=self.airship_thamasa[1],
+                                   y=self.airship_thamasa[2] - 1, direction=direction.DOWN)
+            )
+        space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
-
         # change strago npc to party
         space = Reserve(0xb7316, 0xb7316, "ebots rock dinner table strago")
         space.write(field_entity.PARTY0)
@@ -175,12 +253,33 @@ class EbotsRock(Event):
         space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago runs down", field.NOP())
 
         space = Reserve(0xb7238, 0xb73df, "ebots rock strago/relm/gungho events after hidon", field.NOP())
-        space.copy_from(0xb73e1, 0xb73f0) # event bits after hidon
-        space.write(
-            field.FreeScreen(),
-            field.LoadMap(0x01, direction.DOWN, default_music = True, x = 249, y = 224),
-            world.End(),
-        )
+        space.copy_from(0xb73e1, 0xb73f0)  # event bits after hidon
+        if self.EXIT_IN_WOB:
+            space.write(
+                field.ClearEventBit(event_bit.IN_WOR)
+            )
+        space.write(field.FreeScreen())
+        if self.DOOR_RANDOMIZE and (self.exit_loc[0] in [0x0, 0x1]):
+            # Door rando returning to world map: summon the airship.
+            from event.switchyard import SummonAirship
+            space.write(
+                SummonAirship(self.exit_loc[0], x=self.exit_loc[1], y=self.exit_loc[2], fadeout=True)
+            )
+        elif self.DOOR_RANDOMIZE:
+            # Door rando returning to interior room (ruination, or dungeon crawl
+            # where Ebot's Rock was reached from a non-world-map room).
+            space.write(
+                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music=True,
+                              x=self.exit_loc[1], y=self.exit_loc[2], fade_in=True, entrance_event=True),
+                field.Return(),
+            )
+        else:
+            # Vanilla or map shuffle: exit to world map.
+            space.write(
+                field.LoadMap(self.exit_loc[0], direction.DOWN, default_music = True, x = self.exit_loc[1],
+                              y = self.exit_loc[2]),
+                world.End(),
+            )
 
         space = Reserve(0xb73f1, 0xb73f9, "ebots rock load thamasa map", field.NOP())
 
@@ -195,3 +294,27 @@ class EbotsRock(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def warp_to_chest_mod(self):
+        # If the player has sufficient Coral, make teleports have only 3 locations: Boss, Save, and Exit
+        CORAL_EVENT_WORD = 0x07
+        NORMAL_LOGIC_ADDR = 0xb6f0e # Normal Ebot's Cave branch logic location in ROM
+        GO_TO_CHEST_ADDR = 0xb6fb5 # The address in ROM of the event instruction to go to Chest
+        GO_TO_SAVE_ADDR = 0xb6fa3 # The address in ROM of the event instruction to go to Save point
+        GO_TO_EXIT_ADDR = 0xb6fac # the address in ROM of the event instruction to go to the exit
+        NUM_CORAL_ADDR = 0xb7109 # The address of the number of coral that the chest checks
+        num_coral = Read(NUM_CORAL_ADDR, NUM_CORAL_ADDR+1)[0]
+
+        src = [
+            field.BranchIfEventWordEqual(CORAL_EVENT_WORD, num_coral, NORMAL_LOGIC_ADDR), #coral count == 21, branch to regular logic
+            field.BranchIfEventWordLess(CORAL_EVENT_WORD, num_coral, NORMAL_LOGIC_ADDR),  #coral count  < 21, branch to regular logic
+            # else, we've > 21
+            field.BranchRandomly(GO_TO_CHEST_ADDR), # 50% chance to go to chest
+            field.BranchRandomly(GO_TO_SAVE_ADDR),  # 50% chance to go to save
+            field.Branch(GO_TO_EXIT_ADDR),      # else, go to entrance
+        ]
+        space = Write(Bank.CB, src, "Coral check to branch")
+        check_coral = space.start_address
+
+        space = Reserve(0xb6f01, 0xb6f04, "Call Ebot's Cave branch logic")
+        space.write(field.Call(check_coral))

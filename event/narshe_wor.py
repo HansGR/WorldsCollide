@@ -19,6 +19,9 @@ class NarsheWOR(Event):
             field.SetEventBit(event_bit.MET_LONE_WOLF_WOR),
             field.ClearEventBit(npc_bit.WHELK_GUARD_TRITOCH_NARSHE_WOB),
         )
+        # self.args.ruination_mode:
+        #    space.write(field.ClearEventBit(npc_bit.ARVIS_INTRO))  # Why was this set?  Shows NPCs in Narshe.
+        # Solved: it was set in Moogle Defense.
 
     def mod(self):
         self.pickpocket_mod()
@@ -222,6 +225,7 @@ class NarsheWOR(Event):
         ])
 
     def cursed_shield_mod(self):
+        self.dialogs.set_text(919, f"G'ho! Everyone knows that these days, curses only last for {self.items.cursed_shield_battles} battles.<end>")
         self.dialogs.set_text(1523, f"“Cursed Shld”…{self.items.cursed_shield_battles}<end>")
         if not self.args.cursed_shield_battles_original:
             self.log_change("Cursed Shield 256", self.items.cursed_shield_battles)

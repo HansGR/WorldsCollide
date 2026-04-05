@@ -15,7 +15,7 @@ class Lores:
     INITIAL_LORES_END = 0x26f566
 
     NAMES_START = 0x26f9fd
-    NAMES_END = 0x26fb65
+    NAMES_END = 0x26faec # https://discord.com/channels/666661907628949504/931737764205047858/1069100781216739328
     NAME_SIZE = 10
 
     DESC_PTRS_START = 0x2d7a70
@@ -77,7 +77,13 @@ class Lores:
         from memory.space import START_ADDRESS_SNES
         import instruction.c0 as c0
 
-        character_available = START_ADDRESS_SNES + c0.character_available
+        # In ruination mode, away-party characters have their character_available bit
+        # cleared. Use character_recruited instead so characters on branches can still
+        # learn lores after battle.
+        if self.args.ruination_mode is not None:
+            character_check = START_ADDRESS_SNES + c0.character_recruited
+        else:
+            character_check = START_ADDRESS_SNES + c0.character_available
 
         # NOTE: lores are learned by being in the party
         #       on the veldt, the character to possibly appear is added to the party and hidden
@@ -91,7 +97,7 @@ class Lores:
             asm.LDA(0x3ed9, asm.ABS_X),         # a = character id
             asm.CMP(0xff, asm.IMM8),            # no character in this slot?
             asm.BEQ("LOOP_INCREMENT"),          # branch to next slot if no character in this slot
-            asm.JSL(character_available),
+            asm.JSL(character_check),
             asm.CMP(0x00, asm.IMM8),            # compare result with 0
             asm.BEQ("LOOP_INCREMENT"),          # branch if character not available
             asm.TXY(),                          # transfer character index to y
@@ -213,10 +219,50 @@ class Lores:
             battle_message = re.sub('<dotted line>', '“', lore.desc)
             dialogs.set_battle_message_text(self.DIALOG_OFFSET + lore_index, battle_message)
 
+    def show_mp_mod(self):
+        # Show Party member MP in menus if they have Lore, even if they don't know any Magic
+        # Thanks to Lenophis for most of this work: https://discord.com/channels/666661907628949504/931737764205047858/1054557544942673940
+        src = [
+            asm.JSR(0x30d2b, asm.ABS), # check to see if this character knows magic; this is displaced code
+            asm.BCS("magic_exit"),
+            # if we are at this point, we have a magic command but no magic.
+            # so now we are going to do a back-up check and see if a secondary command is present so MP can be shown
+            # if not, it will be grayed out as normal
+            asm.LDY(0x67, asm.DIR), # this gets set earlier in our route. Let's pull this character's index again for our back-up check
+            asm.LDX(0x0000, asm.IMM16),
+            "command_loop",
+            asm.LDA(0x0016, asm.ABS_Y),
+            asm.CMP(0x0C, asm.IMM8), # Lore
+            asm.BEQ("command_ok"),
+            asm.INY(),
+            asm.INX(),
+            asm.CPX(0x0004, asm.IMM16), # have we done 4 commands yet?
+            asm.BNE("command_loop"), # branch if not
+            # if we have exited the loop with no match, we need to flag MP to not show up
+            asm.CLC(),
+            asm.RTS(),
+            "command_ok",
+            # at this point, we have matched supplemental command, so let's flag MP as ok to show up
+            asm.SEC(),
+            "magic_exit",
+            asm.RTS(),
+        ]
+        space = Write(Bank.C3, src, "check for Lore")
+        mp_hook = space.start_address
+        space = Reserve(0x30cb7, 0x30cb9, "check for magic command")
+        space.write(
+            asm.JSR(mp_hook, asm.ABS),
+        )
+        space = Reserve(0x36134, 0x36136, "check for magic command 2")
+        space.write(
+            asm.JSR(mp_hook, asm.ABS),
+        )
+
     def mod(self, dialogs):
         self.write_learners_table()
         self.write_is_learner()
         self.after_battle_check_mod()
+        self.show_mp_mod()
 
         if self.args.start_lores_random:
             self.start_random_lores()

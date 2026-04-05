@@ -77,7 +77,10 @@ class MoblizWOR(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
-        space = Reserve(0xc4c09, 0xc4c1a, "mobliz wor jump straight to attacking phunbaba", field.NOP())
+        # In ruination mode, this space is reserved by character_mod/esper_item_mod
+        # to inject SetupBranchRecruit before the Phunbaba 3 battle
+        if not self.args.ruination_mode:
+            space = Reserve(0xc4c09, 0xc4c1a, "mobliz wor jump straight to attacking phunbaba", field.NOP())
         space = Reserve(0xc4c88, 0xc4c8b, "mobliz wor phunbaba 2 TERRA!!", field.NOP())
         space = Reserve(0xc4c97, 0xc4cc7, "mobliz wor turn terra into esper", field.NOP())
         space.write(
@@ -109,25 +112,65 @@ class MoblizWOR(Event):
         self.dialogs.set_text(2307, "You're not gonna take <" + char_default_name + "> away, are you?<end>")
         self.dialogs.set_text(2315, "I'm not gonna cry.<line>If I do, <" + char_default_name + ">'ll feel sad…<end>")
 
-        space = Reserve(0xc4cca, 0xc4cd9, "mobliz wor add character to party before phunbaba 4 if room available", field.NOP())
-        space.write(
+        src = [
             # check for 4 party members in case phunbaba 3 was not the previous boss and no bababreath happened
-            field.BranchIfPartySize(4, space.end_address + 1),
+            field.BranchIfPartySize(4, "RETURN"),
 
             field.CreateEntity(character),
             field.AddCharacterToParty(character, 1),
             field.RefreshEntities(),
+        ]
+        if self.args.start_average_level:
+            src += [
+                # Average character level via field command - example ref: CC/3A2C
+                field.AverageLevel(character),
+                field.RestoreHp(character, 0x7f), # restore all HP
+                field.RestoreMp(character, 0x7f), # restore all MP
+            ]
+        src += [
+            "RETURN",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "character joins before Mobliz battle")
+        add_character = space.start_address
+
+        # In ruination mode, inject SetupBranchRecruit before Phunbaba 3 battle
+        # to capture the full party before bababreath can blow members away.
+        # After Setup, everyone is moved to P1, so AddCharacterToParty(char, 1) is correct.
+        # Also set the recruited character's talk-event pointer for party interaction.
+        if self.args.ruination_mode:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+            space = Reserve(0xc4c09, 0xc4c1a, "mobliz wor setup branch recruit before phunbaba 3", field.NOP())
+            space.write(
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
+                field.SetupBranchRecruit(character),
+            )
+
+        space = Reserve(0xc4cca, 0xc4cd9, "mobliz wor add character to party before phunbaba 4 if room available", field.NOP())
+        space.write(
+            field.Call(add_character),
         )
 
         boss_pack_id = self.get_boss("Phunbaba 4")
 
-        space = Reserve(0xc4cda, 0xc4cec, "mobliz wor phunbaba 4 battle, esper terra and children scene", field.NOP())
+        space = Reserve(0xc4cda, 0xc4cef, "mobliz wor phunbaba 4 battle, esper terra and children scene", field.NOP())
         space.add_label("FINISH_EVENT", 0xc502a),
-        space.write(
-            field.InvokeBattle(boss_pack_id),
-            field.RecruitAndSelectParty(character),
-            field.Branch("FINISH_EVENT"), # skip scene
-        )
+        if self.args.ruination_mode:
+            # Decompose RecruitAndSelectParty: skip SetupBranchRecruit (already called
+            # before Phunbaba 3) and just do recruit + party select + finalize
+            space.write(
+                field.InvokeBattle(boss_pack_id),
+                field.RecruitCharacter(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchRecruit(),
+                field.Branch("FINISH_EVENT"),
+            )
+        else:
+            space.write(
+                field.InvokeBattle(boss_pack_id),
+                field.RecruitAndSelectParty(character),
+                field.Branch("FINISH_EVENT"), # skip scene
+            )
 
         space = Reserve(0xc503f, 0xc5059, "mobliz wor add terra to party", field.NOP())
         space.write(
@@ -152,6 +195,17 @@ class MoblizWOR(Event):
 
         boss_pack_id = self.get_boss("Phunbaba 4")
 
+        # In ruination mode, inject SetupBranchRecruit before Phunbaba 3 battle
+        # and wrap party select with FinalizeBranchRecruit.
+        # 0x0F sentinel = no new recruit character.
+        if self.args.ruination_mode:
+            space = Reserve(0xc4c09, 0xc4c1a, "mobliz wor setup branch recruit before phunbaba 3", field.NOP())
+            if not self.args.shuffle_random_phunbaba3:
+                # Party select will happen → need Setup/Finalize pair
+                space.write(
+                    field.SetupBranchRecruit(0x0F),
+                )
+
         space = Reserve(0xc4cca, 0xc4cec, "mobliz wor phunbaba 4 battle, esper terra and children scene", field.NOP())
         space.add_label("FINISH_EVENT", 0xc502a),
         space.write(
@@ -161,6 +215,10 @@ class MoblizWOR(Event):
             space.write(
                 field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             )
+            if self.args.ruination_mode:
+                space.write(
+                    field.FinalizeBranchRecruit(),
+                )
         space.write(
             field.FadeOutSong(0),
             field.Branch("FINISH_EVENT"), # skip scene

@@ -21,8 +21,11 @@ class NarsheMoogleDefense(Event):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def init_event_bits(self, space):
+        if not self.args.ruination_mode:
+            space.write(
+                field.SetEventBit(npc_bit.ARVIS_INTRO),  # show Arvis
+            )
         space.write(
-            field.SetEventBit(npc_bit.ARVIS_INTRO), # show Arvis
             field.ClearEventBit(npc_bit.MARSHAL_NARSHE_WOB), # do not show marshal
         )
 
@@ -67,7 +70,7 @@ class NarsheMoogleDefense(Event):
                 field.SetPalette(character_idx, self.characters.get_palette(self.characters.MOG)),
                 # Give it the name and properties of the moogle
                 field.SetName(character_idx, moogle_id),
-                field.SetProperties(character_idx, moogle_id),
+                field.SetEquipmentAndCommands(character_idx, moogle_id),
             ]
             if self.args.start_average_level:
                 src += [
@@ -141,6 +144,7 @@ class NarsheMoogleDefense(Event):
         space = Reserve(0xca905, 0xcaa03, "moogle defense party creation", field.NOP())
         space.write(
             src,
+            field.SetEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE), # cause locke's theme to keep playing through battles
             field.Branch(space.end_address + 1), # skip nops
         )
 
@@ -383,40 +387,99 @@ class NarsheMoogleDefense(Event):
         space = Reserve(0xca8ff, 0xca8ff, "small pause before fade", field.NOP())
 
         # Change logic for moogle party selection to account for any party variation
-        self.add_moogles_to_parties()
+        if self.args.ruination_mode:
+            # Copy relevant part of "add moogles to parties"
+            space = Reserve(0xca905, 0xcaa03, "moogle defense party creation", field.NOP())
+            space.write(
+                field.FadeOutScreen(),
+                field.WaitForFade(),
+                field.SetEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
+                # cause locke's theme to keep playing through battles
+                field.Branch(space.end_address + 1),  # skip nops
+            )
 
-        # Add party size checks around the addition of parties 2 and 3 to the map
-        src = [
-            field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
-            Read(0xcaa23, 0xcaa26), # displaced code -- place party 2 on map
-            field.BranchIfPartyEmpty(3, "RETURN"),
-            Read(0xcaa27, 0xcaa2a), # displaced code -- place party 3 on map
-            "RETURN", 
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "Check for Party 2 and 3 sizes before placing")
-        place_parties = space.start_address
+            # Instead of creating parties 2 and 3, just place some moogle NPCs.
+            # Remove the SetPartyMap call for all parties - the active party is already on the correct map, and the others should not be moved.
+            space = Reserve(0xcaa1f, 0xcaa2f, "place party 2 and 3 on map", field.NOP())
+            space.write(
+                field.CreateEntity(0x10),   # Create moogle #1
+                field.ShowEntity(0x10),     # Show moogle #1
+                field.CreateEntity(0x11),   # Create moogle #2
+                field.ShowEntity(0x11),     # Show moogle #2
+                field.RefreshEntities(),
+            )
+            # space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
+            space = Reserve(0xcaa3a, 0xcaa3d, "Moogle defense no 2nd party edit 1", field.NOP())
+            space = Reserve(0xcaa3e, 0xcaa3e, "Moogle defense 2nd party to npc 0x10", field.NOP())
+            space.write(0x10),
+            space = Reserve(0xcaa46, 0xcaa4c, "Moogle defense no 3rd party edit 1", field.NOP())
+            space = Reserve(0xcaa4d, 0xcaa4d, "Moogle defense 3nd party to npc 0x11", field.NOP())
+            space.write(0x11),
+            space = Reserve(0xcaa55, 0xcaa5b, "Moogle defense no other parties edit 1", field.NOP())
+            space.write(field.RefreshEntities()),
 
-        space = Reserve(0xcaa23, 0xcaa2a, "place party 2 and 3 on map", field.NOP())
-        space.write(
-            field.Call(place_parties),
-        )
+            # Handle y-party switching: store value & disable until end of battle.
+            # We will use 0x1ca, which is set here but seems unused.
+            src = [
+                field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "IS_SET"),
+                field.ClearEventBit(0x1ca), # Store value is cleared
+                field.Return(),
+                "IS_SET",
+                field.SetEventBit(0x1ca),
+                field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+                field.Return()
+            ]
+            space = Write(Bank.CC, src, "Store Y-party-switch before moogle_defense")
+            self.handle_y_party_switch_addr = space.start_address
 
-        src = [
-            field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
-            Read(0xcaa3a, 0xcaa48), # displaced code -- position party 2 on map
-            field.BranchIfPartyEmpty(3, "RETURN"),
-            Read(0xcaa49, 0xcaa57), # displaced code -- position party 3 on map
-            "RETURN",
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "Position party 2")
-        position_parties = space.start_address
+            space = Reserve(0xcaa99, 0xcaa9c, "Moogle defense handle Y-party switch", field.NOP())
+            space.write(field.Call(self.handle_y_party_switch_addr))
 
-        space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
-        space.write(
-            field.Call(position_parties),
-        )
+            # Reserve the vanilla post-battle retry loop (0xCADAF-0xCADBE).
+            # On loss the vanilla code retries the battle; in ruination mode we replace it with a straightforward game-over check.
+            space = Reserve(0xcadaf, 0xcadbe, "moogle defense post-battle retry loop (ruination)", field.NOP())
+            space.write(
+                field.BranchIfBattleEventBitClear(battle_bit.PARTY_ANNIHILATED, 0xcadbf),
+                field.Dialog(1744),
+                field.Call(field.GAME_OVER),
+                field.Return()
+            )
+
+        else:
+            self.add_moogles_to_parties()
+
+            # Add party size checks around the addition of parties 2 and 3 to the map
+            src = [
+                field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
+                Read(0xcaa23, 0xcaa26), # displaced code -- place party 2 on map
+                field.BranchIfPartyEmpty(3, "RETURN"),
+                Read(0xcaa27, 0xcaa2a), # displaced code -- place party 3 on map
+                "RETURN",
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "Check for Party 2 and 3 sizes before placing")
+            place_parties = space.start_address
+
+            space = Reserve(0xcaa23, 0xcaa2a, "place party 2 and 3 on map", field.NOP())
+            space.write(
+                field.Call(place_parties),
+            )
+
+            src = [
+                field.BranchIfPartyEmpty(2, "RETURN"), # if there's no party 2, there's no party 3
+                Read(0xcaa3a, 0xcaa48), # displaced code -- position party 2 on map
+                field.BranchIfPartyEmpty(3, "RETURN"),
+                Read(0xcaa49, 0xcaa57), # displaced code -- position party 3 on map
+                "RETURN",
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "Position party 2")
+            position_parties = space.start_address
+
+            space = Reserve(0xcaa3a, 0xcaa57, "position party 2 on map", field.NOP())
+            space.write(
+                field.Call(position_parties),
+            )
 
         # Clear use of event_bit.12E (TERRA_COLLAPSED_NARHSE_WOB) and event_bit.003 (moogle defense) at cc/aaab so that we can reuse 12E 
         # and so that 003 doesn't cause issues at WoB Narshe entrance
@@ -436,36 +499,69 @@ class NarsheMoogleDefense(Event):
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE), # allow song to change on map change
             field.ClearEventBit(npc_bit.MARSHAL_NARSHE_WOB), # Remove Marshal and "Terra" in south caves
             field.ClearEventBit(npc_bit.TERRA_COLLAPSED_NARSHE_WOB), # Remove collapsed Terra
+            field.SetEventBit(event_bit.FINISHED_MOOGLE_DEFENSE),
 
             Read(0xcaded, 0xcadf2), # load map
 
             field.HideEntity(0x1B), # the exit block at top of map
-
-            field.SetParty(1),
-            field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
-            field.LoadRecruitedCharacters(),
         ]
-        for character_idx in range(self.characters.CHARACTER_COUNT):
+        if self.args.ruination_mode:
+            # Skip restore moogled characters (they were never moogled).
+            #space = Reserve(0xcadf3, 0xcae01, "hide parties 1 and 2", field.NOP())
+
+            # Need to re-enable Y-party switch if required.  We stored the value of event_bit.ENABLE_Y_PARTY_SWITCHING in 0x1ca.
             src += [
-                #only restore if character has not been recruited (meaning they were moogled)
-                field.BranchIfEventBitSet(event_bit.multipurpose(character_idx), f"SKIP_{character_idx}"), 
-                field.RemoveStatusEffects(character_idx, field.Status.FLOAT | field.Status.DARKNESS | field.Status.ZOMBIE | field.Status.POISON | field.Status.VANISH | field.Status.IMP | field.Status.PETRIFY | field.Status.DEATH),
-                field.RemoveDeath(character_idx), # added due to permadeath situations to make sure the corresponding party member is alive
-                field.RestoreHp(character_idx, 0x7f), # restore all HP
-                field.RestoreMp(character_idx, 0x7f), # restore all MP
-                # Restore character appearance, name, and properties
-                field.SetSprite(character_idx, self.characters.get_sprite(character_idx)),
-                field.SetPalette(character_idx, self.characters.get_palette(character_idx)),
-                field.SetName(character_idx, character_idx),
-                field.SetProperties(character_idx, character_idx),
-                f"SKIP_{character_idx}",
+                field.BranchIfEventBitClear(0x1ca, "IS_CLEAR"),
+                field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Store value is cleared
+                field.ClearEventBit(0x1ca),
+                "IS_CLEAR",
             ]
+            # If recruited a character, allow party reform
+            if self.reward.type == RewardType.CHARACTER:
+                from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+                branch_refresh_src = [
+                    field.ChangeNPCEventAddress(self.reward.id, PARTY_INTERACTION_SCRIPT_ADDRS[self.reward.id]),
+                    field.SetupBranchRecruit(self.reward.id),
+                    field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                    field.FinalizeBranchRecruit(),
+                    field.Return(),
+                ]
+                branch_refresh = Write(Bank.CA, branch_refresh_src, "moogle defense branch-aware refresh")
+                src += [
+                    field.Call(branch_refresh.start_address),
+                    field.UpdatePartyLeader(),
+                ]
+        else:
+            src += [
+                field.SetParty(1),
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.LoadRecruitedCharacters(),
+            ]
+            for character_idx in range(self.characters.CHARACTER_COUNT):
+                src += [
+                    #only restore if character has not been recruited (meaning they were moogled)
+                    field.BranchIfEventBitSet(event_bit.multipurpose(character_idx), f"SKIP_{character_idx}"),
+                    field.RemoveStatusEffects(character_idx, field.Status.FLOAT | field.Status.DARKNESS | field.Status.ZOMBIE | field.Status.POISON | field.Status.VANISH | field.Status.IMP | field.Status.PETRIFY | field.Status.DEATH),
+                    field.RemoveDeath(character_idx), # added due to permadeath situations to make sure the corresponding party member is alive
+                    field.RestoreHp(character_idx, 0x7f), # restore all HP
+                    field.RestoreMp(character_idx, 0x7f), # restore all MP
+                    # Restore character appearance, name, and properties
+                    field.SetSprite(character_idx, self.characters.get_sprite(character_idx)),
+                    field.SetPalette(character_idx, self.characters.get_palette(character_idx)),
+                    field.SetName(character_idx, character_idx),
+                    field.SetEquipmentAndCommands(character_idx, character_idx),
+                    f"SKIP_{character_idx}",
+                ]
+
+            src += [
+                # give Shadow Interceptor again
+                field.AddStatusEffects(self.characters.SHADOW, field.Status.DOG_BLOCK),
+
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.UpdatePartyLeader(),
+            ]
+
         src += [
-            # give Shadow Interceptor again
-            field.AddStatusEffects(self.characters.SHADOW, field.Status.DOG_BLOCK),
-            
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
             field.RefreshEntities(),
 
@@ -474,7 +570,6 @@ class NarsheMoogleDefense(Event):
             field.FadeInScreen(),
             field.WaitForFade(),
 
-            field.SetEventBit(event_bit.FINISHED_MOOGLE_DEFENSE),
             field.FreeMovement(),
 
             # hide Arvis 
@@ -497,7 +592,7 @@ class NarsheMoogleDefense(Event):
             field.SetSprite(character, self.characters.get_sprite(character)),
             field.SetPalette(character, self.characters.get_palette(character)),
             field.SetName(character, character),
-            field.SetProperties(character, character),
+            field.SetEquipmentAndCommands(character, character),
             field.RemoveStatusEffects(character, field.Status.FLOAT | field.Status.DARKNESS | field.Status.ZOMBIE | field.Status.POISON | field.Status.VANISH | field.Status.IMP | field.Status.PETRIFY | field.Status.DEATH),
             field.RemoveDeath(character), # added due to permadeath situations to make sure the corresponding party member is alive
             field.RestoreHp(character, 0x7f), # restore all HP
@@ -506,8 +601,12 @@ class NarsheMoogleDefense(Event):
         ])
 
     def esper_item_mod(self, esper_item_instructions):
-        #Using thematic Moogle sprite for Esper/Items
-        esper_item_sprite = self.characters.get_sprite(self.characters.MOG)
+        if self.args.character_gating:
+            #Using thematic Moogle sprite for Esper/Items
+            esper_item_sprite = self.characters.get_sprite(self.characters.MOG)
+        else:
+            # Open world -- use standard sprites
+            esper_item_sprite = self.characters.get_random_esper_item_sprite()
         self.terra_npc.sprite = esper_item_sprite
         self.terra_npc.palette = self.characters.get_palette(self.terra_npc.sprite)
         self.terra_collapsed_npc.sprite = esper_item_sprite
@@ -535,9 +634,13 @@ class NarsheMoogleDefense(Event):
 
         self.marshal_npc_mod()
 
-        self.arvis_start_mod()
+        if not self.args.ruination_mode:
+            self.arvis_start_mod()
         self.event_start_mod()
         self.marshal_battle_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_start_mod()  # requires event_start_mod to be written.
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -548,6 +651,80 @@ class NarsheMoogleDefense(Event):
 
         self.log_reward(self.reward)
 
+    def ruination_start_mod(self):
+        # (1) Edit the mine entry event to show collapsed Terra, if we have mog
+        # Original entrance_event code is at 0xcab6f: handles wolf movement (if 0x12f is set)
+        if self.args.character_gating:
+            src = [
+                field.BranchIfAny([event_bit.character_recruited(self.character_gate()), False,
+                                   event_bit.FINISHED_MOOGLE_DEFENSE, True],
+                                  "CONTINUE"),
+                ]
+        else:
+            src = [
+                field.BranchIfEventBitSet(event_bit.FINISHED_MOOGLE_DEFENSE, "CONTINUE"),
+            ]
+        src += [
+            field.SetEventBit(npc_bit.TERRA_COLLAPSED_NARSHE_WOB),  # Show collapsed "Terra"
+            field.CreateEntity(self.COLLAPSED_TERRA_NPC_ID),
+            field.ShowEntity(self.COLLAPSED_TERRA_NPC_ID),
+            field.RefreshEntities(),
+            "CONTINUE",
+            field.Branch(0xcab6f),
+        ]
+        space = Write(Bank.CC, src, "Ruination begin moogle defense in mines")
+        self.maps.maps[self.WOB_MAP_ID]["entrance_event_address"] = space.start_address - EVENT_CODE_START
+        #print('wrote edited entrance event for map ', hex(self.WOB_MAP_ID), 'at', hex(space.start_address), ':')
+        #for s in src:
+        #    print(s.__str__())
 
+        # (2) Edit the collapsed Terra NPC event to begin the encounter
+        self.moogle_defense_begin_addr = 0xCA7b8   # after Locke lands, walks to the left of Terra, kneels, blinks.
+        src = [
+            field.ReturnIfEventBitSet(npc_bit.MARSHAL_NARSHE_WOB),  # Don't do anything if in the battle.
+            field.SetEventBit(npc_bit.MARSHAL_NARSHE_WOB),  # Show "Terra" in south caves and Marshal in battle
+            field.BranchIfEventBitSet(event_bit.FACING_RIGHT, "BEGIN_EVENT"),
+            field.BranchIfEventBitSet(event_bit.FACING_UP, "MOVE_LEFT_UP"),
+            field.BranchIfEventBitSet(event_bit.FACING_DOWN, "MOVE_LEFT_DOWN"),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.UP, 1),
+                            field_entity.Move(direction.LEFT, 1)
+                            ),
+            field.Branch("MOVE_LEFT_DOWN"),
+            "MOVE_LEFT_UP",
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.LEFT, 1),
+                            field_entity.Move(direction.UP, 1)
+                            ),
+            field.Branch("BEGIN_EVENT"),
+            "MOVE_LEFT_DOWN",
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.Move(direction.LEFT, 1),
+                            field_entity.Move(direction.DOWN, 1)
+                            ),
+            "BEGIN_EVENT",
+            field.FadeOutSong(0x40),
+            Read(0xca799, 0xca7b7),   # Animate kneeling, then blinking
+            field.StartSong(13),  # play song: Locke
+            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),  # keep song playing
+            field.Branch(self.moogle_defense_begin_addr)
+        ]
+        space = Write(Bank.CC, src, "Collapsed Terra starting moogle defense event")
+        self.terra_collapsed_npc.event_address = space.start_address - EVENT_CODE_START
+        #
+        #print('wrote edited start event at', hex(space.start_address), ':')
+        #for s in src:
+        #    print(s.__str__())
 
+        # Edit camera move so it doesn't go as far down
+        space = Reserve(0xcA7C5, 0xcA7C5, "Edit camera move before moogle defense", field.NOP())
+        space.write(field_entity.Move(direction=direction.DOWN, distance=5))
 
+        # Edit default music of the battlefield map (should be Narshe WOR, not Narshe WOB)
+        moogle_battle_map_properties = self.maps.properties[self.WOB_MAP_ID]
+        moogle_battle_map_properties.song = 79  # Dark World
+        # Reskin to use WoR mines palette = 0x15
+        moogle_battle_map_properties.paletteindex = 0x15

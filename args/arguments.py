@@ -1,5 +1,9 @@
 class Arguments:
     def __init__(self):
+        # Preprocess -ruin meta-flag before parsing
+        from args.ruin_preprocessor import preprocess_arguments
+        preprocess_arguments()
+
         import importlib
         self.groups = [
             "settings",
@@ -9,7 +13,7 @@ class Arguments:
             "espers", "natural_magic", "misc_magic",
             "starting_gold_items", "items", "shops", "chests",
             "graphics",
-            "coliseum", "auction_house", "challenges", "bug_fixes", "misc",
+            "coliseum", "auction_house", "challenges", "bug_fixes", "misc", "doors"
         ]
         self.group_modules = {}
         for group in self.groups:

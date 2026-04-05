@@ -1,0 +1,4898 @@
+{
+  "_description": "Room-to-map reference. Maps room names from data/rooms.py to their map_id in the game.",
+  "_how_generated": "Primary: found room's physical exit in maps_data.json (approach 1). Secondary: looked up exit partner's dest_map (approach 2). NR rooms inherit from base room. Some manual annotations from rooms.py hex comments.",
+  "_notes": [
+    "Room names in room_data do NOT correspond to map IDs - they are internal identifiers.",
+    "Multiple rooms can share the same map_id (e.g., WoB and WoR versions, or multiple logical rooms on one physical map).",
+    "Unresolved rooms only have virtual/event tile exits that could not be traced to physical maps.",
+    "map_name comes from the game's location name display system (some maps have empty names)."
+  ],
+  "rooms": {
+    "0": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "World of Balance"
+    },
+    "504a": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "WOB Imperial Base / Cave to Sealed Gate connector"
+    },
+    "root-em": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-esper-mountain"
+    },
+    "root-mk": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root room for Mt Kolts"
+    },
+    "root-sfcb": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-south-figaro-cave-wob (to_world_map)"
+    },
+    "shuffle-wob": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for WOB map shuffle (does not include connector to Sealed Gate Cave or chocobo stables)"
+    },
+    "wob-baren": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-doma": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-empire": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-figaro": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-kohlingen": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-narshe": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-nikeah": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-sabil": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-thamasa": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "wob-veldt": {
+      "map_id": 0,
+      "map_name": "",
+      "world": "WoB"
+    },
+    "1": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "World of Ruin"
+    },
+    "root-vc": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Root room for Cave on the Veldt"
+    },
+    "shuffle-wor": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Root map for WOR map shuffle (does not include Figaro Castle, KT, Phoenix Cave or chocobo stables).  Note: extra Nikeah doors are 54, 55."
+    },
+    "wor-dinosaur": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-doma": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-dragonsneck": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-ebots": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-fanatics": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-figaro": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-island": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-jidoor": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-kefkastower": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-narshe": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-thamasa": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "wor-veldt": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "241a": {
+      "map_id": 2,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench #1"
+    },
+    "241b": {
+      "map_id": 2,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench #2"
+    },
+    "241c": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench #3"
+    },
+    "241d": {
+      "map_id": 5,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Passthru room for handling ST#3 --> Nikeah transition"
+    },
+    "root-ze": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "ZoneEater Engulf"
+    },
+    "ruin_kt_entry_3": {
+      "map_id": 301,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Daryl's Tomb staircase + Falcon"
+    },
+    "wor-triangle": {
+      "map_id": 1,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "2": {
+      "map_id": 6,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Blackjack Outside"
+    },
+    "3": {
+      "map_id": 7,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Blackjack Gambling Room"
+    },
+    "4": {
+      "map_id": 7,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Blackjack Party Room"
+    },
+    "5": {
+      "map_id": 7,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Blackjack Shop Room"
+    },
+    "6": {
+      "map_id": 7,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Blackjack Engine Room"
+    },
+    "7": {
+      "map_id": 8,
+      "map_name": "WEAPON SHOP",
+      "world": "WoB",
+      "comment": "Blackjack Parlor Room"
+    },
+    "8": {
+      "map_id": 11,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Falcon Outside"
+    },
+    "10": {
+      "map_id": 12,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Falcon Small Room"
+    },
+    "11": {
+      "map_id": 12,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Falcon Engine Room"
+    },
+    "9": {
+      "map_id": 12,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Falcon Main Room"
+    },
+    "12": {
+      "map_id": 14,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoB",
+      "comment": "Chocobo Stable Exterior WoB"
+    },
+    "13": {
+      "map_id": 15,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Chocobo Stable Interior"
+    },
+    "13R": {
+      "map_id": 15,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Chocobo Stable Interior"
+    },
+    "14": {
+      "map_id": 16,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoR",
+      "comment": "Chocobo Stable Exterior WoR"
+    },
+    "16": {
+      "map_id": 20,
+      "map_name": "NARSHE",
+      "world": "WoB",
+      "comment": "Narshe Outside WoB"
+    },
+    "17": {
+      "map_id": 20,
+      "map_name": "NARSHE",
+      "world": "WoB",
+      "comment": "Narshe Outside Behind Arvis to Mines WoB"
+    },
+    "18": {
+      "map_id": 20,
+      "map_name": "NARSHE",
+      "world": "WoB",
+      "comment": "Narshe South Caves Secret Passage Outside WoB"
+    },
+    "dc-4": {
+      "map_id": 20,
+      "map_name": "NARSHE",
+      "world": "WoB",
+      "comment": "Narshe WOB"
+    },
+    "ms-wob-4": {
+      "map_id": 20,
+      "map_name": "NARSHE",
+      "world": "WoB",
+      "comment": "Narshe WOB"
+    },
+    "19": {
+      "map_id": 21,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines 2nd/3rd Floor Outside WoB"
+    },
+    "20": {
+      "map_id": 21,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines 3rd Floor Outside WoB"
+    },
+    "21": {
+      "map_id": 21,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines 1st Floor Outside WoB"
+    },
+    "root-unb": {
+      "map_id": 21,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-upper-narshe-wob"
+    },
+    "22": {
+      "map_id": 22,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Snow Battlefield WoB"
+    },
+    "23": {
+      "map_id": 23,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Peak WoB"
+    },
+    "24": {
+      "map_id": 24,
+      "map_name": "WEAPON SHOP",
+      "world": "WoB",
+      "comment": "Narshe Weapon Shop"
+    },
+    "24R": {
+      "map_id": 24,
+      "map_name": "WEAPON SHOP",
+      "world": "WoR",
+      "comment": "Narshe Weapon Shop"
+    },
+    "25": {
+      "map_id": 24,
+      "map_name": "WEAPON SHOP",
+      "world": "WoB",
+      "comment": "Narshe Weapon Shop Back Room"
+    },
+    "25R": {
+      "map_id": 24,
+      "map_name": "WEAPON SHOP",
+      "world": "WoR",
+      "comment": "Narshe Weapon Shop Back Room"
+    },
+    "26": {
+      "map_id": 25,
+      "map_name": "ARMOR SHOP",
+      "world": "WoB",
+      "comment": "Narshe Armor Shop"
+    },
+    "26R": {
+      "map_id": 25,
+      "map_name": "ARMOR SHOP",
+      "world": "WoR",
+      "comment": "Narshe Armor Shop"
+    },
+    "27": {
+      "map_id": 26,
+      "map_name": "ITEM SHOP",
+      "world": "WoB",
+      "comment": "Narshe Item Shop"
+    },
+    "27R": {
+      "map_id": 26,
+      "map_name": "ITEM SHOP",
+      "world": "WoR",
+      "comment": "Narshe Item Shop"
+    },
+    "28": {
+      "map_id": 27,
+      "map_name": "RELICS",
+      "world": "WoB",
+      "comment": "Narshe Relic Shop"
+    },
+    "28R": {
+      "map_id": 27,
+      "map_name": "RELICS",
+      "world": "WoR",
+      "comment": "Narshe Relic Shop"
+    },
+    "29": {
+      "map_id": 28,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Narshe Inn"
+    },
+    "29R": {
+      "map_id": 28,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Narshe Inn"
+    },
+    "30": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoB",
+      "comment": "Narshe Arvis House"
+    },
+    "30R": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoR",
+      "comment": "Narshe Arvis House"
+    },
+    "31": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoB",
+      "comment": "#Narshe Elder House"
+    },
+    "31R": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoR",
+      "comment": "Narshe Elder House"
+    },
+    "32": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoB",
+      "comment": "Narshe Cursed Shld House"
+    },
+    "32R": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoR",
+      "comment": "Narshe Cursed Shld House"
+    },
+    "33": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoB",
+      "comment": "Narshe Treasure Room"
+    },
+    "33R": {
+      "map_id": 30,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoR",
+      "comment": "Narshe Treasure Room"
+    },
+    "34": {
+      "map_id": 32,
+      "map_name": "NARSHE",
+      "world": "WoR",
+      "comment": "Narshe Outside WoR"
+    },
+    "35": {
+      "map_id": 32,
+      "map_name": "NARSHE",
+      "world": "WoR",
+      "comment": "Narshe Outside Behind Arvis to Mines WoR"
+    },
+    "36": {
+      "map_id": 32,
+      "map_name": "NARSHE",
+      "world": "WoR",
+      "comment": "Narshe South Caves Secret Passage Outside WoR"
+    },
+    "dc-67": {
+      "map_id": 32,
+      "map_name": "NARSHE",
+      "world": "WoR",
+      "comment": "Narshe WOR"
+    },
+    "ms-wor-67": {
+      "map_id": 32,
+      "map_name": "NARSHE",
+      "world": "WoR",
+      "comment": "Narshe"
+    },
+    "ruin-narshe": {
+      "map_id": 32,
+      "map_name": "NARSHE",
+      "world": "WoR",
+      "comment": "Narshe WOR, incl. secret passage & entrance to south caves & school"
+    },
+    "37": {
+      "map_id": 33,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 2nd/3rd Floor Outside WoR"
+    },
+    "37a": {
+      "map_id": 33,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 2nd/3rd Floor Outside WoR incl. exit from Umaro's cave"
+    },
+    "38": {
+      "map_id": 33,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 3rd Floor Outside WoR"
+    },
+    "39": {
+      "map_id": 33,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 1st Floor Outside WoR"
+    },
+    "root-unr": {
+      "map_id": 33,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Root map for -door-randomize-upper-narshe-wor"
+    },
+    "40": {
+      "map_id": 34,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Snow Battlefield WoR"
+    },
+    "41": {
+      "map_id": 35,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Peak WoR"
+    },
+    "41a": {
+      "map_id": 35,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Peak WoR incl. entrance to Umaro's cave"
+    },
+    "root-u": {
+      "map_id": 35,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Root map for -door-randomize-umaro"
+    },
+    "42": {
+      "map_id": 36,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 1F Side/East Room WoR"
+    },
+    "43": {
+      "map_id": 36,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 2F Inside WoR"
+    },
+    "44": {
+      "map_id": 36,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines 3F Inside WoR"
+    },
+    "45": {
+      "map_id": 36,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe South Caves Secret Passage 1F WoR"
+    },
+    "46": {
+      "map_id": 36,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines Main Hallway WoR"
+    },
+    "47": {
+      "map_id": 36,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Northern Mines Tritoch Room WoR"
+    },
+    "48": {
+      "map_id": 37,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Moogle Defense Cave WoR"
+    },
+    "49": {
+      "map_id": 38,
+      "map_name": "MOOGLE'S CAVE",
+      "world": "WoR",
+      "comment": "Narshe South Caves WoR.  Door 163 is inaccessible."
+    },
+    "50": {
+      "map_id": 38,
+      "map_name": "MOOGLE'S CAVE",
+      "world": "WoR",
+      "comment": "Narshe Checkpoint Room WoR"
+    },
+    "51": {
+      "map_id": 38,
+      "map_name": "MOOGLE'S CAVE",
+      "world": "WoR",
+      "comment": "Narshe South Caves Secret Passage 3F WoR"
+    },
+    "53": {
+      "map_id": 41,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines Side Room 1F WoB"
+    },
+    "54": {
+      "map_id": 41,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines Side Room 2F WoB"
+    },
+    "55": {
+      "map_id": 41,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines Inside 3F WoB"
+    },
+    "56": {
+      "map_id": 41,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe South Caves Secret Passage 1F WoB"
+    },
+    "59": {
+      "map_id": 43,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines Main Hallway WoB"
+    },
+    "60": {
+      "map_id": 43,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Northern Mines Tritoch Room WoB"
+    },
+    "ruin-whelk": {
+      "map_id": 43,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?"
+    },
+    "61": {
+      "map_id": 44,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Narshe Moogle Cave WoR"
+    },
+    "62": {
+      "map_id": 48,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe South Caves Secret Passage 3F WoB"
+    },
+    "63": {
+      "map_id": 49,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Checkpoint Room WoB"
+    },
+    "64": {
+      "map_id": 50,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe South Caves WoB"
+    },
+    "65": {
+      "map_id": 51,
+      "map_name": "MOOGLE'S CAVE",
+      "world": "WoB",
+      "comment": "Narshe Moogle Defense WoB"
+    },
+    "66": {
+      "map_id": 52,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Narshe Moogle Cave WoB"
+    },
+    "67": {
+      "map_id": 53,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Siegfried Tunnel"
+    },
+    "68": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle Entrance"
+    },
+    "68R": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoR",
+      "comment": "Figaro Castle Entrance"
+    },
+    "69": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle Outside Courtyard"
+    },
+    "69R": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoR",
+      "comment": "Figaro Castle Outside Courtyard"
+    },
+    "70": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle Center Tower Outside"
+    },
+    "70R": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoR",
+      "comment": "Figaro Castle Center Tower Outside"
+    },
+    "71": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle Desert Outside"
+    },
+    "71R": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoR",
+      "comment": "Figaro Castle Desert Outside"
+    },
+    "72": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle West Tower Outside"
+    },
+    "72R": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoR",
+      "comment": "Figaro Castle West Tower Outside"
+    },
+    "73": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle East Tower Outside"
+    },
+    "73R": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoR",
+      "comment": "Figaro Castle East Tower Outside"
+    },
+    "ms-wob-1502": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "WoB",
+      "comment": "Figaro Castle"
+    },
+    "ruin-figarocastle": {
+      "map_id": 55,
+      "map_name": "FIGARO CASTLE",
+      "world": "[]",
+      "comment": "Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room, which is locked by Edgar)"
+    },
+    "74": {
+      "map_id": 57,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle King's Bedroom"
+    },
+    "74R": {
+      "map_id": 57,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle King's Bedroom"
+    },
+    "75": {
+      "map_id": 58,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Throne Room"
+    },
+    "75R": {
+      "map_id": 58,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Throne Room"
+    },
+    "76": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Foyer"
+    },
+    "76R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Foyer"
+    },
+    "77": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Main Hallway"
+    },
+    "77R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Main Hallway"
+    },
+    "78": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Behind Throne Room"
+    },
+    "78R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Behind Throne Room"
+    },
+    "79": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle East Bedroom"
+    },
+    "79R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle East Bedroom"
+    },
+    "80": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Inn"
+    },
+    "80R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Inn"
+    },
+    "81": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle West Shop"
+    },
+    "81R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle West Shop"
+    },
+    "82": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle East Shop"
+    },
+    "82R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle East Shop"
+    },
+    "83": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Below Inn"
+    },
+    "83R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Below Inn"
+    },
+    "84": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Below Library"
+    },
+    "84R": {
+      "map_id": 59,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Below Library"
+    },
+    "85": {
+      "map_id": 60,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Figaro Castle Library"
+    },
+    "85R": {
+      "map_id": 60,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Library"
+    },
+    "86": {
+      "map_id": 61,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "Figaro Castle Switch Room"
+    },
+    "86R": {
+      "map_id": 61,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Figaro Castle Switch Room"
+    },
+    "87": {
+      "map_id": 61,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "Figaro Castle Prison"
+    },
+    "87R": {
+      "map_id": 61,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Figaro Castle Prison"
+    },
+    "root-ac": {
+      "map_id": 61,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Cave connection from Figaro Castle Basement"
+    },
+    "88": {
+      "map_id": 62,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Figaro Castle B1 Hallway East"
+    },
+    "89": {
+      "map_id": 62,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Figaro Castle B1 Hallway West"
+    },
+    "90": {
+      "map_id": 62,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Figaro Castle B2 Hallway"
+    },
+    "91": {
+      "map_id": 63,
+      "map_name": "BASEMENT 3",
+      "world": "WoR",
+      "comment": "Figaro Castle B2 East Hallway"
+    },
+    "92": {
+      "map_id": 63,
+      "map_name": "BASEMENT 3",
+      "world": "WoR",
+      "comment": "Figaro Castle B2 West Hallway"
+    },
+    "93": {
+      "map_id": 63,
+      "map_name": "BASEMENT 3",
+      "world": "WoR",
+      "comment": "Figaro Castle B2 4 Chest Room"
+    },
+    "94": {
+      "map_id": 64,
+      "map_name": "ENGINE ROOM",
+      "world": "['fc-engine']",
+      "comment": "Figaro Castle Engine Room (key unlocks Ancient Castle entrance)"
+    },
+    "95": {
+      "map_id": 65,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Figaro Castle Treasure Room Behind Engine Room"
+    },
+    "96": {
+      "map_id": 66,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Figaro Castle B1 Single Chest Room"
+    },
+    "97": {
+      "map_id": 68,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Small Hallway WoR"
+    },
+    "98": {
+      "map_id": 68,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Big Room WoR"
+    },
+    "99": {
+      "map_id": 68,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro South Entrance WoR"
+    },
+    "dc-57": {
+      "map_id": 68,
+      "map_name": "",
+      "world": "['ac1']",
+      "comment": "Cave to Figaro Castle, incl. key & entry to ancient castle, may want to change this."
+    },
+    "ms-wor-57": {
+      "map_id": 68,
+      "map_name": "",
+      "world": "['ac1']",
+      "comment": "Cave to Figaro Castle, incl. key & entry to ancient castle"
+    },
+    "100": {
+      "map_id": 69,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro Small Hallway WoB"
+    },
+    "101": {
+      "map_id": 69,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro Big Room WoB"
+    },
+    "102": {
+      "map_id": 69,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro South Entrance WoB"
+    },
+    "ms-wob-1506": {
+      "map_id": 69,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro S"
+    },
+    "root-sfcb-mapsafe": {
+      "map_id": 69,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-south-figaro-cave-wob (to entry)"
+    },
+    "103": {
+      "map_id": 70,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro Single Chest Room WoB"
+    },
+    "104": {
+      "map_id": 70,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro Turtle Room WoB"
+    },
+    "105": {
+      "map_id": 71,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro Outside WoB"
+    },
+    "ms-wob-5": {
+      "map_id": 71,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Cave to South Figaro N"
+    },
+    "106": {
+      "map_id": 74,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoR",
+      "comment": "South Figaro Outside WoR"
+    },
+    "107": {
+      "map_id": 74,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House Side Outside WoR"
+    },
+    "ms-wor-58": {
+      "map_id": 74,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoR",
+      "comment": "South Figaro"
+    },
+    "108": {
+      "map_id": 75,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoB",
+      "comment": "South Figaro Outside WoB"
+    },
+    "109": {
+      "map_id": 75,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House Side Outside WoB"
+    },
+    "110": {
+      "map_id": 75,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoB",
+      "comment": "South Figaro East Side"
+    },
+    "ms-wob-6": {
+      "map_id": 75,
+      "map_name": "SOUTH FIGARO",
+      "world": "WoB",
+      "comment": "South Figaro"
+    },
+    "112": {
+      "map_id": 76,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "South Figaro Relics"
+    },
+    "112R": {
+      "map_id": 76,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "South Figaro Relics"
+    },
+    "113": {
+      "map_id": 76,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "South Figaro Inn"
+    },
+    "113R": {
+      "map_id": 76,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "South Figaro Inn"
+    },
+    "114": {
+      "map_id": 77,
+      "map_name": "ARSENAL",
+      "world": "WoB",
+      "comment": "South Figaro Armory"
+    },
+    "114R": {
+      "map_id": 77,
+      "map_name": "ARSENAL",
+      "world": "WoR",
+      "comment": "South Figaro Armory"
+    },
+    "115": {
+      "map_id": 78,
+      "map_name": "CAFE",
+      "world": "WoB",
+      "comment": "South Figaro Pub"
+    },
+    "115R": {
+      "map_id": 78,
+      "map_name": "CAFE",
+      "world": "WoR",
+      "comment": "South Figaro Pub"
+    },
+    "116": {
+      "map_id": 78,
+      "map_name": "CAFE",
+      "world": "WoB",
+      "comment": "South Figaro Pub Basement"
+    },
+    "116R": {
+      "map_id": 78,
+      "map_name": "CAFE",
+      "world": "WoR",
+      "comment": "South Figaro Pub Basement"
+    },
+    "117": {
+      "map_id": 80,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoB",
+      "comment": "South Figaro Chocobo Stable"
+    },
+    "117R": {
+      "map_id": 80,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoR",
+      "comment": "South Figaro Chocobo Stable"
+    },
+    "118": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House 1F"
+    },
+    "118R": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House 1F"
+    },
+    "119": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House 2F Hallway"
+    },
+    "119R": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House 2F Hallway"
+    },
+    "120": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's Master Bedroom"
+    },
+    "120R": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's Master Bedroom"
+    },
+    "121": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House Kids' Room"
+    },
+    "121R": {
+      "map_id": 81,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House Kids' Room"
+    },
+    "122": {
+      "map_id": 83,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House Bedroom Secret Stairwell"
+    },
+    "122R": {
+      "map_id": 83,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House Bedroom Secret Stairwell"
+    },
+    "123": {
+      "map_id": 83,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House B1"
+    },
+    "123R": {
+      "map_id": 83,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House B1"
+    },
+    "124": {
+      "map_id": 83,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "South Figaro Celes Cell"
+    },
+    "124R": {
+      "map_id": 83,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "South Figaro Celes Cell"
+    },
+    "125": {
+      "map_id": 84,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Clock Room"
+    },
+    "125R": {
+      "map_id": 84,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Clock Room"
+    },
+    "126": {
+      "map_id": 84,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Duncan's House Basement"
+    },
+    "126R": {
+      "map_id": 84,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Duncan's House Basement"
+    },
+    "127": {
+      "map_id": 85,
+      "map_name": "ITEM SHOP",
+      "world": "WoB",
+      "comment": "South Figaro Item Shop"
+    },
+    "127R": {
+      "map_id": 85,
+      "map_name": "ITEM SHOP",
+      "world": "WoR",
+      "comment": "South Figaro Item Shop"
+    },
+    "128": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House Secret Back Door Room"
+    },
+    "128R": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House Secret Back Door Room"
+    },
+    "129": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoB",
+      "comment": "South Figaro Cider House Secret Room"
+    },
+    "129R": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoR",
+      "comment": "South Figaro Cider House Secret Room"
+    },
+    "130": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoB",
+      "comment": "South Figaro Cider House Upstairs"
+    },
+    "130R": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoR",
+      "comment": "South Figaro Cider House Upstairs"
+    },
+    "131": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoB",
+      "comment": "South Figaro Cider House Downstairs"
+    },
+    "131R": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoR",
+      "comment": "South Figaro Cider House Downstairs"
+    },
+    "132": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoB",
+      "comment": "South Figaro Behind Duncan's House"
+    },
+    "132R": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoR",
+      "comment": "South Figaro Behind Duncan's House"
+    },
+    "133": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoB",
+      "comment": "South Figaro Duncan's House Upstairs"
+    },
+    "133R": {
+      "map_id": 86,
+      "map_name": "DUNCAN'S HOUSE",
+      "world": "WoR",
+      "comment": "South Figaro Duncan's House Upstairs"
+    },
+    "134": {
+      "map_id": 87,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "South Figaro Escape Tunnel"
+    },
+    "134R": {
+      "map_id": 87,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "South Figaro Escape Tunnel"
+    },
+    "135": {
+      "map_id": 88,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Rich Man's House Save Point Room"
+    },
+    "135R": {
+      "map_id": 88,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Rich Man's House Save Point Room"
+    },
+    "136": {
+      "map_id": 89,
+      "map_name": "BASEMENT 2",
+      "world": "WoB",
+      "comment": "South Figaro B2 3 Chest Room"
+    },
+    "136R": {
+      "map_id": 89,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "South Figaro B2 3 Chest Room"
+    },
+    "137": {
+      "map_id": 89,
+      "map_name": "BASEMENT 2",
+      "world": "WoB",
+      "comment": "South Figaro B2 2 Chest Room"
+    },
+    "137R": {
+      "map_id": 89,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "South Figaro B2 2 Chest Room"
+    },
+    "138": {
+      "map_id": 90,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Single Chest Room WoR"
+    },
+    "139": {
+      "map_id": 90,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Turtle Room WoR"
+    },
+    "140": {
+      "map_id": 90,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Turtle Door WoR"
+    },
+    "141": {
+      "map_id": 91,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "South Figaro Docks"
+    },
+    "141R": {
+      "map_id": 91,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "South Figaro Docks"
+    },
+    "142": {
+      "map_id": 92,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cave to South Figaro Behind Turtle"
+    },
+    "143": {
+      "map_id": 93,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Sabin's House Outside"
+    },
+    "ms-wob-10": {
+      "map_id": 93,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Sabin's House"
+    },
+    "144": {
+      "map_id": 94,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Sabin's House Inside"
+    },
+    "145": {
+      "map_id": 95,
+      "map_name": "MT. KOLTS",
+      "world": "WoB",
+      "comment": "Mt. Kolts South Entrance"
+    },
+    "ms-wob-11": {
+      "map_id": 95,
+      "map_name": "MT. KOLTS",
+      "world": "WoB",
+      "comment": "Mt Kolts S"
+    },
+    "root-mk-mapsafe": {
+      "map_id": 95,
+      "map_name": "MT. KOLTS",
+      "world": "WoB",
+      "comment": "Root room for Mt Kolts (mapsafe)"
+    },
+    "146": {
+      "map_id": 96,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts 1F Outside"
+    },
+    "147": {
+      "map_id": 96,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt Kolts Outside Chest 1 Room"
+    },
+    "148": {
+      "map_id": 96,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt Kolts Outside Cliff West"
+    },
+    "149": {
+      "map_id": 96,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt Kolts Outside Chest 2 Room"
+    },
+    "150": {
+      "map_id": 97,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts Outside Bridge"
+    },
+    "151": {
+      "map_id": 98,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts Vargas Spiral"
+    },
+    "152": {
+      "map_id": 100,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts First Inside Room"
+    },
+    "153": {
+      "map_id": 100,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts 4-Way Split Room"
+    },
+    "154": {
+      "map_id": 100,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts 2F Inside Room"
+    },
+    "155": {
+      "map_id": 100,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts Inside Bridges Room"
+    },
+    "156": {
+      "map_id": 100,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts After Vargas Room"
+    },
+    "157": {
+      "map_id": 100,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt Kolts Inside Chest Room"
+    },
+    "158": {
+      "map_id": 101,
+      "map_name": "MT. KOLTS",
+      "world": "WoB",
+      "comment": "Mt. Kolts North Exit"
+    },
+    "ms-wob-12": {
+      "map_id": 101,
+      "map_name": "MT. KOLTS",
+      "world": "WoB",
+      "comment": "Mt Kolts N"
+    },
+    "159": {
+      "map_id": 102,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts Back Side"
+    },
+    "160": {
+      "map_id": 103,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mt. Kolts Save Point Room"
+    },
+    "161": {
+      "map_id": 104,
+      "map_name": "CLASSROOM",
+      "world": "WoB",
+      "comment": "Narshe School Main Room"
+    },
+    "161R": {
+      "map_id": 104,
+      "map_name": "CLASSROOM",
+      "world": "WoR",
+      "comment": "Narshe School Main Room"
+    },
+    "ruin_hub": {
+      "map_id": 104,
+      "map_name": "CLASSROOM",
+      "world": "WoR",
+      "comment": "Narshe school, 3 doors, incl. logical returns from KT and from Lete River"
+    },
+    "ruin_hub_testing": {
+      "map_id": 104,
+      "map_name": "CLASSROOM",
+      "world": "WoR",
+      "comment": "Narshe school, 2 doors"
+    },
+    "162": {
+      "map_id": 105,
+      "map_name": "ADV. BATTLE TACTICS",
+      "world": "WoB",
+      "comment": "Narshe School Left Room"
+    },
+    "162R": {
+      "map_id": 105,
+      "map_name": "ADV. BATTLE TACTICS",
+      "world": "WoR",
+      "comment": "Narshe School Left Room"
+    },
+    "163": {
+      "map_id": 106,
+      "map_name": "BATTLE TACTICS",
+      "world": "WoB",
+      "comment": "Narshe School Middle Room"
+    },
+    "163R": {
+      "map_id": 106,
+      "map_name": "BATTLE TACTICS",
+      "world": "WoR",
+      "comment": "Narshe School Middle Room"
+    },
+    "164": {
+      "map_id": 107,
+      "map_name": "ENVIRONMENTAL SCIENCE",
+      "world": "WoB",
+      "comment": "Narshe School Right Room"
+    },
+    "164R": {
+      "map_id": 107,
+      "map_name": "ENVIRONMENTAL SCIENCE",
+      "world": "WoR",
+      "comment": "Narshe School Right Room"
+    },
+    "165": {
+      "map_id": 108,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returners Hideout Outside"
+    },
+    "dc-13": {
+      "map_id": 108,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returner's Hideout + Lete"
+    },
+    "ms-wob-13": {
+      "map_id": 108,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returner's Hideout"
+    },
+    "166": {
+      "map_id": 109,
+      "map_name": "RETURNERS' HIDEOUT",
+      "world": "WoB",
+      "comment": "Returners Hideout Main Room"
+    },
+    "ruin-returners": {
+      "map_id": 109,
+      "map_name": "RETURNERS' HIDEOUT",
+      "world": "WoB",
+      "comment": "Returners Hideout & Lete River Jumpoff"
+    },
+    "167": {
+      "map_id": 110,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returners Hideout Back Room"
+    },
+    "168": {
+      "map_id": 110,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returners Hideout Banon's Room"
+    },
+    "169": {
+      "map_id": 110,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returner's Hideout Bedroom"
+    },
+    "170": {
+      "map_id": 111,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Returner's Hideout Inn"
+    },
+    "171": {
+      "map_id": 112,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Returner's Hideout Secret Passage"
+    },
+    "172": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River Jumpoff"
+    },
+    "LeteRiver1": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River section 1"
+    },
+    "LeteRiver2": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River section 2"
+    },
+    "LeteRiver3": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Lete River section 3 + boss"
+    },
+    "root-lr": {
+      "map_id": 113,
+      "map_name": "LETE RIVER",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-lete"
+    },
+    "LeteCave1": {
+      "map_id": 114,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Lete River cave 1"
+    },
+    "LeteCave2": {
+      "map_id": 114,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Lete River cave 2"
+    },
+    "173": {
+      "map_id": 115,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Crazy Old Man's House Outside WoB"
+    },
+    "ms-wob-14": {
+      "map_id": 115,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Gau's Dad's House"
+    },
+    "174": {
+      "map_id": 116,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Crazy Old Man's House Inside"
+    },
+    "174R": {
+      "map_id": 116,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Crazy Old Man's House Inside"
+    },
+    "175": {
+      "map_id": 117,
+      "map_name": "IMPERIAL CAMP",
+      "world": "WoB",
+      "comment": "Imperial camp WoB, map 0x075"
+    },
+    "dc-1501": {
+      "map_id": 117,
+      "map_name": "IMPERIAL CAMP",
+      "world": "WoB",
+      "comment": "Imperial Camp + west exit"
+    },
+    "ms-wob-1501": {
+      "map_id": 117,
+      "map_name": "IMPERIAL CAMP",
+      "world": "WoB",
+      "comment": "Imperial Camp"
+    },
+    "176": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma 3F Inside"
+    },
+    "176R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma 3F Inside"
+    },
+    "177": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma Main Room"
+    },
+    "177R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma Main Room"
+    },
+    "178": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma 2F Treasure Room"
+    },
+    "178R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma 2F Treasure Room"
+    },
+    "179": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma Right Side Bedroom"
+    },
+    "179R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma Right Side Bedroom"
+    },
+    "180": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma Throne Room"
+    },
+    "180R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma Throne Room"
+    },
+    "181": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma Left Side Bedroom"
+    },
+    "181R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma Left Side Bedroom"
+    },
+    "182": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoB",
+      "comment": "Doma Inner Room"
+    },
+    "182R": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Doma Inner Room"
+    },
+    "root-cd": {
+      "map_id": 123,
+      "map_name": "KING'S ROOM",
+      "world": "WoR",
+      "comment": "Root room for Cyan's Dream"
+    },
+    "183": {
+      "map_id": 124,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Doma Cyan's Room"
+    },
+    "183R": {
+      "map_id": 124,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Cyan's Room"
+    },
+    "184": {
+      "map_id": 125,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3F Outside"
+    },
+    "185": {
+      "map_id": 125,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 1F Outside"
+    },
+    "186": {
+      "map_id": 125,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 2F Outside"
+    },
+    "187": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3F Inside"
+    },
+    "188": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Main Room"
+    },
+    "188B": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Right Bedroom with savepoint"
+    },
+    "189": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Treasure Room"
+    },
+    "190": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Left Bedroom"
+    },
+    "191": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Inner Room"
+    },
+    "192": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Cyan's Room"
+    },
+    "193": {
+      "map_id": 126,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Throne Room"
+    },
+    "194": {
+      "map_id": 127,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Duncan's House Outside"
+    },
+    "ms-wor-79": {
+      "map_id": 127,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Duncan's House"
+    },
+    "195": {
+      "map_id": 128,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Duncan's House"
+    },
+    "196": {
+      "map_id": 131,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Crazy Old Man's House WoR"
+    },
+    "ms-wor-68": {
+      "map_id": 131,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Gau's Dad's House"
+    },
+    "197": {
+      "map_id": 132,
+      "map_name": "PHANTOM FOREST",
+      "world": "WoB",
+      "comment": "Phantom Forest North Room.  Exit 466 also puts you in here!"
+    },
+    "dc-20-21": {
+      "map_id": 132,
+      "map_name": "PHANTOM FOREST",
+      "world": "WoB",
+      "comment": "Phantom Forest N, S, to train"
+    },
+    "ms-wob-20": {
+      "map_id": 132,
+      "map_name": "PHANTOM FOREST",
+      "world": "WoB",
+      "comment": "Phantom Forest N"
+    },
+    "ruin-phantomforest": {
+      "map_id": 132,
+      "map_name": "PHANTOM FOREST",
+      "world": "WoB",
+      "comment": "Phantom Forest, all rooms + spring (internally randomized)"
+    },
+    "198": {
+      "map_id": 133,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Forest Healing Pool"
+    },
+    "199": {
+      "map_id": 134,
+      "map_name": "PHANTOM FOREST",
+      "world": "WoB",
+      "comment": "Phantom Forest Fork Room.  466 is a normal door behaving as a one-way (!) and 465 goes to world map BUT has an event tile exit...."
+    },
+    "ms-wob-21": {
+      "map_id": 134,
+      "map_name": "PHANTOM FOREST",
+      "world": "WoB",
+      "comment": "Phantom Forest S"
+    },
+    "200": {
+      "map_id": 135,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Forest Path to Phantom Train (0x087)"
+    },
+    "root-pt": {
+      "map_id": 135,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for Phantom Train"
+    },
+    "201": {
+      "map_id": 140,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Station"
+    },
+    "ruin-201": {
+      "map_id": 140,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Station + custom return from train"
+    },
+    "202": {
+      "map_id": 141,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Phantom Train Outside Front Section"
+    },
+    "205b": {
+      "map_id": 141,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside after jump & disconnect"
+    },
+    "204": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside Car 1 - Caboose"
+    },
+    "204b": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside Car 1 - Car 2"
+    },
+    "204c": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside Car 2 - Car 3"
+    },
+    "205": {
+      "map_id": 142,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Outside after jump"
+    },
+    "208": {
+      "map_id": 143,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train Outside 3rd Section (front)  0x08f"
+    },
+    "209": {
+      "map_id": 143,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train Outside 2nd Section (mid) 0x08f"
+    },
+    "210": {
+      "map_id": 143,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train Outside 1st Section (rear)        0x08f"
+    },
+    "211": {
+      "map_id": 144,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train 2nd Car (\"Lump of metal\") 0x090"
+    },
+    "203a": {
+      "map_id": 145,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Inside 1st Car"
+    },
+    "203b": {
+      "map_id": 145,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Inside 2nd Car"
+    },
+    "203c": {
+      "map_id": 145,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Inside 3rd Car"
+    },
+    "212": {
+      "map_id": 146,
+      "map_name": "",
+      "world": "['pt2']",
+      "comment": "Phantom Train Locomotive Interior"
+    },
+    "212R": {
+      "map_id": 146,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train Locomotive Interior"
+    },
+    "213": {
+      "map_id": 146,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Caboose Inner Room"
+    },
+    "215a": {
+      "map_id": 147,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Dining Room Left"
+    },
+    "215b": {
+      "map_id": 147,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Dining Room Right"
+    },
+    "216": {
+      "map_id": 149,
+      "map_name": "",
+      "world": "['pt1']",
+      "comment": "Phantom Train Car 4 with Switch"
+    },
+    "206": {
+      "map_id": 151,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Car 6 Inside (map 0x097)"
+    },
+    "206a": {
+      "map_id": 153,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Car 6 Inside Right Cabin Siegfried Event"
+    },
+    "206b": {
+      "map_id": 153,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Car 6 Inside Left Cabin"
+    },
+    "207": {
+      "map_id": 151,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Car 7 Inside (map 0x097 + event_bit 0x17E)"
+    },
+    "207a": {
+      "map_id": 153,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Car 7 Inside Right Cabin"
+    },
+    "207b": {
+      "map_id": 153,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Car 7 Inside Left Cabin MIAB room"
+    },
+    "220": {
+      "map_id": 152,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Caboose"
+    },
+    "221": {
+      "map_id": 153,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Phantom Train Final Save Point Room"
+    },
+    "221R": {
+      "map_id": 153,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train Final Save Point Room"
+    },
+    "225": {
+      "map_id": 154,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Mobliz Kids' Hideaway"
+    },
+    "226": {
+      "map_id": 155,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Baren Falls Inside"
+    },
+    "227": {
+      "map_id": 156,
+      "map_name": "BAREN FALLS",
+      "world": "WoB",
+      "comment": "Baren Falls Cliff"
+    },
+    "228": {
+      "map_id": 157,
+      "map_name": "MOBLIZ",
+      "world": "WoB",
+      "comment": "Mobliz Outside WoB"
+    },
+    "ms-wob-26": {
+      "map_id": 157,
+      "map_name": "MOBLIZ",
+      "world": "WoB",
+      "comment": "Mobliz"
+    },
+    "229": {
+      "map_id": 158,
+      "map_name": "MOBLIZ",
+      "world": "WoR",
+      "comment": "Mobliz Outside WoR"
+    },
+    "ms-wor-52": {
+      "map_id": 158,
+      "map_name": "MOBLIZ",
+      "world": "WoR",
+      "comment": "Mobliz"
+    },
+    "ruin-baren": {
+      "map_id": 159,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "End for Baren Falls: door exit to (somewhere)"
+    },
+    "231": {
+      "map_id": 160,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Mobliz Inn"
+    },
+    "232": {
+      "map_id": 161,
+      "map_name": "ARSENAL",
+      "world": "WoB",
+      "comment": "Mobliz Arsenal"
+    },
+    "234": {
+      "map_id": 163,
+      "map_name": "ARMOR SHOP",
+      "world": "WoB",
+      "comment": "Mobliz Mail Room Upstairs"
+    },
+    "234R": {
+      "map_id": 163,
+      "map_name": "ARMOR SHOP",
+      "world": "WoR",
+      "comment": "Mobliz Mail Room Upstairs"
+    },
+    "235": {
+      "map_id": 164,
+      "map_name": "ITEM SHOP",
+      "world": "WoB",
+      "comment": "Mobliz Item Shop"
+    },
+    "236": {
+      "map_id": 165,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Mobliz Mail Room Basement WoB"
+    },
+    "236R": {
+      "map_id": 165,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Mobliz Mail Room Basement WoR"
+    },
+    "239": {
+      "map_id": 166,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Baren Falls Outside"
+    },
+    "dc-15": {
+      "map_id": 166,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Baren Falls + one-way exit to Veldt"
+    },
+    "ms-wob-15": {
+      "map_id": 166,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Baren Falls"
+    },
+    "240": {
+      "map_id": 167,
+      "map_name": "MT. CRESCENT",
+      "world": "WoB",
+      "comment": "Crescent Mountain"
+    },
+    "dc-23": {
+      "map_id": 167,
+      "map_name": "MT. CRESCENT",
+      "world": "WoB",
+      "comment": "Crescent Mtn + SerpentTrench"
+    },
+    "ms-wob-23": {
+      "map_id": 167,
+      "map_name": "MT. CRESCENT",
+      "world": "WoB",
+      "comment": "Crescent Mtn"
+    },
+    "ruin_testing": {
+      "map_id": 167,
+      "map_name": "MT. CRESCENT",
+      "world": "WoR",
+      "comment": "Room with 2 doors to test out checks in -ruin."
+    },
+    "241": {
+      "map_id": 168,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cliff"
+    },
+    "root-st": {
+      "map_id": 168,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-serpent-trench"
+    },
+    "242": {
+      "map_id": 169,
+      "map_name": "NIKEAH",
+      "world": "WoB",
+      "comment": "Nikeah Outside WoB"
+    },
+    "242R": {
+      "map_id": 169,
+      "map_name": "NIKEAH",
+      "world": "WoR",
+      "comment": "Nikeah Outside WoR"
+    },
+    "dc-16": {
+      "map_id": 169,
+      "map_name": "NIKEAH",
+      "world": "WoB",
+      "comment": "Nikeah + SerpentTrench dest."
+    },
+    "ms-wob-16": {
+      "map_id": 169,
+      "map_name": "NIKEAH",
+      "world": "WoB",
+      "comment": "Nikeah"
+    },
+    "ms-wor-65": {
+      "map_id": 169,
+      "map_name": "NIKEAH",
+      "world": "WoR",
+      "comment": "Nikeah"
+    },
+    "ruin-nikeah": {
+      "map_id": 169,
+      "map_name": "NIKEAH",
+      "world": "WoR",
+      "comment": "WOR Nikeah + Serpent Trench exit"
+    },
+    "243": {
+      "map_id": 171,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Nikeah Inn"
+    },
+    "243R": {
+      "map_id": 171,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Nikeah Inn"
+    },
+    "244": {
+      "map_id": 172,
+      "map_name": "CAFE",
+      "world": "WoB",
+      "comment": "Nikeah Pub"
+    },
+    "244R": {
+      "map_id": 172,
+      "map_name": "CAFE",
+      "world": "WoR",
+      "comment": "Nikeah Pub"
+    },
+    "245": {
+      "map_id": 173,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoB",
+      "comment": "Nikeah Chocobo Stable"
+    },
+    "245R": {
+      "map_id": 173,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoR",
+      "comment": "Nikeah Chocobo Stable"
+    },
+    "246": {
+      "map_id": 175,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cave 1"
+    },
+    "247a": {
+      "map_id": 175,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cave 2 Part A"
+    },
+    "247b": {
+      "map_id": 175,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cave 2 Part B"
+    },
+    "247c": {
+      "map_id": 175,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Serpent Trench Cave 2 Part C"
+    },
+    "250": {
+      "map_id": 176,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Mt Zozo Outside Bridge"
+    },
+    "251": {
+      "map_id": 177,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Mt Zozo Outside Single Chest Room"
+    },
+    "252": {
+      "map_id": 178,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Mt Zozo Outside Cliff to Cyan's Cave"
+    },
+    "253": {
+      "map_id": 179,
+      "map_name": "MT. ZOZO",
+      "world": "WoR",
+      "comment": "Mt Zozo Inside First Room"
+    },
+    "253-mapsafe": {
+      "map_id": 179,
+      "map_name": "MT. ZOZO",
+      "world": "WoR",
+      "comment": "Mt Zozo Inside First Room"
+    },
+    "254": {
+      "map_id": 179,
+      "map_name": "MT. ZOZO",
+      "world": "WoR",
+      "comment": "Mt Zozo Inside Dragon Room"
+    },
+    "branch-mz": {
+      "map_id": 179,
+      "map_name": "MT. ZOZO",
+      "world": "WoR",
+      "comment": "Zozo branch to Mount Zozo (for use with Zozo-WoR)"
+    },
+    "255": {
+      "map_id": 180,
+      "map_name": "MT. ZOZO",
+      "world": "WoR",
+      "comment": "Mt Zozo Cyan's Cave"
+    },
+    "256": {
+      "map_id": 181,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Mt Zozo Cyan's Cliff"
+    },
+    "257": {
+      "map_id": 185,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Coliseum Guy's House Outside"
+    },
+    "ms-wob-27": {
+      "map_id": 185,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Coliseum guy's house"
+    },
+    "258": {
+      "map_id": 186,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Coliseum Guy's House Inside"
+    },
+    "259": {
+      "map_id": 187,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Nikeah Docks"
+    },
+    "259R": {
+      "map_id": 187,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Nikeah Docks"
+    },
+    "260": {
+      "map_id": 188,
+      "map_name": "KOHLINGEN",
+      "world": "WoB",
+      "comment": "Kohlingen Outside WoB"
+    },
+    "ms-wob-24": {
+      "map_id": 188,
+      "map_name": "KOHLINGEN",
+      "world": "WoB",
+      "comment": "Kohlingen"
+    },
+    "261": {
+      "map_id": 189,
+      "map_name": "KOHLINGEN",
+      "world": "WoR",
+      "comment": "Kohlingen Outside WoR"
+    },
+    "ms-wor-59": {
+      "map_id": 189,
+      "map_name": "KOHLINGEN",
+      "world": "WoR",
+      "comment": "Kohlingen"
+    },
+    "262": {
+      "map_id": 191,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Kohlingen Inn Inside"
+    },
+    "262R": {
+      "map_id": 191,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Kohlingen Inn Inside"
+    },
+    "263": {
+      "map_id": 194,
+      "map_name": "GENERAL STORE",
+      "world": "WoB",
+      "comment": "Kohlingen General Store Inside"
+    },
+    "263R": {
+      "map_id": 194,
+      "map_name": "GENERAL STORE",
+      "world": "WoR",
+      "comment": "Kohlingen General Store Inside"
+    },
+    "264": {
+      "map_id": 195,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Kohlingen Chemist's House Upstairs"
+    },
+    "264R": {
+      "map_id": 195,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Kohlingen Chemist's House Upstairs"
+    },
+    "265": {
+      "map_id": 195,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Kohlingen Chemist's House Downstairs"
+    },
+    "265R": {
+      "map_id": 195,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Kohlingen Chemist's House Downstairs"
+    },
+    "266": {
+      "map_id": 195,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Kohlingen Chemist's House Back Room"
+    },
+    "266R": {
+      "map_id": 195,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Kohlingen Chemist's House Back Room"
+    },
+    "267": {
+      "map_id": 196,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Maranda Lola's House Inside"
+    },
+    "267R": {
+      "map_id": 196,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Maranda Lola's House Inside"
+    },
+    "268": {
+      "map_id": 197,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Kohlingen Rachel's House Inside"
+    },
+    "268R": {
+      "map_id": 197,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Kohlingen Rachel's House Inside"
+    },
+    "269": {
+      "map_id": 198,
+      "map_name": "JIDOOR",
+      "world": "WoB",
+      "comment": "Jidoor Outside"
+    },
+    "269R": {
+      "map_id": 198,
+      "map_name": "JIDOOR",
+      "world": "WoR",
+      "comment": "Jidoor Outside"
+    },
+    "ms-wob-28": {
+      "map_id": 198,
+      "map_name": "JIDOOR",
+      "world": "WoB",
+      "comment": "Jidoor"
+    },
+    "ms-wor-73": {
+      "map_id": 198,
+      "map_name": "JIDOOR",
+      "world": "WoR",
+      "comment": "Jidoor"
+    },
+    "270": {
+      "map_id": 200,
+      "map_name": "AUCTION HOUSE",
+      "world": "WoB",
+      "comment": "Jidoor Auction House"
+    },
+    "270R": {
+      "map_id": 200,
+      "map_name": "AUCTION HOUSE",
+      "world": "WoR",
+      "comment": "Jidoor Auction House"
+    },
+    "271": {
+      "map_id": 201,
+      "map_name": "ITEM SHOP",
+      "world": "WoB",
+      "comment": "Jidoor Item Shop"
+    },
+    "271R": {
+      "map_id": 201,
+      "map_name": "ITEM SHOP",
+      "world": "WoR",
+      "comment": "Jidoor Item Shop"
+    },
+    "272": {
+      "map_id": 202,
+      "map_name": "RELICS",
+      "world": "WoB",
+      "comment": "Jidoor Relic"
+    },
+    "272R": {
+      "map_id": 202,
+      "map_name": "RELICS",
+      "world": "WoR",
+      "comment": "Jidoor Relic"
+    },
+    "273": {
+      "map_id": 203,
+      "map_name": "ARMOR SHOP",
+      "world": "WoB",
+      "comment": "Jidoor Armor"
+    },
+    "273R": {
+      "map_id": 203,
+      "map_name": "ARMOR SHOP",
+      "world": "WoR",
+      "comment": "Jidoor Armor"
+    },
+    "274": {
+      "map_id": 204,
+      "map_name": "WEAPON SHOP",
+      "world": "WoB",
+      "comment": "Jidoor Weapon"
+    },
+    "274R": {
+      "map_id": 204,
+      "map_name": "WEAPON SHOP",
+      "world": "WoR",
+      "comment": "Jidoor Weapon"
+    },
+    "275": {
+      "map_id": 205,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoB",
+      "comment": "Jidoor Chocobo Stable"
+    },
+    "275R": {
+      "map_id": 205,
+      "map_name": "CHOCOBO STABLE",
+      "world": "WoR",
+      "comment": "Jidoor Chocobo Stable"
+    },
+    "276": {
+      "map_id": 206,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Jidoor Inn"
+    },
+    "276R": {
+      "map_id": 206,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Jidoor Inn"
+    },
+    "277": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Behind Painting Room"
+    },
+    "278": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement 1st Room"
+    },
+    "279": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Single Chest Room"
+    },
+    "280": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Switching Door Room.  Removed 2nd trap exit (2018)"
+    },
+    "281": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Behind Switching Door Room"
+    },
+    "282": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Save Point Room"
+    },
+    "283": {
+      "map_id": 207,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Floating Chest room"
+    },
+    "284": {
+      "map_id": 208,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's Basement Chadarnook's Room"
+    },
+    "285": {
+      "map_id": 209,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoB",
+      "comment": "Owzer's House"
+    },
+    "285r": {
+      "map_id": 209,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Owzer's House"
+    },
+    "dc-73": {
+      "map_id": 209,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Jidoor WOR + Owzers"
+    },
+    "root-ob": {
+      "map_id": 209,
+      "map_name": "OWZER'S HOUSE",
+      "world": "WoR",
+      "comment": "Root map for -door-randomize-owzer's basement"
+    },
+    "286": {
+      "map_id": 217,
+      "map_name": "ESPERVILLE",
+      "world": "WoB",
+      "comment": "Esper World Outside"
+    },
+    "287": {
+      "map_id": 218,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper World Gate"
+    },
+    "288": {
+      "map_id": 219,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper World Northwest House"
+    },
+    "289": {
+      "map_id": 219,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper World Far East House"
+    },
+    "290": {
+      "map_id": 219,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper World South Right House"
+    },
+    "291": {
+      "map_id": 219,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper World East House"
+    },
+    "292": {
+      "map_id": 219,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper World South Left House"
+    },
+    "293": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo 1F Outside WOB"
+    },
+    "293r": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "['zr1']",
+      "comment": "Zozo 1F Outside WOB"
+    },
+    "294": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo 2F Clock Room Balcony Outside"
+    },
+    "294r": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoR",
+      "comment": "Zozo 2F Clock Room Balcony Outside"
+    },
+    "295": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo 2F Cafe Balcony Outside"
+    },
+    "295r": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoR",
+      "comment": "Zozo 2F Cafe Balcony Outside"
+    },
+    "296": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo Cafe Upstairs Outside WOB (618 --> Mt Zozo not accessible)"
+    },
+    "296r": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "[]",
+      "comment": "Zozo Cafe Upstairs Outside WOR"
+    },
+    "296r-mapsafe": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "[]",
+      "comment": "Zozo Cafe Upstairs Outside WOR"
+    },
+    "297": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo Relic 1st Section Outside (incl. hook entry event)"
+    },
+    "298": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo Relic 2nd Section Outside (incl. hook exit)"
+    },
+    "299": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "['clock5']",
+      "comment": "Zozo Relic 3rd Section Outside"
+    },
+    "300": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo Relic 4th Section Outside"
+    },
+    "307r_clock": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room West WoR INCLUDING clock logic"
+    },
+    "308r_clock": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room East WoR INCLUDING clock logic"
+    },
+    "ms-wob-37": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo"
+    },
+    "ms-wor-70": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoR",
+      "comment": "Zozo"
+    },
+    "root-mz": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoR",
+      "comment": "Mt Zozo connection (Rusty Door)"
+    },
+    "root-zb": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "WoB",
+      "comment": "Zozo 1F Outside WOB"
+    },
+    "root-zr": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "['zr1']",
+      "comment": "Zozo 1F Outside WOR"
+    },
+    "ruin-zozo": {
+      "map_id": 221,
+      "map_name": "ZOZO",
+      "world": "[]",
+      "comment": "Zozo 1F Outside WOR + Terra-locked 608"
+    },
+    "301": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock1']",
+      "comment": "Zozo Cafe WoB"
+    },
+    "301r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock1']",
+      "comment": "Zozo Cafe WoR"
+    },
+    "302": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Relic 1st Room Inside"
+    },
+    "302r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zozo Relic 1st Room Inside WoR (data only, for ruination mode connection)"
+    },
+    "303a": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock3']",
+      "comment": "Zozo Relic 2nd Room Inside - entrance"
+    },
+    "303b": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock3']",
+      "comment": "Zozo Relic 2nd Room Inside - exit"
+    },
+    "304": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock4']",
+      "comment": "Zozo West Tower Inside"
+    },
+    "305": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Armor"
+    },
+    "305r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zozo Armor"
+    },
+    "306": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock2']",
+      "comment": "Zozo Weapon WoB"
+    },
+    "306r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "['clock2']",
+      "comment": "Zozo Weapon WoR"
+    },
+    "307": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room West WoB, assuming one-way passage  (delete 2061)"
+    },
+    "307_clock": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room West WoB INCLUDING clock logic."
+    },
+    "307r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room West WoR, assuming one-way passage (delete 2063)"
+    },
+    "308": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room East WoB, assuming one-way passage (delete 3061)"
+    },
+    "308_clock": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room East WoB INCLUDING clock logic"
+    },
+    "308r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Zozo Clock Puzzle Room East WoR, assuming one-way passage (delete 3063)"
+    },
+    "309": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Cafe Chest Room"
+    },
+    "309r": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zozo Cafe Chest Room"
+    },
+    "310": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Tower 6F Chest Room"
+    },
+    "311": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Tower Stairwell Room"
+    },
+    "312": {
+      "map_id": 225,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Tower 12F Chest Room"
+    },
+    "313": {
+      "map_id": 226,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Zozo Tower Ramuh's Room"
+    },
+    "314": {
+      "map_id": 231,
+      "map_name": "",
+      "comment": "Opera House Balcony WoR and WoB Disruption"
+    },
+    "315": {
+      "map_id": 232,
+      "map_name": "",
+      "comment": "Opera House Catwalk Stairwell"
+    },
+    "316": {
+      "map_id": 232,
+      "map_name": "",
+      "comment": "Opera House Switch Room"
+    },
+    "317": {
+      "map_id": 233,
+      "map_name": "",
+      "comment": "Opera House Balcony WoB"
+    },
+    "318": {
+      "map_id": 235,
+      "map_name": "",
+      "comment": "Opera House Catwalks"
+    },
+    "319": {
+      "map_id": 237,
+      "map_name": "OPERA HOUSE",
+      "world": "WoB",
+      "comment": "Opera House Lobby WoB"
+    },
+    "319r": {
+      "map_id": 237,
+      "map_name": "OPERA HOUSE",
+      "world": "WoR",
+      "comment": "Opera House Lobby WoR"
+    },
+    "ms-wob-40": {
+      "map_id": 237,
+      "map_name": "OPERA HOUSE",
+      "world": "WoB",
+      "comment": "Opera House"
+    },
+    "ms-wor-62": {
+      "map_id": 237,
+      "map_name": "OPERA HOUSE",
+      "world": "WoR",
+      "comment": "Opera House"
+    },
+    "320": {
+      "map_id": 238,
+      "map_name": "",
+      "comment": "Opera House Dressing Room"
+    },
+    "321": {
+      "map_id": 240,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Vector After Train Ride"
+    },
+    "322": {
+      "map_id": 242,
+      "map_name": "VECTOR",
+      "world": "WoB",
+      "comment": "Vector Outside"
+    },
+    "dc-1505": {
+      "map_id": 242,
+      "map_name": "VECTOR",
+      "world": "WoB",
+      "comment": "Vector + MTek"
+    },
+    "ms-wob-1505": {
+      "map_id": 242,
+      "map_name": "VECTOR",
+      "world": "WoB",
+      "comment": "Vector"
+    },
+    "root-mf": {
+      "map_id": 242,
+      "map_name": "VECTOR",
+      "world": "WoB",
+      "comment": "Magitek Factory root entrance in Vector"
+    },
+    "ruin-vector": {
+      "map_id": 242,
+      "map_name": "VECTOR",
+      "world": "WoB",
+      "comment": "Vector with Mtek3 destination"
+    },
+    "323": {
+      "map_id": 243,
+      "map_name": "IMPERIAL CASTLE",
+      "world": "WoB",
+      "comment": "Imperial Castle Entrance"
+    },
+    "325": {
+      "map_id": 244,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Roof"
+    },
+    "331": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Main Room"
+    },
+    "332": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle 2 Chest Room"
+    },
+    "333": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Jail Cell"
+    },
+    "334": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle 2F Bedroom Hallway"
+    },
+    "335": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Left Side Roof Stairwell"
+    },
+    "336": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Right Side Roof Stairwell"
+    },
+    "338": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Bedroom"
+    },
+    "339": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Bedroom Bathroom"
+    },
+    "340": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Toilet"
+    },
+    "341": {
+      "map_id": 250,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Top Room"
+    },
+    "342": {
+      "map_id": 251,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Banquet Room"
+    },
+    "343": {
+      "map_id": 252,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Castle Barracks Room"
+    },
+    "345": {
+      "map_id": 262,
+      "map_name": "MAGITEK FACTORY",
+      "world": "WoB",
+      "comment": "Magitek Factory Upper Room Platform From Lower Room"
+    },
+    "346": {
+      "map_id": 262,
+      "map_name": "MAGITEK FACTORY",
+      "world": "WoB",
+      "comment": "Magitek Factory Upper Room"
+    },
+    "355a": {
+      "map_id": 272,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Minecart Room"
+    },
+    "347": {
+      "map_id": 263,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Lower Room"
+    },
+    "349": {
+      "map_id": 264,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Garbage Room"
+    },
+    "351": {
+      "map_id": 269,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Stairwell"
+    },
+    "352": {
+      "map_id": 270,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Save Point Room"
+    },
+    "353": {
+      "map_id": 271,
+      "map_name": "MAGITEK RES. FACILITY",
+      "world": "WoB",
+      "comment": "Magitek Factory Tube Hallway"
+    },
+    "354": {
+      "map_id": 273,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Number 024 Room"
+    },
+    "355": {
+      "map_id": 274,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Magitek Factory Esper Tube Room"
+    },
+    "356": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Entry Room"
+    },
+    "357": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Bridge Guards Room"
+    },
+    "358": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Pit entry"
+    },
+    "358b": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Pit exit"
+    },
+    "ms-wor-1552": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater"
+    },
+    "root-ze-as-doors": {
+      "map_id": 276,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "ZoneEater Engulf as doors"
+    },
+    "361": {
+      "map_id": 277,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Short Tunnel"
+    },
+    "363": {
+      "map_id": 278,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Gogo Room"
+    },
+    "359": {
+      "map_id": 279,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Save Point Room"
+    },
+    "359b": {
+      "map_id": 280,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater digestive tract"
+    },
+    "362": {
+      "map_id": 280,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Zone Eater Bridge Switch Room"
+    },
+    "364": {
+      "map_id": 281,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave 1st Room"
+    },
+    "365": {
+      "map_id": 281,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave Bridge Room"
+    },
+    "366": {
+      "map_id": 281,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave Switch Room"
+    },
+    "367a": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave 2nd Room - west"
+    },
+    "367b": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave 2nd Room - middle"
+    },
+    "367c": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave 2nd Room - east"
+    },
+    "share_east": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave west shared pit logical room"
+    },
+    "share_west": {
+      "map_id": 282,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave west shared pit logical room"
+    },
+    "368": {
+      "map_id": 283,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Umaro Cave Umaro's Den"
+    },
+    "369": {
+      "map_id": 284,
+      "map_name": "MARANDA",
+      "world": "WoB",
+      "comment": "Maranda Outside"
+    },
+    "369R": {
+      "map_id": 284,
+      "map_name": "MARANDA",
+      "world": "WoR",
+      "comment": "Maranda Outside"
+    },
+    "ms-wob-31": {
+      "map_id": 284,
+      "map_name": "MARANDA",
+      "world": "WoB",
+      "comment": "Maranda"
+    },
+    "ms-wor-63": {
+      "map_id": 284,
+      "map_name": "MARANDA",
+      "world": "WoR",
+      "comment": "Maranda"
+    },
+    "370": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoB",
+      "comment": "Doma 3F Outside"
+    },
+    "370R": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoR",
+      "comment": "Doma 3F Outside"
+    },
+    "371": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoB",
+      "comment": "Doma 1F Outside"
+    },
+    "371R": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoR",
+      "comment": "Doma 1F Outside"
+    },
+    "372": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoB",
+      "comment": "Doma 2F Outside"
+    },
+    "372R": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoR",
+      "comment": "Doma 2F Outside"
+    },
+    "dc-76": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoR",
+      "comment": "Doma WOR"
+    },
+    "ms-wob-18": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoB",
+      "comment": "Doma"
+    },
+    "ms-wor-76": {
+      "map_id": 285,
+      "map_name": "DOMA CASTLE",
+      "world": "WoR",
+      "comment": "Doma"
+    },
+    "374": {
+      "map_id": 288,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Maranda Inn"
+    },
+    "374R": {
+      "map_id": 288,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Maranda Inn"
+    },
+    "375": {
+      "map_id": 289,
+      "map_name": "WEAPON SHOP",
+      "world": "WoB",
+      "comment": "Maranda Weapon Shop"
+    },
+    "375R": {
+      "map_id": 289,
+      "map_name": "WEAPON SHOP",
+      "world": "WoR",
+      "comment": "Maranda Weapon Shop"
+    },
+    "376": {
+      "map_id": 290,
+      "map_name": "ARMOR SHOP",
+      "world": "WoB",
+      "comment": "Maranda Armor Shop"
+    },
+    "376R": {
+      "map_id": 290,
+      "map_name": "ARMOR SHOP",
+      "world": "WoR",
+      "comment": "Maranda Armor Shop"
+    },
+    "377": {
+      "map_id": 297,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Darill's Tomb Outside"
+    },
+    "ms-wor-53": {
+      "map_id": 297,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Daryl's Tomb"
+    },
+    "root-dt": {
+      "map_id": 297,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Root map for -door-randomize-darills-tomb"
+    },
+    "378": {
+      "map_id": 298,
+      "map_name": "DARILL'S TOMB/B1",
+      "world": "WoR",
+      "comment": "Darill's Tomb Entry Room"
+    },
+    "379": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb Main Upstairs Room"
+    },
+    "380": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb Left Side Tombstone Room"
+    },
+    "381": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb Right Side Tombstone Room"
+    },
+    "382": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb B2 Left Side Bottom Room"
+    },
+    "383": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "[]",
+      "comment": "Darill's Tomb B2 Turtle Hallway.  781 is a shared exit."
+    },
+    "383a": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "[]",
+      "comment": "Darill's Tomb B2 Turtle Hallway.  781 is a shared exit."
+    },
+    "384": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb B2 Right Side Bottom Room"
+    },
+    "386": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb B2 Graveyard"
+    },
+    "387": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Darill's Tomb Dullahan Room"
+    },
+    "ruin-daryl": {
+      "map_id": 299,
+      "map_name": "BASEMENT 2",
+      "world": "['dtboss']",
+      "comment": "Darill's Tomb Dullahan Room"
+    },
+    "388": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "WoR",
+      "comment": "Darills' Tomb B3"
+    },
+    "389": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "['dt2']",
+      "comment": "Darills' Tomb B3 Switch Puzzle Room"
+    },
+    "390": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "['dt3']",
+      "comment": "Darills' Tomb B2 Switch Puzzle Room Left Side"
+    },
+    "391": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "[]",
+      "comment": "Darills' Tomb B2 Switch Puzzle Room Right Side"
+    },
+    "392": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "['dt1']",
+      "comment": "Darills' Tomb Right Side Secret Room"
+    },
+    "393": {
+      "map_id": 300,
+      "map_name": "BASEMENT 3",
+      "world": "WoR",
+      "comment": "Darill's Tomb MIAB Hallway"
+    },
+    "ruin_terminus_3": {
+      "map_id": 301,
+      "map_name": "BASEMENT 2",
+      "world": "WoR",
+      "comment": "Daryl's Tomb staircase + Falcon (KT connection will be patched separately)"
+    },
+    "395": {
+      "map_id": 305,
+      "map_name": "TZEN",
+      "world": "WoR",
+      "comment": "Tzen Outside WoR 0x131"
+    },
+    "ms-wor-51": {
+      "map_id": 305,
+      "map_name": "TZEN",
+      "world": "WoR",
+      "comment": "Tzen"
+    },
+    "396": {
+      "map_id": 306,
+      "map_name": "TZEN",
+      "world": "WoB",
+      "comment": "Tzen Outside WoB 0x132"
+    },
+    "ms-wob-33": {
+      "map_id": 306,
+      "map_name": "TZEN",
+      "world": "WoB",
+      "comment": "Tzen"
+    },
+    "401": {
+      "map_id": 311,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Tzen Collapsing House Downstairs  0x137"
+    },
+    "537": {
+      "map_id": 315,
+      "map_name": "PHOENIX CAVE",
+      "world": "WoR",
+      "comment": "Phoenix cave interior entrance"
+    },
+    "branch-pc": {
+      "map_id": 318,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Phoenix cave outside (with exit as door) treated as dead end"
+    },
+    "ms-wor-1554": {
+      "map_id": 318,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Phoenix Cave"
+    },
+    "root-pc": {
+      "map_id": 11,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Phoenix cave entry as door"
+    },
+    "wor-airship": {
+      "map_id": 11,
+      "map_name": "",
+      "world": "WoR"
+    },
+    "421": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3 Stooges Maze Northwest Section  0x13d"
+    },
+    "422": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3 Stooges Maze West Section"
+    },
+    "423": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "['cd1']",
+      "comment": "Doma Dream 3 Stooges Maze North Section"
+    },
+    "424": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3 Stooges Maze Middle Section"
+    },
+    "425": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3 Stooges Maze Northeast Section"
+    },
+    "426": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3 Stooges Maze Southeast Section"
+    },
+    "427": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "['cd2']",
+      "comment": "Doma Dream 3 Stooges Maze East Section"
+    },
+    "428": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream 3 Stooges Maze South Section"
+    },
+    "429": {
+      "map_id": 317,
+      "map_name": "",
+      "world": "[]",
+      "comment": "Doma Dream 3 Stooges Room"
+    },
+    "536": {
+      "map_id": 318,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Phoenix cave outside (with exit as door)"
+    },
+    "430": {
+      "map_id": 319,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Caves Outside Loop     0x13f"
+    },
+    "431": {
+      "map_id": 319,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Caves Outside Final Room    0x13f"
+    },
+    "432": {
+      "map_id": 320,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Caves Starting Room  0x140"
+    },
+    "433": {
+      "map_id": 320,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Caves Inside Loop   0x140"
+    },
+    "435": {
+      "map_id": 321,
+      "map_name": "",
+      "world": "['cd3']",
+      "comment": "Doma Dream Train Switch Puzzle Room  0x141"
+    },
+    "436": {
+      "map_id": 322,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Doma Dream Train 1st Car   0x142"
+    },
+    "437": {
+      "map_id": 323,
+      "map_name": "ALBROOK",
+      "world": "WoB",
+      "comment": "Albrook WoB, outside (0x143)"
+    },
+    "ms-wob-35": {
+      "map_id": 323,
+      "map_name": "ALBROOK",
+      "world": "WoB",
+      "comment": "Albrook"
+    },
+    "438": {
+      "map_id": 324,
+      "map_name": "ALBROOK",
+      "world": "WoR",
+      "comment": "Albrook WoR, outside (0x144)"
+    },
+    "ms-wor-49": {
+      "map_id": 324,
+      "map_name": "ALBROOK",
+      "world": "WoR",
+      "comment": "Albrook"
+    },
+    "439": {
+      "map_id": 325,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Albrook Inn WoB (0x145)"
+    },
+    "439R": {
+      "map_id": 325,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Albrook Inn WoR (shared map 0x145)"
+    },
+    "440": {
+      "map_id": 326,
+      "map_name": "WEAPON SHOP",
+      "world": "WoB",
+      "comment": "Albrook Weapon Shop WoB (0x146)"
+    },
+    "440R": {
+      "map_id": 326,
+      "map_name": "WEAPON SHOP",
+      "world": "WoR",
+      "comment": "Albrook Weapon Shop WoR (shared map 0x146)"
+    },
+    "441": {
+      "map_id": 327,
+      "map_name": "ARMOR SHOP",
+      "world": "WoB",
+      "comment": "Albrook Armor Shop WoB (0x147)"
+    },
+    "441R": {
+      "map_id": 327,
+      "map_name": "ARMOR SHOP",
+      "world": "WoR",
+      "comment": "Albrook Armor Shop WoR (shared map 0x147)"
+    },
+    "442": {
+      "map_id": 328,
+      "map_name": "ITEM SHOP",
+      "world": "WoB",
+      "comment": "Albrook Item Shop WoB (0x148)"
+    },
+    "442R": {
+      "map_id": 328,
+      "map_name": "ITEM SHOP",
+      "world": "WoR",
+      "comment": "Albrook Item Shop WoR (shared map 0x148)"
+    },
+    "447": {
+      "map_id": 340,
+      "map_name": "THAMASA",
+      "world": "WoB",
+      "comment": "Thamasa After Kefka Outside WoB"
+    },
+    "dc-1504": {
+      "map_id": 340,
+      "map_name": "THAMASA",
+      "world": "WoB",
+      "comment": "Thamasa WOB + burning house"
+    },
+    "ms-wob-1504": {
+      "map_id": 340,
+      "map_name": "THAMASA",
+      "world": "WoB",
+      "comment": "Thamasa"
+    },
+    "449": {
+      "map_id": 344,
+      "map_name": "THAMASA",
+      "world": "WoR",
+      "comment": "Thamasa WoR outside (0x158)"
+    },
+    "dc-75": {
+      "map_id": 344,
+      "map_name": "THAMASA",
+      "world": "WoR",
+      "comment": "Thamasa WOR + Veldt Cave dest."
+    },
+    "ms-wor-75": {
+      "map_id": 344,
+      "map_name": "THAMASA",
+      "world": "WoR",
+      "comment": "Thamasa"
+    },
+    "ruin-thamasa": {
+      "map_id": 344,
+      "map_name": "THAMASA",
+      "world": "[]",
+      "comment": "Thamasa WOR + Veldt Cave dest + burning house"
+    },
+    "450": {
+      "map_id": 345,
+      "map_name": "ARSENAL",
+      "world": "WoB",
+      "comment": "Thamasa Arsenal"
+    },
+    "450R": {
+      "map_id": 345,
+      "map_name": "ARSENAL",
+      "world": "WoR",
+      "comment": "Thamasa Arsenal"
+    },
+    "451": {
+      "map_id": 346,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Thamasa Inn"
+    },
+    "451R": {
+      "map_id": 346,
+      "map_name": "INN",
+      "world": "WoR",
+      "comment": "Thamasa Inn"
+    },
+    "root-bh": {
+      "map_id": 346,
+      "map_name": "INN",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-burning-house"
+    },
+    "452": {
+      "map_id": 347,
+      "map_name": "ITEM SHOP",
+      "world": "WoB",
+      "comment": "Thamasa Item Shop"
+    },
+    "452R": {
+      "map_id": 347,
+      "map_name": "ITEM SHOP",
+      "world": "WoR",
+      "comment": "Thamasa Item Shop"
+    },
+    "453": {
+      "map_id": 348,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoB",
+      "comment": "Thamasa Elder's House"
+    },
+    "453R": {
+      "map_id": 348,
+      "map_name": "ELDER'S HOUSE",
+      "world": "WoR",
+      "comment": "Thamasa Elder's House"
+    },
+    "454": {
+      "map_id": 349,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Strago's House First Floor"
+    },
+    "454R": {
+      "map_id": 349,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Strago's House First Floor"
+    },
+    "455": {
+      "map_id": 349,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Strago's House Second Floor"
+    },
+    "455R": {
+      "map_id": 349,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Strago's House Second Floor"
+    },
+    "456": {
+      "map_id": 350,
+      "map_name": "RELICS",
+      "world": "WoB",
+      "comment": "Thamasa Relic"
+    },
+    "456R": {
+      "map_id": 350,
+      "map_name": "RELICS",
+      "world": "WoR",
+      "comment": "Thamasa Relic"
+    },
+    "457": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Entry Room"
+    },
+    "458": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Second Room"
+    },
+    "459": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Third Room"
+    },
+    "460": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Fourth Room"
+    },
+    "461": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Fifth Room"
+    },
+    "462": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House 1st Chest Room"
+    },
+    "463": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House 2nd Chest Room"
+    },
+    "464": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Sixth Room"
+    },
+    "465": {
+      "map_id": 351,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Burning House Final Room"
+    },
+    "467": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave First Room"
+    },
+    "468": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave Second Room Dead End"
+    },
+    "469": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave Bandit Room / Second Room"
+    },
+    "470": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave Third Room"
+    },
+    "471": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave Bandit Room / Second Room Lower Floor"
+    },
+    "472": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "['vc1']",
+      "comment": "Veldt Cave Fourth Room Left Side"
+    },
+    "474": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave Fifth Room"
+    },
+    "475": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Veldt Cave Final Room"
+    },
+    "ms-wor-61": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Cave in the Veldt"
+    },
+    "root-vc-mapsafe": {
+      "map_id": 353,
+      "map_name": "CAVE IN THE VELDT",
+      "world": "WoR",
+      "comment": "Root room for Cave on the Veldt"
+    },
+    "476": {
+      "map_id": 359,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 2nd Floor Outside"
+    },
+    "477": {
+      "map_id": 360,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 3rd Floor Outside"
+    },
+    "478": {
+      "map_id": 361,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 4th Floor Outside"
+    },
+    "479": {
+      "map_id": 362,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower Bottom"
+    },
+    "ms-wor-69": {
+      "map_id": 362,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatics Tower"
+    },
+    "480": {
+      "map_id": 363,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 1st Floor Outside"
+    },
+    "481": {
+      "map_id": 364,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower Top"
+    },
+    "482": {
+      "map_id": 365,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 1st Floor Treasure Room"
+    },
+    "483": {
+      "map_id": 366,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower Top Room"
+    },
+    "484": {
+      "map_id": 367,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 2nd Floor Treasure Room"
+    },
+    "485": {
+      "map_id": 368,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 3rd Floor Treasure Room"
+    },
+    "486": {
+      "map_id": 369,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 4th Floor Treasure Room"
+    },
+    "487": {
+      "map_id": 370,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Fanatic's Tower 1st Floor Secret Room"
+    },
+    "488": {
+      "map_id": 371,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain 3 Statues Room"
+    },
+    "489": {
+      "map_id": 372,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Outside Bridge Room"
+    },
+    "490": {
+      "map_id": 372,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Outside East Treasure Room"
+    },
+    "491": {
+      "map_id": 372,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Outside Path to Final Room"
+    },
+    "492": {
+      "map_id": 373,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Outside Statue Path"
+    },
+    "493": {
+      "map_id": 373,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Outside West Treasure Room"
+    },
+    "494": {
+      "map_id": 374,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Outside Northwest Treasure Room"
+    },
+    "495": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Inside First Room"
+    },
+    "496": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Inside Second Room South Section (with bridge jump entrances)"
+    },
+    "497": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Falling Pit Room"
+    },
+    "498": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Inside Second Room West Section"
+    },
+    "499": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Inside Second Room East Section"
+    },
+    "500": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Inside Second Room North Section"
+    },
+    "501": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mountain Inside Second Room Dead End"
+    },
+    "ms-wob-44": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Esper Mtn"
+    },
+    "root-em_mapsafe": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-esper-mountain"
+    },
+    "ruin_kt_entry_2": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Esper Mountain Terminus"
+    },
+    "ruin_terminus_2": {
+      "map_id": 375,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Esper Mountain Terminus (KT connection will be patched separately)"
+    },
+    "502": {
+      "map_id": 377,
+      "map_name": "IMPERIAL BASE",
+      "world": "WoB",
+      "comment": "Imperial Base"
+    },
+    "ms-wob-42": {
+      "map_id": 377,
+      "map_name": "IMPERIAL BASE",
+      "world": "WoB",
+      "comment": "Imperial Base"
+    },
+    "root-sg": {
+      "map_id": 377,
+      "map_name": "IMPERIAL BASE",
+      "world": "WoB",
+      "comment": "Root entrance = imperial base"
+    },
+    "503": {
+      "map_id": 378,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Base House"
+    },
+    "504": {
+      "map_id": 378,
+      "map_name": "",
+      "world": "WoB",
+      "comment": "Imperial Base House Basement"
+    },
+    "505": {
+      "map_id": 382,
+      "map_name": "CAVE TO THE SEALED GATE",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Entry Room"
+    },
+    "506": {
+      "map_id": 383,
+      "map_name": "BASEMENT 1",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate B1"
+    },
+    "507": {
+      "map_id": 384,
+      "map_name": "BASEMENT 3",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Last Room"
+    },
+    "508": {
+      "map_id": 384,
+      "map_name": "BASEMENT 3",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Main Room Last Section"
+    },
+    "509": {
+      "map_id": 384,
+      "map_name": "BASEMENT 3",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Main Room First Section"
+    },
+    "510": {
+      "map_id": 384,
+      "map_name": "BASEMENT 3",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Main Room Middle Section"
+    },
+    "511": {
+      "map_id": 384,
+      "map_name": "BASEMENT 3",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate 4 Chest Room"
+    },
+    "512": {
+      "map_id": 385,
+      "map_name": "BASEMENT 2",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Lava Switch Room  # 1076 inaccessible?"
+    },
+    "513": {
+      "map_id": 386,
+      "map_name": "BASEMENT 4",
+      "world": "WoB",
+      "comment": "Cave to Sealed Gate Save Point Room"
+    },
+    "514": {
+      "map_id": 391,
+      "map_name": "SEALED GATE",
+      "world": "WoB",
+      "comment": "Sealed Gate"
+    },
+    "ruin_kt_entry_1": {
+      "map_id": 391,
+      "map_name": "SEALED GATE",
+      "world": "WoR",
+      "comment": "The Sealed Gate"
+    },
+    "ruin_terminus_1": {
+      "map_id": 391,
+      "map_name": "SEALED GATE",
+      "world": "WoR",
+      "comment": "The Sealed Gate (KT connection will be patched separately)"
+    },
+    "515": {
+      "map_id": 396,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Solitary Island House Outside"
+    },
+    "ms-wor-48": {
+      "map_id": 396,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Cid's House"
+    },
+    "516": {
+      "map_id": 397,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Solitary Island House Inside"
+    },
+    "517": {
+      "map_id": 398,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Solitary Island Beach"
+    },
+    "520": {
+      "map_id": 401,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ancient Cave First Room"
+    },
+    "521": {
+      "map_id": 401,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ancient Cave Second Room"
+    },
+    "522": {
+      "map_id": 401,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ancient Cave Third Room"
+    },
+    "ms-wor-1558": {
+      "map_id": 401,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ancient Castle"
+    },
+    "523": {
+      "map_id": 402,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ancient Cave Save Point Room"
+    },
+    "535": {
+      "map_id": 405,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ebot's Rock entrance, 0x195"
+    },
+    "ms-wor-78": {
+      "map_id": 405,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ebot's Rock"
+    },
+    "524": {
+      "map_id": 406,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Castle West Side South Room"
+    },
+    "525": {
+      "map_id": 406,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Castle East Side Single Chest Room"
+    },
+    "526": {
+      "map_id": 406,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Castle West Side North Room"
+    },
+    "527": {
+      "map_id": 406,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Castle East Side 2 Chest Room"
+    },
+    "528": {
+      "map_id": 406,
+      "map_name": "BASEMENT 1",
+      "world": "['ac2']",
+      "comment": "Ancient Castle Throne Room"
+    },
+    "529": {
+      "map_id": 406,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Castle Entry Room"
+    },
+    "530": {
+      "map_id": 407,
+      "map_name": "",
+      "world": "WoR",
+      "comment": "Ancient Castle Outside"
+    },
+    "531": {
+      "map_id": 408,
+      "map_name": "BASEMENT 1",
+      "world": "[]",
+      "comment": "Ancient Castle Eastern Basement"
+    },
+    "532": {
+      "map_id": 408,
+      "map_name": "BASEMENT 1",
+      "world": "WoR",
+      "comment": "Ancient Castle Dragon Room"
+    },
+    "533": {
+      "map_id": 413,
+      "map_name": "COLOSSEUM",
+      "world": "WoR",
+      "comment": "Coliseum Main Room"
+    },
+    "534": {
+      "map_id": 413,
+      "map_name": "COLOSSEUM",
+      "world": "WoR",
+      "comment": "Coliseum Left Room"
+    },
+    "ms-wor-56": {
+      "map_id": 413,
+      "map_name": "COLOSSEUM",
+      "world": "WoR",
+      "comment": "Coliseum"
+    },
+    "233": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "Mobliz Relic Shop",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [],
+      "pits": []
+    },
+    "237": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "Mobliz Injured Lad House WoB",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [],
+      "pits": []
+    },
+    "237R": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "Mobliz Injured Lad House WoR",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [],
+      "pits": []
+    },
+    "238": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "Mobliz Injured Lad Hidden Basement",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [],
+      "pits": []
+    },
+    "branch-fc": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "Floating Continent outside at entry",
+      "note": "unresolved",
+      "doors": [
+        1557
+      ],
+      "traps": [],
+      "pits": []
+    },
+    "branch-mz_mapsafe": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "Zozo branch to Mount Zozo (for use with Zozo-WoR)",
+      "note": "unresolved",
+      "doors": [
+        30537
+      ],
+      "traps": [],
+      "pits": []
+    },
+    "ms-wob-1556": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "Floating Continent",
+      "note": "unresolved",
+      "doors": [
+        1557
+      ],
+      "traps": [],
+      "pits": []
+    },
+    "root-em_mapsafe_each": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "Root map for -door-randomize-esper-mountain & map shuffle.  would need to have map shuffle use 31047 instead of 1047...",
+      "note": "unresolved",
+      "doors": [
+        30044
+      ],
+      "traps": [],
+      "pits": []
+    },
+    "root-fc-as-doors": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "Floating Continent entry as door",
+      "note": "unresolved",
+      "doors": [
+        1556
+      ],
+      "traps": [],
+      "pits": []
+    },
+    "root-mz_mapsafe": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "Mt Zozo connection (Rusty Door)",
+      "note": "unresolved",
+      "doors": [
+        30618
+      ],
+      "traps": [],
+      "pits": []
+    },
+    "ruin-baren-reward": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "End for Baren Falls with reward, logically forced to Veldt Shore",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [
+        2176
+      ],
+      "pits": [
+        3076
+      ]
+    },
+    "ruin-mtek3": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "comment": "MTek 3 destination with reward, logically forced to Vector",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [
+        2128
+      ],
+      "pits": [
+        3028
+      ]
+    },
+    "ruin-st-exit": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "Serpent trench entry to nikeah with reward, logically forced to Nikeah WOR",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [
+        2153
+      ],
+      "pits": [
+        3053
+      ]
+    },
+    "ruin_kt1": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "KT Left",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [
+        2097
+      ],
+      "pits": [
+        3077
+      ]
+    },
+    "ruin_kt2": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "KT Mid",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [
+        2098
+      ],
+      "pits": [
+        3078
+      ]
+    },
+    "ruin_kt3": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoR",
+      "comment": "KT Right",
+      "note": "unresolved",
+      "doors": [],
+      "traps": [
+        2099
+      ],
+      "pits": [
+        3079
+      ]
+    },
+    "wob-airship": {
+      "map_id": null,
+      "map_name": null,
+      "world": "WoB",
+      "note": "unresolved",
+      "doors": [
+        1556
+      ],
+      "traps": [],
+      "pits": []
+    }
+  },
+  "summary": {
+    "total_rooms": 801,
+    "resolved": 784,
+    "unresolved": 17
+  }
+}

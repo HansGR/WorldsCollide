@@ -24,9 +24,13 @@ def parse(parser):
                             help = "Life spells cannot be learned. Fenix Downs unavailable (except from starting items). Buckets/inns/tents/events do not revive characters. Phoenix casts Life 3 on party instead of Life")
     challenges.add_argument("-rls", "--remove-learnable-spells", type = str,
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
+    challenges.add_argument("-nosaves", "--no-saves", nargs = '?', const = 'full', default = None,
+                            choices = ['full', 'lite'],
+                            help = "Ironmog Mode: 'full' (default if no value given) disables saving entirely. 'lite' auto-saves/loads slot 1 and wipes saves on game over")
 
 def process(args):
     from constants.spells import black_magic_ids, white_magic_ids, gray_magic_ids, spell_id
+    from data.esper_spell_tiers import top_spells
 
     # If no_ultima is on, add it to our exclude list for downstream use
     # If permadeath is on, add it to our exclude list for downstream use
@@ -50,6 +54,8 @@ def process(args):
                 args.remove_learnable_spell_ids.extend(black_magic_ids)
             elif a_spell_id == 'gray' or a_spell_id == 'grey':
                 args.remove_learnable_spell_ids.extend(gray_magic_ids)
+            elif a_spell_id == 'top':
+                args.remove_learnable_spell_ids.extend(top_spells)
             else:
                 spell_ids_lower = {k.lower():v for k,v in spell_id.items()}
                 if a_spell_id in spell_ids_lower:
@@ -86,6 +92,10 @@ def flags(args):
         flags += " -pd"
     if args.remove_learnable_spells:
         flags += f" -rls {args.remove_learnable_spells}"
+    if args.no_saves == 'full':
+        flags += " -nosaves"
+    elif args.no_saves == 'lite':
+        flags += " -nosaves lite"
 
     return flags
 
@@ -97,18 +107,33 @@ def options(args):
         ultima = "254 MP"
 
     return [
-        ("No Moogle Charms", args.no_moogle_charms),
-        ("No Exp Eggs", args.no_exp_eggs),
-        ("No Illuminas", args.no_illuminas),
-        ("No Sprint Shoes", args.no_sprint_shoes),
-        ("No Free Paladin Shields", args.no_free_paladin_shields),
-        ("No Free Characters/Espers", args.no_free_characters_espers),
-        ("Permadeath", args.permadeath),
-        ("Ultima", ultima),
-        ("Remove Learnable Spells", args.remove_learnable_spell_ids),
+        ("No Moogle Charms", args.no_moogle_charms, "no_moogle_charms"),
+        ("No Exp Eggs", args.no_exp_eggs, "no_exp_eggs"),
+        ("No Illuminas", args.no_illuminas, "no_illuminas"),
+        ("No Sprint Shoes", args.no_sprint_shoes, "no_sprint_shoes"),
+        ("No Free Paladin Shields", args.no_free_paladin_shields, "no_free_paladin_shields"),
+        ("No Free Characters/Espers", args.no_free_characters_espers, "no_free_characters_espers"),
+        ("Permadeath", args.permadeath, "permadeath"),
+        ("Ultima", ultima, "ultima"),
+        ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
+        ("No Saves", args.no_saves or False, "no_saves"),
     ]
         
     return opts
+def _format_spells_log_entries(spell_ids):
+    from constants.spells import id_spell
+    spell_entries = []
+    for i, spell_id in enumerate(spell_ids):
+        spell_entries.append(("", id_spell[spell_id], f"rls_{i}"))
+    return spell_entries
+
+def _format_spells_log_entries(spell_ids):
+    from constants.spells import id_spell
+    spell_entries = []
+    for spell_id in spell_ids:
+        spell_entries.append(("", id_spell[spell_id]))
+    return spell_entries
+
 def _format_spells_log_entries(spell_ids):
     from constants.spells import id_spell
     spell_entries = []
@@ -121,13 +146,13 @@ def menu(args):
 
     entries = options(args)
     for index, entry in enumerate(entries):
-        key, value = entry
+        key, value, unique_name = entry
         if key == "No Free Paladin Shields":
-            entries[index] = ("No Free Paladin Shlds", entry[1])
+            entries[index] = ("No Free Paladin Shlds", entry[1], unique_name)
         elif key == "No Free Characters/Espers":
-            entries[index] = ("No Free Chars/Espers", entry[1])
+            entries[index] = ("No Free Chars/Espers", entry[1], unique_name)
         elif key == "Remove Learnable Spells":
-            entries[index] = ("Remove L. Spells", FlagsRemoveLearnableSpells(value)) # flags sub-menu
+            entries[index] = ("Remove Spells", FlagsRemoveLearnableSpells(value), unique_name) # flags sub-menu
 
     return (name(), entries)
 
@@ -137,12 +162,12 @@ def log(args):
 
     entries = options(args)
     for entry in entries:
-        key, value = entry
+        key, value, unique_name = entry
         if key == "Remove Learnable Spells":
             if len(value) == 0:
-                entry = (key, "None")
+                entry = (key, "None", unique_name)
             else:
-                entry = (key, "") # The entries will show up on subsequent lines
+                entry = (key, "", unique_name) # The entries will show up on subsequent lines
             log.append(format_option(*entry))
             for spell_entry in _format_spells_log_entries(value):
                 log.append(format_option(*spell_entry))

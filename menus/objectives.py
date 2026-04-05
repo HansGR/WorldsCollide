@@ -16,6 +16,29 @@ class Objectives(scroll_area.ScrollArea):
 
         self.lines = []
         self.line_color_addresses = []
+
+        if args.ruination_mode:
+            import version
+            wc_version = "v" + version.__version__.split(' ')[0]
+            credits_lines = [
+                scroll_area.Line("", f0.set_user_text_color),
+                scroll_area.Line("Credits", f0.set_blue_text_color),
+                #scroll_area.Line("", f0.set_user_text_color),
+                scroll_area.Line("Final Fantasy 6 roguelike", f0.set_user_text_color),
+                scroll_area.Line("made in FFVI WorldsCollide", f0.set_user_text_color),
+                scroll_area.Line(("(" + wc_version + ")").rjust(scroll_area.WIDTH), f0.set_user_text_color),
+                scroll_area.Line("", f0.set_user_text_color),
+                scroll_area.Line(" Original code: AtmaTek", f0.set_user_text_color),
+                scroll_area.Line(" Door rando by: DoctorDT", f0.set_user_text_color),
+                scroll_area.Line("", f0.set_user_text_color),
+                scroll_area.Line(" Special Thanks:", f0.set_user_text_color),
+                scroll_area.Line("  asilverthorn, Franklin,", f0.set_user_text_color),
+                scroll_area.Line("  Jefe01, Jexvrok,", f0.set_user_text_color),
+                scroll_area.Line("  NobodyWar, WRJones", f0.set_user_text_color),
+                scroll_area.Line("  and the WC community", f0.set_user_text_color),
+                #scroll_area.Line("", f0.set_user_text_color),
+            ]
+
         for oi, objective in enumerate(objectives):
             result_line = objective.letter + " " + str(objective.result)
             self.lines.append(scroll_area.Line(result_line, f0.set_blue_text_color))
@@ -23,10 +46,13 @@ class Objectives(scroll_area.ScrollArea):
             if len(objective.conditions) == 0:
                 self.lines.append(scroll_area.Line(" " + chr(self.special_characters_start + oi) + " required", f0.set_user_text_color))
             else:
-                conditions_required = " All " + str(objective.conditions_required) + " of"
+                conditions_required = ""
+                if objective.conditions_required != 1: # exclude "All 1 of"
+                    conditions_required = " All " + str(objective.conditions_required) + " of"
                 if objective.conditions_required < len(objective.conditions):
                     conditions_required = " Any " + str(objective.conditions_required) + " of"
-                self.lines.append(scroll_area.Line(conditions_required, f0.set_user_text_color))
+                if conditions_required != "":
+                    self.lines.append(scroll_area.Line(conditions_required, f0.set_user_text_color))
 
                 for condition in objective.conditions:
                     condition_line = "  " + str(condition)
@@ -37,14 +63,19 @@ class Objectives(scroll_area.ScrollArea):
                     ).space.start_address
                     self.lines.append(scroll_area.Line(condition_line, line_color_address))
 
-                completed_line = " -- " + chr(self.special_characters_start + oi) + " completed --"
-                self.lines.append(scroll_area.Line(completed_line, f0.set_user_text_color))
+                if conditions_required != "": #exclude "All 1 of"
+                    completed_line = " -- " + chr(self.special_characters_start + oi) + " completed --"
+                    self.lines.append(scroll_area.Line(completed_line, f0.set_user_text_color))
             self.lines.append(scroll_area.Line("", f0.set_user_text_color))
 
         if len(self.lines) == 0:
             self.lines.append(scroll_area.Line("No Objectives", f0.set_blue_text_color))
         else:
             del self.lines[-1] # exclude final empty line
+            
+        if args.ruination_mode:
+            # append credits after objectives (keep trailing blank as separator)
+            self.lines.extend(credits_lines)
 
         super().__init__()
 

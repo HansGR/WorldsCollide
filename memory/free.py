@@ -12,7 +12,6 @@ spaces = [
     (0x02a65a, 0x02a7ff),
     (0x02faa4, 0x02fc6c),
     (0x03f091, 0x03ffff),
-    (0x046a6b, 0x046abf),
     (0x04a4c0, 0x04b9ff),
     (0x04bfb9, 0x04c007),
     (0x04f1c2, 0x04f476),
@@ -67,7 +66,7 @@ spaces = [
     (0x2ffbc8, 0x2ffeef),
 
     # EVENTS
-    (0x0a4363, 0x0a48bf), # daryl tomb staircase daryl flashback
+    (0x0a4369, 0x0a48bf), # daryl tomb staircase daryl flashback
     (0x0a48e3, 0x0a533e), # end of the world
     (0x0a6629, 0x0a6785), # terra/locke meet edgar in figaro castle wob
     (0x0a75ee, 0x0a7673), # figaro cave entrance guard
@@ -86,7 +85,7 @@ spaces = [
     (0x0b39de, 0x0b3dca), # sealed gate opening/kefka/close scene
     (0x0b75d6, 0x0b77c7), # relm and strago find gungho hurt in thamasa wor
     (0x0ba0ec, 0x0ba37d), # doma poisoned, purple water function, cyan checks liege
-    (0x0bba0c, 0x0bbec3), # cyan's family scene after phantom train
+    (0x0bba23, 0x0bbec3), # cyan's family scene after phantom train  # originally (0x0bba0c, 0x0bbec3), needed fixed space for DR exit event.
     (0x0bbfe9, 0x0bc026), # baren falls shadow leaves
     (0x0bc228, 0x0bc5fa), # serpent trench cave various tile events (gau forget, scare sabin, drop gp, ...)
     (0x0bc730, 0x0bc84c), # serpent trench cave go outside and jump in water
@@ -100,7 +99,7 @@ spaces = [
     (0x0c1f9f, 0x0c2047), # 8 dragons decrement count, receive crusader
     (0x0c2bf0, 0x0c3296), # kohlingen rachel scenes after phoenix cave
     (0x0c3971, 0x0c3af7), # recruit mog wor
-    (0x0c4ced, 0x0c5029), # mobliz wor esper terra and children scene
+    (0x0c4cf0, 0x0c5029), # mobliz wor esper terra and children scene
     (0x0c6150, 0x0c62a5), # locke/celes albrook inn night scene
     (0x0c6a2e, 0x0c6ce3), # locke/rachel lost memories flashback at rachel's house
     (0x0c6f8c, 0x0c704e), # hire shadow kohlingen inn
