@@ -197,19 +197,19 @@
       "comment": "3 --> Nikeah transition"
     },
     "root-ze": {
-      "map_id": 5,
+      "map_id": 1,
       "map_name": "",
       "world": "WoR",
       "comment": "ZoneEater Engulf"
     },
     "ruin_kt_entry_3": {
-      "map_id": 5,
+      "map_id": 301,
       "map_name": "",
       "world": "WoR",
       "comment": "Daryl's Tomb staircase + Falcon"
     },
     "wor-triangle": {
-      "map_id": 5,
+      "map_id": 1,
       "map_name": "",
       "world": "WoR"
     },
@@ -343,7 +343,7 @@
       "map_id": 21,
       "map_name": "",
       "world": "WoB",
-      "comment": "Phantom Forest, south entrance"
+      "comment": "Narshe Northern Mines 1st Floor Outside WoB"
     },
     "root-unb": {
       "map_id": 21,
@@ -367,7 +367,7 @@
       "map_id": 24,
       "map_name": "WEAPON SHOP",
       "world": "WoB",
-      "comment": "Kohlingen WoB entrance"
+      "comment": "Narshe Weapon Shop"
     },
     "24R": {
       "map_id": 24,
@@ -451,7 +451,7 @@
       "map_id": 30,
       "map_name": "ELDER'S HOUSE",
       "world": "WoB",
-      "comment": "Maranda WoB entrance"
+      "comment": "#Narshe Elder House"
     },
     "31R": {
       "map_id": 30,
