@@ -162,6 +162,7 @@ def options(args):
         ("No Elemental Shields", args.shops_no_elemental_shields, "shops_no_elemental_shields"),
         ("No Super Balls", args.shops_no_super_balls, "shops_no_super_balls"),
         ("Expensive Balls", args.shops_expensive_super_balls, "shops_expensive_super_balls"),
+        ("Expensive Restoratives", args.shops_expensive_restorative_items, "shops_expensive_restorative_items"),
         ("No Exp. Eggs", args.shops_no_exp_eggs, "shops_no_exp_eggs"),
         ("No Illuminas", args.shops_no_illuminas, "shops_no_illuminas"),
     ])
