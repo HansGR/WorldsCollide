@@ -503,7 +503,7 @@ class Maps():
                 0x150, 0x151, 0x152, 0x153,                                        # KT upper
                 0x160, 0x162, 0x163, 0x164, 0x165,                                 # KT rooms
                 0x199, 0x19A, 0x19B, 0x19C,                                        # KT factory/final
-                0x139, 0x13A, 0x13B, 0x13C, 0x13E,                                  # Phoenix Cave
+                #0x139, 0x13A, 0x13B, 0x13C, 0x13E,                                  # Phoenix Cave.  Actually allow warp in Phoenix cave as softlock protection if the player is dumb.
                 0x167, 0x168, 0x169, 0x16A, 0x16B, 0x16C, 0x16D, 0x16E, 0x16F,  # Fanatics Tower
                 0x170, 0x171, 0x172,                                              # Fanatics Tower (cont.)
                 0x033,                                                              # Narshe Moogle Defense
