@@ -1,4 +1,5 @@
 from memory.space import START_ADDRESS_SNES, Bank, Reserve, Write
+from data.shops import Shops
 import instruction.asm as asm
 import args
 
@@ -6,6 +7,11 @@ class BuyMenu:
     # ROM table addresses (must match data/shops.py Shops class constants)
     PACK_SIZE_TABLE_SNES  = 0xc47fa8
     TRACK_PTR_TABLE_SNES  = 0xc48258
+
+    # Direct page addresses for compaction buffers (must match data/shops.py)
+    COMPACT_ITEMS_DP = Shops.COMPACT_ITEMS_DP   # $C0
+    SLOT_MAP_DP      = Shops.SLOT_MAP_DP         # $C8
+    COMPACT_FLAG_DP  = Shops.COMPACT_FLAG_DP     # $E1
 
     def __init__(self):
         if args.shop_limited_inventory:
@@ -20,63 +26,35 @@ class BuyMenu:
     def hook_load_item(self):
         """Hook at C3/B9AF: replace LDA $C47AC0,X with JSL to custom routine.
 
-        When loading shop items for display, checks the tracking byte in Save RAM.
-        If the item's bit is set (already purchased), returns $FF (empty) so the
-        item is hidden from the buy list.
+        If compact mode is active ($E1 != 0), reads from the pre-built compact
+        buffer at $C0-$C7 using $F1 (display position) as the index. This ensures
+        available items are packed into the first N rows with no gaps.
+
+        If compact mode is not active, loads from ROM as normal.
 
         Entry state: A=8-bit, X=16-bit, Y=16-bit
         $F1 = current menu slot (0-7)
-        X = shop data offset (shop_index + menu_slot + 1)
+        X = shop data offset (shop_index + menu_slot + 1) [unused in compact mode]
         """
         src = [
-            # Load original shop item
+            # Check if compact mode is active
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $E1
+            asm.BNE("USE_COMPACT"),
+
+            # Normal mode: load from ROM as usual
             asm.LDA(0xc47ac0, asm.LNG_X),     # Load item from ROM
-            asm.CMP(0xff, asm.IMM8),           # Empty slot?
-            asm.BEQ("RETURN"),                 # Skip check for empty items
-
-            asm.PHA(),                         # Save item ID
-            asm.PHX(),                         # Save X (16-bit)
-
-            # Look up tracking pointer for this shop
-            asm.REP(0x20),                     # 16-bit A
-            asm.LDA(0x7e0201, asm.LNG),        # Shop number
-            asm.AND(0x00ff, asm.IMM16),        # Clean to 8-bit value
-            asm.ASL(),                         # *2 for pointer table offset
-            asm.TAX(),                         # X = offset
-            asm.LDA(self.TRACK_PTR_TABLE_SNES, asm.LNG_X),  # Tracking pointer
-            asm.TAX(),                         # X = Save RAM address (or 0)
-            asm.SEP(0x20),                     # 8-bit A
-            # Z flag still reflects the 16-bit LDA result
-            asm.BEQ("RESTORE"),               # 0 = normal shop, skip
-
-            # Load tracking byte from Save RAM and test bit for menu slot
-            asm.LDA(0x7e0000, asm.LNG_X),     # Load tracking byte from WRAM
-            asm.LDX(0xf1, asm.DIR),           # X = menu slot (0-7, 16-bit load)
-            asm.BEQ("CHECK_BIT"),             # Slot 0: no shifting needed
-
-            "SHIFT_LOOP",
-            asm.LSR(),                         # Shift tracking byte right
-            asm.DEX(),                         # Counter--
-            asm.BNE("SHIFT_LOOP"),            # Loop until slot reached
-
-            "CHECK_BIT",
-            asm.AND(0x01, asm.IMM8),          # Test lowest bit
-            asm.BEQ("RESTORE"),               # Not sold, use original item
-
-            # Item is sold - return FF (empty)
-            asm.PLX(),                         # Restore X (16-bit pop)
-            asm.PLA(),                         # Discard saved item (8-bit pop)
-            asm.LDA(0xff, asm.IMM8),          # Return empty
             asm.RTL(),
 
-            "RESTORE",
-            asm.PLX(),                         # Restore X
-            asm.PLA(),                         # Restore original item
-            "RETURN",
+            # Compact mode: read from pre-built compact buffer
+            "USE_COMPACT",
+            asm.PHX(),                          # Save original X
+            asm.LDX(0xf1, asm.DIR),            # X = display position (menu slot)
+            asm.LDA(self.COMPACT_ITEMS_DP, asm.DIR_X),  # LDA $C0,X
+            asm.PLX(),                          # Restore X
             asm.RTL(),
         ]
 
-        space = Write(Bank.C3, src, "limited inventory: load shop item with tracking check")
+        space = Write(Bank.C3, src, "limited inventory: load shop item with compaction")
         custom_load_item_addr = space.start_address + START_ADDRESS_SNES
 
         # Replace the 4-byte LDA $C47AC0,X at B9AF with JSL to our routine
@@ -92,8 +70,11 @@ class BuyMenu:
         quantity ($28) and buy limit ($6A) to the pack size, and stores the
         pack size in $E0 as a "limited mode" flag for the order menu.
 
+        In compact mode, $4B is the display position. The original shop slot
+        is looked up from slot_map[$4B] at $C8+$4B.
+
         Entry state: A=8-bit, X=16-bit, Y=16-bit
-        $4B = selected cursor slot (item index in buy list)
+        $4B = selected cursor slot (display position in buy list)
         """
         src = [
             asm.JSR(0xb82f, asm.ABS),         # Call original set_buy_limit
@@ -111,18 +92,35 @@ class BuyMenu:
             asm.SEP(0x20),                     # 8-bit A
             asm.BEQ("DONE"),                  # 0 = normal shop (Z from 16-bit LDA)
 
-            # Get pack size: table index = shop_num * 8 + item_slot
+            # Resolve display position to original slot via slot_map
+            # If compact mode active, original_slot = slot_map[$4B]; else use $4B directly
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $E1
+            asm.BEQ("USE_4B"),                # not compact mode, use $4B
+            # Clean 16-bit X from $4B (only low byte is meaningful)
+            asm.REP(0x20),                     # 16-bit A
+            asm.LDA(0x4b, asm.DIR),            # A = $4B-$4C (16-bit)
+            asm.AND(0x00ff, asm.IMM16),        # clean to 0-7
+            asm.TAX(),                         # X = clean display position
+            asm.SEP(0x20),                     # 8-bit A
+            asm.LDA(self.SLOT_MAP_DP, asm.DIR_X),  # A = original slot from $C8,X
+            asm.BRA("HAVE_SLOT"),
+            "USE_4B",
+            asm.LDA(0x4b, asm.DIR),           # A = $4B (original slot = display pos)
+            "HAVE_SLOT",
+            asm.STA(0xeb, asm.DIR),            # $EB = original slot index
+
+            # Get pack size: table index = shop_num * 8 + original_slot
             asm.REP(0x20),                     # 16-bit A
             asm.LDA(0x7e0201, asm.LNG),        # Shop number
             asm.AND(0x00ff, asm.IMM16),        # Clean
             asm.ASL(),                         # *2
             asm.ASL(),                         # *4
             asm.ASL(),                         # *8
-            asm.STA(0xeb, asm.DIR),            # Temp store in $EB-$EC
-            asm.LDA(0x4b, asm.DIR),            # Item slot ($4B, 16-bit read)
-            asm.AND(0x00ff, asm.IMM16),        # Clean
+            asm.STA(0xec, asm.DIR),            # Temp store in $EC-$ED (shifted by 1 to not overwrite $EB)
+            asm.LDA(0xeb, asm.DIR),            # Original slot (in $EB; 16-bit read includes $EC)
+            asm.AND(0x00ff, asm.IMM16),        # Clean to just the slot byte
             asm.CLC(),
-            asm.ADC(0xeb, asm.DIR),            # Add shop_num * 8
+            asm.ADC(0xec, asm.DIR),            # Add shop_num * 8
             asm.TAX(),                         # X = pack table index
             asm.SEP(0x20),                     # 8-bit A
             asm.LDA(self.PACK_SIZE_TABLE_SNES, asm.LNG_X),  # Pack size
@@ -178,6 +176,9 @@ class BuyMenu:
 
         After the purchase is executed, sets the tracking bit in Save RAM
         for the purchased item slot, so it won't appear in the shop next time.
+
+        In compact mode, $4B is the display position. The original shop slot
+        is looked up from slot_map[$4B] at $C8+$4B.
         """
         src = [
             asm.JSR(0xb5b7, asm.ABS),         # Call original execute_purchase
@@ -198,9 +199,25 @@ class BuyMenu:
             asm.CPX(0x0000, asm.IMM16),       # Zero pointer? (16-bit X compare)
             asm.BEQ("DONE"),                  # Normal shop, skip
 
-            # Build bit mask for item slot $4B
+            # Resolve display position to original slot
+            asm.PHX(),                         # Save SRAM address
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $E1
+            asm.BEQ("USE_4B"),
+            # Clean 16-bit X from $4B (only low byte is meaningful)
+            asm.REP(0x20),                     # 16-bit A
+            asm.LDA(0x4b, asm.DIR),            # A = $4B-$4C (16-bit)
+            asm.AND(0x00ff, asm.IMM16),        # clean to 0-7
+            asm.TAX(),                         # X = clean display position
+            asm.SEP(0x20),                     # 8-bit A
+            asm.LDA(self.SLOT_MAP_DP, asm.DIR_X),  # A = original slot from $C8,X
+            asm.BRA("HAVE_SLOT"),
+            "USE_4B",
+            asm.LDA(0x4b, asm.DIR),           # A = $4B directly
+            "HAVE_SLOT",
+            asm.PLX(),                         # Restore SRAM address
+
+            # Build bit mask for the original item slot (in A, 0-7)
             asm.REP(0x20),                     # 16-bit A (to get clean TAY)
-            asm.LDA(0x4b, asm.DIR),            # Item slot (16-bit load from $4B-$4C)
             asm.AND(0x0007, asm.IMM16),       # Mask to 0-7 (clean both bytes)
             asm.TAY(),                         # Y = clean slot number
             asm.SEP(0x20),                     # 8-bit A
