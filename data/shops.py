@@ -388,12 +388,14 @@ class Shops():
                 break
             self.limited_shop_sram[shop_id] = self.SRAM_TRACKING_START + i
 
-        # Extend the battle-bit zeroing loop at C0/BE03 to cover the SLI tracking range.
-        # Vanilla zeroes $1DC9..$1E1C (CPX #$0054). Extend to $1DC9..$1E3F (CPX #$0077)
-        # so the tracking bytes start as zero on a new game.
+        # Extend the treasure-chest zeroing loop (C0/BB1A) to also cover SLI tracking.
+        # Vanilla: STZ $1E40,X / CPX #$0030 → zeroes $1E40..$1E6F
+        # Patched: STZ $1E1D,X / CPX #$0053 → zeroes $1E1D..$1E6F
         from memory.space import Reserve
-        space = Reserve(0x00be04, 0x00be04, "extend battle bit zeroing for SLI tracking")
-        space.write(0x77)
+        space = Reserve(0x00bb1b, 0x00bb1b, "SLI tracking: lower chest-zeroing base to $1E1D")
+        space.write(0x1d)
+        space = Reserve(0x00bb1f, 0x00bb1f, "SLI tracking: extend chest-zeroing count to $53")
+        space.write(0x53)
 
     def write_limited_inventory_data(self):
         """Write pack size table and tracking pointer table to ROM."""
