@@ -422,25 +422,68 @@ class Shops():
             else:
                 space.write((0).to_bytes(2, "little"))
 
+    # Direct page addresses used for limited inventory compaction buffers.
+    # $C0-$C7: compact_items (available items packed into first N slots, rest $FF)
+    # $C8-$CF: slot_map (display position -> original shop slot index)
+    # $E1: compact mode flag (0 = normal shop, 1 = limited shop with valid buffers)
+    # $E2: temp (tracking byte during init)
+    # $E3: temp (item ID during init)
+    COMPACT_ITEMS_DP  = 0xc0   # 8 bytes: $C0-$C7
+    SLOT_MAP_DP       = 0xc8   # 8 bytes: $C8-$CF
+    COMPACT_FLAG_DP   = 0xe1   # 1 byte
+
     def disable_buy_if_empty(self):
         # in shops with no items scrolling breaks and you can buy "Empty" items
         # this function will not allow the buy menu to be selected if the shop type is empty
         from memory.space import Bank, Reserve, Write
         import instruction.asm as asm
 
-        src = [
-            asm.LDX(0x67, asm.DIR),         # x = shop index
-            asm.INX(),                      # skip shop flags byte
-            asm.LDA(0xc47ac0, asm.LNG_X),   # load first item byte
-            asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
-            asm.BNE("OPEN_BUY_MENU"),       # branch if not
-            asm.JSR(0xb66f, asm.ABS),       # call invalid selection (play buzzer sound and pixelate screen)
-            asm.JMP(0xb760, asm.ABS),       # jump to return to main shop menu
+        if self.args.shop_limited_inventory:
+            # Write the compact_init subroutine first (builds compacted item list
+            # for limited shops so purchased items don't leave gaps in the menu)
+            compact_src = self._build_compact_init_asm()
+            compact_space = Write(Bank.C3, compact_src, "limited inventory: compact init subroutine")
+            compact_init_addr = compact_space.start_address
 
-            "OPEN_BUY_MENU",
-            asm.STZ(0xe0, asm.DIR),          # clear limited inventory mode flag
-            asm.JMP(0xb7a3, asm.ABS),        # jump to normal buy menu initialization
-        ]
+            src = [
+                # Check if first ROM item is empty (catches genuinely empty shops)
+                asm.LDX(0x67, asm.DIR),         # x = shop index
+                asm.INX(),                      # skip shop flags byte
+                asm.LDA(0xc47ac0, asm.LNG_X),   # load first item byte
+                asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
+                asm.BNE("OPEN_BUY_MENU"),       # branch if not
+                asm.JSR(0xb66f, asm.ABS),       # buzzer
+                asm.JMP(0xb760, asm.ABS),       # return to main shop menu
+
+                "OPEN_BUY_MENU",
+                asm.STZ(0xe0, asm.DIR),          # clear limited inventory mode flag
+                asm.JSR(compact_init_addr, asm.ABS),  # build compacted item list
+                # For limited shops, check if all items have been purchased
+                asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),
+                asm.BEQ("GO"),                  # normal shop, skip check
+                asm.LDA(self.COMPACT_ITEMS_DP, asm.DIR),  # first compact item
+                asm.CMP(0xff, asm.IMM8),        # all purchased?
+                asm.BNE("GO"),
+                asm.JSR(0xb66f, asm.ABS),       # buzzer
+                asm.JMP(0xb760, asm.ABS),       # return to main shop menu
+                "GO",
+                asm.JMP(0xb7a3, asm.ABS),       # normal buy menu initialization
+            ]
+        else:
+            src = [
+                asm.LDX(0x67, asm.DIR),         # x = shop index
+                asm.INX(),                      # skip shop flags byte
+                asm.LDA(0xc47ac0, asm.LNG_X),   # load first item byte
+                asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
+                asm.BNE("OPEN_BUY_MENU"),       # branch if not
+                asm.JSR(0xb66f, asm.ABS),       # buzzer
+                asm.JMP(0xb760, asm.ABS),       # return to main shop menu
+
+                "OPEN_BUY_MENU",
+                asm.STZ(0xe0, asm.DIR),          # clear limited inventory mode flag
+                asm.JMP(0xb7a3, asm.ABS),        # normal buy menu initialization
+            ]
+
         space = Write(Bank.C3, src, "shops handle buy menu empty shop")
         check_empty_shop = space.start_address
 
@@ -448,6 +491,109 @@ class Shops():
         space.write(
             (check_empty_shop & 0xffff).to_bytes(2, "little"),
         )
+
+    def _build_compact_init_asm(self):
+        """Build ASM for the compact_init subroutine.
+
+        Scans all 8 shop item slots, skips empty and purchased items,
+        and packs available items into $C0-$C7 with a slot mapping at $C8-$CF.
+        Sets $E1 = 1 if this is a limited shop (compact buffers valid).
+
+        Register contract: preserves X, Y. Uses A freely.
+        Entry: 8-bit A, 16-bit X/Y (standard menu state).
+        """
+        import instruction.asm as asm
+
+        return [
+            # Save caller's registers
+            asm.PHX(),
+            asm.PHY(),
+
+            # Clear compact mode flag
+            asm.STZ(self.COMPACT_FLAG_DP, asm.DIR),  # $E1 = 0
+
+            # Fill compact_items ($C0-$C7) and slot_map ($C8-$CF) with $FF
+            asm.LDA(0xff, asm.IMM8),
+            asm.LDX(0x000f, asm.IMM16),
+            "CLEAR",
+            asm.STA(self.COMPACT_ITEMS_DP, asm.DIR_X),  # STA $C0,X (covers $C0-$CF)
+            asm.DEX(),
+            asm.BPL("CLEAR"),
+
+            # Check if this is a limited shop
+            asm.REP(0x20),                              # 16-bit A
+            asm.LDA(0x7e0201, asm.LNG),                 # shop number
+            asm.AND(0x00ff, asm.IMM16),                  # clean high byte
+            asm.ASL(),                                   # *2 for pointer table
+            asm.TAX(),                                   # X = table offset
+            asm.LDA(self.TRACK_PTR_TABLE_SNES, asm.LNG_X),  # tracking pointer
+            asm.TAX(),                                   # X = SRAM address (or 0)
+            asm.SEP(0x20),                               # 8-bit A
+            # Z flag from TAX: set if pointer was 0 (normal shop)
+            asm.BEQ("DONE"),
+
+            # Limited shop: set flag and load tracking byte
+            asm.LDA(0x01, asm.IMM8),
+            asm.STA(self.COMPACT_FLAG_DP, asm.DIR),      # $E1 = 1
+            asm.LDA(0x7e0000, asm.LNG_X),               # tracking byte from SRAM
+            asm.STA(0xe2, asm.DIR),                      # save tracking byte
+
+            # Scan slots: Y = scan_slot (0-7), X = write_pos (0-N)
+            asm.LDX(0x0000, asm.IMM16),                  # write_pos = 0
+            asm.LDY(0x0000, asm.IMM16),                  # scan_slot = 0
+
+            "SCAN",
+            # Load item from ROM at scan_slot Y
+            # ROM index = scan_slot + $67 (16-bit shop base) + 1
+            asm.PHX(),                                   # save write_pos
+            asm.REP(0x20),                               # 16-bit A
+            asm.TYA(),                                   # A = scan_slot (16-bit, 0-7)
+            asm.CLC(),
+            asm.ADC(0x67, asm.DIR),                      # A += shop base index ($67-$68, 16-bit)
+            asm.INC(),                                   # A += 1 (skip flags byte)
+            asm.TAX(),                                   # X = ROM data offset
+            asm.SEP(0x20),                               # 8-bit A
+            asm.LDA(0xc47ac0, asm.LNG_X),               # load item from ROM
+            asm.PLX(),                                   # restore write_pos
+
+            # Check if empty in ROM
+            asm.CMP(0xff, asm.IMM8),
+            asm.BEQ("NEXT"),                             # skip empty slots
+
+            # Save item ID
+            asm.STA(0xe3, asm.DIR),
+
+            # Check tracking bit for scan_slot Y
+            asm.LDA(0xe2, asm.DIR),                      # tracking byte
+            asm.PHY(),                                   # save scan_slot
+            asm.CPY(0x0000, asm.IMM16),                  # slot 0?
+            asm.BEQ("TESTBIT"),                          # no shifting needed
+            "SHIFT",
+            asm.LSR(),                                   # shift tracking byte right
+            asm.DEY(),                                   # decrement counter
+            asm.BNE("SHIFT"),                            # loop until done
+            "TESTBIT",
+            asm.PLY(),                                   # restore scan_slot
+            asm.AND(0x01, asm.IMM8),                     # test lowest bit
+            asm.BNE("NEXT"),                             # bit set = purchased, skip
+
+            # Item is available: add to compact list
+            asm.LDA(0xe3, asm.DIR),                      # item ID
+            asm.STA(self.COMPACT_ITEMS_DP, asm.DIR_X),   # compact_items[write_pos]
+            asm.TYA(),                                   # A = scan_slot
+            asm.STA(self.SLOT_MAP_DP, asm.DIR_X),        # slot_map[write_pos]
+            asm.INX(),                                   # write_pos++
+
+            "NEXT",
+            asm.INY(),                                   # scan_slot++
+            asm.CPY(0x0008, asm.IMM16),                  # done 8 slots?
+            asm.BNE("SCAN"),                             # loop if not
+
+            "DONE",
+            asm.PLY(),                                   # restore caller's Y
+            asm.PLX(),                                   # restore caller's X
+            asm.RTS(),
+        ]
 
     def mod(self):
         self.disable_buy_if_empty()
