@@ -388,6 +388,13 @@ class Shops():
                 break
             self.limited_shop_sram[shop_id] = self.SRAM_TRACKING_START + i
 
+        # Extend the battle-bit zeroing loop at C0/BE03 to cover the SLI tracking range.
+        # Vanilla zeroes $1DC9..$1E1C (CPX #$0054). Extend to $1DC9..$1E3F (CPX #$0077)
+        # so the tracking bytes start as zero on a new game.
+        from memory.space import Reserve
+        space = Reserve(0x00be04, 0x00be04, "extend battle bit zeroing for SLI tracking")
+        space.write(0x77)
+
     def write_limited_inventory_data(self):
         """Write pack size table and tracking pointer table to ROM."""
         from memory.space import Reserve
