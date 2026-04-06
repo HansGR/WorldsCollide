@@ -1,5 +1,6 @@
 from data.shop import Shop
 from data.structures import DataArray
+from constants.items import id_name, name_id
 
 class Shops():
     DATA_START = 0x47ac0
@@ -293,6 +294,125 @@ class Shops():
                 if shop.contains(item):
                     shop.remove(item)
 
+    # ROM addresses for limited inventory data (in unused space at C47FA8-C487BF)
+    PACK_SIZE_TABLE_START = 0x47fa8       # 8 bytes per shop * 86 shops = 688 bytes
+    PACK_SIZE_TABLE_END   = 0x48257
+    TRACK_PTR_TABLE_START = 0x48258       # 2 bytes per shop * 86 shops = 172 bytes
+    TRACK_PTR_TABLE_END   = 0x48303
+    SHOP_COUNT            = 86            # Total shops in ROM (including inaccessible)
+
+    # SNES addresses (for ASM long addressing)
+    PACK_SIZE_TABLE_SNES  = 0xc47fa8
+    TRACK_PTR_TABLE_SNES  = 0xc48258
+
+    # Save RAM range for ruination mode tracking bytes
+    SRAM_TRACKING_START   = 0x1e1d        # $1E1D-$1E3F (35 bytes, enough for 34 ruination shops)
+
+    # Special relics that should always be sold as singles
+    SPECIAL_RELICS = {
+        name_id["Economizer"], name_id["Offering"], name_id["Hero Ring"],
+        name_id["Dragon Horn"], name_id["Gem Box"], name_id["Merit Award"],
+        name_id["Exp. Egg"], name_id["Marvel Shoes"], name_id["Ribbon"],
+        name_id["Genji Glove"], name_id["Gauntlet"], name_id["Moogle Charm"],
+    }
+
+    # Basic healing items: larger packs (3-10)
+    BASIC_HEALING = {
+        name_id["Tonic"], name_id["Potion"], name_id["Fenix Down"],
+        name_id["Revivify"], name_id["Antidote"], name_id["Eyedrop"],
+        name_id["Soft"], name_id["Echo Screen"], name_id["Green Cherry"],
+        name_id["Sleeping Bag"],
+    }
+
+    # High healing items: moderate packs (1-3)
+    HIGH_HEALING = {
+        name_id["X-Potion"], name_id["Tincture"], name_id["Ether"],
+        name_id["X-Ether"], name_id["Tent"], name_id["Remedy"],
+    }
+
+    def get_pack_size(self, item_id):
+        """Determine pack size for an item based on its type/category."""
+        import random
+        from data.item import Item
+        from constants.items import WEAPONS, SHIELDS, HELMETS, ARMORS, TOOLS, SKEANS, RELICS
+
+        if item_id == Shop.NO_ITEM:
+            return 0
+
+        # Weapons, shields, helmets, armors, tools, skeans: always singles
+        if item_id in WEAPONS or item_id in SHIELDS or item_id in HELMETS or \
+           item_id in ARMORS or item_id in TOOLS or item_id in SKEANS:
+            return 1
+
+        # Relics: 1-4, except special relics which are singles
+        if item_id in RELICS:
+            if item_id in self.SPECIAL_RELICS:
+                return 1
+            return random.randint(1, 4)
+
+        # Basic healing items: 3-10
+        if item_id in self.BASIC_HEALING:
+            return random.randint(3, 10)
+
+        # High healing items: 1-3
+        if item_id in self.HIGH_HEALING:
+            return random.randint(1, 3)
+
+        # Elixir, Megalixir: singles
+        if item_id in (name_id["Elixir"], name_id["Megalixir"]):
+            return 1
+
+        # Default for other consumables (Smoke Bomb, Warp Stone, Dried Meat, Super Ball, etc.)
+        return random.randint(1, 3)
+
+    def compute_pack_sizes(self):
+        """Compute pack sizes for all items in all shops."""
+        self.pack_sizes = {}
+        for shop in self.all_shops:
+            sizes = []
+            for item_id in shop.items:
+                sizes.append(self.get_pack_size(item_id))
+            self.pack_sizes[shop.id] = sizes
+
+    def enable_limited_shops(self, shop_ids):
+        """Called by ruination to set which shops have limited inventory.
+
+        Args:
+            shop_ids: List of shop IDs to enable limited inventory for.
+        """
+        self.limited_shop_ids = shop_ids
+        self.limited_shop_sram = {}
+        for i, shop_id in enumerate(sorted(set(shop_ids))):
+            if i >= 35:  # Only 35 bytes available in SRAM range
+                print(f"Warning: Too many limited shops ({len(shop_ids)}), max 35. Skipping shop {shop_id}")
+                break
+            self.limited_shop_sram[shop_id] = self.SRAM_TRACKING_START + i
+
+    def write_limited_inventory_data(self):
+        """Write pack size table and tracking pointer table to ROM."""
+        from memory.space import Reserve
+
+        # Write pack sizes: 8 bytes per shop (1 byte per item slot)
+        space = Reserve(self.PACK_SIZE_TABLE_START, self.PACK_SIZE_TABLE_END,
+                       "shop limited inventory pack sizes")
+        for shop_id in range(self.SHOP_COUNT):
+            if shop_id in self.pack_sizes:
+                for size in self.pack_sizes[shop_id]:
+                    space.write(size)
+            else:
+                for _ in range(8):
+                    space.write(0)
+
+        # Write tracking pointers: 2 bytes per shop (Save RAM address or 0x0000)
+        space = Reserve(self.TRACK_PTR_TABLE_START, self.TRACK_PTR_TABLE_END,
+                       "shop limited inventory tracking pointers")
+        for shop_id in range(self.SHOP_COUNT):
+            if hasattr(self, 'limited_shop_sram') and shop_id in self.limited_shop_sram:
+                addr = self.limited_shop_sram[shop_id]
+                space.write(addr.to_bytes(2, "little"))
+            else:
+                space.write((0).to_bytes(2, "little"))
+
     def disable_buy_if_empty(self):
         # in shops with no items scrolling breaks and you can buy "Empty" items
         # this function will not allow the buy menu to be selected if the shop type is empty
@@ -309,7 +429,8 @@ class Shops():
             asm.JMP(0xb760, asm.ABS),       # jump to return to main shop menu
 
             "OPEN_BUY_MENU",
-            asm.JMP(0xb7a3, asm.ABS),       # jump to normal buy menu initialization
+            asm.STZ(0xe0, asm.DIR),          # clear limited inventory mode flag
+            asm.JMP(0xb7a3, asm.ABS),        # jump to normal buy menu initialization
         ]
         space = Write(Bank.C3, src, "shops handle buy menu empty shop")
         check_empty_shop = space.start_address
@@ -335,18 +456,30 @@ class Shops():
             self.assign_dried_meats()
         self.remove_excluded_items()
 
+        # Compute pack sizes after inventory is finalized
+        if self.args.shop_limited_inventory:
+            self.compute_pack_sizes()
+
     def log(self):
         from log import section_entries, format_option
 
         lentries = []
         rentries = []
         for shop_index, shop in enumerate(self.shops):
-            entry = [f"{shop.name()} {shop.get_type_string()}"]
+            limited = hasattr(self, 'limited_shop_sram') and shop.id in self.limited_shop_sram
+            label = f"{shop.name()} {shop.get_type_string()}"
+            if limited:
+                label += " [Limited]"
+            entry = [label]
             for item_index, item in enumerate(shop.items):
                 if item != Shop.NO_ITEM:
                     item_name = self.items.get_name(item)
                     item_price = self.items.get_price(item)
-                    entry.append(format_option(item_name, str(item_price)))
+                    if limited and shop.id in self.pack_sizes:
+                        pack = self.pack_sizes[shop.id][item_index]
+                        entry.append(format_option(f"{item_name} x{pack}", str(item_price * pack)))
+                    else:
+                        entry.append(format_option(item_name, str(item_price)))
 
             if shop_index % 2:
                 rentries.append(entry)
@@ -363,6 +496,9 @@ class Shops():
             self.shop_data[shop_index] = self.all_shops[shop_index].data()
 
         self.shop_data.write()
+
+        if self.args.shop_limited_inventory:
+            self.write_limited_inventory_data()
 
     def print(self):
         for shop in self.shops:
