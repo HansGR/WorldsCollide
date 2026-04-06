@@ -691,3 +691,153 @@ Not yet locally gated (need gating or decision to ungate):
 
 Not currently used in ruination mode:
 - [-] **CYAN — Doma WOB** (ms-wob-18): Doma Siege
+
+---
+
+## Limited Inventory Shops (`-sli` flag)
+
+Pack-based purchasing system for ruination mode. Each shop item slot sells a fixed-size "pack" (1-15 items) and can only be bought once. Tracked via 1 bit per item slot in Save RAM.
+
+### Original FF6 Buy Menu Code (Bank C3)
+
+**State Machine (driven by jump table at B792):**
+
+| State | Address | Description |
+|-------|---------|-------------|
+| 25 | B49B | Main shop menu — BUY/SELL/EXIT cursor |
+| 26 | B4BD | Buy item list — navigate items, A=select, B=back |
+| 27 | B505 | Order menu — quantity ±1/±10, A=confirm, B=cancel |
+| 28 | B60E | Post-purchase delay (32 frames), then return to buy list |
+
+**Key Routines:**
+
+| Address | Description |
+|---------|-------------|
+| B466 | Shop menu initialization |
+| B760 | Exit submenu, return to main shop menu |
+| B792 | Handle BUY/SELL/EXIT choice via jump table at B79A |
+| B7A3 | Initialize buy menu (calls B8A0, B8A9, B986, BCFD) |
+| B7B3 | Return to buy list after purchase (redraws via B986, sets state 26) |
+| B7E6 | Check GP and stock before entering order menu |
+| B82F | Set buy limit: `$6A = 99 - owned_quantity` |
+| B850 | Enter order menu (set state 27, draw "How many?") |
+| B87D | Set exit delay: state→28, 32-frame timer |
+| B986 | Draw all buy text; item list loop at B998-B9EC |
+| B9AF | `LDA $C47AC0,X` — load shop item ID from ROM |
+| BA0C | Define item price with shop type multiplier, store to $7E9F09 |
+| BB53 | Get order value: price × quantity ($28) |
+| BB81 | Hardware multiplication via SNES registers $4202/$4203/$4216 |
+| BBAE | Draw order size and value |
+| BBC0 | Draw order size (reads $28, displays 2 digits) |
+| BC84 | Draw quantity owned |
+| BC92 | Define $64 (quantity in stock) |
+| BCA8 | Draw quantity worn |
+| BCFD | Build sign list (E/^/v/= equip indicators) |
+| BFC2 | Get selected buy item from `$7E9D89[$4B]` |
+| BFD3 | Draw shop title, compute `$67 = shop_num × 9` |
+| B5B7 | Execute purchase (find/create inventory slot, add qty) |
+| B5EA | Reduce GP (3-byte subtraction from $1860-$1862) |
+
+**Key RAM Variables:**
+
+| Address | Description |
+|---------|-------------|
+| $0201 | Shop number (0-85) |
+| $28 | Buy/sell quantity |
+| $4B | Cursor slot (selected item index 0-7) |
+| $54 | Cursor limit (number of items in list) |
+| $64/$65 | Qty in stock / qty worn |
+| $67 | Shop index (`shop_num × 9`, byte offset into shop data) |
+| $69/$6A | Total owned / buy limit |
+| $E6 | List size counter |
+| $EB-$EC | Scratch for multiplication |
+| $F1-$F3 | Price/order value (also $F1 = current menu slot in load loop) |
+| $1860-$1862 | Party gold (3 bytes, little-endian) |
+| $1869+Y | Item inventory IDs (256 slots) |
+| $1969+Y | Item inventory quantities |
+| $7E9D89+X | Menu display list (item IDs) |
+| $7E9F09+X | Menu display prices (16-bit per item) |
+
+### Implementation Overview
+
+**Files modified/created:**
+- `args/shops.py` — `-sli` / `--shop-limited-inventory` flag
+- `data/shops.py` — Pack size computation, Save RAM pointer assignment, ROM table writing
+- `menus/buy.py` — NEW: BuyMenu class with 4 ASM hooks
+- `menus/menus.py` — BuyMenu instantiation
+- `event/events.py` — Integration call in `ruination_mod()`
+
+### Data Tables (ROM)
+
+| Table | SNES Address | ROM Address | Size | Format |
+|-------|-------------|-------------|------|--------|
+| Pack sizes | $C47FA8 | $047FA8 | 688 bytes | 8 bytes/shop × 86 shops |
+| Tracking pointers | $C48258 | $048258 | 172 bytes | 2 bytes/shop × 86 shops |
+
+**Pack size table:** Each byte = pack size for that item slot (1-15, or 0 for empty slots).
+**Tracking pointer table:** Each 16-bit word = Save RAM address for that shop's tracking byte, or $0000 for non-limited (normal) shops.
+
+**Save RAM range:** $1E1D-$1E3F (35 bytes available, one per limited shop). Each byte tracks 8 item slots via individual bits.
+
+### Pack Size Rules
+
+| Category | Size | Items |
+|----------|------|-------|
+| Weapons, Armor, Shields, Helmets | 1 | IDs 0-162 |
+| Tools, Skeans | 1 | IDs 163-175 |
+| Special Relics | 1 | Economizer, Offering, Hero Ring, etc. |
+| Normal Relics | 1-4 | IDs 176-230 (not special) |
+| Basic Healing | 3-10 | Tonic, Potion, Fenix Down, Antidote, etc. |
+| High Healing | 1-3 | X-Potion, Tincture, Ether, Tent, Remedy, etc. |
+| Elixirs | 1 | Elixir, Megalixir |
+| Dried Meat | 5 | Fixed |
+| Other consumables | 1-3 | Everything else |
+
+### ASM Hooks (menus/buy.py)
+
+**New RAM variable:** `$E0` = limited mode flag (0=unlimited shop, 1-15=pack size for current selection)
+
+#### Hook 1: Load Item (hook_load_item)
+- **Original:** `LDA $C47AC0,X` at C3/B9AF (4 bytes)
+- **Replaced with:** `JSL <custom>` (4 bytes, exact fit)
+- **Reserve:** 0x3B9AF-0x3B9B2
+- **Purpose:** When drawing the buy list, checks if item's tracking bit is set. If purchased, returns $FF (empty) to hide it.
+- **Logic:** Load item from ROM → if $FF skip → look up tracking pointer via shop number → if pointer=0 skip (normal shop) → load tracking byte from WRAM → shift right by menu slot ($F1) positions → test bit 0 → if set, return $FF
+
+#### Hook 2: Buy Setup (hook_buy_setup)
+- **Original:** `JSR $B82F` at C3/B4DF
+- **Replaced:** Address bytes at B4E0-B4E1 changed to point to custom routine
+- **Reserve:** 0x3B4E0-0x3B4E1
+- **Purpose:** After calling original set_buy_limit, looks up pack size and sets quantity/limit to pack size.
+- **Logic:** Call original B82F → look up tracking pointer → if 0 skip → compute pack table index (shop_num×8 + item_slot) → load pack size → store to $28 (qty), $6A (limit), $E0 (flag)
+
+#### Hook 3: Pre-Order (hook_pre_order)
+- **Original:** `JSR $BB53` at C3/B50B
+- **Replaced:** Address bytes at B50C-B50D changed to point to custom routine
+- **Reserve:** 0x3B50C-0x3B50D
+- **Purpose:** Every frame in order menu, forces quantity back to pack size if limited mode active. Prevents player from changing quantity via left/down.
+- **Logic:** If $E0≠0, store $E0→$28 → tail-call JMP $BB53
+
+#### Hook 4: Execute Buy (hook_execute_buy)
+- **Original:** `JSR $B5B7` at C3/B5B3
+- **Replaced:** Address bytes at B5B4-B5B5 changed to point to custom routine
+- **Reserve:** 0x3B5B4-0x3B5B5
+- **Purpose:** After purchase completes, sets the tracking bit so item disappears on next draw.
+- **Logic:** Call original B5B7 → look up tracking pointer → if 0 skip → build bitmask (1 << item_slot via ASL loop) → ORA into tracking byte → clear $E0
+
+#### Register State Notes
+- Entry at B9AF: A=8-bit (SEP #$20 at B9AD), X=16-bit, Y=16-bit
+- `SEP #$20` does NOT modify the Z flag — BEQ after SEP tests Z from preceding instruction
+- Hidden B register: 16-bit Y/X transfers include B register in high byte. When loading $4B for TAY, must use REP #$20 + AND #$00FF to get clean 16-bit value
+- All hooks preserve and restore caller's register state
+
+### Integration Flow
+
+1. `data/shops.py` `mod()` → `compute_pack_sizes()` (determines pack sizes for all shop items)
+2. `menus/menus.py` → `BuyMenu()` constructor → writes ASM hooks if `-sli` active
+3. `event/events.py` `ruination_mod()` → `shops.enable_limited_shops(accessible_shops)` (assigns Save RAM bytes)
+4. `data/shops.py` `write()` → `write_limited_inventory_data()` (writes pack size + pointer tables to ROM)
+
+### Clearing $E0 on Menu Entry
+
+In `data/shops.py` `disable_buy_if_empty()`, a `STZ $E0` was added in the "OPEN_BUY_MENU" path to ensure the limited mode flag is cleared when first entering the buy menu, preventing stale values from a previous shop visit.
