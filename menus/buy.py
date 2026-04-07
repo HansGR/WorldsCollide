@@ -202,8 +202,13 @@ class BuyMenu:
             asm.TAX(),
             asm.LDA(self.TRACK_PTR_TABLE_SNES, asm.LNG_X),  # Tracking pointer
             asm.SEP(0x20),                     # 8-bit A
-            asm.BEQ("DONE"),                  # 0 = normal shop (Z from 16-bit LDA)
+            asm.BNE("IS_LIMITED"),            # nonzero = limited shop, continue
+            # Normal shop: early exit (duplicated exit sequence to avoid long branch)
+            asm.PLX(),
+            asm.PLA(),
+            asm.RTS(),
 
+            "IS_LIMITED",
             # Resolve display position to original slot via slot_map
             asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BEQ("USE_4B"),                # not compact mode, use $4B
@@ -234,7 +239,12 @@ class BuyMenu:
             asm.TAX(),                         # X = pack table index
             asm.SEP(0x20),                     # 8-bit A
             asm.LDA(self.PACK_SIZE_TABLE_SNES, asm.LNG_X),  # Pack size
-            asm.BEQ("DONE"),                  # 0 = no pack (shouldn't happen)
+            asm.BNE("HAS_PACK"),              # nonzero = valid pack, continue
+            # Zero pack: early exit
+            asm.PLX(),
+            asm.PLA(),
+            asm.RTS(),
+            "HAS_PACK",
 
             asm.STA(0x28, asm.DIR),            # Set buy quantity
             asm.STA(0x6a, asm.DIR),            # Set buy limit (locks quantity up)
