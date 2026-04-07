@@ -334,15 +334,28 @@ class Shops():
         """Determine pack size for an item based on its type/category."""
         import random
         from data.item import Item
-        from constants.items import WEAPONS, SHIELDS, HELMETS, ARMORS, TOOLS, SKEANS, RELICS
+        from constants.items import (WEAPONS, SHIELDS, HELMETS, ARMORS, TOOLS, STARS, SKEANS, RELICS,
+                                     junk_weapons, id_name, junk_armor)
 
         if item_id == Shop.NO_ITEM:
             return 0
 
-        # Weapons, shields, helmets, armors, tools, skeans: always singles
+        # Throwables
+        if item_id in STARS or item_id in SKEANS:
+            if item_id == name_id['Shuriken']:
+                return random.randint(5, 30)  # Allow more shuriken, they're relatively weak
+            else:
+                return random.randint(3, 10)
+
+        # Other weapons, shields, helmets, armors, tools: always singles
         if item_id in WEAPONS or item_id in SHIELDS or item_id in HELMETS or \
-           item_id in ARMORS or item_id in TOOLS or item_id in SKEANS:
-            return 1
+           item_id in ARMORS or item_id in TOOLS:
+            if id_name[item_id] in junk_weapons:
+                return random.randint(2, 8)      # Allow more, they're probably just throwables
+            elif id_name[item_id] in junk_armor:
+                return random.randint(2, 4)      # Allow more, they're probably just backup
+            else:
+                return 1
 
         # Relics: 1-4, except special relics which are singles
         if item_id in RELICS:
