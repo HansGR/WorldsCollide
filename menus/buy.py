@@ -3,10 +3,12 @@ from data.shops import Shops
 import instruction.asm as asm
 import args
 
+from data.shops import PACK_SIZE_TABLE_START, TRACK_PTR_TABLE_START
+
 class BuyMenu:
     # ROM table addresses (must match data/shops.py Shops class constants)
-    PACK_SIZE_TABLE_SNES  = 0xc47fa8
-    TRACK_PTR_TABLE_SNES  = 0xc48258
+    PACK_SIZE_TABLE_SNES  = 0xc00000 + PACK_SIZE_TABLE_START
+    TRACK_PTR_TABLE_SNES  = 0xc00000 + TRACK_PTR_TABLE_START
 
     # Direct page addresses for compaction buffers (must match data/shops.py)
     COMPACT_ITEMS_DP = Shops.COMPACT_ITEMS_DP   # $78

@@ -2,6 +2,12 @@ from data.shop import Shop
 from data.structures import DataArray
 from constants.items import id_name, name_id
 
+OFFSET = 64   # OFFSETs up to 1212 should be ok...
+PACK_SIZE_TABLE_START = 0x47fa8 + OFFSET      # 8 bytes per shop * 86 shops = 688 bytes
+PACK_SIZE_TABLE_END   = 0x48257 + OFFSET
+TRACK_PTR_TABLE_START = 0x48258 + OFFSET      # 2 bytes per shop * 86 shops = 172 bytes
+TRACK_PTR_TABLE_END   = 0x48303 + OFFSET
+
 class Shops():
     DATA_START = 0x47ac0
     DATA_END = 0x47f3f
@@ -295,15 +301,11 @@ class Shops():
                     shop.remove(item)
 
     # ROM addresses for limited inventory data (in unused space at C47FA8-C487BF)
-    PACK_SIZE_TABLE_START = 0x47fa8       # 8 bytes per shop * 86 shops = 688 bytes
-    PACK_SIZE_TABLE_END   = 0x48257
-    TRACK_PTR_TABLE_START = 0x48258       # 2 bytes per shop * 86 shops = 172 bytes
-    TRACK_PTR_TABLE_END   = 0x48303
     SHOP_COUNT            = 86            # Total shops in ROM (including inaccessible)
 
     # SNES addresses (for ASM long addressing)
-    PACK_SIZE_TABLE_SNES  = 0xc47fa8
-    TRACK_PTR_TABLE_SNES  = 0xc48258
+    PACK_SIZE_TABLE_SNES  = 0xc00000 + PACK_SIZE_TABLE_START
+    TRACK_PTR_TABLE_SNES  = 0xc00000 + TRACK_PTR_TABLE_START
 
     # Save RAM range for ruination mode tracking bytes
     SRAM_TRACKING_START   = 0x1e1d        # $1E1D-$1E3F (35 bytes, enough for 34 ruination shops)
@@ -415,7 +417,7 @@ class Shops():
         from memory.space import Reserve
 
         # Write pack sizes: 8 bytes per shop (1 byte per item slot)
-        space = Reserve(self.PACK_SIZE_TABLE_START, self.PACK_SIZE_TABLE_END,
+        space = Reserve(PACK_SIZE_TABLE_START, PACK_SIZE_TABLE_END,
                        "shop limited inventory pack sizes")
         for shop_id in range(self.SHOP_COUNT):
             if shop_id in self.pack_sizes:
@@ -426,7 +428,7 @@ class Shops():
                     space.write(0)
 
         # Write tracking pointers: 2 bytes per shop (Save RAM address or 0x0000)
-        space = Reserve(self.TRACK_PTR_TABLE_START, self.TRACK_PTR_TABLE_END,
+        space = Reserve(TRACK_PTR_TABLE_START, TRACK_PTR_TABLE_END,
                        "shop limited inventory tracking pointers")
         for shop_id in range(self.SHOP_COUNT):
             if hasattr(self, 'limited_shop_sram') and shop_id in self.limited_shop_sram:
