@@ -696,7 +696,7 @@ Not currently used in ruination mode:
 
 ## Limited Inventory Shops (`-sli` flag)
 
-Pack-based purchasing system for ruination mode. Each shop item slot sells a fixed-size "pack" (1-15 items) and can only be bought once. Tracked via 1 bit per item slot in Save RAM.
+Pack-based purchasing system for ruination mode. Each shop item slot sells a fixed-size "pack" (1-15 items) and can only be bought once. Tracked via 1 bit per item slot in Save RAM. After purchase, remaining items are compacted (no gaps) in the buy list.
 
 ### Original FF6 Buy Menu Code (Bank C3)
 
@@ -718,6 +718,7 @@ Pack-based purchasing system for ruination mode. Each shop item slot sells a fix
 | B792 | Handle BUY/SELL/EXIT choice via jump table at B79A |
 | B7A3 | Initialize buy menu (calls B8A0, B8A9, B986, BCFD) |
 | B7B3 | Return to buy list after purchase (redraws via B986, sets state 26) |
+| B7BC | `JSR $B986` — draw all buy text (hooked for redraw trampoline) |
 | B7E6 | Check GP and stock before entering order menu |
 | B82F | Set buy limit: `$6A = 99 - owned_quantity` |
 | B850 | Enter order menu (set state 27, draw "How many?") |
@@ -745,12 +746,12 @@ Pack-based purchasing system for ruination mode. Each shop item slot sells a fix
 | $0201 | Shop number (0-85) |
 | $28 | Buy/sell quantity |
 | $4B | Cursor slot (selected item index 0-7) |
+| $4E | Cursor position (visual position in list) |
 | $54 | Cursor limit (number of items in list) |
 | $64/$65 | Qty in stock / qty worn |
-| $67 | Shop index (`shop_num × 9`, byte offset into shop data) |
+| $67-$68 | Shop index (`shop_num × 9`, 16-bit byte offset into shop data) |
 | $69/$6A | Total owned / buy limit |
 | $E6 | List size counter |
-| $EB-$EC | Scratch for multiplication |
 | $F1-$F3 | Price/order value (also $F1 = current menu slot in load loop) |
 | $1860-$1862 | Party gold (3 bytes, little-endian) |
 | $1869+Y | Item inventory IDs (256 slots) |
@@ -762,7 +763,7 @@ Pack-based purchasing system for ruination mode. Each shop item slot sells a fix
 
 **Files modified/created:**
 - `args/shops.py` — `-sli` / `--shop-limited-inventory` flag
-- `data/shops.py` — Pack size computation, Save RAM pointer assignment, ROM table writing
+- `data/shops.py` — Pack size computation, Save RAM pointer assignment, ROM table writing, compact_init subroutine, redraw trampoline
 - `menus/buy.py` — NEW: BuyMenu class with 4 ASM hooks
 - `menus/menus.py` — BuyMenu instantiation
 - `event/events.py` — Integration call in `ruination_mod()`
@@ -793,51 +794,93 @@ Pack-based purchasing system for ruination mode. Each shop item slot sells a fix
 | Dried Meat | 5 | Fixed |
 | Other consumables | 1-3 | Everything else |
 
-### ASM Hooks (menus/buy.py)
+### Custom Direct Page Variables
 
-**New RAM variable:** `$E0` = limited mode flag (0=unlimited shop, 1-15=pack size for current selection)
+These addresses are verified unused during shop menu operations (Bank C3 B4xx-BAxx range). Many commonly-used DP addresses ($E0, $E1, $C0-$CF, $39-$3A, etc.) are actively used by the menu system for cursor/state/window positioning and **must not** be used.
+
+| Address | Size | Purpose |
+|---------|------|---------|
+| $25 | 1 byte | Compact mode flag (0=normal shop, 1=limited shop with valid compact buffers) |
+| $30 | 1 byte | Limited mode flag / pack size (0=unlimited, 1-15=pack size for order menu qty lock) |
+| $36 | 1 byte | Temp: tracking byte during compact_init |
+| $37 | 1 byte | Temp: item ID during compact_init |
+| $38 | 1 byte | Temp: original slot index in hook_buy_setup |
+| $40-$41 | 2 bytes | Temp: shop_num×8 in hook_buy_setup (16-bit) |
+| $78-$7F | 8 bytes | compact_items buffer (available items packed to top, rest $FF) |
+| $B8-$BF | 8 bytes | slot_map buffer (display position → original shop slot index) |
+
+**Verified safe DP addresses (from in-game testing):** $25, $30, $36, $37, $38, $40, $41, $42, $49, $4A, $60, $61, $62, $63, $66, $78-$7F, $B8-$BF.
+
+### Item Compaction System
+
+When items are purchased in limited shops, they are removed from the display. Without compaction, this leaves blank rows (0xFF) in the middle of the item list, causing: unreachable items below gaps (cursor limit is correct but items aren't contiguous), and character animation glitches when selecting blank rows.
+
+**compact_init subroutine** (written to Bank C3 by `data/shops.py` `_build_compact_init_asm()`):
+1. Clears compact buffers ($78-$7F and $B8-$BF) to $FF
+2. Checks tracking pointer table — if $0000, this is a normal shop → sets $25=0, returns
+3. For limited shops: sets $25=1, loads tracking byte from SRAM
+4. Scans original slots 0-7: for each non-empty, non-purchased item, writes item ID to compact_items[write_pos] and original slot index to slot_map[write_pos], increments write_pos
+5. Result: available items are packed into $78-$7F[0..N-1], rest are $FF
+
+**Redraw trampoline** (hooks `JSR $B986` at B7BC via Reserve 0x3B7BD-0x3B7BE):
+- Runs on every buy list redraw (initial entry AND post-purchase returns)
+- Calls compact_init to rebuild buffers with current tracking state
+- Checks if all items purchased ($25=1 and $78=$FF): if so, pops JSR return address and `JMP $B760` to exit to main shop menu
+- Otherwise falls through to `JMP $B986` (draw all text)
+
+### ASM Hooks (menus/buy.py)
 
 #### Hook 1: Load Item (hook_load_item)
 - **Original:** `LDA $C47AC0,X` at C3/B9AF (4 bytes)
 - **Replaced with:** `JSL <custom>` (4 bytes, exact fit)
 - **Reserve:** 0x3B9AF-0x3B9B2
-- **Purpose:** When drawing the buy list, checks if item's tracking bit is set. If purchased, returns $FF (empty) to hide it.
-- **Logic:** Load item from ROM → if $FF skip → look up tracking pointer via shop number → if pointer=0 skip (normal shop) → load tracking byte from WRAM → shift right by menu slot ($F1) positions → test bit 0 → if set, return $FF
+- **Purpose:** In compact mode, reads from compact_items buffer instead of ROM. Items are already packed with no gaps.
+- **Logic:** If $25=0 (normal shop), load from ROM as usual. If $25≠0 (compact mode), load compact_items[$F1] via `LDA $78,X` where X=$F1.
 
 #### Hook 2: Buy Setup (hook_buy_setup)
 - **Original:** `JSR $B82F` at C3/B4DF
 - **Replaced:** Address bytes at B4E0-B4E1 changed to point to custom routine
 - **Reserve:** 0x3B4E0-0x3B4E1
-- **Purpose:** After calling original set_buy_limit, looks up pack size and sets quantity/limit to pack size.
-- **Logic:** Call original B82F → look up tracking pointer → if 0 skip → compute pack table index (shop_num×8 + item_slot) → load pack size → store to $28 (qty), $6A (limit), $E0 (flag)
+- **Purpose:** After calling original set_buy_limit, looks up pack size using the original slot index (resolved via slot_map in compact mode) and sets quantity/limit to pack size.
+- **Logic:** Call original B82F → look up tracking pointer → if 0 skip → resolve $4B to original slot via slot_map[$4B] if compact mode → compute pack table index (shop_num×8 + original_slot) → load pack size → store to $28 (qty), $6A (limit), $30 (flag)
 
 #### Hook 3: Pre-Order (hook_pre_order)
 - **Original:** `JSR $BB53` at C3/B50B
 - **Replaced:** Address bytes at B50C-B50D changed to point to custom routine
 - **Reserve:** 0x3B50C-0x3B50D
 - **Purpose:** Every frame in order menu, forces quantity back to pack size if limited mode active. Prevents player from changing quantity via left/down.
-- **Logic:** If $E0≠0, store $E0→$28 → tail-call JMP $BB53
+- **Logic:** If $30≠0, store $30→$28 → tail-call JMP $BB53
 
 #### Hook 4: Execute Buy (hook_execute_buy)
 - **Original:** `JSR $B5B7` at C3/B5B3
 - **Replaced:** Address bytes at B5B4-B5B5 changed to point to custom routine
 - **Reserve:** 0x3B5B4-0x3B5B5
-- **Purpose:** After purchase completes, sets the tracking bit so item disappears on next draw.
-- **Logic:** Call original B5B7 → look up tracking pointer → if 0 skip → build bitmask (1 << item_slot via ASL loop) → ORA into tracking byte → clear $E0
+- **Purpose:** After purchase completes, sets the tracking bit so item disappears on next draw. Resets cursor position. Resolves display position to original slot via slot_map in compact mode.
+- **Logic:** Call original B5B7 → look up tracking pointer → if 0 skip → resolve $4B to original slot via slot_map → build bitmask (1 << original_slot via ASL loop) → ORA into tracking byte → clear $30 → `STZ $4E` (reset cursor to top)
 
 #### Register State Notes
 - Entry at B9AF: A=8-bit (SEP #$20 at B9AD), X=16-bit, Y=16-bit
 - `SEP #$20` does NOT modify the Z flag — BEQ after SEP tests Z from preceding instruction
-- Hidden B register: 16-bit Y/X transfers include B register in high byte. When loading $4B for TAY, must use REP #$20 + AND #$00FF to get clean 16-bit value
+- Hidden B register: 16-bit Y/X transfers include B register in high byte. When loading $4B for TAX/TAY, must use REP #$20 + AND #$00FF to get clean 16-bit value
+- $67 is a 16-bit value (shop_num × 9); ROM index computation must use 16-bit ADC $67 (reads $67-$68)
 - All hooks preserve and restore caller's register state
+
+### Buy Menu Entry (disable_buy_if_empty)
+
+In `data/shops.py` `disable_buy_if_empty()`, the buy menu entry hook (Reserve 0x3B79A-0x3B79B) handles two cases:
+
+**Without `-sli`:** Checks if first ROM item is $FF (empty shop) → buzzer + return. Otherwise clears $30 and `JMP $B7A3`.
+
+**With `-sli`:** Same empty-shop check, then:
+1. Clears $30 (limited mode flag)
+2. Calls compact_init to build compacted item list
+3. If compact mode active ($25=1) and first compact item is $FF (all purchased) → buzzer + return to main shop menu
+4. Otherwise `JMP $B7A3` (normal buy menu init)
 
 ### Integration Flow
 
 1. `data/shops.py` `mod()` → `compute_pack_sizes()` (determines pack sizes for all shop items)
-2. `menus/menus.py` → `BuyMenu()` constructor → writes ASM hooks if `-sli` active
-3. `event/events.py` `ruination_mod()` → `shops.enable_limited_shops(accessible_shops)` (assigns Save RAM bytes)
-4. `data/shops.py` `write()` → `write_limited_inventory_data()` (writes pack size + pointer tables to ROM)
-
-### Clearing $E0 on Menu Entry
-
-In `data/shops.py` `disable_buy_if_empty()`, a `STZ $E0` was added in the "OPEN_BUY_MENU" path to ensure the limited mode flag is cleared when first entering the buy menu, preventing stale values from a previous shop visit.
+2. `data/shops.py` `disable_buy_if_empty()` → writes compact_init subroutine + redraw trampoline + buy menu entry hook if `-sli` active
+3. `menus/menus.py` → `BuyMenu()` constructor → writes 4 ASM hooks if `-sli` active
+4. `event/events.py` `ruination_mod()` → `shops.enable_limited_shops(accessible_shops)` (assigns Save RAM bytes)
+5. `data/shops.py` `write()` → `write_limited_inventory_data()` (writes pack size + pointer tables to ROM)
