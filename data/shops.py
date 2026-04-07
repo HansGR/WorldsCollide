@@ -500,7 +500,21 @@ class Shops():
             # from post-purchase return (state 28 → B7B3 → B7BC).
             redraw_src = [
                 asm.JSR(compact_init_addr, asm.ABS),  # rebuild compact buffers
-                asm.JMP(0xb986, asm.ABS),              # then do original draw-all-text
+                asm.STZ(0x4e, asm.DIR),                # reset cursor position to top
+
+                # If limited shop and all items now bought, exit to main shop menu
+                asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25 compact mode?
+                asm.BEQ("DRAW"),                       # normal shop, just draw
+                asm.LDA(self.COMPACT_ITEMS_DP, asm.DIR), # first compact item
+                asm.CMP(0xff, asm.IMM8),               # all purchased?
+                asm.BNE("DRAW"),                       # still have items
+                # All items bought: pop the JSR return address and exit to main menu
+                asm.PLA(),                             # discard return address low byte
+                asm.PLA(),                             # discard return address high byte
+                asm.JMP(0xb760, asm.ABS),              # return to main shop menu
+
+                "DRAW",
+                asm.JMP(0xb986, asm.ABS),              # draw all text (original target)
             ]
             redraw_space = Write(Bank.C3, redraw_src, "limited inventory: redraw trampoline")
             redraw_addr = redraw_space.start_address
