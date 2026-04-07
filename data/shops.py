@@ -323,12 +323,12 @@ class Shops():
         name_id["Tonic"], name_id["Potion"], name_id["Fenix Down"],
         name_id["Revivify"], name_id["Antidote"], name_id["Eyedrop"],
         name_id["Soft"], name_id["Echo Screen"], name_id["Green Cherry"],
-        name_id["Sleeping Bag"],
+        name_id["Sleeping Bag"], name_id["Tincture"],
     }
 
     # High healing items: moderate packs (1-3)
     HIGH_HEALING = {
-        name_id["X-Potion"], name_id["Tincture"], name_id["Ether"],
+        name_id["X-Potion"], name_id["Ether"],
         name_id["X-Ether"], name_id["Tent"], name_id["Remedy"],
     }
 
@@ -365,9 +365,12 @@ class Shops():
                 return 1
             return random.randint(1, 4)
 
-        # Basic healing items: 3-10
+        # Basic healing items: 1-5 for Fenix Down, 3-8 for everything else
         if item_id in self.BASIC_HEALING:
-            return random.randint(3, 10)
+            if item_id is name_id["Fenix Down"]:
+                return random.randint(1, 5)
+            else:
+                return random.randint(3, 8)
 
         # High healing items: 1-3
         if item_id in self.HIGH_HEALING:
