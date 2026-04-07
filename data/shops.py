@@ -500,7 +500,6 @@ class Shops():
             # from post-purchase return (state 28 → B7B3 → B7BC).
             redraw_src = [
                 asm.JSR(compact_init_addr, asm.ABS),  # rebuild compact buffers
-                asm.STZ(0x4e, asm.DIR),                # reset cursor position to top
 
                 # If limited shop and all items now bought, exit to main shop menu
                 asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25 compact mode?
