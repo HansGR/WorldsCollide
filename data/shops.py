@@ -493,6 +493,24 @@ class Shops():
             (check_empty_shop & 0xffff).to_bytes(2, "little"),
         )
 
+        if self.args.shop_limited_inventory:
+            # Hook JSR $B986 at B7BC so compact_init runs before every buy list
+            # redraw (including post-purchase returns, not just first entry).
+            # B7BC is reached both from initial buy menu setup (B7A3 path) and
+            # from post-purchase return (state 28 → B7B3 → B7BC).
+            redraw_src = [
+                asm.JSR(compact_init_addr, asm.ABS),  # rebuild compact buffers
+                asm.JMP(0xb986, asm.ABS),              # then do original draw-all-text
+            ]
+            redraw_space = Write(Bank.C3, redraw_src, "limited inventory: redraw trampoline")
+            redraw_addr = redraw_space.start_address
+
+            # Replace address in JSR $B986 at B7BC (opcode at B7BC, address at B7BD-B7BE)
+            space = Reserve(0x3b7bd, 0x3b7be, "shop buy menu draw text hook")
+            space.write(
+                (redraw_addr & 0xffff).to_bytes(2, "little"),
+            )
+
     def _build_compact_init_asm(self):
         """Build ASM for the compact_init subroutine.
 
