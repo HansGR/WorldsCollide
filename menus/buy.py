@@ -117,11 +117,11 @@ class BuyMenu:
             asm.ASL(),                         # *2
             asm.ASL(),                         # *4
             asm.ASL(),                         # *8
-            asm.STA(0x39, asm.DIR),            # Temp store in $39-$3A
+            asm.STA(0x40, asm.DIR),            # Temp store in $40-$41
             asm.LDA(0x38, asm.DIR),            # Original slot (in $38; 16-bit read includes $39)
             asm.AND(0x00ff, asm.IMM16),        # Clean to just the slot byte
             asm.CLC(),
-            asm.ADC(0x39, asm.DIR),            # Add shop_num * 8
+            asm.ADC(0x40, asm.DIR),            # Add shop_num * 8
             asm.TAX(),                         # X = pack table index
             asm.SEP(0x20),                     # 8-bit A
             asm.LDA(self.PACK_SIZE_TABLE_SNES, asm.LNG_X),  # Pack size
