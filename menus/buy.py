@@ -9,9 +9,10 @@ class BuyMenu:
     TRACK_PTR_TABLE_SNES  = 0xc48258
 
     # Direct page addresses for compaction buffers (must match data/shops.py)
-    COMPACT_ITEMS_DP = Shops.COMPACT_ITEMS_DP   # $C0
-    SLOT_MAP_DP      = Shops.SLOT_MAP_DP         # $C8
-    COMPACT_FLAG_DP  = Shops.COMPACT_FLAG_DP     # $E1
+    COMPACT_ITEMS_DP = Shops.COMPACT_ITEMS_DP   # $78
+    SLOT_MAP_DP      = Shops.SLOT_MAP_DP         # $B8
+    COMPACT_FLAG_DP  = Shops.COMPACT_FLAG_DP     # $25
+    LIMITED_MODE_DP  = Shops.LIMITED_MODE_DP      # $30
 
     def __init__(self):
         if args.shop_limited_inventory:
@@ -26,8 +27,8 @@ class BuyMenu:
     def hook_load_item(self):
         """Hook at C3/B9AF: replace LDA $C47AC0,X with JSL to custom routine.
 
-        If compact mode is active ($E1 != 0), reads from the pre-built compact
-        buffer at $C0-$C7 using $F1 (display position) as the index. This ensures
+        If compact mode is active ($25 != 0), reads from the pre-built compact
+        buffer at $78-$7F using $F1 (display position) as the index. This ensures
         available items are packed into the first N rows with no gaps.
 
         If compact mode is not active, loads from ROM as normal.
@@ -38,7 +39,7 @@ class BuyMenu:
         """
         src = [
             # Check if compact mode is active
-            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $E1
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BNE("USE_COMPACT"),
 
             # Normal mode: load from ROM as usual
@@ -49,7 +50,7 @@ class BuyMenu:
             "USE_COMPACT",
             asm.PHX(),                          # Save original X
             asm.LDX(0xf1, asm.DIR),            # X = display position (menu slot)
-            asm.LDA(self.COMPACT_ITEMS_DP, asm.DIR_X),  # LDA $C0,X
+            asm.LDA(self.COMPACT_ITEMS_DP, asm.DIR_X),  # LDA $78,X
             asm.PLX(),                          # Restore X
             asm.RTL(),
         ]
@@ -68,10 +69,10 @@ class BuyMenu:
 
         When player presses A on an item in the buy list, this sets the buy
         quantity ($28) and buy limit ($6A) to the pack size, and stores the
-        pack size in $E0 as a "limited mode" flag for the order menu.
+        pack size in $30 as a "limited mode" flag for the order menu.
 
         In compact mode, $4B is the display position. The original shop slot
-        is looked up from slot_map[$4B] at $C8+$4B.
+        is looked up from slot_map[$4B] at $B8+$4B.
 
         Entry state: A=8-bit, X=16-bit, Y=16-bit
         $4B = selected cursor slot (display position in buy list)
@@ -94,7 +95,7 @@ class BuyMenu:
 
             # Resolve display position to original slot via slot_map
             # If compact mode active, original_slot = slot_map[$4B]; else use $4B directly
-            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $E1
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BEQ("USE_4B"),                # not compact mode, use $4B
             # Clean 16-bit X from $4B (only low byte is meaningful)
             asm.REP(0x20),                     # 16-bit A
@@ -102,12 +103,12 @@ class BuyMenu:
             asm.AND(0x00ff, asm.IMM16),        # clean to 0-7
             asm.TAX(),                         # X = clean display position
             asm.SEP(0x20),                     # 8-bit A
-            asm.LDA(self.SLOT_MAP_DP, asm.DIR_X),  # A = original slot from $C8,X
+            asm.LDA(self.SLOT_MAP_DP, asm.DIR_X),  # A = original slot from $B8,X
             asm.BRA("HAVE_SLOT"),
             "USE_4B",
             asm.LDA(0x4b, asm.DIR),           # A = $4B (original slot = display pos)
             "HAVE_SLOT",
-            asm.STA(0xeb, asm.DIR),            # $EB = original slot index
+            asm.STA(0x38, asm.DIR),            # $38 = original slot index (temp, unused in shop)
 
             # Get pack size: table index = shop_num * 8 + original_slot
             asm.REP(0x20),                     # 16-bit A
@@ -116,11 +117,11 @@ class BuyMenu:
             asm.ASL(),                         # *2
             asm.ASL(),                         # *4
             asm.ASL(),                         # *8
-            asm.STA(0xec, asm.DIR),            # Temp store in $EC-$ED (shifted by 1 to not overwrite $EB)
-            asm.LDA(0xeb, asm.DIR),            # Original slot (in $EB; 16-bit read includes $EC)
+            asm.STA(0x39, asm.DIR),            # Temp store in $39-$3A
+            asm.LDA(0x38, asm.DIR),            # Original slot (in $38; 16-bit read includes $39)
             asm.AND(0x00ff, asm.IMM16),        # Clean to just the slot byte
             asm.CLC(),
-            asm.ADC(0xec, asm.DIR),            # Add shop_num * 8
+            asm.ADC(0x39, asm.DIR),            # Add shop_num * 8
             asm.TAX(),                         # X = pack table index
             asm.SEP(0x20),                     # 8-bit A
             asm.LDA(self.PACK_SIZE_TABLE_SNES, asm.LNG_X),  # Pack size
@@ -128,7 +129,7 @@ class BuyMenu:
 
             asm.STA(0x28, asm.DIR),            # Set buy quantity
             asm.STA(0x6a, asm.DIR),            # Set buy limit (locks quantity up)
-            asm.STA(0xe0, asm.DIR),            # Set limited mode flag/pack size
+            asm.STA(self.LIMITED_MODE_DP, asm.DIR),  # Set limited mode flag/pack size ($30)
 
             "DONE",
             asm.PLX(),
@@ -149,13 +150,13 @@ class BuyMenu:
         """Hook at C3/B50B: replace JSR $BB53 with JSR to custom routine.
 
         In the order menu (state 27), this runs every frame. If limited mode
-        is active ($E0 != 0), it forces $28 back to the pack size, preventing
+        is active ($30 != 0), it forces $28 back to the pack size, preventing
         the player from changing the quantity via left/down inputs.
 
         Then falls through to the original BB53 (get order value).
         """
         src = [
-            asm.LDA(0xe0, asm.DIR),            # Limited mode flag
+            asm.LDA(self.LIMITED_MODE_DP, asm.DIR),  # Limited mode flag ($30)
             asm.BEQ("NORMAL"),                # 0 = unlimited, skip
             asm.STA(0x28, asm.DIR),            # Force quantity = pack size
             "NORMAL",
@@ -178,7 +179,7 @@ class BuyMenu:
         for the purchased item slot, so it won't appear in the shop next time.
 
         In compact mode, $4B is the display position. The original shop slot
-        is looked up from slot_map[$4B] at $C8+$4B.
+        is looked up from slot_map[$4B] at $B8+$4B.
         """
         src = [
             asm.JSR(0xb5b7, asm.ABS),         # Call original execute_purchase
@@ -201,7 +202,7 @@ class BuyMenu:
 
             # Resolve display position to original slot
             asm.PHX(),                         # Save SRAM address
-            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $E1
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BEQ("USE_4B"),
             # Clean 16-bit X from $4B (only low byte is meaningful)
             asm.REP(0x20),                     # 16-bit A
@@ -209,7 +210,7 @@ class BuyMenu:
             asm.AND(0x00ff, asm.IMM16),        # clean to 0-7
             asm.TAX(),                         # X = clean display position
             asm.SEP(0x20),                     # 8-bit A
-            asm.LDA(self.SLOT_MAP_DP, asm.DIR_X),  # A = original slot from $C8,X
+            asm.LDA(self.SLOT_MAP_DP, asm.DIR_X),  # A = original slot from $B8,X
             asm.BRA("HAVE_SLOT"),
             "USE_4B",
             asm.LDA(0x4b, asm.DIR),           # A = $4B directly
@@ -235,7 +236,7 @@ class BuyMenu:
             asm.STA(0x7e0000, asm.LNG_X),    # Store back
 
             # Clear limited mode flag (will be re-set if player buys again)
-            asm.STZ(0xe0, asm.DIR),
+            asm.STZ(self.LIMITED_MODE_DP, asm.DIR),  # Clear $30
 
             "DONE",
             asm.PLY(),

@@ -423,14 +423,15 @@ class Shops():
                 space.write((0).to_bytes(2, "little"))
 
     # Direct page addresses used for limited inventory compaction buffers.
-    # $C0-$C7: compact_items (available items packed into first N slots, rest $FF)
-    # $C8-$CF: slot_map (display position -> original shop slot index)
-    # $E1: compact mode flag (0 = normal shop, 1 = limited shop with valid buffers)
-    # $E2: temp (tracking byte during init)
-    # $E3: temp (item ID during init)
-    COMPACT_ITEMS_DP  = 0xc0   # 8 bytes: $C0-$C7
-    SLOT_MAP_DP       = 0xc8   # 8 bytes: $C8-$CF
-    COMPACT_FLAG_DP   = 0xe1   # 1 byte
+    # These addresses are verified unused during shop menu operations (Bank C3).
+    # $78-$7F: compact_items (available items packed into first N slots, rest $FF)
+    # $B8-$BF: slot_map (display position -> original shop slot index)
+    # $25: compact mode flag (0 = normal shop, 1 = limited shop with valid buffers)
+    # $30: limited mode flag / pack size for order menu quantity lock
+    COMPACT_ITEMS_DP  = 0x78   # 8 bytes: $78-$7F
+    SLOT_MAP_DP       = 0xb8   # 8 bytes: $B8-$BF
+    COMPACT_FLAG_DP   = 0x25   # 1 byte
+    LIMITED_MODE_DP   = 0x30   # 1 byte (pack size during buy, or 0 for unlimited)
 
     def disable_buy_if_empty(self):
         # in shops with no items scrolling breaks and you can buy "Empty" items
@@ -456,7 +457,7 @@ class Shops():
                 asm.JMP(0xb760, asm.ABS),       # return to main shop menu
 
                 "OPEN_BUY_MENU",
-                asm.STZ(0xe0, asm.DIR),          # clear limited inventory mode flag
+                asm.STZ(self.LIMITED_MODE_DP, asm.DIR),  # clear limited inventory mode flag ($30)
                 asm.JSR(compact_init_addr, asm.ABS),  # build compacted item list
                 # For limited shops, check if all items have been purchased
                 asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),
@@ -480,7 +481,7 @@ class Shops():
                 asm.JMP(0xb760, asm.ABS),       # return to main shop menu
 
                 "OPEN_BUY_MENU",
-                asm.STZ(0xe0, asm.DIR),          # clear limited inventory mode flag
+                asm.STZ(self.LIMITED_MODE_DP, asm.DIR),  # clear limited inventory mode flag ($30)
                 asm.JMP(0xb7a3, asm.ABS),        # normal buy menu initialization
             ]
 
@@ -496,8 +497,8 @@ class Shops():
         """Build ASM for the compact_init subroutine.
 
         Scans all 8 shop item slots, skips empty and purchased items,
-        and packs available items into $C0-$C7 with a slot mapping at $C8-$CF.
-        Sets $E1 = 1 if this is a limited shop (compact buffers valid).
+        and packs available items into $78-$7F with a slot mapping at $B8-$BF.
+        Sets $25 = 1 if this is a limited shop (compact buffers valid).
 
         Register contract: preserves X, Y. Uses A freely.
         Entry: 8-bit A, 16-bit X/Y (standard menu state).
@@ -510,15 +511,22 @@ class Shops():
             asm.PHY(),
 
             # Clear compact mode flag
-            asm.STZ(self.COMPACT_FLAG_DP, asm.DIR),  # $E1 = 0
+            asm.STZ(self.COMPACT_FLAG_DP, asm.DIR),  # $25 = 0
 
-            # Fill compact_items ($C0-$C7) and slot_map ($C8-$CF) with $FF
+            # Fill compact_items ($78-$7F) with $FF
             asm.LDA(0xff, asm.IMM8),
-            asm.LDX(0x000f, asm.IMM16),
-            "CLEAR",
-            asm.STA(self.COMPACT_ITEMS_DP, asm.DIR_X),  # STA $C0,X (covers $C0-$CF)
+            asm.LDX(0x0007, asm.IMM16),
+            "CLEAR_ITEMS",
+            asm.STA(self.COMPACT_ITEMS_DP, asm.DIR_X),  # STA $78,X
             asm.DEX(),
-            asm.BPL("CLEAR"),
+            asm.BPL("CLEAR_ITEMS"),
+
+            # Fill slot_map ($B8-$BF) with $FF
+            asm.LDX(0x0007, asm.IMM16),
+            "CLEAR_MAP",
+            asm.STA(self.SLOT_MAP_DP, asm.DIR_X),       # STA $B8,X
+            asm.DEX(),
+            asm.BPL("CLEAR_MAP"),
 
             # Check if this is a limited shop
             asm.REP(0x20),                              # 16-bit A
@@ -534,9 +542,9 @@ class Shops():
 
             # Limited shop: set flag and load tracking byte
             asm.LDA(0x01, asm.IMM8),
-            asm.STA(self.COMPACT_FLAG_DP, asm.DIR),      # $E1 = 1
+            asm.STA(self.COMPACT_FLAG_DP, asm.DIR),      # $25 = 1
             asm.LDA(0x7e0000, asm.LNG_X),               # tracking byte from SRAM
-            asm.STA(0xe2, asm.DIR),                      # save tracking byte
+            asm.STA(0x36, asm.DIR),                      # save tracking byte (temp, $36 is unused)
 
             # Scan slots: Y = scan_slot (0-7), X = write_pos (0-N)
             asm.LDX(0x0000, asm.IMM16),                  # write_pos = 0
@@ -561,10 +569,10 @@ class Shops():
             asm.BEQ("NEXT"),                             # skip empty slots
 
             # Save item ID
-            asm.STA(0xe3, asm.DIR),
+            asm.STA(0x37, asm.DIR),                      # temp item ID ($37 is unused)
 
             # Check tracking bit for scan_slot Y
-            asm.LDA(0xe2, asm.DIR),                      # tracking byte
+            asm.LDA(0x36, asm.DIR),                      # tracking byte
             asm.PHY(),                                   # save scan_slot
             asm.CPY(0x0000, asm.IMM16),                  # slot 0?
             asm.BEQ("TESTBIT"),                          # no shifting needed
@@ -578,10 +586,10 @@ class Shops():
             asm.BNE("NEXT"),                             # bit set = purchased, skip
 
             # Item is available: add to compact list
-            asm.LDA(0xe3, asm.DIR),                      # item ID
-            asm.STA(self.COMPACT_ITEMS_DP, asm.DIR_X),   # compact_items[write_pos]
+            asm.LDA(0x37, asm.DIR),                      # item ID
+            asm.STA(self.COMPACT_ITEMS_DP, asm.DIR_X),   # compact_items[write_pos] ($78,X)
             asm.TYA(),                                   # A = scan_slot
-            asm.STA(self.SLOT_MAP_DP, asm.DIR_X),        # slot_map[write_pos]
+            asm.STA(self.SLOT_MAP_DP, asm.DIR_X),        # slot_map[write_pos] ($B8,X)
             asm.INX(),                                   # write_pos++
 
             "NEXT",
