@@ -800,6 +800,14 @@ class SetBattleEventBit(_Instruction):
     def __str__(self):
         return super().__str__(hex(self.battle_event_bit))
 
+class ClearBattleEventBit(_Instruction):
+    def __init__(self, battle_event_bit):
+        self.battle_event_bit = battle_event_bit
+        super().__init__(0xb9, battle_event_bit)
+
+    def __str__(self):
+        return super().__str__(hex(self.battle_event_bit))
+
 class BranchIfBattleEventBitClear(_Branch):
     def __init__(self, battle_event_bit, destination):
         self.battle_event_bit = battle_event_bit
