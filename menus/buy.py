@@ -237,6 +237,7 @@ class BuyMenu:
 
             # Clear limited mode flag (will be re-set if player buys again)
             asm.STZ(self.LIMITED_MODE_DP, asm.DIR),  # Clear $30
+            asm.STZ(0x4e, asm.DIR),            # Reset cursor to top for redraw
 
             "DONE",
             asm.PLY(),
