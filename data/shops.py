@@ -206,6 +206,7 @@ class Shops():
             if not random_shop.full():
                 random_shop.append(dried_meat_id)
                 phantom_train_shop.remove(dried_meat_id)
+                self._update_pack_sizes_for_shops(phantom_train_shop, random_shop)
                 return
 
             # try to find an item in random_shop that phantom train does not have and swap them
@@ -217,6 +218,7 @@ class Shops():
                 if item_type == dried_meat_type and not phantom_train_shop.contains(item):
                     phantom_train_shop.items[dried_meat_index] = item
                     random_shop.items[item_index] = dried_meat_id
+                    self._update_pack_sizes_for_shops(phantom_train_shop, random_shop)
                     return
 
     def assign_dried_meats_ruination(self, accessible_shop_ids):
@@ -394,6 +396,20 @@ class Shops():
         """Compute pack sizes for all items in all shops."""
         self.pack_sizes = {}
         for shop in self.all_shops:
+            sizes = []
+            for item_id in shop.items:
+                sizes.append(self.get_pack_size(item_id))
+            self.pack_sizes[shop.id] = sizes
+
+    def _update_pack_sizes_for_shops(self, *shops):
+        """Recompute pack sizes for specific shops after item changes.
+
+        Called when items are swapped/replaced after initial compute_pack_sizes().
+        No-op if pack_sizes hasn't been computed yet (limited inventory not active).
+        """
+        if not hasattr(self, 'pack_sizes'):
+            return
+        for shop in shops:
             sizes = []
             for item_id in shop.items:
                 sizes.append(self.get_pack_size(item_id))
@@ -726,11 +742,10 @@ class Shops():
 
         # Compute pack sizes after inventory is finalized
         if self.args.shop_limited_inventory:
-            self.compute_pack_sizes()
-
-            # In default (non-ruination) mode, enable limited inventory for all shops.
-            # In ruination mode, this is called later from events.py with only accessible shops.
+            # In ruination mode, compute_pack_sizes is deferred to events.py
+            # so it runs AFTER assign_dried_meats_ruination modifies shop items.
             if not self.args.ruination_mode:
+                self.compute_pack_sizes()
                 all_shop_ids = [shop.id for shop in self.all_shops]
                 self.enable_limited_shops(all_shop_ids)
 
