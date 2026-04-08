@@ -56,7 +56,7 @@ def parse(parser):
                        help = "Illuminas not sold in shops")
 
     shops.add_argument("-sli", "--shop-limited-inventory", action = "store_true",
-                       help = "Shops sell items in limited packs. Each item slot can only be bought once. Requires ruination mode")
+                       help = "Shops sell items in limited packs. Each item slot can only be bought once")
 
 def process(args):
     if args.shop_inventory_shuffle_random is not None:
