@@ -271,8 +271,11 @@ class Events():
             non_veldt_shops = ruin_map.get_non_veldt_gated_shops(self.characters)
             self.shops.assign_dried_meats_ruination(non_veldt_shops)
 
-        # Enable limited inventory for ruination shops if flag is set
+        # Enable limited inventory for ruination shops if flag is set.
+        # compute_pack_sizes must run here (after dried meat assignment) so that
+        # replaced items get the correct pack size for dried meat.
         if self.args.shop_limited_inventory:
+            self.shops.compute_pack_sizes()
             self.shops.enable_limited_shops(ruin_map.accessible_shops)
             if self.args.debug:
                 print(f'Limited inventory enabled for {len(ruin_map.accessible_shops)} shops')
