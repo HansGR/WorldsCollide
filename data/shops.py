@@ -307,8 +307,15 @@ class Shops():
     PACK_SIZE_TABLE_SNES  = 0xc00000 + PACK_SIZE_TABLE_START
     TRACK_PTR_TABLE_SNES  = 0xc00000 + TRACK_PTR_TABLE_START
 
-    # Save RAM range for ruination mode tracking bytes
-    SRAM_TRACKING_START   = 0x1e1d        # $1E1D-$1E3F (35 bytes, enough for 34 ruination shops)
+    # Save RAM regions for limited inventory tracking bytes (1 byte per shop, 8 item slots as bits).
+    # Non-contiguous regions of unused SRAM, totalling 103 bytes (enough for all 86 shops).
+    SRAM_REGIONS = [
+        (0x1CF8, 0x1D27),   # SwdTech names (unused in English version), 48 bytes
+        (0x1DC9, 0x1DCE),   # Unused battle variable bytes, 6 bytes
+        (0x1DD6, 0x1DDC),   # Unused battle variable bytes, 7 bytes
+        (0x1E1D, 0x1E3F),   # Previously used SLI range, 35 bytes
+        (0x1FF7, 0x1FFD),   # Unused bit range before checksum, 7 bytes
+    ]
 
     # Special relics that should always be sold as singles
     SPECIAL_RELICS = {
@@ -393,27 +400,76 @@ class Shops():
             self.pack_sizes[shop.id] = sizes
 
     def enable_limited_shops(self, shop_ids):
-        """Called by ruination to set which shops have limited inventory.
+        """Assign SRAM tracking bytes to shops and patch new-game init to clear them.
 
         Args:
             shop_ids: List of shop IDs to enable limited inventory for.
         """
+        # Build a flat list of available SRAM addresses from the non-contiguous regions
+        sram_addresses = []
+        for start, end in self.SRAM_REGIONS:
+            for addr in range(start, end + 1):
+                sram_addresses.append(addr)
+
         self.limited_shop_ids = shop_ids
         self.limited_shop_sram = {}
         for i, shop_id in enumerate(sorted(set(shop_ids))):
-            if i >= 35:  # Only 35 bytes available in SRAM range
-                print(f"Warning: Too many limited shops ({len(shop_ids)}), max 35. Skipping shop {shop_id}")
+            if i >= len(sram_addresses):
+                print(f"Warning: Too many limited shops ({len(shop_ids)}), max {len(sram_addresses)}. Skipping shop {shop_id}")
                 break
-            self.limited_shop_sram[shop_id] = self.SRAM_TRACKING_START + i
+            self.limited_shop_sram[shop_id] = sram_addresses[i]
 
-        # Extend the treasure-chest zeroing loop (C0/BB1A) to also cover SLI tracking.
+        # Patch new-game initialization to zero all SLI SRAM regions.
+        # The vanilla treasure-chest zeroing subroutine at C0/BB18 zeroes $1E40-$1E6F.
+        # We extend it to also cover $1E1D-$1E3F (contiguous with chests), and write
+        # a new wrapper subroutine that zeroes the other non-contiguous regions first,
+        # then falls through to the (extended) chest zeroing.
+        from memory.space import Bank, Reserve, Write
+        import instruction.asm as asm
+
+        # Step 1: Extend the chest-zeroing loop to also cover $1E1D-$1E3F.
         # Vanilla: STZ $1E40,X / CPX #$0030 → zeroes $1E40..$1E6F
         # Patched: STZ $1E1D,X / CPX #$0053 → zeroes $1E1D..$1E6F
-        from memory.space import Reserve
         space = Reserve(0x00bb1b, 0x00bb1b, "SLI tracking: lower chest-zeroing base to $1E1D")
         space.write(0x1d)
         space = Reserve(0x00bb1f, 0x00bb1f, "SLI tracking: extend chest-zeroing count to $53")
         space.write(0x53)
+
+        # Step 2: Write a new subroutine that zeroes the non-contiguous SRAM regions
+        # that fall outside the $1E1D-$1E6F range, then jumps to the original
+        # chest-zeroing subroutine (BB18) which handles $1E1D-$1E6F.
+        extra_regions = [(s, e) for s, e in self.SRAM_REGIONS
+                         if not (s >= 0x1E1D and e <= 0x1E3F)]
+
+        src = []
+        for start, end in extra_regions:
+            size = end - start + 1
+            if size >= 8:
+                # Use a loop for larger regions
+                src.extend([
+                    asm.LDX(0x0000, asm.IMM16),
+                    f"LOOP_{start:04X}",
+                    asm.STZ(start, asm.ABS_X),
+                    asm.INX(),
+                    asm.CPX(size, asm.IMM16),
+                    asm.BNE(f"LOOP_{start:04X}"),
+                ])
+            else:
+                # Individual STZ for small regions
+                for addr in range(start, end + 1):
+                    src.append(asm.STZ(addr, asm.ABS))
+
+        # Jump to the original (patched) chest-zeroing subroutine.
+        # Its RTS will return to the caller at C0/BE90.
+        src.append(asm.JMP(0xBB18, asm.ABS))
+
+        space = Write(Bank.C0, src, "SLI tracking: zero non-contiguous SRAM regions on new game")
+        new_zeroing_addr = space.start_address
+
+        # Step 3: Redirect the JSR $BB18 at C0/BE8D to our new subroutine.
+        # C0/BE8D: 20 18 BB → 20 <lo> <hi>
+        space = Reserve(0x00be8e, 0x00be8f, "SLI tracking: redirect chest-zeroing JSR to new sub")
+        space.write((new_zeroing_addr & 0xffff).to_bytes(2, "little"))
 
     def write_limited_inventory_data(self):
         """Write pack size table and tracking pointer table to ROM."""
@@ -671,6 +727,12 @@ class Shops():
         # Compute pack sizes after inventory is finalized
         if self.args.shop_limited_inventory:
             self.compute_pack_sizes()
+
+            # In default (non-ruination) mode, enable limited inventory for all shops.
+            # In ruination mode, this is called later from events.py with only accessible shops.
+            if not self.args.ruination_mode:
+                all_shop_ids = [shop.id for shop in self.all_shops]
+                self.enable_limited_shops(all_shop_ids)
 
     def log(self):
         from log import section_entries, format_option
