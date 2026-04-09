@@ -394,9 +394,31 @@ class MagitekFactory(Event):
 
         # use original game over check function after mine cart ride, the custom one cannot be used here
         # refreshing objects or updating the party leader causes a hard lock at the end of the ride (never return from black screen)
+        #
+        # if the cranes have already been defeated (i.e. the player already completed the magitek factory finish
+        # check and is riding the mine cart a second time), skip the vanilla post-mine-cart scene and exit
+        # directly to the world map. the vanilla scene code hides party entities for cutscene setup and the
+        # modified reward/crane code does not fully restore entity visibility, leaving the player invisible.
+        src = [
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.LoadMap(0x00, direction.DOWN, default_music = True, x = 120, y = 188, airship = True),
+            vehicle.End(),
+        ]
+        space = Write(Bank.CC, src, "magitek factory exit to world map after mine cart already complete")
+        already_complete_exit = space.start_address
+
+        src = [
+            field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+            field.BranchIfEventBitSet(event_bit.DEFEATED_CRANES, already_complete_exit),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "magitek factory check game over and already complete after mine cart ride")
+        check_game_over_and_complete = space.start_address
+
         space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
         space.write(
-            field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+            field.Call(check_game_over_and_complete),
         )
 
     def character_mod(self, character):
