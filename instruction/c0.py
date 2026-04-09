@@ -346,12 +346,18 @@ def _add_item_mod():
     return space.start_address
 add_item = _add_item_mod()
 
-def _y_party_switch_in_wor_mod():
-    """Patch Y-party switch to save/restore IN_WOR per-party.
+def _y_party_switch_mod():
+    """Patch Y-party switch to save/restore IN_WOR per-party and clear
+    SAVE_ENABLED so the destination party cannot save/heal unless they
+    are actually standing on a savepoint.
 
-    Without this, switching parties via Y leaves IN_WOR at whatever the
-    previous party set it to.  Maps shared between WoB/WoR (e.g. Zozo)
-    then behave as if the party is in the wrong world.
+    Without the IN_WOR fix, switching parties via Y leaves IN_WOR at
+    whatever the previous party set it to.  Maps shared between WoB/WoR
+    (e.g. Zozo) then behave as if the party is in the wrong world.
+
+    Without the SAVE_ENABLED fix, if one party is on a savepoint and
+    the player presses Y, the second party inherits the save-enabled
+    state and can heal/save from anywhere.
 
     Hook strategy — leave the original C0/6D77-6E87 completely intact:
 
@@ -364,9 +370,9 @@ def _y_party_switch_in_wor_mod():
         LDA $1A6D / TAY / LDA $1FF3,Y / AND #$03 / STA $0744
         sequences (before the RTS) with JSR restore_and_exit.
         restore_and_exit restores IN_WOR from the new party's
-        PARTY_N_IN_WOR, then does the original facing-restore code.
-        Remaining bytes are NOP-filled so execution slides to the
-        original RTS at C0/6E43 / C0/6E87.
+        PARTY_N_IN_WOR, clears SAVE_ENABLED, then does the original
+        facing-restore code.  Remaining bytes are NOP-filled so
+        execution slides to the original RTS at C0/6E43 / C0/6E87.
     """
     import data.event_bit as event_bit
 
@@ -374,6 +380,8 @@ def _y_party_switch_in_wor_mod():
     in_wor_addr      = event_bit.address(event_bit.IN_WOR)          # $1E94
     in_wor_bit_mask  = 1 << event_bit.bit(event_bit.IN_WOR)        # 0x10 (bit 4)
     party_state_byte = event_bit.address(event_bit.PARTY_1_IN_WOR) # $1E9C
+    save_addr_eb     = event_bit.address(event_bit.SAVE_ENABLED)   # $1EB7
+    save_bit_mask    = 1 << event_bit.bit(event_bit.SAVE_ENABLED)  # 0x80 (bit 7)
 
     # --- Save routine: called at entry before the switch begins ---
     # Replaces original STZ $0762 at C0/6D71.
@@ -400,7 +408,7 @@ def _y_party_switch_in_wor_mod():
         asm.TSB(party_state_byte, asm.ABS),
         asm.RTS(),
     ]
-    save_space = Write(Bank.C0, save_src, "c0 y-party switch save IN_WOR")
+    save_space = Write(Bank.C0, save_src, "c0 y-party switch save state")
     save_addr = save_space.start_address
 
     # --- Exit routine: restores IN_WOR then does original facing restore ---
@@ -418,23 +426,28 @@ def _y_party_switch_in_wor_mod():
 
         asm.LDA(in_wor_bit_mask, asm.IMM8),
         asm.TSB(in_wor_addr, asm.ABS),
-        asm.BRA("ORIG_EXIT"),
+        asm.BRA("CLEAR_SAVE"),
 
         "CLEAR_WOR",
         asm.LDA(in_wor_bit_mask, asm.IMM8),
         asm.TRB(in_wor_addr, asm.ABS),
+
+        # Clear SAVE_ENABLED so new party can't save/heal from a remote savepoint
+        "CLEAR_SAVE",
+        asm.LDA(save_bit_mask, asm.IMM8),
+        asm.TRB(save_addr_eb, asm.ABS),
 
         # Original exit: restore facing from saved party data
         "ORIG_EXIT",
         Read(0x6e37, 0x6e42),               # LDA $1A6D / TAY / LDA $1FF3,Y / AND #$03 / STA $0744
         asm.RTS(),
     ]
-    exit_space = Write(Bank.C0, exit_src, "c0 y-party switch restore IN_WOR + exit")
+    exit_space = Write(Bank.C0, exit_src, "c0 y-party switch restore state + exit")
     exit_addr = exit_space.start_address
 
     # --- Hook entry: C0/6D71, replace STZ $0762 with JSR save_addr ---
     # BRA $6D77 at C0/6D74 is untouched.
-    space = Reserve(0x6d71, 0x6d73, "y-party switch entry hook: save IN_WOR")
+    space = Reserve(0x6d71, 0x6d73, "y-party switch entry hook: save state")
     space.write(asm.JSR(save_addr, asm.ABS))
 
     # --- Hook exit 1 (same-map): C0/6E37-6E42, JSR + NOP sled to RTS at 6E43 ---
@@ -449,4 +462,4 @@ def _y_party_switch_in_wor_mod():
     # Remaining 9 bytes (6E7E-6E86) are NOP-filled; RTS at 6E87 is untouched.
 
 if args.ruination_mode is not None:
-    _y_party_switch_in_wor_mod()
+    _y_party_switch_mod()
