@@ -26,6 +26,11 @@ def main():
     data.write()
     memory.write()
 
+    # Append -debug-verbose diagnostics (if any) to the spoiler log. No-op
+    # unless -debug-verbose is set on the command line.
+    from log import verbose as verbose_log
+    verbose_log.finalize_and_append_to_log()
+
     #if data.maps.doors.verbose:
     #    from memory.space import Space
     #    print(Space.heaps)

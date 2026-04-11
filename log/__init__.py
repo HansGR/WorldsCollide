@@ -1,5 +1,6 @@
 import logging, os
 from log.format import *
+from log import verbose as verbose_log
 
 import args
 name, ext = os.path.splitext(args.output_file)
@@ -9,6 +10,15 @@ if args.stdout_log:
     logging.basicConfig(stream = sys.stdout, filemode = 'w', level = logging.INFO, format = "%(message)s")
 else:
     logging.basicConfig(filename = log_file, filemode = 'w', level = logging.INFO, format = "%(message)s")
+
+# Configure verbose diagnostics destinations.
+# -debug routes verbose output to stdout (legacy behaviour).
+# -debug-verbose routes verbose output to a temp file that is appended
+# to the spoiler log file at the end of the compile.
+verbose_log.init(
+    to_stdout = bool(getattr(args, "debug", False)),
+    to_file = bool(getattr(args, "debug_verbose", False)),
+)
 
 hash = ', '.join([entry.name for entry in args.sprite_hash])
 import time
