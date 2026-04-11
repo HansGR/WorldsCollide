@@ -7,6 +7,7 @@ from data.npc import *
 import data.npc_bit as npc_bit
 from instruction.event import EVENT_CODE_START
 from data.map_event import MapEvent
+from log.verbose import vprint
 
 KT_CHECK_ADDR = 0xa014f
 CUSTOM_WARP_HOOK = 0xa0138
@@ -39,13 +40,13 @@ class Warps():
         new_warp = Warp(event_bit, warp_code)
         self.warps.append(new_warp)
         if self.verbose:
-            print('Added custom warp: ', hex(event_bit), '@ address: ', hex(warp_code))
+            vprint('Added custom warp: ', hex(event_bit), '@ address: ', hex(warp_code))
 
     def add_bit(self, bit, setting):
         if setting in ['clear', 'set']:
             self.bits[bit] = setting
             if self.verbose:
-                print('Added custom bit set to warp: ', hex(bit), ' --> ', setting)
+                vprint('Added custom bit set to warp: ', hex(bit), ' --> ', setting)
         else:
             print('warning: bad setting', hex(bit), setting)
 
@@ -87,9 +88,9 @@ class Warps():
         space = Write(Bank.CA, src, "modified custom warp handler")
         warp_handler_addr = space.start_address
         if self.verbose:
-            print('Custom warp script:')
+            vprint('Custom warp script:')
             for s in src:
-                print('\t', s.__str__())
+                vprint('\t', s.__str__())
 
         space = Reserve(CUSTOM_WARP_HOOK, CUSTOM_WARP_HOOK+5, "branch to modified custom warp handler", field.NOP())
         space.write(field.Branch(warp_handler_addr))
@@ -239,7 +240,7 @@ class WarpPoints:
             self.make_warp_point_pair(wp, maps)
 
             if self.verbose:
-                print('Modified warp point:', wp.name)
+                vprint('Modified warp point:', wp.name)
 
         # Deconflict used npc_bits
         ### APPARENTLY maps.get_npc_count gets out of whack at some point?  I'm not sure how.
@@ -289,8 +290,8 @@ class WarpPoints:
             field.Return()
         ]
         if self.verbose:
-            print('Warp point code: ', warp_point.name)
-            print([s.__str__() for s in src])
+            vprint('Warp point code: ', warp_point.name)
+            vprint([s.__str__() for s in src])
 
         return src
 
@@ -316,8 +317,8 @@ class WarpPoints:
             field.Return(),
         ]
         if self.verbose:
-            print('Warp point pair code: ', warp_point.name)
-            print([s.__str__() for s in src])
+            vprint('Warp point pair code: ', warp_point.name)
+            vprint([s.__str__() for s in src])
         return src
 
     def warp_out_animation(self):
@@ -344,8 +345,8 @@ class WarpPoints:
         ]
         space = Write(Bank.CC, src, "Warp out animation")
         if self.verbose:
-            print('Warp out animation:  ')
-            print([s.__str__() for s in src])
+            vprint('Warp out animation:  ')
+            vprint([s.__str__() for s in src])
         return space.start_address
 
     def warp_in_animation(self):
@@ -370,8 +371,8 @@ class WarpPoints:
             field.Return()
         ]
         if self.verbose:
-            print('Warp in animation:  ')
-            print([s.__str__() for s in src])
+            vprint('Warp in animation:  ')
+            vprint([s.__str__() for s in src])
         space = Write(Bank.CC, src, "Warp in animation")
         return space.start_address
 

@@ -4,6 +4,7 @@ from data.rooms import room_data, ruination_dont_force, shared_exits
 from data.walks import *
 from data.characters import Characters
 import random
+from log.verbose import vprint
 
 
 class RuinationMappingError(Exception):
@@ -348,7 +349,7 @@ class RuinationBranch(Network):
             hub_room = self.rooms.get_room(hub_room_id)
             hub_room.add_pits([3039])
             if self.verbose:
-                print('CUSTOM add pit 3039 to', hub_room_id, '!', hub_room.count, hub_room.pits)
+                vprint('CUSTOM add pit 3039 to', hub_room_id, '!', hub_room.count, hub_room.pits)
             self.rooms.reindex_room(hub_room_id)
 
     def classify_rooms(self, rooms):
@@ -415,7 +416,7 @@ class RuinationBranch(Network):
     def get_all_check_connections(self, element_type=0):
         conns = set()
         if self.verbose:
-            print('Looking for check rooms...', self.check_rooms)
+            vprint('Looking for check rooms...', self.check_rooms)
         for room_id in self.check_rooms:
             room = self.rooms.get_room(room_id)
             if element_type == 0:
@@ -505,10 +506,10 @@ class RuinationBranch(Network):
                 total_pits += len([p for p in room.pits if p not in self.protected])
 
             if self.verbose:
-                print(f'  [{step_name}] Hub network totals: doors={total_doors}, traps={total_traps}, pits={total_pits}')
-                print(f'  [{step_name}] Hub {hub_id}: doors={hub_doors}, traps={hub_traps}, pits={hub_pits}')
-                print(f'  [{step_name}] Upstream nodes: {list(upstream)}')
-                print(f'  [{step_name}] Downstream nodes: {list(downstream)}')
+                vprint(f'  [{step_name}] Hub network totals: doors={total_doors}, traps={total_traps}, pits={total_pits}')
+                vprint(f'  [{step_name}] Hub {hub_id}: doors={hub_doors}, traps={hub_traps}, pits={hub_pits}')
+                vprint(f'  [{step_name}] Upstream nodes: {list(upstream)}')
+                vprint(f'  [{step_name}] Downstream nodes: {list(downstream)}')
 
         if remaining_doors is not None and dead_ends is not None:
             door_count = len(remaining_doors)
@@ -516,7 +517,7 @@ class RuinationBranch(Network):
             excess = door_count - dead_end_count
 
             if self.verbose:
-                print(f'  [{step_name}] remaining_doors={door_count}, dead_ends={dead_end_count}, excess={excess}')
+                vprint(f'  [{step_name}] remaining_doors={door_count}, dead_ends={dead_end_count}, excess={excess}')
 
             if excess > 0 and excess % 2 == 1:
                 issues.append(f'Odd excess doors ({excess}): will have orphan door after pairing')
@@ -526,13 +527,13 @@ class RuinationBranch(Network):
             pit_count = len(all_pits)
 
             if self.verbose:
-                print(f'  [{step_name}] all_traps={trap_count}, all_pits={pit_count}')
+                vprint(f'  [{step_name}] all_traps={trap_count}, all_pits={pit_count}')
 
             if trap_count > pit_count:
                 issues.append(f'More traps ({trap_count}) than pits ({pit_count})')
 
         if issues and self.verbose:
-            print(f'  [{step_name}] POTENTIAL ISSUES: {issues}')
+            vprint(f'  [{step_name}] POTENTIAL ISSUES: {issues}')
 
         return issues
 
@@ -1852,10 +1853,10 @@ class RuinationBranch(Network):
             return
 
         if self.verbose:
-            print('\t=== NO DOORS FOR TERMINUS FIX ===')
-            print(f'\tTerminus {self.terminus} not merged, but network has no doors')
-            print(f'\tAvailable traps: {all_traps}')
-            print(f'\tSearching for room with pit, door, and another exit...')
+            vprint('\t=== NO DOORS FOR TERMINUS FIX ===')
+            vprint(f'\tTerminus {self.terminus} not merged, but network has no doors')
+            vprint(f'\tAvailable traps: {all_traps}')
+            vprint(f'\tSearching for room with pit, door, and another exit...')
 
         # Find a suitable room: has pit (to receive trap), door (to add to network),
         # and at least one other exit (door or trap) so connecting doesn't dead-end
@@ -1878,14 +1879,14 @@ class RuinationBranch(Network):
             if len(unprotected_pits) >= 1 and len(unprotected_doors) >= 1 and total_exits >= 2:
                 suitable_room = room_id
                 if self.verbose:
-                    print(f'\tFound suitable room in network: {room_id}')
-                    print(f'\t  pits={unprotected_pits}, doors={unprotected_doors}, traps={unprotected_traps}')
+                    vprint(f'\tFound suitable room in network: {room_id}')
+                    vprint(f'\t  pits={unprotected_pits}, doors={unprotected_doors}, traps={unprotected_traps}')
                 break
 
         # If no suitable room in network, check reserve areas
         if suitable_room is None and reserve_areas is not None:
             if self.verbose:
-                print('\tNo suitable room in network, checking reserve areas...')
+                vprint('\tNo suitable room in network, checking reserve areas...')
 
             for area_name, area_rooms in reserve_areas:
                 for room_id in area_rooms:
@@ -1903,8 +1904,8 @@ class RuinationBranch(Network):
                             area_rooms.remove(room_id)
                             suitable_room = room_id
                             if self.verbose:
-                                print(f'\tAdded suitable room from area {area_name}: {room_id}')
-                                print(f'\t  pits={pits}, doors={doors}, traps={traps}')
+                                vprint(f'\tAdded suitable room from area {area_name}: {room_id}')
+                                vprint(f'\t  pits={pits}, doors={doors}, traps={traps}')
                             break
                 if suitable_room is not None:
                     break
@@ -1951,7 +1952,7 @@ class RuinationBranch(Network):
         selected_pit = random.choice(suitable_pits)
 
         if self.verbose:
-            print(f'\tConnecting trap {selected_trap} --> pit {selected_pit} (room {suitable_room})')
+            vprint(f'\tConnecting trap {selected_trap} --> pit {selected_pit} (room {suitable_room})')
 
         self.connect(selected_trap, selected_pit)
 
@@ -1964,21 +1965,21 @@ class RuinationBranch(Network):
             for node in downstream:
                 room = self.rooms.get_room(node)
                 new_doors.extend([d for d in room.doors if d not in self.protected])
-            print(f'\tAfter fix: network now has {len(new_doors)} doors')
+            vprint(f'\tAfter fix: network now has {len(new_doors)} doors')
 
     def finalize_map(self, reserve_areas=None):
         if self.verbose:
-            print('Closing branch...')
+            vprint('Closing branch...')
             try:
                 viz = self.visualize_branch_topology()
-                print(viz)
+                vprint(viz)
             except:
-                print('Could not visualise branch!')
+                vprint('Could not visualise branch!')
 
         self.ForceConnections(forced_connections)
 
         if self.verbose:
-            print(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
+            vprint(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
 
         # PRE-CHECK: Handle "no doors but terminus unconnected" edge case
         # This happens when the branch has only traps/pits with no remaining doors.
@@ -1994,12 +1995,12 @@ class RuinationBranch(Network):
         while finalize_iteration < max_finalize_iterations:
             finalize_iteration += 1
             if finalize_iteration > 1 and self.verbose:
-                print(f'\n=== Finalize iteration {finalize_iteration} (new elements were unlocked) ===\n')
+                vprint(f'\n=== Finalize iteration {finalize_iteration} (new elements were unlocked) ===\n')
 
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
             if self.verbose:
-                print('\thub:', hub_id, hub.count)
+                vprint('\thub:', hub_id, hub.count)
 
             # (1) Count trapdoors/pits connected to hub.  If trapdoors > pits, connect traps to rooms with (# pits > # traps).
             # Filter out protected elements to avoid using forced connection destinations
@@ -2010,7 +2011,7 @@ class RuinationBranch(Network):
             filtered_pits = [p for p in hub.pits if p in self.protected]
             filtered_traps = [t for t in hub.traps if t in self.protected]
             if self.verbose and (filtered_pits or filtered_traps):
-                print(f'\t(hub) Filtered out protected - pits: {filtered_pits}, traps: {filtered_traps}')
+                vprint(f'\t(hub) Filtered out protected - pits: {filtered_pits}, traps: {filtered_traps}')
 
             upstream = self.get_upstream_nodes(hub_id)
             for node in upstream:
@@ -2025,20 +2026,20 @@ class RuinationBranch(Network):
                 all_traps.extend([t for t in room.traps if t not in self.protected])
 
             if self.verbose:
-                print('\tpits:', all_pits)
-                print('\ttraps:', all_traps)
+                vprint('\tpits:', all_pits)
+                vprint('\ttraps:', all_traps)
 
             while len(all_traps) > len(all_pits):
                 # Find unconnected rooms with more pits than traps
                 if self.verbose:
-                    print('(1) assessing nodes for (more pits than traps):')
+                    vprint('(1) assessing nodes for (more pits than traps):')
                 winner = ''
                 diff = 0
                 for n in self.net.nodes:
                     if n not in upstream and n not in downstream and n != hub_id:
                         r = self.rooms.get_room(n)
                         if self.verbose:
-                            print('\t',n, r.count, r.doors, r.traps, r.pits, r.keys, r.locks)
+                            vprint('\t',n, r.count, r.doors, r.traps, r.pits, r.keys, r.locks)
                         # Skip rooms with no originally-free exits (all exits were key-unlocked)
                         orig_free_exits = (
                             len([d for d in r.doors if d not in self.protected
@@ -2058,7 +2059,7 @@ class RuinationBranch(Network):
                 # Fallback: search reserve areas for a room with more pits than traps
                 if winner == '' and reserve_areas is not None:
                     if self.verbose:
-                        print('(1) no suitable node in network, checking reserve areas...')
+                        vprint('(1) no suitable node in network, checking reserve areas...')
                     best_diff = 0
                     best_rid = None
                     best_area_rooms = None
@@ -2081,7 +2082,7 @@ class RuinationBranch(Network):
                         best_area_rooms.remove(best_rid)
                         winner = best_rid
                         if self.verbose:
-                            print(f'(1) added room from reserve area {best_area}: {best_rid}')
+                            vprint(f'(1) added room from reserve area {best_area}: {best_rid}')
 
                 # connect a hub trapdoor to this node
                 this_exit = random.choice(all_traps)
@@ -2090,10 +2091,10 @@ class RuinationBranch(Network):
                 this_entr = random.choice(unprotected_room_pits)
                 if self.verbose:
                     protected_in_room = [p for p in room.pits if p in self.protected]
-                    print(f'(1) selected {winner}: traps={room.traps}, pits={room.pits}')
+                    vprint(f'(1) selected {winner}: traps={room.traps}, pits={room.pits}')
                     if protected_in_room:
-                        print(f'    (filtered protected pits: {protected_in_room})')
-                    print(f'(1) connecting {this_exit} --> {this_entr}')
+                        vprint(f'    (filtered protected pits: {protected_in_room})')
+                    vprint(f'(1) connecting {this_exit} --> {this_entr}')
 
                 self.connect(this_exit, this_entr)
 
@@ -2126,7 +2127,7 @@ class RuinationBranch(Network):
                 exit_count = len(room.doors) + len(room.traps)
                 delta.append((entrance_count - exit_count, node))
             if self.verbose:
-                print('(2) delta values:', delta)
+                vprint('(2) delta values:', delta)
             # Fix A: Sort so trap-bearing rooms are processed BEFORE door-only rooms.
             # Since pop() takes from the end, trap-bearing rooms must sort last.
             # Secondary sort by delta value within each group.
@@ -2141,13 +2142,13 @@ class RuinationBranch(Network):
                 node = value[1]
                 room = self.rooms.get_room(node)
                 if self.verbose:
-                    print('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
+                    vprint('(2) selected', node, '(delta = ', value[0], '): ', room.count, room.doors, room.traps, room.pits)
 
                 # Skip rooms with no exits (only pit entrances) - they can't connect upstream
                 # Their pits will be connected when traps are processed in step (3)
                 if len(room.doors) == 0 and len(room.traps) == 0:
                     if self.verbose:
-                        print('(2) skipping - room has no exits (pit-only)')
+                        vprint('(2) skipping - room has no exits (pit-only)')
                     continue
 
                 upstream_doors = [d for d in hub.doors if d not in self.protected]
@@ -2187,8 +2188,8 @@ class RuinationBranch(Network):
                                 # (1+ pit, 1+ door, 1+ other exit) so the trap connects
                                 # to its pit, and its door can serve the terminus.
                                 if self.verbose:
-                                    print(f'(2) Terminus unconnected, trap connection would leave 0 accessible exits.')
-                                    print(f'    Searching for converter room (1+ pit, 1+ door, 1+ other exit)...')
+                                    vprint(f'(2) Terminus unconnected, trap connection would leave 0 accessible exits.')
+                                    vprint(f'    Searching for converter room (1+ pit, 1+ door, 1+ other exit)...')
 
                                 connected_set = {hub_id} | set(upstream) | set(downstream)
                                 # Search unconnected rooms in network
@@ -2204,7 +2205,7 @@ class RuinationBranch(Network):
                                     if len(n_pits) >= 1 and len(n_doors) >= 1 and (len(n_doors) + len(n_traps)) >= 2:
                                         this_conn = random.choice(n_pits)
                                         if self.verbose:
-                                            print(f'    Found converter room {node_id} in network')
+                                            vprint(f'    Found converter room {node_id} in network')
                                         break
 
                                 # Fallback: search reserve areas
@@ -2225,7 +2226,7 @@ class RuinationBranch(Network):
                                                     added_pits = [p for p in added_room.pits if p not in self.protected]
                                                     this_conn = random.choice(added_pits)
                                                     if self.verbose:
-                                                        print(f'    Added converter room {rid} from {area_name}')
+                                                        vprint(f'    Added converter room {rid} from {area_name}')
                                                     break
                                         if this_conn is not None:
                                             break
@@ -2244,7 +2245,7 @@ class RuinationBranch(Network):
                     total_branch_doors = len(all_branch_doors)
                     if total_branch_doors <= 2 and reserve_areas is not None:
                         if self.verbose:
-                            print(f'(2) Fix B: only {total_branch_doors} doors remain in branch, '
+                            vprint(f'(2) Fix B: only {total_branch_doors} doors remain in branch, '
                                   f'searching for hub room (3+ doors) in reserve...')
                         hub_room_found = False
                         for area_name, area_rooms in reserve_areas:
@@ -2262,7 +2263,7 @@ class RuinationBranch(Network):
                                         this_conn = random.choice(unprotected_hub_doors)
                                         this_exit = random.choice(unprotected_room_doors)
                                         if self.verbose:
-                                            print(f'(2) Fix B: added hub room {rid} from {area_name} '
+                                            vprint(f'(2) Fix B: added hub room {rid} from {area_name} '
                                                   f'({len(r_doors)} doors), connecting {this_exit} --> {this_conn}')
                                         self.connect(this_exit, this_conn)
                                         hub_room_found = True
@@ -2282,19 +2283,19 @@ class RuinationBranch(Network):
                     # In such a case, we can look at unused rooms, find a converter, attach it, and try again.
                     available_nodes = [n for n in self.net.nodes if n not in self.dead_ends and n != hub_id]
                     if self.verbose:
-                        print(f'\t(2) converter search: room_traps={unprotected_room_traps}, room_doors={unprotected_room_doors}')
-                        print(f'\t    upstream_doors={upstream_doors}, upstream_pits={upstream_pits}')
-                        print(f'\t    available_nodes in network: {len(available_nodes)}')
+                        vprint(f'\t(2) converter search: room_traps={unprotected_room_traps}, room_doors={unprotected_room_doors}')
+                        vprint(f'\t    upstream_doors={upstream_doors}, upstream_pits={upstream_pits}')
+                        vprint(f'\t    available_nodes in network: {len(available_nodes)}')
                         if reserve_areas is not None:
                             ra_summary = [(a, len(r)) for a, r in reserve_areas if len(r) > 0]
-                            print(f'\t    reserve_areas: {ra_summary}')
+                            vprint(f'\t    reserve_areas: {ra_summary}')
                         else:
-                            print(f'\t    reserve_areas: None')
+                            vprint(f'\t    reserve_areas: None')
                     if len(unprotected_room_traps) > 0 and len(upstream_pits) == 0 and len(upstream_doors) > 0:
                         # Need a pit-in, door-out converter
                         pido = []
                         if self.verbose:
-                            print('\t\tlooking for available pido nodes:')
+                            vprint('\t\tlooking for available pido nodes:')
                         for node_id in available_nodes:
                             node = self.rooms.get_room(node_id)
                             unprotected_node_pits = [p for p in node.pits if p not in self.protected]
@@ -2303,7 +2304,7 @@ class RuinationBranch(Network):
                             if len(unprotected_node_pits) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_pits) > len(unprotected_node_traps):
                                 pido.append(node_id)
                                 if self.verbose:
-                                    print('\t\t\t', node_id, ': ', node.count)
+                                    vprint('\t\t\t', node_id, ': ', node.count)
 
                         if len(pido) > 0:
                             pido_room_id = random.choice(pido)
@@ -2315,7 +2316,7 @@ class RuinationBranch(Network):
                         # Fallback: search reserve areas for a pido room
                         if len(pido) == 0 and reserve_areas is not None:
                             if self.verbose:
-                                print('\t\tno pido in network, checking reserve areas...')
+                                vprint('\t\tno pido in network, checking reserve areas...')
                             for area_name, area_rooms in reserve_areas:
                                 for rid in area_rooms:
                                     if rid in self.net.nodes:
@@ -2332,7 +2333,7 @@ class RuinationBranch(Network):
                                             unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
                                             this_conn = random.choice(unprotected_pido_pits)
                                             if self.verbose:
-                                                print(f'\t\tadded pido room from reserve area {area_name}: {rid}')
+                                                vprint(f'\t\tadded pido room from reserve area {area_name}: {rid}')
                                             break
                                 if this_conn is not None:
                                     break
@@ -2341,7 +2342,7 @@ class RuinationBranch(Network):
                         # Need a door-in, trap-out converter
                         dito = []
                         if self.verbose:
-                            print('\t\tlooking for available dito nodes:')
+                            vprint('\t\tlooking for available dito nodes:')
                         for node_id in available_nodes:
                             node = self.rooms.get_room(node_id)
                             unprotected_node_traps = [t for t in node.traps if t not in self.protected]
@@ -2350,7 +2351,7 @@ class RuinationBranch(Network):
                             if len(unprotected_node_traps) > 0 and len(unprotected_node_doors) > 0 and len(unprotected_node_traps) > len(unprotected_node_pits):
                                 dito.append(node_id)
                                 if self.verbose:
-                                    print('\t\t\t', node_id, ': ', node.count)
+                                    vprint('\t\t\t', node_id, ': ', node.count)
 
                         if len(dito) > 0:
                             dito_room_id = random.choice(dito)
@@ -2362,7 +2363,7 @@ class RuinationBranch(Network):
                         # Fallback: search reserve areas for a dito room
                         if len(dito) == 0 and reserve_areas is not None:
                             if self.verbose:
-                                print('\t\tno dito in network, checking reserve areas...')
+                                vprint('\t\tno dito in network, checking reserve areas...')
                             for area_name, area_rooms in reserve_areas:
                                 for rid in area_rooms:
                                     if rid in self.net.nodes:
@@ -2379,7 +2380,7 @@ class RuinationBranch(Network):
                                             unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
                                             this_conn = random.choice(unprotected_dito_doors)
                                             if self.verbose:
-                                                print(f'\t\tadded dito room from reserve area {area_name}: {rid}')
+                                                vprint(f'\t\tadded dito room from reserve area {area_name}: {rid}')
                                             break
                                 if this_conn is not None:
                                     break
@@ -2387,7 +2388,7 @@ class RuinationBranch(Network):
                     elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) == 0:
                         # Upstream has nothing at all - need to add any room with a door
                         if self.verbose:
-                            print('\t\tupstream has no doors or pits, looking for a room with a door...')
+                            vprint('\t\tupstream has no doors or pits, looking for a room with a door...')
                         # Search network first
                         for node_id in available_nodes:
                             node = self.rooms.get_room(node_id)
@@ -2395,13 +2396,13 @@ class RuinationBranch(Network):
                             if len(unprotected_node_doors) > 0:
                                 this_conn = random.choice(unprotected_node_doors)
                                 if self.verbose:
-                                    print(f'\t\tfound door {this_conn} in network node {node_id}')
+                                    vprint(f'\t\tfound door {this_conn} in network node {node_id}')
                                 break
 
                         # Fallback: search reserve areas for any room with a door
                         if this_conn is None and reserve_areas is not None:
                             if self.verbose:
-                                print('\t\tno door-bearing room in network, checking reserve areas...')
+                                vprint('\t\tno door-bearing room in network, checking reserve areas...')
                             for area_name, area_rooms in reserve_areas:
                                 for rid in area_rooms:
                                     if rid in self.net.nodes:
@@ -2416,7 +2417,7 @@ class RuinationBranch(Network):
                                             unprotected_added_doors = [d for d in added_room.doors if d not in self.protected]
                                             this_conn = random.choice(unprotected_added_doors)
                                             if self.verbose:
-                                                print(f'\t\tadded room with door from reserve area {area_name}: {rid}')
+                                                vprint(f'\t\tadded room with door from reserve area {area_name}: {rid}')
                                             break
                                 if this_conn is not None:
                                     break
@@ -2432,7 +2433,7 @@ class RuinationBranch(Network):
                     )
 
                 if self.verbose:
-                    print('(2) connecting', this_exit, '-->', this_conn)
+                    vprint('(2) connecting', this_exit, '-->', this_conn)
                 self.connect(this_exit, this_conn)
 
                 # Update hub, upstream, downstream, delta
@@ -2447,13 +2448,13 @@ class RuinationBranch(Network):
                     exit_count = len(room.doors) + len(room.traps)
                     delta.append((entrance_count - exit_count, node))
                 if self.verbose:
-                    print('(2) delta values:', delta)
+                    vprint('(2) delta values:', delta)
                 delta.sort(key=_trap_priority)
 
             # If Fix B triggered a restart, skip remaining steps and go back to step 1
             if restart_finalization:
                 if self.verbose:
-                    print('(2) Fix B: restarting finalization after adding hub room')
+                    vprint('(2) Fix B: restarting finalization after adding hub room')
                 continue
 
             # Post-step-2 check: all downstream nodes should be merged into hub
@@ -2553,11 +2554,11 @@ class RuinationBranch(Network):
             while len(remaining_traps) > 0 and len(remaining_pits) > 0:
                 random.shuffle(remaining_pits)
                 if self.verbose:
-                    print('(3) remaining traps:', remaining_traps, '; pits: ', remaining_pits)
+                    vprint('(3) remaining traps:', remaining_traps, '; pits: ', remaining_pits)
                 this_exit = remaining_traps.pop()
                 this_conn = remaining_pits.pop()
                 if self.verbose:
-                    print('(3) connecting:', this_exit, '-->', this_conn)
+                    vprint('(3) connecting:', this_exit, '-->', this_conn)
                 self.connect(this_exit, this_conn)
                 # Re-collect from entire network - keys applied during connect() may unlock new traps
                 remaining_traps, remaining_pits = self.collect_network_traps_and_pits()
@@ -2567,7 +2568,7 @@ class RuinationBranch(Network):
             # so restart finalization from step 1 after adding.
             if len(remaining_traps) > 0 and reserve_areas is not None:
                 if self.verbose:
-                    print(f'(3) {len(remaining_traps)} traps remaining with no pits, checking reserve areas...')
+                    vprint(f'(3) {len(remaining_traps)} traps remaining with no pits, checking reserve areas...')
                 rescue_found = False
                 for area_name, area_rooms in reserve_areas:
                     for rid in list(area_rooms):
@@ -2580,7 +2581,7 @@ class RuinationBranch(Network):
                                 self.add_room(rid)
                                 area_rooms.remove(rid)
                                 if self.verbose:
-                                    print(f'(3) added room with pits from reserve area {area_name}: {rid}. '
+                                    vprint(f'(3) added room with pits from reserve area {area_name}: {rid}. '
                                           f'Restarting finalization.')
                                 rescue_found = True
                                 break
@@ -2607,7 +2608,7 @@ class RuinationBranch(Network):
             remaining_doors = [d for d in hub.doors if d not in self.protected]
             random.shuffle(remaining_doors)
             if self.verbose:
-                print('(4) remaining doors:', remaining_doors)
+                vprint('(4) remaining doors:', remaining_doors)
             terminus = self.rooms.get_room(self.terminus)
             if terminus is not None and len(remaining_doors) > 0:
                 # Terminus is still a separate room and we have doors to connect it
@@ -2617,16 +2618,16 @@ class RuinationBranch(Network):
                 unprotected_terminus_doors = [d for d in terminus.doors if d not in self.protected]
                 this_conn = unprotected_terminus_doors.pop() if unprotected_terminus_doors else terminus.doors.pop()
                 if self.verbose:
-                    print('(4) connecting terminus:', this_exit , '-->', this_conn)
+                    vprint('(4) connecting terminus:', this_exit , '-->', this_conn)
                 self.connect(this_exit, this_conn)
             elif terminus is not None and len(remaining_doors) == 0:
                 # Terminus exists but no hub doors available - add terminus to dead ends for step 6
                 if self.terminus not in self.dead_ends:
                     self.dead_ends.append(self.terminus)
                 if self.verbose:
-                    print('(4) no hub doors to connect terminus, deferring to step 6')
+                    vprint('(4) no hub doors to connect terminus, deferring to step 6')
             elif self.verbose:
-                print('(4) terminus already merged into hub, skipping')
+                vprint('(4) terminus already merged into hub, skipping')
 
             # (5) Count doors in hub.  Connect doors within hub until # doors <= # dead ends
             # Clean up dead ends first - use list() to avoid modifying during iteration
@@ -2642,18 +2643,18 @@ class RuinationBranch(Network):
             # (doors - dead_ends is odd), we'll end up with 1 orphan door.
             while len(remaining_doors) > len(self.dead_ends) and len(remaining_doors) >= 2:
                 if self.verbose:
-                    print('(5) doors in hub:', len(remaining_doors), '.  dead ends:', len(self.dead_ends))
+                    vprint('(5) doors in hub:', len(remaining_doors), '.  dead ends:', len(self.dead_ends))
                 this_exit = remaining_doors.pop()
                 this_conn = remaining_doors.pop()
                 if self.verbose:
-                    print('(5) connecting doors in hub:', this_exit, '-->', this_conn)
+                    vprint('(5) connecting doors in hub:', this_exit, '-->', this_conn)
                 self.connect(this_exit, this_conn)
 
             # (5b) Handle orphan door situation: we have more doors than dead ends but can't pair them
             if len(remaining_doors) > len(self.dead_ends):
                 orphan_count = len(remaining_doors) - len(self.dead_ends)
                 if self.verbose:
-                    print(f'(5b) orphan door situation: {orphan_count} excess door(s), searching for available rooms')
+                    vprint(f'(5b) orphan door situation: {orphan_count} excess door(s), searching for available rooms')
 
                 # Find rooms not yet in the network that can absorb the orphan doors
                 hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
@@ -2679,7 +2680,7 @@ class RuinationBranch(Network):
                             this_exit = remaining_doors.pop()
                             this_conn = random.choice(unprotected_room_doors)
                             if self.verbose:
-                                print(f'(5b) connecting orphan door {this_exit} --> room {room_id} door {this_conn}')
+                                vprint(f'(5b) connecting orphan door {this_exit} --> room {room_id} door {this_conn}')
                             self.connect(this_exit, this_conn)
                             # Add this room to dead_ends if it now has only one connection
                             if room_id not in self.dead_ends and len(room.doors) == 1:
@@ -2701,7 +2702,7 @@ class RuinationBranch(Network):
                                     this_exit = remaining_doors.pop()
                                     this_conn = random.choice(unprotected)
                                     if self.verbose:
-                                        print(f'(5b) fallback: connecting orphan {this_exit} --> {this_conn} in {node}')
+                                        vprint(f'(5b) fallback: connecting orphan {this_exit} --> {this_conn} in {node}')
                                     self.connect(this_exit, this_conn)
                                     found_connection = True
                                     break
@@ -2726,7 +2727,7 @@ class RuinationBranch(Network):
             # Skip entirely if no doors to connect
             if len(remaining_doors) == 0:
                 if self.verbose:
-                    print('(6) No remaining doors to connect, skipping step 6')
+                    vprint('(6) No remaining doors to connect, skipping step 6')
             else:
                 # Pre-check: we need enough dead ends for remaining doors
                 if len(remaining_doors) > len(self.dead_ends):
@@ -2760,8 +2761,8 @@ class RuinationBranch(Network):
                         dead_ends_without_keys.append(de_id)
 
                 if self.verbose:
-                    print('(6) remaining dead ends:', selected_dead_ends)
-                    print(f'(6) partitioned: {len(dead_ends_with_keys)} with keys, {len(dead_ends_without_keys)} without keys')
+                    vprint('(6) remaining dead ends:', selected_dead_ends)
+                    vprint(f'(6) partitioned: {len(dead_ends_with_keys)} with keys, {len(dead_ends_without_keys)} without keys')
 
                 # CRITICAL: The last dead end connected must NOT have a key.
                 # If all selected dead ends have keys, we need to find a keyless one from remaining pool.
@@ -2776,13 +2777,13 @@ class RuinationBranch(Network):
                             self.dead_ends.pop(i)
                             dead_ends_without_keys.append(candidate_id)
                             if self.verbose:
-                                print(f'(6) swapped key-bearing {swapped_out} for keyless {candidate_id}')
+                                vprint(f'(6) swapped key-bearing {swapped_out} for keyless {candidate_id}')
                             break
 
                 if len(dead_ends_without_keys) == 0 and len(dead_ends_with_keys) > 0:
                     # All dead ends have keys - this is risky but we must proceed
                     if self.verbose:
-                        print('(6) WARNING: All available dead ends have keys!')
+                        vprint('(6) WARNING: All available dead ends have keys!')
 
                 # Order: key-bearing first, keyless last (ensures last connection is safe)
                 ordered_dead_ends = dead_ends_with_keys + dead_ends_without_keys
@@ -2795,7 +2796,7 @@ class RuinationBranch(Network):
                     this_conn = unprotected_room_doors.pop() if unprotected_room_doors else room.doors.pop()
                     if self.verbose:
                         has_keys = room and len(room.keys) > 0
-                        print(f'(6) connecting dead ends: {this_exit} --> {this_conn} (has_keys={has_keys})')
+                        vprint(f'(6) connecting dead ends: {this_exit} --> {this_conn} (has_keys={has_keys})')
                     self.connect(this_exit, this_conn)
 
                     # Check if this connection unlocked TRULY NEW elements via key application.
@@ -2806,8 +2807,8 @@ class RuinationBranch(Network):
                     new_doors = [d for d in check_doors if d not in known_doors]
                     if len(new_traps) > 0 or len(new_doors) > 0:
                         if self.verbose:
-                            print(f'(6) Key unlocked new elements! Breaking early to preserve entrances.')
-                            print(f'    New traps: {new_traps}, New doors: {new_doors}')
+                            vprint(f'(6) Key unlocked new elements! Breaking early to preserve entrances.')
+                            vprint(f'    New traps: {new_traps}, New doors: {new_doors}')
                         # Return unused dead ends to the pool
                         self.dead_ends.extend(ordered_dead_ends)
                         break
@@ -2822,12 +2823,12 @@ class RuinationBranch(Network):
                 break  # Done - no new elements to process
 
             if self.verbose:
-                print(f'\nNew elements unlocked: {len(new_traps)} traps, {len(new_doors)} doors')
+                vprint(f'\nNew elements unlocked: {len(new_traps)} traps, {len(new_doors)} doors')
                 if new_traps:
-                    print(f'    traps: {new_traps}')
+                    vprint(f'    traps: {new_traps}')
                 if new_doors:
-                    print(f'    doors: {new_doors}')
-                print('Restarting finalization from step 1...\n')
+                    vprint(f'    doors: {new_doors}')
+                vprint('Restarting finalization from step 1...\n')
 
         if finalize_iteration >= max_finalize_iterations:
             # Collect remaining element info for diagnostics
@@ -2842,7 +2843,7 @@ class RuinationBranch(Network):
             )
 
         if self.verbose:
-            print('... closing branch complete!')
+            vprint('... closing branch complete!')
 
     def extend_branch_path(self):
         """Extend the branch by connecting an exit to an entrance.
@@ -2871,7 +2872,7 @@ class RuinationBranch(Network):
         if topology is None:
             # No hub yet - fall back to simple behavior
             if self.verbose:
-                print('\tNo hub found, using simple extension')
+                vprint('\tNo hub found, using simple extension')
             return self._extend_branch_path_simple()
 
         hub_id = topology['hub_id']
@@ -2886,10 +2887,10 @@ class RuinationBranch(Network):
         currently_connected = set(room_levels.keys())
 
         if self.verbose:
-            print(f'\t=== LOCATION-AWARE EXTENSION ===')
-            print(f'\tActive room: {self.active} (level {active_level})')
-            print(f'\tHub+Upstream: {hub_and_upstream}')
-            print(f'\tUpstream: {upstream}, Downstream: {downstream}')
+            vprint(f'\t=== LOCATION-AWARE EXTENSION ===')
+            vprint(f'\tActive room: {self.active} (level {active_level})')
+            vprint(f'\tHub+Upstream: {hub_and_upstream}')
+            vprint(f'\tUpstream: {upstream}, Downstream: {downstream}')
 
         # === STEP 1: Check for forced exits ===
         all_connected_rooms = [self.active] + list(downstream)
@@ -2904,7 +2905,7 @@ class RuinationBranch(Network):
             this_exit = forced_exits[0]
             this_conn = forced_connections[this_exit][0]
             if self.verbose:
-                print(f'\tForced exit: {this_exit} --> {this_conn}')
+                vprint(f'\tForced exit: {this_exit} --> {this_conn}')
             return this_exit, this_conn
 
         # === STEP 2: Collect exits from the active path ===
@@ -2944,7 +2945,7 @@ class RuinationBranch(Network):
             exit_room_id = list(deepest_rooms)[0] if deepest_rooms else self.active
 
         if self.verbose:
-            print(f'\tAvailable exits: {len(available_exits["doors"])} doors, {len(available_exits["traps"])} traps')
+            vprint(f'\tAvailable exits: {len(available_exits["doors"])} doors, {len(available_exits["traps"])} traps')
 
         # === STEP 3: Determine exit order based on location ===
         # ## Original logic:
@@ -2987,7 +2988,7 @@ class RuinationBranch(Network):
                     door_targets_exist = True
 
         if self.verbose:
-            print(f'\tTarget availability: pits={trap_targets_exist}, doors={door_targets_exist}')
+            vprint(f'\tTarget availability: pits={trap_targets_exist}, doors={door_targets_exist}')
 
         # Adjust order based on actual availability
         if exit_type_order[0] == 'traps' and not trap_targets_exist and door_targets_exist:
@@ -3012,7 +3013,7 @@ class RuinationBranch(Network):
                 all_exits.append((exit_id, exit_room.id))
 
             if self.verbose:
-                print(f'\t{exit_type}: {len(all_exits)} exits to evaluate')
+                vprint(f'\t{exit_type}: {len(all_exits)} exits to evaluate')
 
             # Shuffle and try each exit
             random.shuffle(all_exits)
@@ -3029,9 +3030,9 @@ class RuinationBranch(Network):
                     )
 
                 if self.verbose:
-                    print(f'\t\tExit {exit_id}: {len(valid_targets)} valid targets')
+                    vprint(f'\t\tExit {exit_id}: {len(valid_targets)} valid targets')
                     if False:
-                        print(valid_targets)
+                        vprint(valid_targets)
 
 
                 if len(valid_targets) > 0:
@@ -3039,7 +3040,7 @@ class RuinationBranch(Network):
                     if self.verbose:
                         conn_room = self.rooms.get_room_from_element(this_conn)
                         conn_room_id = conn_room.id if conn_room else 'unknown'
-                        print(f'\t\tSelected: {exit_id} --> {this_conn} (room {conn_room_id})')
+                        vprint(f'\t\tSelected: {exit_id} --> {this_conn} (room {conn_room_id})')
                     self.last_stuck_reason = StuckReason.NONE
                     return exit_id, this_conn
 
@@ -3047,7 +3048,7 @@ class RuinationBranch(Network):
         self._diagnose_stuck_reason(available_exits, topology)
 
         if self.verbose:
-            print(f'\tBranch extension failed. Reason: {self.last_stuck_reason}')
+            vprint(f'\tBranch extension failed. Reason: {self.last_stuck_reason}')
 
         return None, None
 
@@ -3143,12 +3144,12 @@ class RuinationBranch(Network):
         upstream = self.get_upstream_nodes(self.active)
         downstream = self.get_downstream_nodes(self.active)
         if self.verbose:
-            print('\tActive room: ', self.active, '.\n\tUpstream nodes: ', upstream,
+            vprint('\tActive room: ', self.active, '.\n\tUpstream nodes: ', upstream,
                   '\n\tDownstream nodes: ', downstream,
                   '\n\tAll entrances: ', all_entrances)
         hub_is_upstream = len([n for n in upstream if 'ruin_hub_' in str(n)]) > 0
         if hub_is_upstream and self.verbose:
-            print('\tHub is upstream!')
+            vprint('\tHub is upstream!')
         for node in upstream:
             room = self.rooms.get_room(node)
             all_entrances += list(room.doors) + list(room.pits)
@@ -3157,14 +3158,14 @@ class RuinationBranch(Network):
         dito_ok = len(
             all_entrances) >= 2  # a door-in, trap-out room effectively replaces a door (entrance) with a trap (not entrance), so an extra entrance is required
         if self.verbose and not allow_traps:
-            print('\ttraps not allowed!')
+            vprint('\ttraps not allowed!')
         elif self.verbose:
-            print('\ttraps allowed!')
+            vprint('\ttraps allowed!')
 
         # Look at unconnected hubs.
         currently_used = [self.active] + list(downstream) + list(upstream)
         if self.verbose:
-            print('\tCurrently used rooms:', currently_used)
+            vprint('\tCurrently used rooms:', currently_used)
         new_hub_door_conns = self.get_available_hub_connections(element_type=0, excluded=currently_used,
                                                                   dito_ok=dito_ok)
         new_hub_pit_conns = self.get_available_hub_connections(element_type=1, excluded=currently_used)
@@ -3174,7 +3175,7 @@ class RuinationBranch(Network):
             uppaths = self.get_upstream_paths(self.active)
             for path in uppaths:
                 if self.verbose:
-                    print('\tchecking upstream path:', path)
+                    vprint('\tchecking upstream path:', path)
                 path_door_count = 0
                 path_trap_count = 0
                 tracker = [False, False]
@@ -3186,23 +3187,23 @@ class RuinationBranch(Network):
                         # We've met the condition for trapdoor connections.  Add pits.
                         new_hub_pit_conns.update(node.pits)
                         if self.verbose and tracker[0] is False:
-                            print('\t\tTrapdoor condition met at', node_id)
+                            vprint('\t\tTrapdoor condition met at', node_id)
                             tracker[0] = True
                         if self.verbose:
-                            print('\t\tAdding', node_id, node.pits)
+                            vprint('\t\tAdding', node_id, node.pits)
                     if (path_door_count + path_trap_count) > 2:
                         # We've met the condition for door connections.  Add doors.
                         new_hub_door_conns.update(node.doors)
                         if self.verbose and tracker[1] is False:
-                            print('\t\tDoor condition met at', node_id)
+                            vprint('\t\tDoor condition met at', node_id)
                             tracker[1] = True
                         if self.verbose:
-                            print('\t\tAdding', node_id, node.doors)
+                            vprint('\t\tAdding', node_id, node.doors)
 
         if self.verbose:
-            print('\tCollected available hub connections:')
-            print('\t\tdoors:', new_hub_door_conns)
-            print('\t\tpits:', new_hub_pit_conns)
+            vprint('\tCollected available hub connections:')
+            vprint('\t\tdoors:', new_hub_door_conns)
+            vprint('\t\tpits:', new_hub_pit_conns)
 
         # Select which exits are permissable based on what is available.
         # WE HAVE TO BE CAREFUL to not fully map a branch before we run out of checks.
@@ -3225,8 +3226,8 @@ class RuinationBranch(Network):
                 all_exits += list(node.traps)
             available_connections[1] += new_hub_pit_conns
         if self.verbose:
-            print('\tCollected available active room exits:', len(all_exits))
-            print('\t\t', all_exits)
+            vprint('\tCollected available active room exits:', len(all_exits))
+            vprint('\t\t', all_exits)
 
         # Handle failure modes: no exits available
         legal_exits = True
@@ -3238,17 +3239,17 @@ class RuinationBranch(Network):
                 all_exits += list(active_room.doors)
                 available_connections[0] += check_door_cons
                 if self.verbose:
-                    print('\tInstead using rooms with checks (doors):', len(all_exits))
-                    print('\t\t', all_exits)
+                    vprint('\tInstead using rooms with checks (doors):', len(all_exits))
+                    vprint('\t\t', all_exits)
             elif len(check_pit_cons) > 0 and allow_traps:
                 all_exits += list(active_room.traps)
                 available_connections[1] += check_pit_cons
                 if self.verbose:
-                    print('\tInstead using rooms with checks (traps):', len(all_exits))
-                    print('\t\t', all_exits)
+                    vprint('\tInstead using rooms with checks (traps):', len(all_exits))
+                    vprint('\t\t', all_exits)
             else:
                 if self.verbose:
-                    print('No legal exits found on branch!')
+                    vprint('No legal exits found on branch!')
                 legal_exits = False
 
         # If any exits are forced, apply them
@@ -3258,19 +3259,19 @@ class RuinationBranch(Network):
                 this_exit = forced_exits.pop()
                 this_conn = forced_connections[this_exit][0]
                 if self.verbose:
-                    print('Found forced exit!', this_exit, '-->', this_conn)
+                    vprint('Found forced exit!', this_exit, '-->', this_conn)
             else:
                 this_exit = random.choice(all_exits)
                 this_type = active_room.element_type(this_exit)
                 if self.verbose:
-                    print('All allowed exits:', all_exits, '.  Choose: ', this_exit, '(type ', this_type, ')')
+                    vprint('All allowed exits:', all_exits, '.  Choose: ', this_exit, '(type ', this_type, ')')
                 # Reconstruct available connections for this exit?
 
                 if this_exit in available_connections[this_type]:
                     available_connections[this_type].remove(this_exit)
                 this_conn = random.choice(available_connections[this_type])
                 if self.verbose:
-                    print('Available connections:', available_connections[this_type], '. Choose: ', this_conn)
+                    vprint('Available connections:', available_connections[this_type], '. Choose: ', this_conn)
 
         else:
             this_exit = None
@@ -3283,7 +3284,7 @@ class RuinationBranch(Network):
         conn_room = self.rooms.get_room_from_element(this_conn)
         downstream = self.get_downstream_nodes(conn_room.id)
         if self.verbose:
-            print('Looking for reward in room', conn_room.id, '...')
+            vprint('Looking for reward in room', conn_room.id, '...')
         if conn_room.id in self.check_rooms:
             reward_room = conn_room.id
         elif len([n for n in downstream if n in self.check_rooms]) > 0:
@@ -3295,7 +3296,7 @@ class RuinationBranch(Network):
         if reward_room is not None:
             rewards = [(k, ROOM_REWARD[reward_room][k]) for k in ROOM_REWARD[reward_room].keys()]
             if self.verbose:
-                print('Found a reward! ', [(r[0], r[1].possible_types) for r in rewards], 'in room',
+                vprint('Found a reward! ', [(r[0], r[1].possible_types) for r in rewards], 'in room',
                       reward_room)
 
             # Remove check room from the list
@@ -3348,16 +3349,16 @@ class ruination_map():
         self.Requested[0] = random.randint(char_min, char_max)
         self.Requested[1] = random.randint(esper_min, esper_max)
         if self.verbose:
-            print('Requested: ', self.Requested[0], 'characters, ', self.Requested[1], 'espers')
+            vprint('Requested: ', self.Requested[0], 'characters, ', self.Requested[1], 'espers')
 
         # PRE-PLANNING PHASE: Determine which characters will be obtained and reserve areas
         self.planned_characters, self.reserve_characters, self.dead_checks_allowed = \
             self.pre_plan_character_acquisition()
 
         if self.verbose:
-            print('Pre-plan: Will obtain characters:', self.planned_characters)
-            print('Pre-plan: Reserve characters (for extra areas):', self.reserve_characters)
-            print('Pre-plan: Dead checks allowed:', self.dead_checks_allowed)
+            vprint('Pre-plan: Will obtain characters:', self.planned_characters)
+            vprint('Pre-plan: Reserve characters (for extra areas):', self.reserve_characters)
+            vprint('Pre-plan: Dead checks allowed:', self.dead_checks_allowed)
 
         # Check if any planned or starting party character has Blitz; if so, 50% chance to include Duncan's House
         self.include_duncan_house = False
@@ -3373,8 +3374,8 @@ class ruination_map():
                 self.duncan_house_character = all_blitz[0]
                 self.include_duncan_house = True
             if self.verbose:
-                print(f'Blitz characters: {blitz_char_names}')
-                print(f'Duncan\'s House: {"included" if self.include_duncan_house else "not included"}'
+                vprint(f'Blitz characters: {blitz_char_names}')
+                vprint(f'Duncan\'s House: {"included" if self.include_duncan_house else "not included"}'
                       + (f' (character: {self.duncan_house_character})' if self.include_duncan_house else ''))
 
         # Assemble initial areas from starting party + planned characters
@@ -3385,7 +3386,7 @@ class ruination_map():
         if self.include_duncan_house and self.duncan_house_character in self.PARTY:
             initial_areas.add('DuncanHouse')
         if self.verbose:
-            print('Areas used: ', initial_areas)
+            vprint('Areas used: ', initial_areas)
 
         # Create branches with starting areas
         hub_id = 'ruin_hub'
@@ -3411,7 +3412,7 @@ class ruination_map():
         # Distribute areas to the branches
         self.distribute_areas(initial_areas)
         if self.verbose:
-            print('Rewards available: ', self.RewardsAvailable)
+            vprint('Rewards available: ', self.RewardsAvailable)
 
         # Apply keys to branches
         for branch in self.branches:
@@ -3589,11 +3590,11 @@ class ruination_map():
                 result_map[1].append([d1, d2])
 
         if self.verbose:
-            print(f'Isolated maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
+            vprint(f'Isolated maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
             for d1, d2 in result_map[0]:
-                print(f'\tdoor: {d1} <-> {d2}')
+                vprint(f'\tdoor: {d1} <-> {d2}')
             for d1, d2 in result_map[1]:
-                print(f'\ttrap: {d1} -> {d2}')
+                vprint(f'\ttrap: {d1} -> {d2}')
 
         return result_map
 
@@ -3649,7 +3650,7 @@ class ruination_map():
                         total_esper_slots += 1
 
         if self.verbose:
-            print(f'Pre-plan: Planned areas have {total_checks} checks, '
+            vprint(f'Pre-plan: Planned areas have {total_checks} checks, '
                   f'{total_character_slots} character slots, {total_esper_slots} esper slots')
 
         # Check if we have enough esper slots after accounting for character slots
@@ -3661,7 +3662,7 @@ class ruination_map():
             new_areas = CHARACTER_AREAS.get(new_char, [])
 
             if self.verbose:
-                print(f'Pre-plan: Adding {new_char} to get more esper slots (areas: {new_areas})')
+                vprint(f'Pre-plan: Adding {new_char} to get more esper slots (areas: {new_areas})')
 
             # Count new slots from this character's areas
             for area_name in new_areas:
@@ -3747,7 +3748,7 @@ class ruination_map():
                     if partner in self.AreasUsed.keys():
                         branch_index = self.AreasUsed[partner]
                         if self.verbose:
-                            print('Forced same branch:', a, partner, branch_index)
+                            vprint('Forced same branch:', a, partner, branch_index)
                         return branch_index
                 return False
             return False
@@ -3774,7 +3775,7 @@ class ruination_map():
                             continue  # Can't assign to this branch
                         if area_analysis[area]['has_pido']:
                             if self.verbose:
-                                print(f'\tPriority: Assigning {area} to stuck branch {branch_id} (has PIDO rooms)')
+                                vprint(f'\tPriority: Assigning {area} to stuck branch {branch_id} (has PIDO rooms)')
                             branch_areas[branch_id].add(area)
                             self.AreasUsed[area] = branch_id
                             remaining_areas.remove(area)
@@ -3787,7 +3788,7 @@ class ruination_map():
                             continue  # Can't assign to this branch
                         if area_analysis[area]['has_hub']:
                             if self.verbose:
-                                print(f'\tPriority: Assigning {area} to stuck branch {branch_id} (has hub rooms)')
+                                vprint(f'\tPriority: Assigning {area} to stuck branch {branch_id} (has hub rooms)')
                             branch_areas[branch_id].add(area)
                             self.AreasUsed[area] = branch_id
                             remaining_areas.remove(area)
@@ -3820,7 +3821,7 @@ class ruination_map():
                 this_index = _check_forced_same_branch(area)
                 if this_index is False:
                     if self.verbose:
-                        print('\t\t# rooms on each branch: ', num_rooms)
+                        vprint('\t\t# rooms on each branch: ', num_rooms)
                     this_index = num_rooms.index(min(num_rooms))
                 branch_areas[this_index].add(area)
                 self.AreasUsed[area] = this_index
@@ -3837,9 +3838,9 @@ class ruination_map():
 
 
         if self.verbose:
-            print('Distributed areas:')
+            vprint('Distributed areas:')
             for i, b in enumerate(branch_areas):
-                print('\t', i, ': ', b)
+                vprint('\t', i, ': ', b)
 
         # Expand to list of rooms to add to each branch
         branch_rooms = [set(), set(), set()]
@@ -3873,9 +3874,9 @@ class ruination_map():
                             self.RewardsAvailable[1] += 1
 
         if self.verbose:
-            print('Checks available:')
+            vprint('Checks available:')
             for i, b in enumerate(self.branch_checks):
-                print('\t', i, ': ', b)
+                vprint('\t', i, ': ', b)
 
         # Add rooms to the branches (skip rooms that already exist in ANY branch)
         # Use all_rooms_added to include rooms that may have been merged into compound rooms
@@ -3905,7 +3906,7 @@ class ruination_map():
                             room = branch.rooms.get_room(room_id)
                             if room and _room_has_pido_potential(room):
                                 if self.verbose:
-                                    print(f'\tFound PIDO room {room_id} for stuck branch {i}')
+                                    vprint(f'\tFound PIDO room {room_id} for stuck branch {i}')
                                 should_unstick = True
                                 break
                     elif stuck_reason == StuckReason.NO_HUB:
@@ -3914,7 +3915,7 @@ class ruination_map():
                             room = branch.rooms.get_room(room_id)
                             if room and _room_has_hub_potential(room):
                                 if self.verbose:
-                                    print(f'\tFound hub room {room_id} for stuck branch {i}')
+                                    vprint(f'\tFound hub room {room_id} for stuck branch {i}')
                                 should_unstick = True
                                 break
                     else:
@@ -3924,7 +3925,7 @@ class ruination_map():
 
                     if should_unstick:
                         if self.verbose:
-                            print(f'\tUnsticking branch {i} - received helpful areas (was stuck: {stuck_reason})')
+                            vprint(f'\tUnsticking branch {i} - received helpful areas (was stuck: {stuck_reason})')
                         self.stuck_branches.pop(i, None)
 
     def apply_key(self, key):
@@ -3952,7 +3953,7 @@ class ruination_map():
                                     if reward_slot.possible_types & RewardType.ESPER:
                                         self.RewardsAvailable[1] += 1
                                     if self.verbose:
-                                        print(f'\tUnlocked reward {reward_name} added to branch {branch_id} checks')
+                                        vprint(f'\tUnlocked reward {reward_name} added to branch {branch_id} checks')
                                 break
 
     def get_non_veldt_gated_shops(self, characters):
@@ -3976,7 +3977,7 @@ class ruination_map():
         all_game_characters = set(self.PARTY) | set(self.planned_characters)
         if 'GAU' not in all_game_characters:
             if self.verbose:
-                print('Gau not in game characters, all accessible shops valid for dried meat')
+                vprint('Gau not in game characters, all accessible shops valid for dried meat')
             return self.accessible_shops[:]
 
         # Find which character was assigned to the Veldt reward
@@ -3990,13 +3991,13 @@ class ruination_map():
                     veldt_char_id = reward_slot.id
                     veldt_char_name = characters.DEFAULT_NAME[veldt_char_id]
                     if self.verbose:
-                        print(f'Veldt character: {veldt_char_name} (ID: {veldt_char_id})')
+                        vprint(f'Veldt character: {veldt_char_name} (ID: {veldt_char_id})')
                     break
 
         # If no character at Veldt (or Veldt not in map), all accessible shops are valid
         if veldt_char_id is None:
             if self.verbose:
-                print('No character at Veldt, all accessible shops valid for dried meat')
+                vprint('No character at Veldt, all accessible shops valid for dried meat')
             return self.accessible_shops[:]
 
         # Find all characters that depend on the Veldt character
@@ -4006,7 +4007,7 @@ class ruination_map():
             if veldt_char_id in characters.character_paths[char_id]:
                 veldt_gated_chars.add(char_id)
                 if self.verbose:
-                    print(f'  {characters.DEFAULT_NAME[char_id]} is gated by Veldt character')
+                    vprint(f'  {characters.DEFAULT_NAME[char_id]} is gated by Veldt character')
 
         # Collect areas unlocked by Veldt-gated characters
         veldt_gated_areas = set()
@@ -4016,7 +4017,7 @@ class ruination_map():
                 veldt_gated_areas.update(CHARACTER_AREAS[char_name])
 
         if self.verbose and veldt_gated_areas:
-            print(f'Veldt-gated areas: {veldt_gated_areas}')
+            vprint(f'Veldt-gated areas: {veldt_gated_areas}')
 
         # Collect shop IDs in Veldt-gated areas
         veldt_gated_shops = set()
@@ -4029,9 +4030,9 @@ class ruination_map():
                           if shop_id not in veldt_gated_shops]
 
         if self.verbose:
-            print(f'Accessible shops: {len(self.accessible_shops)}')
-            print(f'Veldt-gated shops: {list(veldt_gated_shops)}')
-            print(f'Non-Veldt-gated shops: {len(non_veldt_shops)} - {non_veldt_shops}')
+            vprint(f'Accessible shops: {len(self.accessible_shops)}')
+            vprint(f'Veldt-gated shops: {list(veldt_gated_shops)}')
+            vprint(f'Non-Veldt-gated shops: {len(non_veldt_shops)} - {non_veldt_shops}')
 
         # Warn if no non-Veldt-gated shops exist when Gau is in the game
         if not non_veldt_shops and 'GAU' in all_game_characters:
@@ -4156,7 +4157,7 @@ class ruination_map():
                 forced_connections.pop(fc)
 
         if self.verbose:
-            print('Generating map with characters...')
+            vprint('Generating map with characters...')
 
         ### This approach fails if a branch has only dead ends on it.  For example: a branch could initially get just
         # 'Gau Father House', 'Floating Continent', both of which are dead ends.
@@ -4171,7 +4172,7 @@ class ruination_map():
             # Pick a branch that is not all dead ends.  Requires at least one true hub room
             branch_is_viable = [b.has_a_hub() for b in self.branches]
             if self.verbose:
-                print('Branch viability:', branch_is_viable, 'Stuck:', self.stuck_branches)
+                vprint('Branch viability:', branch_is_viable, 'Stuck:', self.stuck_branches)
             viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in self.stuck_branches]
             if len(viable_branches) > 0:
                 branch_id = random.choice(viable_branches)
@@ -4199,7 +4200,7 @@ class ruination_map():
                     # Use the best reserve area (most hub potential)
                     new_area, new_rooms = reserve_areas[0]
                     if self.verbose:
-                        print(f'Adding reserve area {new_area} ({len(new_rooms)} rooms) to unstick branch {branch_id}')
+                        vprint(f'Adding reserve area {new_area} ({len(new_rooms)} rooms) to unstick branch {branch_id}')
 
                     # Mark area as used
                     self.AreasUsed[new_area] = branch_id
@@ -4218,7 +4219,7 @@ class ruination_map():
                     for room in new_rooms:
                         if room in existing_rooms:
                             if self.verbose:
-                                print(f'\tSkipping room {room} - already exists')
+                                vprint(f'\tSkipping room {room} - already exists')
                             continue
                         branch.add_room(room)
 
@@ -4229,7 +4230,7 @@ class ruination_map():
                                 if reward_id not in self.branch_checks[branch_id]:
                                     self.branch_checks[branch_id].append(reward_id)
                                     if self.verbose:
-                                        print(f'\tAdded new check: {reward_id}')
+                                        vprint(f'\tAdded new check: {reward_id}')
 
                     self.stuck_branches.pop(branch_id, None)  # Give it another chance
 
@@ -4238,13 +4239,13 @@ class ruination_map():
                     hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
                     branch.active = hub_id
                     if self.verbose:
-                        print(f'\tReset branch {branch_id} active room to hub: {hub_id}')
+                        vprint(f'\tReset branch {branch_id} active room to hub: {hub_id}')
 
                 elif len(CHARACTER_AREAS.get('EXTRA', [])) > 0:
                     # Fallback to EXTRA areas if no reserve areas left
                     new_area = CHARACTER_AREAS['EXTRA'].pop()
                     if self.verbose:
-                        print('Adding extra area', new_area, 'to unstick branch', branch_id)
+                        vprint('Adding extra area', new_area, 'to unstick branch', branch_id)
                     # Skip rooms that already exist (use all_rooms_added to catch merged rooms)
                     existing_rooms = set()
                     for b in self.branches:
@@ -4252,7 +4253,7 @@ class ruination_map():
                     for room in RUIN_ROOM_SETS[new_area]:
                         if room in existing_rooms:
                             if self.verbose:
-                                print(f'\tSkipping room {room} - already exists')
+                                vprint(f'\tSkipping room {room} - already exists')
                             continue
                         branch.add_room(room)
                     self.stuck_branches.pop(branch_id, None)
@@ -4261,7 +4262,7 @@ class ruination_map():
                     hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
                     branch.active = hub_id
                     if self.verbose:
-                        print(f'\tReset branch {branch_id} active room to hub: {hub_id}')
+                        vprint(f'\tReset branch {branch_id} active room to hub: {hub_id}')
 
                 else:
                     # Collect diagnostic information
@@ -4278,24 +4279,24 @@ class ruination_map():
                 if de not in branch.net.nodes:
                     branch.dead_ends.remove(de)
                     if self.verbose:
-                        print('\ttrimmed dead end ', de)
+                        vprint('\ttrimmed dead end ', de)
 
             if self.verbose:
-                print('Working on branch', branch_id, '(', self.branch_checks[branch_id], ')')
-                print('status: terminus', branch.terminus)
-                print('status: check rooms', branch.check_rooms)
-                print('status: dead ends', branch.dead_ends)
+                vprint('Working on branch', branch_id, '(', self.branch_checks[branch_id], ')')
+                vprint('status: terminus', branch.terminus)
+                vprint('status: check rooms', branch.check_rooms)
+                vprint('status: dead ends', branch.dead_ends)
 
             # Force any forced connections before starting
             if self.verbose:
-                print('Forcing connections...')
+                vprint('Forcing connections...')
             branch.ForceConnections(forced_connections)
 
             # Forcing connections can update the name of the active branch
             if branch.active not in branch.net.nodes:
                 new_active = [n_id for n_id in branch.net.nodes if branch.active in str(n_id)]
                 if self.verbose:
-                    print('updating active room id: ', branch.active, '-->', new_active[0])
+                    vprint('updating active room id: ', branch.active, '-->', new_active[0])
                 branch.active = new_active[0]
 
             # Apply any keys we have found in other branches
@@ -4316,12 +4317,12 @@ class ruination_map():
                     retries += 1
                     if retries >= max_retries_per_branch:
                         if self.verbose:
-                            print(f'Branch {branch_id} is stuck after {retries} retries. Reason: {branch.last_stuck_reason}')
+                            vprint(f'Branch {branch_id} is stuck after {retries} retries. Reason: {branch.last_stuck_reason}')
                         self.stuck_branches[branch_id] = branch.last_stuck_reason
                         break
                     else:
                         if self.verbose:
-                            print(f'Branch {branch_id} failed to extend, retry {retries}/{max_retries_per_branch}')
+                            vprint(f'Branch {branch_id} failed to extend, retry {retries}/{max_retries_per_branch}')
                         continue  # Try again with different random choices
 
                 # Check if a reward was found
@@ -4340,7 +4341,7 @@ class ruination_map():
                                 self.LockedRewards[locker].append(
                                     (branch_id, [r]))  # (branch_id, [check_name, check_data])
                                 if self.verbose:
-                                    print('\t\treward is locked by', locker, '. Saving for later.')
+                                    vprint('\t\treward is locked by', locker, '. Saving for later.')
                             else:
                                 # We have the locking character, so reward is accessed.
                                 accessible_rewards.append(r)
@@ -4352,7 +4353,7 @@ class ruination_map():
 
                 # Actually connect them.  This also moves the active room to the new room.
                 if self.verbose:
-                    print('Making connection: ', this_exit, '-->', this_conn)
+                    vprint('Making connection: ', this_exit, '-->', this_conn)
                 branch.connect(this_exit, this_conn)
 
             ### Process reward & restart loop - only if we actually found a reward
@@ -4360,7 +4361,7 @@ class ruination_map():
                 self.process_rewards(accessible_rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
             elif branch_id in self.stuck_branches:
                 if self.verbose:
-                    print(f'Skipping reward processing for stuck branch {branch_id}')
+                    vprint(f'Skipping reward processing for stuck branch {branch_id}')
 
             # If not in the hub room, return to the hub room?
 
@@ -4406,7 +4407,7 @@ class ruination_map():
                         if shop_id not in self.accessible_shops:
                             self.accessible_shops.append(shop_id)
                 if self.verbose:
-                    print(f'Added ALL area {area_name} to branch {target_branch_id}')
+                    vprint(f'Added ALL area {area_name} to branch {target_branch_id}')
 
         # After satisfying conditions, fully connect map
         reserve_areas = self.get_reserve_area_rooms()
@@ -4527,30 +4528,30 @@ class ruination_map():
             reward_name = reward[0]  # reward_name = slot.event.name()
             slot = reward[1]
             if self.verbose:
-                print('Processing reward: ', reward_name)
+                vprint('Processing reward: ', reward_name)
 
             remaining_chars_needed = len(self.planned_characters) - self.RewardsObtained[0]
             if remaining_chars_needed >= 1 and self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
                 # This must be a character.
                 if self.verbose:
-                    print('\tmust be a character')
+                    vprint('\tmust be a character')
                 # Use characters.get_random_available with exclude parameter
                 slot.id = characters.get_random_available(exclude=exclude_chars)
                 slot.type = RewardType.CHARACTER
                 if self.verbose:
-                    print('\tgot ', characters.get_name(slot.id), '!')
+                    vprint('\tgot ', characters.get_name(slot.id), '!')
             else:
                 # Just choose from among available types
                 if self.verbose:
-                    print('\tchoosing from...', slot.possible_types)
+                    vprint('\tchoosing from...', slot.possible_types)
                 slot.id, slot.type = self._choose_reward_with_exclusion(slot.possible_types, characters, espers, items, exclude_chars)
                 if self.verbose:
                     if slot.type is RewardType.CHARACTER:
-                        print('\tgot', characters.get_name(slot.id), '!')
+                        vprint('\tgot', characters.get_name(slot.id), '!')
                     elif slot.type is RewardType.ESPER:
-                        print('\tgot', espers.get_name(slot.id), '!')
+                        vprint('\tgot', espers.get_name(slot.id), '!')
                     elif slot.type is RewardType.ITEM:
-                        print('\tgot', items.get_name(slot.id), '!')
+                        vprint('\tgot', items.get_name(slot.id), '!')
 
             # Update RewardsObtained
             if slot.type is RewardType.CHARACTER:
@@ -4562,7 +4563,7 @@ class ruination_map():
                 if self.verbose and slot.event.character_gate() is not None:
                     unlocker_name = characters.DEFAULT_NAME[slot.event.character_gate()]
                     new_char_name = characters.DEFAULT_NAME[slot.id]
-                    print(f'\tSet character path: {new_char_name} depends on {unlocker_name}')
+                    vprint(f'\tSet character path: {new_char_name} depends on {unlocker_name}')
 
                 # If a character, add new areas to the map
                 new_char = characters.DEFAULT_NAME[slot.id]
@@ -4572,7 +4573,7 @@ class ruination_map():
                 if self.include_duncan_house and new_char == self.duncan_house_character:
                     new_areas.append('DuncanHouse')
                     if self.verbose:
-                        print(f'\tAdding DuncanHouse to {new_char}\'s areas (Blitz character)')
+                        vprint(f'\tAdding DuncanHouse to {new_char}\'s areas (Blitz character)')
                 self.distribute_areas(new_areas, method='shortest')
 
             elif slot.type is RewardType.ESPER:
@@ -4585,8 +4586,8 @@ class ruination_map():
                 self.RewardsAvailable[1] -= 1
 
             if self.verbose:
-                print('\tUpdated Rewards Obtained: ', self.RewardsObtained[0], 'Characters, ', self.RewardsObtained[1], 'Espers')
-                print('\tUpdated Rewards Available: ', self.RewardsAvailable[0], 'Characters, ',
+                vprint('\tUpdated Rewards Obtained: ', self.RewardsObtained[0], 'Characters, ', self.RewardsObtained[1], 'Espers')
+                vprint('\tUpdated Rewards Available: ', self.RewardsAvailable[0], 'Characters, ',
                       self.RewardsAvailable[1],
                       'Espers')
 
@@ -4609,9 +4610,9 @@ class ruination_map():
             # Update branch_checks
             self.branch_checks[branch_id].remove(reward_name)
             if self.verbose:
-                print('\tUpdated branch checks available:')
+                vprint('\tUpdated branch checks available:')
                 for i, bc in enumerate(self.branch_checks):
-                    print('\t', i, ': ', bc)
+                    vprint('\t', i, ': ', bc)
 
             # If a new character unlocks a reward we already found, apply it.
             if slot.type is RewardType.CHARACTER:
@@ -4623,7 +4624,7 @@ class ruination_map():
                         unlocked_rewards = v[1]
                         for new_reward in unlocked_rewards:
                             if self.verbose:
-                                print('\tUnlocked an available reward!', new_reward[0], 'on branch', v[0])
+                                vprint('\tUnlocked an available reward!', new_reward[0], 'on branch', v[0])
                             # Add to branch_checks so it can be properly removed during processing
                             self.branch_checks[v[0]].append(new_reward[0])
                             # First add this to rewards available (since it was never done)

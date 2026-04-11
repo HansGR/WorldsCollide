@@ -8,6 +8,7 @@ from memory.space import Allocate, Bank, Free, Write, Reserve
 from data.map_exit_extra import exit_data as exit_partner
 from data.map_event import MapEvent
 from event.switchyard import SummonAirship
+from log.verbose import vprint
 
 # NOTES:
 # To be comprehensive, we should treat this the same way we treat exits:
@@ -31,6 +32,10 @@ class Transitions:
         self.transitions = []
         self.rom = rom
         self.args = args
+        # Verbose diagnostics: enabled by -debug (stdout) or -debug-verbose
+        # (temp file appended to spoiler log). Override the class default.
+        if args is not None:
+            self.verbose = bool(getattr(args, "debug", False) or getattr(args, "debug_verbose", False))
         self.include_script_data = include_script_data
         if self.include_script_data is None:
             self.include_script_data = {}
@@ -55,21 +60,21 @@ class Transitions:
 
             if flags.count(True) > 0 and soo_flag:
                 if self.verbose:
-                    print(f'Making new transition: {m[0]} -> {m[1]} (reasons: {", ".join(active_reasons)})')
+                    vprint(f'Making new transition: {m[0]} -> {m[1]} (reasons: {", ".join(active_reasons)})')
                 new_trans = Transition(m[0], m[1], rom, exit_data, event_data)
                 self.transitions.append(new_trans)
             elif self.verbose and flags.count(True) > 0 and not soo_flag:
-                print(f'Skipping transition: {m[0]} -> {m[1]} (shared_oneway, not lowest)')
+                vprint(f'Skipping transition: {m[0]} -> {m[1]} (shared_oneway, not lowest)')
 
         if self.FREE_MEMORY:
             self.free()
 
         if self.verbose:
-            print('Number of Transitions = ', len(self.transitions))
+            vprint('Number of Transitions = ', len(self.transitions))
             hexify = lambda src: [hex(a)[2:] for a in src]
             for t in self.transitions:
-                print(t.exit.id, '-->', hexify(t.exit.exit_code))
-                print(t.entr.id, '-->', hexify(t.entr.entr_code))
+                vprint(t.exit.id, '-->', hexify(t.exit.exit_code))
+                vprint(t.entr.id, '-->', hexify(t.entr.entr_code))
 
         self.mod()  # Modify the code after loading all transitions
 
@@ -214,7 +219,7 @@ class Transitions:
                             print_src += [b]
                         else:
                             print_src += [b.__str__()]
-                    print(t.exit.id, t.entr.id, ' incl. addl. data ', print_src)
+                    vprint(t.exit.id, t.entr.id, ' incl. addl. data ', print_src)
 
             # Check if updated parent map is required
             if t.exit.do_update_parent_map:
@@ -279,12 +284,12 @@ class Transitions:
                 for i in range(len(addr)):
                     if addr[i] is not None:
                         addr[i] = str(hex(addr[i]))
-                print('Writing: ', t.exit.id, ' --> ', t.entr.id,
+                vprint('Writing: ', t.exit.id, ' --> ', t.entr.id,
                       ':\n\toriginal memory addresses: ', str(addr[0]), ', ', str(addr[1]),
                       '\n\tpatches applied: ', t.patches,
                       '\n\tuse jump method: ', t.exit.use_jmp,
                       '\n\tbitstring: ', [hex(s)[2:] for s in bit_src])  # t.src
-                print('\n\tnew memory address: ', hex(new_event_address))
+                vprint('\n\tnew memory address: ', hex(new_event_address))
 
             if t.exit.use_jmp:
                 # Overwrite the Load Map command with a CALL SUBROUTINE & RETURN & NOP (B2 XX XX XX FE FD)
@@ -334,7 +339,7 @@ class Transitions:
                 new_event.event_address = new_event_address - EVENT_CODE_START
                 maps.add_event(t.exit.location[0], new_event)
                 if self.verbose:
-                    print('Added new map event: ', t.exit.location[0], new_event.x, new_event.y, hex(new_event_address))
+                    vprint('Added new map event: ', t.exit.location[0], new_event.x, new_event.y, hex(new_event_address))
 
                 # Note that if this is a door acting as a one-way, the door itself is not actually used.
 
