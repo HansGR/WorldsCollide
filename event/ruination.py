@@ -305,6 +305,7 @@ RUIN_ROOM_SETS = {
 # Maps ruination area names to shop IDs from data/shop_map_names.py
 # Used to track which shops are accessible in ruination mode for dried meat assignment
 AREA_SHOPS = {
+    'Vector': [27, 28],                # WOB shops (weapon/armor, no item)
     'Kohlingen': [65, 66, 67],         # WOR shops (items/weapons/armor)
     'Nikeah': [56, 57, 58, 59],        # WOR shops
     'Thamasa': [72, 73, 74, 75],       # WOR shops

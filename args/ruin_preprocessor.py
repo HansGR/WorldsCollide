@@ -119,10 +119,10 @@ RUIN_DEFAULT_FLAGS = {
 
     # Item flags
     'items': [
-        '-gp', '5000', '-smc', '3', '-sto', '1', '-ieor', '33', '-ieror', '33',
+        '-gp', '6000', '-smc', '3', '-sto', '1', '-ieor', '33', '-ieror', '33',
         '-ir', 'stronger', '-csb', '6', '14', '-mca', '-stra', '-saw',
         '-sisr', '20', '-sprp', '75', '125', '-sdm', '4', '-npi', '-sebr', '-sli',
-        '-snsb', '-snee', '-snil', '-ccsr', '20', '-chrm', '5', '0', '-cms'
+        '-snsb', '-snee', '-snil', '-ccsr', '20', '-chrm', '7', '0', '-cms'
     ],
 
     # Other flags
