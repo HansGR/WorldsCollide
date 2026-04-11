@@ -4,12 +4,15 @@ import instruction.field as field
 from data.map_exit_extra import exit_data, door_to_eventname
 from data.warps import Warps, WarpPoints
 from event.ruination import *
+from log.verbose import vprint
 
 class Events():
     def __init__(self, rom, args, data):
         self.rom = rom
         self.args = args
-        self.verbose = False
+        # Verbose diagnostics: enabled by -debug (stdout) or -debug-verbose
+        # (temp file appended to spoiler log).
+        self.verbose = bool(getattr(args, "debug", False) or getattr(args, "debug_verbose", False))
 
         self.dialogs = data.dialogs
         self.characters = data.characters
@@ -58,7 +61,7 @@ class Events():
                     for loc in location_list:
                         extra_gating[loc] = self.characters.EDGAR
             if self.verbose:
-                print('Added extra gating logic:', extra_gating)
+                vprint('Added extra gating logic:', extra_gating)
 
         if self.args.ruination_mode:
             self.warp_points.mod(self.dialogs, self.maps)
@@ -171,7 +174,7 @@ class Events():
                     if extra_gate[slot.event.name()] not in characters_available:
                         extra_gate_flag = False
                         if self.verbose:
-                            print('Extra gate flag FALSE!: ', slot.event.name(), self.characters.get_available_count())
+                            vprint('Extra gate flag FALSE!: ', slot.event.name(), self.characters.get_available_count())
 
                 gate_char_available = (slot.event.character_gate() in characters_available or slot.event.character_gate() is None) \
                                       and extra_gate_flag
@@ -252,8 +255,11 @@ class Events():
         party = [self.characters.DEFAULT_NAME[c] for c in characters_available]
 
         # Initialize ruination_map object
-        # Use -debug flag to enable verbose output for map generation diagnostics
-        ruin_map = ruination_map(self.args, party, verbose=self.args.debug, characters=self.characters)
+        # Verbose output for map generation diagnostics is enabled by either
+        # -debug (prints to stdout) or -debug-verbose (prints to a temp file
+        # that is appended to the spoiler log at the end of the compile).
+        ruin_verbose = bool(self.args.debug or getattr(self.args, "debug_verbose", False))
+        ruin_map = ruination_map(self.args, party, verbose=ruin_verbose, characters=self.characters)
 
         # Build out the map & distribute characters
         # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)

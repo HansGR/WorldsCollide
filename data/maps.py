@@ -1,4 +1,5 @@
 from data.map_property import MapProperty
+from log.verbose import vprint
 
 import data.npcs as npcs
 from data.npc import NPC
@@ -529,11 +530,11 @@ class Maps():
         # Postprocess the door map
         #import traceback
         if self.doors.verbose:
-            print("=== postprocess_door_map() CALLED ===")
+            vprint("=== postprocess_door_map() CALLED ===")
             #print("Call stack:")
             #traceback.print_stack(limit=5)
-            print(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
-            print(f"exit_data[360][0] BEFORE processing: {exit_data[360][0]}")
+            vprint(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
+            vprint(f"exit_data[360][0] BEFORE processing: {exit_data[360][0]}")
 
         self.door_map = {}
         self.trap_map = {}
@@ -553,14 +554,14 @@ class Maps():
                     is_shared = len(
                         [ses for ses in shared_exits_sets if self.door_map[m[0]] in ses and m[1] in ses]) > 0
                     if self.doors.verbose and not is_shared and not (self.door_map[m[0]] == m[1]):
-                        print('CONFLICTING EXITS: ', m[0], '-->', self.door_map[m[0]], ' vs ', m[1])
+                        vprint('CONFLICTING EXITS: ', m[0], '-->', self.door_map[m[0]], ' vs ', m[1])
                 if m[1] not in self.door_map.keys():
                     self.door_map[m[1]] = m[0]
                 else:
                     is_shared = len(
                         [ses for ses in shared_exits_sets if self.door_map[m[1]] in ses and m[0] in ses]) > 0
                     if self.doors.verbose and not is_shared and not (self.door_map[m[1]] == m[0]):
-                        print('CONFLICTING EXITS: ', m[1], '-->', self.door_map[m[1]], ' vs ', m[0])
+                        vprint('CONFLICTING EXITS: ', m[1], '-->', self.door_map[m[1]], ' vs ', m[0])
 
             # Check reciprocity
             for m in self.door_map.keys():
@@ -576,15 +577,15 @@ class Maps():
             temp = [m for m in self.door_map.keys() if
                     m + 4000 in exit_data.keys() and m + 4000 not in self.door_map.keys()]
             if self.doors.verbose:
-                print(f"Adding WoR exits for doors: {temp}")
+                vprint(f"Adding WoR exits for doors: {temp}")
             for m in temp:
                 # Add logical WoR exits to the map (with vanilla connections)
                 wor_door = m + 4000
                 wor_pair = exit_data[wor_door][0]
                 if self.doors.verbose:
-                    print(f"  WoR door {wor_door}: exit_data[{wor_door}][0] = {wor_pair}")
+                    vprint(f"  WoR door {wor_door}: exit_data[{wor_door}][0] = {wor_pair}")
                     if wor_pair >= 1281 and wor_pair <= 1300:
-                        print(f"  WARNING: WoR pair {wor_pair} is in safe_id range!")
+                        vprint(f"  WARNING: WoR pair {wor_pair} is in safe_id range!")
                 self.door_map[wor_door] = wor_pair
                 # Don't overwrite the mapping for wor_pair if it is mapped
                 if wor_pair not in exit_data.keys():
@@ -601,7 +602,7 @@ class Maps():
             # Check if any safe_id values ended up in door_map
             safe_ids_in_map = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
             if safe_ids_in_map and self.doors.verbose:
-                print(f"WARNING: safe_id values in door_map after WoR exits: {safe_ids_in_map}")
+                vprint(f"WARNING: safe_id values in door_map after WoR exits: {safe_ids_in_map}")
 
             # Patch all used exits
             # Also patch exits that are logical and have different destinations than their WOB companions ...
@@ -635,7 +636,7 @@ class Maps():
             if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
                 safe_id = max([d for d in exit_data.keys() if d < 1500])
                 if self.doors.verbose:
-                    print(f"Applying dungeon_crawl override, starting safe_id: {safe_id}")
+                    vprint(f"Applying dungeon_crawl override, starting safe_id: {safe_id}")
                 for d in dungeon_crawl_exit_destination_override.keys():
                     safe_id += 1  # get a new safe door id
 
@@ -649,7 +650,7 @@ class Maps():
                     self.exits.exit_original_data[safe_id] = this_data
                     # print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
                 if self.doors.verbose:
-                    print(f"exit_data[360][0] AFTER dungeon_crawl override: {exit_data[360][0]}")
+                    vprint(f"exit_data[360][0] AFTER dungeon_crawl override: {exit_data[360][0]}")
 
             # Create a trapdoor map for reference
             for m in self.doors.map[1]:
@@ -660,32 +661,32 @@ class Maps():
         safe_ids_final = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
         safe_ids_as_values = [k for k, v in self.door_map.items() if 1281 <= v <= 1300]
         if self.doors.verbose:
-            print(f"=== postprocess_door_map() FINISHED ===")
-            print(f"door_map has {len(self.door_map)} entries")
+            vprint(f"=== postprocess_door_map() FINISHED ===")
+            vprint(f"door_map has {len(self.door_map)} entries")
         if safe_ids_final and self.doors.verbose:
-            print(f"WARNING: safe_id keys in door_map: {safe_ids_final}")
+            vprint(f"WARNING: safe_id keys in door_map: {safe_ids_final}")
             for sid in safe_ids_final:
-                print(f"  door_map[{sid}] = {self.door_map[sid]}")
+                vprint(f"  door_map[{sid}] = {self.door_map[sid]}")
         if safe_ids_as_values and self.doors.verbose:
-            print(f"WARNING: safe_id VALUES in door_map: {[(k, self.door_map[k]) for k in safe_ids_as_values]}")
+            vprint(f"WARNING: safe_id VALUES in door_map: {[(k, self.door_map[k]) for k in safe_ids_as_values]}")
         if 1291 in self.door_map and self.doors.verbose:
-            print(f"CRITICAL: 1291 is in door_map! door_map[1291] = {self.door_map[1291]}")
+            vprint(f"CRITICAL: 1291 is in door_map! door_map[1291] = {self.door_map[1291]}")
         if 1291 in self.door_map.values() and self.doors.verbose:
             keys_with_1291 = [k for k, v in self.door_map.items() if v == 1291]
-            print(f"CRITICAL: 1291 is a VALUE in door_map! Keys: {keys_with_1291}")
+            vprint(f"CRITICAL: 1291 is a VALUE in door_map! Keys: {keys_with_1291}")
 
         if self.doors.verbose:
-            print('Door connections:')
+            vprint('Door connections:')
             for m in self.doors.map[0]:
                 ma = [a for a in m]
                 ma.sort()
                 # Use door_descr if available, otherwise try exit_data, otherwise show ID
                 desc0 = self.doors.door_descr.get(ma[0], exit_data.get(ma[0], [None, f'ID:{ma[0]}'])[1])
                 desc1 = self.doors.door_descr.get(ma[1], exit_data.get(ma[1], [None, f'ID:{ma[1]}'])[1])
-                print('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + desc0 + '<-->' + desc1 + ')')
-            print('One-way connections:')
+                vprint('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + desc0 + '<-->' + desc1 + ')')
+            vprint('One-way connections:')
             for m in self.doors.map[1]:
-                print('\t', m[0], " -> ", m[1])
+                vprint('\t', m[0], " -> ", m[1])
 
     def doorRandoOverride(self, newmap):
         from data.map_exit_extra import exit_data as ed
@@ -800,7 +801,7 @@ class Maps():
             for e in event_exit_info.keys():
                 if (e in used_events or e in used_exits) and event_exit_info[e][0] is None:
                     if self.doors.verbose:
-                        print('attempting to update event exit info: ', e)
+                        vprint('attempting to update event exit info: ', e)
                     # Update the event addresses
                     #mapid = event_exit_info[e][5][0]
                     #ex = event_exit_info[e][5][1]
@@ -815,7 +816,7 @@ class Maps():
                     ev = self.get_event(mapid, ex, ey)
                     event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
                     if self.doors.verbose:
-                        print('Updated event exit info: ', e, hex(event_exit_info[e][0]))
+                        vprint('Updated event exit info: ', e, hex(event_exit_info[e][0]))
 
             # Connect one-way event exits using the Transitions class
             self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info, args=self.args)
@@ -960,7 +961,7 @@ class Maps():
                     # Pass the script data to exit_event_data_to_include
                     self.exit_event_data_to_include[m] = [info, 1]  # always include before transition
                     if self.doors.verbose:
-                        print('Passed exit door patch for ', str(m), ' --> ', str(map[m]))
+                        vprint('Passed exit door patch for ', str(m), ' --> ', str(map[m]))
                         # print([a.__str__() for a in info[0]])
 
         for m in entrance_door_patch.keys():
@@ -974,7 +975,7 @@ class Maps():
                     # Pass the script data to exit_event_data_to_include
                     self.exit_event_data_to_include[map[m]] = info
                     if self.doors.verbose:
-                        print('Passed entrance door patch for ', str(map[m]), ' --> ', str(m))
+                        vprint('Passed entrance door patch for ', str(map[m]), ' --> ', str(m))
                         # print([a.__str__() for a in info[0]])
 
         # Generate a final list of all exits that need to be connected
@@ -987,7 +988,7 @@ class Maps():
         door_exits = [m for m in all_exits if m < 1500]
         for m in door_exits:
             if self.doors.verbose:
-                print('Connecting: ' + str(m) + ' to ' + str(map[m]))
+                vprint('Connecting: ' + str(m) + ' to ' + str(map[m]))
                 #  + ": " + str(exit_data[m][1]) + ' to ' + str(exit_data[map[m]][1])
 
             # Get exits associated with doors m and m_conn
@@ -1013,7 +1014,7 @@ class Maps():
                 if exitA.dest_map == 0x1ff:
                     exitA.dest_map = self.exits.exit_original_data[map[m]][-1]  #exit_world[exitB_pairID]
                     if self.doors.verbose:
-                        print('Updated destination map for ', m,': 0x1ff --> ', hex(exitA.dest_map) )
+                        vprint('Updated destination map for ', m,': 0x1ff --> ', hex(exitA.dest_map) )
 
             # Write events on the exits to handle required conditions:
             self.create_exit_event(m, map[m])
@@ -1024,7 +1025,7 @@ class Maps():
         for m in transition_exits:
             # We want to accumulate them first, then write them all together to avoid conflicts.
             if self.doors.verbose:
-                print('Connecting: ' + str(m) + ' to ' + str(map[m]))
+                vprint('Connecting: ' + str(m) + ' to ' + str(map[m]))
             transition_map.append([m, map[m]])
         dt = Transitions(transition_map, self.rom, self.exits.exit_original_data, event_exit_info,
                          self.exit_event_data_to_include, args=self.args)  # self.exit_event_addr_to_call
@@ -1081,7 +1082,7 @@ class Maps():
             # Look for an existing event on this exit tile
             try:
                 if self.doors.verbose:
-                    print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y, '(type ', self.exits.exit_type[d], ')')
+                    vprint('looking for event at: ', hex(map_id), this_exit.x, this_exit.y, '(type ', self.exits.exit_type[d], ')')
                 existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
                 # An event already exists.  It will need to be modified.
 
@@ -1089,10 +1090,10 @@ class Maps():
                 src = [field.Call(existing_event.event_address + EVENT_CODE_START), field.Return()]
 
                 if self.doors.verbose:
-                    print('WARNING: found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ',
+                    vprint('WARNING: found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ',
                           str(this_exit.y),
                           '): ')
-                    print('\t(', str(existing_event.x), ', ', str(existing_event.y), '):  ',
+                    vprint('\t(', str(existing_event.x), ', ', str(existing_event.y), '):  ',
                           str(hex(existing_event.event_address)))
 
                 # delete existing event
@@ -1115,8 +1116,8 @@ class Maps():
                     this_address = self.GO_WOR_EVENT_ADDR - EVENT_CODE_START
 
                 if self.doors.verbose:
-                    print('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
-                    print('\tReason: ', require_event_flags)
+                    vprint('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
+                    vprint('\tReason: ', require_event_flags)
 
             else:
                 #  (5) <code required when leaving room>
@@ -1231,7 +1232,7 @@ class Maps():
 
                     src_dummy = update_parent_map_src + src[:-1] + load_destination_src + src[-1:]
                     if self.doors.verbose:
-                        print('source code at switchyard: ', [a.__str__() for a in src_dummy])
+                        vprint('source code at switchyard: ', [a.__str__() for a in src_dummy])
                     AddSwitchyardEvent(d, self, src=src_dummy)
                     # space = Write(Bank.CC, src_dummy, "Door Dummy Event " + str(d))
                     # dummy_address = space.start_address - EVENT_CODE_START
@@ -1261,9 +1262,9 @@ class Maps():
                 this_address = space.start_address - EVENT_CODE_START
 
                 if self.doors.verbose:
-                    print('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
-                    print('\tReason: ', require_event_flags)
-                    print([str(s) for s in src])
+                    vprint('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
+                    vprint('\tReason: ', require_event_flags)
+                    vprint([str(s) for s in src])
 
             # Write the new event on the exit
             if self.exits.exit_type[d] == 'short':
@@ -1352,11 +1353,11 @@ class Maps():
         # Look for an existing event on this exit tile
         try:
             if self.doors.verbose:
-                print('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
+                vprint('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
             existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
             # An event already exists.
             if self.doors.verbose:
-                print('shared map: found an existing event at ', map_id, this_exit.x, this_exit.y,
+                vprint('shared map: found an existing event at ', map_id, this_exit.x, this_exit.y,
                       hex(existing_event.event_address))
 
             # Add Call to existing event code
@@ -1479,8 +1480,8 @@ class Maps():
             space = Write(Bank.CC, wor_src, "WOR door Event " + str(d))
             this_address = space.start_address
             if self.doors.verbose:
-                print('Writing WOR door event:', d, ' @ ', hex(this_address))
-                print('\t', [str(s) for s in wor_src])
+                vprint('Writing WOR door event:', d, ' @ ', hex(this_address))
+                vprint('\t', [str(s) for s in wor_src])
 
         src = [field.BranchIfEventBitSet(event_bit.IN_WOR, this_address)] + src
 
@@ -1489,9 +1490,9 @@ class Maps():
         tile_address = space.start_address - EVENT_CODE_START
 
         if self.doors.verbose:
-            print('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(tile_address))
-            print('\tReason: ', require_event_flags)
-            print([str(s) for s in src])
+            vprint('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(tile_address))
+            vprint('\tReason: ', require_event_flags)
+            vprint([str(s) for s in src])
 
         # Write the new event on the exit
         if self.exits.exit_type[d - 4000] == 'short':
@@ -1564,7 +1565,7 @@ class Maps():
         space = Reserve(0x040000, 0x041A0F, "Original map event pointer data", field.NOP())
 
         if self.doors.verbose:
-            print('Moved Event Trigger data to ' + str(hex(new_bank)) + ': ' + str(
+            vprint('Moved Event Trigger data to ' + str(hex(new_bank)) + ': ' + str(
                 hex(self.EVENT_PTR_START)) + ', ' + str(hex(self.events.DATA_START_ADDR)))
             # for e in range(14):
             #    print('\t' + str(e) + ' (' + str(self.events.events[e].x) + ', ' + str(self.events.events[e].y) + '): ' + str(hex(self.events.events[e].event_address)))
