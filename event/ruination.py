@@ -3501,8 +3501,7 @@ class ruination_map():
             forced_same_branch['Doma'] = forced_same_branch.get('Doma', set()) | {'DreamMaze'}
             forced_same_branch['DreamMaze'] = {'Doma'}
             # Randomize internal maze connections
-            if False:
-                self.isolated_maze_map = self._randomize_isolated_maze()
+            self.isolated_maze_map = self._randomize_isolated_maze()
 
         else:
             # Default: force Doma and DreamMaze to same branch (preserves current behavior)
@@ -3518,10 +3517,6 @@ class ruination_map():
         """
         maze_rooms = [421, 422, 423, 424, 425, 426, 427, 428, 429]
 
-        # Create a standalone network for the maze
-        maze_net = Network(maze_rooms)
-        maze_net.protected = set()
-
         # Pick a random entry pit. Exclude 6847 and 6852 (key rooms 423/427) and 6844 (west section)
         # since the player must always be able to revisit the starting room.
         entry_pits = [6845, 6846, 6854, 3069, 6849, 6843, 6848, 6853]
@@ -3530,26 +3525,36 @@ class ruination_map():
         # Update the composite room's pit to match the chosen entry
         room_data['ruin-stooge-maze'][2] = [entry_pit]
 
-        # Initial connection: connect 429's locked trap (2070) back to the entry pit.
-        # This closes the loop so the Network becomes fully connected internally.
-        # The branch mapping algorithm will handle where 2070 actually exits to,
-        # so we filter this connection from the result.
-        maze_net.connect(2070, entry_pit)
-
         # Set starting room
         start_room_id = [m for m in maze_rooms if entry_pit in room_data[m][2]][0]
-        maze_net.active = start_room_id
 
         # Force a revisitable starting room using key logic:
         # (a) add new keys to starting room, unlocked by stooge keys
         if len(room_data[start_room_id]) < 5:
             # this is an unimproved room.  Reconstruct [[doors],[traps],[pits],[keys],{locks},world]
-            room_data[start_room_id] = room_data[start_room_id][:3] + [[], {'cd1': ['cd1_r'], 'cd2': ['cd2_r']}] + [room_data[start_room_id][-1]]
+            room_data[start_room_id] = room_data[start_room_id][:3] + [[], {'cd1': ['cd1_r'], 'cd2': ['cd2_r'], 'cd3': ['cd3_r']}] + [room_data[start_room_id][-1]]
         else:
             room_data[start_room_id][4]['cd1'] = ['cd1_r']
             room_data[start_room_id][4]['cd2'] = ['cd2_r']
+            room_data[start_room_id][4]['cd3'] = ['cd3_r']
         # (b) change ending lock to use chain keys
-        room_data[429][4] = {('cd1_r', 'cd2_r'): [2070]}
+        room_data[429][3] = ['cd3']   # must be able to return to starting room from here to unlock boss
+        room_data[429][4] = {('cd1_r', 'cd2_r', 'cd3_r'): [2070]}
+
+        vprint(f'Dreamscape maze starting room state:')
+        for m in maze_rooms:
+            vprint(f'\t{m}: {room_data[m]}')
+
+        # Create a standalone network for the maze
+        maze_net = Network(maze_rooms)
+        maze_net.protected = set()
+
+        # Initial connection: connect 429's locked trap (2070) back to the entry pit.
+        # This closes the loop so the Network becomes fully connected internally.
+        # The branch mapping algorithm will handle where 2070 actually exits to,
+        # so we filter this connection from the result.
+        maze_net.connect(2070, entry_pit)
+        maze_net.active = start_room_id
 
         # Fully connect network
         maze_net.verbose = True
