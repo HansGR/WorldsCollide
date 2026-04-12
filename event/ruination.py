@@ -303,6 +303,28 @@ RUIN_ROOM_SETS = {
     'ImperialCastle': [331],  # Extra hub room if needed
 }
 
+# Build area-level reward locking:
+# For each character-owned area, map rewards to the set of characters that provide access.
+# A reward is area-locked if none of its area-owning characters are in the keychain.
+AREA_OWNERS = {}  # area_name -> set of character names
+for _char_name, _char_areas in CHARACTER_AREAS.items():
+    if _char_name in ('ALL', 'EXTRA'):
+        continue
+    for _area in _char_areas:
+        if _area not in AREA_OWNERS:
+            AREA_OWNERS[_area] = set()
+        AREA_OWNERS[_area].add(_char_name)
+
+REWARD_AREA_OWNERS = {}  # reward_name -> frozenset of character names (any one unlocks)
+for _room_id, _room_rewards in ROOM_REWARD.items():
+    _owning_chars = set()
+    for _area_name, _area_rooms in RUIN_ROOM_SETS.items():
+        if _room_id in _area_rooms and _area_name in AREA_OWNERS:
+            _owning_chars.update(AREA_OWNERS[_area_name])
+    if _owning_chars:
+        for _reward_name in _room_rewards.keys():
+            REWARD_AREA_OWNERS[_reward_name] = frozenset(_owning_chars)
+
 # Maps ruination area names to shop IDs from data/shop_map_names.py
 # Used to track which shops are accessible in ruination mode for dried meat assignment
 AREA_SHOPS = {
@@ -3858,12 +3880,7 @@ class ruination_map():
             which_branch = next((i for i, branch in enumerate(branch_rooms) if room in branch), -1)
             if which_branch >= 0:
                 for reward_id in ROOM_REWARD[room].keys():
-                    process_me = True
-                    # Check if this reward is locked by a character, and if we have that character.
-                    if reward_id in REWARDS_LOCKED_BY_CHARACTER.keys():
-                        lock_char = REWARDS_LOCKED_BY_CHARACTER[reward_id]
-                        if lock_char not in self.keychain:
-                            process_me = False
+                    process_me = self._is_reward_accessible(reward_id)
                     if process_me:
                         self.branch_checks[which_branch].append(reward_id)
                         reward = ROOM_REWARD[room][reward_id]
@@ -3944,7 +3961,7 @@ class ruination_map():
                         # Find which branch has this room
                         for branch_id, branch in enumerate(self.branches):
                             if room_id in branch.net.nodes or room_id in branch.original_room_ids:
-                                if reward_name not in self.branch_checks[branch_id]:
+                                if reward_name not in self.branch_checks[branch_id] and self._is_reward_accessible(reward_name):
                                     self.branch_checks[branch_id].append(reward_name)
                                     # Also update RewardsAvailable
                                     reward_slot = ROOM_REWARD[room_id][reward_name]
@@ -3955,6 +3972,40 @@ class ruination_map():
                                     if self.verbose:
                                         vprint(f'\tUnlocked reward {reward_name} added to branch {branch_id} checks')
                                 break
+
+        # If this key is a character that owns areas, check for area-locked rewards now accessible
+        if key in ALL_CHARACTERS:
+            for room_id, rewards in ROOM_REWARD.items():
+                for reward_name in rewards.keys():
+                    if reward_name in REWARD_AREA_OWNERS and key in REWARD_AREA_OWNERS[reward_name]:
+                        if self._is_reward_accessible(reward_name):
+                            for branch_id, branch in enumerate(self.branches):
+                                if room_id in branch.all_rooms_added:
+                                    if reward_name not in self.branch_checks[branch_id]:
+                                        self.branch_checks[branch_id].append(reward_name)
+                                        reward_slot = ROOM_REWARD[room_id][reward_name]
+                                        if reward_slot.possible_types & RewardType.CHARACTER:
+                                            self.RewardsAvailable[0] += 1
+                                        if reward_slot.possible_types & RewardType.ESPER:
+                                            self.RewardsAvailable[1] += 1
+                                        if self.verbose:
+                                            vprint(f'\tArea-unlocked reward {reward_name} added to branch {branch_id} checks')
+                                    break
+
+    def _is_reward_accessible(self, reward_name):
+        """Check if a reward is currently accessible (not locked).
+
+        A reward is inaccessible if:
+        1. It has an in-game character lock and the locking character is not in keychain, OR
+        2. It is in a character-owned area and none of the area owners are in keychain.
+        """
+        if reward_name in REWARDS_LOCKED_BY_CHARACTER:
+            if REWARDS_LOCKED_BY_CHARACTER[reward_name] not in self.keychain:
+                return False
+        if reward_name in REWARD_AREA_OWNERS:
+            if not any(c in self.keychain for c in REWARD_AREA_OWNERS[reward_name]):
+                return False
+        return True
 
     def get_non_veldt_gated_shops(self, characters):
         """Identify shops that are NOT gated behind the Veldt reward.
@@ -4223,14 +4274,23 @@ class ruination_map():
                             continue
                         branch.add_room(room)
 
-                    # Check if this area has any reward rooms
+                    # Check if this area has any reward rooms (only add accessible ones)
                     for room in new_rooms:
                         if room in ROOM_REWARD:
                             for reward_id in ROOM_REWARD[room].keys():
                                 if reward_id not in self.branch_checks[branch_id]:
-                                    self.branch_checks[branch_id].append(reward_id)
-                                    if self.verbose:
-                                        vprint(f'\tAdded new check: {reward_id}')
+                                    if self._is_reward_accessible(reward_id):
+                                        self.branch_checks[branch_id].append(reward_id)
+                                        reward = ROOM_REWARD[room][reward_id]
+                                        if reward.possible_types & RewardType.CHARACTER:
+                                            self.RewardsAvailable[0] += 1
+                                        if reward.possible_types & RewardType.ESPER:
+                                            self.RewardsAvailable[1] += 1
+                                        if self.verbose:
+                                            vprint(f'\tAdded new check: {reward_id}')
+                                    else:
+                                        if self.verbose:
+                                            vprint(f'\tReward {reward_id} is area-locked, skipping')
 
                     self.stuck_branches.pop(branch_id, None)  # Give it another chance
 
@@ -4332,24 +4392,34 @@ class ruination_map():
                     # Check to see if the reward is locked; if so, bank it
                     accessible_rewards = []
                     for r in rewards:
-                        if r[0] in REWARDS_LOCKED_BY_CHARACTER.keys():
-                            locker = REWARDS_LOCKED_BY_CHARACTER[r[0]]
+                        reward_name = r[0]
+                        # Check in-game character lock
+                        if reward_name in REWARDS_LOCKED_BY_CHARACTER:
+                            locker = REWARDS_LOCKED_BY_CHARACTER[reward_name]
                             if locker not in self.keychain:
-                                # Bank this reward for later & keep going
-                                if locker not in self.LockedRewards.keys():
+                                if locker not in self.LockedRewards:
                                     self.LockedRewards[locker] = []
                                 self.LockedRewards[locker].append(
-                                    (branch_id, [r]))  # (branch_id, [check_name, check_data])
+                                    (branch_id, [r]))
                                 if self.verbose:
-                                    vprint('\t\treward is locked by', locker, '. Saving for later.')
-                            else:
-                                # We have the locking character, so reward is accessed.
-                                accessible_rewards.append(r)
-                                found_reward = True
-                        else:
-                            # There is no potential character lock, so reward is accessed.
-                            accessible_rewards.append(r)
-                            found_reward = True
+                                    vprint('\t\treward is locked by', locker, '(in-game). Saving for later.')
+                                continue
+                        # Check area-level character lock
+                        if reward_name in REWARD_AREA_OWNERS:
+                            area_owners = REWARD_AREA_OWNERS[reward_name]
+                            if not any(c in self.keychain for c in area_owners):
+                                # Bank under one of the unrecruited area owners
+                                locker = sorted(area_owners - self.keychain)[0]
+                                if locker not in self.LockedRewards:
+                                    self.LockedRewards[locker] = []
+                                self.LockedRewards[locker].append(
+                                    (branch_id, [r]))
+                                if self.verbose:
+                                    vprint(f'\t\treward is area-locked by {area_owners}. Banking under {locker}.')
+                                continue
+                        # Not locked - reward is accessible
+                        accessible_rewards.append(r)
+                        found_reward = True
 
                 # Actually connect them.  This also moves the active room to the new room.
                 if self.verbose:
@@ -4531,8 +4601,8 @@ class ruination_map():
                 vprint('Processing reward: ', reward_name)
 
             remaining_chars_needed = len(self.planned_characters) - self.RewardsObtained[0]
-            if remaining_chars_needed >= 1 and self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
-                # This must be a character.
+            if remaining_chars_needed >= 1 and self.RewardsAvailable[0] <= remaining_chars_needed and (slot.possible_types & RewardType.CHARACTER):
+                # Can't afford to waste any more character-capable slots on non-characters.
                 if self.verbose:
                     vprint('\tmust be a character')
                 # Use characters.get_random_available with exclude parameter
@@ -4617,8 +4687,7 @@ class ruination_map():
             # If a new character unlocks a reward we already found, apply it.
             if slot.type is RewardType.CHARACTER:
                 this_char = characters.DEFAULT_NAME[slot.id]
-                if this_char in self.LockedRewards.keys():
-                    # self.LockedRewards[locker].append((branch_id, [r]))   # (branch_id, [check_name, check_data])
+                if this_char in self.LockedRewards:
                     value = self.LockedRewards.pop(this_char)
                     for v in value:
                         unlocked_rewards = v[1]
@@ -4627,13 +4696,44 @@ class ruination_map():
                                 vprint('\tUnlocked an available reward!', new_reward[0], 'on branch', v[0])
                             # Add to branch_checks so it can be properly removed during processing
                             self.branch_checks[v[0]].append(new_reward[0])
-                            # First add this to rewards available (since it was never done)
+                            # Add to rewards available (was never counted when banked)
                             if new_reward[1].possible_types & RewardType.CHARACTER:
-                                self.RewardsAvailable[0] -= 1
+                                self.RewardsAvailable[0] += 1
                             if new_reward[1].possible_types & RewardType.ESPER:
-                                self.RewardsAvailable[1] -= 1
+                                self.RewardsAvailable[1] += 1
                         # Then process them all
                         self.process_rewards(unlocked_rewards, characters, espers, items, v[0], exclude_chars)
+
+                # Also scan all remaining LockedRewards for area-locked rewards now
+                # accessible (handles shared-area cases like Thamasa owned by SHADOW+STRAGO)
+                for other_char in list(self.LockedRewards.keys()):
+                    still_locked = []
+                    to_unlock = []
+                    for entry in self.LockedRewards[other_char]:
+                        entry_branch_id, entry_rewards = entry
+                        all_accessible = all(self._is_reward_accessible(r[0]) for r in entry_rewards)
+                        if all_accessible:
+                            to_unlock.append(entry)
+                        else:
+                            still_locked.append(entry)
+
+                    if to_unlock:
+                        if still_locked:
+                            self.LockedRewards[other_char] = still_locked
+                        else:
+                            del self.LockedRewards[other_char]
+                        for entry in to_unlock:
+                            entry_branch_id, entry_rewards = entry
+                            for r in entry_rewards:
+                                if r[0] not in self.branch_checks[entry_branch_id]:
+                                    self.branch_checks[entry_branch_id].append(r[0])
+                                if r[1].possible_types & RewardType.CHARACTER:
+                                    self.RewardsAvailable[0] += 1
+                                if r[1].possible_types & RewardType.ESPER:
+                                    self.RewardsAvailable[1] += 1
+                            if self.verbose:
+                                vprint(f'\tArea-unlock scan: processing {[r[0] for r in entry_rewards]} on branch {entry_branch_id}')
+                            self.process_rewards(entry_rewards, characters, espers, items, entry_branch_id, exclude_chars)
 
     def generate_spoiler_log(self, characters, espers, items):
         """Generate a ruination-specific spoiler log for the -sl flag.
