@@ -4601,8 +4601,8 @@ class ruination_map():
                 vprint('Processing reward: ', reward_name)
 
             remaining_chars_needed = len(self.planned_characters) - self.RewardsObtained[0]
-            if remaining_chars_needed >= 1 and self.RewardsAvailable[0] <= remaining_chars_needed and (slot.possible_types & RewardType.CHARACTER):
-                # Can't afford to waste any more character-capable slots on non-characters.
+            if remaining_chars_needed >= 1 and self.RewardsAvailable[0] == 1 and (slot.possible_types & RewardType.CHARACTER):
+                # This is the last character-capable slot — must be a character.
                 if self.verbose:
                     vprint('\tmust be a character')
                 # Use characters.get_random_available with exclude parameter
