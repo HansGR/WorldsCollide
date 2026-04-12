@@ -159,10 +159,13 @@ class Network:
                     locked = room.locks.pop(required_keys)  # this also removes the item from room.locks
                     for item in locked:
                         if isinstance(item, str):
-                            # This is a key.  Immediately apply it.
+                            # This is a key.  Move it to the room's keys (the room may not have been visited yet)
+                            # If the room is active, it will be caught next time we traverse it.
                             if self.verbose:
-                                vprint('\t\t\tApplying a new key:', item)
-                            self.apply_key(item)
+                                #vprint('\t\t\tApplying a new key:', item)
+                                vprint('\t\t\tadding a key:', item)
+                            #self.apply_key(item)
+                            room.add_keys([item])
                         elif isinstance(item, dict):
                             # This is another locked item.  Should not happen with tuple keys
                             if self.verbose:

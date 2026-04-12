@@ -306,24 +306,53 @@ RUIN_ROOM_SETS = {
 # Build area-level reward locking:
 # For each character-owned area, map rewards to the set of characters that provide access.
 # A reward is area-locked if none of its area-owning characters are in the keychain.
-AREA_OWNERS = {}  # area_name -> set of character names
-for _char_name, _char_areas in CHARACTER_AREAS.items():
-    if _char_name in ('ALL', 'EXTRA'):
-        continue
-    for _area in _char_areas:
-        if _area not in AREA_OWNERS:
-            AREA_OWNERS[_area] = set()
-        AREA_OWNERS[_area].add(_char_name)
+# Could hypothetically read this data from Event.character_gate
+REWARD_OWNERS = {
+    "Whelk": frozenset(['TERRA']),
+    "Lete River": frozenset(['TERRA']),
+    "Zozo": frozenset(['TERRA']),
+    "Mobliz WOR": frozenset(['TERRA']),
+    "Narshe WOR": frozenset(['LOCKE']),
+    "South Figaro Cave": frozenset(['LOCKE']),
+    "Phoenix Cave": frozenset(['LOCKE']),
+    "Figaro Castle WOB": frozenset(['EDGAR']),
+    "Figaro Castle WOR": frozenset(['EDGAR']),
+    "Ancient Castle": frozenset(['EDGAR']),
+    "Imperial Camp": frozenset(['SABIN']),
+    "Baren Falls": frozenset(['SABIN']),
+    "Phantom Train": frozenset(['SABIN']),
+    "Mt. Kolts": frozenset(['SABIN']),
+    "Collapsing House": frozenset(['SABIN']),
+    "South Figaro": frozenset(['CELES']),
+    "Opera House": frozenset(['CELES']),
+    "Magitek Factory_1": frozenset(['CELES']),
+    "Magitek Factory_2": frozenset(['CELES']),
+    "Magitek Factory_3": frozenset(['CELES']),
+    "Doma WOB": frozenset(['CYAN']),
+    "Doma WOR_2": frozenset(['CYAN']),
+    "Doma WOR_1": frozenset(['CYAN']),
+    "Doma WOR_3": frozenset(['CYAN']),
+    "Mt. Zozo": frozenset(['CYAN']),
+    "Gau Father House": frozenset(['SHADOW']),
+    "Floating Continent_1": frozenset(['SHADOW']),
+    "Floating Continent_2": frozenset(['SHADOW']),
+    "Floating Continent_3": frozenset(['SHADOW']),
+    "Veldt Cave WOR": frozenset(['SHADOW']),
+    "Veldt": frozenset(['GAU']),
+    "Serpent Trench": frozenset(['GAU']),
+    "Kohlingen": frozenset(['SETZER']),
+    "Daryl's Tomb": frozenset(['SETZER']),
+    "Burning House": frozenset(['STRAGO']),
+    "Fanatic's Tower": frozenset(['STRAGO']),
+    "Ebot's Rock": frozenset(['STRAGO']),
+    "Esper Mountain": frozenset(['RELM']),
+    "Owzer Mansion": frozenset(['RELM']),
+    "Lone Wolf": frozenset(['MOG']),
+    "Narshe Moogle Defense": frozenset(['MOG']),
+    "Umaro's Cave": frozenset(['UMARO']),
+    "Zone Eater": frozenset(['GOGO'])
+}  # reward_name -> frozenset of character name
 
-REWARD_AREA_OWNERS = {}  # reward_name -> frozenset of character names (any one unlocks)
-for _room_id, _room_rewards in ROOM_REWARD.items():
-    _owning_chars = set()
-    for _area_name, _area_rooms in RUIN_ROOM_SETS.items():
-        if _room_id in _area_rooms and _area_name in AREA_OWNERS:
-            _owning_chars.update(AREA_OWNERS[_area_name])
-    if _owning_chars:
-        for _reward_name in _room_rewards.keys():
-            REWARD_AREA_OWNERS[_reward_name] = frozenset(_owning_chars)
 
 # Maps ruination area names to shop IDs from data/shop_map_names.py
 # Used to track which shops are accessible in ruination mode for dried meat assignment
@@ -3472,7 +3501,8 @@ class ruination_map():
             forced_same_branch['Doma'] = forced_same_branch.get('Doma', set()) | {'DreamMaze'}
             forced_same_branch['DreamMaze'] = {'Doma'}
             # Randomize internal maze connections
-            self.isolated_maze_map = self._randomize_isolated_maze()
+            if False:
+                self.isolated_maze_map = self._randomize_isolated_maze()
 
         else:
             # Default: force Doma and DreamMaze to same branch (preserves current behavior)
@@ -3492,9 +3522,9 @@ class ruination_map():
         maze_net = Network(maze_rooms)
         maze_net.protected = set()
 
-        # Pick a random entry pit. Exclude 6847 and 6852 (key rooms 423/427)
-        # since the player must always be able to revisit those rooms.
-        entry_pits = [6845, 6846, 6844, 6854, 3069, 6849, 6843, 6848, 6853]
+        # Pick a random entry pit. Exclude 6847 and 6852 (key rooms 423/427) and 6844 (west section)
+        # since the player must always be able to revisit the starting room.
+        entry_pits = [6845, 6846, 6854, 3069, 6849, 6843, 6848, 6853]
         entry_pit = random.choice(entry_pits)
 
         # Update the composite room's pit to match the chosen entry
@@ -3506,101 +3536,24 @@ class ruination_map():
         # so we filter this connection from the result.
         maze_net.connect(2070, entry_pit)
 
-        # Now run a simple randomization loop: connect exits to entrances
-        # until no more connections can be made
-        max_iterations = 200
-        for _ in range(max_iterations):
-            active_room = maze_net.rooms.get_room(maze_net.active)
-            if active_room is None:
-                break
+        # Set starting room
+        start_room_id = [m for m in maze_rooms if entry_pit in room_data[m][2]][0]
+        maze_net.active = start_room_id
 
-            # Collect available exits from the active room
-            exits_doors = list(active_room.doors)
-            exits_traps = list(active_room.traps)
+        # Force a revisitable starting room using key logic:
+        # (a) add new keys to starting room, unlocked by stooge keys
+        if len(room_data[start_room_id]) < 5:
+            # this is an unimproved room.  Reconstruct [[doors],[traps],[pits],[keys],{locks},world]
+            room_data[start_room_id] = room_data[start_room_id][:3] + [[], {'cd1': ['cd1_r'], 'cd2': ['cd2_r']}] + [room_data[start_room_id][-1]]
+        else:
+            room_data[start_room_id][4]['cd1'] = ['cd1_r']
+            room_data[start_room_id][4]['cd2'] = ['cd2_r']
+        # (b) change ending lock to use chain keys
+        room_data[429][4] = {('cd1_r', 'cd2_r'): [2070]}
 
-            connected = False
-
-            # Try traps first (prefer extending deeper into maze)
-            random.shuffle(exits_traps)
-            for trap_id in exits_traps:
-                # Find any room with an available pit
-                target_rooms = [r_id for r_id in maze_net.net.nodes
-                                if r_id != maze_net.active]
-                random.shuffle(target_rooms)
-                for target_id in target_rooms:
-                    target = maze_net.rooms.get_room(target_id)
-                    if target and len(target.pits) > 0:
-                        pit_id = random.choice(list(target.pits))
-                        maze_net.connect(trap_id, pit_id)
-                        connected = True
-                        break
-                if connected:
-                    break
-
-            if connected:
-                continue
-
-            # Try doors
-            random.shuffle(exits_doors)
-            for door_id in exits_doors:
-                target_rooms = [r_id for r_id in maze_net.net.nodes
-                                if r_id != maze_net.active]
-                random.shuffle(target_rooms)
-                for target_id in target_rooms:
-                    target = maze_net.rooms.get_room(target_id)
-                    if target and len(target.doors) > 0:
-                        target_door = random.choice(list(target.doors))
-                        if target_door != door_id:
-                            maze_net.connect(door_id, target_door)
-                            connected = True
-                            break
-                if connected:
-                    break
-
-            if not connected:
-                # Try connecting from any room that still has exits
-                any_connected = False
-                all_rooms = list(maze_net.net.nodes)
-                random.shuffle(all_rooms)
-                for room_id in all_rooms:
-                    room = maze_net.rooms.get_room(room_id)
-                    if room is None:
-                        continue
-
-                    # Try traps -> pits
-                    for trap_id in list(room.traps):
-                        for target_id in all_rooms:
-                            if target_id == room_id:
-                                continue
-                            target = maze_net.rooms.get_room(target_id)
-                            if target and len(target.pits) > 0:
-                                pit_id = random.choice(list(target.pits))
-                                maze_net.connect(trap_id, pit_id)
-                                any_connected = True
-                                break
-                        if any_connected:
-                            break
-
-                    if any_connected:
-                        break
-
-                    # Try doors -> doors
-                    for door_id in list(room.doors):
-                        for target_id in all_rooms:
-                            if target_id == room_id:
-                                continue
-                            target = maze_net.rooms.get_room(target_id)
-                            if target and len(target.doors) > 0:
-                                target_door = random.choice(list(target.doors))
-                                if target_door != door_id:
-                                    maze_net.connect(door_id, target_door)
-                                    any_connected = True
-                                    break
-                        if any_connected:
-                            break
-
-                if not any_connected:
-                    break  # No more connections possible
+        # Fully connect network
+        maze_net.verbose = True
+        maze_net = maze_net.connect_network()
 
         # Filter out the initial 2070->entry_pit connection from the map.
         # The branch mapper controls where 2070 exits to (via ruin-stooge-maze).
@@ -3612,7 +3565,8 @@ class ruination_map():
                 result_map[1].append([d1, d2])
 
         if self.verbose:
-            vprint(f'Isolated maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
+            vprint(f'Dreamscape maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
+            vprint(f'\tEntry pit: {entry_pit} in starting room: {start_room_id}')
             for d1, d2 in result_map[0]:
                 vprint(f'\tdoor: {d1} <-> {d2}')
             for d1, d2 in result_map[1]:
@@ -3977,7 +3931,7 @@ class ruination_map():
         if key in ALL_CHARACTERS:
             for room_id, rewards in ROOM_REWARD.items():
                 for reward_name in rewards.keys():
-                    if reward_name in REWARD_AREA_OWNERS and key in REWARD_AREA_OWNERS[reward_name]:
+                    if reward_name in REWARD_OWNERS and key in REWARD_OWNERS[reward_name]:
                         if self._is_reward_accessible(reward_name):
                             for branch_id, branch in enumerate(self.branches):
                                 if room_id in branch.all_rooms_added:
@@ -4002,8 +3956,8 @@ class ruination_map():
         if reward_name in REWARDS_LOCKED_BY_CHARACTER:
             if REWARDS_LOCKED_BY_CHARACTER[reward_name] not in self.keychain:
                 return False
-        if reward_name in REWARD_AREA_OWNERS:
-            if not any(c in self.keychain for c in REWARD_AREA_OWNERS[reward_name]):
+        if reward_name in REWARD_OWNERS:
+            if not any(c in self.keychain for c in REWARD_OWNERS[reward_name]):
                 return False
         return True
 
@@ -4405,8 +4359,8 @@ class ruination_map():
                                     vprint('\t\treward is locked by', locker, '(in-game). Saving for later.')
                                 continue
                         # Check area-level character lock
-                        if reward_name in REWARD_AREA_OWNERS:
-                            area_owners = REWARD_AREA_OWNERS[reward_name]
+                        if reward_name in REWARD_OWNERS:
+                            area_owners = REWARD_OWNERS[reward_name]
                             if not any(c in self.keychain for c in area_owners):
                                 # Bank under one of the unrecruited area owners
                                 locker = sorted(area_owners - self.keychain)[0]
@@ -4630,10 +4584,17 @@ class ruination_map():
                 # Set character path using the event's character_gate method
                 # This returns the character ID that gates this reward (or None for starting areas)
                 characters.set_character_path(slot.id, slot.event.character_gate())
+                unlocker_name = characters.DEFAULT_NAME[slot.event.character_gate()]
                 if self.verbose and slot.event.character_gate() is not None:
-                    unlocker_name = characters.DEFAULT_NAME[slot.event.character_gate()]
                     new_char_name = characters.DEFAULT_NAME[slot.id]
                     vprint(f'\tSet character path: {new_char_name} depends on {unlocker_name}')
+                if slot.event.character_gate() is not None and unlocker_name not in self.keychain:
+                    # Error:
+                    event_name = slot.event.name()
+                    new_char_name = characters.DEFAULT_NAME[slot.id]
+                    diag = f'\tMAPPING ERROR: got {new_char_name} at {event_name} reward before {unlocker_name} was recruited!'
+                    raise RuinationMappingError(diag)
+
 
                 # If a character, add new areas to the map
                 new_char = characters.DEFAULT_NAME[slot.id]
