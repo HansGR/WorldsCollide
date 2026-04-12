@@ -18,7 +18,13 @@ class BuyMenu:
 
     # Free DP bytes used as temporaries for price inflation / pack lookup
     SLOT_TEMP_DP       = 0x42   # 1 byte: temp for slot index or pack size
-    PACK_TEMP_DP       = 0x49   # 2 bytes ($49-$4A): temp for pack table computation
+    # NOTE: $49-$4A are NOT safe for scratch — $49 is the sell menu's "top BG1
+    # write row" and $4A is its "list scroll position" (used by C3/83F7 and
+    # C3/BBE0).  Clobbering them during buy caused a desync on first Sell open
+    # (items drawn at wrong BG1 rows or from wrong inventory slot).  Use $62-$63
+    # instead: the Bank C3 disassembly confirms they're unused in the shop menu
+    # code range B4xx-BFxx.
+    PACK_TEMP_DP       = 0x62   # 2 bytes ($62-$63): temp for pack table computation
     UNIT_PRICE_SAVE_DP = 0x60   # 2 bytes ($60-$61): saved unit price for restore
 
     def __init__(self):
@@ -88,7 +94,7 @@ class BuyMenu:
             asm.ASL(),
             asm.ASL(),
             asm.ASL(),                                   # *8
-            asm.STA(self.PACK_TEMP_DP, asm.DIR),         # $49-$4A
+            asm.STA(self.PACK_TEMP_DP, asm.DIR),         # $62-$63
             asm.LDA(self.SLOT_TEMP_DP, asm.DIR),
             asm.AND(0x00ff, asm.IMM16),
             asm.CLC(),
@@ -278,9 +284,9 @@ class BuyMenu:
             asm.NOP(),
             asm.NOP(),
             asm.LDA(0x4216, asm.ABS),           # R1_low
-            asm.STA(self.PACK_TEMP_DP, asm.DIR),            # $49
+            asm.STA(self.PACK_TEMP_DP, asm.DIR),            # $62
             asm.LDA(0x4217, asm.ABS),           # R1_high (carry)
-            asm.STA(self.PACK_TEMP_DP + 1, asm.DIR),        # $4A
+            asm.STA(self.PACK_TEMP_DP + 1, asm.DIR),        # $63
 
             # Step 2: price_high * pack
             asm.LDA(self.UNIT_PRICE_SAVE_DP + 1, asm.DIR),  # $61 = price high byte
@@ -295,15 +301,15 @@ class BuyMenu:
             # Combine: final_high = R2_low + R1_high
             asm.CLC(),
             asm.LDA(0x4216, asm.ABS),           # R2_low
-            asm.ADC(self.PACK_TEMP_DP + 1, asm.DIR),  # + R1_high ($4A)
+            asm.ADC(self.PACK_TEMP_DP + 1, asm.DIR),  # + R1_high ($63)
             asm.BCS("CAP_PRICE"),               # overflow → cap
-            asm.STA(self.PACK_TEMP_DP + 1, asm.DIR),  # $4A = final high byte
+            asm.STA(self.PACK_TEMP_DP + 1, asm.DIR),  # $63 = final high byte
             asm.LDA(0x4217, asm.ABS),           # R2_high
             asm.BNE("CAP_PRICE"),               # >0 → cap
 
-            # Store inflated price: $49 = low, $4A = high
+            # Store inflated price: $62 = low, $63 = high
             asm.REP(0x20),
-            asm.LDA(self.PACK_TEMP_DP, asm.DIR),  # 16-bit result from $49-$4A
+            asm.LDA(self.PACK_TEMP_DP, asm.DIR),  # 16-bit result from $62-$63
             asm.STA(0x7e9f09, asm.LNG_X),
             asm.SEP(0x20),
             asm.BRA("DONE"),
@@ -479,9 +485,9 @@ class BuyMenu:
             asm.STA(0x4203, asm.ABS),           # trigger multiply
             asm.NOP(), asm.NOP(), asm.NOP(), asm.NOP(),
             asm.LDA(0x4216, asm.ABS),           # R1_low
-            asm.STA(self.PACK_TEMP_DP, asm.DIR),            # $49
+            asm.STA(self.PACK_TEMP_DP, asm.DIR),            # $62
             asm.LDA(0x4217, asm.ABS),           # R1_high
-            asm.STA(self.PACK_TEMP_DP + 1, asm.DIR),        # $4A
+            asm.STA(self.PACK_TEMP_DP + 1, asm.DIR),        # $63
 
             # Step 2: $F4 (high byte) * pack
             asm.LDA(0xf4, asm.DIR),

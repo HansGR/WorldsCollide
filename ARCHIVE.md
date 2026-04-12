@@ -806,10 +806,15 @@ These addresses are verified unused during shop menu operations (Bank C3 B4xx-BA
 | $37 | 1 byte | Temp: item ID during compact_init |
 | $38 | 1 byte | Temp: original slot index in hook_buy_setup |
 | $40-$41 | 2 bytes | Temp: shop_num×8 in hook_buy_setup (16-bit) |
+| $42 | 1 byte | SLOT_TEMP_DP: temp for slot index or pack size |
+| $60-$61 | 2 bytes | UNIT_PRICE_SAVE_DP: saved unit price (for restore after pack-price inflation) |
+| $62-$63 | 2 bytes | PACK_TEMP_DP: 16-bit scratch for pack table computation / multiply results |
 | $78-$7F | 8 bytes | compact_items buffer (available items packed to top, rest $FF) |
 | $B8-$BF | 8 bytes | slot_map buffer (display position → original shop slot index) |
 
-**Verified safe DP addresses (from in-game testing):** $25, $30, $36, $37, $38, $40, $41, $42, $49, $4A, $60, $61, $62, $63, $66, $78-$7F, $B8-$BF.
+**Verified safe DP addresses (from in-game testing):** $25, $30, $36, $37, $38, $40, $41, $42, $60, $61, $62, $63, $66, $78-$7F, $B8-$BF.
+
+**⚠️ DO NOT USE $49 or $4A as scratch:** Despite being in the previous "verified safe" list, these are actually the sell menu's persistent state — `$49` is the sell menu's "Top BG1 write row" (read at C3/83F7 → `$E6`) and `$4A` is its "List scroll position" (read at C3/83F7 and C3/BBF8). The shop init at C3/B47C only zeros `$4A` once on shop entry and never re-initializes either between submenu transitions. Clobbering them inside the buy hooks causes a desync on first Sell-menu open after Buy: items draw at wrong BG1 rows (cursor appears at visual row 0 while `$4B` points to a different inventory slot). Pressing L/R fixes it because the scroll handler at C3/1F64 recomputes both registers. Earlier versions of the `-sli` hooks used `$49-$4A` as PACK_TEMP_DP and hit this bug; the fix is to use `$62-$63` instead.
 
 ### Item Compaction System
 
