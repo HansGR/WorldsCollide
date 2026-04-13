@@ -351,7 +351,9 @@ class MagitekFactory(Event):
         # (the destination of the LoadMap at CC/80B9 is patched by the Transition
         # class). Avoid replaying the full minecart/Number 128 sequence on revisit
         # by hooking in just after the fade-in-complete at CC/80A7. Split logic:
-        #   - If DEFEATED_NUMBER128 is set: branch to the LoadMap split point (CC/80B9)
+        #   - If DEFEATED_NUMBER128 is set: branch to the event-bit block at CC/80B1
+        #     so music-state hygiene (TEMP_SONG_OVERRIDE, CONTINUE_MUSIC_DURING_BATTLE)
+        #     and Vector-outdoors NPC-visibility bits run before the LoadMap at CC/80B9.
         #   - Otherwise: set the bit, replay the displaced pre-ride bytes (PlaySong +
         #     SetEventBit + train-car anim at CC/80A8-CC/80AC) plus the
         #     Call(ORIGINAL_CHECK_GAME_OVER) that number128_battle_mod would write
@@ -367,13 +369,14 @@ class MagitekFactory(Event):
             displaced_pre_ride = Read(0xc80a8, 0xc80ac)  # PlaySong + SetEventBit + train car
 
             src = [
-                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, "SKIP_RIDE"),
+                # If the ride has already run, fall straight through to the
+                # event-bit block at CC/80B1 (music-state hygiene + Vector
+                # NPC-visibility setup) and then into the LoadMap at CC/80B9.
+                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, 0xc80b1),
                 field.SetEventBit(event_bit.DEFEATED_NUMBER128),
                 displaced_pre_ride,                                # replay CC/80A8-CC/80AC
                 field.Call(field.ORIGINAL_CHECK_GAME_OVER),        # absorb number128_battle_mod's patch at CC/80AD
                 field.Branch(0xc80b1),                             # continue past the absorbed region
-                "SKIP_RIDE",
-                field.Branch(0xc80b9),                             # jump to transition split point (LoadMap)
             ]
             space = Write(Bank.CC, src, "magitek factory minecart revisit check")
             minecart_revisit_check = space.start_address
