@@ -347,6 +347,34 @@ class MagitekFactory(Event):
         space.copy_from(0x2e2f92, 0x2e2fa5) # ride data and battle with Number 128
         space.copy_from(0x2e2fa6, 0x2e2faf) # ride data and end script
 
+        # In dungeon-crawl / ruination mode, the minecart exit can be revisited
+        # (the destination of the LoadMap at CC/80B9 is patched by the Transition
+        # class). Avoid replaying the full minecart/Number 128 sequence on revisit
+        # by hooking in just after the fade-in-complete at CC/80A7. Split logic:
+        #   - If DEFEATED_NUMBER128 is set: branch to the LoadMap split point (CC/80B9)
+        #   - Otherwise: set the bit, replay the displaced bytes (PlaySong + SetEventBit
+        #     at CC/80A8-CC/80AB), and return to CC/80AC to continue the ride.
+        # The 4-byte Call hook at CC/80A8-CC/80AB does not overlap the 4-byte
+        # Call at CC/80AD that number128_battle_mod later reserves.
+        if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
+            # Capture the original bytes BEFORE reserving them so Read() returns
+            # the untouched ROM contents.
+            displaced_bytes = Read(0xc80a8, 0xc80ab)
+
+            src = [
+                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, "SKIP_RIDE"),
+                field.SetEventBit(event_bit.DEFEATED_NUMBER128),
+                displaced_bytes,     # replay PlaySong + SetEventBit
+                field.Return(),      # execution resumes at CC/80AC (train car anim)
+                "SKIP_RIDE",
+                field.Branch(0xc80b9), # jump to transition split point (LoadMap)
+            ]
+            space = Write(Bank.CC, src, "magitek factory minecart revisit check")
+            minecart_revisit_check = space.start_address
+
+            space = Reserve(0xc80a8, 0xc80ab, "magitek factory minecart revisit hook", field.NOP())
+            space.write(field.Call(minecart_revisit_check))
+
     def fixed_battles_mod(self):
         import instruction.asm as asm
 
