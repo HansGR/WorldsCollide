@@ -98,6 +98,7 @@ DISABLE_HOOK_MAGITEK_FACTORY = 0x273
 RODE_MINE_CART_MAGITEK_FACTORY = 0x069
 MET_SETZER_AFTER_MAGITEK_FACTORY = 0x06a # locke/celes not required in airship changing room after set
 DEFEATED_CRANES = 0x06b
+DEFEATED_NUMBER128 = 0x06d # tracks whether the minecart escape / Number 128 sequence has run (ruin/dungeon-crawl)
 SAW_MADUIN_DIE = 0x070 # enables lone wolf
 ESPERS_CRASHED_AIRSHIP = 0x242 # allows entry to imperial base without terra
 FINISHED_GESTAHL_DINNER = 0x07d

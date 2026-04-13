@@ -347,6 +347,43 @@ class MagitekFactory(Event):
         space.copy_from(0x2e2f92, 0x2e2fa5) # ride data and battle with Number 128
         space.copy_from(0x2e2fa6, 0x2e2faf) # ride data and end script
 
+        # In dungeon-crawl / ruination mode, the minecart exit can be revisited
+        # (the destination of the LoadMap at CC/80B9 is patched by the Transition
+        # class). Avoid replaying the full minecart/Number 128 sequence on revisit
+        # by hooking in just after the fade-in-complete at CC/80A7. Split logic:
+        #   - If DEFEATED_NUMBER128 is set: branch to the event-bit block at CC/80B1
+        #     so music-state hygiene (TEMP_SONG_OVERRIDE, CONTINUE_MUSIC_DURING_BATTLE)
+        #     and Vector-outdoors NPC-visibility bits run before the LoadMap at CC/80B9.
+        #   - Otherwise: set the bit, replay the displaced pre-ride bytes (PlaySong +
+        #     SetEventBit + train-car anim at CC/80A8-CC/80AC) plus the
+        #     Call(ORIGINAL_CHECK_GAME_OVER) that number128_battle_mod would write
+        #     at CC/80AD, then branch back to CC/80B1 to continue.
+        # Uses Branch (not Call) so that the SKIP path does not leave an
+        # unbalanced entry on the event subroutine stack. The hook covers the
+        # full CC/80A8-CC/80B0 region (9 bytes) to fit a 6-byte Branch and the
+        # absorbed Call at CC/80AD; number128_battle_mod skips its own Reserve
+        # in this mode to avoid overlap.
+        if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
+            # Capture the original bytes BEFORE reserving them so Read() returns
+            # the untouched ROM contents.
+            displaced_pre_ride = Read(0xc80a8, 0xc80ac)  # PlaySong + SetEventBit + train car
+
+            src = [
+                # If the ride has already run, fall straight through to the
+                # event-bit block at CC/80B1 (music-state hygiene + Vector
+                # NPC-visibility setup) and then into the LoadMap at CC/80B9.
+                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, 0xc80b1),
+                field.SetEventBit(event_bit.DEFEATED_NUMBER128),
+                displaced_pre_ride,                                # replay CC/80A8-CC/80AC
+                field.Call(field.ORIGINAL_CHECK_GAME_OVER),        # absorb number128_battle_mod's patch at CC/80AD
+                field.Branch(0xc80b1),                             # continue past the absorbed region
+            ]
+            space = Write(Bank.CC, src, "magitek factory minecart revisit check")
+            minecart_revisit_check = space.start_address
+
+            space = Reserve(0xc80a8, 0xc80b0, "magitek factory minecart revisit hook", field.NOP())
+            space.write(field.Branch(minecart_revisit_check))
+
     def fixed_battles_mod(self):
         import instruction.asm as asm
 
@@ -394,10 +431,13 @@ class MagitekFactory(Event):
 
         # use original game over check function after mine cart ride, the custom one cannot be used here
         # refreshing objects or updating the party leader causes a hard lock at the end of the ride (never return from black screen)
-        space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
-        space.write(
-            field.Call(field.ORIGINAL_CHECK_GAME_OVER),
-        )
+        # In dungeon-crawl / ruination mode this patch is absorbed into the
+        # minecart revisit hook in minecart_mod (which reserves CC/80A8-CC/80B0).
+        if not (self.args.door_randomize_dungeon_crawl or self.args.ruination_mode):
+            space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
+            space.write(
+                field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+            )
 
     def character_mod(self, character):
         self.setzer_npc.sprite = character
