@@ -372,17 +372,22 @@ class MagitekFactory(Event):
                 # If the ride has already run, fall straight through to the
                 # event-bit block at CC/80B1 (music-state hygiene + Vector
                 # NPC-visibility setup) and then into the LoadMap at CC/80B9.
-                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, 0xc80b1),
+                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, 0xc80b3),  # was 0xc80b3 to include TEMP_MUSIC_OVERRIDE
                 field.SetEventBit(event_bit.DEFEATED_NUMBER128),
                 displaced_pre_ride,                                # replay CC/80A8-CC/80AC
                 field.Call(field.ORIGINAL_CHECK_GAME_OVER),        # absorb number128_battle_mod's patch at CC/80AD
-                field.Branch(0xc80b1),                             # continue past the absorbed region
+                field.Branch(0xc80b3),                             # continue past the absorbed region
             ]
             space = Write(Bank.CC, src, "magitek factory minecart revisit check")
             minecart_revisit_check = space.start_address
 
             space = Reserve(0xc80a8, 0xc80b0, "magitek factory minecart revisit hook", field.NOP())
             space.write(field.Branch(minecart_revisit_check))
+
+            # Also try a music fix: set Mtek 3 Vector map music to "Save Them!" and don't turn on TEMP_MUSIC_OVERRIDE
+            #space = Reserve(0xc80b1, 0xc80b2, "minecart end dont turn on TEMP_MUSIC_OVERRIDE", field.NOP())
+            mtek3_vector_properties = self.maps.properties[0xf0]
+            mtek3_vector_properties.song = 26  # SAVE THEM!
 
     def fixed_battles_mod(self):
         import instruction.asm as asm

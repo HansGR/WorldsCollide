@@ -763,6 +763,7 @@ def minecart_event_mod(src, src_end):
     from memory.space import Write, Bank
     from event.event import direction
     go_to_vector = (
+        #field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
         field.LoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
         field.ShowEntity(field_entity.PARTY0),
         field.RefreshEntities(),
@@ -770,6 +771,7 @@ def minecart_event_mod(src, src_end):
         field.Return()
     )
     go_to_mtek3_vector = (
+        #field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
         field.LoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
         field.ShowEntity(field_entity.PARTY0),
         field.RefreshEntities(),
