@@ -22,6 +22,24 @@ class BurningHouse(Event):
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
+    # Per-fireball NPC visibility bits used in ruination mode so fireballs
+    # stay defeated across map reloads. See ruination_fireballs_mod().
+    RUINATION_FIREBALLS = [
+        # (event_addr, npc_id, npc_bit)
+        (0xbe6cb, 0x10, 0x3a1),
+        (0xbe6d8, 0x11, 0x3a2),
+        (0xbe6e5, 0x12, 0x3a3),
+        (0xbe6f2, 0x17, 0x3a4),
+        (0xbe6ff, 0x19, 0x3a5),
+        (0xbe70c, 0x1a, 0x3a6),
+        (0xbe719, 0x1e, 0x3a7),
+        (0xbe726, 0x1f, 0x3a8),
+        (0xbe733, 0x20, 0x3a9),
+        (0xbe740, 0x21, 0x3aa),
+        (0xbe74d, 0x22, 0x3ab),
+        (0xbe75a, 0x23, 0x3ac),
+    ]
+
     def init_event_bits(self, space):
         space.write(
             field.SetEventBit(event_bit.MET_STRAGO_RELM),
@@ -36,9 +54,16 @@ class BurningHouse(Event):
             field.SetEventBit(npc_bit.THAMASA_CITIZENS),
         )
 
+        if self.args.ruination_mode:
+            # Make each fireball NPC initially visible via its unique bit.
+            # Cleared per-fireball when defeated (see ruination_fireballs_mod).
+            for _, _, bit in self.RUINATION_FIREBALLS:
+                space.write(field.SetEventBit(bit))
+
     def mod(self):
         if self.args.ruination_mode:
             self.ruination_inn_mod()
+            self.ruination_fireballs_mod()
         elif self.args.character_gating:
             self.add_gating_condition()
 
@@ -121,6 +146,55 @@ class BurningHouse(Event):
         space.write(
             field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.STRAGO), "BURNING_HOUSE"),
         )
+
+    def ruination_fireballs_mod(self):
+        """
+        In ruination mode the burning house is re-enterable, so fireball NPCs
+        that were simply hidden after battle in vanilla reappear on every map
+        reload. Give each of the twelve fireballs its own NPC visibility bit
+        (0x3a1-0x3ac) and replace the hide/delete tail of each fireball's
+        event with a Call to a new subroutine that also clears that bit, so
+        the fireball stays defeated permanently.
+
+        The NPC bits are set at startup in init_event_bits so the fireballs
+        are visible on the first visit.
+
+        Each vanilla fireball event is 13 bytes:
+            4D xx            InvokeBattle              (3 bytes)
+            B2 A9 5E CA      Call game-over check      (4 bytes)
+            42 nn            HideEntity   (back half)  (2 bytes)
+            3E nn            DeleteEntity (back half)  (2 bytes)
+            96               FadeInScreen (back half)  (1 byte)
+            FE               Return       (back half)  (1 byte)
+        We replace the 6-byte back half with Call(subroutine) + Return.
+        """
+        for event_addr, npc_id, bit in self.RUINATION_FIREBALLS:
+            # Assign the unique NPC visibility bit to this fireball.
+            fireball_npc = self.maps.get_npc(0x15f, npc_id)
+            fireball_npc.event_byte = npc_bit.event_byte(bit)
+            fireball_npc.event_bit = npc_bit.event_bit(bit)
+
+            # Subroutine replacing the back half: hide+delete self, restore
+            # screen, clear the NPC visibility bit so it stays gone.
+            src = [
+                field.HideEntity(npc_id),
+                field.DeleteEntity(npc_id),
+                field.FadeInScreen(),
+                field.ClearEventBit(bit),
+                field.Return(),
+            ]
+            subspace = Write(Bank.CB, src, f"burning house fireball {hex(npc_id)} defeated")
+
+            # Replace the 6-byte back half with Call + Return (5 bytes; 1 NOP).
+            back_half_start = event_addr + 7   # after InvokeBattle(3) + game-over Call(4)
+            back_half_end = event_addr + 12    # inclusive; 6 bytes total
+            space = Reserve(back_half_start, back_half_end,
+                            f"burning house fireball {hex(npc_id)} back half",
+                            field.NOP())
+            space.write(
+                field.Call(subspace.start_address),
+                field.Return(),
+            )
 
     def enter_burning_house_mod(self):
         # wake up in middle of night, enter burning house, skip scene with villagers outside burning house
