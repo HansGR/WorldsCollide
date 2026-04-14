@@ -21,6 +21,12 @@ class KefkaTower(Event):
                 field.SetEventBit(event_bit.UNLOCKED_FINAL_KEFKA),
             )
 
+        if self.args.ruination_mode:
+            space.write(
+                field.ClearEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH),
+                field.ClearEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH),
+            )
+
     def mod(self):
         self.statue_landing_mod()
         self.entrance_landing_mod()
@@ -704,8 +710,12 @@ class KefkaTower(Event):
         # are persistent, so we place event tiles on cells adjacent to each switch.
         from data.map_event import MapEvent
 
+        # 0x1b5 is a multipurpose bit cleared on every step; using it as a debounce
+        # ensures each tile's script runs at most once per step-on.
         src = [
+            field.ReturnIfEventBitSet(0x1b5),
             field.ClearEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH),
+            field.SetEventBit(0x1b5),
             field.Return(),
         ]
         space = Write(Bank.CC, src, "kefka tower clear left switch bit")
@@ -719,7 +729,9 @@ class KefkaTower(Event):
             self.maps.add_event(0x151, new_event)
 
         src = [
+            field.ReturnIfEventBitSet(0x1b5),
             field.ClearEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH),
+            field.SetEventBit(0x1b5),
             field.Return(),
         ]
         space = Write(Bank.CC, src, "kefka tower clear right switch bit")
