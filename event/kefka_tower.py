@@ -659,74 +659,49 @@ class KefkaTower(Event):
         self.kt_switch_ruination_mod()
 
     def kt_switch_ruination_mod(self):
-        # In vanilla, the switches on map 0x151 use multipurpose_party2_step(0) and
-        # multipurpose_party3_step(0) which are tied to specific parties and cleared on
-        # every step.  In ruination mode any party may use any switch, so we instead use
-        # dedicated event bits that we manage ourselves.
-        #
-        # Left switch  (4,12)  → KEFKA_TOWER_LEFT_SWITCH  (0x088)
-        # Right switch (12,12) → KEFKA_TOWER_RIGHT_SWITCH (0x08a)
-        #
-        # The "both switches pressed" check lives in the shared subroutine CC/14CD.
-        # We write a replacement subroutine in free space and redirect the switch events
-        # to call it instead.  We then patch just the first branch in each weight event
-        # to test the new bits.  Finally we add event tiles adjacent to each switch that
-        # clear the corresponding bit when the party steps off.
+        # In vanilla the switch/weight events use multipurpose_party2/3_step(0) which are
+        # auto-cleared on every step and tied to specific parties.  In ruination mode any
+        # party may use any switch, so we patch each individual instruction in-place to
+        # use the new dedicated bits instead.  All replacement instructions encode to the
+        # same number of bytes as the originals, so no surrounding code is disturbed.
 
-        # --- New "both switches pressed → open center door" subroutine ---------------
-        # Original CC/14CD checked multipurpose_party2/3_step(0); we check our new bits.
-        # The door-opening sequence that follows the check (CC/14D7..CC/14EF) is unchanged.
-        src = [
-            field.ReturnIfAny([
-                event_bit.CENTER_DOOR_KEFKA_TOWER,    True,   # door already open → return
-                event_bit.KEFKA_TOWER_LEFT_SWITCH,    False,  # left switch not pressed → return
-                event_bit.KEFKA_TOWER_RIGHT_SWITCH,   False,  # right switch not pressed → return
-            ]),
-            Read(0xc14d7, 0xc14ef),  # door-opening sequence verbatim from original CC/14CD
-        ]
-        space = Write(Bank.CC, src, "kefka tower ruin both switches check")
-        ruin_both_switches_check = space.start_address
+        # Left switch (CC/14AF): ReturnIfEventBitSet — 6 bytes
+        space = Reserve(0xc14af, 0xc14b4, "kefka tower left switch ruin bit check", field.NOP())
+        space.write(field.ReturnIfEventBitSet(event_bit.KEFKA_TOWER_LEFT_SWITCH))
 
-        # --- Left switch event (CC/14AF–CC/14BD, 15 bytes) ---------------------------
-        # Original: BranchIfSet(multipurpose_party2_step(0)) / PlaySFX / SetBit / Call CC14CD / Return
-        # New:      BranchIfSet(KEFKA_TOWER_LEFT_SWITCH)     / PlaySFX / SetBit / Call above   / Return
-        space = Reserve(0xc14af, 0xc14bd, "kefka tower left switch ruination", field.NOP())
-        space.write(
-            field.ReturnIfEventBitSet(event_bit.KEFKA_TOWER_LEFT_SWITCH),
-            field.PlaySoundEffect(150),
-            field.SetEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH),
-            field.Call(ruin_both_switches_check),
-            field.Return(),
-        )
+        # Left switch (CC/14B7): SetEventBit — 2 bytes
+        space = Reserve(0xc14b7, 0xc14b8, "kefka tower left switch ruin bit set", field.NOP())
+        space.write(field.SetEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH))
 
-        # --- Right switch event (CC/14BE–CC/14CC, 15 bytes) --------------------------
-        space = Reserve(0xc14be, 0xc14cc, "kefka tower right switch ruination", field.NOP())
-        space.write(
-            field.ReturnIfEventBitSet(event_bit.KEFKA_TOWER_RIGHT_SWITCH),
-            field.PlaySoundEffect(150),
-            field.SetEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH),
-            field.Call(ruin_both_switches_check),
-            field.Return(),
-        )
+        # Right switch (CC/14BE): ReturnIfEventBitSet — 6 bytes
+        space = Reserve(0xc14be, 0xc14c3, "kefka tower right switch ruin bit check", field.NOP())
+        space.write(field.ReturnIfEventBitSet(event_bit.KEFKA_TOWER_RIGHT_SWITCH))
 
-        # --- Left weight event (CC/14F4, first 6 bytes) ------------------------------
-        # Original branch: if multipurpose_party2_step(0) set → show "already pushed" dialog
-        # New branch:      if KEFKA_TOWER_LEFT_SWITCH set      → same dialog
+        # Right switch (CC/14C6): SetEventBit — 2 bytes
+        space = Reserve(0xc14c6, 0xc14c7, "kefka tower right switch ruin bit set", field.NOP())
+        space.write(field.SetEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH))
+
+        # CC/14CD: ReturnIfAny (3 conditions) — 10 bytes
+        # Original checked CENTER_DOOR, multipurpose_party2_step(0), multipurpose_party3_step(0).
+        # We keep the same structure and just replace the two multipurpose bits.
+        space = Reserve(0xc14cd, 0xc14d6, "kefka tower ruin both switches check", field.NOP())
+        space.write(field.ReturnIfAny([
+            event_bit.CENTER_DOOR_KEFKA_TOWER,  True,   # door already open → return
+            event_bit.KEFKA_TOWER_LEFT_SWITCH,  False,  # left switch not pressed → return
+            event_bit.KEFKA_TOWER_RIGHT_SWITCH, False,  # right switch not pressed → return
+        ]))
+
+        # Left weight (CC/14F4): BranchIfEventBitSet — 6 bytes
         space = Reserve(0xc14f4, 0xc14f9, "kefka tower left weight ruin check", field.NOP())
-        space.write(
-            field.BranchIfEventBitSet(event_bit.KEFKA_TOWER_LEFT_SWITCH, 0xc1544),
-        )
+        space.write(field.BranchIfEventBitSet(event_bit.KEFKA_TOWER_LEFT_SWITCH, 0xc1544))
 
-        # --- Right weight event (CC/1548, first 6 bytes) -----------------------------
+        # Right weight (CC/1548): BranchIfEventBitSet — 6 bytes
         space = Reserve(0xc1548, 0xc154d, "kefka tower right weight ruin check", field.NOP())
-        space.write(
-            field.BranchIfEventBitSet(event_bit.KEFKA_TOWER_RIGHT_SWITCH, 0xc1544),
-        )
+        space.write(field.BranchIfEventBitSet(event_bit.KEFKA_TOWER_RIGHT_SWITCH, 0xc1544))
 
-        # --- Event tiles that clear the switch bits when the party steps off ---------
+        # Event tiles that clear the switch bits when the party steps off.
         # The multipurpose_party_step bits were auto-cleared on every step; our new bits
-        # are persistent, so we place invisible event tiles on the cells surrounding each
-        # switch.  Stepping on any of them clears the bit.
+        # are persistent, so we place event tiles on cells adjacent to each switch.
         from data.map_event import MapEvent
 
         src = [
