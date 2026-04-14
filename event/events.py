@@ -94,7 +94,10 @@ class Events():
 
         # initialize event bits, mod events, log rewards
         log_strings = []
-        space = Allocate(Bank.CC, 400, "event/npc bit initialization", field.NOP())
+        # Ruination mode adds extra init_event_bits writes (e.g. burning house
+        # fireball NPC visibility bits), so reserve a bit more room.
+        init_bits_size = 450 if self.args.ruination_mode else 400
+        space = Allocate(Bank.CC, init_bits_size, "event/npc bit initialization", field.NOP())
         for event in events:
             event.init_event_bits(space)
             event.mod()
