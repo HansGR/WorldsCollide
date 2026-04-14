@@ -177,16 +177,17 @@ class BurningHouse(Event):
             # Subroutine replacing the back half: hide+delete self, restore
             # screen, and 75% of the time clear the NPC visibility bit so it
             # stays gone. The 25% respawn chance keeps the house dangerous.
-            # BranchRandomly is 50/50; chaining two skip-branches yields a
-            # 0.5 * 0.5 = 0.25 probability of skipping the clear.
+            # BranchRandomly is 50/50; chaining two branches to CLEAR_BIT
+            # reaches the clear with 0.5 + 0.5 * 0.5 = 0.75 probability.
             src = [
                 field.HideEntity(npc_id),
                 field.DeleteEntity(npc_id),
                 field.FadeInScreen(),
-                field.BranchRandomly("SKIP_CLEAR"),
-                field.BranchRandomly("SKIP_CLEAR"),
+                field.BranchRandomly("CLEAR_BIT"),
+                field.BranchRandomly("CLEAR_BIT"),
+                field.Return(),  # 25%: both branches fell through, skip clear
+                "CLEAR_BIT",
                 field.ClearEventBit(bit),
-                "SKIP_CLEAR",
                 field.Return(),
             ]
             subspace = Write(Bank.CB, src, f"burning house fireball {hex(npc_id)} defeated")
