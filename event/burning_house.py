@@ -103,39 +103,44 @@ class BurningHouse(Event):
 
     def ruination_inn_mod(self):
         """
-        Modifies the Thamasa inn pricing for ruination mode.
+        Modifies the Thamasa inn for ruination mode.
 
-        - If STRAGO not recruited: "You're strangers" path with high price (1500 GP * multiplier)
+        Burning house re-trigger (always, ruination architecture):
         - If STRAGO recruited: always trigger burning house event (re-enterable)
+
+        Inn pricing (gated by -nfh):
+        - If STRAGO not recruited: "You're strangers" path with high price (1500 GP * multiplier)
 
         The burning house is made re-enterable by enter_burning_house_mod() which NOPs
         the DEFEATED_FLAME_EATER check at 0xbd7bf when DOOR_RANDOMIZE is true.
         """
         from event.ruination import INN_COST_MULTIPLIER
 
-        # Original "strangers" price, with multiplier applied
-        STRANGERS_BASE_PRICE = 1500
-        new_price = min(STRANGERS_BASE_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+        # Inn price increase is the free-heal-related portion. Skip when -nfh is off.
+        if self.args.no_free_heals:
+            # Original "strangers" price, with multiplier applied
+            STRANGERS_BASE_PRICE = 1500
+            new_price = min(STRANGERS_BASE_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
-        # Strangers price path (when STRAGO not recruited)
-        STRANGERS_PRICE_PATH = 0xbd769
-        STRANGERS_PRICE_GP = 0xbd775
-        STRANGERS_DIALOG = 0x0790
+            # Strangers price path (when STRAGO not recruited)
+            STRANGERS_PRICE_PATH = 0xbd769
+            STRANGERS_PRICE_GP = 0xbd775
+            STRANGERS_DIALOG = 0x0790
 
-        # Patch event at 0xbd73f: If STRAGO not recruited, branch to strangers price
-        space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
-        space.add_label("STRANGERS_PRICE", STRANGERS_PRICE_PATH)
-        space.write(
-            field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGERS_PRICE"),
-        )
+            # Patch event at 0xbd73f: If STRAGO not recruited, branch to strangers price
+            space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
+            space.add_label("STRANGERS_PRICE", STRANGERS_PRICE_PATH)
+            space.write(
+                field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGERS_PRICE"),
+            )
 
-        # Update dialog with original flavor, new price
-        self.dialogs.set_text(STRANGERS_DIALOG,
-                              f"You're strangers...<line>{new_price} GP if you wanna stay.<line>"
-                              f"<choice> (Well, okay.)<line><choice> (No way!)<end>")
+            # Update dialog with original flavor, new price
+            self.dialogs.set_text(STRANGERS_DIALOG,
+                                  f"You're strangers...<line>{new_price} GP if you wanna stay.<line>"
+                                  f"<choice> (Well, okay.)<line><choice> (No way!)<end>")
 
-        # Update the GP cost for strangers price path
-        self.rom.set_bytes(STRANGERS_PRICE_GP, new_price.to_bytes(2, 'little'))
+            # Update the GP cost for strangers price path
+            self.rom.set_bytes(STRANGERS_PRICE_GP, new_price.to_bytes(2, 'little'))
 
         # Patch burning house trigger at 0xbd7c5: use character_recruited instead of MET_STRAGO_RELM
         # Original: If MET_STRAGO_RELM set -> branch to burning house (0xbdcc7)

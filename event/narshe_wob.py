@@ -17,7 +17,10 @@ class NarsheWOB(Event):
             field.ClearEventBit(npc_bit.SOLDIER_DOORWAY_ARVIS_HOUSE),
         )
 
-        if self.args.ruination_mode:
+        if self.args.ruination_mode and self.args.no_free_heals:
+            # NARSHE_CHECKPOINT event word is repurposed as pot heal counter.
+            # Only initialize it when both ruination_mode and -nfh are active,
+            # since the limited pot heal NPC code below is similarly gated.
             space.write(
                 field.SetEventWord(event_word.NARSHE_CHECKPOINT, NUM_HEALS)
             )  # [E8 02 03 0]
@@ -110,44 +113,46 @@ class NarsheWOB(Event):
         self.maps.delete_event(school_map_id, school_door.x, school_door.y)
 
         # (2) Make the bucket provide a limited number of heals
-        NARSHE_DIALOG_IDS = [i for i in range(1462, 1471)]  # 1461 used by Figaro Castle inn
-        # Based on Dragon number src: see e.g. CC/1F9F
-        # Could use this memory space if needed  [0xc1f9f -- 0xc2047]
-        # Could also use dragon dialogs:  [1498 -- 1506]
-        # It turns out AtmaTek already used all the free event words (for CHARACTERS, ESPERS, CHECKS, DRAGONS, CID HEALTH, and CORAL).
-        # How are 0x0 (CHECKPOINT_BANQUET) and 0x1 (NARSHE_CHECKPOINT) used?  just in vanilla code.
-        # If this mode doesn't include the checkpoint, we can use 0x1.
-        drink_query_ids = []
-        drink_src = []
-        pot_heal_address = 0xc33ae
-        for i in range(NUM_HEALS):
-            this_id = NARSHE_DIALOG_IDS.pop()
-            drink_query_ids.append(this_id)
-            this_num = NUM_HEALS - i
-            num_drinks_line = "<line>(" + str(this_num) + " drink" + ["s", ""][[True, False].index(this_num != 1)] + " left)"
-            self.dialogs.set_text(this_id, "Drink from the bucket?" + num_drinks_line + "<line><choice> Yes<line><choice> No<end>")
+        # Gated by -nfh so a stock -ruin run leaves the pot as a free heal.
+        if self.args.no_free_heals:
+            NARSHE_DIALOG_IDS = [i for i in range(1462, 1471)]  # 1461 used by Figaro Castle inn
+            # Based on Dragon number src: see e.g. CC/1F9F
+            # Could use this memory space if needed  [0xc1f9f -- 0xc2047]
+            # Could also use dragon dialogs:  [1498 -- 1506]
+            # It turns out AtmaTek already used all the free event words (for CHARACTERS, ESPERS, CHECKS, DRAGONS, CID HEALTH, and CORAL).
+            # How are 0x0 (CHECKPOINT_BANQUET) and 0x1 (NARSHE_CHECKPOINT) used?  just in vanilla code.
+            # If this mode doesn't include the checkpoint, we can use 0x1.
+            drink_query_ids = []
+            drink_src = []
+            pot_heal_address = 0xc33ae
+            for i in range(NUM_HEALS):
+                this_id = NARSHE_DIALOG_IDS.pop()
+                drink_query_ids.append(this_id)
+                this_num = NUM_HEALS - i
+                num_drinks_line = "<line>(" + str(this_num) + " drink" + ["s", ""][[True, False].index(this_num != 1)] + " left)"
+                self.dialogs.set_text(this_id, "Drink from the bucket?" + num_drinks_line + "<line><choice> Yes<line><choice> No<end>")
+                drink_src += [
+                    field.BranchIfEventWordLess(event_word.NARSHE_CHECKPOINT, this_num, "LESS_"+str(this_num)),
+                    field.DialogBranch(this_id, "HEAL", "RETURN"),
+                    "LESS_" + str(this_num),
+                ]
+
+            empty_id = NARSHE_DIALOG_IDS.pop()
+            self.dialogs.set_text(empty_id, "The bucket is empty.<end>")
             drink_src += [
-                field.BranchIfEventWordLess(event_word.NARSHE_CHECKPOINT, this_num, "LESS_"+str(this_num)),
-                field.DialogBranch(this_id, "HEAL", "RETURN"),
-                "LESS_" + str(this_num),
+                field.Dialog(empty_id),
+                "RETURN",
+                field.Return(),
+                "HEAL",
+                field.Call(pot_heal_address),
+                field.DecrementEventWord(event_word.NARSHE_CHECKPOINT),  # = [EA 02 01 0]
+                field.Return()
             ]
+            space = Write(Bank.CC, drink_src, "Limited use pot heal")
 
-        empty_id = NARSHE_DIALOG_IDS.pop()
-        self.dialogs.set_text(empty_id, "The bucket is empty.<end>")
-        drink_src += [
-            field.Dialog(empty_id),
-            "RETURN",
-            field.Return(),
-            "HEAL",
-            field.Call(pot_heal_address),
-            field.DecrementEventWord(event_word.NARSHE_CHECKPOINT),  # = [EA 02 01 0]
-            field.Return()
-        ]
-        space = Write(Bank.CC, drink_src, "Limited use pot heal")
-
-        pot_npc_id = 0x12
-        pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
-        pot_npc.event_address = space.start_address - EVENT_CODE_START
+            pot_npc_id = 0x12
+            pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
+            pot_npc.event_address = space.start_address - EVENT_CODE_START
 
         # (3) Update the NPC dialogs & actions
         counter_npc_id = 0x10

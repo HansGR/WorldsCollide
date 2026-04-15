@@ -249,7 +249,7 @@ class DomaWOB(Event):
 
     def end_mod(self):
         # function called after commander defeated and army retreats
-        if self.args.ruination_mode:
+        if self.args.no_free_heals:
             # Remove free full heal after Leader battle
             # CB/9FD5: B2 Call subroutine $CACFBD (heals all HP/MP/Statuses)
             space = Reserve(0xb9fd5, 0xb9fd8, "remove post-leader battle full heal", field.NOP())

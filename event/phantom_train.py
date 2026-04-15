@@ -456,7 +456,7 @@ class PhantomTrain(Event):
         #space = Reserve(0xbb088, 0xbb09a, "phantom train restaurant skip other scenes")
         #space.clear(field.NOP())
 
-        if self.RUINATION_MODE:
+        if self.args.no_free_heals:
             self.ruination_restaurant_mod()
 
     def ruination_restaurant_mod(self):

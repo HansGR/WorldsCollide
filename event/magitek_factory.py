@@ -31,7 +31,7 @@ class MagitekFactory(Event):
             field.SetEventBit(event_bit.TALKED_TO_SHIVA_MAGITEK_FACTORY),
             field.SetEventBit(event_bit.MET_SETZER_AFTER_MAGITEK_FACTORY),
         )
-        if self.args.ruination_mode:
+        if self.args.no_free_heals:
             space.write(
                 field.ClearEventBit(event_bit.VECTOR_FULL_HEAL_USED),
             )
@@ -92,7 +92,7 @@ class MagitekFactory(Event):
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
 
-        if self.args.ruination_mode:
+        if self.args.no_free_heals:
             self.ruination_mod()
 
 
@@ -495,7 +495,7 @@ class MagitekFactory(Event):
             else:
                 battle_background = 37  # airship WOR, center (does not exist!)
 
-        if self.args.ruination_mode:
+        if self.args.no_free_heals:
             # Remove full heal before crane battle
             # CB/40E1: B2 Call subroutine $CACFBD (heals all HP/MP/Statuses)
             space = Reserve(0xb40e1, 0xb40e4, "remove pre-crane battle full heal", field.NOP())

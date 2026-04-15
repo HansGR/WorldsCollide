@@ -92,6 +92,11 @@ class Events():
         if self.args.ruination_mode:
             create_party_interaction_scripts(self.dialogs)
 
+        # Apply -nfh (no free heals) modifications. Works both with -ruin
+        # (where -nfh is on by default) and standalone.
+        if self.args.no_free_heals:
+            self.no_free_heals_mod()
+
         # initialize event bits, mod events, log rewards
         log_strings = []
         # Ruination mode adds extra init_event_bits writes (e.g. burning house
@@ -328,20 +333,31 @@ class Events():
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()
 
-        # Modify inn costs for ruination mode (includes converting free inns to paid)
-        modify_inn_costs(self.maps, self.rom, self.dialogs, self.args)
-
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs, self.args)
+
+        # Fix ferry connections between South Figaro and Nikeah
+        fix_ferry_connections(self.rom, self.dialogs, ruin_map, self.args)
+
+    def no_free_heals_mod(self):
+        """Apply -nfh changes that wrap up free-heal removals/restrictions.
+
+        Modifies inn costs (and converts free inns to paid), turns existing
+        free bed heals into HP-only heals with an ambush chance, and randomises
+        recovery spring effects. Per-event heal removals (Doma WoB Leader,
+        Magitek 3 pre-crane, Vector heal hut, Phantom Train restaurant, Narshe
+        school pot, Thamasa inn pricing) are gated locally in their respective
+        event files via ``args.no_free_heals``.
+        """
+        # Modify inn costs (includes converting free inns Returners Hideout
+        # and Figaro Castle into paid inns).
+        modify_inn_costs(self.maps, self.rom, self.dialogs, self.args)
 
         # Modify existing free bed heals (HP-only heal with 3/8 monster attack chance)
         modify_free_bed_heals(self.maps, self.dialogs, self.args)
 
         # Modify recovery springs with random effects
         modify_recovery_springs(self.maps, self.rom, self.dialogs, self.args)
-
-        # Fix ferry connections between South Figaro and Nikeah
-        fix_ferry_connections(self.rom, self.dialogs, ruin_map, self.args)
 
     def validate(self, events):
         char_esper_checks = []
