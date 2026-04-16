@@ -93,7 +93,7 @@ class MagitekFactory(Event):
             self.map_shuffle_mod()
 
         if self.args.no_free_heals:
-            self.ruination_mod()
+            self.vector_heal_hut_mod()
 
 
     def vector_mod(self):
@@ -587,7 +587,7 @@ class MagitekFactory(Event):
         ]
         AddSwitchyardEvent(event_id, self.maps, src=src)
 
-    def ruination_mod(self):
+    def vector_heal_hut_mod(self):
         # Write branching code to make the Vector full-heal NPC a one-off (after the fight)
         src = [
             field.BranchIfEventBitSet(event_bit.VECTOR_FULL_HEAL_USED, "NO_HEAL"),
@@ -605,9 +605,6 @@ class MagitekFactory(Event):
         space.write([
             field.BranchIfEventBitSet(destination=heal_hut_npc_branch_addr, event_bit=0x136)
         ])
-
-        # Edit ending: fight final boss in Vector, return to Vector.
-        pass
 
     # def reride_minecart_mod(src):
     #     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.
