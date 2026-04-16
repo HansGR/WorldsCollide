@@ -6,7 +6,7 @@ from data.rooms import forced_connections, shared_oneways, exit_room, logical_li
 from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door  # for door descriptions, WOR/WOB equivalent doors
 from data.event_exit_info import event_exit_info  # for one-way exit descriptions
 from data.walks import *
-from log.verbose import vprint
+from log.verbose import vprint, is_enabled as _verbose_enabled
 
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368, 'root-u'],
@@ -134,12 +134,12 @@ ROOM_SETS['Ruination'] = ['ruin_hub_testing', 'ruin_testing',
 class Doors():
     force_vanilla = False  # for debugging purposes
 
-    def __init__(self, args):
-        # Verbose output controlled by -debug (stdout) or -debug-verbose (temp
-        # file appended to the spoiler log). Either flag enables the verbose
-        # diagnostic prints throughout the door randomizer and related modules.
-        self.verbose = bool(getattr(args, "debug", False) or getattr(args, "debug_verbose", False))
+    @property
+    def verbose(self):
+        """Delegates to the centralized verbose logging flag."""
+        return _verbose_enabled()
 
+    def __init__(self, args):
         # Hard overrides for testing
         self.OVERRIDE = [
             #[1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
@@ -386,12 +386,10 @@ class Doors():
             for r in shuffle_rooms:
                 for dk in [d for d in room_data[r][0]]:
                     if dk in ignore_maps:
-                        if self.verbose:
-                            vprint('removing ', dk, ' from ', r)
+                        vprint('removing ', dk, ' from ', r)
                         room_data[r][0].remove(dk)
                     if dk in protect_doors.keys():
-                        if self.verbose:
-                            vprint('protecting ', dk, ' in ', r, ' --> ', protect_doors[dk])
+                        vprint('protecting ', dk, ' in ', r, ' --> ', protect_doors[dk])
                         room_data[r][0].remove(dk)
                         room_data[r][0].append(protect_doors[dk])
 
@@ -400,8 +398,7 @@ class Doors():
                 if a not in shuffle_rooms:
                     for dk in [d for d in room_data[a][0]]:
                         if dk in ignore_doors:
-                            if self.verbose:
-                                vprint('removing ', dk, ' from ', a)
+                            vprint('removing ', dk, ' from ', a)
                             room_data[a][0].remove(dk)
 
         if self.args.map_shuffle_separate:  # -maps
@@ -647,21 +644,18 @@ class Doors():
             # print('Keys:', len(all_keys), all_keys)
             # print('Locked:', len(all_locked), all_locked)
 
-            if self.verbose:
-                vprint('Now Randomizing:' , area_id)
+            vprint('Now Randomizing:' , area_id)
 
             if len(area) > 0:
 
                 # Initialize the Walk Network
                 walks = Network(area)
-                if self.verbose:
-                    vprint('Initial Count: ', walks.rooms.count)
+                vprint('Initial Count: ', walks.rooms.count)
 
                 walks.ApplyImmediateKeys(self.args)
                 walks.ForceConnections(self.forcing)  # Force initial connections, if any
 
-                if self.verbose:
-                    vprint('Count after forced connections: ', walks.rooms.count)
+                vprint('Count after forced connections: ', walks.rooms.count)
 
                 walks.attach_dead_ends()  # Connect all the dead ends.
 
@@ -694,9 +688,7 @@ class Doors():
                     fully_connected = walks.connect_network()
                 else:
                     try:
-                        if self.verbose:
-                            #print('\tTry', Ncount, ': start room... ', start_room_id)
-                            vprint('\tstarting room... ', start_room_id)
+                        vprint('\tstarting room... ', start_room_id)
                         fully_connected = connect_with_timeout(walks, self.timeout)
 
                         if fully_connected is None:
@@ -704,8 +696,7 @@ class Doors():
                             #Ncount += 1
 
                     except Exception as e:
-                        if self.verbose:
-                            vprint(f"Network connection failed: {e}")
+                        vprint(f"Network connection failed: {e}")
 
                 fcm_doors = [m for m in fully_connected.map[0]]
                 fcm_oneways = [m for m in fully_connected.map[1]]
@@ -731,14 +722,12 @@ class Doors():
                 remove_flag = True
             if remove_flag:
                 map[0].remove(m)
-                if self.verbose:
-                    vprint('Removing logical link: ', m)
+                vprint('Removing logical link: ', m)
         for L in logical_links:
             if L[0] in llink.keys():
                 patched_m = [llink[L[0]], llink[L[1]]]
                 map[0].append(patched_m)
-                if self.verbose:
-                    vprint('Patching logical link: ', patched_m)
+                vprint('Patching logical link: ', patched_m)
 
         # Process OVERRIDE
         for op in self.OVERRIDE:
@@ -780,8 +769,7 @@ class Doors():
 
         if self.match_WOB_WOR:
             # Make the WOR map match the WOB map in relevant areas
-            if self.verbose:
-                vprint('Mapping WoR to match WoB ...')
+            vprint('Mapping WoR to match WoB ...')
             WOR_map = []
             for m in map[0]:
                 if m[0] in doors_WOB_WOR.keys():
@@ -790,9 +778,8 @@ class Doors():
 
         if self.force_vanilla:
             # disregard everything above.  Force vanilla connections to be written.
-            if self.verbose:
-                vprint('OVERWRITING MAP: ')
-                vprint(map)
+            vprint('OVERWRITING MAP: ')
+            vprint(map)
             vanilla_map = [tuple( sorted((m[0], exit_data[m[0]][0])) ) for m in map[0]] + \
                           [tuple( sorted((m[1], exit_data[m[1]][0])) ) for m in map[0]]
             vanilla_map = list(set(vanilla_map))

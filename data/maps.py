@@ -617,7 +617,7 @@ class Maps():
                     exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode.
                 force_explicit = True  # Always force explicit in ruination mode, even if 978 is already in exits_to_patch
             # print(exits_to_patch)
-            self.exits.patch_exits(exits_to_patch, verbose=self.doors.verbose, force_explicit=force_explicit)
+            self.exits.patch_exits(exits_to_patch, force_explicit=force_explicit)
             for e in self.exits.exit_original_data.keys():
                 if len(self.exits.exit_original_data[e]) == 12:
                     # need to append map_id for event doors
