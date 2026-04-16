@@ -17,18 +17,22 @@ class NarsheWOB(Event):
             field.ClearEventBit(npc_bit.SOLDIER_DOORWAY_ARVIS_HOUSE),
         )
 
-        if self.args.ruination_mode and self.args.no_free_heals:
-            # NARSHE_CHECKPOINT event word is repurposed as pot heal counter.
-            # Only initialize it when both ruination_mode and -nfh are active,
-            # since the limited pot heal NPC code below is similarly gated.
+        if self.args.no_free_heals:
+            # Initialize the Narshe school bucket drink counter to 3 drinks.
+            # Two event bits encode the remaining drinks: (SCHOOL_LIMITED_HEALS_1,
+            # SCHOOL_LIMITED_HEALS_2) = (1,1)=3, (1,0)=2, (0,1)=1, (0,0)=0.
             space.write(
-                field.SetEventWord(event_word.NARSHE_CHECKPOINT, NUM_HEALS)
-            )  # [E8 02 03 0]
+                field.SetEventBit(event_bit.SCHOOL_LIMITED_HEALS_1),
+                field.SetEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            )
 
     def mod(self):
         self.terra_elder_scene_mod()
         self.security_checkpoint_mod()
         self.shop_mod()
+
+        if self.args.no_free_heals:
+            self.limited_heals()
 
         if self.args.ruination_mode:
             self.ruination_mod()
@@ -99,6 +103,72 @@ class NarsheWOB(Event):
             field.Branch("INVOKE_SHOP"),
         )
 
+    def limited_heals(self):
+        """Limit the Narshe school heal bucket to NUM_HEALS uses (gated by -nfh).
+
+        Two event bits track remaining drinks: (SCHOOL_LIMITED_HEALS_1,
+        SCHOOL_LIMITED_HEALS_2) = (1,1)=3, (1,0)=2, (0,1)=1, (0,0)=0. The bits
+        are initialized to (1,1) in ``init_event_bits`` when -nfh is active.
+        """
+        school_map_id = 0x068
+        pot_heal_address = 0xc33ae
+
+        # Dialog IDs for the bucket prompts. 1461 is used by Figaro Castle inn;
+        # 1462-1466 are left for ruination_mod's reform dialogs.
+        three_id = 1470
+        two_id = 1469
+        one_id = 1468
+        empty_id = 1467
+
+        self.dialogs.set_text(three_id, "Drink from the bucket?<line>(3 drinks left)<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(two_id, "Drink from the bucket?<line>(2 drinks left)<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(one_id, "Drink from the bucket?<line>(1 drink left)<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(empty_id, "The bucket is empty.<end>")
+
+        drink_src = [
+            # Check top bit (SCHOOL_LIMITED_HEALS_1)
+            field.BranchIfEventBitClear(event_bit.SCHOOL_LIMITED_HEALS_1, "TOP_CLEAR"),
+            # top=1: check bottom bit
+            field.BranchIfEventBitClear(event_bit.SCHOOL_LIMITED_HEALS_2, "TWO_DRINKS"),
+            # (1,1) = 3 drinks
+            field.DialogBranch(three_id, dest1="DRINK_3_TO_2", dest2="RETURN"),
+            "TWO_DRINKS",
+            # (1,0) = 2 drinks
+            field.DialogBranch(two_id, dest1="DRINK_2_TO_1", dest2="RETURN"),
+            "TOP_CLEAR",
+            # top=0: check bottom bit
+            field.BranchIfEventBitClear(event_bit.SCHOOL_LIMITED_HEALS_2, "EMPTY"),
+            # (0,1) = 1 drink
+            field.DialogBranch(one_id, dest1="DRINK_1_TO_0", dest2="RETURN"),
+            "EMPTY",
+            # (0,0) = 0 drinks
+            field.Dialog(empty_id),
+            "RETURN",
+            field.Return(),
+
+            # 3 -> 2 drinks: (1,1) -> (1,0), clear bottom
+            "DRINK_3_TO_2",
+            field.ClearEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            field.Branch("HEAL"),
+            # 2 -> 1 drinks: (1,0) -> (0,1), clear top, set bottom
+            "DRINK_2_TO_1",
+            field.ClearEventBit(event_bit.SCHOOL_LIMITED_HEALS_1),
+            field.SetEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            field.Branch("HEAL"),
+            # 1 -> 0 drinks: (0,1) -> (0,0), clear bottom
+            "DRINK_1_TO_0",
+            field.ClearEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            # fallthrough
+            "HEAL",
+            field.Call(pot_heal_address),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, drink_src, "Limited use pot heal")
+
+        pot_npc_id = 0x12
+        pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
+        pot_npc.event_address = space.start_address - EVENT_CODE_START
+
     def ruination_mod(self):
         school_map_id = 0x068
 
@@ -112,49 +182,14 @@ class NarsheWOB(Event):
         # (1a) Delete event tile that handles WOB vs WOR exit (always go to same place)
         self.maps.delete_event(school_map_id, school_door.x, school_door.y)
 
-        # (2) Make the bucket provide a limited number of heals
-        # Gated by -nfh so a stock -ruin run leaves the pot as a free heal.
-        if self.args.no_free_heals:
-            NARSHE_DIALOG_IDS = [i for i in range(1462, 1471)]  # 1461 used by Figaro Castle inn
-            # Based on Dragon number src: see e.g. CC/1F9F
-            # Could use this memory space if needed  [0xc1f9f -- 0xc2047]
-            # Could also use dragon dialogs:  [1498 -- 1506]
-            # It turns out AtmaTek already used all the free event words (for CHARACTERS, ESPERS, CHECKS, DRAGONS, CID HEALTH, and CORAL).
-            # How are 0x0 (CHECKPOINT_BANQUET) and 0x1 (NARSHE_CHECKPOINT) used?  just in vanilla code.
-            # If this mode doesn't include the checkpoint, we can use 0x1.
-            drink_query_ids = []
-            drink_src = []
-            pot_heal_address = 0xc33ae
-            for i in range(NUM_HEALS):
-                this_id = NARSHE_DIALOG_IDS.pop()
-                drink_query_ids.append(this_id)
-                this_num = NUM_HEALS - i
-                num_drinks_line = "<line>(" + str(this_num) + " drink" + ["s", ""][[True, False].index(this_num != 1)] + " left)"
-                self.dialogs.set_text(this_id, "Drink from the bucket?" + num_drinks_line + "<line><choice> Yes<line><choice> No<end>")
-                drink_src += [
-                    field.BranchIfEventWordLess(event_word.NARSHE_CHECKPOINT, this_num, "LESS_"+str(this_num)),
-                    field.DialogBranch(this_id, "HEAL", "RETURN"),
-                    "LESS_" + str(this_num),
-                ]
-
-            empty_id = NARSHE_DIALOG_IDS.pop()
-            self.dialogs.set_text(empty_id, "The bucket is empty.<end>")
-            drink_src += [
-                field.Dialog(empty_id),
-                "RETURN",
-                field.Return(),
-                "HEAL",
-                field.Call(pot_heal_address),
-                field.DecrementEventWord(event_word.NARSHE_CHECKPOINT),  # = [EA 02 01 0]
-                field.Return()
-            ]
-            space = Write(Bank.CC, drink_src, "Limited use pot heal")
-
-            pot_npc_id = 0x12
-            pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
-            pot_npc.event_address = space.start_address - EVENT_CODE_START
+        # (2) Fetch the pot NPC so the ghost NPC below can inherit its
+        # event_byte/event_bit. Limiting the bucket to a few heals is handled by
+        # limited_heals(), which is gated independently by -nfh.
+        pot_npc_id = 0x12
+        pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
 
         # (3) Update the NPC dialogs & actions
+        NARSHE_DIALOG_IDS = [i for i in range(1462, 1467)]  # 1461 used by Figaro Castle inn; 1467-1470 reserved for limited_heals
         counter_npc_id = 0x10
         right_npc_id = 0x11
         left_npc_id = 0x13
