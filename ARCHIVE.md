@@ -889,3 +889,45 @@ In `data/shops.py` `disable_buy_if_empty()`, the buy menu entry hook (Reserve 0x
 3. `menus/menus.py` → `BuyMenu()` constructor → writes 4 ASM hooks if `-sli` active
 4. `event/events.py` `ruination_mod()` → `shops.enable_limited_shops(accessible_shops)` (assigns Save RAM bytes)
 5. `data/shops.py` `write()` → `write_limited_inventory_data()` (writes pack size + pointer tables to ROM)
+
+---
+
+## No Free Heals (`-nfh` / `--no-free-heals`)
+
+Bundles all of ruination mode's free-heal removals/restrictions behind a single
+flag so they can be enabled together (default in `-ruin`) or used standalone in
+any other mode. Added to the `-ruin` defaults in `args/ruin_preprocessor.py`
+under `RUIN_DEFAULT_FLAGS['other']`. Users can opt out with `-no nfh`.
+
+### Argument Wiring
+
+- **Flag definition:** `args/misc.py` — `misc.add_argument("-nfh", "--no-free-heals", action="store_true", ...)`. Also exposed via `flags()` and `options()` ("No Free Heals").
+- **Default in `-ruin`:** `args/ruin_preprocessor.py` `RUIN_DEFAULT_FLAGS['other']` includes `'-nfh'`.
+- **Top-level call site:** `event/events.py` `mod()` calls `self.no_free_heals_mod()` immediately after `create_party_interaction_scripts` whenever `args.no_free_heals` is true. This works in both ruination and standalone contexts.
+- **Top-level method:** `event/events.py` `no_free_heals_mod()` invokes the three "global" sweepers from `event/ruination.py`:
+  - `modify_inn_costs(maps, rom, dialogs, args)` — multiplies all paid inn costs by `INN_COST_MULTIPLIER` (`= 3`) and converts free inns at Returners Hideout and Figaro Castle into paid ones.
+  - `modify_free_bed_heals(maps, dialogs, args)` — turns the six existing free bed heals into HP-only heals with a 3/8 chance of an ambush from `FREE_BED_AMBUSH_PACK = 416`.
+  - `modify_recovery_springs(maps, rom, dialogs, args)` — randomises the spring effects in `SPRING_LOCATIONS` (Phantom Forest, Cave to South Figaro).
+
+### Per-Event Heal Modifications (gated locally)
+
+Each event file checks `args.no_free_heals` directly so the changes apply with or without `-ruin`.
+
+| Location | File / Function | Change |
+|----------|-----------------|--------|
+| Doma WoB Leader battle | `event/doma_wob.py` `end_mod()` | `Reserve(0xb9fd5, 0xb9fd8, ..., NOP())` removes `Call $CACFBD` (full heal). |
+| Magitek 3 pre-crane | `event/magitek_factory.py` `crane_battle_mod()` | `Reserve(0xb40e1, 0xb40e4, ..., NOP())` removes the pre-crane full heal. |
+| Vector heal hut NPC | `event/magitek_factory.py` `ruination_mod()` (called when `args.no_free_heals`) | NPC at `0xc9371` patched to branch into one-off heal subroutine that sets `event_bit.VECTOR_FULL_HEAL_USED` (`0x149`) on first use; subsequent talks dialog-only. `init_event_bits` clears the bit at start. |
+| Phantom Train restaurant | `event/phantom_train.py` `restaurant_mod()` → `ruination_restaurant_mod()` | Replaces free meal with three priced choices (Cheap 10 GP / Filling 500 GP / Chef's Special 2000 GP) with random / risky / full-heal effects respectively. |
+| Narshe school heal pot | `event/narshe_wob.py` `ruination_mod()` (also requires `ruination_mode`) | Limits the bucket to `NUM_HEALS = 3` uses, tracked via the repurposed `NARSHE_CHECKPOINT` event word. The init writes the counter only when **both** `ruination_mode` and `no_free_heals` are set, since the event word is otherwise reserved by vanilla logic. |
+| Thamasa inn pricing | `event/burning_house.py` `ruination_inn_mod()` | When `no_free_heals` is on, "strangers" path receives `1500 * INN_COST_MULTIPLIER` GP. The companion burning-house re-trigger patch (use `character_recruited(STRAGO)` instead of `MET_STRAGO_RELM`) stays unconditional inside `ruination_inn_mod` since it is part of ruination's hub architecture. |
+| Returners / Figaro free inns | `modify_inn_costs()` (`event/ruination.py`) | Replaces free sleep events with `RemoveGP` followed by branch into the original sleep code; included via `no_free_heals_mod`. |
+
+### Notes / Caveats
+
+- **NARSHE_CHECKPOINT reuse**: The event word is repurposed as a heal-counter only in ruination mode, so the Narshe pot limit is gated by `ruination_mode AND no_free_heals`. Running `-nfh` without `-ruin` leaves the pot vanilla.
+- **Vector heal hut**: The one-use restriction is gated by `no_free_heals` alone — the Vector heal hut exists in vanilla, so the patch is safe outside ruination.
+- **Thamasa inn**: The `ruination_inn_mod()` call site in `event/burning_house.py` still requires `ruination_mode`; only the price-bump portion checks `no_free_heals` internally.
+- **Baren Falls**: Vanilla provides a free heal there but the current `ruination_mod()` is a no-op pass — nothing to gate (yet).
+- **Recovery springs**: `phantom_forest auto recovery spring` reserve in `event/phantom_train.py` `add_gating_condition()` repurposes the spring tile for character-gating walking and is unrelated to `-nfh`.
+- **Inn cost ordering**: `modify_inn_costs`/`modify_free_bed_heals`/`modify_recovery_springs` do not access door-map postprocessed data, so calling `no_free_heals_mod()` before the event mod loop (and before `postprocess_door_map`) is safe.
