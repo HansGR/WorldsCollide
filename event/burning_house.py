@@ -389,6 +389,23 @@ class BurningHouse(Event):
                 field_entity.SetSpeed(field_entity.Speed.NORMAL),
                 field_entity.Move(direction.UP, 7),
             ),
+        )
+        if self.args.ruination_mode:
+            # Some of the fireballs may have been deleted.  Recreate them for the animation.
+            space.write(
+                field.CreateEntity(0x10),
+                field.ShowEntity(0x10),
+                field.CreateEntity(0x11),
+                field.ShowEntity(0x11),
+                field.CreateEntity(0x12),
+                field.ShowEntity(0x12),
+                field.CreateEntity(0x17),
+                field.ShowEntity(0x17),
+                field.CreateEntity(0x19),
+                field.ShowEntity(0x19),
+                field.RefreshEntities(),
+            )
+        space.write(
             field.Branch(space.end_address + 1), # skip nop
         )
 
