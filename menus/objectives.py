@@ -35,7 +35,8 @@ class Objectives(scroll_area.ScrollArea):
                 scroll_area.Line("  asilverthorn, Franklin,", f0.set_user_text_color),
                 scroll_area.Line("  Jefe01, Jexvrok,", f0.set_user_text_color),
                 scroll_area.Line("  NobodyWar, WRJones", f0.set_user_text_color),
-                scroll_area.Line("  and the WC community", f0.set_user_text_color),
+                scroll_area.Line("  Haloingmoons, and", f0.set_user_text_color),
+                scroll_area.Line("  the WC community", f0.set_user_text_color),
                 #scroll_area.Line("", f0.set_user_text_color),
             ]
 
