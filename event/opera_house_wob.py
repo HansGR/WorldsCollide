@@ -64,6 +64,9 @@ class OperaHouseWOB(Event):
 
         #print('OPERA HOUSE FIX: ', self.MAP_CROSSWORLD, self.airship_loc, self.mod_world_src)
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
         self.begin_performance_mod()
         self.performance_mod()
         self.end_performance_mod()
@@ -489,3 +492,25 @@ class OperaHouseWOB(Event):
             field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
             field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
         ]
+
+    def ruination_mod(self):
+        # Remove softlock potential if y-switching parties while in switch room
+        # Edit NPC starting event: CA/B455: C0    If ($1E80($110) [$1EA2, bit 0] is set), branch to $CAB45F
+        # Change event script to animate party out of the way if party is facing left
+        src = [
+            field.BranchIfEventBitClear(event_bit.FACING_LEFT, "GO_TO_ORIGINAL_SCRIPT"),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                            field_entity.Move(direction.UP, 1),
+                            field_entity.Move(direction.LEFT, 1),
+                            field_entity.Turn(direction.DOWN)
+                            ),
+            "GO_TO_ORIGINAL_SCRIPT",
+            field.Branch(0xab455),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src, 'Opera House switchmaster Remove Softlock Potential')
+        map_id = 0xe8
+        switchmaster_id = 0x11
+        switchmaster_npc = self.maps.get_npc(map_id, switchmaster_id)
+        switchmaster_npc.event_address = space.start_address - EVENT_CODE_START
