@@ -31,6 +31,40 @@ class MultipleCalls(_Instruction):
     def __str__(self):
         return super().__str__(hex(self.address))
 
+
+def diagnose_state(offset, repl_addr):
+    # DIAGNOSTIC ROUTINES: something in the SelectParties script is sometimes writing $00 to address $1880 and
+    # $80 to address $1881, overwriting the default 'empty' value $FF.
+    # Let's occasionally save the value of these bytes to see when this happens.
+    # We will save them to later in the inventory, because why not.
+
+    # DIAGNOSTIC STEP: Save SRAM bytes at this part of the routine
+    import instruction.asm as asm
+    from memory.space import Bank, START_ADDRESS_SNES, Reserve, Write, Read
+    diagnostic_check_addr = 0x1880
+    diagnostic_save_addr = 0x1890
+
+    src = [
+        Read(repl_addr, repl_addr + 2),  # run line first to test if it introduced the change
+        asm.PHA(),
+        asm.LDA(diagnostic_check_addr, asm.ABS),  # load diagnostic byte
+        asm.STA(diagnostic_save_addr + (offset-1)*2, asm.ABS),  # store diagnostic byte
+        asm.LDA(diagnostic_check_addr + 1, asm.ABS),  # load diagnostic byte
+        asm.STA(diagnostic_save_addr + 1 + (offset-1)*2, asm.ABS),  # store diagnostic byte
+        asm.PLA(),
+        asm.RTS(),
+    ]
+    space = Write(Bank.C0, src, f"Diagnostic {offset} for SelectParties")
+
+    src_repl = [
+        asm.JSR(space.start_address, asm.ABS)
+    ]
+    space = Reserve(repl_addr, repl_addr + 2, f"Diagnostic replacement {offset} for SelectParties", asm.NOP())
+    space.write(src_repl)
+
+    return
+
+
 class SelectParties(_Instruction):
     def __init__(self, count, unmovable_characters = 0x0000, clear_party=False):
         if clear_party:
