@@ -6342,15 +6342,16 @@ def fix_ferry_connections(rom, dialogs, ruin_map, args):
 
 # Battle pack for nighttime ambush at free beds.
 # Set by modify_free_bed_heals from WOB zone 0, pack slot 0. WOB zone 0 is
-# unreachable in ruination mode, so we repurpose its pack as the dedicated
-# bed-ambush pack and modify its enemies without affecting reachable zones.
+# unreachable (the WOB map is not used outside vanilla flows), so we repurpose
+# its pack as the dedicated bed-ambush pack and modify its enemies without
+# affecting reachable zones.
 FREE_BED_AMBUSH_PACK = None
 FREE_BED_DIALOG_ID = 443  # "Take a nap?" at Gau's Dad's House
 
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
 VANILLA_BED_HEAL_ADDRESS = 0xcd17
 
-# Address of the ruination bed heal routine (set by modify_free_bed_heals)
+# Address of the -nfh bed heal routine (set by modify_free_bed_heals)
 RUINATION_BED_HEAL_ADDRESS = None
 
 # Existing free bed heal event tile locations
@@ -6369,18 +6370,18 @@ FREE_BED_LOCATIONS = [
 
 def modify_free_bed_heals(maps, dialogs, enemies, args):
     """
-    Modifies existing free bed heal events for ruination mode.
+    Modifies existing free bed heal events as part of -nfh (no free heals).
 
     Changes the bed heals to:
     - Have a 3/8 (37.5%) chance of triggering an unescapable back attack
-    - Apply a per-character state-dependent heal (see RuinationBedHealCharacter):
-      dead -> revive to 1 HP, statused -> cure, hurt -> +half max HP,
-      otherwise -> +half max MP.
+    - Apply a per-character state-dependent heal (see BedHealCharacter):
+      dead -> revive to 1 HP (no-op under -permadeath), statused -> cure,
+      hurt -> +half max HP, otherwise -> +half max MP.
     - Use the standard bed animation (fade, Nighty Night song, unfade)
 
-    The ambush pack is pulled from WOB zone 0 (which is unreachable in ruination
-    mode) so the "cant flee" flag we set on its enemies doesn't leak into any
-    reachable encounter.
+    The ambush pack is pulled from WOB zone 0 (which is not used by the
+    randomizer in any reachable context) so the "can't flee" flag we set on
+    its enemies doesn't leak into any reachable encounter.
 
     Args:
         maps: The Maps object to modify event tiles
@@ -6388,7 +6389,7 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         enemies: The Enemies object (to adjust the ambush pack's enemies/formations)
         args: Command line arguments (for debug flag)
     """
-    from instruction.field.custom import BranchChance, RuinationBedHealCharacter
+    from instruction.field.custom import BranchChance, BedHealCharacter
 
     # NIGHTY_NIGHT song ID
     NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
@@ -6446,10 +6447,10 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.StartSong(NIGHTY_NIGHT),
 
         # Per-character state-dependent heal for each party slot.
-        RuinationBedHealCharacter(field_entity.PARTY0),
-        RuinationBedHealCharacter(field_entity.PARTY1),
-        RuinationBedHealCharacter(field_entity.PARTY2),
-        RuinationBedHealCharacter(field_entity.PARTY3),
+        BedHealCharacter(field_entity.PARTY0),
+        BedHealCharacter(field_entity.PARTY1),
+        BedHealCharacter(field_entity.PARTY2),
+        BedHealCharacter(field_entity.PARTY3),
 
         # Stop temporary song and restore previous
         field.WaitForSong(),

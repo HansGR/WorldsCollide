@@ -112,13 +112,13 @@ class DomaWOR(Event):
 
     def _create_ruination_bed_routine(self):
         """
-        Creates a custom bed heal routine for Doma Castle in ruination mode.
+        Creates a custom bed heal routine for Doma Castle under -nfh.
         Includes the Doma-specific bed animations (going to bed, party split,
-        map reload, party reform) combined with the ruination healing logic
+        map reload, party reform) combined with the -nfh healing logic
         (dialog, possible unescapable ambush, per-character state-dependent heal).
         """
         from event.ruination import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
-        from instruction.field.custom import RuinationBedHealCharacter
+        from instruction.field.custom import BedHealCharacter
 
         # Subroutine addresses from vanilla event code
         SLEEP_SUBROUTINE = [0xacf67, 0xacf8e]   # Party split to beds, fade, play nighty night
@@ -150,10 +150,10 @@ class DomaWOR(Event):
 
             "HEAL",
             # Per-character state-dependent heal for each party slot.
-            RuinationBedHealCharacter(field_entity.PARTY0),
-            RuinationBedHealCharacter(field_entity.PARTY1),
-            RuinationBedHealCharacter(field_entity.PARTY2),
-            RuinationBedHealCharacter(field_entity.PARTY3),
+            BedHealCharacter(field_entity.PARTY0),
+            BedHealCharacter(field_entity.PARTY1),
+            BedHealCharacter(field_entity.PARTY2),
+            BedHealCharacter(field_entity.PARTY3),
 
             # Load map 0x7B (Doma Castle bedroom) at position (8, 8), facing down
             # This happens while screen is still black

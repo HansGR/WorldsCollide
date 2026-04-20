@@ -6,7 +6,7 @@ import args
 from enum import IntEnum
 
 # Remaining unused opcodes: 0x4a, 0x5b, 0xe6, 0xfc, 0xfd
-# Ruination-only: 0xa4 (RuinationBedHealCharacter)
+# -nfh-only: 0xa4 (BedHealCharacter)
 # Also used in y_npc/instructions.py: 0x9e (SetYNPCGraphics), 0x9f (YNPCEffect)
 def _set_opcode_address(opcode, address):
     FIRST_OPCODE = 0x35
@@ -149,8 +149,8 @@ class SetEquipmentAndCommands(_Instruction):
         self.__init__(to_character, from_character)
 
 
-class RuinationBedHealCharacter(_Instruction):
-    # Ruination bed heal, per character. Character arg is 0x00..0x0F for a
+class BedHealCharacter(_Instruction):
+    # -nfh bed heal, per character. Character arg is 0x00..0x0F for a
     # specific actor or 0x31..0x34 for PARTY0..PARTY3 (resolved via $9DAD).
     # Effect per character (mutually exclusive):
     #   dead                   -> revive to 1 HP (no-op if -permadeath)
@@ -265,13 +265,13 @@ class RuinationBedHealCharacter(_Instruction):
             asm.JMP(NEXT_COMMAND, asm.ABS),
         ]
 
-        space = Write(Bank.C0, src, "ruination bed heal single character")
+        space = Write(Bank.C0, src, "nfh bed heal single character")
         address = space.start_address
 
         opcode = 0xa4
         _set_opcode_address(opcode, address)
 
-        RuinationBedHealCharacter.__init__ = lambda self, character: super().__init__(opcode, character)
+        BedHealCharacter.__init__ = lambda self, character: super().__init__(opcode, character)
         self.__init__(character)
 
 
