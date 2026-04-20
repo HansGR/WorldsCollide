@@ -1642,74 +1642,43 @@ class FinalizeBranchRecruit(_Instruction):
 # Keep old name as alias for backward compatibility during transition
 FinalizeBranchPartySelect = FinalizeBranchRecruit
 
-def _select_parties_safe_mod():
-    """Patch gen. act. 99 (SelectParties) to prevent a vanilla leader-finder
-    bug in C0/6F67 that corrupts inventory slots $1880/$1881 when the menu
-    closes with no character matching $1A6D.
+def _leader_finder_safe_store_mod():
+    """Patch the two SRAM writes in C0/6F67 (post-SelectParties leader-finder)
+    to skip themselves when their destination index is out of range.
 
-    Vanilla post-menu sequence at C0/6F67:
-      1. LDY $0803; STY $1E          ; save old leader offset
-      2. loop: for each char, if ($1850,Y & 7) == $1A6D, update $07FB = X
-      3. post-loop: use $1E and $07FB as dividends in hardware divides by 41,
-         then STA $1850,Y where Y = quotient.
+    The routine issues two hardware divides-by-41 and then does:
+        LDY $4214
+        STA $1850,Y
+    intending Y to be a character index in [0, 13]. When the inputs
+    ($1E = entry $0803, $07FB = the loop's new-leader offset) are the
+    vanilla "no character" sentinels $07B0 (camera) or $07D9 (empty slot),
+    the quotient is 48 or 49 and the store lands in inventory save RAM at
+    $1850+48=$1880 (slot 23, "Dirk") or $1850+49=$1881 (slot 24, "Cat Hood").
 
-    If the loop never matches (e.g. $1A6D = 2 but SelectParties just put
-    chars in party 1), $07FB keeps its pre-menu value. Pre-menu, C0/B038
-    seeds $07FB from $0803. When either value is the "no character"
-    sentinel $07B0 (camera) or $07D9 (empty slot), the divide-by-41
-    yields 48 or 49, and STA $1850,Y lands in inventory save RAM:
-      $1850 + 48 = $1880 (slot 23, overwritten with item id $00 "Dirk")
-      $1850 + 49 = $1881 (slot 24, overwritten with item id $80 "Cat Hood")
-
-    Fix: force $1A6D = 1 pre-menu. SelectParties always yields >=1 char in
-    party 1, so the search loop is guaranteed to match and $07FB lands on
-    a valid character offset. The menu also sets $0803 to the new party-1
-    leader, so the first divide's dividend is valid too.
-
-    Vanilla SelectParties clears bit $1A6D of $1E9C (party_away_byte),
-    which would destroy PARTY_N_AWAY state in ruination mode. Save/restore
-    $1E9C around the menu via SCRATCH high byte ($1FFB). This coordinates
-    cleanly with SetupBranchRecruit, which already uses $1FFB for the same
-    purpose with the same source value.
-
-    Two 3-byte ROM patches in bank C0:
-      C0/B035..B037: LDY $0803  -> JSR pre_hook   (falls through to STY $07FB)
-      C0/B05C..B05E: JSR $6F67  -> JSR post_hook  (wraps the buggy call)
+    Minimal fix: replace each 3-byte `STA $1850,Y` with `JSR safe_store`,
+    where safe_store skips the write when Y >= 14. Nothing else in the
+    routine's behavior changes. When the indices are valid (the normal
+    case), the write happens identically to vanilla.
     """
-    import data.event_word as event_word
-
-    current_party = 0x1a6d
-    party_away_byte = 0x1e9c           # event bits $0E0..$0E7, bits 1-3 = PARTY_N_AWAY
-    scratch_hi = event_word.address(event_word.SCRATCH) + 1  # $1FFB
-
-    # Pre-menu hook. Returns with Y = $0803 so the fall-through STY $07FB
-    # at C0/B038 stores the correct value.
-    pre_hook_src = [
-        asm.LDA(party_away_byte, asm.ABS),
-        asm.STA(scratch_hi, asm.ABS),
-        asm.LDA(0x01, asm.IMM8),
-        asm.STA(current_party, asm.ABS),   # force active party = 1
-        asm.LDY(0x0803, asm.ABS),          # restore the displaced vanilla load
+    # X/Y are 16-bit at entry to C0/6F67 (event engine invariant), so Y
+    # stays 16-bit here and CPY #$000E is a 16-bit compare.
+    safe_store_src = [
+        asm.CPY(0x000e, asm.IMM16),
+        asm.BCS("SKIP"),
+        asm.STA(0x1850, asm.ABS_Y),
+        "SKIP",
         asm.RTS(),
     ]
-    pre_hook_space = Write(Bank.C0, pre_hook_src, "select_parties safe pre-hook")
-    pre_hook_addr = pre_hook_space.start_address
+    safe_store_space = Write(Bank.C0, safe_store_src, "leader-finder safe store")
+    safe_store_addr = safe_store_space.start_address
 
-    # Post-menu hook. Wraps the original JSR $6F67 with a $1E9C restore.
-    post_hook_src = [
-        asm.JSR(0x6f67, asm.ABS),
-        asm.LDA(scratch_hi, asm.ABS),
-        asm.STA(party_away_byte, asm.ABS),
-        asm.RTS(),
-    ]
-    post_hook_space = Write(Bank.C0, post_hook_src, "select_parties safe post-hook")
-    post_hook_addr = post_hook_space.start_address
+    # First write site: C0/7049..704B = STA $1850,Y (old-leader quotient)
+    space = Reserve(0x7049, 0x704b, "leader-finder first store range-check")
+    space.write(asm.JSR(safe_store_addr, asm.ABS))
 
-    space = Reserve(0xb035, 0xb037, "SelectParties pre-menu safety JSR")
-    space.write(asm.JSR(pre_hook_addr, asm.ABS))
-
-    space = Reserve(0xb05c, 0xb05e, "SelectParties post-menu safety JSR")
-    space.write(asm.JSR(post_hook_addr, asm.ABS))
+    # Second write site: C0/7062..7064 = STA $1850,Y (new-leader quotient)
+    space = Reserve(0x7062, 0x7064, "leader-finder second store range-check")
+    space.write(asm.JSR(safe_store_addr, asm.ABS))
 
 if args.ruination_mode is not None:
-    _select_parties_safe_mod()
+    _leader_finder_safe_store_mod()
