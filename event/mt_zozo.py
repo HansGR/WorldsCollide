@@ -299,6 +299,11 @@ class MtZozo(Event):
         # replaces has_entrance_event;
         # to be used in event_exit_info.entrance_door_patch()
 
+        # When the branch condition misses we must fall through to the caller's LoadMap, not
+        # Return() early. Returning early short-circuits shared_map_exit_event's FadeLoadMap
+        # (used by logical WoR exits like 5224), leaving the underlying long exit to fire its
+        # vanilla dest_map=0x1ff (return to parent map).
+
         CYAN = 2
 
         # CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
@@ -306,11 +311,9 @@ class MtZozo(Event):
             src = [
                 field.BranchIfAll([event_bit.FINISHED_MT_ZOZO, False,
                                    event_bit.character_recruited(CYAN), True], 0xc3fad),
-                field.Return()
             ]
         else:
             src = [
                 field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, 0xc3fad),
-                field.Return()
             ]
         return src
