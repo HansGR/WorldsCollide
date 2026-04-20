@@ -112,21 +112,17 @@ class DomaWOR(Event):
 
     def _create_ruination_bed_routine(self):
         """
-        Creates a custom bed heal routine for Doma Castle in ruination mode.
+        Creates a custom bed heal routine for Doma Castle under -nfh.
         Includes the Doma-specific bed animations (going to bed, party split,
-        map reload, party reform) combined with the ruination healing logic
-        (dialog, possible ambush, HP heal).
+        map reload, party reform) combined with the -nfh healing logic
+        (dialog, possible unescapable ambush, per-character state-dependent heal).
         """
         from event.ruination import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
+        from instruction.field.custom import BedHealCharacter
 
         # Subroutine addresses from vanilla event code
         SLEEP_SUBROUTINE = [0xacf67, 0xacf8e]   # Party split to beds, fade, play nighty night
         WAKE_SUBROUTINE = 0xCACF96    # Fade in, party reform, free screen
-
-        # Status effects to remove (same as ruination bed heal)
-        HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
-                       field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
-                       field.Status.DARKNESS)
 
         src = [
             # Ask if player wants to sleep BEFORE any animation
@@ -148,20 +144,16 @@ class DomaWOR(Event):
             # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
             field.BranchChance(0.625, "HEAL"),
 
-            # Monster attack! (back attack)
+            # Monster attack! (back attack; pack enemies have no_run set)
             field.Dialog(448),  # "Ambushed!" dialog
             *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
 
             "HEAL",
-            # Heal HP and remove status effects for all party members
-            field.RemoveStatusEffects(field_entity.PARTY0, HEAL_STATUS),
-            field.RemoveStatusEffects(field_entity.PARTY1, HEAL_STATUS),
-            field.RemoveStatusEffects(field_entity.PARTY2, HEAL_STATUS),
-            field.RemoveStatusEffects(field_entity.PARTY3, HEAL_STATUS),
-            field.RestoreHp(field_entity.PARTY0, 0x7f),
-            field.RestoreHp(field_entity.PARTY1, 0x7f),
-            field.RestoreHp(field_entity.PARTY2, 0x7f),
-            field.RestoreHp(field_entity.PARTY3, 0x7f),
+            # Per-character state-dependent heal for each party slot.
+            BedHealCharacter(field_entity.PARTY0),
+            BedHealCharacter(field_entity.PARTY1),
+            BedHealCharacter(field_entity.PARTY2),
+            BedHealCharacter(field_entity.PARTY3),
 
             # Load map 0x7B (Doma Castle bedroom) at position (8, 8), facing down
             # This happens while screen is still black

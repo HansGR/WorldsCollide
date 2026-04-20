@@ -5,7 +5,8 @@ import instruction.c0 as c0
 import args
 from enum import IntEnum
 
-# Remaining unused opcodes: 0x4a, 0x5b, 0xa4, 0xe6, 0xfc, 0xfd
+# Remaining unused opcodes: 0x4a, 0x5b, 0xe6, 0xfc, 0xfd
+# -nfh-only: 0xa4 (BedHealCharacter)
 # Also used in y_npc/instructions.py: 0x9e (SetYNPCGraphics), 0x9f (YNPCEffect)
 def _set_opcode_address(opcode, address):
     FIRST_OPCODE = 0x35
@@ -146,6 +147,132 @@ class SetEquipmentAndCommands(_Instruction):
 
         SetEquipmentAndCommands.__init__ = lambda self, to_character, from_character : super().__init__(opcode, to_character, from_character)
         self.__init__(to_character, from_character)
+
+
+class BedHealCharacter(_Instruction):
+    # -nfh bed heal, per character. Character arg is 0x00..0x0F for a
+    # specific actor or 0x31..0x34 for PARTY0..PARTY3 (resolved via $9DAD).
+    # Effect per character (mutually exclusive):
+    #   dead                   -> revive to 1 HP (no-op if -permadeath)
+    #   alive + any status     -> clear all field status bytes ($1614, $1615)
+    #   alive + HP < max HP    -> current HP += max HP / 2 (capped at max)
+    #   alive + at max HP      -> current MP += max MP / 2 (capped at max)
+    def __init__(self, character):
+        from instruction.c0 import character_data_offset
+
+        CURRENT_HP = 0x1609
+        CURRENT_MP = 0x160d
+        STATUS1    = 0x1614  # death bit is bit 7 here (matches permadeath.py)
+        STATUS4    = 0x1615
+        DEATH_MASK = 0x80
+
+        MAX_HP_INTO_1E = 0xaee8  # JSR -> $1E = boosted max HP (capped at 9999)
+        MAX_MP_INTO_1E = 0xafa3  # JSR -> $1E = boosted max MP
+        NEXT_COMMAND   = 0x9b5c
+
+        src = [
+            # Resolve character data offset. Y = offset such that char data
+            # lives at $1600+Y. Sentinel Y>=$0250 means no such slot.
+            asm.JSR(character_data_offset, asm.ABS),
+            asm.CPY(0x0250, asm.IMM16),
+            asm.BCS("DONE"),
+
+            # Is this character dead?
+            asm.LDA(STATUS1, asm.ABS_Y),
+            asm.AND(DEATH_MASK, asm.IMM8),
+            asm.BEQ("NOT_DEAD"),
+        ]
+
+        if args.permadeath:
+            # Permadeath: dead characters get no effect from the bed.
+            src += [
+                asm.BRA("DONE"),
+            ]
+        else:
+            # Revive: clear death bit, HP = 1.
+            src += [
+                asm.LDA(STATUS1, asm.ABS_Y),
+                asm.AND(0xff - DEATH_MASK, asm.IMM8),
+                asm.STA(STATUS1, asm.ABS_Y),
+                asm.A16(),
+                asm.LDA(0x0001, asm.IMM16),
+                asm.STA(CURRENT_HP, asm.ABS_Y),
+                asm.A8(),
+                asm.BRA("DONE"),
+            ]
+
+        src += [
+            "NOT_DEAD",
+            # Any non-death status bit in $1614?
+            asm.LDA(STATUS1, asm.ABS_Y),
+            asm.AND(0xff - DEATH_MASK, asm.IMM8),
+            asm.BNE("HAS_STATUS"),
+            # Any bit in $1615?
+            asm.LDA(STATUS4, asm.ABS_Y),
+            asm.BEQ("NO_STATUS"),
+
+            "HAS_STATUS",
+            # Clear both field status bytes. (Death is already 0 here.)
+            asm.LDA(0x00, asm.IMM8),
+            asm.STA(STATUS1, asm.ABS_Y),
+            asm.STA(STATUS4, asm.ABS_Y),
+            asm.BRA("DONE"),
+
+            "NO_STATUS",
+            # Alive + no status: heal HP if below max, else heal MP.
+            asm.JSR(MAX_HP_INTO_1E, asm.ABS),   # $1E = max HP, returns A8
+            asm.A16(),
+            asm.LDA(CURRENT_HP, asm.ABS_Y),
+            asm.CMP(0x1e, asm.DIR),
+            asm.BCS("HEAL_MP"),                 # current HP >= max -> heal MP
+
+            # current HP += max HP / 2, capped at max HP.
+            asm.LDA(0x1e, asm.DIR),
+            asm.LSR(),
+            asm.CLC(),
+            asm.ADC(CURRENT_HP, asm.ABS_Y),
+            asm.CMP(0x1e, asm.DIR),
+            asm.BCC("STORE_HP"),
+            asm.LDA(0x1e, asm.DIR),
+            "STORE_HP",
+            asm.STA(CURRENT_HP, asm.ABS_Y),
+            asm.A8(),
+            asm.BRA("DONE"),
+
+            "HEAL_MP",
+            asm.JSR(MAX_MP_INTO_1E, asm.ABS),   # $1E = max MP, returns A8
+            asm.A16(),
+            asm.LDA(CURRENT_MP, asm.ABS_Y),
+            asm.CMP(0x1e, asm.DIR),
+            asm.BCS("HEAL_MP_DONE"),            # already at max MP, nothing to do
+
+            # current MP += max MP / 2, capped at max MP.
+            asm.LDA(0x1e, asm.DIR),
+            asm.LSR(),
+            asm.CLC(),
+            asm.ADC(CURRENT_MP, asm.ABS_Y),
+            asm.CMP(0x1e, asm.DIR),
+            asm.BCC("STORE_MP"),
+            asm.LDA(0x1e, asm.DIR),
+            "STORE_MP",
+            asm.STA(CURRENT_MP, asm.ABS_Y),
+
+            "HEAL_MP_DONE",
+            asm.A8(),
+
+            "DONE",
+            asm.LDA(0x02, asm.IMM8),   # command size: opcode + 1 arg byte
+            asm.JMP(NEXT_COMMAND, asm.ABS),
+        ]
+
+        space = Write(Bank.C0, src, "nfh bed heal single character")
+        address = space.start_address
+
+        opcode = 0xa4
+        _set_opcode_address(opcode, address)
+
+        BedHealCharacter.__init__ = lambda self, character: super().__init__(opcode, character)
+        self.__init__(character)
 
 
 class UpdateWorldReturnToParentMap(_Instruction):
