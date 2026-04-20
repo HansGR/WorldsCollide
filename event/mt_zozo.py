@@ -306,11 +306,9 @@ class MtZozo(Event):
             src = [
                 field.BranchIfAll([event_bit.FINISHED_MT_ZOZO, False,
                                    event_bit.character_recruited(CYAN), True], 0xc3fad),
-                field.Return()
             ]
         else:
             src = [
                 field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, 0xc3fad),
-                field.Return()
             ]
         return src
