@@ -6393,9 +6393,9 @@ def modify_free_bed_heals(maps, dialogs, args):
     free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
     dialogs.set_text(FREE_BED_DIALOG_ID, free_bed_dialog)
 
-    ambushed_dialog_id = 448  # Repurpose unused Dry Goods Merchant dialog
-    ambushed_dialog = "           Ambushed!"
-    dialogs.set_text(ambushed_dialog_id, ambushed_dialog)
+    #ambushed_dialog_id = 448  # Repurpose unused Dry Goods Merchant dialog
+    #ambushed_dialog = "           Ambushed!"
+    #dialogs.set_text(ambushed_dialog_id, ambushed_dialog)
 
     # Create the new bed heal event code
     # 5/8 chance to skip attack (so 3/8 chance of attack)
