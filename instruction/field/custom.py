@@ -1711,5 +1711,5 @@ def _select_parties_safe_mod():
     space = Reserve(0xb05c, 0xb05e, "SelectParties post-menu safety JSR")
     space.write(asm.JSR(post_hook_addr, asm.ABS))
 
-if args.ruination_mode is not None:
-    _select_parties_safe_mod()
+# if args.ruination_mode is not None:
+#     _select_parties_safe_mod()
