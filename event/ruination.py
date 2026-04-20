@@ -6340,9 +6340,11 @@ def fix_ferry_connections(rom, dialogs, ruin_map, args):
         print(f"Ferry: Patched Nikeah ferryman at {nikeah_event_addr:#x}")
 
 
-# Battle pack for nighttime ambush at free beds
-# This should be a difficult encounter - can be adjusted as needed
-FREE_BED_AMBUSH_PACK = 416  # Placeholder pack - adjust to desired encounter
+# Battle pack for nighttime ambush at free beds.
+# Set by modify_free_bed_heals from WOB zone 0, pack slot 0. WOB zone 0 is
+# unreachable in ruination mode, so we repurpose its pack as the dedicated
+# bed-ambush pack and modify its enemies without affecting reachable zones.
+FREE_BED_AMBUSH_PACK = None
 FREE_BED_DIALOG_ID = 443  # "Take a nap?" at Gau's Dad's House
 
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
@@ -6365,37 +6367,55 @@ FREE_BED_LOCATIONS = [
 ]
 
 
-def modify_free_bed_heals(maps, dialogs, args):
+def modify_free_bed_heals(maps, dialogs, enemies, args):
     """
     Modifies existing free bed heal events for ruination mode.
 
     Changes the bed heals to:
-    - Have a 3/8 (37.5%) chance of triggering a back attack before healing
-    - Heal only HP and status effects (NOT MP)
+    - Have a 3/8 (37.5%) chance of triggering an unescapable back attack
+    - Apply a per-character state-dependent heal (see RuinationBedHealCharacter):
+      dead -> revive to 1 HP, statused -> cure, hurt -> +half max HP,
+      otherwise -> +half max MP.
     - Use the standard bed animation (fade, Nighty Night song, unfade)
+
+    The ambush pack is pulled from WOB zone 0 (which is unreachable in ruination
+    mode) so the "cant flee" flag we set on its enemies doesn't leak into any
+    reachable encounter.
 
     Args:
         maps: The Maps object to modify event tiles
         dialogs: The Dialogs object to modify dialog for these events
+        enemies: The Enemies object (to adjust the ambush pack's enemies/formations)
         args: Command line arguments (for debug flag)
     """
-    from instruction.field.custom import BranchChance
+    from instruction.field.custom import BranchChance, RuinationBedHealCharacter
 
     # NIGHTY_NIGHT song ID
     NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
 
-    # Status effects to remove (same as vanilla heal but we skip MP)
-    # Remove: Death, Petrify, Imp, Vanish, Poison, Zombie, Darkness
-    HEAL_STATUS = (field.Status.DEATH | field.Status.PETRIFY | field.Status.IMP |
-                   field.Status.VANISH | field.Status.POISON | field.Status.ZOMBIE |
-                   field.Status.DARKNESS)
-
     free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
     dialogs.set_text(FREE_BED_DIALOG_ID, free_bed_dialog)
 
-    #ambushed_dialog_id = 448  # Repurpose unused Dry Goods Merchant dialog
-    #ambushed_dialog = "           Ambushed!"
-    #dialogs.set_text(ambushed_dialog_id, ambushed_dialog)
+    # Pick the ambush pack from the first slot of WOB zone 0. That zone is
+    # unreachable in ruination, so mutating its enemies/formations is safe.
+    global FREE_BED_AMBUSH_PACK
+    FREE_BED_AMBUSH_PACK = enemies.zones.zones[0].packs[0]
+
+    # Mark every enemy in every formation of the ambush pack as un-runnable,
+    # and suppress the "Can't run away" formation animation/message.
+    ambush_pack = enemies.packs.packs[FREE_BED_AMBUSH_PACK]
+    touched_enemy_ids = set()
+    for formation_id in ambush_pack.formations:
+        formation = enemies.formations.formations[formation_id]
+        formation.disable_escape = 1
+        for enemy_id in formation.enemies():
+            enemies.enemies[enemy_id].no_run = 1
+            touched_enemy_ids.add(enemy_id)
+
+    if args.debug:
+        print(f"Bed ambush pack: {FREE_BED_AMBUSH_PACK} (WOB zone 0 slot 0)")
+        print(f"  formations: {list(ambush_pack.formations)}")
+        print(f"  enemies marked no_run: {sorted(touched_enemy_ids)}")
 
     # Create the new bed heal event code
     # 5/8 chance to skip attack (so 3/8 chance of attack)
@@ -6417,26 +6437,19 @@ def modify_free_bed_heals(maps, dialogs, args):
         # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
         BranchChance(0.625, "HEAL"),
 
-        # Monster attack! (back attack)
-        #field.Dialog(ambushed_dialog_id),   # Turn off dialog, not really needed.
+        # Monster attack! (back attack -- can't be fled because the pack's
+        # enemies now have no_run set)
         *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
 
         "HEAL",
         # Play Nighty Night song
         field.StartSong(NIGHTY_NIGHT),
 
-        # Heal HP and status for all party members (NOT MP)
-        # Remove status effects
-        field.RemoveStatusEffects(field_entity.PARTY0, HEAL_STATUS),
-        field.RemoveStatusEffects(field_entity.PARTY1, HEAL_STATUS),
-        field.RemoveStatusEffects(field_entity.PARTY2, HEAL_STATUS),
-        field.RemoveStatusEffects(field_entity.PARTY3, HEAL_STATUS),
-        # Restore HP to max
-        field.RestoreHp(field_entity.PARTY0, 0x7f),
-        field.RestoreHp(field_entity.PARTY1, 0x7f),
-        field.RestoreHp(field_entity.PARTY2, 0x7f),
-        field.RestoreHp(field_entity.PARTY3, 0x7f),
-        # Note: No MP restoration!
+        # Per-character state-dependent heal for each party slot.
+        RuinationBedHealCharacter(field_entity.PARTY0),
+        RuinationBedHealCharacter(field_entity.PARTY1),
+        RuinationBedHealCharacter(field_entity.PARTY2),
+        RuinationBedHealCharacter(field_entity.PARTY3),
 
         # Stop temporary song and restore previous
         field.WaitForSong(),
