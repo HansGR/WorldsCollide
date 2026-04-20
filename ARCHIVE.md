@@ -438,6 +438,71 @@ FinalizeBranchPartySelect()  → remaps slot, restores correct available state
 
 ---
 
+## SelectParties Inventory Corruption Bug & Fix (2026-04)
+
+### Symptom
+
+After certain Narshe ghost-NPC reform-parties menus, a phantom Dirk (item $00) appeared in inventory slot 23 (SRAM $1880) and/or a phantom Cat Hood (item $80) in slot 24 (SRAM $1881). Corruption was reproducible and tied to specific pre-menu party configurations with away parties.
+
+### Root Cause: C0/6F67 Leader-Finder
+
+Vanilla opcode 0x99 (SelectParties, body at C0/B035) calls a post-menu leader-finder subroutine `C0/6F67`. The subroutine's job is to update the four "leader offset" cache slots ($07FB/$07FD/$07FF/$0801) and active-party leader ($0803). It does this by:
+
+1. Snapshotting entry `$0803` into zero-page `$1E`.
+2. Using SNES hardware divide ($4204/$4206, result `$4214`) to convert `$1E / 41` → character index in Y.
+3. Writing the active-party mask to SRAM: `STA $1850,Y` at **C0/7049**.
+4. Searching the 14 character objects for the first match belonging to the newly-selected party, stashing the found offset at `$07FB`.
+5. Loading `$07FB`, dividing by 41 again, and writing the new party mask with another `STA $1850,Y` at **C0/7062**.
+
+The vanilla code assumes Y is always a character index in `[0, 13]`. That assumption breaks when the divisor input is a **sentinel** value:
+
+| Offset | Decimal | Meaning | `/ 41` quotient |
+|--------|---------|---------|-----------------|
+| `$07B0` | 1968 | camera object ($30) | **48** |
+| `$07D9` | 2009 | empty/vacant object ($31) | **49** |
+| `$0867..$106F` | 2151..4207 | valid char slots $00..$0D | 0..13 |
+
+A quotient of 48 or 49 directs the `STA $1850,Y` into `$1850+48=$1880` or `$1850+49=$1881` — inventory slots 23 and 24. The low byte of A at that point is the party mask being written (0x01/0x02/0x04 → Dirk/Cat Hood variants).
+
+### How a Sentinel Reaches the Divider
+
+- **Entry site (C0/7049)**: Uses `$1E` = snapshot of entry `$0803`. `$0803` holds the *active-party* leader offset. If the map was entered without a true active party (e.g., the hub just loaded after returning from a branch and the last placed party's leader wasn't yet cached properly), `$0803` can still hold a sentinel.
+- **New-leader site (C0/7062)**: Uses `$07FB`. The SelectParties body (C0/B038) seeds `$07FB` from `$0803` *before* the menu runs. If the subsequent search loop in C0/6F67 finds no character belonging to party 1 (which happens when the menu produced a party assigned to a different slot, or when the away-party machinery has cleared the expected characters), `$07FB` retains that pre-menu sentinel.
+
+In ruination mode, both conditions are routinely produced by the reform flow in `event/narshe_wob.py` (away parties + `RemapPartiesToFreeSlots` remapping slot 1 to a different mask). Neither condition occurs in vanilla flows (e.g., Phoenix Cave's `SelectParties(2)`), so the bug was latent until ruination exercised it.
+
+### Fix: Minimal Range Check (`instruction/field/custom.py`)
+
+Two 3-byte in-place patches replace each `STA $1850,Y` with `JSR safe_store`, where `safe_store` is a small tramp:
+
+```
+safe_store:
+    CPY #$000E      ; Y is 16-bit (event engine invariant)
+    BCS .skip
+    STA $1850,Y
+.skip:
+    RTS
+```
+
+The patch is applied only when `args.ruination_mode is not None`. Because event-engine ASM entry to C0/6F67 has `REP #$10` in effect, `CPY #$000E` is a 16-bit compare and correctly distinguishes 0-13 from 48/49. When the quotient is valid the write is identical to vanilla; when it is a sentinel the write is skipped.
+
+### Why the Minimal Approach
+
+An earlier attempt tried to sanitize `$1A6D` / `$07FB` / `$0803` and save/restore `$1E9C` around SelectParties via new hooks on the gen. act. 99 body. That broke unrelated party state (leader-offset caches went stale, Y-switching regressed). Root-causing the corruption to just these two store instructions and guarding only those writes was safer: every register, zero-page, SRAM slot, and control flow path outside the two patched instructions stays byte-identical to vanilla.
+
+### Code Location
+
+- `instruction/field/custom.py` — `_leader_finder_safe_store_mod()` (gated on `args.ruination_mode is not None`)
+- Patched ROM addresses: **C0/7049** (first store) and **C0/7062** (second store)
+- Safe-store tramp: allocated in Bank.C0 via `Write(Bank.C0, ..., "leader-finder safe store")`
+
+### Testing Notes
+
+- Detection method: write a debug hook that copies `$1880`/`$1881` to a known scratch address and inspect after reform-parties menu invocations.
+- Corruption was reproduced by reform sequences involving at least one away party; the vanilla flow (no away parties, no RemapPartiesToFreeSlots, no branch recruitment) does not trigger it because the pre-menu `$0803` always refers to a real character object.
+
+---
+
 ## Ruination Mode - Duplicate Event Tiles for Reverse Entrances (2026-02)
 
 In vanilla FF6, some maps have animation event tiles (e.g., Vargas shadow appearances on Mt Kolts) placed near only one entrance. In ruination mode, players may enter rooms from the opposite side, missing the trigger entirely.
