@@ -6374,7 +6374,8 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
     Changes the bed heals to:
     - Have a 50% chance of triggering a pincer attack (escape only allowed
       once half the enemies are defeated, or via Warp Stone / Smoke Bomb).
-    - Apply a per-character state-dependent heal (see BedHealCharacter):
+    - If the party flees the ambush, no heal is applied.
+    - Otherwise apply a per-character state-dependent heal (see BedHealCharacter):
       dead -> revive to 1 HP (no-op under -permadeath), statused -> cure,
       hurt -> +half max HP, otherwise -> +half max MP.
     - Use the standard bed animation (fade, Nighty Night song, unfade)
@@ -6431,6 +6432,11 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         # or via Warp Stone / Smoke Bomb).
         field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.PINCER),
 
+        # If the party fought, heal; if they fled, skip straight to cleanup.
+        # Battle bit RAN_AWAY is set by battle code only when the party ran.
+        field.BranchIfBattleEventBitClear(battle_bit.RAN_AWAY, "HEAL"),
+        field.Branch("AFTER_HEAL"),
+
         "HEAL",
         # Play Nighty Night song
         field.StartSong(NIGHTY_NIGHT),
@@ -6441,8 +6447,11 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.BedHealCharacter(field_entity.PARTY2),
         field.BedHealCharacter(field_entity.PARTY3),
 
-        # Stop temporary song and restore previous
+        # Stop temporary song
         field.WaitForSong(),
+
+        "AFTER_HEAL",
+        # Restore previous song and fade screen back in
         field.FadeInPreviousSong(32),
         field.FadeInScreen(8),
 
