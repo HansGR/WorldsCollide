@@ -104,7 +104,7 @@ RUIN_DEFAULT_FLAGS = {
 
     # Battle flags
     'battle': [
-        '-xpm', '3', '-mpm', '5', '-gpm', '0', '-nxppd', '-lsced', '2', '-hmced', '2',
+        '-xpm', '8', '-mpm', '5', '-gpm', '0', '-lsced', '2', '-hmced', '2',
         '-xgced', '2', '-ase', '2', '-msl', '40', '-sed', '-bbs',
         '-drloc', 'shuffle', '-stloc', 'mix', '-be', '-bnu', '-res',
         '-fer', '0', '-escr', '100', '-dgne', '-wnz', '-mmnu', '-cmd'
@@ -121,7 +121,7 @@ RUIN_DEFAULT_FLAGS = {
     'items': [
         '-gp', '6000', '-smc', '3', '-sto', '1', '-ieor', '33', '-ieror', '33',
         '-ir', 'stronger', '-csb', '6', '14', '-mca', '-stra', '-saw',
-        '-sisr', '20', '-sprp', '75', '125', '-sdm', '4', '-npi', '-sebr', '-sli',
+        '-sisr', '20', '-sprp', '75', '125', '-sdm', '4', '-npi', '-sebr', '-sli', '-ssf4',
         '-snsb', '-snee', '-snil', '-ccsr', '20', '-chrm', '7', '0', '-cms'
     ],
 
