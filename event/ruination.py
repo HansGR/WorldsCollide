@@ -6341,11 +6341,10 @@ def fix_ferry_connections(rom, dialogs, ruin_map, args):
 
 
 # Battle pack for nighttime ambush at free beds.
-# Set by modify_free_bed_heals from WOB zone 0, pack slot 0. WOB zone 0 is
-# unreachable (the WOB map is not used outside vanilla flows), so we repurpose
-# its pack as the dedicated bed-ambush pack and modify its enemies without
-# affecting reachable zones.
-FREE_BED_AMBUSH_PACK = None
+# Must be a PACK2 (event battle group, IDs 256-511); InvokeBattleType can only
+# address PACK2 slots. Pack 416 is unused elsewhere, so we can set no_run /
+# disable_escape on its formations' enemies without affecting other encounters.
+FREE_BED_AMBUSH_PACK = 416
 FREE_BED_DIALOG_ID = 443  # "Take a nap?" at Gau's Dad's House
 
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
@@ -6379,10 +6378,6 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
       hurt -> +half max HP, otherwise -> +half max MP.
     - Use the standard bed animation (fade, Nighty Night song, unfade)
 
-    The ambush pack is pulled from WOB zone 0 (which is not used by the
-    randomizer in any reachable context) so the "can't flee" flag we set on
-    its enemies doesn't leak into any reachable encounter.
-
     Args:
         maps: The Maps object to modify event tiles
         dialogs: The Dialogs object to modify dialog for these events
@@ -6396,11 +6391,6 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
     free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
     dialogs.set_text(FREE_BED_DIALOG_ID, free_bed_dialog)
 
-    # Pick the ambush pack from the first slot of WOB zone 0. That zone is
-    # unreachable in ruination, so mutating its enemies/formations is safe.
-    global FREE_BED_AMBUSH_PACK
-    FREE_BED_AMBUSH_PACK = enemies.zones.zones[0].packs[0]
-
     # Mark every enemy in every formation of the ambush pack as un-runnable,
     # and suppress the "Can't run away" formation animation/message.
     ambush_pack = enemies.packs.packs[FREE_BED_AMBUSH_PACK]
@@ -6413,7 +6403,7 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
             touched_enemy_ids.add(enemy_id)
 
     if args.debug:
-        print(f"Bed ambush pack: {FREE_BED_AMBUSH_PACK} (WOB zone 0 slot 0)")
+        print(f"Bed ambush pack: {FREE_BED_AMBUSH_PACK}")
         print(f"  formations: {list(ambush_pack.formations)}")
         print(f"  enemies marked no_run: {sorted(touched_enemy_ids)}")
 
