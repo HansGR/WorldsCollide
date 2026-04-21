@@ -6342,8 +6342,8 @@ def fix_ferry_connections(rom, dialogs, ruin_map, args):
 
 # Battle pack for nighttime ambush at free beds.
 # Must be a PACK2 (event battle group, IDs 256-511); InvokeBattleType can only
-# address PACK2 slots. Pack 416 is unused elsewhere, so we can set no_run /
-# disable_escape on its formations' enemies without affecting other encounters.
+# address PACK2 slots. Pack 416 is unused elsewhere, so we can overwrite its
+# two formation slots without affecting other encounters.
 FREE_BED_AMBUSH_PACK = 416
 FREE_BED_DIALOG_ID = 443  # "Take a nap?" at Gau's Dad's House
 
@@ -6372,7 +6372,8 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
     Modifies existing free bed heal events as part of -nfh (no free heals).
 
     Changes the bed heals to:
-    - Have a 3/8 (37.5%) chance of triggering an unescapable back attack
+    - Have a 50% chance of triggering a pincer attack (escape only allowed
+      once half the enemies are defeated, or via Warp Stone / Smoke Bomb).
     - Apply a per-character state-dependent heal (see BedHealCharacter):
       dead -> revive to 1 HP (no-op under -permadeath), statused -> cure,
       hurt -> +half max HP, otherwise -> +half max MP.
@@ -6391,24 +6392,23 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
     free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
     dialogs.set_text(FREE_BED_DIALOG_ID, free_bed_dialog)
 
-    # Mark every enemy in every formation of the ambush pack as un-runnable,
-    # and suppress the "Can't run away" formation animation/message.
+    # Pick two different random formations that allow pincer attacks and
+    # install them in the ambush pack's two slots.
+    pincer_formations = [
+        f_id for f_id in enemies.formations.normal
+        if enemies.formations.formations[f_id].disable_pincer_attack == 0
+    ]
+    formation_a, formation_b = random.sample(pincer_formations, 2)
     ambush_pack = enemies.packs.packs[FREE_BED_AMBUSH_PACK]
-    touched_enemy_ids = set()
-    for formation_id in ambush_pack.formations:
-        formation = enemies.formations.formations[formation_id]
-        formation.disable_escape = 1
-        #for enemy_id in formation.enemies():
-        #    enemies.enemies[enemy_id].no_run = 1
-        #    touched_enemy_ids.add(enemy_id)
+    ambush_pack.formations[0] = formation_a
+    ambush_pack.formations[1] = formation_b
 
     if args.debug:
         print(f"Bed ambush pack: {FREE_BED_AMBUSH_PACK}")
-        print(f"  formations: {list(ambush_pack.formations)}")
-        #print(f"  enemies marked no_run: {sorted(touched_enemy_ids)}")
+        print(f"  formation A: {formation_a} ({enemies.formations.get_name(formation_a)})")
+        print(f"  formation B: {formation_b} ({enemies.formations.get_name(formation_b)})")
 
-    # Create the new bed heal event code
-    # 5/8 chance to skip attack (so 3/8 chance of attack)
+    # Create the new bed heal event code (50% chance of pincer ambush)
     src = [
         # Include a trigger so this can only be done once per map load
         field.ReturnIfEventBitSet(event_bit.multipurpose_map(0)),
@@ -6424,12 +6424,12 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.FadeOutScreen(8),
         field.WaitForFade(),
 
-        # 3/8 chance of monster attack (branch with 3/8 = 37.5% probability to skip)
-        field.BranchChance(0.375, "HEAL"),
+        # 50% chance of monster attack (branch to HEAL with 50% probability)
+        field.BranchChance(0.5, "HEAL"),
 
-        # Monster attack! (back attack -- can't be fled because the pack's
-        # enemies now have no_run set)
-        field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
+        # Pincer attack -- escape allowed (after half the enemies are defeated,
+        # or via Warp Stone / Smoke Bomb).
+        field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.PINCER),
 
         "HEAL",
         # Play Nighty Night song
