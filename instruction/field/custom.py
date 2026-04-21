@@ -247,7 +247,7 @@ class BedHealCharacter(_Instruction):
             asm.A16(),
             asm.LDA(CURRENT_MP, asm.ABS_Y),
             asm.CMP(0x1e, asm.DIR),
-            asm.BCS("HEAL_MP_DONE"),            # already at max MP, nothing to do
+            asm.BCS("DONE"),            # already at max MP, nothing to do
 
             # current MP += max MP / 2, capped at max MP.
             asm.LDA(0x1e, asm.DIR),
@@ -260,10 +260,9 @@ class BedHealCharacter(_Instruction):
             "STORE_MP",
             asm.STA(CURRENT_MP, asm.ABS_Y),
 
-            "HEAL_MP_DONE",
-            asm.A8(),
-
             "DONE",
+            asm.TDC(),
+            asm.A8(),
             asm.LDA(0x02, asm.IMM8),   # command size: opcode + 1 arg byte
             asm.JMP(NEXT_COMMAND, asm.ABS),
         ]
