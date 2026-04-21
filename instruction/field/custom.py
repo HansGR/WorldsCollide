@@ -226,8 +226,9 @@ class BedHealCharacter(_Instruction):
             asm.CMP(0x1e, asm.DIR),
             asm.BCS("HEAL_MP"),                 # current HP >= max -> heal MP
 
-            # current HP += max HP / 2, capped at max HP.
+            # current HP += max HP / 4, capped at max HP.
             asm.LDA(0x1e, asm.DIR),
+            asm.LSR(),
             asm.LSR(),
             asm.CLC(),
             asm.ADC(CURRENT_HP, asm.ABS_Y),
@@ -249,8 +250,9 @@ class BedHealCharacter(_Instruction):
             asm.CMP(0x1e, asm.DIR),
             asm.BCS("DONE"),            # already at max MP, nothing to do
 
-            # current MP += max MP / 2, capped at max MP.
+            # current MP += max MP / 4, capped at max MP.
             asm.LDA(0x1e, asm.DIR),
+            asm.LSR(),
             asm.LSR(),
             asm.CLC(),
             asm.ADC(CURRENT_MP, asm.ABS_Y),

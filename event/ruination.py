@@ -6398,14 +6398,14 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
     for formation_id in ambush_pack.formations:
         formation = enemies.formations.formations[formation_id]
         formation.disable_escape = 1
-        for enemy_id in formation.enemies():
-            enemies.enemies[enemy_id].no_run = 1
-            touched_enemy_ids.add(enemy_id)
+        #for enemy_id in formation.enemies():
+        #    enemies.enemies[enemy_id].no_run = 1
+        #    touched_enemy_ids.add(enemy_id)
 
     if args.debug:
         print(f"Bed ambush pack: {FREE_BED_AMBUSH_PACK}")
         print(f"  formations: {list(ambush_pack.formations)}")
-        print(f"  enemies marked no_run: {sorted(touched_enemy_ids)}")
+        #print(f"  enemies marked no_run: {sorted(touched_enemy_ids)}")
 
     # Create the new bed heal event code
     # 5/8 chance to skip attack (so 3/8 chance of attack)
