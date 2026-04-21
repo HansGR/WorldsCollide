@@ -240,6 +240,9 @@ class BedHealCharacter(_Instruction):
             asm.BRA("DONE"),
 
             "HEAL_MP",
+            # Reached from BCS above while still in A16. Vanilla MAX_MP
+            # routine expects A8, so switch back before the JSR.
+            asm.A8(),
             asm.JSR(MAX_MP_INTO_1E, asm.ABS),   # $1E = max MP, returns A8
             asm.A16(),
             asm.LDA(CURRENT_MP, asm.ABS_Y),
