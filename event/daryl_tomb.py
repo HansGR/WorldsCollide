@@ -272,7 +272,9 @@ class DarylTomb(Event):
             # If terminus was used, airship has departed - block access
             field.ReturnIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED),
             field.FadeOutScreen(),
-            Read(0xa46cd, 0xa46e8),  # Load falcon, modify graphics.
+            field.LoadMap(map_id=0x00b, direction=direction.LEFT, default_music=False, x=23, y=8, fade_in=True,
+                          entrance_event=True), # CA/46CD: 6B    Load map $000B (Falcon, upper deck (general use / with Daryl / buried / homing pigeon)) instantly, (upper bits $3400), place party at (23, 8), facing left
+            # Read(0xa46cd, 0xa46d2),  # Load falcon (modify graphics in entrance event, below)
             field.FadeInScreen(speed=4),
             field.Return()
         ]
@@ -297,6 +299,22 @@ class DarylTomb(Event):
         staircase_map_properties.song = song_id
         falcon_map_properties = self.maps.properties[0xb]
         falcon_map_properties.song = song_id
+
+        # Fix visual bug if opening the menu on the Falcon or y-switching (the graphics updates that show the Falcon
+        # "grounded" are not re-run, and it appears to be flying.):
+        # Move the code 0xa46d3-0xa46e8 into the map 0x0b entrance event; gate it to only run if
+        # event_bit.AIRSHIP_TERMINUS_USED is not set (so it doesn't run when reloading map during animations
+        # attacking KT).
+        # The map 0x0b entrance event (CA/E90B) is a long sequence that just sets/clears the PCs visible on the airship.
+        # We could call it after doing whatever else we need to (although the airship interior is not used in Ruin)
+        src = [
+            # If terminus was used, don't update graphics
+            field.ReturnIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED),
+            Read(0xa46d3, 0xa46e8),  # Modify falcon graphics.
+            field.Return()
+        ]
+        space = Write(Bank.CA, src, 'Falcon Ruination entrance event')
+        self.maps.set_entrance_event(0x0b, space.start_address - EVENT_CODE_START)
 
         # (1e) Change the airship console event (do this in airship.py to save space)
 
