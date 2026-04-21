@@ -6424,12 +6424,12 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.FadeOutScreen(8),
         field.WaitForFade(),
 
-        # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
-        field.BranchChance(0.625, "HEAL"),
+        # 3/8 chance of monster attack (branch with 3/8 = 37.5% probability to skip)
+        field.BranchChance(0.375, "HEAL"),
 
         # Monster attack! (back attack -- can't be fled because the pack's
         # enemies now have no_run set)
-        *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
+        field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
 
         "HEAL",
         # Play Nighty Night song
