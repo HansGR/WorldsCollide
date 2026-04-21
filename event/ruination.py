@@ -6447,12 +6447,14 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.BedHealCharacter(field_entity.PARTY2),
         field.BedHealCharacter(field_entity.PARTY3),
 
-        # Stop temporary song
+        # Stop temporary song and restore the pre-battle song. Only valid on
+        # this path because StartSong above sets up the "current"/"previous"
+        # slots correctly; on the fled path the battle leaves the slots in an
+        # inconsistent state and 0xF3 resurrects the battle music.
         field.WaitForSong(),
+        field.FadeInPreviousSong(32),
 
         "AFTER_HEAL",
-        # Restore previous song and fade screen back in
-        field.FadeInPreviousSong(32),
         field.FadeInScreen(8),
 
         "RETURN",
