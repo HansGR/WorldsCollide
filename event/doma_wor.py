@@ -118,7 +118,6 @@ class DomaWOR(Event):
         (dialog, possible unescapable ambush, per-character state-dependent heal).
         """
         from event.ruination import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
-        from instruction.field.custom import BedHealCharacter
 
         # Subroutine addresses from vanilla event code
         SLEEP_SUBROUTINE = [0xacf67, 0xacf8e]   # Party split to beds, fade, play nighty night
@@ -150,10 +149,10 @@ class DomaWOR(Event):
 
             "HEAL",
             # Per-character state-dependent heal for each party slot.
-            BedHealCharacter(field_entity.PARTY0),
-            BedHealCharacter(field_entity.PARTY1),
-            BedHealCharacter(field_entity.PARTY2),
-            BedHealCharacter(field_entity.PARTY3),
+            field.BedHealCharacter(field_entity.PARTY0),
+            field.BedHealCharacter(field_entity.PARTY1),
+            field.BedHealCharacter(field_entity.PARTY2),
+            field.BedHealCharacter(field_entity.PARTY3),
 
             # Load map 0x7B (Doma Castle bedroom) at position (8, 8), facing down
             # This happens while screen is still black

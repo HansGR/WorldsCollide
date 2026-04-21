@@ -6389,7 +6389,6 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         enemies: The Enemies object (to adjust the ambush pack's enemies/formations)
         args: Command line arguments (for debug flag)
     """
-    from instruction.field.custom import BranchChance, BedHealCharacter
 
     # NIGHTY_NIGHT song ID
     NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
@@ -6436,7 +6435,7 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.WaitForFade(),
 
         # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
-        BranchChance(0.625, "HEAL"),
+        field.BranchChance(0.625, "HEAL"),
 
         # Monster attack! (back attack -- can't be fled because the pack's
         # enemies now have no_run set)
@@ -6447,10 +6446,10 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.StartSong(NIGHTY_NIGHT),
 
         # Per-character state-dependent heal for each party slot.
-        BedHealCharacter(field_entity.PARTY0),
-        BedHealCharacter(field_entity.PARTY1),
-        BedHealCharacter(field_entity.PARTY2),
-        BedHealCharacter(field_entity.PARTY3),
+        field.BedHealCharacter(field_entity.PARTY0),
+        field.BedHealCharacter(field_entity.PARTY1),
+        field.BedHealCharacter(field_entity.PARTY2),
+        field.BedHealCharacter(field_entity.PARTY3),
 
         # Stop temporary song and restore previous
         field.WaitForSong(),
@@ -6463,6 +6462,7 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
 
     space = Write(Bank.CC, src, "ruination free bed heal event")
     new_bed_heal_address = space.start_address
+    #print(f"New ruination bed code at {hex(space.start_address)}--{hex(space.end_address)}")
 
     # Export the address for use by other modules (e.g., doma_wor.py)
     global RUINATION_BED_HEAL_ADDRESS
