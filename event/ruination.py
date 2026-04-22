@@ -4517,26 +4517,53 @@ class ruination_map():
         return map
 
     def compute_actual_areas_used(self):
-        """Determine which branch each area's rooms actually ended up in after finalization.
+        """Determine which branch each area's rooms actually reached after finalization.
 
-        self.AreasUsed tracks which branch an area was *distributed* to, but the
-        distribution only adds rooms that are not already present in some other
-        branch. When an area's rooms were already claimed by another branch
-        (forced_same_branch, shared rooms, or the CHARACTER_AREAS['ALL'] pass),
-        AreasUsed can name a branch that contains none of the area's rooms.
+        self.AreasUsed tracks which branch an area was *distributed* to. That's
+        not enough for the Narshe school clues because:
+          (a) Distribution only adds rooms that aren't already present in some
+              other branch (forced_same_branch, shared rooms, the
+              CHARACTER_AREAS['ALL'] pass), so AreasUsed can tag a branch that
+              holds none of the area's rooms.
+          (b) Even rooms that were added may not be reachable: finalize_map
+              only guarantees the hub has no dangling exits, and explicitly
+              allows non-hub rooms to remain unconnected (see validation at
+              the end of generate_map_with_characters).
 
-        Returns dict mapping area_name -> branch_id for areas with at least one
-        room present in some branch. For areas split across branches, picks the
-        branch that holds the most of the area's rooms.
+        By the end of finalize_map, every connected room has been merged into
+        the hub's compound node via loop compression (its constituent IDs are
+        joined by '_'). A room R is therefore reachable iff '_R_' is a
+        substring of the bracketed hub ID — the underscore boundaries avoid
+        false positives from numeric ID prefixes (e.g. 78 vs 278, 501 vs 1501)
+        and work for IDs that already contain underscores (share_east,
+        ruin_hub_0).
+
+        Returns dict mapping area_name -> branch_id, including only areas with
+        at least one reachable room. For areas split across branches, picks
+        the branch holding the most reachable rooms.
         """
+        connected_per_branch = []
+        for branch in self.branches:
+            if branch is None:
+                connected_per_branch.append(set())
+                continue
+            hub_ids = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)]
+            if not hub_ids:
+                connected_per_branch.append(set())
+                continue
+            hub_bracketed = f"_{hub_ids[0]}_"
+            connected = {
+                r for r in branch.all_rooms_added
+                if f"_{r}_" in hub_bracketed
+            }
+            connected_per_branch.append(connected)
+
         result = {}
         for area_name, room_ids in RUIN_ROOM_SETS.items():
             branch_counts = [0, 0, 0]
-            for i, branch in enumerate(self.branches):
-                if branch is None:
-                    continue
+            for i, connected in enumerate(connected_per_branch):
                 for room_id in room_ids:
-                    if room_id in branch.all_rooms_added:
+                    if room_id in connected:
                         branch_counts[i] += 1
             max_count = max(branch_counts)
             if max_count > 0:
