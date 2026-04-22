@@ -59,7 +59,7 @@
       - Includes a 3/8 chance of being attacked in the night (forced back attack before healing)
   - Phantom Train food:  Add a cost to the meal?  Or randomize outcome from a list (incl. bad outcomes).  Or both: "Premium meal" for [1000---10000] GP, or "cheap meal" for [1-100] GP, with differently chosen outcomes.  I like it!
 - ✅ **IMPLEMENTED** - Increase all inn costs by a multiplier (2x). Implementation:
-  - Inn costs doubled via INN_COST_MULTIPLIER in event/ruination.py
+  - Inn costs doubled via INN_COST_MULTIPLIER in event/free_heals.py
   - Dialog text updated to reflect new prices (modify_inn_costs function)
   - In-town chocobo stables disabled (South Figaro, Nikeah, Jidoor) - NPCs now say "The chocobos won't go outside anymore."
   - Thamasa inn has special handling (event/burning_house.py:ruination_inn_mod):

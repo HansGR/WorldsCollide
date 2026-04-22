@@ -114,7 +114,7 @@ class BurningHouse(Event):
         The burning house is made re-enterable by enter_burning_house_mod() which NOPs
         the DEFEATED_FLAME_EATER check at 0xbd7bf when DOOR_RANDOMIZE is true.
         """
-        from event.ruination import INN_COST_MULTIPLIER
+        from event.free_heals import INN_COST_MULTIPLIER
 
         # Inn price increase is the free-heal-related portion. Skip when -nfh is off.
         if self.args.no_free_heals:
