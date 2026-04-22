@@ -274,8 +274,12 @@ class Events():
         # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)
         self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
 
-        # Store area-to-branch mapping so NPC clue scripts can reference it
-        self.args.ruination_areas_used = dict(ruin_map.AreasUsed)
+        # Store area-to-branch mapping so NPC clue scripts can reference it.
+        # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),
+        # because distribution can tag an area with a branch whose rooms already
+        # lived elsewhere — which would produce clues for areas that aren't
+        # really on that branch.
+        self.args.ruination_areas_used = ruin_map.compute_actual_areas_used()
 
         # Handle dried meat for Gau: ensure it's available in non-Veldt-gated shops
         # This ensures dried meat is accessible BEFORE Gau is obtained (needed for Veldt recruitment)
