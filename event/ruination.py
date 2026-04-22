@@ -4516,6 +4516,33 @@ class ruination_map():
 
         return map
 
+    def compute_actual_areas_used(self):
+        """Determine which branch each area's rooms actually ended up in after finalization.
+
+        self.AreasUsed tracks which branch an area was *distributed* to, but the
+        distribution only adds rooms that are not already present in some other
+        branch. When an area's rooms were already claimed by another branch
+        (forced_same_branch, shared rooms, or the CHARACTER_AREAS['ALL'] pass),
+        AreasUsed can name a branch that contains none of the area's rooms.
+
+        Returns dict mapping area_name -> branch_id for areas with at least one
+        room present in some branch. For areas split across branches, picks the
+        branch that holds the most of the area's rooms.
+        """
+        result = {}
+        for area_name, room_ids in RUIN_ROOM_SETS.items():
+            branch_counts = [0, 0, 0]
+            for i, branch in enumerate(self.branches):
+                if branch is None:
+                    continue
+                for room_id in room_ids:
+                    if room_id in branch.all_rooms_added:
+                        branch_counts[i] += 1
+            max_count = max(branch_counts)
+            if max_count > 0:
+                result[area_name] = branch_counts.index(max_count)
+        return result
+
     def _choose_reward_with_exclusion(self, possible_types, characters, espers, items, exclude_chars):
         """Choose a reward from possible types, excluding specified characters.
 
