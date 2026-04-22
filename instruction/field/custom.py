@@ -219,7 +219,7 @@ class BedHealCharacter(_Instruction):
             asm.BRA("DONE"),
 
             "NO_STATUS",
-            # Alive + no status: heal HP if below max, else heal MP.
+            # Alive + no status: heal HP if below max, AND heal MP.
             asm.JSR(MAX_HP_INTO_1E, asm.ABS),   # $1E = max HP, returns A8
             asm.A16(),
             asm.LDA(CURRENT_HP, asm.ABS_Y),
@@ -238,7 +238,7 @@ class BedHealCharacter(_Instruction):
             "STORE_HP",
             asm.STA(CURRENT_HP, asm.ABS_Y),
             asm.A8(),
-            asm.BRA("DONE"),
+            # asm.BRA("DONE"),  # ALSO heal MP
 
             "HEAL_MP",
             # Reached from BCS above while still in A16. Vanilla MAX_MP
