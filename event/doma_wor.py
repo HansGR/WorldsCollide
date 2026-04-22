@@ -117,7 +117,7 @@ class DomaWOR(Event):
         map reload, party reform) combined with the -nfh healing logic
         (dialog, possible unescapable ambush, per-character state-dependent heal).
         """
-        from event.ruination import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
+        from event.free_heals import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
 
         # Subroutine addresses from vanilla event code
         SLEEP_SUBROUTINE = [0xacf67, 0xacf8e]   # Party split to beds, fade, play nighty night
