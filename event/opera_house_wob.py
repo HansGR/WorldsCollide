@@ -514,3 +514,7 @@ class OperaHouseWOB(Event):
         switchmaster_id = 0x11
         switchmaster_npc = self.maps.get_npc(map_id, switchmaster_id)
         switchmaster_npc.event_address = space.start_address - EVENT_CODE_START
+
+        # Edit switch event: remove "wait for party animation to complete"
+        # If the player y-switches and the NPC is in the wrong place, the player sprite can collide with the NPC sprite
+        space = Reserve(0xab4dc, 0xab4dd, "Opera House switch remove softlock potential", field.NOP())
