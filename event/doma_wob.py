@@ -291,12 +291,14 @@ class DomaWOB(Event):
             "LOAD_DOMA",
             field.LoadMap(0x11d, direction.UP, default_music=True, x=exit_event_x, y=exit_event_y,
                           fade_in=True, entrance_event=True),
+            field.Return()
         ]
         src_world += [
             "LOAD_DOMA",
             world.LoadMap(0x11d, direction.UP, default_music = True, x = exit_event_x, y = exit_event_y,
                           fade_in = True, entrance_event = True),
             field.ClearEventBit(event_bit.IN_WOR),
+            field.Return()
         ]
 
         return src_field  # {'field': src_field, 'world': src_world}
