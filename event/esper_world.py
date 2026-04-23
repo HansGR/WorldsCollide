@@ -72,11 +72,20 @@ class EsperWorld(Event):
         self.maps.add_event(self.map_gate_cave, save_event)
 
     def cleanup_esper_world(self):
-        # Turn off the entrance events for these rooms
+        # Replace the vanilla entrance events for these rooms. In ruination mode,
+        # point them at the shared party-interaction-pointer subroutine so NPC talk
+        # events are re-bound whenever the player enters (needed after loading a
+        # save, since field RAM pointers aren't preserved). Otherwise, point at
+        # a bare Return.
         RETURN_ADDR = 0x5eb3
-        self.maps.maps[self.map_outside]["entrance_event_address"] = RETURN_ADDR
-        self.maps.maps[self.map_gate_cave]["entrance_event_address"] = RETURN_ADDR
-        self.maps.maps[self.map_interiors]["entrance_event_address"] = RETURN_ADDR
+        if self.args.ruination_mode:
+            from event.ruination import SET_PARTY_INTERACTION_POINTERS
+            entrance_addr = SET_PARTY_INTERACTION_POINTERS - EVENT_CODE_START
+        else:
+            entrance_addr = RETURN_ADDR
+        self.maps.maps[self.map_outside]["entrance_event_address"] = entrance_addr
+        self.maps.maps[self.map_gate_cave]["entrance_event_address"] = entrance_addr
+        self.maps.maps[self.map_interiors]["entrance_event_address"] = entrance_addr
 
         # Delete event tile in gate cave: 0xaa78f -- 0xaa7f4
         self.maps.delete_event(self.map_gate_cave, 56, 49)

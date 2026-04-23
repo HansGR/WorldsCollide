@@ -687,13 +687,13 @@ class NarsheWOB(Event):
         # Also restore away-party character availability when a party returns
         # Set all characters' talk-event pointers so party interaction works
         # after loading a saved game (field RAM pointers aren't preserved in saves).
-        from event.ruination import set_party_interaction_pointers_src
+        from event.ruination import SET_PARTY_INTERACTION_POINTERS
         entrance_src = [
             field.TintBackground(field.Tint.NIGHT),
             field.RestoreActivePartyAvailable(),  # idempotent: no-op if party isn't away
+            field.Call(SET_PARTY_INTERACTION_POINTERS),
+            field.Return(),
         ]
-        entrance_src += set_party_interaction_pointers_src()
-        entrance_src += [field.Return()]
         space = Write(Bank.CA, entrance_src, "Narshe school ruination entrance event")
         self.maps.set_entrance_event(school_map_id, space.start_address - EVENT_CODE_START)
 
