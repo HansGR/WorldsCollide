@@ -6038,6 +6038,12 @@ PARTY_INTERACT_CHOICE_DIALOG = 1320
 # NarsheWob/Start to emit ChangeNPCEventAddress instructions.
 PARTY_INTERACTION_SCRIPT_ADDRS = {}
 
+# ROM address of the shared "set all party interaction NPC pointers" subroutine.
+# Populated by create_party_interaction_scripts() (runs before the event mod loop).
+# Callers import this lazily (inside a method) and invoke it via field.Call, or
+# assign it as a map's entrance_event_address (after subtracting EVENT_CODE_START).
+SET_PARTY_INTERACTION_POINTERS = None
+
 
 def create_party_interaction_scripts(dialogs):
     """Create per-character event scripts for party interaction in ruination mode.
@@ -6113,29 +6119,37 @@ def create_party_interaction_scripts(dialogs):
     # CA/3F13-CA/3F82 (112 bytes, 8 per character).
     Free(0xa3f13, 0xa3f82)
 
+    # Write the shared subroutine that repoints every recruited character's
+    # NPC talk event to its party-interaction script. Runs after the per-character
+    # scripts above so PARTY_INTERACTION_SCRIPT_ADDRS is fully populated. Must
+    # happen before the event.mod() loop so callers (NarsheWob, EsperWorld)
+    # can read SET_PARTY_INTERACTION_POINTERS.
+    _write_set_party_interaction_pointers_subroutine()
 
-def set_party_interaction_pointers_src(char_ids=None):
-    """Return a list of ChangeNPCEventAddress instructions for the given characters.
 
-    Args:
-        char_ids: Iterable of character IDs, or None for all 14 characters.
+def _write_set_party_interaction_pointers_subroutine():
+    """Write the 'set all party interaction NPC pointers' subroutine to Bank.CA once.
 
-    Returns:
-        List of field instructions to include in an event script.
+    For each of the 14 characters, emits:
+        if character_recruited(c): ChangeNPCEventAddress(c, PARTY_INTERACTION_SCRIPT_ADDRS[c])
+    followed by a Return so the subroutine can be invoked via field.Call or used
+    as a map entrance_event. Stores the full SNES address in the module-level
+    SET_PARTY_INTERACTION_POINTERS.
     """
     from constants.entities import CHARACTER_COUNT
-    if char_ids is None:
-        char_ids = range(CHARACTER_COUNT)
+    global SET_PARTY_INTERACTION_POINTERS
+
     src = []
-    for char_id in char_ids:
+    for char_id in range(CHARACTER_COUNT):
         addr = PARTY_INTERACTION_SCRIPT_ADDRS[char_id]
-        char_src = [
+        src += [
             field.BranchIfEventBitClear(event_bit.character_recruited(char_id), f"SKIP_{char_id}"),
             field.ChangeNPCEventAddress(char_id, addr),
             f"SKIP_{char_id}",
         ]
-        src.append(char_src)
-    return src
+    src.append(field.Return())
+    space = Write(Bank.CA, src, "set party interaction pointers subroutine")
+    SET_PARTY_INTERACTION_POINTERS = space.start_address
 
 
 def disable_chocobo_stables(rom, dialogs, args):
