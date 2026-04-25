@@ -164,7 +164,7 @@ class SerpentTrench(Event):
             # four of those displaced bytes (battle_addr+3..+6).
             #
             # Read them now, before the redirect overwrites the first three.
-            displaced_bytes = list(self.rom.get_bytes(battle_addr + 3, 4))
+            displaced_bytes = list(self.rom.get_bytes(battle_addr + 3, return_addr - battle_addr - 3))
             # Battle bytes (CF, pack, bg) - read so we re-emit the same
             # encounter even if some other mod has changed the pack byte.
             battle_bytes = list(self.rom.get_bytes(battle_addr, 3))
