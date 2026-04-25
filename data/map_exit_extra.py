@@ -1573,6 +1573,10 @@ exit_data_patch = {
 
     # BAREN FALLS
     15:  lambda info: set_refreshparentmap(1, info),  #   15: [1196, "Baren Falls"],
+
+    # DOMA DREAM
+    437: lambda info: set_dest_x(17, info),   #   [441, "Doma Dream 2F Outside to Main Room"], off by one.
+
 }
 
 # Additional data patches for dungeon crawl mode
