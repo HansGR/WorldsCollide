@@ -4,6 +4,58 @@ This file contains useful reference information that has been moved from the Top
 
 ---
 
+## Table of Contents
+
+Sections are grouped by theme. The file is append-only, so on-disk order doesn't match this grouping — use the links below or the section headings as anchors.
+
+### FF6 Internals (vanilla reference)
+- [Field Object Data Structure (41 bytes per object)](#field-object-data-structure-41-bytes-per-object-0867-1068)
+- [FF6 Text Encoding Types](#ff6-text-encoding-types)
+
+### Ruination Mode — Architecture
+- [Ruination Mode (`-ruin`) — Detailed Architecture](#ruination-mode--ruin-detailed-architecture)
+
+### Ruination Mode — Mapping Algorithm
+- [Mapping Algorithm Analysis](#ruination-mode---mapping-algorithm-analysis)
+- [Key/Lock Softlock Analysis & Fix (2026-02-10)](#keylock-softlock-analysis--fix-2026-02-10)
+- [finalize_map Debug Patterns (2026-02-09)](#ruination-mode---finalize_map-debug-patterns-2026-02-09)
+- [Branch Area Detection for Narshe Clues (2026-04)](#branch-area-detection-for-narshe-clues-2026-04)
+
+### Ruination Mode — Party Formation
+- [Party Formation & Away-Party System (2026-02)](#ruination-mode---party-formation--away-party-system-2026-02)
+- [SET_PARTY_INTERACTION_POINTERS shared subroutine (2026-04)](#set_party_interaction_pointers-shared-subroutine-2026-04)
+
+### Ruination Mode — Event Patterns
+- [Conditional Area Checks](#ruination-mode---conditional-area-checks)
+- [Duplicate Event Tiles for Reverse Entrances (2026-02)](#ruination-mode---duplicate-event-tiles-for-reverse-entrances-2026-02)
+- [Patching NPC Events](#ruination-mode---patching-npc-events)
+- [Persistent Event State Across Reloads (2026-04)](#persistent-event-state-across-reloads-2026-04)
+
+### Door Randomizer
+- [Event Exit Info — Detailed Data Structures](#event-exit-info---detailed-data-structures)
+- [Local Character Gating (Door Rando)](#local-character-gating-door-rando)
+- [entrance_door_patch must fall through (2026-04)](#entrance_door_patch-must-fall-through-2026-04)
+
+### Feature Flags (deep dives)
+- [Limited Inventory Shops (`-sli` flag)](#limited-inventory-shops--sli-flag)
+- [No Free Heals (`-nfh` / `--no-free-heals`)](#no-free-heals--nfh----no-free-heals)
+
+### Custom Opcodes
+- [Custom Opcodes Reference](#custom-opcodes-reference) (consolidated table)
+- [BranchProbability vehicle-script opcode (0xE1) (2026-04)](#branchprobability-vehicle-script-opcode-0xe1-2026-04)
+
+### Bug Post-Mortems
+- [SelectParties Inventory Corruption Bug & Fix (2026-04)](#selectparties-inventory-corruption-bug--fix-2026-04)
+
+### Conventions
+- [Debug Output Routing (`-debug` vs `-debug-verbose`) (2026-04)](#debug-output-routing--debug-vs--debug-verbose-2026-04)
+
+### Lookups (see CLAUDE.md "How to Find X" cheat sheet first)
+- [Finding NPCs in Reference Data — Detailed Procedure](#finding-npcs-in-reference-data---detailed-procedure)
+- [Finding Map IDs by Name — Detailed Example](#finding-map-ids-by-name---detailed-example)
+
+---
+
 ## Field Object Data Structure (41 bytes per object, $0867-$1068)
 
 50 objects total: $00-$0F = characters, $10-$2F = NPCs, $30 = camera, $31 = showing character.
