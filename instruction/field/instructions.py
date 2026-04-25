@@ -32,7 +32,12 @@ class MultipleCalls(_Instruction):
         return super().__str__(hex(self.address))
 
 class SelectParties(_Instruction):
-    def __init__(self, count, unmovable_characters = 0x0000):
+    unmovable = 0x0000
+    import args as flags
+    if flags.require_umaro:
+        unmovable = 0x2000  # Umaro
+
+    def __init__(self, count, unmovable_characters=unmovable):
         super().__init__(0x99, count, unmovable_characters.to_bytes(2, "little"))
 
     def __str__(self):
