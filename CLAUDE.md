@@ -41,26 +41,14 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 3. **Events** - Modifies event scripts, distributes rewards
 4. **Memory.write()** - Outputs the modified ROM
 
-### 7. Key Module Locations
-- **memory/space.py** - ROM space management (`Reserve`, `Allocate`)
-- **data/maps.py** - Map/exit handling, door randomization via `Doors` class
-- **data/doors.py** - Door randomizer orchestration
-- **data/rooms.py** - Room and connection definitions
-- **event/ruination.py** - Ruination mode implementation (~4700 lines)
-  - `get_valid_door_targets_v2` / `get_valid_pit_targets_v2`: Connection validation (hub entrance invariants)
-  - `finalize_map`: Steps 1-6 close all connections; see ARCHIVE.md for detailed reference
-  - All `room_data` lookups in reserve area searches must filter by `self.protected`
-  - `compute_actual_areas_used()`: Maps area_name → branch_id from rooms actually placed AND reachable in each branch. Used by Narshe school clue scripts; do NOT use raw `AreasUsed` (it can credit areas to branches that hold none of their rooms). See ARCHIVE.md "Branch Area Detection for Narshe Clues".
-  - Branch selection is weighted toward less-extended branches via `branch_rewards_found` to avoid stub branches.
-  - `SET_PARTY_INTERACTION_POINTERS` (Bank.CA): Shared subroutine that re-binds every recruited character's NPC talk event to its party-interaction script. Populated by `create_party_interaction_scripts()` before the event mod loop; callers `field.Call(SET_PARTY_INTERACTION_POINTERS)` or assign it as an `entrance_event_address` (subtract `EVENT_CODE_START`).
-- **event/narshe_wob.py** `ruination_mod()` - Hub party formation: reform dialog, away-party cap, slot assignment, placement. See ARCHIVE.md "Party Formation & Away-Party System" for full details. Also hosts `limited_heals()` (gated by `-nfh`) which limits the school bucket to 3 drinks tracked via two event bits (`SCHOOL_LIMITED_HEALS_1/2`); does NOT use the `NARSHE_CHECKPOINT` event word any more.
-- **event/free_heals.py** - Cross-event `-nfh` sweepers, orchestrated by `Events.no_free_heals_mod()` in `event/events.py`: `modify_inn_costs` (×3 paid inns + convert free Returners/Figaro inns), `modify_free_bed_heals` (six bed tiles → 50% pincer ambush + per-character `BedHealCharacter`), `modify_recovery_springs` (9 randomised outcomes). Per-event `-nfh` patches still live in their own files (baren_falls, burning_house, collapsing_house, doma_wob, doma_wor, magitek_factory, narshe_wob, phantom_train). See ARCHIVE.md "No Free Heals" for the full table.
-- **instruction/field/custom.py** - Custom event opcodes (65816 ASM). Key ruination opcodes: `MarkActivePartyAway` (0x8a), `RestoreActivePartyAvailable` (0x8b), `RemapPartiesToFreeSlots` (0x8c), `SetupBranchPartySelect` (0x8d), `FinalizeBranchPartySelect` (0x8e). `-nfh`-only opcode: `BedHealCharacter` (0xa4) — per-character state-dependent heal (revive→cure→HP→MP). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass. Also hosts `_leader_finder_safe_store_mod` (ruin-gated), which range-checks the two `STA $1850,Y` writes inside vanilla C0/6F67 to avoid inventory corruption when a leader offset is a sentinel ($07B0/$07D9). See ARCHIVE.md "SelectParties Inventory Corruption Bug & Fix".
-- **instruction/vehicle.py** - Vehicle-script opcodes. Custom opcode `BranchProbability` (0xE1) does an inline RNG roll and branches with a given chance (0-255). Handler is lazily installed in Bank.EE on first use; dispatch table is patched at SNES `$EE76FB`. See ARCHIVE.md "BranchProbability vehicle-script opcode".
-- **instruction/field/instructions.py** `RecruitAndSelectParty` - In ruin mode, wraps recruitment with `SetupBranchPartySelect`/`FinalizeBranchPartySelect` to restrict party select to current party + new recruit on branches. See ARCHIVE.md "Branch Character Recruitment".
-- **`initially_locked_exits`** (set on Network in `data/walks.py`): Tracks doors/traps unlocked by `apply_key()`. These exits are excluded as connection targets and from downstream available exits because the player may not have the key yet. See ARCHIVE.md "Key/Lock Softlock Analysis" for full details.
-- **Local character gating** (door rando): In door rando, character gates must be enforced inside the reward room, not at the area entrance. Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating (rejection animation), and `ruin-*` room variants with lock dicts. See ARCHIVE.md "Local Character Gating (Door Rando)" for patterns and progress tracker. **Gotcha:** `entrance_door_patch` source must NOT terminate with `field.Return()` — see ARCHIVE.md "entrance_door_patch must fall through".
-- **`init_event_bits` allocation**: `event/events.py` allocates 450 bytes in ruination mode (vs. 400 otherwise). Expand if you add new `init_event_bits` writes that overflow.
+### 7. Persistent Event State Across Reloads
+Field RAM (NPC pointers, party state, etc.) is **not** preserved in saves. Events that need post-defeat state to persist across reloads must use event bits, with two halves:
+1. **`init_event_bits`** (called once on every game start, in each event's `init_event_bits(space)`) sets/clears the bit so the world starts in a known state.
+2. **In-event update** when the trigger fires, set/clear the bit to record progress.
+
+Companion gotchas:
+- The shared `init_event_bits` buffer is **450 bytes in ruination mode, 400 otherwise** (`event/events.py`). Overflow throws an allocator error — bump the size or reduce writes.
+- NPC talk-event pointers (`ChangeNPCEventAddress`) are field RAM. In ruination mode, re-bind them on map entry via `field.Call(SET_PARTY_INTERACTION_POINTERS)`. See ARCHIVE.md "Persistent Event State Across Reloads" for examples (burning house fireballs, KT switches, minecart revisit).
 
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
@@ -75,6 +63,51 @@ Each NPC has a visibility bit determining if it appears when the map loads. Form
   - Example: SNES `$CEF100` → ROM `$0EF100` (not `$2EF100`!)
 - ROM uses little-endian byte order
 - The codebase constant `START_ADDRESS_SNES = 0xc00000` reflects this offset
+
+---
+
+## Module Map
+
+Quick orientation by file. Detailed sections are in ARCHIVE.md.
+
+### Memory & ROM
+- **memory/space.py** — `Reserve` (in-place patch), `Allocate` (new code into free space), `Write` (Allocate + write), `Read` (extract bytes), `Free` (mark range free). All take `Bank.XX` enum.
+- **memory/free.py** — Static table of vanilla free-space ranges per bank.
+
+### Maps & Doors
+- **data/maps.py** — `Maps` class: NPC/event tile management, `door_map`, runtime patching.
+- **data/doors.py** — `Doors` orchestrator. `verbose` is a property of `verbose.is_enabled()` — don't add an instance attribute.
+- **data/rooms.py** — Room definitions (incl. `ruin-*` variants) and `forced_connections`.
+- **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
+- **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
+- **data/walks.py** — `Network` class: connection graph, `apply_key()`, `initially_locked_exits` (excluded as targets — see ARCHIVE.md "Key/Lock Softlock Analysis").
+
+### Ruination Mode
+- **event/ruination.py** (~4700 lines) — `ruination_map` orchestrator, `RuinationBranch(Network)`, `generate_map_with_characters`, `extend_branch_path`, `finalize_map`, `RUIN_ROOM_SETS`, `ROOM_REWARD`. All `room_data` lookups in reserve searches must filter by `self.protected`.
+  - `compute_actual_areas_used()` — area_name → branch_id from rooms actually placed AND reachable. Use this (not raw `AreasUsed`) for Narshe school clue scripts. See ARCHIVE.md "Branch Area Detection for Narshe Clues".
+  - Branch selection weighted toward less-extended branches via `branch_rewards_found`.
+  - `SET_PARTY_INTERACTION_POINTERS` (Bank.CA, populated by `create_party_interaction_scripts()` before the event mod loop) — shared subroutine to re-bind NPC talk events.
+- **args/ruin_preprocessor.py** — `RUIN_DEFAULT_FLAGS` expansion. `-ruin` bundles `-nfh` here.
+- **event/narshe_wob.py** — `ruination_mod()` (hub party formation, see ARCHIVE.md "Party Formation & Away-Party System") and `limited_heals()` (gated by `-nfh`, uses `SCHOOL_LIMITED_HEALS_1/2` event bits — does NOT use the `NARSHE_CHECKPOINT` event word any more).
+
+### Feature flags
+- **event/free_heals.py** — `-nfh` cross-event sweepers, orchestrated by `Events.no_free_heals_mod()`: `modify_inn_costs` (×3 paid + convert free Returners/Figaro), `modify_free_bed_heals` (50% pincer ambush + per-character `BedHealCharacter`), `modify_recovery_springs` (9 randomised outcomes). Per-event `-nfh` patches stay in their own files. See ARCHIVE.md "No Free Heals" for the full table.
+- **menus/buy.py** + **data/shops.py** — `-sli` limited-inventory shops (pack-based purchasing). See ARCHIVE.md "Limited Inventory Shops".
+
+### Custom opcodes
+- **instruction/field/custom.py** — Field opcodes (65816 ASM). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass.
+- **instruction/field/y_npc/instructions.py** — Y-NPC opcodes (also via `_set_opcode_address`).
+- **instruction/vehicle.py** — Vehicle-script opcodes (Bank.EE). `BranchProbability` (0xE1) handler installed lazily on first use.
+- **instruction/battle_event.py** — Battle-event opcodes.
+- See ARCHIVE.md "Custom Opcodes Reference" for the consolidated table.
+
+### Door-rando integration
+- **instruction/field/instructions.py** `RecruitAndSelectParty` — In ruin mode, wraps recruitment with `SetupBranchRecruit`/`FinalizeBranchRecruit` to restrict party select on branches.
+- **Local character gating** (door rando) — Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating, `ruin-*` room variants with lock dicts. See ARCHIVE.md "Local Character Gating".
+  - **Gotcha:** `entrance_door_patch` source must NOT terminate with `field.Return()` — see ARCHIVE.md "entrance_door_patch must fall through".
+
+### Conventions
+- **log/verbose.py** `vprint()` — debug output helper. `-debug` → stdout, `-debug-verbose`/`-dv` → spoiler-log temp file, neither → no-op. **Don't** wrap `vprint(...)` in `if self.verbose:`.
 
 ---
 
