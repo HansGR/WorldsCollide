@@ -406,9 +406,9 @@ The ruination hub (Narshe school, map 0x068) allows the player to form up to 3 p
 
 | Opcode | Class | Purpose |
 |--------|-------|---------|
-| `0x8a` | `MarkActivePartyAway` | Sets PARTY_N_AWAY bit, clears character_available for party members, decrements CHARACTERS_AVAILABLE. Idempotent. Fired by event tiles on branch door exits. |
-| `0x8b` | `RestoreActivePartyAvailable` | Clears PARTY_N_AWAY bit, restores character_available, increments CHARACTERS_AVAILABLE. Idempotent. Fired by hub entrance event when a party returns. |
-| `0x8c` | `RemapPartiesToFreeSlots` | Remaps $1850 party assignments from SelectParties slots (always 1..count) to actual free slots. Uses character_available to distinguish new from away characters. |
+| `0x66` | `MarkActivePartyAway` | Sets PARTY_N_AWAY bit, clears character_available for party members, decrements CHARACTERS_AVAILABLE. Idempotent. Fired by event tiles on branch door exits. |
+| `0x67` | `RestoreActivePartyAvailable` | Clears PARTY_N_AWAY bit, restores character_available, increments CHARACTERS_AVAILABLE. Idempotent. Fired by hub entrance event when a party returns. |
+| `0x68` | `RemapPartiesToFreeSlots` | Remaps $1850 party assignments from SelectParties slots (always 1..count) to actual free slots. Uses character_available to distinguish new from away characters. |
 
 ### Party Formation Flow (event/narshe_wob.py, reform_src)
 
@@ -428,7 +428,7 @@ The branching checks each combination of PARTY_1/2/3_AWAY to classify into MAX_1
 2. `REFRESH_CHARACTERS_AND_SELECT_N_PARTIES` deletes all entities, creates entities for available characters only, calls `SelectParties(count)` (vanilla opcode 0x99)
 3. SelectParties always assigns to slots 1..count regardless of away parties
 
-**Step 3 - Remap to free slots (RemapPartiesToFreeSlots, opcode 0x8c):**
+**Step 3 - Remap to free slots (RemapPartiesToFreeSlots, opcode 0x68):**
 1. Reads PARTY_N_AWAY bits from $1E9B to build a free_slots mapping in scratch RAM ($e8-$ea). For each party not away, stores its mask (0x01/0x02/0x04) at the next index.
 2. Iterates through all 14 characters. For each with `character_available` set AND `$1850+char != 0`:
    - If $1850 == 0x01: replace with free_slots[0]
@@ -466,15 +466,15 @@ When a party on a branch recruits a character, the standard party select flow wo
 
 | Opcode | Class | Purpose |
 |--------|-------|---------|
-| `0x8d` | `SetupBranchPartySelect` | Takes character ID argument. If active party is away: saves party mask to $e7, zeros character_available, re-sets it only for current party members and the new recruit, clears $1850 for party members (clean slate for SelectParties), recomputes CHARACTERS_AVAILABLE. No-op if not on branch. |
-| `0x8e` | `FinalizeBranchPartySelect` | No argument. If $e7 is non-zero: remaps slot 1 → saved party mask ($e7), recomputes character_available as `recruited AND NOT in_away_party`, recomputes CHARACTERS_AVAILABLE count, clears $e7. No-op if $e7 is zero. |
+| `0xec` | `SetupBranchRecruit` (alias `SetupBranchPartySelect`) | Takes character ID argument. If active party is away: saves party mask to $e7, zeros character_available, re-sets it only for current party members and the new recruit, clears $1850 for party members (clean slate for SelectParties), recomputes CHARACTERS_AVAILABLE. No-op if not on branch. |
+| `0xed` | `FinalizeBranchRecruit` (alias `FinalizeBranchPartySelect`) | No argument. If $e7 is non-zero: remaps slot 1 → saved party mask ($e7), recomputes character_available as `recruited AND NOT in_away_party`, recomputes CHARACTERS_AVAILABLE count, clears $e7. No-op if $e7 is zero. |
 
 **Execution flow (branch recruitment):**
 ```
 RecruitCharacter(char)       → sets recruited + available for new char
-SetupBranchPartySelect(char) → restricts select screen to party + new char
+SetupBranchRecruit(char)     → restricts select screen to party + new char
 Call(REFRESH_CHARACTERS_AND_SELECT_PARTY) → shows party select screen
-FinalizeBranchPartySelect()  → remaps slot, restores correct available state
+FinalizeBranchRecruit()      → remaps slot, restores correct available state
 ```
 
 **After finalization**, the state is correct:
@@ -1088,6 +1088,62 @@ def entrance_door_patch(args):
 ```
 
 The `Local Character Gating` section above has been updated to reflect this; older copies in commit history still show the incorrect shape with trailing `Return()`s.
+
+---
+
+## Custom Opcodes Reference
+
+Single source of truth for every opcode added by this codebase. Verified against source on 2026-04-25.
+
+### Field opcodes (`instruction/field/custom.py`)
+
+Vanilla field-event opcode table is at SNES `$C098C4`, 256 entries × 2 bytes. `_set_opcode_address(opcode, address)` patches one entry; the implicit Bank.C0 provides the high byte. Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, set `_Instruction.__init__` to forward `opcode + args`.
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0x66` | `MarkActivePartyAway` | Sets `PARTY_N_AWAY` bit, clears `character_available` for party members, decrements `CHARACTERS_AVAILABLE`. Idempotent. Fired by event tiles on branch door exits. |
+| `0x67` | `RestoreActivePartyAvailable` | Clears `PARTY_N_AWAY` bit, restores `character_available`, increments `CHARACTERS_AVAILABLE`. Idempotent. Fired by hub entrance event when a party returns. |
+| `0x68` | `RemapPartiesToFreeSlots` | Remaps `$1850` party assignments from SelectParties slots (always 1..count) to actual free slots. Uses `character_available` to distinguish new from away characters. |
+| `0x69` | `UpdateWorldReturnToParentMap` | Map Shuffle / door rando: read parent map, update world bit (`$1E94` bit 4) to match, return to parent map. |
+| `0x6d` | `SetParentWorld` | Map Shuffle / door rando: set the parent-world bit. |
+| `0x6e` | `_InvokeBattleType` (internal — used by `field.InvokeBattleType`) | Invoke a battle with explicit type (e.g. `BattleType.PINCER`). |
+| `0x6f` | `RemoveDeath` | Special command for events like Moogle Defense — clears the death status bit even with `-permadeath`. |
+| `0x76` | `RecruitCharacter` | Recruit a single character (sets recruited + available bits). |
+| `0x83` | `LoadEsperFound` | Load esper-found event word into A. |
+| `0x8f` | `LongCall` | Bank-tagged subroutine call. **Overwrites the vanilla "learn all swdtech" opcode.** |
+| `0x9e` | `SetYNPCGraphics` (in `instruction/field/y_npc/instructions.py`) | Set Y-NPC graphics for the `-y*` flags. |
+| `0x9f` | `YNPCEffect` (in `instruction/field/y_npc/instructions.py`) | Trigger Y-NPC effect. |
+| `0xa3` | `SetEquipmentAndCommands` | Copy equipment and commands from one character slot to another. |
+| `0xa4` | `BedHealCharacter` | **`-nfh` only.** Per-character state-dependent heal. Argument: `0x00..0x0F` for a specific actor, or `0x31..0x34` for `PARTY0..PARTY3` (resolved via `$9DAD`). Effects (mutually exclusive): dead → revive to 1 HP (no-op under `-permadeath`); alive + status → clear `$1614`/`$1615`; alive + HP < max → +max/4 HP capped; alive + HP == max → +max/4 MP capped. Always emits A8, dispatches `JMP $9b5c`. |
+| `0xa5` | `BranchChance` | Branch with given probability — field equivalent of `BranchProbability`. |
+| `0xe5` | `LoadPartiesWithCharacters` | Load parties pre-populated with a list of characters (used by Branch Recruit setup). |
+| `0xec` | `SetupBranchRecruit` (alias `SetupBranchPartySelect`) | Pre-recruitment hook for ruination branch recruits. Saves party_away_byte, restricts party-select pool to current party + new recruit. |
+| `0xed` | `FinalizeBranchRecruit` (alias `FinalizeBranchPartySelect`) | Post-recruitment hook. Restores party_away_byte saved by `SetupBranchRecruit`, recomputes `character_available` and `CHARACTERS_AVAILABLE`. |
+
+**Other helpers in `instruction/field/custom.py`**:
+- `_leader_finder_safe_store_mod()` (ruin-gated, called once at module load) — patches the two `STA $1850,Y` writes inside vanilla `C0/6F67` to range-check Y (`CPY #$000E / BCS .skip`). Avoids inventory corruption when a leader offset is a sentinel (`$07B0`/`$07D9`). See "SelectParties Inventory Corruption Bug & Fix".
+
+### Vehicle-script opcodes (`instruction/vehicle.py`)
+
+Vanilla vehicle-script opcode table is at SNES `$EE76FB`, 256 entries × 2 bytes. Opcodes E1-F2 are unused in vanilla (their entries dispatch to a no-op stub at `$EE74A4`). `_set_vehicle_opcode_address(opcode, snes_handler_addr)` patches one entry.
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0xE1` | `BranchProbability` | Inline RNG roll → branch with given chance (0-255). Handler is lazily installed on first use; see the section below. |
+
+### Battle-event opcodes (`instruction/battle_event.py`)
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0x15` | `IncrementChecksComplete` | Increment the "checks complete" counter at end of battle. |
+
+### Adding a new opcode
+
+1. Pick an unused opcode. Field unused list (commented at top of `instruction/field/custom.py`): `0x4a`, `0x5b`, `0xe6`, `0xfc`, `0xfd`. Plus `0xa4` (now used by `-nfh`). Vehicle: `0xE2-0xF2` unused.
+2. Write the ASM body. Field opcodes typically end with `LDA #<size> / JMP $9b5c` (next command); vehicle opcodes end with `JMP $7093` (return to dispatcher).
+3. Register: `_set_opcode_address(opcode, address)` (field/y_npc) or `_set_vehicle_opcode_address(...)` (vehicle).
+4. Subclass `_Instruction` (or `_Branch`) and forward `opcode + args` via `super().__init__(opcode, *args)`.
+5. **Update the table above.**
 
 ---
 
