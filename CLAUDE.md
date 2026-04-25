@@ -33,7 +33,7 @@ NPC IDs used in `maps.get_npc(map_id, npc_id)` are **offset by 0x10** from the m
 Event tiles (IDs 1500-2000) acting as doors need runtime connection data. When adding new event tile connections, ensure **BOTH sides' partners** are included in `used_events` if they need runtime updates. Connections are stored as `[exit_id, entrance_id]`, so check both `m[0]` and `m[1]` partners.
 
 ### 5. Code Organization Principle
-Event-specific modifications go in their respective event files (e.g., `event/burning_house.py`), not in top-level files like `event/events.py` or generic modules. For mode-specific changes, add a method like `ruination_mod()` to the event class and call it conditionally from `mod()`.
+Event-specific modifications go in their respective event files (e.g., `event/burning_house.py`), not in top-level files like `event/events.py` or generic modules. For mode-specific changes, add a method like `ruination_mod()` or `no_free_heals_mod()` to the event class and call it conditionally from `mod()` (gated on `args.ruination_mode` / `args.no_free_heals` etc.). Cross-event "sweepers" that run once per build belong in their own module (e.g., `event/free_heals.py` for `-nfh`), invoked from a top-level `Events` method (e.g., `events.no_free_heals_mod()`).
 
 ### 6. Execution Flow (wc.py)
 1. **Memory** - Loads ROM, initializes free space tracking
@@ -41,20 +41,14 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 3. **Events** - Modifies event scripts, distributes rewards
 4. **Memory.write()** - Outputs the modified ROM
 
-### 7. Key Module Locations
-- **memory/space.py** - ROM space management (`Reserve`, `Allocate`)
-- **data/maps.py** - Map/exit handling, door randomization via `Doors` class
-- **data/doors.py** - Door randomizer orchestration
-- **data/rooms.py** - Room and connection definitions
-- **event/ruination.py** - Ruination mode implementation (~4700 lines)
-  - `get_valid_door_targets_v2` / `get_valid_pit_targets_v2`: Connection validation (hub entrance invariants)
-  - `finalize_map`: Steps 1-6 close all connections; see ARCHIVE.md for detailed reference
-  - All `room_data` lookups in reserve area searches must filter by `self.protected`
-- **event/narshe_wob.py** `ruination_mod()` - Hub party formation: reform dialog, away-party cap, slot assignment, placement. See ARCHIVE.md "Party Formation & Away-Party System" for full details.
-- **instruction/field/custom.py** - Custom event opcodes (65816 ASM). Key ruination opcodes: `MarkActivePartyAway` (0x8a), `RestoreActivePartyAvailable` (0x8b), `RemapPartiesToFreeSlots` (0x8c), `SetupBranchPartySelect` (0x8d), `FinalizeBranchPartySelect` (0x8e). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass. Also hosts `_leader_finder_safe_store_mod` (ruin-gated), which range-checks the two `STA $1850,Y` writes inside vanilla C0/6F67 to avoid inventory corruption when a leader offset is a sentinel ($07B0/$07D9). See ARCHIVE.md "SelectParties Inventory Corruption Bug & Fix".
-- **instruction/field/instructions.py** `RecruitAndSelectParty` - In ruin mode, wraps recruitment with `SetupBranchPartySelect`/`FinalizeBranchPartySelect` to restrict party select to current party + new recruit on branches. See ARCHIVE.md "Branch Character Recruitment".
-- **`initially_locked_exits`** (set on Network in `data/walks.py`): Tracks doors/traps unlocked by `apply_key()`. These exits are excluded as connection targets and from downstream available exits because the player may not have the key yet. See ARCHIVE.md "Key/Lock Softlock Analysis" for full details.
-- **Local character gating** (door rando): In door rando, character gates must be enforced inside the reward room, not at the area entrance. Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating (rejection animation), and `ruin-*` room variants with lock dicts. See ARCHIVE.md "Local Character Gating (Door Rando)" for patterns and progress tracker.
+### 7. Persistent Event State Across Reloads
+Field RAM (NPC pointers, party state, etc.) is **not** preserved in saves. Events that need post-defeat state to persist across reloads must use event bits, with two halves:
+1. **`init_event_bits`** (called once on every game start, in each event's `init_event_bits(space)`) sets/clears the bit so the world starts in a known state.
+2. **In-event update** when the trigger fires, set/clear the bit to record progress.
+
+Companion gotchas:
+- The shared `init_event_bits` buffer is **450 bytes in ruination mode, 400 otherwise** (`event/events.py`). Overflow throws an allocator error — bump the size or reduce writes.
+- NPC talk-event pointers (`ChangeNPCEventAddress`) are field RAM. In ruination mode, re-bind them on map entry via `field.Call(SET_PARTY_INTERACTION_POINTERS)`. See ARCHIVE.md "Persistent Event State Across Reloads" for examples (burning house fireballs, KT switches, minecart revisit).
 
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
@@ -69,6 +63,80 @@ Each NPC has a visibility bit determining if it appears when the map loads. Form
   - Example: SNES `$CEF100` → ROM `$0EF100` (not `$2EF100`!)
 - ROM uses little-endian byte order
 - The codebase constant `START_ADDRESS_SNES = 0xc00000` reflects this offset
+
+---
+
+## How to Find X (Cheat Sheet)
+
+Quick lookup procedures I re-derive every session. Most JSONs are in `claude_reference/` and large — open with `grep`, not `Read`, unless you've narrowed it down.
+
+| Looking for | Where / how |
+|-------------|-------------|
+| **Map ID by name** | `grep "<name>" data/map_exit_extra.py` → identify the entrance door (e.g. "Door Outside" goes INTO the building) → `grep '"index": <door_id>' claude_reference/exits_raw.json` → `dest_map` is the interior map ID. (Top 10 #8.) |
+| **NPC by sprite/position** | `claude_reference/maps_data.json` `maps[map_id].npcs` array (position, sprite). Index in array = map-local index; **`npc_id = map_local_index + 0x10`** for `maps.get_npc(map_id, npc_id)` (Top 10 #2). Cross-reference `claude_reference/npcs_raw.json` for full properties (event_byte, event_bit). |
+| **Event bit by name** | `grep -i "<name>" data/event_bit.py`. `npc_bit = (event_byte + 0x60) * 8 + event_bit` (Top 10 #9). Special: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` in `data/npc_bit.py`. |
+| **Event word by name** | `grep -i "<name>" data/event_word.py`. Address: `event_word.address(event_word.NAME)`. |
+| **Item ID by name** | `grep -in "<name>" data/items.py`. ID is the index in the `items` list. |
+| **Esper / spell / character ID** | `data/espers.py`, `data/spells.py`. Character IDs (constant): 0=Terra, 1=Locke, 2=Cyan, 3=Shadow, 4=Edgar, 5=Sabin, 6=Celes, 7=Strago, 8=Relm, 9=Setzer, 10=Mog, 11=Gau, 12=Gogo, 13=Umaro. |
+| **Custom opcode → file/class** | ARCHIVE.md "Custom Opcodes Reference" table. |
+| **Vanilla event script for a ROM address** | `claude_reference/EventScriptTxt.txt` — search by SNES address (e.g. `CC/8022`). Decompile is comprehensive. |
+| **Dialog text by ID** | `claude_reference/dialog_file.txt` — IDs are decimal. Modify with `dialogs.set_text(dialog_id, "...")`. |
+| **Room ID → SNES map ID + name** | `claude_reference/room_map_reference.json` (covers 784/801; Mobliz/switchyard/ruin-logical rooms unresolved). |
+| **Door ID → endpoints** | `data/map_exit_extra.py` `exit_data[door_id]` = `[partner_id, description]`. Door ranges: <2000 two-way, 2000-2999 trap (one-way exit), 3000+ pit (one-way entrance) — Top 10 #3. Full data: `claude_reference/exits_raw.json` (`dest_map`/`dest_x`/`dest_y`). |
+| **Reward room for character X (ruin)** | `ROOM_REWARD` dict in `event/ruination.py`. |
+| **Area name → rooms (ruin)** | `RUIN_ROOM_SETS` dict in `event/ruination.py`. |
+| **Which branch holds area X (ruin)** | `args.ruination_areas_used[area_name]` (populated from `ruin_map.compute_actual_areas_used()`, NOT raw `AreasUsed`). |
+| **ROM address ↔ SNES** | `ROM = SNES - 0xC00000`. SNES `$CEF100` → ROM `$0EF100`. Constant: `START_ADDRESS_SNES = 0xc00000`. (Top 10 #10.) |
+| **ROM data structure offset** | `claude_reference/ff3infov2.txt` — comprehensive FF6 ROM map (large; grep). |
+| **Chest contents at coords** | `claude_reference/chests_raw.json`. |
+| **Map event tile at coords** | `claude_reference/events_raw.json` (one record per event tile). |
+
+For the lookups above, prefer the JSON files over reading the corresponding .py because the JSONs are structured for grep-and-jump.
+
+---
+
+## Module Map
+
+Quick orientation by file. Detailed sections are in ARCHIVE.md.
+
+### Memory & ROM
+- **memory/space.py** — `Reserve` (in-place patch), `Allocate` (new code into free space), `Write` (Allocate + write), `Read` (extract bytes), `Free` (mark range free). All take `Bank.XX` enum.
+- **memory/free.py** — Static table of vanilla free-space ranges per bank.
+
+### Maps & Doors
+- **data/maps.py** — `Maps` class: NPC/event tile management, `door_map`, runtime patching.
+- **data/doors.py** — `Doors` orchestrator. `verbose` is a property of `verbose.is_enabled()` — don't add an instance attribute.
+- **data/rooms.py** — Room definitions (incl. `ruin-*` variants) and `forced_connections`.
+- **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
+- **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
+- **data/walks.py** — `Network` class: connection graph, `apply_key()`, `initially_locked_exits` (excluded as targets — see ARCHIVE.md "Key/Lock Softlock Analysis").
+
+### Ruination Mode
+- **event/ruination.py** (~4700 lines) — `ruination_map` orchestrator, `RuinationBranch(Network)`, `generate_map_with_characters`, `extend_branch_path`, `finalize_map`, `RUIN_ROOM_SETS`, `ROOM_REWARD`. All `room_data` lookups in reserve searches must filter by `self.protected`.
+  - `compute_actual_areas_used()` — area_name → branch_id from rooms actually placed AND reachable. Use this (not raw `AreasUsed`) for Narshe school clue scripts. See ARCHIVE.md "Branch Area Detection for Narshe Clues".
+  - Branch selection weighted toward less-extended branches via `branch_rewards_found`.
+  - `SET_PARTY_INTERACTION_POINTERS` (Bank.CA, populated by `create_party_interaction_scripts()` before the event mod loop) — shared subroutine to re-bind NPC talk events.
+- **args/ruin_preprocessor.py** — `RUIN_DEFAULT_FLAGS` expansion. `-ruin` bundles `-nfh` here.
+- **event/narshe_wob.py** — `ruination_mod()` (hub party formation, see ARCHIVE.md "Party Formation & Away-Party System") and `limited_heals()` (gated by `-nfh`, uses `SCHOOL_LIMITED_HEALS_1/2` event bits — does NOT use the `NARSHE_CHECKPOINT` event word any more).
+
+### Feature flags
+- **event/free_heals.py** — `-nfh` cross-event sweepers, orchestrated by `Events.no_free_heals_mod()`: `modify_inn_costs` (×3 paid + convert free Returners/Figaro), `modify_free_bed_heals` (50% pincer ambush + per-character `BedHealCharacter`), `modify_recovery_springs` (9 randomised outcomes). Per-event `-nfh` patches stay in their own files. See ARCHIVE.md "No Free Heals" for the full table.
+- **menus/buy.py** + **data/shops.py** — `-sli` limited-inventory shops (pack-based purchasing). See ARCHIVE.md "Limited Inventory Shops".
+
+### Custom opcodes
+- **instruction/field/custom.py** — Field opcodes (65816 ASM). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass.
+- **instruction/field/y_npc/instructions.py** — Y-NPC opcodes (also via `_set_opcode_address`).
+- **instruction/vehicle.py** — Vehicle-script opcodes (Bank.EE). `BranchProbability` (0xE1) handler installed lazily on first use.
+- **instruction/battle_event.py** — Battle-event opcodes.
+- See ARCHIVE.md "Custom Opcodes Reference" for the consolidated table.
+
+### Door-rando integration
+- **instruction/field/instructions.py** `RecruitAndSelectParty` — In ruin mode, wraps recruitment with `SetupBranchRecruit`/`FinalizeBranchRecruit` to restrict party select on branches.
+- **Local character gating** (door rando) — Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating, `ruin-*` room variants with lock dicts. See ARCHIVE.md "Local Character Gating".
+  - **Gotcha:** `entrance_door_patch` source must NOT terminate with `field.Return()` — see ARCHIVE.md "entrance_door_patch must fall through".
+
+### Conventions
+- **log/verbose.py** `vprint()` — debug output helper. `-debug` → stdout, `-debug-verbose`/`-dv` → spoiler-log temp file, neither → no-op. **Don't** wrap `vprint(...)` in `if self.verbose:`.
 
 ---
 
