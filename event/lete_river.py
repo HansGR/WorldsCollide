@@ -30,6 +30,9 @@ class LeteRiver(Event):
             field.ClearEventBit(npc_bit.BANON_IN_ROOM_RETURNER_HIDEOUT),
             field.SetEventBit(npc_bit.RAFT_LETE_RIVER),
         )
+        if self.args.ruination_mode:
+            for bit in self.RUINATION_SEGMENT_DONE_BITS:
+                space.write(field.ClearEventBit(bit))
 
     def mod(self):
         self.raft_npc_id = 0x11
@@ -97,6 +100,24 @@ class LeteRiver(Event):
                                        battle_background, check_game_over = False),
             )
 
+    RUINATION_SEGMENT_DONE_BITS = [0x3b2, 0x3b3, 0x3b4, 0x3b5, 0x3b6, 0x3b7]
+
+    RUINATION_REPEAT_BATTLE_PROBABILITY = 0.25  # Control chance of battles re-triggering after first fight
+
+    RUINATION_BATTLES = [
+        (0xb066b, 0, True),    # Segment 0 (from beginning) - last battle in segment
+        (0xb06a4, 1, False),   # Segment 1 ("straight") -
+        (0xb06b4, 1, False),   # Segment 1 ("straight") -
+        (0xb06e1, 1, True),    # Segment 1 ("straight") - last battle in segment
+        (0xb0704, 2, False),   # Segment 2 ("left") -
+        (0xB0734, 2, True),    # Segment 2 ("left") - last battle in segment
+        (0xB077C, 3, False),   # Segment 3 ("right") -
+        (0xB07A0, 3, True),    # Segment 3 ("right") - last battle in segment
+        (0xB0809, 4, False),   # Segment 4 ("up") -
+        (0xB081E, 4, True),    # Segment 4 ("up") - last battle in segment
+        (0xB084E, 5, True),    # Segment 5 ("left") - last battle in segment
+    ]
+
     def fixed_battle_location_mod(self):
         # to eliminate randomness across runners of the same seed, this eliminates the 50% chance encounters and turns some of them into 100% encounters
         # This causes this many encounters based on your first choice if you don't go up at the second choice:
@@ -116,21 +137,21 @@ class LeteRiver(Event):
         TO_BATTLE_2 = 2 # force battle 2
         # this list stores all of the calls to the 50% chance encounter subroutine and the change that we're making
         chance_encounter_calls = \
-            [ # There is a Forced battle 1 before Straight/Left/Right choice
+            [ # There is a Forced battle 1 before Straight/Left/Right choice (at CB/066B)
               # Straight
                 (0xB0690, TO_NOOP),
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/06A4
                 (0xB06B4, TO_BATTLE_2),
                 (0xB06D0, TO_NOOP),
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/06E1
               # Left 
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/0704
                 (0xB071B, TO_NOOP),
                 (0xB0734, TO_BATTLE_2),
                 (0xB0744, TO_NOOP),
               # Right
                 (0xB076A, TO_NOOP),
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/077C
                 (0xB07A0, TO_BATTLE_2),
                 (0xB07B6, TO_NOOP),
               # After First Cave, before Up/Left choice
@@ -145,20 +166,77 @@ class LeteRiver(Event):
                 (0xB0873, TO_NOOP),
                 (0xB08A8, TO_NOOP),
              ]
-        
-        for chance_encounter_call in chance_encounter_calls:
-            start_address = chance_encounter_call[0]
-            end_address = start_address+3
-            action = chance_encounter_call[1]
-            space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
-            if action == TO_BATTLE_1:
+
+        if self.args.ruination_mode:
+            chance_byte = int(self.RUINATION_REPEAT_BATTLE_PROBABILITY * 255)
+
+            # Add logic that makes battles 1/4 probability in each segment after the segment has been completed
+            ii = 0
+            for start_addr, seg_id, is_last in self.RUINATION_BATTLES:
+                ii += 1
+                done_bit = self.RUINATION_SEGMENT_DONE_BITS[seg_id]  # control bit for this segment
+
+                which_battle = [a[1] for a in chance_encounter_calls if start_addr in a]
+                if len(which_battle) > 0:
+                    FORCE_BATTLE = which_battle[0]
+                else:
+                    FORCE_BATTLE = 1  # by default
+                # Write logic handling for this battle
+                custom_src = [
+                    field.BranchIfEventBitClear(done_bit, "FIGHT"),   # First visit (done bit clear): always fight.
+                    field.BranchChance(chance_byte, "FIGHT"),         # Repeat visit (done bit set): fight with probability p.
+                    field.Return(),                                             # Otherwise skip the battle.
+                    "FIGHT",
+                ]
+                if FORCE_BATTLE == 1:
+                    custom_src += [
+                        field.Call(self.BATTLE_1_INVOKE_ADDR)
+                    ]
+                elif FORCE_BATTLE == 2:
+                    custom_src += [
+                        field.Call(self.BATTLE_2_INVOKE_ADDR)
+                    ]
+                else:
+                    print('Warning: bad logic in Lete River ruination battle handling!')
+                if is_last:
+                    custom_src += [
+                        field.SetEventBit(done_bit)
+                    ]
+                custom_src += [
+                    field.Return()
+                ]
+                space = Write(Bank.CB, custom_src, f"Lete River {ii} segment {seg_id} battle logic")
+                patch_address = space.start_address
+
+                space = Reserve(start_addr, start_addr + 3, f"Lete River {ii} segment {seg_id} patch", field.NOP())
                 space.write(
-                    field.Call(self.BATTLE_1_INVOKE_ADDR)
+                    field.Call(patch_address)
                 )
-            elif action == TO_BATTLE_2:
-                space.write(
-                    field.Call(self.BATTLE_2_INVOKE_ADDR)
-                )
+
+            # Also handle TO_NOOPs
+            for chance_encounter_call in chance_encounter_calls:
+                start_address = chance_encounter_call[0]
+                end_address = start_address + 3
+                action = chance_encounter_call[1]
+                if action == TO_NOOP:
+                    space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
+
+
+        else:
+            # Original behavior: overwrite to force certain battles
+            for chance_encounter_call in chance_encounter_calls:
+                start_address = chance_encounter_call[0]
+                end_address = start_address+3
+                action = chance_encounter_call[1]
+                space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
+                if action == TO_BATTLE_1:
+                    space.write(
+                        field.Call(self.BATTLE_1_INVOKE_ADDR)
+                    )
+                elif action == TO_BATTLE_2:
+                    space.write(
+                        field.Call(self.BATTLE_2_INVOKE_ADDR)
+                    )
 
     def before_ultros_mod(self):
         space = Reserve(0xb05a5, 0xb05e3, "lete river heal party, here we go", field.NOP()) # unused dialog 0166 -- Here we go! This raft'll take us to Narshe!
@@ -174,6 +252,7 @@ class LeteRiver(Event):
             # Don't patch out the map load argument
             space = Reserve(0xb0617, 0xb062f, "lete river tutorial", field.NOP())
             self.rom.set_byte(0xb0630, 0x6b)  # this should be a load map, not a fade-load map
+            self.rom.set_byte(0xb0635, 0x80)  # do fade in screen after
             #space = Reserve(0xb0636, 0xb063c, "lete river tutorial end", field.NOP())
         else:
             space = Reserve(0xb0617, 0xb063c, "lete river tutorial", field.NOP())
