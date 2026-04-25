@@ -3074,3 +3074,200 @@ Branch 1 failed to extend, retry 2/3
 Branch 1 is stuck after 3 retries. Reason: need_pido
 Skipping reward processing for stuck branch 1
 Branch viability: [False, True, True] Stuck: {1: 'need_pido'}
+
+
+
+C:\Users\hansr\Documents\GitHub\WorldsCollide (claude_ruination -> origin)
+λ python3.10.exe wc.py -i ../FFIII.smc -o ../ruin.smc -ruin -stl 53 -sc1 cyan -debug > ../output.txt
+Traceback (most recent call last):
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 36, in <module>
+    main()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\wc.py", line 12, in main
+    events = Events(memory.rom, args, data)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 29, in __init__
+    events = self.mod()
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 78, in mod
+    self.ruination_mod(events, name_event)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\events.py", line 275, in ruination_mod
+    self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+  File "C:\Users\hansr\Documents\GitHub\WorldsCollide\event\ruination.py", line 4300, in generate_map_with_characters
+    raise RuinationMappingError(diag)
+event.ruination.RuinationMappingError:
+============================================================
+RUINATION MAPPING FAILURE: No reserve areas available to unstick branches
+============================================================
+
+=== Rewards State ===
+  Requested: 6 characters, 9 espers
+  Obtained:  0 characters, 5 espers
+  Available: 1 character slots, 3 esper slots
+  Planned characters: ['STRAGO', 'GAU', 'UMARO', 'SETZER', 'TERRA']
+  Reserve characters: ['EDGAR', 'SHADOW', 'GOGO', 'RELM', 'MOG', 'SABIN', 'LOCKE', 'CELES']
+  Dead checks allowed: 7
+
+=== Branch State ===
+  Stuck branches: {1: 'need_pido'}
+  Branch viability: [False, True, True]
+  Current branch_id: 1
+
+  Branch 0:
+    Active room: ruin_hub_0
+    Terminus: ruin_terminus_1
+    Has hub: False
+    Last stuck reason: none
+    Check rooms: []
+    Dead ends: ['ruin_hub_0', 'ruin_terminus_1']
+    Nodes in network: 2
+    Rooms added (incl. merged): 2
+    Branch checks: []
+    Keychain: {'CYAN'}
+    Unconnected elements: 2 doors, 0 traps, 0 pits
+
+  Branch 1:
+    Active room: 282_281_278_280_dc-73_358_357_359b_361_359_356_ruin-cotv_469_470_471_472_474_467_ruin-thamasa_362_358b_355_345_353_346_351_ruin-mtek2_531_532_529_521_524_520_522_528_523_530_151_152_159_148_155_160_146_156_150_153_499_498_497_488_495_500_492_489_496_491_216_206_207_212R_204c_203a_204_ruin-202_40_50_45_41a_61_ruin-whelk_65_ruin-narshe_43_49_431_44_38_435_42_37a_ruin-wrexsoul_188B_191_209_211_432_208_186_ruin_hub_1_430_210_436_ms-wor-63_371_ruin-doma_187_188_433_ruin-stooge-maze_205_212_ruin-201_220_204b_203b_ruin-mtek3_355a_347_ruin-mtek1_ruin-vector_283
+    Terminus: ruin_terminus_2
+    Has hub: True
+    Last stuck reason: need_pido
+    Check rooms: ['ruin-doma', 371, 'ruin-lonewolf', 363, 284, 104, 'ruin-baren-reward', 'ruin-figarocastle', 'ms-wor-58', 'dc-1501', 'ms-wor-59', 'ms-wob-14', 'ms-wob-1556', 'ms-wor-51', 'ms-wor-1554', 'ms-wob-40']
+    Dead ends: ['ruin_terminus_2', '221R', 184, 185, 189, 190, 192, 47, '203c', '206a', '206b', '207a', '207b', 213, '215a', '215b', 221, 490, 493, 494, 147, 149, 157, 525, 526, 527, 352, 468, 363, 279, 284, 103, 'ms-wob-14', 'ms-wob-1556', 'ms-wor-51', 'ms-wor-1554', 'ms-wob-40', 'ms-wor-48']
+    Nodes in network: 53
+    Rooms added (incl. merged): 164
+    Branch checks: ['Doma WOB', 'Doma WOR_3', 'Tzen']
+    Keychain: {'cd3', 'vc1', 'mtboss1', 'ac2', 'pt1', 'mtboss2', 'pt2', 'CYAN'}
+    Unconnected elements: 66 doors, 1 traps, 6 pits
+
+  Branch 2:
+    Active room: 256_301r_ruin-zozo_254_252_255_253_ruin_hub_2
+    Terminus: ruin_terminus_3
+    Has hub: True
+    Last stuck reason: none
+    Check rooms: []
+    Dead ends: ['ruin_hub_2', 'ruin_terminus_3', 256, '305r', '309r', '295r', 251, '306r', '294r']
+    Nodes in network: 12
+    Rooms added (incl. merged): 19
+    Branch checks: []
+    Keychain: {'clock1', 'CYAN', 'zr1'}
+    Unconnected elements: 17 doors, 0 traps, 0 pits
+
+
+=== Branch Topology Visualizations ===
+
+--- Branch 0 Topology ---
+  (Error generating visualization: argument of type 'NoneType' is not iterable)
+
+
+--- Branch 1 Topology ---
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  282_281_278_280_dc-73_358_357_359b_... (0D/1T/3P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  ruin-lonewolf (0D/0T/0P)*
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_2 (1D/0T/0P)
+  ** CHECK ROOMS (have rewards, should be connected) **:
+    363 (1D/0T/0P)
+    284 (1D/0T/0P)
+    104 (2D/0T/0P)
+    ruin-baren-reward (0D/0T/0P)
+    ruin-figarocastle (1D/0T/0P)
+    ms-wor-58 (2D/0T/0P)
+    dc-1501 (2D/0T/0P)
+    ms-wor-59 (2D/0T/0P)
+    ms-wob-14 (1D/0T/0P)
+    ms-wob-1556 (1D/0T/0P)
+    ms-wor-51 (1D/0T/0P)
+    ms-wor-1554 (1D/0T/0P)
+    ms-wob-40 (1D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): 101, 331
+    Connectors (2+ doors): 277, 100, 102
+    Dead ends (1 door): 221R, 184, 185, 189, 190, 192, ... (+26)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 53 total, 2 in topology, 51 unconnected
+  Free exits: 66 doors, 1 traps, 3 pits
+  Connections: 114 door-pairs, 35 trap->pit
+  WARNINGS:
+    - TERMINUS not connected!
+    - 13 check room(s) not connected!
+======================================================================
+
+
+--- Branch 2 Topology ---
+
+======================================================================
+BRANCH TOPOLOGY
+======================================================================
+
+Format: room_name (doors/traps/pits free)
+  * = check room (has reward),  ! = terminus
+
+----------------------------------------------------------------------
+LEVEL 0: HUB (player starts here, can always return)
+----------------------------------------------------------------------
+  256_301r_ruin-zozo_254_252_255_253_... (3D/0T/0P)
+
+----------------------------------------------------------------------
+UPSTREAM: Rooms with paths BACK to hub (via forced pit->trap)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+DOWNSTREAM: Rooms reached by FALLING through traps (one-way until reconnected)
+----------------------------------------------------------------------
+  (none)
+
+----------------------------------------------------------------------
+UNCONNECTED: Rooms in network but not yet in topology
+----------------------------------------------------------------------
+  !! TERMINUS (must be connected!) !!:
+    ruin_terminus_3 (1D/0T/0P)
+  Other rooms:
+    Hub potential (3+ exits): 296r
+    Connectors (2+ doors): 250
+    Dead ends (1 door): 305r, 308r, 307r, 309r, 295r, 251, ... (+2)
+
+----------------------------------------------------------------------
+SUMMARY
+----------------------------------------------------------------------
+  Rooms: 12 total, 1 in topology, 11 unconnected
+  Free exits: 17 doors, 0 traps, 0 pits
+  Connections: 8 door-pairs, 1 trap->pit
+  WARNINGS:
+    - odd doors (17)
+    - TERMINUS not connected!
+======================================================================
+
+=== Areas State ===
+  Areas used: {'MtZozo': 2, 'DreamMaze': 1, 'Maranda': 1, 'Doma': 1, 'Zozo': 2, 'Narshe': 1, 'PhantomTrain': 1, 'EsperMountain': 1, 'MtKolts': 1, 'AncientCastle': 1, 'Vector': 1, 'VeldtCave': 1, 'ZoneEater': 1, 'Jidoor': 1, 'SouthFigaroCave': 1, 'BarenFalls': 1, 'FigaroCastle': 1, 'SouthFigaro': 1, 'Thamasa': 1, 'ImperialCamp': 1, 'Kohlingen': 1, 'ImperialCastle': 1, 'GauFatherHouse': 1, 'FloatingContinent': 1, 'Tzen': 1, 'PhoenixCave': 1, 'OperaHouse': 1, 'Cid': 1}
+  Global keychain: {'CYAN'}
+  Locked rewards waiting: {'LOCKE': [(1, [('Narshe WOR', <event.event_reward.Reward object at 0x0000021E35685CF0>)])], 'MOG': [(1, [('Narshe Moogle Defense', <event.event_reward.Reward object at 0x0000021E35685C90>)])], 'TERRA': [(1, [('Whelk', <event.event_reward.Reward object at 0x0000021E356862F0>)])], 'SABIN': [(1, [('Phantom Train', <event.event_reward.Reward object at 0x0000021E35685E70>)]), (1, [('Mt. Kolts', <event.event_reward.Reward object at 0x0000021E35685B70>)])], 'RELM': [(1, [('Esper Mountain', <event.event_reward.Reward object at 0x0000021E35685450>)])], 'EDGAR': [(1, [('Ancient Castle', <event.event_reward.Reward object at 0x0000021E35684C40>)])], 'CELES': [(1, [('Magitek Factory_2', <event.event_reward.Reward object at 0x0000021E35685A50>)]), (1, [('Magitek Factory_3', <event.event_reward.Reward object at 0x0000021E35685AB0>)]), (1, [('Magitek Factory_1', <event.event_reward.Reward object at 0x0000021E356859F0>)])], 'SHADOW': [(1, [('Veldt Cave WOR', <event.event_reward.Reward object at 0x0000021E35686290>)])]}
+
+  Reserve areas available: 0
+
+=== Troubleshooting Hints ===
+  - No reserve areas: all character areas already used
+============================================================
