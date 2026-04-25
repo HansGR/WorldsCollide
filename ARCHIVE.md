@@ -4,6 +4,58 @@ This file contains useful reference information that has been moved from the Top
 
 ---
 
+## Table of Contents
+
+Sections are grouped by theme. The file is append-only, so on-disk order doesn't match this grouping — use the links below or the section headings as anchors.
+
+### FF6 Internals (vanilla reference)
+- [Field Object Data Structure (41 bytes per object)](#field-object-data-structure-41-bytes-per-object-0867-1068)
+- [FF6 Text Encoding Types](#ff6-text-encoding-types)
+
+### Ruination Mode — Architecture
+- [Ruination Mode (`-ruin`) — Detailed Architecture](#ruination-mode--ruin-detailed-architecture)
+
+### Ruination Mode — Mapping Algorithm
+- [Mapping Algorithm Analysis](#ruination-mode---mapping-algorithm-analysis)
+- [Key/Lock Softlock Analysis & Fix (2026-02-10)](#keylock-softlock-analysis--fix-2026-02-10)
+- [finalize_map Debug Patterns (2026-02-09)](#ruination-mode---finalize_map-debug-patterns-2026-02-09)
+- [Branch Area Detection for Narshe Clues (2026-04)](#branch-area-detection-for-narshe-clues-2026-04)
+
+### Ruination Mode — Party Formation
+- [Party Formation & Away-Party System (2026-02)](#ruination-mode---party-formation--away-party-system-2026-02)
+- [SET_PARTY_INTERACTION_POINTERS shared subroutine (2026-04)](#set_party_interaction_pointers-shared-subroutine-2026-04)
+
+### Ruination Mode — Event Patterns
+- [Conditional Area Checks](#ruination-mode---conditional-area-checks)
+- [Duplicate Event Tiles for Reverse Entrances (2026-02)](#ruination-mode---duplicate-event-tiles-for-reverse-entrances-2026-02)
+- [Patching NPC Events](#ruination-mode---patching-npc-events)
+- [Persistent Event State Across Reloads (2026-04)](#persistent-event-state-across-reloads-2026-04)
+
+### Door Randomizer
+- [Event Exit Info — Detailed Data Structures](#event-exit-info---detailed-data-structures)
+- [Local Character Gating (Door Rando)](#local-character-gating-door-rando)
+- [entrance_door_patch must fall through (2026-04)](#entrance_door_patch-must-fall-through-2026-04)
+
+### Feature Flags (deep dives)
+- [Limited Inventory Shops (`-sli` flag)](#limited-inventory-shops--sli-flag)
+- [No Free Heals (`-nfh` / `--no-free-heals`)](#no-free-heals--nfh----no-free-heals)
+
+### Custom Opcodes
+- [Custom Opcodes Reference](#custom-opcodes-reference) (consolidated table)
+- [BranchProbability vehicle-script opcode (0xE1) (2026-04)](#branchprobability-vehicle-script-opcode-0xe1-2026-04)
+
+### Bug Post-Mortems
+- [SelectParties Inventory Corruption Bug & Fix (2026-04)](#selectparties-inventory-corruption-bug--fix-2026-04)
+
+### Conventions
+- [Debug Output Routing (`-debug` vs `-debug-verbose`) (2026-04)](#debug-output-routing--debug-vs--debug-verbose-2026-04)
+
+### Lookups (see CLAUDE.md "How to Find X" cheat sheet first)
+- [Finding NPCs in Reference Data — Detailed Procedure](#finding-npcs-in-reference-data---detailed-procedure)
+- [Finding Map IDs by Name — Detailed Example](#finding-map-ids-by-name---detailed-example)
+
+---
+
 ## Field Object Data Structure (41 bytes per object, $0867-$1068)
 
 50 objects total: $00-$0F = characters, $10-$2F = NPCs, $30 = camera, $31 = showing character.
@@ -354,9 +406,9 @@ The ruination hub (Narshe school, map 0x068) allows the player to form up to 3 p
 
 | Opcode | Class | Purpose |
 |--------|-------|---------|
-| `0x8a` | `MarkActivePartyAway` | Sets PARTY_N_AWAY bit, clears character_available for party members, decrements CHARACTERS_AVAILABLE. Idempotent. Fired by event tiles on branch door exits. |
-| `0x8b` | `RestoreActivePartyAvailable` | Clears PARTY_N_AWAY bit, restores character_available, increments CHARACTERS_AVAILABLE. Idempotent. Fired by hub entrance event when a party returns. |
-| `0x8c` | `RemapPartiesToFreeSlots` | Remaps $1850 party assignments from SelectParties slots (always 1..count) to actual free slots. Uses character_available to distinguish new from away characters. |
+| `0x66` | `MarkActivePartyAway` | Sets PARTY_N_AWAY bit, clears character_available for party members, decrements CHARACTERS_AVAILABLE. Idempotent. Fired by event tiles on branch door exits. |
+| `0x67` | `RestoreActivePartyAvailable` | Clears PARTY_N_AWAY bit, restores character_available, increments CHARACTERS_AVAILABLE. Idempotent. Fired by hub entrance event when a party returns. |
+| `0x68` | `RemapPartiesToFreeSlots` | Remaps $1850 party assignments from SelectParties slots (always 1..count) to actual free slots. Uses character_available to distinguish new from away characters. |
 
 ### Party Formation Flow (event/narshe_wob.py, reform_src)
 
@@ -376,7 +428,7 @@ The branching checks each combination of PARTY_1/2/3_AWAY to classify into MAX_1
 2. `REFRESH_CHARACTERS_AND_SELECT_N_PARTIES` deletes all entities, creates entities for available characters only, calls `SelectParties(count)` (vanilla opcode 0x99)
 3. SelectParties always assigns to slots 1..count regardless of away parties
 
-**Step 3 - Remap to free slots (RemapPartiesToFreeSlots, opcode 0x8c):**
+**Step 3 - Remap to free slots (RemapPartiesToFreeSlots, opcode 0x68):**
 1. Reads PARTY_N_AWAY bits from $1E9B to build a free_slots mapping in scratch RAM ($e8-$ea). For each party not away, stores its mask (0x01/0x02/0x04) at the next index.
 2. Iterates through all 14 characters. For each with `character_available` set AND `$1850+char != 0`:
    - If $1850 == 0x01: replace with free_slots[0]
@@ -414,15 +466,15 @@ When a party on a branch recruits a character, the standard party select flow wo
 
 | Opcode | Class | Purpose |
 |--------|-------|---------|
-| `0x8d` | `SetupBranchPartySelect` | Takes character ID argument. If active party is away: saves party mask to $e7, zeros character_available, re-sets it only for current party members and the new recruit, clears $1850 for party members (clean slate for SelectParties), recomputes CHARACTERS_AVAILABLE. No-op if not on branch. |
-| `0x8e` | `FinalizeBranchPartySelect` | No argument. If $e7 is non-zero: remaps slot 1 → saved party mask ($e7), recomputes character_available as `recruited AND NOT in_away_party`, recomputes CHARACTERS_AVAILABLE count, clears $e7. No-op if $e7 is zero. |
+| `0xec` | `SetupBranchRecruit` (alias `SetupBranchPartySelect`) | Takes character ID argument. If active party is away: saves party mask to $e7, zeros character_available, re-sets it only for current party members and the new recruit, clears $1850 for party members (clean slate for SelectParties), recomputes CHARACTERS_AVAILABLE. No-op if not on branch. |
+| `0xed` | `FinalizeBranchRecruit` (alias `FinalizeBranchPartySelect`) | No argument. If $e7 is non-zero: remaps slot 1 → saved party mask ($e7), recomputes character_available as `recruited AND NOT in_away_party`, recomputes CHARACTERS_AVAILABLE count, clears $e7. No-op if $e7 is zero. |
 
 **Execution flow (branch recruitment):**
 ```
 RecruitCharacter(char)       → sets recruited + available for new char
-SetupBranchPartySelect(char) → restricts select screen to party + new char
+SetupBranchRecruit(char)     → restricts select screen to party + new char
 Call(REFRESH_CHARACTERS_AND_SELECT_PARTY) → shows party select screen
-FinalizeBranchPartySelect()  → remaps slot, restores correct available state
+FinalizeBranchRecruit()      → remaps slot, restores correct available state
 ```
 
 **After finalization**, the state is correct:
@@ -535,6 +587,8 @@ if 'SouthFigaro' in ruin_map.AreasUsed:
 ```
 
 **Area names** (from `RUIN_ROOM_SETS` in ruination.py): `'SouthFigaro'`, `'Nikeah'`, `'Kohlingen'`, `'Jidoor'`, `'Veldt'`, `'Thamasa'`, `'Mobliz'`, `'Maranda'`, `'Albrook'`, `'Vector'`, `'Zozo'`, `'Narshe'`, `'OperaHouse'`, `'FigaroCastle'`, etc.
+
+**For "which branch is area X on?" queries**, use `args.ruination_areas_used` (populated from `ruin_map.compute_actual_areas_used()`, NOT `AreasUsed`). `AreasUsed` records the branch an area was *distributed* to, which can be wrong if the area's rooms ended up in another branch (forced_same_branch, shared rooms, or `CHARACTER_AREAS['ALL']` pre-claim) or if rooms were added but never connected. See "Branch Area Detection for Narshe Clues".
 
 ---
 
@@ -670,7 +724,7 @@ In standard (non-door-rando) modes, character gating is enforced at the area lev
 There are three complementary mechanisms:
 
 **1. `entrance_door_patch` (for entrance-event-based checks)**
-Used when the reward is triggered by an entrance event (map load). The patch is a static method on the event class that takes `args` and returns event code. When `args.character_gating` is true, use `BranchIfAll` to combine the "not finished" and "character recruited" checks:
+Used when the reward is triggered by an entrance event (map load). The patch is a static method on the event class that takes `args` and returns event code. When `args.character_gating` is true, use `BranchIfAll` to combine the "not finished" and "character recruited" checks. **Do NOT terminate the returned source with `field.Return()`** — see "entrance_door_patch must fall through" below for why:
 ```python
 @staticmethod
 def entrance_door_patch(args):
@@ -679,12 +733,11 @@ def entrance_door_patch(args):
         src = [
             field.BranchIfAll([event_bit.FINISHED_MT_ZOZO, False,
                                event_bit.character_recruited(CYAN), True], continue_addr),
-            field.Return()
+            # No Return() — fall through to caller's LoadMap on the miss path
         ]
     else:
         src = [
             field.BranchIfEventBitClear(event_bit.FINISHED_MT_ZOZO, continue_addr),
-            field.Return()
         ]
     return src
 ```
@@ -959,21 +1012,23 @@ In `data/shops.py` `disable_buy_if_empty()`, the buy menu entry hook (Reserve 0x
 
 ## No Free Heals (`-nfh` / `--no-free-heals`)
 
-Bundles all of ruination mode's free-heal removals/restrictions behind a single
-flag so they can be enabled together (default in `-ruin`) or used standalone in
-any other mode. Added to the `-ruin` defaults in `args/ruin_preprocessor.py`
-under `RUIN_DEFAULT_FLAGS['other']`. Users can opt out with `-no nfh`.
+Bundles every free-heal removal/restriction behind a single flag so they can be
+enabled together (default in `-ruin`) or used standalone in any other mode.
+Added to the `-ruin` defaults in `args/ruin_preprocessor.py` under
+`RUIN_DEFAULT_FLAGS['other']`. Users can opt out with `-no nfh`. The two flags
+are now fully orthogonal — `-ruin` just bundles `-nfh`; `-nfh` works without
+`-ruin`; `-ruin` without `-nfh` leaves all heals vanilla.
 
 ### Argument Wiring
 
 - **Flag definition:** `args/misc.py` — `misc.add_argument("-nfh", "--no-free-heals", action="store_true", ...)`. Also exposed via `flags()` and `options()` ("No Free Heals").
 - **Default in `-ruin`:** `args/ruin_preprocessor.py` `RUIN_DEFAULT_FLAGS['other']` includes `'-nfh'`.
 - **Top-level call site:** `event/events.py` `mod()` calls `self.no_free_heals_mod()` immediately after `create_party_interaction_scripts` whenever `args.no_free_heals` is true. This works in both ruination and standalone contexts.
-- **Top-level method:** `event/events.py` `no_free_heals_mod()` invokes the three "global" sweepers from `event/free_heals.py`:
+- **Top-level method:** `event/events.py` `no_free_heals_mod()` invokes the three group sweepers from `event/free_heals.py`:
   - `modify_inn_costs(maps, rom, dialogs, args)` — multiplies all paid inn costs by `INN_COST_MULTIPLIER` (`= 3`) and converts free inns at Returners Hideout and Figaro Castle into paid ones.
-  - `modify_free_bed_heals(maps, dialogs, args)` — turns the six existing free bed heals into HP-only heals with a 3/8 chance of an ambush from `FREE_BED_AMBUSH_PACK = 416`.
-  - `modify_recovery_springs(maps, rom, dialogs, args)` — randomises the spring effects in `SPRING_LOCATIONS` (Phantom Forest, Cave to South Figaro).
-  - `event/ruination.py` retains only ruination-specific sweepers (`disable_chocobo_stables`, `fix_ferry_connections`), which are called from `ruination_mod`, not `no_free_heals_mod`.
+  - `modify_free_bed_heals(maps, dialogs, enemies, args)` — replaces the six free bed-heal tiles (Narshe Weapon Shop, Sabin's House x3, Gau's Father's House, Mobliz Relic Shop) with: 50% pincer ambush (`FREE_BED_AMBUSH_PACK = 416`, escape allowed), then per-character state-dependent heal via the `BedHealCharacter` (0xa4) field opcode (revive→cure→HP→MP, mutually exclusive). If the party flees the ambush no heal is applied. Uses `multipurpose_map(0)` to debounce per map load. Two random pincer-capable formations are written into the ambush pack.
+  - `modify_recovery_springs(maps, rom, dialogs, args)` — randomises the spring effects in `SPRING_LOCATIONS` (Phantom Forest pool, Cave to South Figaro) into one of nine outcomes (`SpringEffect`): FULL_RECOVERY, RECOVER_HP, RECOVER_MP, RECOVER_STATUS, POISON, IMP, ZOMBIE, STONE, REDUCE_TO_1_HP. Flash colour is keyed by outcome; dialog ID base is `SPRING_DIALOG_BASE = 1480`.
+- **Ruination-only sweepers** (still in `event/ruination.py`, called from `ruination_mod`, NOT `no_free_heals_mod`): `disable_chocobo_stables`, `fix_ferry_connections`.
 
 ### Per-Event Heal Modifications (gated locally)
 
@@ -981,19 +1036,208 @@ Each event file checks `args.no_free_heals` directly so the changes apply with o
 
 | Location | File / Function | Change |
 |----------|-----------------|--------|
+| Baren Falls free heal | `event/baren_falls.py` `remove_free_heal_mod()` | NOPs `Call $CACFBD` at `0xbc0b2-0xbc0b5`. |
+| Collapsing House innkeeper | `event/collapsing_house.py` `no_free_heals_mod()` | NOPs the heal `Call` at `0xc5c9d-0xc5ca0` and the flash/SFX at `0xc5c95-0xc5c98`; rewrites dialog `0x08B3`. |
 | Doma WoB Leader battle | `event/doma_wob.py` `end_mod()` | `Reserve(0xb9fd5, 0xb9fd8, ..., NOP())` removes `Call $CACFBD` (full heal). |
+| Doma WoR post-Wrexsoul | `event/doma_wor.py` `doma_mod()` | NOPs the post-Wrexsoul heal at `0xb9802-0xb9805`. |
 | Magitek 3 pre-crane | `event/magitek_factory.py` `crane_battle_mod()` | `Reserve(0xb40e1, 0xb40e4, ..., NOP())` removes the pre-crane full heal. |
-| Vector heal hut NPC | `event/magitek_factory.py` `ruination_mod()` (called when `args.no_free_heals`) | NPC at `0xc9371` patched to branch into one-off heal subroutine that sets `event_bit.VECTOR_FULL_HEAL_USED` (`0x149`) on first use; subsequent talks dialog-only. `init_event_bits` clears the bit at start. |
+| Vector heal hut NPC | `event/magitek_factory.py` `ruination_mod()` (called when `args.no_free_heals` alone — gate dropped from `args.ruination_mode` in commit 3acecb4) | NPC at `0xc9371` patched to branch into one-off heal subroutine that sets `event_bit.VECTOR_FULL_HEAL_USED` (`0x149`) on first use; subsequent talks dialog-only. `init_event_bits` clears the bit at start. |
 | Phantom Train restaurant | `event/phantom_train.py` `restaurant_mod()` → `ruination_restaurant_mod()` | Replaces free meal with three priced choices (Cheap 10 GP / Filling 500 GP / Chef's Special 2000 GP) with random / risky / full-heal effects respectively. |
-| Narshe school heal pot | `event/narshe_wob.py` `ruination_mod()` (also requires `ruination_mode`) | Limits the bucket to `NUM_HEALS = 3` uses, tracked via the repurposed `NARSHE_CHECKPOINT` event word. The init writes the counter only when **both** `ruination_mode` and `no_free_heals` are set, since the event word is otherwise reserved by vanilla logic. |
+| Narshe school heal bucket | `event/narshe_wob.py` `limited_heals()` | Limits the bucket to `NUM_HEALS = 3` uses tracked via two new event bits `SCHOOL_LIMITED_HEALS_1` (`0x0ce`) / `SCHOOL_LIMITED_HEALS_2` (`0x0cf`) encoding 3/2/1/0 drinks. **No longer uses `NARSHE_CHECKPOINT` event word** (which conflicted with the "Complete Narshe Checkpoint" objective). Gated solely by `-nfh` (works without `-ruin`). |
 | Thamasa inn pricing | `event/burning_house.py` `ruination_inn_mod()` | When `no_free_heals` is on, "strangers" path receives `1500 * INN_COST_MULTIPLIER` GP. The companion burning-house re-trigger patch (use `character_recruited(STRAGO)` instead of `MET_STRAGO_RELM`) stays unconditional inside `ruination_inn_mod` since it is part of ruination's hub architecture. |
 | Returners / Figaro free inns | `modify_inn_costs()` (`event/free_heals.py`) | Replaces free sleep events with `RemoveGP` followed by branch into the original sleep code; included via `no_free_heals_mod`. |
 
 ### Notes / Caveats
 
-- **NARSHE_CHECKPOINT reuse**: The event word is repurposed as a heal-counter only in ruination mode, so the Narshe pot limit is gated by `ruination_mode AND no_free_heals`. Running `-nfh` without `-ruin` leaves the pot vanilla.
-- **Vector heal hut**: The one-use restriction is gated by `no_free_heals` alone — the Vector heal hut exists in vanilla, so the patch is safe outside ruination.
+- **Narshe school bucket bits**: encoded as `(SCHOOL_LIMITED_HEALS_1, SCHOOL_LIMITED_HEALS_2) = (1,1)=3, (1,0)=2, (0,1)=1, (0,0)=0`. Init in `init_event_bits` writes `(1,1)` whenever `args.no_free_heals` is set. Dialog IDs 1467-1470 (1471 reserved); 1462-1466 are reserved for ruination reform dialogs.
+- **Vector heal hut**: The one-use restriction is gated by `no_free_heals` alone — the Vector heal hut exists in vanilla, so the patch is safe outside ruination. The container `magitek_factory.ruination_mod()` is still gated by `ruination_mode`; the heal-hut block inside it now checks `no_free_heals`.
 - **Thamasa inn**: The `ruination_inn_mod()` call site in `event/burning_house.py` still requires `ruination_mode`; only the price-bump portion checks `no_free_heals` internally.
-- **Baren Falls**: Vanilla provides a free heal there but the current `ruination_mod()` is a no-op pass — nothing to gate (yet).
+- **`BedHealCharacter` (opcode 0xa4)**: Defined in `instruction/field/custom.py`. Argument is `0x00..0x0F` for a specific actor or `0x31..0x34` for `PARTY0..PARTY3` (resolved via `$9DAD` in vanilla). Effects (mutually exclusive): dead → revive to 1 HP (no-op under `-permadeath`); alive + status → clear field status bytes `$1614`/`$1615`; alive + HP < max → +max/4 HP capped; alive + HP == max → +max/4 MP capped. Always emits A8 on exit and dispatches `JMP $9b5c`.
 - **Recovery springs**: `phantom_forest auto recovery spring` reserve in `event/phantom_train.py` `add_gating_condition()` repurposes the spring tile for character-gating walking and is unrelated to `-nfh`.
 - **Inn cost ordering**: `modify_inn_costs`/`modify_free_bed_heals`/`modify_recovery_springs` do not access door-map postprocessed data, so calling `no_free_heals_mod()` before the event mod loop (and before `postprocess_door_map`) is safe.
+
+---
+
+## entrance_door_patch must fall through (2026-04)
+
+`entrance_door_patch` is the door-rando hook used by `event_exit_info.py` to inject a per-event check before the door's normal load logic. The returned event source is **prepended** to the caller's source by both consumption sites:
+
+1. `shared_map_exit_event`: `wor_src = edp + [FadeLoadMap(...), Return()]`
+2. `create_exit_event`: builds `src[:-1] + edp + src[-1:]` so the original terminal `Return()` still ends the script.
+
+**The patch source must NOT end with `field.Return()`.** If it does, the trailing `Return()` short-circuits the caller's `LoadMap`/`FadeLoadMap`, leaving the underlying long exit to fire its vanilla `dest_map = 0x1ff` ("return to parent map"). The branch-taken path goes elsewhere via the `BranchIfAll`/`BranchIfEventBitClear` jump; the branch-missed path needs to fall through into the caller's load.
+
+**Caught/fixed (2026-04)**:
+- `event/mt_zozo.py` — Cyan's Cliff door 1204: missed branches sent the player back to the world map instead of Cyan's Cliff (commit `c23fb5e`).
+- `event/doma_wob.py` and `event/mt_zozo.py`: trailing `field.Return()` removed from `entrance_door_patch` returns (commit `8a8cd0e`).
+
+**Pattern (correct)**:
+```python
+@staticmethod
+def entrance_door_patch(args):
+    if args.character_gating:
+        return [
+            field.BranchIfAll([event_bit.FINISHED_X, False,
+                               event_bit.character_recruited(CHAR), True], continue_addr),
+            # NO Return() here — fall through to caller's LoadMap
+        ]
+    else:
+        return [
+            field.BranchIfEventBitClear(event_bit.FINISHED_X, continue_addr),
+        ]
+```
+
+The `Local Character Gating` section above has been updated to reflect this; older copies in commit history still show the incorrect shape with trailing `Return()`s.
+
+---
+
+## Custom Opcodes Reference
+
+Single source of truth for every opcode added by this codebase. Verified against source on 2026-04-25.
+
+### Field opcodes (`instruction/field/custom.py`)
+
+Vanilla field-event opcode table is at SNES `$C098C4`, 256 entries × 2 bytes. `_set_opcode_address(opcode, address)` patches one entry; the implicit Bank.C0 provides the high byte. Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, set `_Instruction.__init__` to forward `opcode + args`.
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0x66` | `MarkActivePartyAway` | Sets `PARTY_N_AWAY` bit, clears `character_available` for party members, decrements `CHARACTERS_AVAILABLE`. Idempotent. Fired by event tiles on branch door exits. |
+| `0x67` | `RestoreActivePartyAvailable` | Clears `PARTY_N_AWAY` bit, restores `character_available`, increments `CHARACTERS_AVAILABLE`. Idempotent. Fired by hub entrance event when a party returns. |
+| `0x68` | `RemapPartiesToFreeSlots` | Remaps `$1850` party assignments from SelectParties slots (always 1..count) to actual free slots. Uses `character_available` to distinguish new from away characters. |
+| `0x69` | `UpdateWorldReturnToParentMap` | Map Shuffle / door rando: read parent map, update world bit (`$1E94` bit 4) to match, return to parent map. |
+| `0x6d` | `SetParentWorld` | Map Shuffle / door rando: set the parent-world bit. |
+| `0x6e` | `_InvokeBattleType` (internal — used by `field.InvokeBattleType`) | Invoke a battle with explicit type (e.g. `BattleType.PINCER`). |
+| `0x6f` | `RemoveDeath` | Special command for events like Moogle Defense — clears the death status bit even with `-permadeath`. |
+| `0x76` | `RecruitCharacter` | Recruit a single character (sets recruited + available bits). |
+| `0x83` | `LoadEsperFound` | Load esper-found event word into A. |
+| `0x8f` | `LongCall` | Bank-tagged subroutine call. **Overwrites the vanilla "learn all swdtech" opcode.** |
+| `0x9e` | `SetYNPCGraphics` (in `instruction/field/y_npc/instructions.py`) | Set Y-NPC graphics for the `-y*` flags. |
+| `0x9f` | `YNPCEffect` (in `instruction/field/y_npc/instructions.py`) | Trigger Y-NPC effect. |
+| `0xa3` | `SetEquipmentAndCommands` | Copy equipment and commands from one character slot to another. |
+| `0xa4` | `BedHealCharacter` | **`-nfh` only.** Per-character state-dependent heal. Argument: `0x00..0x0F` for a specific actor, or `0x31..0x34` for `PARTY0..PARTY3` (resolved via `$9DAD`). Effects (mutually exclusive): dead → revive to 1 HP (no-op under `-permadeath`); alive + status → clear `$1614`/`$1615`; alive + HP < max → +max/4 HP capped; alive + HP == max → +max/4 MP capped. Always emits A8, dispatches `JMP $9b5c`. |
+| `0xa5` | `BranchChance` | Branch with given probability — field equivalent of `BranchProbability`. |
+| `0xe5` | `LoadPartiesWithCharacters` | Load parties pre-populated with a list of characters (used by Branch Recruit setup). |
+| `0xec` | `SetupBranchRecruit` (alias `SetupBranchPartySelect`) | Pre-recruitment hook for ruination branch recruits. Saves party_away_byte, restricts party-select pool to current party + new recruit. |
+| `0xed` | `FinalizeBranchRecruit` (alias `FinalizeBranchPartySelect`) | Post-recruitment hook. Restores party_away_byte saved by `SetupBranchRecruit`, recomputes `character_available` and `CHARACTERS_AVAILABLE`. |
+
+**Other helpers in `instruction/field/custom.py`**:
+- `_leader_finder_safe_store_mod()` (ruin-gated, called once at module load) — patches the two `STA $1850,Y` writes inside vanilla `C0/6F67` to range-check Y (`CPY #$000E / BCS .skip`). Avoids inventory corruption when a leader offset is a sentinel (`$07B0`/`$07D9`). See "SelectParties Inventory Corruption Bug & Fix".
+
+### Vehicle-script opcodes (`instruction/vehicle.py`)
+
+Vanilla vehicle-script opcode table is at SNES `$EE76FB`, 256 entries × 2 bytes. Opcodes E1-F2 are unused in vanilla (their entries dispatch to a no-op stub at `$EE74A4`). `_set_vehicle_opcode_address(opcode, snes_handler_addr)` patches one entry.
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0xE1` | `BranchProbability` | Inline RNG roll → branch with given chance (0-255). Handler is lazily installed on first use; see the section below. |
+
+### Battle-event opcodes (`instruction/battle_event.py`)
+
+| Opcode | Class | Purpose |
+|--------|-------|---------|
+| `0x15` | `IncrementChecksComplete` | Increment the "checks complete" counter at end of battle. |
+
+### Adding a new opcode
+
+1. Pick an unused opcode. Field unused list (commented at top of `instruction/field/custom.py`): `0x4a`, `0x5b`, `0xe6`, `0xfc`, `0xfd`. Plus `0xa4` (now used by `-nfh`). Vehicle: `0xE2-0xF2` unused.
+2. Write the ASM body. Field opcodes typically end with `LDA #<size> / JMP $9b5c` (next command); vehicle opcodes end with `JMP $7093` (return to dispatcher).
+3. Register: `_set_opcode_address(opcode, address)` (field/y_npc) or `_set_vehicle_opcode_address(...)` (vehicle).
+4. Subclass `_Instruction` (or `_Branch`) and forward `opcode + args` via `super().__init__(opcode, *args)`.
+5. **Update the table above.**
+
+---
+
+## BranchProbability vehicle-script opcode (0xE1) (2026-04)
+
+Vanilla vehicle scripts (Bank EE, used by Lete River, Serpent Trench, ending sequence) have no random-branch primitive. Custom opcode `0xE1` (`BranchProbability(chance, destination)`, in `instruction/vehicle.py`) adds one.
+
+**Format**: `E1 cc dd_lo dd_mid dd_hi` (5 bytes)
+- `cc` — 1-byte chance 0-255. Branch is taken iff RNG byte `<` cc.
+- `dd_lo/mid/hi` — 3-byte destination, encoded the same way as the existing `B0` conditional-branch destination (caller passes a ROM offset; handler adds `0xCA` to rebase to bank CA).
+
+**Installation**: Lazy. The first `BranchProbability(...)` constructor in a build calls `_install_branch_probability_handler()` once, which:
+1. Writes the handler ASM to Bank EE free space (memory/free.py declares 0x2eaf01-0x2eb1ff = SNES `$EEAF01-$EEB1FF`).
+2. Patches the dispatch table entry at SNES `$EE76FB + 0xE1*2` to point at the new handler. Vehicle opcodes E1-F2 are all unused in vanilla (their pointer-table entries dispatch to a no-op stub at `$EE74A4`).
+
+**Handler logic**:
+1. `SEP #$20` to put A in 8-bit mode; fetch chance byte at script offset `$ED` into scratch DP `$58`.
+2. Inline RNG (X-mode-safe variant of `c0.rng`): increment `$1F6D`, read `$C0FD00,X` after switching to X8.
+3. `CMP $58 / BCC` to branch.
+4. **Branch-taken**: rewrite script PC `$EA/$EB/$EC` from operand bytes (mirroring the tail of vanilla B0 at `$EE715F`), zero `$ED/$EE`, `JMP $7093`.
+5. **Fall-through**: advance `$ED` past 4 operand bytes, `JMP $7093`.
+
+**Use site**: `event/serpent_trench.py` `ruination_battles_mod` — first visit to a fixed battle is forced; subsequent visits use `BranchProbability(p, FIGHT)` so re-rides don't re-fight every encounter. Replaces an earlier field-mode pre-script + entry wrapper that had the same effect with much more code (commit `1c65837`).
+
+---
+
+## SET_PARTY_INTERACTION_POINTERS shared subroutine (2026-04)
+
+`event/ruination.py` exports `SET_PARTY_INTERACTION_POINTERS` — the SNES address of a Bank.CA subroutine that re-binds every recruited character's NPC talk event to its corresponding party-interaction script. Populated by `create_party_interaction_scripts()` (which runs **before** the event mod loop, so it's available when individual events build their own scripts).
+
+**Why it exists**: Field RAM NPC pointers (`ChangeNPCEventAddress`) are not preserved in saves. Whenever the player loads a saved game and enters a hub-adjacent map, every recruited character's NPC needs its talk-event pointer re-applied. The shared subroutine consolidates the per-character `ChangeNPCEventAddress` calls so callers don't inline them.
+
+**Two consumers**:
+1. `event/narshe_wob.py` Narshe school entrance event: `field.Call(SET_PARTY_INTERACTION_POINTERS)` after `RestoreActivePartyAvailable`.
+2. `event/esper_world.py` `cleanup_esper_world()`: assigns `SET_PARTY_INTERACTION_POINTERS - EVENT_CODE_START` as the entrance event for the three repurposed esper-world maps (only in ruination mode; non-ruin uses a bare `Return` at `0x5eb3`).
+
+**Pattern when adding new consumers**: Import lazily inside the method (not at module top) — `from event.ruination import SET_PARTY_INTERACTION_POINTERS`. Reads happen during event mod, after `create_party_interaction_scripts()` has populated it. If used as an `entrance_event_address`, subtract `EVENT_CODE_START`; if invoked from event source, use `field.Call(SET_PARTY_INTERACTION_POINTERS)`.
+
+---
+
+## Branch Area Detection for Narshe Clues (2026-04)
+
+The Narshe school NPC clue scripts read `args.ruination_areas_used` (a `dict[area_name, branch_id]`) to tell the player which areas are on which branch. **Do not source this dict from `ruin_map.AreasUsed`** — use `ruin_map.compute_actual_areas_used()` instead.
+
+**Why**: `AreasUsed` records which branch an area was *distributed* to, but two failure modes can cause the recorded branch to hold none of the area's rooms:
+1. **Distribution skips already-claimed rooms**: When `forced_same_branch`, shared rooms, or `CHARACTER_AREAS['ALL']` placed an area's rooms in another branch first, the later distribution still tags itself as "the" branch for that area.
+2. **Added but unreachable**: `finalize_map` only guarantees the hub has no dangling exits. Non-hub rooms can remain unconnected; counting `branch.all_rooms_added` would credit those.
+
+**Implementation** (`event/ruination.py` `compute_actual_areas_used`):
+- For each branch, find its hub node (id contains `'ruin_hub_'`); use the hub's compound id (joined by `_` via `compress_loop`) as a substring oracle.
+- A room `R` is reachable iff `_R_` is a substring of the bracketed hub id. Underscore boundaries avoid false positives (e.g. 78 vs 278, 501 vs 1501) and handle ids that contain underscores (`share_east`, `ruin_hub_0`).
+- For each area in `RUIN_ROOM_SETS`, count reachable rooms per branch; pick the branch holding the most.
+- Skip areas with zero reachable rooms across all branches.
+
+**Branch selection weighting** (`event/ruination.py` generation loop, commit `6fb1624`): To avoid one branch staying a stub while the other two grow long, viable branches are picked with weight `1 + total_rewards_found - branch_rewards_found[b]` (always `>= 1`). `branch_rewards_found` is incremented after each successful reward placement.
+
+---
+
+## Persistent Event State Across Reloads (2026-04)
+
+Several ruination-mode events need post-defeat state to persist when the player saves and reloads. The pattern is: **clear or set the relevant event bit(s) on init, then update them in-event when the trigger fires**, so reloading doesn't replay the event.
+
+### Burning House Fireballs (commit `54e05b4`)
+
+Each of the 12 fireball NPCs in the burning house has its own visibility bit (`0x3a1-0x3ac`). On init, all 12 bits are **set** so the fireballs appear; the back half of each fireball event is replaced with a `Call` that **clears** that fireball's bit when defeated. Only 75% of fireballs clear per defeat (commit `df47838`/`0e4a363` — the original probability was inverted).
+
+This adds 12 `SetEventBit` writes (24 bytes) to the shared `init_event_bits` buffer. The buffer was bumped from 400 → 450 bytes in ruination mode (`event/events.py`, commit `298736b`) to accommodate. **Add more init writes carefully** — overflow throws an allocator error.
+
+### Kefka Tower Switches (commits `2604cc8`, `d62cda7`, `bb6e1ce`)
+
+The KT left/right switch event bits (`KEFKA_TOWER_LEFT_SWITCH`/`KEFKA_TOWER_RIGHT_SWITCH`) are **cleared** on `init_event_bits` so the switches start unpressed regardless of vanilla pre-state. The clear-bit event tiles wrap their `ClearEventBit` call in the standard step-debounce pattern using multipurpose bit `0x1b5` (cleared every step):
+
+```
+ReturnIfEventBitSet(0x1b5)
+ClearEventBit(<switch bit>)
+SetEventBit(0x1b5)
+Return
+```
+
+In-place patching of the existing scripts is preferred over rewriting them (commit `d62cda7`).
+
+### Minecart (commit `5e85dbb`)
+
+In dungeon-crawl/ruination modes the minecart event exit (CC/8022) can be revisited. A 4-byte hook at CC/80A8-CC/80AB routes through a check/set block: first pass replays the displaced PlaySong+SetEventBit bytes; subsequent passes branch over the ride to CC/80B9 (the LoadMap, which `Transition` has already patched to the new destination). `event_bit.DEFEATED_NUMBER128` (`0x06d`) is the gating bit. Hook footprint is disjoint from `number128_battle_mod`'s reserve at CC/80AD-CC/80B0. `MagitekFactory.minecart_mod` uses `Branch` (not `Call`) for the revisit hook (commit `ba450c3`); the post-ride event-bit block runs on revisit too (commit `5bccfe3`).
+
+---
+
+## Debug Output Routing (`-debug` vs `-debug-verbose`) (2026-04)
+
+`log/verbose.py` `vprint()` is the canonical helper for debug logging in the door randomizer and ruination code. It routes based on flags:
+- `-debug` (`args.debug`) — prints to stdout.
+- `-debug-verbose` / `-dv` (`args.debug_verbose`) — appends to a temp file that joins the spoiler log.
+- Neither — `vprint` is a no-op.
+
+**Don't** wrap `vprint(...)` calls in `if self.verbose:` — the no-op handling is built in. **Don't** use raw `print()` for diagnostic output: it leaks to stdout whenever `-debug` is set, even without `-dv`. The fix in commit `85b1703` replaced `print()` with `vprint()` in `data/map_exits.py` `patch_exits()` and removed the redundant `Doors.verbose` instance attribute (replaced with a property that delegates to `verbose.is_enabled()`).
+
+When introducing new debug output, prefer `vprint(...)` and let the user's flag choice decide where it goes.
