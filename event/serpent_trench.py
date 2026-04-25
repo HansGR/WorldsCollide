@@ -124,90 +124,66 @@ class SerpentTrench(Event):
             Segment 4: Battle 4 & 5                @ 0xa8bb7, 0xa8bd0
             Segment 5: Battle B1 (cave B return)   @ 0xa8c6c
 
-        Each segment has a single tracking ("done") bit. The segment's
-        battles all check that bit to decide whether to fire; the LAST
-        battle in the segment sets it. So within one run all of a segment's
-        battles fire or all are skipped.
+        Each segment has a single tracking ("done") bit. Within a single
+        run through the animation, all of a segment's battles fight or all
+        skip together: the segment's last battle is the only one that sets
+        the done bit, so earlier battles in the same segment still see it
+        clear and also fight.
 
-        The serpent trench animation is a vehicle script and the vehicle
-        opcode set has no random-branch primitive, so the probabilistic
-        clear-the-done-bit roll runs in a small field-mode pre-script
-        invoked once before the animation begins. For each segment:
-          * if the done bit is clear (first visit), leave it; the vehicle
-            script will see "clear" and fire the battle, then set the bit
-          * if the done bit is set (repeat), roll: with probability p clear
-            the bit (battles fire and the bit is re-set), else leave it
-            (battles are skipped this run)
-
-        The vehicle-script battle sites themselves are 3-byte `CF pack bg`
-        invocations packed tightly between 2-byte movement/pause opcodes,
-        with no room for an inline 6-byte conditional branch. Each battle
-        site is therefore replaced with an unconditional 6-byte branch to
-        a per-battle custom block in Bank CA which:
-          1. checks the done bit and skips the battle if it's set
-          2. invokes the battle (CF pack bg)
-          3. (last battle only) sets the done bit
-          4. replays the four bytes of original instructions that the
-             6-byte branch displaced (one whole 2-byte instruction plus
-             the 2-byte instruction whose opcode the branch overwrote)
-          5. branches back to the byte after those displaced bytes
+        Implementation: the new vehicle-script opcode `BranchProbability`
+        (instruction/vehicle.py) lets us roll the probability inline at
+        each battle site. The vanilla `CF pack bg` battle invocation is
+        only 3 bytes, so we still can't fit the conditional logic inline;
+        each battle site is replaced with an unconditional 6-byte branch
+        to a per-battle custom block in Bank CA which:
+          1. if done_bit is CLEAR -> jump to FIGHT (first visit always fights)
+          2. else, BranchProbability(p, FIGHT) - 25% chance to fight again
+          3. otherwise skip the battle and continue
+          4. on the FIGHT path, invoke the battle and (if last in segment)
+             set the done bit
+          5. replay the four bytes of original instructions the 6-byte
+             redirect displaced
+          6. branch back to the byte after those displaced bytes
 
         Tracking bits are cleared at game start in init_event_bits.
         """
-        from instruction.field.custom import BranchChance
+        # Convert the float (0.0-1.0) chance into the 0-255 byte the new
+        # opcode expects. BranchProbability would do this internally, but
+        # doing it here means logging/diagnostics see the integer chance.
+        chance_byte = int(self.RUINATION_REPEAT_BATTLE_PROBABILITY * 255)
 
-        # ---- Field-mode pre-script: probabilistically reset done bits ----
-        # Logic per segment:
-        #   if done bit is clear -> leave it (first visit; battles will fire)
-        #   else -> with prob p clear it (fight); else leave set (skip)
-        pre_src = []
-        for i, bit in enumerate(self.RUINATION_SEGMENT_DONE_BITS):
-            next_label = f"SEG_{i}_NEXT"
-            fight_label = f"SEG_{i}_FIGHT"
-            pre_src += [
-                # First visit: bit is clear, nothing to do
-                field.BranchIfEventBitClear(bit, next_label),
-                # Repeat visit: roll for "fight this time"
-                BranchChance(self.RUINATION_REPEAT_BATTLE_PROBABILITY, fight_label),
-                # Fall-through: skip (leave bit set)
-                field.Branch(next_label),
-                fight_label,
-                field.ClearEventBit(bit),
-                next_label,
-            ]
-        pre_src.append(field.Return())
-        pre_space = Write(Bank.CA, pre_src,
-                          "serpent trench ruin: pre-animation probability roll")
-        pre_script_addr = pre_space.start_address
-
-        # ---- Per-battle custom blocks + redirects ----
         for battle_addr, seg_idx, is_last, return_addr in self.RUINATION_BATTLES:
             done_bit = self.RUINATION_SEGMENT_DONE_BITS[seg_idx]
 
-            # The 6-byte branch we're about to install at battle_addr will
-            # clobber the 3-byte battle, the next whole 2-byte instruction
-            # (battle_addr+3..+4), and the opcode of the instruction after
-            # that (battle_addr+5). Its arg byte at battle_addr+6 stays in
-            # ROM but is unreachable (the branch always fires before we'd
-            # reach it). To resume the original animation we replay all
+            # The 6-byte branch we install at battle_addr clobbers the
+            # 3-byte battle, the next whole 2-byte instruction
+            # (battle_addr+3..+4), and the opcode of the instruction
+            # after that (battle_addr+5). Its arg byte at battle_addr+6
+            # is left in ROM but is unreachable (the branch always
+            # fires). To resume the original animation we replay all
             # four of those displaced bytes (battle_addr+3..+6).
             #
             # Read them now, before the redirect overwrites the first three.
-            displaced_bytes = list(
-                self.rom.get_bytes(battle_addr + 3, 4)
-            )
+            displaced_bytes = list(self.rom.get_bytes(battle_addr + 3, 4))
             # Battle bytes (CF, pack, bg) - read so we re-emit the same
             # encounter even if some other mod has changed the pack byte.
             battle_bytes = list(self.rom.get_bytes(battle_addr, 3))
 
             custom_src = [
-                vehicle.BranchIfEventBitSet(done_bit, "SKIP_BATTLE"),
+                # First visit (done bit clear): always fight.
+                vehicle.BranchIfEventBitClear(done_bit, "FIGHT"),
+                # Repeat visit (done bit set): fight with probability p.
+                vehicle.BranchProbability(chance_byte, "FIGHT"),
+                # Otherwise skip the battle.
+                vehicle.Branch("AFTER_BATTLE"),
+
+                "FIGHT",
                 battle_bytes,
             ]
             if is_last:
                 custom_src.append(vehicle.SetEventBit(done_bit))
             custom_src += [
-                "SKIP_BATTLE",
+                "AFTER_BATTLE",
                 displaced_bytes,
                 vehicle.Branch(return_addr),
             ]
@@ -218,28 +194,6 @@ class SerpentTrench(Event):
             redirect = Reserve(battle_addr, battle_addr + 5,
                                f"serpent trench ruin battle redirect @ {hex(battle_addr)}")
             redirect.write(vehicle.Branch(custom_addr))
-
-        # ---- Entry wrapper: call pre-script before vehicle script starts ----
-        # 0xa8ae3 holds the original 6-byte field LoadMap (with airship flag)
-        # that switches the script into vehicle mode. We replace it with an
-        # unconditional branch to a wrapper that calls the pre-script in
-        # field mode, then replays the same LoadMap, then jumps (in the
-        # newly-entered vehicle mode) into the original vehicle-script body
-        # at 0xa8ae9 (the byte right after the LoadMap).
-        original_loadmap_bytes = list(self.rom.get_bytes(0xa8ae3, 6))
-
-        wrapper_src = [
-            field.Call(pre_script_addr),
-            original_loadmap_bytes,        # field LoadMap, transitions to vehicle mode
-            vehicle.Branch(0xa8ae9),       # resume vanilla vehicle script
-        ]
-        wspace = Write(Bank.CA, wrapper_src,
-                       "serpent trench ruin: pre-animation wrapper")
-        wrapper_addr = wspace.start_address
-
-        entry_redirect = Reserve(0xa8ae3, 0xa8ae8,
-                                 "serpent trench ruin: entry redirect to wrapper")
-        entry_redirect.write(field.Branch(wrapper_addr))
 
     def fixed_battles_mod(self):
         # Serpents Trench has 3 fixed encounters:
