@@ -66,6 +66,35 @@ Each NPC has a visibility bit determining if it appears when the map loads. Form
 
 ---
 
+## How to Find X (Cheat Sheet)
+
+Quick lookup procedures I re-derive every session. Most JSONs are in `claude_reference/` and large — open with `grep`, not `Read`, unless you've narrowed it down.
+
+| Looking for | Where / how |
+|-------------|-------------|
+| **Map ID by name** | `grep "<name>" data/map_exit_extra.py` → identify the entrance door (e.g. "Door Outside" goes INTO the building) → `grep '"index": <door_id>' claude_reference/exits_raw.json` → `dest_map` is the interior map ID. (Top 10 #8.) |
+| **NPC by sprite/position** | `claude_reference/maps_data.json` `maps[map_id].npcs` array (position, sprite). Index in array = map-local index; **`npc_id = map_local_index + 0x10`** for `maps.get_npc(map_id, npc_id)` (Top 10 #2). Cross-reference `claude_reference/npcs_raw.json` for full properties (event_byte, event_bit). |
+| **Event bit by name** | `grep -i "<name>" data/event_bit.py`. `npc_bit = (event_byte + 0x60) * 8 + event_bit` (Top 10 #9). Special: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` in `data/npc_bit.py`. |
+| **Event word by name** | `grep -i "<name>" data/event_word.py`. Address: `event_word.address(event_word.NAME)`. |
+| **Item ID by name** | `grep -in "<name>" data/items.py`. ID is the index in the `items` list. |
+| **Esper / spell / character ID** | `data/espers.py`, `data/spells.py`. Character IDs (constant): 0=Terra, 1=Locke, 2=Cyan, 3=Shadow, 4=Edgar, 5=Sabin, 6=Celes, 7=Strago, 8=Relm, 9=Setzer, 10=Mog, 11=Gau, 12=Gogo, 13=Umaro. |
+| **Custom opcode → file/class** | ARCHIVE.md "Custom Opcodes Reference" table. |
+| **Vanilla event script for a ROM address** | `claude_reference/EventScriptTxt.txt` — search by SNES address (e.g. `CC/8022`). Decompile is comprehensive. |
+| **Dialog text by ID** | `claude_reference/dialog_file.txt` — IDs are decimal. Modify with `dialogs.set_text(dialog_id, "...")`. |
+| **Room ID → SNES map ID + name** | `claude_reference/room_map_reference.json` (covers 784/801; Mobliz/switchyard/ruin-logical rooms unresolved). |
+| **Door ID → endpoints** | `data/map_exit_extra.py` `exit_data[door_id]` = `[partner_id, description]`. Door ranges: <2000 two-way, 2000-2999 trap (one-way exit), 3000+ pit (one-way entrance) — Top 10 #3. Full data: `claude_reference/exits_raw.json` (`dest_map`/`dest_x`/`dest_y`). |
+| **Reward room for character X (ruin)** | `ROOM_REWARD` dict in `event/ruination.py`. |
+| **Area name → rooms (ruin)** | `RUIN_ROOM_SETS` dict in `event/ruination.py`. |
+| **Which branch holds area X (ruin)** | `args.ruination_areas_used[area_name]` (populated from `ruin_map.compute_actual_areas_used()`, NOT raw `AreasUsed`). |
+| **ROM address ↔ SNES** | `ROM = SNES - 0xC00000`. SNES `$CEF100` → ROM `$0EF100`. Constant: `START_ADDRESS_SNES = 0xc00000`. (Top 10 #10.) |
+| **ROM data structure offset** | `claude_reference/ff3infov2.txt` — comprehensive FF6 ROM map (large; grep). |
+| **Chest contents at coords** | `claude_reference/chests_raw.json`. |
+| **Map event tile at coords** | `claude_reference/events_raw.json` (one record per event tile). |
+
+For the lookups above, prefer the JSON files over reading the corresponding .py because the JSONs are structured for grep-and-jump.
+
+---
+
 ## Module Map
 
 Quick orientation by file. Detailed sections are in ARCHIVE.md.
