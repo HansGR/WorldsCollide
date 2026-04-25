@@ -22,6 +22,45 @@ class SerpentTrench(Event):
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
+    # --- Ruination mode: probabilistic Serpent Trench fixed battles ---
+    # On the first run through any Serpent Trench segment, its battles always
+    # fire and the segment's tracking bit is set. On subsequent runs the
+    # battles fire only with this probability (skipped otherwise).
+    RUINATION_REPEAT_BATTLE_PROBABILITY = 0.25
+
+    # One tracking ("done") bit per segment, in the unused NPC bit range.
+    # 0x3a1-0x3ac are used by the Burning House fireballs; we use the next
+    # five bits here.
+    RUINATION_SEGMENT_DONE_BITS = [0x3ad, 0x3ae, 0x3af, 0x3b0, 0x3b1]
+
+    # Per-battle metadata for ruination_battles_mod.
+    # (battle_addr, segment_index, is_last_in_segment, return_addr)
+    #   battle_addr        - SNES/ROM addr of the vanilla `CF pack bg` battle
+    #                        invocation in the vehicle script
+    #   segment_index      - 0..4, indexing RUINATION_SEGMENT_DONE_BITS
+    #   is_last_in_segment - True if this battle should set the done bit;
+    #                        False for non-final battles in multi-battle
+    #                        segments (so the segment's later battles still
+    #                        see the bit clear within the same run)
+    #   return_addr        - addr to resume the vehicle script after the
+    #                        custom block runs (== battle_addr + 7, i.e.
+    #                        past the 6 overwritten bytes plus the orphaned
+    #                        arg byte of the partially-clobbered instruction)
+    RUINATION_BATTLES = [
+        (0xa8b22, 0, True,  0xa8b29),   # Battle 1  - segment 1
+        (0xa8b62, 1, False, 0xa8b69),   # Battle 2  - segment 2
+        (0xa8b77, 1, True,  0xa8b7e),   # Battle 3  - segment 2
+        (0xa8c25, 2, True,  0xa8c2c),   # Battle A1 - segment 3
+        (0xa8bb7, 3, False, 0xa8bbe),   # Battle 4  - segment 4
+        (0xa8bd0, 3, True,  0xa8bd7),   # Battle 5  - segment 4
+        (0xa8c6c, 4, True,  0xa8c73),   # Battle B1 - segment 5
+    ]
+
+    def init_event_bits(self, space):
+        if self.args.ruination_mode:
+            for bit in self.RUINATION_SEGMENT_DONE_BITS:
+                space.write(field.ClearEventBit(bit))
+
     def mod(self):
         self.airship_nikeah = [0x0, 116, 61]
         self.airship_sf = [0x0, 84, 113]
@@ -66,10 +105,98 @@ class SerpentTrench(Event):
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_battles_mod()
+
         self.log_reward(self.reward)
 
+    def ruination_battles_mod(self):
+        """
+        In ruination mode the player can be forced to redo parts of the
+        Serpent Trench animation. Make the seven fixed battles always fire
+        on the first run through each segment, then fire only with
+        probability RUINATION_REPEAT_BATTLE_PROBABILITY on later runs.
+
+        Five segments share the seven battles:
+            Segment 1: Battle 1                    @ 0xa8b22
+            Segment 2: Battle 2 & 3                @ 0xa8b62, 0xa8b77
+            Segment 3: Battle A1 (cave A return)   @ 0xa8c25
+            Segment 4: Battle 4 & 5                @ 0xa8bb7, 0xa8bd0
+            Segment 5: Battle B1 (cave B return)   @ 0xa8c6c
+
+        Each segment has a single tracking ("done") bit. Within a single
+        run through the animation, all of a segment's battles fight or all
+        skip together: the segment's last battle is the only one that sets
+        the done bit, so earlier battles in the same segment still see it
+        clear and also fight.
+
+        Implementation: the new vehicle-script opcode `BranchProbability`
+        (instruction/vehicle.py) lets us roll the probability inline at
+        each battle site. The vanilla `CF pack bg` battle invocation is
+        only 3 bytes, so we still can't fit the conditional logic inline;
+        each battle site is replaced with an unconditional 6-byte branch
+        to a per-battle custom block in Bank CA which:
+          1. if done_bit is CLEAR -> jump to FIGHT (first visit always fights)
+          2. else, BranchProbability(p, FIGHT) - 25% chance to fight again
+          3. otherwise skip the battle and continue
+          4. on the FIGHT path, invoke the battle and (if last in segment)
+             set the done bit
+          5. replay the four bytes of original instructions the 6-byte
+             redirect displaced
+          6. branch back to the byte after those displaced bytes
+
+        Tracking bits are cleared at game start in init_event_bits.
+        """
+        # Convert the float (0.0-1.0) chance into the 0-255 byte the new
+        # opcode expects. BranchProbability would do this internally, but
+        # doing it here means logging/diagnostics see the integer chance.
+        chance_byte = int(self.RUINATION_REPEAT_BATTLE_PROBABILITY * 255)
+
+        for battle_addr, seg_idx, is_last, return_addr in self.RUINATION_BATTLES:
+            done_bit = self.RUINATION_SEGMENT_DONE_BITS[seg_idx]
+
+            # The 6-byte branch we install at battle_addr clobbers the
+            # 3-byte battle, the next whole 2-byte instruction
+            # (battle_addr+3..+4), and the opcode of the instruction
+            # after that (battle_addr+5). Its arg byte at battle_addr+6
+            # is left in ROM but is unreachable (the branch always
+            # fires). To resume the original animation we replay all
+            # four of those displaced bytes (battle_addr+3..+6).
+            #
+            # Read them now, before the redirect overwrites the first three.
+            displaced_bytes = list(self.rom.get_bytes(battle_addr + 3, 4))
+            # Battle bytes (CF, pack, bg) - read so we re-emit the same
+            # encounter even if some other mod has changed the pack byte.
+            battle_bytes = list(self.rom.get_bytes(battle_addr, 3))
+
+            custom_src = [
+                # First visit (done bit clear): always fight.
+                vehicle.BranchIfEventBitClear(done_bit, "FIGHT"),
+                # Repeat visit (done bit set): fight with probability p.
+                vehicle.BranchProbability(chance_byte, "FIGHT"),
+                # Otherwise skip the battle.
+                vehicle.Branch("AFTER_BATTLE"),
+
+                "FIGHT",
+                battle_bytes,
+            ]
+            if is_last:
+                custom_src.append(vehicle.SetEventBit(done_bit))
+            custom_src += [
+                "AFTER_BATTLE",
+                displaced_bytes,
+                vehicle.Branch(return_addr),
+            ]
+            cspace = Write(Bank.CA, custom_src,
+                           f"serpent trench ruin battle @ {hex(battle_addr)}")
+            custom_addr = cspace.start_address
+
+            redirect = Reserve(battle_addr, battle_addr + 5,
+                               f"serpent trench ruin battle redirect @ {hex(battle_addr)}")
+            redirect.write(vehicle.Branch(custom_addr))
+
     def fixed_battles_mod(self):
-        # Serpents Trench has 3 fixed encounters: 
+        # Serpents Trench has 3 fixed encounters:
         #  275 - encountered once (first battle)
         #  276 - encountered 3 times
         #  277 - encountered 3 times
