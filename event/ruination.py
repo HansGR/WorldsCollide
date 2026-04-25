@@ -4145,6 +4145,9 @@ class ruination_map():
         """
         # Build out branches, always starting with the least connected
         self.RewardsObtained = [0, 0]
+        # Track rewards found on each branch, used to weight branch selection
+        # toward less-extended branches (avoids one stub branch when others get long).
+        self.branch_rewards_found = [0, 0, 0]
         self.LockedRewards = dict()
         # Track stuck branches and WHY they're stuck (branch_id -> StuckReason)
         # This allows distribute_areas to prioritize sending areas with the right connectors
@@ -4181,7 +4184,14 @@ class ruination_map():
                 vprint('Branch viability:', branch_is_viable, 'Stuck:', self.stuck_branches)
             viable_branches = [b for b in range(3) if len(self.branch_checks[b]) > 0 and branch_is_viable[b] and b not in self.stuck_branches]
             if len(viable_branches) > 0:
-                branch_id = random.choice(viable_branches)
+                # Weight toward branches with fewer rewards found, so one stub branch
+                # doesn't get left behind while the others grow long. Weight is always
+                # >= 1, so any viable branch can still be chosen.
+                total_rewards_found = sum(self.branch_rewards_found)
+                branch_weights = [1 + total_rewards_found - self.branch_rewards_found[b] for b in viable_branches]
+                if self.verbose:
+                    vprint('Branch selection weights:', dict(zip(viable_branches, branch_weights)))
+                branch_id = random.choices(viable_branches, weights=branch_weights, k=1)[0]
                 branch = self.branches[branch_id]
             else:
                 # All branches with checks are stuck or non-viable - try to unstick one
@@ -4384,6 +4394,7 @@ class ruination_map():
             ### Process reward & restart loop - only if we actually found a reward
             if found_reward and accessible_rewards:
                 self.process_rewards(accessible_rewards, characters, espers, items, branch_id=branch_id, exclude_chars=non_planned_chars)
+                self.branch_rewards_found[branch_id] += len(accessible_rewards)
             elif branch_id in self.stuck_branches:
                 if self.verbose:
                     vprint(f'Skipping reward processing for stuck branch {branch_id}')
