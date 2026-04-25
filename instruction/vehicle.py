@@ -42,6 +42,16 @@ class BranchIfEventBitClear(_Branch):
     def __str__(self):
         return super().__str__(hex(self.event_bit))
 
+class BranchIfEventBitSet(_Branch):
+    def __init__(self, event_bit, destination):
+        self.event_bit = event_bit
+        event_bit_arg = (event_bit | 0x8000).to_bytes(2, "little")
+
+        super().__init__(0xb0, [event_bit_arg], destination)
+
+    def __str__(self):
+        return super().__str__(hex(self.event_bit))
+
 class Branch(BranchIfEventBitClear):
     def __init__(self, destination):
         super().__init__(event_bit.ALWAYS_CLEAR, destination)
