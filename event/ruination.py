@@ -381,7 +381,41 @@ class RuinationBranch(Network):
         self.all_rooms_added = set(rooms)
         # Track why this branch got stuck (if it did) - used for smart area distribution
         self.last_stuck_reason = StuckReason.NONE
+        # Map compound room id -> list of original check_room ids merged into it.
+        # Populated by compress_loop when ROOM_REWARD rooms are absorbed by a forced
+        # connection (e.g., 4418<->744 fusing 371 and 'ruin-doma' into '371_ruin-doma').
+        self._compound_check_rooms = {}
         self.classify_rooms(rooms)
+
+    def compress_loop(self, loop_ids):
+        # Capture which loop members were check_rooms BEFORE the base class drops them
+        # from net/rooms. After the merge we need to re-point check_rooms (and the reward
+        # tracking) at the new compound id, otherwise check_for_rewards never matches the
+        # compound and the rewards are stranded.
+        merged_check_rooms = [r for r in loop_ids if r in self.check_rooms]
+        new_room = super().compress_loop(loop_ids)
+        if new_room is not False and merged_check_rooms:
+            for r in merged_check_rooms:
+                self.check_rooms.remove(r)
+            if new_room.id not in self.check_rooms:
+                self.check_rooms.append(new_room.id)
+            # Resolve each merged id to its original ROOM_REWARD components. If a member
+            # was already a compound from a prior merge, inherit its components.
+            components = []
+            for r in merged_check_rooms:
+                if r in self._compound_check_rooms:
+                    components.extend(self._compound_check_rooms.pop(r))
+                else:
+                    components.append(r)
+            existing = self._compound_check_rooms.get(new_room.id, [])
+            for c in components:
+                if c not in existing:
+                    existing.append(c)
+            self._compound_check_rooms[new_room.id] = existing
+            if self.verbose:
+                vprint(f'\tcompress_loop merged check_rooms {merged_check_rooms} '
+                       f'-> compound {new_room.id} (components={existing})')
+        return new_room
 
     def add_room(self, room_id):
         self.all_rooms_added.add(room_id)
@@ -3341,13 +3375,20 @@ class RuinationBranch(Network):
             reward_room = None
 
         if reward_room is not None:
-            rewards = [(k, ROOM_REWARD[reward_room][k]) for k in ROOM_REWARD[reward_room].keys()]
+            # If this is a compound room produced by compress_loop (e.g. forced 4418<->744
+            # fusing 371 and 'ruin-doma'), gather rewards from every original check_room
+            # that was merged into it. ROOM_REWARD stays keyed on original ids.
+            source_rooms = self._compound_check_rooms.get(reward_room, [reward_room])
+            rewards = []
+            for src in source_rooms:
+                rewards.extend([(k, ROOM_REWARD[src][k]) for k in ROOM_REWARD[src].keys()])
             if self.verbose:
                 vprint('Found a reward! ', [(r[0], r[1].possible_types) for r in rewards], 'in room',
                       reward_room)
 
             # Remove check room from the list
             self.check_rooms.remove(reward_room)
+            self._compound_check_rooms.pop(reward_room, None)
 
             return rewards
 
