@@ -770,3 +770,35 @@ class DomaWOR(Event):
         # Update event tile
         boss_event.event_address = space.start_address - EVENT_CODE_START
 
+        # (5) TRAIN CHEST PUZZLE ROOM: make it renavigable if puzzle already solved
+        # The following code moves the "couch" in the room 435 (# Doma Dream Train Switch Puzzle Room map_id = 0x141)
+        # so the player can traverse left to right.
+        #   CB/8E3B: 74    Replace current map's Layer 2 at (13, 8) with the following (3 x 3) chunk
+        #   CB/8E40:       $31, $30, $0B
+        #   CB/8E43:       $2B, $2B, $1B
+        #   CB/8E46:       $01, $01, $01
+        #   CB/8E49: 74    Replace current map's Layer 2 at (13, 71) with the following (1 x 3) chunk
+        #   CB/8E4E:       $23
+        #   CB/8E4F:       $24
+        #   CB/8E50:       $13
+        #   CB/8E51: 75    Refresh map after alteration
+        # Also, should set multipurpose bit that tracks couch position:
+        #   CB/8E35: D2    Set event bit $1E80($185) [$1EB0, bit 5]
+        # We should add a routine to the entrance event that calls this code if $17A is set (chest puzzle solved).
+        # We can hook in at a spot that is already gated by $17A:
+        #   CB/8D14: 74    Replace current map's Layer 2 at (4, 71) with the following (2 x 1) chunk
+        #   CB/8D19:       $60, $96
+        hook_in = 0xb8d14
+        hook_out = 0xb8d1a
+        src = [
+            Read(hook_in, hook_out),
+            Read(0xb8e3b, 0xb8e50),
+            field.SetEventBit(0x185),  # Set multipurpose bit that tracks couch position
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, 'Doma Dream Train chest puzzle entrance patch revisit from left code')
+        entrance_patch_address = space.start_address
+
+        space = Reserve(hook_in, hook_out, 'Doma Dream Train entrance patch revisit chest puzzle from left', field.NOP())
+        space.write(field.Call(entrance_patch_address))
+
