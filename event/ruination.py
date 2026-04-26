@@ -5372,9 +5372,9 @@ class ruination_map():
 
             # Draw nodes by category. Regular nodes split by warp/town:
             #   plain    -> circle, size 300
-            #   town     -> circle, size 450 (50% larger)
+            #   town     -> circle, size 600
             #   warp     -> upward triangle, size 300
-            #   warp+town-> upward triangle, size 450
+            #   warp+town-> upward triangle, size 600
             if regular_plain:
                 nx.draw_networkx_nodes(G, pos, nodelist=regular_plain, ax=ax,
                                        node_color=[get_node_color(n) for n in regular_plain],
@@ -5383,7 +5383,7 @@ class ruination_map():
             if regular_town_only:
                 nx.draw_networkx_nodes(G, pos, nodelist=regular_town_only, ax=ax,
                                        node_color=[get_node_color(n) for n in regular_town_only],
-                                       node_size=450, node_shape='o',
+                                       node_size=600, node_shape='o',
                                        edgecolors='black', linewidths=1.0)
             if regular_warp_only:
                 nx.draw_networkx_nodes(G, pos, nodelist=regular_warp_only, ax=ax,
@@ -5393,7 +5393,7 @@ class ruination_map():
             if regular_warp_town:
                 nx.draw_networkx_nodes(G, pos, nodelist=regular_warp_town, ax=ax,
                                        node_color=[get_node_color(n) for n in regular_warp_town],
-                                       node_size=450, node_shape='^',
+                                       node_size=600, node_shape='^',
                                        edgecolors='black', linewidths=1.0)
 
             node_colors_reward = [get_node_color(n) for n in reward_nodes]
@@ -5488,7 +5488,7 @@ class ruination_map():
         legend_handles.append(mlines.Line2D([], [], color='white', marker='^', linestyle='None',
                               markersize=10, markeredgecolor='black', label='Warp point'))
         legend_handles.append(mlines.Line2D([], [], color='white', marker='o', linestyle='None',
-                              markersize=12, markeredgecolor='black', label='Town (50% larger)'))
+                              markersize=14, markeredgecolor='black', label='Town'))
         legend_handles.append(mlines.Line2D([], [], color='#555555', linestyle='solid',
                               linewidth=2, label='Door (two-way)'))
         legend_handles.append(mlines.Line2D([], [], color='#CC0000', linestyle='dashed',
