@@ -2122,10 +2122,13 @@ class RuinationBranch(Network):
         """Partition the branch's warp rooms into connected vs. unconnected.
 
         A node counts as a warp room if it is itself a member of WARP_ROOMS, or
-        if it is a compound (compress_loop) id whose underscore-separated pieces
-        contain a WARP_ROOMS member. "Connected" means the node belongs to the
-        hub's reachable set (hub + upstream + downstream); orphan nodes added via
-        rescue paths but never wired up are reported as unconnected.
+        if it is a compound (compress_loop) id that contains a WARP_ROOMS member.
+        Compound membership is tested by bracketing the node id with underscores
+        and looking for "_<warp_id>_" -- the safe convention used elsewhere in
+        the codebase, since some room ids themselves contain underscores
+        (e.g. 'share_east', 'ruin_hub_*'). "Connected" means the node belongs to
+        the hub's reachable set (hub + upstream + downstream); orphan nodes added
+        via rescue paths but never wired up are reported as unconnected.
 
         Returns:
             (connected_warps, unconnected_warps): two lists of node ids.
@@ -2137,12 +2140,12 @@ class RuinationBranch(Network):
         )
         connected_warps = []
         unconnected_warps = []
-        warp_str_set = {str(w) for w in WARP_ROOMS}
         for node_id in self.net.nodes:
             if node_id in WARP_ROOMS:
                 is_warp = True
-            elif isinstance(node_id, str) and '_' in node_id:
-                is_warp = any(piece in warp_str_set for piece in node_id.split('_'))
+            elif isinstance(node_id, str):
+                bracketed = f'_{node_id}_'
+                is_warp = any(f'_{w}_' in bracketed for w in WARP_ROOMS)
             else:
                 is_warp = False
             if not is_warp:
