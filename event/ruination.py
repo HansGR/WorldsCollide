@@ -244,6 +244,41 @@ AREA_TYPES = {
     'TOWNS': ['Kohlingen', 'Jidoor', 'Maranda', 'Tzen', 'Albrook', 'Thamasa', 'Nikeah', 'Vector', 'SouthFigaro'],  # 'Mobliz', 'Narshe', # WOB only
 }
 
+# Rooms that contain a warp/save point (best-effort mapping from data/warps.WARP_POINTS).
+# Used by the cooldown system in RuinationBranch to keep warp points from clustering
+# near the hub or each other. May overlap with TOWN_ROOMS (e.g. 'ms-wor-58' is both a
+# warp point and the South Figaro town entry).
+WARP_ROOMS = {
+    22,                # Snowfield WOR (Narshe Battle / Kefka@Narshe)
+    'ms-wor-58',       # SF_prison_cell -> South Figaro WOR (also a town)
+    160,               # Mt. Kolts Save Point Room
+    'ruin-returners',  # Returners Hideout entry / save point
+    221,               # Phantom Train Final Save Point Room
+    282,               # Owzer's Basement Save Point Room
+    352,               # Magitek Factory Save Point Room
+    359,               # Zone Eater Save Point Room
+    378,               # Daryl's Tomb Entry Room (best guess - no labeled save point)
+    421,               # Doma Dream 3 Stooges Maze NW Section (map 0x13d)
+    436,               # Doma Dream Train 1st Car (map 0x142)
+    467,               # Veldt Cave First Room
+    488,               # Esper Mountain entry (no labeled save point)
+    523,               # Ancient Cave Save Point Room
+}
+
+# Rooms that contain a town entry. One representative room per town area in
+# AREA_TYPES['TOWNS']. For multi-room areas, picks the world-map-adjacent entry.
+TOWN_ROOMS = {
+    'ms-wor-59',     # Kohlingen
+    'dc-73',         # Jidoor (WOR world map entry; also covers Owzer's mansion exterior)
+    'ms-wor-63',     # Maranda
+    'ms-wor-51',     # Tzen
+    'ms-wor-49',     # Albrook
+    'ruin-thamasa',  # Thamasa
+    'ruin-nikeah',   # Nikeah
+    'ruin-vector',   # Vector (world-map entry room)
+    'ms-wor-58',     # South Figaro (also a warp point)
+}
+
 # List of rooms associated with each named area
 RUIN_ROOM_SETS = {
     'Doma': [208, 209, 210, 211, '221R', 435, 436, '212R', 430, 431,
@@ -385,7 +420,29 @@ class RuinationBranch(Network):
         # Populated by compress_loop when ROOM_REWARD rooms are absorbed by a forced
         # connection (e.g., 4418<->744 fusing 371 and 'ruin-doma' into '371_ruin-doma').
         self._compound_check_rooms = {}
+        # Cooldown counters that gate when warp/town rooms may be mapped onto this
+        # branch. Decremented each time an unconnected room is mapped; reset to the
+        # initial value (set on ruination_map) when the corresponding room type is
+        # mapped. While > 0, the corresponding room type is excluded as a target.
+        self.warp_cooldown = ruination_map.WARP_COOLDOWN_INITIAL
+        self.town_cooldown = ruination_map.TOWN_COOLDOWN_INITIAL
         self.classify_rooms(rooms)
+
+    def update_cooldowns(self, mapped_room_id):
+        """Update warp/town cooldowns after an unconnected room is mapped onto the branch.
+
+        Decrements both cooldowns (clamped at zero); if the newly-mapped room is a
+        warp or town room, its corresponding cooldown is then reset to the initial
+        value. Should be called once per unconnected room added to the branch.
+        """
+        if self.warp_cooldown > 0:
+            self.warp_cooldown -= 1
+        if self.town_cooldown > 0:
+            self.town_cooldown -= 1
+        if mapped_room_id in WARP_ROOMS:
+            self.warp_cooldown = ruination_map.WARP_COOLDOWN_INITIAL
+        if mapped_room_id in TOWN_ROOMS:
+            self.town_cooldown = ruination_map.TOWN_COOLDOWN_INITIAL
 
     def compress_loop(self, loop_ids):
         # Capture which loop members were check_rooms BEFORE the base class drops them
@@ -1379,6 +1436,12 @@ class RuinationBranch(Network):
 
             if not is_connected:
                 # === A1: Unconnected room ===
+                # Cooldown gating: warp/town rooms can only be mapped when the
+                # corresponding cooldown has run down to zero.
+                if room_id in WARP_ROOMS and self.warp_cooldown > 0:
+                    continue
+                if room_id in TOWN_ROOMS and self.town_cooldown > 0:
+                    continue
                 # Connection consumes trap_exit from exit room and a pit from target room.
                 # Pit is not an exit, so target room exits are unaffected.
                 # Legal if target room has at least one exit (door or trap).
@@ -1548,6 +1611,12 @@ class RuinationBranch(Network):
 
             if not is_connected:
                 # === A2: Unconnected room ===
+                # Cooldown gating: warp/town rooms can only be mapped when the
+                # corresponding cooldown has run down to zero.
+                if room_id in WARP_ROOMS and self.warp_cooldown > 0:
+                    continue
+                if room_id in TOWN_ROOMS and self.town_cooldown > 0:
+                    continue
                 # Connection consumes door_exit from exit room and target_door from target room.
                 # Both are doors (exits), so we check remaining exits after removing both.
                 # Also checks downstream rooms (from forced connections) for exits.
@@ -3140,6 +3209,14 @@ class RuinationBranch(Network):
             self.last_stuck_reason = StuckReason.NO_EXITS
             return None, None
 
+        def _cooldown_blocks(room_id):
+            # Filter unconnected warp/town rooms while their cooldown is active.
+            if room_id in WARP_ROOMS and self.warp_cooldown > 0:
+                return True
+            if room_id in TOWN_ROOMS and self.town_cooldown > 0:
+                return True
+            return False
+
         # Try doors first
         doors = [d for d in active_room.doors if d not in self.protected]
         if len(doors) > 0:
@@ -3147,6 +3224,8 @@ class RuinationBranch(Network):
             # Find a door to connect to
             for room_id in self.net.nodes:
                 if room_id == self.active:
+                    continue
+                if _cooldown_blocks(room_id):
                     continue
                 room = self.rooms.get_room(room_id)
                 if room:
@@ -3161,6 +3240,8 @@ class RuinationBranch(Network):
             # Find a pit to connect to
             for room_id in self.net.nodes:
                 if room_id == self.active:
+                    continue
+                if _cooldown_blocks(room_id):
                     continue
                 room = self.rooms.get_room(room_id)
                 if room:
@@ -3398,6 +3479,14 @@ class RuinationBranch(Network):
 
 class ruination_map():
     # Class to organize data for mapping out ruination mode branches
+
+    # Initial values for the per-branch cooldown counters that prevent warp points
+    # and towns from clustering near the hub or each other. While the counter is
+    # > 0, rooms of the corresponding type cannot be mapped onto the branch; each
+    # unconnected room mapped decrements both counters, and mapping a warp/town
+    # room resets the corresponding counter back to the initial value. Tune here.
+    WARP_COOLDOWN_INITIAL = 5
+    TOWN_COOLDOWN_INITIAL = 4
 
     def __init__(self, args, starting_party, verbose=False, characters=None):
         # Verbose flag controls debug output throughout map generation
@@ -4427,10 +4516,29 @@ class ruination_map():
                         accessible_rewards.append(r)
                         found_reward = True
 
+                # Identify the target room and whether it was unconnected before
+                # this connection. Mapping a previously-unconnected room is what
+                # ticks the warp/town cooldown counters for this branch.
+                target_room_obj = branch.rooms.get_room_from_element(this_conn)
+                target_room_id = target_room_obj.id if target_room_obj is not None else None
+                target_was_connected = (
+                    target_room_id is not None
+                    and target_room_id in branch.net.nodes
+                    and (branch.net.in_degree(target_room_id) + branch.net.out_degree(target_room_id)) > 0
+                )
+
                 # Actually connect them.  This also moves the active room to the new room.
                 if self.verbose:
                     vprint('Making connection: ', this_exit, '-->', this_conn)
                 branch.connect(this_exit, this_conn)
+
+                # If a previously-unconnected room just got mapped onto the branch,
+                # tick the cooldown counters (and reset if it's a warp/town room).
+                if target_room_id is not None and not target_was_connected:
+                    branch.update_cooldowns(target_room_id)
+                    if self.verbose:
+                        vprint(f'\tCooldowns: warp={branch.warp_cooldown}, town={branch.town_cooldown}'
+                               f' (mapped {target_room_id})')
 
             ### Process reward & restart loop - only if we actually found a reward
             if found_reward and accessible_rewards:
