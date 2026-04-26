@@ -2118,6 +2118,89 @@ class RuinationBranch(Network):
                 new_doors.extend([d for d in room.doors if d not in self.protected])
             vprint(f'\tAfter fix: network now has {len(new_doors)} doors')
 
+    def _classify_branch_warp_rooms(self, hub_id):
+        """Partition the branch's warp rooms into connected vs. unconnected.
+
+        A node counts as a warp room if it is itself a member of WARP_ROOMS, or
+        if it is a compound (compress_loop) id whose underscore-separated pieces
+        contain a WARP_ROOMS member. "Connected" means the node belongs to the
+        hub's reachable set (hub + upstream + downstream); orphan nodes added via
+        rescue paths but never wired up are reported as unconnected.
+
+        Returns:
+            (connected_warps, unconnected_warps): two lists of node ids.
+        """
+        connected_set = (
+            {hub_id}
+            | set(self.get_upstream_nodes(hub_id))
+            | set(self.get_downstream_nodes(hub_id))
+        )
+        connected_warps = []
+        unconnected_warps = []
+        warp_str_set = {str(w) for w in WARP_ROOMS}
+        for node_id in self.net.nodes:
+            if node_id in WARP_ROOMS:
+                is_warp = True
+            elif isinstance(node_id, str) and '_' in node_id:
+                is_warp = any(piece in warp_str_set for piece in node_id.split('_'))
+            else:
+                is_warp = False
+            if not is_warp:
+                continue
+            if node_id in connected_set:
+                connected_warps.append(node_id)
+            else:
+                unconnected_warps.append(node_id)
+        return connected_warps, unconnected_warps
+
+    def _connect_orphan_warp_room(self, unconnected_warps, hub_id):
+        """Attempt to integrate an orphan warp room into the branch.
+
+        Tries each unconnected warp (in random order) against the hub and any
+        downstream node. A door<->door pairing is preferred; falls back to
+        hub/downstream-trap to warp-pit. Returns True if a connection was made.
+        """
+        random.shuffle(unconnected_warps)
+        downstream = self.get_downstream_nodes(hub_id)
+        targets = [(hub_id, self.rooms.get_room(hub_id))]
+        for node in downstream:
+            targets.append((node, self.rooms.get_room(node)))
+
+        for warp_id in unconnected_warps:
+            warp_room = self.rooms.get_room(warp_id)
+            if warp_room is None:
+                continue
+            warp_doors = [d for d in warp_room.doors if d not in self.protected]
+            warp_pits = [p for p in warp_room.pits if p not in self.protected]
+            if not warp_doors and not warp_pits:
+                continue
+
+            shuffled_targets = list(targets)
+            random.shuffle(shuffled_targets)
+            for target_id, target in shuffled_targets:
+                if target is None or target_id == warp_id:
+                    continue
+                target_doors = [d for d in target.doors if d not in self.protected]
+                target_traps = [t for t in target.traps if t not in self.protected]
+
+                if warp_doors and target_doors:
+                    this_exit = random.choice(target_doors)
+                    this_conn = random.choice(warp_doors)
+                    if self.verbose:
+                        vprint(f'\twarp rescue: connecting {target_id} door {this_exit} '
+                               f'--> {warp_id} door {this_conn}')
+                    self.connect(this_exit, this_conn)
+                    return True
+                if warp_pits and target_traps:
+                    this_exit = random.choice(target_traps)
+                    this_conn = random.choice(warp_pits)
+                    if self.verbose:
+                        vprint(f'\twarp rescue: connecting {target_id} trap {this_exit} '
+                               f'--> {warp_id} pit {this_conn}')
+                    self.connect(this_exit, this_conn)
+                    return True
+        return False
+
     def finalize_map(self, reserve_areas=None):
         if self.verbose:
             vprint('Closing branch...')
@@ -2152,6 +2235,23 @@ class RuinationBranch(Network):
             hub = self.rooms.get_room(hub_id)
             if self.verbose:
                 vprint('\thub:', hub_id, hub.count)
+
+            # WARP-ROOM RESCUE: If the branch ended up with no connected warp room
+            # but at least one warp room sits in the network as an orphan (e.g. an
+            # add_room from a rescue path that never got wired up), connect one
+            # before the regular finalization steps run. Restart the loop so steps
+            # 1-6 see a topology that already includes the warp room.
+            connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
+            if self.verbose:
+                vprint(f'\twarp rooms: connected={connected_warps}, '
+                       f'unconnected={unconnected_warps}')
+            if len(connected_warps) == 0 and len(unconnected_warps) > 0:
+                if self._connect_orphan_warp_room(unconnected_warps, hub_id):
+                    if self.verbose:
+                        vprint('\twarp rescue made a connection; restarting finalize loop')
+                    continue
+                elif self.verbose:
+                    vprint('\twarp rescue could not connect any orphan; proceeding')
 
             # (1) Count trapdoors/pits connected to hub.  If trapdoors > pits, connect traps to rooms with (# pits > # traps).
             # Filter out protected elements to avoid using forced connection destinations
