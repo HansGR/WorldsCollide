@@ -2270,7 +2270,7 @@ class RuinationBranch(Network):
             if self.verbose:
                 vprint(f'\twarp rooms: connected={connected_warps}, '
                        f'unconnected={unconnected_warps}')
-            if len(connected_warps) == 0 and len(unconnected_warps) > 0:
+            if len(connected_warps) < 2 and len(unconnected_warps) > 0:
                 if self._connect_orphan_warp_room(unconnected_warps, hub_id):
                     if self.verbose:
                         vprint('\twarp rescue made a connection; restarting finalize loop')
