@@ -160,7 +160,7 @@ WARP_POINTS = {
     'SF_prison_cell':   [0x0db, 7, 9, "South Figaro", 1],
     'Mt_Kolts':         [0x0d9, 38, 40, "Mount Kolts", 0],
     'Returners':        [0x0d9, 50, 42, "Returners Hideout", 0],
-    'Train_caboose':    [0x0db, 39, 52, "Phantom Train", 0],
+    'Train_mid':        [0x0db, 39, 52, "Phantom Train", 0],     # Changed from Train_caboose: prefer not dead ends.
     'Owzer_basement':   [0x0d9, 28, 29, "Owzer's Mansion", 1],
     'MTek_pit':         [0x0db, 19, 29, "Magitek Factory", 0],
     'Zoneeater':        [0x0d9, 20, 30, "Zone Eater", 1],

@@ -249,19 +249,19 @@ AREA_TYPES = {
 # near the hub or each other. May overlap with TOWN_ROOMS (e.g. 'ms-wor-58' is both a
 # warp point and the South Figaro town entry).
 WARP_ROOMS = {
-    22,                # Snowfield WOR (Narshe Battle / Kefka@Narshe)
+    40,                # Snowfield WOR (Snow Battlefield WoR)
     'ms-wor-58',       # SF_prison_cell -> South Figaro WOR (also a town)
     160,               # Mt. Kolts Save Point Room
     'ruin-returners',  # Returners Hideout entry / save point
-    221,               # Phantom Train Final Save Point Room
+    216,               # Phantom Train Car 4 with Switch (Final Save Point Room = 221, if we switch)
     282,               # Owzer's Basement Save Point Room
     352,               # Magitek Factory Save Point Room
     359,               # Zone Eater Save Point Room
-    378,               # Daryl's Tomb Entry Room (best guess - no labeled save point)
-    421,               # Doma Dream 3 Stooges Maze NW Section (map 0x13d)
+    393,               # Darill's Tomb MIAB Hallway
+    424,               # Doma Dream 3 Stooges Maze Middle Section
     436,               # Doma Dream Train 1st Car (map 0x142)
-    467,               # Veldt Cave First Room
-    488,               # Esper Mountain entry (no labeled save point)
+    474,               # Veldt Cave Fifth Room
+    497,               # Esper Mountain Falling Pit Room
     523,               # Ancient Cave Save Point Room
 }
 
@@ -277,6 +277,7 @@ TOWN_ROOMS = {
     'ruin-nikeah',   # Nikeah
     'ruin-vector',   # Vector (world-map entry room)
     'ms-wor-58',     # South Figaro (also a warp point)
+    'ruin-returners',  # Returners Hideout (also a warp point)
 }
 
 # List of rooms associated with each named area
@@ -3620,6 +3621,8 @@ class ruination_map():
         elif dream_maze_mode == 'iso':
             # Isolate: replace the nine maze rooms with a single composite room
             RUIN_ROOM_SETS['DreamMaze'] = ['ruin-stooge-maze']
+            WARP_ROOMS.remove(424)
+            WARP_ROOMS.add('ruin-stooge-maze')
             # Update ROOM_REWARD: move 429's reward to ruin-stooge-maze
             if 429 in ROOM_REWARD:
                 ROOM_REWARD['ruin-stooge-maze'] = ROOM_REWARD.pop(429)
