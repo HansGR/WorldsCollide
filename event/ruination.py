@@ -5336,6 +5336,14 @@ class ruination_map():
             reward_nodes = [n for n in G.nodes if is_reward_room(n) and n not in hub_nodes and n not in terminus_nodes]
             regular_nodes = [n for n in G.nodes if n not in hub_nodes and n not in terminus_nodes and n not in reward_nodes]
 
+            # Sub-classify regular nodes by warp/town membership. A room can be in
+            # both sets (e.g. 'ms-wor-58' is both), so combine: triangle for warp,
+            # 50% larger size for town.
+            regular_warp_town = [n for n in regular_nodes if n in WARP_ROOMS and n in TOWN_ROOMS]
+            regular_warp_only = [n for n in regular_nodes if n in WARP_ROOMS and n not in TOWN_ROOMS]
+            regular_town_only = [n for n in regular_nodes if n in TOWN_ROOMS and n not in WARP_ROOMS]
+            regular_plain = [n for n in regular_nodes if n not in WARP_ROOMS and n not in TOWN_ROOMS]
+
             # Classify edges
             door_edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('edge_type') == 'door']
             trap_edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('edge_type') == 'trap']
@@ -5362,12 +5370,31 @@ class ruination_map():
                                        arrows=True, arrowstyle='->', arrowsize=20,
                                        alpha=0.8, connectionstyle='arc3,rad=0.1')
 
-            # Draw nodes by category
-            node_colors_regular = [get_node_color(n) for n in regular_nodes]
-            if regular_nodes:
-                nx.draw_networkx_nodes(G, pos, nodelist=regular_nodes, ax=ax,
-                                       node_color=node_colors_regular, node_size=300,
-                                       node_shape='o', edgecolors='black', linewidths=1.0)
+            # Draw nodes by category. Regular nodes split by warp/town:
+            #   plain    -> circle, size 300
+            #   town     -> circle, size 450 (50% larger)
+            #   warp     -> upward triangle, size 300
+            #   warp+town-> upward triangle, size 450
+            if regular_plain:
+                nx.draw_networkx_nodes(G, pos, nodelist=regular_plain, ax=ax,
+                                       node_color=[get_node_color(n) for n in regular_plain],
+                                       node_size=300, node_shape='o',
+                                       edgecolors='black', linewidths=1.0)
+            if regular_town_only:
+                nx.draw_networkx_nodes(G, pos, nodelist=regular_town_only, ax=ax,
+                                       node_color=[get_node_color(n) for n in regular_town_only],
+                                       node_size=450, node_shape='o',
+                                       edgecolors='black', linewidths=1.0)
+            if regular_warp_only:
+                nx.draw_networkx_nodes(G, pos, nodelist=regular_warp_only, ax=ax,
+                                       node_color=[get_node_color(n) for n in regular_warp_only],
+                                       node_size=300, node_shape='^',
+                                       edgecolors='black', linewidths=1.0)
+            if regular_warp_town:
+                nx.draw_networkx_nodes(G, pos, nodelist=regular_warp_town, ax=ax,
+                                       node_color=[get_node_color(n) for n in regular_warp_town],
+                                       node_size=450, node_shape='^',
+                                       edgecolors='black', linewidths=1.0)
 
             node_colors_reward = [get_node_color(n) for n in reward_nodes]
             if reward_nodes:
@@ -5458,6 +5485,10 @@ class ruination_map():
                               markersize=10, markeredgecolor='black', label='Terminus'))
         legend_handles.append(mlines.Line2D([], [], color='white', marker='*', linestyle='None',
                               markersize=14, markeredgecolor='black', label='Reward'))
+        legend_handles.append(mlines.Line2D([], [], color='white', marker='^', linestyle='None',
+                              markersize=10, markeredgecolor='black', label='Warp point'))
+        legend_handles.append(mlines.Line2D([], [], color='white', marker='o', linestyle='None',
+                              markersize=12, markeredgecolor='black', label='Town (50% larger)'))
         legend_handles.append(mlines.Line2D([], [], color='#555555', linestyle='solid',
                               linewidth=2, label='Door (two-way)'))
         legend_handles.append(mlines.Line2D([], [], color='#CC0000', linestyle='dashed',
