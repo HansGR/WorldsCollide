@@ -2193,6 +2193,7 @@ class RuinationBranch(Network):
                         vprint(f'\twarp rescue: connecting {target_id} door {this_exit} '
                                f'--> {warp_id} door {this_conn}')
                     self.connect(this_exit, this_conn)
+                    self._cleanup_dead_end_after_warp_connect(warp_id)
                     return True
                 if warp_pits and target_traps:
                     this_exit = random.choice(target_traps)
@@ -2201,8 +2202,29 @@ class RuinationBranch(Network):
                         vprint(f'\twarp rescue: connecting {target_id} trap {this_exit} '
                                f'--> {warp_id} pit {this_conn}')
                     self.connect(this_exit, this_conn)
+                    self._cleanup_dead_end_after_warp_connect(warp_id)
                     return True
         return False
+
+    def _cleanup_dead_end_after_warp_connect(self, warp_id):
+        """Remove warp_id from self.dead_ends if it can no longer serve as one.
+
+        A warp room classified as a dead end has its only door consumed by a
+        door<->door rescue, leaving a 0-door survivor still in self.dead_ends.
+        Step 6 would then pop it and crash on `room.doors.pop()`. The pre-step5
+        cleanup only removes entries that left net.nodes (e.g. via compress_loop
+        merging), so we must handle the in-place case here.
+        """
+        if warp_id not in self.dead_ends:
+            return
+        warp_room_after = self.rooms.get_room(warp_id)
+        if warp_room_after is None:
+            # Merged into a compound during connect; pre-step5 cleanup will catch it.
+            return
+        if not [d for d in warp_room_after.doors if d not in self.protected]:
+            self.dead_ends.remove(warp_id)
+            if self.verbose:
+                vprint(f'\twarp rescue: removed {warp_id} from dead_ends (no doors left)')
 
     def finalize_map(self, reserve_areas=None):
         if self.verbose:
