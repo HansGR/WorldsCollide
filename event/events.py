@@ -341,8 +341,8 @@ class Events():
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs, self.args)
 
-        # Fix ferry connections between South Figaro and Nikeah
-        fix_ferry_connections(self.rom, self.dialogs, ruin_map, self.args)
+        # Wire up SF / Nikeah / Albrook ferry network based on which ports are mapped
+        fix_ferry_connections(self.rom, self.dialogs, self.maps, ruin_map, self.args)
 
     def no_free_heals_mod(self):
         """Apply -nfh changes that wrap up free-heal removals/restrictions.

@@ -6513,61 +6513,186 @@ def disable_chocobo_stables(rom, dialogs, args):
             print(f"Disabled {description} at {event_addr:#x}")
 
 
-def fix_ferry_connections(rom, dialogs, ruin_map, args):
-    """
-    Fixes the ferry connection between South Figaro and Nikeah for ruination mode.
+# Ferry-port descriptors used by fix_ferry_connections.
+#   npc_event_addr  - the field-event slot the NPC's talk script enters at.
+#   dest_map / dest_spawn / dest_dir - where the player materialises after travel.
+#   wor_dock        - the airship-park tile on the WoR overworld for the boat anim.
+# Albrook adds a few extra fields because we promote a generic NPC into a sailor:
+#   sailor_map / sailor_npc_id - which NPC slot we promote
+#   sailor_npc_bit             - the visibility bit that must be ON for the NPC
+#   sailor_sprite              - sprite to assign (54 = sailor)
+FERRY_PORTS = {
+    'SouthFigaro': {
+        'display':        'South Figaro',
+        'npc_event_addr': 0x0a77d7,
+        'dest_map':       0x5b,  'dest_spawn': (12, 11), 'dest_dir': direction.LEFT,
+        'wor_dock':       (113, 96),
+    },
+    'Nikeah': {
+        'display':        'Nikeah',
+        'npc_event_addr': 0x0a8cbb,
+        'dest_map':       0xbb,  'dest_spawn': (24, 11), 'dest_dir': direction.DOWN,
+        'wor_dock':       (147, 77),
+    },
+    'Albrook': {
+        'display':        'Albrook',
+        'npc_event_addr': 0xbd1f3,
+        'dest_map':       0x14c, 'dest_spawn': (28, 7),  'dest_dir': direction.LEFT,
+        'wor_dock':       (141, 210),
+        'sailor_map':     0x14c, 'sailor_npc_id': 0x22,
+        'sailor_npc_bit': 0x565, 'sailor_sprite': 54,
+    },
+}
 
-    If both South Figaro and Nikeah are mapped, preserves the original ferry behavior.
-    If not both are mapped, changes the ferryman dialogs to indicate the ferry
-    is not running and removes the choice from the NPC events.
+# Each port's NPC has a single owned dialog ID; we rewrite its text to whatever
+# prompt makes sense (1-destination "X-bound ferry" or 2-destination "Where to?").
+FERRY_PROMPT_DIALOG = {
+    'SouthFigaro': 812,    # vanilla: "Nikeah-bound ferry..."
+    'Nikeah':      810,    # vanilla: "South Figaro-bound ferry..."
+    'Albrook':     1925,   # vanilla: Leo cargo-ship line ($0785)
+}
 
-    Args:
-        rom: The ROM object to modify
-        dialogs: The Dialogs object to update dialog text
-        ruin_map: The ruination_map object
-        args: Command line arguments (for debug flag)
-    """
-    # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),
-    # because distribution can tag an area with a branch whose rooms already
-    # lived elsewhere — leaving the ferry enabled when South Figaro or Nikeah
-    # has no reachable rooms on the map.
-    actual_areas_used = ruin_map.compute_actual_areas_used()
-    south_figaro_mapped = 'SouthFigaro' in actual_areas_used
-    nikeah_mapped = 'Nikeah' in actual_areas_used
+# Vanilla "stay" return target — CA/5EB3 is just a single Return.
+FERRY_STAY_RETURN_ADDR = 0xca5eb3
 
-    if south_figaro_mapped and nikeah_mapped:
-        if args.debug:
-            print("Ferry: Both South Figaro and Nikeah are mapped - preserving ferry connection")
-        return
+FERRY_DISABLED_MESSAGE = (
+    "Some of us went out to map the sea, but no one returned.<end>"
+)
 
-    # Ferry connection data:
-    # - Dialog 810 (0x32A) = "South Figaro-bound ferry..." - used by Nikeah ferryman
-    # - Dialog 812 (0x32C) = "Nikeah-bound ferry..." - used by South Figaro ferryman
-    # - South Figaro dock ferryman: event at ROM 0x0A77D7, uses dialog 812 (0x32C)
-    # - Nikeah dock ferryman: event at ROM 0x0A8CBB, uses dialog 810 (0x32A)
 
-    disabled_message = "Some of us went out to map the sea, but no one returned.<end>"
+def _ferry_disabled_patch(dialog_id):
+    """4-byte field-event sequence: Display dialog, Return."""
+    return bytes([0x4B, dialog_id & 0xFF, dialog_id >> 8, 0xFE])
 
-    # Update both ferry dialogs
-    dialogs.set_text(810, disabled_message)  # South Figaro-bound ferry dialog
-    dialogs.set_text(812, disabled_message)  # Nikeah-bound ferry dialog
 
-    # Patch South Figaro ferryman event to just display dialog and return
-    # Event at 0x0A77D7 - uses dialog 812 (0x32C)
-    south_figaro_event_addr = 0x0a77d7
-    south_figaro_dialog_id = 812  # 0x32C
-    event_bytes = bytes([0x4B, south_figaro_dialog_id & 0xFF, south_figaro_dialog_id >> 8, 0xFE])
-    rom.set_bytes(south_figaro_event_addr, event_bytes)
+def _ferry_build_prompt(src_port, destinations):
+    """Return dialog text for the src_port sailor offering the given destinations."""
+    if len(destinations) == 1:
+        dst = FERRY_PORTS[destinations[0]]['display']
+        return (
+            f"{dst}-bound ferry."
+            f"<line><choice> (Still need to shop.)"
+            f"<line><choice> (Hop aboard?)<end>"
+        )
+    dst1 = FERRY_PORTS[destinations[0]]['display']
+    dst2 = FERRY_PORTS[destinations[1]]['display']
+    return (
+        f"Where to?"
+        f"<line><choice> (Still need to shop.)"
+        f"<line><choice> ({dst1})"
+        f"<line><choice> ({dst2})<end>"
+    )
 
-    # Patch Nikeah ferryman event to just display dialog and return
-    # Event at 0x0A8CBB - uses dialog 810 (0x32A)
-    nikeah_event_addr = 0x0a8cbb
-    nikeah_dialog_id = 810  # 0x32A
-    event_bytes = bytes([0x4B, nikeah_dialog_id & 0xFF, nikeah_dialog_id >> 8, 0xFE])
-    rom.set_bytes(nikeah_event_addr, event_bytes)
+
+def _ferry_build_trip(src_port, dst_port):
+    """Allocate a Bank.CA subroutine that runs the boat-trip animation."""
+    src = FERRY_PORTS[src_port]
+    dst = FERRY_PORTS[dst_port]
+    code = [
+        vehicle.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        vehicle.LoadMap(0x01, direction.DOWN, default_music=False,
+                        x=src['wor_dock'][0], y=src['wor_dock'][1],
+                        fade_in=False, airship=True),
+        vehicle.SetPosition(dst['wor_dock'][0], dst['wor_dock'][1]),
+        vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        vehicle.FadeLoadMap(dst['dest_map'], dst['dest_dir'], default_music=True,
+                            x=dst['dest_spawn'][0], y=dst['dest_spawn'][1],
+                            fade_in=True, entrance_event=True),
+        field.SetParentMap(0x01, direction.DOWN,
+                           x=dst['wor_dock'][0], y=dst['wor_dock'][1] - 1),
+        field.Return(),
+    ]
+    return Write(Bank.CA, code, f"ruin ferry {src_port}->{dst_port}").start_address
+
+
+def _ferry_install_disabled(rom, dialogs):
+    """Disable every port's NPC: each shows the disabled message and returns."""
+    for port_name in FERRY_PORTS:
+        dialog_id = FERRY_PROMPT_DIALOG[port_name]
+        dialogs.set_text(dialog_id, FERRY_DISABLED_MESSAGE)
+        rom.set_bytes(FERRY_PORTS[port_name]['npc_event_addr'],
+                      _ferry_disabled_patch(dialog_id))
+
+
+def _ferry_install_enabled(rom, dialogs, maps, mapped, args):
+    """For each pair of mapped ports, build a trip subroutine and dispatch event."""
+    # Promote the Albrook NPC if Albrook is on the network. Sprite is set here;
+    # the visibility bit is flipped via init_event_bits in event/albrook_wob.py
+    # (see Events.ruination_mod ordering — fix_ferry_connections runs before the
+    # init_event_bits loop, so the bit-flip cannot live here).
+    if 'Albrook' in mapped:
+        port = FERRY_PORTS['Albrook']
+        maps.get_npc(port['sailor_map'], port['sailor_npc_id']).sprite = port['sailor_sprite']
+
+    # Build all ordered trip subroutines we will need.
+    trips = {}
+    for src in mapped:
+        for dst in mapped:
+            if src == dst:
+                continue
+            trips[(src, dst)] = _ferry_build_trip(src, dst)
+
+    # For each port, build a dispatch event (DialogBranch with stay + 1 or 2 boats)
+    # and patch the NPC's event slot with a Branch into it.
+    for src in mapped:
+        destinations = [p for p in mapped if p != src]
+        prompt_text = _ferry_build_prompt(src, destinations)
+        dialog_id = FERRY_PROMPT_DIALOG[src]
+        dialogs.set_text(dialog_id, prompt_text)
+
+        dest1 = trips[(src, destinations[0])]
+        dest2 = trips[(src, destinations[1])] if len(destinations) == 2 else None
+
+        # DialogBranch returns (Dialog, _DialogBranch, Return). Choice 1 is the
+        # "stay" option (matches vanilla "Still need to shop."), so we route it
+        # to the bare-Return stub at FERRY_STAY_RETURN_ADDR.
+        dispatch_code = list(field.DialogBranch(
+            dialog_id,
+            FERRY_STAY_RETURN_ADDR,
+            dest1,
+            dest2,
+        ))
+        dispatch_addr = Write(Bank.CA, dispatch_code,
+                              f"ruin ferry dispatch {src}").start_address
+
+        # field.Branch is BranchIfEventBitClear(ALWAYS_CLEAR, dest) = 6 bytes.
+        # The vanilla event slots all have >=12 bytes available (verified for
+        # SF 0xa77d7=21B, Nikeah 0xa8cbb=31B, Albrook 0xbd1f3=18B).
+        patch = field.Branch(dispatch_addr)
+        opcode, patch_args = patch(None)
+        patch_bytes = bytes([opcode]) + bytes(patch_args)
+        rom.set_bytes(FERRY_PORTS[src]['npc_event_addr'], patch_bytes)
 
     if args.debug:
-        print(f"Ferry: South Figaro mapped={south_figaro_mapped}, Nikeah mapped={nikeah_mapped}")
-        print(f"Ferry: Disabled ferry connections - updated dialogs 810 and 812")
-        print(f"Ferry: Patched South Figaro ferryman at {south_figaro_event_addr:#x}")
-        print(f"Ferry: Patched Nikeah ferryman at {nikeah_event_addr:#x}")
+        for (src, dst), addr in trips.items():
+            print(f"Ferry: trip {src}->{dst} at {addr:#x}")
+
+
+def fix_ferry_connections(rom, dialogs, maps, ruin_map, args):
+    """Wire up the SF / Nikeah / Albrook ferry network for ruination mode.
+
+    If 0 or 1 of the three ports has any reachable rooms on the map, every
+    sailor shows a disabled message. If 2 or 3 are mapped, each mapped sailor
+    offers travel to every other mapped port. The Albrook NPC is a generic
+    sprite-16 NPC on map 0x14C that we promote to sprite 54 (sailor) and make
+    visible via npc_bit 0x565 (the latter via init_event_bits in
+    event/albrook_wob.py).
+
+    Uses the rooms actually placed in each branch (not ruin_map.AreasUsed),
+    because distribution can tag an area with a branch whose rooms already
+    lived elsewhere — leaving the ferry enabled when a port has no reachable
+    rooms on the map.
+    """
+    actual_areas_used = ruin_map.compute_actual_areas_used()
+    mapped = [p for p in FERRY_PORTS if p in actual_areas_used]
+
+    if args.debug:
+        print(f"Ferry: mapped ports = {mapped}")
+
+    if len(mapped) < 2:
+        _ferry_install_disabled(rom, dialogs)
+        if args.debug:
+            print("Ferry: <2 ports mapped - all sailors disabled")
+        return
+
+    _ferry_install_enabled(rom, dialogs, maps, mapped, args)
