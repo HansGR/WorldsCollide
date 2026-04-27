@@ -112,7 +112,7 @@ room_data = {
     'ms-wob-1556': [[1557], [], [], 0],     # Floating Continent
 
     'ms-wor-48': [[1267], [], [], 1],       # Cid's House
-    'ms-wor-49': [[1249, 1250, 1251], [], [], 1],       # Albrook
+    'ms-wor-49': [[1249, 1250], [], [], 1],       # Albrook
     'ms-wor-51': [[1243], [], [], 1],       # Tzen
     'ms-wor-52': [[1192], [], [], 1],       # Mobliz
     'ms-wor-53': [[1242], [], [], 1],       # Daryl's Tomb
