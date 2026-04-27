@@ -246,7 +246,3 @@ class MoveForward(_Instruction):
 
     def __str__(self):
         return super().__str__(f"{str(self.direction)} {str(self.distance)}")
-
-class BecomeShip(_Instruction):
-    def __init__(self):
-        super().__init__(0xfc)

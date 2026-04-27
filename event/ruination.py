@@ -6610,22 +6610,24 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
         field.FadeOutSong(8),
         field.FadeOutScreen(),
         field.StartSong(0x3a),  # "Tide"
-        field.LoadMap(map_id=0x001, x=ANIMATION_XY[0], y=ANIMATION_XY[1], direction=ANIMATION_XY[src_port][2],
+        field.LoadMap(map_id=0x001, x=ANIMATION_XY[src_port][0], y=ANIMATION_XY[src_port][1], direction=ANIMATION_XY[src_port][2],
                       default_music=False, entrance_event=False, airship=False, fade_in=True),
-        field_entity.SetSpeed(field_entity.Speed.SLOW),
-        vehicle.BecomeShip(),
+        world.SetSpeed(field_entity.Speed.SLOW),
+        world.BecomeShip(),
+        world.HideMinimap(),
     ]
 
     # Go to elbow
     dist = get_distance(delta_xy_1)
     while dist > 8:
         code += [
-            vehicle.MoveForward(direction=get_dir(delta_xy_1), distance=8)
+            #vehicle.MoveForward(direction=get_dir(delta_xy_1), distance=8)  # This is the wrong code.  Need something more like field_entity.Move codes
+            field_entity.Move(direction=get_dir(delta_xy_1), distance=8)
         ]
         dist -= 8
     if dist > 0:
         code += [
-            vehicle.MoveForward(direction=get_dir(delta_xy_1), distance=dist)
+            field_entity.Move(direction=get_dir(delta_xy_1), distance=dist)
         ]
     # Sea Battle?  We don't have a background for it (0x0d = raft, 0x29 = airship wor).  Might add some nice danger.
     # Can we capture an unused boss & have it trigger 3/8 of the time, once?
@@ -6638,9 +6640,9 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     skip_boss_chance = int(SHIP_BOSS_BATTLE_PROBABILITY * 255)
     if boss_pack_id is not None:
         code += [
-            vehicle.BranchIfEventBitSet(event_bit.FINISHED_NARSHE_BATTLE, "SKIP_BATTLE"),
-            vehicle.BranchProbability(skip_boss_chance, "SKIP_BATTLE"),
-            vehicle.InvokeBattle(boss_pack_id, background=0x0d),
+            world.BranchIfEventBitSet(event_bit.FINISHED_NARSHE_BATTLE, "SKIP_BATTLE"),
+            #vehicle.BranchProbability(skip_boss_chance, "SKIP_BATTLE"),
+            vehicle.InvokeBattle(pack=boss_pack_id, background=0x0d),  # [0xca, boss_pack_id, 0x0d],  #
             vehicle.SetEventBit(event_bit.FINISHED_NARSHE_BATTLE),
             "SKIP_BATTLE",
         ]
@@ -6649,12 +6651,12 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     dist = get_distance(delta_xy_2)
     while dist > 8:
         code += [
-            vehicle.MoveForward(direction=get_dir(delta_xy_2), distance=8)
+            field_entity.Move(direction=get_dir(delta_xy_1), distance=8)
         ]
         dist -= 8
     if dist > 0:
         code += [
-            vehicle.MoveForward(direction=get_dir(delta_xy_2), distance=dist)
+            field_entity.Move(direction=get_dir(delta_xy_1), distance=dist)
         ]
 
     code += [
@@ -6722,16 +6724,18 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
             dest1,
             dest2,
         ))
-        dispatch_addr = Write(Bank.CA, dispatch_code,
-                              f"ruin ferry dispatch {src}").start_address
+        space = Write(Bank.CA, dispatch_code, f"ruin ferry dispatch {src}")
+        dispatch_addr = space.start_address
 
         # field.Branch is BranchIfEventBitClear(ALWAYS_CLEAR, dest) = 6 bytes.
         # The vanilla event slots all have >=12 bytes available (verified for
         # SF 0xa77d7=21B, Nikeah 0xa8cbb=31B, Albrook 0xbd1f3=18B).
-        patch = field.Branch(dispatch_addr)
-        opcode, patch_args = patch(None)
-        patch_bytes = bytes([opcode]) + bytes(patch_args)
-        rom.set_bytes(FERRY_PORTS[src]['npc_event_addr'], patch_bytes)
+        #patch = field.Branch(dispatch_addr)
+        #opcode, patch_args = patch(None)
+        #patch_bytes = bytes([opcode]) + bytes(patch_args)
+        #rom.set_bytes(FERRY_PORTS[src]['npc_event_addr'], patch_bytes)
+        space = Reserve(FERRY_PORTS[src]['npc_event_addr'], FERRY_PORTS[src]['npc_event_addr']+5, f"ruin ferry dispatch hook {src}")
+        space.write(field.Branch(dispatch_addr))
 
     if args.debug:
         for (src, dst), addr in trips.items():

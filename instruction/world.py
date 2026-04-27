@@ -66,3 +66,7 @@ class EndIfEventBitClear(BranchIfEventBitClear):
 class Branch(BranchIfEventBitClear):
     def __init__(self, destination):
         super().__init__(event_bit.ALWAYS_CLEAR, destination)
+
+class BecomeShip(_Instruction):
+    def __init__(self):
+        super().__init__(0xfc)
