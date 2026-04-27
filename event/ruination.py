@@ -232,8 +232,30 @@ CHARACTER_AREAS = {
     'MOG': ['Narshe'],
     'GOGO': ['ZoneEater'],
     'UMARO': ['UmarosCave'],
-    'ALL': ['Coliseum', 'Albrook'],
+    'ALL': ['Coliseum'],
     'EXTRA': ['ImperialCastle']
+}
+
+# Areas that are appended to a recruited character's `new_areas` during
+# process_rewards iff their predicate (called as `predicate(ruination_map, new_char)`)
+# is satisfied. distribute_areas filters out areas already in `self.AreasUsed`,
+# but the helper also short-circuits to keep verbose logging clean.
+#
+# Add an entry here for any area that should be mapped on demand based on
+# global mapping state (e.g. cooldowns, recruited commands) rather than being
+# tied to a specific character's CHARACTER_AREAS list.
+CONDITIONAL_AREAS = {
+    # Duncan's House (Bum Rush teacher) — added when the planned Blitz character
+    # is recruited (and the 50% inclusion roll passed at pre-plan time).
+    'DuncanHouse': lambda rm, new_char: (
+        rm.include_duncan_house and new_char == rm.duncan_house_character
+    ),
+    # Albrook is a two-exit pass-through town. Only add it when at least two
+    # of the three branches have a zeroed town cooldown, so towns don't
+    # cluster and Albrook isn't placed too early or too often.
+    'Albrook': lambda rm, new_char: (
+        sum(1 for b in rm.branches if b.town_cooldown == 0) >= 2
+    ),
 }
 
 # All playable characters that can be obtained as rewards
@@ -243,6 +265,14 @@ ALL_CHARACTERS = ['TERRA', 'LOCKE', 'EDGAR', 'SABIN', 'CELES', 'CYAN', 'SHADOW',
 AREA_TYPES = {
     'TOWNS': ['Kohlingen', 'Jidoor', 'Maranda', 'Tzen', 'Albrook', 'Thamasa', 'Nikeah', 'Vector', 'SouthFigaro'],  # 'Mobliz', 'Narshe', # WOB only
 }
+
+# Towns whose RUIN_ROOM_SETS entry is a single room and which aren't tied to
+# another area via forced_same_branch — these are spread across branches by
+# distribute_areas instead of using the normal dispatch, so towns don't all
+# pile up on one branch. Composite towns (Jidoor + Owzer's, Vector + Magitek)
+# and forced-same-branch towns (Thamasa, Nikeah) are intentionally excluded;
+# they place with their larger area.
+STANDALONE_TOWNS = ['SouthFigaro', 'Kohlingen', 'Maranda', 'Tzen', 'Albrook']
 
 # Rooms that contain a warp/save point (best-effort mapping from data/warps.WARP_POINTS).
 # Used by the cooldown system in RuinationBranch to keep warp points from clustering
@@ -4032,6 +4062,36 @@ class ruination_map():
             # Update areas list to only include remaining unassigned areas
             areas = remaining_areas
 
+        # Town spreading: route every STANDALONE_TOWNS member queued for
+        # distribution to whichever branch currently has the fewest mapped
+        # TOWNS (random tiebreak), recomputing the count after each placement
+        # so they actually spread when multiple come in together. Anything
+        # caught by forced_same_branch falls through to the normal dispatch.
+        balanced_towns = [a for a in areas if a in STANDALONE_TOWNS]
+        if balanced_towns:
+            town_set = set(AREA_TYPES['TOWNS'])
+            random.shuffle(balanced_towns)
+            placed = []
+            for town in balanced_towns:
+                if _check_forced_same_branch(town) is not False:
+                    continue
+                town_counts = [
+                    sum(1 for a, bid in self.AreasUsed.items()
+                        if bid == i and a in town_set)
+                    for i in range(3)
+                ]
+                min_count = min(town_counts)
+                candidates = [i for i, c in enumerate(town_counts) if c == min_count]
+                this_index = random.choice(candidates)
+                if self.verbose:
+                    vprint(f'\tTown spread: {town} -> branch {this_index} '
+                           f'(town counts: {town_counts})')
+                branch_areas[this_index].add(town)
+                self.AreasUsed[town] = this_index
+                placed.append(town)
+            if placed:
+                areas = [a for a in areas if a not in placed]
+
         if method == 'random':
             for area in areas:
                 this_index = _check_forced_same_branch(area)
@@ -4885,6 +4945,23 @@ class ruination_map():
         assert(item_possible)
         return (items.get_good_random(), RewardType.ITEM)
 
+    def _add_conditional_areas(self, new_areas, new_char):
+        """Append any CONDITIONAL_AREAS whose predicate is currently satisfied.
+
+        Returns the (possibly extended) `new_areas` list. Areas already mapped
+        or already queued in `new_areas` are skipped so that verbose logging
+        and future predicate inspection stay accurate; distribute_areas would
+        otherwise silently drop duplicates.
+        """
+        for area_name, condition in CONDITIONAL_AREAS.items():
+            if area_name in self.AreasUsed or area_name in new_areas:
+                continue
+            if condition(self, new_char):
+                new_areas.append(area_name)
+                if self.verbose:
+                    vprint(f'\tAdding conditional area {area_name} to {new_char}\'s areas')
+        return new_areas
+
     def process_rewards(self, rewards, characters, espers, items, branch_id, exclude_chars=None):
         # Identify reward & decide on reward type
         if exclude_chars is None:
@@ -4943,11 +5020,7 @@ class ruination_map():
                 new_char = characters.DEFAULT_NAME[slot.id]
                 self.apply_key(new_char)  # apply new key to all branches
                 new_areas = list(CHARACTER_AREAS[new_char])
-                # Add Duncan's House if this is the Blitz character
-                if self.include_duncan_house and new_char == self.duncan_house_character:
-                    new_areas.append('DuncanHouse')
-                    if self.verbose:
-                        vprint(f'\tAdding DuncanHouse to {new_char}\'s areas (Blitz character)')
+                new_areas = self._add_conditional_areas(new_areas, new_char)
                 self.distribute_areas(new_areas, method='shortest')
 
             elif slot.type is RewardType.ESPER:
