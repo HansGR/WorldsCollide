@@ -4054,6 +4054,29 @@ class ruination_map():
             # Update areas list to only include remaining unassigned areas
             areas = remaining_areas
 
+        # Town spreading: Albrook is a 2-exit pass-through town added on demand
+        # during process_rewards. Route it to whichever branch currently has
+        # the fewest mapped TOWNS so towns don't pile up on one branch (random
+        # tiebreak). Honor forced_same_branch in case it gains a partner later.
+        if 'Albrook' in areas:
+            forced_idx = _check_forced_same_branch('Albrook')
+            if forced_idx is False:
+                town_set = set(AREA_TYPES['TOWNS'])
+                town_counts = [
+                    sum(1 for a, bid in self.AreasUsed.items()
+                        if bid == i and a in town_set)
+                    for i in range(3)
+                ]
+                min_count = min(town_counts)
+                candidates = [i for i, c in enumerate(town_counts) if c == min_count]
+                this_index = random.choice(candidates)
+                if self.verbose:
+                    vprint(f'\tTown spread: Albrook -> branch {this_index} '
+                           f'(town counts: {town_counts})')
+                branch_areas[this_index].add('Albrook')
+                self.AreasUsed['Albrook'] = this_index
+                areas = [a for a in areas if a != 'Albrook']
+
         if method == 'random':
             for area in areas:
                 this_index = _check_forced_same_branch(area)
