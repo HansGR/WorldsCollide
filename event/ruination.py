@@ -266,6 +266,14 @@ AREA_TYPES = {
     'TOWNS': ['Kohlingen', 'Jidoor', 'Maranda', 'Tzen', 'Albrook', 'Thamasa', 'Nikeah', 'Vector', 'SouthFigaro'],  # 'Mobliz', 'Narshe', # WOB only
 }
 
+# Towns whose RUIN_ROOM_SETS entry is a single room and which aren't tied to
+# another area via forced_same_branch — these are spread across branches by
+# distribute_areas instead of using the normal dispatch, so towns don't all
+# pile up on one branch. Composite towns (Jidoor + Owzer's, Vector + Magitek)
+# and forced-same-branch towns (Thamasa, Nikeah) are intentionally excluded;
+# they place with their larger area.
+STANDALONE_TOWNS = ['SouthFigaro', 'Kohlingen', 'Maranda', 'Tzen', 'Albrook']
+
 # Rooms that contain a warp/save point (best-effort mapping from data/warps.WARP_POINTS).
 # Used by the cooldown system in RuinationBranch to keep warp points from clustering
 # near the hub or each other. May overlap with TOWN_ROOMS (e.g. 'ms-wor-58' is both a
@@ -4054,14 +4062,19 @@ class ruination_map():
             # Update areas list to only include remaining unassigned areas
             areas = remaining_areas
 
-        # Town spreading: Albrook is a 2-exit pass-through town added on demand
-        # during process_rewards. Route it to whichever branch currently has
-        # the fewest mapped TOWNS so towns don't pile up on one branch (random
-        # tiebreak). Honor forced_same_branch in case it gains a partner later.
-        if 'Albrook' in areas:
-            forced_idx = _check_forced_same_branch('Albrook')
-            if forced_idx is False:
-                town_set = set(AREA_TYPES['TOWNS'])
+        # Town spreading: route every STANDALONE_TOWNS member queued for
+        # distribution to whichever branch currently has the fewest mapped
+        # TOWNS (random tiebreak), recomputing the count after each placement
+        # so they actually spread when multiple come in together. Anything
+        # caught by forced_same_branch falls through to the normal dispatch.
+        balanced_towns = [a for a in areas if a in STANDALONE_TOWNS]
+        if balanced_towns:
+            town_set = set(AREA_TYPES['TOWNS'])
+            random.shuffle(balanced_towns)
+            placed = []
+            for town in balanced_towns:
+                if _check_forced_same_branch(town) is not False:
+                    continue
                 town_counts = [
                     sum(1 for a, bid in self.AreasUsed.items()
                         if bid == i and a in town_set)
@@ -4071,11 +4084,13 @@ class ruination_map():
                 candidates = [i for i, c in enumerate(town_counts) if c == min_count]
                 this_index = random.choice(candidates)
                 if self.verbose:
-                    vprint(f'\tTown spread: Albrook -> branch {this_index} '
+                    vprint(f'\tTown spread: {town} -> branch {this_index} '
                            f'(town counts: {town_counts})')
-                branch_areas[this_index].add('Albrook')
-                self.AreasUsed['Albrook'] = this_index
-                areas = [a for a in areas if a != 'Albrook']
+                branch_areas[this_index].add(town)
+                self.AreasUsed[town] = this_index
+                placed.append(town)
+            if placed:
+                areas = [a for a in areas if a not in placed]
 
         if method == 'random':
             for area in areas:
