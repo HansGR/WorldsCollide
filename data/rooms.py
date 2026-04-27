@@ -1184,7 +1184,7 @@ shared_exits = {
     5238: [5239],        # Maranda WoR to world map
 
     1245: [1246, 1247],   # Albrook WoB to world map
-    1249: [1250, 1251],   # Albrook WoR to world map
+    1249: [1250],   # Albrook WoR to world map
     1250: [1251],         # Albrook WoR north to world map
 
     1199: [1200],    # Nikeah WoB to world map
