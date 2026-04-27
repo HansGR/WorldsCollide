@@ -1614,7 +1614,12 @@ dungeon_crawl_exit_destination_override = {
 
     # Duncan's house WoR:
     457:  [0x07f, 7, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1],  # north entrance
-    1186: [0x07f, 7, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]  # south entrance
+    1186: [0x07f, 7, 13, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],  # south entrance
+
+	# Albrook WoR: north entrance
+	1250: [0x144, 10, 3, 0, 0, 1, 2, 0, 0, 0, 0, 0, 1],  # north entrance #1
+    1251: [0x144, 10, 3, 0, 0, 1, 2, 0, 0, 0, 0, 0, 1]  # north entrance #2 (further north)
+	
 }
 
 # We could probably do this as:
