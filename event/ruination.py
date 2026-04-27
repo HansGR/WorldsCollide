@@ -232,8 +232,30 @@ CHARACTER_AREAS = {
     'MOG': ['Narshe'],
     'GOGO': ['ZoneEater'],
     'UMARO': ['UmarosCave'],
-    'ALL': ['Coliseum', 'Albrook'],
+    'ALL': ['Coliseum'],
     'EXTRA': ['ImperialCastle']
+}
+
+# Areas that are appended to a recruited character's `new_areas` during
+# process_rewards iff their predicate (called as `predicate(ruination_map, new_char)`)
+# is satisfied. distribute_areas filters out areas already in `self.AreasUsed`,
+# but the helper also short-circuits to keep verbose logging clean.
+#
+# Add an entry here for any area that should be mapped on demand based on
+# global mapping state (e.g. cooldowns, recruited commands) rather than being
+# tied to a specific character's CHARACTER_AREAS list.
+CONDITIONAL_AREAS = {
+    # Duncan's House (Bum Rush teacher) — added when the planned Blitz character
+    # is recruited (and the 50% inclusion roll passed at pre-plan time).
+    'DuncanHouse': lambda rm, new_char: (
+        rm.include_duncan_house and new_char == rm.duncan_house_character
+    ),
+    # Albrook is a two-exit pass-through town. Only add it when at least two
+    # of the three branches have a zeroed town cooldown, so towns don't
+    # cluster and Albrook isn't placed too early or too often.
+    'Albrook': lambda rm, new_char: (
+        sum(1 for b in rm.branches if b.town_cooldown == 0) >= 2
+    ),
 }
 
 # All playable characters that can be obtained as rewards
@@ -4885,6 +4907,23 @@ class ruination_map():
         assert(item_possible)
         return (items.get_good_random(), RewardType.ITEM)
 
+    def _add_conditional_areas(self, new_areas, new_char):
+        """Append any CONDITIONAL_AREAS whose predicate is currently satisfied.
+
+        Returns the (possibly extended) `new_areas` list. Areas already mapped
+        or already queued in `new_areas` are skipped so that verbose logging
+        and future predicate inspection stay accurate; distribute_areas would
+        otherwise silently drop duplicates.
+        """
+        for area_name, condition in CONDITIONAL_AREAS.items():
+            if area_name in self.AreasUsed or area_name in new_areas:
+                continue
+            if condition(self, new_char):
+                new_areas.append(area_name)
+                if self.verbose:
+                    vprint(f'\tAdding conditional area {area_name} to {new_char}\'s areas')
+        return new_areas
+
     def process_rewards(self, rewards, characters, espers, items, branch_id, exclude_chars=None):
         # Identify reward & decide on reward type
         if exclude_chars is None:
@@ -4943,11 +4982,7 @@ class ruination_map():
                 new_char = characters.DEFAULT_NAME[slot.id]
                 self.apply_key(new_char)  # apply new key to all branches
                 new_areas = list(CHARACTER_AREAS[new_char])
-                # Add Duncan's House if this is the Blitz character
-                if self.include_duncan_house and new_char == self.duncan_house_character:
-                    new_areas.append('DuncanHouse')
-                    if self.verbose:
-                        vprint(f'\tAdding DuncanHouse to {new_char}\'s areas (Blitz character)')
+                new_areas = self._add_conditional_areas(new_areas, new_char)
                 self.distribute_areas(new_areas, method='shortest')
 
             elif slot.type is RewardType.ESPER:
