@@ -6590,15 +6590,15 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     dst = FERRY_PORTS[dst_port]
 
     # Do some math to determine route for animation.  Elbow is at (223, 200).
+    elbow = [228, 205]  # [223, 200].  Change destinations to be w.r.t elbow.
     ANIMATION_XY = {
-        'SouthFigaro': [216, 200, direction.RIGHT],
-        'Nikeah': [238, 200, direction.LEFT],
-        'Albrook': [223, 216, direction.UP],
+        'SouthFigaro': [-19, 0, direction.RIGHT],
+        'Nikeah': [19, 0, direction.LEFT],
+        'Albrook': [0, -11, direction.UP],
     }
-    elbow = [223, 200]
-    delta_xy_1 = [elbow[a] - ANIMATION_XY[src_port][a] for a in
-                  range(2)]  # first part of journey (positive is right/down)
-    delta_xy_2 = [ANIMATION_XY[dst_port][a] - elbow[a] for a in range(2)]  # second part of journey
+
+    delta_xy_1 = [-ANIMATION_XY[src_port][a] for a in range(2)]  # first part of journey (positive is right/down)
+    delta_xy_2 = [ANIMATION_XY[dst_port][a] for a in range(2)]  # second part of journey
 
     # Helper functions
     get_dir = lambda x: [direction.RIGHT, direction.LEFT, direction.DOWN, direction.UP][
@@ -6610,8 +6610,10 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
         field.FadeOutSong(8),
         field.FadeOutScreen(),
         field.StartSong(0x3a),  # "Tide"
-        field.LoadMap(map_id=0x001, x=ANIMATION_XY[src_port][0], y=ANIMATION_XY[src_port][1], direction=ANIMATION_XY[src_port][2],
-                      default_music=False, entrance_event=False, airship=False, fade_in=True),
+        field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        field.LoadMap(map_id=0x001, x=ANIMATION_XY[src_port][0] + elbow[0], y=ANIMATION_XY[src_port][1] + elbow[1],
+                      direction=ANIMATION_XY[src_port][2], default_music=False, entrance_event=False, airship=False,
+                      fade_in=True),
         world.SetSpeed(field_entity.Speed.SLOW),
         world.BecomeShip(),
         world.HideMinimap(),
@@ -6619,15 +6621,16 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
 
     # Go to elbow
     dist = get_distance(delta_xy_1)
+    d_ix = get_dir(delta_xy_1)
     while dist > 8:
         code += [
             #vehicle.MoveForward(direction=get_dir(delta_xy_1), distance=8)  # This is the wrong code.  Need something more like field_entity.Move codes
-            field_entity.Move(direction=get_dir(delta_xy_1), distance=8)
+            field_entity.Move(direction=d_ix, distance=8)
         ]
         dist -= 8
     if dist > 0:
         code += [
-            field_entity.Move(direction=get_dir(delta_xy_1), distance=dist)
+            field_entity.Move(direction=d_ix, distance=dist)
         ]
     # Sea Battle?  We don't have a background for it (0x0d = raft, 0x29 = airship wor).  Might add some nice danger.
     # Can we capture an unused boss & have it trigger 3/8 of the time, once?
@@ -6638,25 +6641,35 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     # So we can set event_bit.FINISHED_NARSHE_BATTLE to track it.
     SHIP_BOSS_BATTLE_PROBABILITY = 0.375
     skip_boss_chance = int(SHIP_BOSS_BATTLE_PROBABILITY * 255)
+    #print(f'USING SEA BOSS BATTLE ID: {boss_pack_id}')
     if boss_pack_id is not None:
         code += [
             world.BranchIfEventBitSet(event_bit.FINISHED_NARSHE_BATTLE, "SKIP_BATTLE"),
             #vehicle.BranchProbability(skip_boss_chance, "SKIP_BATTLE"),
-            vehicle.InvokeBattle(pack=boss_pack_id, background=0x0d),  # [0xca, boss_pack_id, 0x0d],  #
-            vehicle.SetEventBit(event_bit.FINISHED_NARSHE_BATTLE),
+            #vehicle.InvokeBattle(pack=boss_pack_id, background=0x0d),  # Vehicle.InvokeBattle wasn't working.  Try something else.
+            world.FadeLoadMap(map_id=0x009, direction=0, default_music=False, x=0, y=0, entrance_event=False,
+                              fade_in=False),
+            field.InvokeBattle(pack=boss_pack_id, background=0x0d),
+            field.SetEventBit(event_bit.FINISHED_NARSHE_BATTLE),
+            field.StartSong(0x3a),  # "Tide"
+            field.LoadMap(map_id=0x001, x=elbow[0], y=elbow[1], direction=ANIMATION_XY[src_port][2],
+                          default_music=False, entrance_event=False, airship=False, fade_in=True),
+            world.SetSpeed(field_entity.Speed.SLOW),
+            world.BecomeShip(),
             "SKIP_BATTLE",
         ]
 
     # Complete journey
     dist = get_distance(delta_xy_2)
+    d_ix = get_dir(delta_xy_2)
     while dist > 8:
         code += [
-            field_entity.Move(direction=get_dir(delta_xy_1), distance=8)
+            field_entity.Move(direction=d_ix, distance=8)
         ]
         dist -= 8
     if dist > 0:
         code += [
-            field_entity.Move(direction=get_dir(delta_xy_1), distance=dist)
+            field_entity.Move(direction=d_ix, distance=dist)
         ]
 
     code += [
