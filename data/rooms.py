@@ -112,7 +112,7 @@ room_data = {
     'ms-wob-1556': [[1557], [], [], 0],     # Floating Continent
 
     'ms-wor-48': [[1267], [], [], 1],       # Cid's House
-    'ms-wor-49': [[1249], [], [], 1],       # Albrook
+    'ms-wor-49': [[1249, 1250, 1251], [], [], 1],       # Albrook
     'ms-wor-51': [[1243], [], [], 1],       # Tzen
     'ms-wor-52': [[1192], [], [], 1],       # Mobliz
     'ms-wor-53': [[1242], [], [], 1],       # Daryl's Tomb
@@ -1185,6 +1185,7 @@ shared_exits = {
 
     1245: [1246, 1247],   # Albrook WoB to world map
     1249: [1250, 1251],   # Albrook WoR to world map
+    1250: [1251],         # Albrook WoR north to world map
 
     1199: [1200],    # Nikeah WoB to world map
     5199: [5200],    # Nikeah WoR to world map
@@ -1240,6 +1241,8 @@ dungeon_crawl_split_exits = {
 
     1209: [1210],    # Kohlingen WoB to world map
     1211: [1212],    # Kohlingen WoR to world map
+
+    1249: [1250],    # Albrook WoR to world map
 
 }
 
