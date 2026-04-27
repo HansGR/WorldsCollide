@@ -342,7 +342,9 @@ class Events():
         disable_chocobo_stables(self.rom, self.dialogs, self.args)
 
         # Wire up SF / Nikeah / Albrook ferry network based on which ports are mapped
-        fix_ferry_connections(self.rom, self.dialogs, self.maps, ruin_map, self.args)
+        # Reuse Kefka @ Narshe boss for the possible sea boss attack
+        sea_boss_id = self.enemies.get_event_boss("Kefka (Narshe)")
+        fix_ferry_connections(self.rom, self.dialogs, self.maps, ruin_map, self.args, sea_boss_id)
 
     def no_free_heals_mod(self):
         """Apply -nfh changes that wrap up free-heal removals/restrictions.

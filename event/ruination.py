@@ -6584,11 +6584,81 @@ def _ferry_build_prompt(src_port, destinations):
     )
 
 
-def _ferry_build_trip(src_port, dst_port):
+def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     """Allocate a Bank.CA subroutine that runs the boat-trip animation."""
     src = FERRY_PORTS[src_port]
     dst = FERRY_PORTS[dst_port]
+
+    # Do some math to determine route for animation.  Elbow is at (223, 200).
+    ANIMATION_XY = {
+        'SouthFigaro': [216, 200, direction.RIGHT],
+        'Nikeah': [238, 200, direction.LEFT],
+        'Albrook': [223, 216, direction.UP],
+    }
+    elbow = [223, 200]
+    delta_xy_1 = [elbow[a] - ANIMATION_XY[src_port][a] for a in
+                  range(2)]  # first part of journey (positive is right/down)
+    delta_xy_2 = [ANIMATION_XY[dst_port][a] - elbow[a] for a in range(2)]  # second part of journey
+
+    # Helper functions
+    get_dir = lambda x: [direction.RIGHT, direction.LEFT, direction.DOWN, direction.UP][
+        [x[0] > 0, x[0] < 0, x[1] > 0, x[1] < 0].index(True)]
+    get_distance = lambda x: abs(x[x.index(0) - 1])
+
     code = [
+        # Begin sea journey
+        field.FadeOutSong(8),
+        field.FadeOutScreen(),
+        field.StartSong(0x3a),  # "Tide"
+        field.LoadMap(map_id=0x001, x=ANIMATION_XY[0], y=ANIMATION_XY[1], direction=ANIMATION_XY[src_port][2],
+                      default_music=False, entrance_event=False, airship=False, fade_in=True),
+        field_entity.SetSpeed(field_entity.Speed.SLOW),
+        vehicle.BecomeShip(),
+    ]
+
+    # Go to elbow
+    dist = get_distance(delta_xy_1)
+    while dist > 8:
+        code += [
+            vehicle.MoveForward(direction=get_dir(delta_xy_1), distance=8)
+        ]
+        dist -= 8
+    if dist > 0:
+        code += [
+            vehicle.MoveForward(direction=get_dir(delta_xy_1), distance=dist)
+        ]
+    # Sea Battle?  We don't have a background for it (0x0d = raft, 0x29 = airship wor).  Might add some nice danger.
+    # Can we capture an unused boss & have it trigger 3/8 of the time, once?
+    # We are using the "Kefka (Narshe)" boss for this, since Kefka@Narshe event is not used in Ruination.
+    #   Ultros/Chupon --> Sealed Gate event
+    #   DoomGaze --> Falcon event
+    #   Kefka@Narshe --> Sea boss
+    # So we can set event_bit.FINISHED_NARSHE_BATTLE to track it.
+    SHIP_BOSS_BATTLE_PROBABILITY = 0.375
+    skip_boss_chance = int(SHIP_BOSS_BATTLE_PROBABILITY * 255)
+    if boss_pack_id is not None:
+        code += [
+            vehicle.BranchIfEventBitSet(event_bit.FINISHED_NARSHE_BATTLE, "SKIP_BATTLE"),
+            vehicle.BranchProbability(skip_boss_chance, "SKIP_BATTLE"),
+            vehicle.InvokeBattle(boss_pack_id, background=0x0d),
+            vehicle.SetEventBit(event_bit.FINISHED_NARSHE_BATTLE),
+            "SKIP_BATTLE",
+        ]
+
+    # Complete journey
+    dist = get_distance(delta_xy_2)
+    while dist > 8:
+        code += [
+            vehicle.MoveForward(direction=get_dir(delta_xy_2), distance=8)
+        ]
+        dist -= 8
+    if dist > 0:
+        code += [
+            vehicle.MoveForward(direction=get_dir(delta_xy_2), distance=dist)
+        ]
+
+    code += [
+        # Airship move for safety
         vehicle.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
         vehicle.LoadMap(0x01, direction.DOWN, default_music=False,
                         x=src['wor_dock'][0], y=src['wor_dock'][1],
@@ -6614,7 +6684,7 @@ def _ferry_install_disabled(rom, dialogs):
                       _ferry_disabled_patch(dialog_id))
 
 
-def _ferry_install_enabled(rom, dialogs, maps, mapped, args):
+def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
     """For each pair of mapped ports, build a trip subroutine and dispatch event."""
     # Promote the Albrook NPC if Albrook is on the network. Sprite is set here;
     # the visibility bit is flipped via init_event_bits in event/albrook_wob.py
@@ -6630,7 +6700,7 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args):
         for dst in mapped:
             if src == dst:
                 continue
-            trips[(src, dst)] = _ferry_build_trip(src, dst)
+            trips[(src, dst)] = _ferry_build_trip(src, dst, boss_pack_id)
 
     # For each port, build a dispatch event (DialogBranch with stay + 1 or 2 boats)
     # and patch the NPC's event slot with a Branch into it.
@@ -6668,7 +6738,7 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args):
             print(f"Ferry: trip {src}->{dst} at {addr:#x}")
 
 
-def fix_ferry_connections(rom, dialogs, maps, ruin_map, args):
+def fix_ferry_connections(rom, dialogs, maps, ruin_map, args, boss_pack_id=None):
     """Wire up the SF / Nikeah / Albrook ferry network for ruination mode.
 
     If 0 or 1 of the three ports has any reachable rooms on the map, every
@@ -6695,4 +6765,4 @@ def fix_ferry_connections(rom, dialogs, maps, ruin_map, args):
             print("Ferry: <2 ports mapped - all sailors disabled")
         return
 
-    _ferry_install_enabled(rom, dialogs, maps, mapped, args)
+    _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id)

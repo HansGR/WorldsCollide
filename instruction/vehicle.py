@@ -32,6 +32,16 @@ class ClearEventBit(_Instruction):
     def __str__(self):
         return super().__str__(hex(self.event_bit))
 
+class BranchIfEventBitSet(_Branch):
+    def __init__(self, event_bit, destination):
+        self.event_bit = event_bit
+        event_bit_arg = (event_bit | 0x8000).to_bytes(2, "little")
+
+        super().__init__(0xb0, [event_bit_arg], destination)
+
+    def __str__(self):
+        return super().__str__(hex(self.event_bit))
+
 class BranchIfEventBitClear(_Branch):
     def __init__(self, event_bit, destination):
         self.event_bit = event_bit
@@ -45,6 +55,30 @@ class BranchIfEventBitClear(_Branch):
 class Branch(BranchIfEventBitClear):
     def __init__(self, destination):
         super().__init__(event_bit.ALWAYS_CLEAR, destination)
+
+class _InvokeBattle(_Instruction):
+    def __init__(self, pack, background, battle_sound, battle_animation):
+        self.pack = pack
+
+        pack_arg = pack - 0x100
+        background_sound_animation = background
+        if not battle_sound:
+            background_sound_animation |= 0x40
+        if not battle_animation:
+            background_sound_animation |= 0x80
+
+        super().__init__(0xcf, pack_arg, background_sound_animation)
+
+    def __str__(self):
+        return super().__str__(str(self.pack))
+
+def InvokeBattle(pack, background = 0x3f, battle_sound = True, battle_animation = True):  # check_game_over = True
+    InvokeBattle = type("InvokeBattle", (_InvokeBattle,), {})
+    commands = [InvokeBattle(pack, background, battle_sound, battle_animation)]
+    #if check_game_over:
+    #    from instruction.field.functions import CHECK_GAME_OVER
+    #    commands.append(Call(CHECK_GAME_OVER))
+    return commands
 
 # Custom vehicle-script opcode 0xE1: BranchProbability.
 # Format: E1 cc dd_lo dd_mid dd_hi (5 bytes total).
@@ -212,3 +246,7 @@ class MoveForward(_Instruction):
 
     def __str__(self):
         return super().__str__(f"{str(self.direction)} {str(self.distance)}")
+
+class BecomeShip(_Instruction):
+    def __init__(self):
+        super().__init__(0xfc)
