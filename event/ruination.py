@@ -6524,12 +6524,16 @@ def fix_ferry_connections(rom, dialogs, ruin_map, args):
     Args:
         rom: The ROM object to modify
         dialogs: The Dialogs object to update dialog text
-        ruin_map: The ruination_map object containing AreasUsed
+        ruin_map: The ruination_map object
         args: Command line arguments (for debug flag)
     """
-    # Check if both South Figaro and Nikeah are mapped
-    south_figaro_mapped = 'SouthFigaro' in ruin_map.AreasUsed
-    nikeah_mapped = 'Nikeah' in ruin_map.AreasUsed
+    # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),
+    # because distribution can tag an area with a branch whose rooms already
+    # lived elsewhere — leaving the ferry enabled when South Figaro or Nikeah
+    # has no reachable rooms on the map.
+    actual_areas_used = ruin_map.compute_actual_areas_used()
+    south_figaro_mapped = 'SouthFigaro' in actual_areas_used
+    nikeah_mapped = 'Nikeah' in actual_areas_used
 
     if south_figaro_mapped and nikeah_mapped:
         if args.debug:
