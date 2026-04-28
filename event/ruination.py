@@ -6665,9 +6665,9 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     # Do some math to determine route for animation.  Elbow is at (223, 200).
     elbow = [228, 205]  # [223, 200].  Change destinations to be w.r.t elbow.
     ANIMATION_XY = {
-        'SouthFigaro': [-19, 0, direction.RIGHT],
-        'Nikeah': [19, 0, direction.LEFT],
-        'Albrook': [0, -11, direction.UP],
+        'SouthFigaro': [-12, 0, direction.RIGHT],
+        'Nikeah': [12, 0, direction.LEFT],
+        'Albrook': [0, 11, direction.UP],
     }
 
     delta_xy_1 = [-ANIMATION_XY[src_port][a] for a in range(2)]  # first part of journey (positive is right/down)
@@ -6712,8 +6712,8 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     #   DoomGaze --> Falcon event
     #   Kefka@Narshe --> Sea boss
     # So we can set event_bit.FINISHED_NARSHE_BATTLE to track it.
-    SHIP_BOSS_BATTLE_PROBABILITY = 0.375
-    skip_boss_chance = int(SHIP_BOSS_BATTLE_PROBABILITY * 255)
+    #SHIP_BOSS_BATTLE_PROBABILITY = 0.375
+    #skip_boss_chance = int(SHIP_BOSS_BATTLE_PROBABILITY * 255)
     #print(f'USING SEA BOSS BATTLE ID: {boss_pack_id}')
     if boss_pack_id is not None:
         code += [
@@ -6722,7 +6722,7 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
             #vehicle.InvokeBattle(pack=boss_pack_id, background=0x0d),  # Vehicle.InvokeBattle wasn't working.  Try something else.
             world.FadeLoadMap(map_id=0x009, direction=0, default_music=False, x=0, y=0, entrance_event=False,
                               fade_in=False),
-            field.InvokeBattle(pack=boss_pack_id, background=0x0d),
+            field.InvokeBattleType(pack=boss_pack_id, battle_type=field.BattleType.FRONT, background=0x0d),
             field.SetEventBit(event_bit.FINISHED_NARSHE_BATTLE),
             field.StartSong(0x3a),  # "Tide"
             field.LoadMap(map_id=0x001, x=elbow[0], y=elbow[1], direction=ANIMATION_XY[src_port][2],
@@ -6804,12 +6804,9 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
         # DialogBranch returns (Dialog, _DialogBranch, Return). Choice 1 is the
         # "stay" option (matches vanilla "Still need to shop."), so we route it
         # to the bare-Return stub at FERRY_STAY_RETURN_ADDR.
-        dispatch_code = list(field.DialogBranch(
-            dialog_id,
-            FERRY_STAY_RETURN_ADDR,
-            dest1,
-            dest2,
-        ))
+        dispatch_code = [field.DialogBranch(dialog_id=dialog_id, dest1=FERRY_STAY_RETURN_ADDR,
+                                            dest2=dest1, dest3=dest2),
+        ]
         space = Write(Bank.CA, dispatch_code, f"ruin ferry dispatch {src}")
         dispatch_addr = space.start_address
 
