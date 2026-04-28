@@ -1502,7 +1502,9 @@ exit_data_patch = {
 
     # ALBROOK
     1249: lambda info: set_dest_x(140,
-                       set_dest_y(208, info)),   # [49, "Albrook West to World Map WoR"],
+                       set_dest_y(208,
+                       set_y(2,
+                       set_size(20, info)))),   # [49, "Albrook West to World Map WoR"]. Avoid overlap with 1250.
     1250: lambda info: set_dest_x(140,
                        set_dest_y(208, info)),   # [49, "Albrook North to World Map WoR"],
     1251: lambda info: set_dest_x(140,
