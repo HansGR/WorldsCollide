@@ -3052,6 +3052,10 @@ class RuinationBranch(Network):
             # one remaining_door, just like a normal step-6 dead-end connection.
             # This restores the >=2 connected-warp invariant without risking
             # inescapable downstream nodes earlier in finalization.
+            # Step 4's terminus connect (and any prior step) may have merged the
+            # hub into a new compound node, so re-fetch hub_id before passing it
+            # into the digraph-aware classifier.
+            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
             while (len(connected_warps) < 2
                    and len(remaining_doors) > 0
@@ -3068,6 +3072,8 @@ class RuinationBranch(Network):
                 # Avoid double-counting if the warp was tracked as a dead end.
                 if warp_id in self.dead_ends:
                     self.dead_ends.remove(warp_id)
+                # connect() may have merged the warp into the hub; refresh.
+                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
                 connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
 
             # Skip entirely if no doors to connect
