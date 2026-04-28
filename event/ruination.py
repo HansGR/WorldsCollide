@@ -2212,18 +2212,15 @@ class RuinationBranch(Network):
             if warp_room is None:
                 continue
             warp_doors = [d for d in warp_room.doors if d not in self.protected]
-            warp_traps = [t for t in warp_room.traps if t not in self.protected]
             warp_pits = [p for p in warp_room.pits if p not in self.protected]
             if not warp_doors and not warp_pits:
                 continue
-            # Hallway filter: only connect warps with >=2 unprotected exits
-            # (doors + traps). Pits are entrances, not exits, so they don't
-            # count. Dead-end warps are handled by finalize_map step 6.
-            if (len(warp_doors) + len(warp_traps)) < 2:
+            # Hallway filter: skip dead-end warps (count [1,0,0], no locks).
+            # Connecting them here could leave a downstream node with no
+            # outbound exit; defer to finalize_map step 6 instead.
+            if self.is_dead_end(warp_id):
                 if self.verbose:
-                    vprint(f'\twarp rescue: deferring dead-end warp {warp_id} '
-                           f'(doors={warp_doors}, traps={warp_traps}, pits={warp_pits}) '
-                           f'to step 6')
+                    vprint(f'\twarp rescue: deferring dead-end warp {warp_id} to step 6')
                 continue
 
             shuffled_targets = list(targets)
