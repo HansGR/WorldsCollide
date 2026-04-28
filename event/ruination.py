@@ -6643,13 +6643,13 @@ def disable_chocobo_stables(rom, dialogs, args):
 FERRY_PORTS = {
     'SouthFigaro': {
         'display':        'South Figaro',
-        'npc_event_addr': 0x0a77d7,
+        'npc_event_addr': 0xa77d7,
         'dest_map':       0x5b,  'dest_spawn': (12, 11), 'dest_dir': direction.LEFT,
         'wor_dock':       (113, 96),
     },
     'Nikeah': {
         'display':        'Nikeah',
-        'npc_event_addr': 0x0a8cbb,
+        'npc_event_addr': 0xa8cbb,
         'dest_map':       0xbb,  'dest_spawn': (24, 11), 'dest_dir': direction.DOWN,
         'wor_dock':       (147, 77),
     },
@@ -6692,7 +6692,7 @@ FERRY_FLAVOR_OTHER_TEXTS = [
 ]
 
 # Vanilla "stay" return target — CA/5EB3 is just a single Return.
-FERRY_STAY_RETURN_ADDR = 0xca5eb3
+FERRY_STAY_RETURN_ADDR = 0xa5eb3
 
 FERRY_DISABLED_MESSAGE = (
     "Some of us went out to map the sea, but no one returned.<end>"
@@ -6785,7 +6785,7 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
         code += [
             world.BranchIfEventBitSet(event_bit.FINISHED_NARSHE_BATTLE, "SKIP_BATTLE"),
             #vehicle.BranchProbability(skip_boss_chance, "SKIP_BATTLE"),
-            #vehicle.InvokeBattle(pack=boss_pack_id, background=0x0d),  # Vehicle.InvokeBattle wasn't working.  Try something else.
+            #vehicle.InvokeBattle(pack=boss_pack_id, background=0x0d),  # Vehicle.InvokeBattle wasn't working.
             world.FadeLoadMap(map_id=0x009, direction=0, default_music=False, x=0, y=0, entrance_event=False,
                               fade_in=False),
             field.InvokeBattleType(pack=boss_pack_id, battle_type=field.BattleType.FRONT, background=0x0d),
