@@ -6671,6 +6671,26 @@ FERRY_PROMPT_DIALOG = {
     'Albrook':     1925,   # vanilla: Leo cargo-ship line ($0785)
 }
 
+# Per-port flavor dialog shown before the ferry prompt while the sea boss
+# (event_bit.FINISHED_NARSHE_BATTLE) is undefeated. IDs sit in the vanilla
+# Maduin/Madonna esper-world conversation block, which never plays in ruination
+# (see ruination_start_game_mod for adjacent claimed IDs $0590/$0591).
+FERRY_FLAVOR_DIALOG = {
+    'SouthFigaro': 0x0592,
+    'Nikeah':      0x0593,
+    'Albrook':     0x0594,
+}
+
+FERRY_FLAVOR_TOWN1_TEXT = (
+    "We sent out a ship, but it was destroyed by a terrible monster!<end>"
+)
+
+# {town1} is replaced with the display name of the chosen TOWN1 port.
+FERRY_FLAVOR_OTHER_TEXTS = [
+    "A sailor from {town1} washed up... his ship was wrecked with all hands!<end>",
+    "The waterways are guarded by a great beast! Can you help us?<end>",
+]
+
 # Vanilla "stay" return target — CA/5EB3 is just a single Return.
 FERRY_STAY_RETURN_ADDR = 0xca5eb3
 
@@ -6828,6 +6848,28 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
         port = FERRY_PORTS['Albrook']
         maps.get_npc(port['sailor_map'], port['sailor_npc_id']).sprite = port['sailor_sprite']
 
+    # Pre-boss flavor dialog: pick one mapped port as TOWN1 (the "we sent out a
+    # ship..." sailor); the other(s) get the alternative lines naming TOWN1.
+    # When all three ports are mapped, the two non-TOWN1 sailors get distinct
+    # alternative lines (one each, shuffled). Only mapped ports get text written.
+    town1_port = random.choice(mapped)
+    town1_display = FERRY_PORTS[town1_port]['display']
+    other_ports = [p for p in mapped if p != town1_port]
+    if len(other_ports) >= 2:
+        other_texts = random.sample(FERRY_FLAVOR_OTHER_TEXTS, len(other_ports))
+    else:
+        other_texts = [random.choice(FERRY_FLAVOR_OTHER_TEXTS)]
+    other_text_for = dict(zip(other_ports, other_texts))
+    flavor_dialog = {}
+    for port in mapped:
+        flavor_id = FERRY_FLAVOR_DIALOG[port]
+        if port == town1_port:
+            text = FERRY_FLAVOR_TOWN1_TEXT
+        else:
+            text = other_text_for[port].format(town1=town1_display)
+        dialogs.set_text(flavor_id, text)
+        flavor_dialog[port] = flavor_id
+
     # Build all ordered trip subroutines we will need.
     trips = {}
     for src in mapped:
@@ -6850,8 +6892,14 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
         # DialogBranch returns (Dialog, _DialogBranch, Return). Choice 1 is the
         # "stay" option (matches vanilla "Still need to shop."), so we route it
         # to the bare-Return stub at FERRY_STAY_RETURN_ADDR.
-        dispatch_code = [field.DialogBranch(dialog_id=dialog_id, dest1=FERRY_STAY_RETURN_ADDR,
-                                            dest2=dest1, dest3=dest2),
+        # Pre-boss: show flavor dialog before the prompt; skip once the sea boss
+        # is defeated (event_bit.FINISHED_NARSHE_BATTLE).
+        dispatch_code = [
+            field.BranchIfEventBitSet(event_bit.FINISHED_NARSHE_BATTLE, "FERRY_PROMPT"),
+            field.Dialog(flavor_dialog[src]),
+            "FERRY_PROMPT",
+            field.DialogBranch(dialog_id=dialog_id, dest1=FERRY_STAY_RETURN_ADDR,
+                               dest2=dest1, dest3=dest2),
         ]
         space = Write(Bank.CA, dispatch_code, f"ruin ferry dispatch {src}")
         dispatch_addr = space.start_address
