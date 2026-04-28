@@ -2190,12 +2190,12 @@ class RuinationBranch(Network):
         """Attempt to integrate an orphan warp room into the branch.
 
         Only considers "hallway" warp rooms with at least 2 unprotected exits
-        (doors + traps + pits). Connecting such a warp consumes one exit on
-        each side and leaves the warp room with at least one outgoing exit, so
-        the branch's overall exit count is unchanged (or grows). Dead-end warp
-        rooms (single exit) are deferred to finalize_map step 6, where they
-        are connected against `remaining_doors` so they cannot create an
-        inescapable dead end.
+        (doors + traps; pits are entrances, not exits). Connecting such a warp
+        consumes one exit on each side and leaves the warp room with at least
+        one outgoing exit, so the branch's overall exit count is unchanged
+        (or grows). Dead-end warp rooms are deferred to finalize_map step 6,
+        where they are connected against `remaining_doors` so they cannot
+        create an inescapable dead end.
 
         Tries each eligible warp (in random order) against the hub and any
         downstream node. A door<->door pairing is preferred; falls back to
@@ -2216,9 +2216,10 @@ class RuinationBranch(Network):
             warp_pits = [p for p in warp_room.pits if p not in self.protected]
             if not warp_doors and not warp_pits:
                 continue
-            # Hallway filter: only connect warps with >=2 unprotected exits.
-            # Dead-end warps (single exit) are handled by finalize_map step 6.
-            if (len(warp_doors) + len(warp_traps) + len(warp_pits)) < 2:
+            # Hallway filter: only connect warps with >=2 unprotected exits
+            # (doors + traps). Pits are entrances, not exits, so they don't
+            # count. Dead-end warps are handled by finalize_map step 6.
+            if (len(warp_doors) + len(warp_traps)) < 2:
                 if self.verbose:
                     vprint(f'\twarp rescue: deferring dead-end warp {warp_id} '
                            f'(doors={warp_doors}, traps={warp_traps}, pits={warp_pits}) '
@@ -3048,39 +3049,28 @@ class RuinationBranch(Network):
             # we still have keyless dead ends available. The LAST connection must be keyless.
             #
             # (6.0) Re-check warp room balance. Hallway warps were already handled
-            # by _connect_orphan_warp_room; any orphan warps remaining here are
-            # dead-end variety (single exit). Connect them now by consuming a
-            # remaining_door + the warp's only door, just like a normal step-6
-            # dead-end connection. This restores the >=2 connected-warp invariant
-            # without risking inescapable downstream nodes earlier in finalization.
+            # by _connect_orphan_warp_room; only dead-end orphans (per
+            # is_dead_end: exactly 1 door, 0 traps, 0 pits, 0 locks) are eligible
+            # to be wired up here. Each such warp's single door is connected to
+            # one remaining_door, just like a normal step-6 dead-end connection.
+            # This restores the >=2 connected-warp invariant without risking
+            # inescapable downstream nodes earlier in finalization.
             connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
-            while (len(connected_warps) < 2 and len(unconnected_warps) > 0
-                   and len(remaining_doors) > 0):
-                random.shuffle(unconnected_warps)
-                connected_one = False
-                for warp_id in unconnected_warps:
-                    warp_room = self.rooms.get_room(warp_id)
-                    if warp_room is None:
-                        continue
-                    warp_doors = [d for d in warp_room.doors if d not in self.protected]
-                    if not warp_doors:
-                        continue
-                    this_exit = remaining_doors.pop()
-                    this_conn = random.choice(warp_doors)
-                    if self.verbose:
-                        vprint(f'(6) connecting dead-end orphan warp room: '
-                               f'{this_exit} --> {warp_id} door {this_conn}')
-                    self.connect(this_exit, this_conn)
-                    # Avoid double-counting if the warp was tracked as a dead end.
-                    if warp_id in self.dead_ends:
-                        self.dead_ends.remove(warp_id)
-                    connected_one = True
-                    break
-                if not connected_one:
-                    if self.verbose:
-                        vprint('(6) no orphan warp room could be connected via door; '
-                               'proceeding with regular dead-end connections')
-                    break
+            while (len(connected_warps) < 2
+                   and len(remaining_doors) > 0
+                   and any(self.is_dead_end(w) for w in unconnected_warps)):
+                dead_end_warps = [w for w in unconnected_warps if self.is_dead_end(w)]
+                warp_id = random.choice(dead_end_warps)
+                warp_room = self.rooms.get_room(warp_id)
+                this_exit = remaining_doors.pop()
+                this_conn = warp_room.doors.pop()
+                if self.verbose:
+                    vprint(f'(6) connecting dead-end orphan warp room: '
+                           f'{this_exit} --> {warp_id} door {this_conn}')
+                self.connect(this_exit, this_conn)
+                # Avoid double-counting if the warp was tracked as a dead end.
+                if warp_id in self.dead_ends:
+                    self.dead_ends.remove(warp_id)
                 connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
 
             # Skip entirely if no doors to connect
