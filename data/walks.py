@@ -6,6 +6,15 @@ import numpy as np
 from log.verbose import vprint
 
 
+class NetworkRecursionError(Exception):
+    """Raised when a network traversal hits unexpected infinite recursion.
+
+    The message contains a snapshot of the network state (nodes, edges,
+    residual 2-cycles, map[0]/map[1]) to aid post-mortem diagnosis.
+    """
+    pass
+
+
 class Network:
     verbose = False
 
@@ -114,6 +123,18 @@ class Network:
                 loop_room = self.compress_loop(loop)
                 if connect_verbose:
                     print('\t\t\tcompressed loop', loop_room.id)
+
+            # Sanity check: after compression, no 2-cycles should remain.
+            # If they do, get_upstream/downstream_nodes would loop forever
+            # were it not for their iteration cap. Surface the violation
+            # immediately so we can localise the cause.
+            if self.verbose:
+                edge_set = set(self.net.edges)
+                residual = [(u, v) for (u, v) in edge_set
+                            if u != v and (v, u) in edge_set and (str(u) < str(v))]
+                if residual:
+                    vprint(f'\t\t\tWARNING: residual 2-cycle edge(s) after '
+                           f'connect({d1},{d2})/compress_loop: {residual}')
 
             if state != 'forced':
                 if loop:
@@ -289,21 +310,48 @@ class Network:
         return self.flatten_paths([visited])
 
     def get_upstream_nodes(self, room_id, visited=None):
-        """Get nodes upstream from room_id"""
+        """Get nodes upstream from room_id (iterative).
+
+        Preserves the original recursive semantics:
+        - When a leaf is reached, the accumulated emit-path is returned.
+        - 2-way edges (cur_room <-> p) skip past p without including it in
+          the emit-path, but DO mark p as visited so we cannot infinite-loop.
+        Duplicate emissions are intentional: a node reachable via multiple
+        path-disjoint chains appears once per chain.
+        """
         if visited is None:
             visited = []
-
-        pred = [p for p in self.net.predecessors(room_id) if p not in visited]
-        if len(pred) > 0:
-            temp = []
-            for p in pred:
-                if room_id in self.net.predecessors(p):
-                    # Ignore simple 2-way doors
-                    temp += self.get_upstream_nodes(p, visited)
-                else:
-                    temp += self.get_upstream_nodes(p, visited + [p])
-            return temp
-        return visited
+        try:
+            # Stack entry: (cur_room, visited_path, emit_path).
+            # `visited_path` blocks revisits along the current branch;
+            # `emit_path` is what gets appended to the result at a leaf.
+            stack = [(room_id, list(visited), list(visited))]
+            result = []
+            max_iterations = 200000   # safety net; real graphs are tiny
+            iterations = 0
+            while stack:
+                iterations += 1
+                if iterations > max_iterations:
+                    raise NetworkRecursionError(self._format_recursion_diagnostics(
+                        'get_upstream_nodes', room_id,
+                        extra=f'iteration limit {max_iterations} exceeded'))
+                cur_room, cur_visited, cur_emit = stack.pop()
+                pred = [p for p in self.net.predecessors(cur_room) if p not in cur_visited]
+                if not pred:
+                    result += cur_emit
+                    continue
+                for p in pred:
+                    new_visited = cur_visited + [p]
+                    if cur_room in self.net.predecessors(p):
+                        # 2-way edge: skip p in the emitted path but mark it
+                        # visited so we cannot bounce back across the edge.
+                        stack.append((p, new_visited, cur_emit))
+                    else:
+                        stack.append((p, new_visited, cur_emit + [p]))
+            return result
+        except RecursionError as e:
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_upstream_nodes', room_id)) from e
 
     def get_downstream_paths(self, room_id, visited=None):
         """Return list of paths heading downstream from room_id"""
@@ -323,21 +371,43 @@ class Network:
         return self.flatten_paths([visited])
 
     def get_downstream_nodes(self, room_id, visited=None):
-        """Get nodes downstream from room_id"""
+        """Get nodes downstream from room_id (iterative).
+
+        Mirror of get_upstream_nodes; preserves the original recursive
+        semantics (including duplicate emissions for nodes reachable via
+        multiple path-disjoint chains) and 2-way edge skipping, while
+        always tracking visited so traversal cannot infinite-loop.
+        """
         if visited is None:
             visited = []
-
-        succ = [s for s in self.net.successors(room_id) if s not in visited]
-        if len(succ) > 0:
-            temp = []
-            for s in succ:
-                if room_id in self.net.successors(s):
-                    # Ignore simple 2-way doors
-                    temp += self.get_downstream_nodes(s, visited)
-                else:
-                    temp += self.get_downstream_nodes(s, visited + [s])
-            return temp
-        return visited
+        try:
+            stack = [(room_id, list(visited), list(visited))]
+            result = []
+            max_iterations = 200000
+            iterations = 0
+            while stack:
+                iterations += 1
+                if iterations > max_iterations:
+                    raise NetworkRecursionError(self._format_recursion_diagnostics(
+                        'get_downstream_nodes', room_id,
+                        extra=f'iteration limit {max_iterations} exceeded'))
+                cur_room, cur_visited, cur_emit = stack.pop()
+                succ = [s for s in self.net.successors(cur_room) if s not in cur_visited]
+                if not succ:
+                    result += cur_emit
+                    continue
+                for s in succ:
+                    new_visited = cur_visited + [s]
+                    if cur_room in self.net.successors(s):
+                        # 2-way edge: skip s in the emitted path but mark it
+                        # visited so we cannot bounce back across the edge.
+                        stack.append((s, new_visited, cur_emit))
+                    else:
+                        stack.append((s, new_visited, cur_emit + [s]))
+            return result
+        except RecursionError as e:
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_downstream_nodes', room_id)) from e
 
     def get_elements(self, node_list, element_type):
         elements = []
@@ -932,6 +1002,38 @@ class Network:
             room = self.rooms.get_room(node)
             nc = room.count
             return nc[:3] == [1, 0, 0] and nc[4] == 0
+
+    def _format_recursion_diagnostics(self, method_name, room_id, extra=''):
+        """Build a snapshot of network state for post-mortem of a runaway traversal.
+
+        Used by NetworkRecursionError so the wrapper that catches finalize_map
+        failures has something to chew on instead of "maximum recursion depth
+        exceeded".
+        """
+        try:
+            nodes = list(self.net.nodes)
+            edges = list(self.net.edges)
+            edge_set = set(edges)
+            two_cycles = sorted(
+                {tuple(sorted([str(u), str(v)])) for u, v in edges
+                 if u != v and (v, u) in edge_set}
+            )
+            lines = []
+            lines.append(f"{method_name} could not terminate on room {room_id!r}")
+            if extra:
+                lines.append(f"  ({extra})")
+            lines.append(f"  Nodes ({len(nodes)}): {nodes}")
+            lines.append(f"  Edges ({len(edges)}): {edges}")
+            lines.append(f"  Uncompressed 2-cycles ({len(two_cycles)}): {two_cycles}")
+            try:
+                lines.append(f"  Door map ({len(self.map[0])}): {self.map[0]}")
+                lines.append(f"  Trap map ({len(self.map[1])}): {self.map[1]}")
+            except Exception:
+                pass
+            return '\n'.join(lines)
+        except Exception as fmt_err:
+            return (f"{method_name} could not terminate on room {room_id!r}; "
+                    f"diagnostic formatting also failed: {fmt_err!r}")
 
     def count_unprotected(self, room_id):
         """Count including locked elements"""
