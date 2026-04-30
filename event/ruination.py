@@ -5117,9 +5117,12 @@ class ruination_map():
                         for new_reward in unlocked_rewards:
                             if self.verbose:
                                 vprint('\tUnlocked an available reward!', new_reward[0], 'on branch', v[0])
-                            # Add to branch_checks so it can be properly removed during processing
+                            # Skip if apply_key already added this reward via
+                            # CHARACTER_LOCKED_REWARDS/REWARD_OWNERS — otherwise
+                            # branch_checks and RewardsAvailable double-count.
+                            if new_reward[0] in self.branch_checks[v[0]]:
+                                continue
                             self.branch_checks[v[0]].append(new_reward[0])
-                            # Add to rewards available (was never counted when banked)
                             if new_reward[1].possible_types & RewardType.CHARACTER:
                                 self.RewardsAvailable[0] += 1
                             if new_reward[1].possible_types & RewardType.ESPER:
@@ -5148,8 +5151,10 @@ class ruination_map():
                         for entry in to_unlock:
                             entry_branch_id, entry_rewards = entry
                             for r in entry_rewards:
-                                if r[0] not in self.branch_checks[entry_branch_id]:
-                                    self.branch_checks[entry_branch_id].append(r[0])
+                                if r[0] in self.branch_checks[entry_branch_id]:
+                                    # apply_key already accounted for this one
+                                    continue
+                                self.branch_checks[entry_branch_id].append(r[0])
                                 if r[1].possible_types & RewardType.CHARACTER:
                                     self.RewardsAvailable[0] += 1
                                 if r[1].possible_types & RewardType.ESPER:
