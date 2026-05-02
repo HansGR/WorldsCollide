@@ -293,11 +293,15 @@ class Events():
         # Enable limited inventory for ruination shops if flag is set.
         # compute_pack_sizes must run here (after dried meat assignment) so that
         # replaced items get the correct pack size for dried meat.
+        # Apply to all shops (not just accessible_shops) so any shop reachable
+        # via door rando — including ones not tracked in accessible_shops, like
+        # the phantom train shop — runs with limited inventory.
         if self.args.shop_limited_inventory:
             self.shops.compute_pack_sizes()
-            self.shops.enable_limited_shops(ruin_map.accessible_shops)
+            all_shop_ids = [shop.id for shop in self.shops.all_shops]
+            self.shops.enable_limited_shops(all_shop_ids)
             if self.args.debug:
-                print(f'Limited inventory enabled for {len(ruin_map.accessible_shops)} shops')
+                print(f'Limited inventory enabled for {len(all_shop_ids)} shops')
 
         # Check state of reward_slots
         if self.args.debug:
