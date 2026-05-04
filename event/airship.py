@@ -501,7 +501,11 @@ class Airship(Event):
                             field_entity.Pause(6),
                             field_entity.AnimateAttack(),
                             ),
-            Read(0xa476a, 0xa478c),  # animate takeoff, load falcon map
+            #Read(0xa476a, 0xa478c),  # animate takeoff, load falcon map
+            # Need to manually add a "turn off minimap" here for aesthetics!
+            Read(0xa476a, 0xa4780),  # animate takeoff, load falcon map
+            world.HideMinimap(),
+            Read(0xa4781, 0xa478c),  # animate takeoff, load falcon map
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.SetPosition(16, 8),
                             field_entity.AnimateAttack()
