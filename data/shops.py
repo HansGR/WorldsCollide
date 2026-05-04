@@ -746,7 +746,7 @@ class Shops():
             # so it runs AFTER assign_dried_meats_ruination modifies shop items.
             if not self.args.ruination_mode:
                 self.compute_pack_sizes()
-                all_shop_ids = [shop.id for shop in self.all_shops]
+                all_shop_ids = [shop.id for shop in self.shops]
                 self.enable_limited_shops(all_shop_ids)
 
     def log(self):

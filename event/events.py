@@ -298,7 +298,7 @@ class Events():
         # the phantom train shop — runs with limited inventory.
         if self.args.shop_limited_inventory:
             self.shops.compute_pack_sizes()
-            all_shop_ids = [shop.id for shop in self.shops.all_shops]
+            all_shop_ids = [shop.id for shop in self.shops.shops]  # don't use shops.all_shops, some are inaccessible
             self.shops.enable_limited_shops(all_shop_ids)
             if self.args.debug:
                 print(f'Limited inventory enabled for {len(all_shop_ids)} shops')
