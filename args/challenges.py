@@ -119,7 +119,7 @@ def options(args):
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
         ("No Saves", args.no_saves, "no_saves"),
-        ("Require Umaro", args.require_umaro),
+        ("Require Umaro", args.require_umaro, "require_umaro"),
     ]
         
     return opts
