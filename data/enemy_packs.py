@@ -3,12 +3,12 @@ from data.structures import DataArray
 import data.bosses as bosses
 
 class EnemyPacks():
-    # the first 256 enemy packs are groups of 4 formations
+    # the first 256 enemy packs are groups of 4 formations -- these are the Battle -> "Random Battle Groups" in ff6tools
     PACK4_START = 0xf4800
     PACK4_END = 0xf4fff
     PACK4_SIZE = 8
 
-    # the next 256 enemy packs are groups of 2 formations
+    # the next 256 enemy packs are groups of 2 formations -- these are the Battle -> "Event Battle Groups" in ff6tools
     PACK2_START = 0xf5000
     PACK2_END = 0xf53ff
     PACK2_SIZE = 4
@@ -150,9 +150,11 @@ class EnemyPacks():
         from constants.objectives.conditions import names as possible_condition_names
 
         boss_condition_name = "Boss"
+        bosses_condition_name = "Bosses"
         dragon_condition_name = "Dragon"
         dragons_condition_name = "Dragons"
         assert boss_condition_name in possible_condition_names
+        assert bosses_condition_name in possible_condition_names
         assert dragon_condition_name in possible_condition_names
         assert dragons_condition_name in possible_condition_names
 
@@ -160,6 +162,7 @@ class EnemyPacks():
         required_dragon_formations = set()
         required_statue_formations = set()
 
+        min_boss_formations = 0
         min_dragon_formations = 0
         for objective in objectives:
             for condition in objective.conditions:
@@ -169,15 +172,41 @@ class EnemyPacks():
                         required_statue_formations.add(formation)
                     else:
                         required_boss_formations.add(formation)
+                # if this condition is a set number of bosses, make sure we always get the highest amount for the minimum req # of formations
+                elif condition.NAME == bosses_condition_name and condition.count > min_boss_formations:
+                    min_boss_formations = condition.count
                 elif condition.NAME == dragon_condition_name:
                     required_dragon_formations.add(condition.dragon_formation)
                 elif condition.NAME == dragons_condition_name and condition.count > min_dragon_formations:
                     min_dragon_formations = condition.count
 
+        # amount of bosses needed is the minimum from above minus the required bosses + required statues
+        boss_formations_needed = min_boss_formations - (len(required_boss_formations) + len(required_statue_formations))
+        # if the extra required number needed non-zero
+        if boss_formations_needed > 0:
+            # initialize all boss formations set
+            all_boss_formations = set(bosses.normal_formation_name)
+            # remaining bosses is all bosses - required bosses | required statues
+            required_formations = set(required_boss_formations | required_statue_formations)
+            remaining_boss_formations = sorted(all_boss_formations - required_formations)
+            # the random boss formation list is a sample of the remaining bosses for the amount needed to fulfill objectives
+            random_boss_formations = random.sample(remaining_boss_formations, boss_formations_needed)
+            # add these boss formations into the appropriate set 
+            # (required_boss_formations or required_statue_formations)
+            for formation_id in random_boss_formations:
+                # if this formation is a statue
+                if formation_id in bosses.statue_formation_name:
+                    # add to required statue formations
+                    required_statue_formations.add(formation_id)
+                # else a regular boss
+                else:
+                    # add to required boss formations
+                    required_boss_formations.add(formation_id)
+
         dragon_formations_needed = min_dragon_formations - len(required_dragon_formations)
         if dragon_formations_needed > 0:
             all_dragon_formations = set(bosses.dragon_formation_name)
-            remaining_dragon_formations = list(all_dragon_formations - required_dragon_formations)
+            remaining_dragon_formations = sorted(all_dragon_formations - required_dragon_formations)
             random_dragon_formations = random.sample(remaining_dragon_formations, dragon_formations_needed)
             required_dragon_formations |= set(random_dragon_formations)
 
@@ -243,11 +272,14 @@ class EnemyPacks():
         import random
         for pack_id in packs:
             if random.random() < boss_percent:
+                formation = self.formations.get_random_boss(exclude_bosses) # outside of the below for loop, this ensures that there's no variability within fixed encounters within the same seed
                 for formation_index in range(self.packs[pack_id].FORMATION_COUNT):
-                    self.packs[pack_id].formations[formation_index] = self.formations.get_random_boss(exclude_bosses)
+                    self.packs[pack_id].formations[formation_index] = formation
             else:
+                formation = self.formations.get_random_normal() # outside of the below for loop, this ensures that there's no variability within fixed encounters within the same seed
                 for formation_index in range(self.packs[pack_id].FORMATION_COUNT):
-                    self.packs[pack_id].formations[formation_index] = self.formations.get_random_normal()
+                    # TODO: update get_random_normal to use more of the otherwise unused Fixed encounters
+                    self.packs[pack_id].formations[formation_index] = formation
 
     def chupon_packs(self, packs):
         # Replace all packs with the CHUPON formation
@@ -256,19 +288,20 @@ class EnemyPacks():
                 self.packs[pack_id].formations[formation_index] = self.formations.CHUPON
 
     def randomize_fixed(self):
+        # TODO: assign each check enough unused "packs" to eliminate variability within the same seed
         lete_river = [263, 264] # nautiloid, exocite, pterodon
         imperial_camp = [272, 298, 300, 269, 270] # soldier, dogs, templar/soldier, final 3 battles
         doma_wob = [299] # soldier
-        phantom_train = [303] # ghost (siegfried unrandomized for style)
-        serpent_trench = [275, 276, 277] # anguiform, actaneon, aspik
+        phantom_train = [303] # ghost (siegfried [365] unrandomized for style)
+        serpent_trench = [275, 276, 277, 410, 411, 412, 413] # anguiform, actaneon, aspik, unused, unused, unused, unused
         narshe_battle = [278, 279, 280] # brown and green soldiers, rider
-        opera_house = [281] # sewer rat, vermin
+        opera_house = [281, 414] # sewer rat/vermin, unused
         vector = [257, 285, 284] # guards, garm, commando, protoarmor, pipsqueak
         mine_cart = [297, 400] # mag roaders
         imperial_base = [295, 296] # soldier and magitek
         sealed_cave = [405] # ninja
-        burning_house = [301, 287] # balloon (x4, x3)
-        iaf = [382] # sky armor / spit fire
+        burning_house = [301, 287, 415] # balloon (x4, x3), unused
+        iaf = [382, 416] # sky armor / spit fire, unused
         floating_continent_escape = [397, 398, 399] # naughty
         owzer_mansion = [402, 403, 407, 404] # dahling, nightshade, souldancer, still life
         moogle_defense = [261] # vomammoth
@@ -352,6 +385,17 @@ class EnemyPacks():
             for formation_index in range(pack.FORMATION_COUNT):
                 pack.extra_formations[formation_index] = False
 
+    def pad_enemy_packs(self):
+        # add more random groups to the otherwise limited event battle groups
+        from data.enemy_battle_groups import unused_event_battle_groups
+        for pack in self.packs:
+            if pack.FORMATION_COUNT == 2:
+                # pack formation 0, 0 is Lobo -- it fills out unused spaces. Id 0, though, is MIAB Lobo, which we want to keep.
+                if (pack.formations == [0, 0] and pack.id > 0) or (pack.id in unused_event_battle_groups):
+                    # Add random formations to the empty pack
+                    this_formation = self.formations.get_random_normal()
+                    pack.formations = [this_formation, this_formation]
+
     def mod(self):
         self.event_boss_replacements = {
             self.DOOM_GAZE: self.DOOM_GAZE,
@@ -365,6 +409,8 @@ class EnemyPacks():
 
         self._handle_original_shuffle_dragons()
         self._handle_original_shuffle_statues()
+
+        self.pad_enemy_packs() # keep this before randomized_fixed, as this pads with normal enemies, whereas that may add bosses
 
         if not self.args.fixed_encounters_original:
             self.randomize_fixed()
