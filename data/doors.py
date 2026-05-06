@@ -234,7 +234,7 @@ class Doors():
         elif self.args.door_randomize_each:  # -dre
             # Randomize all areas separately
             for key in ROOM_SETS.keys():
-                if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW', 'DungeonCrawl']:
+                if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW', 'DungeonCrawl', 'Ruination']:
                     if self.args.map_shuffle:
                         # Check for _mapsafe
                         if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
