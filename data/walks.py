@@ -3,7 +3,7 @@ import networkx as nx
 import random
 from copy import deepcopy
 import numpy as np
-from log.verbose import vprint
+from log.verbose import vprint, is_enabled as _verbose_enabled
 
 
 class NetworkRecursionError(Exception):
@@ -16,7 +16,16 @@ class NetworkRecursionError(Exception):
 
 
 class Network:
-    verbose = False
+    @property
+    def verbose(self):
+        return _verbose_enabled()
+
+    @verbose.setter
+    def verbose(self, value):
+        # Verbose output is controlled centrally by -debug / -debug-verbose.
+        # The setter is kept for backwards compatibility with callers that
+        # still flip self.verbose; assignments are ignored.
+        pass
 
     def __init__(self, rooms):
         self.original_room_ids = list(rooms)  # Store original IDs
