@@ -82,12 +82,6 @@ class PhantomTrain(Event):
             field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
         )
 
-        sabin_path = self.characters.get_character_path(self.characters.SABIN)
-        veldt_gate = self.events["Veldt"].character_gate()
-        if veldt_gate in sabin_path and self.args.shop_dried_meat == 1:
-            # sabin requires veldt gate character and there is only one dried meat in shops
-            # make sure it is not in the phantom train
-            self.shops.no_dried_meat_phantom_train()
 
     def _load_world_map(self):
         src = [field.FadeOutSong(32)]
@@ -149,6 +143,7 @@ class PhantomTrain(Event):
             esper_item_instructions,
 
             field.HideEntity(ghost_npc_id),
+            field.RefreshEntities(),
             field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
             field.FinishCheck(),
             field.Return(),
@@ -172,6 +167,7 @@ class PhantomTrain(Event):
         space.write(
             field.ReturnIfAll(return_conditions),
             field.HideEntity(ghost_npc_id),
+            field.RefreshEntities(),
             field.Return(),
         )
         self.maps.set_entrance_event(0x98, inside_last_car_entrance_event - EVENT_CODE_START)
