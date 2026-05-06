@@ -261,6 +261,13 @@ class Items():
 
         self.moogle_starting_equipment()
 
+        # Umaro special
+        if self.args.require_umaro:
+            # Moogle Charm --> Yeti Charm
+            moogle_charm = self.items[name_id["Moogle Charm"]]
+            moogle_charm.relic_equip_cond_byte |= 0b0010000  # auto berserk
+            moogle_charm.name = "Yeti Charm"
+
     def write(self):
         for item in self.items:
             item.write()
