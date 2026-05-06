@@ -99,11 +99,19 @@ class Chests():
         random_percent = self.args.chest_contents_shuffle_random_percent / 100.0
         num_random_chests = int(len(possible_chests) * random_percent)
         random_chests = random.sample(possible_chests, num_random_chests)
+        if self.args.require_umaro:
+            from constants.items import name_id
+            umaro_items = [name_id["Snow Muffler"], name_id["Bone Club"],
+                           name_id["Blizzard Orb"], name_id["Rage Ring"]]
+
         for chest in random_chests:
             if chest.type == Chest.GOLD:
                 chest.randomize_gold()
             elif chest.type == Chest.ITEM:
-                chest.contents = self.items.get_random()
+                if self.args.require_umaro:
+                    chest.contents = random.choice(umaro_items)
+                else:
+                    chest.contents = self.items.get_random()
 
     def random_tiered(self):
         def get_item(tiers, tier_s_distribution):
@@ -215,11 +223,16 @@ class Chests():
         #gets the specific chests that will be randomized
         random_chests = random.sample(possible_chests, num_monster_chests)  
 
+        umaro_battle_group = name_event_battle_group["Umaro"]
+
         for chest in random_chests:
             chest.type = Chest.MONSTER
             is_boss = (random.random()*100 < boss_percent)
             if is_boss:
-                chest.contents = random.choice(MIAB_boss)
+                if self.args.require_umaro:
+                    chest.contents = umaro_battle_group
+                else:
+                    chest.contents = random.choice(MIAB_boss)
             else:
                 chest.contents = random.choice(MIAB_noboss)
 
