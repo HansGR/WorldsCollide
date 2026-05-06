@@ -771,7 +771,7 @@ class Network:
             #    print('\t\tbug hunting 4: ', total_doors_in, total_doors_out, total_doors_either)
             # For each node: [(door in, door out), (door in, trap out), (pit in, door out), (pit in, trap out)]
             classifications[room_id] = [door_in_door_out, door_in and trap_out, pit_in and door_out, pit_in and trap_out,
-                                     [list(up_count), list(self_count), list(down_count)],
+                                     [up_count.tolist(), self_count.tolist(), down_count.tolist()],
                                      [delta_in, delta_out, delta_either],
                                        is_dead_end and exit_is_locked_internally ]
 
@@ -807,8 +807,8 @@ class Network:
             [Rule_A, Rule_B, Rule_C, Rule_D, Rule_E, Rule_F],
             [DiDo, DiTo, PiDo, PiTo],
             classifications,
-            [total_doors_in, total_doors_out, total_doors_either],
-            [dead_end_count, doors_in_non_dead_ends]
+            [int(total_doors_in), int(total_doors_out), int(total_doors_either)],
+            [int(dead_end_count), int(doors_in_non_dead_ends)]
         ]
 
     def connect_network(self):
