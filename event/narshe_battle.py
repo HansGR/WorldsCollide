@@ -92,6 +92,11 @@ class NarsheBattle(Event):
             )
         space.write(
             field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+        )
+        if self.args.require_umaro:
+            space.write(field.AddCharacterToParty(self.characters.UMARO, 1))
+
+        space.write(
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             field.Branch(space.end_address + 1),
         )

@@ -102,7 +102,8 @@ class Chests():
         if self.args.require_umaro:
             from constants.items import name_id
             umaro_items = [name_id["Snow Muffler"], name_id["Bone Club"],
-                           name_id["Blizzard Orb"], name_id["Rage Ring"]]
+                           name_id["Blizzard Orb"], name_id["Rage Ring"],
+                           name_id["Green Cherry"]]
 
         for chest in random_chests:
             if chest.type == Chest.GOLD:
