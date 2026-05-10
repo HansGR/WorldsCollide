@@ -373,7 +373,9 @@ SPRING_FLASH_COLORS = {
     SpringEffect.REDUCE_TO_1_HP: field.Flash.RED,
 }
 
-# Dialog IDs for spring messages (using range 1480-1495)
+# Dialog IDs for spring messages (range 1480-1495 reserved). Sits in the vanilla
+# Maduin/Madonna esper-world conversation block — see ARCHIVE.md
+# "Ruination Mode — Dialog ID Reservations" before claiming new IDs nearby.
 SPRING_DIALOG_BASE = 1480
 
 
