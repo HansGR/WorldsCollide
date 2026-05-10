@@ -30,6 +30,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Duplicate Event Tiles for Reverse Entrances (2026-02)](#ruination-mode---duplicate-event-tiles-for-reverse-entrances-2026-02)
 - [Patching NPC Events](#ruination-mode---patching-npc-events)
 - [Persistent Event State Across Reloads (2026-04)](#persistent-event-state-across-reloads-2026-04)
+- [Dialog ID Reservations (2026-05)](#ruination-mode--dialog-id-reservations-2026-05)
 
 ### Door Randomizer
 - [Event Exit Info — Detailed Data Structures](#event-exit-info---detailed-data-structures)
@@ -1241,3 +1242,55 @@ In dungeon-crawl/ruination modes the minecart event exit (CC/8022) can be revisi
 **Don't** wrap `vprint(...)` calls in `if self.verbose:` — the no-op handling is built in. **Don't** use raw `print()` for diagnostic output: it leaks to stdout whenever `-debug` is set, even without `-dv`. The fix in commit `85b1703` replaced `print()` with `vprint()` in `data/map_exits.py` `patch_exits()` and removed the redundant `Doors.verbose` instance attribute (replaced with a property that delegates to `verbose.is_enabled()`).
 
 When introducing new debug output, prefer `vprint(...)` and let the user's flag choice decide where it goes.
+
+---
+
+## Ruination Mode — Dialog ID Reservations (2026-05)
+
+Ruination mode repurposes a contiguous block of vanilla dialog IDs that belong to the Maduin/Madonna esper-world conversation (dialog 1424-1496, hex `$0590-$05D8`). That conversation is part of the WoB intro and **never plays in ruination mode**, so the IDs are safe to overwrite. Several systems claim slices of this block independently, and `dialogs.set_text(id, ...)` happily clobbers an ID written earlier — there is no allocator. Always cross-reference this table before claiming a new ID in the 1424-1496 range.
+
+### Maduin/Madonna Block — Reservation Table
+
+| Dialog IDs (hex) | Decimal | Owner | Variable / purpose | File | Gated on |
+|---|---|---|---|---|---|
+| `$0590` | 1424 | ruination start | `ruination_start_1` ("After Kefka broke the world…") | `event/ruination.py` `ruination_start_game_mod` | `-ruin` |
+| `$0591` | 1425 | ruination start | `ruination_start_2` ("This new world is dark…") | `event/ruination.py` `ruination_start_game_mod` | `-ruin` |
+| `$0592-$05B4` | 1426-1460 | warp points | `WARP_DIALOG_IDS` (35 IDs = 1 esper-world prompt + 2 per warp point × 17 points) | `data/warps.py` (`WarpPoints.mod`, called from `event/events.py`) | `-ruin` |
+| `$05B5` | 1461 | -nfh Figaro inn | `FIGARO_DIALOG_ID` (paid Figaro Castle rest dialog) | `event/free_heals.py` `modify_inn_costs` | `-nfh` |
+| `$05B6-$05BA` | 1462-1466 | school reform | `NARSHE_DIALOG_IDS` (reform / how-many-parties dialogs) | `event/narshe_wob.py` `ruination_mod` | `-ruin` |
+| `$05BB-$05BE` | 1467-1470 | -nfh limited heals | `empty_id` / `one_id` / `two_id` / `three_id` (school bucket prompts) | `event/narshe_wob.py` `limited_heals` | `-nfh` |
+| `$05BF-$05C1` | 1471-1473 | ferry flavor | `FERRY_FLAVOR_DIALOG['SouthFigaro' / 'Nikeah' / 'Albrook']` | `event/ruination.py` `_ferry_install_enabled` | `-ruin` |
+| `$05C2-$05C7` | 1474-1479 | **free** | — | — | — |
+| `$05C8-$05D7` | 1480-1495 | -nfh recovery springs | `SPRING_DIALOG_BASE` reservation (1 drink prompt + 1 result per spring area; currently uses 1480-1482, range reserved) | `event/free_heals.py` `modify_recovery_springs` | `-nfh` |
+| `$05D8+` | 1496+ | **out of block** | Vanilla "What's happening in Narshe?" dialog runs here — do not claim. | — | — |
+
+### Other Vanilla Dialogs Repurposed by Ruination Mode
+
+These claims live outside the Maduin block. They overwrite vanilla dialogs whose original event paths are unreachable in ruination mode (e.g. the WoR airship console, the chocobo stables, the WoR ferry sailors), so collisions there are safer — but still worth knowing about.
+
+| Dialog ID(s) | Owner | File | Notes |
+|---|---|---|---|
+| `0x0113` (275) | Jidoor chocobo | `event/ruination.py` `disable_chocobo_stables` | "The chocobos won't go outside anymore." |
+| `0x0258` (600) | Narshe info NPC | `event/narshe_wob.py` `ruination_mod` (`info_id`) | Reform-school welcome / how-to text |
+| `601` | Narshe water shortage | `event/narshe_wob.py` `ruination_mod` | Water-supply rep dialog |
+| `602-610` | Narshe school clue NPCs (3 branches × 3 clues) | `event/narshe_wob.py` `ruination_mod` | Per-area clue text from `compute_actual_areas_used()` |
+| `0x032A`, `0x032C`, `0x0785` (810, 812, 1925) | Ferry prompts | `event/ruination.py` `_ferry_install_enabled` (`FERRY_PROMPT_DIALOG`) | Vanilla SF / Nikeah / Albrook (Leo cargo) ferry NPC dialogs |
+| `0x0507` (1287) | KT statues/entrance choice | `event/kefka_tower.py` `entrance_landing_mod` | "(Statues)/(Entrance)/(Not just yet)" |
+| `0x050D` (1293) | "There's no returning…" | `event/airship.py` `controls_mod`, `event/sealed_gate.py` `ruination_mod`, `event/esper_mountain.py` `ruination_mod` | Shared text for all three KT terminuses |
+| `0x050E` (1294) | "Three parties needed…" | same three sites as 1293 | Shared text |
+| `0x0523` (1315) | `fly_wor_fc_cancel_dialog` | `event/airship.py` `controls_mod` | Falcon WoR-FC console rewritten for ruination |
+| `0x0526` (1318) | `fly_wor_cancel_dialog` | `event/airship.py` `controls_mod` | Falcon WoR console rewritten for ruination |
+| `0x0528` (1320) | `PARTY_INTERACT_CHOICE_DIALOG` | `event/ruination.py` `create_party_interaction_scripts` | Vanilla "Change party members?" repurposed for the join/swap/nothing menu |
+| `0x0666`, `0x0667` (1638, 1639) | KT entry prompts | `event/sealed_gate.py`, `event/esper_mountain.py` ruination_mods | "Enter Kefka's Tower? There's no going back." |
+| `0x068B`, `0x068D`, `0x068F`, `0x0690` | Mog/Gau/Gogo/Umaro airship quotes | `event/ruination.py` `create_party_interaction_scripts` (`CHARACTER_AIRSHIP_DIALOG_IDS`) | Per-character party-interaction dialog |
+| `0x08D0`, `0x08D2`, `0x08D8`, `0x08D9` (2256, 2258, 2264, 2265) | Mobliz "you're not gonna take…" | `event/mobliz_wor.py` (ruination branches) | Replaces character or esper item name |
+| `0x0B8E` (2958) | SF / Nikeah chocobo | `event/ruination.py` `disable_chocobo_stables` | Shared dialog with Nikeah |
+| `0x0B94-0x0B9D` (2964-2973) | Terra/Locke/Cyan/Shadow/Edgar/Sabin/Celes/Strago/Relm/Setzer airship quotes | `event/ruination.py` `create_party_interaction_scripts` (`CHARACTER_AIRSHIP_DIALOG_IDS`) | Per-character party-interaction dialog |
+| `0x0BA6` (2982) | KT "need more allies" | `event/kefka_tower.py` `entrance_landing_mod` | — |
+| `0x0BCF` (3023) | KT objectives-incomplete | `event/kefka_tower.py` `final_kefka_access_mod` | — |
+
+### Lessons (after the Albrook ↔ KT-warp clobber, 2026-05)
+
+- **Order matters when two systems write the same range.** `WarpPoints.mod()` runs early in `Events.mod()`; `fix_ferry_connections` runs later, so any ferry overlap silently overwrote the warp prompts. Symptoms surfaced as warp dialogs containing ferry text at runtime.
+- **No allocator.** `dialogs.set_text(id, …)` is a raw write — there is no "is this ID already claimed?" check. Document the reservation here whenever you grab a new slot.
+- **Pick from the documented free range.** `1471-1479` is the current free band inside the Maduin block. If you need a contiguous run larger than 9, expand into the trailing reservation deliberately and update this table.

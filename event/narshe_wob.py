@@ -115,6 +115,8 @@ class NarsheWOB(Event):
 
         # Dialog IDs for the bucket prompts. 1461 is used by Figaro Castle inn;
         # 1462-1466 are left for ruination_mod's reform dialogs.
+        # See ARCHIVE.md "Ruination Mode — Dialog ID Reservations" for the
+        # complete Maduin-block layout.
         three_id = 1470
         two_id = 1469
         one_id = 1468
@@ -189,7 +191,9 @@ class NarsheWOB(Event):
         pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
 
         # (3) Update the NPC dialogs & actions
-        NARSHE_DIALOG_IDS = [i for i in range(1462, 1467)]  # 1461 used by Figaro Castle inn; 1467-1470 reserved for limited_heals
+        # 1461 used by Figaro Castle inn; 1467-1470 reserved for limited_heals.
+        # See ARCHIVE.md "Ruination Mode — Dialog ID Reservations".
+        NARSHE_DIALOG_IDS = [i for i in range(1462, 1467)]
         counter_npc_id = 0x10
         right_npc_id = 0x11
         left_npc_id = 0x13
