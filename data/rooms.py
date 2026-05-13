@@ -1184,9 +1184,9 @@ shared_exits = {
     1238: [1239],        # Maranda WoB to world map
     5238: [5239],        # Maranda WoR to world map
 
-    1245: [1246],   # Albrook WoB to world map
-    1246: [1247],   # Albrook WoB north to world map
-    1249: [1250],   # Albrook WoR to world map
+    1245: [1246, 1247],   # Albrook WoB to world map
+    1246: [1247],         # Albrook WoB north to world map
+    1249: [1250, 1251],   # Albrook WoR to world map
     1250: [1251],         # Albrook WoR north to world map
 
     1199: [1200],    # Nikeah WoB to world map
@@ -1244,8 +1244,8 @@ dungeon_crawl_split_exits = {
     1209: [1210],    # Kohlingen WoB to world map
     1211: [1212],    # Kohlingen WoR to world map
 
-    1245: [1246],    # Albrook WoB to world map
-    1249: [1250],    # Albrook WoR to world map
+    1245: [1246, 1247],    # Albrook WoB to world map
+    1249: [1250, 1251],    # Albrook WoR to world map
 
 }
 

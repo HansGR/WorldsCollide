@@ -1958,7 +1958,8 @@ door_short_text = {
     78: "Ebot's Rock",
     79: "Duncan's House",
     1552: "the Zone Eater",
-    1554: "Phoenix Cave"
+    1554: "Phoenix Cave",
+    1558: "the Ancient Cave"
 }
 
 import random
