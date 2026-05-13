@@ -125,7 +125,7 @@ class Airship(Event):
             enter_floating_continent = 0xa581a
             enter_floating_continent_skip_reform_iaf = 0xa5980
 
-            space = Allocate(Bank.CA, 313, "airship controls dialog/choices", field.NOP())
+            space = Allocate(Bank.CA, 319, "airship controls dialog/choices", field.NOP())
 
             self.enter_wor_mod(space)
             self.enter_wob_mod(space)
