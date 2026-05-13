@@ -333,7 +333,7 @@ RUIN_ROOM_SETS = {
     'ZoneEater': [356, 357, 358, '358b', 359, '359b', 361, 362, 363],
     'MtKolts': [146, 147, 148, 149, 150, 151, 152, 153, 155, 156, 157, 159, 160],
             # Hallways: 145, 146 (anim), 148, 150 (anim), 152, 154, 155, 158.  Removed: 145, 154, 158.
-    'Narshe': ['ruin-narshe', '37a', 38, 40, '41a', 'ruin-lonewolf', 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 61],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense) + Lone Wolf reward room
+    'Narshe': ['ruin-narshe', '37a', 38, 40, 'ruin-narshepeak', 'ruin-lonewolf', 42, 43, 44, 45, 'ruin-whelk', 47, 65, 49, 50, 61],   # Narshe WOR + northern caves (swap out WOB Whelk 46 --> 59) + snow battlefield + Tritoch + Umaro exit + moogle mines (swap out 48 --> 65 for moogle defense) + Lone Wolf reward room
             # Hallways: 36, 38, 42, 43, 44, 45, 50, 51.  Removed: 36, 51
     'Zozo': ['ruin-zozo', '294r', '295r', '296r', '301r', '305r', '306r', '307r', '308r', '309r'],
     'ZozoTower': [297, 298, 299, 300, 302, '303a', '303b', 304, 310, 311, 312, 313],

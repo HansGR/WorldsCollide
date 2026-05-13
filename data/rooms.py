@@ -104,7 +104,7 @@ room_data = {
     'ms-wob-28': [[1213], [], [], 0],       # Jidoor
     'ms-wob-31': [[1238, 1239], [], [], 0],       # Maranda
     'ms-wob-33': [[1244], [], [], 0],       # Tzen
-    'ms-wob-35': [[1245], [], [], 0],       # Albrook
+    'ms-wob-35': [[1245, 1246], [], [], 0],       # Albrook
     'ms-wob-37': [[1224], [], [], 0],       # Zozo
     'ms-wob-40': [[658], [], [], 0],        # Opera House
     'ms-wob-42': [[1059], [], [], 0],       # Imperial Base
@@ -189,6 +189,7 @@ room_data = {
     'ruin-baren': [ [1194, 1195], [], [3176], 0],  # End for Baren Falls: door exit to (somewhere)
     'ruin-whelk': [ [178, 179], [ ], [ ], [], {"TERRA": [1155]}, 0],  #Narshe Northern Mines Main Hallway WoB.  Reskin map tileset?
     'ruin-narshe': [[1143, 1146, 140, 143, 144], [], [], [], {"MOG": ['lw1']}, 1],         # Narshe WOR, incl. secret passage & entrance to south caves & school.  Key 'lw1' (locked by Mog) unlocks Lone Wolf reward.
+    'ruin-narshepeak' : [ [1150], [2010], [3181], [], {'lw1': [2180]}, 1], # Narshe Peak WoR incl. entrance to Umaro's cave.  Lone Wolf reward (2180) locked by lw1 key from ruin-narshe.  3181 is return from ruin-lonewolf.  clone of '41a'
     'ruin-lonewolf': [[], [2181], [3180], 1],           # Lone Wolf reward room, logical only.  Forced connection from Narshe Peak (41a), return via 2181.
     'ruin-zozo': [ [4600, 4601, 4602, 4604, 5224], [ ], [ ], [], {"TERRA": [4608], "CYAN": ['zr1']}, 1], #Zozo 1F Outside WOR + Terra-locked 608
 
@@ -251,7 +252,7 @@ room_data = {
     39 : [ [1145, 1146], [ ], [ ], 1], #Narshe Northern Mines 1st Floor Outside WoR
     40 : [ [1148, 1149], [ ], [ ], 1], #Snow Battlefield WoR
     41 : [ [1150], [ ], [ ], 1], #Narshe Peak WoR
-    '41a' : [ [1150], [2010], [3181], [], {'lw1': [2180]}, 1], # Narshe Peak WoR incl. entrance to Umaro's cave.  Lone Wolf reward (2180) locked by lw1 key from ruin-narshe.  3181 is return from ruin-lonewolf.
+    '41a' : [ [1150], [2010], [], 1], # Narshe Peak WoR incl. entrance to Umaro's cave
     42 : [ [148, 149], [ ], [ ], 1], #Narshe Northern Mines 1F Side/East Room WoR
     43 : [ [150, 151], [ ], [ ], 1], #Narshe Northern Mines 2F Inside WoR
     44 : [ [152, 153], [ ], [ ], 1], #Narshe Northern Mines 3F Inside WoR
@@ -328,7 +329,7 @@ room_data = {
     91 : [ [245, 247], [ ], [ ], 1], #Figaro Castle B2 East Hallway
     92 : [ [246, 248], [ ], [ ], 1], #Figaro Castle B2 West Hallway
     93 : [ [249, 250, 251], [ ], [ ], 1], #Figaro Castle B2 4 Chest Room
-    94 : [ [252, 253], [ ], [ ], ['fc-engine'], {'fc-engine': [1558]}, 1], #Figaro Castle Engine Room (key unlocks Ancient Castle entrance)
+    94 : [ [252, 253], [ ], [ ], 1], #Figaro Castle Engine Room (arguably has key to unlock Ancient Castle entrance?  If figaro castle was ever randomized internally, would need to add:  ['fc-engine'], {'fc-engine': [1558]})
     95 : [ [254], [ ], [ ], 1], #Figaro Castle Treasure Room Behind Engine Room
     96 : [ [255], [ ], [ ], 1], #Figaro Castle B1 Single Chest Room
 
@@ -1083,10 +1084,10 @@ forced_connections = {
     2099: [3099],   # KT right, trickery
     2128: [3128],   # MTek 3 ending back to vector, trickery.
 
-    2180: [3180],   # Narshe Peak (41a) --> Lone Wolf reward room (ruin-lonewolf), logical only.
-    2181: [3181],   # Lone Wolf reward room (ruin-lonewolf) --> Narshe Peak (41a), return.
+    2180: [3180],   # Narshe Peak (ruin-narshepeak) --> Lone Wolf reward room (ruin-lonewolf), logical only.
+    2181: [3181],   # Lone Wolf reward room (ruin-lonewolf) --> Narshe Peak (ruin-narshepeak), return.
 
-    4418: [744],    # Doma WOR Main Room --> Doma WoB Outside (ruination: splits indoor WoR from outdoor WoB for siege)
+    4418: [744],    # Doma WOR Main Room --> Doma WoB Outside (ruination: splits indoor WoR from outdoor WoB for siege).  If Doma interior were ever randomized, this would cause problems.
 }
 
 # Add forced connections for virtual doors (-dra)
@@ -1183,7 +1184,8 @@ shared_exits = {
     1238: [1239],        # Maranda WoB to world map
     5238: [5239],        # Maranda WoR to world map
 
-    1245: [1246, 1247],   # Albrook WoB to world map
+    1245: [1246],   # Albrook WoB to world map
+    1246: [1247],   # Albrook WoB north to world map
     1249: [1250],   # Albrook WoR to world map
     1250: [1251],         # Albrook WoR north to world map
 
@@ -1242,6 +1244,7 @@ dungeon_crawl_split_exits = {
     1209: [1210],    # Kohlingen WoB to world map
     1211: [1212],    # Kohlingen WoR to world map
 
+    1245: [1246],    # Albrook WoB to world map
     1249: [1250],    # Albrook WoR to world map
 
 }
