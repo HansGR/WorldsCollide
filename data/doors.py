@@ -233,6 +233,9 @@ class Doors():
 
         elif self.args.door_randomize_each:  # -dre
             # Randomize all areas separately
+
+            # Regardless of shuffle, we want to use mapsafe sets & protections for MtZozo and Zozo-WOR
+            use_mapsafe = ['MtZozo', 'Zozo-WOR']
             for key in ROOM_SETS.keys():
                 if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW', 'DungeonCrawl', 'Ruination']:
                     if self.args.map_shuffle:
@@ -244,7 +247,10 @@ class Doors():
                                 d = map_shuffle_protected_doors[key]
                                 protect_doors[d] = d + 30000
                     else:
-                        if '_mapsafe' not in key:
+                        if key in [name + '_mapsafe' for name in use_mapsafe]:
+                            room_sets.append(ROOM_SETS[key])
+                            self.area_name.append(key)
+                        elif '_mapsafe' not in key and key not in use_mapsafe:
                             room_sets.append(ROOM_SETS[key])
                             self.area_name.append(key)
 
