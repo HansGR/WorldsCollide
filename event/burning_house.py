@@ -29,6 +29,9 @@ class BurningHouse(Event):
     def mod(self):
         if self.args.character_gating:
             self.add_gating_condition()
+        elif self.args.no_free_heals:
+            # character_gating already covers the strangers-inn patch.
+            self.no_free_heals_inn_mod()
 
         self.enter_burning_house_mod()
         self.flame_eater_mod()
@@ -61,6 +64,30 @@ class BurningHouse(Event):
         space.write(
             field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGER_PRICE"),
         )
+
+    def no_free_heals_inn_mod(self):
+        # Apply the Thamasa inn price multiplier when Strago is not recruited,
+        # so the "strangers" inn cannot be used as a free heal.
+        from event.free_heals import INN_COST_MULTIPLIER
+
+        STRANGERS_BASE_PRICE = 1500
+        new_price = min(STRANGERS_BASE_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+
+        STRANGERS_PRICE_PATH = 0xbd769
+        STRANGERS_PRICE_GP = 0xbd775
+        STRANGERS_DIALOG = 0x0790
+
+        space = Reserve(0xbd73f, 0xbd746, "thamasa inn -nfh strangers check", field.NOP())
+        space.add_label("STRANGERS_PRICE", STRANGERS_PRICE_PATH)
+        space.write(
+            field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGERS_PRICE"),
+        )
+
+        self.dialogs.set_text(STRANGERS_DIALOG,
+                              f"You're strangers...<line>{new_price} GP if you wanna stay.<line>"
+                              f"<choice> (Well, okay.)<line><choice> (No way!)<end>")
+
+        self.rom.set_bytes(STRANGERS_PRICE_GP, new_price.to_bytes(2, 'little'))
 
     def enter_burning_house_mod(self):
         # wake up in middle of night, enter burning house, skip scene with villagers outside burning house
