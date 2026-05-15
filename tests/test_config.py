@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import config as cfg
 import ff6_config
+import install_trampoline as inst
 
 
 # ---- RGB / bit math --------------------------------------------------
@@ -127,6 +128,9 @@ class _FakeRom:
         self._bytes_at = bytes_at
         self.writes = []
 
+    def get_byte(self, addr):
+        return self._bytes_at[addr]
+
     def get_bytes(self, addr, count):
         return list(self._bytes_at[addr:addr + count])
 
@@ -156,6 +160,113 @@ def test_set_config_writes_three_bytes():
     assert cfg.CONFIG1_ADDR in written_addrs
     assert 0x03FC01 in written_addrs
     assert 0x03FC11 in written_addrs
+
+
+# ---- Trampoline detection -------------------------------------------
+
+def test_trampoline_detection():
+    rom_bytes = bytearray(0x040000)
+    # Vanilla: two STZ instructions -- not detected as installed
+    rom_bytes[0x0370C2] = 0x9C
+    rom_bytes[0x0370C5] = 0x9C
+    assert cfg.is_trampoline_installed(_FakeRom(rom_bytes)) is False
+
+    # WC-style: two JSRs
+    rom_bytes[0x0370C2] = 0x20
+    rom_bytes[0x0370C5] = 0x20
+    assert cfg.is_trampoline_installed(_FakeRom(rom_bytes)) is True
+
+    # Only one JSR -- not enough
+    rom_bytes[0x0370C5] = 0x9C
+    assert cfg.is_trampoline_installed(_FakeRom(rom_bytes)) is False
+
+
+# ---- Installer -------------------------------------------------------
+
+def test_build_subroutines_layout():
+    b = inst.build_subroutines()
+    assert len(b) == 12
+    # Subroutine 1: LDA #$00; STA $1D54; RTS
+    assert b[:6] == [0xA9, 0x00, 0x8D, 0x54, 0x1D, 0x60]
+    # Subroutine 2: LDA #$00; STA $1D4E; RTS
+    assert b[6:] == [0xA9, 0x00, 0x8D, 0x4E, 0x1D, 0x60]
+
+
+def test_build_jsr_pair_default_address():
+    # Default trampoline at file 0x3F091 -> SNES $C3/F091, low 16 bits 0xF091.
+    # Second subroutine at offset +6 -> $C3/F097, low 16 bits 0xF097.
+    jsrs = inst.build_jsr_pair(0xF091)
+    assert jsrs == [0x20, 0x91, 0xF0, 0x20, 0x97, 0xF0]
+
+
+def test_parse_address_forms():
+    # File offset forms
+    assert inst.parse_address("0x3F091") == 0x3F091
+    assert inst.parse_address("3F091") == 0x3F091
+    # SNES form -- subtracts 0xC00000
+    assert inst.parse_address("0xC3F091") == 0x03F091
+    assert inst.parse_address("$C3F091") == 0x03F091
+
+
+def test_installer_main_writes_expected_bytes(tmp_path=None):
+    """Run main() end-to-end with a tiny in-memory ROM via monkey-patched IO."""
+    import io
+    rom_bytes = bytearray(0x40000)
+    rom_bytes[0x0370C2] = 0x9C  # vanilla STZ
+    rom_bytes[0x0370C5] = 0x9C
+    rom_bytes[0x0370C3] = 0x54  # arbitrary STZ operand
+    rom_bytes[0x0370C4] = 0x1D
+
+    # Patch open() to use our buffer for both read and write.
+    read_calls = []
+    write_calls = []
+    original_open = inst.__builtins__["open"] if isinstance(inst.__builtins__, dict) else open
+
+    class _Reader(io.BytesIO):
+        def __enter__(self): return self
+        def __exit__(self, *a): self.close()
+
+    class _Writer(io.BytesIO):
+        def __init__(self, path):
+            super().__init__()
+            self.path = path
+        def __enter__(self): return self
+        def __exit__(self, *a):
+            write_calls.append((self.path, self.getvalue()))
+            self.close()
+
+    def fake_open(path, mode, *args, **kwargs):
+        if mode == "rb":
+            read_calls.append(path)
+            return _Reader(bytes(rom_bytes))
+        if mode == "wb":
+            return _Writer(path)
+        return original_open(path, mode, *args, **kwargs)
+
+    import builtins
+    saved = builtins.open
+    builtins.open = fake_open
+    try:
+        inst.main(["-i", "fake.smc", "-o", "out.smc"])
+    finally:
+        builtins.open = saved
+
+    assert len(write_calls) == 1
+    out_path, out = write_calls[0]
+    assert out_path == "out.smc"
+    # Expect JSR pair to default address ($C3/F091)
+    assert out[0x0370C2:0x0370C8] == bytes([0x20, 0x91, 0xF0, 0x20, 0x97, 0xF0])
+    # Expect the 12 trampoline bytes
+    assert out[0x03F091:0x03F09D] == bytes(inst.build_subroutines())
+
+
+def test_installer_rejects_out_of_bank_address():
+    try:
+        inst.main(["-i", "fake.smc", "--address", "0x0FEE8"])
+    except SystemExit as e:
+        assert "bank $C3" in str(e) or "not in bank" in str(e)
+        return
+    raise AssertionError("expected SystemExit for out-of-bank address")
 
 
 # ---- runner ----------------------------------------------------------

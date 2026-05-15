@@ -169,6 +169,13 @@ def main(argv=None):
     }
 
     rom = ROM(args.input)
+    if not cfg.is_trampoline_installed(rom):
+        sys.exit(
+            f"error: {args.input} does not have the default-config trampoline "
+            "installed at $03/70C2.\n"
+            "Run `python3 install_trampoline.py -i <rom>` first, or apply a "
+            "Worlds Collide patch."
+        )
     cfg.set_config(rom, config_set)
     rom.write(output_path)
 

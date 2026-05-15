@@ -125,6 +125,21 @@ def _read_default_config_addr(rom, jsr_operand_addr):
     return ((0x03 << 16) | (hi << 8) | lo) + 1
 
 
+CONFIG_TRAMPOLINE_JSR = 0x0370C2  # boot-time opcode site for the two JSRs
+
+
+def is_trampoline_installed(rom):
+    """Return True if the JSR trampoline at ``$03/70C2`` is in place.
+
+    Vanilla FF6 has two ``STZ ABS`` (opcode ``0x9C``) instructions here.
+    The WC patch (and our installer) replace them with two ``JSR ABS``
+    (opcode ``0x20``).  ``set_config`` only works when the trampoline
+    is installed.
+    """
+    return (rom.get_byte(CONFIG_TRAMPOLINE_JSR) == 0x20
+            and rom.get_byte(CONFIG_TRAMPOLINE_JSR + 3) == 0x20)
+
+
 # ---- Public API ------------------------------------------------------
 
 def set_config(rom, config_set):
