@@ -1,14 +1,14 @@
 """Command-line entry point: apply default-config overrides to a ROM.
 
 Usage:
-    python wc_config.py -i ff6wc.smc [options]
+    python ff6_config.py -i ff6.smc [options]
 """
 
 import argparse
 import sys
 
 from config import config as cfg
-from config.wcrom import WCROM
+from config.rom import ROM
 
 
 # ---- argparse value parsers -----------------------------------------
@@ -168,7 +168,7 @@ def main(argv=None):
         if getattr(args, name) is not None
     }
 
-    rom = WCROM(args.input)
+    rom = ROM(args.input)
     cfg.set_config(rom, config_set)
     rom.write(output_path)
 

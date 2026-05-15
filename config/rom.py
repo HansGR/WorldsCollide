@@ -1,4 +1,4 @@
-class WCROM():
+class ROM():
     SHORT_PTR_SIZE = 2  # short ptr (16-bit)
     LONG_PTR_SIZE = 3   # long ptr  (24-bit)
 
