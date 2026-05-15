@@ -1,4 +1,4 @@
-"""Smoke tests for config/config.py and the wc_config CLI parsers.
+"""Smoke tests for config/config.py and the ff6_config CLI parsers.
 
 Run as:
     python tests/test_config.py
@@ -11,7 +11,7 @@ import argparse
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import config as cfg
-import wc_config
+import ff6_config
 
 
 # ---- RGB / bit math --------------------------------------------------
@@ -69,7 +69,7 @@ def test_pack_config3_all_set():
 # ---- CLI parsing -----------------------------------------------------
 
 def test_cli_parses_basic_flags():
-    parser = wc_config.build_parser()
+    parser = ff6_config.build_parser()
     ns = parser.parse_args([
         "-i", "rom.smc",
         "--bat-speed", "5",
@@ -93,7 +93,7 @@ def test_cli_parses_basic_flags():
 
 
 def test_cli_rejects_out_of_range_int():
-    parser = wc_config.build_parser()
+    parser = ff6_config.build_parser()
     try:
         parser.parse_args(["-i", "rom.smc", "--bat-speed", "7"])
     except SystemExit:
@@ -102,7 +102,7 @@ def test_cli_rejects_out_of_range_int():
 
 
 def test_cli_rejects_bad_bool():
-    parser = wc_config.build_parser()
+    parser = ff6_config.build_parser()
     try:
         parser.parse_args(["-i", "rom.smc", "--bat-mode", "kinda"])
     except SystemExit:
@@ -111,7 +111,7 @@ def test_cli_rejects_bad_bool():
 
 
 def test_cli_rejects_bad_rgb():
-    parser = wc_config.build_parser()
+    parser = ff6_config.build_parser()
     for bad in ["32,0,0", "1,2", "a,b,c", "1,2,3,4"]:
         try:
             parser.parse_args(["-i", "rom.smc", "--font", bad])
