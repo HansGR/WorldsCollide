@@ -26,10 +26,12 @@ class BuyMenu:
     # code range B4xx-BFxx.
     PACK_TEMP_DP       = 0x62   # 2 bytes ($62-$63): temp for pack table computation
     UNIT_PRICE_SAVE_DP = 0x60   # 2 bytes ($60-$61): saved unit price for restore
-    SUBMENU_FLAG_DP    = 0x64   # 1 byte: non-zero while the order submenu is open
+    SUBMENU_FLAG_DP    = 0x66   # 1 byte: non-zero while the order submenu is open
                                 # (set by the BAAB label hook, cleared by the B98F
                                 # label hook); read by the qty-value hook to
                                 # suppress repainting the qty under the submenu.
+                                # $66 is on the verified-safe list in ARCHIVE.md
+                                # alongside the other shop-menu scratch bytes.
 
     def __init__(self):
         if args.shop_limited_inventory:
@@ -584,12 +586,12 @@ class BuyMenu:
         The original C2E1 draws 'Owned:' and 'Equipped:' in blue.
 
         B98F (buy list redraw, also reached on return from the order menu):
-            - Clears the submenu flag at $64.
+            - Clears the submenu flag at $66.
             - Draws the 'Qty:' label at tilemap position $7CB3.
             (The qty value at $7D3F is then drawn by hook_draw_qty_value.)
 
         BAAB (order submenu redraw):
-            - Sets the submenu flag at $64 so hook_draw_qty_value will
+            - Sets the submenu flag at $66 so hook_draw_qty_value will
               suppress the qty value.
             - Erases the 'Qty:' label tiles at $7CB3-$7CB9 and the qty
               value tiles at $7D3F so neither overlaps the submenu's
@@ -674,7 +676,7 @@ class BuyMenu:
         equipped count at $7C3F).
 
         For normal shops ($25 = 0), or while the order submenu is open
-        ($64 != 0), we clear the qty area to avoid stale data and to keep
+        ($66 != 0), we clear the qty area to avoid stale data and to keep
         the submenu's window dressing unobstructed.
         """
         src = [
@@ -686,7 +688,7 @@ class BuyMenu:
             asm.BEQ("CLEAR"),
 
             # Suppress the qty value while the order submenu is open.
-            asm.LDA(self.SUBMENU_FLAG_DP, asm.DIR),  # $64
+            asm.LDA(self.SUBMENU_FLAG_DP, asm.DIR),  # $66
             asm.BNE("CLEAR"),
 
             # Get pack size for cursor slot $4B
