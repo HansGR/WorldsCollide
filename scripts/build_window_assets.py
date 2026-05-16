@@ -75,6 +75,7 @@ def _strip_cursor_ghosts(raw_images: list[np.ndarray | None],
         cand[:, CURSOR_X_HI:] = False
         if not cand.any():
             continue
+        cursor_mask = np.zeros_like(cand)
         visited = np.zeros_like(cand)
         for y0 in range(H):
             for x0 in range(CURSOR_X_LO, CURSOR_X_HI):
@@ -89,8 +90,26 @@ def _strip_cursor_ghosts(raw_images: list[np.ndarray | None],
                     pts.append((y, x))
                     stack.extend(((y+1,x),(y-1,x),(y,x+1),(y,x-1)))
                 if 0 < len(pts) <= CURSOR_MAX_SIZE:
-                    for (py, px) in pts:
-                        out[n][py, px] = baseline[py, px]
+                    cursor_mask[[p[0] for p in pts], [p[1] for p in pts]] = True
+        if not cursor_mask.any():
+            continue
+        # Inpaint cursor pixels from horizontal neighbors: for each cleaned
+        # row, replace cursor pixels with the value at the nearest non-
+        # cursor pixel on the same row outside the gutter.  Resetting to
+        # `baseline` would leave a visible un-recolored bar at the cursor
+        # column, since the rest of the window IS recolored.
+        for py in range(H):
+            row_mask = cursor_mask[py]
+            if not row_mask.any():
+                continue
+            left = im[py, max(0, CURSOR_X_LO - 1)]   # closest pixel left of the gutter
+            right = im[py, min(W - 1, CURSOR_X_HI)]  # closest pixel right of the gutter
+            for px in range(W):
+                if not row_mask[px]:
+                    continue
+                # Linear interp between left/right anchors.
+                t = (px - (CURSOR_X_LO - 1)) / max(1, CURSOR_X_HI - (CURSOR_X_LO - 1))
+                out[n][py, px] = (left * (1 - t) + right * t).astype(np.uint8)
     return out
 
 
