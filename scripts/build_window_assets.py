@@ -44,8 +44,9 @@ def _save(arr: np.ndarray, path: Path) -> None:
     Image.fromarray(arr.astype(np.uint8), "RGB").save(path, optimize=True)
 
 
-CURSOR_MIN_SIZE = 30
-CURSOR_MAX_SIZE = 300
+CURSOR_X_LO = 90
+CURSOR_X_HI = 116
+CURSOR_MAX_SIZE = 200
 
 
 def _strip_cursor_ghosts(raw_images: list[np.ndarray | None],
@@ -53,57 +54,41 @@ def _strip_cursor_ghosts(raw_images: list[np.ndarray | None],
     """Erase the menu cursor sprite from each slot-isolation screenshot.
 
     The cursor is the FF6 hand pointer drawn in the gutter just left of
-    each value column.  It moves between W_N screenshots and so each
-    cursor blob appears in only one slot's image.  But many *legitimate*
-    pixels also appear in only one slot — e.g. window 3 decomposes the
-    wallpaper "lightning bolts" across the slots, with each slot lighting
-    up its own subset of the pattern.
-
-    The distinguishing feature is *connected-component size*:
-
-      - Cursor sprite: ~50-200 connected bright pixels (a hand shape)
-      - Wallpaper lightning: 1-20 px micro-blobs scattered across the screen
-      - Window borders / fill: hundreds-of-thousands of px strips
-
-    Clean any CC whose size falls in the cursor band and whose bright
-    pixels are *not* shared with another slot.
+    each value column.  An earlier "any small CC unique to one slot"
+    heuristic worked for most artwork but trimmed shadows / gradient
+    bands that are themselves small CCs unique to a slot — visible as
+    softer-than-expected borders.  Restrict cleanup to the cursor's
+    natural X gutter (90..116 in native pixels) where window borders
+    don't live, so we only stomp on the cursor blob and nothing else.
     """
     if not any(im is not None for im in raw_images):
         return raw_images
     H, W, _ = baseline.shape
-
-    # Per-slot "bright vs baseline" mask, stacked.
-    bright_stack = []
-    for im in raw_images:
-        if im is None:
-            bright_stack.append(np.zeros((H, W), bool))
-            continue
-        d = np.abs(im.astype(int) - baseline.astype(int)).max(-1)
-        bright_stack.append(d > 80)
-    bright_stack = np.stack(bright_stack)
-    counts = bright_stack.sum(0)
-
     out = [im.copy() if im is not None else None for im in raw_images]
     for n in range(len(raw_images)):
-        if raw_images[n] is None:
+        im = raw_images[n]
+        if im is None:
             continue
-        unique = bright_stack[n] & (counts == 1)
-        if not unique.any():
+        diff = np.abs(im.astype(int) - baseline.astype(int)).max(-1)
+        cand = (diff > 80)
+        cand[:, :CURSOR_X_LO] = False
+        cand[:, CURSOR_X_HI:] = False
+        if not cand.any():
             continue
-        visited = np.zeros_like(unique)
+        visited = np.zeros_like(cand)
         for y0 in range(H):
-            for x0 in range(W):
-                if not unique[y0, x0] or visited[y0, x0]:
+            for x0 in range(CURSOR_X_LO, CURSOR_X_HI):
+                if not cand[y0, x0] or visited[y0, x0]:
                     continue
                 stack = [(y0, x0)]; pts = []
                 while stack:
                     y, x = stack.pop()
                     if not (0 <= y < H and 0 <= x < W): continue
-                    if visited[y, x] or not unique[y, x]: continue
+                    if visited[y, x] or not cand[y, x]: continue
                     visited[y, x] = True
                     pts.append((y, x))
                     stack.extend(((y+1,x),(y-1,x),(y,x+1),(y,x-1)))
-                if CURSOR_MIN_SIZE <= len(pts) <= CURSOR_MAX_SIZE:
+                if 0 < len(pts) <= CURSOR_MAX_SIZE:
                     for (py, px) in pts:
                         out[n][py, px] = baseline[py, px]
     return out
