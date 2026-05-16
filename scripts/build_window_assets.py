@@ -46,70 +46,75 @@ def _save(arr: np.ndarray, path: Path) -> None:
 
 CURSOR_X_LO = 90
 CURSOR_X_HI = 116
+CURSOR_COPY_OFFSET = 32  # The wallpaper tiles every 32 px horizontally, so
+                         # copying from x-32 recovers the "underlying"
+                         # background that the cursor sprite is hiding.
+CURSOR_MIN_SIZE = 30
 CURSOR_MAX_SIZE = 200
 
 
-def _strip_cursor_ghosts(raw_images: list[np.ndarray | None],
-                         baseline: np.ndarray) -> list[np.ndarray | None]:
-    """Erase the menu cursor sprite from each slot-isolation screenshot.
+def _find_cursor_mask(baseline: np.ndarray) -> np.ndarray:
+    """Return a boolean mask of cursor-sprite pixels in the baseline image.
 
-    The cursor is the FF6 hand pointer drawn in the gutter just left of
-    each value column.  An earlier "any small CC unique to one slot"
-    heuristic worked for most artwork but trimmed shadows / gradient
-    bands that are themselves small CCs unique to a slot — visible as
-    softer-than-expected borders.  Restrict cleanup to the cursor's
-    natural X gutter (90..116 in native pixels) where window borders
-    don't live, so we only stomp on the cursor blob and nothing else.
+    The screenshots are captured with the menu cursor parked in a fixed
+    spot (consistent across W_0, W_1..W_7, and W_font for a given window).
+    That sprite shows up as a tight bright cluster in the cursor X-gutter
+    (x ∈ [90, 116]).
     """
-    if not any(im is not None for im in raw_images):
-        return raw_images
     H, W, _ = baseline.shape
-    out = [im.copy() if im is not None else None for im in raw_images]
-    for n in range(len(raw_images)):
-        im = raw_images[n]
-        if im is None:
-            continue
-        diff = np.abs(im.astype(int) - baseline.astype(int)).max(-1)
-        cand = (diff > 80)
-        cand[:, :CURSOR_X_LO] = False
-        cand[:, CURSOR_X_HI:] = False
-        if not cand.any():
-            continue
-        cursor_mask = np.zeros_like(cand)
-        visited = np.zeros_like(cand)
-        for y0 in range(H):
-            for x0 in range(CURSOR_X_LO, CURSOR_X_HI):
-                if not cand[y0, x0] or visited[y0, x0]:
-                    continue
-                stack = [(y0, x0)]; pts = []
-                while stack:
-                    y, x = stack.pop()
-                    if not (0 <= y < H and 0 <= x < W): continue
-                    if visited[y, x] or not cand[y, x]: continue
-                    visited[y, x] = True
-                    pts.append((y, x))
-                    stack.extend(((y+1,x),(y-1,x),(y,x+1),(y,x-1)))
-                if 0 < len(pts) <= CURSOR_MAX_SIZE:
-                    cursor_mask[[p[0] for p in pts], [p[1] for p in pts]] = True
-        if not cursor_mask.any():
-            continue
-        # Inpaint cursor pixels from horizontal neighbors: for each cleaned
-        # row, replace cursor pixels with the value at the nearest non-
-        # cursor pixel on the same row outside the gutter.  Resetting to
-        # `baseline` would leave a visible un-recolored bar at the cursor
-        # column, since the rest of the window IS recolored.
-        for py in range(H):
-            row_mask = cursor_mask[py]
-            if not row_mask.any():
+    # Bright pixels in the gutter (the cursor is the brightest thing here
+    # when all slots are [0,0,0]).
+    gray = baseline.mean(-1)
+    cand = gray > 130
+    cand[:, :CURSOR_X_LO] = False
+    cand[:, CURSOR_X_HI:] = False
+    if not cand.any():
+        return np.zeros((H, W), bool)
+    # Take all CCs in the cursor-sprite size band and union them.
+    visited = np.zeros_like(cand)
+    mask = np.zeros_like(cand)
+    for y0 in range(H):
+        for x0 in range(CURSOR_X_LO, CURSOR_X_HI):
+            if not cand[y0, x0] or visited[y0, x0]:
                 continue
-            left = im[py, max(0, CURSOR_X_LO - 1)]   # closest pixel left of the gutter
-            right = im[py, min(W - 1, CURSOR_X_HI)]  # closest pixel right of the gutter
-            for px in range(W):
-                if not row_mask[px]:
-                    continue
-                # Linear interp between left/right anchors.
-                t = (px - (CURSOR_X_LO - 1)) / max(1, CURSOR_X_HI - (CURSOR_X_LO - 1))
-                out[n][py, px] = (left * (1 - t) + right * t).astype(np.uint8)
+            stack = [(y0, x0)]; pts = []
+            while stack:
+                y, x = stack.pop()
+                if not (0 <= y < H and 0 <= x < W): continue
+                if visited[y, x] or not cand[y, x]: continue
+                visited[y, x] = True
+                pts.append((y, x))
+                stack.extend(((y+1,x),(y-1,x),(y,x+1),(y,x-1)))
+            if CURSOR_MIN_SIZE <= len(pts) <= CURSOR_MAX_SIZE:
+                for (py, px) in pts:
+                    mask[py, px] = True
+    return mask
+
+
+def _apply_cursor_mask(images: list[np.ndarray | None],
+                       cursor_mask: np.ndarray) -> list[np.ndarray | None]:
+    """Inpaint cursor pixels in each image by copying from 32 px to the left.
+
+    The menu wallpaper tiles on a 32-px horizontal period, so the pixel
+    at (y, x-32) is essentially what would be visible at (y, x) if the
+    cursor weren't there.  We apply the same copy to baseline, every slot
+    raw, and the font raw, so the *delta* the recolor pass sees over the
+    cursor region is the same as everywhere else.
+    """
+    if not cursor_mask.any():
+        return [im.copy() if im is not None else None for im in images]
+    ys, xs = np.where(cursor_mask)
+    src_xs = xs - CURSOR_COPY_OFFSET
+    if (src_xs < 0).any():
+        # If the offset would step outside the image, fall back to +32 instead.
+        src_xs = np.where(src_xs >= 0, src_xs, xs + CURSOR_COPY_OFFSET)
+    out = []
+    for im in images:
+        if im is None:
+            out.append(None); continue
+        patched = im.copy()
+        patched[ys, xs] = im[ys, src_xs]
+        out.append(patched)
     return out
 
 
@@ -122,8 +127,7 @@ def build_window(window_index: int) -> dict | None:
     out_dir = ASSETS_DIR / f"W{window_index}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    baseline = _load(baseline_path)
-    _save(baseline, out_dir / "baseline.png")
+    raw_baseline = _load(baseline_path)
 
     raw_slots: list[np.ndarray | None] = []
     slot_indices: list[int] = []
@@ -135,20 +139,32 @@ def build_window(window_index: int) -> dict | None:
         else:
             raw_slots.append(None)
 
-    cleaned = _strip_cursor_ghosts(raw_slots, baseline)
-    for n, im in zip(range(1, 8), cleaned):
+    font_path = src / f"W{window_index}_font.png"
+    font_present = font_path.exists()
+    raw_font = _load(font_path) if font_present else None
+
+    # The user parks the menu cursor in the same spot for every shot of
+    # a given window.  Detect the sprite from the baseline (only bright
+    # thing in the gutter when all slots are [0,0,0]) and inpaint it in
+    # all images by copying from 32 px to the left, where the wallpaper's
+    # tile pattern places the same content.
+    cursor_mask = _find_cursor_mask(raw_baseline)
+    if cursor_mask.any():
+        patched = _apply_cursor_mask([raw_baseline, raw_font, *raw_slots], cursor_mask)
+        baseline = patched[0]
+        font_clean = patched[1]
+        cleaned_slots = patched[2:]
+    else:
+        baseline = raw_baseline
+        font_clean = raw_font
+        cleaned_slots = raw_slots
+
+    _save(baseline, out_dir / "baseline.png")
+    for n, im in zip(range(1, 8), cleaned_slots):
         if im is not None:
             _save(im, out_dir / f"slot{n}.png")
-
-    font_present = False
-    font_path = src / f"W{window_index}_font.png"
-    if font_path.exists():
-        font_raw = _load(font_path)
-        # Don't run cursor cleanup here — every text glyph is a small
-        # bright CC and would be eaten.  The font screenshot has one
-        # cursor ghost; we leave it in.
-        _save(font_raw, out_dir / "font.png")
-        font_present = True
+    if font_clean is not None:
+        _save(font_clean, out_dir / "font.png")
 
     for tag in ("A", "B"):
         ref = src / f"W{window_index}_default{tag}.png"

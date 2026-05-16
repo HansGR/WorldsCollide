@@ -89,6 +89,36 @@
       "font": true,
       "hasDefaultA": true,
       "hasDefaultB": true
+    },
+    "7": {
+      "window": 7,
+      "slots": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "font": true,
+      "hasDefaultA": true,
+      "hasDefaultB": true
+    },
+    "8": {
+      "window": 8,
+      "slots": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "font": true,
+      "hasDefaultA": true,
+      "hasDefaultB": true
     }
   }
 }
