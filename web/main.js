@@ -167,6 +167,10 @@ async function loadWindowAssets(n) {
   else promises.push(Promise.resolve(null));
   if (info.hasDefaultB) promises.push(loadImage(base + 'defaultB.png'));
   else promises.push(Promise.resolve(null));
+  if (info.hasCorrection)
+    promises.push(fetch(base + 'correction.json').then(r => r.json()));
+  else
+    promises.push(Promise.resolve(null));
 
   const imgs = await Promise.all(promises);
   const a = {
@@ -175,6 +179,7 @@ async function loadWindowAssets(n) {
     font: imgs[8],
     defaultA: imgs[9],
     defaultB: imgs[10],
+    correction: imgs[11],  // (H rows) × [r, g, b] residual to add per pixel.
   };
   // Convert each to ImageData so we can do per-pixel math fast.
   const toData = (im) => {
@@ -295,6 +300,25 @@ function recolor(asset) {
       acc[i+2] += d[i+2] * bs;
     }
   }
+  // Per-row residual correction: fits the SNES per-scanline color-math
+  // pass that the linear baseline + Σ slot · c/31 model doesn't capture.
+  // The values are fit against the default-palette screenshot, so they're
+  // exact at defaults and "shifted in the right direction" for other
+  // palettes.
+  if (asset.correction) {
+    const corr = asset.correction;
+    for (let y = 0; y < H; y++) {
+      const cr = corr[y][0], cg = corr[y][1], cb = corr[y][2];
+      const row = y * W * 4;
+      for (let x = 0; x < W; x++) {
+        const i = row + x * 4;
+        acc[i  ] += cr;
+        acc[i+1] += cg;
+        acc[i+2] += cb;
+      }
+    }
+  }
+
   for (let i = 0; i < N; i += 4) {
     out.data[i  ] = acc[i  ];   // Uint8ClampedArray clamps to [0,255]
     out.data[i+1] = acc[i+1];

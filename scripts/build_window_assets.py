@@ -51,6 +51,24 @@ CURSOR_COPY_OFFSET = 32  # The wallpaper tiles every 32 px horizontally, so
                          # background that the cursor sprite is hiding.
 CURSOR_MIN_SIZE = 30
 CURSOR_MAX_SIZE = 200
+CURSOR_DILATE = 3  # Expand the detected sprite mask by this many pixels in
+                   # every direction to also catch its drop shadow.
+
+
+# Per-window default palette (matches config/config.py WINDOW_DEFAULTS).  We
+# need this to render a "synth at defaults" image so we can fit a y-axis
+# correction against the real defaultB screenshot.
+WINDOW_DEFAULTS = {
+    1: [[25,28,28],[20,22,22],[16,16,16],[10,10,10],[5,6,6],   [6,6,17],  [5,5,16]],
+    2: [[14,15,15],[8,9,9],   [7,8,8],   [6,7,7],   [5,6,6],   [4,5,5],   [1,2,2]],
+    3: [[7,13,16], [6,10,13], [4,7,10],  [3,6,7],   [2,4,5],   [2,3,4],   [10,15,19]],
+    4: [[17,12,4], [15,11,4], [14,9,3],  [12,8,2],  [19,21,20],[7,9,8],   [4,6,5]],
+    5: [[13,11,8], [12,11,8], [12,10,7], [11,9,6],  [10,8,4],  [7,7,4],   [2,2,2]],
+    6: [[19,19,19],[13,15,15],[10,12,11],[8,10,9],  [6,8,7],   [4,6,5],   [1,3,2]],
+    7: [[15,21,14],[12,17,11],[9,15,8],  [7,13,6],  [5,10,4],  [4,7,4],   [2,5,3]],
+    8: [[20,12,13],[25,24,22],[20,19,16],[26,17,0], [25,13,0], [20,11,0], [4,4,4]],
+}
+FONT_DEFAULT = [31, 31, 31]
 
 
 def _find_cursor_mask(baseline: np.ndarray) -> np.ndarray:
@@ -88,7 +106,67 @@ def _find_cursor_mask(baseline: np.ndarray) -> np.ndarray:
             if CURSOR_MIN_SIZE <= len(pts) <= CURSOR_MAX_SIZE:
                 for (py, px) in pts:
                     mask[py, px] = True
+    if mask.any():
+        mask = _dilate(mask, CURSOR_DILATE)
     return mask
+
+
+def _dilate(mask: np.ndarray, k: int) -> np.ndarray:
+    """Binary dilation by k pixels (8-connected).  Pure-numpy."""
+    if k <= 0:
+        return mask
+    out = mask.copy()
+    for _ in range(k):
+        nxt = out.copy()
+        nxt[1:]  |= out[:-1]
+        nxt[:-1] |= out[1:]
+        nxt[:, 1:]  |= out[:, :-1]
+        nxt[:, :-1] |= out[:, 1:]
+        out = nxt
+    return out
+
+
+def _synth_at_defaults(window_index: int,
+                       baseline: np.ndarray,
+                       slots: list[np.ndarray | None],
+                       font: np.ndarray | None) -> np.ndarray:
+    """Mirror the JS recolor pass for window i with its default palette."""
+    palette = WINDOW_DEFAULTS[window_index]
+    H, W, _ = baseline.shape
+    acc = np.zeros((H, W, 3), dtype=np.float32)
+    # baseline weight = 1 − Σ c_n/31 − c_font/31  per channel
+    wb = np.ones(3, dtype=np.float32)
+    for n, im in enumerate(slots):
+        if im is None: continue
+        c = palette[n]
+        wb -= np.array(c, dtype=np.float32) / 31.0
+    if font is not None:
+        wb -= np.array(FONT_DEFAULT, dtype=np.float32) / 31.0
+    acc += baseline.astype(np.float32) * wb
+    for n, im in enumerate(slots):
+        if im is None: continue
+        c = np.array(palette[n], dtype=np.float32) / 31.0
+        acc += im.astype(np.float32) * c
+    if font is not None:
+        c = np.array(FONT_DEFAULT, dtype=np.float32) / 31.0
+        acc += font.astype(np.float32) * c
+    return np.clip(acc, 0, 255)
+
+
+def _fit_y_correction(real_default: np.ndarray,
+                      synth_default: np.ndarray) -> np.ndarray:
+    """Return a (H, 3) per-row, per-channel correction.
+
+    The SNES menu applies a per-scanline operation (color math + a
+    gradient against another BG layer) that the linear baseline + Σ
+    delta · c/31 model doesn't capture.  Empirically the residual
+    averages to a smooth function of y, so storing the mean residual
+    per row is enough to bring the live preview almost on top of the
+    real screenshot for default palettes — and shifts non-default
+    palettes in the right direction too.
+    """
+    res = real_default.astype(np.float32) - synth_default.astype(np.float32)
+    return res.mean(axis=1)  # (H, 3) — per row, per channel
 
 
 def _apply_cursor_mask(images: list[np.ndarray | None],
@@ -166,6 +244,22 @@ def build_window(window_index: int) -> dict | None:
     if font_clean is not None:
         _save(font_clean, out_dir / "font.png")
 
+    # Fit a per-row, per-channel correction against the default-palette
+    # screenshot.  Stored as raw float arrays under correction.json so
+    # the renderer can load them once and add a small constant to each
+    # pixel based on its row.
+    correction = None
+    ref_default = src / f"W{window_index}_defaultB.png"
+    if ref_default.exists():
+        real = _load(ref_default)
+        synth = _synth_at_defaults(window_index, baseline,
+                                   list(cleaned_slots), font_clean)
+        corr = _fit_y_correction(real, synth)  # (H, 3)
+        # Round to 2 decimals to keep the JSON readable.
+        correction = [[round(float(v), 2) for v in row] for row in corr]
+        with open(out_dir / "correction.json", "w") as f:
+            json.dump(correction, f)
+
     for tag in ("A", "B"):
         ref = src / f"W{window_index}_default{tag}.png"
         if ref.exists():
@@ -175,6 +269,7 @@ def build_window(window_index: int) -> dict | None:
         "window": window_index,
         "slots": slot_indices,
         "font": font_present,
+        "hasCorrection": correction is not None,
         "hasDefaultA": (src / f"W{window_index}_defaultA.png").exists(),
         "hasDefaultB": (src / f"W{window_index}_defaultB.png").exists(),
     }
