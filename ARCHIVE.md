@@ -928,6 +928,7 @@ These addresses are verified unused during shop menu operations (Bank C3 B4xx-BA
 | $42 | 1 byte | SLOT_TEMP_DP: temp for slot index or pack size |
 | $60-$61 | 2 bytes | UNIT_PRICE_SAVE_DP: saved unit price (for restore after pack-price inflation) |
 | $62-$63 | 2 bytes | PACK_TEMP_DP: 16-bit scratch for pack table computation / multiply results |
+| $66 | 1 byte | SUBMENU_FLAG_DP: non-zero while the order submenu is open; set by the BAAB label hook, cleared by the B98F label hook; read by the qty-value hook (BCAB) to suppress repainting the "Qty: N" indicator under the submenu's window dressing |
 | $78-$7F | 8 bytes | compact_items buffer (available items packed to top, rest $FF) |
 | $B8-$BF | 8 bytes | slot_map buffer (display position → original shop slot index) |
 
