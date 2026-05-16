@@ -51,8 +51,14 @@ CURSOR_COPY_OFFSET = 32  # The wallpaper tiles every 32 px horizontally, so
                          # background that the cursor sprite is hiding.
 CURSOR_MIN_SIZE = 30
 CURSOR_MAX_SIZE = 200
-CURSOR_DILATE = 3  # Expand the detected sprite mask by this many pixels in
-                   # every direction to also catch its drop shadow.
+# Asymmetric dilation around the detected cursor sprite (in pixels).
+# The bare CC misses the drop shadow under the hand (pad down) and a thin
+# bright outline around the sides; on the right the sprite sits flush
+# against menu text so we trim that direction a little.
+CURSOR_DILATE_LEFT  = 3
+CURSOR_DILATE_RIGHT = 2
+CURSOR_DILATE_UP    = 3
+CURSOR_DILATE_DOWN  = 6
 
 
 # Per-window default palette (matches config/config.py WINDOW_DEFAULTS).  We
@@ -107,22 +113,23 @@ def _find_cursor_mask(baseline: np.ndarray) -> np.ndarray:
                 for (py, px) in pts:
                     mask[py, px] = True
     if mask.any():
-        mask = _dilate(mask, CURSOR_DILATE)
+        mask = _dilate(mask, CURSOR_DILATE_LEFT, CURSOR_DILATE_RIGHT,
+                       CURSOR_DILATE_UP, CURSOR_DILATE_DOWN)
     return mask
 
 
-def _dilate(mask: np.ndarray, k: int) -> np.ndarray:
-    """Binary dilation by k pixels (8-connected).  Pure-numpy."""
-    if k <= 0:
-        return mask
+def _dilate(mask: np.ndarray, left: int, right: int,
+            up: int, down: int) -> np.ndarray:
+    """Asymmetric binary dilation (4-connected, per direction)."""
     out = mask.copy()
-    for _ in range(k):
-        nxt = out.copy()
-        nxt[1:]  |= out[:-1]
-        nxt[:-1] |= out[1:]
-        nxt[:, 1:]  |= out[:, :-1]
-        nxt[:, :-1] |= out[:, 1:]
-        out = nxt
+    for _ in range(up):
+        out[:-1] |= out[1:]
+    for _ in range(down):
+        out[1:] |= out[:-1]
+    for _ in range(left):
+        out[:, :-1] |= out[:, 1:]
+    for _ in range(right):
+        out[:, 1:] |= out[:, :-1]
     return out
 
 
@@ -159,14 +166,30 @@ def _fit_y_correction(real_default: np.ndarray,
 
     The SNES menu applies a per-scanline operation (color math + a
     gradient against another BG layer) that the linear baseline + Σ
-    delta · c/31 model doesn't capture.  Empirically the residual
-    averages to a smooth function of y, so storing the mean residual
-    per row is enough to bring the live preview almost on top of the
-    real screenshot for default palettes — and shifts non-default
-    palettes in the right direction too.
+    delta · c/31 model doesn't capture.  Empirically the residual is
+    a smooth, almost-linear function of y across the active menu area,
+    so we fit a single line per channel rather than carry the
+    row-by-row noise from a per-row mean.
+
+    The fit ignores the top-most and bottom-most rows where there's no
+    actual window content (and so no informative residual signal).
     """
-    res = real_default.astype(np.float32) - synth_default.astype(np.float32)
-    return res.mean(axis=1)  # (H, 3) — per row, per channel
+    res = (real_default.astype(np.float32)
+           - synth_default.astype(np.float32))  # (H, W, 3)
+    H = res.shape[0]
+    per_row = res.mean(axis=1)                  # (H, 3)
+    y = np.arange(H, dtype=np.float32)
+
+    # Active menu vertical span — covers all 8 window styles.
+    y_lo, y_hi = 8, 210
+    mask = (y >= y_lo) & (y < y_hi)
+    y_fit = y[mask]
+    out = np.zeros_like(per_row)
+    for ch in range(3):
+        # Plain least-squares: corr(y) = slope·y + intercept.
+        slope, intercept = np.polyfit(y_fit, per_row[mask, ch], 1)
+        out[:, ch] = slope * y + intercept
+    return out
 
 
 def _apply_cursor_mask(images: list[np.ndarray | None],
