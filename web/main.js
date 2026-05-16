@@ -227,51 +227,78 @@ const CURSOR_SPRITE = (() => {
 })();
 
 function recolor(asset) {
-  // Build an ImageData by compositing baseline + slot_n * c_n/31 + font * c_f/31
+  // Compose:  output[p] = baseline[p]
+  //                     + Σ (slot_n_raw[p] - baseline[p]) * c_n / 31
+  //                     +  (font_raw[p]    - baseline[p]) * c_f / 31
+  // The stored slot{N}.png and font.png are the RAW W_N / W_font
+  // screenshots (with cursor sprites scrubbed), not pre-subtracted deltas,
+  // so this preserves *signed* per-channel contributions — including the
+  // pixels whose intensity drops when a slot turns on (e.g. wallpaper
+  // pixels that get averaged with the slot color instead of rendered at
+  // full brightness).
   if (!asset || !asset.baselineData) return null;
   const W = 256, H = 224;
   const out = ctx.createImageData(W, H);
   const N = W * H * 4;
   const base = asset.baselineData.data;
 
-  // Pull current window slot colors for the *visible* window style preview.
   const winN = state.WindowStyle;
   const slotColors = state.windows[winN];
   const fontColor = state.font;
 
-  // Start with baseline.
-  for (let i = 0; i < N; i++) out.data[i] = base[i];
+  // Per-channel scalar weight on the *baseline* contribution:
+  //   weight_base = 1 - Σ c_n_ch/31 - c_font_ch/31
+  // (this lets us rewrite  baseline + Σ (raw_n - baseline) * c_n/31
+  //                     =  baseline * weight_base + Σ raw_n * c_n/31
+  //  in a single linear pass per channel.)
+  let wBaseR = 1, wBaseG = 1, wBaseB = 1;
+  for (let s = 0; s < 7; s++) {
+    if (!asset.slotsData[s]) continue;
+    const c = slotColors[s];
+    wBaseR -= c[0] / 31; wBaseG -= c[1] / 31; wBaseB -= c[2] / 31;
+  }
+  if (asset.fontData) {
+    wBaseR -= fontColor[0] / 31;
+    wBaseG -= fontColor[1] / 31;
+    wBaseB -= fontColor[2] / 31;
+  }
 
-  // Add slot contributions.
+  // ImageData backing arrays are Uint8ClampedArray which clamp on every
+  // write — that erases the signed intermediate sums we need.  Accumulate
+  // into a Float32Array, then commit.
+  const acc = new Float32Array(N);
+  for (let i = 0; i < N; i += 4) {
+    acc[i  ] = base[i  ] * wBaseR;
+    acc[i+1] = base[i+1] * wBaseG;
+    acc[i+2] = base[i+2] * wBaseB;
+  }
   for (let s = 0; s < 7; s++) {
     const sd = asset.slotsData[s];
     if (!sd) continue;
-    const c = slotColors[s]; // [r,g,b] 0..31
-    if (c[0] === 0 && c[1] === 0 && c[2] === 0) continue;
+    const c = slotColors[s];
     const rs = c[0] / 31, gs = c[1] / 31, bs = c[2] / 31;
+    if (rs === 0 && gs === 0 && bs === 0) continue;
     const d = sd.data;
     for (let i = 0; i < N; i += 4) {
-      out.data[i]   += d[i]   * rs;
-      out.data[i+1] += d[i+1] * gs;
-      out.data[i+2] += d[i+2] * bs;
+      acc[i  ] += d[i  ] * rs;
+      acc[i+1] += d[i+1] * gs;
+      acc[i+2] += d[i+2] * bs;
     }
   }
-  // Add font contribution.
   if (asset.fontData) {
     const c = fontColor;
     const rs = c[0] / 31, gs = c[1] / 31, bs = c[2] / 31;
     const d = asset.fontData.data;
     for (let i = 0; i < N; i += 4) {
-      out.data[i]   += d[i]   * rs;
-      out.data[i+1] += d[i+1] * gs;
-      out.data[i+2] += d[i+2] * bs;
+      acc[i  ] += d[i  ] * rs;
+      acc[i+1] += d[i+1] * gs;
+      acc[i+2] += d[i+2] * bs;
     }
   }
-  // Clamp & set alpha to 255.
   for (let i = 0; i < N; i += 4) {
-    if (out.data[i]   > 255) out.data[i]   = 255;
-    if (out.data[i+1] > 255) out.data[i+1] = 255;
-    if (out.data[i+2] > 255) out.data[i+2] = 255;
+    out.data[i  ] = acc[i  ];   // Uint8ClampedArray clamps to [0,255]
+    out.data[i+1] = acc[i+1];
+    out.data[i+2] = acc[i+2];
     out.data[i+3] = 255;
   }
   return out;

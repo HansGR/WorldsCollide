@@ -6,23 +6,24 @@ Per window style i, the screenshots/Wi/ folder is expected to contain:
   - Wi_font.png      font color bright; all 7 slots [0,0,0]
   - Wi_defaultA.png, Wi_defaultB.png   reference shots with default palette
 
-We extract:
-  - baseline.png   = Wi_0.png (output when all slots are [0,0,0])
-  - slot{N}.png    = clamp(Wi_N - Wi_0, 0, 255) per channel, N in 1..7
-  - font.png       = clamp(Wi_font - Wi_0, 0, 255)
+The web UI composites these per-pixel as:
 
-The web UI composites these as:
-    output[p] = baseline[p] + sum_n slot{n}[p] * c_n / 31 + font[p] * c_font / 31
-where c_n is the [0..31] BGR15 slot color (per channel).
+    output[p] = baseline[p]
+              + Σ (raw{n}[p] - baseline[p]) * c_n / 31
+              + (font_raw[p] - baseline[p]) * c_font / 31
 
-This script writes the per-window assets into web/assets/W{i}/ and emits a
-manifest.json so the UI can know which window styles have art available.
+so we need to preserve the *signed* delta.  Storing raw screenshots is the
+simplest way to do that — JS does the subtraction at render time, with
+full precision in either direction.
+
+This script copies the relevant screenshots into ``web/assets/W{i}/`` and
+emits a ``manifest.json`` so the UI knows which window styles ship with
+art and which need a placeholder.
 """
 
 from __future__ import annotations
 
 import json
-import os
 import sys
 from pathlib import Path
 
@@ -43,49 +44,68 @@ def _save(arr: np.ndarray, path: Path) -> None:
     Image.fromarray(arr.astype(np.uint8), "RGB").save(path, optimize=True)
 
 
-def _strip_cursor_ghosts(deltas: list[np.ndarray]) -> list[np.ndarray]:
-    """Heuristic: a pixel that is bright in only ONE slot's delta and is part
-    of a small cluster (< ~64 pixels) is almost certainly the menu cursor in
-    that slot's source screenshot — the cursor moves between screenshots while
-    the actual window border / fill pixels light up in adjacent slots too.
+CURSOR_MIN_SIZE = 30
+CURSOR_MAX_SIZE = 300
 
-    We zero out such pixels so the recoloring math doesn't keep ghost cursors.
+
+def _strip_cursor_ghosts(raw_images: list[np.ndarray | None],
+                         baseline: np.ndarray) -> list[np.ndarray | None]:
+    """Erase the menu cursor sprite from each slot-isolation screenshot.
+
+    The cursor is the FF6 hand pointer drawn in the gutter just left of
+    each value column.  It moves between W_N screenshots and so each
+    cursor blob appears in only one slot's image.  But many *legitimate*
+    pixels also appear in only one slot — e.g. window 3 decomposes the
+    wallpaper "lightning bolts" across the slots, with each slot lighting
+    up its own subset of the pattern.
+
+    The distinguishing feature is *connected-component size*:
+
+      - Cursor sprite: ~50-200 connected bright pixels (a hand shape)
+      - Wallpaper lightning: 1-20 px micro-blobs scattered across the screen
+      - Window borders / fill: hundreds-of-thousands of px strips
+
+    Clean any CC whose size falls in the cursor band and whose bright
+    pixels are *not* shared with another slot.
     """
-    if not deltas:
-        return deltas
-    H, W, _ = deltas[0].shape
-    intensities = np.stack([d.max(-1) for d in deltas])
-    BRIGHT = 80
-    bright = intensities > BRIGHT
-    counts = bright.sum(0)  # how many slots light up each pixel
-    out = [d.copy() for d in deltas]
-    for n, d in enumerate(out):
-        unique_mask = bright[n] & (counts == 1)
-        if not unique_mask.any():
+    if not any(im is not None for im in raw_images):
+        return raw_images
+    H, W, _ = baseline.shape
+
+    # Per-slot "bright vs baseline" mask, stacked.
+    bright_stack = []
+    for im in raw_images:
+        if im is None:
+            bright_stack.append(np.zeros((H, W), bool))
             continue
-        # Connected components on `unique_mask`; tiny components (cursor-sized)
-        # get zeroed out.  Avoid scipy dep — use a basic flood fill.
-        visited = np.zeros_like(unique_mask)
+        d = np.abs(im.astype(int) - baseline.astype(int)).max(-1)
+        bright_stack.append(d > 80)
+    bright_stack = np.stack(bright_stack)
+    counts = bright_stack.sum(0)
+
+    out = [im.copy() if im is not None else None for im in raw_images]
+    for n in range(len(raw_images)):
+        if raw_images[n] is None:
+            continue
+        unique = bright_stack[n] & (counts == 1)
+        if not unique.any():
+            continue
+        visited = np.zeros_like(unique)
         for y0 in range(H):
             for x0 in range(W):
-                if not unique_mask[y0, x0] or visited[y0, x0]:
+                if not unique[y0, x0] or visited[y0, x0]:
                     continue
-                stack = [(y0, x0)]
-                pts = []
+                stack = [(y0, x0)]; pts = []
                 while stack:
                     y, x = stack.pop()
-                    if y < 0 or y >= H or x < 0 or x >= W: continue
-                    if visited[y, x] or not unique_mask[y, x]: continue
+                    if not (0 <= y < H and 0 <= x < W): continue
+                    if visited[y, x] or not unique[y, x]: continue
                     visited[y, x] = True
                     pts.append((y, x))
                     stack.extend(((y+1,x),(y-1,x),(y,x+1),(y,x-1)))
-                # Cursors are localized hand sprites (~100-160 px including the
-                # arrow body).  Window borders are LONG connected strips
-                # (hundreds of pixels along an edge).  Strip only the small
-                # blobs.
-                if 0 < len(pts) <= 200:
+                if CURSOR_MIN_SIZE <= len(pts) <= CURSOR_MAX_SIZE:
                     for (py, px) in pts:
-                        d[py, px] = 0
+                        out[n][py, px] = baseline[py, px]
     return out
 
 
@@ -101,35 +121,29 @@ def build_window(window_index: int) -> dict | None:
     baseline = _load(baseline_path)
     _save(baseline, out_dir / "baseline.png")
 
-    slot_indices = []
-    raw_deltas = []
+    raw_slots: list[np.ndarray | None] = []
+    slot_indices: list[int] = []
     for n in range(1, 8):
         p = src / f"W{window_index}_{n}.png"
-        if not p.exists():
-            raw_deltas.append(None)
-            continue
-        img = _load(p)
-        delta = np.clip(img.astype(int) - baseline.astype(int), 0, 255).astype(np.uint8)
-        raw_deltas.append(delta)
-        slot_indices.append(n)
+        if p.exists():
+            raw_slots.append(_load(p))
+            slot_indices.append(n)
+        else:
+            raw_slots.append(None)
 
-    # Strip cursor ghosts using cross-slot agreement.
-    nonempty = [d for d in raw_deltas if d is not None]
-    cleaned = _strip_cursor_ghosts(nonempty)
-    ci = 0
-    for n in range(1, 8):
-        if raw_deltas[n - 1] is None:
-            continue
-        _save(cleaned[ci], out_dir / f"slot{n}.png")
-        ci += 1
-    slot_present = slot_indices
+    cleaned = _strip_cursor_ghosts(raw_slots, baseline)
+    for n, im in zip(range(1, 8), cleaned):
+        if im is not None:
+            _save(im, out_dir / f"slot{n}.png")
 
-    font_path = src / f"W{window_index}_font.png"
     font_present = False
+    font_path = src / f"W{window_index}_font.png"
     if font_path.exists():
-        img = _load(font_path)
-        delta = np.clip(img.astype(int) - baseline.astype(int), 0, 255)
-        _save(delta, out_dir / "font.png")
+        font_raw = _load(font_path)
+        # Don't run cursor cleanup here — every text glyph is a small
+        # bright CC and would be eaten.  The font screenshot has one
+        # cursor ghost; we leave it in.
+        _save(font_raw, out_dir / "font.png")
         font_present = True
 
     for tag in ("A", "B"):
@@ -139,7 +153,7 @@ def build_window(window_index: int) -> dict | None:
 
     return {
         "window": window_index,
-        "slots": slot_present,
+        "slots": slot_indices,
         "font": font_present,
         "hasDefaultA": (src / f"W{window_index}_defaultA.png").exists(),
         "hasDefaultB": (src / f"W{window_index}_defaultB.png").exists(),
