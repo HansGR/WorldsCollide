@@ -105,13 +105,15 @@ const PAGE_A_OPTIONS = [
 const PAGE_B_OPTIONS = [
   { key: 'SpellOrder',  y: 44,
     values: [1,2,3,4,5,6].map((v,i)=>[v, 112 + i*16])  },
-  { key: 'WindowStyle', y:112,
-    values: [1,2,3,4,5,6,7,8].map((v,i)=>[v, 112 + i*14])  },
-  // Color row: selects what the R/G/B sliders edit.  "font" then slot1..7.
+  { key: 'WindowStyle', y:108,
+    values: [1,2,3,4,5,6,7,8].map((v,i)=>[v, 112 + i*15])  },
+  // Color row: selects what the R/G/B sliders edit.  "font" sits on the
+  // text row at y=128, but the seven slot swatches FF6 draws live one
+  // line below in a tighter row of small color blocks.
   { key: 'Color',       y:128, kind: 'color',
     values: [
-      ['font', 112],
-      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 152 + i*14]))
+      ['font', 112, 128],
+      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 168 + i*5, 136]))
     ] },
 ];
 
@@ -410,14 +412,22 @@ function currentValueOf(row) {
   return state[row.key];
 }
 
+function valuePos(row, item) {
+  // Each row.values entry is [value, x] or [value, x, y].  The y override
+  // is used by the Color row's slot swatches, which sit one line below
+  // the row's text label.
+  const [, x, yOverride] = item;
+  return { x, y: yOverride ?? row.y };
+}
+
 function drawCursorOverlay() {
   const row = activeRow();
   if (!row) return;
   const v = row.values[activeValueIndex()];
   if (!v) return;
-  const [, x] = v;
+  const { x, y } = valuePos(row, v);
   ctx.save();
-  ctx.drawImage(CURSOR_SPRITE, x - 10, row.y + 1);
+  ctx.drawImage(CURSOR_SPRITE, x - 10, y + 1);
   ctx.restore();
 }
 
@@ -431,15 +441,19 @@ function drawSelectionOverlay() {
     const cur = currentValueOf(row);
     const item = row.values.find(([v]) => v === cur);
     if (!item) continue;
-    const [, x] = item;
+    const { x, y } = valuePos(row, item);
     const w = approxValueWidth(row, item[0]);
-    ctx.fillRect(x, row.y + 10, w, 1);
+    ctx.fillRect(x, y + 10, w, 1);
   }
   ctx.restore();
 }
 
 function approxValueWidth(row, v) {
-  if (row.kind === 'color' || row.kind === 'wallpaper') return 12;
+  if (row.kind === 'color') {
+    // 'font' is a word, slot1..7 are tiny swatches.
+    return v === 'font' ? 22 : 4;
+  }
+  if (row.kind === 'wallpaper') return 12;
   if (typeof v === 'number') return 8;
   // ~6px per char roughly
   return Math.min(56, String(v).length * 7 + 4);
@@ -453,13 +467,15 @@ function updateHitTargets() {
   for (let r = 0; r < opts.length; r++) {
     const row = opts[r];
     for (let v = 0; v < row.values.length; v++) {
-      const [val, x] = row.values[v];
+      const item = row.values[v];
+      const val = item[0];
+      const { x, y } = valuePos(row, item);
       const w = approxValueWidth(row, val);
       const el = document.createElement('div');
       el.className = 'hit';
       // hit-layer occupies the canvas; canvas displays at 2x.
       el.style.left   = (x - 2) * 2 + 'px';
-      el.style.top    = (row.y) * 2 + 'px';
+      el.style.top    = y * 2 + 'px';
       el.style.width  = (w + 4) * 2 + 'px';
       el.style.height = 12 * 2 + 'px';
       el.title = `${row.key}: ${val}`;
@@ -562,6 +578,15 @@ function syncSidePanel() {
   document.getElementById('rgb-g-val').textContent = rgb[1];
   document.getElementById('rgb-b-val').textContent = rgb[2];
 
+  // Target selector (Font / Window + slot index)
+  const isFont = state.editing.kind === 'font';
+  document.querySelectorAll('#target-kind .seg-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.kind === (isFont ? 'font' : 'slot'));
+  });
+  const slotSel = document.getElementById('target-slot');
+  slotSel.disabled = isFont;
+  if (!isFont) slotSel.value = String(state.editing.slot);
+
   // preview-warning
   const warn = document.getElementById('preview-warning');
   const info = assets.manifest?.windows?.[String(state.WindowStyle)];
@@ -580,6 +605,29 @@ function syncSidePanel() {
     render();
     updateFlagString();
   });
+});
+
+// Target-kind buttons (Font / Window).
+document.querySelectorAll('#target-kind .seg-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.kind === 'font') {
+      state.editing = { kind: 'font' };
+    } else {
+      // Default to last-edited slot, or slot 1.
+      const slot = state.editing.kind === 'slot' ? state.editing.slot : 1;
+      state.editing = { kind: 'slot', slot };
+    }
+    syncSidePanel();
+    render();
+  });
+});
+
+// Slot picker dropdown.
+document.getElementById('target-slot').addEventListener('change', (e) => {
+  const slot = parseInt(e.target.value, 10);
+  state.editing = { kind: 'slot', slot };
+  syncSidePanel();
+  render();
 });
 
 document.getElementById('reset-color').addEventListener('click', () => {

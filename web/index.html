@@ -51,6 +51,22 @@
 
       <div class="color-edit" id="color-edit">
         <h3 id="color-edit-title">Editing: Font color</h3>
+        <div class="target-row">
+          <label>Target:</label>
+          <div class="seg" id="target-kind">
+            <button data-kind="font" class="seg-btn active">Font</button>
+            <button data-kind="slot" class="seg-btn">Window</button>
+          </div>
+          <select id="target-slot" disabled>
+            <option value="1">slot 1</option>
+            <option value="2">slot 2</option>
+            <option value="3">slot 3</option>
+            <option value="4">slot 4</option>
+            <option value="5">slot 5</option>
+            <option value="6">slot 6</option>
+            <option value="7">slot 7</option>
+          </select>
+        </div>
         <div class="rgb-row">
           <label>R</label>
           <input type="range" min="0" max="31" id="rgb-r">
