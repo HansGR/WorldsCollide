@@ -16,7 +16,17 @@ class BuyMenu:
     COMPACT_FLAG_DP  = Shops.COMPACT_FLAG_DP     # $25
     LIMITED_MODE_DP  = Shops.LIMITED_MODE_DP      # $30
 
-    # Free DP bytes used as temporaries for price inflation / pack lookup
+    # Free DP bytes used as temporaries for price inflation / pack lookup.
+    #
+    # Verified-safe DP bytes for shop-menu hooks (Bank C3 B4xx-BAxx range),
+    # per the table in ARCHIVE.md → "Custom Direct Page Variables":
+    #     $25, $30, $36, $37, $38, $40, $41, $42,
+    #     $60, $61, $62, $63, $66, $78-$7F, $B8-$BF
+    # Pick from this list when adding a new shop-menu DP variable, and add
+    # the new entry to the ARCHIVE.md table.  Bytes NOT on the list are not
+    # guaranteed unused — in particular $49-$4A are sell-menu state (see
+    # note below), and most $C0-$CF / $E0-$E1 / $39-$3A are used by the
+    # menu engine for cursor/window state.
     SLOT_TEMP_DP       = 0x42   # 1 byte: temp for slot index or pack size
     # NOTE: $49-$4A are NOT safe for scratch — $49 is the sell menu's "top BG1
     # write row" and $4A is its "list scroll position" (used by C3/83F7 and
