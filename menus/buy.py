@@ -26,6 +26,10 @@ class BuyMenu:
     # code range B4xx-BFxx.
     PACK_TEMP_DP       = 0x62   # 2 bytes ($62-$63): temp for pack table computation
     UNIT_PRICE_SAVE_DP = 0x60   # 2 bytes ($60-$61): saved unit price for restore
+    SUBMENU_FLAG_DP    = 0x64   # 1 byte: non-zero while the order submenu is open
+                                # (set by the BAAB label hook, cleared by the B98F
+                                # label hook); read by the qty-value hook to
+                                # suppress repainting the qty under the submenu.
 
     def __init__(self):
         if args.shop_limited_inventory:
@@ -573,16 +577,30 @@ class BuyMenu:
         )
 
     def hook_draw_labels(self):
-        """Hook JSR $C2E1 at B98F and BAAB to also draw 'Qty:' label.
+        """Hook the two JSR $C2E1 call sites (B98F, BAAB) with separate
+        routines so the 'Qty:' indicator is hidden while the order submenu
+        is open and restored when it closes.
 
-        The original C2E1 draws 'Owned:' and 'Equipped:' in blue.  For
-        limited shops ($25 != 0), we additionally draw 'Qty:' below
-        'Equipped:' at tilemap position $7CB3.
+        The original C2E1 draws 'Owned:' and 'Equipped:' in blue.
+
+        B98F (buy list redraw, also reached on return from the order menu):
+            - Clears the submenu flag at $64.
+            - Draws the 'Qty:' label at tilemap position $7CB3.
+            (The qty value at $7D3F is then drawn by hook_draw_qty_value.)
+
+        BAAB (order submenu redraw):
+            - Sets the submenu flag at $64 so hook_draw_qty_value will
+              suppress the qty value.
+            - Erases the 'Qty:' label tiles at $7CB3-$7CB9 and the qty
+              value tiles at $7D3F so neither overlaps the submenu's
+              window dressing.
         """
         qty_text_local = self._qty_text_addr_local()
 
-        src = [
+        # ----- Buy list version (B98F): draw "Qty:" label -----
+        buy_list_src = [
             asm.JSR(0xc2e1, asm.ABS),          # original: draw Owned:, Equipped:
+            asm.STZ(self.SUBMENU_FLAG_DP, asm.DIR),  # leaving submenu
 
             asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BEQ("DONE"),
@@ -597,17 +615,55 @@ class BuyMenu:
             asm.RTS(),
         ]
 
-        space = Write(Bank.C3, src, "limited inventory: draw labels with Qty")
-        labels_addr = space.start_address
+        space = Write(Bank.C3, buy_list_src,
+                      "limited inventory: draw labels with Qty (buy list)")
+        buy_list_addr = space.start_address
 
-        # Hook both call sites of JSR $C2E1
-        # Site 1: B98F (initial buy list draw)
+        # ----- Order menu version (BAAB): erase "Qty:" label and value -----
+        order_menu_src = [
+            asm.JSR(0xc2e1, asm.ABS),          # original: draw Owned:, Equipped:
+
+            asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
+            asm.BEQ("DONE"),
+
+            # Mark submenu as open so the qty-value hook suppresses repaints.
+            asm.LDA(0x01, asm.IMM8),
+            asm.STA(self.SUBMENU_FLAG_DP, asm.DIR),
+
+            # Erase tiles: $04b6 writes the 2-byte pair at $F8-$F9 as two
+            # adjacent tiles starting at the position in X.  $FF is the
+            # blank tile.
+            asm.LDA(0xff, asm.IMM8),
+            asm.STA(0xf8, asm.DIR),
+            asm.STA(0xf9, asm.DIR),
+
+            # Erase the 4-tile "Qty:" label at $7CB3 / $7CB5 / $7CB7 / $7CB9.
+            asm.LDX(0x7cb3, asm.IMM16),
+            asm.JSR(0x04b6, asm.ABS),
+            asm.LDX(0x7cb7, asm.IMM16),
+            asm.JSR(0x04b6, asm.ABS),
+
+            # Erase the 2-tile qty value at $7D3F (covers anything previously
+            # drawn there before the submenu opened).
+            asm.LDX(0x7d3f, asm.IMM16),
+            asm.JSR(0x04b6, asm.ABS),
+
+            "DONE",
+            asm.RTS(),
+        ]
+
+        space = Write(Bank.C3, order_menu_src,
+                      "limited inventory: erase Qty label (order submenu)")
+        order_menu_addr = space.start_address
+
+        # Hook each call site of JSR $C2E1 with its own routine.
+        # Site 1: B98F (initial buy list draw / restored on submenu close)
         space = Reserve(0x3b990, 0x3b991, "shop buy menu draw labels hook 1")
-        space.write((labels_addr & 0xffff).to_bytes(2, "little"))
+        space.write((buy_list_addr & 0xffff).to_bytes(2, "little"))
 
-        # Site 2: BAAB (order menu redraw)
+        # Site 2: BAAB (order submenu redraw)
         space = Reserve(0x3baac, 0x3baad, "shop buy menu draw labels hook 2")
-        space.write((labels_addr & 0xffff).to_bytes(2, "little"))
+        space.write((order_menu_addr & 0xffff).to_bytes(2, "little"))
 
     def hook_draw_qty_value(self):
         """Hook JMP $BF69 at C3/BCAB to also draw the pack quantity.
@@ -617,7 +673,9 @@ class BuyMenu:
         the pack size at tilemap position $7D3F (one section below the
         equipped count at $7C3F).
 
-        For normal shops ($25 = 0), we clear the qty area to avoid stale data.
+        For normal shops ($25 = 0), or while the order submenu is open
+        ($64 != 0), we clear the qty area to avoid stale data and to keep
+        the submenu's window dressing unobstructed.
         """
         src = [
             # BF69 expects A = item ID (set by BFC2 before the JMP).
@@ -626,6 +684,10 @@ class BuyMenu:
 
             asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BEQ("CLEAR"),
+
+            # Suppress the qty value while the order submenu is open.
+            asm.LDA(self.SUBMENU_FLAG_DP, asm.DIR),  # $64
+            asm.BNE("CLEAR"),
 
             # Get pack size for cursor slot $4B
             asm.LDA(0x4b, asm.DIR),
