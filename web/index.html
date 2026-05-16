@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FF6WC Config Builder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>FF6WC Config Builder</h1>
+    <p class="hint">
+      Arrow keys / WASD = move cursor &middot; Enter / Space = toggle &middot;
+      Tab = switch page &middot; Click options directly with the mouse.
+    </p>
+  </header>
+
+  <main>
+    <section class="menu-wrap">
+      <div class="page-tabs">
+        <button id="tab-A" class="tab active" data-page="A">Page A</button>
+        <button id="tab-B" class="tab" data-page="B">Page B</button>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="menu-canvas" width="256" height="224" tabindex="0"></canvas>
+        <div id="hit-layer" class="hit-layer"></div>
+      </div>
+    </section>
+
+    <section class="side">
+      <div class="window-picker">
+        <div class="row">
+          <label>Preview window style:</label>
+          <select id="window-style">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option>
+          </select>
+          <span id="preview-warning" class="warn"></span>
+        </div>
+        <div class="row">
+          <label>Wallpaper (1..8):</label>
+          <select id="wallpaper">
+            <option value="1">1</option><option value="2">2</option>
+            <option value="3">3</option><option value="4">4</option>
+            <option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="color-edit" id="color-edit">
+        <h3 id="color-edit-title">Editing: Font color</h3>
+        <div class="rgb-row">
+          <label>R</label>
+          <input type="range" min="0" max="31" id="rgb-r">
+          <span id="rgb-r-val">0</span>
+        </div>
+        <div class="rgb-row">
+          <label>G</label>
+          <input type="range" min="0" max="31" id="rgb-g">
+          <span id="rgb-g-val">0</span>
+        </div>
+        <div class="rgb-row">
+          <label>B</label>
+          <input type="range" min="0" max="31" id="rgb-b">
+          <span id="rgb-b-val">0</span>
+        </div>
+        <button id="reset-color">Reset this color to default</button>
+      </div>
+
+      <div class="reset-all">
+        <button id="reset-all">Reset everything to defaults</button>
+      </div>
+
+      <div class="flagstring">
+        <label for="flag-out">Flagstring (paste after <code>ff6_config.py -i rom.smc</code>):</label>
+        <textarea id="flag-out" readonly rows="6"></textarea>
+        <button id="copy-flags">Copy</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+</html>
