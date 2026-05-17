@@ -405,31 +405,56 @@ function render() {
 
 function drawMagOrderText() {
   // The "A.. Healing / B.. Attack / C.. Effect" block under the Mag.Order
-  // row changes with each spell-order preset.  Our W_N isolation
-  // screenshots were captured at preset 1, so the canvas already has
-  // preset 1's text baked into the recolored output.  To switch to
-  // preset N we apply a signed delta:
+  // row changes with each spell-order preset.  We swap it in two steps:
   //
-  //   canvas[p] += MagOrder_N[p] − MagOrder_1[p]
+  // 1. ERASE — the menu wallpaper repeats on a 32-px horizontal period,
+  //    so we tile-copy the 32 px immediately to the left of the
+  //    MagOrder region across it (L-to-R, in place, so the third 32-px
+  //    block reads freshly-cleared pixels from the second one).  This
+  //    removes preset 1's text that was baked into the W_N isolation
+  //    shots without leaving any ghost outlines.
   //
-  // The crops were both captured under the same palette state, so where
-  // text is identical the delta is zero and the pixel is unchanged;
-  // where the text differs, the delta removes the old strokes and lays
-  // down the new ones.
+  // 2. STAMP — composite the chosen preset's text on top by copying
+  //    only the bright pixels (max channel > threshold) from the
+  //    cropped MagOrder_N image.  The crops were captured under W1's
+  //    default palette so the text uses W1's colors; the background
+  //    around the glyphs comes from the live recolored wallpaper.
   const n = state.SpellOrder;
-  if (n === 1) return;
-  if (!assets.magOrderBbox) return;
-  const ref = assets.magOrder[1];
-  const cur = assets.magOrder[n];
-  if (!ref || !cur) return;
+  const img = assets.magOrder[n];
+  if (!img || !assets.magOrderBbox) return;
+
   const [x0, y0, x1, y1] = assets.magOrderBbox;
   const w = x1 - x0, h = y1 - y0;
+  const TILE = 32;
+  if (x0 - TILE < 0) return;
+
+  // 1) Tile-erase.
+  const ext = ctx.getImageData(x0 - TILE, y0, w + TILE, h);
+  const d = ext.data;
+  const W_EXT = w + TILE;
+  for (let y = 0; y < h; y++) {
+    const row = y * W_EXT * 4;
+    for (let x = TILE; x < W_EXT; x++) {
+      const off = row + x * 4;
+      const src = off - TILE * 4;
+      d[off    ] = d[src    ];
+      d[off + 1] = d[src + 1];
+      d[off + 2] = d[src + 2];
+    }
+  }
+  ctx.putImageData(ext, x0 - TILE, y0);
+
+  // 2) Stamp text glyphs.
+  const TEXT_THRESHOLD = 70;
   const region = ctx.getImageData(x0, y0, w, h);
-  const d = region.data, rd = ref.data, cd = cur.data;
-  for (let i = 0; i < d.length; i += 4) {
-    d[i  ] += cd[i  ] - rd[i  ];
-    d[i+1] += cd[i+1] - rd[i+1];
-    d[i+2] += cd[i+2] - rd[i+2];
+  const rd = region.data, md = img.data;
+  for (let i = 0; i < rd.length; i += 4) {
+    const mx = Math.max(md[i], md[i+1], md[i+2]);
+    if (mx > TEXT_THRESHOLD) {
+      rd[i    ] = md[i    ];
+      rd[i + 1] = md[i + 1];
+      rd[i + 2] = md[i + 2];
+    }
   }
   ctx.putImageData(region, x0, y0);
 }
