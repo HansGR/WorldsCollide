@@ -206,6 +206,15 @@ UNLOCKED_FINAL_KEFKA = 0x094 # custom
 SIEGFRIED_LUMP_OF_METAL_CHESTS = 0x187 # set after siegfried chest in phantom train and lump of metal chest in cyan's dream
 VELDT_WORLD_MUSIC = 0x1bb
 VELDT_REWARD_OBTAINED = 0x1bc # custom
+
+FACING_UP = 0x1b0
+FACING_RIGHT = 0x1b1
+FACING_DOWN = 0x1b2
+FACING_LEFT = 0x1b3
+PRESSING_A = 0x1b4
+NOT_ENOUGH_GP = 0x1be  # set by RemoveGP when player has insufficient GP
+SAVE_ENABLED = 0x1bf
+
 DISABLE_SPRINT = 0x1c1
 DISABLE_MENU_ACCESS = 0x1c2
 TEMP_SONG_OVERRIDE = 0x1cc
