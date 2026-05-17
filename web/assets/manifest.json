@@ -128,5 +128,21 @@
       "hasDefaultA": true,
       "hasDefaultB": true
     }
+  },
+  "magOrder": {
+    "presets": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "bbox": [
+      110,
+      56,
+      200,
+      100
+    ]
   }
 }

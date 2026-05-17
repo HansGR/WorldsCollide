@@ -298,6 +298,36 @@ def build_window(window_index: int) -> dict | None:
     }
 
 
+# --- Magic-order text overlays ----------------------------------------
+#
+# The three lines below "Mag.Order 1 2 3 4 5 6" change based on which
+# spell-order preset is selected (e.g. A•Healing / B•Attack / C•Effect
+# for preset 1).  The user shipped six full-menu screenshots showing
+# each preset's text; we just need the rectangular region with the three
+# text lines, which the renderer can blit over the recolored canvas
+# whenever SpellOrder != 1.
+MAGORDER_BBOX = (110, 56, 200, 100)  # x_lo, y_lo, x_hi, y_hi (inclusive_lo, exclusive_hi)
+
+
+def build_magorder() -> dict | None:
+    src = SHOTS_DIR / "MagOrder"
+    if not src.exists():
+        return None
+    out_dir = ASSETS_DIR / "magorder"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    x0, y0, x1, y1 = MAGORDER_BBOX
+    presets = []
+    for n in range(1, 7):
+        p = src / f"MagOrder_{n}.png"
+        if not p.exists():
+            continue
+        img = _load(p)
+        crop = img[y0:y1, x0:x1]
+        _save(crop, out_dir / f"{n}.png")
+        presets.append(n)
+    return {"presets": presets, "bbox": [x0, y0, x1, y1]}
+
+
 def main() -> int:
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     manifest = {"windows": {}}
@@ -306,6 +336,10 @@ def main() -> int:
         if info is not None:
             manifest["windows"][str(i)] = info
             print(f"built W{i}: {info}")
+    mag = build_magorder()
+    if mag is not None:
+        manifest["magOrder"] = mag
+        print(f"built magOrder: {mag}")
     out = ASSETS_DIR / "manifest.json"
     out.write_text(json.dumps(manifest, indent=2))
     print(f"wrote {out}")

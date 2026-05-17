@@ -126,7 +126,26 @@ const PAGE_B_OPTIONS = [
 const assets = {
   manifest: null,
   windowAssets: {},   // {1: {baseline, slot1..7, font, defaultA, defaultB}}
+  magOrder: {},       // {1: HTMLImageElement, ..., 6: HTMLImageElement}
+  magOrderBbox: null, // [x0, y0, x1, y1]
 };
+
+async function loadMagOrderOverlays() {
+  const info = assets.manifest && assets.manifest.magOrder;
+  if (!info) return;
+  assets.magOrderBbox = info.bbox;
+  const [x0, y0, x1, y1] = info.bbox;
+  const w = x1 - x0, h = y1 - y0;
+  const tmp = document.createElement('canvas');
+  tmp.width = w; tmp.height = h;
+  const tctx = tmp.getContext('2d');
+  for (const n of info.presets) {
+    const img = await loadImage(`assets/magorder/${n}.png`);
+    tctx.clearRect(0, 0, w, h);
+    tctx.drawImage(img, 0, 0);
+    assets.magOrder[n] = tctx.getImageData(0, 0, w, h);
+  }
+}
 
 async function loadImage(url) {
   const img = new Image();
@@ -362,10 +381,42 @@ function render() {
     drawPlaceholder();
   }
 
+  if (state.page === 'B') drawMagOrderText();
   highlightValueText();
   drawCursorOverlay();
   drawSelectionOverlay();
   updateHitTargets();
+}
+
+function drawMagOrderText() {
+  // The "A.. Healing / B.. Attack / C.. Effect" block under the Mag.Order
+  // row changes with each spell-order preset.  Our W_N isolation
+  // screenshots were captured at preset 1, so the canvas already has
+  // preset 1's text baked into the recolored output.  To switch to
+  // preset N we apply a signed delta:
+  //
+  //   canvas[p] += MagOrder_N[p] − MagOrder_1[p]
+  //
+  // The crops were both captured under the same palette state, so where
+  // text is identical the delta is zero and the pixel is unchanged;
+  // where the text differs, the delta removes the old strokes and lays
+  // down the new ones.
+  const n = state.SpellOrder;
+  if (n === 1) return;
+  if (!assets.magOrderBbox) return;
+  const ref = assets.magOrder[1];
+  const cur = assets.magOrder[n];
+  if (!ref || !cur) return;
+  const [x0, y0, x1, y1] = assets.magOrderBbox;
+  const w = x1 - x0, h = y1 - y0;
+  const region = ctx.getImageData(x0, y0, w, h);
+  const d = region.data, rd = ref.data, cd = cur.data;
+  for (let i = 0; i < d.length; i += 4) {
+    d[i  ] += cd[i  ] - rd[i  ];
+    d[i+1] += cd[i+1] - rd[i+1];
+    d[i+2] += cd[i+2] - rd[i+2];
+  }
+  ctx.putImageData(region, x0, y0);
 }
 
 function drawPlaceholder() {
@@ -863,6 +914,7 @@ document.getElementById('copy-flags').addEventListener('click', async () => {
   }
   // Try to preload the default style.
   await loadWindowAssets(state.WindowStyle);
+  await loadMagOrderOverlays();
   updateTabUI();
   syncSidePanel();
   render();
