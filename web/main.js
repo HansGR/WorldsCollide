@@ -542,6 +542,26 @@ const DIGIT_MASKS = [
 const DIGIT_MASK_W = 8;
 const DIGIT_MASK_H = 10;
 
+// Bitmap masks of Page A's twelve binary-option words, extracted from
+// W1_defaultA.png (defaults: wait, window, on, stereo, reset, optimum)
+// and W1_defaultA_opposite.png (the rest).  Rows are packed as 32-bit
+// unsigned ints, with column 0 in the MSB of the first int.  Masks
+// wider than 32 px take multiple ints per row (`ipr`).
+const WORD_MASKS = {
+  'wait':    { w: 30, h: 7, ipr: 1, rows: [0xb6003030, 0xb67830fc, 0xb68c0030, 0xb67c3030, 0xb6cc3030, 0xb6cc3030, 0xfc7c301c] },
+  'window':  { w: 47, h: 7, ipr: 2, rows: [0xb630000c, 0x00000000, 0xb630f80c, 0x78b60000, 0xb600cc7c, 0xccb60000, 0xb630cccc, 0xccb60000, 0xb630cccc, 0xccb60000, 0xb630cccc, 0xccb60000, 0xfc30cc7c, 0x78fc0000] },
+  'on':      { w: 14, h: 7, ipr: 1, rows: [0x7c000000, 0xc6f80000, 0xc6cc0000, 0xc6cc0000, 0xc6cc0000, 0xc6cc0000, 0x7ccc0000] },
+  'stereo':  { w: 46, h: 7, ipr: 2, rows: [0x7c300000, 0x00000000, 0xc2fc78dc, 0x78780000, 0xe030cce0, 0xcccc0000, 0x7830fcc0, 0xfccc0000, 0x1c30c0c0, 0xc0cc0000, 0x8e30c4c0, 0xc4cc0000, 0x7c1c78c0, 0x78780000] },
+  'reset':   { w: 38, h: 7, ipr: 2, rows: [0xfc000000, 0x30000000, 0xc6787878, 0xfc000000, 0xc6ccc4cc, 0x30000000, 0xfcfc70fc, 0x30000000, 0xc6c038c0, 0x30000000, 0xc6c48cc4, 0x30000000, 0xc6787878, 0x1c000000] },
+  'optimum': { w: 55, h: 8, ipr: 2, rows: [0x7c003030, 0x00000000, 0xc6f8fc30, 0xfcccfc00, 0xc6cc3000, 0xb6ccb600, 0xc6cc3030, 0xb6ccb600, 0xc6cc3030, 0xb6ccb600, 0xc6f83030, 0xb6ccb600, 0x7cc01c30, 0xb67cb600, 0x00c00000, 0x00000000] },
+  'active':  { w: 46, h: 7, ipr: 2, rows: [0x7c003030, 0x00000000, 0xc678fc30, 0xcc780000, 0xc6c43000, 0xcccc0000, 0xc6c03030, 0xccfc0000, 0xfec03030, 0xccc00000, 0xc6c43030, 0xc8c40000, 0xc6781c30, 0xf0780000] },
+  'short':   { w: 38, h: 7, ipr: 2, rows: [0x7cc00000, 0x30000000, 0xc2c078dc, 0xfc000000, 0xe0f8cce0, 0x30000000, 0x78ccccc0, 0x30000000, 0x1cccccc0, 0x30000000, 0x8eccccc0, 0x30000000, 0x7ccc78c0, 0x1c000000] },
+  'off':     { w: 22, h: 7, ipr: 1, rows: [0x7c1c1c00, 0xc6303000, 0xc6fcfc00, 0xc6303000, 0xc6303000, 0xc6303000, 0x7c303000] },
+  'mono':    { w: 30, h: 7, ipr: 1, rows: [0x86000000, 0xce78f878, 0xfecccccc, 0xb6cccccc, 0x86cccccc, 0x86cccccc, 0x8678cc78] },
+  'memory':  { w: 46, h: 8, ipr: 2, rows: [0x86000000, 0x00000000, 0xce78fc78, 0xdccc0000, 0xfeccb6cc, 0xe0cc0000, 0xb6fcb6cc, 0xc0cc0000, 0x86c0b6cc, 0xc07c0000, 0x86c4b6cc, 0xc00c0000, 0x8678b678, 0xc08c0000, 0x00000000, 0x00780000] },
+  'empty':   { w: 38, h: 8, ipr: 2, rows: [0xfe000030, 0x00000000, 0xc0fcf8fc, 0xcc000000, 0xc0b6cc30, 0xcc000000, 0xfcb6cc30, 0xcc000000, 0xc0b6cc30, 0x7c000000, 0xc0b6f830, 0x0c000000, 0xfeb6c01c, 0x8c000000, 0x0000c000, 0x78000000] },
+};
+
 function highlightValueText() {
   // FF6 renders the selected option's text white and other options grey.
   // We bake the selected state in at render time: scale text pixels so
@@ -598,8 +618,26 @@ function highlightValueText() {
             }
           }
         }
+      } else if (typeof val === 'string' && WORD_MASKS[val]) {
+        // String option: walk the per-word bitmap mask so only the glyph
+        // strokes are touched (no halo around the word).
+        const m = WORD_MASKS[val];
+        for (let dy = 0; dy < m.h; dy++) {
+          const py = y + dy;
+          if (py < 0 || py >= H) continue;
+          for (let dx = 0; dx < m.w; dx++) {
+            const px = x + dx;
+            if (px < 0 || px >= W) continue;
+            const intIdx = dx >> 5;            // 0 for first 32 cols, 1 for next 32
+            const bitIdx = 31 - (dx & 31);
+            const word = m.rows[dy * m.ipr + intIdx];
+            if (word & (1 << bitIdx)) {
+              adjustPixel((py * W + px) * 4, target);
+            }
+          }
+        }
       } else {
-        // Words: fall back to brightness-threshold rectangle.
+        // Anything else: fall back to brightness-threshold rectangle.
         const w = approxValueWidth(row, val);
         const h = 9;
         for (let py = y; py < y + h && py < H; py++) {
