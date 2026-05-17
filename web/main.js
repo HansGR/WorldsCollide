@@ -121,9 +121,9 @@ const PAGE_B_OPTIONS = [
   // the Color row picked (font or one of the seven window slots).  We
   // don't redraw the slider bar in the canvas — the side-panel slider
   // already reflects the live value and that's the source of truth.
-  { key: 'R', y:158, kind: 'slider', channel: 0, cursorX: 112 },
-  { key: 'G', y:174, kind: 'slider', channel: 1, cursorX: 112 },
-  { key: 'B', y:190, kind: 'slider', channel: 2, cursorX: 112 },
+  { key: 'R', y:154, kind: 'slider', channel: 0, cursorX: 112 },
+  { key: 'G', y:170, kind: 'slider', channel: 1, cursorX: 112 },
+  { key: 'B', y:186, kind: 'slider', channel: 2, cursorX: 112 },
 ];
 
 // Row labels drawn at the leftmost column when a non-screenshot page is shown.
@@ -405,7 +405,10 @@ function render() {
     drawPlaceholder();
   }
 
-  if (state.page === 'B') drawMagOrderText();
+  if (state.page === 'B') {
+    drawMagOrderText();
+    drawColorEditValues();
+  }
   highlightValueText();
   drawCursorOverlay();
   drawSelectionOverlay();
@@ -551,15 +554,22 @@ function drawCursorOverlay() {
 // part of the glyph.  Used by highlightValueText() to recolor only the
 // glyph strokes — not the surrounding rectangle — when a numeric option
 // is selected vs. dimmed.
+// Bitmap masks of digits 0-9 in the FF6 menu font.  Indices 1-8 were
+// extracted from the Window row of W1_defaultB.png; 0 and 9 were
+// hand-constructed to match the same style (closed oval / mirror of 6).
+// Each entry is 10 rows × 8 columns, MSB on the left, so the renderer
+// can walk the same bitloop as before.  Index matches the digit value.
 const DIGIT_MASKS = [
-  /* 1 */ [0b00000000, 0b00110000, 0b01110000, 0b00110000, 0b00110000, 0b00110000, 0b00110000, 0b01111000, 0b00000000, 0b00000000],
-  /* 2 */ [0b00000000, 0b01111100, 0b10000110, 0b00000110, 0b00001100, 0b00110000, 0b01100000, 0b11111110, 0b00000000, 0b00000000],
-  /* 3 */ [0b00000000, 0b11111110, 0b00001100, 0b00011000, 0b00111100, 0b00000110, 0b10000110, 0b01111100, 0b00000000, 0b00000000],
-  /* 4 */ [0b00000000, 0b00011100, 0b00101100, 0b01001100, 0b10001100, 0b10001100, 0b11111110, 0b00001100, 0b00000000, 0b00000000],
-  /* 5 */ [0b00000000, 0b11111110, 0b11000000, 0b11111100, 0b00000110, 0b00000110, 0b10000110, 0b01111100, 0b00000000, 0b00000000],
-  /* 6 */ [0b00000000, 0b00111100, 0b01100000, 0b11000000, 0b11111100, 0b11000110, 0b11000110, 0b01111100, 0b00000000, 0b00000000],
-  /* 7 */ [0b00000000, 0b11111110, 0b00000110, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b00110000, 0b00000000, 0b00000000],
-  /* 8 */ [0b00000000, 0b01111100, 0b11000110, 0b11000110, 0b01111100, 0b11000110, 0b11000110, 0b01111100, 0b00000000, 0b00000000],
+  /* 0 */ [0, 0b01111100, 0b11000110, 0b11000110, 0b11000110, 0b11000110, 0b11000110, 0b01111100, 0, 0],
+  /* 1 */ [0, 0b00110000, 0b01110000, 0b00110000, 0b00110000, 0b00110000, 0b00110000, 0b01111000, 0, 0],
+  /* 2 */ [0, 0b01111100, 0b10000110, 0b00000110, 0b00001100, 0b00110000, 0b01100000, 0b11111110, 0, 0],
+  /* 3 */ [0, 0b11111110, 0b00001100, 0b00011000, 0b00111100, 0b00000110, 0b10000110, 0b01111100, 0, 0],
+  /* 4 */ [0, 0b00011100, 0b00101100, 0b01001100, 0b10001100, 0b10001100, 0b11111110, 0b00001100, 0, 0],
+  /* 5 */ [0, 0b11111110, 0b11000000, 0b11111100, 0b00000110, 0b00000110, 0b10000110, 0b01111100, 0, 0],
+  /* 6 */ [0, 0b00111100, 0b01100000, 0b11000000, 0b11111100, 0b11000110, 0b11000110, 0b01111100, 0, 0],
+  /* 7 */ [0, 0b11111110, 0b00000110, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b00110000, 0, 0],
+  /* 8 */ [0, 0b01111100, 0b11000110, 0b11000110, 0b01111100, 0b11000110, 0b11000110, 0b01111100, 0, 0],
+  /* 9 */ [0, 0b01111100, 0b11000110, 0b11000110, 0b01111110, 0b00000110, 0b00001100, 0b01111000, 0, 0],
 ];
 const DIGIT_MASK_W = 8;
 const DIGIT_MASK_H = 10;
@@ -583,6 +593,103 @@ const WORD_MASKS = {
   'memory':  { w: 46, h: 8, ipr: 2, rows: [0x86000000, 0x00000000, 0xce78fc78, 0xdccc0000, 0xfeccb6cc, 0xe0cc0000, 0xb6fcb6cc, 0xc0cc0000, 0x86c0b6cc, 0xc07c0000, 0x86c4b6cc, 0xc00c0000, 0x8678b678, 0xc08c0000, 0x00000000, 0x00780000] },
   'empty':   { w: 38, h: 8, ipr: 2, rows: [0xfe000030, 0x00000000, 0xc0fcf8fc, 0xcc000000, 0xc0b6cc30, 0xcc000000, 0xfcb6cc30, 0xcc000000, 0xc0b6cc30, 0x7c000000, 0xc0b6f830, 0x0c000000, 0xfeb6c01c, 0x8c000000, 0x0000c000, 0x78000000] },
 };
+
+// ---------------- Slider value + bar repaint -------------------------
+
+// Layout constants for the three R/G/B rows on page B.  Numbers and the
+// slider-fill stripe both live within these bands; the bar's outline
+// (rounded capsule with a 1-px white top/bottom edge) lives in the same
+// y range but at columns that the renderer never touches.
+const SLIDER_ROWS = [
+  { y: 154, channel: 0 },   // R
+  { y: 170, channel: 1 },   // G
+  { y: 186, channel: 2 },   // B
+];
+const SLIDER_NUM_TENS_X = 128;
+const SLIDER_NUM_ONES_X = 137;
+const SLIDER_NUM_Y_OFF  = 2;        // top of the digit row, relative to row.y
+const SLIDER_NUM_ERASE_X = 127;
+const SLIDER_NUM_ERASE_W = 18;
+const SLIDER_NUM_ERASE_H = 9;
+const SLIDER_NUM_ERASE_SRC_X = 80;  // clean menu fill, just left of "R"
+const SLIDER_BAR_X0    = 152;       // first column of the fill region
+const SLIDER_BAR_W31   = 62;        // total fill width when value = 31
+const SLIDER_BAR_Y_OFF = 5;         // first of three interior fill rows
+const SLIDER_BAR_FILL_H = 3;        // bar interior is three pixels tall
+const SLIDER_BAR_DARK_SAMPLE_OFF = 4;  // dark inner-border row (always 99-ish)
+
+function drawColorEditValues() {
+  // Repaint each R/G/B row's value text and slider-fill to reflect the
+  // current target's channel value.  The user's tip: just paint over
+  // the numbers and the bar's white stripe — the bar's outline rows
+  // (top/bottom edges, rounded ends) stay untouched.
+  const rgb = editedRgb();
+  // Number text + bar fill use the font palette in the real game, so
+  // they tint with whatever font colour the user has chosen.  Mirror
+  // that by painting in state.font scaled to 8-bit; matches the recolored
+  // canvas's R / G / B labels closely enough that they blend.
+  const fr = Math.round(state.font[0] * 255 / 31);
+  const fg = Math.round(state.font[1] * 255 / 31);
+  const fb = Math.round(state.font[2] * 255 / 31);
+  const fontCss = `rgb(${fr}, ${fg}, ${fb})`;
+  for (const row of SLIDER_ROWS) {
+    redrawNumber(row.y, rgb[row.channel], fontCss);
+    redrawBarFill(row.y, rgb[row.channel], fontCss);
+  }
+}
+
+function redrawNumber(rowY, value, fontCss) {
+  // Erase the two-digit number area with a tile copy from a clean
+  // patch of menu fill just left of the R/G/B labels.
+  const yTop = rowY + SLIDER_NUM_Y_OFF;
+  const src = ctx.getImageData(SLIDER_NUM_ERASE_SRC_X, yTop,
+                                SLIDER_NUM_ERASE_W,   SLIDER_NUM_ERASE_H);
+  ctx.putImageData(src, SLIDER_NUM_ERASE_X, yTop);
+  if (value >= 10) drawDigit(SLIDER_NUM_TENS_X, yTop, Math.floor(value / 10), fontCss);
+  drawDigit(SLIDER_NUM_ONES_X, yTop, value % 10, fontCss);
+}
+
+function drawDigit(x, y, digit, fillCss) {
+  const mask = DIGIT_MASKS[digit];
+  if (!mask) return;
+  ctx.fillStyle = fillCss;
+  for (let dy = 0; dy < DIGIT_MASK_H; dy++) {
+    const py = y + dy - 1;     // same -1 offset as highlightValueText
+    if (py < 0 || py >= 224) continue;
+    const bits = mask[dy];
+    if (!bits) continue;
+    for (let dx = 0; dx < DIGIT_MASK_W; dx++) {
+      const px = x + dx;
+      if (px < 0 || px >= 256) continue;
+      if (bits & (1 << (DIGIT_MASK_W - 1 - dx))) {
+        ctx.fillRect(px, py, 1, 1);
+      }
+    }
+  }
+}
+
+function redrawBarFill(rowY, value, fontCss) {
+  // The bar's interior is 3 px tall.  When empty, it's the same dark
+  // colour as the inner-border row just above; when filled, it's solid
+  // white.  Sample the inner-border row to track each window's
+  // y-correction automatically.
+  const refY = rowY + SLIDER_BAR_DARK_SAMPLE_OFF;
+  const ref  = ctx.getImageData(180, refY, 1, 1).data;
+  const darkCss = `rgb(${ref[0]}, ${ref[1]}, ${ref[2]})`;
+  const fillW   = Math.round(value * SLIDER_BAR_W31 / 31);
+  const restW   = SLIDER_BAR_W31 - fillW;
+  for (let i = 0; i < SLIDER_BAR_FILL_H; i++) {
+    const y = rowY + SLIDER_BAR_Y_OFF + i;
+    if (fillW > 0) {
+      ctx.fillStyle = fontCss;
+      ctx.fillRect(SLIDER_BAR_X0, y, fillW, 1);
+    }
+    if (restW > 0) {
+      ctx.fillStyle = darkCss;
+      ctx.fillRect(SLIDER_BAR_X0 + fillW, y, restW, 1);
+    }
+  }
+}
 
 function highlightValueText() {
   // FF6 renders the selected option's text white and other options grey.
@@ -621,12 +728,12 @@ function highlightValueText() {
       const { x, y } = valuePos(row, item);
       const target = val === cur ? BRIGHT_TARGET : DIM_TARGET;
 
-      if (typeof val === 'number' && val >= 1 && val <= DIGIT_MASKS.length) {
+      if (typeof val === 'number' && val >= 0 && val < DIGIT_MASKS.length) {
         // Digit: walk only the glyph pixels.  The captured masks include
         // an empty padding row at index 0, so the first glyph row lives
         // at mask[1] — offset by -1 so mask[1] lands on row.y, which is
         // the actual top of the digit in every numeric row.
-        const mask = DIGIT_MASKS[val - 1];
+        const mask = DIGIT_MASKS[val];
         for (let dy = 0; dy < DIGIT_MASK_H; dy++) {
           const py = y + dy - 1;
           if (py < 0 || py >= H) continue;
