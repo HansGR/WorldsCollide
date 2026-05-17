@@ -97,6 +97,14 @@
     </section>
   </main>
 
-  <script src="main.js"></script>
+  <!-- cache-bust on every load so iterative dev keeps in step with the
+       static-server cache without forcing the user to hard-reload. -->
+  <script>
+    (function () {
+      const s = document.createElement('script');
+      s.src = 'main.js?v=' + Date.now();
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>

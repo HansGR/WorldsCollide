@@ -113,7 +113,7 @@ const PAGE_B_OPTIONS = [
   { key: 'Color',       y:124, kind: 'color',
     values: [
       ['font', 112, 124],
-      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 138]))
+      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 139]))
     ] },
 ];
 
