@@ -489,10 +489,13 @@ function highlightValueText() {
       const target = val === cur ? BRIGHT_TARGET : DIM_TARGET;
 
       if (typeof val === 'number' && val >= 1 && val <= DIGIT_MASKS.length) {
-        // Digit: walk only the glyph pixels.
+        // Digit: walk only the glyph pixels.  The captured masks include
+        // an empty padding row at index 0, so the first glyph row lives
+        // at mask[1] — offset by -1 so mask[1] lands on row.y, which is
+        // the actual top of the digit in every numeric row.
         const mask = DIGIT_MASKS[val - 1];
         for (let dy = 0; dy < DIGIT_MASK_H; dy++) {
-          const py = y + dy;
+          const py = y + dy - 1;
           if (py < 0 || py >= H) continue;
           let bits = mask[dy];
           if (!bits) continue;
