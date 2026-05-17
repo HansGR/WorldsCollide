@@ -106,14 +106,14 @@ const PAGE_B_OPTIONS = [
   { key: 'SpellOrder',  y: 44,
     values: [1,2,3,4,5,6].map((v,i)=>[v, 112 + i*16])  },
   { key: 'WindowStyle', y:108,
-    values: [1,2,3,4,5,6,7,8].map((v,i)=>[v, 112 + i*15])  },
+    values: [1,2,3,4,5,6,7,8].map((v,i)=>[v, 112 + i*16])  },
   // Color row: selects what the R/G/B sliders edit.  "font" sits on the
   // text row at y=128, but the seven slot swatches FF6 draws live one
   // line below in a tighter row of small color blocks.
   { key: 'Color',       y:128, kind: 'color',
     values: [
       ['font', 112, 128],
-      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 168 + i*5, 136]))
+      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 175 + i*8, 136]))
     ] },
 ];
 
