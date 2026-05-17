@@ -373,7 +373,7 @@ class Airship(Event):
         # CB/224A: FE    Return
         heal_cost = 3000   # GP
         heal_dialog_id = 0x517
-        heal_text = f"G'ho! Customers!<line>Need refreshment? {heal_cost} GP<line><choice> Yes<line><choice> No<end>"
+        heal_text = f"G'ho! Customers!<line>Need refreshment? ({heal_cost} GP)<line><choice> Yes<line><choice> No<end>"
         self.dialogs.set_text(heal_dialog_id, heal_text)
 
         ORIGINAL_YES_CODE = 0xb224b
