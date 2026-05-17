@@ -110,10 +110,10 @@ const PAGE_B_OPTIONS = [
   // Color row: selects what the R/G/B sliders edit.  "font" sits on the
   // text row at y=128, but the seven slot swatches FF6 draws live one
   // line below in a tighter row of small color blocks.
-  { key: 'Color',       y:128, kind: 'color',
+  { key: 'Color',       y:124, kind: 'color',
     values: [
-      ['font', 112, 128],
-      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 136]))
+      ['font', 112, 124],
+      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 138]))
     ] },
 ];
 
@@ -432,46 +432,86 @@ function drawCursorOverlay() {
   ctx.restore();
 }
 
+// Bitmap masks of digits 1-8 in the FF6 menu font, extracted from
+// W1_defaultB.png's "Window" row.  Each entry is 10 rows × 8 columns
+// (MSB on the left of each row) representing exactly which pixels are
+// part of the glyph.  Used by highlightValueText() to recolor only the
+// glyph strokes — not the surrounding rectangle — when a numeric option
+// is selected vs. dimmed.
+const DIGIT_MASKS = [
+  /* 1 */ [0b00000000, 0b00110000, 0b01110000, 0b00110000, 0b00110000, 0b00110000, 0b00110000, 0b01111000, 0b00000000, 0b00000000],
+  /* 2 */ [0b00000000, 0b01111100, 0b10000110, 0b00000110, 0b00001100, 0b00110000, 0b01100000, 0b11111110, 0b00000000, 0b00000000],
+  /* 3 */ [0b00000000, 0b11111110, 0b00001100, 0b00011000, 0b00111100, 0b00000110, 0b10000110, 0b01111100, 0b00000000, 0b00000000],
+  /* 4 */ [0b00000000, 0b00011100, 0b00101100, 0b01001100, 0b10001100, 0b10001100, 0b11111110, 0b00001100, 0b00000000, 0b00000000],
+  /* 5 */ [0b00000000, 0b11111110, 0b11000000, 0b11111100, 0b00000110, 0b00000110, 0b10000110, 0b01111100, 0b00000000, 0b00000000],
+  /* 6 */ [0b00000000, 0b00111100, 0b01100000, 0b11000000, 0b11111100, 0b11000110, 0b11000110, 0b01111100, 0b00000000, 0b00000000],
+  /* 7 */ [0b00000000, 0b11111110, 0b00000110, 0b00000110, 0b00001100, 0b00011000, 0b00110000, 0b00110000, 0b00000000, 0b00000000],
+  /* 8 */ [0b00000000, 0b01111100, 0b11000110, 0b11000110, 0b01111100, 0b11000110, 0b11000110, 0b01111100, 0b00000000, 0b00000000],
+];
+const DIGIT_MASK_W = 8;
+const DIGIT_MASK_H = 10;
+
 function highlightValueText() {
-  // FF6 draws the selected option's text in white and the other option(s)
-  // in grey.  Our background screenshot bakes in one fixed selection per
-  // option (whatever state the user captured), so we normalize each
-  // value's text pixels at render time: the selected value's bright
-  // pixels go to white (255), and every other value's bright pixels
-  // get pulled down toward grey (128).
+  // FF6 renders the selected option's text white and other options grey.
+  // We bake the selected state in at render time: scale text pixels so
+  // the selected value's peak channel goes to 255 and the rest go to 128,
+  // preserving per-pixel hue.
   //
-  // The detection is brightness-based — text pixels have substantially
-  // higher luminance than the window-fill behind them.  We work in
-  // RGB and preserve the channel ratio when scaling so an originally
-  // teal/yellow tinted glyph keeps its hue.
+  // For numeric options (BatSpeed, MsgSpeed, SpellOrder, WindowStyle)
+  // we use precomputed digit bitmap masks so only the glyph strokes are
+  // touched and the surrounding background is left alone.  String
+  // options still use a brightness-threshold fallback over the bbox.
   const opts = getCurrentOptions();
   if (!opts.length) return;
   const W = 256, H = 224;
   const data = ctx.getImageData(0, 0, W, H);
   const d = data.data;
-  const TEXT_THRESHOLD = 80;       // pixels above this are considered glyph strokes
+  const TEXT_THRESHOLD = 80;
   const BRIGHT_TARGET = 255;
   const DIM_TARGET    = 128;
 
+  const adjustPixel = (i, target) => {
+    const r = d[i], g = d[i+1], b = d[i+2];
+    const m = Math.max(r, g, b);
+    if (m <= TEXT_THRESHOLD) return;
+    const scale = target / m;
+    d[i  ] = Math.min(255, r * scale);
+    d[i+1] = Math.min(255, g * scale);
+    d[i+2] = Math.min(255, b * scale);
+  };
+
   for (const row of opts) {
-    if (row.kind === 'color') continue;       // slot swatches show their color directly
+    if (row.kind === 'color') continue;
     const cur = currentValueOf(row);
     for (const item of row.values) {
       const [val] = item;
       const { x, y } = valuePos(row, item);
-      const w = approxValueWidth(row, val);
-      const h = 9;                            // FF6 glyphs are ~7px tall + a row of padding
       const target = val === cur ? BRIGHT_TARGET : DIM_TARGET;
-      for (let py = y; py < y + h && py < H; py++) {
-        for (let px = x; px < x + w && px < W; px++) {
-          const i = (py * W + px) * 4;
-          const r = d[i], g = d[i+1], b = d[i+2];
-          const m = Math.max(r, g, b);
-          if (m <= TEXT_THRESHOLD) continue;
-          const scale = target / m;
-          d[i  ] = Math.min(255, r * scale);
-          d[i+1] = Math.min(255, g * scale);
-          d[i+2] = Math.min(255, b * scale);
+
+      if (typeof val === 'number' && val >= 1 && val <= DIGIT_MASKS.length) {
+        // Digit: walk only the glyph pixels.
+        const mask = DIGIT_MASKS[val - 1];
+        for (let dy = 0; dy < DIGIT_MASK_H; dy++) {
+          const py = y + dy;
+          if (py < 0 || py >= H) continue;
+          let bits = mask[dy];
+          if (!bits) continue;
+          for (let dx = 0; dx < DIGIT_MASK_W; dx++) {
+            const px = x + dx;
+            if (px < 0 || px >= W) continue;
+            if (bits & (1 << (DIGIT_MASK_W - 1 - dx))) {
+              adjustPixel((py * W + px) * 4, target);
+            }
+          }
+        }
+      } else {
+        // Words: fall back to brightness-threshold rectangle.
+        const w = approxValueWidth(row, val);
+        const h = 9;
+        for (let py = y; py < y + h && py < H; py++) {
+          for (let px = x; px < x + w && px < W; px++) {
+            adjustPixel((py * W + px) * 4, target);
+          }
         }
       }
     }
