@@ -115,6 +115,15 @@ const PAGE_B_OPTIONS = [
       ['font', 112, 124],
       ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 139]))
     ] },
+  // R / G / B sliders.  Pressing Down from the Color row lands on R;
+  // Down from R goes to G, then B.  On each slider row, Left/Right
+  // decrements/increments the corresponding channel of whichever target
+  // the Color row picked (font or one of the seven window slots).  We
+  // don't redraw the slider bar in the canvas — the side-panel slider
+  // already reflects the live value and that's the source of truth.
+  { key: 'R', y:158, kind: 'slider', channel: 0, cursorX: 112 },
+  { key: 'G', y:174, kind: 'slider', channel: 1, cursorX: 112 },
+  { key: 'B', y:190, kind: 'slider', channel: 2, cursorX: 112 },
 ];
 
 // Row labels drawn at the leftmost column when a non-screenshot page is shown.
@@ -491,6 +500,7 @@ function activeRow() {
 function activeValueIndex() {
   const row = activeRow();
   if (!row) return 0;
+  if (row.kind === 'slider') return 0;  // no discrete values
   const cur = currentValueOf(row);
   const i = row.values.findIndex(([v]) => v === cur);
   return i < 0 ? 0 : i;
@@ -501,7 +511,14 @@ function currentValueOf(row) {
     if (state.editing.kind === 'font') return 'font';
     return `slot${state.editing.slot}`;
   }
+  if (row.kind === 'slider') return editedRgb()[row.channel];
   return state[row.key];
+}
+
+function editedRgb() {
+  return state.editing.kind === 'font'
+    ? state.font
+    : state.windows[state.WindowStyle][state.editing.slot - 1];
 }
 
 function valuePos(row, item) {
@@ -515,11 +532,16 @@ function valuePos(row, item) {
 function drawCursorOverlay() {
   const row = activeRow();
   if (!row) return;
-  const v = row.values[activeValueIndex()];
-  if (!v) return;
-  const { x, y } = valuePos(row, v);
+  let cx, cy;
+  if (row.kind === 'slider') {
+    cx = row.cursorX; cy = row.y;
+  } else {
+    const v = row.values[activeValueIndex()];
+    if (!v) return;
+    ({ x: cx, y: cy } = valuePos(row, v));
+  }
   ctx.save();
-  ctx.drawImage(CURSOR_SPRITE, x - 10, y + 1);
+  ctx.drawImage(CURSOR_SPRITE, cx - 10, cy + 1);
   ctx.restore();
 }
 
@@ -592,7 +614,7 @@ function highlightValueText() {
   };
 
   for (const row of opts) {
-    if (row.kind === 'color') continue;
+    if (row.kind === 'color' || row.kind === 'slider') continue;
     const cur = currentValueOf(row);
     for (const item of row.values) {
       const [val] = item;
@@ -658,6 +680,7 @@ function drawSelectionOverlay() {
   ctx.save();
   ctx.fillStyle = 'rgba(255, 240, 120, 0.85)';
   for (const row of opts) {
+    if (row.kind === 'slider') continue;  // no per-value highlight on sliders
     const cur = currentValueOf(row);
     const item = row.values.find(([v]) => v === cur);
     if (!item) continue;
@@ -686,6 +709,7 @@ function updateHitTargets() {
   const opts = getCurrentOptions();
   for (let r = 0; r < opts.length; r++) {
     const row = opts[r];
+    if (row.kind === 'slider') continue;  // sliders are keyboard-only for now
     for (let v = 0; v < row.values.length; v++) {
       const item = row.values[v];
       const val = item[0];
@@ -734,6 +758,10 @@ function move(dRow, dCol) {
   if (dCol !== 0) {
     const opts = getCurrentOptions();
     const row = opts[state.cursor];
+    if (row.kind === 'slider') {
+      adjustChannel(row.channel, dCol);
+      return;
+    }
     const cur = activeValueIndex();
     const next = (cur + dCol + row.values.length) % row.values.length;
     selectValue(row, row.values[next][0]);
@@ -743,8 +771,17 @@ function move(dRow, dCol) {
   syncSidePanel();
 }
 
+function adjustChannel(ch, delta) {
+  const rgb = editedRgb();
+  rgb[ch] = Math.max(0, Math.min(31, rgb[ch] + delta));
+  render();
+  syncSidePanel();
+  updateFlagString();
+}
+
 function selectCurrent() {
   const row = activeRow();
+  if (row.kind === 'slider') return;   // Enter on a slider is a no-op
   const idx = activeValueIndex();
   const [val] = row.values[idx];
   selectValue(row, val);
