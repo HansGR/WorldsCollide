@@ -91,15 +91,15 @@ const state = {
 // gutter just to the left of the word.
 const PAGE_A_OPTIONS = [
   { key: 'BatMode',  y: 44, values: [['active', 112], ['wait', 176]] },
-  { key: 'BatSpeed', y: 64,
+  { key: 'BatSpeed', y: 60,
     values: [1,2,3,4,5,6].map((v,i)=>[v, 112 + i*16])  },
-  { key: 'MsgSpeed', y: 80,
+  { key: 'MsgSpeed', y: 76,
     values: [1,2,3,4,5,6].map((v,i)=>[v, 112 + i*16])  },
-  { key: 'Command',  y: 96,  values: [['window', 112], ['short', 176]] },
-  { key: 'Gauge',    y:112,  values: [['on',     112], ['off',   176]] },
-  { key: 'Sound',    y:128,  values: [['stereo', 112], ['mono',  176]] },
-  { key: 'Cursor',   y:144,  values: [['reset',  112], ['memory',176]] },
-  { key: 'Reequip',  y:160,  values: [['optimum',112], ['empty', 176]] },
+  { key: 'Command',  y: 92,  values: [['window', 112], ['short', 176]] },
+  { key: 'Gauge',    y:108,  values: [['on',     112], ['off',   176]] },
+  { key: 'Sound',    y:124,  values: [['stereo', 112], ['mono',  176]] },
+  { key: 'Cursor',   y:140,  values: [['reset',  112], ['memory',176]] },
+  { key: 'Reequip',  y:156,  values: [['optimum',112], ['empty', 176]] },
 ];
 
 const PAGE_B_OPTIONS = [
@@ -113,7 +113,7 @@ const PAGE_B_OPTIONS = [
   { key: 'Color',       y:128, kind: 'color',
     values: [
       ['font', 112, 128],
-      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 175 + i*8, 136]))
+      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 136]))
     ] },
 ];
 
@@ -362,6 +362,7 @@ function render() {
     drawPlaceholder();
   }
 
+  highlightValueText();
   drawCursorOverlay();
   drawSelectionOverlay();
   updateHitTargets();
@@ -431,6 +432,53 @@ function drawCursorOverlay() {
   ctx.restore();
 }
 
+function highlightValueText() {
+  // FF6 draws the selected option's text in white and the other option(s)
+  // in grey.  Our background screenshot bakes in one fixed selection per
+  // option (whatever state the user captured), so we normalize each
+  // value's text pixels at render time: the selected value's bright
+  // pixels go to white (255), and every other value's bright pixels
+  // get pulled down toward grey (128).
+  //
+  // The detection is brightness-based — text pixels have substantially
+  // higher luminance than the window-fill behind them.  We work in
+  // RGB and preserve the channel ratio when scaling so an originally
+  // teal/yellow tinted glyph keeps its hue.
+  const opts = getCurrentOptions();
+  if (!opts.length) return;
+  const W = 256, H = 224;
+  const data = ctx.getImageData(0, 0, W, H);
+  const d = data.data;
+  const TEXT_THRESHOLD = 80;       // pixels above this are considered glyph strokes
+  const BRIGHT_TARGET = 255;
+  const DIM_TARGET    = 128;
+
+  for (const row of opts) {
+    if (row.kind === 'color') continue;       // slot swatches show their color directly
+    const cur = currentValueOf(row);
+    for (const item of row.values) {
+      const [val] = item;
+      const { x, y } = valuePos(row, item);
+      const w = approxValueWidth(row, val);
+      const h = 9;                            // FF6 glyphs are ~7px tall + a row of padding
+      const target = val === cur ? BRIGHT_TARGET : DIM_TARGET;
+      for (let py = y; py < y + h && py < H; py++) {
+        for (let px = x; px < x + w && px < W; px++) {
+          const i = (py * W + px) * 4;
+          const r = d[i], g = d[i+1], b = d[i+2];
+          const m = Math.max(r, g, b);
+          if (m <= TEXT_THRESHOLD) continue;
+          const scale = target / m;
+          d[i  ] = Math.min(255, r * scale);
+          d[i+1] = Math.min(255, g * scale);
+          d[i+2] = Math.min(255, b * scale);
+        }
+      }
+    }
+  }
+  ctx.putImageData(data, 0, 0);
+}
+
 function drawSelectionOverlay() {
   // Draw a small marker under each row's current value so the user can see
   // every chosen setting at a glance (the cursor only marks the active row).
@@ -491,11 +539,28 @@ function updateHitTargets() {
 // ---------------- input handling ----------------
 
 function move(dRow, dCol) {
-  const opts = getCurrentOptions();
   if (dRow !== 0) {
-    state.cursor = (state.cursor + dRow + opts.length) % opts.length;
+    // Vertical movement wraps both within and across pages: pressing down
+    // from the last row of page A drops into row 0 of page B and vice
+    // versa.  Same direction wraps from row 0 back to the last row of
+    // the other page.
+    const opts = getCurrentOptions();
+    const next = state.cursor + dRow;
+    if (next < 0) {
+      state.page = state.page === 'A' ? 'B' : 'A';
+      const otherOpts = getCurrentOptions();
+      state.cursor = otherOpts.length - 1;
+      updateTabUI();
+    } else if (next >= opts.length) {
+      state.page = state.page === 'A' ? 'B' : 'A';
+      state.cursor = 0;
+      updateTabUI();
+    } else {
+      state.cursor = next;
+    }
   }
   if (dCol !== 0) {
+    const opts = getCurrentOptions();
     const row = opts[state.cursor];
     const cur = activeValueIndex();
     const next = (cur + dCol + row.values.length) % row.values.length;
