@@ -132,7 +132,10 @@ const assets = {
 
 async function loadMagOrderOverlays() {
   const info = assets.manifest && assets.manifest.magOrder;
-  if (!info) return;
+  if (!info) {
+    console.warn('manifest.magOrder missing — Mag.Order text overlay disabled');
+    return;
+  }
   assets.magOrderBbox = info.bbox;
   const [x0, y0, x1, y1] = info.bbox;
   const w = x1 - x0, h = y1 - y0;
@@ -140,22 +143,34 @@ async function loadMagOrderOverlays() {
   tmp.width = w; tmp.height = h;
   const tctx = tmp.getContext('2d');
   for (const n of info.presets) {
-    const img = await loadImage(`assets/magorder/${n}.png`);
-    tctx.clearRect(0, 0, w, h);
-    tctx.drawImage(img, 0, 0);
-    assets.magOrder[n] = tctx.getImageData(0, 0, w, h);
+    try {
+      const img = await loadImage(`assets/magorder/${n}.png`);
+      tctx.clearRect(0, 0, w, h);
+      tctx.drawImage(img, 0, 0);
+      assets.magOrder[n] = tctx.getImageData(0, 0, w, h);
+    } catch (e) {
+      console.warn(`Failed to load MagOrder preset ${n}:`, e);
+    }
   }
 }
 
+// Per-session cache-bust for every asset fetch.  The static-server cache
+// in the typical hosting setup is aggressive enough that a redeploy of
+// the assets (new manifest.json, new MagOrder crops, ...) goes unnoticed
+// until the user does a hard-reload — that's been catching real users.
+// Pinning a single timestamp at boot means assets are fetched fresh on
+// every page load without churning the cache on every individual call.
+const CB = '?v=' + Date.now();
+
 async function loadImage(url) {
   const img = new Image();
-  img.src = url;
+  img.src = url + CB;
   await img.decode();
   return img;
 }
 
 async function loadManifest() {
-  const r = await fetch('assets/manifest.json');
+  const r = await fetch('assets/manifest.json' + CB);
   return r.json();
 }
 
@@ -189,7 +204,7 @@ async function loadWindowAssets(n) {
   if (info.hasDefaultB) promises.push(loadImage(base + 'defaultB.png'));
   else promises.push(Promise.resolve(null));
   if (info.hasCorrection)
-    promises.push(fetch(base + 'correction.json').then(r => r.json()));
+    promises.push(fetch(base + 'correction.json' + CB).then(r => r.json()));
   else
     promises.push(Promise.resolve(null));
 
