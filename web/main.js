@@ -456,11 +456,19 @@ function drawMagOrderText() {
   }
   ctx.putImageData(ext, x0 - TILE, y0);
 
-  // 2) Stamp text glyphs.  Two passes so the 1-px FF6 drop shadow
-  //    comes back: first a black pixel one cell down-right of every
-  //    bright source pixel, then the bright pixel itself (which
-  //    overpaints any shadow that lands on an adjacent glyph cell).
+  // 2) Stamp text glyphs.  Three passes so the 1-px FF6 drop shadow
+  //    comes back AND filled-icon outlines survive:
+  //    a) Black pixel one cell down-right of every bright source pixel
+  //       (the procedural FF6 drop shadow).
+  //    b) Black pixel wherever the source itself is pure black — this
+  //       brings back the outline around the filled "black ball" icon
+  //       on the Attack row, whose outline is below TEXT_THRESHOLD and
+  //       would otherwise be skipped (the procedural shadow only covers
+  //       the down-right side of bright pixels, not a full ring).
+  //    c) Bright source pixel itself, which overpaints any shadow that
+  //       lands on an adjacent glyph cell.
   const TEXT_THRESHOLD = 70;
+  const DARK_THRESHOLD = 10;
   const region = ctx.getImageData(x0, y0, w, h);
   const rd = region.data, md = img.data;
   const stride = w * 4;
@@ -474,6 +482,14 @@ function drawMagOrderText() {
         rd[sh + 1] = 0;
         rd[sh + 2] = 0;
       }
+    }
+  }
+  for (let i = 0; i < rd.length; i += 4) {
+    const mx = Math.max(md[i], md[i + 1], md[i + 2]);
+    if (mx < DARK_THRESHOLD) {
+      rd[i    ] = 0;
+      rd[i + 1] = 0;
+      rd[i + 2] = 0;
     }
   }
   for (let i = 0; i < rd.length; i += 4) {
