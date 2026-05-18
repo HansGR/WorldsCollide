@@ -233,7 +233,8 @@ def _apply_cursor_mask(images: list[np.ndarray | None],
     return out
 
 
-def build_window(window_index: int) -> dict | None:
+def build_window(window_index: int,
+                 default_a_cursor_mask: np.ndarray | None = None) -> dict | None:
     src = SHOTS_DIR / f"W{window_index}"
     baseline_path = src / f"W{window_index}_0.png"
     if not baseline_path.exists():
@@ -302,26 +303,15 @@ def build_window(window_index: int) -> dict | None:
         if not ref.exists():
             continue
         img = _load(ref)
-        if tag == "A":
-            # The cursor in every defaultA capture is parked on the BatMode
-            # row (just left of "Active"). Detect it within that row band
-            # to avoid catching the menu top border at y≈23, then inpaint
-            # from +128 px to the right — the wallpaper repeats every 32
-            # px, and that source lands well past the "Wait" value where
-            # the wallpaper is clean of menu text.
-            mask = _find_cursor_mask(img, y_lo=38, y_hi=58)
-            # The dilation + the menu's bright top frame at y≈38–39 push
-            # the bounding box higher and farther right than the actual
-            # cursor sprite, which scrapes a strip off the menu border and
-            # clips the leading edge of "Active". Crop 4 px off the top
-            # and right of the mask to keep the inpaint inside the sprite.
-            if mask.any():
-                ys_m, xs_m = np.where(mask)
-                top = ys_m.min()
-                right = xs_m.max()
-                mask[: top + 4, :] = False
-                mask[:, right - 3 :] = False
-            img = _apply_cursor_mask([img], mask, offset=-128)[0]
+        if tag == "A" and default_a_cursor_mask is not None:
+            # The cursor sprite is parked in the same spot in every
+            # defaultA capture, but detecting it per-window yields
+            # different bounding boxes (each wallpaper has a different
+            # brightness profile around the gutter, so the CC search
+            # picks up different false-positive pixels). Inpaint every
+            # window with the same mask derived from W5, which gave the
+            # cleanest result, so the cursor area is treated uniformly.
+            img = _apply_cursor_mask([img], default_a_cursor_mask, offset=-128)[0]
         _save(img, out_dir / f"default{tag}.png")
 
     return {
@@ -364,11 +354,33 @@ def build_magorder() -> dict | None:
     return {"presets": presets, "bbox": [x0, y0, x1, y1]}
 
 
+def _build_default_a_cursor_mask() -> np.ndarray | None:
+    """Derive the canonical defaultA cursor mask from W5.
+
+    W5's wallpaper happens to give the cleanest CC around the cursor
+    sprite, so we detect there and reuse the resulting mask for every
+    window. We still crop 4 px off the top and right to keep the inpaint
+    from scraping the menu border or the leading 'A' of "Active".
+    """
+    ref = SHOTS_DIR / "W5" / "W5_defaultA.png"
+    if not ref.exists():
+        return None
+    mask = _find_cursor_mask(_load(ref), y_lo=38, y_hi=58)
+    if not mask.any():
+        return None
+    ys, xs = np.where(mask)
+    top, right = ys.min(), xs.max()
+    mask[: top + 4, :] = False
+    mask[:, right - 3 :] = False
+    return mask
+
+
 def main() -> int:
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     manifest = {"windows": {}}
+    default_a_mask = _build_default_a_cursor_mask()
     for i in range(1, 9):
-        info = build_window(i)
+        info = build_window(i, default_a_cursor_mask=default_a_mask)
         if info is not None:
             manifest["windows"][str(i)] = info
             print(f"built W{i}: {info}")
