@@ -787,7 +787,7 @@ function highlightValueText() {
       const fontBright = state.editing.kind === 'font';
       stampWordHighlight('font',   112, 124, adjustPixel,
                           fontBright ? BRIGHT_TARGET : DIM_TARGET);
-      stampWordHighlight('window', 180, 124, adjustPixel,
+      stampWordHighlight('window', 176, 124, adjustPixel,
                           fontBright ? DIM_TARGET : BRIGHT_TARGET);
       continue;
     }
