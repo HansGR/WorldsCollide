@@ -784,6 +784,19 @@ function highlightValueText() {
   const BRIGHT_TARGET = 255;
   const DIM_TARGET    = 128;
 
+  // Mask-driven highlights use a flat colour stamp: bright pixels get
+  // the current font colour exactly (so a purple font reads as purple,
+  // not a per-channel rescale of whatever was baked into the screenshot),
+  // and dim pixels get neutral grey regardless of font colour. This
+  // matches FF6's own menu — the selected option uses the font palette
+  // entry, while unselected options use a fixed secondary text colour.
+  const BRIGHT_COLOR = [
+    Math.round(state.font[0] * 255 / 31),
+    Math.round(state.font[1] * 255 / 31),
+    Math.round(state.font[2] * 255 / 31),
+  ];
+  const DIM_COLOR = [DIM_TARGET, DIM_TARGET, DIM_TARGET];
+
   const adjustPixel = (i, target) => {
     const r = d[i], g = d[i+1], b = d[i+2];
     const m = Math.max(r, g, b);
@@ -794,19 +807,10 @@ function highlightValueText() {
     d[i+2] = Math.min(255, b * scale);
   };
 
-  // For mask-driven highlights (digit / word bitmaps) we already know the
-  // pixel is part of a glyph stroke, so skip the brightness threshold —
-  // some windows (W4 / W7 / W8) shipped baseline captures with a non-zero
-  // font color, which leaves the recolored "Window" label dim enough that
-  // adjustPixel's >80 gate would otherwise refuse to scale it.
-  const adjustGlyphPixel = (i, target) => {
-    const r = d[i], g = d[i+1], b = d[i+2];
-    const m = Math.max(r, g, b);
-    if (m === 0) return;
-    const scale = target / m;
-    d[i  ] = Math.min(255, r * scale);
-    d[i+1] = Math.min(255, g * scale);
-    d[i+2] = Math.min(255, b * scale);
+  const stampGlyphPixel = (i, color) => {
+    d[i  ] = color[0];
+    d[i+1] = color[1];
+    d[i+2] = color[2];
   };
 
   for (const row of opts) {
@@ -816,10 +820,10 @@ function highlightValueText() {
       // highlighted state tracks state.editing rather than a discrete
       // value in row.values.  Stamp them with the per-word mask.
       const fontBright = state.editing.kind === 'font';
-      stampWordHighlight('font',   112, 124, adjustGlyphPixel,
-                          fontBright ? BRIGHT_TARGET : DIM_TARGET);
-      stampWordHighlight('window', 176, 124, adjustGlyphPixel,
-                          fontBright ? DIM_TARGET : BRIGHT_TARGET);
+      stampWordHighlight('font',   112, 124, stampGlyphPixel,
+                          fontBright ? BRIGHT_COLOR : DIM_COLOR);
+      stampWordHighlight('window', 176, 124, stampGlyphPixel,
+                          fontBright ? DIM_COLOR : BRIGHT_COLOR);
       continue;
     }
     const cur = currentValueOf(row);
@@ -827,6 +831,7 @@ function highlightValueText() {
       const [val] = item;
       const { x, y } = valuePos(row, item);
       const target = val === cur ? BRIGHT_TARGET : DIM_TARGET;
+      const color  = val === cur ? BRIGHT_COLOR  : DIM_COLOR;
 
       if (typeof val === 'number' && val >= 0 && val < DIGIT_MASKS.length) {
         // Digit: walk only the glyph pixels.  The captured masks include
@@ -843,7 +848,7 @@ function highlightValueText() {
             const px = x + dx;
             if (px < 0 || px >= W) continue;
             if (bits & (1 << (DIGIT_MASK_W - 1 - dx))) {
-              adjustGlyphPixel((py * W + px) * 4, target);
+              stampGlyphPixel((py * W + px) * 4, color);
             }
           }
         }
@@ -861,7 +866,7 @@ function highlightValueText() {
             const bitIdx = 31 - (dx & 31);
             const word = m.rows[dy * m.ipr + intIdx];
             if (word & (1 << bitIdx)) {
-              adjustGlyphPixel((py * W + px) * 4, target);
+              stampGlyphPixel((py * W + px) * 4, color);
             }
           }
         }
