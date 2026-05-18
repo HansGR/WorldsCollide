@@ -286,14 +286,25 @@ Three dispatch arms:
   branch in `highlightValueText` that stamps both labels at fixed
   positions.
 
-The pixel adjuster has two flavours.  `adjustPixel` keeps the
-`max > TEXT_THRESHOLD` gate for the fallback bounding-box path so it
-can't accidentally scale wallpaper.  `adjustGlyphPixel` drops the gate
-(only skipping pure black) and is used everywhere a digit/word bitmap
-mask drives the call — the mask itself already guarantees we're on a
-glyph stroke, and some windows ship baselines where the dim label
-sits at brightness ~50 (below the gate) so the rescale would
-otherwise be silently skipped.
+Originally the highlight was a per-pixel rescale that preserved hue:
+`scale = target / max(r,g,b)`, where `target` was 255 for the selected
+option and 128 for the others.  This worked under the default white
+font palette but fell apart once the font colour was edited — a purple
+font (`[31,0,31]`) left a baked-in green channel of 0 in the recolored
+composite, and the y-correction's per-channel residual then nudged it
+back up a few units.  Rescaling that pixel to bright passed through
+the small green and read as near-white; rescaling the dim version
+preserved (R≈G=0, B≈) and read as dark purple, not grey.
+
+Replace the rescale with a flat colour stamp on mask-driven paths:
+
+* **Bright** = `state.font * 255/31` exactly.  Whatever colour the
+  user picked is the colour the selected option shows in.
+* **Dim**    = `[128, 128, 128]` neutral grey, regardless of font.
+
+The fallback bounding-box path still uses the hue-preserving rescaler
+(`adjustPixel`, with the `max > TEXT_THRESHOLD` gate) because it has
+no mask to distinguish glyph strokes from wallpaper.
 
 ### Color-row capture orientation
 
@@ -401,3 +412,4 @@ picks up any redeployed assets.
 | `349a339` | Add `adjustGlyphPixel` (no brightness gate) for mask-driven highlights; the existing gate was silently skipping the dim "Window" label on W4/W7/W8. |
 | `269d4a3` | Normalize Color-row orientation in W4/W7/W8 baselines: copy W1's `y=124..132` strip to undo the Window-selected capture state. |
 | `9046025` | Preload every window's assets in the background after first paint so style switches never flash "No preview". |
+| `e107c8c` | Replace hue-preserving rescale with flat colour stamp on mask-driven highlights: bright = current font colour exactly, dim = neutral grey, so purple/etc. fonts read correctly. |
