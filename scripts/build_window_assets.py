@@ -233,8 +233,34 @@ def _apply_cursor_mask(images: list[np.ndarray | None],
     return out
 
 
+COLOR_ROW_Y_LO, COLOR_ROW_Y_HI = 124, 132
+COLOR_ROW_FONT_X = slice(112, 160)
+COLOR_ROW_WINDOW_X = slice(176, 228)
+
+
+def _fix_color_row_orientation(baseline: np.ndarray,
+                               reference_strip: np.ndarray) -> np.ndarray:
+    """If the baseline was captured with Window selected (Window label
+    rendered bright, Font label invisible), overwrite the Color row strip
+    with the reference (captured with Font selected).
+
+    The Color-row strip in baseline.png is otherwise uniform black across
+    every window — only the menu labels themselves carry signal — so we
+    can wholesale-copy the y band from a known-good window without
+    disturbing window-specific wallpaper.
+    """
+    g = baseline.max(-1)
+    font_bright = int(g[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI, COLOR_ROW_FONT_X].max())
+    win_bright  = int(g[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI, COLOR_ROW_WINDOW_X].max())
+    if win_bright > font_bright + 30:
+        baseline = baseline.copy()
+        baseline[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI] = reference_strip
+    return baseline
+
+
 def build_window(window_index: int,
-                 default_a_cursor_mask: np.ndarray | None = None) -> dict | None:
+                 default_a_cursor_mask: np.ndarray | None = None,
+                 color_row_reference: np.ndarray | None = None) -> dict | None:
     src = SHOTS_DIR / f"W{window_index}"
     baseline_path = src / f"W{window_index}_0.png"
     if not baseline_path.exists():
@@ -298,6 +324,14 @@ def build_window(window_index: int,
     baseline = patched[0]
     font_clean = patched[1]
     cleaned_slots = list(patched[2:])
+
+    # W4 / W7 / W8 baselines were captured with the Color row's Window
+    # label selected, leaving Font invisible and Window bright — the
+    # opposite of W1's convention. Restore the Font-selected layout from
+    # a reference strip (the strip is otherwise just black wallpaper, so
+    # copying it doesn't disturb window-specific texture).
+    if color_row_reference is not None:
+        baseline = _fix_color_row_orientation(baseline, color_row_reference)
 
     _save(baseline, out_dir / "baseline.png")
     for n, im in zip(range(1, 8), cleaned_slots):
@@ -411,11 +445,19 @@ def main() -> int:
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     manifest = {"windows": {}}
     default_a_mask = _build_default_a_cursor_mask()
-    for i in range(1, 9):
-        info = build_window(i, default_a_cursor_mask=default_a_mask)
+    # Build W1 first (Font-selected capture) to harvest a reference Color
+    # row strip that the orientation-fix can apply to W4/W7/W8.
+    color_row_ref: np.ndarray | None = None
+    for i in [1] + list(range(2, 9)):
+        info = build_window(i,
+                            default_a_cursor_mask=default_a_mask,
+                            color_row_reference=color_row_ref)
         if info is not None:
             manifest["windows"][str(i)] = info
             print(f"built W{i}: {info}")
+        if i == 1:
+            w1_baseline = _load(ASSETS_DIR / "W1" / "baseline.png")
+            color_row_ref = w1_baseline[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI].copy()
     mag = build_magorder()
     if mag is not None:
         manifest["magOrder"] = mag
