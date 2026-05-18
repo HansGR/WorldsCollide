@@ -456,11 +456,19 @@ function drawMagOrderText() {
   }
   ctx.putImageData(ext, x0 - TILE, y0);
 
-  // 2) Stamp text glyphs.  Two passes so the 1-px FF6 drop shadow
-  //    comes back: first a black pixel one cell down-right of every
-  //    bright source pixel, then the bright pixel itself (which
-  //    overpaints any shadow that lands on an adjacent glyph cell).
+  // 2) Stamp text glyphs.  Three passes so the 1-px FF6 drop shadow
+  //    comes back AND filled-icon outlines survive:
+  //    a) Black pixel one cell down-right of every bright source pixel
+  //       (the procedural FF6 drop shadow).
+  //    b) Black pixel wherever the source itself is pure black — this
+  //       brings back the outline around the filled "black ball" icon
+  //       on the Attack row, whose outline is below TEXT_THRESHOLD and
+  //       would otherwise be skipped (the procedural shadow only covers
+  //       the down-right side of bright pixels, not a full ring).
+  //    c) Bright source pixel itself, which overpaints any shadow that
+  //       lands on an adjacent glyph cell.
   const TEXT_THRESHOLD = 70;
+  const DARK_THRESHOLD = 10;
   const region = ctx.getImageData(x0, y0, w, h);
   const rd = region.data, md = img.data;
   const stride = w * 4;
@@ -474,6 +482,14 @@ function drawMagOrderText() {
         rd[sh + 1] = 0;
         rd[sh + 2] = 0;
       }
+    }
+  }
+  for (let i = 0; i < rd.length; i += 4) {
+    const mx = Math.max(md[i], md[i + 1], md[i + 2]);
+    if (mx < DARK_THRESHOLD) {
+      rd[i    ] = 0;
+      rd[i + 1] = 0;
+      rd[i + 2] = 0;
     }
   }
   for (let i = 0; i < rd.length; i += 4) {
@@ -768,6 +784,19 @@ function highlightValueText() {
   const BRIGHT_TARGET = 255;
   const DIM_TARGET    = 128;
 
+  // Mask-driven highlights use a flat colour stamp: bright pixels get
+  // the current font colour exactly (so a purple font reads as purple,
+  // not a per-channel rescale of whatever was baked into the screenshot),
+  // and dim pixels get neutral grey regardless of font colour. This
+  // matches FF6's own menu — the selected option uses the font palette
+  // entry, while unselected options use a fixed secondary text colour.
+  const BRIGHT_COLOR = [
+    Math.round(state.font[0] * 255 / 31),
+    Math.round(state.font[1] * 255 / 31),
+    Math.round(state.font[2] * 255 / 31),
+  ];
+  const DIM_COLOR = [DIM_TARGET, DIM_TARGET, DIM_TARGET];
+
   const adjustPixel = (i, target) => {
     const r = d[i], g = d[i+1], b = d[i+2];
     const m = Math.max(r, g, b);
@@ -778,6 +807,12 @@ function highlightValueText() {
     d[i+2] = Math.min(255, b * scale);
   };
 
+  const stampGlyphPixel = (i, color) => {
+    d[i  ] = color[0];
+    d[i+1] = color[1];
+    d[i+2] = color[2];
+  };
+
   for (const row of opts) {
     if (row.kind === 'slider') continue;
     if (row.kind === 'color') {
@@ -785,10 +820,10 @@ function highlightValueText() {
       // highlighted state tracks state.editing rather than a discrete
       // value in row.values.  Stamp them with the per-word mask.
       const fontBright = state.editing.kind === 'font';
-      stampWordHighlight('font',   112, 124, adjustPixel,
-                          fontBright ? BRIGHT_TARGET : DIM_TARGET);
-      stampWordHighlight('window', 180, 124, adjustPixel,
-                          fontBright ? DIM_TARGET : BRIGHT_TARGET);
+      stampWordHighlight('font',   112, 124, stampGlyphPixel,
+                          fontBright ? BRIGHT_COLOR : DIM_COLOR);
+      stampWordHighlight('window', 176, 124, stampGlyphPixel,
+                          fontBright ? DIM_COLOR : BRIGHT_COLOR);
       continue;
     }
     const cur = currentValueOf(row);
@@ -796,6 +831,7 @@ function highlightValueText() {
       const [val] = item;
       const { x, y } = valuePos(row, item);
       const target = val === cur ? BRIGHT_TARGET : DIM_TARGET;
+      const color  = val === cur ? BRIGHT_COLOR  : DIM_COLOR;
 
       if (typeof val === 'number' && val >= 0 && val < DIGIT_MASKS.length) {
         // Digit: walk only the glyph pixels.  The captured masks include
@@ -812,7 +848,7 @@ function highlightValueText() {
             const px = x + dx;
             if (px < 0 || px >= W) continue;
             if (bits & (1 << (DIGIT_MASK_W - 1 - dx))) {
-              adjustPixel((py * W + px) * 4, target);
+              stampGlyphPixel((py * W + px) * 4, color);
             }
           }
         }
@@ -830,7 +866,7 @@ function highlightValueText() {
             const bitIdx = 31 - (dx & 31);
             const word = m.rows[dy * m.ipr + intIdx];
             if (word & (1 << bitIdx)) {
-              adjustPixel((py * W + px) * 4, target);
+              stampGlyphPixel((py * W + px) * 4, color);
             }
           }
         }
@@ -1203,8 +1239,16 @@ document.getElementById('copy-flags').addEventListener('click', async () => {
     console.error('Failed to load manifest', e);
     assets.manifest = { windows: {} };
   }
-  // Try to preload the default style.
+  // Preload the active window first so the initial render isn't blocked
+  // on the others, then pull the remaining windows in parallel so cycling
+  // through styles never falls back to the "No preview" placeholder.
   await loadWindowAssets(state.WindowStyle);
+  const others = Object.keys(assets.manifest.windows || {})
+    .map(k => parseInt(k, 10))
+    .filter(n => n !== state.WindowStyle);
+  Promise.all(others.map(n => loadWindowAssets(n))).catch(e => {
+    console.warn('Background preload of window assets failed:', e);
+  });
   await loadMagOrderOverlays();
   updateTabUI();
   syncSidePanel();

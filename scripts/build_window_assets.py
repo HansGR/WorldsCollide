@@ -77,27 +77,36 @@ WINDOW_DEFAULTS = {
 FONT_DEFAULT = [31, 31, 31]
 
 
-def _find_cursor_mask(baseline: np.ndarray) -> np.ndarray:
+def _find_cursor_mask(baseline: np.ndarray,
+                      y_lo: int = 0, y_hi: int | None = None) -> np.ndarray:
     """Return a boolean mask of cursor-sprite pixels in the baseline image.
 
     The screenshots are captured with the menu cursor parked in a fixed
     spot (consistent across W_0, W_1..W_7, and W_font for a given window).
     That sprite shows up as a tight bright cluster in the cursor X-gutter
     (x ∈ [90, 116]).
+
+    For images that have menu chrome / text in the gutter (e.g. the
+    default-palette references), pass y_lo/y_hi to restrict the search to
+    the row band where the cursor is parked.
     """
     H, W, _ = baseline.shape
+    if y_hi is None:
+        y_hi = H
     # Bright pixels in the gutter (the cursor is the brightest thing here
     # when all slots are [0,0,0]).
     gray = baseline.mean(-1)
     cand = gray > 130
     cand[:, :CURSOR_X_LO] = False
     cand[:, CURSOR_X_HI:] = False
+    cand[:y_lo, :] = False
+    cand[y_hi:, :] = False
     if not cand.any():
         return np.zeros((H, W), bool)
     # Take all CCs in the cursor-sprite size band and union them.
     visited = np.zeros_like(cand)
     mask = np.zeros_like(cand)
-    for y0 in range(H):
+    for y0 in range(y_lo, y_hi):
         for x0 in range(CURSOR_X_LO, CURSOR_X_HI):
             if not cand[y0, x0] or visited[y0, x0]:
                 continue
@@ -193,22 +202,27 @@ def _fit_y_correction(real_default: np.ndarray,
 
 
 def _apply_cursor_mask(images: list[np.ndarray | None],
-                       cursor_mask: np.ndarray) -> list[np.ndarray | None]:
-    """Inpaint cursor pixels in each image by copying from 32 px to the left.
+                       cursor_mask: np.ndarray,
+                       offset: int = CURSOR_COPY_OFFSET) -> list[np.ndarray | None]:
+    """Inpaint cursor pixels in each image by copying from ``offset`` px to the left.
 
-    The menu wallpaper tiles on a 32-px horizontal period, so the pixel
-    at (y, x-32) is essentially what would be visible at (y, x) if the
-    cursor weren't there.  We apply the same copy to baseline, every slot
-    raw, and the font raw, so the *delta* the recolor pass sees over the
-    cursor region is the same as everywhere else.
+    The menu wallpaper tiles on a 32-px horizontal period, so any multiple
+    of 32 works as a source.  The default −32 lands in the gutter where
+    the cursor sprite usually sits; the defaultA screenshot needs a
+    larger offset because both x±32 and x+64 collide with menu text
+    around the BatMode row, so callers pass +128 to source from past
+    the "Wait" value instead.
     """
     if not cursor_mask.any():
         return [im.copy() if im is not None else None for im in images]
+    H, W = cursor_mask.shape
     ys, xs = np.where(cursor_mask)
-    src_xs = xs - CURSOR_COPY_OFFSET
-    if (src_xs < 0).any():
-        # If the offset would step outside the image, fall back to +32 instead.
-        src_xs = np.where(src_xs >= 0, src_xs, xs + CURSOR_COPY_OFFSET)
+    src_xs = xs - offset
+    # Wallpaper is 32-px periodic, so any in-bounds multiple of 32 works.
+    # Step the offset to fit when the requested source falls off the edge.
+    while (src_xs < 0).any() or (src_xs >= W).any():
+        src_xs = np.where(src_xs < 0, src_xs + 32, src_xs)
+        src_xs = np.where(src_xs >= W, src_xs - 32, src_xs)
     out = []
     for im in images:
         if im is None:
@@ -219,7 +233,34 @@ def _apply_cursor_mask(images: list[np.ndarray | None],
     return out
 
 
-def build_window(window_index: int) -> dict | None:
+COLOR_ROW_Y_LO, COLOR_ROW_Y_HI = 124, 132
+COLOR_ROW_FONT_X = slice(112, 160)
+COLOR_ROW_WINDOW_X = slice(176, 228)
+
+
+def _fix_color_row_orientation(baseline: np.ndarray,
+                               reference_strip: np.ndarray) -> np.ndarray:
+    """If the baseline was captured with Window selected (Window label
+    rendered bright, Font label invisible), overwrite the Color row strip
+    with the reference (captured with Font selected).
+
+    The Color-row strip in baseline.png is otherwise uniform black across
+    every window — only the menu labels themselves carry signal — so we
+    can wholesale-copy the y band from a known-good window without
+    disturbing window-specific wallpaper.
+    """
+    g = baseline.max(-1)
+    font_bright = int(g[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI, COLOR_ROW_FONT_X].max())
+    win_bright  = int(g[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI, COLOR_ROW_WINDOW_X].max())
+    if win_bright > font_bright + 30:
+        baseline = baseline.copy()
+        baseline[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI] = reference_strip
+    return baseline
+
+
+def build_window(window_index: int,
+                 default_a_cursor_mask: np.ndarray | None = None,
+                 color_row_reference: np.ndarray | None = None) -> dict | None:
     src = SHOTS_DIR / f"W{window_index}"
     baseline_path = src / f"W{window_index}_0.png"
     if not baseline_path.exists():
@@ -251,6 +292,15 @@ def build_window(window_index: int) -> dict | None:
     # tile pattern places the same content.
     cursor_mask = _find_cursor_mask(raw_baseline)
     if cursor_mask.any():
+        # The cursor is parked on the B-slider row; the raw CC + right
+        # dilation reaches x=112, which is the leading column of the "B"
+        # glyph rendered into the font/slot images. Capping the mask at
+        # x≤111 keeps the recolored Page B composite from clipping the
+        # left edge of B. Then stamp the cursor's drop-shadow tip
+        # (y=197..199, x=109..111) that the bright-pixel CC misses, so
+        # it doesn't leak through as a black smudge below-left of B.
+        cursor_mask[:, 112:] = False
+        cursor_mask[197:200, 109:112] = True
         patched = _apply_cursor_mask([raw_baseline, raw_font, *raw_slots], cursor_mask)
         baseline = patched[0]
         font_clean = patched[1]
@@ -259,6 +309,29 @@ def build_window(window_index: int) -> dict | None:
         baseline = raw_baseline
         font_clean = raw_font
         cleaned_slots = raw_slots
+
+    # The 8-px strip just below the slot-color row and above the R bar
+    # contains an in-game UI artifact: an up-pointing black arrow that
+    # marks whichever slot was selected when the capture was taken. Its
+    # x position differs per window, so erase the whole slot-row strip
+    # (x=176..240, covering all seven 8-px swatches) and inpaint with
+    # wallpaper from 96 px (3 tiles) to the left, where this y band is
+    # uniformly wallpaper across every menu page.
+    arrow_mask = np.zeros(raw_baseline.shape[:2], bool)
+    arrow_mask[148:156, 176:240] = True
+    patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
+                                 arrow_mask, offset=96)
+    baseline = patched[0]
+    font_clean = patched[1]
+    cleaned_slots = list(patched[2:])
+
+    # W4 / W7 / W8 baselines were captured with the Color row's Window
+    # label selected, leaving Font invisible and Window bright — the
+    # opposite of W1's convention. Restore the Font-selected layout from
+    # a reference strip (the strip is otherwise just black wallpaper, so
+    # copying it doesn't disturb window-specific texture).
+    if color_row_reference is not None:
+        baseline = _fix_color_row_orientation(baseline, color_row_reference)
 
     _save(baseline, out_dir / "baseline.png")
     for n, im in zip(range(1, 8), cleaned_slots):
@@ -285,8 +358,19 @@ def build_window(window_index: int) -> dict | None:
 
     for tag in ("A", "B"):
         ref = src / f"W{window_index}_default{tag}.png"
-        if ref.exists():
-            _save(_load(ref), out_dir / f"default{tag}.png")
+        if not ref.exists():
+            continue
+        img = _load(ref)
+        if tag == "A" and default_a_cursor_mask is not None:
+            # The cursor sprite is parked in the same spot in every
+            # defaultA capture, but detecting it per-window yields
+            # different bounding boxes (each wallpaper has a different
+            # brightness profile around the gutter, so the CC search
+            # picks up different false-positive pixels). Inpaint every
+            # window with the same mask derived from W5, which gave the
+            # cleanest result, so the cursor area is treated uniformly.
+            img = _apply_cursor_mask([img], default_a_cursor_mask, offset=-128)[0]
+        _save(img, out_dir / f"default{tag}.png")
 
     return {
         "window": window_index,
@@ -328,14 +412,52 @@ def build_magorder() -> dict | None:
     return {"presets": presets, "bbox": [x0, y0, x1, y1]}
 
 
+def _build_default_a_cursor_mask() -> np.ndarray | None:
+    """Derive the canonical defaultA cursor mask from W5.
+
+    W5's wallpaper happens to give the cleanest CC around the cursor
+    sprite, so we detect there and reuse the resulting mask for every
+    window.  Then:
+
+      * Trim 4 px off the top: dilation pulls the menu's bright top
+        frame (y≈38–39) into the mask and scrapes the border.
+      * Cap the right edge at x≤111: "Active" starts at x=112 and the
+        raw CC + 2-px right dilation overlaps the leading 'A'.
+      * Add a 3-px shadow patch at (y=53..55, x=109..111): the FF6
+        cursor sprite drops a darker shadow at its lower-right tip
+        that the bright-pixel CC doesn't reach, so without this an
+        obvious black smudge survives below-left of the 'A'.
+    """
+    ref = SHOTS_DIR / "W5" / "W5_defaultA.png"
+    if not ref.exists():
+        return None
+    mask = _find_cursor_mask(_load(ref), y_lo=38, y_hi=58)
+    if not mask.any():
+        return None
+    top = np.where(mask)[0].min()
+    mask[: top + 4, :] = False
+    mask[:, 112:] = False
+    mask[53:56, 109:112] = True
+    return mask
+
+
 def main() -> int:
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     manifest = {"windows": {}}
-    for i in range(1, 9):
-        info = build_window(i)
+    default_a_mask = _build_default_a_cursor_mask()
+    # Build W1 first (Font-selected capture) to harvest a reference Color
+    # row strip that the orientation-fix can apply to W4/W7/W8.
+    color_row_ref: np.ndarray | None = None
+    for i in [1] + list(range(2, 9)):
+        info = build_window(i,
+                            default_a_cursor_mask=default_a_mask,
+                            color_row_reference=color_row_ref)
         if info is not None:
             manifest["windows"][str(i)] = info
             print(f"built W{i}: {info}")
+        if i == 1:
+            w1_baseline = _load(ASSETS_DIR / "W1" / "baseline.png")
+            color_row_ref = w1_baseline[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI].copy()
     mag = build_magorder()
     if mag is not None:
         manifest["magOrder"] = mag
