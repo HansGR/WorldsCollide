@@ -77,27 +77,36 @@ WINDOW_DEFAULTS = {
 FONT_DEFAULT = [31, 31, 31]
 
 
-def _find_cursor_mask(baseline: np.ndarray) -> np.ndarray:
+def _find_cursor_mask(baseline: np.ndarray,
+                      y_lo: int = 0, y_hi: int | None = None) -> np.ndarray:
     """Return a boolean mask of cursor-sprite pixels in the baseline image.
 
     The screenshots are captured with the menu cursor parked in a fixed
     spot (consistent across W_0, W_1..W_7, and W_font for a given window).
     That sprite shows up as a tight bright cluster in the cursor X-gutter
     (x ∈ [90, 116]).
+
+    For images that have menu chrome / text in the gutter (e.g. the
+    default-palette references), pass y_lo/y_hi to restrict the search to
+    the row band where the cursor is parked.
     """
     H, W, _ = baseline.shape
+    if y_hi is None:
+        y_hi = H
     # Bright pixels in the gutter (the cursor is the brightest thing here
     # when all slots are [0,0,0]).
     gray = baseline.mean(-1)
     cand = gray > 130
     cand[:, :CURSOR_X_LO] = False
     cand[:, CURSOR_X_HI:] = False
+    cand[:y_lo, :] = False
+    cand[y_hi:, :] = False
     if not cand.any():
         return np.zeros((H, W), bool)
     # Take all CCs in the cursor-sprite size band and union them.
     visited = np.zeros_like(cand)
     mask = np.zeros_like(cand)
-    for y0 in range(H):
+    for y0 in range(y_lo, y_hi):
         for x0 in range(CURSOR_X_LO, CURSOR_X_HI):
             if not cand[y0, x0] or visited[y0, x0]:
                 continue
@@ -193,22 +202,27 @@ def _fit_y_correction(real_default: np.ndarray,
 
 
 def _apply_cursor_mask(images: list[np.ndarray | None],
-                       cursor_mask: np.ndarray) -> list[np.ndarray | None]:
-    """Inpaint cursor pixels in each image by copying from 32 px to the left.
+                       cursor_mask: np.ndarray,
+                       offset: int = CURSOR_COPY_OFFSET) -> list[np.ndarray | None]:
+    """Inpaint cursor pixels in each image by copying from ``offset`` px to the left.
 
-    The menu wallpaper tiles on a 32-px horizontal period, so the pixel
-    at (y, x-32) is essentially what would be visible at (y, x) if the
-    cursor weren't there.  We apply the same copy to baseline, every slot
-    raw, and the font raw, so the *delta* the recolor pass sees over the
-    cursor region is the same as everywhere else.
+    The menu wallpaper tiles on a 32-px horizontal period, so any multiple
+    of 32 works as a source.  The default −32 lands in the gutter where
+    the cursor sprite usually sits; the defaultA screenshot needs a
+    larger offset because both x±32 and x+64 collide with menu text
+    around the BatMode row, so callers pass +128 to source from past
+    the "Wait" value instead.
     """
     if not cursor_mask.any():
         return [im.copy() if im is not None else None for im in images]
+    H, W = cursor_mask.shape
     ys, xs = np.where(cursor_mask)
-    src_xs = xs - CURSOR_COPY_OFFSET
-    if (src_xs < 0).any():
-        # If the offset would step outside the image, fall back to +32 instead.
-        src_xs = np.where(src_xs >= 0, src_xs, xs + CURSOR_COPY_OFFSET)
+    src_xs = xs - offset
+    # Wallpaper is 32-px periodic, so any in-bounds multiple of 32 works.
+    # Step the offset to fit when the requested source falls off the edge.
+    while (src_xs < 0).any() or (src_xs >= W).any():
+        src_xs = np.where(src_xs < 0, src_xs + 32, src_xs)
+        src_xs = np.where(src_xs >= W, src_xs - 32, src_xs)
     out = []
     for im in images:
         if im is None:
@@ -285,8 +299,19 @@ def build_window(window_index: int) -> dict | None:
 
     for tag in ("A", "B"):
         ref = src / f"W{window_index}_default{tag}.png"
-        if ref.exists():
-            _save(_load(ref), out_dir / f"default{tag}.png")
+        if not ref.exists():
+            continue
+        img = _load(ref)
+        if tag == "A":
+            # The cursor in every defaultA capture is parked on the BatMode
+            # row (just left of "Active"). Detect it within that row band
+            # to avoid catching the menu top border at y≈23, then inpaint
+            # from +128 px to the right — the wallpaper repeats every 32
+            # px, and that source lands well past the "Wait" value where
+            # the wallpaper is clean of menu text.
+            mask = _find_cursor_mask(img, y_lo=38, y_hi=58)
+            img = _apply_cursor_mask([img], mask, offset=-128)[0]
+        _save(img, out_dir / f"default{tag}.png")
 
     return {
         "window": window_index,
