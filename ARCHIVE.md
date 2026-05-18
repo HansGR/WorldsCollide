@@ -127,6 +127,45 @@ trivial:
    wallpaper tiles every 32 px horizontally, so the source is the
    "underlying" wallpaper pixel the cursor was hiding.
 
+Three follow-up refinements landed once the menu was readable enough to
+spot residual artifacts:
+
+* **Right-edge cap + shadow patch on the baseline mask** (Page B
+  cleanup).  The baseline cursor is parked on the B-slider row, so the
+  raw CC + 2-px right dilation reaches `x=112` — the leading column of
+  the "B" glyph.  Cap the mask at `x ≤ 111` and stamp a 3×3 patch over
+  the drop-shadow tip (`y=197..199, x=109..111`) that the bright-pixel
+  CC misses.
+* **Unified defaultA mask from W5.**  The Page A reference shots
+  (`W{i}_defaultA.png`) carry a *different* cursor parked on
+  BatMode → Active.  Each window's CC was picking up different gutter
+  false-positives (menu top frame, slot 1's outline, etc.), so masks
+  varied per window.  Derive a single mask from W5 (the cleanest CC),
+  trim 4 px off the top, cap at `x ≤ 111`, and stamp a shadow patch
+  at `(y=53..55, x=109..111)`.  Apply uniformly to every window's
+  `defaultA.png`.  Inpaint with a `+128 px` offset so the source lands
+  past "Wait" on the same row — the standard `−32` would copy from
+  the "Bat.Mode" label text.
+* **`_apply_cursor_mask(offset=…)`.**  The cursor copy offset is no
+  longer hard-coded.  Callers pass a multiple of 32; if the source
+  would fall off the canvas edge the helper steps it by ±32 until in
+  range.
+
+### Slot-selection arrow
+
+In-game, FF6 draws a small black up-arrow under the selected slot
+colour swatch on the Color row.  Whichever slot the user happened to
+have selected during capture leaves that arrow baked into every
+isolation shot for that window.  Each window has the arrow at a
+different x, but always in the 8-pixel strip immediately under the
+slot swatches.
+
+Erase the entire strip `y=148..155, x=176..240` in baseline / slot /
+font and inpaint from 96 px to the left (3 wallpaper tiles).  The same
+y band has no menu chrome anywhere across the slot range, so the
+inpaint stitches even W3's lightning and W8's moogle clouds without a
+seam.
+
 ## Page-by-page interactive layer
 
 ### Page A (toggles)
@@ -202,11 +241,19 @@ Two-pass overlay:
    is clean wallpaper, and because we write left-to-right *in place*,
    the second 32-px column reads freshly-cleared pixels from the first
    one and so on — the whole rectangle gets tiled with clean wallpaper.
-2. **Stamp** the chosen preset's glyphs.  For each source pixel whose
-   max channel > 70, first paint a 1-px black drop shadow at `(+1, +1)`
-   and then paint the source pixel itself.  The shadow gets overpainted
-   wherever a neighbouring glyph cell lands on top, matching FF6's
-   natural drop shadow on every menu glyph.
+2. **Stamp** the chosen preset's glyphs.  Three passes:
+   1. Procedural drop shadow at `(+1, +1)` of every pixel with
+      `max channel > 70`.
+   2. Dark-pixel pass: any source pixel with `max channel < 10` stamps
+      pure black.  This pass exists for the Attack row's filled black
+      ball icon — its outline is pure black and was being filtered out
+      by the brightness gate, leaving only the dim grey interior; the
+      procedural shadow only covers the down-right side of bright
+      pixels, not the full ring.  Letter outlines coincide with the
+      procedural shadow and are unaffected.
+   3. Bright-pixel stamp: any source pixel with `max channel > 70`
+      copies its own colour, overpainting any shadow that lands on an
+      adjacent glyph cell.
 
 ## Text-highlight masks
 
@@ -239,6 +286,30 @@ Three dispatch arms:
   branch in `highlightValueText` that stamps both labels at fixed
   positions.
 
+The pixel adjuster has two flavours.  `adjustPixel` keeps the
+`max > TEXT_THRESHOLD` gate for the fallback bounding-box path so it
+can't accidentally scale wallpaper.  `adjustGlyphPixel` drops the gate
+(only skipping pure black) and is used everywhere a digit/word bitmap
+mask drives the call — the mask itself already guarantees we're on a
+glyph stroke, and some windows ship baselines where the dim label
+sits at brightness ~50 (below the gate) so the rescale would
+otherwise be silently skipped.
+
+### Color-row capture orientation
+
+`W4_0.png`, `W7_0.png`, and `W8_0.png` were captured with the *Window*
+sub-label selected on the Color row, while every other window was
+captured with Font selected.  That asymmetry leaks into the recolored
+composite as a dim "Window" label with no way to brighten it.
+
+The strip `y=124..132` in baseline.png is otherwise uniform black
+wallpaper across every window — only the menu labels themselves carry
+signal.  So the build script processes W1 first, harvests its strip
+as a reference, and then for any subsequent window whose Window
+brightness exceeds Font brightness by > 30, it wholesale-copies the
+W1 strip into the affected baseline.  Wallpaper texture elsewhere is
+untouched.
+
 ## Cache-busting
 
 The static-server cache turned out to be aggressive enough that
@@ -251,6 +322,15 @@ every asset fetch — `manifest.json`, every per-window `correction.json`,
 every baseline / slot / font / default / magorder PNG, and `main.js`
 itself (via an inline script tag in `index.html`).  Single timestamp
 per page load so we don't churn the cache on every individual call.
+
+## Background preload
+
+`loadWindowAssets(n)` is lazy — the first switch to a never-seen
+window would briefly flash the "No preview" placeholder while the
+fetches resolved.  After the active window's assets are loaded at
+boot, `init()` fires `Promise.all` over every other window in the
+manifest and lets it run in the background.  By the time the user
+cycles styles, the assets are already cached.
 
 ## Side panel (right column)
 
@@ -304,3 +384,20 @@ picks up any redeployed assets.
 | `43c72cc` | Keyboard-driven R / G / B slider rows on Page B. |
 | `7022f65` | Live R/G/B number + slider-fill repaint; cursor y −4 px on those rows; digit masks reindexed 0–9. |
 | `c4393ce` | 1-px drop shadow on slider digits + Mag.Order text; Color row Font / Window highlight tracks state.editing. |
+
+### Follow-up polish (branch: claude/fix-highlight-position-HnXqr)
+
+| Commit  | What landed |
+| ------- | ----------- |
+| `7d7601f` | Shift Color row "Window" highlight 4 px left to align with text. |
+| `8b50dbf` | Mask cursor sprite out of `defaultA` window screenshots; add `y_lo/y_hi` filter on `_find_cursor_mask` and a configurable copy offset on `_apply_cursor_mask`. |
+| `58f9578` | Trim defaultA cursor mask 4 px on top and right so the menu border and the leading "A" of "Active" stop getting scraped. |
+| `dc90489` | Reuse W5's cursor mask for every defaultA cleanup so wallpaper-dependent CC variance no longer leaks per-window artifacts. |
+| `15002f3` | Cap defaultA mask at `x ≤ 111` and stamp a shadow patch at `(y=53..55, x=109..111)` — the cursor's drop shadow tip the bright-pixel CC misses. |
+| `c654bae` | Apply the same `x ≤ 111` cap + shadow patch to the baseline cursor mask used by Page B, so the recolored composite stops clipping "B". |
+| `0d74f91` | Move the B-row shadow patch up to `y=197..199` (the actual shadow location, not y=200+). |
+| `e1d3b25` | Erase the in-game slot-selection arrow with a strip mask at `y=148..155, x=176..240`, inpainted from 96 px to the left. |
+| `e2da90e` | Stamp source pixels with `max < 10` in the Mag.Order overlay so the Attack row's black ball outline survives the brightness gate. |
+| `349a339` | Add `adjustGlyphPixel` (no brightness gate) for mask-driven highlights; the existing gate was silently skipping the dim "Window" label on W4/W7/W8. |
+| `269d4a3` | Normalize Color-row orientation in W4/W7/W8 baselines: copy W1's `y=124..132` strip to undo the Window-selected capture state. |
+| `9046025` | Preload every window's assets in the background after first paint so style switches never flash "No preview". |
