@@ -359,8 +359,16 @@ def _build_default_a_cursor_mask() -> np.ndarray | None:
 
     W5's wallpaper happens to give the cleanest CC around the cursor
     sprite, so we detect there and reuse the resulting mask for every
-    window. We still crop 4 px off the top and right to keep the inpaint
-    from scraping the menu border or the leading 'A' of "Active".
+    window.  Then:
+
+      * Trim 4 px off the top: dilation pulls the menu's bright top
+        frame (y≈38–39) into the mask and scrapes the border.
+      * Cap the right edge at x≤111: "Active" starts at x=112 and the
+        raw CC + 2-px right dilation overlaps the leading 'A'.
+      * Add a 3-px shadow patch at (y=53..55, x=109..111): the FF6
+        cursor sprite drops a darker shadow at its lower-right tip
+        that the bright-pixel CC doesn't reach, so without this an
+        obvious black smudge survives below-left of the 'A'.
     """
     ref = SHOTS_DIR / "W5" / "W5_defaultA.png"
     if not ref.exists():
@@ -368,10 +376,10 @@ def _build_default_a_cursor_mask() -> np.ndarray | None:
     mask = _find_cursor_mask(_load(ref), y_lo=38, y_hi=58)
     if not mask.any():
         return None
-    ys, xs = np.where(mask)
-    top, right = ys.min(), xs.max()
+    top = np.where(mask)[0].min()
     mask[: top + 4, :] = False
-    mask[:, right - 3 :] = False
+    mask[:, 112:] = False
+    mask[53:56, 109:112] = True
     return mask
 
 
