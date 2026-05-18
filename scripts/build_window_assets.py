@@ -284,6 +284,21 @@ def build_window(window_index: int,
         font_clean = raw_font
         cleaned_slots = raw_slots
 
+    # The 8-px strip just below the slot-color row and above the R bar
+    # contains an in-game UI artifact: an up-pointing black arrow that
+    # marks whichever slot was selected when the capture was taken. Its
+    # x position differs per window, so erase the whole slot-row strip
+    # (x=176..240, covering all seven 8-px swatches) and inpaint with
+    # wallpaper from 96 px (3 tiles) to the left, where this y band is
+    # uniformly wallpaper across every menu page.
+    arrow_mask = np.zeros(raw_baseline.shape[:2], bool)
+    arrow_mask[148:156, 176:240] = True
+    patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
+                                 arrow_mask, offset=96)
+    baseline = patched[0]
+    font_clean = patched[1]
+    cleaned_slots = list(patched[2:])
+
     _save(baseline, out_dir / "baseline.png")
     for n, im in zip(range(1, 8), cleaned_slots):
         if im is not None:
