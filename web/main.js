@@ -456,12 +456,28 @@ function drawMagOrderText() {
   }
   ctx.putImageData(ext, x0 - TILE, y0);
 
-  // 2) Stamp text glyphs.
+  // 2) Stamp text glyphs.  Two passes so the 1-px FF6 drop shadow
+  //    comes back: first a black pixel one cell down-right of every
+  //    bright source pixel, then the bright pixel itself (which
+  //    overpaints any shadow that lands on an adjacent glyph cell).
   const TEXT_THRESHOLD = 70;
   const region = ctx.getImageData(x0, y0, w, h);
   const rd = region.data, md = img.data;
+  const stride = w * 4;
+  for (let py = 0; py < h - 1; py++) {
+    for (let px = 0; px < w - 1; px++) {
+      const i = py * stride + px * 4;
+      const mx = Math.max(md[i], md[i + 1], md[i + 2]);
+      if (mx > TEXT_THRESHOLD) {
+        const sh = i + stride + 4;  // (px+1, py+1)
+        rd[sh    ] = 0;
+        rd[sh + 1] = 0;
+        rd[sh + 2] = 0;
+      }
+    }
+  }
   for (let i = 0; i < rd.length; i += 4) {
-    const mx = Math.max(md[i], md[i+1], md[i+2]);
+    const mx = Math.max(md[i], md[i + 1], md[i + 2]);
     if (mx > TEXT_THRESHOLD) {
       rd[i    ] = md[i    ];
       rd[i + 1] = md[i + 1];
@@ -592,6 +608,9 @@ const WORD_MASKS = {
   'mono':    { w: 30, h: 7, ipr: 1, rows: [0x86000000, 0xce78f878, 0xfecccccc, 0xb6cccccc, 0x86cccccc, 0x86cccccc, 0x8678cc78] },
   'memory':  { w: 46, h: 8, ipr: 2, rows: [0x86000000, 0x00000000, 0xce78fc78, 0xdccc0000, 0xfeccb6cc, 0xe0cc0000, 0xb6fcb6cc, 0xc0cc0000, 0x86c0b6cc, 0xc07c0000, 0x86c4b6cc, 0xc00c0000, 0x8678b678, 0xc08c0000, 0x00000000, 0x00780000] },
   'empty':   { w: 38, h: 8, ipr: 2, rows: [0xfe000030, 0x00000000, 0xc0fcf8fc, 0xcc000000, 0xc0b6cc30, 0xcc000000, 0xfcb6cc30, 0xcc000000, 0xc0b6cc30, 0x7c000000, 0xc0b6f830, 0x0c000000, 0xfeb6c01c, 0x8c000000, 0x0000c000, 0x78000000] },
+  // Page B Color row's "Font" word (the existing 'window' mask above
+  // works for the same-row "Window" label since the font is uniform).
+  'font':    { w: 30, h: 7, ipr: 1, rows: [0xfe000030, 0xc078f8fc, 0xc0cccc30, 0xfccccc30, 0xc0cccc30, 0xc0cccc30, 0xc078cc1c] },
 };
 
 // ---------------- Slider value + bar repaint -------------------------
@@ -652,9 +671,28 @@ function redrawNumber(rowY, value, fontCss) {
 function drawDigit(x, y, digit, fillCss) {
   const mask = DIGIT_MASKS[digit];
   if (!mask) return;
+  // First pass: 1-px black shadow offset +1, +1 from every set bit.  FF6
+  // renders all menu glyphs with this drop shadow; we paint it first and
+  // let the glyph itself overpaint the cells where shadow overlaps a
+  // neighbouring glyph pixel.
+  ctx.fillStyle = '#000000';
+  for (let dy = 0; dy < DIGIT_MASK_H; dy++) {
+    const py = y + dy - 1;
+    if (py + 1 < 0 || py + 1 >= 224) continue;
+    const bits = mask[dy];
+    if (!bits) continue;
+    for (let dx = 0; dx < DIGIT_MASK_W; dx++) {
+      const px = x + dx;
+      if (px + 1 < 0 || px + 1 >= 256) continue;
+      if (bits & (1 << (DIGIT_MASK_W - 1 - dx))) {
+        ctx.fillRect(px + 1, py + 1, 1, 1);
+      }
+    }
+  }
+  // Second pass: the glyph itself.
   ctx.fillStyle = fillCss;
   for (let dy = 0; dy < DIGIT_MASK_H; dy++) {
-    const py = y + dy - 1;     // same -1 offset as highlightValueText
+    const py = y + dy - 1;
     if (py < 0 || py >= 224) continue;
     const bits = mask[dy];
     if (!bits) continue;
@@ -691,6 +729,26 @@ function redrawBarFill(rowY, value, fontCss) {
   }
 }
 
+function stampWordHighlight(word, x, y, adjuster, target) {
+  const m = WORD_MASKS[word];
+  if (!m) return;
+  const W = 256, H = 224;
+  for (let dy = 0; dy < m.h; dy++) {
+    const py = y + dy;
+    if (py < 0 || py >= H) continue;
+    for (let dx = 0; dx < m.w; dx++) {
+      const px = x + dx;
+      if (px < 0 || px >= W) continue;
+      const intIdx = dx >> 5;
+      const bitIdx = 31 - (dx & 31);
+      const word32 = m.rows[dy * m.ipr + intIdx];
+      if (word32 & (1 << bitIdx)) {
+        adjuster((py * W + px) * 4, target);
+      }
+    }
+  }
+}
+
 function highlightValueText() {
   // FF6 renders the selected option's text white and other options grey.
   // We bake the selected state in at render time: scale text pixels so
@@ -721,7 +779,18 @@ function highlightValueText() {
   };
 
   for (const row of opts) {
-    if (row.kind === 'color' || row.kind === 'slider') continue;
+    if (row.kind === 'slider') continue;
+    if (row.kind === 'color') {
+      // Color row has two text labels ("Font" / "Window") whose
+      // highlighted state tracks state.editing rather than a discrete
+      // value in row.values.  Stamp them with the per-word mask.
+      const fontBright = state.editing.kind === 'font';
+      stampWordHighlight('font',   112, 124, adjustPixel,
+                          fontBright ? BRIGHT_TARGET : DIM_TARGET);
+      stampWordHighlight('window', 180, 124, adjustPixel,
+                          fontBright ? DIM_TARGET : BRIGHT_TARGET);
+      continue;
+    }
     const cur = currentValueOf(row);
     for (const item of row.values) {
       const [val] = item;
