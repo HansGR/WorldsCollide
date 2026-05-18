@@ -271,10 +271,10 @@ def build_window(window_index: int,
         # glyph rendered into the font/slot images. Capping the mask at
         # x≤111 keeps the recolored Page B composite from clipping the
         # left edge of B. Then stamp the cursor's drop-shadow tip
-        # (y=200..203, x=109..111) that the bright-pixel CC misses, so
+        # (y=197..199, x=109..111) that the bright-pixel CC misses, so
         # it doesn't leak through as a black smudge below-left of B.
         cursor_mask[:, 112:] = False
-        cursor_mask[200:204, 109:112] = True
+        cursor_mask[197:200, 109:112] = True
         patched = _apply_cursor_mask([raw_baseline, raw_font, *raw_slots], cursor_mask)
         baseline = patched[0]
         font_clean = patched[1]
