@@ -1234,8 +1234,16 @@ document.getElementById('copy-flags').addEventListener('click', async () => {
     console.error('Failed to load manifest', e);
     assets.manifest = { windows: {} };
   }
-  // Try to preload the default style.
+  // Preload the active window first so the initial render isn't blocked
+  // on the others, then pull the remaining windows in parallel so cycling
+  // through styles never falls back to the "No preview" placeholder.
   await loadWindowAssets(state.WindowStyle);
+  const others = Object.keys(assets.manifest.windows || {})
+    .map(k => parseInt(k, 10))
+    .filter(n => n !== state.WindowStyle);
+  Promise.all(others.map(n => loadWindowAssets(n))).catch(e => {
+    console.warn('Background preload of window assets failed:', e);
+  });
   await loadMagOrderOverlays();
   updateTabUI();
   syncSidePanel();
