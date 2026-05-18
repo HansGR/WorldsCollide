@@ -310,6 +310,17 @@ def build_window(window_index: int) -> dict | None:
             # px, and that source lands well past the "Wait" value where
             # the wallpaper is clean of menu text.
             mask = _find_cursor_mask(img, y_lo=38, y_hi=58)
+            # The dilation + the menu's bright top frame at y≈38–39 push
+            # the bounding box higher and farther right than the actual
+            # cursor sprite, which scrapes a strip off the menu border and
+            # clips the leading edge of "Active". Crop 4 px off the top
+            # and right of the mask to keep the inpaint inside the sprite.
+            if mask.any():
+                ys_m, xs_m = np.where(mask)
+                top = ys_m.min()
+                right = xs_m.max()
+                mask[: top + 4, :] = False
+                mask[:, right - 3 :] = False
             img = _apply_cursor_mask([img], mask, offset=-128)[0]
         _save(img, out_dir / f"default{tag}.png")
 
