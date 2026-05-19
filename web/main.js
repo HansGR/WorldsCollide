@@ -651,7 +651,6 @@ const SLIDER_BAR_X0    = 152;       // first column of the fill region
 const SLIDER_BAR_W31   = 62;        // total fill width when value = 31
 const SLIDER_BAR_Y_OFF = 5;         // first of three interior fill rows
 const SLIDER_BAR_FILL_H = 3;        // bar interior is three pixels tall
-const SLIDER_BAR_DARK_SAMPLE_OFF = 4;  // dark inner-border row (always 99-ish)
 
 function drawColorEditValues() {
   // Repaint each R/G/B row's value text and slider-fill to reflect the
@@ -723,25 +722,18 @@ function drawDigit(x, y, digit, fillCss) {
 }
 
 function redrawBarFill(rowY, value, fontCss) {
-  // The bar's interior is 3 px tall.  When empty, it's the same dark
-  // colour as the inner-border row just above; when filled, it's solid
-  // white.  Sample the inner-border row to track each window's
-  // y-correction automatically.
-  const refY = rowY + SLIDER_BAR_DARK_SAMPLE_OFF;
-  const ref  = ctx.getImageData(180, refY, 1, 1).data;
-  const darkCss = `rgb(${ref[0]}, ${ref[1]}, ${ref[2]})`;
-  const fillW   = Math.round(value * SLIDER_BAR_W31 / 31);
-  const restW   = SLIDER_BAR_W31 - fillW;
+  // The bar's interior is 3 px tall.  The build script masks the
+  // interior out of the source screenshots (inpainted with wallpaper
+  // from 4 tiles to the left), so the recolored composite already
+  // shows the wallpaper under the bar — we only need to paint the
+  // filled portion on top.  Leaving the empty portion untouched lets
+  // the wallpaper texture show through "behind" the bar instead of a
+  // solid SNES-rendered colour that tints with the slot palette.
+  const fillW = Math.round(value * SLIDER_BAR_W31 / 31);
+  if (fillW <= 0) return;
+  ctx.fillStyle = fontCss;
   for (let i = 0; i < SLIDER_BAR_FILL_H; i++) {
-    const y = rowY + SLIDER_BAR_Y_OFF + i;
-    if (fillW > 0) {
-      ctx.fillStyle = fontCss;
-      ctx.fillRect(SLIDER_BAR_X0, y, fillW, 1);
-    }
-    if (restW > 0) {
-      ctx.fillStyle = darkCss;
-      ctx.fillRect(SLIDER_BAR_X0 + fillW, y, restW, 1);
-    }
+    ctx.fillRect(SLIDER_BAR_X0, rowY + SLIDER_BAR_Y_OFF + i, fillW, 1);
   }
 }
 

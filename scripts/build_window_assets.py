@@ -333,17 +333,13 @@ def build_window(window_index: int,
     if color_row_reference is not None:
         baseline = _fix_color_row_orientation(baseline, color_row_reference)
 
-    _save(baseline, out_dir / "baseline.png")
-    for n, im in zip(range(1, 8), cleaned_slots):
-        if im is not None:
-            _save(im, out_dir / f"slot{n}.png")
-    if font_clean is not None:
-        _save(font_clean, out_dir / "font.png")
-
     # Fit a per-row, per-channel correction against the default-palette
     # screenshot.  Stored as raw float arrays under correction.json so
     # the renderer can load them once and add a small constant to each
-    # pixel based on its row.
+    # pixel based on its row.  Fit it before the slider-bar mask below
+    # so the synth-vs-real comparison sees an intact bar in both images
+    # (the per-row mean residual would otherwise be skewed at bar rows
+    # by 62 px of bar-vs-wallpaper diff).
     correction = None
     ref_default = src / f"W{window_index}_defaultB.png"
     if ref_default.exists():
@@ -355,6 +351,32 @@ def build_window(window_index: int,
         correction = [[round(float(v), 2) for v in row] for row in corr]
         with open(out_dir / "correction.json", "w") as f:
             json.dump(correction, f)
+
+    # Erase the R / G / B bar interior strips so the wallpaper texture
+    # shows through behind the dynamic slider fill the runtime paints on
+    # top.  The original screenshots have each bar's 3-row interior as a
+    # solid SNES-rendered colour (gray rails + white middle), which gets
+    # tinted by slot colours in the recolour composite — visible as a
+    # solid block under the dynamic fill instead of the wallpaper.
+    # Inpainting with a 128-px (4-tile) left offset lands on clean
+    # wallpaper for every image: the bar itself ends at x=219, and the
+    # R / G / B labels and "31" digits sit at x≈112..147, so source
+    # x ∈ [24, 86) misses both.
+    bar_mask = np.zeros(raw_baseline.shape[:2], bool)
+    for row_y in (154, 170, 186):  # R, G, B slider rows; see PAGE_B_OPTIONS in main.js
+        bar_mask[row_y + 5 : row_y + 8, 152:214] = True
+    patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
+                                 bar_mask, offset=128)
+    baseline = patched[0]
+    font_clean = patched[1]
+    cleaned_slots = list(patched[2:])
+
+    _save(baseline, out_dir / "baseline.png")
+    for n, im in zip(range(1, 8), cleaned_slots):
+        if im is not None:
+            _save(im, out_dir / f"slot{n}.png")
+    if font_clean is not None:
+        _save(font_clean, out_dir / "font.png")
 
     for tag in ("A", "B"):
         ref = src / f"W{window_index}_default{tag}.png"
