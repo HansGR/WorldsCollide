@@ -219,13 +219,21 @@ The slider bar and value text are repainted on every render:
   scaled to 8-bit so they tint with whatever colour the menu is using
   for its labels.
 * `redrawBarFill()` — overpaints the 3-row interior of the bar with a
-  font-color stripe of width `round(value · 62 / 31)` followed by the
-  bar's empty-track dark gray for the remainder.  The dark gray is
-  sampled per render from the bar's inner-border row so it tracks the
-  y-correction automatically.
+  font-color stripe of width `round(value · 62 / 31)`.  The empty
+  remainder is intentionally left untouched: the build script erases
+  the bar interior out of every baseline / slot / font screenshot
+  (4-tile left inpaint), so the recolored composite already shows the
+  wallpaper under the bar.  Painting only the filled portion lets the
+  wallpaper texture read as "transparent" through the empty section
+  instead of a solid SNES-rendered colour that tints with the slot
+  palette (which is what the raw screenshots' bar interiors did,
+  noticeable as a dark block under the dynamic fill on busy wallpapers
+  like W3).
 
 The bar's outline (rounded capsule, top/bottom edges, inner border
 rows) is never touched — only the value-dependent interior changes.
+The y-correction is fit *before* the bar mask runs so the per-row mean
+residual isn't skewed by 62 px of bar-vs-wallpaper diff at bar rows.
 
 ### Mag.Order text overlay
 
