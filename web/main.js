@@ -297,6 +297,54 @@ const CURSOR_SPRITE = (() => {
   return c;
 })();
 
+// Page-switch arrow sprites — static graphics blitted at fixed positions
+// after the recolour pass.  Pixel colours extracted from W1_defaultA /
+// W1_defaultB at the arrow positions; the bitmap is intentionally not
+// re-tinted by the live palette since the in-game arrow is rendered
+// from a fixed chrome palette that doesn't follow the user's font/slot
+// colours.  The build script erases the underlying arrow out of every
+// isolation so the bg behind these sprites is just recoloured chrome
+// / wallpaper.
+//
+// Page A's arrow lives at the bottom (y=206..210, "go down to Page B");
+// Page B's at the top (y=29..33, "go up to Page A").
+const ARROW_X0 = 123;
+const ARROW_DOWN_Y0 = 206;  // Page A
+const ARROW_UP_Y0   = 29;   // Page B
+const ARROW_W = 9, ARROW_H = 5;
+
+const ARROW_DOWN_SPRITE = (() => {
+  const rows = [
+    [[123,156,156],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[123,156,156]],
+    [[ 24, 24, 41],[123,156,156],[165,198,198],[247,255,255],[247,255,255],[247,255,255],[165,198,198],[123,156,156],[ 24, 24, 41]],
+    [null,         [ 24, 24, 41],[123,156,156],[165,198,198],[247,255,255],[165,198,198],[123,156,156],[ 24, 24, 41],null         ],
+    [null,         null,         [ 24, 24, 41],[123,156,156],[165,198,198],[123,156,156],[ 24, 24, 41],null,         null         ],
+    [null,         null,         null,         [ 24, 24, 41],[123,156,156],[ 24, 24, 41],null,         null,         null         ],
+  ];
+  const c = document.createElement('canvas');
+  c.width = ARROW_W; c.height = ARROW_H;
+  const cx = c.getContext('2d');
+  const im = cx.createImageData(ARROW_W, ARROW_H);
+  for (let y = 0; y < ARROW_H; y++) for (let x = 0; x < ARROW_W; x++) {
+    const px = rows[y][x];
+    const i = (y * ARROW_W + x) * 4;
+    if (px) { im.data[i] = px[0]; im.data[i+1] = px[1]; im.data[i+2] = px[2]; im.data[i+3] = 255; }
+  }
+  cx.putImageData(im, 0, 0);
+  return c;
+})();
+
+const ARROW_UP_SPRITE = (() => {
+  const c = document.createElement('canvas');
+  c.width = ARROW_W; c.height = ARROW_H;
+  const cx = c.getContext('2d');
+  // Vertical flip of the down arrow.
+  cx.translate(0, ARROW_H);
+  cx.scale(1, -1);
+  cx.drawImage(ARROW_DOWN_SPRITE, 0, 0);
+  return c;
+})();
+
 function recolor(asset) {
   // Compose:  output[p] = baseline[p]
   //                     + Σ (slot_n_raw[p] - baseline[p]) * c_n / 31
@@ -435,10 +483,18 @@ function render() {
     drawMagOrderText();
     drawColorEditValues();
   }
+  drawPageSwitchArrow();
   highlightValueText();
   drawCursorOverlay();
   drawSelectionOverlay();
   updateHitTargets();
+}
+
+function drawPageSwitchArrow() {
+  // Each page draws the indicator that points toward the *other* page —
+  // Page A → down arrow at the bottom, Page B → up arrow at the top.
+  if (state.page === 'A') ctx.drawImage(ARROW_DOWN_SPRITE, ARROW_X0, ARROW_DOWN_Y0);
+  else                    ctx.drawImage(ARROW_UP_SPRITE,   ARROW_X0, ARROW_UP_Y0);
 }
 
 function drawMagOrderText() {
@@ -948,7 +1004,29 @@ function updateHitTargets() {
   const opts = getCurrentOptions();
   for (let r = 0; r < opts.length; r++) {
     const row = opts[r];
-    if (row.kind === 'slider') continue;  // sliders are keyboard-only for now
+    if (row.kind === 'slider') {
+      // Whole bar (outline included, ~70 px wide) is clickable; the click
+      // position maps linearly to a [0, 31] value.  Clicking parks the
+      // cursor on the row too so keyboard nudges resume from there.
+      const el = document.createElement('div');
+      el.className = 'hit slider';
+      el.style.left   = (SLIDER_BAR_X0 - 4) * 2 + 'px';
+      el.style.top    = (row.y + 3) * 2 + 'px';
+      el.style.width  = (SLIDER_BAR_W31 + 8) * 2 + 'px';
+      el.style.height = 7 * 2 + 'px';
+      el.title = `${row.key}: click to set`;
+      const setFromEvent = (e) => {
+        const rect = el.getBoundingClientRect();
+        const xCanvas = (e.clientX - rect.left) / 2 + (SLIDER_BAR_X0 - 4);
+        const t = (xCanvas - SLIDER_BAR_X0) / SLIDER_BAR_W31;
+        const v = Math.round(Math.max(0, Math.min(1, t)) * 31);
+        state.cursor = r;
+        setChannel(row.channel, v);
+      };
+      el.addEventListener('click', setFromEvent);
+      hitLayer.appendChild(el);
+      continue;
+    }
     for (let v = 0; v < row.values.length; v++) {
       const item = row.values[v];
       const val = item[0];
@@ -969,6 +1047,35 @@ function updateHitTargets() {
       hitLayer.appendChild(el);
     }
   }
+
+  // Page-switch arrow hit target — slightly bigger than the 9×5 sprite so
+  // it's easy to click.  Tab key still works via keyHandler.
+  const arrow = document.createElement('div');
+  arrow.className = 'hit page-switch';
+  const ay = state.page === 'A' ? ARROW_DOWN_Y0 : ARROW_UP_Y0;
+  arrow.style.left   = (ARROW_X0 - 3) * 2 + 'px';
+  arrow.style.top    = (ay - 2) * 2 + 'px';
+  arrow.style.width  = (ARROW_W + 6) * 2 + 'px';
+  arrow.style.height = (ARROW_H + 4) * 2 + 'px';
+  arrow.title = state.page === 'A' ? 'Go to Page B' : 'Go to Page A';
+  arrow.addEventListener('click', switchPage);
+  hitLayer.appendChild(arrow);
+}
+
+function switchPage() {
+  state.page = state.page === 'A' ? 'B' : 'A';
+  state.cursor = 0;
+  updateTabUI();
+  render();
+  syncSidePanel();
+}
+
+function setChannel(ch, value) {
+  const rgb = editedRgb();
+  rgb[ch] = Math.max(0, Math.min(31, value | 0));
+  render();
+  syncSidePanel();
+  updateFlagString();
 }
 
 // ---------------- input handling ----------------
