@@ -287,8 +287,16 @@ Two-pass overlay:
       pixels, not the full ring.  Letter outlines coincide with the
       procedural shadow and are unaffected.
    3. Bright-pixel stamp: any source pixel with `max channel > 70`
-      copies its own colour, overpainting any shadow that lands on an
-      adjacent glyph cell.
+      stamps the live font palette scaled by source brightness
+      (`font_8bit · md[i] / 255` per channel), overpainting any shadow
+      that lands on an adjacent glyph cell.  The crops were captured
+      under W1's default (white) font, so the source is grayscale and
+      the multiply collapses to a flat font-colour tint at the source's
+      brightness — bright letter strokes get the full font colour, the
+      dim bullet outlines stay proportionally dimmer.  Previously the
+      stamp just copied `md[i]` unchanged, which left the Mag.Order
+      text frozen at white even when the rest of the menu's text
+      recoloured.
 
 ## Text-highlight masks
 
