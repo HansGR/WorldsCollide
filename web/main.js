@@ -491,10 +491,18 @@ function drawMagOrderText() {
   //       on the Attack row, whose outline is below TEXT_THRESHOLD and
   //       would otherwise be skipped (the procedural shadow only covers
   //       the down-right side of bright pixels, not a full ring).
-  //    c) Bright source pixel itself, which overpaints any shadow that
-  //       lands on an adjacent glyph cell.
+  //    c) Bright source pixel itself, tinted with the live font palette
+  //       so the overlay text matches whatever colour the rest of the
+  //       menu's text uses.  The crops were captured under W1's default
+  //       (white) font so source[i] is grayscale — scaling by the user's
+  //       font colour preserves the per-pixel brightness ramp (the dim
+  //       bullet outlines stay dimmer than the bright letter strokes).
+  //       Pure black survives as black since md[i] · anything = 0.
   const TEXT_THRESHOLD = 70;
   const DARK_THRESHOLD = 10;
+  const fr = state.font[0] * 255 / 31;
+  const fg = state.font[1] * 255 / 31;
+  const fb = state.font[2] * 255 / 31;
   const region = ctx.getImageData(x0, y0, w, h);
   const rd = region.data, md = img.data;
   const stride = w * 4;
@@ -521,9 +529,10 @@ function drawMagOrderText() {
   for (let i = 0; i < rd.length; i += 4) {
     const mx = Math.max(md[i], md[i + 1], md[i + 2]);
     if (mx > TEXT_THRESHOLD) {
-      rd[i    ] = md[i    ];
-      rd[i + 1] = md[i + 1];
-      rd[i + 2] = md[i + 2];
+      const t = mx / 255;
+      rd[i    ] = Math.round(fr * t);
+      rd[i + 1] = Math.round(fg * t);
+      rd[i + 2] = Math.round(fb * t);
     }
   }
   ctx.putImageData(region, x0, y0);
