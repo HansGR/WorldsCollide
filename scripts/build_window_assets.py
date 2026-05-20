@@ -463,6 +463,90 @@ def _build_default_a_cursor_mask() -> np.ndarray | None:
     return mask
 
 
+def build_window_page_a(window_index: int,
+                        default_a_cursor_mask: np.ndarray | None) -> dict | None:
+    """Process the parallel Page A isolation captures under W{i}A/.
+
+    Same shape as build_window() (a baseline at all-zero, seven slot
+    isolations, and a font isolation) but for the Page A menu layout
+    instead of Page B.  The cursor is parked on Bat.Mode → Active in
+    every capture, identical to the existing W{i}_defaultA.png reference
+    shots — so we reuse the canonical defaultA cursor mask + the +128
+    source offset that lands past 'Wait' on wallpaper.
+
+    Page A has none of Page B's special cases — no slot-selection arrow,
+    no Color-row orientation flip, no R/G/B slider bar to mask — so the
+    pipeline reduces to: cursor cleanup → save → fit y-correction
+    against W{i}_defaultA.png.
+    """
+    src = SHOTS_DIR / f"W{window_index}A"
+    baseline_path = src / f"W{window_index}A_0.png"
+    if not baseline_path.exists():
+        return None
+
+    out_dir = ASSETS_DIR / f"W{window_index}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    raw_baseline = _load(baseline_path)
+
+    raw_slots: list[np.ndarray | None] = []
+    slot_indices: list[int] = []
+    for n in range(1, 8):
+        p = src / f"W{window_index}A_{n}.png"
+        if p.exists():
+            raw_slots.append(_load(p))
+            slot_indices.append(n)
+        else:
+            raw_slots.append(None)
+
+    font_path = src / f"W{window_index}A_font.png"
+    font_present = font_path.exists()
+    raw_font = _load(font_path) if font_present else None
+
+    # Cursor is in the same spot as the defaultA reference shots.  The
+    # canonical mask derived from W5_defaultA covers it cleanly, and the
+    # +128 px source offset (offset=-128 to _apply_cursor_mask) lands
+    # past 'Wait' on wallpaper for every image — including the font
+    # isolation where 'Active'/'Wait' are rendered bright.
+    if default_a_cursor_mask is not None:
+        patched = _apply_cursor_mask(
+            [raw_baseline, raw_font, *raw_slots],
+            default_a_cursor_mask, offset=-128)
+        baseline = patched[0]
+        font_clean = patched[1]
+        cleaned_slots = list(patched[2:])
+    else:
+        baseline = raw_baseline
+        font_clean = raw_font
+        cleaned_slots = list(raw_slots)
+
+    _save(baseline, out_dir / "baselineA.png")
+    for n, im in zip(range(1, 8), cleaned_slots):
+        if im is not None:
+            _save(im, out_dir / f"slot{n}A.png")
+    if font_clean is not None:
+        _save(font_clean, out_dir / "fontA.png")
+
+    # Fit Page A's y-correction against the existing defaultA reference.
+    correction = None
+    ref_default = SHOTS_DIR / f"W{window_index}" / f"W{window_index}_defaultA.png"
+    if ref_default.exists():
+        real = _load(ref_default)
+        if default_a_cursor_mask is not None:
+            real = _apply_cursor_mask([real], default_a_cursor_mask, offset=-128)[0]
+        synth = _synth_at_defaults(window_index, baseline, cleaned_slots, font_clean)
+        corr = _fit_y_correction(real, synth)  # (H, 3)
+        correction = [[round(float(v), 2) for v in row] for row in corr]
+        with open(out_dir / "correctionA.json", "w") as f:
+            json.dump(correction, f)
+
+    return {
+        "slots": slot_indices,
+        "font": font_present,
+        "hasCorrection": correction is not None,
+    }
+
+
 def main() -> int:
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     manifest = {"windows": {}}
@@ -477,6 +561,10 @@ def main() -> int:
         if info is not None:
             manifest["windows"][str(i)] = info
             print(f"built W{i}: {info}")
+            page_a_info = build_window_page_a(i, default_a_mask)
+            if page_a_info is not None:
+                info["pageA"] = page_a_info
+                print(f"built W{i}A: {page_a_info}")
         if i == 1:
             w1_baseline = _load(ASSETS_DIR / "W1" / "baseline.png")
             color_row_ref = w1_baseline[COLOR_ROW_Y_LO:COLOR_ROW_Y_HI].copy()

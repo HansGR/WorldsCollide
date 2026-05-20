@@ -202,20 +202,34 @@ async function loadWindowAssets(n) {
   const info = assets.manifest.windows[String(n)];
   if (!info) return null;
   const base = `assets/W${n}/`;
-  const promises = [loadImage(base + 'baseline.png')];
-  for (let s = 1; s <= 7; s++) {
-    if (info.slots.includes(s)) promises.push(loadImage(base + `slot${s}.png`));
-    else promises.push(Promise.resolve(null));
-  }
-  promises.push(info.font ? loadImage(base + 'font.png') : Promise.resolve(null));
-  if (info.hasDefaultA) promises.push(loadImage(base + 'defaultA.png'));
-  else promises.push(Promise.resolve(null));
-  if (info.hasDefaultB) promises.push(loadImage(base + 'defaultB.png'));
-  else promises.push(Promise.resolve(null));
-  if (info.hasCorrection)
-    promises.push(fetch(base + 'correction.json' + CB).then(r => r.json()));
-  else
-    promises.push(Promise.resolve(null));
+  const pageA = info.pageA || null;
+  // Slot count varies per page in principle; only Page A actually ships
+  // its own isolations, so we still index slots 1..7 per page.
+  const slotPaths = (suffix, present) => {
+    const out = [];
+    for (let s = 1; s <= 7; s++) {
+      out.push(present && present.includes(s)
+        ? loadImage(`${base}slot${s}${suffix}.png`)
+        : Promise.resolve(null));
+    }
+    return out;
+  };
+  const promises = [
+    loadImage(base + 'baseline.png'),
+    ...slotPaths('', info.slots),
+    info.font ? loadImage(base + 'font.png') : Promise.resolve(null),
+    info.hasDefaultA ? loadImage(base + 'defaultA.png') : Promise.resolve(null),
+    info.hasDefaultB ? loadImage(base + 'defaultB.png') : Promise.resolve(null),
+    info.hasCorrection
+      ? fetch(base + 'correction.json' + CB).then(r => r.json())
+      : Promise.resolve(null),
+    pageA ? loadImage(base + 'baselineA.png') : Promise.resolve(null),
+    ...slotPaths('A', pageA ? pageA.slots : null),
+    (pageA && pageA.font) ? loadImage(base + 'fontA.png') : Promise.resolve(null),
+    (pageA && pageA.hasCorrection)
+      ? fetch(base + 'correctionA.json' + CB).then(r => r.json())
+      : Promise.resolve(null),
+  ];
 
   const imgs = await Promise.all(promises);
   const a = {
@@ -225,6 +239,10 @@ async function loadWindowAssets(n) {
     defaultA: imgs[9],
     defaultB: imgs[10],
     correction: imgs[11],  // (H rows) × [r, g, b] residual to add per pixel.
+    baselineA: imgs[12],
+    slotsA: imgs.slice(13, 20),
+    fontA: imgs[20],
+    correctionA: imgs[21],
   };
   // Convert each to ImageData so we can do per-pixel math fast.
   const toData = (im) => {
@@ -235,10 +253,13 @@ async function loadWindowAssets(n) {
     cx.drawImage(im, 0, 0);
     return cx.getImageData(0, 0, 256, 224);
   };
-  a.baselineData = toData(a.baseline);
-  a.slotsData    = a.slots.map(toData);
-  a.fontData     = toData(a.font);
+  a.baselineData  = toData(a.baseline);
+  a.slotsData     = a.slots.map(toData);
+  a.fontData      = toData(a.font);
   a.fontFromFallback = false;
+  a.baselineDataA = toData(a.baselineA);
+  a.slotsDataA    = a.slotsA.map(toData);
+  a.fontDataA     = toData(a.fontA);
   assets.windowAssets[n] = a;
   if (!a.fontData) {
     a.fontData = await getFontDataFallback();
@@ -286,11 +307,22 @@ function recolor(asset) {
   // pixels whose intensity drops when a slot turns on (e.g. wallpaper
   // pixels that get averaged with the slot color instead of rendered at
   // full brightness).
+  //
+  // Page A and Page B ship parallel isolation sets (the menu layout
+  // changes between pages, so a single set of captures can't drive
+  // both).  Pick the matching bundle based on state.page; fall back to
+  // Page B's data when Page A's isolations aren't available so older
+  // builds keep rendering something.
   if (!asset || !asset.baselineData) return null;
+  const useA = state.page === 'A' && asset.baselineDataA;
+  const baselineData = useA ? asset.baselineDataA : asset.baselineData;
+  const slotsData    = useA ? asset.slotsDataA    : asset.slotsData;
+  const fontData     = useA ? asset.fontDataA     : asset.fontData;
+  const correction   = useA ? asset.correctionA   : asset.correction;
   const W = 256, H = 224;
   const out = ctx.createImageData(W, H);
   const N = W * H * 4;
-  const base = asset.baselineData.data;
+  const base = baselineData.data;
 
   const winN = state.WindowStyle;
   const slotColors = state.windows[winN];
@@ -303,11 +335,11 @@ function recolor(asset) {
   //  in a single linear pass per channel.)
   let wBaseR = 1, wBaseG = 1, wBaseB = 1;
   for (let s = 0; s < 7; s++) {
-    if (!asset.slotsData[s]) continue;
+    if (!slotsData[s]) continue;
     const c = slotColors[s];
     wBaseR -= c[0] / 31; wBaseG -= c[1] / 31; wBaseB -= c[2] / 31;
   }
-  if (asset.fontData) {
+  if (fontData) {
     wBaseR -= fontColor[0] / 31;
     wBaseG -= fontColor[1] / 31;
     wBaseB -= fontColor[2] / 31;
@@ -323,7 +355,7 @@ function recolor(asset) {
     acc[i+2] = base[i+2] * wBaseB;
   }
   for (let s = 0; s < 7; s++) {
-    const sd = asset.slotsData[s];
+    const sd = slotsData[s];
     if (!sd) continue;
     const c = slotColors[s];
     const rs = c[0] / 31, gs = c[1] / 31, bs = c[2] / 31;
@@ -335,10 +367,10 @@ function recolor(asset) {
       acc[i+2] += d[i+2] * bs;
     }
   }
-  if (asset.fontData) {
+  if (fontData) {
     const c = fontColor;
     const rs = c[0] / 31, gs = c[1] / 31, bs = c[2] / 31;
-    const d = asset.fontData.data;
+    const d = fontData.data;
     for (let i = 0; i < N; i += 4) {
       acc[i  ] += d[i  ] * rs;
       acc[i+1] += d[i+1] * gs;
@@ -350,8 +382,8 @@ function recolor(asset) {
   // The values are fit against the default-palette screenshot, so they're
   // exact at defaults and "shifted in the right direction" for other
   // palettes.
-  if (asset.correction) {
-    const corr = asset.correction;
+  if (correction) {
+    const corr = correction;
     for (let y = 0; y < H; y++) {
       const cr = corr[y][0], cg = corr[y][1], cb = corr[y][2];
       const row = y * W * 4;
@@ -387,17 +419,11 @@ function render() {
     const data = recolor(asset);
     if (data) ctx.putImageData(data, 0, 0);
 
-    // The recolored image is page B (it's what was screenshotted for slot
-    // isolation).  If the user wants page A, overlay the (recolored) defaultA
-    // — but we only have defaultA as a flat screenshot.  Approximation: draw
-    // it directly when page A is selected and we have it.
-    if (state.page === 'A' && asset.defaultA) {
-      // Use defaultA pixel data as a passthrough — colors are already
-      // baked in.  For windows that have isolation data, we could try to
-      // re-derive, but the user only isolated page B.  Best effort:
-      // show the default-palette page A for whichever window style is
-      // selected.  If the user changed window colors, page A preview
-      // can't reflect that.
+    // If Page A is selected but this window has no Page A isolations,
+    // fall back to the flat defaultA screenshot (colours are frozen at
+    // the default palette).  Windows that ship pageA assets recolour
+    // through the same path as Page B above — no overlay needed.
+    if (state.page === 'A' && !asset.baselineDataA && asset.defaultA) {
       ctx.drawImage(asset.defaultA, 0, 0);
       drawPaletteHintBar();
     }
