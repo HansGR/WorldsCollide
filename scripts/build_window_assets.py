@@ -371,6 +371,23 @@ def build_window(window_index: int,
     font_clean = patched[1]
     cleaned_slots = list(patched[2:])
 
+    # Erase the Page B "more pages above" up-arrow at y=29..33, x=123..131.
+    # The arrow is part of the static menu chrome — it only fully appears in
+    # the baseline; the slot/font isolations have it knocked out to a
+    # uniform colour, so the recolour formula can't reconstruct it cleanly
+    # at non-default palettes (it can fade or shift hue).  The runtime
+    # stamps a static arrow bitmap on top instead.  Source for inpaint at
+    # offset 32 lands inside the menu chrome strip just left of the arrow
+    # (uniform colour at this y), which is exactly what the arrow position
+    # would read as if the arrow weren't there.
+    arrow_mask = np.zeros(raw_baseline.shape[:2], bool)
+    arrow_mask[29:34, 123:132] = True
+    patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
+                                 arrow_mask, offset=32)
+    baseline = patched[0]
+    font_clean = patched[1]
+    cleaned_slots = list(patched[2:])
+
     _save(baseline, out_dir / "baseline.png")
     for n, im in zip(range(1, 8), cleaned_slots):
         if im is not None:
@@ -520,14 +537,9 @@ def build_window_page_a(window_index: int,
         font_clean = raw_font
         cleaned_slots = list(raw_slots)
 
-    _save(baseline, out_dir / "baselineA.png")
-    for n, im in zip(range(1, 8), cleaned_slots):
-        if im is not None:
-            _save(im, out_dir / f"slot{n}A.png")
-    if font_clean is not None:
-        _save(font_clean, out_dir / "fontA.png")
-
-    # Fit Page A's y-correction against the existing defaultA reference.
+    # Fit Page A's y-correction against the existing defaultA reference,
+    # before the arrow mask runs (the down-arrow's contribution is in
+    # both real and synth, so the per-row residual stays consistent).
     correction = None
     ref_default = SHOTS_DIR / f"W{window_index}" / f"W{window_index}_defaultA.png"
     if ref_default.exists():
@@ -539,6 +551,30 @@ def build_window_page_a(window_index: int,
         correction = [[round(float(v), 2) for v in row] for row in corr]
         with open(out_dir / "correctionA.json", "w") as f:
             json.dump(correction, f)
+
+    # Erase the Page A "more pages below" down-arrow at y=206..210,
+    # x=123..131.  Same rationale as the Page B up-arrow mask in
+    # build_window(): the arrow's a static chrome element that the
+    # recolour formula can't reconstruct cleanly at non-default
+    # palettes (W3A_1/W3A_font show it knocked out to a uniform
+    # background), so we erase it from every isolation and let the
+    # runtime stamp a static bitmap on top.  Source at offset=32 lands
+    # on the wallpaper strip below the menu rows — uniform-dark for
+    # every window.
+    arrow_mask = np.zeros(raw_baseline.shape[:2], bool)
+    arrow_mask[206:211, 123:132] = True
+    patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
+                                 arrow_mask, offset=32)
+    baseline = patched[0]
+    font_clean = patched[1]
+    cleaned_slots = list(patched[2:])
+
+    _save(baseline, out_dir / "baselineA.png")
+    for n, im in zip(range(1, 8), cleaned_slots):
+        if im is not None:
+            _save(im, out_dir / f"slot{n}A.png")
+    if font_clean is not None:
+        _save(font_clean, out_dir / "fontA.png")
 
     return {
         "slots": slot_indices,
