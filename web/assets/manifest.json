@@ -14,7 +14,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "2": {
       "window": 2,
@@ -30,7 +43,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "3": {
       "window": 3,
@@ -46,7 +72,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "4": {
       "window": 4,
@@ -62,7 +101,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "5": {
       "window": 5,
@@ -78,7 +130,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "6": {
       "window": 6,
@@ -94,7 +159,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "7": {
       "window": 7,
@@ -110,7 +188,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     },
     "8": {
       "window": 8,
@@ -126,7 +217,20 @@
       "font": true,
       "hasCorrection": true,
       "hasDefaultA": true,
-      "hasDefaultB": true
+      "hasDefaultB": true,
+      "pageA": {
+        "slots": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "font": true,
+        "hasCorrection": true
+      }
     }
   },
   "magOrder": {

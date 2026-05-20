@@ -36,6 +36,8 @@ web/                         # the static-site builder
   assets/manifest.json
   assets/W{1..8}/baseline.png · slot{1..7}.png · font.png
                               · default{A,B}.png · correction.json
+                              · baselineA.png · slot{1..7}A.png
+                              · fontA.png · correctionA.json
   assets/magorder/{1..6}.png
 ```
 
@@ -51,6 +53,19 @@ Each window style ships eight screenshots:
 
 Plus two reference shots with the default palette: `W{i}_defaultA.png`
 (Page A) and `W{i}_defaultB.png` (Page B).
+
+Page A ships a parallel set under `screenshots/W{i}A/` (`W{i}A_0.png`,
+`W{i}A_{n}.png`, `W{i}A_font.png`) using the same conventions, so the
+preview can recolor Page A through the same math.  The captures park
+the cursor on Bat.Mode → Active, identical to the existing defaultA
+reference shots — so the build pipeline reuses the W5_defaultA-derived
+cursor mask and the `+128` source offset for cleanup, no new
+per-window detection needed.  Page A has none of Page B's special
+cases (no slot-selection arrow, no Color-row orientation flip, no
+slider bars), so its `build_window_page_a()` reduces to cursor cleanup
+→ save → y-correction fit against `W{i}_defaultA.png`.  Outputs land
+next to Page B's under the same window dir as `baselineA.png` /
+`slot{n}A.png` / `fontA.png` / `correctionA.json`.
 
 ### The math
 
@@ -180,6 +195,18 @@ selectable values.  Each row is
 with `y` in native pixels (canvas is 256×224, displayed 2x).  Cursor
 draws at `(x − 10, y + 1)` so the sprite's tip lands in the gutter
 just left of the value's first glyph.
+
+Page A used to be rendered by blitting the static `defaultA.png` and
+showing a "(live recolor preview is on Page B)" hint bar — the menu
+chrome on Page A is tinted by the slot palette via SNES color math,
+which the linear recolor model can't fake from Page B's isolations
+alone (the chrome geometry differs between pages).  Once the parallel
+`W{i}A_*` capture set landed, `recolor()` switched to picking
+`baselineDataA` / `slotsDataA` / `fontDataA` / `correctionA` when
+`state.page === 'A'`; the same `highlightValueText` / `drawCursorOverlay`
+overlays run on top of the recolored Page A as they do for Page B.
+The defaultA blit fallback survives in `render()` for windows that
+ship without Page A isolations (none currently).
 
 ### Page B (color picker)
 
