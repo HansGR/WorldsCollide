@@ -306,20 +306,26 @@ const CURSOR_SPRITE = (() => {
 // isolation so the bg behind these sprites is just recoloured chrome
 // / wallpaper.
 //
-// Page A's arrow lives at the bottom (y=206..210, "go down to Page B");
-// Page B's at the top (y=29..33, "go up to Page A").
-const ARROW_X0 = 123;
-const ARROW_DOWN_Y0 = 206;  // Page A
-const ARROW_UP_Y0   = 29;   // Page B
-const ARROW_W = 9, ARROW_H = 5;
+// Page A's arrow lives at the bottom (y=205..211, "go down to Page B");
+// Page B's at the top (y=28..34, "go up to Page A").  7×13 bounding box
+// captures the 5×9 visible triangle plus the SNES halo: a (24,24,41)
+// anti-alias outline one cell out from each triangle edge, and a solid
+// drop-shadow row on the base side (y=34 for up arrow, y=205 for down).
+const ARROW_X0 = 121;
+const ARROW_DOWN_Y0 = 205;  // Page A
+const ARROW_UP_Y0   = 28;   // Page B
+const ARROW_W = 13, ARROW_H = 7;
 
 const ARROW_DOWN_SPRITE = (() => {
+  const H = [24,24,41], A = [123,156,156], B = [165,198,198], C = [247,255,255];
   const rows = [
-    [[123,156,156],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[165,198,198],[123,156,156]],
-    [[ 24, 24, 41],[123,156,156],[165,198,198],[247,255,255],[247,255,255],[247,255,255],[165,198,198],[123,156,156],[ 24, 24, 41]],
-    [null,         [ 24, 24, 41],[123,156,156],[165,198,198],[247,255,255],[165,198,198],[123,156,156],[ 24, 24, 41],null         ],
-    [null,         null,         [ 24, 24, 41],[123,156,156],[165,198,198],[123,156,156],[ 24, 24, 41],null,         null         ],
-    [null,         null,         null,         [ 24, 24, 41],[123,156,156],[ 24, 24, 41],null,         null,         null         ],
+    [H, H, H, H, H, H, H, H, H, H, H, H, H],
+    [null, H, A, B, B, B, B, B, B, B, A, H, null],
+    [null, null, H, A, B, C, C, C, B, A, H, null, null],
+    [null, null, null, H, A, B, C, B, A, H, null, null, null],
+    [null, null, null, null, H, A, B, A, H, null, null, null, null],
+    [null, null, null, null, null, H, A, H, null, null, null, null, null],
+    [null, null, null, null, null, null, H, null, null, null, null, null, null],
   ];
   const c = document.createElement('canvas');
   c.width = ARROW_W; c.height = ARROW_H;
