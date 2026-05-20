@@ -371,17 +371,24 @@ def build_window(window_index: int,
     font_clean = patched[1]
     cleaned_slots = list(patched[2:])
 
-    # Erase the Page B "more pages above" up-arrow at y=29..33, x=123..131.
-    # The arrow is part of the static menu chrome — it only fully appears in
-    # the baseline; the slot/font isolations have it knocked out to a
-    # uniform colour, so the recolour formula can't reconstruct it cleanly
-    # at non-default palettes (it can fade or shift hue).  The runtime
-    # stamps a static arrow bitmap on top instead.  Source for inpaint at
-    # offset 32 lands inside the menu chrome strip just left of the arrow
-    # (uniform colour at this y), which is exactly what the arrow position
-    # would read as if the arrow weren't there.
+    # Erase the Page B "more pages above" up-arrow.  The arrow is part of
+    # the static menu chrome — it only fully appears in the baseline; the
+    # slot/font isolations have it knocked out to a uniform colour, so
+    # the recolour formula can't reconstruct it cleanly at non-default
+    # palettes (it can fade or shift hue).  The runtime stamps a static
+    # arrow bitmap on top instead.  Source for inpaint at offset 32 lands
+    # inside the menu chrome strip just left of the arrow (uniform
+    # colour at this y), which is exactly what the arrow position would
+    # read as if the arrow weren't there.
+    #
+    # Mask the full 7×13 bounding box (y=28..34, x=121..133): the visible
+    # triangle is 5×9 but the SNES draws a (24,24,41) anti-alias halo one
+    # column out on each row of the triangle plus a solid drop-shadow row
+    # below the base (y=34 spanning x=121..133), and a 1-px halo above the
+    # apex (y=28).  The 5×9 mask used previously left those halo pixels
+    # behind, visible as a darker fringe around the live-stamped sprite.
     arrow_mask = np.zeros(raw_baseline.shape[:2], bool)
-    arrow_mask[29:34, 123:132] = True
+    arrow_mask[28:35, 121:134] = True
     patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
                                  arrow_mask, offset=32)
     baseline = patched[0]
@@ -552,17 +559,21 @@ def build_window_page_a(window_index: int,
         with open(out_dir / "correctionA.json", "w") as f:
             json.dump(correction, f)
 
-    # Erase the Page A "more pages below" down-arrow at y=206..210,
-    # x=123..131.  Same rationale as the Page B up-arrow mask in
-    # build_window(): the arrow's a static chrome element that the
-    # recolour formula can't reconstruct cleanly at non-default
-    # palettes (W3A_1/W3A_font show it knocked out to a uniform
-    # background), so we erase it from every isolation and let the
-    # runtime stamp a static bitmap on top.  Source at offset=32 lands
-    # on the wallpaper strip below the menu rows — uniform-dark for
-    # every window.
+    # Erase the Page A "more pages below" down-arrow.  Same rationale
+    # as the Page B up-arrow mask in build_window(): the arrow's a
+    # static chrome element that the recolour formula can't reconstruct
+    # cleanly at non-default palettes (W3A_1/W3A_font show it knocked
+    # out to a uniform background), so we erase it from every isolation
+    # and let the runtime stamp a static bitmap on top.  Source at
+    # offset=32 lands on the wallpaper strip below the menu rows —
+    # uniform-dark for every window.
+    #
+    # Full 7×13 bounding box (y=205..211, x=121..133) — see Page B mask
+    # in build_window() for the halo extent.  The down arrow's solid
+    # drop-shadow row sits at y=205 (above the base) since the SNES
+    # mirrors the shadow direction along with the arrow.
     arrow_mask = np.zeros(raw_baseline.shape[:2], bool)
-    arrow_mask[206:211, 123:132] = True
+    arrow_mask[205:212, 121:134] = True
     patched = _apply_cursor_mask([baseline, font_clean, *cleaned_slots],
                                  arrow_mask, offset=32)
     baseline = patched[0]
