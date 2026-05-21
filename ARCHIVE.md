@@ -364,6 +364,73 @@ brightness exceeds Font brightness by > 30, it wholesale-copies the
 W1 strip into the affected baseline.  Wallpaper texture elsewhere is
 untouched.
 
+## Window graphics encoding (ROM $ED/0000 – $ED/1BFF)
+
+Aside from the palette table at `$ED/1C00`, each of the eight FF6 menu
+window styles also ships its own 32×56-pixel source-graphics sheet at
+`$ED/0000 + (N − 1) × 896`.  The ff6hacking wiki labels them "Menu
+Window Graphics (8 items, 896 bytes each)" without specifying the
+format; the actual encoding is **standard SNES 4bpp**, **28 tiles per
+window** laid out as a **4-wide × 7-tall** image.
+
+### Per-window layout
+
+* **Graphics**: 28 tiles × 32 bytes = 896 bytes at file offset
+  `0x2D0000 + (N − 1) × 0x380`.  Tile order is left-to-right,
+  top-to-bottom of a 4×7 grid → final image is 32 px wide, 56 px tall.
+* **Palette**: 16 BGR15 colors × 2 bytes = 32 bytes at file offset
+  `0x2D1C00 + (N − 1) × 0x20`.  Color 0 is always `(0,0,0)` (transparent
+  against the wallpaper).  Colors 1..7 are the seven user-editable slots
+  shown in the config menu.  Colors 8..15 are filler — every shipped
+  ROM stores `0x3800` there and the graphics never reference them.
+
+The visible content of each sheet:
+
+* Top six tile-rows (32×48 px) — the **interior fill / texture** the
+  engine tiles across the window background (the wood / water / stone
+  patterns in W2..W8; a near-solid gradient in W1).
+* Bottom tile-row (32×8 px) — the **frame pieces**: rounded corner,
+  edge, and a small "I/II" gauge marker.
+
+### Tile encoding (standard SNES 4bpp)
+
+Each 32-byte tile is two 2bpp planar tiles concatenated:
+
+```
+bytes  0..15 : 8 rows × (bp0_byte, bp1_byte)   -- low planes
+bytes 16..31 : 8 rows × (bp2_byte, bp3_byte)   -- high planes
+```
+
+Per pixel `x` in row `r` (MSB-first within each byte):
+
+```
+color = bp0_bit(7-x) | (bp1_bit(7-x) << 1) | (bp2_bit(7-x) << 2) | (bp3_bit(7-x) << 3)
+```
+
+So a "solid color 7" tile is `bp0=bp1=bp2=0xFF`, `bp3=0x00` repeated 8
+times — which is exactly the pattern of every "fill" tile in W1's
+sheet.  Confirmed by round-tripping `romdata/ED0000_MenuWindowGraphics.txt`
+through `decode_window_sheet` → `encode_window_sheet` (bit-perfect) and
+by visual inspection: under any other tile size / arrangement, W1's
+"II" gauge tile reads as garbled vertical stripes.
+
+### Constraints for custom graphics
+
+* **Image dimensions**: exactly 32 × 56 pixels.
+* **Color count**: at most 7 distinct foreground colors (palette
+  indices 1..7) plus the transparent index 0.
+* **Color resolution**: each channel quantizes to BGR15 (5 bits =
+  32 levels), so RGB888 must be divided by 8 before packing.
+* **ROM payload**: 896 bytes of graphics + 32 bytes of palette per
+  window, written with `rom.set_bytes` exactly like the existing
+  palette-only patch.
+
+`config/window_graphics.py` provides the encode/decode pair plus
+`get_/set_window_graphics` and `get_/set_window_palette_full` for the
+two-region ROM IO.  `scripts/window_graphics.py` is a thin CLI: extract
+the eight stock sheets as indexed PNGs for visual reference, or pack a
+hand-edited PNG back into a `(896, 32)` byte pair.
+
 ## Cache-busting
 
 The static-server cache turned out to be aggressive enough that
