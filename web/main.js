@@ -482,99 +482,122 @@ function recolor(asset) {
 
 // ---- custom-graphics overlay --------------------------------------
 //
-// When the user customizes a window in the designer, we want the
-// configurator's menu canvas to reflect that custom design too.  The
-// recolor pipeline above renders the menu assuming the *vanilla*
-// source sheet, so we need a post-pass that swaps in the user's
-// pixels wherever a window-chrome pixel lives.
+// When the user customizes a window in the designer, the configurator's
+// menu canvas needs to swap in the user's design where the vanilla
+// chrome would otherwise show.  We use a reverse-engineered tilemap
+// (web/window_tilemap.js, built by scripts/build_window_tilemap.py from
+// the existing slot screenshots) that records, for each 8x8 on-screen
+// cell, which of the 4x7 = 28 source tiles the engine places there and
+// in what orientation.  Combining that tilemap with the user's custom
+// 32x56 pixel grid gives a faithful per-pixel rendering: corners stay
+// at corners, edges along edges, interior tiles tile through the
+// interior -- exactly the way the SNES draws it.
 //
-// We don't have the FF6 engine's exact tilemap (which 8x8 source
-// tile sits at each on-screen 8x8 cell), so we approximate: tile the
-// custom 32x56 sheet across the on-screen window region with period
-// (32, 56), aligned to the screen origin.  Pixels where the custom
-// sheet is index 0 (transparent) fall through to the recolor result;
-// non-transparent pixels get overwritten with the user's palette.
-// The frame tiles won't land at the exact corner positions the
-// engine uses, but the dominant texture and overall colour story
-// match what the ROM will produce.
+// The tilemap is shared across all 8 window styles (the engine doesn't
+// care which source sheet is loaded), and split by page (A vs B) since
+// the menu's window dimensions differ.
 //
-// Window-chrome detection comes from the existing slot screenshots:
-// any pixel where some slot screenshot diverges from baseline is a
-// window-chrome pixel (vs. wallpaper or text/cursor pixels, which
-// agree with baseline across all 7 slot captures).
-
-const SHEET_W_OVERLAY = 32, SHEET_H_OVERLAY = 56;
-
-function buildChromeMask(asset, useA) {
-  const baseline = useA ? asset.baselineDataA : asset.baselineData;
-  const slots = useA ? asset.slotsDataA : asset.slotsData;
-  if (!baseline || !slots) return null;
-  const W = 256, H = 224;
-  const mask = new Uint8Array(W * H);
-  const base = baseline.data;
-  for (let i = 0, p = 0; i < base.length; i += 4, p++) {
-    let maxDiff = 0;
-    for (let s = 0; s < 7; s++) {
-      if (!slots[s]) continue;
-      const d = slots[s].data;
-      const dr = Math.abs(d[i]   - base[i]);
-      const dg = Math.abs(d[i+1] - base[i+1]);
-      const db = Math.abs(d[i+2] - base[i+2]);
-      const m = Math.max(dr, dg, db);
-      if (m > maxDiff) maxDiff = m;
-    }
-    mask[p] = maxDiff > 6 ? 1 : 0;   // threshold sized to dithering noise
-  }
-  return mask;
-}
-
-function getChromeMask(asset) {
-  // Cache per-asset, per-page (Page A vs B have different chrome
-  // because the menu layout changes between pages).
-  const useA = state.page === 'A' && asset.baselineDataA;
-  const key = useA ? '_chromeMaskA' : '_chromeMask';
-  if (!asset[key]) asset[key] = buildChromeMask(asset, useA);
-  return asset[key];
-}
+// Pixels that aren't part of the window's chrome (wallpaper, text,
+// cursor sprites) fall through to recolor()'s output as before.
 
 function overlayCustomGraphics(imageData, asset) {
   const customWindows = window.__designer && window.__designer.customGraphics;
   const cur = customWindows && customWindows[state.WindowStyle];
   if (!cur || !cur.pixels) return;
-  const mask = getChromeMask(asset);
+  const TM = window.WINDOW_TILEMAP;
+  if (!TM) return;
+  const page = state.page === 'A' ? TM.A : TM.B;
+  if (!page) return;
+
+  const Y_OFFSET = TM.Y_OFFSET || 0;
+  const palette = state.windows[state.WindowStyle];   // slots 1..7
+
+  // Per-pixel chrome / font mask -- only paint where the pixel is part
+  // of the window's chrome AND not occluded by the font (text/cursor).
+  // Cached per asset+page to keep render() fast.
+  const mask = getChromeMaskOnly(asset);
   if (!mask) return;
-  const palette = state.windows[state.WindowStyle];   // 7 entries
+
   const W = 256, H = 224;
   const data = imageData.data;
-  const sheetW = SHEET_W_OVERLAY, sheetH = SHEET_H_OVERLAY;
-  // Walk every chrome pixel, sample the custom sheet tiled with period
-  // (32, 56) anchored at the screen origin.  The exact anchor doesn't
-  // matter for a tiled texture; what matters is the per-pixel ratio
-  // between (x, y) and the sheet dimensions.
-  for (let y = 0; y < H; y++) {
-    const sy = y % sheetH;
-    for (let x = 0; x < W; x++) {
-      const p = y * W + x;
-      if (!mask[p]) continue;
-      const sx = x % sheetW;
-      const idx = cur.pixels[sy * sheetW + sx];
-      if (idx === 0) continue;      // transparent -- keep recolor result
-      const c = palette[idx - 1];   // slots 1..7 -> state.windows index 0..6
-      const off = p * 4;
-      data[off]     = (c[0] << 3) | (c[0] >> 2);
-      data[off + 1] = (c[1] << 3) | (c[1] >> 2);
-      data[off + 2] = (c[2] << 3) | (c[2] >> 2);
+  const tileW = page.width, tileH = page.height;
+  const customPixels = cur.pixels;     // Uint8Array, 32x56 source pixels
+
+  for (let ty = 0; ty < tileH; ty++) {
+    const cellY = Y_OFFSET + ty * 8;
+    for (let tx = 0; tx < tileW; tx++) {
+      const cellIdx = ty * tileW + tx;
+      if (!page.mapped[cellIdx]) continue;
+      const ti = page.tile[cellIdx];
+      const fl = page.flip[cellIdx];
+      // Source-sheet tile coordinates (4 wide, 7 tall, scan right-then-down)
+      const srcTileX = (ti % 4) * 8;
+      const srcTileY = ((ti / 4) | 0) * 8;
+      const cellX = tx * 8;
+      for (let py = 0; py < 8; py++) {
+        for (let px = 0; px < 8; px++) {
+          const screenY = cellY + py;
+          const screenX = cellX + px;
+          if (screenY >= H || screenX >= W) continue;
+          if (!mask[screenY * W + screenX]) continue;
+          // Apply flips when looking up the source pixel.
+          const sx = (fl & 1) ? 7 - px : px;
+          const sy = (fl & 2) ? 7 - py : py;
+          const srcIdx = customPixels[(srcTileY + sy) * 32 + (srcTileX + sx)];
+          if (srcIdx === 0) continue;
+          const c = palette[srcIdx - 1];
+          const off = (screenY * W + screenX) * 4;
+          data[off]     = (c[0] << 3) | (c[0] >> 2);
+          data[off + 1] = (c[1] << 3) | (c[1] >> 2);
+          data[off + 2] = (c[2] << 3) | (c[2] >> 2);
+        }
+      }
     }
   }
 }
 
-// Recompute chrome masks when a window's screenshots load late.  Asset
-// load happens after the first render, so we may have rendered with a
-// stale (null) mask; clear so the next render rebuilds.
-function invalidateChromeMasks(asset) {
-  if (!asset) return;
-  asset._chromeMask = null;
-  asset._chromeMaskA = null;
+// Mask of pixels we're allowed to paint: window-chrome AND not text.
+// Window-chrome = some slot screenshot diverges from baseline at this
+// pixel (the recolor pipeline's own definition of "this pixel belongs
+// to the window").  Text = font screenshot diverges -- those pixels
+// should keep the recolored glyph color from recolor().
+function getChromeMaskOnly(asset) {
+  const useA = state.page === 'A' && asset.baselineDataA;
+  const cacheKey = useA ? '_chromeMaskA' : '_chromeMask';
+  if (asset[cacheKey]) return asset[cacheKey];
+  const baseline = useA ? asset.baselineDataA : asset.baselineData;
+  const slots    = useA ? asset.slotsDataA    : asset.slotsData;
+  const fontD    = useA ? asset.fontDataA     : asset.fontData;
+  if (!baseline || !slots) return null;
+  const W = 256, H = 224;
+  const mask = new Uint8Array(W * H);
+  const base = baseline.data;
+  for (let i = 0, p = 0; i < base.length; i += 4, p++) {
+    // Chrome iff some slot diverges from baseline by > THRESH.
+    let chromeDiff = 0;
+    for (let s = 0; s < 7; s++) {
+      if (!slots[s]) continue;
+      const d = slots[s].data;
+      const m = Math.max(
+        Math.abs(d[i]     - base[i]),
+        Math.abs(d[i + 1] - base[i + 1]),
+        Math.abs(d[i + 2] - base[i + 2]));
+      if (m > chromeDiff) chromeDiff = m;
+    }
+    if (chromeDiff <= 6) continue;
+    // Exclude font pixels (let recolor's text rendering stand).
+    if (fontD) {
+      const f = fontD.data;
+      const fontDiff = Math.max(
+        Math.abs(f[i]     - base[i]),
+        Math.abs(f[i + 1] - base[i + 1]),
+        Math.abs(f[i + 2] - base[i + 2]));
+      if (fontDiff > chromeDiff) continue;
+    }
+    mask[p] = 1;
+  }
+  asset[cacheKey] = mask;
+  return mask;
 }
 
 function currentAsset() {

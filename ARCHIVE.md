@@ -567,23 +567,50 @@ test suite verifies.
 ### Menu-preview overlay
 
 `overlayCustomGraphics()` runs as a post-pass on the configurator's
-`recolor()` output.  Algorithm:
+`recolor()` output, swapping the user's custom design into the
+menu's window chrome with engine-faithful tile placement.
 
-1. Build a per-asset, per-page `chromeMask` (256 × 224 Uint8Array):
-   1 where any slot screenshot diverges from baseline by > 6, 0
-   otherwise.  That isolates the window's chrome pixels from
-   wallpaper, text, and cursor.
-2. For each chrome pixel `(x, y)`, sample the custom sheet at
-   `(x mod 32, y mod 56)`.  Non-transparent indices overwrite the
-   recolored RGB with the user's palette colour for that slot.
+The first cut just tiled the custom 32 × 56 sheet across the chrome
+region with period (32, 56) — interior textures reproduced fine but
+frame tiles (corners, gauge marker) landed at every 56-pixel
+y-boundary instead of just along the window's edges.  Replaced with
+a reverse-engineered tilemap.
 
-We don't have FF6's actual window tilemap (which 8 × 8 source tile
-sits at each on-screen 8 × 8 cell), so this is an approximation —
-the interior texture is reproduced faithfully but frame tiles land
-at every 56-pixel y-boundary instead of just along the window's
-top/bottom edges.  Good enough for the user to recognize "yes, that
-is the design I just uploaded"; the actual in-game rendering is
-the source of truth.
+**Tilemap derivation** (`scripts/build_window_tilemap.py`):
+
+1. Pick a "reference" window with distinct interior tiles (W3, the
+   water pattern — W1's solid-color interior tiles produce ambiguous
+   matches because tile 0 and tile 2 are the same pattern).
+2. Compute the per-pixel slot-index map from W3's slot screenshots
+   (`argmax_K |slot[K] - baseline|` thresholded at > 8 / 255).
+3. Find the engine's tile-grid offset by sweeping `(x_off, y_off)` and
+   maximizing the per-tile pattern match.  The right answer is
+   `(0, 7)` — the FF6 menu's window starts at screen y = 7 because
+   the menu itself isn't aligned to an 8-pixel boundary.
+4. For each on-screen 8 × 8 cell aligned to that offset, find the
+   source tile + flip orientation that matches the cell's slot
+   pattern at ≥ 95% agreement.
+5. Verify against W2 / W4 / W5 / W6 / W8: the same tilemap should fit
+   their screenshots too (every cell's slot pattern matches the cell
+   the tilemap says it should match).  Achieved 100% on W2/W5/W6 and
+   ≥ 98% on W4/W8 — the few mismatches there are dithering noise.
+6. Repeat for Page A using `screenshots/W3A/`.
+
+**Output**: `web/window_tilemap.js` — `window.WINDOW_TILEMAP = {Y_OFFSET:
+7, B: {width, height, tile, flip, mapped}, A: {...}}`.
+`tile[ty*width+tx]` is 0..27 (the index of the source-sheet tile at
+that screen cell, scanning the 4 × 7 sheet left-to-right then
+top-to-bottom); `flip` packs hflip (bit 0) + vflip (bit 1); `mapped`
+is 1 where the cell is part of the window's chrome and 0 elsewhere.
+
+**Overlay rendering**: for each cell where `mapped[i]` is 1, walk
+the 8 × 8 pixels, look up the corresponding source-sheet pixel in
+the user's custom 32 × 56 grid (applying the flip), map through the
+active palette, and overwrite the recolored RGB.  A per-pixel chrome
+mask (`getChromeMaskOnly`) excludes pixels where the font screenshot
+diverges from baseline more than any slot screenshot — those are
+text/cursor pixels that `recolor()` already drew correctly and we
+shouldn't paint over.
 
 ### Unified config JSON
 
