@@ -1,70 +1,142 @@
 /* Custom window image designer.
  *
- * Self-contained module that runs alongside the existing flagstring
- * builder.  Produces a 928-byte binary (896 bytes of SNES 4bpp graphics
- * + 32 bytes of BGR15 palette) for one of the 8 window slots in the
- * FF6 ROM, applied via:
+ * Integrated with the flagstring builder above: the active window is
+ * whichever one ``state.WindowStyle`` (controlled by the configurator's
+ * dropdown / Page B WindowStyle row) is on, and the palette this
+ * designer shows for that window is the SAME palette the configurator
+ * edits via its R/G/B sliders.  Per-window pixel grids live in
+ * ``ds.customGraphics[N]``; switching to a window the user hasn't
+ * touched loads its vanilla pixels.
  *
- *   ff6_config.py --window-image N:file.bin
+ * Download produces a single ``ff6config.json`` blob containing:
+ *   - ``flags``: the configurator's current flagstring (palette/font/
+ *     toggle overrides), unchanged from the existing "Copy" button.
+ *   - ``graphics``: ``{ N: base64(928 bytes) }`` for every window the
+ *     user actually edited.  The CLI applies this via:
  *
- * Pipeline:
- *   1. User uploads a 32x32 image.  Cover-fit center-crop to 32x32, then
- *      median-cut quantize to 7 colors, sort by luminosity (light->dark),
- *      snap to BGR15.  Palette index 0 is reserved as transparent black.
- *   2. User picks a border preset (or uploads a custom 32x24 image,
- *      which is bucketed by luminosity rank into indices 0 (transparent)
- *      and 1..7 (lightest..darkest) so it composes with whatever palette
- *      the texture left behind).
- *   3. User can paint individual pixels in the editor canvas, and adjust
- *      any of the 7 palette colors via R/G/B sliders.
- *   4. Download triggers encode_window_sheet + encode_palette to produce
- *      the 928-byte blob.
+ *       python ff6_config.py -i rom.smc --config ff6config.json
  *
- * Pixel coords inside the designer: (x in 0..31, y in 0..55).  Indices
- * 0..7 are used; 8..15 of the 16-color palette get the vanilla 0x3800
- * filler at encode time to keep the bytes faithful to the stock layout.
+ * Per-pixel format: ``ds.pixels`` is a 32x56 Uint8Array of palette
+ * indices 0..7.  Index 0 is transparent (always rendered as black on
+ * the canvas; never written into ``state.windows``).  Indices 1..7
+ * track ``state.windows[currentWindow][0..6]`` exactly.
  */
 
 (function () {
-  const enc = window.WGEncoder;   // SNES 4bpp encoder + quantizer (encoder.js)
+  const enc = window.WGEncoder;            // 4bpp encoder + quantizer
+  const ff6c = window.ff6c || (window.ff6c = {});
+  const SHARED = ff6c.state;               // configurator's state object
 
   // ---- shape constants -----------------------------------------------
   const TEX_W = 32, TEX_H = 32;
   const BORDER_W = 32, BORDER_H = 24;
   const SHEET_W = enc.SHEET_W, SHEET_H = enc.SHEET_H;
-  const NUM_PALETTE_SLOTS = 8;  // index 0 (transparent) + slots 1..7
-  const SCALE = 8;              // px per source pixel on the editor canvas
+  const NUM_PALETTE_SLOTS = 8;     // index 0 (transparent) + slots 1..7
+  const SCALE = 8;
   const BLOB_BYTES = enc.BLOB_BYTES;
 
-  // ---- default initial state -----------------------------------------
-
-  // A simple greyscale ramp so the editor opens with something visible.
-  const DEFAULT_PALETTE = [
-    [0, 0, 0],            // 0 - transparent
-    [28, 28, 28],         // 1 - lightest
-    [22, 22, 22],
-    [17, 17, 17],
-    [13, 13, 13],
-    [9, 9, 9],
-    [5, 5, 5],
-    [2, 2, 2],            // 7 - darkest
-  ];
-
-  // ---- state ---------------------------------------------------------
+  // ---- per-window state ---------------------------------------------
 
   const ds = {
-    // Per-pixel palette indices for the whole 32x56 sheet.
     pixels: new Uint8Array(SHEET_W * SHEET_H),
-    palette: DEFAULT_PALETTE.map(c => c.slice()),
-    selectedIndex: 1,            // which palette slot is being edited / painted
-    borderId: 'rounded',
-    targetWindow: 8,
-    lastTextureFile: null,       // for re-quantize
+    currentWindow: SHARED.WindowStyle || 1,
+    borderId: '__current__',          // synthetic "what's already there" entry
+    selectedIndex: 1,
     isPainting: false,
-    lastTexUpload: null,         // cached ImageData for re-quantize
+    lastTexUpload: null,              // for "Re-quantize" -- per-window
+    // For each window the user has touched, store a snapshot so cycling
+    // away and back preserves the design.  Entries:
+    //   N -> { pixels: Uint8Array, borderId: string, lastTexUpload: ImageData|null }
+    customGraphics: {},
   };
 
-  // ---- helpers -------------------------------------------------------
+  // Mark the current window as customized.  Called from any edit path.
+  function markCustomized() {
+    if (!ds.customGraphics[ds.currentWindow]) {
+      ds.customGraphics[ds.currentWindow] = {};
+    }
+    snapshotCurrent();   // keep the cache in sync with ds.pixels
+    updateWindowBanner();
+    // The configurator's menu preview reads from
+    // window.__designer.customGraphics, so prod it to re-render.
+    ff6c.refresh && ff6c.refresh();
+  }
+
+  function snapshotCurrent() {
+    if (!ds.customGraphics[ds.currentWindow]) return;
+    ds.customGraphics[ds.currentWindow].pixels = ds.pixels.slice();
+    ds.customGraphics[ds.currentWindow].borderId = ds.borderId;
+    ds.customGraphics[ds.currentWindow].lastTexUpload = ds.lastTexUpload;
+  }
+
+  function loadWindow(n) {
+    if (ds.currentWindow === n) return;
+    snapshotCurrent();
+    ds.currentWindow = n;
+    const cached = ds.customGraphics[n];
+    if (cached && cached.pixels) {
+      ds.pixels = new Uint8Array(cached.pixels);
+      ds.borderId = cached.borderId || '__current__';
+      ds.lastTexUpload = cached.lastTexUpload || null;
+    } else {
+      // Load vanilla pixels for this window; palette is already in
+      // SHARED.windows[n] (or has been edited there by the configurator).
+      const v = window.VANILLA_GRAPHICS && window.VANILLA_GRAPHICS[n];
+      if (v) {
+        ds.pixels = new Uint8Array(v.pixels);
+      } else {
+        ds.pixels = new Uint8Array(SHEET_W * SHEET_H);
+      }
+      ds.borderId = '__current__';
+      ds.lastTexUpload = null;
+    }
+    updateWindowBanner();
+    render();
+    // Configurator's overlay reads customGraphics[currentWindow], so
+    // tell it to redraw with the right window's data.
+    ff6c.refresh && ff6c.refresh();
+  }
+
+  function revertCurrentToDefault() {
+    delete ds.customGraphics[ds.currentWindow];
+    ds.lastTexUpload = null;
+    // Restore the vanilla palette through the configurator so its
+    // sliders + flagstring update too.
+    const v = window.VANILLA_GRAPHICS && window.VANILLA_GRAPHICS[ds.currentWindow];
+    if (v) {
+      ds.pixels = new Uint8Array(v.pixels);
+      // VANILLA_GRAPHICS[n].palette has 8 entries; slots 1..7 go to
+      // the configurator (which stores 7 entries per window).  This
+      // call already triggers an ff6c:stateChange + main.js render, so
+      // the menu preview drops back to the vanilla appearance.
+      ff6c.setPaletteBulk(ds.currentWindow, v.palette.slice(1, 8));
+    } else {
+      ds.pixels = new Uint8Array(SHEET_W * SHEET_H);
+      ff6c.refresh && ff6c.refresh();
+    }
+    ds.borderId = '__current__';
+    updateWindowBanner();
+    render();
+  }
+
+  // ---- palette read/write through SHARED.windows --------------------
+
+  function getColor(slot) {
+    if (slot === 0) return [0, 0, 0];
+    // slot 1..7 -> SHARED.windows[N][0..6]
+    return SHARED.windows[ds.currentWindow][slot - 1];
+  }
+
+  function setColor(slot, rgb) {
+    if (slot === 0) return;
+    SHARED.windows[ds.currentWindow][slot - 1] = rgb.slice();
+    // Notify the configurator to re-render its preview + flagstring.
+    document.dispatchEvent(new CustomEvent('ff6c:stateChange',
+      { detail: { kind: 'palette-from-designer',
+                  window: ds.currentWindow, slot } }));
+  }
+
+  // ---- helpers ------------------------------------------------------
 
   function idx(x, y) { return y * SHEET_W + x; }
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
@@ -72,7 +144,6 @@
   const bgr5_to_rgb8 = enc.bgr5_to_rgb8;
   const rgb8_to_bgr5 = enc.rgb8_to_bgr5;
 
-  // Apply a 32x24 border indices array into the bottom of ds.pixels.
   function applyBorderPixels(borderPx) {
     for (let y = 0; y < BORDER_H; y++) {
       for (let x = 0; x < BORDER_W; x++) {
@@ -80,8 +151,6 @@
       }
     }
   }
-
-  // Apply a 32x32 texture indices array into the top of ds.pixels.
   function applyTexturePixels(texPx) {
     for (let y = 0; y < TEX_H; y++) {
       for (let x = 0; x < TEX_W; x++) {
@@ -99,7 +168,6 @@
         const c = document.createElement('canvas');
         c.width = w; c.height = h;
         const ctx = c.getContext('2d');
-        // Cover-fit center-crop (preserve aspect, fill the target).
         const srcAspect = img.width / img.height;
         const dstAspect = w / h;
         let sx, sy, sw, sh;
@@ -127,43 +195,26 @@
     return out;
   }
 
-  // Quantize a freshly-uploaded 32x32 RGB array into:
-  //   - a 7-color palette (indices 1..7 in the editor's 8-slot palette)
-  //   - a 1024-entry index array (values 1..7)
-  // Index 0 (transparent) is left untouched by this path.
   function quantizeTexture(rgbPixels) {
     const { palette, indices } = enc.medianCut(rgbPixels, 7);
     const sorted = enc.sortByLuminosity(palette, indices);
-    // Shift indices to land in slots 1..7 (not 0..6).
     const shifted = sorted.indices.map(i => i + 1);
-    // Snap to BGR15.
     const snapped = sorted.palette.map(c => [
       rgb8_to_bgr5(c[0]), rgb8_to_bgr5(c[1]), rgb8_to_bgr5(c[2]),
     ]);
     return { palette: snapped, indices: shifted };
   }
 
-  // Quantize an uploaded 32x24 image to the editor's 8-slot palette by
-  // luminosity rank, matching the preset borders' scheme:
-  //   index 0 = (near-)transparent -- pixels darker than TRANSPARENT_CUTOFF
-  //   index 1 = lightest visible band
-  //   ...
-  //   index 7 = darkest visible band
-  // The non-transparent pixels get bucketed into 7 equal-population
-  // luminosity bins so the upload preserves shading nuance instead of
-  // collapsing to a two-color silhouette.
+  // 32x24 border quantizer -- 7 equal-population luminosity bins, plus
+  // index 0 for pixels darker than TRANSPARENT_CUTOFF.
   function quantizeBorder(rgbPixels) {
-    const TRANSPARENT_CUTOFF = 24;   // 0..255 luminance
-    // Collect luminosities of the "visible" (non-transparent) pixels and
-    // build the bin edges from their distribution.
+    const TRANSPARENT_CUTOFF = 24;
     const visibleLums = [];
     for (const p of rgbPixels) {
       const L = lumin(p);
       if (L >= TRANSPARENT_CUTOFF) visibleLums.push(L);
     }
-    visibleLums.sort((a, b) => b - a);  // brightest first
-    // Six interior cut points carve the sorted list into seven equal-ish
-    // populations: pixels in segment k -> output index k+1.
+    visibleLums.sort((a, b) => b - a);
     const cuts = [];
     for (let k = 1; k < 7; k++) {
       cuts.push(visibleLums[Math.floor(k * visibleLums.length / 7)] || 0);
@@ -185,14 +236,11 @@
   const ctx = canvas.getContext('2d');
 
   function paletteRGB8(index) {
-    const c = ds.palette[index] || [0, 0, 0];
+    const c = getColor(index);
     return [bgr5_to_rgb8(c[0]), bgr5_to_rgb8(c[1]), bgr5_to_rgb8(c[2])];
   }
 
   function render() {
-    // Paint each source pixel as a SCALExSCALE square.  Background for
-    // transparent (index 0) is a faint checkerboard so the user can see
-    // its extent on the canvas.
     const im = ctx.createImageData(SHEET_W * SCALE, SHEET_H * SCALE);
     const w = im.width;
     for (let y = 0; y < SHEET_H; y++) {
@@ -200,7 +248,6 @@
         const v = ds.pixels[idx(x, y)];
         let rgb;
         if (v === 0) {
-          // checkerboard for transparent
           rgb = ((Math.floor(x / 2) + Math.floor(y / 2)) & 1) ? [60, 60, 70] : [40, 40, 50];
         } else {
           rgb = paletteRGB8(v);
@@ -208,7 +255,7 @@
         for (let dy = 0; dy < SCALE; dy++) {
           for (let dx = 0; dx < SCALE; dx++) {
             const px = ((y * SCALE + dy) * w + (x * SCALE + dx)) * 4;
-            im.data[px] = rgb[0];
+            im.data[px]     = rgb[0];
             im.data[px + 1] = rgb[1];
             im.data[px + 2] = rgb[2];
             im.data[px + 3] = 255;
@@ -217,12 +264,8 @@
       }
     }
     ctx.putImageData(im, 0, 0);
-
-    // Faint divider between the texture area (top 32 rows) and the
-    // border area (bottom 24 rows).
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.fillRect(0, TEX_H * SCALE, SHEET_W * SCALE, 1);
-
     renderSwatches();
     syncRgbSliders();
   }
@@ -242,10 +285,11 @@
       if (i === 0) {
         btn.style.background =
           'repeating-conic-gradient(#555 0 25%, #333 0 50%) 0/12px 12px';
-        btn.title = 'index 0 — transparent';
+        btn.title = 'index 0 -- transparent';
       } else {
         btn.style.background = `rgb(${r},${g},${b})`;
-        btn.title = `index ${i} — rgb(${ds.palette[i].join(', ')})`;
+        const c = getColor(i);
+        btn.title = `index ${i} -- rgb(${c.join(', ')})`;
       }
       btn.textContent = String(i);
       btn.addEventListener('click', () => {
@@ -263,20 +307,23 @@
   const rgbLabels = ['r', 'g', 'b'].map(c => document.getElementById('ds-' + c + '-val'));
 
   function syncRgbSliders() {
-    const c = ds.palette[ds.selectedIndex] || [0, 0, 0];
+    const c = getColor(ds.selectedIndex);
     for (let i = 0; i < 3; i++) {
       rgbInputs[i].value = c[i];
       rgbLabels[i].textContent = c[i];
-      rgbInputs[i].disabled = (ds.selectedIndex === 0);  // 0 stays transparent
+      rgbInputs[i].disabled = (ds.selectedIndex === 0);
     }
   }
 
   rgbInputs.forEach((input, i) => {
     input.addEventListener('input', () => {
       if (ds.selectedIndex === 0) return;
-      const v = parseInt(input.value, 10);
-      ds.palette[ds.selectedIndex][i] = clamp(v, 0, 31);
-      rgbLabels[i].textContent = String(ds.palette[ds.selectedIndex][i]);
+      const v = clamp(parseInt(input.value, 10), 0, 31);
+      const cur = getColor(ds.selectedIndex).slice();
+      cur[i] = v;
+      setColor(ds.selectedIndex, cur);
+      rgbLabels[i].textContent = String(v);
+      markCustomized();
       render();
     });
   });
@@ -287,15 +334,12 @@
     const rect = canvas.getBoundingClientRect();
     const cssX = evt.clientX - rect.left;
     const cssY = evt.clientY - rect.top;
-    // The canvas is displayed at its intrinsic size (256x448) but the user
-    // may have zoomed -- use the bounding rect to map.
     const x = Math.floor(cssX * (SHEET_W * SCALE) / rect.width / SCALE);
     const y = Math.floor(cssY * (SHEET_H * SCALE) / rect.height / SCALE);
     if (x < 0 || x >= SHEET_W || y < 0 || y >= SHEET_H) return null;
     return { x, y };
   }
 
-  // Bresenham-ish line so dragged strokes don't skip pixels at high speeds.
   function paintLine(a, b) {
     let x0 = a.x, y0 = a.y, x1 = b.x, y1 = b.y;
     const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
@@ -317,6 +361,7 @@
     ds.isPainting = true;
     lastPaintPx = p;
     ds.pixels[idx(p.x, p.y)] = ds.selectedIndex;
+    markCustomized();
     render();
     e.preventDefault();
   });
@@ -329,7 +374,10 @@
     lastPaintPx = p;
     render();
   });
-  const endPaint = () => { ds.isPainting = false; lastPaintPx = null; };
+  const endPaint = () => {
+    if (ds.isPainting) { ds.isPainting = false; snapshotCurrent(); }
+    lastPaintPx = null;
+  };
   canvas.addEventListener('mouseup', endPaint);
   canvas.addEventListener('mouseleave', endPaint);
   window.addEventListener('mouseup', endPaint);
@@ -339,31 +387,34 @@
   const borderSelect = document.getElementById('ds-border-preset');
 
   function populateBorderOptions() {
-    if (!window.BORDER_PRESETS) {
-      console.warn('BORDER_PRESETS not loaded yet');
-      return;
-    }
+    if (!window.BORDER_PRESETS) return;
     borderSelect.innerHTML = '';
+    // Synthetic "current" entry: keep whatever is in the bottom of
+    // ds.pixels right now (vanilla on first load, or whatever the user
+    // painted later).  Lets the user upload only a texture without
+    // disturbing the existing border.
+    const cur = document.createElement('option');
+    cur.value = '__current__';
+    cur.textContent = '(keep current)';
+    borderSelect.appendChild(cur);
     const order = window.BORDER_PRESETS_ORDER || Object.keys(window.BORDER_PRESETS);
     for (const key of order) {
       const opt = document.createElement('option');
       opt.value = key;
       opt.textContent = window.BORDER_PRESETS[key].name;
-      if (key === ds.borderId) opt.selected = true;
       borderSelect.appendChild(opt);
     }
-  }
-
-  function applyCurrentBorder() {
-    const preset = window.BORDER_PRESETS && window.BORDER_PRESETS[ds.borderId];
-    if (!preset) return;
-    applyBorderPixels(preset.pixels);
+    borderSelect.value = ds.borderId;
   }
 
   borderSelect.addEventListener('change', () => {
     ds.borderId = borderSelect.value;
-    applyCurrentBorder();
-    render();
+    const preset = window.BORDER_PRESETS && window.BORDER_PRESETS[ds.borderId];
+    if (preset) {
+      applyBorderPixels(preset.pixels);
+      markCustomized();
+      render();
+    }
   });
 
   document.getElementById('ds-border-upload').addEventListener('change', async (e) => {
@@ -373,16 +424,16 @@
       const imgData = await loadImageToCanvas(f, BORDER_W, BORDER_H);
       const px = quantizeBorder(imageDataToRGB(imgData));
       applyBorderPixels(px);
-      // "Switch" to a synthetic preset entry so the dropdown reflects it.
-      let opt = [...borderSelect.options].find(o => o.value === '__custom__');
+      let opt = [...borderSelect.options].find(o => o.value === '__upload__');
       if (!opt) {
         opt = document.createElement('option');
-        opt.value = '__custom__';
+        opt.value = '__upload__';
         opt.textContent = 'Custom upload';
         borderSelect.appendChild(opt);
       }
-      borderSelect.value = '__custom__';
-      ds.borderId = '__custom__';
+      borderSelect.value = '__upload__';
+      ds.borderId = '__upload__';
+      markCustomized();
       render();
     } catch (err) {
       setStatus('border upload failed: ' + err.message, true);
@@ -414,39 +465,72 @@
   function requantizeTexture() {
     const rgb = imageDataToRGB(ds.lastTexUpload);
     const { palette, indices } = quantizeTexture(rgb);
-    // Replace slots 1..7 with the quantized colors; slot 0 stays transparent.
-    for (let i = 0; i < 7; i++) ds.palette[i + 1] = palette[i];
+    // Push palette to shared state in one batch so the configurator
+    // doesn't render 7 times.
+    ff6c.setPaletteBulk(ds.currentWindow, palette);
     applyTexturePixels(indices);
+    markCustomized();
     setStatus('texture re-quantized from upload', false);
     render();
   }
 
-  // ---- target window + download --------------------------------------
+  // ---- window banner + revert ----------------------------------------
 
-  const targetSelect = document.getElementById('ds-target');
-  targetSelect.addEventListener('change', () => {
-    ds.targetWindow = parseInt(targetSelect.value, 10);
+  const banner = document.getElementById('ds-window-banner');
+  const revertBtn = document.getElementById('ds-revert');
+
+  function updateWindowBanner() {
+    const n = ds.currentWindow;
+    const customized = !!(ds.customGraphics[n] && ds.customGraphics[n].pixels);
+    banner.textContent =
+      `Editing window ${n} ` + (customized ? '(customized)' : '(default)');
+    banner.classList.toggle('customized', customized);
+    revertBtn.disabled = !customized;
+  }
+
+  revertBtn.addEventListener('click', () => {
+    revertCurrentToDefault();
+    setStatus(`window ${ds.currentWindow} reverted to default`, false);
   });
 
+  // ---- download (unified config JSON) --------------------------------
+
   document.getElementById('ds-download').addEventListener('click', () => {
-    const gfx = enc.encodeSheet(ds.pixels);
-    const pal = enc.encodePalette(ds.palette);
-    const blob = new Uint8Array(BLOB_BYTES);
-    blob.set(gfx, 0);
-    blob.set(pal, enc.SHEET_BYTES);
-    const file = new Blob([blob], { type: 'application/octet-stream' });
+    snapshotCurrent();
+    const graphics = {};
+    for (const [nStr, c] of Object.entries(ds.customGraphics)) {
+      if (!c.pixels) continue;
+      const gfx = enc.encodeSheet(c.pixels);
+      // Palette comes from SHARED.windows -- single source of truth.
+      const pal8 = [[0, 0, 0], ...SHARED.windows[parseInt(nStr, 10)]];
+      const palBytes = enc.encodePalette(pal8);
+      const all = new Uint8Array(BLOB_BYTES);
+      all.set(gfx, 0);
+      all.set(palBytes, enc.SHEET_BYTES);
+      let bin = '';
+      for (const b of all) bin += String.fromCharCode(b);
+      graphics[nStr] = btoa(bin);
+    }
+    const cfg = {
+      version: 1,
+      flags: (ff6c.getFlagString && ff6c.getFlagString()) || '',
+      graphics,
+    };
+    const json = JSON.stringify(cfg, null, 2);
+    const file = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(file);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `window${ds.targetWindow}.bin`;
+    a.download = 'ff6config.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const customCount = Object.keys(graphics).length;
     setStatus(
-      `downloaded window${ds.targetWindow}.bin — apply with ` +
-      `\`ff6_config.py --window-image ${ds.targetWindow}:window${ds.targetWindow}.bin\``,
-      false);
+      `downloaded ff6config.json (${customCount} custom window` +
+      (customCount === 1 ? '' : 's') + ') -- apply with ' +
+      '`ff6_config.py -i rom.smc --config ff6config.json`', false);
   });
 
   // ---- status line ---------------------------------------------------
@@ -457,20 +541,43 @@
     statusEl.classList.toggle('error', !!isError);
   }
 
+  // ---- configurator -> designer sync --------------------------------
+
+  document.addEventListener('ff6c:stateChange', (e) => {
+    const detail = (e && e.detail) || {};
+    if (detail.kind === 'reset-all') {
+      // The user hit "Reset everything to defaults" in the configurator.
+      // Drop every custom-graphics entry so the configurator's window
+      // styles snap back to vanilla too.
+      ds.customGraphics = {};
+      ds.lastTexUpload = null;
+      const v = window.VANILLA_GRAPHICS && window.VANILLA_GRAPHICS[SHARED.WindowStyle];
+      if (v) ds.pixels = new Uint8Array(v.pixels);
+      ds.currentWindow = SHARED.WindowStyle;
+      ds.borderId = '__current__';
+      updateWindowBanner();
+      render();
+      return;
+    }
+    const newWindow = SHARED.WindowStyle;
+    if (newWindow !== ds.currentWindow) {
+      loadWindow(newWindow);   // re-renders inside
+    } else {
+      // Palette / other change for the current window -- just re-render.
+      render();
+    }
+  });
+
   // ---- init ----------------------------------------------------------
 
-  // Greyscale ramp texture so the editor opens with visible content.
-  for (let y = 0; y < TEX_H; y++) {
-    for (let x = 0; x < TEX_W; x++) {
-      // Diagonal gradient mapped into indices 1..7.
-      const t = ((x + y) / (TEX_W + TEX_H - 2));
-      ds.pixels[idx(x, y)] = 1 + Math.min(6, Math.floor(t * 7));
-    }
-  }
   populateBorderOptions();
-  applyCurrentBorder();
+  // Initial load: whatever WindowStyle the configurator boots with.
+  // We can't reuse loadWindow() because that early-returns if the target
+  // matches ds.currentWindow.
+  const v = window.VANILLA_GRAPHICS && window.VANILLA_GRAPHICS[ds.currentWindow];
+  if (v) ds.pixels = new Uint8Array(v.pixels);
+  updateWindowBanner();
   render();
 
-  // Expose for debugging from the console.
-  window.__designer = ds;
+  window.__designer = ds;   // debug handle
 })();

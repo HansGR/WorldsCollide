@@ -121,8 +121,9 @@ config/
   rom.py                 tiny ROM I/O class
   window_graphics.py     4bpp tile/palette encode/decode + ROM IO for $ED/0000
 scripts/
-  window_graphics.py     CLI: extract/inject window graphics as indexed PNGs
-  build_borders.py       regenerate web/borders.js from romdata/
+  window_graphics.py        CLI: extract/inject window graphics as indexed PNGs
+  build_borders.py          regenerate web/borders.js from romdata/
+  build_vanilla_graphics.py regenerate web/vanilla_graphics.js from romdata/
 tests/
   test_config.py         smoke tests; run with `python tests/test_config.py`
   test_window_graphics.py

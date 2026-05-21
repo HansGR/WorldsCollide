@@ -181,6 +181,130 @@ def test_apply_window_image_writes_both_regions(tmp_path=None):
         os.unlink(blob_path)
 
 
+# ---- JSON --config bundle -------------------------------------------
+
+def test_load_json_config_rejects_unknown_version():
+    import os
+    import tempfile
+    import json as _json
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as tf:
+        _json.dump({"version": 99, "flags": ""}, tf)
+        path = tf.name
+    try:
+        try:
+            ff6_config._load_json_config(path)
+        except SystemExit:
+            return
+        raise AssertionError("expected SystemExit for unsupported version")
+    finally:
+        os.unlink(path)
+
+
+def test_load_json_config_parses_v1():
+    import os
+    import tempfile
+    import json as _json
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as tf:
+        _json.dump({
+            "version": 1,
+            "flags": "-bs 5 -ms 2",
+            "graphics": {"3": "abc="},
+        }, tf)
+        path = tf.name
+    try:
+        d = ff6_config._load_json_config(path)
+        assert d["version"] == 1
+        assert d["flags"] == "-bs 5 -ms 2"
+        assert "3" in d["graphics"]
+    finally:
+        os.unlink(path)
+
+
+def test_main_with_config_file_applies_embedded_flags_and_graphics(tmp_path=None):
+    """Build a tiny WC-style ROM, a config JSON, run main(), verify writes."""
+    import os
+    import base64
+    import json as _json
+    import tempfile
+    import io
+    import builtins
+
+    # 928-byte blob: 896 of 0x55 + 32 of palette bytes
+    blob = bytes([0x55] * 896 + [0x00, 0x38] * 16)
+    config = {
+        "version": 1,
+        "flags": "-bs 5 -ms 2",
+        "graphics": {"7": base64.b64encode(blob).decode("ascii")},
+    }
+
+    with tempfile.TemporaryDirectory() as td:
+        cfg_path = os.path.join(td, "cfg.json")
+        with open(cfg_path, "w") as f:
+            _json.dump(config, f)
+
+        # Fake ROM with the trampoline already installed.
+        rom_bytes = bytearray(0x2E0000)
+        rom_bytes[0x0370C2] = 0x20  # JSR
+        rom_bytes[0x0370C5] = 0x20
+        rom_bytes[0x0370C3] = 0x91  # Config2 sub address: $C3/F091 + 1
+        rom_bytes[0x0370C4] = 0xF0
+        rom_bytes[0x0370C6] = 0x97  # Config3 sub address: $C3/F097 + 1
+        rom_bytes[0x0370C7] = 0xF0
+        rom_in = os.path.join(td, "in.smc")
+        with open(rom_in, "wb") as f:
+            f.write(rom_bytes)
+        rom_out = os.path.join(td, "out.smc")
+
+        ff6_config.main(["-i", rom_in, "-o", rom_out, "--config", cfg_path])
+
+        with open(rom_out, "rb") as f:
+            out = f.read()
+
+        # Config1: BatSpeed=5 (offset 5-1=4=100), MsgSpeed=2 (offset 1=001)
+        # Defaults: Command=0, BatMode=1. Bits: 0_001_1_100 = 0x1C
+        from config import config as _cfg
+        c1 = out[_cfg.CONFIG1_ADDR]
+        assert c1 == 0b00011100, f"Config1 = {c1:#04x}, expected 0x1C"
+
+        # W7 graphics at file offset 0x2D0000 + 6*0x380 = 0x2D1500
+        gfx_off = 0x2D0000 + 6 * 0x380
+        assert out[gfx_off : gfx_off + 896] == blob[:896]
+        # W7 palette at 0x2D1C00 + 6*0x20 = 0x2D1CC0
+        pal_off = 0x2D1C00 + 6 * 0x20
+        assert out[pal_off : pal_off + 32] == blob[896:]
+
+
+def test_main_explicit_cli_flag_overrides_config_flag(tmp_path=None):
+    """Explicit -bs 6 on the CLI should beat --config's -bs 5."""
+    import os
+    import json as _json
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as td:
+        cfg_path = os.path.join(td, "cfg.json")
+        with open(cfg_path, "w") as f:
+            _json.dump({"version": 1, "flags": "-bs 5"}, f)
+
+        rom_bytes = bytearray(0x2E0000)
+        rom_bytes[0x0370C2] = 0x20; rom_bytes[0x0370C5] = 0x20
+        rom_bytes[0x0370C3] = 0x91; rom_bytes[0x0370C4] = 0xF0
+        rom_bytes[0x0370C6] = 0x97; rom_bytes[0x0370C7] = 0xF0
+        rom_in = os.path.join(td, "in.smc")
+        with open(rom_in, "wb") as f:
+            f.write(rom_bytes)
+        rom_out = os.path.join(td, "out.smc")
+
+        ff6_config.main(["-i", rom_in, "-o", rom_out, "--config", cfg_path, "-bs", "6"])
+
+        with open(rom_out, "rb") as f:
+            out = f.read()
+        from config import config as _cfg
+        c1 = out[_cfg.CONFIG1_ADDR]
+        # BatSpeed=6 means offset 5=101.  Defaults for other fields:
+        # Command=0, MsgSpeed=3->010, BatMode=1.  Bits: 0_010_1_101 = 0x2D
+        assert c1 == 0b00101101, f"Config1 = {c1:#04x}, expected 0x2D"
+
+
 def test_apply_window_image_rejects_wrong_size():
     import os
     import tempfile

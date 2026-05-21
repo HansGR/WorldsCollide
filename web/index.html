@@ -109,6 +109,7 @@
     </header>
     <div class="designer-grid">
       <div class="designer-controls">
+        <div id="ds-window-banner" class="ds-window-banner">Editing window 1 (default)</div>
         <fieldset>
           <legend>Texture (32&times;32)</legend>
           <input type="file" id="ds-tex-upload" accept="image/*">
@@ -141,16 +142,8 @@
         </fieldset>
         <fieldset>
           <legend>Output</legend>
-          <div class="row">
-            <label for="ds-target">Target window:</label>
-            <select id="ds-target">
-              <option value="1">1</option><option value="2">2</option>
-              <option value="3">3</option><option value="4">4</option>
-              <option value="5">5</option><option value="6">6</option>
-              <option value="7">7</option><option value="8" selected>8</option>
-            </select>
-          </div>
-          <button id="ds-download" type="button">Download .bin (928 bytes)</button>
+          <button id="ds-revert" type="button" disabled>Revert this window to default</button>
+          <button id="ds-download" type="button">Download configuration (.json)</button>
           <div id="ds-status" class="ds-status"></div>
         </fieldset>
       </div>
@@ -160,7 +153,9 @@
         <p class="hint">
           Click / drag in the canvas to paint with the selected palette color.
           The top 32&times;32 area is the interior texture; the bottom
-          32&times;24 area is the border / frame.
+          32&times;24 area is the border / frame.  Cycle the
+          <em>Preview window style</em> dropdown above to switch which window
+          you're designing.
         </p>
       </div>
     </div>
@@ -171,7 +166,7 @@
   <script>
     (function () {
       const cb = '?v=' + Date.now();
-      for (const src of ['borders.js', 'encoder.js', 'main.js', 'designer.js']) {
+      for (const src of ['borders.js', 'encoder.js', 'vanilla_graphics.js', 'main.js', 'designer.js']) {
         const s = document.createElement('script');
         s.src = src + cb;
         // Dynamically-inserted classic scripts default to async, which means

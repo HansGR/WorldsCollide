@@ -510,6 +510,103 @@ main.js, designer.js]`.
   `web/encoder.js` against the shipped `romdata/` dump: encodes every
   stock window from decoded indices and checks the bytes match.
 
+## Configurator ↔ designer integration
+
+The designer started as a standalone panel that produced a single
+928-byte `.bin` for one window; later it grew to per-window state
+that shares the configurator's window-style selection and palette,
+producing a single JSON config bundle.  Key pieces:
+
+### Shared state via `window.ff6c`
+
+`main.js` exposes its `state` object on `window.ff6c` and dispatches
+a single `ff6c:stateChange` `CustomEvent` after every mutation
+(window-style change, palette slider, reset-color, reset-all,
+designer-initiated palette bulk-set, …).  The designer listens to
+that event:
+
+* If `SHARED.WindowStyle` moved, call `loadWindow(newN)` to swap in
+  that window's pixels (from `customGraphics[N]` if it's been
+  edited; otherwise from `window.VANILLA_GRAPHICS[N]`).
+* Otherwise just re-render — the palette swatches read from
+  `SHARED.windows[N]` directly so they pick up the new colour.
+* If `detail.kind === 'reset-all'`, drop every entry in
+  `customGraphics` so the configurator's "Reset everything"
+  cascades to the designer too.
+
+The reverse direction goes through two helpers on `window.ff6c`:
+
+* `setPaletteBulk(n, palette7)` — used by the designer when a fresh
+  texture upload produces 7 new colours, so the configurator's
+  preview + flagstring + side panel all update in one render
+  instead of 7.
+* `refresh()` — called by the designer after non-palette edits
+  (paint, border switch) so the menu preview re-runs its overlay
+  pass with the new pixel data.
+
+### Per-window pixel state
+
+`ds.customGraphics` is keyed by window number (1..8); only windows
+the user actually touched have entries.  `loadWindow(n)` snapshots
+the current edit (`snapshotCurrent()`) before swapping in the new
+window's pixels, so cycling W3 → W5 → W3 round-trips losslessly.
+"Revert this window to default" deletes the entry, restores the
+vanilla palette via `setPaletteBulk(n, VANILLA_GRAPHICS[n].palette[1..8])`,
+and reloads the vanilla pixels.
+
+### Vanilla baseline
+
+`scripts/build_vanilla_graphics.py` pre-decodes the shipped
+`romdata/ED0000_*.txt` + `ED1C00_*.txt` into
+`web/vanilla_graphics.js` — `window.VANILLA_GRAPHICS[1..8] = {pixels:
+Uint8Array(32*56), palette: [[R,G,B] × 8]}`.  Doing this at build
+time means the web UI doesn't need to fetch + parse the romdata
+files at page load, and it bakes in the same encoding the round-trip
+test suite verifies.
+
+### Menu-preview overlay
+
+`overlayCustomGraphics()` runs as a post-pass on the configurator's
+`recolor()` output.  Algorithm:
+
+1. Build a per-asset, per-page `chromeMask` (256 × 224 Uint8Array):
+   1 where any slot screenshot diverges from baseline by > 6, 0
+   otherwise.  That isolates the window's chrome pixels from
+   wallpaper, text, and cursor.
+2. For each chrome pixel `(x, y)`, sample the custom sheet at
+   `(x mod 32, y mod 56)`.  Non-transparent indices overwrite the
+   recolored RGB with the user's palette colour for that slot.
+
+We don't have FF6's actual window tilemap (which 8 × 8 source tile
+sits at each on-screen 8 × 8 cell), so this is an approximation —
+the interior texture is reproduced faithfully but frame tiles land
+at every 56-pixel y-boundary instead of just along the window's
+top/bottom edges.  Good enough for the user to recognize "yes, that
+is the design I just uploaded"; the actual in-game rendering is
+the source of truth.
+
+### Unified config JSON
+
+The "Download configuration" button serializes:
+
+```json
+{
+  "version": 1,
+  "flags": "<the existing flagstring textarea content>",
+  "graphics": { "<window N>": "<base64 of 928 bytes>", ... }
+}
+```
+
+The flagstring already encodes palette / font / toggle overrides
+for every customized field; the `graphics` map only contains
+windows in `ds.customGraphics`.  `ff6_config.py --config FILE.json`
+re-parses the embedded flagstring (via `shlex.split`) with any
+explicit CLI flags appended *after* it, so users can override an
+individual field on the command line without re-opening the web
+UI.  After `set_config` applies the merged flags, each base64 blob
+is decoded and written via the existing `--window-image` byte
+writer.
+
 ## Cache-busting
 
 The static-server cache turned out to be aggressive enough that

@@ -78,6 +78,27 @@ const state = {
   cursor: 0, // index into current page's selectable rows
 };
 
+// ---------------- integration with the custom-window designer ----------
+//
+// designer.js shares the same window-style selection and palette state
+// as the configurator.  We expose ``state`` (plus a few helpers) on
+// window.ff6c and dispatch a single ``ff6c:stateChange`` CustomEvent
+// after every state mutation.  The designer listens to the event and
+// re-renders or switches windows accordingly.
+//
+// Helpers go further down once syncSidePanel / render / updateFlagString
+// are defined.
+
+if (typeof window !== 'undefined') {
+  window.ff6c = window.ff6c || {};
+  window.ff6c.state = state;
+}
+
+function notifyStateChange(detail) {
+  document.dispatchEvent(new CustomEvent('ff6c:stateChange',
+                                         { detail: detail || {} }));
+}
+
 // ---------------- menu layout ----------------
 //
 // All coordinates are in native 256x224 pixel space.  These rectangles are
@@ -459,6 +480,103 @@ function recolor(asset) {
   return out;
 }
 
+// ---- custom-graphics overlay --------------------------------------
+//
+// When the user customizes a window in the designer, we want the
+// configurator's menu canvas to reflect that custom design too.  The
+// recolor pipeline above renders the menu assuming the *vanilla*
+// source sheet, so we need a post-pass that swaps in the user's
+// pixels wherever a window-chrome pixel lives.
+//
+// We don't have the FF6 engine's exact tilemap (which 8x8 source
+// tile sits at each on-screen 8x8 cell), so we approximate: tile the
+// custom 32x56 sheet across the on-screen window region with period
+// (32, 56), aligned to the screen origin.  Pixels where the custom
+// sheet is index 0 (transparent) fall through to the recolor result;
+// non-transparent pixels get overwritten with the user's palette.
+// The frame tiles won't land at the exact corner positions the
+// engine uses, but the dominant texture and overall colour story
+// match what the ROM will produce.
+//
+// Window-chrome detection comes from the existing slot screenshots:
+// any pixel where some slot screenshot diverges from baseline is a
+// window-chrome pixel (vs. wallpaper or text/cursor pixels, which
+// agree with baseline across all 7 slot captures).
+
+const SHEET_W_OVERLAY = 32, SHEET_H_OVERLAY = 56;
+
+function buildChromeMask(asset, useA) {
+  const baseline = useA ? asset.baselineDataA : asset.baselineData;
+  const slots = useA ? asset.slotsDataA : asset.slotsData;
+  if (!baseline || !slots) return null;
+  const W = 256, H = 224;
+  const mask = new Uint8Array(W * H);
+  const base = baseline.data;
+  for (let i = 0, p = 0; i < base.length; i += 4, p++) {
+    let maxDiff = 0;
+    for (let s = 0; s < 7; s++) {
+      if (!slots[s]) continue;
+      const d = slots[s].data;
+      const dr = Math.abs(d[i]   - base[i]);
+      const dg = Math.abs(d[i+1] - base[i+1]);
+      const db = Math.abs(d[i+2] - base[i+2]);
+      const m = Math.max(dr, dg, db);
+      if (m > maxDiff) maxDiff = m;
+    }
+    mask[p] = maxDiff > 6 ? 1 : 0;   // threshold sized to dithering noise
+  }
+  return mask;
+}
+
+function getChromeMask(asset) {
+  // Cache per-asset, per-page (Page A vs B have different chrome
+  // because the menu layout changes between pages).
+  const useA = state.page === 'A' && asset.baselineDataA;
+  const key = useA ? '_chromeMaskA' : '_chromeMask';
+  if (!asset[key]) asset[key] = buildChromeMask(asset, useA);
+  return asset[key];
+}
+
+function overlayCustomGraphics(imageData, asset) {
+  const customWindows = window.__designer && window.__designer.customGraphics;
+  const cur = customWindows && customWindows[state.WindowStyle];
+  if (!cur || !cur.pixels) return;
+  const mask = getChromeMask(asset);
+  if (!mask) return;
+  const palette = state.windows[state.WindowStyle];   // 7 entries
+  const W = 256, H = 224;
+  const data = imageData.data;
+  const sheetW = SHEET_W_OVERLAY, sheetH = SHEET_H_OVERLAY;
+  // Walk every chrome pixel, sample the custom sheet tiled with period
+  // (32, 56) anchored at the screen origin.  The exact anchor doesn't
+  // matter for a tiled texture; what matters is the per-pixel ratio
+  // between (x, y) and the sheet dimensions.
+  for (let y = 0; y < H; y++) {
+    const sy = y % sheetH;
+    for (let x = 0; x < W; x++) {
+      const p = y * W + x;
+      if (!mask[p]) continue;
+      const sx = x % sheetW;
+      const idx = cur.pixels[sy * sheetW + sx];
+      if (idx === 0) continue;      // transparent -- keep recolor result
+      const c = palette[idx - 1];   // slots 1..7 -> state.windows index 0..6
+      const off = p * 4;
+      data[off]     = (c[0] << 3) | (c[0] >> 2);
+      data[off + 1] = (c[1] << 3) | (c[1] >> 2);
+      data[off + 2] = (c[2] << 3) | (c[2] >> 2);
+    }
+  }
+}
+
+// Recompute chrome masks when a window's screenshots load late.  Asset
+// load happens after the first render, so we may have rendered with a
+// stale (null) mask; clear so the next render rebuilds.
+function invalidateChromeMasks(asset) {
+  if (!asset) return;
+  asset._chromeMask = null;
+  asset._chromeMaskA = null;
+}
+
 function currentAsset() {
   return assets.windowAssets[state.WindowStyle] || null;
 }
@@ -471,7 +589,10 @@ function render() {
   const asset = currentAsset();
   if (asset) {
     const data = recolor(asset);
-    if (data) ctx.putImageData(data, 0, 0);
+    if (data) {
+      overlayCustomGraphics(data, asset);
+      ctx.putImageData(data, 0, 0);
+    }
 
     // If Page A is selected but this window has no Page A isolations,
     // fall back to the flat defaultA screenshot (colours are frozen at
@@ -1156,6 +1277,7 @@ function selectValue(row, val) {
   render();
   syncSidePanel();
   updateFlagString();
+  notifyStateChange({ kind: 'select', row: row.key, value: val });
 }
 
 function keyHandler(e) {
@@ -1230,6 +1352,9 @@ function syncSidePanel() {
     else state.windows[state.WindowStyle][state.editing.slot - 1][i] = v;
     render();
     updateFlagString();
+    notifyStateChange({ kind: 'palette',
+                        window: state.editing.kind === 'slot' ? state.WindowStyle : null,
+                        slot:   state.editing.kind === 'slot' ? state.editing.slot : null });
   });
 });
 
@@ -1265,6 +1390,7 @@ document.getElementById('reset-color').addEventListener('click', () => {
       [...WINDOW_DEFAULTS[state.WindowStyle][s - 1]];
   }
   syncSidePanel(); render(); updateFlagString();
+  notifyStateChange({ kind: 'reset-color' });
 });
 
 document.getElementById('reset-all').addEventListener('click', () => {
@@ -1277,6 +1403,7 @@ document.getElementById('reset-all').addEventListener('click', () => {
   document.getElementById('wallpaper').value = '1';
   loadWindowAssets(1).then(() => {
     syncSidePanel(); render(); updateFlagString();
+    notifyStateChange({ kind: 'reset-all' });
   });
 });
 
@@ -1285,6 +1412,7 @@ document.getElementById('window-style').addEventListener('change', (e) => {
   state.WindowStyle = v;
   loadWindowAssets(v).then(() => {
     syncSidePanel(); render(); updateFlagString();
+    notifyStateChange({ kind: 'windowStyle', value: v });
   });
 });
 
@@ -1369,6 +1497,35 @@ document.getElementById('copy-flags').addEventListener('click', async () => {
     document.execCommand('copy');
   }
 });
+
+// ---------------- designer integration helpers ----------------
+//
+// Called from designer.js when an in-editor action touches multiple
+// palette slots at once (a fresh texture quantization, "revert to
+// vanilla", etc.).  Doing each write through the existing per-slider
+// handler would cause N renders + N flag-string rebuilds for one user
+// gesture; this batches them into one.
+
+if (typeof window !== 'undefined') {
+  window.ff6c.setPaletteBulk = function (windowN, palette7) {
+    for (let i = 0; i < 7; i++) {
+      state.windows[windowN][i] = palette7[i].slice();
+    }
+    syncSidePanel(); render(); updateFlagString();
+    notifyStateChange({ kind: 'palette-bulk', window: windowN });
+  };
+  // Used by designer.js to embed the configurator's current flagstring
+  // into a single downloadable JSON config.
+  window.ff6c.getFlagString = function () {
+    return document.getElementById('flag-out').value;
+  };
+  // Triggered by designer.js whenever the user changes pixels / border /
+  // anything else that doesn't go through setPaletteBulk.  Re-renders
+  // the menu preview so the custom graphics overlay updates.
+  window.ff6c.refresh = function () {
+    render();
+  };
+}
 
 // ---------------- boot ----------------
 
