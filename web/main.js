@@ -78,6 +78,27 @@ const state = {
   cursor: 0, // index into current page's selectable rows
 };
 
+// ---------------- integration with the custom-window designer ----------
+//
+// designer.js shares the same window-style selection and palette state
+// as the configurator.  We expose ``state`` (plus a few helpers) on
+// window.ff6c and dispatch a single ``ff6c:stateChange`` CustomEvent
+// after every state mutation.  The designer listens to the event and
+// re-renders or switches windows accordingly.
+//
+// Helpers go further down once syncSidePanel / render / updateFlagString
+// are defined.
+
+if (typeof window !== 'undefined') {
+  window.ff6c = window.ff6c || {};
+  window.ff6c.state = state;
+}
+
+function notifyStateChange(detail) {
+  document.dispatchEvent(new CustomEvent('ff6c:stateChange',
+                                         { detail: detail || {} }));
+}
+
 // ---------------- menu layout ----------------
 //
 // All coordinates are in native 256x224 pixel space.  These rectangles are
@@ -459,6 +480,126 @@ function recolor(asset) {
   return out;
 }
 
+// ---- custom-graphics overlay --------------------------------------
+//
+// When the user customizes a window in the designer, the configurator's
+// menu canvas needs to swap in the user's design where the vanilla
+// chrome would otherwise show.  We use a reverse-engineered tilemap
+// (web/window_tilemap.js, built by scripts/build_window_tilemap.py from
+// the existing slot screenshots) that records, for each 8x8 on-screen
+// cell, which of the 4x7 = 28 source tiles the engine places there and
+// in what orientation.  Combining that tilemap with the user's custom
+// 32x56 pixel grid gives a faithful per-pixel rendering: corners stay
+// at corners, edges along edges, interior tiles tile through the
+// interior -- exactly the way the SNES draws it.
+//
+// The tilemap is shared across all 8 window styles (the engine doesn't
+// care which source sheet is loaded), and split by page (A vs B) since
+// the menu's window dimensions differ.
+//
+// Pixels that aren't part of the window's chrome (wallpaper, text,
+// cursor sprites) fall through to recolor()'s output as before.
+
+function overlayCustomGraphics(imageData, asset) {
+  const customWindows = window.__designer && window.__designer.customGraphics;
+  const cur = customWindows && customWindows[state.WindowStyle];
+  if (!cur || !cur.pixels) return;
+  const TM = window.WINDOW_TILEMAP;
+  if (!TM) return;
+  const page = state.page === 'A' ? TM.A : TM.B;
+  if (!page) return;
+
+  const Y_OFFSET = TM.Y_OFFSET || 0;
+  const palette = state.windows[state.WindowStyle];   // slots 1..7
+
+  // Per-pixel chrome / font mask -- only paint where the pixel is part
+  // of the window's chrome AND not occluded by the font (text/cursor).
+  // Cached per asset+page to keep render() fast.
+  const mask = getChromeMaskOnly(asset);
+  if (!mask) return;
+
+  const W = 256, H = 224;
+  const data = imageData.data;
+  const tileW = page.width, tileH = page.height;
+  const customPixels = cur.pixels;     // Uint8Array, 32x56 source pixels
+
+  for (let ty = 0; ty < tileH; ty++) {
+    const cellY = Y_OFFSET + ty * 8;
+    for (let tx = 0; tx < tileW; tx++) {
+      const cellIdx = ty * tileW + tx;
+      if (!page.mapped[cellIdx]) continue;
+      const ti = page.tile[cellIdx];
+      const fl = page.flip[cellIdx];
+      // Source-sheet tile coordinates (4 wide, 7 tall, scan right-then-down)
+      const srcTileX = (ti % 4) * 8;
+      const srcTileY = ((ti / 4) | 0) * 8;
+      const cellX = tx * 8;
+      for (let py = 0; py < 8; py++) {
+        for (let px = 0; px < 8; px++) {
+          const screenY = cellY + py;
+          const screenX = cellX + px;
+          if (screenY >= H || screenX >= W) continue;
+          if (!mask[screenY * W + screenX]) continue;
+          // Apply flips when looking up the source pixel.
+          const sx = (fl & 1) ? 7 - px : px;
+          const sy = (fl & 2) ? 7 - py : py;
+          const srcIdx = customPixels[(srcTileY + sy) * 32 + (srcTileX + sx)];
+          if (srcIdx === 0) continue;
+          const c = palette[srcIdx - 1];
+          const off = (screenY * W + screenX) * 4;
+          data[off]     = (c[0] << 3) | (c[0] >> 2);
+          data[off + 1] = (c[1] << 3) | (c[1] >> 2);
+          data[off + 2] = (c[2] << 3) | (c[2] >> 2);
+        }
+      }
+    }
+  }
+}
+
+// Mask of pixels we're allowed to paint: window-chrome AND not text.
+// Window-chrome = some slot screenshot diverges from baseline at this
+// pixel (the recolor pipeline's own definition of "this pixel belongs
+// to the window").  Text = font screenshot diverges -- those pixels
+// should keep the recolored glyph color from recolor().
+function getChromeMaskOnly(asset) {
+  const useA = state.page === 'A' && asset.baselineDataA;
+  const cacheKey = useA ? '_chromeMaskA' : '_chromeMask';
+  if (asset[cacheKey]) return asset[cacheKey];
+  const baseline = useA ? asset.baselineDataA : asset.baselineData;
+  const slots    = useA ? asset.slotsDataA    : asset.slotsData;
+  const fontD    = useA ? asset.fontDataA     : asset.fontData;
+  if (!baseline || !slots) return null;
+  const W = 256, H = 224;
+  const mask = new Uint8Array(W * H);
+  const base = baseline.data;
+  for (let i = 0, p = 0; i < base.length; i += 4, p++) {
+    // Chrome iff some slot diverges from baseline by > THRESH.
+    let chromeDiff = 0;
+    for (let s = 0; s < 7; s++) {
+      if (!slots[s]) continue;
+      const d = slots[s].data;
+      const m = Math.max(
+        Math.abs(d[i]     - base[i]),
+        Math.abs(d[i + 1] - base[i + 1]),
+        Math.abs(d[i + 2] - base[i + 2]));
+      if (m > chromeDiff) chromeDiff = m;
+    }
+    if (chromeDiff <= 6) continue;
+    // Exclude font pixels (let recolor's text rendering stand).
+    if (fontD) {
+      const f = fontD.data;
+      const fontDiff = Math.max(
+        Math.abs(f[i]     - base[i]),
+        Math.abs(f[i + 1] - base[i + 1]),
+        Math.abs(f[i + 2] - base[i + 2]));
+      if (fontDiff > chromeDiff) continue;
+    }
+    mask[p] = 1;
+  }
+  asset[cacheKey] = mask;
+  return mask;
+}
+
 function currentAsset() {
   return assets.windowAssets[state.WindowStyle] || null;
 }
@@ -471,7 +612,10 @@ function render() {
   const asset = currentAsset();
   if (asset) {
     const data = recolor(asset);
-    if (data) ctx.putImageData(data, 0, 0);
+    if (data) {
+      overlayCustomGraphics(data, asset);
+      ctx.putImageData(data, 0, 0);
+    }
 
     // If Page A is selected but this window has no Page A isolations,
     // fall back to the flat defaultA screenshot (colours are frozen at
@@ -1156,6 +1300,7 @@ function selectValue(row, val) {
   render();
   syncSidePanel();
   updateFlagString();
+  notifyStateChange({ kind: 'select', row: row.key, value: val });
 }
 
 function keyHandler(e) {
@@ -1230,6 +1375,9 @@ function syncSidePanel() {
     else state.windows[state.WindowStyle][state.editing.slot - 1][i] = v;
     render();
     updateFlagString();
+    notifyStateChange({ kind: 'palette',
+                        window: state.editing.kind === 'slot' ? state.WindowStyle : null,
+                        slot:   state.editing.kind === 'slot' ? state.editing.slot : null });
   });
 });
 
@@ -1265,6 +1413,7 @@ document.getElementById('reset-color').addEventListener('click', () => {
       [...WINDOW_DEFAULTS[state.WindowStyle][s - 1]];
   }
   syncSidePanel(); render(); updateFlagString();
+  notifyStateChange({ kind: 'reset-color' });
 });
 
 document.getElementById('reset-all').addEventListener('click', () => {
@@ -1277,6 +1426,7 @@ document.getElementById('reset-all').addEventListener('click', () => {
   document.getElementById('wallpaper').value = '1';
   loadWindowAssets(1).then(() => {
     syncSidePanel(); render(); updateFlagString();
+    notifyStateChange({ kind: 'reset-all' });
   });
 });
 
@@ -1285,6 +1435,7 @@ document.getElementById('window-style').addEventListener('change', (e) => {
   state.WindowStyle = v;
   loadWindowAssets(v).then(() => {
     syncSidePanel(); render(); updateFlagString();
+    notifyStateChange({ kind: 'windowStyle', value: v });
   });
 });
 
@@ -1369,6 +1520,35 @@ document.getElementById('copy-flags').addEventListener('click', async () => {
     document.execCommand('copy');
   }
 });
+
+// ---------------- designer integration helpers ----------------
+//
+// Called from designer.js when an in-editor action touches multiple
+// palette slots at once (a fresh texture quantization, "revert to
+// vanilla", etc.).  Doing each write through the existing per-slider
+// handler would cause N renders + N flag-string rebuilds for one user
+// gesture; this batches them into one.
+
+if (typeof window !== 'undefined') {
+  window.ff6c.setPaletteBulk = function (windowN, palette7) {
+    for (let i = 0; i < 7; i++) {
+      state.windows[windowN][i] = palette7[i].slice();
+    }
+    syncSidePanel(); render(); updateFlagString();
+    notifyStateChange({ kind: 'palette-bulk', window: windowN });
+  };
+  // Used by designer.js to embed the configurator's current flagstring
+  // into a single downloadable JSON config.
+  window.ff6c.getFlagString = function () {
+    return document.getElementById('flag-out').value;
+  };
+  // Triggered by designer.js whenever the user changes pixels / border /
+  // anything else that doesn't go through setPaletteBulk.  Re-renders
+  // the menu preview so the custom graphics overlay updates.
+  window.ff6c.refresh = function () {
+    render();
+  };
+}
 
 // ---------------- boot ----------------
 

@@ -2,12 +2,17 @@
 
 Usage:
     python ff6_config.py -i ff6.smc [options]
+    python ff6_config.py -i ff6.smc --config ff6config.json
 """
 
 import argparse
+import base64
+import json
+import shlex
 import sys
 
 from config import config as cfg
+from config import window_graphics as wg
 from config.rom import ROM
 
 
@@ -60,6 +65,25 @@ def _parse_rgb(s):
             raise argparse.ArgumentTypeError(f"component {v} out of range 0..31 in {s!r}")
         rgb.append(v)
     return rgb
+
+
+def _parse_window_image(s):
+    """Parse ``N:path/to/file.bin`` into ``(window_index, path)``.
+
+    ``N`` is 1..8 (target window slot to overwrite).  The file is read
+    later by ``main`` -- here we only validate the syntax and existence.
+    """
+    if ":" not in s:
+        raise argparse.ArgumentTypeError(
+            f"expected 'N:path' (N=1..8), got {s!r}")
+    n_str, path = s.split(":", 1)
+    try:
+        n = int(n_str)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"bad window index {n_str!r}")
+    if not 1 <= n <= 8:
+        raise argparse.ArgumentTypeError(f"window index {n} out of range 1..8")
+    return (n, path)
 
 
 def _parse_window_palette(s):
@@ -149,6 +173,21 @@ def build_parser():
         p.add_argument(f"-w{i}", f"--window{i}", dest=f"Window{i}",
                        type=_parse_window_palette,
                        help=f"window {i} palette: 'slot=R,G,B;...' (slot 1..7)")
+    p.add_argument("--window-image", dest="WindowImage",
+                   type=_parse_window_image, action="append", default=None,
+                   metavar="N:FILE",
+                   help="overwrite window N (1..8) with the 928-byte "
+                        "graphics+palette blob in FILE (896 bytes of 4bpp "
+                        "graphics followed by 32 bytes of BGR15 palette). "
+                        "May be repeated for different windows.")
+    p.add_argument("--config", dest="Config", metavar="FILE",
+                   help="JSON config bundle produced by the web designer's "
+                        "'Download configuration' button.  Contains a "
+                        "flagstring + (optional) custom graphics for any of "
+                        "the 8 window slots.  When given, the embedded "
+                        "flagstring is parsed first, then any CLI flags "
+                        "the user explicitly passed override on top, then "
+                        "graphics blobs are applied last.")
     return p
 
 
@@ -159,7 +198,37 @@ def _default_output_path(input_path):
 
 
 def main(argv=None):
-    args = build_parser().parse_args(argv)
+    raw_argv = sys.argv[1:] if argv is None else argv
+    args = build_parser().parse_args(raw_argv)
+
+    # If the user passed --config, merge in the embedded flagstring.
+    # Explicit CLI flags win over the embedded ones, so we re-parse with
+    # the embedded flags PREPENDED (later args override earlier ones in
+    # argparse for the same option).
+    graphics_blobs = []  # list of (window_num, 928-byte bytes) to apply
+    if args.Config:
+        cfg_data = _load_json_config(args.Config)
+        embedded = shlex.split(cfg_data.get("flags", "") or "")
+        if embedded:
+            # -i / -o stay from the CLI; everything else comes from a
+            # reparse with embedded flags ahead of the CLI flags.
+            re_argv = ["-i", args.input]
+            if args.output is not None:
+                re_argv += ["-o", args.output]
+            re_argv += embedded + raw_argv
+            args = build_parser().parse_args(re_argv)
+        # Pull graphics out of the JSON.
+        for n_str, b64 in (cfg_data.get("graphics") or {}).items():
+            n = int(n_str)
+            if not 1 <= n <= 8:
+                sys.exit(f"error: {args.Config}: bad window number {n}")
+            blob = base64.b64decode(b64)
+            expected = wg.WINDOW_GRAPHICS_SIZE + wg.WINDOW_PALETTE_FULL_SIZE
+            if len(blob) != expected:
+                sys.exit(
+                    f"error: {args.Config}: window {n} blob is {len(blob)} "
+                    f"bytes, expected {expected}")
+            graphics_blobs.append((n, blob))
 
     output_path = args.output or _default_output_path(args.input)
     config_set = {
@@ -177,7 +246,50 @@ def main(argv=None):
             "Worlds Collide patch."
         )
     cfg.set_config(rom, config_set)
+
+    # Apply --config graphics first, then --window-image, so an explicit
+    # --window-image on the CLI overrides whatever the JSON has for the
+    # same slot.
+    for n, blob in graphics_blobs:
+        _apply_window_image_bytes(rom, n, blob)
+
+    if args.WindowImage:
+        seen = set()
+        for n, path in args.WindowImage:
+            if n in seen:
+                sys.exit(f"error: --window-image specified twice for window {n}")
+            seen.add(n)
+            _apply_window_image(rom, n, path)
+
     rom.write(output_path)
+
+
+def _load_json_config(path):
+    try:
+        with open(path) as f:
+            d = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        sys.exit(f"error: --config {path}: {e}")
+    if d.get("version") != 1:
+        sys.exit(f"error: {path}: unsupported config version {d.get('version')}")
+    return d
+
+
+def _apply_window_image_bytes(rom, n, blob):
+    expected = wg.WINDOW_GRAPHICS_SIZE + wg.WINDOW_PALETTE_FULL_SIZE
+    if len(blob) != expected:
+        sys.exit(
+            f"error: window {n} blob: expected {expected} bytes "
+            f"({wg.WINDOW_GRAPHICS_SIZE} graphics + "
+            f"{wg.WINDOW_PALETTE_FULL_SIZE} palette), got {len(blob)}")
+    wg.set_window_graphics(rom, n, list(blob[: wg.WINDOW_GRAPHICS_SIZE]))
+    rom.set_bytes(wg.palette_addr(n), list(blob[wg.WINDOW_GRAPHICS_SIZE :]))
+
+
+def _apply_window_image(rom, n, path):
+    """Read a 928-byte graphics+palette blob from ``path`` and patch window ``n``."""
+    with open(path, "rb") as f:
+        _apply_window_image_bytes(rom, n, f.read())
 
 
 if __name__ == "__main__":
