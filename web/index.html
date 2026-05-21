@@ -144,6 +144,11 @@
           <legend>Output</legend>
           <button id="ds-revert" type="button" disabled>Revert this window to default</button>
           <button id="ds-download" type="button">Download configuration (.json)</button>
+          <label class="ds-upload-config" for="ds-config-upload">
+            Load configuration (.json):
+          </label>
+          <input type="file" id="ds-config-upload" accept="application/json,.json"
+                 title="Restore the configurator from a previously downloaded ff6config.json">
           <div id="ds-status" class="ds-status"></div>
         </fieldset>
       </div>

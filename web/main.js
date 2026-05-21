@@ -1529,6 +1529,112 @@ document.getElementById('copy-flags').addEventListener('click', async () => {
 // handler would cause N renders + N flag-string rebuilds for one user
 // gesture; this batches them into one.
 
+// ---------------- flagstring parser (for config-JSON upload) ----------
+//
+// Inverse of buildFlagString(): split a flagstring into tokens, then
+// map each `-flag value` pair into ``state``.  Reset to defaults first
+// so flags that are *absent* from the upload snap back rather than
+// inheriting the previous session's value.
+//
+// The Python CLI accepts the same arguments and is the source of truth
+// for the format; mirror its parsers for the small handful of value
+// shapes we have to read (rgb triples, window palettes).
+
+function shlexSplit(s) {
+  // Minimal POSIX-ish split: handles single and double quotes and
+  // backslash escapes.  buildFlagString only quotes -wN values, so we
+  // don't need anything fancier.
+  const out = [];
+  let cur = '', has = false, sq = false, dq = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (!sq && !dq && /\s/.test(c)) {
+      if (has) { out.push(cur); cur = ''; has = false; }
+      continue;
+    }
+    if (!sq && c === '"') { dq = !dq; has = true; continue; }
+    if (!dq && c === "'") { sq = !sq; has = true; continue; }
+    if (!sq && c === '\\' && i + 1 < s.length) {
+      cur += s[++i]; has = true; continue;
+    }
+    cur += c; has = true;
+  }
+  if (has) out.push(cur);
+  return out;
+}
+
+function parseRgbTriple(s) {
+  const parts = s.split(',');
+  if (parts.length !== 3) throw new Error(`bad rgb triple ${JSON.stringify(s)}`);
+  const out = parts.map(p => parseInt(p, 10));
+  for (const v of out) {
+    if (!Number.isInteger(v) || v < 0 || v > 31)
+      throw new Error(`rgb component out of 0..31 in ${JSON.stringify(s)}`);
+  }
+  return out;
+}
+
+const FLAG_MAP = {
+  '-b':   { key: 'BatMode'  },
+  '-bs':  { key: 'BatSpeed',   int: true },
+  '-ms':  { key: 'MsgSpeed',   int: true },
+  '-com': { key: 'Command'  },
+  '-g':   { key: 'Gauge'    },
+  '-s':   { key: 'Sound'    },
+  '-c':   { key: 'Cursor'   },
+  '-r':   { key: 'Reequip'  },
+  '-so':  { key: 'SpellOrder', int: true },
+  '-w':   { key: 'Wallpaper',  int: true },
+};
+
+function applyFlagString(flags) {
+  // Hard reset to defaults so anything missing from the flagstring is
+  // restored, not left over from a previous session.
+  Object.assign(state, structuredClone(TOGGLE_DEFAULTS));
+  state.font = [...FONT_DEFAULT];
+  state.windows = structuredClone(WINDOW_DEFAULTS);
+  state.editing = { kind: 'font' };
+  state.cursor = 0;
+
+  const toks = shlexSplit(flags || '');
+  for (let i = 0; i < toks.length; i++) {
+    const flag = toks[i];
+    const val  = toks[i + 1];
+    if (val === undefined) throw new Error(`flag ${flag} missing value`);
+    if (FLAG_MAP[flag]) {
+      const spec = FLAG_MAP[flag];
+      state[spec.key] = spec.int ? parseInt(val, 10) : val;
+    } else if (flag === '-f') {
+      state.font = parseRgbTriple(val);
+    } else if (/^-w[1-8]$/.test(flag)) {
+      const n = parseInt(flag.slice(2), 10);
+      for (const entry of val.split(';')) {
+        if (!entry) continue;
+        const eq = entry.indexOf('=');
+        if (eq < 0) throw new Error(`bad palette entry ${JSON.stringify(entry)}`);
+        const slot = parseInt(entry.slice(0, eq), 10);
+        if (!(slot >= 1 && slot <= 7))
+          throw new Error(`slot ${slot} out of range in ${flag} ${JSON.stringify(val)}`);
+        state.windows[n][slot - 1] = parseRgbTriple(entry.slice(eq + 1));
+      }
+    } else {
+      throw new Error(`unknown flag ${JSON.stringify(flag)}`);
+    }
+    i++;
+  }
+
+  // Sync side panels + canvas to the freshly-loaded state.
+  document.getElementById('window-style').value = String(state.WindowStyle);
+  document.getElementById('wallpaper').value    = String(state.Wallpaper);
+  return loadWindowAssets(state.WindowStyle).then(() => {
+    updateTabUI();
+    syncSidePanel();
+    render();
+    updateFlagString();
+    notifyStateChange({ kind: 'config-load' });
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.ff6c.setPaletteBulk = function (windowN, palette7) {
     for (let i = 0; i < 7; i++) {
@@ -1548,6 +1654,7 @@ if (typeof window !== 'undefined') {
   window.ff6c.refresh = function () {
     render();
   };
+  window.ff6c.applyFlagString = applyFlagString;
 }
 
 // ---------------- boot ----------------

@@ -533,6 +533,99 @@
       '`ff6_config.py -i rom.smc --config ff6config.json`', false);
   });
 
+  // ---- upload (restore from previously downloaded JSON) -------------
+
+  document.getElementById('ds-config-upload').addEventListener('change', async (e) => {
+    const input = e.target;
+    const f = input.files && input.files[0];
+    if (!f) return;
+    try {
+      const text = await f.text();
+      let cfg;
+      try { cfg = JSON.parse(text); }
+      catch (err) { throw new Error('not valid JSON: ' + err.message); }
+      if (cfg.version !== 1)
+        throw new Error(`unsupported config version: ${cfg.version}`);
+
+      // Decode graphics first so we can fail before mutating state if any
+      // blob is malformed.  Each entry: { n, pixels, palette }.
+      const decoded = [];
+      const graphics = cfg.graphics || {};
+      for (const [nStr, b64] of Object.entries(graphics)) {
+        const n = parseInt(nStr, 10);
+        if (!(n >= 1 && n <= 8))
+          throw new Error(`bad window number ${JSON.stringify(nStr)}`);
+        if (typeof b64 !== 'string')
+          throw new Error(`window ${n} blob is not a string`);
+        let bin;
+        try { bin = atob(b64); }
+        catch (err) { throw new Error(`window ${n}: bad base64`); }
+        if (bin.length !== BLOB_BYTES)
+          throw new Error(`window ${n} blob is ${bin.length} bytes, ` +
+                          `expected ${BLOB_BYTES}`);
+        const blob = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) blob[i] = bin.charCodeAt(i);
+        const pixels  = enc.decodeSheet(blob.subarray(0, enc.SHEET_BYTES));
+        const palette = enc.decodePalette(blob.subarray(enc.SHEET_BYTES));
+        decoded.push({ n, pixels, palette });
+      }
+      decoded.sort((a, b) => a.n - b.n);
+
+      // Push the flagstring through the configurator -- this resets every
+      // toggle, font color, and window palette to either the embedded value
+      // or its default (so a flag that's absent snaps back instead of
+      // inheriting the previous session's value).
+      await ff6c.applyFlagString(cfg.flags || '');
+
+      // Replace customGraphics from scratch.  The flagstring already wrote
+      // each window's palette into SHARED.windows, but the graphics blob
+      // carries the palette too and we treat that as authoritative for the
+      // saved design (in practice they always match, since the download
+      // side reads them from the same source).
+      ds.customGraphics = {};
+      ds.lastTexUpload = null;
+      for (const { n, pixels, palette } of decoded) {
+        ff6c.setPaletteBulk(n, palette.slice(1, 8));
+        ds.customGraphics[n] = {
+          pixels: new Uint8Array(pixels),
+          borderId: '__current__',
+          lastTexUpload: null,
+        };
+      }
+
+      // Snap the designer's view to the first customized window so the
+      // user lands on something visible instead of an untouched window.
+      const target = decoded.length ? decoded[0].n : ds.currentWindow;
+      ds.currentWindow = target;
+      const sel = document.getElementById('window-style');
+      if (sel && parseInt(sel.value, 10) !== target) {
+        sel.value = String(target);
+        sel.dispatchEvent(new Event('change'));
+      }
+      const cur = ds.customGraphics[target];
+      if (cur && cur.pixels) {
+        ds.pixels = new Uint8Array(cur.pixels);
+        ds.borderId = cur.borderId;
+      } else {
+        const v = window.VANILLA_GRAPHICS && window.VANILLA_GRAPHICS[target];
+        ds.pixels = v ? new Uint8Array(v.pixels) : new Uint8Array(SHEET_W * SHEET_H);
+        ds.borderId = '__current__';
+      }
+      updateWindowBanner();
+      render();
+      ff6c.refresh && ff6c.refresh();
+
+      const n = decoded.length;
+      setStatus(`loaded ${f.name} (${n} custom window` +
+                (n === 1 ? '' : 's') + ')', false);
+    } catch (err) {
+      setStatus('config upload failed: ' + err.message, true);
+    } finally {
+      // Reset so picking the same file again still fires "change".
+      input.value = '';
+    }
+  });
+
   // ---- status line ---------------------------------------------------
 
   const statusEl = document.getElementById('ds-status');
