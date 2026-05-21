@@ -97,13 +97,90 @@
     </section>
   </main>
 
+  <section class="designer" id="designer">
+    <header class="designer-head">
+      <h2>Custom window image</h2>
+      <p class="hint">
+        Upload a 32&times;32 image as the window's interior texture, pick a
+        border treatment, paint any tweaks, then download as a 928-byte
+        binary.  Apply with
+        <code>ff6_config.py --window-image N:file.bin</code>.
+      </p>
+    </header>
+    <div class="designer-grid">
+      <div class="designer-controls">
+        <fieldset>
+          <legend>Texture (32&times;32)</legend>
+          <input type="file" id="ds-tex-upload" accept="image/*">
+          <button id="ds-tex-revert" type="button" title="Re-quantize from the most recent upload">Re-quantize</button>
+        </fieldset>
+        <fieldset>
+          <legend>Border</legend>
+          <select id="ds-border-preset"></select>
+          <input type="file" id="ds-border-upload" accept="image/*"
+                 title="Custom 32x24 border image (optional)">
+        </fieldset>
+        <fieldset>
+          <legend>Palette</legend>
+          <div id="ds-swatches" class="swatches"></div>
+          <div class="rgb-row">
+            <label>R</label>
+            <input type="range" min="0" max="31" id="ds-r">
+            <span id="ds-r-val">0</span>
+          </div>
+          <div class="rgb-row">
+            <label>G</label>
+            <input type="range" min="0" max="31" id="ds-g">
+            <span id="ds-g-val">0</span>
+          </div>
+          <div class="rgb-row">
+            <label>B</label>
+            <input type="range" min="0" max="31" id="ds-b">
+            <span id="ds-b-val">0</span>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Output</legend>
+          <div class="row">
+            <label for="ds-target">Target window:</label>
+            <select id="ds-target">
+              <option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+              <option value="7">7</option><option value="8" selected>8</option>
+            </select>
+          </div>
+          <button id="ds-download" type="button">Download .bin (928 bytes)</button>
+          <div id="ds-status" class="ds-status"></div>
+        </fieldset>
+      </div>
+      <div class="designer-canvas-wrap">
+        <canvas id="ds-sheet" width="256" height="448"></canvas>
+        <div class="ds-overlay-lines"></div>
+        <p class="hint">
+          Click / drag in the canvas to paint with the selected palette color.
+          The top 32&times;32 area is the interior texture; the bottom
+          32&times;24 area is the border / frame.
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- cache-bust on every load so iterative dev keeps in step with the
        static-server cache without forcing the user to hard-reload. -->
   <script>
     (function () {
-      const s = document.createElement('script');
-      s.src = 'main.js?v=' + Date.now();
-      document.body.appendChild(s);
+      const cb = '?v=' + Date.now();
+      for (const src of ['borders.js', 'encoder.js', 'main.js', 'designer.js']) {
+        const s = document.createElement('script');
+        s.src = src + cb;
+        // Dynamically-inserted classic scripts default to async, which means
+        // they execute in whatever order they finish loading — designer.js
+        // would race ahead of borders.js sometimes and find no presets.
+        // Forcing async=false makes the browser run them in insertion order.
+        s.async = false;
+        document.body.appendChild(s);
+      }
     })();
   </script>
 </body>

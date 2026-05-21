@@ -8,6 +8,7 @@ import argparse
 import sys
 
 from config import config as cfg
+from config import window_graphics as wg
 from config.rom import ROM
 
 
@@ -60,6 +61,25 @@ def _parse_rgb(s):
             raise argparse.ArgumentTypeError(f"component {v} out of range 0..31 in {s!r}")
         rgb.append(v)
     return rgb
+
+
+def _parse_window_image(s):
+    """Parse ``N:path/to/file.bin`` into ``(window_index, path)``.
+
+    ``N`` is 1..8 (target window slot to overwrite).  The file is read
+    later by ``main`` -- here we only validate the syntax and existence.
+    """
+    if ":" not in s:
+        raise argparse.ArgumentTypeError(
+            f"expected 'N:path' (N=1..8), got {s!r}")
+    n_str, path = s.split(":", 1)
+    try:
+        n = int(n_str)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"bad window index {n_str!r}")
+    if not 1 <= n <= 8:
+        raise argparse.ArgumentTypeError(f"window index {n} out of range 1..8")
+    return (n, path)
 
 
 def _parse_window_palette(s):
@@ -149,6 +169,13 @@ def build_parser():
         p.add_argument(f"-w{i}", f"--window{i}", dest=f"Window{i}",
                        type=_parse_window_palette,
                        help=f"window {i} palette: 'slot=R,G,B;...' (slot 1..7)")
+    p.add_argument("--window-image", dest="WindowImage",
+                   type=_parse_window_image, action="append", default=None,
+                   metavar="N:FILE",
+                   help="overwrite window N (1..8) with the 928-byte "
+                        "graphics+palette blob in FILE (896 bytes of 4bpp "
+                        "graphics followed by 32 bytes of BGR15 palette). "
+                        "May be repeated for different windows.")
     return p
 
 
@@ -177,7 +204,30 @@ def main(argv=None):
             "Worlds Collide patch."
         )
     cfg.set_config(rom, config_set)
+
+    if args.WindowImage:
+        seen = set()
+        for n, path in args.WindowImage:
+            if n in seen:
+                sys.exit(f"error: --window-image specified twice for window {n}")
+            seen.add(n)
+            _apply_window_image(rom, n, path)
+
     rom.write(output_path)
+
+
+def _apply_window_image(rom, n, path):
+    """Read a 928-byte graphics+palette blob from ``path`` and patch window ``n``."""
+    with open(path, "rb") as f:
+        blob = f.read()
+    expected = wg.WINDOW_GRAPHICS_SIZE + wg.WINDOW_PALETTE_FULL_SIZE
+    if len(blob) != expected:
+        sys.exit(
+            f"error: {path}: expected {expected} bytes "
+            f"({wg.WINDOW_GRAPHICS_SIZE} graphics + "
+            f"{wg.WINDOW_PALETTE_FULL_SIZE} palette), got {len(blob)}")
+    wg.set_window_graphics(rom, n, list(blob[: wg.WINDOW_GRAPHICS_SIZE]))
+    rom.set_bytes(wg.palette_addr(n), list(blob[wg.WINDOW_GRAPHICS_SIZE :]))
 
 
 if __name__ == "__main__":

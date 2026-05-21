@@ -174,3 +174,115 @@ button {
 button:hover { background: #4a4a5e; }
 button:active { background: #2a2a3e; }
 #copy-flags { margin-top: 6px; }
+
+/* ---- Custom window image designer ---- */
+
+.designer {
+  margin-top: 32px;
+  padding: 16px;
+  background: #21212a;
+  border: 1px solid #383846;
+  border-radius: 8px;
+}
+.designer-head h2 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  color: #cdf;
+}
+.designer-head .hint { margin: 0 0 12px 0; color: #aab; font-size: 13px; }
+.designer-head code { background: #15151b; padding: 1px 4px; border-radius: 3px; color: #cfe; }
+
+.designer-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) auto;
+  gap: 20px;
+  align-items: start;
+}
+
+.designer-controls fieldset {
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  background: #2a2a36;
+}
+.designer-controls legend {
+  padding: 0 6px;
+  color: #aab;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.designer-controls .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.designer-controls input[type=file] {
+  color: #cfe;
+  font-size: 12px;
+}
+.designer-controls select {
+  background: #1d1d24;
+  border: 1px solid #555;
+  color: #eee;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.designer-controls .rgb-row {
+  display: grid;
+  grid-template-columns: 16px 1fr 32px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.designer-controls .rgb-row input[type=range] { width: 100%; }
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.swatches .swatch {
+  height: 32px;
+  border: 2px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  color: rgba(255,255,255,0.7);
+  font-size: 11px;
+  text-shadow: 0 0 2px rgba(0,0,0,0.8);
+  padding: 0;
+}
+.swatches .swatch.active {
+  border-color: #ffd34d;
+  box-shadow: 0 0 0 2px rgba(255, 211, 77, 0.35);
+}
+
+#ds-sheet {
+  display: block;
+  width: 256px;
+  height: 448px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  border: 2px solid #444;
+  border-radius: 4px;
+  cursor: crosshair;
+}
+
+.ds-status {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #adc;
+  min-height: 1em;
+  word-break: break-all;
+}
+.ds-status.error { color: #fc8; }
+
+.designer-canvas-wrap .hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #889;
+}

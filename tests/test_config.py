@@ -121,6 +121,92 @@ def test_cli_rejects_bad_rgb():
         raise AssertionError(f"expected SystemExit for --font {bad}")
 
 
+# ---- Window-image flag ----------------------------------------------
+
+def test_cli_parses_window_image_flag():
+    parser = ff6_config.build_parser()
+    ns = parser.parse_args([
+        "-i", "rom.smc",
+        "--window-image", "3:gfx3.bin",
+        "--window-image", "8:gfx8.bin",
+    ])
+    assert ns.WindowImage == [(3, "gfx3.bin"), (8, "gfx8.bin")]
+
+
+def test_cli_rejects_bad_window_image():
+    parser = ff6_config.build_parser()
+    for bad in ["9:foo.bin", "0:foo.bin", "foo.bin", "abc:foo.bin"]:
+        try:
+            parser.parse_args(["-i", "rom.smc", "--window-image", bad])
+        except SystemExit:
+            continue
+        raise AssertionError(f"expected SystemExit for --window-image {bad}")
+
+
+def test_apply_window_image_writes_both_regions(tmp_path=None):
+    import io
+    import os
+    import tempfile
+
+    # 928 bytes: 896 graphics + 32 palette (well-formed)
+    blob = bytes(range(256)) * 4  # 1024 bytes
+    blob = blob[:928]
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as tf:
+        tf.write(blob)
+        blob_path = tf.name
+
+    try:
+        # Fake ROM big enough to cover $2D/1C20 (W2 palette).
+        class _FakeRom:
+            def __init__(self):
+                self.data = bytearray(0x2E0000)
+            def get_bytes(self, addr, count):
+                return list(self.data[addr : addr + count])
+            def set_bytes(self, addr, values):
+                self.data[addr : addr + len(values)] = bytes(values)
+                return addr + len(values)
+
+        rom = _FakeRom()
+        ff6_config._apply_window_image(rom, 2, blob_path)
+
+        # Graphics landed at W2's graphics base.
+        from config import window_graphics as wg_mod
+        assert bytes(rom.data[wg_mod.graphics_addr(2):
+                              wg_mod.graphics_addr(2) + 896]) == blob[:896]
+        # Palette landed at W2's palette base.
+        assert bytes(rom.data[wg_mod.palette_addr(2):
+                              wg_mod.palette_addr(2) + 32]) == blob[896:928]
+    finally:
+        os.unlink(blob_path)
+
+
+def test_apply_window_image_rejects_wrong_size():
+    import os
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as tf:
+        tf.write(b"\x00" * 100)
+        bad_path = tf.name
+
+    try:
+        class _FakeRom:
+            def __init__(self):
+                self.data = bytearray(0x2E0000)
+            def get_bytes(self, addr, count):
+                return list(self.data[addr : addr + count])
+            def set_bytes(self, addr, values):
+                self.data[addr : addr + len(values)] = bytes(values)
+
+        try:
+            ff6_config._apply_window_image(_FakeRom(), 1, bad_path)
+        except SystemExit:
+            return
+        raise AssertionError("expected SystemExit for wrong-size blob")
+    finally:
+        os.unlink(bad_path)
+
+
 # ---- Default config address read ------------------------------------
 
 class _FakeRom:
