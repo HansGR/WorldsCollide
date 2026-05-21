@@ -11,9 +11,10 @@
  *   1. User uploads a 32x32 image.  Cover-fit center-crop to 32x32, then
  *      median-cut quantize to 7 colors, sort by luminosity (light->dark),
  *      snap to BGR15.  Palette index 0 is reserved as transparent black.
- *   2. User picks a border preset (or uploads a custom 32x24 image, which
- *      is quantized down to {transparent, highlight=1, outline=7} so it
- *      composes with whatever palette the texture left behind).
+ *   2. User picks a border preset (or uploads a custom 32x24 image,
+ *      which is bucketed by luminosity rank into indices 0 (transparent)
+ *      and 1..7 (lightest..darkest) so it composes with whatever palette
+ *      the texture left behind).
  *   3. User can paint individual pixels in the editor canvas, and adjust
  *      any of the 7 palette colors via R/G/B sliders.
  *   4. Download triggers encode_window_sheet + encode_palette to produce
@@ -142,25 +143,38 @@
     return { palette: snapped, indices: shifted };
   }
 
-  // Quantize an uploaded 32x24 image down to {transparent, highlight, outline}.
-  // We don't pick its own palette colors -- instead we map every pixel to
-  // one of the existing texture-palette slots: lightest (1) for the
-  // brightest pixels, darkest (7) for the rest.  A simple brightness
-  // threshold makes the user's hand-drawn border read correctly against
-  // the texture's palette.
+  // Quantize an uploaded 32x24 image to the editor's 8-slot palette by
+  // luminosity rank, matching the preset borders' scheme:
+  //   index 0 = (near-)transparent -- pixels darker than TRANSPARENT_CUTOFF
+  //   index 1 = lightest visible band
+  //   ...
+  //   index 7 = darkest visible band
+  // The non-transparent pixels get bucketed into 7 equal-population
+  // luminosity bins so the upload preserves shading nuance instead of
+  // collapsing to a two-color silhouette.
   function quantizeBorder(rgbPixels) {
-    // 3-means by luminosity, then label clusters by brightness order.
-    // (k-means would be fancier; a simple Otsu-style split is enough.)
-    const lums = rgbPixels.map(p => lumin(p)).slice().sort((a, b) => a - b);
-    const mid = lums[Math.floor(lums.length / 2)];
-    // Treat very dark pixels (< 32) as transparent, everything else
-    // chooses between highlight (lighter than mid) and outline.
+    const TRANSPARENT_CUTOFF = 24;   // 0..255 luminance
+    // Collect luminosities of the "visible" (non-transparent) pixels and
+    // build the bin edges from their distribution.
+    const visibleLums = [];
+    for (const p of rgbPixels) {
+      const L = lumin(p);
+      if (L >= TRANSPARENT_CUTOFF) visibleLums.push(L);
+    }
+    visibleLums.sort((a, b) => b - a);  // brightest first
+    // Six interior cut points carve the sorted list into seven equal-ish
+    // populations: pixels in segment k -> output index k+1.
+    const cuts = [];
+    for (let k = 1; k < 7; k++) {
+      cuts.push(visibleLums[Math.floor(k * visibleLums.length / 7)] || 0);
+    }
     const out = new Uint8Array(rgbPixels.length);
     for (let i = 0; i < rgbPixels.length; i++) {
       const L = lumin(rgbPixels[i]);
-      if (L < 24) out[i] = 0;
-      else if (L > mid) out[i] = 1;
-      else out[i] = 7;
+      if (L < TRANSPARENT_CUTOFF) { out[i] = 0; continue; }
+      let bin = 0;
+      while (bin < 6 && L < cuts[bin]) bin++;
+      out[i] = bin + 1;
     }
     return out;
   }
