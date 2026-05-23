@@ -123,6 +123,7 @@ const PAGE_A_OPTIONS = [
   { key: 'Sound',    y:124,  values: [['stereo', 112], ['mono',  176]] },
   { key: 'Cursor',   y:140,  values: [['reset',  112], ['memory',176]] },
   { key: 'Reequip',  y:156,  values: [['optimum',112], ['empty', 176]] },
+  { key: 'Controller', y:172, values: [['single', 112], ['multiple', 176]] },
 ];
 
 const PAGE_B_OPTIONS = [
@@ -867,6 +868,9 @@ const WORD_MASKS = {
   'mono':    { w: 30, h: 7, ipr: 1, rows: [0x86000000, 0xce78f878, 0xfecccccc, 0xb6cccccc, 0x86cccccc, 0x86cccccc, 0x8678cc78] },
   'memory':  { w: 46, h: 8, ipr: 2, rows: [0x86000000, 0x00000000, 0xce78fc78, 0xdccc0000, 0xfeccb6cc, 0xe0cc0000, 0xb6fcb6cc, 0xc0cc0000, 0x86c0b6cc, 0xc07c0000, 0x86c4b6cc, 0xc00c0000, 0x8678b678, 0xc08c0000, 0x00000000, 0x00780000] },
   'empty':   { w: 38, h: 8, ipr: 2, rows: [0xfe000030, 0x00000000, 0xc0fcf8fc, 0xcc000000, 0xc0b6cc30, 0xcc000000, 0xfcb6cc30, 0xcc000000, 0xc0b6cc30, 0x7c000000, 0xc0b6f830, 0x0c000000, 0xfeb6c01c, 0x8c000000, 0x0000c000, 0x78000000] },
+  // Page A Controller row: extracted from W1/fontA.png at x=112 / x=176, y=172.
+  'single':  { w: 46, h: 8, ipr: 2, rows: [0x7c300000, 0x70000000, 0xc230f87c, 0x30780000, 0xe000cccc, 0x30cc0000, 0x7830cccc, 0x30fc0000, 0x1c30cc7c, 0x30c00000, 0x8e30cc0c, 0x30c40000, 0x7c30cc8c, 0x30780000, 0x00000078, 0x00000000] },
+  'multiple':{ w: 62, h: 8, ipr: 2, rows: [0x86007030, 0x30007000, 0xcecc30fc, 0x30f83078, 0xfecc3030, 0x00cc30cc, 0xb6cc3030, 0x30cc30fc, 0x86cc3030, 0x30cc30c0, 0x86cc3030, 0x30f830c4, 0x867c301c, 0x30c03078, 0x00000000, 0x00c00000] },
   // Page B Color row's "Font" word (the existing 'window' mask above
   // works for the same-row "Window" label since the font is uniform).
   'font':    { w: 30, h: 7, ipr: 1, rows: [0xfe000030, 0xc078f8fc, 0xc0cccc30, 0xfccccc30, 0xc0cccc30, 0xc0cccc30, 0xc078cc1c] },
@@ -1145,6 +1149,9 @@ function approxValueWidth(row, v) {
   }
   if (row.kind === 'wallpaper') return 12;
   if (typeof v === 'number') return 8;
+  // Use the exact mask width when we have one (avoids the underline
+  // clipping at the 56-px guess for longer words like 'multiple').
+  if (typeof v === 'string' && WORD_MASKS[v]) return WORD_MASKS[v].w;
   // ~6px per char roughly
   return Math.min(56, String(v).length * 7 + 4);
 }
@@ -1359,6 +1366,11 @@ function syncSidePanel() {
   const slotSel = document.getElementById('target-slot');
   slotSel.disabled = isFont;
   if (!isFont) slotSel.value = String(state.editing.slot);
+
+  // Side-panel selects that mirror state.  Controller can be cycled both
+  // from the canvas (PAGE_A_OPTIONS) and the side-panel dropdown, so keep
+  // the dropdown synced after every state mutation.
+  document.getElementById('controller').value = state.Controller;
 
   // preview-warning
   const warn = document.getElementById('preview-warning');
