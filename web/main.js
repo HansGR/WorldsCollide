@@ -41,6 +41,7 @@ const TOGGLE_DEFAULTS = {
   Cursor:     'reset',
   Reequip:    'optimum',
   SpellOrder: 1,
+  Controller: 'single',
   Wallpaper:  1,
   WindowStyle: 1,   // which Window* palette is "active" for editing/preview
 };
@@ -49,12 +50,13 @@ const TOGGLE_DEFAULTS = {
 // where the first label is the default-False display (matches config.py Field
 // `default=False`) and the second is default-True.
 const BINARY_OPTS = {
-  BatMode:  ['active', 'wait'],     // default wait (true)
-  Command:  ['window', 'short'],    // default window (false)
-  Gauge:    ['on',     'off'],      // default on (false → label "on")
-  Sound:    ['stereo', 'mono'],     // default stereo
-  Cursor:   ['reset',  'memory'],
-  Reequip:  ['optimum','empty'],
+  BatMode:    ['active', 'wait'],     // default wait (true)
+  Command:    ['window', 'short'],    // default window (false)
+  Gauge:      ['on',     'off'],      // default on (false → label "on")
+  Sound:      ['stereo', 'mono'],     // default stereo
+  Cursor:     ['reset',  'memory'],
+  Reequip:    ['optimum','empty'],
+  Controller: ['single', 'multiple'], // default single (false), maps to -ctrl
 };
 
 const NUMERIC_OPTS = {
@@ -1424,6 +1426,7 @@ document.getElementById('reset-all').addEventListener('click', () => {
   state.cursor = 0;
   document.getElementById('window-style').value = '1';
   document.getElementById('wallpaper').value = '1';
+  document.getElementById('controller').value = 'single';
   loadWindowAssets(1).then(() => {
     syncSidePanel(); render(); updateFlagString();
     notifyStateChange({ kind: 'reset-all' });
@@ -1441,6 +1444,11 @@ document.getElementById('window-style').addEventListener('change', (e) => {
 
 document.getElementById('wallpaper').addEventListener('change', (e) => {
   state.Wallpaper = parseInt(e.target.value, 10);
+  updateFlagString();
+});
+
+document.getElementById('controller').addEventListener('change', (e) => {
+  state.Controller = e.target.value;
   updateFlagString();
 });
 
@@ -1492,6 +1500,8 @@ function buildFlagString() {
     args.push(`-r ${state.Reequip}`);
   if (state.SpellOrder !== TOGGLE_DEFAULTS.SpellOrder)
     args.push(`-so ${state.SpellOrder}`);
+  if (state.Controller !== TOGGLE_DEFAULTS.Controller)
+    args.push(`-ctrl ${state.Controller}`);
   if (state.Wallpaper !== TOGGLE_DEFAULTS.Wallpaper)
     args.push(`-w ${state.Wallpaper}`);
   if (!deepEq(state.font, FONT_DEFAULT))
@@ -1584,6 +1594,7 @@ const FLAG_MAP = {
   '-c':   { key: 'Cursor'   },
   '-r':   { key: 'Reequip'  },
   '-so':  { key: 'SpellOrder', int: true },
+  '-ctrl':{ key: 'Controller'  },
   '-w':   { key: 'Wallpaper',  int: true },
 };
 
@@ -1626,6 +1637,7 @@ function applyFlagString(flags) {
   // Sync side panels + canvas to the freshly-loaded state.
   document.getElementById('window-style').value = String(state.WindowStyle);
   document.getElementById('wallpaper').value    = String(state.Wallpaper);
+  document.getElementById('controller').value   = state.Controller;
   return loadWindowAssets(state.WindowStyle).then(() => {
     updateTabUI();
     syncSidePanel();

@@ -78,6 +78,7 @@ def test_cli_parses_basic_flags():
         "--bat-mode", "active",
         "--command", "short",
         "--gauge", "off",
+        "--controller", "multiple",
         "--font", "31,0,0",
         "-w3", "1=10,10,10;4=20,20,20",
     ])
@@ -87,6 +88,7 @@ def test_cli_parses_basic_flags():
     assert ns.BatMode is False
     assert ns.Command is True
     assert ns.Gauge is True
+    assert ns.Controller2 is True
     assert ns.Font == [31, 0, 0]
     assert ns.Window3 == {1: [10, 10, 10], 4: [20, 20, 20]}
     # Unset options come through as None and get filtered out

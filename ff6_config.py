@@ -121,7 +121,7 @@ def _parse_window_palette(s):
 # argparse namespace straight through to set_config.
 CLI_OPTIONS = [
     "BatMode", "BatSpeed", "MsgSpeed", "Command", "Gauge", "Sound",
-    "Cursor", "Reequip", "SpellOrder", "Font", "Wallpaper",
+    "Cursor", "Reequip", "SpellOrder", "Controller2", "Font", "Wallpaper",
     *(f"Window{i}" for i in range(1, 9)),
 ]
 
@@ -163,6 +163,9 @@ def build_parser():
     p.add_argument("-so",  "--spell-order", dest="SpellOrder",
                    type=_int_in_range(1, 6),
                    help="1..6  (default: 1)")
+    p.add_argument("-ctrl","--controller",  dest="Controller2",
+                   type=_bool_choice("multiple", "single"),
+                   help="single | multiple  (default: single)")
     p.add_argument("-f",   "--font",        dest="Font",
                    type=_parse_rgb,
                    help="font color as R,G,B (each 0..31)")
