@@ -22,17 +22,35 @@ class LoneWolf(Event):
         )
 
     def mod(self):
-        self.mog_npc_id = 0x1c
-        self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
+        # In ruination mode, Lone Wolf event is on Narshe WoB instead of Tritoch Peak
+        if self.args.ruination_mode:
+            NARSHE_WOB_MAP = 0x014
+            # Lone Wolf is at map-local index 25 (0x19), but npc_id is offset by 0x10
+            # So npc_id = 0x19 + 0x10 = 0x29
+            NARSHE_WOB_LONE_WOLF_NPC_ID = 0x29
 
-        self.lone_wolf_npc_id = 0x1b
-        self.lone_wolf_npc = self.maps.get_npc(0x017, self.lone_wolf_npc_id)
+            # Load Narshe WoB Lone Wolf for property copying in ruination_mod()
+            self.lone_wolf_npc_id = NARSHE_WOB_LONE_WOLF_NPC_ID
+            self.lone_wolf_npc = self.maps.get_npc(NARSHE_WOB_MAP, self.lone_wolf_npc_id)
+
+            # DON'T initialize self.mog_npc here - ruination_mod() will set it
+            # after creating the WoR Tritoch Peak cliff scene NPCs
+        else:
+            self.mog_npc_id = 0x1c
+            self.mog_npc = self.maps.get_npc(0x017, self.mog_npc_id)
+
+            self.lone_wolf_npc_id = 0x1b
+            self.lone_wolf_npc = self.maps.get_npc(0x017, self.lone_wolf_npc_id)
 
         self.mog_moogle_room_npc_id = 0x10
         self.mog_moogle_room_npc = self.maps.get_npc(0x02c, self.mog_moogle_room_npc_id)
 
         # invisible npc blocking bridge until player chooses either mog or lone wolf
         self.invisible_bridge_block_npc_id = 0x1d
+
+        if self.args.ruination_mode:
+            self.ruination_mod()  # Edit npc data prior to other modifications
+            self.y_switch_cliff_mod()
 
         self.dialog_mod()
         self.chase_mod()
@@ -96,23 +114,99 @@ class LoneWolf(Event):
         # move lone wolf falling up to make room for adding character
         # skip copying lone wolf take this dialog at [0xcd693,0xcd695]
         space = Reserve(0xcd61b, 0xcd67b, "lone wolf mog dialog and naming", field.NOP())
-        space.copy_from(0xcd67c, 0xcd692)
-        space.copy_from(0xcd696, 0xcd6bf)
+        if self.args.ruination_mode:
+            # Rewrite explicitly with updated NPC IDs (copy_from would use old hardcoded $1C/$1B)
+            # Range 1 (0xcd67c-0xcd692): Mog/character celebration animation
+            space.write(
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.AnimateHighJump(),
+                    field_entity.Turn(direction.RIGHT),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.UP),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.LEFT),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.DOWN),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.AnimateFrontRightHandUp(),
+                ),
+                field.Pause(1.5),
+                # Range 2 (0xcd696-0xcd6bf): Lone Wolf falls off cliff
+                field.DisableEntityCollision(self.lone_wolf_npc_id),
+                field.PlaySoundEffect(186),
+                field.EntityAct(self.lone_wolf_npc_id, True,
+                    field_entity.SetSpriteLayer(3),
+                    field_entity.DisableWalkingAnimation(),
+                    field_entity.SetSpeed(field_entity.Speed.FAST),
+                    field_entity.Turn(direction.RIGHT),
+                    field_entity.AnimateHighJump(),
+                    field_entity.Move(direction.RIGHT, 2),
+                    field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                    field_entity.Move(direction.DOWN, 4),
+                ),
+                field.HideEntity(self.lone_wolf_npc_id),
+                field.RefreshEntities(),
+                field.EnableEntityCollision(self.lone_wolf_npc_id),
+                field.EntityAct(field_entity.PARTY0, False,
+                    field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                    field_entity.MoveDiagonal(direction.RIGHT, 1, direction.DOWN, 1),
+                    field_entity.Move(direction.RIGHT, 2),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                    field_entity.Move(direction.RIGHT, 4),
+                ),
+                field.Pause(2.0),
+                field.EntityAct(field_entity.PARTY0, False,
+                    field_entity.Turn(direction.UP),
+                ),
+                field.EntityAct(self.mog_npc_id, True,
+                    field_entity.Turn(direction.DOWN),
+                ),
+                field.Pause(0.5),
+            )
+        else:
+            space.copy_from(0xcd67c, 0xcd692)
+            space.copy_from(0xcd696, 0xcd6bf)
         space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
 
-        space = Reserve(0xcd67c, 0xcd6dc, "lone wolf add char", field.NOP())
-        space.write(
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+        if self.args.ruination_mode is not None:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+            branch_refresh_src = [
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
+                field.SetupBranchRecruit(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchRecruit(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CC, branch_refresh_src, "lone wolf branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
+        hide_entities = [
             field.HideEntity(self.mog_npc_id),
             field.HideEntity(self.invisible_bridge_block_npc_id),
+        ]
+        if self.args.ruination_mode:
+            hide_entities.append(field.HideEntity(self.invisible_bridge_block_npc_id_2))
+
+        space = Reserve(0xcd67c, 0xcd696, "lone wolf add char", field.NOP())
+        space.write(
+            field.Call(refresh_addr),
+            hide_entities,
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.SetEventBit(npc_bit.MOG_MOOGLE_ROOM_WOR),
             field.SetEventBit(event_bit.RECRUITED_MOG_WOB),
             field.RefreshEntities(),
             field.FadeInScreen(),
-            field.Branch(space.end_address + 1), # skip nops
+            field.Branch(0xcd6dd), # skip nops
         )
 
     def esper_item_mod(self, add_esper_item, sound_dialog_esper_item):
@@ -174,14 +268,19 @@ class LoneWolf(Event):
         )
 
         # add pause after lone wolf jumps to wait for falling sound effect
-        src = [
+        hide_block_src = [
             field.HideEntity(self.lone_wolf_npc_id),
             field.RefreshEntities(),
             field.HideEntity(self.invisible_bridge_block_npc_id),
+        ]
+        if self.args.ruination_mode:
+            hide_block_src.append(field.HideEntity(self.invisible_bridge_block_npc_id_2))
+            hide_block_src.append(field.Call(self.restore_y_switch))   # restore y-switching after lone wolf event
+        hide_block_src.extend([
             field.RefreshEntities(),
             field.Return(),
-        ]
-        space = Write(Bank.CC, src, "lone wolf hide lone wolf and remove bridge block")
+        ])
+        space = Write(Bank.CC, hide_block_src, "lone wolf hide lone wolf and remove bridge block")
         hide_npcs = space.start_address
 
         space = Reserve(0xcd5d1, 0xcd5d6, "lone wolf hide npcs after fall", field.NOP())
@@ -191,19 +290,44 @@ class LoneWolf(Event):
         )
 
     def finish_check_mod(self):
-        src = [
-            field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
-            field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
-            field.FinishCheck(),
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "lone wolf finish check")
-        finish_check = space.start_address
+        if self.args.ruination_mode:
+            # Include HideEntity for both bridge blockers in the subroutine
+            # This covers the esper/item "saved mog" path where code flows through 0xcd6da
+            src = [
+                field.HideEntity(self.invisible_bridge_block_npc_id),
+                field.HideEntity(self.invisible_bridge_block_npc_id_2),
+                field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
+                field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
+                field.Call(self.restore_y_switch),
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "lone wolf finish check")
+            finish_check = space.start_address
 
-        space = Reserve(0xcd6dd, 0xcd6e0, "lone wolf finish saving mog", field.NOP())
-        space.write(
-            field.Call(finish_check),
-        )
+            # Extend reserve to cover HideEntity at 0xcd6da-0xcd6db + Call at 0xcd6dd-0xcd6e0
+            # Write NOPs first so Call starts at 0xcd6dd (Branch target from character_mod)
+            space = Reserve(0xcd6da, 0xcd6e0, "lone wolf finish saving mog", field.NOP())
+            space.write(
+                field.NOP(),
+                field.NOP(),
+                field.NOP(),
+                field.Call(finish_check),
+            )
+        else:
+            src = [
+                field.ClearEventBit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF),
+                field.ClearEventBit(npc_bit.LONE_WOLF_NARSHE_CLIFF_BRIDGE),
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "lone wolf finish check")
+            finish_check = space.start_address
+
+            space = Reserve(0xcd6dd, 0xcd6e0, "lone wolf finish saving mog", field.NOP())
+            space.write(
+                field.Call(finish_check),
+            )
 
         space = Reserve(0xcd5d7, 0xcd5da, "lone wolf finish saving gold hairpin", field.NOP())
         space.write(
@@ -316,3 +440,257 @@ class LoneWolf(Event):
         space = Write(Bank.CC, src, "lone wolf new moogle room entrance event")
 
         self.maps.set_entrance_event(0x02c, space.start_address - EVENT_CODE_START)
+
+    def y_switch_cliff_mod(self):
+        """Disable y-party-switching during the Tritoch Peak cliff scene (CC/D4FE-CC/D593).
+        Saves the y-switch state to multipurpose_map(2) and restores it when the scene ends."""
+
+        # Start subroutine: save y-switch state and disable, then run original CC/D506-CC/D50F
+        start_src = [
+            field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, "SKIP_SAVE"),
+            field.SetEventBit(event_bit.multipurpose_map(2)),
+            field.CreateEntity(self.invisible_bridge_block_npc_id),  # Necessary to create & show now, so the player can't do a map transition.
+            field.ShowEntity(self.invisible_bridge_block_npc_id),
+            "SKIP_SAVE",
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            # Original instructions from CC/D506-CC/D50F:
+            field.Pause(0.5),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.DisableWalkingAnimation(),
+                field_entity.Move(direction.DOWN, 1),
+                field_entity.EnableWalkingAnimation(),
+                field_entity.Turn(direction.UP),
+            ),
+            field.Pause(0.5),
+            field.Return(),
+        ]
+        start_sub = Write(Bank.CC, start_src, "lone wolf y-switch save and disable")
+
+        space = Reserve(0xcd506, 0xcd50f, "lone wolf y-switch start hook", field.NOP())
+        space.write(
+            field.Call(start_sub.start_address),
+        )
+
+        # End subroutine: write restore y-switch code to be used in finish_check
+        end_src = [
+            field.BranchIfEventBitClear(event_bit.multipurpose_map(2), "SKIP_RESTORE"),
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.ClearEventBit(event_bit.multipurpose_map(2)),
+            "SKIP_RESTORE",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, end_src, "lone wolf y-switch restore")
+        self.restore_y_switch = space.start_address
+
+
+    def ruination_mod(self):
+        """
+        Ruination mode moves Lone Wolf event from WoB to WoR for both locations:
+        1. Initial chase: Narshe WoB -> Narshe WoR
+        2. Cliff scene: Tritoch Peak WoB -> Tritoch Peak WoR
+        """
+        NARSHE_WOB_MAP = 0x014
+        NARSHE_WOR_MAP = 0x020
+        NARSHE_TREASURE_MAP = 0x01e
+        TRITOCH_WOB_MAP = 0x017
+        TRITOCH_WOR_MAP = 0x023
+
+        # Tritoch Peak original NPC IDs (for copying the cliff scene to WoR)
+        tritoch_lone_wolf_npc_id = 0x1b
+        tritoch_mog_npc_id = 0x1c
+
+        # Narshe WoR NPC IDs
+        narshe_wor_lone_wolf_npc_id = 0x10
+        narshe_wor_treasurehouse_npc_id = 0x14
+
+        # (1) Edit entrance event for Narshe treasure house
+        # Entrance event: 0xc395a:  just handles which song is playing.
+        # Tile event: (79, 17, 0xcd3ce)
+        space = Reserve(0xcd3ce, 0xcd3d3, "Remove Lone Wolf world check", field.NOP())
+
+        # Exit tile event: (79, 18, 0xc3933).  Since we're not using Narshe WOB, just delete the event tile & change exit to go to Narshe WOR
+        self.maps.delete_event(map_id=NARSHE_TREASURE_MAP, x=79, y=18)
+        treasure_exit_id = 128
+        treasure_exit = self.maps.get_exit(treasure_exit_id)
+        treasure_exit.dest_map = NARSHE_WOR_MAP
+
+        # (2) Remove lock from Narshe treasure house
+        treasure_blocker = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=narshe_wor_treasurehouse_npc_id)
+        treasure_blocker.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+        treasure_blocker.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+
+        # (3) Move Lone Wolf initial chase event from Narshe WoB to Narshe WoR
+        # Move event tile from (49, 37) on WoB to same position on WoR
+        # Event script address: 0xcd424
+        old_event = self.maps.get_event(map_id=NARSHE_WOB_MAP, x=49, y=37)
+
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = old_event.x
+        new_event.y = old_event.y
+        new_event.event_address = old_event.event_address
+
+        self.maps.add_event(map_id=NARSHE_WOR_MAP, new_event=new_event)
+        self.maps.delete_event(map_id=NARSHE_WOB_MAP, x=old_event.x, y=old_event.y)
+
+        # (3a) Update event script to reference correct WoR NPC ID
+        # The event script has 5 references to the NPC that need updating
+        space = Reserve(0xcd42d, 0xcd42e, "Edit Lone Wolf NPC_ID 1", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd43b, 0xcd43b, "Edit Lone Wolf NPC_ID 2", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd443, 0xcd443, "Edit Lone Wolf NPC_ID 3", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd44d, 0xcd44d, "Edit Lone Wolf NPC_ID 4", narshe_wor_lone_wolf_npc_id)
+        space = Reserve(0xcd454, 0xcd454, "Edit Lone Wolf NPC_ID 5", narshe_wor_lone_wolf_npc_id)
+
+        # (3b) Setup Lone Wolf NPC on Narshe WoR
+        # Copy all properties from Narshe WoB Lone Wolf (self.lone_wolf_npc loaded at line 34)
+        narshe_wor_lone_wolf = self.maps.get_npc(map_id=NARSHE_WOR_MAP, npc_id=narshe_wor_lone_wolf_npc_id)
+
+        # Copy all visual and behavioral properties
+        narshe_wor_lone_wolf.sprite = self.lone_wolf_npc.sprite                    # 56 (Lone Wolf sprite)
+        narshe_wor_lone_wolf.palette = self.lone_wolf_npc.palette                  # 4
+        narshe_wor_lone_wolf.direction = self.lone_wolf_npc.direction              # 0 (UP)
+        narshe_wor_lone_wolf.no_face_on_trigger = self.lone_wolf_npc.no_face_on_trigger
+        narshe_wor_lone_wolf.speed = self.lone_wolf_npc.speed                      # 3 (FASTEST)
+        narshe_wor_lone_wolf.movement = self.lone_wolf_npc.movement                # 0 (NO_MOVE)
+        narshe_wor_lone_wolf.split_sprite = self.lone_wolf_npc.split_sprite
+        narshe_wor_lone_wolf.const_sprite = self.lone_wolf_npc.const_sprite
+        narshe_wor_lone_wolf.vehicle = self.lone_wolf_npc.vehicle
+        narshe_wor_lone_wolf.event_address = self.lone_wolf_npc.event_address      # 0x5eb3 (just return - chase triggered by event tile)
+        narshe_wor_lone_wolf.map_layer = self.lone_wolf_npc.map_layer
+        narshe_wor_lone_wolf.background_scrolls = self.lone_wolf_npc.background_scrolls
+        narshe_wor_lone_wolf.background_layer = self.lone_wolf_npc.background_layer
+        narshe_wor_lone_wolf.unknown1 = self.lone_wolf_npc.unknown1
+        narshe_wor_lone_wolf.unknown2 = self.lone_wolf_npc.unknown2
+
+        # Override position and visibility for WoR location
+        narshe_wor_lone_wolf.x = 49                                                # Same x as WoB
+        narshe_wor_lone_wolf.y = 32                                                # Same y as WoB
+        narshe_wor_lone_wolf.event_bit = npc_bit.event_bit(0x63f)                 # Same npc_bit as WoB
+        narshe_wor_lone_wolf.event_byte = npc_bit.event_byte(0x63f)
+
+        # (4) Add 2nd lone wolf event to WOR Narshe?  Skip for now, due to randomized maps.
+        # (5) Add 3rd lone wolf event to WOR Narshe?  Skip for now, due to randomized maps.
+
+        # (6) Move cliff scene from Tritoch Peak WoB to WoR
+        # This is SEPARATE from the Narshe chase - it's the Mog/Lone Wolf choice on the cliff
+
+        # Copy Lone Wolf cliff NPC (0x1b on WoB -> new ID on WoR)
+        tritoch_lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_lone_wolf_npc_id)
+        tritoch_wor_lone_wolf_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=tritoch_lone_wolf_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_lone_wolf_npc_id)
+
+        # Copy Mog cliff NPC (0x1c on WoB -> new ID on WoR)
+        tritoch_mog_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_mog_npc_id)
+        tritoch_wor_mog_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=tritoch_mog_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=tritoch_mog_npc_id)
+
+        # IMPORTANT: Update instance variables to point to Tritoch WoR NPCs
+        # These are used by character_mod(), esper_mod(), item_mod(), and other methods
+        # that modify the cliff scene reward and animations.
+        # Patch npc data as appropriate.
+        self.lone_wolf_npc_id = tritoch_wor_lone_wolf_npc_id
+        self.mog_npc_id = tritoch_wor_mog_npc_id
+        self.lone_wolf_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_lone_wolf_npc_id)
+        self.lone_wolf_npc.event_byte = npc_bit.event_byte(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
+        self.lone_wolf_npc.event_bit = npc_bit.event_bit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
+        self.mog_npc = self.maps.get_npc(map_id=TRITOCH_WOR_MAP, npc_id=tritoch_wor_mog_npc_id)
+        self.mog_npc.x = 9
+        self.mog_npc.y = 16
+        self.mog_npc.split_sprite = 0
+        self.mog_npc.event_address = 0x2d5df  # tritoch_mog_npc.event_address  # 0xcd5df
+        self.mog_npc.event_byte = npc_bit.event_byte(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
+        self.mog_npc.event_bit = npc_bit.event_bit(npc_bit.LONE_WOLF_MOG_NARSHE_CLIFF)
+
+        # Copy bridge animation NPC (runs across bridge during cliff scene)
+        lonewolf_bridge_npc_id = 0x1a
+        lonewolf_bridge_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
+        wor_lonewolf_bridge_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=lonewolf_bridge_npc)
+        self.maps.remove_npc(map_id=TRITOCH_WOB_MAP, npc_id=lonewolf_bridge_npc_id)
+
+        # Copy invisible bridge blocker NPC (blocks bridge until player chooses mog or lone wolf)
+        #bridge_block_npc_id = 0x1d
+        #bridge_block_npc = self.maps.get_npc(map_id=TRITOCH_WOB_MAP, npc_id=bridge_block_npc_id)
+        from data.npc import InvisibleBlockNPC
+        bridge_block_npc = InvisibleBlockNPC(17, 20)  # original position (x += 3 to put graphical glitch off screen!)
+        bridge_block_npc.event_bit = npc_bit.event_bit(0x641)
+        bridge_block_npc.event_byte = npc_bit.event_byte(0x641)
+        wor_bridge_block_npc_id = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc)
+        self.invisible_bridge_block_npc_id = wor_bridge_block_npc_id
+
+        # Second bridge block NPC at (9, 12) to cover WoR event exit
+        bridge_block_npc_2 = InvisibleBlockNPC(9, 12)
+        bridge_block_npc_2.event_bit = npc_bit.event_bit(0x641)
+        bridge_block_npc_2.event_byte = npc_bit.event_byte(0x641)
+        wor_bridge_block_npc_id_2 = self.maps.append_npc(map_id=TRITOCH_WOR_MAP, new_npc=bridge_block_npc_2)
+        self.invisible_bridge_block_npc_id_2 = wor_bridge_block_npc_id_2
+
+        # (6a) Move Tritoch Peak cliff scene event tiles from WoB to WoR
+        # These event tiles trigger the animations and dialog for the cliff scene
+        event_tile_xy = [(22, 20, 0xcd4a8),
+                         (8, 18, 0xcd4dd),
+                         (9, 18, 0xcd4fe),
+                         (10, 18, 0xcd4f1),
+                         (8, 19, 0xcd523),
+                         (10, 19, 0xcd523),
+                         (9, 20, 0xcd523)]
+        for xy in event_tile_xy:
+            old_event = self.maps.get_event(map_id=TRITOCH_WOB_MAP, x=xy[0], y=xy[1])
+            new_event = MapEvent()
+            new_event.x = old_event.x
+            new_event.y = old_event.y
+            new_event.event_address = old_event.event_address
+            self.maps.add_event(map_id=TRITOCH_WOR_MAP, new_event=new_event)
+            self.maps.delete_event(map_id=TRITOCH_WOB_MAP, x=old_event.x, y=old_event.y)
+
+        # (6b) Update cliff scene event scripts to reference WoR NPC IDs
+        # Event scripts contain hardcoded NPC IDs that need to be updated after copying to WoR
+
+        # Update bridge NPC references (6 locations in event script)
+        addresses = [0xcd4b1, 0xcd4b3, 0xcd4b5, 0xcd4b9, 0xcd4c0, 0xcd4c5]
+        for i, addr in enumerate(addresses):
+            space = Reserve(addr, addr, "edit lone wolf bridge animation " + str(i), wor_lonewolf_bridge_npc_id)
+
+        # Update bridge blocker NPC references
+        # 0xcd587-0xcd58a: CreateEntity+ShowEntity (4 bytes) -> Call subroutine for both blockers
+        create_show_blockers_src = [
+            field.CreateEntity(wor_bridge_block_npc_id),
+            field.ShowEntity(wor_bridge_block_npc_id),
+            field.CreateEntity(wor_bridge_block_npc_id_2),
+            field.ShowEntity(wor_bridge_block_npc_id_2),
+            field.Return(),
+        ]
+        create_show_blockers = Write(Bank.CC, create_show_blockers_src, "lone wolf create show both bridge blockers")
+        space = Reserve(0xcd587, 0xcd58a, "lone wolf create/show bridge blockers", field.NOP())
+        space.write(field.Call(create_show_blockers.start_address))
+        # 0xcd6da-0xcd6db: HideEntity is handled in finish_check_mod() with extended reserve
+
+        # Update Mog NPC references (26 locations in event script)
+        # Note: addresses 0xcd67c-0xcd68d are in the range that character_mod() overwrites,
+        # so skip them if the reward is a character to avoid space conflicts
+        # Note: 0xcd591 excluded - handled by y_switch_cliff_mod()
+        self.mog_addresses = [0xcd4cc, 0xcd4d0, 0xcd4d4, 0xcd514, 0xcd538, 0xcd53f, 0xcd543, 0xcd548, 0xcd54f, 0xcd557,
+                         0xcd573, 0xcd5ab, 0xcd5b5, 0xcd5fc,
+                         # 0xcD61F, 0xcD626, 0xcD62A, 0xcD62F, 0xcD648, 0xcD674,
+                         0xcd67c, 0xcd681, 0xcd685, 0xcd689, 0xcd68d,
+                         0xcd6b1, 0xcd6bb, 0xcd6c4, 0xcd6ca, 0xcd6cb, 0xcd6d4]
+        # Addresses that conflict with character_mod()'s Reserve(0xcd67c, 0xcd696)
+        char_mod_conflict_range = range(0xcd67c, 0xcd697)
+        for i, addr in enumerate(self.mog_addresses):
+            if self.reward1.type == RewardType.CHARACTER and addr in char_mod_conflict_range:
+                continue  # Skip - character_mod() will overwrite this entire section
+            space = Reserve(addr, addr, "edit lone wolf mog animation " + str(i), tritoch_wor_mog_npc_id)
+
+        # Update Lone Wolf NPC references (12 locations in event script)
+        # Note: 0xcd58f excluded - handled by y_switch_cliff_mod()
+        self.lonewolf_addresses = [0xcd4ce, 0xcd4d2, 0xcd566, 0xcd569, 0xcd5c2, 0xcd5c5, 0xcd5dc,
+                              0xcd697, 0xcd69a, 0xcd6a7, 0xcd6aa]
+        for i, addr in enumerate(self.lonewolf_addresses):
+            space = Reserve(addr, addr, "edit lone wolf animation " + str(i), tritoch_wor_lone_wolf_npc_id)
+
+        # (6c) Simplify cliff scene entry condition
+        # In ruination mode, only require seeing the first Narshe chase animation
+        # (instead of all three chase scenes from vanilla WoB)
+        space = Reserve(0xcd4a8, 0xcd4af, "edit entry condition for LoneWolf", field.NOP())
+        space.write(field.BranchIfAny([event_bit.CHASING_LONE_WOLF1, False, 0x23D, True],
+                                      field.RETURN))

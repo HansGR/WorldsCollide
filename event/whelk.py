@@ -24,6 +24,9 @@ class Whelk(Event):
         self.cleanup_mod()
         self.whelk_battle_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -160,3 +163,9 @@ class Whelk(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def ruination_mod(self):
+        # Modify Whelk room palette to look like WOR
+        map_id = 0x02b
+        whelk_room_properties = self.maps.properties[map_id]
+        whelk_room_properties.paletteindex = 0x05

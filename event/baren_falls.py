@@ -18,6 +18,12 @@ class BarenFalls(Event):
         if self.args.character_gating:
             self.add_gating_condition()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
+        if self.args.no_free_heals:
+            self.remove_free_heal_mod()
+
         self.rizopas_battle_mod()
         self.after_battle_mod()
         self.already_complete_mod()
@@ -78,23 +84,55 @@ class BarenFalls(Event):
         space = Reserve(0xbc0cb, 0xbc0cc, "baren falls pause before starting song", field.NOP())
 
     def already_complete_mod(self):
-        # jumped after rizopas already defeated, exit to world map after battle
-        src = [
-            # move airship
-            field.StartSong(0),
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x000, direction.DOWN, default_music = False,
-                          x = 192, y = 105, fade_in = False, airship = True),
-            vehicle.SetPosition(192, 105),
-            vehicle.SetEventBit(event_bit.VELDT_WORLD_MUSIC),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        if self.args.ruination_mode:
+            # Wake up on shore
+            src = [
+                field.LoadMap(0x09f, direction.DOWN, default_music=True, x=10, y=11, fade_in=False),
+                field.StartSong(58),        # Windy shores
+                field.EntityAct(field_entity.PARTY0, True, [
+                    field_entity.AnimateKnockedOut()
+                ]),
+                field.FadeInScreen(),
+                field.WaitForFade(),
+                field.Pause(1),
+                field.EntityAct(field_entity.PARTY0, True, [
+                    field_entity.AnimateStandingHeadDown(),
+                    field_entity.Pause(8),
+                    field_entity.AnimateTiltHeadLeft(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateTiltHeadRight(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateTiltHeadLeft(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateTiltHeadRight(),
+                    field_entity.Pause(1),
+                    field_entity.AnimateStandingFront(),
+                ]),
+                field.RefreshEntities(),
+                field.FreeScreen(),
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "baren falls exit function")
+            exit_function = space.start_address
 
-            # load world map
-            vehicle.LoadMap(0x000, direction.DOWN, default_music = True, x = 192, y = 105),
-            world.End(),
-        ]
-        space = Write(Bank.CB, src, "baren falls exit function")
-        exit_function = space.start_address
+        else:
+            # jumped after rizopas already defeated, exit to world map after battle
+            src = [
+                # move airship
+                field.StartSong(0),
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(0x000, direction.DOWN, default_music=False,
+                              x=192, y=105, fade_in=False, airship=True),
+                vehicle.SetPosition(192, 105),
+                vehicle.SetEventBit(event_bit.VELDT_WORLD_MUSIC),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+
+                # load world map
+                vehicle.LoadMap(0x000, direction.DOWN, default_music=True, x=192, y=105),
+                world.End(),
+            ]
+            space = Write(Bank.CB, src, "baren falls exit function")
+            exit_function = space.start_address
 
         space = Reserve(0xbc203, 0xbc209, "baren falls rizopas already defeated, load wob", field.NOP())
         space.write(
@@ -121,11 +159,25 @@ class BarenFalls(Event):
             field.Branch(space.end_address + 1), # skip nop
         )
 
+        if self.args.ruination_mode is not None:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+            branch_refresh_src = [
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
+                field.SetupBranchRecruit(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchRecruit(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CB, branch_refresh_src, "baren falls branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
         space = Reserve(0xbc1e2, 0xbc1ee, "baren falls gau runs off", field.NOP())
         space.write(
             field.Pause(0.5),
             field.RecruitCharacter(character),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(refresh_addr),
             field.Branch(space.end_address + 1), # skip nop
         )
 
@@ -185,3 +237,33 @@ class BarenFalls(Event):
         space.write(
             asm.STA(0xEC71, asm.ABS_X)
         )
+
+    def remove_free_heal_mod(self):
+        # Event beginning the battle has a free heal.  Remove it.
+        # CB/C0B2: B2    Call subroutine $CACFBD (heals all HP/MP/Statuses except M-Tek & Dog Block)
+        space = Reserve(0xbc0b2, 0xbc0b5, "Baren Falls remove free heal", field.NOP())
+
+    def ruination_mod(self):
+        pass
+
+        # Add the exit event(s) that go to switchyard tile for "door" exit 1561
+        # from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+        # event_id = 1561
+        # switchyard_src = [
+        #     field.FadeLoadMap(map_id=0x0, direction=direction.DOWN, default_music=True, x=192, y=105, fade_in=True, airship=False),
+        #     field.Return(),
+        # ]
+        # AddSwitchyardEvent(event_id=event_id, maps=self.maps, src=switchyard_src)
+        #
+        # src = [
+        #     GoToSwitchyard(event_id, map='field'),
+        #     field.Return()
+        # ]
+        # space = Write(Bank.CB, src, description='Veldt exit to world map id=1561')
+        #
+        # # Update event_exit_info[1561] with this information
+        # from data.event_exit_info import event_exit_info
+        # event_exit_info[event_id][0:3] = [space.start_address, 7, 1]
+
+
+

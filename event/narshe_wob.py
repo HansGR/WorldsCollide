@@ -1,5 +1,7 @@
 from event.event import *
 
+NUM_HEALS = 3
+
 class NarsheWOB(Event):
     def name(self):
         return "Narshe WOB"
@@ -15,10 +17,25 @@ class NarsheWOB(Event):
             field.ClearEventBit(npc_bit.SOLDIER_DOORWAY_ARVIS_HOUSE),
         )
 
+        if self.args.no_free_heals:
+            # Initialize the Narshe school bucket drink counter to 3 drinks.
+            # Two event bits encode the remaining drinks: (SCHOOL_LIMITED_HEALS_1,
+            # SCHOOL_LIMITED_HEALS_2) = (1,1)=3, (1,0)=2, (0,1)=1, (0,0)=0.
+            space.write(
+                field.SetEventBit(event_bit.SCHOOL_LIMITED_HEALS_1),
+                field.SetEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            )
+
     def mod(self):
         self.terra_elder_scene_mod()
         self.security_checkpoint_mod()
         self.shop_mod()
+
+        if self.args.no_free_heals:
+            self.limited_heals()
+
+        if self.args.ruination_mode:
+            self.ruination_mod()
 
     def end_terra_scenario(self):
         # delete the end of terra's scenario event in arvis' house
@@ -85,3 +102,632 @@ class NarsheWOB(Event):
         space.write(
             field.Branch("INVOKE_SHOP"),
         )
+
+    def limited_heals(self):
+        """Limit the Narshe school heal bucket to NUM_HEALS uses (gated by -nfh).
+
+        Two event bits track remaining drinks: (SCHOOL_LIMITED_HEALS_1,
+        SCHOOL_LIMITED_HEALS_2) = (1,1)=3, (1,0)=2, (0,1)=1, (0,0)=0. The bits
+        are initialized to (1,1) in ``init_event_bits`` when -nfh is active.
+        """
+        school_map_id = 0x068
+        pot_heal_address = 0xc33ae
+
+        # Dialog IDs for the bucket prompts. 1461 is used by Figaro Castle inn;
+        # 1462-1466 are left for ruination_mod's reform dialogs.
+        # See ARCHIVE.md "Ruination Mode — Dialog ID Reservations" for the
+        # complete Maduin-block layout.
+        three_id = 1470
+        two_id = 1469
+        one_id = 1468
+        empty_id = 1467
+
+        self.dialogs.set_text(three_id, "Drink from the bucket?<line>(3 drinks left)<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(two_id, "Drink from the bucket?<line>(2 drinks left)<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(one_id, "Drink from the bucket?<line>(1 drink left)<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(empty_id, "The bucket is empty.<end>")
+
+        drink_src = [
+            # Check top bit (SCHOOL_LIMITED_HEALS_1)
+            field.BranchIfEventBitClear(event_bit.SCHOOL_LIMITED_HEALS_1, "TOP_CLEAR"),
+            # top=1: check bottom bit
+            field.BranchIfEventBitClear(event_bit.SCHOOL_LIMITED_HEALS_2, "TWO_DRINKS"),
+            # (1,1) = 3 drinks
+            field.DialogBranch(three_id, dest1="DRINK_3_TO_2", dest2="RETURN"),
+            "TWO_DRINKS",
+            # (1,0) = 2 drinks
+            field.DialogBranch(two_id, dest1="DRINK_2_TO_1", dest2="RETURN"),
+            "TOP_CLEAR",
+            # top=0: check bottom bit
+            field.BranchIfEventBitClear(event_bit.SCHOOL_LIMITED_HEALS_2, "EMPTY"),
+            # (0,1) = 1 drink
+            field.DialogBranch(one_id, dest1="DRINK_1_TO_0", dest2="RETURN"),
+            "EMPTY",
+            # (0,0) = 0 drinks
+            field.Dialog(empty_id),
+            "RETURN",
+            field.Return(),
+
+            # 3 -> 2 drinks: (1,1) -> (1,0), clear bottom
+            "DRINK_3_TO_2",
+            field.ClearEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            field.Branch("HEAL"),
+            # 2 -> 1 drinks: (1,0) -> (0,1), clear top, set bottom
+            "DRINK_2_TO_1",
+            field.ClearEventBit(event_bit.SCHOOL_LIMITED_HEALS_1),
+            field.SetEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            field.Branch("HEAL"),
+            # 1 -> 0 drinks: (0,1) -> (0,0), clear bottom
+            "DRINK_1_TO_0",
+            field.ClearEventBit(event_bit.SCHOOL_LIMITED_HEALS_2),
+            # fallthrough
+            "HEAL",
+            field.Call(pot_heal_address),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, drink_src, "Limited use pot heal")
+
+        pot_npc_id = 0x12
+        pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
+        pot_npc.event_address = space.start_address - EVENT_CODE_START
+
+    def ruination_mod(self):
+        school_map_id = 0x068
+
+        # (1) Change destination of school door to esper gate
+        school_door_id = 392
+        school_door = self.maps.get_exit(school_door_id)  # (0x068, 108, 53)
+        school_door.dest_map = 0x0da
+        school_door.dest_x = 55
+        school_door.dest_y = 30
+
+        # (1a) Delete event tile that handles WOB vs WOR exit (always go to same place)
+        self.maps.delete_event(school_map_id, school_door.x, school_door.y)
+
+        # (2) Fetch the pot NPC so the ghost NPC below can inherit its
+        # event_byte/event_bit. Limiting the bucket to a few heals is handled by
+        # limited_heals(), which is gated independently by -nfh.
+        pot_npc_id = 0x12
+        pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
+
+        # (3) Update the NPC dialogs & actions
+        # 1461 used by Figaro Castle inn; 1467-1470 reserved for limited_heals.
+        # See ARCHIVE.md "Ruination Mode — Dialog ID Reservations".
+        NARSHE_DIALOG_IDS = [i for i in range(1462, 1467)]
+        counter_npc_id = 0x10
+        right_npc_id = 0x11
+        left_npc_id = 0x13
+        ghost_npc_id = 0x14
+        mid_npc_id = 0x15
+
+        self.dialogs.set_text(601, "We can no longer replenish our supplies. Please use this water wisely.<end>")
+
+        info_id = 0x0258  # NARSHE_DIALOG_IDS.pop()
+        self.dialogs.set_text(info_id, "Welcome. We have little we can offer you, but will help as much as we can." +
+                              "<page>Each door leads to a path through the ruins." +
+                              "<page>As you travel, you'll find green warp points. If you're in danger, use them to return to the Esper world." +
+                              "<page>All roads lead to Kefka's tower. But you'll need to send a team down each path to defeat him." +
+                              "<page>Speak to the ghost to reform your party.<end>")
+        space = Reserve(0xc33a2, 0xc33a4, "make npc dialog the same in both worlds")
+        space.write(field.Dialog(info_id, top_of_screen=False))
+
+        reform_id = NARSHE_DIALOG_IDS.pop()
+        self.dialogs.set_text(reform_id, "<choice> Reform parties.<line><choice> Unequip those not in party.<line><choice> Unequip all members.<line><choice> Don't do a thing!<end>")
+        reform_id_2 = NARSHE_DIALOG_IDS.pop()
+        self.dialogs.set_text(reform_id_2,
+                              "How many parties?<line><choice> 1<line><choice> 2<line><choice> never mind<end>")
+        reform_id_3 = NARSHE_DIALOG_IDS.pop()
+        self.dialogs.set_text(reform_id_3,
+                              "How many parties?<line><choice> 1      <choice> 2<line><choice> 3      <choice> never mind<end>")
+
+        from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY, \
+            REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES, REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES, \
+            REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES
+        from constants.entities import CHARACTER_COUNT
+
+        # Build a safe version of REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES that
+        # preserves party assignments for away characters (character_available cleared).
+        remove_available_src = []
+        for char in range(CHARACTER_COUNT):
+            remove_available_src += [
+                field.BranchIfEventBitClear(event_bit.character_available(char), f"SKIP_{char}"),
+                field.RemoveCharacterFromParties(char),
+                f"SKIP_{char}",
+            ]
+        remove_available_src += [field.Return()]
+        space = Write(Bank.CA, remove_available_src, "Remove available characters from parties (preserve away)")
+        remove_available_addr = space.start_address
+
+        # Position subroutines: position PARTY0 at each location.
+        # These do NOT include SetParty/SetPartyMap - the caller handles those
+        # dynamically based on which party slots are free.
+        src_pos_center = [
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=109, y=49),
+                            field_entity.Turn(direction.RIGHT),
+                            ),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src_pos_center, "Position party at center (reform school)")
+        pos_center_addr = space.start_address
+
+        src_pos_upper_right = [
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=110, y=48),
+                            field_entity.Turn(direction.DOWN),
+                            ),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src_pos_upper_right, "Position party at upper-right (reform school)")
+        pos_upper_right_addr = space.start_address
+
+        src_pos_lower_right = [
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=110, y=50),
+                            field_entity.Turn(direction.UP),
+                            ),
+            field.ShowEntity(field_entity.PARTY0),
+            field.UpdatePartyLeader(),
+            field.Return()
+        ]
+        space = Write(Bank.CA, src_pos_lower_right, "Position party at lower-right (reform school)")
+        pos_lower_right_addr = space.start_address
+
+        # Subroutine: sync PARTY_N_IN_WOR for all non-away parties from current IN_WOR.
+        # Called after party creation so the Y-party switch code has correct per-party state.
+        sync_in_wor_src = [
+            field.BranchIfEventBitClear(event_bit.IN_WOR, "WOR_CLEAR"),
+            # IN_WOR is set: set PARTY_N_IN_WOR for each non-away party
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SKIP_P1_S"),
+            field.SetEventBit(event_bit.PARTY_1_IN_WOR),
+            "SKIP_P1_S",
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SKIP_P2_S"),
+            field.SetEventBit(event_bit.PARTY_2_IN_WOR),
+            "SKIP_P2_S",
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "SKIP_P3_S"),
+            field.SetEventBit(event_bit.PARTY_3_IN_WOR),
+            "SKIP_P3_S",
+            field.Return(),
+            "WOR_CLEAR",
+            # IN_WOR is clear: clear PARTY_N_IN_WOR for each non-away party
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "SKIP_P1_C"),
+            field.ClearEventBit(event_bit.PARTY_1_IN_WOR),
+            "SKIP_P1_C",
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "SKIP_P2_C"),
+            field.ClearEventBit(event_bit.PARTY_2_IN_WOR),
+            "SKIP_P2_C",
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "SKIP_P3_C"),
+            field.ClearEventBit(event_bit.PARTY_3_IN_WOR),
+            "SKIP_P3_C",
+            field.Return(),
+        ]
+        space = Write(Bank.CA, sync_in_wor_src, "Sync PARTY_N_IN_WOR from IN_WOR (reform)")
+        sync_in_wor_addr = space.start_address
+
+        reform_src = [
+            "START_OVER",
+            field.DialogBranch(reform_id, dest1="REFORM", dest2=0xc359d, dest3=0xc351e, dest4=field.RETURN),
+
+            # === Determine max new parties (3 - away_count) capped by CHARACTERS_AVAILABLE ===
+            "REFORM",
+            # Check away parties to determine free slot count
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "CHECK_P1_AWAY"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "CHECK_P2_AWAY_NO_P1"),
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "MAX_2_NEW"),
+            field.Branch("MAX_3_NEW"),
+
+            "CHECK_P1_AWAY",  # P1 is away
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "MAX_1_NEW"),  # P1+P2 away
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "MAX_1_NEW"),  # P1+P3 away
+            field.Branch("MAX_2_NEW"),  # only P1 away
+
+            "CHECK_P2_AWAY_NO_P1",  # P2 away, P1 not
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "MAX_1_NEW"),  # P2+P3 away
+            # fallthrough: only P2 away
+
+            "MAX_2_NEW",  # exactly 1 away -> at most 2 new parties
+            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "1_PARTY"),
+            field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
+
+            "MAX_1_NEW",  # 2 parties away -> force 1 new party
+            field.Branch("1_PARTY"),
+
+            "MAX_3_NEW",  # 0 away -> up to 3 new parties (original logic)
+            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "1_PARTY"),
+            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 3, "MAX_3_NOT_ENOUGH_FOR_3"),
+            field.DialogBranch(reform_id_3, dest1="1_PARTY", dest2="2_PARTIES", dest3="3_PARTIES", dest4=field.RETURN),
+            "MAX_3_NOT_ENOUGH_FOR_3",
+            field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
+
+            # === 1 PARTY: select 1 party, remap to first free slot ===
+            "1_PARTY",
+            field.Call(remove_available_addr),
+            field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.RemapPartiesToFreeSlots(0),
+            # Determine first free slot for SetPartyMap/SetParty
+            field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "1P_SLOT1"),
+            field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "1P_SLOT2"),
+            # P1 and P2 both away -> use slot 3
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Branch("1P_PLACE"),
+            "1P_SLOT2",
+            field.SetPartyMap(2, school_map_id),
+            field.SetParty(2),
+            field.Branch("1P_PLACE"),
+            "1P_SLOT1",
+            field.SetPartyMap(1, school_map_id),
+            field.SetParty(1),
+            # fallthrough
+            "1P_PLACE",
+            field.Call(pos_center_addr),
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            # Update THREE_PARTIES_CREATED: set only if 2 parties are already away (2 away + 1 new = 3 total)
+            field.BranchIfEventBitClear(event_bit.PARTY_1_AWAY, "NO_P1_1P"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "THREE_TOTAL_1P"),
+            field.BranchIfEventBitSet(event_bit.PARTY_3_AWAY, "THREE_TOTAL_1P"),
+            field.Branch("NOT_THREE_1P"),
+            "NO_P1_1P",
+            field.BranchIfEventBitClear(event_bit.PARTY_2_AWAY, "NOT_THREE_1P"),
+            field.BranchIfEventBitClear(event_bit.PARTY_3_AWAY, "NOT_THREE_1P"),
+            "THREE_TOTAL_1P",
+            field.SetEventBit(event_bit.THREE_PARTIES_CREATED),
+            field.Branch("1P_3PC_DONE"),
+            "NOT_THREE_1P",
+            field.ClearEventBit(event_bit.THREE_PARTIES_CREATED),
+            "1P_3PC_DONE",
+            field.Call(sync_in_wor_addr),
+            # Skip clear y-party switching if parties are away
+            field.BranchIfAny([event_bit.PARTY_1_AWAY, True, event_bit.PARTY_2_AWAY, True, event_bit.PARTY_3_AWAY, True], "FREE_AND_RETURN"),
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            "FREE_AND_RETURN",
+            field.FreeMovement(),
+            field.Return(),
+
+            # === 2 PARTIES: select 2 parties, remap to free slots ===
+            "2_PARTIES",
+            field.Call(remove_available_addr),
+            field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
+            field.RemapPartiesToFreeSlots(0),
+            # Branch based on which party is away for correct slot assignment
+            field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "2P_P1_AWAY"),
+            field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "2P_P2_AWAY"),
+            # P3 away or none -> free slots 1, 2
+            field.SetPartyMap(1, school_map_id),
+            field.SetPartyMap(2, school_map_id),
+            field.SetParty(2),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(1),
+            field.Call(pos_center_addr),
+            field.Branch("2P_FINISH"),
+
+            "2P_P1_AWAY",  # P1 away -> free slots 2, 3
+            field.SetPartyMap(2, school_map_id),
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(2),
+            field.Call(pos_center_addr),
+            field.Branch("2P_FINISH"),
+
+            "2P_P2_AWAY",  # P2 away -> free slots 1, 3
+            field.SetPartyMap(1, school_map_id),
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(1),
+            field.Call(pos_center_addr),
+            # fallthrough
+
+            "2P_FINISH",
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            # Update THREE_PARTIES_CREATED: set if any party was already away (1 away + 2 new = 3 total)
+            field.BranchIfAny([event_bit.PARTY_1_AWAY, True, event_bit.PARTY_2_AWAY, True, event_bit.PARTY_3_AWAY, True], "THREE_TOTAL_2P"),
+            field.ClearEventBit(event_bit.THREE_PARTIES_CREATED),
+            field.Branch("2P_3PC_DONE"),
+            "THREE_TOTAL_2P",
+            field.SetEventBit(event_bit.THREE_PARTIES_CREATED),
+            "2P_3PC_DONE",
+            field.Call(sync_in_wor_addr),
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.FreeMovement(),
+            field.Return(),
+
+            # === 3 PARTIES (only reachable when 0 away - no remap needed) ===
+            "3_PARTIES",
+            field.Call(remove_available_addr),
+            field.Call(REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES),
+            field.SetPartyMap(1, school_map_id),
+            field.SetPartyMap(2, school_map_id),
+            field.SetPartyMap(3, school_map_id),
+            field.SetParty(3),
+            field.Call(pos_lower_right_addr),
+            field.SetParty(2),
+            field.Call(pos_upper_right_addr),
+            field.SetParty(1),
+            field.Call(pos_center_addr),
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.SetEventBit(event_bit.THREE_PARTIES_CREATED),  # 3 parties formed, always 0 away at this branch
+            field.Call(sync_in_wor_addr),
+            field.FreeMovement(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, reform_src, "Custom split parties npc action")
+
+        ghost_npc = self.maps.get_npc(school_map_id, ghost_npc_id)
+        ghost_npc.event_address = space.start_address - EVENT_CODE_START
+        ghost_npc.event_byte = pot_npc.event_byte
+        ghost_npc.event_bit = pot_npc.event_bit
+        ghost_npc.movement = 0
+        ghost_npc.x = 110
+        ghost_npc.direction = direction.LEFT
+
+        # (3b) NPC clue scripts: each branch NPC cycles through up to 3 clues
+        # about which areas are on their branch.
+        # AreasUsed is set by events.py ruination_mod() before event.mod() runs.
+        areas_used = getattr(self.args, 'ruination_areas_used', {})
+
+        # Map internal area names to player-friendly display names
+        # Done: replace the names with clue dialogs customized to each area
+        AREA_DISPLAY_NAMES = {
+            'Doma': 'Doma Castle',
+            'UmarosCave': "Umaro's Cave",
+            'EsperMountain': 'Esper Mountain',
+            'PhantomTrain': 'Phantom Train',
+            'SealedGate': 'Sealed Gate',
+            'SouthFigaroCave': 'South Figaro Cave',
+            'ReturnersHideout': "Returner's Hideout",
+            'AncientCastle': 'Ancient Castle',
+            'Jidoor': "Owzer's Mansion",
+            'VeldtCave': 'Veldt Cave',
+            'CrescentMtn': 'Crescent Mountain',
+            'BarenFalls': 'Baren Falls',
+            'Vector': 'Magitek Factory',
+            'DarylsTomb': "Daryl's Tomb",
+            'ZoneEater': 'Zone Eater',
+            'MtKolts': 'Mt. Kolts',
+            'Narshe': 'Narshe Mines',
+            'Zozo': 'Zozo',
+            'ZozoTower': 'Zozo Tower',
+            'MtZozo': 'Mt. Zozo',
+            'BurningHouse': 'Burning House',
+            'SouthFigaro': 'South Figaro',
+            'GauFatherHouse': "Gau's Father's House",
+            'Thamasa': 'Thamasa',
+            'Kohlingen': 'Kohlingen',
+            'Cid': "Cid's Island",
+            'Mobliz': 'Mobliz',
+            'Maranda': 'Maranda',
+            'FanaticsTower': "Fanatic's Tower",
+            'OperaHouse': 'Opera House',
+            'EbotsRock': "Ebot's Rock",
+            'Coliseum': 'Coliseum',
+            'Tzen': 'Tzen',
+            'Albrook': 'Albrook',
+            'Veldt': 'Veldt',
+            'Nikeah': 'Nikeah',
+            'PhoenixCave': 'Phoenix Cave',
+            'FloatingContinent': 'Floating Continent',
+            'ImperialCamp': 'Imperial Camp',
+            'FigaroCastle': 'Figaro Castle',
+            'ImperialCastle': 'Imperial Castle',
+        }
+
+        AREA_CLUES = {
+            'Doma': "After the end of the world,<line>I awoke all alone in Doma Castle.<page>When I would try to sleep there, demons would come for me… Oh! I don't want to remember that!<end>",
+            'UmarosCave': "The air from this door sometimes smells… terrible!<end>",
+            'EsperMountain': "Travelers describe a cave with ancient magical power.<end>",
+            'PhantomTrain': "Sometimes late at night, I hear the sound of a train…<end>",
+            'SealedGate': "I smell sulphur and the air is warm.<end>",
+            'SouthFigaroCave': "Sometimes there's a rumbling sound, like tunneling through rock.<end>",
+            'ReturnersHideout': "A Returner came floating up the river on a raft!<end>",
+            'AncientCastle': "This cave seems to go deeper than the others.<end>",
+            'Jidoor': "A rich man came through here, trying to buy 'pre-crisis art'.  Honestly!<end>",
+            'VeldtCave': "A hunter came through, talking about dragons.<end>",
+            'CrescentMtn': "Part of this path is under water.  I hope you can swim!<end>",
+            'BarenFalls': "Do you hear the sound of rushing water?<end>",
+            'Vector': "An imperial soldier scouted us. Are we in danger?<end>",
+            'DarylsTomb': "The whole world is a tomb now.<end>",
+            'ZoneEater': "The rock ahead seems unstable. Watch out for cave-ins!<end>",
+            'MtKolts': "In this world, people can be more dangerous than monsters.<end>",
+            'Narshe': "Beyond here, the wind blows endlessly.<end>",
+            'Zozo': "We helped a man and he tried to rob us. Be careful!<end>",
+            'ZozoTower': "Ramuh came to me in a dream. The espers may help you in your journey.<end>",
+            'MtZozo': "Even in this ruined world, there is beauty.<end>",
+            'BurningHouse': "Some fires from the end of the world never went out.<end>",
+            'SouthFigaro': "We know some people survived. A visitor came from South Figaro!<end>",
+            'GauFatherHouse': "A few loners still live out there.<end>",
+            'Thamasa': "I found Thamasa in my explorations. They don't like outsiders, though.<end>",
+            'Kohlingen': "I've heard Kohlingen survived.<end>",
+            'Cid': "The red ocean stretches on endlessly…<end>",
+            'Mobliz': "The world is littered with broken towns from the light of judgement.<end>",
+            'Maranda': "I saw some pigeons flying down this path.<end>",
+            'FanaticsTower': "Some “Cult of Kefka” members have built a tower on this road.<end>",
+            'OperaHouse': "Do you hear... music?<end>",
+            'EbotsRock': "These caves can be disorienting. Keep your bearings!<end>",
+            'Coliseum': "A strange swordsman came through here looking for prizes and glory.<end>",
+            'Tzen': "Tzen still stands, for now.<end>",
+            'Albrook': "Albrook has survived war, occupation, now the end of the world.<end>",
+            'Veldt': "On my travels I've seen monsters from all over the world.<end>",
+            'Nikeah': "Nikeah's still sending out ships. Don't know if they've found anything.<end>",
+            'PhoenixCave': "I hear a legendary treasure is hidden on this path.<end>",
+            'FloatingContinent': "Memories of the crisis live on in the waking world.<end>",
+            'ImperialCamp': "Everyone is struggling to survive, even the imperial army.<end>",
+            'FigaroCastle': "Figaro Castle disappeared the day the world became…<line>unzipped…<end>",  # "Figaro Castle had an accident under the desert.<line>Don't know what happened to its people…<end>",
+            'ImperialCastle': 'Good luck!<end>',
+        }
+
+        # Build per-branch area lists (up to 3 areas per branch for clues)
+        branch_clue_areas = [[], [], []]
+        for area_name, branch_id in areas_used.items():
+            if branch_id in (0, 1, 2) and area_name in AREA_CLUES:    # AREA_DISPLAY_NAMES
+                branch_clue_areas[branch_id].append(AREA_CLUES[area_name])   # AREA_DISPLAY_NAMES
+        import random
+
+        for bca in branch_clue_areas:
+            # Shuffle them just in case
+            random.shuffle(bca)
+
+        # Use dialog IDs 602-625 (0x25A-0x271) for clue messages
+        # 3 clue dialogs per branch × 3 branches = 9 dialogs
+        # Branch 0: 602, 603, 604  |  Branch 1: 605, 606, 607  |  Branch 2: 608, 609, 610
+        clue_dialog_ids = [[602, 603, 604], [605, 606, 607], [608, 609, 610]]
+
+        for branch_id in range(3):
+            areas = branch_clue_areas[branch_id]
+            for clue_idx in range(3):
+                dialog_id = clue_dialog_ids[branch_id][clue_idx]
+                if clue_idx < len(areas):
+                    clue = areas[clue_idx]
+                    #self.dialogs.set_text(dialog_id, f"I've heard that {clue} lies down this path.<end>")  # replace generic hint with actual clues
+                    self.dialogs.set_text(dialog_id, clue)
+                else:
+                    self.dialogs.set_text(dialog_id,
+                        "That's all I know about this path.<end>")
+
+        # multipurpose_map bits (cleared on map load, so cycle resets each visit):
+        # Branch 0: bits 1, 2   Branch 1: bits 3, 4   Branch 2: bits 5, 6
+        branch_cycle_bits = [
+            (event_bit.multipurpose_map(1), event_bit.multipurpose_map(2)),
+            (event_bit.multipurpose_map(3), event_bit.multipurpose_map(4)),
+            (event_bit.multipurpose_map(5), event_bit.multipurpose_map(6)),
+        ]
+
+        # Event bit 0x1B0 = player facing UP when talking to NPC
+        # Event bit 0x1B3 = player facing LEFT when talking to NPC
+        FACING_UP = 0x1B0
+        FACING_LEFT = 0x1B3
+
+        def build_cycle_src(branch_id):
+            """Build event script that cycles through 3 clue dialogs."""
+            bit_a, bit_b = branch_cycle_bits[branch_id]
+            d1, d2, d3 = clue_dialog_ids[branch_id]
+            pfx = f"B{branch_id}_"
+            return [
+                # State check: (bit_a, bit_b) = (0,0) → clue 1, (1,0) → clue 2, (x,1) → clue 3
+                field.BranchIfEventBitSet(bit_a, pfx + "STATE1"),
+                field.BranchIfEventBitSet(bit_b, pfx + "STATE2"),
+                # State 0: show clue 1, advance to state 1
+                field.Dialog(d1),
+                field.SetEventBit(bit_a),
+                field.Return(),
+                # State 1: show clue 2, advance to state 2
+                pfx + "STATE1",
+                field.BranchIfEventBitSet(bit_b, pfx + "STATE2"),
+                field.Dialog(d2),
+                field.ClearEventBit(bit_a),
+                field.SetEventBit(bit_b),
+                field.Return(),
+                # State 2: show clue 3, reset to state 0
+                pfx + "STATE2",
+                field.Dialog(d3),
+                field.ClearEventBit(bit_a),
+                field.ClearEventBit(bit_b),
+                field.Return(),
+            ]
+
+        # Reserve ROM space for all 3 NPC clue scripts in the school tutorial range.
+        # CC/33E1-CC/350B (0xc33e1-0xc350b) = 299 bytes, replaces vanilla tutorial dialogs.
+        space = Reserve(0xc33e1, 0xc350b, "NPC clue scripts for branches 0-2", field.NOP())
+
+        # Branch 0 NPC (left_npc_id = 0x13): simple cycle through clues
+        left_src = build_cycle_src(0)
+        left_space = space.next_address
+        space.write(left_src)
+
+        left_npc = self.maps.get_npc(school_map_id, left_npc_id)
+        left_npc.event_address = left_space - EVENT_CODE_START
+
+        # Branch 1 NPC (mid_npc_id = 0x15): simple cycle through clues
+        mid_src = build_cycle_src(1)
+        mid_space = space.next_address
+        space.write(mid_src)
+
+        mid_npc = self.maps.get_npc(school_map_id, mid_npc_id)
+        mid_npc.event_address = mid_space - EVENT_CODE_START
+
+        # Branch 2 NPC (right_npc_id = 0x11): facing UP → supply line, facing LEFT → cycle clues
+        right_cycle_src = build_cycle_src(2)
+        right_src = [
+            # Check facing direction: UP → supply line, LEFT → clue cycle
+            field.BranchIfEventBitSet(FACING_UP, "SUPPLY_LINE"),
+            field.BranchIfEventBitClear(FACING_LEFT, "SUPPLY_LINE"),
+        ] + right_cycle_src + [
+            "SUPPLY_LINE",
+            field.Dialog(601),
+            field.Return(),
+        ]
+        right_space = space.next_address
+        space.write(right_src)
+
+        right_npc = self.maps.get_npc(school_map_id, right_npc_id)
+        right_npc.event_address = right_space - EVENT_CODE_START
+
+        # (4) Modify room aesthetics
+        # Change the music to "esper world" (song = 33)
+        school_properties = self.maps.properties[school_map_id]
+        school_properties.song = 33
+
+        # Try palette animation for torch flicker effect
+        # Value 0x7 is used by torch/fire maps (maps 136, 156, 373)
+        # This may or may not work depending on palette color compatibility
+        school_properties.paletteanimationindex = 0x7
+
+        # Make it darker via entrance event with dark tint
+        # Also restore away-party character availability when a party returns
+        # Set all characters' talk-event pointers so party interaction works
+        # after loading a saved game (field RAM pointers aren't preserved in saves).
+        from event.ruination import SET_PARTY_INTERACTION_POINTERS
+        entrance_src = [
+            field.TintBackground(field.Tint.NIGHT),
+            field.RestoreActivePartyAvailable(),  # idempotent: no-op if party isn't away
+            field.Call(SET_PARTY_INTERACTION_POINTERS),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, entrance_src, "Narshe school ruination entrance event")
+        self.maps.set_entrance_event(school_map_id, space.start_address - EVENT_CODE_START)
+
+        # (4b) Add event tiles on the three classroom doors to mark away parties
+        # When a party steps on these tiles, MarkActivePartyAway fires before the map exit
+        from data.map_event import MapEvent
+
+        away_src = [
+            field.MarkActivePartyAway(),  # idempotent: sets PARTY_N_AWAY, clears character_available
+            field.Return(),
+        ]
+        space = Write(Bank.CA, away_src, "Mark party away on branch door exit")
+        away_event_addr = space.start_address - EVENT_CODE_START
+
+        # Door coordinates from exits 393, 394, 395
+        branch_door_coords = [(93, 45), (99, 45), (108, 45), (108, 53)]
+        for x, y in branch_door_coords:
+            new_event = MapEvent()
+            new_event.x = x
+            new_event.y = y
+            new_event.event_address = away_event_addr
+            self.maps.add_event(school_map_id, new_event)
+
+        # (5) Reskin the whelk room (map 59, WoB mines) to use WoR mines palette
+        # The ruin-whelk room uses map 59 (Narshe Northern Mines Main Hallway WoB) which has
+        # a different palette than the WoR mines rooms the player encounters elsewhere.
+        # Copy the palette from map 36 (Narshe Northern Mines 2F Inside WoR).
+        whelk_map_id = 43
+        whelk_properties = self.maps.properties[whelk_map_id]
+        whelk_properties.paletteindex = 0x15  # ???
+        whelk_properties.song = 79  # Dark World
+
+

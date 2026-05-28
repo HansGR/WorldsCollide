@@ -19,6 +19,9 @@ class NarsheWOR(Event):
             field.SetEventBit(event_bit.MET_LONE_WOLF_WOR),
             field.ClearEventBit(npc_bit.WHELK_GUARD_TRITOCH_NARSHE_WOB),
         )
+        # self.args.ruination_mode:
+        #    space.write(field.ClearEventBit(npc_bit.ARVIS_INTRO))  # Why was this set?  Shows NPCs in Narshe.
+        # Solved: it was set in Moogle Defense.
 
     def mod(self):
         self.pickpocket_mod()

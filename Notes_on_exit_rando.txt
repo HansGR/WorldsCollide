@@ -1,0 +1,158 @@
+Notes on programming WC full entrance randomizer (v2 with one-ways)
+
+One-way doors are handled as events, in ./data/map_events.MapEvents (?)
+	- events start at data address 0x040342 (MapEvents.DATA_START_ADDR), and each is size 0x05 (MapEvent.DATA_SIZE)
+	- the MapEvents() code starts by reading in all the map events as MapEvent() and saving them in a list (self.events)
+		- The MapEvents have properties:
+			- self.x = first bit
+			- self.y = second bit
+			- self.event_address = address of event (in base 10, usually said in hex)
+	- the MapExits() code starts by reading in all the map exits, including short_exits and long_exits
+		- short exits start at 0x1fbf02 (MapExits.SHORT_DATA_START_ADDR), there are 0x469 of them (SHORT_EXIT_COUNT) and they are each 0x06 long (ShortMapExit.DATA_SIZE)
+			- ShortExits have properties:
+				- self.x = first bit
+				- self.y = 2nd bit
+				- self.dest_map = 3rd  bit & half of 4th bit?
+				- self.dest_x = 5th bit
+				- self.dest_y = 6th bit
+		- long exits start at 0x2df882 (MapExits.LONG_DATA_START_ADDR), there are 	0x98 of them (LONG_EXIT_COUNT) and they are each 0x07 long (LongMapExit.DATA_SIZE)
+			- LongExits have properties:
+				- self.x = first bit
+				- self.y = 2nd bit
+				- self.size = 3rd bit + part of 4th bit?
+				- self.direction = 3rd bit + part of 4th bit? (Horiz/vert)
+				- self.dest_map = 4rd  bit & half of 5th bit?
+				- self.dest_x = 6th bit
+				- self.dest_y = 7th bit
+		IN MODIFYING SHORT/LONG EXITS, we probably need to change the last 3 properties (self.dest_map, self.dest_x, self.dest_y) to match the values of the desired randomized door, before writing them back to the rom. 
+
+		Franklin additionally has to 
+			- Change the definition of ShortExits to match the definition for LongExits (so that the destinations can be randomized between them)
+
+Franklin's exit randomizer works by:
+	1. Generating a file "map_exit_extra.py" that contains a dictionary, exit_data
+		exit_data[exit] = [doorpair_x, doorpair_y, doorpair_facing, parent_room]
+	2. in Maps.read(), look through the exits for ones that are keys in exit_data, and update their values
+	3. This is then written to the rom in Maps.write()
+		(theoretically.  I think there's an error in the version of the code Franklin sent me).
+
+That should all work for basic exits (doors).  But events are handled entirely differently:
+	- map events are read in using the code MapEvents(), and written in Maps.write() just before it writes exits.  
+	- There's code to modify events but it's just a stub ('pass').
+	- Field events are listed in: https://www.ff6hacking.com/wiki/doku.php?id=ff3:ff3us:doc:asm:rom_map:field_events
+	- An example is the map event for a trapdoor in Umaro's cave:  
+		"CC/D93A: MAP	Umaro's Cave, first cave and bridges cave"
+		Next event is CC/D967, so there should be 45 bytes for this instruction.
+		Here's the interpreted code:
+		CC/D93A: C1    If ($1E80($1B0) [$1EB6, bit 0] is clear) or ($1E80($1B4) [$1EB6, bit 4] is clear), branch to $CA5EB3 (simply returns)
+		CC/D942: F4    Play sound effect 150
+		CC/D944: 92    Pause for 30 units
+		CC/D945: F4    Play sound effect 169
+		CC/D947: 58    Shake screen ($F2): 
+					   (Intensity: 2)) 
+					   (Permanance and ???: 0)) 
+					   (Layer 1 affected) 
+					   (Layer 2 affected) 
+					   (Layer 3 affected) 
+					   (Sprite layer affected)
+		CC/D949: 74    Replace current map's Layer 2 at (31, 9) with the following (2 x 1) chunk
+		CC/D94E:       $F1, $92
+		CC/D950: 74    Replace current map's Layer 2 at (31, 73) with the following (2 x 1) chunk
+		CC/D955:       $11, $10
+		CC/D957: 75    Refresh map after alteration
+		CC/D958: B2    Call subroutine $CCD994
+			CC/D994: 31    Begin action queue for character $31 (Party Character 0), 7 bytes long (Wait until complete)
+			CC/D996: C3        Set vehicle/entity's event speed to fast
+			CC/D997: C8        Set object layering priority to 3 (low nibble 3)
+			CC/D999: C7        Set vehicle/entity to stay still when moving
+			CC/D99A: 16        Do vehicle/entity graphical action $16 (facing forward, head cocked left)
+			CC/D99B: 82        Move vehicle/entity down 1 tile
+			CC/D99C: FF        End queue
+			CC/D99D: 42    Hide object $31
+			CC/D99F: 45    Refresh objects
+			CC/D9A0: D2    Set event bit $1E80($1CC) [$1EB9, bit 4]
+			CC/D9A2: F4    Play sound effect 186
+			CC/D9A4: 91    Pause for 15 units
+			CC/D9A5: FE    Return
+		CC/D95C: 6A    Load map $0119 (Umaro's Cave, first cave and bridges cave) after fade out, (upper bits $2000), place party at (59, 38), facing down
+		CC/D962: B2    Call subroutine $CCD9A6
+			CC/D9A6: 38    Hold screen
+			CC/D9A7: 41    Show object $31
+			CC/D9A9: 31    Begin action queue for character $31 (Party Character 0), 3 bytes long (Wait until complete)
+			CC/D9AB: C4        Set vehicle/entity's event speed to faster
+			CC/D9AC: 9C        Move vehicle/entity up 8 tiles
+			CC/D9AD: FF        End queue
+			CC/D9AE: 96    Restore screen from fade
+			CC/D9AF: 5C    Pause execution until fade in or fade out is complete
+			CC/D9B0: 31    Begin action queue for character $31 (Party Character 0), 11 bytes long (Wait until complete)
+			CC/D9B2: C8        Set object layering priority to 2 (low nibble 2)
+			CC/D9B4: C7        Set vehicle/entity to stay still when moving
+			CC/D9B5: 16        Do vehicle/entity graphical action $16 (facing forward, head cocked left)
+			CC/D9B6: C4        Set vehicle/entity's event speed to faster
+			CC/D9B7: 9E        Move vehicle/entity down 8 tiles
+			CC/D9B8: 09        Do vehicle/entity graphical action $09 (kneeling)
+			CC/D9B9: C6        Set vehicle/entity to walk when moving
+			CC/D9BA: C8        Set object layering priority to 0 (low nibble 0)
+			CC/D9BC: FF        End queue
+			CC/D9BD: F4    Play sound effect 181
+			CC/D9BF: 39    Free screen
+			CC/D9C0: D3    Clear event bit $1E80($1CC) [$1EB9, bit 4]
+			CC/D9C2: 3A    Enable player to move while event commands execute
+			CC/D9C3: FE    Return
+		CC/D966: FE    Return
+		
+		- The line we care about is: (6 bytes)
+			CC/D95C: 6A    Load map $0119 (Umaro's Cave, first cave and bridges cave) after fade out, (upper bits $2000), place party at (59, 38), facing down
+		- Format:
+			6A (MapID) (Facing & MusicAction) (xpos) (ypos) (loadBehavior)
+			MapID: which Map to load
+			Facing: 0 (up) 1 (right) 2 (down) 3 (left)
+			MusicAction:  0 (default music) 4 (keep same music)
+			xpos:  x location for character
+			ypos:  y position for character
+			loadBehavior: sum of the following:
+				-$40: Don't fade the screen in immediately after loading map (useful when not loading the world map)
+				-$80: Run the entrance event to the map you are loading (useful when not loading the world map)
+				-$01: The party is in the airship when the map loads (useful when loading the world map)
+				-$02: The party is on a chocobo when the map loads (useful when loading the world map)
+
+PROPOSAL:
+	- If every MapEvent transition is organized in this way, we can do the following:
+		- Identify the 'split point' for every MapEvent transition
+			- this is just the relative index of the 6A (or 6B) command
+			- Can we do this automatically, or do we need to hard code it?  Need to be careful, can parse through if we can 'read' assembly.
+		** Created exit_event_info.py, contains dictionary: **
+			{ Event_ID : [original address, bit length, split point, description] }
+		- For the connection "Event1" --> "Event2":
+			- Reserve the code regions for (Event1) and (Event2)
+			- Write a new Event1a = Event1[0:split1] + Event2[split2:]
+			- Update the MapEvent.event_address = Address(Event1a)
+			- Do this for all events, then write them.  Event2 will be updated when the initiating door for Event2 is mapped 
+				e.g. Event2a = Event2[0:split2] + Event3[split3:]; & so on.
+	- MapEvents.write() will update all the event addresses as is.
+		- This is probably the place to do it: Add to mod(self).
+		- then, we need to roll the randomization earlier, before or in data.  
+			Doors are written in data.__init__ at self.maps = maps.Maps(...); self.maps.mod(...), so it will have to be before that too.
+	- Check whether these events are modified in ./event/(maps).py.mod()
+		- Each event location has a file ("umaro_cave.py") that is a subclass of the Event class.  
+			at least for Umaro's Cave, the exits seems not to be modified.
+			
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

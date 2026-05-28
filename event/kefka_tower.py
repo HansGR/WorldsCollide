@@ -1,5 +1,6 @@
 from event.event import *
 import args
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
 class KefkaTower(Event):
     def name(self):
@@ -18,6 +19,12 @@ class KefkaTower(Event):
         if self.unlock_final_kefka_result_name not in objectives.results:
             space.write(
                 field.SetEventBit(event_bit.UNLOCKED_FINAL_KEFKA),
+            )
+
+        if self.args.ruination_mode:
+            space.write(
+                field.ClearEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH),
+                field.ClearEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH),
             )
 
     def mod(self):
@@ -45,7 +52,11 @@ class KefkaTower(Event):
         self.poltrgeist_battle_mod()
         self.kefka_battle_mod()
 
-        self.final_kefka_access_mod()
+        if self.args.ruination_mode:
+            self.ruination_mod()
+        else:
+            # Do not block final kefka access in ruination mode
+            self.final_kefka_access_mod()
         self.final_scenes_mod()
         self.exit_mod()
 
@@ -519,3 +530,218 @@ class KefkaTower(Event):
         # leaving with crane or warp stone
         # warp stone call trace: c0c670 -> ca0039 -> ca0108 -> ca014f -> cc0ff6 -> cc0f7d
         space = Reserve(0xc0fbf, 0xc0fc0, "kefka tower exit clear poltrgeist statue bit", asm.NOP())
+
+    def ruination_mod(self):
+        # (1) Create switchyard tiles & events for individual entrances to left, mid, right
+        # (1b) Add the switchyard event tile that handles entry to Phoenix Cave
+        self.left_entrance_id = 2077
+        self.mid_entrance_id = 2078
+        self.right_entrance_id = 2079
+
+        # Code for entry to KT animation begins at
+        # CA/030B: 6B    Load map $014E (Kefka's Tower, exterior) instantly, (upper bits $3400), place party at (11, 7), facing left
+        party_position = [[11, 0], [43, 7], [56, 9]]
+        load_position = [[11, 7], [43, 14], [56, 15]]
+
+        # Left Entrance
+        src = [
+            field.LoadMap(0x14e, x=load_position[0][0], y=load_position[0][1], direction=direction.LEFT,
+                          default_music=True, fade_in=False, entrance_event=True),
+            field.HoldScreen(),
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=party_position[0][0], y=party_position[0][1]),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            ),
+            field.UpdatePartyLeader(),
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.CAMERA, False,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 7),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 1),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 1),
+                            ),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(2),
+                            field_entity.Move(direction.DOWN, 8),
+                            field_entity.Move(direction.DOWN, 2),
+                            field_entity.AnimateSurprised(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            field_entity.AnimateHighJump(),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 2),
+                            field_entity.MoveDiagonal(direction.LEFT, 1, direction.DOWN, 2),
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.AnimateHighJump(),
+                            field_entity.Move(direction.DOWN, 2),
+                            field_entity.AnimateKneeling(),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(0),
+                            ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.FreeScreen(),
+            field.FreeMovement(),
+            field.Return()
+        ]
+
+        AddSwitchyardEvent(self.left_entrance_id, self.maps, src=src)
+
+        # Middle Entrance
+        src = [
+            field.LoadMap(0x14e, x=load_position[1][0], y=load_position[1][1], direction=direction.LEFT,
+                          default_music=True, fade_in=False, entrance_event=True),
+            field.HoldScreen(),
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=party_position[1][0], y=party_position[1][1]),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                            ),
+            field.UpdatePartyLeader(),
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.CAMERA, False,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 7),
+                            ),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(2),
+                            field_entity.Move(direction.DOWN, 8),
+                            field_entity.Move(direction.DOWN, 6),
+                            field_entity.AnimateKneeling(),
+                            field_entity.EnableWalkingAnimation(),
+                            field_entity.SetSpriteLayer(0),
+                            ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.FreeScreen(),
+            field.FreeMovement(),
+            field.Return()
+        ]
+
+        AddSwitchyardEvent(self.mid_entrance_id, self.maps, src=src)
+
+        # Right Entrance
+        src = [
+            field.LoadMap(0x14e, x=load_position[2][0], y=load_position[2][1], direction=direction.LEFT,
+                          default_music=True, fade_in=False, entrance_event=True),
+            field.HoldScreen(),
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetPosition(x=party_position[2][0], y=party_position[2][1]),
+                            field_entity.AnimateFrontHandsUp(),
+                            field_entity.SetSpeed(field_entity.Speed.FAST),
+                            ),
+            field.UpdatePartyLeader(),
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.CAMERA, False,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 7),
+                            ),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.DisableWalkingAnimation(),
+                            field_entity.Move(direction.DOWN, 8),
+                            field_entity.Move(direction.DOWN, 5),
+                            field_entity.AnimateKneelingRight(),
+                            field_entity.EnableWalkingAnimation(),
+                            ),
+            field.WaitForEntityAct(field_entity.CAMERA),
+            field.FreeScreen(),
+            field.FreeMovement(),
+            field.Return()
+        ]
+
+        AddSwitchyardEvent(self.right_entrance_id, self.maps, src=src)
+
+        # (2) Disable the 'hook' npc (no going back that way!)
+        # In the entrance event we have:
+        #CC/119B: B2    Call subroutine $CC11AE  modify colors
+        #CC/119F: B2    Call subroutine $CC10E6  animate hook
+        space = Reserve(0xc119f, 0xc11a2, "Disable hook animation", field.NOP())
+
+        self.kt_switch_ruination_mod()
+
+    def kt_switch_ruination_mod(self):
+        # In vanilla the switch/weight events use multipurpose_party2/3_step(0) which are
+        # auto-cleared on every step and tied to specific parties.  In ruination mode any
+        # party may use any switch, so we patch each individual instruction in-place to
+        # use the new dedicated bits instead.  All replacement instructions encode to the
+        # same number of bytes as the originals, so no surrounding code is disturbed.
+
+        # Left switch (CC/14AF): ReturnIfEventBitSet — 6 bytes
+        space = Reserve(0xc14af, 0xc14b4, "kefka tower left switch ruin bit check", field.NOP())
+        space.write(field.ReturnIfEventBitSet(event_bit.KEFKA_TOWER_LEFT_SWITCH))
+
+        # Left switch (CC/14B7): SetEventBit — 2 bytes
+        space = Reserve(0xc14b7, 0xc14b8, "kefka tower left switch ruin bit set", field.NOP())
+        space.write(field.SetEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH))
+
+        # Right switch (CC/14BE): ReturnIfEventBitSet — 6 bytes
+        space = Reserve(0xc14be, 0xc14c3, "kefka tower right switch ruin bit check", field.NOP())
+        space.write(field.ReturnIfEventBitSet(event_bit.KEFKA_TOWER_RIGHT_SWITCH))
+
+        # Right switch (CC/14C6): SetEventBit — 2 bytes
+        space = Reserve(0xc14c6, 0xc14c7, "kefka tower right switch ruin bit set", field.NOP())
+        space.write(field.SetEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH))
+
+        # CC/14CD: ReturnIfAny (3 conditions) — 10 bytes
+        # Original checked CENTER_DOOR, multipurpose_party2_step(0), multipurpose_party3_step(0).
+        # We keep the same structure and just replace the two multipurpose bits.
+        space = Reserve(0xc14cd, 0xc14d6, "kefka tower ruin both switches check", field.NOP())
+        space.write(field.ReturnIfAny([
+            event_bit.CENTER_DOOR_KEFKA_TOWER,  True,   # door already open → return
+            event_bit.KEFKA_TOWER_LEFT_SWITCH,  False,  # left switch not pressed → return
+            event_bit.KEFKA_TOWER_RIGHT_SWITCH, False,  # right switch not pressed → return
+        ]))
+
+        # Left weight (CC/14F4): BranchIfEventBitSet — 6 bytes
+        space = Reserve(0xc14f4, 0xc14f9, "kefka tower left weight ruin check", field.NOP())
+        space.write(field.BranchIfEventBitSet(event_bit.KEFKA_TOWER_LEFT_SWITCH, 0xc1544))
+
+        # Right weight (CC/1548): BranchIfEventBitSet — 6 bytes
+        space = Reserve(0xc1548, 0xc154d, "kefka tower right weight ruin check", field.NOP())
+        space.write(field.BranchIfEventBitSet(event_bit.KEFKA_TOWER_RIGHT_SWITCH, 0xc1544))
+
+        # Event tiles that clear the switch bits when the party steps off.
+        # The multipurpose_party_step bits were auto-cleared on every step; our new bits
+        # are persistent, so we place event tiles on cells adjacent to each switch.
+        from data.map_event import MapEvent
+
+        # 0x1b5 is a multipurpose bit cleared on every step; using it as a debounce
+        # ensures each tile's script runs at most once per step-on.
+        src = [
+            field.ReturnIfEventBitSet(0x1b5),
+            field.ClearEventBit(event_bit.KEFKA_TOWER_LEFT_SWITCH),
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "kefka tower clear left switch bit")
+        clear_left_switch = space.start_address
+
+        for (x, y) in [(3, 12), (4, 13)]:
+            new_event = MapEvent()
+            new_event.x = x
+            new_event.y = y
+            new_event.event_address = clear_left_switch - EVENT_CODE_START
+            self.maps.add_event(0x151, new_event)
+
+        src = [
+            field.ReturnIfEventBitSet(0x1b5),
+            field.ClearEventBit(event_bit.KEFKA_TOWER_RIGHT_SWITCH),
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "kefka tower clear right switch bit")
+        clear_right_switch = space.start_address
+
+        for (x, y) in [(13, 12), (12, 13)]:
+            new_event = MapEvent()
+            new_event.x = x
+            new_event.y = y
+            new_event.event_address = clear_right_switch - EVENT_CODE_START
+            self.maps.add_event(0x151, new_event)
+
+

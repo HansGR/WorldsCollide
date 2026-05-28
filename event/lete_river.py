@@ -1,8 +1,19 @@
+from copy import deepcopy
+
 from event.event import *
 
 class LeteRiver(Event):
     BATTLE_1_INVOKE_ADDR = 0xb0498 # the event code that initiates fixed battle 1
     BATTLE_2_INVOKE_ADDR = 0xb04a1 # the event code that initiated fixed battle 2
+
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = args.door_randomize_all \
+                              or args.door_randomize_crossworld \
+                              or args.door_randomize_dungeon_crawl \
+                              or args.door_randomize_lete_river \
+                              or args.ruination_mode
+
     def name(self):
         return "Lete River"
 
@@ -19,6 +30,9 @@ class LeteRiver(Event):
             field.ClearEventBit(npc_bit.BANON_IN_ROOM_RETURNER_HIDEOUT),
             field.SetEventBit(npc_bit.RAFT_LETE_RIVER),
         )
+        if self.args.ruination_mode:
+            for bit in self.RUINATION_SEGMENT_DONE_BITS:
+                space.write(field.ClearEventBit(bit))
 
     def mod(self):
         self.raft_npc_id = 0x11
@@ -36,6 +50,9 @@ class LeteRiver(Event):
         self.remove_raft_mod()
         self.exit_river_mod()
 
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -46,18 +63,23 @@ class LeteRiver(Event):
         self.log_reward(self.reward)
 
     def add_gating_condition(self):
-        src = [
-            field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
-            field.HideEntity(self.raft_npc_id),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "lete river entrance event character gate")
-        entrance_event_gate = space.start_address
+        if self.args.ruination_mode:
+            # Gate at the boss
+            pass
+        else:
+            # Gate at the 'boarding the raft' location
+            src = [
+                field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
+                field.HideEntity(self.raft_npc_id),
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "lete river entrance event character gate")
+            entrance_event_gate = space.start_address
 
-        space = Reserve(0xb0469, 0xb0473, "lete river entrance event", field.NOP())
-        space.write(
-            field.Call(entrance_event_gate),
-        )
+            space = Reserve(0xb0469, 0xb0473, "lete river entrance event", field.NOP())
+            space.write(
+                field.Call(entrance_event_gate),
+            )
 
     def fixed_battles_mod(self):
         # force front attacks to keep party on the raft
@@ -78,6 +100,24 @@ class LeteRiver(Event):
                                        battle_background, check_game_over = False),
             )
 
+    RUINATION_SEGMENT_DONE_BITS = [0x3b2, 0x3b3, 0x3b4, 0x3b5, 0x3b6, 0x3b7]
+
+    RUINATION_REPEAT_BATTLE_PROBABILITY = 0.25  # Control chance of battles re-triggering after first fight
+
+    RUINATION_BATTLES = [
+        (0xb066b, 0, True),    # Segment 0 (from beginning) - last battle in segment
+        (0xb06a4, 1, False),   # Segment 1 ("straight") -
+        (0xb06b4, 1, False),   # Segment 1 ("straight") -
+        (0xb06e1, 1, True),    # Segment 1 ("straight") - last battle in segment
+        (0xb0704, 2, False),   # Segment 2 ("left") -
+        (0xB0734, 2, True),    # Segment 2 ("left") - last battle in segment
+        (0xB077C, 3, False),   # Segment 3 ("right") -
+        (0xB07A0, 3, True),    # Segment 3 ("right") - last battle in segment
+        (0xB0809, 4, False),   # Segment 4 ("up") -
+        (0xB081E, 4, True),    # Segment 4 ("up") - last battle in segment
+        (0xB084E, 5, True),    # Segment 5 ("left") - last battle in segment
+    ]
+
     def fixed_battle_location_mod(self):
         # to eliminate randomness across runners of the same seed, this eliminates the 50% chance encounters and turns some of them into 100% encounters
         # This causes this many encounters based on your first choice if you don't go up at the second choice:
@@ -97,21 +137,21 @@ class LeteRiver(Event):
         TO_BATTLE_2 = 2 # force battle 2
         # this list stores all of the calls to the 50% chance encounter subroutine and the change that we're making
         chance_encounter_calls = \
-            [ # There is a Forced battle 1 before Straight/Left/Right choice
+            [ # There is a Forced battle 1 before Straight/Left/Right choice (at CB/066B)
               # Straight
                 (0xB0690, TO_NOOP),
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/06A4
                 (0xB06B4, TO_BATTLE_2),
                 (0xB06D0, TO_NOOP),
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/06E1
               # Left 
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/0704
                 (0xB071B, TO_NOOP),
                 (0xB0734, TO_BATTLE_2),
                 (0xB0744, TO_NOOP),
               # Right
                 (0xB076A, TO_NOOP),
-                # Forced battle 1 here
+                # Forced battle 1 here:  CB/077C
                 (0xB07A0, TO_BATTLE_2),
                 (0xB07B6, TO_NOOP),
               # After First Cave, before Up/Left choice
@@ -126,24 +166,81 @@ class LeteRiver(Event):
                 (0xB0873, TO_NOOP),
                 (0xB08A8, TO_NOOP),
              ]
-        
-        for chance_encounter_call in chance_encounter_calls:
-            start_address = chance_encounter_call[0]
-            end_address = start_address+3
-            action = chance_encounter_call[1]
-            space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
-            if action == TO_BATTLE_1:
+
+        if self.args.ruination_mode:
+            chance_byte = int(self.RUINATION_REPEAT_BATTLE_PROBABILITY * 255)
+
+            # Add logic that makes battles 1/4 probability in each segment after the segment has been completed
+            ii = 0
+            for start_addr, seg_id, is_last in self.RUINATION_BATTLES:
+                ii += 1
+                done_bit = self.RUINATION_SEGMENT_DONE_BITS[seg_id]  # control bit for this segment
+
+                which_battle = [a[1] for a in chance_encounter_calls if start_addr in a]
+                if len(which_battle) > 0:
+                    FORCE_BATTLE = which_battle[0]
+                else:
+                    FORCE_BATTLE = 1  # by default
+                # Write logic handling for this battle
+                custom_src = [
+                    field.BranchIfEventBitClear(done_bit, "FIGHT"),   # First visit (done bit clear): always fight.
+                    field.BranchChance(chance_byte, "FIGHT"),         # Repeat visit (done bit set): fight with probability p.
+                    field.Return(),                                             # Otherwise skip the battle.
+                    "FIGHT",
+                ]
+                if FORCE_BATTLE == 1:
+                    custom_src += [
+                        field.Call(self.BATTLE_1_INVOKE_ADDR)
+                    ]
+                elif FORCE_BATTLE == 2:
+                    custom_src += [
+                        field.Call(self.BATTLE_2_INVOKE_ADDR)
+                    ]
+                else:
+                    print('Warning: bad logic in Lete River ruination battle handling!')
+                if is_last:
+                    custom_src += [
+                        field.SetEventBit(done_bit)
+                    ]
+                custom_src += [
+                    field.Return()
+                ]
+                space = Write(Bank.CB, custom_src, f"Lete River {ii} segment {seg_id} battle logic")
+                patch_address = space.start_address
+
+                space = Reserve(start_addr, start_addr + 3, f"Lete River {ii} segment {seg_id} patch", field.NOP())
                 space.write(
-                    field.Call(self.BATTLE_1_INVOKE_ADDR)
+                    field.Call(patch_address)
                 )
-            elif action == TO_BATTLE_2:
-                space.write(
-                    field.Call(self.BATTLE_2_INVOKE_ADDR)
-                )
+
+            # Also handle TO_NOOPs
+            for chance_encounter_call in chance_encounter_calls:
+                start_address = chance_encounter_call[0]
+                end_address = start_address + 3
+                action = chance_encounter_call[1]
+                if action == TO_NOOP:
+                    space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
+
+
+        else:
+            # Original behavior: overwrite to force certain battles
+            for chance_encounter_call in chance_encounter_calls:
+                start_address = chance_encounter_call[0]
+                end_address = start_address+3
+                action = chance_encounter_call[1]
+                space = Reserve(start_address, end_address, "lete river call invoke battle subroutine", field.NOP())
+                if action == TO_BATTLE_1:
+                    space.write(
+                        field.Call(self.BATTLE_1_INVOKE_ADDR)
+                    )
+                elif action == TO_BATTLE_2:
+                    space.write(
+                        field.Call(self.BATTLE_2_INVOKE_ADDR)
+                    )
 
     def before_ultros_mod(self):
         space = Reserve(0xb05a5, 0xb05e3, "lete river heal party, here we go", field.NOP()) # unused dialog 0166 -- Here we go! This raft'll take us to Narshe!
-        if self.args.character_gating:
+        if self.args.character_gating and not self.args.ruination_mode:
             space.write(
                 field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
             )
@@ -151,7 +248,14 @@ class LeteRiver(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
-        space = Reserve(0xb0617, 0xb063c, "lete river tutorial", field.NOP()) # unused dialog 0169
+        if self.args.door_randomize:
+            # Don't patch out the map load argument
+            space = Reserve(0xb0617, 0xb062f, "lete river tutorial", field.NOP())
+            self.rom.set_byte(0xb0630, 0x6b)  # this should be a load map, not a fade-load map
+            self.rom.set_byte(0xb0635, 0x80)  # do fade in screen after
+            #space = Reserve(0xb0636, 0xb063c, "lete river tutorial end", field.NOP())
+        else:
+            space = Reserve(0xb0617, 0xb063c, "lete river tutorial", field.NOP())
 
         # skip setting started raft ride bit to avoid side effects (terra/edgar/banon party in narshe)
         space = Reserve(0xb066f, 0xb0670, "lete river set started raft ride bit", field.NOP())
@@ -159,9 +263,21 @@ class LeteRiver(Event):
         space = Reserve(0xb08c2, 0xb08da, "lete river take sabin's path to wob", field.NOP())
 
         space = Reserve(0xb08db, 0xb08e0, "lete river skip ultros battle if already fought", field.NOP())
-        space.write(
-            field.BranchIfEventBitSet(event_bit.RODE_RAFT_LETE_RIVER, 0xb092b),
-        )
+        continue_address = 0xb092b
+        if self.args.character_gating and self.args.ruination_mode:
+            # Do character gating at the boss:
+            src = [
+                field.BranchIfAny([event_bit.RODE_RAFT_LETE_RIVER, True,
+                                   event_bit.character_recruited(self.character_gate()), False],
+                                  continue_address),
+                field.SetEventBit(event_bit.multipurpose_map(3)),  # Store character gating result to recruit character
+                field.Branch(space.end_address + 1)  # branch back if not.
+            ]
+            updated_rode_raft_check = Write(Bank.CB, src, "lete river ruination character gating at boss")
+            space.write(field.Branch(updated_rode_raft_check.start_address))
+        else:
+            space.write(field.BranchIfEventBitSet(event_bit.RODE_RAFT_LETE_RIVER, continue_address))
+
 
         space = Reserve(0xb08ea, 0xb08ec, "lete river what is it?", field.NOP()) # unused dialog 0142 What? WHAT IS IT?
 
@@ -204,14 +320,97 @@ class LeteRiver(Event):
         self.remove_raft = space.start_address
 
     def exit_river_mod(self):
-        src = [
-            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            field.LoadMap(0x00, direction.LEFT, default_music = False, x = 93, y = 41, airship = True),
-            vehicle.SetPosition(93, 41),
-            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            vehicle.LoadMap(0x00, direction.LEFT, default_music = True, x = 93, y = 41),
-            world.End(),
-        ]
+        if self.args.ruination_mode:
+            # Add raft NPC to Esper World map
+            esper_world_map_id = 0x0d9
+            raft_npc = self.maps.get_npc(0x072, 0x11)
+            new_raft_npc = deepcopy(raft_npc)
+            new_raft_npc.x = 34
+            new_raft_npc.y = 52
+            new_raft_npc.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
+            new_raft_npc.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
+            self.esper_world_raft_npc_id = self.maps.append_npc(esper_world_map_id, new_raft_npc)
+
+            # Custom exit to Esper World:  See ref. lete river cave (CB/04B7)
+            src = [
+                field.LoadMap(esper_world_map_id, direction.UP, default_music=False, x=29, y=62, fade_in=False),
+                field.SetVehicle(field_entity.PARTY0, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY1, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY2, field.Vehicle.RAFT_AND_RIDER),
+                field.SetVehicle(field_entity.PARTY3, field.Vehicle.RAFT_AND_RIDER),
+                field.FadeInScreen(),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetSpeed(speed=field_entity.Speed.NORMAL),
+                                field_entity.Move(direction=direction.UP, distance=5),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.SetSpeed(speed=field_entity.Speed.SLOW),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                #field_entity.Move(direction=direction.UP, distance=1),
+                                ),
+                field.Call(0xb04aa),  # Remove Raft
+                field.CreateEntity(self.esper_world_raft_npc_id),
+                field.RefreshEntities(),
+                field.ShowEntity(self.esper_world_raft_npc_id),
+                Read(0xb04d0, 0xb04e2),  # Jump off raft
+                field.FreeMovement(),
+                field.EntityAct(self.esper_world_raft_npc_id, True,
+                                field_entity.SetSpeed(speed=field_entity.Speed.SLOW),
+                                field_entity.Move(direction=direction.RIGHT, distance=5),
+                                field_entity.SetSpeed(speed=field_entity.Speed.NORMAL),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.SetSpeed(speed=field_entity.Speed.FAST),
+                                field_entity.Move(direction=direction.RIGHT, distance=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.Move(direction=direction.RIGHT, distance=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.SetSpeed(speed=field_entity.Speed.FASTEST),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=2),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.Move(direction=direction.UP, distance=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=2,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.MoveDiagonal(dir1=direction.UP, dist1=1,
+                                                          dir2=direction.RIGHT, dist2=1),
+                                field_entity.Hide()
+                                ),
+                field.HideEntity(self.esper_world_raft_npc_id),
+                field.DeleteEntity(self.esper_world_raft_npc_id),
+                field.RefreshEntities(),
+                field.Return()
+            ]
+        else:
+            # Exit to world map
+            src = [
+                field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                field.LoadMap(0x00, direction.LEFT, default_music = False, x = 93, y = 41, airship = True),
+                vehicle.SetPosition(93, 41),
+                vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+                vehicle.LoadMap(0x00, direction.LEFT, default_music = True, x = 93, y = 41),
+                world.End(),
+            ]
         space = Write(Bank.CB, src, "lete river exit after ultros")
         self.exit_river = space.start_address
 
@@ -239,6 +438,26 @@ class LeteRiver(Event):
         space = Reserve(0xb0920, 0xb0920, "lete river sabin floats away")
         space.write(character)
 
+        if self.args.ruination_mode is not None:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+            branch_refresh_src = []
+            if self.args.character_gating:
+                # Skip recruiting character if we don't have Terra
+                branch_refresh_src += [
+                    field.ReturnIfEventBitClear(event_bit.multipurpose_map(3))  # Set upon fighting ultros only
+                ]
+            branch_refresh_src += [
+                field.ChangeNPCEventAddress(character, PARTY_INTERACTION_SCRIPT_ADDRS[character]),
+                field.SetupBranchRecruit(character),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.FinalizeBranchRecruit(),
+                field.Return(),
+            ]
+            branch_refresh = Write(Bank.CB, branch_refresh_src, "lete river branch-aware refresh")
+            refresh_addr = branch_refresh.start_address
+        else:
+            refresh_addr = field.REFRESH_CHARACTERS_AND_SELECT_PARTY
+
         # change party to follow character instead of go the other way
         space = Reserve(0xb092b, 0xb094d, "lete river party floats away", field.NOP())
         space.write(
@@ -256,7 +475,7 @@ class LeteRiver(Event):
             field.WaitForFade(),
 
             field.Call(self.remove_raft),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(refresh_addr),
             field.Call(self.exit_river),
             field.Return(),
         )
@@ -290,3 +509,24 @@ class LeteRiver(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Lete Section 1: Overwrite code for branches "LEFT", "RIGHT" to branch to the map load from "STRAIGHT"
+        # (STRAIGHT is the only one changed by door rando).
+        straight_mapload_addr = 0xb06eb
+        left_mapload_addr = 0xb0750
+        right_mapload_addr = 0xb07c0
+
+        straight_id = 2035
+        if straight_id in self.maps.trap_map.keys():
+            left_id = '2035a'
+            if left_id not in self.maps.trap_map.keys():
+                space = Reserve(left_mapload_addr, left_mapload_addr + 5, "Edit Lete River 1 Left destination", field.NOP())
+                space.write(field.Branch(straight_mapload_addr))
+                #print('patched ', left_id)
+
+            right_id = '2035b'
+            if right_id not in self.maps.trap_map.keys():
+                space = Reserve(right_mapload_addr, right_mapload_addr + 5, "Edit Lete River 1 Right destination", field.NOP())
+                space.write(field.Branch(straight_mapload_addr))
+                #print('patched ', right_id)

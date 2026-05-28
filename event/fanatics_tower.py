@@ -30,6 +30,9 @@ class FanaticsTower(Event):
         self.finish_magimaster_check_mod()
         self.finish_strago_check_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
         self.log_reward(self.reward1)
         self.log_reward(self.reward2)
 
@@ -210,3 +213,46 @@ class FanaticsTower(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def ruination_mod(self):
+        from data.map_event import MapEvent
+
+        # Save ENABLE_Y_PARTY_SWITCHING to SAVED_Y_PARTY_SWITCHING, then clear it
+        src = [
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            field.Branch("DONE_SAVE"),
+            "Y_WAS_ON",
+            field.SetEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            "DONE_SAVE",
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "fanatics tower save and disable y-party switching")
+        disable_y_switch_event = space.start_address
+
+        new_event = MapEvent()
+        new_event.x = 8
+        new_event.y = 1
+        new_event.event_address = disable_y_switch_event - EVENT_CODE_START
+        self.maps.add_event(0x16a, new_event)
+
+        # Restore ENABLE_Y_PARTY_SWITCHING from SAVED_Y_PARTY_SWITCHING
+        src = [
+            field.BranchIfEventBitSet(event_bit.SAVED_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.Branch("DONE_RESTORE"),
+            "Y_WAS_ON",
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            "DONE_RESTORE",
+            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "fanatics tower restore y-party switching")
+        enable_y_switch_event = space.start_address
+
+        new_event = MapEvent()
+        new_event.x = 7
+        new_event.y = 29
+        new_event.event_address = enable_y_switch_event - EVENT_CODE_START
+        self.maps.add_event(0x16b, new_event)
