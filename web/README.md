@@ -20,9 +20,12 @@ python3 -m http.server --directory web 8000
 * **Canvas (left)** — the FF6 config menu, page A or B, displayed at native
   256x224 and scaled 2x.  Cursor sits next to the current value for the
   active row; the yellow underline marks every row's current value.
-* **Side panel (right)** — preview-window picker, wallpaper picker, R/G/B
-  sliders for the currently-targeted color, reset buttons, and the
-  generated flagstring.
+* **Side panel (right)** — preview-window picker, wallpaper picker,
+  controller (`single`/`multiple`) picker, R/G/B sliders for the
+  currently-targeted color, reset buttons, and the generated flagstring.
+  Choosing `multiple` reveals four "Player 2 controls" checkboxes
+  (battle slots 1–4) that map to the `-p2` flag and the in-game
+  controller-assignment submenu; they hide again under `single`.
 
 ### Keyboard
 

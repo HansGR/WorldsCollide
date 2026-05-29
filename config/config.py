@@ -10,11 +10,20 @@ palette tables.  Their layout in ROM:
     bbb = battle speed     (0..5, displayed as 1..6)
 * Config2 -- byte loaded into $1D54: mbcc csss
 * Config3 -- byte loaded into $1D4E: gcsr wwww
+* Config4 -- byte loaded into $1D4F: ---- 4321
+    4321 = which battle character (slot 1..4) player 2 controls when the
+    Controller option is "multiple".  Each bit is the in-game submenu's
+    "if on, player 2 controls character N" toggle; the upper nibble is
+    unused.
 
-Config1 lives at a fixed address.  Config2/Config3 default writes are done
-by a pair of small subroutines whose addresses are stored as JSR operands
-at $03/70C3 and $03/70C6 -- we read those, then add 1 to skip past the
-"LDA #$NN" opcode and land on the immediate byte that we want to patch.
+Config1 lives at a fixed address.  Config2/Config3/Config4 default writes
+are done by small subroutines whose addresses are stored as JSR operands
+at $03/70C3, $03/70C6 and $03/70C9 -- we read those, then add 1 to skip
+past the "LDA #$NN" opcode and land on the immediate byte we want to patch.
+
+The Config4 ($1D4F) subroutine is an extension: vanilla/older trampolines
+only override Config2/Config3, leaving boot code's ``STZ $1D4F`` in place
+(a hard zero).  ``set_config`` detects whether the extension is present.
 
 Window palettes live at $2D/1C02 etc., 14 bytes (7 BGR15 colors) each.
 """
@@ -30,6 +39,7 @@ CONFIG1_ADDR = 0x0370B9
 # Same for $03/70C5.  Reading at +1 / +4 skips the opcode byte.
 CONFIG2_JSR_OPERAND = 0x0370C3
 CONFIG3_JSR_OPERAND = 0x0370C6
+CONFIG4_JSR_OPERAND = 0x0370C9
 
 FONT_PALETTE_ADDRS = (
     0x18E806,  # actual font color (2 bytes)
@@ -78,7 +88,16 @@ CONFIG_BYTES = {
         Field("Reequip",   bits=1, default=False),
         Field("Wallpaper", bits=4, default=1, offset=1),
     ],
+    "Config4": [   # ----4321
+        # Low nibble is a bitmask: bit N-1 set => player 2 controls battle
+        # slot N.  Stored as a 4-bit int (0..15); the high nibble stays 0.
+        Field("Player2Controls", bits=4, default=0),
+    ],
 }
+
+# CONFIG_BYTES entries written through the boot trampoline.  Config4
+# ($1D4F) is handled separately because it needs the trampoline extension.
+TRAMPOLINE_CONFIG_BYTES = ("Config2", "Config3")
 
 
 WINDOW_DEFAULTS = {
@@ -140,6 +159,22 @@ def is_trampoline_installed(rom):
             and rom.get_byte(CONFIG_TRAMPOLINE_JSR + 3) == 0x20)
 
 
+# The boot site for the Config4 ($1D4F) write sits right after the two
+# original STZ instructions.  Older trampolines leave a ``STZ $1D4F``
+# (opcode 0x9C) here; the extended trampoline replaces it with a JSR.
+CONTROLLER_TRAMPOLINE_JSR = CONFIG_TRAMPOLINE_JSR + 6  # 0x0370C8
+
+
+def is_controller_trampoline_installed(rom):
+    """Return True if the extended ``$03/70C8`` trampoline is in place.
+
+    This is the third JSR that lets us override the default value of
+    $1D4F (player-2 controller assignments).  Without it, $1D4F is a hard
+    zero baked in by the boot ``STZ`` and only a zero default is possible.
+    """
+    return rom.get_byte(CONTROLLER_TRAMPOLINE_JSR) == 0x20
+
+
 # ---- Public API ------------------------------------------------------
 
 def set_config(rom, config_set):
@@ -155,8 +190,21 @@ def set_config(rom, config_set):
         "Config2": _read_default_config_addr(rom, CONFIG2_JSR_OPERAND),
         "Config3": _read_default_config_addr(rom, CONFIG3_JSR_OPERAND),
     }
-    for name, fields in CONFIG_BYTES.items():
-        rom.set_bytes(addresses[name], [pack_config_byte(fields, config_set)])
+    for name in ("Config1", *TRAMPOLINE_CONFIG_BYTES):
+        rom.set_bytes(addresses[name], [pack_config_byte(CONFIG_BYTES[name], config_set)])
+
+    # Config4 ($1D4F) only exists once the trampoline extension is in.
+    # When it's absent, the boot ``STZ`` already gives a zero default, so
+    # we only need to complain if the user actually asked for non-zero.
+    p2_byte = pack_config_byte(CONFIG_BYTES["Config4"], config_set)
+    if is_controller_trampoline_installed(rom):
+        addr = _read_default_config_addr(rom, CONFIG4_JSR_OPERAND)
+        rom.set_bytes(addr, [p2_byte])
+    elif p2_byte:
+        raise ValueError(
+            "player-2 controller assignments need the extended config "
+            "trampoline ($03/70C8); re-run install_trampoline.py on this ROM."
+        )
 
     for i in range(1, 9):
         key = f"Window{i}"

@@ -49,6 +49,31 @@ def _bool_choice(true_label, false_label):
     return parse
 
 
+def _parse_player2(s):
+    """Parse a subset of battle slots {1,2,3,4} into a 4-bit mask.
+
+    Accepts the digits 1..4 in any order, optionally separated by commas
+    or spaces (e.g. ``"13"``, ``"1,3"``).  Each listed slot N sets bit
+    N-1, matching the in-game submenu's ``----4321`` layout in $1D4F
+    ("if on, player 2 controls that character").  An empty string means
+    no slots (player 1 controls everyone).
+    """
+    mask = 0
+    seen = set()
+    for ch in s:
+        if ch in ", ":
+            continue
+        if ch not in "1234":
+            raise argparse.ArgumentTypeError(
+                f"player-2 slots must be a subset of {{1,2,3,4}}, got {s!r}")
+        n = int(ch)
+        if n in seen:
+            raise argparse.ArgumentTypeError(f"slot {n} listed twice in {s!r}")
+        seen.add(n)
+        mask |= 1 << (n - 1)
+    return mask
+
+
 def _parse_rgb(s):
     """Parse ``R,G,B`` (each 0..31) into ``[R, G, B]``."""
     parts = s.split(",")
@@ -121,7 +146,8 @@ def _parse_window_palette(s):
 # argparse namespace straight through to set_config.
 CLI_OPTIONS = [
     "BatMode", "BatSpeed", "MsgSpeed", "Command", "Gauge", "Sound",
-    "Cursor", "Reequip", "SpellOrder", "Font", "Wallpaper",
+    "Cursor", "Reequip", "SpellOrder", "Controller2", "Player2Controls",
+    "Font", "Wallpaper",
     *(f"Window{i}" for i in range(1, 9)),
 ]
 
@@ -163,6 +189,13 @@ def build_parser():
     p.add_argument("-so",  "--spell-order", dest="SpellOrder",
                    type=_int_in_range(1, 6),
                    help="1..6  (default: 1)")
+    p.add_argument("-ctrl","--controller",  dest="Controller2",
+                   type=_bool_choice("multiple", "single"),
+                   help="single | multiple  (default: single)")
+    p.add_argument("-p2",  "--player2",      dest="Player2Controls",
+                   type=_parse_player2,
+                   help="battle slots player 2 controls: subset of 1,2,3,4 "
+                        "(e.g. 13 or 1,3). Requires --controller multiple.")
     p.add_argument("-f",   "--font",        dest="Font",
                    type=_parse_rgb,
                    help="font color as R,G,B (each 0..31)")
@@ -237,6 +270,11 @@ def main(argv=None):
         if getattr(args, name) is not None
     }
 
+    # Player-2 assignments only make sense in "multiple" controller mode --
+    # the in-game submenu they map to is unreachable otherwise.
+    if config_set.get("Player2Controls") and not config_set.get("Controller2"):
+        sys.exit("error: -p2/--player2 requires -ctrl/--controller multiple")
+
     rom = ROM(args.input)
     if not cfg.is_trampoline_installed(rom):
         sys.exit(
@@ -245,7 +283,10 @@ def main(argv=None):
             "Run `python3 install_trampoline.py -i <rom>` first, or apply a "
             "Worlds Collide patch."
         )
-    cfg.set_config(rom, config_set)
+    try:
+        cfg.set_config(rom, config_set)
+    except ValueError as e:
+        sys.exit(f"error: {e}")
 
     # Apply --config graphics first, then --window-image, so an explicit
     # --window-image on the CLI overrides whatever the JSON has for the
