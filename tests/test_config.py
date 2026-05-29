@@ -58,6 +58,19 @@ def test_pack_config2_defaults():
     assert cfg.pack_config_byte(cfg.CONFIG_BYTES["Config2"], {}) == 0
 
 
+def test_pack_config4_player2():
+    # Default: no slots -> 0
+    assert cfg.pack_config_byte(cfg.CONFIG_BYTES["Config4"], {}) == 0
+    # Slots 1 and 3 -> ----0101 = 0x05 (upper nibble stays clear)
+    byte = cfg.pack_config_byte(cfg.CONFIG_BYTES["Config4"],
+                                {"Player2Controls": 0b0101})
+    assert byte == 0b0101, f"{byte:#04x}"
+    # All four slots -> ----1111 = 0x0F
+    byte = cfg.pack_config_byte(cfg.CONFIG_BYTES["Config4"],
+                                {"Player2Controls": 0b1111})
+    assert byte == 0x0F, f"{byte:#04x}"
+
+
 def test_pack_config3_all_set():
     byte = cfg.pack_config_byte(
         cfg.CONFIG_BYTES["Config3"],
@@ -374,6 +387,68 @@ def test_set_config_writes_three_bytes():
     assert 0x03FC11 in written_addrs
 
 
+def test_parse_player2_masks():
+    assert ff6_config._parse_player2("") == 0
+    assert ff6_config._parse_player2("1") == 0b0001
+    assert ff6_config._parse_player2("13") == 0b0101
+    assert ff6_config._parse_player2("1,3") == 0b0101
+    assert ff6_config._parse_player2("1234") == 0b1111
+    # Order doesn't matter
+    assert ff6_config._parse_player2("42") == 0b1010
+
+
+def test_parse_player2_rejects_bad():
+    for bad in ["5", "0", "a", "12,5"]:
+        try:
+            ff6_config._parse_player2(bad)
+        except argparse.ArgumentTypeError:
+            pass
+        else:
+            raise AssertionError(f"expected rejection for {bad!r}")
+    # Duplicate slot
+    try:
+        ff6_config._parse_player2("11")
+    except argparse.ArgumentTypeError:
+        pass
+    else:
+        raise AssertionError("expected rejection for duplicate slot")
+
+
+def test_cli_parses_player2_and_controller():
+    parser = ff6_config.build_parser()
+    ns = parser.parse_args(["-i", "rom.smc", "-ctrl", "multiple", "-p2", "13"])
+    assert ns.Controller2 is True
+    assert ns.Player2Controls == 0b0101
+
+
+def test_set_config_writes_player2_when_extended():
+    rom_bytes = bytearray(0x300000)
+    rom_bytes[0x0370C3] = 0x00; rom_bytes[0x0370C4] = 0xFC  # Config2 -> 0x03FC01
+    rom_bytes[0x0370C6] = 0x10; rom_bytes[0x0370C7] = 0xFC  # Config3 -> 0x03FC11
+    rom_bytes[0x0370C8] = 0x20                              # extended trampoline JSR
+    rom_bytes[0x0370C9] = 0x20; rom_bytes[0x0370CA] = 0xFC  # Config4 -> 0x03FC21
+    rom = _FakeRom(rom_bytes)
+    cfg.set_config(rom, {"Player2Controls": 0b1010})
+    assert (0x03FC21, [0b1010]) in rom.writes
+
+
+def test_set_config_rejects_player2_without_extended_trampoline():
+    rom_bytes = bytearray(0x300000)
+    rom_bytes[0x0370C3] = 0x00; rom_bytes[0x0370C4] = 0xFC
+    rom_bytes[0x0370C6] = 0x10; rom_bytes[0x0370C7] = 0xFC
+    rom_bytes[0x0370C8] = 0x9C  # vanilla STZ $1D4F -- no Config4 override
+    rom = _FakeRom(rom_bytes)
+    # Zero request is fine (the STZ already gives a zero default).
+    cfg.set_config(rom, {"Player2Controls": 0})
+    # Non-zero request must fail loudly.
+    try:
+        cfg.set_config(rom, {"Player2Controls": 0b0001})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError without extended trampoline")
+
+
 # ---- Trampoline detection -------------------------------------------
 
 def test_trampoline_detection():
@@ -393,22 +468,32 @@ def test_trampoline_detection():
     assert cfg.is_trampoline_installed(_FakeRom(rom_bytes)) is False
 
 
+def test_controller_trampoline_detection():
+    rom_bytes = bytearray(0x040000)
+    rom_bytes[0x0370C8] = 0x9C  # vanilla STZ $1D4F
+    assert cfg.is_controller_trampoline_installed(_FakeRom(rom_bytes)) is False
+    rom_bytes[0x0370C8] = 0x20  # extended trampoline JSR
+    assert cfg.is_controller_trampoline_installed(_FakeRom(rom_bytes)) is True
+
+
 # ---- Installer -------------------------------------------------------
 
 def test_build_subroutines_layout():
     b = inst.build_subroutines()
-    assert len(b) == 12
+    assert len(b) == 18
     # Subroutine 1: LDA #$00; STA $1D54; RTS
-    assert b[:6] == [0xA9, 0x00, 0x8D, 0x54, 0x1D, 0x60]
+    assert b[0:6] == [0xA9, 0x00, 0x8D, 0x54, 0x1D, 0x60]
     # Subroutine 2: LDA #$00; STA $1D4E; RTS
-    assert b[6:] == [0xA9, 0x00, 0x8D, 0x4E, 0x1D, 0x60]
+    assert b[6:12] == [0xA9, 0x00, 0x8D, 0x4E, 0x1D, 0x60]
+    # Subroutine 3: LDA #$00; STA $1D4F; RTS (player-2 controller byte)
+    assert b[12:18] == [0xA9, 0x00, 0x8D, 0x4F, 0x1D, 0x60]
 
 
-def test_build_jsr_pair_default_address():
+def test_build_jsrs_default_address():
     # Default trampoline at file 0x3F091 -> SNES $C3/F091, low 16 bits 0xF091.
-    # Second subroutine at offset +6 -> $C3/F097, low 16 bits 0xF097.
-    jsrs = inst.build_jsr_pair(0xF091)
-    assert jsrs == [0x20, 0x91, 0xF0, 0x20, 0x97, 0xF0]
+    # Subroutines at offsets +0/+6/+12 -> $F091/$F097/$F09D.
+    jsrs = inst.build_jsrs(0xF091)
+    assert jsrs == [0x20, 0x91, 0xF0, 0x20, 0x97, 0xF0, 0x20, 0x9D, 0xF0]
 
 
 def test_parse_address_forms():
@@ -466,10 +551,10 @@ def test_installer_main_writes_expected_bytes(tmp_path=None):
     assert len(write_calls) == 1
     out_path, out = write_calls[0]
     assert out_path == "out.smc"
-    # Expect JSR pair to default address ($C3/F091)
-    assert out[0x0370C2:0x0370C8] == bytes([0x20, 0x91, 0xF0, 0x20, 0x97, 0xF0])
-    # Expect the 12 trampoline bytes
-    assert out[0x03F091:0x03F09D] == bytes(inst.build_subroutines())
+    # Expect the JSR trio to the default address ($C3/F091)
+    assert out[0x0370C2:0x0370CB] == bytes(inst.build_jsrs(0xF091))
+    # Expect the 18 trampoline bytes
+    assert out[0x03F091:0x03F0A3] == bytes(inst.build_subroutines())
 
 
 def test_installer_rejects_out_of_bank_address():

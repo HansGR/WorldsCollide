@@ -42,6 +42,7 @@ const TOGGLE_DEFAULTS = {
   Reequip:    'optimum',
   SpellOrder: 1,
   Controller: 'single',
+  Player2:    [],   // battle slots (1..4) player 2 controls in "multiple"
   Wallpaper:  1,
   WindowStyle: 1,   // which Window* palette is "active" for editing/preview
 };
@@ -1371,6 +1372,7 @@ function syncSidePanel() {
   // from the canvas (PAGE_A_OPTIONS) and the side-panel dropdown, so keep
   // the dropdown synced after every state mutation.
   document.getElementById('controller').value = state.Controller;
+  syncPlayer2UI();
 
   // preview-warning
   const warn = document.getElementById('preview-warning');
@@ -1461,7 +1463,29 @@ document.getElementById('wallpaper').addEventListener('change', (e) => {
 
 document.getElementById('controller').addEventListener('change', (e) => {
   state.Controller = e.target.value;
+  syncPlayer2UI();
   updateFlagString();
+});
+
+// Player-2 controller assignment toggles.  The row is only visible while
+// Controller is "multiple"; the four checkboxes mirror the in-game submenu
+// ("if on, player 2 controls battle slot N", $1D4F bits ----4321).
+function syncPlayer2UI() {
+  const row = document.getElementById('player2-row');
+  row.style.display = state.Controller === 'multiple' ? '' : 'none';
+  document.querySelectorAll('.player2').forEach(cb => {
+    cb.checked = state.Player2.includes(parseInt(cb.value, 10));
+  });
+}
+
+document.querySelectorAll('.player2').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const n = parseInt(cb.value, 10);
+    const set = new Set(state.Player2);
+    if (cb.checked) set.add(n); else set.delete(n);
+    state.Player2 = [...set].sort((a, b) => a - b);
+    updateFlagString();
+  });
 });
 
 document.querySelectorAll('.tab').forEach(t => {
@@ -1514,6 +1538,10 @@ function buildFlagString() {
     args.push(`-so ${state.SpellOrder}`);
   if (state.Controller !== TOGGLE_DEFAULTS.Controller)
     args.push(`-ctrl ${state.Controller}`);
+  // Player-2 assignments only mean anything in "multiple" mode, and the
+  // CLI rejects -p2 without -ctrl multiple, so gate the flag on both.
+  if (state.Controller === 'multiple' && state.Player2.length)
+    args.push(`-p2 ${[...state.Player2].sort((a, b) => a - b).join('')}`);
   if (state.Wallpaper !== TOGGLE_DEFAULTS.Wallpaper)
     args.push(`-w ${state.Wallpaper}`);
   if (!deepEq(state.font, FONT_DEFAULT))
@@ -1585,6 +1613,20 @@ function shlexSplit(s) {
   return out;
 }
 
+function parsePlayer2(s) {
+  // Inverse of buildFlagString's -p2 emission: digits 1..4 (optionally
+  // comma/space separated) -> sorted array of slot numbers.
+  const out = [];
+  for (const ch of s) {
+    if (ch === ',' || ch === ' ') continue;
+    if (!'1234'.includes(ch))
+      throw new Error(`player-2 slot out of 1..4 in ${JSON.stringify(s)}`);
+    const n = parseInt(ch, 10);
+    if (!out.includes(n)) out.push(n);
+  }
+  return out.sort((a, b) => a - b);
+}
+
 function parseRgbTriple(s) {
   const parts = s.split(',');
   if (parts.length !== 3) throw new Error(`bad rgb triple ${JSON.stringify(s)}`);
@@ -1629,6 +1671,8 @@ function applyFlagString(flags) {
       state[spec.key] = spec.int ? parseInt(val, 10) : val;
     } else if (flag === '-f') {
       state.font = parseRgbTriple(val);
+    } else if (flag === '-p2') {
+      state.Player2 = parsePlayer2(val);
     } else if (/^-w[1-8]$/.test(flag)) {
       const n = parseInt(flag.slice(2), 10);
       for (const entry of val.split(';')) {
