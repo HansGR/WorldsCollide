@@ -54,9 +54,11 @@ class Dialogs():
                                     self.DIALOGS_START, self.DIALOGS_END)
 
         self.dialogs = []
+        #with open('../dialog_file.txt', 'w') as f:
         for dialog_index, dialog_data in enumerate(self.dialog_data):
             dialog = Dialog(dialog_index, data.text.TEXT1, dialog_data)
             self.dialogs.append(dialog)
+                #print(dialog_index,':', dialog.text, file=f)  # Python 3.x
 
         # the last used dialog ends with garbage data because the last pointer pointed to the end of
         # the available dialog memory instead of the end of the actual displayed text

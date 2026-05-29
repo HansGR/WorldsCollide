@@ -1,5 +1,9 @@
 class Arguments:
     def __init__(self):
+        # Preprocess -ruin meta-flag before parsing
+        from args.ruin_preprocessor import preprocess_arguments
+        preprocess_arguments()
+
         import importlib
         self.groups = [
             "settings",
@@ -9,7 +13,7 @@ class Arguments:
             "espers", "natural_magic", "misc_magic",
             "starting_gold_items", "items", "shops", "chests",
             "graphics",
-            "coliseum", "auction_house", "challenges", "bug_fixes", "misc",
+            "coliseum", "auction_house", "challenges", "bug_fixes", "misc", "doors"
         ]
         self.group_modules = {}
         for group in self.groups:
@@ -23,6 +27,8 @@ class Arguments:
         self.parser.add_argument("-url", dest = "website_url", required = False, help = "Url to the shareable link for the seed")
         self.parser.add_argument("-manifest", dest = "manifest_file", required = False, help = "Output location for api metadata")
         self.parser.add_argument("-debug", dest = "debug", action = "store_true", help = "Debug mode")
+        self.parser.add_argument("-dv", "-debug-verbose", dest = "debug_verbose", action = "store_true",
+                                 help = "Write verbose ruin-mode diagnostics to a temp file and append to the spoiler log")
         self.parser.add_argument("-sid", dest = "seed_id", action = "store_true", help = "Key used for api tracking")
 
         self.parser.add_argument("-nro", dest = "no_rom_output", action = "store_true", help = "Do not output a modified rom file")
@@ -65,6 +71,10 @@ class Arguments:
             self.output_file = os.path.join(self.output_file, f"{name}_wc_{self.seed}{ext}")            
 
         if self.debug:
+            self.spoiler_log = True
+        if self.debug_verbose:
+            # -debug-verbose implies a spoiler log so the diagnostics have
+            # somewhere to be appended at the end of the compile.
             self.spoiler_log = True
 
     def _process_min_max(self, arg_name):

@@ -3,6 +3,16 @@ from event.event import *
 # TODO: only trigger this event in wob
 
 class BurningHouse(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_burning_house
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Burning House"
 
@@ -11,6 +21,24 @@ class BurningHouse(Event):
 
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
+
+    # Per-fireball NPC visibility bits used in ruination mode so fireballs
+    # stay defeated across map reloads. See ruination_fireballs_mod().
+    RUINATION_FIREBALLS = [
+        # (event_addr, npc_id, npc_bit)
+        (0xbe6cb, 0x10, 0x3a1),
+        (0xbe6d8, 0x11, 0x3a2),
+        (0xbe6e5, 0x12, 0x3a3),
+        (0xbe6f2, 0x17, 0x3a4),
+        (0xbe6ff, 0x19, 0x3a5),
+        (0xbe70c, 0x1a, 0x3a6),
+        (0xbe719, 0x1e, 0x3a7),
+        (0xbe726, 0x1f, 0x3a8),
+        (0xbe733, 0x20, 0x3a9),
+        (0xbe740, 0x21, 0x3aa),
+        (0xbe74d, 0x22, 0x3ab),
+        (0xbe75a, 0x23, 0x3ac),
+    ]
 
     def init_event_bits(self, space):
         space.write(
@@ -26,16 +54,27 @@ class BurningHouse(Event):
             field.SetEventBit(npc_bit.THAMASA_CITIZENS),
         )
 
+        if self.args.ruination_mode:
+            # Make each fireball NPC initially visible via its unique bit.
+            # Cleared per-fireball when defeated (see ruination_fireballs_mod).
+            for _, _, bit in self.RUINATION_FIREBALLS:
+                space.write(field.SetEventBit(bit))
+
     def mod(self):
-        if self.args.character_gating:
+        if self.args.ruination_mode:
+            self.ruination_inn_mod()
+            self.ruination_fireballs_mod()
+        elif self.args.character_gating:
             self.add_gating_condition()
 
         self.enter_burning_house_mod()
         self.flame_eater_mod()
         self.wake_up_mod()
 
-        if not self.args.fixed_encounters_original:
-            self.fixed_battles_mod()
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
+        if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
+            self.map_shuffle_mod()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -62,6 +101,115 @@ class BurningHouse(Event):
             field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGER_PRICE"),
         )
 
+    def ruination_inn_mod(self):
+        """
+        Modifies the Thamasa inn for ruination mode.
+
+        Burning house re-trigger (always, ruination architecture):
+        - If STRAGO recruited: always trigger burning house event (re-enterable)
+
+        Inn pricing (gated by -nfh):
+        - If STRAGO not recruited: "You're strangers" path with high price (1500 GP * multiplier)
+
+        The burning house is made re-enterable by enter_burning_house_mod() which NOPs
+        the DEFEATED_FLAME_EATER check at 0xbd7bf when DOOR_RANDOMIZE is true.
+        """
+        from event.free_heals import INN_COST_MULTIPLIER
+
+        # Inn price increase is the free-heal-related portion. Skip when -nfh is off.
+        if self.args.no_free_heals:
+            # Original "strangers" price, with multiplier applied
+            STRANGERS_BASE_PRICE = 1500
+            new_price = min(STRANGERS_BASE_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
+
+            # Strangers price path (when STRAGO not recruited)
+            STRANGERS_PRICE_PATH = 0xbd769
+            STRANGERS_PRICE_GP = 0xbd775
+            STRANGERS_DIALOG = 0x0790
+
+            # Patch event at 0xbd73f: If STRAGO not recruited, branch to strangers price
+            space = Reserve(0xbd73f, 0xbd746, "thamasa inn ruination check", field.NOP())
+            space.add_label("STRANGERS_PRICE", STRANGERS_PRICE_PATH)
+            space.write(
+                field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGERS_PRICE"),
+            )
+
+            # Update dialog with original flavor, new price
+            self.dialogs.set_text(STRANGERS_DIALOG,
+                                  f"You're strangers...<line>{new_price} GP if you wanna stay.<line>"
+                                  f"<choice> (Well, okay.)<line><choice> (No way!)<end>")
+
+            # Update the GP cost for strangers price path
+            self.rom.set_bytes(STRANGERS_PRICE_GP, new_price.to_bytes(2, 'little'))
+
+        # Patch burning house trigger at 0xbd7c5: use character_recruited instead of MET_STRAGO_RELM
+        # Original: If MET_STRAGO_RELM set -> branch to burning house (0xbdcc7)
+        # New: If STRAGO recruited -> branch to burning house
+        BURNING_HOUSE_EVENT = 0xbdcc7
+        space = Reserve(0xbd7c5, 0xbd7ca, "thamasa inn burning house trigger", field.NOP())
+        space.add_label("BURNING_HOUSE", BURNING_HOUSE_EVENT)
+        space.write(
+            field.BranchIfEventBitSet(event_bit.character_recruited(self.characters.STRAGO), "BURNING_HOUSE"),
+        )
+
+    def ruination_fireballs_mod(self):
+        """
+        In ruination mode the burning house is re-enterable, so fireball NPCs
+        that were simply hidden after battle in vanilla reappear on every map
+        reload. Give each of the twelve fireballs its own NPC visibility bit
+        (0x3a1-0x3ac) and replace the hide/delete tail of each fireball's
+        event with a Call to a new subroutine that also clears that bit, so
+        the fireball stays defeated permanently.
+
+        The NPC bits are set at startup in init_event_bits so the fireballs
+        are visible on the first visit.
+
+        Each vanilla fireball event is 13 bytes:
+            4D xx            InvokeBattle              (3 bytes)
+            B2 A9 5E CA      Call game-over check      (4 bytes)
+            42 nn            HideEntity   (back half)  (2 bytes)
+            3E nn            DeleteEntity (back half)  (2 bytes)
+            96               FadeInScreen (back half)  (1 byte)
+            FE               Return       (back half)  (1 byte)
+        We replace the 6-byte back half with Call(subroutine) + Return.
+        """
+        for event_addr, npc_id, bit in self.RUINATION_FIREBALLS:
+            # Assign the unique NPC visibility bit to this fireball.
+            fireball_npc = self.maps.get_npc(0x15f, npc_id)
+            fireball_npc.event_byte = npc_bit.event_byte(bit)
+            fireball_npc.event_bit = npc_bit.event_bit(bit)
+
+            # Subroutine replacing the back half: hide+delete self, restore
+            # screen, and 5/8 of the time clear the NPC visibility bit so it
+            # stays gone. The 3/8 respawn chance keeps the house dangerous.
+            # BranchRandomly is 50/50; chaining two branches to CLEAR_BIT
+            # reaches the clear with 0.5 + 0.5 * 0.5 = 0.75 probability.
+            src = [
+                field.HideEntity(npc_id),
+                field.DeleteEntity(npc_id),
+                field.FadeInScreen(),
+                field.BranchRandomly("CLEAR_BIT"),  # 50% clear bit
+                # From here, we want 25% clear bit, 75% return for 5/8 clear
+                field.BranchRandomly("RETURN"),
+                field.BranchRandomly("RETURN"),     # 25% fall through to clear --> 62.5% total (5/8)
+                "CLEAR_BIT",
+                field.ClearEventBit(bit),
+                "RETURN",
+                field.Return(),
+            ]
+            subspace = Write(Bank.CB, src, f"burning house fireball {hex(npc_id)} defeated")
+
+            # Replace the 6-byte back half with Call + Return (5 bytes; 1 NOP).
+            back_half_start = event_addr + 7   # after InvokeBattle(3) + game-over Call(4)
+            back_half_end = event_addr + 12    # inclusive; 6 bytes total
+            space = Reserve(back_half_start, back_half_end,
+                            f"burning house fireball {hex(npc_id)} back half",
+                            field.NOP())
+            space.write(
+                field.Call(subspace.start_address),
+                field.Return(),
+            )
+
     def enter_burning_house_mod(self):
         # wake up in middle of night, enter burning house, skip scene with villagers outside burning house
         space = Reserve(0xbdcc7, 0xbdccd, "load burning house map", field.NOP())
@@ -76,16 +224,68 @@ class BurningHouse(Event):
             field.Return(),
         )
 
+        if self.DOOR_RANDOMIZE:
+            # Make entry to burning house repeatable by removing check for DEFEATED_FLAME_EATER
+            space = Reserve(0xbd7bf, 0xbd7c4, "make burning house repeatable", field.NOP())
+
     def flame_eater_mod(self):
         boss_pack_id = self.get_boss("FlameEater")
 
-        space = Reserve(0xbe793, 0xbe799, "burning house invoke battle flame eater", field.NOP())
-        space.write(
-            field.InvokeBattle(boss_pack_id),
-        )
+        if self.DOOR_RANDOMIZE:
+            # Reserve the entire approach + boss animation + battle invoke area
+            space = Reserve(0xbe767, 0xbe799, "burning house flame eater approach and battle", field.NOP())
 
-        # split party, "Is this the source of our blaze...?"
-        space = Reserve(0xbe76c, 0xbe78d, "burning house approach flame eater dialog", field.NOP())
+            src = [
+                field.ReturnIfEventBitSet(event_bit.DEFEATED_FLAME_EATER),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                                field_entity.Move(direction.UP, 1),
+                                ),
+            ]
+
+            if self.args.character_gating:
+                # If Strago recruited, skip to boss fight; otherwise kick-out animation
+                src += [
+                    field.BranchIfEventBitSet(
+                        event_bit.character_recruited(self.character_gate()),
+                        "FIGHT",
+                    ),
+                    # Kick-out: shake + sound, surprised animation, low jump down 2 tiles
+                    field.PlaySoundEffect(137),
+                    field.ShakeScreen(intensity=3, permanent=True,
+                                      layer1=True, layer2=True, layer3=True, sprite_layer=True),
+                    field.EntityAct(field_entity.PARTY0, True,
+                                    field_entity.AnimateSurprised(),
+                                    field_entity.DisableWalkingAnimation(),
+                                    field_entity.Pause(8),
+                                    field_entity.AnimateLowJump(),
+                                    field_entity.Move(direction.DOWN, 2),
+                                    field_entity.AnimateLowJump(),
+                                    field_entity.Move(direction.DOWN, 1),
+                                    field_entity.EnableWalkingAnimation(),
+                                    ),
+                    field.StopScreenShake(),
+                    field.FreeScreen(),
+                    field.Return(),
+                    "FIGHT",
+                ]
+
+            src.append([
+                field.EntityAct(0x18, True,
+                                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                                field_entity.Move(direction.DOWN, 2),
+                                ),
+                field.InvokeBattle(boss_pack_id)
+            ])
+            space.write(src)
+        else:
+            space = Reserve(0xbe793, 0xbe799, "burning house invoke battle flame eater", field.NOP())
+            space.write(
+                field.InvokeBattle(boss_pack_id),
+            )
+            # split party, "Is this the source of our blaze...?"
+            space = Reserve(0xbe76c, 0xbe78d, "burning house approach flame eater dialog", field.NOP())
+
 
     def defeated_flame_eater_mod(self, space):
         space.write(
@@ -100,7 +300,14 @@ class BurningHouse(Event):
             field.Pause(1),
             field.StartSong(0xb8),
             field.WaitForSong(),
+        ]
+        if self.args.ruination_mode:
+            # Force waking up in WOR (we don't use WOB in ruination mode)
+            src += [
+                field.SetEventBit(event_bit.IN_WOR)
+            ]
 
+        src += [
             field.LoadMap(0x15a, direction.DOWN, default_music = True, x = 13, y = 16, fade_in = False, entrance_event = True),
             field.Call(field.UPDATE_LEADER_AND_SHOW_ALL_PARTY_MEMBERS),
             field.Call(field.DISABLE_COLLISIONS_FOR_PARTY_MEMBERS),
@@ -182,17 +389,59 @@ class BurningHouse(Event):
                 field_entity.SetSpeed(field_entity.Speed.NORMAL),
                 field_entity.Move(direction.UP, 7),
             ),
+        )
+        if self.args.ruination_mode:
+            # Some of the fireballs may have been deleted.  Recreate them for the animation.
+            space.write(
+                field.CreateEntity(0x10),
+                field.ShowEntity(0x10),
+                field.CreateEntity(0x11),
+                field.ShowEntity(0x11),
+                field.CreateEntity(0x12),
+                field.ShowEntity(0x12),
+                field.CreateEntity(0x17),
+                field.ShowEntity(0x17),
+                field.CreateEntity(0x19),
+                field.ShowEntity(0x19),
+                field.RefreshEntities(),
+            )
+        space.write(
             field.Branch(space.end_address + 1), # skip nop
         )
 
         # "I'll use a smoke bomb"
         space = Reserve(0xbea2c, 0xbea2e, "burning house smoke bomb dialog", field.NOP())
 
-        space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
-        space.write(
-            field.RecruitAndSelectParty(character),
-            field.Branch(self.wake_up),
-        )
+        if self.DOOR_RANDOMIZE:
+            dog_npc_id = 0x1c
+            # If door randomized, just replace the character where they were.
+            # Talking to the dog will animate the exit to Thamasa Inn.
+            space = Reserve(0xbea2f, 0xbea64, "burning house wake up", field.NOP())
+            src = [
+                field.RecruitAndSelectParty(character),
+                # Two event bits cleared after animation:
+                field.ClearEventBit(0x507),  # CB/EA40: DB    Clear event bit $1E80($507) [$1F20, bit 7]
+                field.ClearEventBit(0x506),  # CB/EA42: DB    Clear event bit $1E80($506) [$1F20, bit 6]
+                field.Call(self.delete_flameeater_npcs),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.AnimateStandingFront(),
+                                ),
+                field.EntityAct(dog_npc_id, True,
+                                field_entity.SetPosition(47, 43),
+                                ),
+                #field.FreeMovement(),
+                field.FadeInScreen(),
+                field.FreeScreen(),
+                field.Return()
+            ]
+        else:
+            space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
+            src = [
+                field.RecruitAndSelectParty(character),
+                field.Branch(self.wake_up)
+            ]
+
+        space.write(src)
 
     def esper_item_mod(self, instructions):
         # strago jumps around, party finds relm
@@ -200,15 +449,24 @@ class BurningHouse(Event):
         self.defeated_flame_eater_mod(space)
         space.write(
             instructions,
-
-            field.FadeOutScreen(4),
+            #field.FadeOutScreen(4),
             field.Branch(space.end_address + 1), # skip nops
         )
 
         space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
-        space.write(
-            field.Branch(self.wake_up),
-        )
+        if self.DOOR_RANDOMIZE:
+            # if doors are randomized, don't auto go to wakeup
+            space.write(
+                field.Call(self.delete_flameeater_npcs),
+                #field.FadeInScreen(),
+                field.FreeScreen(),
+                field.Return()
+            )
+        else:
+            space.write(
+                field.FadeOutScreen(4),
+                field.Branch(self.wake_up),
+            )
 
     def esper_mod(self, esper):
         self.esper_item_mod([
@@ -221,3 +479,92 @@ class BurningHouse(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Make Burning House re-exitable by talking to the dog NPC
+        # Copy animation from 0xbea27 ("I'll use a smoke bomb!")
+        src_escape = [
+            field.Call(0xb6abf),  # "Woof!"
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.AnimateKneeling(),
+                            field_entity.Pause(1),
+                            field_entity.AnimateFrontRightHandUp(),
+                            field_entity.Pause(5),
+                            field_entity.Turn(direction.DOWN),
+                            field_entity.End()
+                            ),
+            field.MosaicScreen(5),
+            field.PlaySoundEffect(0x85),  # Smoke Bomb
+            field.FadeOutScreen(5),
+            field.WaitForFade(),
+            field.HoldScreen(),
+            field.Branch(self.wake_up),
+        ]
+        space = Write(Bank.CB, src_escape, 'Smoke Bomb Escape from Burning House')
+
+        dog_npc_id = 0x1c
+        dog_npc = self.maps.get_npc(0x15f, dog_npc_id)
+        dog_npc.event_address = space.start_address - EVENT_CODE_START
+
+        # Place an event tile on [0x15f, 46, 54] that deletes fireball & Relm NPCs if boss is defeated.
+        boss_npc_id = 0x18
+        relm_npc_id = 0x1b
+        shadow_npc_id = 0x1d
+        src = [
+            field.ReturnIfEventBitClear(event_bit.DEFEATED_FLAME_EATER),
+            field.ReturnIfEventBitSet(0x1b5),
+            field.DeleteEntity(boss_npc_id),
+            field.HideEntity(boss_npc_id),
+            field.DeleteEntity(relm_npc_id),
+            field.HideEntity(relm_npc_id),
+            field.DeleteEntity(shadow_npc_id),
+            field.HideEntity(shadow_npc_id),
+            field.SetEventBit(0x1b5),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Burning House Delete NPCs if Boss Cleared")
+        self.delete_flameeater_npcs = space.start_address
+
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 46
+        new_event.y = 54
+        new_event.event_address = self.delete_flameeater_npcs - EVENT_CODE_START
+        self.maps.add_event(0x15f, new_event)
+
+        # Delete NPCs in Thamasa Inn to avoid softlocking.
+        # We don't use them, and they appear if npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN (0x507) is set
+        #thamasa_inn = 0x15a
+        strago_npc_id = 0x11
+        interceptor_npc_id = 0x12
+        src = [
+            field.DeleteEntity(strago_npc_id),
+            field.HideEntity(strago_npc_id),
+            field.DeleteEntity(interceptor_npc_id),
+            field.HideEntity(interceptor_npc_id),
+            field.Call(0xbd65f),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, 'Thamasa Inn Entrance Event hide npcs')
+        hide_addr = space.start_address
+
+        space = Reserve(0xbd6a3, 0xbd6a6, 'Thamasa Inn Entrance Event mod')
+        space.write(field.Call(hide_addr))
+
+
+    def map_shuffle_mod(self):
+        # Change the entrance on the worldmap to skip bit checks & just load the map
+        #enter_event = self.maps.get_event(0x0, 250, 128)
+        #enter_event.event_address = 0xbd308 - EVENT_CODE_START
+        from event.switchyard import GoToSwitchyard, AddSwitchyardEvent
+
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1504  # ID of Thamasa WoB entrance
+        space = Reserve(0xbd2ee, 0xbd30e, 'Thamasa WoB Entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to South Figaro Cave
+        src = [
+            field.LoadMap(0x154, direction=direction.UP, x=23, y=46, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
