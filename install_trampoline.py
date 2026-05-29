@@ -1,14 +1,15 @@
 """Install the FF6 default-config trampoline into a ROM.
 
-`ff6_config.py` only edits the immediate byte baked into a pair of
+`ff6_config.py` only edits the immediate byte baked into a set of
 config-default subroutines.  In a vanilla FF6 ROM those subroutines
-don't exist -- the boot code at file offset 0x0370C2 zeros $1D54 and
-$1D4E in place with two ``STZ ABS`` instructions and provides no way
-to override the defaults.
+don't exist -- the boot code at file offset 0x0370C2 zeros $1D54,
+$1D4E and $1D4F in place with three consecutive ``STZ ABS``
+instructions and provides no way to override the defaults.
 
-This script replaces those 6 bytes with two ``JSR ABS`` calls into a
-pair of 6-byte trampoline subroutines that `ff6_config` can later
-patch.
+This script replaces those 9 bytes with three ``JSR ABS`` calls into a
+trio of 6-byte trampoline subroutines that `ff6_config` can later
+patch.  The third subroutine ($1D4F) backs the player-2 controller
+assignments, settable only when the Controller option is "multiple".
 
 Default placement is at file offset 0x03F091 (SNES $C3/F091), which
 the published FF6 ROM map lists as the start of a 3951-byte unused
@@ -39,7 +40,7 @@ BANK_C3_FILE_START = 0x30000
 BANK_C3_FILE_END   = 0x40000   # exclusive
 
 DEFAULT_TRAMPOLINE_ADDR = 0x03F091
-TRAMPOLINE_SIZE = 12  # two 6-byte subroutines
+TRAMPOLINE_SIZE = 18  # three 6-byte subroutines
 
 STZ_OPCODE = 0x9C
 JSR_OPCODE = 0x20
@@ -48,10 +49,11 @@ JSR_OPCODE = 0x20
 # ---- Trampoline byte builders ---------------------------------------
 
 def build_subroutines():
-    """Return the 12 trampoline bytes: two LDA/STA/RTS subroutines.
+    """Return the 18 trampoline bytes: three LDA/STA/RTS subroutines.
 
     ff6_config patches the second byte of each subroutine (the LDA
-    immediate operand) to set the default value of Config2 / Config3.
+    immediate operand) to set the default value of Config2 / Config3 /
+    Config4 ($1D54 / $1D4E / $1D4F).
     """
     return [
         # Config2 (writes $1D54)
@@ -62,21 +64,25 @@ def build_subroutines():
         0xA9, 0x00,        # LDA #$00
         0x8D, 0x4E, 0x1D,  # STA $1D4E
         0x60,              # RTS
+        # Config4 (writes $1D4F -- player-2 controller assignments)
+        0xA9, 0x00,        # LDA #$00
+        0x8D, 0x4F, 0x1D,  # STA $1D4F
+        0x60,              # RTS
     ]
 
 
-def build_jsr_pair(snes_low_addr):
-    """Return the 6 bytes that replace the two STZ instructions.
+def build_jsrs(snes_low_addr):
+    """Return the 9 bytes that replace the three STZ instructions.
 
     ``snes_low_addr`` is the low 16 bits of the SNES address of the
-    Config2 subroutine; the Config3 subroutine lives 6 bytes later.
+    Config2 subroutine; the Config3 and Config4 subroutines live 6 and
+    12 bytes later.
     """
-    sub2 = snes_low_addr & 0xFFFF
-    sub3 = (snes_low_addr + 6) & 0xFFFF
-    return [
-        JSR_OPCODE, sub2 & 0xFF, (sub2 >> 8) & 0xFF,
-        JSR_OPCODE, sub3 & 0xFF, (sub3 >> 8) & 0xFF,
-    ]
+    out = []
+    for offset in (0, 6, 12):
+        sub = (snes_low_addr + offset) & 0xFFFF
+        out += [JSR_OPCODE, sub & 0xFF, (sub >> 8) & 0xFF]
+    return out
 
 
 # ---- CLI -------------------------------------------------------------
@@ -162,10 +168,11 @@ def main(argv=None):
 
     snes_low = target & 0xFFFF
     sub_bytes = build_subroutines()
-    jsr_bytes = build_jsr_pair(snes_low)
+    jsr_bytes = build_jsrs(snes_low)
 
     print(
-        f"WARNING: writing 12 bytes at file 0x{target:05X} (SNES $C3/{snes_low:04X}).\n"
+        f"WARNING: writing {TRAMPOLINE_SIZE} bytes at file 0x{target:05X} "
+        f"(SNES $C3/{snes_low:04X}).\n"
         "The FF6 ROM map lists this region as unused, but any other patch\n"
         "applied to this ROM that also writes here will be clobbered. If\n"
         "you're maintaining an FF6 project, install the trampoline as part\n"
@@ -175,10 +182,12 @@ def main(argv=None):
     print()
     print("Installing trampoline:")
     print(f"  Config2 sub  @ file 0x{target:05X}: "
-          f"{' '.join(f'{b:02X}' for b in sub_bytes[:6])}")
+          f"{' '.join(f'{b:02X}' for b in sub_bytes[0:6])}")
     print(f"  Config3 sub  @ file 0x{target + 6:05X}: "
-          f"{' '.join(f'{b:02X}' for b in sub_bytes[6:])}")
-    print(f"  JSR pair     @ file 0x{BOOT_JSR_SITE:05X}: "
+          f"{' '.join(f'{b:02X}' for b in sub_bytes[6:12])}")
+    print(f"  Config4 sub  @ file 0x{target + 12:05X}: "
+          f"{' '.join(f'{b:02X}' for b in sub_bytes[12:18])}")
+    print(f"  JSR trio     @ file 0x{BOOT_JSR_SITE:05X}: "
           f"{' '.join(f'{b:02X}' for b in jsr_bytes)}")
 
     rom.set_bytes(target, sub_bytes)
