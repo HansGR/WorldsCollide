@@ -42,6 +42,9 @@
     currentWindow: SHARED.WindowStyle || 1,
     borderId: '__current__',          // synthetic "what's already there" entry
     selectedIndex: 1,
+    tool: 'paint',                    // 'paint' | 'fill'
+    brushSize: 1,                     // 1, 2, 4, 8 (pixels per side)
+    brushShape: 'square',             // 'square' | 'circle'
     isPainting: false,
     lastTexUpload: null,              // for "Re-quantize" -- per-window
     // For each window the user has touched, store a snapshot so cycling
@@ -340,13 +343,39 @@
     return { x, y };
   }
 
+  // Stamp the current brush (size + shape) centred on pixel (cx, cy).
+  function stampBrush(cx, cy) {
+    const s = ds.brushSize;
+    if (s <= 1) {
+      if (cx >= 0 && cx < SHEET_W && cy >= 0 && cy < SHEET_H)
+        ds.pixels[idx(cx, cy)] = ds.selectedIndex;
+      return;
+    }
+    // Top-left of the brush square, roughly centred on the cursor pixel.
+    const off = Math.floor((s - 1) / 2);
+    const x0 = cx - off, y0 = cy - off;
+    const r = s / 2;
+    const bcx = x0 + r, bcy = y0 + r;   // brush centre in pixel-space
+    for (let dy = 0; dy < s; dy++) {
+      for (let dx = 0; dx < s; dx++) {
+        const px = x0 + dx, py = y0 + dy;
+        if (px < 0 || px >= SHEET_W || py < 0 || py >= SHEET_H) continue;
+        if (ds.brushShape === 'circle') {
+          const ex = (px + 0.5) - bcx, ey = (py + 0.5) - bcy;
+          if (ex * ex + ey * ey > r * r) continue;
+        }
+        ds.pixels[idx(px, py)] = ds.selectedIndex;
+      }
+    }
+  }
+
   function paintLine(a, b) {
     let x0 = a.x, y0 = a.y, x1 = b.x, y1 = b.y;
     const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
     const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
     let err = dx - dy;
     while (true) {
-      ds.pixels[idx(x0, y0)] = ds.selectedIndex;
+      stampBrush(x0, y0);
       if (x0 === x1 && y0 === y1) break;
       const e2 = 2 * err;
       if (e2 > -dy) { err -= dy; x0 += sx; }
@@ -354,23 +383,48 @@
     }
   }
 
+  // 4-connected flood fill seeded at (sx, sy).  Constrained to the region
+  // the seed lives in (texture: y<32, border: y>=32) so a fill never bleeds
+  // across the divider between the two areas.
+  function floodFill(sx, sy) {
+    const target = ds.pixels[idx(sx, sy)];
+    const repl = ds.selectedIndex;
+    if (target === repl) return;
+    const yLo = sy < TEX_H ? 0 : TEX_H;
+    const yHi = sy < TEX_H ? TEX_H : SHEET_H;
+    const stack = [sx, sy];
+    while (stack.length) {
+      const y = stack.pop(), x = stack.pop();
+      if (x < 0 || x >= SHEET_W || y < yLo || y >= yHi) continue;
+      if (ds.pixels[idx(x, y)] !== target) continue;
+      ds.pixels[idx(x, y)] = repl;
+      stack.push(x + 1, y, x - 1, y, x, y + 1, x, y - 1);
+    }
+  }
+
   let lastPaintPx = null;
   canvas.addEventListener('mousedown', (e) => {
     const p = canvasToPixel(e);
     if (!p) return;
+    e.preventDefault();
+    if (ds.tool === 'fill') {
+      floodFill(p.x, p.y);
+      markCustomized();
+      render();
+      return;
+    }
     ds.isPainting = true;
     lastPaintPx = p;
-    ds.pixels[idx(p.x, p.y)] = ds.selectedIndex;
+    stampBrush(p.x, p.y);
     markCustomized();
     render();
-    e.preventDefault();
   });
   canvas.addEventListener('mousemove', (e) => {
     if (!ds.isPainting) return;
     const p = canvasToPixel(e);
     if (!p) return;
     if (lastPaintPx) paintLine(lastPaintPx, p);
-    else ds.pixels[idx(p.x, p.y)] = ds.selectedIndex;
+    else stampBrush(p.x, p.y);
     lastPaintPx = p;
     render();
   });
@@ -381,6 +435,37 @@
   canvas.addEventListener('mouseup', endPaint);
   canvas.addEventListener('mouseleave', endPaint);
   window.addEventListener('mouseup', endPaint);
+
+  // ---- tool / brush selectors ----------------------------------------
+
+  // Wire a segmented button group: clicking a button marks it active and
+  // calls onPick with its data-* value.
+  function wireSegGroup(hostId, dataAttr, onPick) {
+    const host = document.getElementById(hostId);
+    if (!host) return;
+    host.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-' + dataAttr + ']');
+      if (!btn || !host.contains(btn)) return;
+      for (const b of host.querySelectorAll('button')) b.classList.remove('active');
+      btn.classList.add('active');
+      onPick(btn.dataset[dataAttr]);
+    });
+  }
+
+  // Brush size/shape only apply to the brush; grey them out under Fill.
+  function syncToolUi() {
+    const fill = ds.tool === 'fill';
+    for (const id of ['ds-brush-row', 'ds-shape-row']) {
+      const row = document.getElementById(id);
+      if (row) row.classList.toggle('disabled', fill);
+    }
+    canvas.style.cursor = fill ? 'cell' : 'crosshair';
+  }
+
+  wireSegGroup('ds-tool', 'tool', (v) => { ds.tool = v; syncToolUi(); });
+  wireSegGroup('ds-brush-size', 'size', (v) => { ds.brushSize = parseInt(v, 10); });
+  wireSegGroup('ds-brush-shape', 'shape', (v) => { ds.brushShape = v; });
+  syncToolUi();
 
   // ---- border preset / upload ----------------------------------------
 
@@ -473,6 +558,101 @@
     setStatus('texture re-quantized from upload', false);
     render();
   }
+
+  // ---- bitmap export / import (32x56 sheet) --------------------------
+  //
+  // A round-trip path parallel to the "interpret any image" texture upload:
+  // export writes the current sheet exactly, and import reads back a 32x56
+  // bitmap pixel-for-pixel.  Index 0 (transparent) uses a magenta sentinel
+  // so the editor shows it as a real, distinct colour.
+
+  const MAGENTA = [255, 0, 255];
+  function isMagenta(c) { return c[0] === 255 && c[1] === 0 && c[2] === 255; }
+  function colorKey(c) { return (c[0] << 16) | (c[1] << 8) | c[2]; }
+
+  // 8 RGB8 entries indexed by pixel value; slot 0 -> magenta sentinel.
+  function sheetPaletteRGB8() {
+    const pal = [MAGENTA.slice()];
+    for (let s = 1; s < NUM_PALETTE_SLOTS; s++) pal.push(paletteRGB8(s));
+    return pal;
+  }
+
+  document.getElementById('ds-bmp-export').addEventListener('click', () => {
+    const bmp = enc.encodeBMP(ds.pixels, sheetPaletteRGB8());
+    const file = new Blob([bmp], { type: 'image/bmp' });
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ff6window${ds.currentWindow}.bmp`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus(`exported window ${ds.currentWindow} as a ${SHEET_W}x${SHEET_H} .bmp`, false);
+  });
+
+  document.getElementById('ds-bmp-import').addEventListener('change', async (e) => {
+    const input = e.target;
+    const f = input.files && input.files[0];
+    if (!f) return;
+    try {
+      const decoded = enc.decodeBMP(await f.arrayBuffer());
+      if (decoded.width !== SHEET_W || decoded.height !== SHEET_H)
+        throw new Error(
+          `image is ${decoded.width}x${decoded.height}; need ${SHEET_W}x${SHEET_H}. ` +
+          `Use the texture upload to auto-fit other sizes.`);
+
+      // Collect distinct, non-transparent colours (first-seen order).
+      const seen = new Map();   // colorKey -> [r,g,b]
+      for (const c of decoded.pixels) {
+        if (isMagenta(c)) continue;
+        const k = colorKey(c);
+        if (!seen.has(k)) seen.set(k, c);
+      }
+      const maxColors = NUM_PALETTE_SLOTS - 1;   // 7 visible slots
+      if (seen.size > maxColors)
+        throw new Error(
+          `image has ${seen.size} colors; bitmap import supports at most ` +
+          `${maxColors} plus magenta transparency. ` +
+          `Use the texture upload to auto-quantize instead.`);
+
+      // Assign slots 1..7 light-to-dark, matching the quantiser's ordering.
+      const colors = [...seen.values()].sort((a, b) => lumin(b) - lumin(a));
+      const slotOf = new Map();
+      colors.forEach((c, i) => slotOf.set(colorKey(c), i + 1));
+
+      // Update slots 1..7.  rgb8 -> bgr5 is exact for colours that came from
+      // our own export; external colours snap to the nearest SNES value.
+      // Pad untouched slots with their current palette so nothing is lost.
+      const cur = SHARED.windows[ds.currentWindow];
+      const pal7 = [];
+      for (let i = 0; i < 7; i++) {
+        pal7.push(i < colors.length
+          ? [rgb8_to_bgr5(colors[i][0]), rgb8_to_bgr5(colors[i][1]), rgb8_to_bgr5(colors[i][2])]
+          : cur[i].slice());
+      }
+      ff6c.setPaletteBulk(ds.currentWindow, pal7);
+
+      // Map every pixel to its slot (magenta -> 0).
+      const px = new Uint8Array(SHEET_W * SHEET_H);
+      for (let i = 0; i < decoded.pixels.length; i++) {
+        const c = decoded.pixels[i];
+        px[i] = isMagenta(c) ? 0 : slotOf.get(colorKey(c));
+      }
+      ds.pixels = px;
+      ds.lastTexUpload = null;
+      ds.borderId = '__current__';
+      markCustomized();
+      render();
+      setStatus(
+        `imported ${f.name} (${seen.size} color` + (seen.size === 1 ? '' : 's') +
+        ') pixel-exact', false);
+    } catch (err) {
+      setStatus('bitmap import failed: ' + err.message, true);
+    } finally {
+      input.value = '';   // let the same file re-trigger "change"
+    }
+  });
 
   // ---- window banner + revert ----------------------------------------
 

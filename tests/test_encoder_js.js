@@ -168,5 +168,61 @@ run('bgr5_to_rgb8 + rgb8_to_bgr5 round-trip every 5-bit value', () => {
   }
 });
 
+run('encodeBMP -> decodeBMP recovers every pixel index exactly', () => {
+  const W = enc.SHEET_W, H = enc.SHEET_H;
+  const pixels = new Uint8Array(W * H);
+  for (let i = 0; i < pixels.length; i++) pixels[i] = (i * 7) % 8;
+  // Slot 0 = magenta sentinel; 1..7 distinct colours snapped to BGR5.
+  const pal = [[255, 0, 255]];
+  for (let s = 1; s < 8; s++) {
+    pal.push([enc.bgr5_to_rgb8((s * 3) % 32),
+              enc.bgr5_to_rgb8((s * 5) % 32),
+              enc.bgr5_to_rgb8((s * 7) % 32)]);
+  }
+  const bmp = enc.encodeBMP(pixels, pal);
+  if (bmp[0] !== 0x42 || bmp[1] !== 0x4D) throw new Error('missing BM magic');
+  const ab = bmp.buffer.slice(bmp.byteOffset, bmp.byteOffset + bmp.byteLength);
+  const dec = enc.decodeBMP(ab);
+  if (dec.width !== W || dec.height !== H)
+    throw new Error(`decoded ${dec.width}x${dec.height}`);
+  const key = c => (c[0] << 16) | (c[1] << 8) | c[2];
+  const slot = new Map(); pal.forEach((c, i) => slot.set(key(c), i));
+  for (let i = 0; i < pixels.length; i++) {
+    if (slot.get(key(dec.pixels[i])) !== pixels[i])
+      throw new Error(`pixel ${i} mismatch`);
+  }
+});
+
+run('decodeBMP reads a 24-bit bottom-up bitmap top-to-bottom', () => {
+  // Hand-build a 2x2 24-bit BMP.  File rows are bottom-up, so the first
+  // pixel row in the file is the *bottom* image row.
+  const W = 2, H = 2;
+  const rowSize = Math.floor((24 * W + 31) / 32) * 4;   // 8 bytes (6 + 2 pad)
+  const dataOff = 54;
+  const buf = new Uint8Array(dataOff + rowSize * H);
+  const dv = new DataView(buf.buffer);
+  buf[0] = 0x42; buf[1] = 0x4D;
+  dv.setUint32(2, buf.length, true);
+  dv.setUint32(10, dataOff, true);
+  dv.setUint32(14, 40, true);
+  dv.setInt32(18, W, true);
+  dv.setInt32(22, H, true);            // positive -> bottom-up
+  dv.setUint16(26, 1, true);
+  dv.setUint16(28, 24, true);
+  dv.setUint32(30, 0, true);
+  // BGR triples.  bottom row (file row 0): red, green; top row: blue, white.
+  const put = (off, r, g, b) => { buf[off] = b; buf[off + 1] = g; buf[off + 2] = r; };
+  put(dataOff + 0 * rowSize + 0, 255, 0, 0);   // bottom-left  red
+  put(dataOff + 0 * rowSize + 3, 0, 255, 0);   // bottom-right green
+  put(dataOff + 1 * rowSize + 0, 0, 0, 255);   // top-left     blue
+  put(dataOff + 1 * rowSize + 3, 255, 255, 255); // top-right  white
+  const dec = enc.decodeBMP(buf.buffer);
+  const eq = (c, r, g, b) => c[0] === r && c[1] === g && c[2] === b;
+  if (!eq(dec.pixels[0], 0, 0, 255)) throw new Error('top-left not blue');
+  if (!eq(dec.pixels[1], 255, 255, 255)) throw new Error('top-right not white');
+  if (!eq(dec.pixels[2], 255, 0, 0)) throw new Error('bottom-left not red');
+  if (!eq(dec.pixels[3], 0, 255, 0)) throw new Error('bottom-right not green');
+});
+
 console.log(`\n${passed}/${passed + failed.length} passed`);
 if (failed.length) process.exit(1);

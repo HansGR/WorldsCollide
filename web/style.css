@@ -314,6 +314,32 @@ button:active { background: #2a2a3e; }
   color: #cfe5d4;
 }
 
+.ds-tool-label {
+  width: 44px;
+  flex: 0 0 44px;
+  color: #aab;
+  font-size: 12px;
+}
+.designer-controls .row.disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.designer-controls .seg-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+.ds-fieldnote {
+  margin: 6px 0 0 0;
+  font-size: 11px;
+  color: #889;
+  line-height: 1.4;
+}
+#ds-bmp-export {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
 #ds-revert {
   display: block;
   width: 100%;
