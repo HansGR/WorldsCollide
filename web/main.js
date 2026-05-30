@@ -1181,25 +1181,46 @@ function updateHitTargets() {
   for (let r = 0; r < opts.length; r++) {
     const row = opts[r];
     if (row.kind === 'slider') {
-      // Whole bar (outline included, ~70 px wide) is clickable; the click
-      // position maps linearly to a [0, 31] value.  Clicking parks the
-      // cursor on the row too so keyboard nudges resume from there.
+      // Whole bar (outline included, ~70 px wide) is clickable AND
+      // draggable: press and slide left/right to scrub the value, which
+      // tracks the cursor until the button is released.  Clicking parks
+      // the cursor on the row too so keyboard nudges resume from there.
       const el = document.createElement('div');
       el.className = 'hit slider';
       el.style.left   = (SLIDER_BAR_X0 - 4) * 2 + 'px';
       el.style.top    = (row.y + 3) * 2 + 'px';
       el.style.width  = (SLIDER_BAR_W31 + 8) * 2 + 'px';
       el.style.height = 7 * 2 + 'px';
-      el.title = `${row.key}: click to set`;
-      const setFromEvent = (e) => {
-        const rect = el.getBoundingClientRect();
-        const xCanvas = (e.clientX - rect.left) / 2 + (SLIDER_BAR_X0 - 4);
+      el.title = `${row.key}: click or drag to set`;
+      const channel = row.channel;
+      // Map a client-space X to a 0..31 channel value using a rect
+      // captured at press time.  We can't re-read the element's rect
+      // mid-drag because each value change calls render(), which rebuilds
+      // the hit layer and detaches this element — but the bar's on-screen
+      // geometry is fixed, so the captured rect stays valid.
+      const valueFromClientX = (clientX, rect) => {
+        const xCanvas = (clientX - rect.left) / 2 + (SLIDER_BAR_X0 - 4);
         const t = (xCanvas - SLIDER_BAR_X0) / SLIDER_BAR_W31;
-        const v = Math.round(Math.max(0, Math.min(1, t)) * 31);
-        state.cursor = r;
-        setChannel(row.channel, v);
+        return Math.round(Math.max(0, Math.min(1, t)) * 31);
       };
-      el.addEventListener('click', setFromEvent);
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        const rect = el.getBoundingClientRect();
+        state.cursor = r;
+        setChannel(channel, valueFromClientX(e.clientX, rect));
+        // Listen on window (not el) so the drag keeps tracking even though
+        // setChannel -> render() removes el from the DOM on every update.
+        const onMove = (ev) => {
+          const v = valueFromClientX(ev.clientX, rect);
+          if (editedRgb()[channel] !== v) setChannel(channel, v);
+        };
+        const onUp = () => {
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', onUp);
+        };
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+      });
       hitLayer.appendChild(el);
       continue;
     }
