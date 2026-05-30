@@ -15,6 +15,43 @@ be installed in the ROM first; if you don't have a WC-patched ROM, run
 
 [wc]: https://www.ff6wc.com
 
+## Quick start: patch a ROM with a config from the web app
+
+The easiest way to use this tool is the web configurator:
+
+> **https://ff6config.vercel.app/**
+
+Set up the menu the way you want — battle/message speed, spell order,
+wallpaper, font and window-palette colors, even custom window graphics —
+then click **Download configuration** to save an `ff6config.json` file.
+That file bundles the chosen flags (and any custom window graphics) so you
+don't have to assemble a command line by hand.
+
+To patch a ROM with it, pass the JSON to `ff6_config.py` with `--config`:
+
+```sh
+python3 ff6_config.py -i ff6.smc --config ff6config.json
+```
+
+This writes `ff6_config.smc` (or use `-o NAME.smc` to choose the output
+name) with every setting from the website baked in as the ROM's new
+defaults.  Your input ROM is left untouched.
+
+Notes:
+
+* The ROM needs the **trampoline** installed for the Config2/3/4 settings
+  (controller 2, spell order, gauge, cursor, sound, re-equip, wallpaper,
+  player-2 assignments).  ROMs patched by Worlds Collide already have it;
+  for a vanilla ROM, run [`install_trampoline.py`](#trampoline) first.
+* You can still override individual settings on the command line — any
+  flag you pass alongside `--config` wins over the value embedded in the
+  JSON.  For example, to reuse a downloaded config but force the ATB
+  gauge off: `python3 ff6_config.py -i ff6.smc --config ff6config.json
+  --gauge off`.
+
+The rest of this document describes the individual command-line flags,
+which the web app generates for you but you can also set by hand.
+
 ## Usage
 
 ```sh
