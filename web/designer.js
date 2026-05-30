@@ -836,8 +836,11 @@
     if (newWindow !== ds.currentWindow) {
       loadWindow(newWindow);   // re-renders inside
     } else {
-      // Palette / other change for the current window -- just re-render.
-      render();
+      // A configurator palette edit aimed at a specific slot: mirror the
+      // selection so this designer's swatch + R/G/B sliders track the same
+      // color instead of drifting out of sync.  (font edits send no slot.)
+      if (detail.slot >= 1 && detail.slot <= 7) ds.selectedIndex = detail.slot;
+      render();   // re-reads SHARED.windows for the canvas image + sliders
     }
   });
 
