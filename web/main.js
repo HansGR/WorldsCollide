@@ -154,7 +154,7 @@ const PAGE_B_OPTIONS = [
   { key: 'Color',       y:124, kind: 'color',
     values: [
       ['font', 112, 124],
-      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 180 + i*8, 139]))
+      ...([1,2,3,4,5,6,7].map((s,i)=>[`slot${s}`, 178 + i*8, 139]))
     ] },
   // R / G / B sliders.  Pressing Down from the Color row lands on R;
   // Down from R goes to G, then B.  On each slider row, Left/Right
@@ -315,6 +315,13 @@ const canvas = document.getElementById('menu-canvas');
 const ctx    = canvas.getContext('2d');
 const hitLayer = document.getElementById('hit-layer');
 
+// True while a slider bar is being dragged.  During a drag we must NOT
+// rebuild the hit layer (render() normally does on every value change),
+// because that detaches the very element receiving the pointer events and
+// silently kills the gesture — the symptom being that the value only snaps
+// into place when the button is released.
+let draggingSlider = false;
+
 // Cursor sprite — a small bitmap drawn at the active option.
 // Simple 8x8 right-pointing arrow.
 const CURSOR_SPRITE = (() => {
@@ -333,6 +340,28 @@ const CURSOR_SPRITE = (() => {
   ];
   cx.fillStyle = '#fff';
   for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+    if (px[y][x] === 'X') cx.fillRect(x, y, 1, 1);
+  }
+  return c;
+})();
+
+// Up-pointing variant used to mark the active window-palette swatch.  The
+// row cursor floats in the gutter to the left of a value, which reads badly
+// against the tight row of tiny color boxes — so for those we point up at
+// the box from just below it instead.  8 px wide so it centers cleanly on
+// the 4-px swatch.
+const UP_CURSOR_SPRITE = (() => {
+  const c = document.createElement('canvas');
+  c.width = 8; c.height = 4;
+  const cx = c.getContext('2d');
+  const px = [
+    "...XX...",
+    "..XXXX..",
+    ".XXXXXX.",
+    "XXXXXXXX",
+  ];
+  cx.fillStyle = '#fff';
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 8; x++) {
     if (px[y][x] === 'X') cx.fillRect(x, y, 1, 1);
   }
   return c;
@@ -657,7 +686,9 @@ function render() {
   highlightValueText();
   drawCursorOverlay();
   drawSelectionOverlay();
-  updateHitTargets();
+  // Skip the rebuild mid-drag so the slider's hit element stays attached and
+  // keeps receiving pointermove events; the drag's pointerup rebuilds it.
+  if (!draggingSlider) updateHitTargets();
 }
 
 function drawPageSwitchArrow() {
@@ -828,16 +859,26 @@ function valuePos(row, item) {
 function drawCursorOverlay() {
   const row = activeRow();
   if (!row) return;
-  let cx, cy;
-  if (row.kind === 'slider') {
-    cx = row.cursorX; cy = row.y;
-  } else {
-    const v = row.values[activeValueIndex()];
-    if (!v) return;
-    ({ x: cx, y: cy } = valuePos(row, v));
-  }
   ctx.save();
-  ctx.drawImage(CURSOR_SPRITE, cx - 10, cy + 1);
+  if (row.kind === 'slider') {
+    ctx.drawImage(CURSOR_SPRITE, row.cursorX - 10, row.y + 1);
+  } else {
+    const item = row.values[activeValueIndex()];
+    if (item) {
+      const val = item[0];
+      const { x, y } = valuePos(row, item);
+      if (row.kind === 'color' && val !== 'font') {
+        // A window-palette swatch is active: point up at the box from just
+        // below it, horizontally centered on the swatch rather than floating
+        // off to its left.
+        const w = approxValueWidth(row, val);
+        const cx = x + (w >> 1) - (UP_CURSOR_SPRITE.width >> 1);
+        ctx.drawImage(UP_CURSOR_SPRITE, cx, y + 10);
+      } else {
+        ctx.drawImage(CURSOR_SPRITE, x - 10, y + 1);
+      }
+    }
+  }
   ctx.restore();
 }
 
@@ -1207,19 +1248,27 @@ function updateHitTargets() {
         e.preventDefault();
         const rect = el.getBoundingClientRect();
         state.cursor = r;
+        // Capture the pointer and freeze the hit layer for the duration of
+        // the drag (see draggingSlider) so this element keeps receiving
+        // pointermove events instead of being torn down on the first update.
+        draggingSlider = true;
+        el.setPointerCapture(e.pointerId);
         setChannel(channel, valueFromClientX(e.clientX, rect));
-        // Listen on window (not el) so the drag keeps tracking even though
-        // setChannel -> render() removes el from the DOM on every update.
         const onMove = (ev) => {
           const v = valueFromClientX(ev.clientX, rect);
           if (editedRgb()[channel] !== v) setChannel(channel, v);
         };
         const onUp = () => {
-          window.removeEventListener('pointermove', onMove);
-          window.removeEventListener('pointerup', onUp);
+          el.removeEventListener('pointermove', onMove);
+          el.removeEventListener('pointerup', onUp);
+          el.removeEventListener('pointercancel', onUp);
+          draggingSlider = false;
+          // Rebuild the hit layer we suppressed during the drag.
+          updateHitTargets();
         };
-        window.addEventListener('pointermove', onMove);
-        window.addEventListener('pointerup', onUp);
+        el.addEventListener('pointermove', onMove);
+        el.addEventListener('pointerup', onUp);
+        el.addEventListener('pointercancel', onUp);
       });
       hitLayer.appendChild(el);
       continue;
