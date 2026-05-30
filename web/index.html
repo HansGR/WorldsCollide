@@ -12,6 +12,11 @@
       Arrow keys / WASD = move cursor &middot; Enter / Space = toggle &middot;
       Tab = switch page &middot; Click options directly with the mouse.
     </p>
+    <div class="load-config">
+      <label class="ds-upload-config" for="ds-config-upload">Load configuration (.json):</label>
+      <input type="file" id="ds-config-upload" accept="application/json,.json"
+             title="Restore the configurator from a previously downloaded ff6config.json">
+    </div>
   </header>
 
   <main>
@@ -124,7 +129,8 @@
       </p>
     </header>
     <div class="designer-grid">
-      <div class="designer-controls">
+      <!-- Column 1: input -->
+      <div class="designer-controls designer-col">
         <div id="ds-window-banner" class="ds-window-banner">Editing window 1 (default)</div>
         <fieldset>
           <legend>Texture (32&times;32)</legend>
@@ -137,6 +143,26 @@
           <input type="file" id="ds-border-upload" accept="image/*"
                  title="Custom 32x24 border image (optional)">
         </fieldset>
+        <fieldset>
+          <legend>Bitmap (32&times;56)</legend>
+          <button id="ds-bmp-export" type="button"
+                  title="Export the current window sheet as a 32x56 indexed .bmp to edit in an external tool">Export .bmp</button>
+          <label class="ds-upload-config" for="ds-bmp-import">Import .bmp:</label>
+          <input type="file" id="ds-bmp-import" accept="image/bmp,.bmp"
+                 title="Import a 32x56 bitmap (up to 7 colors + magenta transparency) pixel-exact">
+          <p class="ds-fieldnote">
+            Index 0 (transparent) is exported as magenta. A 32&times;56 image
+            with up to 7 colors plus magenta is read back pixel-exact; other
+            sizes/colors should use the texture upload instead.
+          </p>
+        </fieldset>
+        <fieldset>
+          <legend>Revert</legend>
+          <button id="ds-revert" type="button" disabled>Revert this window to default</button>
+        </fieldset>
+      </div>
+      <!-- Column 2: paint tools -->
+      <div class="designer-controls designer-col">
         <fieldset>
           <legend>Tools</legend>
           <div class="row">
@@ -182,31 +208,8 @@
             <span id="ds-b-val">0</span>
           </div>
         </fieldset>
-        <fieldset>
-          <legend>Bitmap (32&times;56)</legend>
-          <button id="ds-bmp-export" type="button"
-                  title="Export the current window sheet as a 32x56 indexed .bmp to edit in an external tool">Export .bmp</button>
-          <label class="ds-upload-config" for="ds-bmp-import">Import .bmp:</label>
-          <input type="file" id="ds-bmp-import" accept="image/bmp,.bmp"
-                 title="Import a 32x56 bitmap (up to 7 colors + magenta transparency) pixel-exact">
-          <p class="ds-fieldnote">
-            Index 0 (transparent) is exported as magenta. A 32&times;56 image
-            with up to 7 colors plus magenta is read back pixel-exact; other
-            sizes/colors should use the texture upload instead.
-          </p>
-        </fieldset>
-        <fieldset>
-          <legend>Output</legend>
-          <button id="ds-revert" type="button" disabled>Revert this window to default</button>
-          <button id="ds-download" type="button">Download configuration (.json)</button>
-          <label class="ds-upload-config" for="ds-config-upload">
-            Load configuration (.json):
-          </label>
-          <input type="file" id="ds-config-upload" accept="application/json,.json"
-                 title="Restore the configurator from a previously downloaded ff6config.json">
-          <div id="ds-status" class="ds-status"></div>
-        </fieldset>
       </div>
+      <!-- Column 3: canvas -->
       <div class="designer-canvas-wrap">
         <canvas id="ds-sheet" width="256" height="448"></canvas>
         <div class="ds-overlay-lines"></div>
@@ -221,6 +224,11 @@
           through an external editor.
         </p>
       </div>
+    </div>
+    <!-- Output tools: below the column row -->
+    <div class="designer-output">
+      <button id="ds-download" type="button">Download configuration (.json)</button>
+      <div id="ds-status" class="ds-status"></div>
     </div>
   </section>
 
