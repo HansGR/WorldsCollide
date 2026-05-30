@@ -138,6 +138,32 @@
                  title="Custom 32x24 border image (optional)">
         </fieldset>
         <fieldset>
+          <legend>Tools</legend>
+          <div class="row">
+            <span class="ds-tool-label">Tool</span>
+            <div class="seg" id="ds-tool">
+              <button type="button" class="seg-btn active" data-tool="paint">Brush</button>
+              <button type="button" class="seg-btn" data-tool="fill" title="Paint bucket (flood fill)">Fill</button>
+            </div>
+          </div>
+          <div class="row" id="ds-brush-row">
+            <span class="ds-tool-label">Size</span>
+            <div class="seg" id="ds-brush-size">
+              <button type="button" class="seg-btn active" data-size="1">1&times;</button>
+              <button type="button" class="seg-btn" data-size="2">2&times;</button>
+              <button type="button" class="seg-btn" data-size="4">4&times;</button>
+              <button type="button" class="seg-btn" data-size="8">8&times;</button>
+            </div>
+          </div>
+          <div class="row" id="ds-shape-row">
+            <span class="ds-tool-label">Shape</span>
+            <div class="seg" id="ds-brush-shape">
+              <button type="button" class="seg-btn active" data-shape="square">Square</button>
+              <button type="button" class="seg-btn" data-shape="circle">Circle</button>
+            </div>
+          </div>
+        </fieldset>
+        <fieldset>
           <legend>Palette</legend>
           <div id="ds-swatches" class="swatches"></div>
           <div class="rgb-row">
@@ -157,6 +183,19 @@
           </div>
         </fieldset>
         <fieldset>
+          <legend>Bitmap (32&times;56)</legend>
+          <button id="ds-bmp-export" type="button"
+                  title="Export the current window sheet as a 32x56 indexed .bmp to edit in an external tool">Export .bmp</button>
+          <label class="ds-upload-config" for="ds-bmp-import">Import .bmp:</label>
+          <input type="file" id="ds-bmp-import" accept="image/bmp,.bmp"
+                 title="Import a 32x56 bitmap (up to 7 colors + magenta transparency) pixel-exact">
+          <p class="ds-fieldnote">
+            Index 0 (transparent) is exported as magenta. A 32&times;56 image
+            with up to 7 colors plus magenta is read back pixel-exact; other
+            sizes/colors should use the texture upload instead.
+          </p>
+        </fieldset>
+        <fieldset>
           <legend>Output</legend>
           <button id="ds-revert" type="button" disabled>Revert this window to default</button>
           <button id="ds-download" type="button">Download configuration (.json)</button>
@@ -173,10 +212,13 @@
         <div class="ds-overlay-lines"></div>
         <p class="hint">
           Click / drag in the canvas to paint with the selected palette color.
-          The top 32&times;32 area is the interior texture; the bottom
-          32&times;24 area is the border / frame.  Cycle the
-          <em>Preview window style</em> dropdown above to switch which window
-          you're designing.
+          Pick a brush size (1&ndash;8) and shape (square / circle), or switch
+          to the <em>Fill</em> tool to flood-fill a region.  The top
+          32&times;32 area is the interior texture; the bottom 32&times;24
+          area is the border / frame.  Cycle the <em>Preview window style</em>
+          dropdown above to switch which window you're designing, or use
+          <em>Export / Import .bmp</em> to round-trip the 32&times;56 sheet
+          through an external editor.
         </p>
       </div>
     </div>

@@ -196,9 +196,124 @@
     return v < 0 ? 0 : v > 31 ? 31 : v;
   }
 
+  // ---- BMP import / export (32x56 sheet) ----------------------------
+  // Lets the user round-trip a sheet through an external pixel editor.
+  // encodeBMP writes an 8-bit indexed, uncompressed (BI_RGB), bottom-up
+  // Windows BMP whose colour table is the 8-entry window palette and whose
+  // pixel bytes are palette indices 0..7 -- so it carries exactly the same
+  // information ds.pixels does.  decodeBMP reads it (and most editor output)
+  // back to per-pixel RGB.
+
+  // pixels: Uint8Array(SHEET_W*SHEET_H) of indices 0..7.
+  // paletteRGB8: array indexed by pixel value -> [r,g,b] 0..255.
+  function encodeBMP(pixels, paletteRGB8) {
+    const w = SHEET_W, h = SHEET_H;
+    const rowSize = (w + 3) & ~3;          // pad each row to 4 bytes (32 stays 32)
+    const pixelArraySize = rowSize * h;
+    const TABLE = 256;                      // full colour table; only 0..7 used
+    const headerSize = 14 + 40 + TABLE * 4;
+    const fileSize = headerSize + pixelArraySize;
+    const buf = new Uint8Array(fileSize);
+    const dv = new DataView(buf.buffer);
+    // BITMAPFILEHEADER
+    buf[0] = 0x42; buf[1] = 0x4D;          // 'BM'
+    dv.setUint32(2, fileSize, true);
+    dv.setUint32(10, headerSize, true);    // pixel-data offset
+    // BITMAPINFOHEADER
+    dv.setUint32(14, 40, true);
+    dv.setInt32(18, w, true);
+    dv.setInt32(22, h, true);              // positive height -> bottom-up
+    dv.setUint16(26, 1, true);             // colour planes
+    dv.setUint16(28, 8, true);             // bits per pixel
+    dv.setUint32(30, 0, true);             // BI_RGB (uncompressed)
+    dv.setUint32(34, pixelArraySize, true);
+    dv.setInt32(38, 2835, true);           // ~72 DPI (X)
+    dv.setInt32(42, 2835, true);           // ~72 DPI (Y)
+    dv.setUint32(46, TABLE, true);         // colours used
+    dv.setUint32(50, 0, true);             // all colours important
+    // colour table, stored BGRA
+    let p = 54;
+    for (let i = 0; i < TABLE; i++) {
+      const c = paletteRGB8[i] || [0, 0, 0];
+      buf[p++] = c[2]; buf[p++] = c[1]; buf[p++] = c[0]; buf[p++] = 0;
+    }
+    // pixel array, bottom-up
+    for (let y = 0; y < h; y++) {
+      const srcRow = (h - 1 - y) * w;
+      let dst = headerSize + y * rowSize;
+      for (let x = 0; x < w; x++) buf[dst++] = pixels[srcRow + x] & 0xFF;
+    }
+    return buf;
+  }
+
+  // Decode an uncompressed Windows BMP into { width, height, pixels }, where
+  // pixels is a flat Array of [r,g,b] in row-major top-to-bottom order.
+  // Handles 1/4/8-bit indexed and 24/32-bit truecolour (BI_RGB, plus 32-bit
+  // BI_BITFIELDS read as BGRA).  Throws on anything it can't read.
+  function decodeBMP(arrayBuffer) {
+    const buf = new Uint8Array(arrayBuffer);
+    if (buf.length < 54 || buf[0] !== 0x42 || buf[1] !== 0x4D)
+      throw new Error('not a BMP file');
+    const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    const dataOffset = dv.getUint32(10, true);
+    const dibSize = dv.getUint32(14, true);
+    const width = dv.getInt32(18, true);
+    const rawHeight = dv.getInt32(22, true);
+    const bpp = dv.getUint16(28, true);
+    const compression = dv.getUint32(30, true);
+    const topDown = rawHeight < 0;
+    const height = Math.abs(rawHeight);
+    if (width <= 0 || height <= 0) throw new Error('bad BMP dimensions');
+    if (compression !== 0 && !(compression === 3 && bpp === 32))
+      throw new Error('compressed BMPs are not supported -- save as an ' +
+                      'uncompressed (BI_RGB) bitmap');
+
+    let palette = null;
+    if (bpp <= 8) {
+      let clrUsed = dv.getUint32(46, true);
+      if (clrUsed === 0) clrUsed = 1 << bpp;
+      const tableOff = 14 + dibSize;
+      palette = [];
+      for (let i = 0; i < clrUsed; i++) {
+        const o = tableOff + i * 4;
+        palette.push([buf[o + 2], buf[o + 1], buf[o]]);   // BGRA -> RGB
+      }
+    }
+
+    const rowSize = Math.floor((bpp * width + 31) / 32) * 4;
+    const pixels = new Array(width * height);
+    for (let ry = 0; ry < height; ry++) {        // ry: output row, 0 = top
+      const fileRow = topDown ? ry : (height - 1 - ry);
+      const rowOff = dataOffset + fileRow * rowSize;
+      for (let x = 0; x < width; x++) {
+        let rgb;
+        if (bpp === 8) {
+          rgb = palette[buf[rowOff + x]] || [0, 0, 0];
+        } else if (bpp === 4) {
+          const b = buf[rowOff + (x >> 1)];
+          rgb = palette[(x & 1) ? (b & 0x0F) : (b >> 4)] || [0, 0, 0];
+        } else if (bpp === 1) {
+          const b = buf[rowOff + (x >> 3)];
+          rgb = palette[(b >> (7 - (x & 7))) & 1] || [0, 0, 0];
+        } else if (bpp === 24) {
+          const o = rowOff + x * 3;
+          rgb = [buf[o + 2], buf[o + 1], buf[o]];
+        } else if (bpp === 32) {
+          const o = rowOff + x * 4;
+          rgb = [buf[o + 2], buf[o + 1], buf[o]];          // assume BGRA
+        } else {
+          throw new Error('unsupported BMP bit depth ' + bpp);
+        }
+        pixels[ry * width + x] = rgb;
+      }
+    }
+    return { width, height, pixels };
+  }
+
   return {
     encodeTile4bpp, encodeSheet, encodePalette,
     decodeTile4bpp, decodeSheet, decodePalette,
+    encodeBMP, decodeBMP,
     medianCut, sortByLuminosity, lumin,
     bgr5_to_rgb8, rgb8_to_bgr5,
     SHEET_W, SHEET_H, SHEET_BYTES, PAL_BYTES, BLOB_BYTES,
