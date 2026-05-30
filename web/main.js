@@ -68,12 +68,28 @@ const NUMERIC_OPTS = {
   WindowStyle:[1,2,3,4,5,6,7,8],
 };
 
+// The selection the configurator boots with, and the target of "Reset
+// everything to defaults".  This intentionally differs from TOGGLE_DEFAULTS:
+// TOGGLE_DEFAULTS is the game's no-flag baseline (must match config.py) and
+// stays the flag-omission baseline used by buildFlagString / applyFlagString,
+// so flagstrings still round-trip.  Because these picks differ from that
+// baseline, a freshly loaded site already emits "-bs 6 -ms 1 -c memory" --
+// which is what makes them actually take effect when the CLI applies the
+// flagstring.  (BatMode = wait is already the baseline, so no -b is emitted.)
+const INITIAL_TOGGLES = {
+  ...TOGGLE_DEFAULTS,
+  BatMode:  'wait',
+  BatSpeed: 6,
+  MsgSpeed: 1,
+  Cursor:   'memory',
+};
+
 // ---------------- state ----------------
 
 const state = {
   page: 'A',
-  // toggles
-  ...structuredClone(TOGGLE_DEFAULTS),
+  // toggles (boot selection -- see INITIAL_TOGGLES)
+  ...structuredClone(INITIAL_TOGGLES),
   font: [...FONT_DEFAULT],
   windows: structuredClone(WINDOW_DEFAULTS),
   // editing: 'font' or {window: N, slot: 1..7}
@@ -1433,7 +1449,7 @@ document.getElementById('reset-color').addEventListener('click', () => {
 });
 
 document.getElementById('reset-all').addEventListener('click', () => {
-  Object.assign(state, structuredClone(TOGGLE_DEFAULTS));
+  Object.assign(state, structuredClone(INITIAL_TOGGLES));
   state.font = [...FONT_DEFAULT];
   state.windows = structuredClone(WINDOW_DEFAULTS);
   state.editing = { kind: 'font' };
