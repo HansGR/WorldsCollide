@@ -118,6 +118,18 @@ function notifyStateChange(detail) {
                                          { detail: detail || {} }));
 }
 
+// Broadcast a palette-value edit so the custom-window designer mirrors the
+// change (and selects the same slot).  Shared by every control that nudges
+// an R/G/B channel: the canvas sliders, the keyboard, and the side-panel
+// sliders.  Carries the window/slot when a window slot is being edited so
+// the designer can follow along; font edits send nulls.
+function notifyPaletteEdit() {
+  const slot = state.editing.kind === 'slot' ? state.editing.slot : null;
+  notifyStateChange({ kind: 'palette',
+                      window: slot ? state.WindowStyle : null,
+                      slot });
+}
+
 // ---------------- menu layout ----------------
 //
 // All coordinates are in native 256x224 pixel space.  These rectangles are
@@ -1322,6 +1334,7 @@ function setChannel(ch, value) {
   render();
   syncSidePanel();
   updateFlagString();
+  notifyPaletteEdit();
 }
 
 // ---------------- input handling ----------------
@@ -1369,6 +1382,7 @@ function adjustChannel(ch, delta) {
   render();
   syncSidePanel();
   updateFlagString();
+  notifyPaletteEdit();
 }
 
 function selectCurrent() {
@@ -1477,10 +1491,23 @@ function syncSidePanel() {
     else state.windows[state.WindowStyle][state.editing.slot - 1][i] = v;
     render();
     updateFlagString();
-    notifyStateChange({ kind: 'palette',
-                        window: state.editing.kind === 'slot' ? state.WindowStyle : null,
-                        slot:   state.editing.kind === 'slot' ? state.editing.slot : null });
+    notifyPaletteEdit();
   });
+});
+
+// Designer -> configurator sync.  When a window-palette color is edited in
+// the custom-window designer (bottom half), it writes straight into
+// state.windows and emits this event.  Mirror the edited slot into the
+// editing bar and re-sync the top half so the two stay in lock-step.
+document.addEventListener('ff6c:stateChange', (e) => {
+  const detail = (e && e.detail) || {};
+  if (detail.kind !== 'palette-from-designer') return;
+  if (detail.slot >= 1 && detail.slot <= 7) {
+    state.editing = { kind: 'slot', slot: detail.slot };
+  }
+  syncSidePanel();
+  render();
+  updateFlagString();
 });
 
 // Target-kind buttons (Font / Window).
