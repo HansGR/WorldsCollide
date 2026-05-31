@@ -1,6 +1,15 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
+  "functions": {
+    "api/patch.py": {
+      "includeFiles": "{ff6_config.py,config/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/web/index.html" },
+    { "source": "/((?!api/).*)", "destination": "/web/$1" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

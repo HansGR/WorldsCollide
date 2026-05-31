@@ -2,13 +2,27 @@ class ROM():
     SHORT_PTR_SIZE = 2  # short ptr (16-bit)
     LONG_PTR_SIZE = 3   # long ptr  (24-bit)
 
-    def __init__(self, file_name):
-        with open(file_name, "rb") as rom_file:
-            self.data = list(rom_file.read())
+    def __init__(self, file_name=None, data=None):
+        # Two ways to build a ROM:
+        #   ROM("path.smc")     -- read the bytes from disk (CLI use)
+        #   ROM(data=b"...")    -- wrap bytes already in memory (web use)
+        # The in-memory form lets the web service patch an uploaded ROM
+        # without ever writing it to disk.
+        if data is not None:
+            self.data = list(data)
+        elif file_name is not None:
+            with open(file_name, "rb") as rom_file:
+                self.data = list(rom_file.read())
+        else:
+            raise ValueError("ROM requires either file_name or data")
 
 
     def size(self):
         return len(self.data)
+
+    def get_data(self):
+        """Return the current ROM image as bytes (no filesystem access)."""
+        return bytes(self.data)
 
     def write(self, file_name):
         with open(file_name, "wb") as out_file:

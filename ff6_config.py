@@ -16,6 +16,15 @@ from config import window_graphics as wg
 from config.rom import ROM
 
 
+class ConfigError(Exception):
+    """Invalid input while applying a config to an in-memory ROM.
+
+    Library callers (the web service) catch this and turn it into a 400 so a
+    bad upload never crashes the process; the CLI catches it and turns it into
+    a ``sys.exit`` message.
+    """
+
+
 # ---- argparse value parsers -----------------------------------------
 
 def _int_in_range(lo, hi):
@@ -230,6 +239,106 @@ def _default_output_path(input_path):
     return input_path + "_config.smc"
 
 
+# ---- reusable, file-free patching core ------------------------------
+#
+# These functions never touch the filesystem, so the web service can patch
+# an uploaded ROM entirely in memory and hand the bytes straight back without
+# ever storing a copy.  The CLI (``main``) layers file I/O on top of them.
+
+def _graphics_blobs_from_config(cfg_data):
+    """Decode a config dict's ``graphics`` map into ``[(window, blob), ...]``.
+
+    Each value is base64 of a 928-byte (graphics + palette) blob.  Raises
+    ConfigError on a bad window number, bad base64, or wrong-size blob.
+    """
+    expected = wg.WINDOW_GRAPHICS_SIZE + wg.WINDOW_PALETTE_FULL_SIZE
+    blobs = []
+    for n_str, b64 in (cfg_data.get("graphics") or {}).items():
+        try:
+            n = int(n_str)
+        except (TypeError, ValueError):
+            raise ConfigError(f"bad window number {n_str!r}")
+        if not 1 <= n <= 8:
+            raise ConfigError(f"bad window number {n}")
+        try:
+            blob = base64.b64decode(b64, validate=True)
+        except (ValueError, TypeError) as e:
+            raise ConfigError(f"window {n}: invalid base64 ({e})")
+        if len(blob) != expected:
+            raise ConfigError(
+                f"window {n} blob is {len(blob)} bytes, expected {expected}")
+        blobs.append((n, blob))
+    return blobs
+
+
+def apply_config(rom, args, graphics_blobs=()):
+    """Apply a parsed argparse namespace + graphics blobs to an in-memory ROM.
+
+    Mutates ``rom`` in place and returns it.  Raises ConfigError on any
+    invalid input (missing trampoline, bad palette, player-2 without
+    ``multiple``, duplicate window image, ...).  Touches no files.
+    """
+    config_set = {
+        name: getattr(args, name)
+        for name in CLI_OPTIONS
+        if getattr(args, name) is not None
+    }
+
+    # Player-2 assignments only make sense in "multiple" controller mode --
+    # the in-game submenu they map to is unreachable otherwise.
+    if config_set.get("Player2Controls") and not config_set.get("Controller2"):
+        raise ConfigError("-p2/--player2 requires -ctrl/--controller multiple")
+
+    if not cfg.is_trampoline_installed(rom):
+        raise ConfigError(
+            "ROM does not have the default-config trampoline installed at "
+            "$03/70C2. Patch the ROM with Worlds Collide first (or run "
+            "install_trampoline.py on a vanilla ROM).")
+
+    try:
+        cfg.set_config(rom, config_set)
+    except ValueError as e:
+        raise ConfigError(str(e))
+
+    seen = set()
+    for n, blob in graphics_blobs:
+        if n in seen:
+            raise ConfigError(f"window {n} graphics specified twice")
+        seen.add(n)
+        _apply_window_image_bytes(rom, n, blob)
+    return rom
+
+
+def patch_rom_bytes(rom_bytes, config=None, extra_flags=None):
+    """Patch an FF6 ROM held in memory and return the patched bytes.
+
+    ``config`` is a parsed ``ff6config.json`` dict (``version`` / ``flags`` /
+    ``graphics``) as produced by the web app, or None.  ``extra_flags`` is an
+    optional list of additional CLI flag tokens applied on top (they win over
+    the config's embedded flags, matching the CLI's ``--config`` behaviour).
+
+    Never reads or writes the filesystem.  Raises ConfigError on bad input.
+    """
+    flag_argv = []
+    graphics_blobs = []
+    if config is not None:
+        if config.get("version") != 1:
+            raise ConfigError(
+                f"unsupported config version {config.get('version')!r}")
+        flag_argv += shlex.split(config.get("flags", "") or "")
+        graphics_blobs = _graphics_blobs_from_config(config)
+    if extra_flags:
+        flag_argv += list(extra_flags)
+    try:
+        # "-i" is required by the parser but unused for in-memory patching.
+        args = build_parser().parse_args(["-i", "<memory>", *flag_argv])
+    except SystemExit:
+        raise ConfigError("invalid configuration flags")
+    rom = ROM(data=rom_bytes)
+    apply_config(rom, args, graphics_blobs)
+    return rom.get_data()
+
+
 def main(argv=None):
     raw_argv = sys.argv[1:] if argv is None else argv
     args = build_parser().parse_args(raw_argv)
@@ -251,49 +360,21 @@ def main(argv=None):
             re_argv += embedded + raw_argv
             args = build_parser().parse_args(re_argv)
         # Pull graphics out of the JSON.
-        for n_str, b64 in (cfg_data.get("graphics") or {}).items():
-            n = int(n_str)
-            if not 1 <= n <= 8:
-                sys.exit(f"error: {args.Config}: bad window number {n}")
-            blob = base64.b64decode(b64)
-            expected = wg.WINDOW_GRAPHICS_SIZE + wg.WINDOW_PALETTE_FULL_SIZE
-            if len(blob) != expected:
-                sys.exit(
-                    f"error: {args.Config}: window {n} blob is {len(blob)} "
-                    f"bytes, expected {expected}")
-            graphics_blobs.append((n, blob))
+        try:
+            graphics_blobs = _graphics_blobs_from_config(cfg_data)
+        except ConfigError as e:
+            sys.exit(f"error: {args.Config}: {e}")
 
     output_path = args.output or _default_output_path(args.input)
-    config_set = {
-        name: getattr(args, name)
-        for name in CLI_OPTIONS
-        if getattr(args, name) is not None
-    }
-
-    # Player-2 assignments only make sense in "multiple" controller mode --
-    # the in-game submenu they map to is unreachable otherwise.
-    if config_set.get("Player2Controls") and not config_set.get("Controller2"):
-        sys.exit("error: -p2/--player2 requires -ctrl/--controller multiple")
 
     rom = ROM(args.input)
-    if not cfg.is_trampoline_installed(rom):
-        sys.exit(
-            f"error: {args.input} does not have the default-config trampoline "
-            "installed at $03/70C2.\n"
-            "Run `python3 install_trampoline.py -i <rom>` first, or apply a "
-            "Worlds Collide patch."
-        )
     try:
-        cfg.set_config(rom, config_set)
-    except ValueError as e:
+        apply_config(rom, args, graphics_blobs)
+    except ConfigError as e:
         sys.exit(f"error: {e}")
 
-    # Apply --config graphics first, then --window-image, so an explicit
-    # --window-image on the CLI overrides whatever the JSON has for the
-    # same slot.
-    for n, blob in graphics_blobs:
-        _apply_window_image_bytes(rom, n, blob)
-
+    # --config graphics are applied above; explicit --window-image files on
+    # the CLI come last so they override whatever the JSON had for that slot.
     if args.WindowImage:
         seen = set()
         for n, path in args.WindowImage:
@@ -319,8 +400,8 @@ def _load_json_config(path):
 def _apply_window_image_bytes(rom, n, blob):
     expected = wg.WINDOW_GRAPHICS_SIZE + wg.WINDOW_PALETTE_FULL_SIZE
     if len(blob) != expected:
-        sys.exit(
-            f"error: window {n} blob: expected {expected} bytes "
+        raise ConfigError(
+            f"window {n} blob: expected {expected} bytes "
             f"({wg.WINDOW_GRAPHICS_SIZE} graphics + "
             f"{wg.WINDOW_PALETTE_FULL_SIZE} palette), got {len(blob)}")
     wg.set_window_graphics(rom, n, list(blob[: wg.WINDOW_GRAPHICS_SIZE]))
@@ -330,7 +411,10 @@ def _apply_window_image_bytes(rom, n, blob):
 def _apply_window_image(rom, n, path):
     """Read a 928-byte graphics+palette blob from ``path`` and patch window ``n``."""
     with open(path, "rb") as f:
-        _apply_window_image_bytes(rom, n, f.read())
+        try:
+            _apply_window_image_bytes(rom, n, f.read())
+        except ConfigError as e:
+            sys.exit(f"error: {e}")
 
 
 if __name__ == "__main__":

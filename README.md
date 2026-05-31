@@ -23,11 +23,19 @@ The easiest way to use this tool is the web configurator:
 
 Set up the menu the way you want — battle/message speed, spell order,
 wallpaper, font and window-palette colors, even custom window graphics —
-then click **Download configuration** to save an `ff6config.json` file.
-That file bundles the chosen flags (and any custom window graphics) so you
-don't have to assemble a command line by hand.
+then either:
 
-To patch a ROM with it, pass the JSON to `ff6_config.py` with `--config`:
+* **Patch a ROM right there.** Pick your WC-patched ROM under *Patch a
+  ROM* and click **Patch & download ROM**. The site uploads the ROM to a
+  serverless function that runs the same `ff6_config` code path in memory
+  and streams the patched copy straight back. The ROM is never stored —
+  it is received, patched, and returned, with no copy retained.
+* **Download the config** (`ff6config.json`) to patch locally with the CLI.
+  That file bundles the chosen flags (and any custom window graphics) so
+  you don't have to assemble a command line by hand.
+
+To patch a ROM with the JSON locally, pass it to `ff6_config.py` with
+`--config`:
 
 ```sh
 python3 ff6_config.py -i ff6.smc --config ff6config.json

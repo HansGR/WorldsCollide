@@ -234,6 +234,18 @@
     <!-- Output tools: below the column row -->
     <div class="designer-output">
       <button id="ds-download" type="button">Download configuration (.json)</button>
+      <div class="ds-patch-rom">
+        <label class="ds-upload-config" for="ds-rom-upload">Patch a ROM (.smc / .sfc):</label>
+        <input type="file" id="ds-rom-upload" accept=".smc,.sfc,application/octet-stream">
+        <button id="ds-rom-patch" type="button">Patch &amp; download ROM</button>
+      </div>
+      <p class="hint">
+        Applies the configuration above to your ROM and returns the patched
+        copy. The ROM must already be patched by
+        <a href="https://ff6worldscollide.com/">Worlds Collide</a>. Your ROM is
+        sent to the server, patched in memory, and handed straight back &mdash;
+        it is never stored.
+      </p>
       <div id="ds-status" class="ds-status"></div>
     </div>
   </section>
