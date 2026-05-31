@@ -19,6 +19,7 @@ header .hint { margin: 0 0 12px 0; color: #aab; font-size: 13px; }
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  max-width: 808px;
   margin: 0 0 16px 0;
   padding: 10px 12px;
   background: #25252e;
@@ -30,7 +31,12 @@ header .hint { margin: 0 0 12px 0; color: #aab; font-size: 13px; }
 
 main {
   display: grid;
-  grid-template-columns: minmax(520px, 1fr) minmax(320px, 1fr);
+  /* Canvas column sizes to its fixed 512px content; the side column is a
+     fixed width so the control tiles stay flush against the simulated
+     window instead of drifting right as the browser widens.  Packing the
+     tracks to the start leaves the extra width on the right. */
+  grid-template-columns: auto 268px;
+  justify-content: start;
   gap: 24px;
   align-items: start;
 }
@@ -104,10 +110,11 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 6px;
 }
 .window-picker .row:last-child { margin-bottom: 0; }
-.window-picker label { min-width: 160px; }
+.window-picker label { min-width: auto; }
 .window-picker select {
   background: #1d1d24;
   border: 1px solid #555;
@@ -214,6 +221,9 @@ button:active { background: #2a2a3e; }
 
 .designer {
   margin-top: 32px;
+  /* Cap the tile so its three columns sit at their natural width instead of
+     stretching out on wide screens. */
+  max-width: 808px;
   padding: 16px;
   background: #21212a;
   border: 1px solid #383846;
@@ -229,8 +239,8 @@ button:active { background: #2a2a3e; }
 
 .designer-grid {
   display: grid;
-  /* col 1: input controls · col 2: canvas · col 3: paint tools */
-  grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr);
+  /* col 1: input controls (fixed) · col 2: canvas · col 3: paint tools */
+  grid-template-columns: 240px auto minmax(240px, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -245,6 +255,7 @@ button:active { background: #2a2a3e; }
 /* Export / patch tile at the bottom of the page. */
 .output-tile {
   margin-top: 24px;
+  max-width: 808px;
   padding: 16px;
   background: #21212a;
   border: 1px solid #383846;
@@ -259,11 +270,11 @@ button:active { background: #2a2a3e; }
 .output-tile code { background: #15151b; padding: 1px 4px; border-radius: 3px; color: #cfe; }
 .output-actions {
   display: flex;
-  gap: 24px;
+  flex-direction: column;
+  gap: 16px;
   align-items: flex-start;
-  flex-wrap: wrap;
 }
-.output-actions > * { flex: 1 1 280px; }
+.output-actions > * { width: 100%; max-width: 360px; }
 .ds-patch-rom {
   display: flex;
   flex-direction: column;
