@@ -38,34 +38,12 @@
     </section>
 
     <section class="side">
-      <div class="window-picker">
-        <div class="row">
-          <label>Preview window style:</label>
-          <select id="window-style">
-            <option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option>
-            <option value="5">5</option><option value="6">6</option>
-            <option value="7">7</option><option value="8">8</option>
-          </select>
-          <span id="preview-warning" class="warn"></span>
-        </div>
-        <div class="row">
-          <label>Wallpaper (1..8):</label>
-          <select id="wallpaper">
-            <option value="1">1</option><option value="2">2</option>
-            <option value="3">3</option><option value="4">4</option>
-            <option value="5">5</option><option value="6">6</option>
-            <option value="7">7</option><option value="8">8</option>
-          </select>
-        </div>
-        <div class="row">
-          <label>Controller:</label>
-          <select id="controller">
-            <option value="single">single</option>
-            <option value="multiple">multiple</option>
-          </select>
-        </div>
-        <div class="row" id="player2-row" style="display:none;">
+      <!-- Window style, wallpaper, and controller are all chosen directly on
+           the simulated menu above, so this tile only carries the Player-2
+           battle-slot assignment (which has no on-canvas equivalent) and is
+           hidden entirely outside "multiple" controller mode. -->
+      <div class="window-picker" id="window-picker" style="display:none;">
+        <div class="row" id="player2-row">
           <label>Player 2 controls:</label>
           <span class="p2-toggles">
             <label><input type="checkbox" class="player2" value="1"> 1</label>
@@ -78,6 +56,7 @@
 
       <div class="color-edit" id="color-edit">
         <h3 id="color-edit-title">Editing: Font color</h3>
+        <p id="preview-warning" class="warn"></p>
         <div class="target-row">
           <label>Target:</label>
           <div class="seg" id="target-kind">
@@ -129,9 +108,13 @@
       <h2>Custom window image</h2>
       <p class="hint">
         Upload a 32&times;32 image as the window's interior texture, pick a
-        border treatment, paint any tweaks, then download as a 928-byte
-        binary.  Apply with
-        <code>ff6_config.py --window-image N:file.bin</code>.
+        border treatment, and paint any tweaks.  Everything you change here
+        &mdash; the custom graphics, palette colors, and every menu setting
+        above &mdash; is bundled into a single configuration file.  Use the
+        buttons at the bottom of the page to export it as
+        <code>ff6config.json</code> (apply with
+        <code>ff6_config.py -i rom.smc --config ff6config.json</code>) or to
+        patch a ROM straight from your browser.
       </p>
     </header>
     <div class="designer-grid">
@@ -160,12 +143,13 @@
             sizes/colors should use the texture upload instead.
           </p>
         </fieldset>
-        <fieldset>
-          <legend>Revert</legend>
-          <button id="ds-revert" type="button" disabled>Revert this window to default</button>
-        </fieldset>
       </div>
-      <!-- Column 2: paint tools -->
+      <!-- Column 2: canvas -->
+      <div class="designer-canvas-wrap">
+        <canvas id="ds-sheet" width="256" height="448"></canvas>
+        <div class="ds-overlay-lines"></div>
+      </div>
+      <!-- Column 3: paint tools -->
       <div class="designer-controls designer-col">
         <fieldset>
           <legend>Tools</legend>
@@ -214,40 +198,45 @@
         </fieldset>
         <button id="ds-bmp-export" type="button"
                 title="Export the current window sheet as a 32x56 indexed .bmp to edit in an external tool">Export .bmp</button>
-      </div>
-      <!-- Column 3: canvas -->
-      <div class="designer-canvas-wrap">
-        <canvas id="ds-sheet" width="256" height="448"></canvas>
-        <div class="ds-overlay-lines"></div>
-        <p class="hint">
-          Click / drag in the canvas to paint with the selected palette color.
-          Pick a brush size (1&ndash;8) and shape (square / circle), or switch
-          to the <em>Fill</em> tool to flood-fill a region.  The top
-          32&times;32 area is the interior texture; the bottom 32&times;24
-          area is the border / frame.  Cycle the <em>Preview window style</em>
-          dropdown above to switch which window you're designing, or use
-          <em>Export / Import .bmp</em> to round-trip the 32&times;56 sheet
-          through an external editor.
-        </p>
+        <button id="ds-revert" type="button" disabled>Revert this window to default</button>
       </div>
     </div>
-    <!-- Output tools: below the column row -->
-    <div class="designer-output">
-      <button id="ds-download" type="button">Download configuration (.json)</button>
+    <!-- Full-width note running the length of the tile, under the columns. -->
+    <p class="hint designer-note">
+      Click / drag in the canvas to paint with the selected palette color.
+      Pick a brush size (1&ndash;8) and shape (square / circle), or switch
+      to the <em>Fill</em> tool to flood-fill a region.  The top
+      32&times;32 area is the interior texture; the bottom 32&times;24
+      area is the border / frame.  Choose which window you're designing
+      straight from the simulated menu at the top of the page
+      (Page&nbsp;B &rarr; Window style), or use <em>Export / Import .bmp</em>
+      to round-trip the 32&times;56 sheet through an external editor.
+    </p>
+  </section>
+
+  <!-- Export / patch tile.  Lives in its own tile at the bottom because these
+       two actions bundle up everything changed above, not just the window
+       image. -->
+  <section class="output-tile">
+    <h2>Export &amp; patch</h2>
+    <div class="output-actions">
+      <button id="ds-download" type="button">Export configuration (.json)</button>
       <div class="ds-patch-rom">
         <label class="ds-upload-config" for="ds-rom-upload">Patch a ROM (.smc / .sfc):</label>
         <input type="file" id="ds-rom-upload" accept=".smc,.sfc,application/octet-stream">
         <button id="ds-rom-patch" type="button">Patch &amp; download ROM</button>
       </div>
-      <p class="hint">
-        Applies the configuration above to your ROM and returns the patched
-        copy. The ROM must already be patched by
-        <a href="https://ff6worldscollide.com/">Worlds Collide</a>. Your ROM is
-        sent to the server, patched in memory, and handed straight back &mdash;
-        it is never stored.
-      </p>
-      <div id="ds-status" class="ds-status"></div>
     </div>
+    <p class="hint">
+      <em>Export configuration (.json)</em> bundles every menu setting and
+      custom window image above into a single <code>ff6config.json</code>.
+      <em>Patch a ROM</em> applies that same configuration to your ROM and
+      returns the patched copy; the ROM must already be patched by
+      <a href="https://ff6worldscollide.com/">Worlds Collide</a>.  Your ROM is
+      sent to the server, patched in memory, and handed straight back &mdash;
+      it is never stored.
+    </p>
+    <div id="ds-status" class="ds-status"></div>
   </section>
 
   <!-- cache-bust on every load so iterative dev keeps in step with the

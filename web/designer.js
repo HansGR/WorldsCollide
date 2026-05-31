@@ -841,10 +841,8 @@
       // user lands on something visible instead of an untouched window.
       const target = decoded.length ? decoded[0].n : ds.currentWindow;
       ds.currentWindow = target;
-      const sel = document.getElementById('window-style');
-      if (sel && parseInt(sel.value, 10) !== target) {
-        sel.value = String(target);
-        sel.dispatchEvent(new Event('change'));
+      if (SHARED.WindowStyle !== target && ff6c.setWindowStyle) {
+        ff6c.setWindowStyle(target);
       }
       const cur = ds.customGraphics[target];
       if (cur && cur.pixels) {
