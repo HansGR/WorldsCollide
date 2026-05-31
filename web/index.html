@@ -12,7 +12,7 @@
       A web app to make and customize menu configuration files for
       patching <a href="https://ff6worldscollide.com/">FF6 Worlds Collide</a> roms.
       See <a href="https://github.com/HansGR/WorldsCollide/tree/ff6_customize_config_window">the project code</a>
-      for information on how to patch roms.  Code by DoctorDT.
+      for information on how to patch roms.  Designed by DoctorDT.
     </p>
     <p class="hint">
       Arrow keys / WASD = move cursor &middot; Enter / Space = toggle &middot;
@@ -107,14 +107,8 @@
     <header class="designer-head">
       <h2>Custom window image</h2>
       <p class="hint">
-        Upload a 32&times;32 image as the window's interior texture, pick a
-        border treatment, and paint any tweaks.  Everything you change here
-        &mdash; the custom graphics, palette colors, and every menu setting
-        above &mdash; is bundled into a single configuration file.  Use the
-        buttons at the bottom of the page to export it as
-        <code>ff6config.json</code> (apply with
-        <code>ff6_config.py -i rom.smc --config ff6config.json</code>) or to
-        patch a ROM straight from your browser.
+        Upload an image as the window's interior texture, pick a
+        border treatment, and paint any tweaks.  
       </p>
     </header>
     <div class="designer-grid">
@@ -203,14 +197,12 @@
     </div>
     <!-- Full-width note running the length of the tile, under the columns. -->
     <p class="hint designer-note">
-      Click / drag in the canvas to paint with the selected palette color.
-      Pick a brush size (1&ndash;8) and shape (square / circle), or switch
-      to the <em>Fill</em> tool to flood-fill a region.  The top
+      Click in the canvas to paint with the selected palette color.
+      Pick a brush size (1&ndash;8) and shape (square / circle), or use
+      the <em>Fill</em> tool to fill a region.  The top
       32&times;32 area is the interior texture; the bottom 32&times;24
-      area is the border / frame.  Choose which window you're designing
-      straight from the simulated menu at the top of the page
-      (Page&nbsp;B &rarr; Window style), or use <em>Export / Import .bmp</em>
-      to round-trip the 32&times;56 sheet through an external editor.
+      area is the border / frame.  Use <em>Export / Import .bmp</em>
+      to edit the 32&times;56 sheet in an external editor.
     </p>
   </section>
 
@@ -228,13 +220,10 @@
       </div>
     </div>
     <p class="hint">
-      <em>Export configuration (.json)</em> bundles every menu setting and
-      custom window image above into a single <code>ff6config.json</code>.
-      <em>Patch a ROM</em> applies that same configuration to your ROM and
-      returns the patched copy; the ROM must already be patched by
-      <a href="https://ff6worldscollide.com/">Worlds Collide</a>.  Your ROM is
-      sent to the server, patched in memory, and handed straight back &mdash;
-      it is never stored.
+      <em>Export configuration (.json)</em> bundles settings and
+      custom window images into a <code>ff6config.json</code> file.
+      <em>Patch a ROM</em> applies the configuration to your <a href="https://ff6worldscollide.com/">Worlds Collide</a> ROM and
+      returns the patched copy.  
     </p>
     <div id="ds-status" class="ds-status"></div>
   </section>
