@@ -675,7 +675,10 @@
 
   // ---- download (unified config JSON) --------------------------------
 
-  document.getElementById('ds-download').addEventListener('click', () => {
+  // Build the unified { version, flags, graphics } config object from the
+  // current designer + configurator state.  Shared by the JSON download and
+  // the "patch a ROM" upload so the two can never drift apart.
+  function buildConfigObject() {
     snapshotCurrent();
     const graphics = {};
     for (const [nStr, c] of Object.entries(ds.customGraphics)) {
@@ -691,11 +694,15 @@
       for (const b of all) bin += String.fromCharCode(b);
       graphics[nStr] = btoa(bin);
     }
-    const cfg = {
+    return {
       version: 1,
       flags: (ff6c.getFlagString && ff6c.getFlagString()) || '',
       graphics,
     };
+  }
+
+  document.getElementById('ds-download').addEventListener('click', () => {
+    const cfg = buildConfigObject();
     const json = JSON.stringify(cfg, null, 2);
     const file = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(file);
@@ -706,12 +713,69 @@
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    const customCount = Object.keys(graphics).length;
+    const customCount = Object.keys(cfg.graphics).length;
     setStatus(
       `downloaded ff6config.json (${customCount} custom window` +
       (customCount === 1 ? '' : 's') + ') -- apply with ' +
       '`ff6_config.py -i rom.smc --config ff6config.json`', false);
   });
+
+  // ---- patch a ROM on the server (upload -> patch -> download) -------
+  //
+  // POSTs the uploaded ROM + the current config to the /api/patch function,
+  // which patches it in memory and streams the result straight back.  The
+  // ROM is never stored server-side.
+  const romInput = document.getElementById('ds-rom-upload');
+  const patchBtn = document.getElementById('ds-rom-patch');
+  if (romInput && patchBtn) {
+    patchBtn.addEventListener('click', async () => {
+      const f = romInput.files && romInput.files[0];
+      if (!f) {
+        setStatus('choose a ROM (.smc / .sfc) to patch first', true);
+        return;
+      }
+      const cfg = buildConfigObject();
+      patchBtn.disabled = true;
+      setStatus(`patching ${f.name}…`, false);
+      try {
+        const form = new FormData();
+        form.append('rom', f, f.name);
+        form.append('config', JSON.stringify(cfg));
+        form.append('filename', f.name);
+
+        const resp = await fetch('/api/patch', { method: 'POST', body: form });
+        if (!resp.ok) {
+          const msg = (await resp.text().catch(() => '')).trim();
+          throw new Error(msg || `HTTP ${resp.status} ${resp.statusText}`);
+        }
+
+        const blob = await resp.blob();
+        // Prefer the server's suggested filename; fall back locally.
+        let name = (f.name || 'ff6').replace(/\.(smc|sfc)$/i, '') + '_config.smc';
+        const cd = resp.headers.get('Content-Disposition') || '';
+        const m = cd.match(/filename="([^"]+)"/);
+        if (m) name = m[1];
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        const customCount = Object.keys(cfg.graphics).length;
+        setStatus(
+          `patched ${f.name} → ${name} (${customCount} custom window` +
+          (customCount === 1 ? '' : 's') + ')', false);
+      } catch (err) {
+        setStatus('patch failed: ' + err.message, true);
+      } finally {
+        patchBtn.disabled = false;
+      }
+    });
+  }
 
   // ---- upload (restore from previously downloaded JSON) -------------
 

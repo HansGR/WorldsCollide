@@ -1,0 +1,8 @@
+# Keep the Vercel deploy lean: ship only the static site (web/), the Python
+# patching function (api/), and the library it pulls in (config/, ff6_config.py).
+# Everything below is dev-only and never served or imported at runtime.
+screenshots/
+tests/
+scripts/
+ARCHIVE.md
+install_trampoline.py

@@ -236,6 +236,17 @@ button:active { background: #2a2a3e; }
   margin-top: 20px;
   max-width: 320px;
 }
+.designer-output .hint { margin: 8px 0 0 0; color: #aab; font-size: 13px; }
+.ds-patch-rom {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ds-patch-rom .ds-upload-config { color: #aab; font-size: 13px; }
+.ds-patch-rom input[type=file] { color: #cfe; font-size: 12px; }
 
 .designer-controls fieldset {
   border: 1px solid #444;

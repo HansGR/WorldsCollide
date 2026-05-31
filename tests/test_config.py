@@ -566,6 +566,87 @@ def test_installer_rejects_out_of_bank_address():
     raise AssertionError("expected SystemExit for out-of-bank address")
 
 
+# ---- in-memory patching (web service path) --------------------------
+
+def _trampolined_rom_bytes(size=0x2E0000):
+    """A minimal ROM image with the default-config trampoline installed."""
+    rom = bytearray(size)
+    rom[0x0370C2] = 0x20  # JSR (Config2)
+    rom[0x0370C5] = 0x20  # JSR (Config3)
+    rom[0x0370C3] = 0x91; rom[0x0370C4] = 0xF0  # Config2 sub -> $C3/F091 + 1
+    rom[0x0370C6] = 0x97; rom[0x0370C7] = 0xF0  # Config3 sub -> $C3/F097 + 1
+    return rom
+
+
+def test_patch_rom_bytes_applies_flags_and_graphics():
+    import base64
+    from config import config as _cfg
+
+    blob = bytes([0x55] * 896 + [0x00, 0x38] * 16)
+    config = {
+        "version": 1,
+        "flags": "-bs 5 -ms 2",
+        "graphics": {"7": base64.b64encode(blob).decode("ascii")},
+    }
+    out = ff6_config.patch_rom_bytes(_trampolined_rom_bytes(), config)
+
+    assert isinstance(out, (bytes, bytearray))
+    # Config1: BatSpeed=5 (100), MsgSpeed=2 (001), Command=0, BatMode=1
+    assert out[_cfg.CONFIG1_ADDR] == 0b00011100, f"{out[_cfg.CONFIG1_ADDR]:#04x}"
+    gfx_off = 0x2D0000 + 6 * 0x380
+    assert out[gfx_off:gfx_off + 896] == blob[:896]
+    pal_off = 0x2D1C00 + 6 * 0x20
+    assert out[pal_off:pal_off + 32] == blob[896:]
+
+
+def test_patch_rom_bytes_extra_flags_override_config():
+    from config import config as _cfg
+    config = {"version": 1, "flags": "-bs 5"}
+    out = ff6_config.patch_rom_bytes(
+        _trampolined_rom_bytes(), config, extra_flags=["-bs", "6"])
+    # BatSpeed=6 (101), MsgSpeed=3 (010), Command=0, BatMode=1 -> 0x2D
+    assert out[_cfg.CONFIG1_ADDR] == 0b00101101, f"{out[_cfg.CONFIG1_ADDR]:#04x}"
+
+
+def test_patch_rom_bytes_requires_trampoline():
+    # A vanilla (no-trampoline) ROM must raise ConfigError, not crash.
+    try:
+        ff6_config.patch_rom_bytes(bytearray(0x2E0000), {"version": 1, "flags": ""})
+    except ff6_config.ConfigError as e:
+        assert "trampoline" in str(e)
+        return
+    raise AssertionError("expected ConfigError without trampoline")
+
+
+def test_patch_rom_bytes_rejects_bad_version():
+    try:
+        ff6_config.patch_rom_bytes(_trampolined_rom_bytes(), {"version": 2})
+    except ff6_config.ConfigError as e:
+        assert "version" in str(e)
+        return
+    raise AssertionError("expected ConfigError for unsupported version")
+
+
+def test_patch_rom_bytes_rejects_wrong_size_graphics():
+    import base64
+    bad = base64.b64encode(b"\x00" * 100).decode("ascii")
+    config = {"version": 1, "flags": "", "graphics": {"3": bad}}
+    try:
+        ff6_config.patch_rom_bytes(_trampolined_rom_bytes(), config)
+    except ff6_config.ConfigError as e:
+        assert "expected" in str(e)
+        return
+    raise AssertionError("expected ConfigError for wrong-size graphics blob")
+
+
+def test_patch_rom_bytes_does_not_mutate_input():
+    src = _trampolined_rom_bytes()
+    snapshot = bytes(src)
+    ff6_config.patch_rom_bytes(src, {"version": 1, "flags": "-bs 6"})
+    # ROM(data=...) copies, so the caller's buffer is untouched.
+    assert bytes(src) == snapshot
+
+
 # ---- runner ----------------------------------------------------------
 
 def main():
