@@ -12,7 +12,7 @@
       A web app to make and customize menu configuration files for
       patching <a href="https://ff6worldscollide.com/">FF6 Worlds Collide</a> roms.
       See <a href="https://github.com/HansGR/WorldsCollide/tree/ff6_customize_config_window">the project code</a>
-      for information on how to patch roms.  Designed by DoctorDT.
+      for information on how to patch roms.  Designed by DoctorDT, coded by Claude.
     </p>
     <p class="hint">
       Arrow keys / WASD = move cursor &middot; Enter / Space = toggle &middot;
@@ -210,21 +210,28 @@
        two actions bundle up everything changed above, not just the window
        image. -->
   <section class="output-tile">
-    <h2>Export &amp; patch</h2>
-    <div class="output-actions">
-      <button id="ds-download" type="button">Export configuration (.json)</button>
-      <div class="ds-patch-rom">
-        <label class="ds-upload-config" for="ds-rom-upload">Patch a ROM (.smc / .sfc):</label>
-        <input type="file" id="ds-rom-upload" accept=".smc,.sfc,application/octet-stream">
+    <div class="output-split">
+      <div class="output-col output-export">
+        <h2>Export</h2>
+        <p class="hint">
+          Bundle settings and custom window images into a
+          <code>ff6config.json</code> file.
+        </p>
+        <button id="ds-download" type="button">Export configuration (.json)</button>
+      </div>
+      <div class="output-col output-patch">
+        <div class="output-col-head">
+          <h2>Patch</h2>
+          <input type="file" id="ds-rom-upload" accept=".smc,.sfc,application/octet-stream">
+        </div>
+        <p class="hint">
+          Apply this configuration to your
+          <a href="https://ff6worldscollide.com/">Worlds Collide</a> ROM and
+          return the patched copy.
+        </p>
         <button id="ds-rom-patch" type="button">Patch &amp; download ROM</button>
       </div>
     </div>
-    <p class="hint">
-      <em>Export configuration (.json)</em> bundles settings and
-      custom window images into a <code>ff6config.json</code> file.
-      <em>Patch a ROM</em> applies the configuration to your <a href="https://ff6worldscollide.com/">Worlds Collide</a> ROM and
-      returns the patched copy.  
-    </p>
     <div id="ds-status" class="ds-status"></div>
   </section>
 

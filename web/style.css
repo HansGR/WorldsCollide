@@ -268,20 +268,44 @@ button:active { background: #2a2a3e; }
 }
 .output-tile .hint { margin: 12px 0 0 0; color: #aab; font-size: 13px; }
 .output-tile code { background: #15151b; padding: 1px 4px; border-radius: 3px; color: #cfe; }
-.output-actions {
+/* Two side-by-side tiles: Export on the left, Patch on the right. */
+.output-split {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
 }
-.output-actions > * { width: 100%; max-width: 360px; }
-.ds-patch-rom {
+.output-col {
+  flex: 1 1 280px;
+  min-width: 280px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  padding: 12px;
+  background: #1b1b22;
+  border: 1px solid #383846;
+  border-radius: 6px;
 }
-.ds-patch-rom .ds-upload-config { color: #aab; font-size: 13px; }
-.ds-patch-rom input[type=file] { color: #cfe; font-size: 12px; }
+.output-col h2 { margin: 0; }
+/* Browse... file picker sits on the same line as the Patch title so the
+   two columns line up and their action buttons share the same elevation. */
+.output-col-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.output-col-head input[type=file] {
+  color: #cfe;
+  font-size: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* margin-top:auto pins each button to the bottom of its (equal-height)
+   column, keeping the two buttons at the same y elevation. */
+.output-col button {
+  margin-top: auto;
+  width: 100%;
+}
+.output-col .hint { margin: 12px 0 16px 0; }
 
 .designer-controls fieldset {
   border: 1px solid #444;
