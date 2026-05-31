@@ -1403,7 +1403,6 @@ function selectValue(row, val) {
   } else if (row.key === 'WindowStyle') {
     state.WindowStyle = val;
     loadWindowAssets(val).then(render);
-    document.getElementById('window-style').value = String(val);
   } else {
     state[row.key] = val;
   }
@@ -1468,10 +1467,8 @@ function syncSidePanel() {
   slotSel.disabled = isFont;
   if (!isFont) slotSel.value = String(state.editing.slot);
 
-  // Side-panel selects that mirror state.  Controller can be cycled both
-  // from the canvas (PAGE_A_OPTIONS) and the side-panel dropdown, so keep
-  // the dropdown synced after every state mutation.
-  document.getElementById('controller').value = state.Controller;
+  // Controller is cycled from the canvas (PAGE_A_OPTIONS); keep the
+  // Player-2 sub-panel in step with the current controller mode.
   syncPlayer2UI();
 
   // preview-warning
@@ -1551,41 +1548,19 @@ document.getElementById('reset-all').addEventListener('click', () => {
   state.windows = structuredClone(WINDOW_DEFAULTS);
   state.editing = { kind: 'font' };
   state.cursor = 0;
-  document.getElementById('window-style').value = '1';
-  document.getElementById('wallpaper').value = '1';
-  document.getElementById('controller').value = 'single';
   loadWindowAssets(1).then(() => {
     syncSidePanel(); render(); updateFlagString();
     notifyStateChange({ kind: 'reset-all' });
   });
 });
 
-document.getElementById('window-style').addEventListener('change', (e) => {
-  const v = parseInt(e.target.value, 10);
-  state.WindowStyle = v;
-  loadWindowAssets(v).then(() => {
-    syncSidePanel(); render(); updateFlagString();
-    notifyStateChange({ kind: 'windowStyle', value: v });
-  });
-});
-
-document.getElementById('wallpaper').addEventListener('change', (e) => {
-  state.Wallpaper = parseInt(e.target.value, 10);
-  updateFlagString();
-});
-
-document.getElementById('controller').addEventListener('change', (e) => {
-  state.Controller = e.target.value;
-  syncPlayer2UI();
-  updateFlagString();
-});
-
-// Player-2 controller assignment toggles.  The row is only visible while
-// Controller is "multiple"; the four checkboxes mirror the in-game submenu
-// ("if on, player 2 controls battle slot N", $1D4F bits ----4321).
+// Player-2 controller assignment toggles.  The picker tile is only visible
+// while Controller is "multiple" (chosen on the canvas); the four checkboxes
+// mirror the in-game submenu ("if on, player 2 controls battle slot N",
+// $1D4F bits ----4321).
 function syncPlayer2UI() {
-  const row = document.getElementById('player2-row');
-  row.style.display = state.Controller === 'multiple' ? '' : 'none';
+  const picker = document.getElementById('window-picker');
+  picker.style.display = state.Controller === 'multiple' ? '' : 'none';
   document.querySelectorAll('.player2').forEach(cb => {
     cb.checked = state.Player2.includes(parseInt(cb.value, 10));
   });
@@ -1655,8 +1630,10 @@ function buildFlagString() {
   // CLI rejects -p2 without -ctrl multiple, so gate the flag on both.
   if (state.Controller === 'multiple' && state.Player2.length)
     args.push(`-p2 ${[...state.Player2].sort((a, b) => a - b).join('')}`);
-  if (state.Wallpaper !== TOGGLE_DEFAULTS.Wallpaper)
-    args.push(`-w ${state.Wallpaper}`);
+  // Wallpaper is no longer chosen independently: the applied wallpaper
+  // (`-w N`) always tracks the window style the user is previewing.
+  if (state.WindowStyle !== TOGGLE_DEFAULTS.Wallpaper)
+    args.push(`-w ${state.WindowStyle}`);
   if (!deepEq(state.font, FONT_DEFAULT))
     args.push(`-f ${rgbStr(state.font)}`);
   for (let w = 1; w <= 8; w++) {
@@ -1762,7 +1739,9 @@ const FLAG_MAP = {
   '-r':   { key: 'Reequip'  },
   '-so':  { key: 'SpellOrder', int: true },
   '-ctrl':{ key: 'Controller'  },
-  '-w':   { key: 'Wallpaper',  int: true },
+  // `-w N` is the applied wallpaper, which now drives the previewed window
+  // style so a loaded config shows the window it was saved against.
+  '-w':   { key: 'WindowStyle', int: true },
 };
 
 function applyFlagString(flags) {
@@ -1803,10 +1782,8 @@ function applyFlagString(flags) {
     i++;
   }
 
-  // Sync side panels + canvas to the freshly-loaded state.
-  document.getElementById('window-style').value = String(state.WindowStyle);
-  document.getElementById('wallpaper').value    = String(state.Wallpaper);
-  document.getElementById('controller').value   = state.Controller;
+  // Window style, wallpaper, and controller are all reflected on the canvas
+  // and side panel, so there are no dropdowns left to sync here.
   return loadWindowAssets(state.WindowStyle).then(() => {
     updateTabUI();
     syncSidePanel();
@@ -1834,6 +1811,16 @@ if (typeof window !== 'undefined') {
   // the menu preview so the custom graphics overlay updates.
   window.ff6c.refresh = function () {
     render();
+  };
+  // Switch the previewed/edited window style from outside the configurator
+  // (the designer used to do this by poking the now-removed dropdown).
+  // Reloads that window's art, then re-syncs everything that depends on it.
+  window.ff6c.setWindowStyle = function (n) {
+    state.WindowStyle = n;
+    return loadWindowAssets(n).then(() => {
+      syncSidePanel(); render(); updateFlagString();
+      notifyStateChange({ kind: 'windowStyle', value: n });
+    });
   };
   window.ff6c.applyFlagString = applyFlagString;
 }

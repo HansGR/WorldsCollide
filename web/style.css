@@ -116,10 +116,12 @@ main {
   border-radius: 4px;
 }
 .warn {
-  margin-left: 12px;
+  margin: 0 0 8px 0;
   font-size: 12px;
   color: #fc8;
 }
+/* Don't reserve vertical space when there's no warning to show. */
+.warn:empty { display: none; }
 .p2-toggles {
   display: flex;
   gap: 12px;
@@ -227,20 +229,42 @@ button:active { background: #2a2a3e; }
 
 .designer-grid {
   display: grid;
-  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr) auto;
+  /* col 1: input controls · col 2: canvas · col 3: paint tools */
+  grid-template-columns: minmax(240px, 1fr) auto minmax(240px, 1fr);
   gap: 20px;
   align-items: start;
 }
 
-.designer-output {
-  margin-top: 20px;
-  max-width: 320px;
+/* Full-width note under the three designer columns. */
+.designer-note {
+  margin: 16px 0 0 0;
+  font-size: 12px;
+  color: #889;
 }
-.designer-output .hint { margin: 8px 0 0 0; color: #aab; font-size: 13px; }
+
+/* Export / patch tile at the bottom of the page. */
+.output-tile {
+  margin-top: 24px;
+  padding: 16px;
+  background: #21212a;
+  border: 1px solid #383846;
+  border-radius: 8px;
+}
+.output-tile h2 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #cdf;
+}
+.output-tile .hint { margin: 12px 0 0 0; color: #aab; font-size: 13px; }
+.output-tile code { background: #15151b; padding: 1px 4px; border-radius: 3px; color: #cfe; }
+.output-actions {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.output-actions > * { flex: 1 1 280px; }
 .ds-patch-rom {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #444;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -329,12 +353,6 @@ button:active { background: #2a2a3e; }
   word-break: break-all;
 }
 .ds-status.error { color: #fc8; }
-
-.designer-canvas-wrap .hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #889;
-}
 
 .ds-window-banner {
   padding: 8px 10px;
