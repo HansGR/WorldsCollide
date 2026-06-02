@@ -1026,10 +1026,12 @@ are now fully orthogonal — `-ruin` just bundles `-nfh`; `-nfh` works without
 - **Flag definition:** `args/misc.py` — `misc.add_argument("-nfh", "--no-free-heals", action="store_true", ...)`. Also exposed via `flags()` and `options()` ("No Free Heals").
 - **Default in `-ruin`:** `args/ruin_preprocessor.py` `RUIN_DEFAULT_FLAGS['other']` includes `'-nfh'`.
 - **Top-level call site:** `event/events.py` `mod()` calls `self.no_free_heals_mod()` immediately after `create_party_interaction_scripts` whenever `args.no_free_heals` is true. This works in both ruination and standalone contexts.
-- **Top-level method:** `event/events.py` `no_free_heals_mod()` invokes the three group sweepers from `event/free_heals.py`:
-  - `modify_inn_costs(maps, rom, dialogs, args)` — multiplies all paid inn costs by `INN_COST_MULTIPLIER` (`= 3`) and converts free inns at Returners Hideout and Figaro Castle into paid ones.
+- **Top-level method:** `event/events.py` `no_free_heals_mod()` invokes the group sweepers from `event/free_heals.py`:
+  - `modify_inn_costs(maps, rom, dialogs, args)` — multiplies all paid inn costs by `INN_COST_MULTIPLIER` (`= 3`) and converts free inns at Returners Hideout and Figaro Castle into paid ones. Includes the Coliseum inn (Take-GP opcode at `CB/786F`, amount byte `0xb7870`, base 400 GP, dialog `$0973`), which was missed in the original sweep.
   - `modify_free_bed_heals(maps, dialogs, enemies, args)` — replaces the six free bed-heal tiles (Narshe Weapon Shop, Sabin's House x3, Gau's Father's House, Mobliz Relic Shop) with: 50% pincer ambush (`FREE_BED_AMBUSH_PACK = 416`, escape allowed), then per-character state-dependent heal via the `BedHealCharacter` (0xa4) field opcode (revive→cure→HP→MP, mutually exclusive). If the party flees the ambush no heal is applied. Uses `multipurpose_map(0)` to debounce per map load. Two random pincer-capable formations are written into the ambush pack.
   - `modify_recovery_springs(maps, rom, dialogs, args)` — randomises the spring effects in `SPRING_LOCATIONS` (Phantom Forest pool, Cave to South Figaro) into one of nine outcomes (`SpringEffect`): FULL_RECOVERY, RECOVER_HP, RECOVER_MP, RECOVER_STATUS, POISON, IMP, ZOMBIE, STONE, REDUCE_TO_1_HP. Flash colour is keyed by outcome; dialog ID base is `SPRING_DIALOG_BASE = 1480`.
+  - `remove_coliseum_heal(args)` — removes the start-of-battle full heal applied to the selected Coliseum fighter. The battle setup at `C2/27A8` ("copy out-of-battle stats into battle stats") restores current HP/MP to max and clears Death/Petrify/Zombie/Clear for any character flagged in zero-page `$B8`. NOPs the `LDA #$01 / TSB $B8` at `C2/2F83` (file `0x22f83`–`0x22f86`) that flags the chosen fighter (always loaded as character 1). Special-event-installed characters are flagged separately at `C2/3023` and keep their heal; the rest of the Coliseum logic keys off `$3A97`, so it is untouched.
+  - `modify_vector_inn(dialogs, args)` — reworks Vector's free inn (`N = 1000 * INN_COST_MULTIPLIER`). The innkeeper NPC event (`CC/945D`, file `0xc945d`–`0xc9467`) is redirected via `Branch` into a new entry-gate routine: `RemoveGP(N/4)` then refund — too poor → "No room for yeh!" and no stay option; otherwise the still-free "Have a snooze?" prompt (dialog `$0559`) is offered, with Yes branching into the original sleep event at `CC/9468`. The scripted theft (`Take 1000 GP` at `CC/94D4`, file `0xc94d4`–`0xc94e0`) is redirected to a scaled-theft routine that steals N, falling back to N/2 then N/4, reporting the actual amount, then returns to `CC/94E1`. The N/4 entry gate guarantees the final N/4 theft always succeeds, so the heal is never free.
 - **Ruination-only sweepers** (still in `event/ruination.py`, called from `ruination_mod`, NOT `no_free_heals_mod`): `disable_chocobo_stables`, `fix_ferry_connections`.
 
 ### Per-Event Heal Modifications (gated locally)
@@ -1057,6 +1059,8 @@ Each event file checks `args.no_free_heals` directly so the changes apply with o
 - **`BedHealCharacter` (opcode 0xa4)**: Defined in `instruction/field/custom.py`. Argument is `0x00..0x0F` for a specific actor or `0x31..0x34` for `PARTY0..PARTY3` (resolved via `$9DAD` in vanilla). Effects (mutually exclusive): dead → revive to 1 HP (no-op under `-permadeath`); alive + status → clear field status bytes `$1614`/`$1615`; alive + HP < max → +max/4 HP capped; alive + HP == max → +max/4 MP capped. Always emits A8 on exit and dispatches `JMP $9b5c`.
 - **Recovery springs**: `phantom_forest auto recovery spring` reserve in `event/phantom_train.py` `add_gating_condition()` repurposes the spring tile for character-gating walking and is unrelated to `-nfh`.
 - **Inn cost ordering**: `modify_inn_costs`/`modify_free_bed_heals`/`modify_recovery_springs` do not access door-map postprocessed data, so calling `no_free_heals_mod()` before the event mod loop (and before `postprocess_door_map`) is safe.
+- **Coliseum fighter heal**: `remove_coliseum_heal` works by *not flagging* the fighter (NOP at `C2/2F83`), rather than editing the heal at `C2/27A8` itself — this keeps the heal for special-event installs (`C2/2F2F` → `C2/3023`). With the heal gone, sending a KO'd/petrified character into the Coliseum means they enter the match in that state.
+- **Vector inn entry gate**: requires `N/4` GP (`= 250 * INN_COST_MULTIPLIER`) to rest at all; assumes `$1BE`/`NOT_ENOUGH_GP` is clear on NPC entry (same convention as the Returners/Figaro inn rewrites). Both redirects use trampoline `Branch`es from the original NPC/Take-GP sites, so the NPC pointer and the `CC/94E1` thief-leaving code are unchanged.
 
 ---
 
@@ -1261,7 +1265,8 @@ Ruination mode repurposes a contiguous block of vanilla dialog IDs that belong t
 | `$05B6-$05BA` | 1462-1466 | school reform | `NARSHE_DIALOG_IDS` (reform / how-many-parties dialogs) | `event/narshe_wob.py` `ruination_mod` | `-ruin` |
 | `$05BB-$05BE` | 1467-1470 | -nfh limited heals | `empty_id` / `one_id` / `two_id` / `three_id` (school bucket prompts) | `event/narshe_wob.py` `limited_heals` | `-nfh` |
 | `$05BF-$05C1` | 1471-1473 | ferry flavor | `FERRY_FLAVOR_DIALOG['SouthFigaro' / 'Nikeah' / 'Albrook']` | `event/ruination.py` `_ferry_install_enabled` | `-ruin` |
-| `$05C2-$05C7` | 1474-1479 | **free** | — | — | — |
+| `$05C2-$05C4` | 1474-1476 | -nfh Vector inn | `VECTOR_NO_ROOM_DIALOG_ID` (1474, "No room for yeh!"), `VECTOR_STOLEN_HALF_DIALOG_ID` (1475, "<N/2> GP stolen!"), `VECTOR_STOLEN_QUARTER_DIALOG_ID` (1476, "<N/4> GP stolen!") | `event/free_heals.py` `modify_vector_inn` | `-nfh` |
+| `$05C5-$05C7` | 1477-1479 | **free** | — | — | — |
 | `$05C8-$05D7` | 1480-1495 | -nfh recovery springs | `SPRING_DIALOG_BASE` reservation (1 drink prompt + 1 result per spring area; currently uses 1480-1482, range reserved) | `event/free_heals.py` `modify_recovery_springs` | `-nfh` |
 | `$05D8+` | 1496+ | **out of block** | Vanilla "What's happening in Narshe?" dialog runs here — do not claim. | — | — |
 
@@ -1282,6 +1287,7 @@ These claims live outside the Maduin block. They overwrite vanilla dialogs whose
 | `0x0523` (1315) | `fly_wor_fc_cancel_dialog` | `event/airship.py` `controls_mod` | Falcon WoR-FC console rewritten for ruination |
 | `0x0526` (1318) | `fly_wor_cancel_dialog` | `event/airship.py` `controls_mod` | Falcon WoR console rewritten for ruination |
 | `0x0528` (1320) | `PARTY_INTERACT_CHOICE_DIALOG` | `event/ruination.py` `create_party_interaction_scripts` | Vanilla "Change party members?" repurposed for the join/swap/nothing menu |
+| `0x055A` (1370) | -nfh Vector inn theft (`VECTOR_STOLEN_FULL_DIALOG_ID`) | `event/free_heals.py` `modify_vector_inn` | Vanilla "1000 GP stolen!" → "<N> GP stolen!" (full-amount case). Half/quarter cases use 1475/1476 in the Maduin block. Gated on `-nfh`. |
 | `0x0666`, `0x0667` (1638, 1639) | KT entry prompts | `event/sealed_gate.py`, `event/esper_mountain.py` ruination_mods | "Enter Kefka's Tower? There's no going back." |
 | `0x068B`, `0x068D`, `0x068F`, `0x0690` | Mog/Gau/Gogo/Umaro airship quotes | `event/ruination.py` `create_party_interaction_scripts` (`CHARACTER_AIRSHIP_DIALOG_IDS`) | Per-character party-interaction dialog |
 | `0x08D0`, `0x08D2`, `0x08D8`, `0x08D9` (2256, 2258, 2264, 2265) | Mobliz "you're not gonna take…" | `event/mobliz_wor.py` (ruination branches) | Replaces character or esper item name |
