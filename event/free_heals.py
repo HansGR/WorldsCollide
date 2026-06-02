@@ -68,6 +68,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
         (0xc62b2, 300, 0x0649, "{price} GP if you wanna stay.<line>How 'bout it?<line><choice> Yes<line><choice> No<end>", "Albrook inn WOR"),
         (0xc6593, 200, 0x060D, "{price} GP per night!<line>Need a rest?<line><choice> Sure<line><choice> Nope<end>", "Maranda inn"),
         (0xc665f, 100, 0x064B, "You look tired!<line>{price} GP for a snooze.<line><choice> Yes<line><choice> No<end>", "Mobliz inn"),
+        (0xb7870, 400, 0x0973, "{price} GP per night.<line>Wanna rest?<line><choice> Yes<line><choice> No<end>", "Coliseum inn"),
         (0xc69d6, 200, None, None, "Kohlingen inn"),  # Shares dialog 0x060D with Maranda
         (0xcd2b3, 200, None, None, "Narshe inn"),  # Shares dialog 0x060D with Maranda
     ]
