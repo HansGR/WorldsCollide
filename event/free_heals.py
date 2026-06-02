@@ -11,6 +11,8 @@ orchestrated by ``event/events.py`` ``Events.no_free_heals_mod()``:
   ambush.
 - ``modify_recovery_springs``: randomises the effect of recovery springs
   (Phantom Forest pool, Cave to South Figaro) into one of nine outcomes.
+- ``remove_coliseum_heal``    : stops the selected Coliseum fighter from being
+  fully healed (HP/MP/status) at the start of the match.
 
 Per-event heal removals/restrictions gated by ``args.no_free_heals`` live
 in their respective event files (e.g. ``event/baren_falls.py``,
@@ -25,6 +27,7 @@ import random
 
 from memory.space import Bank, Reserve, Write
 from instruction.event import EVENT_CODE_START
+import instruction.asm as asm
 import instruction.field as field
 import instruction.field.entity as field_entity
 import data.event_bit as event_bit
@@ -187,6 +190,45 @@ def modify_inn_costs(maps, rom, dialogs, args):
             print(f"Figaro Castle rest: {FIGARO_CASTLE_INN_PRICE} GP -> {figaro_price} GP")
     elif args.debug:
         print(f"Warning: Could not find Figaro Castle rest event at (47, 52)")
+
+
+# -----------------------------------------------------------------------------
+# COLISEUM FREE HEAL (bank C2)
+# -----------------------------------------------------------------------------
+# At the start of every battle the routine at C2/27A8 ("copy character's out of
+# battle stats into their battle stats") loads each character's current
+# HP/MP/status. If the character is flagged in zero-page $B8, it instead
+# overwrites current HP/MP with their maximum values and clears
+# Death/Petrify/Zombie/Clear -- i.e. a full heal. That flag is set in two
+# unrelated places during battle setup (C2/2F2F):
+#   * C2/2F85 ("LDA #$01 / TSB $B8") flags the selected Coliseum fighter, who
+#     is always loaded as character 1, and
+#   * C2/3023 ("TSB $B8") flags characters force-installed by a formation's
+#     special event (e.g. Gau returning from a Veldt leap).
+# NOPing only the Coliseum branch's flag set removes the free heal for the
+# chosen fighter (they now enter the match at their current HP/MP and status)
+# while leaving the special-event heal -- and the rest of the Coliseum logic,
+# which keys off the separate $3A97 flag -- untouched.
+COLISEUM_HEAL_FLAG_START = 0x22f83  # LDA #$01  (C2/2F83)
+COLISEUM_HEAL_FLAG_END = 0x22f86    # TSB $B8   (C2/2F86, inclusive)
+
+
+def remove_coliseum_heal(args):
+    """Remove the free full-heal applied to the selected Coliseum fighter.
+
+    NOPs the "LDA #$01 / TSB $B8" at C2/2F83 that flags the chosen fighter for
+    the start-of-battle HP/MP/status restore at C2/27A8. Characters installed
+    by a formation's special event are flagged separately (C2/3023) and keep
+    their heal.
+
+    Args:
+        args: Command line arguments (for debug flag)
+    """
+    Reserve(COLISEUM_HEAL_FLAG_START, COLISEUM_HEAL_FLAG_END,
+            "coliseum no free heal for selected fighter", asm.NOP())
+
+    if args.debug:
+        print("Removed Coliseum free heal for the selected fighter")
 
 
 # Battle pack for nighttime ambush at free beds.
