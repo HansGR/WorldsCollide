@@ -298,9 +298,12 @@ class BurningHouse(Event):
         src = [
             field.FadeOutSong(0x60),
             field.Pause(1),
-            field.StartSong(0xb8),
-            field.WaitForSong(),
         ]
+        if not self.args.no_free_heals:
+            src += [
+                field.StartSong(0xb8),  # Nighty night
+                field.WaitForSong(),
+            ]
         if self.args.ruination_mode:
             # Force waking up in WOR (we don't use WOB in ruination mode)
             src += [
@@ -331,7 +334,12 @@ class BurningHouse(Event):
                 field_entity.SetPosition(11, 18), # bottom left bed
                 field_entity.Turn(direction.DOWN),
             ),
-            field.Call(field.HEAL_PARTY_HP_MP_STATUS),
+        ]
+        if not self.args.no_free_heals:
+            src += [
+                field.Call(field.HEAL_PARTY_HP_MP_STATUS),
+            ]
+        src += [
             field.FadeInScreen(8),
             field.Pause(2.00),
             field.FinishCheck(),
