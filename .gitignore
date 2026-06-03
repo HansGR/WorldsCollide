@@ -5,3 +5,6 @@ $py.class
 *-flag.json
 wip/
 ffiii_wc_*
+# ROM files (never commit - legal)
+*.smc
+*.sfc
