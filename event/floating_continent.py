@@ -943,20 +943,38 @@ class FloatingContinent(Event):
                    field.Return()]
             )
 
-        # ---- gated transition: partner -> Tube9, bounce back if not revealed -
+        # ---- gated transition: partner -> Tube9 ------------------------------
+        # The party always drops in and the camera travels toward Tube9.  Only at
+        # the arrival point do we check the reveal: if Tube9 is open, the party
+        # pops out there; if not, the camera travels back and the party re-exits
+        # the tube it entered (a "bounced" round trip, nicer than a dead stop).
         def gated_transition(partner, ld_bit):
+            p = _FC_TUBES[partner]["xy"]
+            t9 = _FC_TUBES[9]["xy"]
+            dx, dy = t9[0] - p[0], t9[1] - p[1]
             return (
-                [field.BranchIfEventBitSet(ld_bit, "TUBE9_REVEALED")]
-                # rejected: shudder at the partner tube and stay put
-                + open_code(partner)
-                + [field.Pause(0.25),
-                   field.ShakeScreen(1, True, True, True, True, True),
-                   field.Pause(0.5),
-                   field.StopScreenShake()]
-                + close_code(partner)
-                + [field.Return(),
-                   "TUBE9_REVEALED"]
-                + tube_transition(partner, 9)
+                open_code(partner) + [field.Call(0xad566)] + close_code(partner)
+                + [field.HoldScreen()]
+                + [field.EntityAct(field_entity.CAMERA, True,
+                                   field_entity.SetSpeed(field_entity.Speed.FAST),
+                                   *pan_path(dx, dy))]              # travel toward Tube9
+                + [field.BranchIfEventBitSet(ld_bit, "TUBE9_OPEN")]
+                # Tube9 still hidden: travel back and re-exit the partner tube
+                + [field.EntityAct(field_entity.CAMERA, True, *pan_path(-dx, -dy))]
+                + [field.EntityAct(field_entity.PARTY0, False,
+                                   field_entity.SetPosition(p[0], p[1] + 2))]
+                + [field.FreeScreen()]
+                + exit_sequence(partner)
+                + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
+                   field.Return()]
+                # Tube9 revealed: arrive and pop out at Tube9
+                + ["TUBE9_OPEN"]
+                + [field.EntityAct(field_entity.PARTY0, False,
+                                   field_entity.SetPosition(t9[0], t9[1] + 2))]
+                + [field.FreeScreen()]
+                + exit_sequence(9)
+                + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
+                   field.Return()]
             )
 
         # ---- cross-map transitions for the Save Room pair (Tube12 <-> X) -----
