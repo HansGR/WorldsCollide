@@ -1,6 +1,159 @@
 from event.event import *
 from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+from log.verbose import vprint
 ENTRY_EVENT_CODE_ADDR = 0xa48e3
+
+# ============================================================================
+# Ruination tube-maze randomizer (self-contained; see ruination_tube_maze_mod).
+#
+# The Floating Continent (map 0x18A) is a maze of "tubes" that warp the party
+# between regions of a single map, plus four buttons that open fixed walls (or
+# reveal a hidden tube).  In ruination mode the route through the maze is
+# randomized:
+#   * Tubes 1-10 are re-paired into new bidirectional connections.
+#   * The four buttons are randomly assigned which lock they control.
+# The player still enters at FC1 (falling in) and leaves via FC8, and every room
+# is guaranteed to stay reachable.
+#
+# Tube9's tile is hidden behind a wall until its assigned button (lock "Ld") is
+# pressed.  Travelling toward Tube9 from its partner before it is revealed bounces
+# the party straight back to the partner tube; once revealed, the trip completes.
+# All four lock bits are "cleared on map load" (event_bit.multipurpose_map), so the
+# hidden wall and the bit stay in sync whenever map 0x18A reloads.
+#
+# Tube11<->Tube12 (the Save Room, which lives on its own map 0x166) is kept
+# vanilla so the cross-map save-room round trip stays intact.
+# ============================================================================
+
+# Tube endpoints.  Tubes 1-8 and 11 reuse the vanilla "open"/"close" tube-graphic
+# subroutines (by ROM address); tubes 9-10 draw their tube graphics inline, so
+# their "open"/"close" are captured from ROM at build time (None here).  Tube 12
+# is the Save Room hole on map 0x166 - it has no tube graphic of its own and is
+# always the cross-map endpoint (its partner becomes the Save Room portal).
+#   xy    : tube tile position (also the camera centre while travelling)
+#   open  : ROM addr of the subroutine that draws the tube opening at xy (or None)
+#   close : ROM addr of the subroutine that restores the closed tube at xy (or None)
+#   room  : logical maze room the tube belongs to
+#   range : (first, last) byte of the tube's event-tile entry code, repointed
+_FC_TUBES = {
+    1:  {"xy": (40,  6), "open": 0xad5d5, "close": 0xad5f0, "room": "FC1",  "range": (0xad583, 0xad5ab)},
+    2:  {"xy": (32, 16), "open": 0xad602, "close": 0xad61d, "room": "FC2",  "range": (0xad5ac, 0xad5d4)},
+    3:  {"xy": (67, 39), "open": 0xad6ce, "close": 0xad6e9, "room": "FC3",  "range": (0xad660, 0xad696)},
+    4:  {"xy": (42, 17), "open": 0xad6fb, "close": 0xad716, "room": "FC4",  "range": (0xad697, 0xad6cd)},
+    5:  {"xy": (40, 24), "open": 0xad77c, "close": 0xad797, "room": "FC4",  "range": (0xad728, 0xad751)},
+    6:  {"xy": (63, 31), "open": 0xad7a9, "close": 0xad7c4, "room": "FC5",  "range": (0xad752, 0xad77b)},
+    7:  {"xy": (48, 22), "open": 0xad82e, "close": 0xad849, "room": "FC4",  "range": (0xad7d6, 0xad801)},
+    8:  {"xy": (77, 31), "open": 0xad85b, "close": 0xad876, "room": "FC6",  "range": (0xad802, 0xad82d)},
+    9:  {"xy": (89, 25), "open": None,    "close": None,    "room": "FC7",  "range": (0xada55, 0xadabf)},
+    10: {"xy": (70, 23), "open": None,    "close": None,    "room": "FC8",  "range": (0xadac0, 0xadb2a)},
+    11: {"xy": (90, 43), "open": 0xad97a, "close": 0xad995, "room": "FC7",  "range": (0xad916, 0xad93f)},
+    12: {"xy": (8,   8), "open": None,    "close": None,    "room": "Save", "range": (0xad940, 0xad979)},
+}
+# Inline tube-graphic byte ranges for tubes 9-10 (captured via Read at build time).
+_FC_INLINE_GFX = {
+    9:  {"open": (0xada55, 0xada6e), "close": (0xada73, 0xada83)},
+    10: {"open": (0xadac0, 0xadad9), "close": (0xadade, 0xadaee)},
+}
+# Vanilla Save Room byte ranges, reused verbatim for the cross-map (Tube12) pair:
+#   arrival : Tube11's save-arrival tail - pause, LoadMap 0x166, drop party, set $1B5
+#   the exit_* ranges are the parts of Tube12's return that don't depend on which
+#   0x18A tube the Save Room connects to (the FC-side LoadMap, position, open/close
+#   tube graphics are substituted with the partner's; everything else is reused).
+_FC_SAVE_ARRIVAL = (0xad922, 0xad93f)
+_FC_SAVE_EXIT_HEAD = (0xad940, 0xad950)   # $1B5 guard, hold, sound, jump-out of hole
+_FC_SAVE_EXIT_RESTORE = (0xad95d, 0xad95d)  # restore screen from fade
+_FC_SAVE_EXIT_TAIL = (0xad971, 0xad978)   # wait, free screen, reset layering
+_FC_TUBE_ROOM = {1: "FC1", 2: "FC2", 3: "FC3", 4: "FC4", 5: "FC4", 6: "FC5",
+                 7: "FC4", 8: "FC6", 9: "FC7", 10: "FC8", 11: "FC7", 12: "Save"}
+
+# Button tiles.  Each tile stays in its room but is randomly assigned a lock.
+#   xy    : button tile position
+#   layer : map layer the "pressed" graphic ($A2) is drawn on
+#   room  : room the button tile lives in (must be reached to press it)
+#   range : (first, last) byte of the button's event-tile entry code
+_FC_BUTTONS = {
+    "FCa": {"xy": (36, 28), "layer": 2, "room": "FC2", "range": (0xad645, 0xad65f)},
+    "FCb": {"xy": (59, 39), "layer": 2, "room": "FC5", "range": (0xad8af, 0xad8d0)},
+    "FCc": {"xy": (52, 24), "layer": 2, "room": "FC5", "range": (0xad888, 0xad8ae)},
+    "FCd": {"xy": (82, 30), "layer": 1, "room": "FC7", "range": (0xad8d1, 0xad906)},
+}
+# Locks.  La/Lb/Lc are fixed walls between rooms; Ld reveals/gates Tube9.
+#   bit  : "cleared on map load" event bit recording the lock is open
+#   cam  : absolute tile to pan the camera to while the wall opens / tube reveals
+#   edge : rooms joined by the wall ("TUBE9" for the Tube9 reveal)
+_FC_LOCKS = {
+    "La": {"bit": event_bit.multipurpose_map(6), "cam": (41, 32), "edge": ("FC2", "FC3")},  # vanilla FCa wall
+    "Lb": {"bit": event_bit.multipurpose_map(8), "cam": (57, 47), "edge": ("FC3", "FC7")},  # vanilla FCb wall
+    "Lc": {"bit": event_bit.multipurpose_map(7), "cam": (56, 28), "edge": ("FC3", "FC5")},  # vanilla FCc wall
+    "Ld": {"bit": event_bit.multipurpose_map(9), "cam": (88, 27), "edge": "TUBE9"},         # reveals Tube9
+}
+_FC_ROOMS = ["FC1", "FC2", "FC3", "FC4", "FC5", "FC6", "FC7", "FC8", "Save"]
+
+
+def _fc_reachable(tube_pairs, assignment, start="FC1"):
+    """Return the set of rooms reachable from `start` under a candidate layout.
+
+    tube_pairs : list of (a, b) pairs over tubes 1..12
+    assignment : dict mapping button name -> lock name (a bijection)
+    start      : room the party begins in with all locks closed (FC1 on entry, or
+                 the Save Room's partner room when returning from a map reload)
+
+    A keys-and-locks fixed point: a lock opens once the room holding its assigned
+    button has been reached.  Most tube edges are always open; the tube edge that
+    contains Tube9 is gated by lock Ld (Tube9 must be revealed to traverse it).
+    """
+    lock_tile_room = {lock: _FC_BUTTONS[btn]["room"] for btn, lock in assignment.items()}
+
+    reached = {start}
+    changed = True
+    while changed:
+        changed = False
+        unlocked = {lock for lock, room in lock_tile_room.items() if room in reached}
+
+        def connect(u, v):
+            nonlocal changed
+            if u in reached and v not in reached:
+                reached.add(v); changed = True
+            elif v in reached and u not in reached:
+                reached.add(u); changed = True
+
+        for a, b in tube_pairs:
+            if 9 in (a, b) and "Ld" not in unlocked:
+                continue  # Tube9 still hidden -> the party is bounced back
+            connect(_FC_TUBE_ROOM[a], _FC_TUBE_ROOM[b])
+        for lock in ("La", "Lb", "Lc"):
+            if lock in unlocked:
+                connect(*_FC_LOCKS[lock]["edge"])
+    return reached
+
+
+def _fc_randomize_maze(rng):
+    """Pick a (tube_pairs, assignment) that keeps every room reachable."""
+    tube_ids = list(range(1, 13))  # tubes 1..12
+    locks = ["La", "Lb", "Lc", "Ld"]
+    buttons = ["FCa", "FCb", "FCc", "FCd"]
+    for _ in range(20000):
+        rng.shuffle(tube_ids)
+        pairs = [(tube_ids[i], tube_ids[i + 1]) for i in range(0, 12, 2)]
+        if any(_FC_TUBE_ROOM[a] == _FC_TUBE_ROOM[b] for a, b in pairs):
+            continue  # don't pair two tubes that live in the same room
+        if any({9, 12} == {a, b} for a, b in pairs):
+            continue  # avoid the gated-and-cross-map Tube9<->Tube12 combination
+        shuffled = locks[:]
+        rng.shuffle(shuffled)
+        assignment = dict(zip(buttons, shuffled))
+        if len(_fc_reachable(pairs, assignment)) != len(_FC_ROOMS):
+            continue  # every room must be reachable from the FC1 entry
+        # Visiting the Save Room reloads map 0x18A (resetting every lock) and drops
+        # the party in the Save Room's partner room, so the exit (FC8) must still be
+        # reachable starting fresh from there - otherwise a save detour could strand
+        # the player before the boss.
+        save_partner = next(a if b == 12 else b for a, b in pairs if 12 in (a, b))
+        if "FC8" in _fc_reachable(pairs, assignment, _FC_TUBE_ROOM[save_partner]):
+            return pairs, assignment
+    # Fallback: vanilla layout (always solvable)
+    return ([(1, 2), (3, 4), (5, 6), (7, 8), (9, 10), (11, 12)],
+            {"FCa": "La", "FCb": "Lb", "FCc": "Lc", "FCd": "Ld"})
 
 # TODO game can freeze, is this something i did or a bug in emulator/game?
 #      go through and when you get to the hole that brings you to three possible holes (including the one you came from)
@@ -73,6 +226,9 @@ class FloatingContinent(Event):
 
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
+
+        if self.args.ruination_mode:
+            self.ruination_tube_maze_mod()
 
     def create_y_party_switch_events(self):
         # Temporary fix: in ruination mode, pressing "y" to switch to another party
@@ -295,6 +451,12 @@ class FloatingContinent(Event):
         )
 
     def save_point_hole_mod(self):
+        if self.args.ruination_mode:
+            # In ruination the Save Room is part of the randomized tube maze:
+            # ruination_tube_maze_mod re-points Tube12's event (which spans this
+            # region), and folds the equivalent map load + light deletion into its
+            # own Save Room -> partner transition.  Leave this region for it.
+            return
         space = Reserve(0xad951, 0xad95c, "floating continent return from save point hole", field.NOP())
         space.write(
             field.Call(self.return_from_save_map_function),
@@ -629,6 +791,272 @@ class FloatingContinent(Event):
             ]
         self.escape_mod(guest_char_id, escape_src)
 
+    def ruination_tube_maze_mod(self):
+        # Randomize the route through the Floating Continent tube maze.  See the
+        # module header above for the model.  All generated event code goes into
+        # Bank.CA (same bank as the vanilla open/close/wall subroutines it calls)
+        # and the vanilla tube/button event tiles are re-pointed to it.
+        import random
+
+        tube_pairs, assignment = _fc_randomize_maze(random)
+
+        # ---- spoiler log ----------------------------------------------------
+        vprint("Floating Continent tube maze:")
+        for a, b in tube_pairs:
+            vprint(f"  Tube{a} <-> Tube{b}   ({_FC_TUBE_ROOM[a]} <-> {_FC_TUBE_ROOM[b]})")
+        for btn, lock in assignment.items():
+            edge = _FC_LOCKS[lock]["edge"]
+            what = "reveals Tube9" if edge == "TUBE9" else f"{edge[0]}<->{edge[1]} wall"
+            vprint(f"  Button {btn} -> {lock} ({what})")
+
+        # ---- capture vanilla bytes we reuse (before any re-pointing) ---------
+        gfx = {}
+        for tube, ranges in _FC_INLINE_GFX.items():
+            gfx[tube] = {
+                "open": Read(ranges["open"][0], ranges["open"][1]),
+                "close": Read(ranges["close"][0], ranges["close"][1]),
+            }
+        save_arrival = Read(*_FC_SAVE_ARRIVAL)
+        save_exit_head = Read(*_FC_SAVE_EXIT_HEAD)
+        save_exit_restore = Read(*_FC_SAVE_EXIT_RESTORE)
+        save_exit_tail = Read(*_FC_SAVE_EXIT_TAIL)
+
+        # per-tube open / close code: a Call for tubes 1-8, raw bytes for 9-10
+        def open_code(tube):
+            addr = _FC_TUBES[tube]["open"]
+            return [field.Call(addr)] if addr is not None else [gfx[tube]["open"]]
+
+        def close_code(tube):
+            addr = _FC_TUBES[tube]["close"]
+            return [field.Call(addr)] if addr is not None else [gfx[tube]["close"]]
+
+        # ---- camera/party pan: a near-straight, symmetric path from (0,0) to ---
+        # (dx, dy), minimizing distance travelled with 1:1 and 1:2/2:1 diagonal
+        # moves plus linear runs.  The diagonal run is split symmetrically around a
+        # central run, e.g. (8, 21) -> [4 down-right(1:2), down 5, 4 down-right(1:2)].
+        def pan_path(dx, dy):
+            ax, ay = abs(dx), abs(dy)
+            hdir = direction.RIGHT if dx > 0 else direction.LEFT
+            vdir = direction.DOWN if dy > 0 else direction.UP
+
+            def linear(d, n):
+                ops = []
+                while n > 0:
+                    step = min(8, n)
+                    ops.append(field_entity.Move(d, step))
+                    n -= step
+                return ops
+
+            if ax == 0:
+                return linear(vdir, ay)
+            if ay == 0:
+                return linear(hdir, ax)
+
+            if ay >= ax:                       # vertical dominant
+                if ay <= 2 * ax:               # slope 1..2: 1:1 and 1:2 diagonals
+                    n11, n12 = 2 * ax - ay, ay - ax
+                    d11 = [field_entity.MoveDiagonal(hdir, 1, vdir, 1) for _ in range(n11)]
+                    d12 = [field_entity.MoveDiagonal(hdir, 1, vdir, 2) for _ in range(n12)]
+                    split, middle = (d12, d11) if n12 >= n11 else (d11, d12)
+                else:                          # slope > 2: 1:2 diagonal and linear
+                    split = [field_entity.MoveDiagonal(hdir, 1, vdir, 2) for _ in range(ax)]
+                    middle = linear(vdir, ay - 2 * ax)
+            else:                              # horizontal dominant
+                if ax <= 2 * ay:               # slope 1/2..1: 1:1 and 2:1 diagonals
+                    n11, n21 = 2 * ay - ax, ax - ay
+                    d11 = [field_entity.MoveDiagonal(hdir, 1, vdir, 1) for _ in range(n11)]
+                    d21 = [field_entity.MoveDiagonal(hdir, 2, vdir, 1) for _ in range(n21)]
+                    split, middle = (d21, d11) if n21 >= n11 else (d11, d21)
+                else:                          # slope < 1/2: 2:1 diagonal and linear
+                    split = [field_entity.MoveDiagonal(hdir, 2, vdir, 1) for _ in range(ay)]
+                    middle = linear(hdir, ax - 2 * ay)
+
+            half = len(split) // 2
+            return split[:half] + middle + split[half:]
+
+        # ---- re-point an event tile's entry code to freshly written code ----
+        def repoint(addr_range, new_src, description):
+            new_code = Write(Bank.CA, new_src, description)
+            space = Reserve(addr_range[0], addr_range[1], description, field.NOP())
+            space.write(field.Branch(new_code.start_address))
+
+        # ---- exit animation, tied to the tube being EXITED ------------------
+        # Every tube but Tube11 is left by stepping DOWN out of the mouth (the
+        # generic vanilla slide-out CAD577, which shows the party, hops in place
+        # and faces down at dst+2).  Tube11 alone is left by stepping UP: the party
+        # is at dst+2 and jumps up 3 to dst-1 (this reconstructs Tube11's vanilla
+        # save-room exit, C2 C6 DD 88, but waits for the hop to finish).
+        def exit_sequence(dst):
+            if dst == 11:
+                return (
+                    open_code(11)
+                    + [field.ShowEntity(field_entity.PARTY0),
+                       field.RefreshEntities(),
+                       field.EntityAct(field_entity.PARTY0, True,
+                                       field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                                       field_entity.EnableWalkingAnimation(),
+                                       field_entity.AnimateHighJump(),
+                                       field_entity.Move(direction.UP, 3)),
+                       field.Pause(0.25)]
+                    + close_code(11)
+                )
+            return open_code(dst) + [field.Call(0xad577)] + close_code(dst)
+
+        # ---- standard tube transition: src tube -> dst tube -----------------
+        # The party is hidden, then we pan the CAMERA (which ignores terrain
+        # collision) to the destination and teleport the hidden party there.
+        # Moving the party itself across the map would let scripted movement jam
+        # against walls on a randomized route - stranding the party mid-tile or
+        # hard-locking the event - so we never walk the party across the maze.
+        def tube_transition(src, dst):
+            s = _FC_TUBES[src]; d = _FC_TUBES[dst]
+            dx = d["xy"][0] - s["xy"][0]
+            dy = d["xy"][1] - s["xy"][1]
+            return (
+                open_code(src)                                  # open the tube under the party
+                + [field.Call(0xad566)]                         # party drops in & is hidden (fast)
+                + close_code(src)                               # restore the closed tube graphic
+                + [field.HoldScreen()]                          # detach the camera from the party
+                + [field.EntityAct(field_entity.CAMERA, True,
+                                   field_entity.SetSpeed(field_entity.Speed.FAST),
+                                   *pan_path(dx, dy))]          # pan the camera to the destination
+                + [field.EntityAct(field_entity.PARTY0, False,
+                                   field_entity.SetPosition(d["xy"][0], d["xy"][1] + 2))]  # teleport hidden party
+                + [field.FreeScreen()]                          # camera re-locks onto the party
+                + exit_sequence(dst)                            # party pops out (up for Tube11, else down)
+                + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
+                   field.Return()]
+            )
+
+        # ---- gated transition: partner -> Tube9, bounce back if not revealed -
+        def gated_transition(partner, ld_bit):
+            return (
+                [field.BranchIfEventBitSet(ld_bit, "TUBE9_REVEALED")]
+                # rejected: shudder at the partner tube and stay put
+                + open_code(partner)
+                + [field.Pause(0.25),
+                   field.ShakeScreen(1, True, True, True, True, True),
+                   field.Pause(0.5),
+                   field.StopScreenShake()]
+                + close_code(partner)
+                + [field.Return(),
+                   "TUBE9_REVEALED"]
+                + tube_transition(partner, 9)
+            )
+
+        # ---- cross-map transitions for the Save Room pair (Tube12 <-> X) -----
+        # X (on map 0x18A) -> Save Room (map 0x166): play X's tube entry, then the
+        # vanilla save-arrival tail (LoadMap 0x166, drop the party, set $1B5).
+        def x_to_save(x):
+            return (open_code(x) + [field.Call(0xad566)] + close_code(x)
+                    + [save_arrival])
+
+        # Save Room (Tube12) -> X: the vanilla save-exit, but the FC-side LoadMap,
+        # landing position and tube graphics are X's instead of Tube11's.  The
+        # LoadMap/position bytes match vanilla flags exactly (6A .. / 31 04 D5 ..).
+        # delete_lights_function mirrors the vanilla save-point-hole return (see
+        # save_point_hole_mod) so the statue lights don't reappear on this reload.
+        def save_to_x(x):
+            xx, xy = _FC_TUBES[x]["xy"]
+            # Centre the camera where the party ends: Tube11 hops UP to y-1, every
+            # other tube stays put at y+2 after the down slide-out.
+            end_y = (xy - 1) if x == 11 else (xy + 2)
+            return (
+                [save_exit_head]
+                + [0x6A, 0x8A, 0x25, xx, end_y & 0xff, 0x00]             # LoadMap 0x18A, camera @ (x, end_y)
+                + [0x31, 0x04, 0xD5, xx, (xy + 2) & 0xff, 0xFF]          # set party pos (x, y+2)
+                + [field.Call(self.delete_lights_function)]              # delete statue lights
+                + [save_exit_restore]
+                + exit_sequence(x)                                       # party pops out (up for Tube11, else down)
+                + [save_exit_tail]
+                + [field.Return()]
+            )
+
+        ld_bit = _FC_LOCKS["Ld"]["bit"]
+        for a, b in tube_pairs:
+            if 12 in (a, b):
+                x = a if b == 12 else b
+                repoint(_FC_TUBES[x]["range"], x_to_save(x), f"FC maze: Tube{x}->Save Room")
+                repoint(_FC_TUBES[12]["range"], save_to_x(x), f"FC maze: Save Room->Tube{x}")
+            elif 9 in (a, b):
+                partner = a if b == 9 else b
+                # Tube9's own tile is only reachable once revealed -> standard trip
+                repoint(_FC_TUBES[9]["range"], tube_transition(9, partner), "FC maze: Tube9->partner")
+                # the partner gates travel toward the (possibly hidden) Tube9
+                repoint(_FC_TUBES[partner]["range"], gated_transition(partner, ld_bit),
+                        f"FC maze: Tube{partner}->Tube9 (gated)")
+            else:
+                repoint(_FC_TUBES[a]["range"], tube_transition(a, b), f"FC maze: Tube{a}->Tube{b}")
+                repoint(_FC_TUBES[b]["range"], tube_transition(b, a), f"FC maze: Tube{b}->Tube{a}")
+
+        # ---- button -> lock wiring ------------------------------------------
+        # Wall / reveal animations per lock (reuse vanilla subroutines by addr).
+        # Lock La's first vanilla sub bundles the FCa button press, so its first
+        # frame is rebuilt here (wall tiles only) before reusing the rest.
+        lock_open = {
+            "La": [
+                field.PlaySoundEffect(25),
+                field.SetMapTiles(2, 38, 31, 6, 3, [
+                    0x61, 0x85, 0x00, 0x14, 0x61, 0xAF,
+                    0x14, 0x30, 0x2B, 0x14, 0x66, 0x3B,
+                    0x84, 0x4A, 0x4B, 0xE4, 0xE5, 0xE1]),
+                field.Pause(0.25),
+                field.Call(0xadbec),
+                field.Pause(0.25),
+                field.PlaySoundEffect(25),
+                field.Call(0xadc05),
+            ],
+            "Lb": [
+                field.PlaySoundEffect(25),
+                field.Call(0xadc66),
+            ],
+            "Lc": [
+                field.PlaySoundEffect(25),
+                field.Call(0xadc26),
+                field.Pause(0.25),
+                field.PlaySoundEffect(25),
+                field.Call(0xadc42),
+            ],
+            "Ld": [  # reveal Tube9
+                field.PlaySoundEffect(25),
+                field.Call(0xadcc8),
+                field.PauseUnits(10),
+                field.Call(0xadcde),
+                field.PauseUnits(10),
+                field.PlaySoundEffect(25),
+                field.Call(0xadcf4),
+                field.PauseUnits(10),
+                field.Call(0xadd04),
+            ],
+        }
+
+        for btn, lock in assignment.items():
+            b = _FC_BUTTONS[btn]; L = _FC_LOCKS[lock]
+            bx, by = b["xy"]; cx, cy = L["cam"]
+            dx, dy = cx - bx, cy - by
+            src = [
+                field.BranchIfEventBitSet(L["bit"], "ALREADY_OPEN"),
+                field.SetEventBit(L["bit"]),
+                field.PlaySoundEffect(44),                            # button click
+                field.SetMapTiles(b["layer"], bx, by, 1, 1, [0xA2]),  # pressed graphic
+            ]
+            if dx or dy:
+                src += [
+                    field.HoldScreen(),
+                    field.EntityAct(field_entity.CAMERA, True,
+                                    field_entity.SetSpeed(field_entity.Speed.FAST),
+                                    *pan_path(dx, dy)),
+                ]
+                src += lock_open[lock]
+                src += [
+                    field.EntityAct(field_entity.CAMERA, True, *pan_path(-dx, -dy)),
+                    field.FreeScreen(),
+                ]
+            else:
+                src += lock_open[lock]
+            src += ["ALREADY_OPEN", field.Return()]
+            repoint(b["range"], src, f"FC maze: button {btn} -> {lock}")
+
     def map_shuffle_mod(self):
         # Modify entrance event to split between Boss #1 and Boss #2
         src_after_boss1 = [
@@ -809,9 +1237,16 @@ class FloatingContinent(Event):
             # Keep the animation if returning to the airship
             pass
         else:
-            # Use the switchyard exit
+            # Use the switchyard exit.  In ruination, restore y-party switching
+            # first: this "do you wish to return?" airship-return tile otherwise
+            # leaves the floating continent with y-switching still disabled.
+            return_src = []
+            if self.args.ruination_mode:
+                return_src += [field.Call(self.restore_y_switch_event)]
+            return_src += GoToSwitchyard(self.exit_id, map='field')
+            return_block = Write(Bank.CA, return_src, "FC airship return restore y-switch")
             space = Reserve(0xa5a96, 0xa5a9c, "return to airship mid FC edit")
-            space.write(GoToSwitchyard(self.exit_id, map='field'))
+            space.write(field.Branch(return_block.start_address))
 
         # (5) Modify warp behavior
         # We will add a new event bit to track special warp to Blackjack
