@@ -452,6 +452,12 @@ class FloatingContinent(Event):
         )
 
     def save_point_hole_mod(self):
+        if self.args.ruination_mode:
+            # In ruination the Save Room is part of the randomized tube maze:
+            # ruination_tube_maze_mod re-points Tube12's event (which spans this
+            # region), and folds the equivalent map load + light deletion into its
+            # own Save Room -> partner transition.  Leave this region for it.
+            return
         space = Reserve(0xad951, 0xad95c, "floating continent return from save point hole", field.NOP())
         space.write(
             field.Call(self.return_from_save_map_function),
@@ -889,12 +895,15 @@ class FloatingContinent(Event):
         # Save Room (Tube12) -> X: the vanilla save-exit, but the FC-side LoadMap,
         # landing position and tube graphics are X's instead of Tube11's.  The
         # LoadMap/position bytes match vanilla flags exactly (6A .. / 31 04 D5 ..).
+        # delete_lights_function mirrors the vanilla save-point-hole return (see
+        # save_point_hole_mod) so the statue lights don't reappear on this reload.
         def save_to_x(x):
             xx, xy = _FC_TUBES[x]["xy"]
             return (
                 [save_exit_head]
                 + [0x6A, 0x8A, 0x25, xx, (xy - 1) & 0xff, 0x00]          # LoadMap 0x18A @ (x, y-1)
                 + [0x31, 0x04, 0xD5, xx, (xy + 2) & 0xff, 0xFF]          # set party pos (x, y+2)
+                + [field.Call(self.delete_lights_function)]              # delete statue lights
                 + [save_exit_restore]
                 + open_code(x)
                 + [save_exit_mid]
