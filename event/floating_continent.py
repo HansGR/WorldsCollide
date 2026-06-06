@@ -62,7 +62,6 @@ _FC_INLINE_GFX = {
 _FC_SAVE_ARRIVAL = (0xad922, 0xad93f)
 _FC_SAVE_EXIT_HEAD = (0xad940, 0xad950)   # $1B5 guard, hold, sound, jump-out of hole
 _FC_SAVE_EXIT_RESTORE = (0xad95d, 0xad95d)  # restore screen from fade
-_FC_SAVE_EXIT_MID = (0xad962, 0xad96c)    # show party, jump up out of tube, pause
 _FC_SAVE_EXIT_TAIL = (0xad971, 0xad978)   # wait, free screen, reset layering
 _FC_TUBE_ROOM = {1: "FC1", 2: "FC2", 3: "FC3", 4: "FC4", 5: "FC4", 6: "FC5",
                  7: "FC4", 8: "FC6", 9: "FC7", 10: "FC8", 11: "FC7", 12: "Save"}
@@ -820,7 +819,6 @@ class FloatingContinent(Event):
         save_arrival = Read(*_FC_SAVE_ARRIVAL)
         save_exit_head = Read(*_FC_SAVE_EXIT_HEAD)
         save_exit_restore = Read(*_FC_SAVE_EXIT_RESTORE)
-        save_exit_mid = Read(*_FC_SAVE_EXIT_MID)
         save_exit_tail = Read(*_FC_SAVE_EXIT_TAIL)
 
         # per-tube open / close code: a Call for tubes 1-8, raw bytes for 9-10
@@ -852,6 +850,28 @@ class FloatingContinent(Event):
             space = Reserve(addr_range[0], addr_range[1], description, field.NOP())
             space.write(field.Branch(new_code.start_address))
 
+        # ---- exit animation, tied to the tube being EXITED ------------------
+        # Every tube but Tube11 is left by stepping DOWN out of the mouth (the
+        # generic vanilla slide-out CAD577, which shows the party, hops in place
+        # and faces down at dst+2).  Tube11 alone is left by stepping UP: the party
+        # is at dst+2 and jumps up 3 to dst-1 (this reconstructs Tube11's vanilla
+        # save-room exit, C2 C6 DD 88, but waits for the hop to finish).
+        def exit_sequence(dst):
+            if dst == 11:
+                return (
+                    open_code(11)
+                    + [field.ShowEntity(field_entity.PARTY0),
+                       field.RefreshEntities(),
+                       field.EntityAct(field_entity.PARTY0, True,
+                                       field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                                       field_entity.EnableWalkingAnimation(),
+                                       field_entity.AnimateHighJump(),
+                                       field_entity.Move(direction.UP, 3)),
+                       field.Pause(0.25)]
+                    + close_code(11)
+                )
+            return open_code(dst) + [field.Call(0xad577)] + close_code(dst)
+
         # ---- standard tube transition: src tube -> dst tube -----------------
         def tube_transition(src, dst):
             s = _FC_TUBES[src]; d = _FC_TUBES[dst]
@@ -862,9 +882,7 @@ class FloatingContinent(Event):
                 + [field.Call(0xad566)]                         # party drops in & is hidden (fast)
                 + close_code(src)                               # restore the closed tube graphic
                 + [field.EntityAct(field_entity.PARTY0, True, *move_ops(dx, dy))]  # pan to dst
-                + open_code(dst)                                # open the destination tube
-                + [field.Call(0xad577)]                         # party pops out & is shown
-                + close_code(dst)                               # restore destination closed graphic
+                + exit_sequence(dst)                            # party pops out (up for Tube11, else down)
                 + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
                    field.Return()]
             )
@@ -905,9 +923,7 @@ class FloatingContinent(Event):
                 + [0x31, 0x04, 0xD5, xx, (xy + 2) & 0xff, 0xFF]          # set party pos (x, y+2)
                 + [field.Call(self.delete_lights_function)]              # delete statue lights
                 + [save_exit_restore]
-                + open_code(x)
-                + [save_exit_mid]
-                + close_code(x)
+                + exit_sequence(x)                                       # party pops out (up for Tube11, else down)
                 + [save_exit_tail]
                 + [field.Return()]
             )
