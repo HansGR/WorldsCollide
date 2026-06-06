@@ -903,6 +903,11 @@ class FloatingContinent(Event):
             return open_code(dst) + [field.Call(0xad577)] + close_code(dst)
 
         # ---- standard tube transition: src tube -> dst tube -----------------
+        # The party is hidden, then we pan the CAMERA (which ignores terrain
+        # collision) to the destination and teleport the hidden party there.
+        # Moving the party itself across the map would let scripted movement jam
+        # against walls on a randomized route - stranding the party mid-tile or
+        # hard-locking the event - so we never walk the party across the maze.
         def tube_transition(src, dst):
             s = _FC_TUBES[src]; d = _FC_TUBES[dst]
             dx = d["xy"][0] - s["xy"][0]
@@ -911,7 +916,13 @@ class FloatingContinent(Event):
                 open_code(src)                                  # open the tube under the party
                 + [field.Call(0xad566)]                         # party drops in & is hidden (fast)
                 + close_code(src)                               # restore the closed tube graphic
-                + [field.EntityAct(field_entity.PARTY0, True, *pan_path(dx, dy))]  # pan to dst
+                + [field.HoldScreen()]                          # detach the camera from the party
+                + [field.EntityAct(field_entity.CAMERA, True,
+                                   field_entity.SetSpeed(field_entity.Speed.FAST),
+                                   *pan_path(dx, dy))]          # pan the camera to the destination
+                + [field.EntityAct(field_entity.PARTY0, False,
+                                   field_entity.SetPosition(d["xy"][0], d["xy"][1] + 2))]  # teleport hidden party
+                + [field.FreeScreen()]                          # camera re-locks onto the party
                 + exit_sequence(dst)                            # party pops out (up for Tube11, else down)
                 + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
                    field.Return()]
@@ -1226,9 +1237,16 @@ class FloatingContinent(Event):
             # Keep the animation if returning to the airship
             pass
         else:
-            # Use the switchyard exit
+            # Use the switchyard exit.  In ruination, restore y-party switching
+            # first: this "do you wish to return?" airship-return tile otherwise
+            # leaves the floating continent with y-switching still disabled.
+            return_src = []
+            if self.args.ruination_mode:
+                return_src += [field.Call(self.restore_y_switch_event)]
+            return_src += GoToSwitchyard(self.exit_id, map='field')
+            return_block = Write(Bank.CA, return_src, "FC airship return restore y-switch")
             space = Reserve(0xa5a96, 0xa5a9c, "return to airship mid FC edit")
-            space.write(GoToSwitchyard(self.exit_id, map='field'))
+            space.write(field.Branch(return_block.start_address))
 
         # (5) Modify warp behavior
         # We will add a new event bit to track special warp to Blackjack
