@@ -3846,12 +3846,14 @@ class ruination_map():
         the maze is completable, retrying up to 20000 times.  A layout is valid
         when, treating doors as two-way and traps as one-way (trap -> pit) edges
         between rooms:
-          - the ending room (429) is reachable from the entry room,
-          - both stooge/key rooms (423 'cd1', 427 'cd2') are reachable from 429,
-          - and 429 is reachable from each stooge room
-        i.e. the party can reach the hub, round-trip to collect both stooge keys,
-        and return to unlock the boss door (429's locked exit 2070, gated by
-        cd1+cd2).  Returns [[door pairs], [trap->pit pairs]].
+          - EVERY room can reach the ending room (429), so a one-way trap can
+            never strand the party (this subsumes "entry -> 429" and
+            "stooge room -> 429"), and
+          - both stooge/key rooms (423 'cd1', 427 'cd2') are reachable from 429.
+        Together: wherever the party ends up they can reach the hub, and from the
+        hub they can round-trip to collect both stooge keys and return to unlock
+        the boss door (429's locked exit 2070, gated by cd1+cd2).  No softlock is
+        possible.  Returns [[door pairs], [trap->pit pairs]].
         """
         maze_rooms = [421, 422, 423, 424, 425, 426, 427, 428, 429]
         STOOGE_ROOMS = [423, 427]   # rooms holding the stooge keys cd1 / cd2
@@ -3883,13 +3885,14 @@ class ruination_map():
                         seen.add(n); stack.append(n)
             return seen
 
-        def solvable(door_pairs, trap_pits, start):
-            if END_ROOM not in reachable(door_pairs, trap_pits, start):
+        def solvable(door_pairs, trap_pits):
+            # Every room must reach the ending, so a one-way trap can never
+            # strand the party (subsumes entry -> 429 and each stooge -> 429).
+            if any(END_ROOM not in reachable(door_pairs, trap_pits, r) for r in maze_rooms):
                 return False
+            # From the hub, both stooge keys must be collectable.
             from_end = reachable(door_pairs, trap_pits, END_ROOM)
-            if not all(s in from_end for s in STOOGE_ROOMS):
-                return False
-            return all(END_ROOM in reachable(door_pairs, trap_pits, s) for s in STOOGE_ROOMS)
+            return all(s in from_end for s in STOOGE_ROOMS)
 
         entry_pit = start_room_id = door_pairs = trap_pits = None
         found = False
@@ -3904,7 +3907,7 @@ class ruination_map():
             trap_pits = [[traps[i], avail[i]] for i in range(len(traps))]
             if any(trap_room[t] == pit_room[p] for t, p in trap_pits):
                 continue  # don't drop a trap back into its own room
-            if solvable(door_pairs, trap_pits, start_room_id):
+            if solvable(door_pairs, trap_pits):
                 found = True
                 break
         if not found:
