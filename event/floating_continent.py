@@ -830,19 +830,49 @@ class FloatingContinent(Event):
             addr = _FC_TUBES[tube]["close"]
             return [field.Call(addr)] if addr is not None else [gfx[tube]["close"]]
 
-        # ---- split a tile displacement into <=8-tile entity moves -----------
-        def move_ops(dx, dy):
-            ops = []
-            def emit(total, pos_dir, neg_dir):
-                d = pos_dir if total > 0 else neg_dir
-                n = abs(total)
+        # ---- camera/party pan: a near-straight, symmetric path from (0,0) to ---
+        # (dx, dy), minimizing distance travelled with 1:1 and 1:2/2:1 diagonal
+        # moves plus linear runs.  The diagonal run is split symmetrically around a
+        # central run, e.g. (8, 21) -> [4 down-right(1:2), down 5, 4 down-right(1:2)].
+        def pan_path(dx, dy):
+            ax, ay = abs(dx), abs(dy)
+            hdir = direction.RIGHT if dx > 0 else direction.LEFT
+            vdir = direction.DOWN if dy > 0 else direction.UP
+
+            def linear(d, n):
+                ops = []
                 while n > 0:
                     step = min(8, n)
                     ops.append(field_entity.Move(d, step))
                     n -= step
-            emit(dx, direction.RIGHT, direction.LEFT)
-            emit(dy, direction.DOWN, direction.UP)
-            return ops
+                return ops
+
+            if ax == 0:
+                return linear(vdir, ay)
+            if ay == 0:
+                return linear(hdir, ax)
+
+            if ay >= ax:                       # vertical dominant
+                if ay <= 2 * ax:               # slope 1..2: 1:1 and 1:2 diagonals
+                    n11, n12 = 2 * ax - ay, ay - ax
+                    d11 = [field_entity.MoveDiagonal(hdir, 1, vdir, 1) for _ in range(n11)]
+                    d12 = [field_entity.MoveDiagonal(hdir, 1, vdir, 2) for _ in range(n12)]
+                    split, middle = (d12, d11) if n12 >= n11 else (d11, d12)
+                else:                          # slope > 2: 1:2 diagonal and linear
+                    split = [field_entity.MoveDiagonal(hdir, 1, vdir, 2) for _ in range(ax)]
+                    middle = linear(vdir, ay - 2 * ax)
+            else:                              # horizontal dominant
+                if ax <= 2 * ay:               # slope 1/2..1: 1:1 and 2:1 diagonals
+                    n11, n21 = 2 * ay - ax, ax - ay
+                    d11 = [field_entity.MoveDiagonal(hdir, 1, vdir, 1) for _ in range(n11)]
+                    d21 = [field_entity.MoveDiagonal(hdir, 2, vdir, 1) for _ in range(n21)]
+                    split, middle = (d21, d11) if n21 >= n11 else (d11, d21)
+                else:                          # slope < 1/2: 2:1 diagonal and linear
+                    split = [field_entity.MoveDiagonal(hdir, 2, vdir, 1) for _ in range(ay)]
+                    middle = linear(hdir, ax - 2 * ay)
+
+            half = len(split) // 2
+            return split[:half] + middle + split[half:]
 
         # ---- re-point an event tile's entry code to freshly written code ----
         def repoint(addr_range, new_src, description):
@@ -881,7 +911,7 @@ class FloatingContinent(Event):
                 open_code(src)                                  # open the tube under the party
                 + [field.Call(0xad566)]                         # party drops in & is hidden (fast)
                 + close_code(src)                               # restore the closed tube graphic
-                + [field.EntityAct(field_entity.PARTY0, True, *move_ops(dx, dy))]  # pan to dst
+                + [field.EntityAct(field_entity.PARTY0, True, *pan_path(dx, dy))]  # pan to dst
                 + exit_sequence(dst)                            # party pops out (up for Tube11, else down)
                 + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
                    field.Return()]
@@ -917,9 +947,12 @@ class FloatingContinent(Event):
         # save_point_hole_mod) so the statue lights don't reappear on this reload.
         def save_to_x(x):
             xx, xy = _FC_TUBES[x]["xy"]
+            # Centre the camera where the party ends: Tube11 hops UP to y-1, every
+            # other tube stays put at y+2 after the down slide-out.
+            end_y = (xy - 1) if x == 11 else (xy + 2)
             return (
                 [save_exit_head]
-                + [0x6A, 0x8A, 0x25, xx, (xy - 1) & 0xff, 0x00]          # LoadMap 0x18A @ (x, y-1)
+                + [0x6A, 0x8A, 0x25, xx, end_y & 0xff, 0x00]             # LoadMap 0x18A, camera @ (x, end_y)
                 + [0x31, 0x04, 0xD5, xx, (xy + 2) & 0xff, 0xFF]          # set party pos (x, y+2)
                 + [field.Call(self.delete_lights_function)]              # delete statue lights
                 + [save_exit_restore]
@@ -1001,11 +1034,11 @@ class FloatingContinent(Event):
                     field.HoldScreen(),
                     field.EntityAct(field_entity.CAMERA, True,
                                     field_entity.SetSpeed(field_entity.Speed.FAST),
-                                    *move_ops(dx, dy)),
+                                    *pan_path(dx, dy)),
                 ]
                 src += lock_open[lock]
                 src += [
-                    field.EntityAct(field_entity.CAMERA, True, *move_ops(-dx, -dy)),
+                    field.EntityAct(field_entity.CAMERA, True, *pan_path(-dx, -dy)),
                     field.FreeScreen(),
                 ]
             else:
