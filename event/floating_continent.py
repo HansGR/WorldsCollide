@@ -1,5 +1,6 @@
 from event.event import *
 from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+from instruction.event import EVENT_CODE_START
 from log.verbose import vprint
 ENTRY_EVENT_CODE_ADDR = 0xa48e3
 
@@ -821,6 +822,20 @@ class FloatingContinent(Event):
         save_exit_restore = Read(*_FC_SAVE_EXIT_RESTORE)
         save_exit_tail = Read(*_FC_SAVE_EXIT_TAIL)
 
+        # ---- reclaim the superseded vanilla tube/button event code ----------
+        # Their open/close, slide-in/out and wall subroutines live outside these
+        # ranges and are kept (the new code still calls them by address), but the
+        # event bodies themselves are dead now.  Freeing them lets the new, more
+        # compact animations be written back into this space first, spilling into
+        # ordinary free space only once it runs out.  Must come after the Reads
+        # above, which snapshot bytes from inside these ranges.
+        for entry in list(_FC_TUBES.values()) + list(_FC_BUTTONS.values()):
+            Free(entry["range"][0], entry["range"][1])
+
+        # ---- map + tile position of a tube's event tile (Tube12 is on 0x166) -
+        def event_tile(tube):
+            return (0x166 if tube == 12 else 0x18a), _FC_TUBES[tube]["xy"]
+
         # per-tube open / close code: a Call for tubes 1-8, raw bytes for 9-10
         def open_code(tube):
             addr = _FC_TUBES[tube]["open"]
@@ -874,11 +889,11 @@ class FloatingContinent(Event):
             half = len(split) // 2
             return split[:half] + middle + split[half:]
 
-        # ---- re-point an event tile's entry code to freshly written code ----
-        def repoint(addr_range, new_src, description):
+        # ---- write new code (into reclaimed space) and point the tile at it --
+        def repoint(map_id, xy, new_src, description):
             new_code = Write(Bank.CA, new_src, description)
-            space = Reserve(addr_range[0], addr_range[1], description, field.NOP())
-            space.write(field.Branch(new_code.start_address))
+            event = self.maps.get_event(map_id, xy[0], xy[1])
+            event.event_address = new_code.start_address - EVENT_CODE_START
 
         # ---- exit animation, tied to the tube being EXITED ------------------
         # Every tube but Tube11 is left by stepping DOWN out of the mouth (the
@@ -928,20 +943,38 @@ class FloatingContinent(Event):
                    field.Return()]
             )
 
-        # ---- gated transition: partner -> Tube9, bounce back if not revealed -
+        # ---- gated transition: partner -> Tube9 ------------------------------
+        # The party always drops in and the camera travels toward Tube9.  Only at
+        # the arrival point do we check the reveal: if Tube9 is open, the party
+        # pops out there; if not, the camera travels back and the party re-exits
+        # the tube it entered (a "bounced" round trip, nicer than a dead stop).
         def gated_transition(partner, ld_bit):
+            p = _FC_TUBES[partner]["xy"]
+            t9 = _FC_TUBES[9]["xy"]
+            dx, dy = t9[0] - p[0], t9[1] - p[1]
             return (
-                [field.BranchIfEventBitSet(ld_bit, "TUBE9_REVEALED")]
-                # rejected: shudder at the partner tube and stay put
-                + open_code(partner)
-                + [field.Pause(0.25),
-                   field.ShakeScreen(1, True, True, True, True, True),
-                   field.Pause(0.5),
-                   field.StopScreenShake()]
-                + close_code(partner)
-                + [field.Return(),
-                   "TUBE9_REVEALED"]
-                + tube_transition(partner, 9)
+                open_code(partner) + [field.Call(0xad566)] + close_code(partner)
+                + [field.HoldScreen()]
+                + [field.EntityAct(field_entity.CAMERA, True,
+                                   field_entity.SetSpeed(field_entity.Speed.FAST),
+                                   *pan_path(dx, dy))]              # travel toward Tube9
+                + [field.BranchIfEventBitSet(ld_bit, "TUBE9_OPEN")]
+                # Tube9 still hidden: travel back and re-exit the partner tube
+                + [field.EntityAct(field_entity.CAMERA, True, *pan_path(-dx, -dy))]
+                + [field.EntityAct(field_entity.PARTY0, False,
+                                   field_entity.SetPosition(p[0], p[1] + 2))]
+                + [field.FreeScreen()]
+                + exit_sequence(partner)
+                + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
+                   field.Return()]
+                # Tube9 revealed: arrive and pop out at Tube9
+                + ["TUBE9_OPEN"]
+                + [field.EntityAct(field_entity.PARTY0, False,
+                                   field_entity.SetPosition(t9[0], t9[1] + 2))]
+                + [field.FreeScreen()]
+                + exit_sequence(9)
+                + [field.EntityAct(field_entity.PARTY0, True, field_entity.SetSpriteLayer(0)),
+                   field.Return()]
             )
 
         # ---- cross-map transitions for the Save Room pair (Tube12 <-> X) -----
@@ -976,18 +1009,18 @@ class FloatingContinent(Event):
         for a, b in tube_pairs:
             if 12 in (a, b):
                 x = a if b == 12 else b
-                repoint(_FC_TUBES[x]["range"], x_to_save(x), f"FC maze: Tube{x}->Save Room")
-                repoint(_FC_TUBES[12]["range"], save_to_x(x), f"FC maze: Save Room->Tube{x}")
+                repoint(*event_tile(x), x_to_save(x), f"FC maze: Tube{x}->Save Room")
+                repoint(*event_tile(12), save_to_x(x), f"FC maze: Save Room->Tube{x}")
             elif 9 in (a, b):
                 partner = a if b == 9 else b
                 # Tube9's own tile is only reachable once revealed -> standard trip
-                repoint(_FC_TUBES[9]["range"], tube_transition(9, partner), "FC maze: Tube9->partner")
+                repoint(*event_tile(9), tube_transition(9, partner), "FC maze: Tube9->partner")
                 # the partner gates travel toward the (possibly hidden) Tube9
-                repoint(_FC_TUBES[partner]["range"], gated_transition(partner, ld_bit),
+                repoint(*event_tile(partner), gated_transition(partner, ld_bit),
                         f"FC maze: Tube{partner}->Tube9 (gated)")
             else:
-                repoint(_FC_TUBES[a]["range"], tube_transition(a, b), f"FC maze: Tube{a}->Tube{b}")
-                repoint(_FC_TUBES[b]["range"], tube_transition(b, a), f"FC maze: Tube{b}->Tube{a}")
+                repoint(*event_tile(a), tube_transition(a, b), f"FC maze: Tube{a}->Tube{b}")
+                repoint(*event_tile(b), tube_transition(b, a), f"FC maze: Tube{b}->Tube{a}")
 
         # ---- button -> lock wiring ------------------------------------------
         # Wall / reveal animations per lock (reuse vanilla subroutines by addr).
@@ -1055,7 +1088,7 @@ class FloatingContinent(Event):
             else:
                 src += lock_open[lock]
             src += ["ALREADY_OPEN", field.Return()]
-            repoint(b["range"], src, f"FC maze: button {btn} -> {lock}")
+            repoint(0x18a, b["xy"], src, f"FC maze: button {btn} -> {lock}")
 
     def map_shuffle_mod(self):
         # Modify entrance event to split between Boss #1 and Boss #2

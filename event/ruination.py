@@ -3841,73 +3841,91 @@ class ruination_map():
     def _randomize_isolated_maze(self):
         """Randomize the internal connections of the Stooges Maze (rooms 421-429).
 
-        Creates a standalone Network with the maze rooms, connects the locked trap
-        in 429 to a starting pit in 421, then randomly maps all remaining exits
-        until the maze is fully connected. Returns the connection map.
+        Rather than walking out a single connection (which could leave the maze
+        unsolvable), this generates random door / trap matchings and *verifies*
+        the maze is completable, retrying up to 20000 times.  A layout is valid
+        when, treating doors as two-way and traps as one-way (trap -> pit) edges
+        between rooms:
+          - EVERY room can reach the ending room (429), so a one-way trap can
+            never strand the party (this subsumes "entry -> 429" and
+            "stooge room -> 429"), and
+          - both stooge/key rooms (423 'cd1', 427 'cd2') are reachable from 429.
+        Together: wherever the party ends up they can reach the hub, and from the
+        hub they can round-trip to collect both stooge keys and return to unlock
+        the boss door (429's locked exit 2070, gated by cd1+cd2).  No softlock is
+        possible.  Returns [[door pairs], [trap->pit pairs]].
         """
         maze_rooms = [421, 422, 423, 424, 425, 426, 427, 428, 429]
+        STOOGE_ROOMS = [423, 427]   # rooms holding the stooge keys cd1 / cd2
+        END_ROOM = 429              # boss room (locked exit 2070 needs cd1+cd2)
 
-        # Pick a random entry pit. Exclude 6847 and 6852 (key rooms 423/427) and 6844 (west section)
-        # since the player must always be able to revisit the starting room.
+        # Entry pits exclude the two stooge rooms (6847/423, 6852/427) and the
+        # west room (6844/422) so the party never starts inside a key room.
         entry_pits = [6845, 6846, 6854, 3069, 6849, 6843, 6848, 6853]
-        entry_pit = random.choice(entry_pits)
 
-        # Update the composite room's pit to match the chosen entry
+        # Which room owns each door / trap / pit (room_data positions 0/1/2).
+        door_room, trap_room, pit_room = {}, {}, {}
+        for r in maze_rooms:
+            for d in room_data[r][0]: door_room[d] = r
+            for t in room_data[r][1]: trap_room[t] = r
+            for p in room_data[r][2]: pit_room[p] = r
+        doors, traps, pits = list(door_room), list(trap_room), list(pit_room)
+
+        def reachable(door_pairs, trap_pits, start):
+            adj = {r: set() for r in maze_rooms}
+            for d1, d2 in door_pairs:                  # doors: two-way
+                adj[door_room[d1]].add(door_room[d2])
+                adj[door_room[d2]].add(door_room[d1])
+            for t, p in trap_pits:                     # traps: one-way (trap -> pit)
+                adj[trap_room[t]].add(pit_room[p])
+            seen, stack = {start}, [start]
+            while stack:
+                for n in adj[stack.pop()]:
+                    if n not in seen:
+                        seen.add(n); stack.append(n)
+            return seen
+
+        def solvable(door_pairs, trap_pits):
+            # Every room must reach the ending, so a one-way trap can never
+            # strand the party (subsumes entry -> 429 and each stooge -> 429).
+            if any(END_ROOM not in reachable(door_pairs, trap_pits, r) for r in maze_rooms):
+                return False
+            # From the hub, both stooge keys must be collectable.
+            from_end = reachable(door_pairs, trap_pits, END_ROOM)
+            return all(s in from_end for s in STOOGE_ROOMS)
+
+        entry_pit = start_room_id = door_pairs = trap_pits = None
+        found = False
+        for _ in range(20000):
+            entry_pit = random.choice(entry_pits)
+            start_room_id = pit_room[entry_pit]
+            # random two-way door pairing (every door is in a distinct room)
+            ds = doors[:]; random.shuffle(ds)
+            door_pairs = [[ds[i], ds[i + 1]] for i in range(0, len(ds), 2)]
+            # random trap -> pit matching over the pits other than the entry pit
+            avail = [p for p in pits if p != entry_pit]; random.shuffle(avail)
+            trap_pits = [[traps[i], avail[i]] for i in range(len(traps))]
+            if any(trap_room[t] == pit_room[p] for t, p in trap_pits):
+                continue  # don't drop a trap back into its own room
+            if solvable(door_pairs, trap_pits):
+                found = True
+                break
+        if not found:
+            vprint('WARNING: dream maze verification failed after 20000 tries; using last layout')
+
+        # The composite room is entered through the chosen pit; its exit trap
+        # (2070) is wired up by the branch mapper.
         room_data['ruin-stooge-maze'][2] = [entry_pit]
 
-        # Set starting room
-        start_room_id = [m for m in maze_rooms if entry_pit in room_data[m][2]][0]
-
-        # Force a revisitable starting room using key logic:
-        # (a) add new keys to starting room, unlocked by stooge keys
-        if len(room_data[start_room_id]) < 5:
-            # this is an unimproved room.  Reconstruct [[doors],[traps],[pits],[keys],{locks},world]
-            room_data[start_room_id] = room_data[start_room_id][:3] + [[], {'cd1': ['cd1_r'], 'cd2': ['cd2_r'], 'cd3': ['cd3_r']}] + [room_data[start_room_id][-1]]
-        else:
-            room_data[start_room_id][4]['cd1'] = ['cd1_r']
-            room_data[start_room_id][4]['cd2'] = ['cd2_r']
-            room_data[start_room_id][4]['cd3'] = ['cd3_r']
-        # (b) change ending lock to use chain keys
-        room_data[429][3] = ['cd3']   # must be able to return to starting room from here to unlock boss
-        room_data[429][4] = {('cd1_r', 'cd2_r', 'cd3_r'): [2070]}
-
-        vprint(f'Dreamscape maze starting room state:')
-        for m in maze_rooms:
-            vprint(f'\t{m}: {room_data[m]}')
-
-        # Create a standalone network for the maze
-        maze_net = Network(maze_rooms)
-        maze_net.protected = set()
-
-        # Initial connection: connect 429's locked trap (2070) back to the entry pit.
-        # This closes the loop so the Network becomes fully connected internally.
-        # The branch mapping algorithm will handle where 2070 actually exits to,
-        # so we filter this connection from the result.
-        maze_net.connect(2070, entry_pit)
-        maze_net.active = start_room_id
-
-        # Fully connect network
-        maze_net.verbose = True
-        maze_net = maze_net.connect_network()
-
-        # Filter out the initial 2070->entry_pit connection from the map.
-        # The branch mapper controls where 2070 exits to (via ruin-stooge-maze).
-        result_map = [[], []]
-        for d1, d2 in maze_net.map[0]:
-            result_map[0].append([d1, d2])
-        for d1, d2 in maze_net.map[1]:
-            if not (d1 == 2070 and d2 == entry_pit):
-                result_map[1].append([d1, d2])
-
         if self.verbose:
-            vprint(f'Dreamscape maze internal connections: {len(result_map[0])} doors, {len(result_map[1])} traps')
-            vprint(f'\tEntry pit: {entry_pit} in starting room: {start_room_id}')
-            for d1, d2 in result_map[0]:
-                vprint(f'\tdoor: {d1} <-> {d2}')
-            for d1, d2 in result_map[1]:
-                vprint(f'\ttrap: {d1} -> {d2}')
+            vprint(f'Dreamscape maze: entry pit {entry_pit} -> start room {start_room_id} '
+                   f'({len(door_pairs)} doors, {len(trap_pits)} traps)')
+            for d1, d2 in door_pairs:
+                vprint(f'\tdoor: {d1} <-> {d2}  (room {door_room[d1]} <-> {door_room[d2]})')
+            for t, p in trap_pits:
+                vprint(f'\ttrap: {t} -> {p}  (room {trap_room[t]} -> {pit_room[p]})')
 
-        return result_map
+        return [door_pairs, trap_pits]
 
     def pre_plan_character_acquisition(self):
         """Pre-plan which characters will be obtained to ensure sufficient areas.

@@ -31,6 +31,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Patching NPC Events](#ruination-mode---patching-npc-events)
 - [Persistent Event State Across Reloads (2026-04)](#persistent-event-state-across-reloads-2026-04)
 - [Dialog ID Reservations (2026-05)](#ruination-mode--dialog-id-reservations-2026-05)
+- [Floating Continent Tube-Maze Randomizer (2026-06)](#floating-continent-tube-maze-randomizer-2026-06)
 
 ### Door Randomizer
 - [Event Exit Info — Detailed Data Structures](#event-exit-info---detailed-data-structures)
@@ -1301,3 +1302,30 @@ These claims live outside the Maduin block. They overwrite vanilla dialogs whose
 - **Order matters when two systems write the same range.** `WarpPoints.mod()` runs early in `Events.mod()`; `fix_ferry_connections` runs later, so any ferry overlap silently overwrote the warp prompts. Symptoms surfaced as warp dialogs containing ferry text at runtime.
 - **No allocator.** `dialogs.set_text(id, …)` is a raw write — there is no "is this ID already claimed?" check. Document the reservation here whenever you grab a new slot.
 - **Pick from the documented free range.** `1471-1479` is the current free band inside the Maduin block. If you need a contiguous run larger than 9, expand into the trailing reservation deliberately and update this table.
+
+---
+
+## Floating Continent Tube-Maze Randomizer (2026-06)
+
+Self-contained, **ruination-only** randomization of the Floating Continent (map `0x18A`) tube maze. All of it lives in `event/floating_continent.py` (module-level `_FC_*` data + `_fc_reachable`/`_fc_randomize_maze`, and the `FloatingContinent.ruination_tube_maze_mod()` method, called last in `mod()`). The player still enters at FC1 (falling in) and exits via FC8 (to the Atma/statues area), but the route is shuffled.
+
+### Model
+
+- **12 tube endpoints** paired into 6 bidirectional connections; **4 buttons** (FCa–d) assigned, as a bijection, to **4 locks** {Fixed1-2 wall FC2↔FC3, Fixed3-4 wall FC3↔FC7, Fixed5-6 wall FC3↔FC5, Tube9 reveal}. `_fc_randomize_maze` retries random matchings until a keys-and-locks fixed point (`_fc_reachable`) shows every room reachable from FC1 **and** FC8 reachable fresh from the Save Room's partner room (a save detour reloads the map and resets the locks). Constraints: no two tubes in the same room pair; never pair Tube9 with Tube12. 0 failures over 5000 seeds.
+- Tube positions / open-close subroutine addresses / event-tile ranges are in `_FC_TUBES`; buttons in `_FC_BUTTONS`; locks (with reset-on-map-load bits + camera-pan targets) in `_FC_LOCKS`.
+
+### Gotchas worth remembering (these caused real bugs)
+
+1. **Scripted entity moves collide with terrain — never walk the party across the map.** The vanilla tube transit moves the hidden *party* along a clear vanilla corridor; on a randomized route that path crosses walls and the move jams (party stranded on the wrong tile) or hard-locks the event (`WaitForEntityAct` never completes — "camera freezes, exit never happens"). Fix: `HoldScreen`, pan the **CAMERA** (object `0x30`, which ignores terrain), then `SetPosition` the hidden party straight onto the destination tile, then `FreeScreen` + exit animation. See `tube_transition`.
+2. **The exit animation belongs to the tube being EXITED.** Every tube emerges *down* (vanilla slide-out `CAD577`, hops in place at dst+2) **except Tube11**, which emerges *up* (jump up 3 to dst-1, reconstructed from its vanilla save-room return `C2 C6 DD 88`). Getting this backwards softlocks the party on an unwalkable tile. See `exit_sequence(dst)`. On the Save Room return, the LoadMap camera must centre on where the party *ends* (`dst-1` for Tube11, else `dst+2`).
+3. **`$1B5` (`$1EB6` bit 5) is a universal "run once per map visit" scratch bit**, set+checked in hundreds of events and cleared on every map load. The Save Room round trip is rebuilt around it verbatim — only the FC-side LoadMap coords + tube graphics are substituted (`x_to_save`/`save_to_x`).
+4. **`event_bit.multipurpose_map(i)` → `0x1f0+i` are "cleared on map load."** The four lock/reveal bits use these (the vanilla FC switch bits `$1F6–$1F9` already are), so the layer-2 walls — which also reset on reload — stay in sync with their bits. Don't use a permanent bit here or a reload desyncs wall vs. bit and softlocks.
+5. **`MoveDiagonal` (opcodes A0–AB, 1:1 / 1:2 / 2:1) is already fully implemented** in `instruction/field/entity.py` as `MoveDiagonal(dir1, dist1, dir2, dist2)`. `pan_path(dx,dy)` uses it for a near-straight, symmetric camera pan (diagonal run split around a central linear/diagonal run), which also makes rides take `~max(dx,dy)` time instead of the L-shape's `dx+dy`.
+6. **`save_point_hole_mod` overlaps Tube12's event** (`0xad951–0xad95c` ⊂ `0xad940–0xad979`); it early-returns under `args.ruination_mode`, and the light-deletion it did is folded into `save_to_x`.
+
+### Reusing vanilla code space (best practice for limited free ROM)
+
+`ruination_tube_maze_mod` reclaims the superseded vanilla tube/button **event bodies** rather than burning fresh free space:
+1. After the `Read` snapshot block (tubes 9/10 inline graphics + Save Room bytes — all *inside* ranges about to be freed), `Free(...)` every `_FC_TUBES`/`_FC_BUTTONS` `"range"` (~832 bytes). The open/close, slide-in/out (`0xad566`/`0xad577`) and wall subroutines those events *called* live outside these ranges and are kept — the new code still calls them by address.
+2. Write the new (more compact) animations with `Write(Bank.CA, …)`; the allocator packs them into the reclaimed space first and spills into ordinary free space only when it runs out. Net cost dropped from ~1050 bytes of free space to ~255.
+3. **Re-point the event tile directly** instead of stamping a `Branch` over the vanilla entry: `event = self.maps.get_event(map_id, x, y); event.event_address = new_code.start_address - EVENT_CODE_START` (`EVENT_CODE_START = 0xA0000`; see `instruction.event`). Tube12's tile is on the Save Room map `0x166`, all others on `0x18A`. This is the same convention `event/switchyard.py` and `data/maps.py` use.
