@@ -6615,6 +6615,59 @@ def _write_set_party_interaction_pointers_subroutine():
     SET_PARTY_INTERACTION_POINTERS = space.start_address
 
 
+# ROM addresses of the shared y-party-switch save/disable and restore subroutines.
+# Populated by create_y_party_switch_subroutines() (runs before the event mod loop).
+# Callers import these lazily (inside a method) and invoke them via field.Call, or
+# assign one as a map event's event_address (after subtracting EVENT_CODE_START).
+DISABLE_Y_PARTY_SWITCH = None
+RESTORE_Y_PARTY_SWITCH = None
+
+
+def create_y_party_switch_subroutines():
+    """Write the shared y-party-switch save/disable and restore subroutines once.
+
+    Several ruination-mode events (doma wob, fanatics tower, floating continent,
+    narshe moogle defense) make dynamic map edits that break if the player presses
+    "y" to switch parties mid-event. Each disables y-party switching when its scene
+    begins and restores it at the end, remembering whether it was on in the
+    SAVED_Y_PARTY_SWITCHING event bit. The scenes never overlap, so one pair of
+    subroutines (and one save bit) serves all of them.
+
+    Stores the SNES addresses in the module-level DISABLE_Y_PARTY_SWITCH /
+    RESTORE_Y_PARTY_SWITCH. Each ends in Return so it can be invoked via field.Call
+    or used as a map event's event_address (after subtracting EVENT_CODE_START).
+    """
+    global DISABLE_Y_PARTY_SWITCH, RESTORE_Y_PARTY_SWITCH
+
+    # Save ENABLE_Y_PARTY_SWITCHING to SAVED_Y_PARTY_SWITCHING, then clear it.
+    src = [
+        field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+        field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+        field.Branch("DONE"),
+        "Y_WAS_ON",
+        field.SetEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+        "DONE",
+        field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+        field.Return(),
+    ]
+    space = Write(Bank.CB, src, "save and disable y-party switching")
+    DISABLE_Y_PARTY_SWITCH = space.start_address
+
+    # Restore ENABLE_Y_PARTY_SWITCHING from SAVED_Y_PARTY_SWITCHING.
+    src = [
+        field.BranchIfEventBitSet(event_bit.SAVED_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+        field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+        field.Branch("DONE"),
+        "Y_WAS_ON",
+        field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+        "DONE",
+        field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+        field.Return(),
+    ]
+    space = Write(Bank.CB, src, "restore y-party switching")
+    RESTORE_Y_PARTY_SWITCH = space.start_address
+
+
 def disable_chocobo_stables(rom, dialogs, args):
     """
     Disables the in-town chocobo stables for ruination mode.

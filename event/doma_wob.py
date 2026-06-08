@@ -52,9 +52,6 @@ class DomaWOB(Event):
         self.dialog_mod()
         self.leader_battle_mod()
 
-        if self.args.ruination_mode:
-            self.create_y_party_switch_events()
-
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -84,43 +81,6 @@ class DomaWOB(Event):
             field.InvokeBattle(boss_pack_id),
         )
 
-    def create_y_party_switch_events(self):
-        # Temporary fix: in ruination mode, pressing "y" to switch to another party
-        # while the Doma siege is running resets the event's dynamic map edits and can
-        # break the event.  Until a more complete fix exists, disable y-party switching
-        # when the siege begins and restore it after the boss is defeated.  This is the
-        # same approach fanatics tower and floating continent use (see
-        # FanaticsTower.ruination_mod / FloatingContinent.create_y_party_switch_events);
-        # we reuse the SAVED_Y_PARTY_SWITCHING event bit since the uses cannot overlap.
-
-        # Save ENABLE_Y_PARTY_SWITCHING to SAVED_Y_PARTY_SWITCHING, then clear it
-        src = [
-            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "Y_WAS_ON"),
-            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
-            field.Branch("DONE_SAVE"),
-            "Y_WAS_ON",
-            field.SetEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
-            "DONE_SAVE",
-            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "doma wob save and disable y-party switching")
-        self.disable_y_switch_event = space.start_address
-
-        # Restore ENABLE_Y_PARTY_SWITCHING from SAVED_Y_PARTY_SWITCHING
-        src = [
-            field.BranchIfEventBitSet(event_bit.SAVED_Y_PARTY_SWITCHING, "Y_WAS_ON"),
-            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            field.Branch("DONE_RESTORE"),
-            "Y_WAS_ON",
-            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            "DONE_RESTORE",
-            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "doma wob restore y-party switching")
-        self.restore_y_switch_event = space.start_address
-
     def enter_exit_functions_mod(self, enter_instructions, exit_instructions):
         space = Reserve(0xba083, 0xba0b6, "doma (0x11d) entrance event", field.NOP())
 
@@ -133,9 +93,15 @@ class DomaWOB(Event):
         )
 
         # In ruination mode, disable y-party switching while the siege runs and restore
-        # it once the boss is defeated (see create_y_party_switch_events).
-        disable_y_switch = [field.Call(self.disable_y_switch_event)] if self.args.ruination_mode else []
-        restore_y_switch = [field.Call(self.restore_y_switch_event)] if self.args.ruination_mode else []
+        # it once the boss is defeated, using the shared subroutines written by
+        # event.ruination.create_y_party_switch_subroutines().
+        if self.args.ruination_mode:
+            from event.ruination import DISABLE_Y_PARTY_SWITCH, RESTORE_Y_PARTY_SWITCH
+            disable_y_switch = [field.Call(DISABLE_Y_PARTY_SWITCH)]
+            restore_y_switch = [field.Call(RESTORE_Y_PARTY_SWITCH)]
+        else:
+            disable_y_switch = []
+            restore_y_switch = []
 
         # doma attack scene up until char (and 2 soldiers) go outside
         space = Reserve(0xb9aae, 0xb9d30, "doma add char and exit functions", field.NOP())
