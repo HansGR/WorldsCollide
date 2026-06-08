@@ -183,9 +183,6 @@ class FloatingContinent(Event):
         self.entry_id = 1556
         self.exit_id = 1557
 
-        if self.args.ruination_mode:
-            self.create_y_party_switch_events()
-
         self.shadow_leaves_mod()
         self.airship_battle_mod()
         if not self.args.fixed_encounters_original:
@@ -230,42 +227,6 @@ class FloatingContinent(Event):
 
         if self.args.ruination_mode:
             self.ruination_tube_maze_mod()
-
-    def create_y_party_switch_events(self):
-        # Temporary fix: in ruination mode, pressing "y" to switch to another party
-        # while on the floating continent resets the event's dynamic map edits and can
-        # softlock the player.  Until a more complete fix exists, disable y-party
-        # switching while on the floating continent and restore it on leaving.  This is
-        # the same approach fanatics tower uses (see FanaticsTower.ruination_mod); we
-        # reuse the SAVED_Y_PARTY_SWITCHING event bit since the two uses cannot overlap.
-
-        # Save ENABLE_Y_PARTY_SWITCHING to SAVED_Y_PARTY_SWITCHING, then clear it
-        src = [
-            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "Y_WAS_ON"),
-            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
-            field.Branch("DONE_SAVE"),
-            "Y_WAS_ON",
-            field.SetEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
-            "DONE_SAVE",
-            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "floating continent save and disable y-party switching")
-        self.disable_y_switch_event = space.start_address
-
-        # Restore ENABLE_Y_PARTY_SWITCHING from SAVED_Y_PARTY_SWITCHING
-        src = [
-            field.BranchIfEventBitSet(event_bit.SAVED_Y_PARTY_SWITCHING, "Y_WAS_ON"),
-            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            field.Branch("DONE_RESTORE"),
-            "Y_WAS_ON",
-            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-            "DONE_RESTORE",
-            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "floating continent restore y-party switching")
-        self.restore_y_switch_event = space.start_address
 
     def shadow_leaves_mod(self):
         # remove shadow from party at floating continent (if return to airship or after atma)
@@ -690,7 +651,8 @@ class FloatingContinent(Event):
         # event (the escape sequence after defeating Nerapa).
         src = []
         if self.args.ruination_mode:
-            src += [field.Call(self.restore_y_switch_event)]
+            from event.ruination import RESTORE_Y_PARTY_SWITCH
+            src += [field.Call(RESTORE_Y_PARTY_SWITCH)]
         src += [
             field.SetEventBit(event_bit.FINISHED_FLOATING_CONTINENT),
             field.StopScreenShake(),
@@ -1189,7 +1151,11 @@ class FloatingContinent(Event):
         # Disable y-party switching as soon as the player commits to landing.  GO_TO_FC
         # is the common point for both landing cases (fighting boss #2 and, on a return
         # visit, skipping it via SKIP_FC_BOSS2), so a single call covers both.
-        disable_y_switch = [field.Call(self.disable_y_switch_event)] if self.args.ruination_mode else []
+        if self.args.ruination_mode:
+            from event.ruination import DISABLE_Y_PARTY_SWITCH
+            disable_y_switch = [field.Call(DISABLE_Y_PARTY_SWITCH)]
+        else:
+            disable_y_switch = []
         src += [
             field.DialogBranch(self.go_to_FC_dialog, "GO_TO_FC", "LEAVE_FC"),
             "GO_TO_FC",
@@ -1275,7 +1241,8 @@ class FloatingContinent(Event):
             # leaves the floating continent with y-switching still disabled.
             return_src = []
             if self.args.ruination_mode:
-                return_src += [field.Call(self.restore_y_switch_event)]
+                from event.ruination import RESTORE_Y_PARTY_SWITCH
+                return_src += [field.Call(RESTORE_Y_PARTY_SWITCH)]
             return_src += GoToSwitchyard(self.exit_id, map='field')
             return_block = Write(Bank.CA, return_src, "FC airship return restore y-switch")
             space = Reserve(0xa5a96, 0xa5a9c, "return to airship mid FC edit")
@@ -1287,7 +1254,8 @@ class FloatingContinent(Event):
         # path (warping back to the airship before completing the event).
         src_warp = []
         if self.args.ruination_mode:
-            src_warp += [field.Call(self.restore_y_switch_event)]
+            from event.ruination import RESTORE_Y_PARTY_SWITCH
+            src_warp += [field.Call(RESTORE_Y_PARTY_SWITCH)]
         src_warp += [
             field.ClearEventBit(event_bit.FLOATING_CONTINENT_WARP_OPTION),
             field.ClearEventBit(event_bit.IN_WOR),

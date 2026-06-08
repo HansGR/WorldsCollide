@@ -92,6 +92,9 @@ class Events():
         # are available for ChangeNPCEventAddress in individual event mods.
         if self.args.ruination_mode:
             create_party_interaction_scripts(self.dialogs)
+            # Shared y-party-switch save/disable and restore subroutines, Call'd by
+            # the several events that must suppress party switching mid-scene.
+            create_y_party_switch_subroutines()
 
         # Apply -nfh (no free heals) modifications. Works both with -ruin
         # (where -nfh is on by default) and standalone.

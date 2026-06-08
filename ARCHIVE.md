@@ -1191,6 +1191,24 @@ Vanilla vehicle scripts (Bank EE, used by Lete River, Serpent Trench, ending seq
 
 ---
 
+## Y-Party-Switch Disable Shared Subroutines (2026-06)
+
+`event/ruination.py` exports `DISABLE_Y_PARTY_SWITCH` and `RESTORE_Y_PARTY_SWITCH` — the SNES addresses of a pair of Bank.CB subroutines that save-and-disable, and restore, the `ENABLE_Y_PARTY_SWITCHING` event bit. Both are populated by `create_y_party_switch_subroutines()`, which runs **before** the event mod loop (in `event/events.py` `mod()`, in the same `args.ruination_mode` block as `create_party_interaction_scripts()`), so the addresses are available when individual events build their scripts.
+
+**Why it exists**: Several ruination-mode events make dynamic map edits that get reset — breaking or softlocking the event — if the player presses "y" to switch parties mid-scene. Each such event disables y-party switching when its scene begins and restores it at the end. `DISABLE_Y_PARTY_SWITCH` saves the current `ENABLE_Y_PARTY_SWITCHING` value into the `SAVED_Y_PARTY_SWITCHING` event bit (`0x0bb`) then clears `ENABLE`; `RESTORE_Y_PARTY_SWITCH` reads `SAVED` back into `ENABLE`. The protected scenes never overlap, so a single pair of subroutines and a single save bit serve all of them. Both subroutines end in `Return`, so they work either as a `field.Call` target or directly as a map-event tile script.
+
+**Four consumers** (all ruination-only):
+1. `event/doma_wob.py` `enter_exit_functions_mod()`: `field.Call(DISABLE_Y_PARTY_SWITCH)` at the start of `enter_event_function` (siege scene begins), `field.Call(RESTORE_Y_PARTY_SWITCH)` in `exit_function` (after the boss is defeated).
+2. `event/fanatics_tower.py` `ruination_mod()`: assigns `DISABLE_Y_PARTY_SWITCH - EVENT_CODE_START` / `RESTORE_Y_PARTY_SWITCH - EVENT_CODE_START` as the `event_address` of two map-event tiles on maps `0x16a` / `0x16b` (entry/exit).
+3. `event/floating_continent.py` `escape_mod()` and `map_shuffle_mod()`: `field.Call` the disable on landing and the restore on each of the three exit paths.
+4. `event/narshe_moogle_defense.py` `event_start_mod()` / `after_battle_mod()`: `field.Call` the disable before the battle and the restore after victory.
+
+**History**: Originally each event wrote its own private copy of the two subroutines (and Moogle Defense used a raw magic bit `0x1ca` instead of the named `SAVED_Y_PARTY_SWITCHING`). Consolidated into the single shared write in 2026-06.
+
+**Pattern when adding new consumers**: Import lazily inside the method (not at module top, to avoid circular imports) — `from event.ruination import DISABLE_Y_PARTY_SWITCH, RESTORE_Y_PARTY_SWITCH`. Reads happen during event mod, after `create_y_party_switch_subroutines()` has populated them. If used as an `event_address`/`entrance_event_address`, subtract `EVENT_CODE_START`; if invoked from event source, use `field.Call(...)`. Mirrors the `SET_PARTY_INTERACTION_POINTERS` convention above.
+
+---
+
 ## Branch Area Detection for Narshe Clues (2026-04)
 
 The Narshe school NPC clue scripts read `args.ruination_areas_used` (a `dict[area_name, branch_id]`) to tell the player which areas are on which branch. **Do not source this dict from `ruin_map.AreasUsed`** — use `ruin_map.compute_actual_areas_used()` instead.

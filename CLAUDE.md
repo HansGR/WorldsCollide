@@ -116,6 +116,7 @@ Quick orientation by file. Detailed sections are in ARCHIVE.md.
   - `compute_actual_areas_used()` — area_name → branch_id from rooms actually placed AND reachable. Use this (not raw `AreasUsed`) for Narshe school clue scripts. See ARCHIVE.md "Branch Area Detection for Narshe Clues".
   - Branch selection weighted toward less-extended branches via `branch_rewards_found`.
   - `SET_PARTY_INTERACTION_POINTERS` (Bank.CA, populated by `create_party_interaction_scripts()` before the event mod loop) — shared subroutine to re-bind NPC talk events.
+  - `DISABLE_Y_PARTY_SWITCH` / `RESTORE_Y_PARTY_SWITCH` (Bank.CB, populated by `create_y_party_switch_subroutines()` before the event mod loop) — shared save/disable and restore subroutines for events that must suppress y-party switching mid-scene (doma wob, fanatics tower, floating continent, narshe moogle defense). Use the named `SAVED_Y_PARTY_SWITCHING` event bit. See ARCHIVE.md "Y-Party-Switch Disable Shared Subroutines".
 - **args/ruin_preprocessor.py** — `RUIN_DEFAULT_FLAGS` expansion. `-ruin` bundles `-nfh` here.
 - **event/narshe_wob.py** — `ruination_mod()` (hub party formation, see ARCHIVE.md "Party Formation & Away-Party System") and `limited_heals()` (gated by `-nfh`, uses `SCHOOL_LIMITED_HEALS_1/2` event bits — does NOT use the `NARSHE_CHECKPOINT` event word any more).
 
