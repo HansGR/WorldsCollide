@@ -148,6 +148,41 @@ class NarsheMoogleDefense(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
+    def create_y_party_switch_events(self):
+        # In ruination mode, pressing "y" to switch parties mid-event resets the moogle
+        # defense's dynamic map edits and can break the event.  Disable y-party switching
+        # when the battle begins and restore it afterward.  This mirrors the shared
+        # approach used by doma wob, floating continent, and fanatics tower; we reuse the
+        # SAVED_Y_PARTY_SWITCHING event bit since the uses cannot overlap.
+
+        # Save ENABLE_Y_PARTY_SWITCHING to SAVED_Y_PARTY_SWITCHING, then clear it
+        src = [
+            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            field.Branch("DONE_SAVE"),
+            "Y_WAS_ON",
+            field.SetEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            "DONE_SAVE",
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "moogle defense save and disable y-party switching")
+        self.disable_y_switch_event = space.start_address
+
+        # Restore ENABLE_Y_PARTY_SWITCHING from SAVED_Y_PARTY_SWITCHING
+        src = [
+            field.BranchIfEventBitSet(event_bit.SAVED_Y_PARTY_SWITCHING, "Y_WAS_ON"),
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            field.Branch("DONE_RESTORE"),
+            "Y_WAS_ON",
+            field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+            "DONE_RESTORE",
+            field.ClearEventBit(event_bit.SAVED_Y_PARTY_SWITCHING),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "moogle defense restore y-party switching")
+        self.restore_y_switch_event = space.start_address
+
     def marshal_battle_mod(self):
         # Replace Marshal battle
         boss_pack_id = self.get_boss("Marshal")
@@ -418,22 +453,10 @@ class NarsheMoogleDefense(Event):
             space = Reserve(0xcaa55, 0xcaa5b, "Moogle defense no other parties edit 1", field.NOP())
             space.write(field.RefreshEntities()),
 
-            # Handle y-party switching: store value & disable until end of battle.
-            # We will use 0x1ca, which is set here but seems unused.
-            src = [
-                field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "IS_SET"),
-                field.ClearEventBit(0x1ca), # Store value is cleared
-                field.Return(),
-                "IS_SET",
-                field.SetEventBit(0x1ca),
-                field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-                field.Return()
-            ]
-            space = Write(Bank.CC, src, "Store Y-party-switch before moogle_defense")
-            self.handle_y_party_switch_addr = space.start_address
-
+            # Handle y-party switching: save & disable until end of battle (restored in
+            # after_battle_mod).  See create_y_party_switch_events.
             space = Reserve(0xcaa99, 0xcaa9c, "Moogle defense handle Y-party switch", field.NOP())
-            space.write(field.Call(self.handle_y_party_switch_addr))
+            space.write(field.Call(self.disable_y_switch_event))
 
             # Reserve the vanilla post-battle retry loop (0xCADAF-0xCADBE).
             # On loss the vanilla code retries the battle; in ruination mode we replace it with a straightforward game-over check.
@@ -509,12 +532,10 @@ class NarsheMoogleDefense(Event):
             # Skip restore moogled characters (they were never moogled).
             #space = Reserve(0xcadf3, 0xcae01, "hide parties 1 and 2", field.NOP())
 
-            # Need to re-enable Y-party switch if required.  We stored the value of event_bit.ENABLE_Y_PARTY_SWITCHING in 0x1ca.
+            # Re-enable y-party switch if it was on before the battle.
+            # See create_y_party_switch_events.
             src += [
-                field.BranchIfEventBitClear(0x1ca, "IS_CLEAR"),
-                field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Store value is cleared
-                field.ClearEventBit(0x1ca),
-                "IS_CLEAR",
+                field.Call(self.restore_y_switch_event),
             ]
             # If recruited a character, allow party reform
             if self.reward.type == RewardType.CHARACTER:
@@ -634,7 +655,9 @@ class NarsheMoogleDefense(Event):
 
         self.marshal_npc_mod()
 
-        if not self.args.ruination_mode:
+        if self.args.ruination_mode:
+            self.create_y_party_switch_events()
+        else:
             self.arvis_start_mod()
         self.event_start_mod()
         self.marshal_battle_mod()
