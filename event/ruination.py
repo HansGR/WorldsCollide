@@ -3934,56 +3934,76 @@ class ruination_map():
 
         return [door_pairs, trap_pits]
 
+    # Kefka's Tower structural constants (the KT* rooms in data/rooms.py).
+    KT_ENTRIES = ['KTa1', 'KTb1', 'KTc1']
+    KT_FINALS = ['KTa-final', 'KTb-final', 'KTc-final']
+    KT_BOSSES = ['KTb4', 'KTb10', 'KTc7', 'KTc12']
+    # Rooms joined by a key-gated forced crossing must share a lane; the
+    # crossing is a one-way edge a -> b, gated by the named switch key.
+    KT_GATED = [('KTa5a', 'KTa5b', 'KT1'), ('KTa8a', 'KTa8b', 'KT2')]
+    # The forced crossings as data/rooms.forced_connections entries (locked
+    # traps living in room_data locks). Fed to ForceConnections during the
+    # walk, then stripped from the output (they are vanilla map features, not
+    # writable ROM exits).
+    KT_FORCED = {2182: [2183], 2184: [2185]}
+    KT_PLATFORM_IDS = {2182, 2183, 2184, 2185}
+    # Room that holds each switch key (key enters the global keychain when the
+    # room is first reached by any party).
+    KT_KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
+    # Budget: number of fresh partitions to try before falling back to vanilla.
+    KT_MAX_SPLITS = 400
+
     def _randomize_kefka_tower(self):
         """Randomize the three lanes of Kefka's Tower (the KT* rooms).
 
         Kefka's Tower has three lanes (originally Left/Middle/Right). Each lane
-        starts with a party dropping into an entry room and ends in one of the
-        three sections of the 4-ton switch room. The lanes interact: the Middle
-        and Right lanes each hold a switch (keys KT1 / KT2) that unlocks a
-        key-gated forced crossing (a switch platform / broken stairs) somewhere
-        in another lane.
+        starts with a party dropping into an entry room (KTa1/KTb1/KTc1) and
+        ends in one of the three sections of the 4-ton switch room
+        (KT*-final). The lanes interact: the Middle and Right lanes each hold a
+        switch (keys KT1 / KT2) that unlocks a key-gated forced crossing (a
+        switch platform / broken stairs) somewhere in another lane.
 
-        Like the isolated Dream Maze, this does NOT walk out a single connection
-        (which could strand a party behind a one-way conveyor or an unopenable
-        switch gate). Instead it:
-          1. Pre-conditions by partitioning every KT room into three
+        KT's door graph is deliberately sparse (only ~28 two-way door-edges for
+        ~34 door-rooms), so a lane cannot be connected by doors alone --
+        connectivity also relies on the one-way conveyor/pipe traps and the two
+        gated platforms. Random matching therefore almost never connects every
+        room, so this drives the same constructive network walk the ruination
+        branches use (data.walks.Network.connect_network), once per lane:
+
+          1. Pre-condition by partitioning every KT room into three
              non-overlapping lanes satisfying cheap, necessary constraints:
                - each lane gets exactly one entry and one ending,
                - rooms joined by a forced crossing share a lane,
                - no lane has more than two of the four bosses,
-               - each lane has equal numbers of one-way exits and entrances
-                 (so traps can pair to pits in-lane), and an even door count.
-          2. For each valid partition, makes up to 100 random connection
-             attempts (door<->door, trap->pit within each lane) and *verifies*
-             completability before accepting.
-          3. Re-partitions up to 20 times if no connection verifies.
+               - each lane has equal numbers of one-way exits and entrances,
+                 and an even door count.
+          2. For each lane, unlock the platforms (so the walk treats them as
+             open), force their crossings, attach dead ends, and walk out a
+             fully-connected, traversable layout.
+          3. Verify the assembled three-lane map: modelling doors as two-way
+             edges, traps as one-way (trap -> pit) edges, and each gated
+             crossing as a one-way edge unlocked by its key, grow reachability
+             from the three entries while collecting keys as their rooms become
+             reachable (a fixpoint). Require EVERY room reachable (no orphans;
+             so all four bosses and both switches are reached and pressable in
+             time) and that, with both keys held, every reached room can still
+             reach its lane's ending (no one-way strand).
+          4. Re-partition (fresh split + walk) until a layout verifies or the
+             budget is exhausted.
 
-        A layout verifies when, modelling doors as two-way edges, traps as
-        one-way (trap -> pit) edges, and each forced crossing as a one-way edge
-        gated by its key:
-          - growing reachability from the three entries while collecting keys as
-            their rooms become reachable (a fixpoint) reaches all three endings
-            (so every switch is pressable in time and every party finishes), and
-          - with both keys held, EVERY reachable room can still reach its lane's
-            ending (so a one-way conveyor / forced drop can never strand a
-            party). Returns [[door pairs], [trap->pit pairs]], or None on
-            failure (callers fall back to the vanilla KT layout).
+        Returns [[door pairs], [trap->pit pairs]] (with the platform ids
+        stripped), or None on failure (callers fall back to the vanilla KT
+        layout).
         """
-        KT = [r for r in room_data if isinstance(r, str) and r.startswith('KT')]
-        ENTRIES = ['KTa1', 'KTb1', 'KTc1']
-        FINALS = ['KTa-final', 'KTb-final', 'KTc-final']
-        BOSSES = ['KTb4', 'KTb10', 'KTc7', 'KTc12']
-        # Rooms joined by a key-gated forced crossing must share a lane; the
-        # crossing itself (a one-way edge a -> b) is gated by the named key.
-        GATED = [('KTa5a', 'KTa5b', 'KT1'), ('KTa8a', 'KTa8b', 'KT2')]
-        # Which room holds each switch key (key enters the keychain when the
-        # room is first reached).
-        KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
+        import log.verbose as _verbose_mod
 
-        # Per-room free connection elements. The forced crossing traps
-        # (2182/2183, 2184/2185) live in room_data locks, not in these slots, so
-        # they are intentionally excluded from random pairing.
+        KT = [r for r in room_data if isinstance(r, str) and r.startswith('KT')]
+        ENTRIES, FINALS, BOSSES = self.KT_ENTRIES, self.KT_FINALS, self.KT_BOSSES
+        GATED, KEY_ROOM = self.KT_GATED, self.KT_KEY_ROOM
+        PLATFORM_IDS = self.KT_PLATFORM_IDS
+
+        # Per-room free connection elements (the gated-crossing traps live in
+        # room_data locks, not in these slots).
         doors_of = {r: list(room_data[r][0]) for r in KT}
         traps_of = {r: list(room_data[r][1]) for r in KT}
         pits_of = {r: list(room_data[r][2]) for r in KT}
@@ -4016,15 +4036,32 @@ class ruination_map():
             return lanes
 
         def connect_lane(lane):
-            ds = [d for r in lane for d in doors_of[r]]
-            ts = [t for r in lane for t in traps_of[r]]
-            ps = [p for r in lane for p in pits_of[r]]
-            random.shuffle(ds)
-            random.shuffle(ts)
-            random.shuffle(ps)
-            door_pairs = [[ds[i], ds[i + 1]] for i in range(0, len(ds), 2)]
-            trap_pits = [[ts[i], ps[i]] for i in range(len(ts))]
-            return door_pairs, trap_pits
+            """Walk out a connected layout for one lane. Returns (door_pairs,
+            trap_pits) with platform ids stripped, or None if the walk fails."""
+            net = Network(list(lane))
+            net.should_stop = None
+            # Unlock both platforms so the walk can rely on the gated crossings
+            # for connectivity; key timing is checked separately in verify().
+            net.apply_key('KT1')
+            net.apply_key('KT2')
+            net.ForceConnections(self.KT_FORCED)  # inits .protected; forces any in-lane platform
+            net.attach_dead_ends()
+            nodes = list(net.net.nodes)
+            if not nodes:
+                return None
+            # Start from the room with the most remaining exits (a poor seed can
+            # make the walk dead-end immediately).
+            net.active = max(nodes, key=lambda n: len(net.rooms.get_room(n).doors)
+                             + len(net.rooms.get_room(n).traps))
+            try:
+                result = net.connect_network()
+            except Exception:
+                return None
+            dp = [m for m in result.map[0]
+                  if m[0] not in PLATFORM_IDS and m[1] not in PLATFORM_IDS]
+            tp = [m for m in result.map[1]
+                  if m[0] not in PLATFORM_IDS and m[1] not in PLATFORM_IDS]
+            return dp, tp
 
         def build_adj(door_pairs, trap_pits, keychain):
             adj = {r: set() for r in KT}
@@ -4057,7 +4094,9 @@ class ruination_map():
                 if newkeys <= keychain:
                     break
                 keychain |= newkeys
-            if not all(f in reached for f in FINALS):
+            # Every room must be reachable (no orphaned rooms / unreachable
+            # bosses or switches; subsumes "all endings reached").
+            if reached != set(KT):
                 return False
             # No-strand: with both keys, every reached room reaches its ending.
             adjf = build_adj(door_pairs, trap_pits, set(KEY_ROOM.values()))
@@ -4067,39 +4106,59 @@ class ruination_map():
                     return False
             return True
 
-        for _ in range(20):
-            lanes = None
-            guard = 0
-            while lanes is None and guard < 5000:
-                lanes = split_lanes()
-                guard += 1
-            if lanes is None:
-                continue
-            lane_of = {r: i for i, lane in enumerate(lanes) for r in lane}
-            for _ in range(100):
+        # The network walk is internally chatty; silence vprint during the
+        # search (it would emit hundreds of pages and is far slower) and
+        # restore it before logging the chosen layout.
+        saved_verbose = (_verbose_mod._to_stdout, _verbose_mod._to_file)
+        _verbose_mod._to_stdout = False
+        _verbose_mod._to_file = False
+        result = None
+        lanes = None
+        try:
+            for _ in range(self.KT_MAX_SPLITS):
+                split = None
+                guard = 0
+                while split is None and guard < 5000:
+                    split = split_lanes()
+                    guard += 1
+                if split is None:
+                    continue
+                lane_of = {r: i for i, lane in enumerate(split) for r in lane}
                 door_pairs, trap_pits = [], []
-                for lane in lanes:
-                    dp, tp = connect_lane(lane)
-                    door_pairs += dp
-                    trap_pits += tp
-                if verify(door_pairs, trap_pits, lane_of):
-                    if self.verbose:
-                        vprint("Kefka's Tower randomized into three lanes:")
-                        for i, lane in enumerate(lanes):
-                            bosses = [r for r in lane if r in BOSSES]
-                            vprint(f'\tlane {i} ({len(lane)} rooms, bosses {bosses}): '
-                                   f'{sorted(lane)}')
-                        for d1, d2 in door_pairs:
-                            vprint(f'\tdoor: {d1} <-> {d2}  '
-                                   f'(room {room_of[d1]} <-> {room_of[d2]})')
-                        for t, p in trap_pits:
-                            vprint(f'\ttrap: {t} -> {p}  '
-                                   f'(room {room_of[t]} -> {room_of[p]})')
-                    return [door_pairs, trap_pits]
+                ok = True
+                for lane in split:
+                    res = connect_lane(lane)
+                    if res is None:
+                        ok = False
+                        break
+                    door_pairs += res[0]
+                    trap_pits += res[1]
+                if ok and verify(door_pairs, trap_pits, lane_of):
+                    result = [door_pairs, trap_pits]
+                    lanes = split
+                    break
+        finally:
+            _verbose_mod._to_stdout, _verbose_mod._to_file = saved_verbose
 
-        vprint("WARNING: Kefka's Tower randomization failed after 20 partitions; "
-               'using vanilla KT layout')
-        return None
+        if result is None:
+            vprint("WARNING: Kefka's Tower randomization failed after "
+                   f'{self.KT_MAX_SPLITS} partitions; using vanilla KT layout')
+            return None
+
+        if self.verbose:
+            door_pairs, trap_pits = result
+            vprint("Kefka's Tower randomized into three lanes:")
+            for i, lane in enumerate(lanes):
+                bosses = [r for r in lane if r in BOSSES]
+                vprint(f'\tlane {i} ({len(lane)} rooms, bosses {bosses}): '
+                       f'{sorted(lane)}')
+            for d1, d2 in door_pairs:
+                vprint(f'\tdoor: {d1} <-> {d2}  '
+                       f'(room {room_of[d1]} <-> {room_of[d2]})')
+            for t, p in trap_pits:
+                vprint(f'\ttrap: {t} -> {p}  '
+                       f'(room {room_of[t]} -> {room_of[p]})')
+        return result
 
     def pre_plan_character_acquisition(self):
         """Pre-plan which characters will be obtained to ensure sufficient areas.

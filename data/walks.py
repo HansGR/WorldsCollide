@@ -829,7 +829,7 @@ class Network:
                           [['A','B','C','D','E','F'][i] for i in range(len(by_rules)) if by_rules[i]],
                           'in/out/either = ', td, ', deadends/other doors = ', dec)
                     for k in cl.keys():
-                        vprint('\t',k.id,': ', cl[k])
+                        vprint('\t',k,': ', cl[k])
                 raise Exception('Invalid network state.')
             else:
                 if self.verbose:
