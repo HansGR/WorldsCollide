@@ -418,22 +418,12 @@ class NarsheMoogleDefense(Event):
             space = Reserve(0xcaa55, 0xcaa5b, "Moogle defense no other parties edit 1", field.NOP())
             space.write(field.RefreshEntities()),
 
-            # Handle y-party switching: store value & disable until end of battle.
-            # We will use 0x1ca, which is set here but seems unused.
-            src = [
-                field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "IS_SET"),
-                field.ClearEventBit(0x1ca), # Store value is cleared
-                field.Return(),
-                "IS_SET",
-                field.SetEventBit(0x1ca),
-                field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
-                field.Return()
-            ]
-            space = Write(Bank.CC, src, "Store Y-party-switch before moogle_defense")
-            self.handle_y_party_switch_addr = space.start_address
-
+            # Handle y-party switching: save & disable until end of battle (restored in
+            # after_battle_mod).  Uses the shared subroutines written by
+            # event.ruination.create_y_party_switch_subroutines().
+            from event.ruination import DISABLE_Y_PARTY_SWITCH
             space = Reserve(0xcaa99, 0xcaa9c, "Moogle defense handle Y-party switch", field.NOP())
-            space.write(field.Call(self.handle_y_party_switch_addr))
+            space.write(field.Call(DISABLE_Y_PARTY_SWITCH))
 
             # Reserve the vanilla post-battle retry loop (0xCADAF-0xCADBE).
             # On loss the vanilla code retries the battle; in ruination mode we replace it with a straightforward game-over check.
@@ -509,12 +499,11 @@ class NarsheMoogleDefense(Event):
             # Skip restore moogled characters (they were never moogled).
             #space = Reserve(0xcadf3, 0xcae01, "hide parties 1 and 2", field.NOP())
 
-            # Need to re-enable Y-party switch if required.  We stored the value of event_bit.ENABLE_Y_PARTY_SWITCHING in 0x1ca.
+            # Re-enable y-party switch if it was on before the battle, using the shared
+            # subroutine written by event.ruination.create_y_party_switch_subroutines().
+            from event.ruination import RESTORE_Y_PARTY_SWITCH
             src += [
-                field.BranchIfEventBitClear(0x1ca, "IS_CLEAR"),
-                field.SetEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),  # Store value is cleared
-                field.ClearEventBit(0x1ca),
-                "IS_CLEAR",
+                field.Call(RESTORE_Y_PARTY_SWITCH),
             ]
             # If recruited a character, allow party reform
             if self.reward.type == RewardType.CHARACTER:

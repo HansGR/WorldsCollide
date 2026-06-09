@@ -92,12 +92,25 @@ class DomaWOB(Event):
             field.Return(),
         )
 
+        # In ruination mode, disable y-party switching while the siege runs and restore
+        # it once the boss is defeated, using the shared subroutines written by
+        # event.ruination.create_y_party_switch_subroutines().
+        if self.args.ruination_mode:
+            from event.ruination import DISABLE_Y_PARTY_SWITCH, RESTORE_Y_PARTY_SWITCH
+            disable_y_switch = [field.Call(DISABLE_Y_PARTY_SWITCH)]
+            restore_y_switch = [field.Call(RESTORE_Y_PARTY_SWITCH)]
+        else:
+            disable_y_switch = []
+            restore_y_switch = []
+
         # doma attack scene up until char (and 2 soldiers) go outside
         space = Reserve(0xb9aae, 0xb9d30, "doma add char and exit functions", field.NOP())
 
         self.exit_function = space.next_address
         space.write(
             exit_instructions,
+
+            restore_y_switch,
 
             field.SetEventBit(event_bit.FINISHED_DOMA_WOB),
             field.FinishCheck(),
@@ -140,6 +153,8 @@ class DomaWOB(Event):
             field.HoldScreen(),
             field.LoadMap(0x78, direction.DOWN, default_music = True,
                           x = self.enter_event_x, y = self.enter_event_y),
+
+            disable_y_switch,
 
             enter_instructions,
 
