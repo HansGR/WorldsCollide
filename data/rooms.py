@@ -1028,6 +1028,53 @@ room_data = {
     # FLOATING CONTINENT
     'root-fc-as-doors': [[1556], [], [], 0],  # Floating Continent entry as door
     'branch-fc': [[1557], [], [], 0],  # Floating Continent outside at entry
+
+    # KEFKA'S TOWER: We are breaking naming scheme here because from a map numbering perspective these should go earlier
+    # need to figure out how to handle connection to ruination code
+    # KT outside: map_id = 0x14F
+    # LEFT LANE
+    'KTa1': [ [887], [], [], [], {}, 1],  # 0x14E, Kefka's Tower, left side, entry room (How to integrate with ruination mode entry?)
+    'KTa2': [ [799, 800], [], [], [], {}, 1],  # 0x12F,  KT left side, conveyor belts room
+    'KTa3': [ [801, 802], [], [], [], {}, 1],  # 0x130,  KT left side, third room (horseshoe with chest)
+    'KTa4': [ [888, 889], [], [], [], {}, 1],  # 0x14E, KT left side, fourth room (outside connector)
+    'KTa5a': [ [760], [], [], [], {'KT1': [2182]}, 1],  # 0x124, KT left side, fifth room entry (switch platform left)
+    'KTa5b': [ [761], [], [], [], {'KT1': [2183]}, 1],  # 0x124, KT left side, fifth room exit
+    'KTa6': [ [976, 977], [], [], [], {}, 1],  # 0x160, KT left side, sixth room (broken tubes)
+    'KTa7': [ [769, 768], [], [], [], {}, 1],  # 0x127, KT left side, seventh room (after-tubes connector)
+    'KTa8a': [ [890], [], [], [], {'KT2': [2184]}, 1],  # 0x14E, KT left side, eighth room (outside before broken stairs)
+    'KTa8b': [ [894], [], [], [], {'KT2': [2185]}, 1],  # 0x14E, KT left side, eighth room (outside after broken stairs)
+    'KTa-final': [ [904], [], [], [], {}, 1],  # 0x151, KT left side, ninth room (4-ton switch room middle)
+
+    # MIDDLE LANE
+    'KTb1': [  [895], [], [], [], {}, 1],  # 0x14E, Kefka's Tower, middle, entry room
+    'KTb2': [  [913, 914, 915], [], [], [], {}, 1],  # 0x152, Kefka's Tower, middle, second room (fork)
+    'KTb3': [  [916], [], [917], [], {}, 1],  # 0x152, Kefka's Tower, middle, third room (treasure & pipe return.  Pipe return is an inaccessible door!)
+    'KTb4': [  [886], [2080], [], [], {}, 1],  # 0x14B, Kefka's Tower, middle, fourth room (toilet atma)
+    'KTb5': [  [885], [], [3080], [], {}, 1],  # 0x149, Kefka's Tower, middle, fifth room (drop + stairs. 884 is a door from which you fall, inaccessible)
+    'KTb6': [  [1110, 1109], [1108], [], [], {}, 1],  # 0x199, Kefka's Tower, middle, sixth room (two pipes out; 'fall' event is on destination map for 1108)
+    'KTb7': [  [896, 893, 891], [], [], [], {}, 1],  # 0x14E, Kefka's Tower, middle, 7th room (outside, conveyors, fork)
+    'KTb8': [  [759], [], [], ['KT1'], {}, 1],  # 0x124, Kefka's Tower, middle, 8th room (switch platform right side with button)
+    'KTb9': [  [766, 767], [], [], [], {}, 1],  # 0x126, Kefka's Tower, middle, 9th room (hallway to gold drgn)
+    'KTb10': [  [902, 903], [], [], [], {}, 1],  # 0x14F, Kefka's Tower, middle, 10th room (gold drgn room)
+    'KTb11': [  [994, 993], [], [], [], {}, 1],  # 0x162, Kefka's Tower, middle, 11th room (post-drgn connector)
+    'KTb-final': [  [911], [], [], [], {}, 1],  # 0x151, Kefka's Tower, middle, 12th room (4-ton switch room left)
+
+    # RIGHT LANE
+    'KTc1': [  [898, 899], [], [], [], {}, 1],  # 0x14E, Kefka's Tower, right, entry room
+    'KTc2': [  [918, 919], [], [], [], {}, 1],  # 0x153, Kefka's Tower, right, second room (hallway to inferno balcony)
+    'KTc3': [  [770], [], [], [], {}, 1],  # 0x128, Kefka's Tower, right, third room (inferno balcony)
+    'KTc4': [  [920, 921], [], [], [], {}, 1],  # 0x153, Kefka's Tower, right, fourth room (connector to conveyor basement)
+    'KTc5': [  [1120], [2081], [3084], [], {}, 1],  # 0x19A, Kefka's Tower, right, fifth room (Aegis basement)
+    'KTc6': [  [], [2082], [3081], [], {}, 1],  # 0x19A, Kefka's Tower, right, sixth room (conveyor belt ride)
+    'KTc7': [  [1111], [2083], [3082], [], {}, 1],  # 0x19A, Kefka's Tower, right, seventh room (Inferno room)
+    'KTc8': [  [], [2084], [3083], [], {}, 1],  # 0x19A, Kefka's Tower, right, eighth room (conveyor belt return ride)
+    'KTc9': [  [763, 762], [], [], [], {}, 1],  # 0x125, Kefka's Tower, right, ninth room (post-Inferno hallway)
+    'KTc10': [  [897, 892], [], [], ['KT2'], {}, 1],  # 0x14e, Kefka's Tower, right, tenth room (outside with red switch box)
+    'KTc11': [  [764, 765], [], [], [], {}, 1],  # 0x125, Kefka's Tower, right, eleventh room (hallway to skull drgn)
+    'KTc12': [  [998, 999], [], [], [], {}, 1],  # 0x162, Kefka's Tower, right, twelfth room (skull drgn room)
+    'KTc13': [  [996, 995], [], [], [], {}, 1],  # 0x162, Kefka's Tower, right, thirteenth room (connector post-skull drgn)
+    'KTc-final': [  [912], [], [], [], {}, 1],  # 0x151, Kefka's Tower, middle, last room (4-ton switch room right)
+
 }
 
 ruination_dont_force = [
@@ -1088,6 +1135,9 @@ forced_connections = {
     2181: [3181],   # Lone Wolf reward room (ruin-lonewolf) --> Narshe Peak (ruin-narshepeak), return.
 
     4418: [744],    # Doma WOR Main Room --> Doma WoB Outside (ruination: splits indoor WoR from outdoor WoB for siege).  If Doma interior were ever randomized, this would cause problems.
+
+    2182: [2183],   # Kefka's Tower switch platform room
+    2184: [2185],   # Kefka's Tower, broken stairs
 }
 
 # Add forced connections for virtual doors (-dra)

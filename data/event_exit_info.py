@@ -1,4 +1,5 @@
-# event exit information:  Event_ID:  [original address, event bit length, split point, transition state, description, location]
+# event exit information:
+# Event_ID:  [original address, event bit length, split point, transition state, description, location]
 #   transition state = [is_chararacter_hidden, is_song_override_on, is_screen_hold_on, is_on_raft, update_parent_map]
 #   location = [map_id, x, y]
 #   None = not implemented
@@ -134,6 +135,12 @@ event_exit_info = {
     2077: [None, 7, 1, [False, False, False, False, False], "Kefka's Tower single entrance left", [0x005, None, None], 'JMP'],  # Handle with a switchyard tile.  Custom for -ruination
     2078: [None, 7, 1, [False, False, False, False, False], "Kefka's Tower single entrance mid", [0x005, None, None], 'JMP'],  # Handle with a switchyard tile.  Custom for -ruination
     2079: [None, 7, 1, [False, False, False, False, False], "Kefka's Tower single entrance right", [0x005, None, None], 'JMP'],  # Handle with a switchyard tile.  Custom for -ruination
+    2080: [0xc135c, 60, 1, [False, False, False, False, False], "Kefka's Tower Atma south exit", [0x14b, 81, 60], 'JMP'],  # Exit from Atma's Room (fall)
+    2081: [0xc1398, 30, 20, [False, False, False, False, False], "Kefka's Tower conveyor south entrance", [0x19a, 8, 14], 'JMP'],  # Enter conveyor belt room before inferno
+    2082: [0xc13b6, 16, 1, [False, False, False, False, False], "Kefka's Tower conveyor north exit", [0x19a, None, None], 'JMP'],  # Exit conveyor belt to inferno room
+    2083: [0xc13c6, 82, 35, [False, False, False, False, False], "Kefka's Tower inferno return north", [0x19a, 43, 23], 'JMP'],  # Enter conveyor belt from inferno room
+    2084: [0xc13f4, 36, 1, [False, False, False, False, False], "Kefka's Tower inferno return south", [0x19a, None, None], 'JMP'],  # Exit conveyor belt from inferno room
+
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
@@ -257,6 +264,17 @@ event_exit_info = {
     # forced connection, no mod
     2181: [0x00000, 0, 0, [None, None, None, None, False], 'Lone Wolf reward logical return to Narshe Peak', [0x23, None, None], None],
     # forced connection, no mod
+
+    # KT Forced connections (RUINATION)
+    2182: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, switch platform top', [0x124, None, None], None],
+    # forced connection, no mod
+    2183: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, switch platform bottom', [0x124, None, None], None],
+    # forced connection, no mod
+    2184: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, broken stairs bottom', [0x14E, None, None], None],
+    # forced connection, no mod
+    2185: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, broken stairs top', [0x14E, None, None], None],
+    # forced connection, no mod
+
 }
 # Notes:
 #   1. is_screen_hold_on is False for Umaro's Cave trapdoor events, but they all include a hold screen / free screen
