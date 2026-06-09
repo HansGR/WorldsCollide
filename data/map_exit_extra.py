@@ -1579,6 +1579,9 @@ exit_data_patch = {
     # DOMA DREAM
     437: lambda info: set_dest_x(17, info),   #   [441, "Doma Dream 2F Outside to Main Room"], off by one.
 
+    # SEALED GATE
+    1079: lambda info: set_dest_y(28, info),   #  [1264, "Sealed Gate"], is mis-targeted because it is never used.
+
 }
 
 # Additional data patches for dungeon crawl mode
