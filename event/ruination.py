@@ -3718,6 +3718,13 @@ class ruination_map():
         # Apply Dream Maze configuration based on -rdm flag
         self._configure_dream_maze(args)
 
+        # Randomize Kefka's Tower lanes if -rkt is set (independent of the
+        # branch graph: produces internal KT door/trap connections injected at
+        # the end of generate_map_with_characters).
+        self.kt_lane_map = None
+        if getattr(args, 'ruin_kefka_tower', False):
+            self.kt_lane_map = self._randomize_kefka_tower()
+
         # Read character/esper requirements from args (extracted from flagstring in args/objectives.py)
         # These are stored as [min, max] ranges; pick a random value in the range
         char_min, char_max = args.ruin_characters_required
@@ -3926,6 +3933,173 @@ class ruination_map():
                 vprint(f'\ttrap: {t} -> {p}  (room {trap_room[t]} -> {pit_room[p]})')
 
         return [door_pairs, trap_pits]
+
+    def _randomize_kefka_tower(self):
+        """Randomize the three lanes of Kefka's Tower (the KT* rooms).
+
+        Kefka's Tower has three lanes (originally Left/Middle/Right). Each lane
+        starts with a party dropping into an entry room and ends in one of the
+        three sections of the 4-ton switch room. The lanes interact: the Middle
+        and Right lanes each hold a switch (keys KT1 / KT2) that unlocks a
+        key-gated forced crossing (a switch platform / broken stairs) somewhere
+        in another lane.
+
+        Like the isolated Dream Maze, this does NOT walk out a single connection
+        (which could strand a party behind a one-way conveyor or an unopenable
+        switch gate). Instead it:
+          1. Pre-conditions by partitioning every KT room into three
+             non-overlapping lanes satisfying cheap, necessary constraints:
+               - each lane gets exactly one entry and one ending,
+               - rooms joined by a forced crossing share a lane,
+               - no lane has more than two of the four bosses,
+               - each lane has equal numbers of one-way exits and entrances
+                 (so traps can pair to pits in-lane), and an even door count.
+          2. For each valid partition, makes up to 100 random connection
+             attempts (door<->door, trap->pit within each lane) and *verifies*
+             completability before accepting.
+          3. Re-partitions up to 20 times if no connection verifies.
+
+        A layout verifies when, modelling doors as two-way edges, traps as
+        one-way (trap -> pit) edges, and each forced crossing as a one-way edge
+        gated by its key:
+          - growing reachability from the three entries while collecting keys as
+            their rooms become reachable (a fixpoint) reaches all three endings
+            (so every switch is pressable in time and every party finishes), and
+          - with both keys held, EVERY reachable room can still reach its lane's
+            ending (so a one-way conveyor / forced drop can never strand a
+            party). Returns [[door pairs], [trap->pit pairs]], or None on
+            failure (callers fall back to the vanilla KT layout).
+        """
+        KT = [r for r in room_data if isinstance(r, str) and r.startswith('KT')]
+        ENTRIES = ['KTa1', 'KTb1', 'KTc1']
+        FINALS = ['KTa-final', 'KTb-final', 'KTc-final']
+        BOSSES = ['KTb4', 'KTb10', 'KTc7', 'KTc12']
+        # Rooms joined by a key-gated forced crossing must share a lane; the
+        # crossing itself (a one-way edge a -> b) is gated by the named key.
+        GATED = [('KTa5a', 'KTa5b', 'KT1'), ('KTa8a', 'KTa8b', 'KT2')]
+        # Which room holds each switch key (key enters the keychain when the
+        # room is first reached).
+        KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
+
+        # Per-room free connection elements. The forced crossing traps
+        # (2182/2183, 2184/2185) live in room_data locks, not in these slots, so
+        # they are intentionally excluded from random pairing.
+        doors_of = {r: list(room_data[r][0]) for r in KT}
+        traps_of = {r: list(room_data[r][1]) for r in KT}
+        pits_of = {r: list(room_data[r][2]) for r in KT}
+        room_of = {}
+        for r in KT:
+            for e in doors_of[r] + traps_of[r] + pits_of[r]:
+                room_of[e] = r
+
+        def split_lanes():
+            """One random partition of all KT rooms into three lanes, or None."""
+            lanes = [{ENTRIES[i]} for i in range(3)]
+            fperm = FINALS[:]
+            random.shuffle(fperm)
+            for i in range(3):
+                lanes[i].add(fperm[i])
+            placed = set(ENTRIES) | set(FINALS)
+            glued = {r for a, b, _ in GATED for r in (a, b)}
+            units = [[a, b] for a, b, _ in GATED]
+            units += [[r] for r in KT if r not in placed and r not in glued]
+            random.shuffle(units)
+            for u in units:
+                random.choice(lanes).update(u)
+            for lane in lanes:
+                if sum(len(traps_of[r]) for r in lane) != sum(len(pits_of[r]) for r in lane):
+                    return None
+                if sum(len(doors_of[r]) for r in lane) % 2 != 0:
+                    return None
+                if sum(1 for r in lane if r in BOSSES) > 2:
+                    return None
+            return lanes
+
+        def connect_lane(lane):
+            ds = [d for r in lane for d in doors_of[r]]
+            ts = [t for r in lane for t in traps_of[r]]
+            ps = [p for r in lane for p in pits_of[r]]
+            random.shuffle(ds)
+            random.shuffle(ts)
+            random.shuffle(ps)
+            door_pairs = [[ds[i], ds[i + 1]] for i in range(0, len(ds), 2)]
+            trap_pits = [[ts[i], ps[i]] for i in range(len(ts))]
+            return door_pairs, trap_pits
+
+        def build_adj(door_pairs, trap_pits, keychain):
+            adj = {r: set() for r in KT}
+            for d1, d2 in door_pairs:
+                adj[room_of[d1]].add(room_of[d2])
+                adj[room_of[d2]].add(room_of[d1])
+            for t, p in trap_pits:
+                adj[room_of[t]].add(room_of[p])
+            for a, b, k in GATED:
+                if k in keychain:
+                    adj[a].add(b)
+            return adj
+
+        def reach(adj, starts):
+            seen, stack = set(starts), list(starts)
+            while stack:
+                for n in adj[stack.pop()]:
+                    if n not in seen:
+                        seen.add(n)
+                        stack.append(n)
+            return seen
+
+        def verify(door_pairs, trap_pits, lane_of):
+            # Fixpoint: grow reachability while collecting keys as their rooms
+            # become reachable (re-opening gated crossings each round).
+            keychain = set()
+            while True:
+                reached = reach(build_adj(door_pairs, trap_pits, keychain), ENTRIES)
+                newkeys = {KEY_ROOM[r] for r in reached if r in KEY_ROOM}
+                if newkeys <= keychain:
+                    break
+                keychain |= newkeys
+            if not all(f in reached for f in FINALS):
+                return False
+            # No-strand: with both keys, every reached room reaches its ending.
+            adjf = build_adj(door_pairs, trap_pits, set(KEY_ROOM.values()))
+            final_of = {lane_of[f]: f for f in FINALS}
+            for r in reached:
+                if final_of[lane_of[r]] not in reach(adjf, [r]):
+                    return False
+            return True
+
+        for _ in range(20):
+            lanes = None
+            guard = 0
+            while lanes is None and guard < 5000:
+                lanes = split_lanes()
+                guard += 1
+            if lanes is None:
+                continue
+            lane_of = {r: i for i, lane in enumerate(lanes) for r in lane}
+            for _ in range(100):
+                door_pairs, trap_pits = [], []
+                for lane in lanes:
+                    dp, tp = connect_lane(lane)
+                    door_pairs += dp
+                    trap_pits += tp
+                if verify(door_pairs, trap_pits, lane_of):
+                    if self.verbose:
+                        vprint("Kefka's Tower randomized into three lanes:")
+                        for i, lane in enumerate(lanes):
+                            bosses = [r for r in lane if r in BOSSES]
+                            vprint(f'\tlane {i} ({len(lane)} rooms, bosses {bosses}): '
+                                   f'{sorted(lane)}')
+                        for d1, d2 in door_pairs:
+                            vprint(f'\tdoor: {d1} <-> {d2}  '
+                                   f'(room {room_of[d1]} <-> {room_of[d2]})')
+                        for t, p in trap_pits:
+                            vprint(f'\ttrap: {t} -> {p}  '
+                                   f'(room {room_of[t]} -> {room_of[p]})')
+                    return [door_pairs, trap_pits]
+
+        vprint("WARNING: Kefka's Tower randomization failed after 20 partitions; "
+               'using vanilla KT layout')
+        return None
 
     def pre_plan_character_acquisition(self):
         """Pre-plan which characters will be obtained to ensure sufficient areas.
@@ -4914,6 +5088,11 @@ class ruination_map():
         if self.isolated_maze_map is not None:
             map[0].extend(self.isolated_maze_map[0])
             map[1].extend(self.isolated_maze_map[1])
+
+        # Add randomized Kefka's Tower lane connections (if -rkt)
+        if self.kt_lane_map is not None:
+            map[0].extend(self.kt_lane_map[0])
+            map[1].extend(self.kt_lane_map[1])
 
         # Add mapping for connections to KT
         traps_to_kt = [2077, 2078, 2079]
