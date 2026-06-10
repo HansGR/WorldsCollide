@@ -144,7 +144,7 @@ class PreGameTrack:
 
         if args.ruination_mode:
             title = "FFVI Ruination"
-            version_string = "v0.2"
+            version_string = "v0.3"
         else:
             title = "FFVI Worlds Collide"
             version_string = "v" + version.__version__.split(' ')[0] # remove substrings such as ' (dev)'
