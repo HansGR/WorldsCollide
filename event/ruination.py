@@ -3980,14 +3980,14 @@ class ruination_map():
           2. For each lane, unlock the platforms (so the walk treats them as
              open), force their crossings, attach dead ends, and walk out a
              fully-connected, traversable layout.
-          3. Verify the assembled three-lane map: modelling doors as two-way
-             edges, traps as one-way (trap -> pit) edges, and each gated
-             crossing as a one-way edge unlocked by its key, grow reachability
-             from the three entries while collecting keys as their rooms become
-             reachable (a fixpoint). Require EVERY room reachable (no orphans;
-             so all four bosses and both switches are reached and pressable in
-             time) and that, with both keys held, every reached room can still
-             reach its lane's ending (no one-way strand).
+          3. Verify the assembled three-lane map against softlocks by modelling
+             the true dynamics: three parties (one per lane) moving
+             asynchronously over a shared, monotonic keychain (see verify()).
+             Require EVERY room reachable (no orphans; all four bosses and both
+             switches reached) AND that from EVERY situation the player can get
+             into, the three parties can still all be herded to their endings
+             (no party can ride a one-way into a pocket whose only exit is a
+             gated crossing whose key it can no longer collect).
           4. Re-partition (fresh split + walk) until a layout verifies or the
              budget is exhausted.
 
@@ -4063,48 +4063,103 @@ class ruination_map():
                   if m[0] not in PLATFORM_IDS and m[1] not in PLATFORM_IDS]
             return dp, tp
 
-        def build_adj(door_pairs, trap_pits, keychain):
-            adj = {r: set() for r in KT}
-            for d1, d2 in door_pairs:
-                adj[room_of[d1]].add(room_of[d2])
-                adj[room_of[d2]].add(room_of[d1])
-            for t, p in trap_pits:
-                adj[room_of[t]].add(room_of[p])
-            for a, b, k in GATED:
-                if k in keychain:
-                    adj[a].add(b)
-            return adj
-
-        def reach(adj, starts):
-            seen, stack = set(starts), list(starts)
-            while stack:
-                for n in adj[stack.pop()]:
-                    if n not in seen:
-                        seen.add(n)
-                        stack.append(n)
-            return seen
-
         def verify(door_pairs, trap_pits, lane_of):
-            # Fixpoint: grow reachability while collecting keys as their rooms
-            # become reachable (re-opening gated crossings each round).
-            keychain = set()
-            while True:
-                reached = reach(build_adj(door_pairs, trap_pits, keychain), ENTRIES)
-                newkeys = {KEY_ROOM[r] for r in reached if r in KEY_ROOM}
-                if newkeys <= keychain:
-                    break
-                keychain |= newkeys
-            # Every room must be reachable (no orphaned rooms / unreachable
-            # bosses or switches; subsumes "all endings reached").
-            if reached != set(KT):
+            """Reject any layout a player could softlock.
+
+            The three lanes are physically disjoint; their only coupling is the
+            **global, monotonic keychain** (pressing the switch in `KTb8`/`KTc10`
+            sets `KT1`/`KT2`, which opens a gated crossing that may be in a
+            different lane). The player drives all three parties asynchronously
+            and switches between them freely, so the honest model is a joint
+            state-space over `(roomA, roomB, roomC, keychain)`:
+
+              - a move steps ONE party along a door (two-way), a trap (one-way),
+                or a gated crossing (one-way, only if its key is already held);
+              - a party standing on a switch room may add that key to the shared
+                keychain (permanent — the keychain never shrinks).
+
+            A layout is accepted iff (1) every room is occupied by its lane's
+            party in some reachable state (no orphans — all bosses/switches
+            reachable) AND (2) from EVERY reachable state the players can still
+            herd all three parties onto their lane endings (no situation is a
+            dead end). This catches the case the old "assume both keys held"
+            check missed: a party riding a one-way into a pocket whose only exit
+            is a gated crossing whose key it can no longer collect.
+            """
+            KEY_BIT = {'KT1': 1, 'KT2': 2}
+            # room -> list of (dest_room, required_key_bit_or_None)
+            adj = {r: [] for r in KT}
+            for d1, d2 in door_pairs:
+                adj[room_of[d1]].append((room_of[d2], None))
+                adj[room_of[d2]].append((room_of[d1], None))
+            for t, p in trap_pits:
+                adj[room_of[t]].append((room_of[p], None))
+            for a, b, k in GATED:
+                adj[a].append((b, KEY_BIT[k]))
+            # room -> keychain bit it grants while a party stands on it
+            grant = {room: KEY_BIT[key] for room, key in KEY_ROOM.items()}
+
+            # Lane i is seeded with ENTRIES[i]; its ending is the in-lane final.
+            entry = tuple(ENTRIES)
+            ending = [None, None, None]
+            for f in FINALS:
+                ending[lane_of[f]] = f
+            ending = tuple(ending)
+
+            def successors(state):
+                a, b, c, K = state
+                pos = (a, b, c)
+                for j in range(3):
+                    r = pos[j]
+                    for dest, need in adj[r]:
+                        if need is None or (K & need):
+                            nxt = list(pos)
+                            nxt[j] = dest
+                            yield (nxt[0], nxt[1], nxt[2], K)
+                    g = grant.get(r)
+                    if g and not (K & g):
+                        yield (a, b, c, K | g)
+
+            # (1) Forward reachable joint states from the three entries.
+            start = (entry[0], entry[1], entry[2], 0)
+            forward = {start}
+            stack = [start]
+            while stack:
+                s = stack.pop()
+                for ns in successors(s):
+                    if ns not in forward:
+                        forward.add(ns)
+                        stack.append(ns)
+
+            # No orphans: every room must be standable by its party somewhere.
+            visited = set()
+            for a, b, c, _K in forward:
+                visited.add(a); visited.add(b); visited.add(c)
+            if visited != set(KT):
                 return False
-            # No-strand: with both keys, every reached room reaches its ending.
-            adjf = build_adj(door_pairs, trap_pits, set(KEY_ROOM.values()))
-            final_of = {lane_of[f]: f for f in FINALS}
-            for r in reached:
-                if final_of[lane_of[r]] not in reach(adjf, [r]):
-                    return False
-            return True
+
+            # (2) No softlock: every forward state must be able to reach a goal
+            # state (all three parties on their endings). Reverse-BFS the goal
+            # set over the forward edges and require it covers `forward`.
+            rev = {}
+            for s in forward:
+                for ns in successors(s):
+                    if ns in forward:
+                        rev.setdefault(ns, []).append(s)
+            goal = [s for s in forward
+                    if (s[0], s[1], s[2]) == ending]
+            if not goal:
+                return False
+            can_finish = set(goal)
+            stack = list(goal)
+            while stack:
+                s = stack.pop()
+                for pre in rev.get(s, ()):
+                    if pre not in can_finish:
+                        can_finish.add(pre)
+                        stack.append(pre)
+            return forward <= can_finish
+
 
         # The network walk is internally chatty; silence vprint during the
         # search (it would emit hundreds of pages and is far slower) and
