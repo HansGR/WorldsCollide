@@ -23,7 +23,7 @@ class ImperialBase(Event):
         )
 
     def mod(self):
-        self.exit_location = [0x0, 164, 194]
+        self.exit_location = [0x0, 164, 194, 0x0]
         if self.MAP_SHUFFLE or self.args.ruination_mode:
             # modify exit position from "no terra" and "chucked out!" events
             exit_id = 1059
@@ -47,11 +47,15 @@ class ImperialBase(Event):
                 field.ReturnIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate())),
             )
             if self.args.ruination_mode:
+                # Go back to wherever you came in
                 src = [
                     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
                                       fade_in=True, default_music=True, entrance_event=True, direction=direction.DOWN),
                     field.Return()
                 ]
+                # Update world bit first if necessary
+                if self.exit_location[3] != 0:
+                    src = [field.SetEventBit(event_bit.IN_WOR)] + src
                 space = Reserve(0xb25fd, 0xb2605, "imperial base thrown out", field.NOP())
                 space.write(src)
 
@@ -112,12 +116,19 @@ class ImperialBase(Event):
                     field.Return()
                 ]
             elif self.args.ruination_mode:
+                # Update world bit if necessary
+                if self.exit_location[3] != 0:
+                    update_world_bit = [field.SetEventBit(event_bit.IN_WOR)]
+                else:
+                    update_world_bit = []
+
                 # Go back to wherever you came in
-                src = [
+                src = update_world_bit + [
                     field.FadeLoadMap(map_id=self.exit_location[0], x=self.exit_location[1], y=self.exit_location[2],
                                       fade_in=True, default_music=True, entrance_event=True, direction=direction.DOWN),
                     field.Return()
                 ]
+
             space = Write(Bank.CB, src, 'Imperial base updated chucked out destination')
             chucked_address = space.start_address
 
