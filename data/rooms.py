@@ -1048,7 +1048,7 @@ room_data = {
     # MIDDLE LANE
     'KTb1': [  [895], [], [], [], {}, 1],  # 0x14E, Kefka's Tower, middle, entry room
     'KTb2': [  [913, 914, 915], [], [], [], {}, 1],  # 0x152, Kefka's Tower, middle, second room (fork)
-    'KTb3': [  [916], [], [7108], [], {}, 1],  # 0x152, Kefka's Tower, middle, third room (treasure & pipe return.  Pipe return is an inaccessible door 917!)
+    'KTb3': [  [916], [], [7108], [], {}, 1],  # 0x152, Kefka's Tower, middle, third room (treasure & pipe return.  7108 = pit landing of door-as-trap 1108 from KTb6; actual door 917 is never used.)
     'KTb4': [  [886], [2080], [], [], {}, 1],  # 0x14B, Kefka's Tower, middle, fourth room (toilet atma)
     'KTb5': [  [885], [], [3080], [], {}, 1],  # 0x149, Kefka's Tower, middle, fifth room (drop + stairs. 884 is a door from which you fall, inaccessible)
     'KTb6': [  [1110, 1109], [1108], [], [], {}, 1],  # 0x199, Kefka's Tower, middle, sixth room (two pipes out; 'fall' event is on destination map for 1108)

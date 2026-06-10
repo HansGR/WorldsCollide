@@ -68,6 +68,12 @@ def parse(parser):
                             "'sep' separates maze from Doma Dream (gated by ALL instead of CYAN), "
                             "'iso' isolates maze as a single composite room (internally randomized)")
 
+    doors.add_argument("-rkt", "--ruin-kefka-tower", action="store_true",
+                       help="Randomize the three lanes of Kefka's Tower in ruination mode: "
+                            "rooms are repartitioned into three non-overlapping lanes "
+                            "(each entry to a 4-ton-switch-room ending) with internal "
+                            "connections shuffled, while preserving switch/boss constraints")
+
     # Map shuffle
     doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
                        help="Randomize overworld entrances in each world")
@@ -144,6 +150,9 @@ def flags(args):
 
         if args.ruin_dream_maze:
             flags += f" -maze {args.ruin_dream_maze}"
+
+        if getattr(args, "ruin_kefka_tower", False):
+            flags += " -rkt"
 
         if args.debug_route_destination:
             flags += " -debug_dest " + " ".join(args.debug_route_destination)

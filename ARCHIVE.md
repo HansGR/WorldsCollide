@@ -32,6 +32,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Persistent Event State Across Reloads (2026-04)](#persistent-event-state-across-reloads-2026-04)
 - [Dialog ID Reservations (2026-05)](#ruination-mode--dialog-id-reservations-2026-05)
 - [Floating Continent Tube-Maze Randomizer (2026-06)](#floating-continent-tube-maze-randomizer-2026-06)
+- [Kefka's Tower Lane Randomizer (`-rkt`) (2026-06)](#kefkas-tower-lane-randomizer--rkt-2026-06)
 
 ### Door Randomizer
 - [Event Exit Info — Detailed Data Structures](#event-exit-info---detailed-data-structures)
@@ -1347,3 +1348,42 @@ Self-contained, **ruination-only** randomization of the Floating Continent (map 
 1. After the `Read` snapshot block (tubes 9/10 inline graphics + Save Room bytes — all *inside* ranges about to be freed), `Free(...)` every `_FC_TUBES`/`_FC_BUTTONS` `"range"` (~832 bytes). The open/close, slide-in/out (`0xad566`/`0xad577`) and wall subroutines those events *called* live outside these ranges and are kept — the new code still calls them by address.
 2. Write the new (more compact) animations with `Write(Bank.CA, …)`; the allocator packs them into the reclaimed space first and spills into ordinary free space only when it runs out. Net cost dropped from ~1050 bytes of free space to ~255.
 3. **Re-point the event tile directly** instead of stamping a `Branch` over the vanilla entry: `event = self.maps.get_event(map_id, x, y); event.event_address = new_code.start_address - EVENT_CODE_START` (`EVENT_CODE_START = 0xA0000`; see `instruction.event`). Tube12's tile is on the Save Room map `0x166`, all others on `0x18A`. This is the same convention `event/switchyard.py` and `data/maps.py` use.
+
+## Kefka's Tower Lane Randomizer (`-rkt`) (2026-06)
+
+Self-contained, **ruination-only** randomization of the three lanes of Kefka's Tower (the `KT*` rooms in `data/rooms.py`). Flag `-rkt` / `--ruin-kefka-tower` (`args/doors.py`). All logic lives in `event/ruination.py`: the `ruination_map._randomize_kefka_tower()` method plus `KT_*` class constants. Wiring: `ruination_map.__init__` calls it once (`self.kt_lane_map = self._randomize_kefka_tower()` when the flag is set), and `generate_map_with_characters` injects the result into the global door/trap map near the end (`map[0].extend(kt_lane_map[0]); map[1].extend(kt_lane_map[1])`), right after the isolated-maze injection. Returns `[[door pairs], [trap→pit pairs]]`, or `None` to fall back to the vanilla KT layout.
+
+### Why it drives the real network walk (not random matching, like Dream Maze)
+
+KT's door graph is **deliberately sparse** — ~28 two-way door-edges across ~34 door-bearing rooms — so a lane **cannot be connected by doors alone**; connectivity also depends on the one-way conveyor/pipe **traps** and the two key-gated **platforms**. The first cut used the Dream-Maze approach (random door↔door / trap→pit matching + verify); it reliably produced *completable* layouts but connected *every* room only **~0.012%** of the time, orphaning bosses/switches onto islands. The fix drives the **same constructive solver the ruination branches use** — `data.walks.Network.connect_network` — once per lane.
+
+### The coupling (why lanes can't be solved independently of keys)
+
+Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced one-way crossing** in *another* lane: `KTa5a→KTa5b` (platform `2182→2183`, needs `KT1`) and `KTa8a→KTa8b` (`2184→2185`, needs `KT2`). Constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_GATED` (the `(a, b, key)` crossings), `KT_KEY_ROOM` (`{'KTb8':'KT1','KTc10':'KT2'}`), `KT_FORCED` (`{2182:[2183], 2184:[2185]}`), `KT_PLATFORM_IDS`, `KT_MAX_SPLITS = 400`.
+
+### Three-phase design (propose → verify, in a retry loop, up to `KT_MAX_SPLITS`)
+
+1. **`split_lanes()` — partition + cheap *necessary* filter.** Randomly assigns every KT room to one of three lanes (one entry + one ending each; the two `KT_GATED` pairs kept atomic so a crossing never spans lanes). Rejects (`None`) any partition where a lane has unequal traps≠pits, an odd door count, or >2 of the 4 bosses. Fast pre-filter only — *not* sufficient.
+2. **`connect_lane(lane)` — drive the walk (optimistic).** `Network(list(lane))` → **`apply_key('KT1'); apply_key('KT2')`** (see gotcha 2) → `ForceConnections(KT_FORCED)` → `attach_dead_ends()` → `active` = room with the most exits → `connect_network()`. Catches the walk's failure-raise and returns `None` (→ re-roll). **Strips `KT_PLATFORM_IDS` from the returned map** (gotcha 2). The walk is deliberately optimistic — it treats both platforms as open and ignores key timing.
+3. **`verify()` — the ground truth (honest), via a joint state-space.** The three lanes are physically disjoint; their *only* coupling is the **global, monotonic keychain** (pressing `KTb8`/`KTc10` sets `KT1`/`KT2`, opening a gated crossing that may be in a different lane). The player drives all three parties asynchronously and switches between them freely, so verify models the true dynamics as a search over joint states **`(roomA, roomB, roomC, keychain)`**:
+   - a move steps **one** party along a door (two-way), a trap (one-way), or a gated crossing (one-way, only if its key is already held);
+   - a party standing on a switch room may add that key to the shared keychain (permanent — it never shrinks).
+
+   Forward-BFS the reachable joint states from the three entries, then accept iff **(a)** every room is occupied by its lane's party in some reachable state (no orphans — all bosses/switches reachable) **and (b)** from EVERY reachable state the players can still herd all three parties onto their endings (reverse-BFS the all-at-endings goal over the forward edges; require it covers the forward set). The state space is tiny (product of lane sizes × 4 keychains ≈ a few thousand; verify ≈ 10 ms).
+
+The soundness argument is the **optimistic-generator / pessimistic-verifier split**: the walk only proposes (treating both platforms as open); `verify` re-checks under the *true* asynchronous-party / key-timing semantics, so a layout ships only if no situation the player could reach is a dead end.
+
+**Why the old single-flood check was wrong (the bug that prompted this, 2026-06).** verify originally did a key-collecting reachability *fixpoint* (flood from entries, add keys as rooms become reachable) plus a "no one-way strand" pass that assumed **both keys already held**. That pass is too optimistic: it cannot see a party that rides a one-way into a pocket whose only exit is a gated crossing whose key it can *no longer collect* (e.g. the key is in that party's own lane but now upstream of the one-way it just took). Measured on 150 fully-connected candidates, **11/29 layouts the old check accepted were actually softlockable** — the new joint check rejects exactly those and is strictly stronger (0 cases where it accepts something the old check rejected). The expensive joint BFS is affordable because it runs only on the rare candidate whose three lanes all connected; ~0 fallbacks remain within `KT_MAX_SPLITS = 400` (median ~0.6 s, max ~3.6 s per build).
+
+### Gotchas worth remembering (these caused real bugs)
+
+1. **`ForceConnections` must always be called**, even for a lane with no platform — it initialises `Network.protected` (which is `None` otherwise). Skipping it makes `connect_network` crash with `'NoneType' object is not iterable` when it filters against `self.protected`.
+2. **The platform traps live in `room_data` *locks*, not in the door/trap slots**, so they are invisible to the walk until unlocked — hence the up-front `apply_key('KT1'/'KT2')`, which lets the walk *use* the platforms for connectivity. They must then be **stripped** from the output: `2182–2185` are vanilla map features, **not writable ROM exits**, and re-enter only as *gated* edges inside `verify`. (Also why `room_of` — built from slots `[0]/[1]/[2]` — does **not** contain them; don't filter `KT_FORCED` through `room_of`.)
+3. **Suppress verbose during the search.** The walk is extremely chatty and far slower with logging on; the search toggles `log.verbose._to_stdout/_to_file` off around the loop and restores them in a `finally`, then logs the *chosen* layout. Under `-debug` an unsuppressed search would emit hundreds of pages.
+4. **Latent walks.py bug fixed here:** `Network.connect_network`'s verbose "Invalid network state" branch did `vprint(k.id, …)` where `k` is already a string room-id (→ `AttributeError`). The KT search is the first caller to exercise that path heavily; fixed to `vprint(k, …)`.
+
+### Validation
+
+Integrated method across 40 seeds (joint-verifier): **0 fallbacks, 0 invalid-or-softlockable layouts** (checked by an independently-written joint dead-state detector — all rooms reachable AND 0 dead states), median 0.60s (p90 2.71s, max 3.64s). Full `-ruin -rkt` ROM compiles (several seeds): every KT room reachable, every door/trap/pit used exactly once, no self-loops, no platform-id leakage into written exits.
+
+**Open caveat:** several KT "rooms" share one physical SNES map (e.g. `KTa5a`/`KTa5b`/`KTb8` on `0x124`; many outdoor rooms on `0x14E`). The model is purely logical (room graph); whether parties can *physically* walk between lane regions on a shared map is map geometry the randomizer doesn't capture — worth a playtest on a generated ROM.
