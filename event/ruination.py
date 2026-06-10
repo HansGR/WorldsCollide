@@ -2311,11 +2311,22 @@ class RuinationBranch(Network):
             # add_room from a rescue path that never got wired up), connect one
             # before the regular finalization steps run. Restart the loop so steps
             # 1-6 see a topology that already includes the warp room.
+            #
+            # Skip the rescue on very small branches (hub + terminus only): there is
+            # no need for intermediate warp point rooms when the terminus connects
+            # directly to the hub. Only attempt the rescue once the branch has grown
+            # past a few connected rooms.
+            connected_rooms = (
+                {hub_id}
+                | set(self.get_upstream_nodes(hub_id))
+                | set(self.get_downstream_nodes(hub_id))
+            )
             connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
             if self.verbose:
                 vprint(f'\twarp rooms: connected={connected_warps}, '
                        f'unconnected={unconnected_warps}')
-            if len(connected_warps) < 2 and len(unconnected_warps) > 0:
+            if (len(connected_rooms) > 3
+                    and len(connected_warps) < 2 and len(unconnected_warps) > 0):
                 if self._connect_orphan_warp_room(unconnected_warps, hub_id):
                     if self.verbose:
                         vprint('\twarp rescue made a connection; restarting finalize loop')
