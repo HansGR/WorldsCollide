@@ -3949,6 +3949,9 @@ class ruination_map():
     KT_ENTRIES = ['KTa1', 'KTb1', 'KTc1']
     KT_FINALS = ['KTa-final', 'KTb-final', 'KTc-final']
     KT_BOSSES = ['KTb4', 'KTb10', 'KTc7', 'KTc12']
+    KT_HALLWAYS = ['KTa2', 'KTa4', 'KTa6', 'KTa7',  # KT rooms that include only 2 doors (no chests, bosses, etc.)
+                   'KTb9', 'KTb11',                 # 11 of 35 rooms are just filler from a map perspective.
+                   'KTc2', 'KTc4', 'KTc9', 'KTc11', 'KTc13']  # We could remove some before mapping.
     # Rooms joined by a key-gated forced crossing must share a lane; the
     # crossing is a one-way edge a -> b, gated by the named switch key.
     KT_GATED = [('KTa5a', 'KTa5b', 'KT1'), ('KTa8a', 'KTa8b', 'KT2')]
@@ -3974,15 +3977,14 @@ class ruination_map():
         switch (keys KT1 / KT2) that unlocks a key-gated forced crossing (a
         switch platform / broken stairs) somewhere in another lane.
 
-        KT's door graph is deliberately sparse (only ~28 two-way door-edges for
-        ~34 door-rooms), so a lane cannot be connected by doors alone --
-        connectivity also relies on the one-way conveyor/pipe traps and the two
-        gated platforms. Random matching therefore almost never connects every
-        room, so this drives the same constructive network walk the ruination
-        branches use (data.walks.Network.connect_network), once per lane:
+        KT's door graph is deliberately sparse, so a lane cannot be connected by doors alone --
+        connectivity also relies on the one-way conveyor/pipe connections and the two
+        gated platforms. Random matching therefore almost never connects every room.
+        Instead, we use the same constructive network walk the ruination
+        branches use (data.walks.Network.connect_network), once per lane.
 
           1. Pre-condition by partitioning every KT room into three
-             non-overlapping lanes satisfying cheap, necessary constraints:
+             groups that satisfy cheap, necessary constraints:
                - each lane gets exactly one entry and one ending,
                - rooms joined by a forced crossing share a lane,
                - no lane has more than two of the four bosses,
@@ -4009,9 +4011,15 @@ class ruination_map():
         import log.verbose as _verbose_mod
 
         KT = [r for r in room_data if isinstance(r, str) and r.startswith('KT')]
-        ENTRIES, FINALS, BOSSES = self.KT_ENTRIES, self.KT_FINALS, self.KT_BOSSES
+        ENTRIES, FINALS, BOSSES, HALLWAYS = self.KT_ENTRIES, self.KT_FINALS, self.KT_BOSSES, self.KT_HALLWAYS
         GATED, KEY_ROOM = self.KT_GATED, self.KT_KEY_ROOM
         PLATFORM_IDS = self.KT_PLATFORM_IDS
+
+        remove_hallways = 0  # number of hallways to remove
+        if remove_hallways in range(1, len(HALLWAYS)+1):
+            rh = random.sample(HALLWAYS, remove_hallways)
+            for r in rh:
+                KT.remove(r)
 
         # Per-room free connection elements (the gated-crossing traps live in
         # room_data locks, not in these slots).
@@ -4034,6 +4042,7 @@ class ruination_map():
             glued = {r for a, b, _ in GATED for r in (a, b)}
             units = [[a, b] for a, b, _ in GATED]
             units += [[r] for r in KT if r not in placed and r not in glued]
+
             random.shuffle(units)
             for u in units:
                 random.choice(lanes).update(u)
