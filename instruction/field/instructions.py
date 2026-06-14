@@ -32,10 +32,10 @@ class MultipleCalls(_Instruction):
         return super().__str__(hex(self.address))
 
 class SelectParties(_Instruction):
-    unmovable = 0x0000
+    # required characters (-rc/--require-characters) must not be moved out of the party they
+    # have been placed in.  the bitmask (bit n = character n) is computed during arg parsing.
     import args as flags
-    if flags.require_umaro:
-        unmovable = 0x2000  # Umaro
+    unmovable = getattr(flags, "required_character_unmovable", 0x0000)
 
     def __init__(self, count, unmovable_characters=unmovable):
         super().__init__(0x99, count, unmovable_characters.to_bytes(2, "little"))
