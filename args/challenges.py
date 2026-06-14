@@ -26,12 +26,34 @@ def parse(parser):
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
     challenges.add_argument("-nosaves", "--no-saves", action = "store_true",
                             help = "Ironmog Mode: You cannot save (but save points still work for Tents/Sleeping Bags)")
-    challenges.add_argument("-ru", "--require-umaro", action = "store_true",
-                            help="Force Umaro to be in the party at all times")
+
+    from data.characters import Characters
+    require_character_options = [name.lower() for name in Characters.DEFAULT_NAME]
+    challenges.add_argument("-rc", "--require-characters", nargs = "+", type = str.lower,
+                            choices = require_character_options, default = [],
+                            help = "Force the listed character(s) (1-4) to be in the party at all times. "
+                                   "Compatible with the starting character flags: a required character that "
+                                   "is not already a starting character is added as an additional one.")
 
 def process(args):
     from constants.spells import black_magic_ids, white_magic_ids, gray_magic_ids, spell_id
     from data.esper_spell_tiers import top_spells
+
+    # Required characters (-rc): resolve names to ids, de-duplicate (preserving order) and
+    # compute the "unmovable" bitmask used by the party-select event command.
+    from data.characters import Characters
+    name_to_id = {name.lower(): char_id for char_id, name in enumerate(Characters.DEFAULT_NAME)}
+    args.required_character_ids = []
+    for char_name in args.require_characters:
+        char_id = name_to_id[char_name]
+        if char_id not in args.required_character_ids:
+            args.required_character_ids.append(char_id)
+    assert len(args.required_character_ids) <= 4, \
+        "At most 4 characters may be required (-rc/--require-characters)"
+    # canonical, de-duplicated list of required character names (preserving the given order,
+    # which determines how they are distributed across the Kefka Tower parties)
+    args.require_characters = [Characters.DEFAULT_NAME[char_id].lower() for char_id in args.required_character_ids]
+    args.required_character_unmovable = sum(1 << char_id for char_id in args.required_character_ids)
 
     # If no_ultima is on, add it to our exclude list for downstream use
     # If permadeath is on, add it to our exclude list for downstream use
@@ -96,8 +118,8 @@ def flags(args):
     if args.no_saves:
         flags += " -nosaves"
 
-    if args.require_umaro:
-        flags += f" -ru "
+    if args.require_characters:
+        flags += " -rc " + " ".join(args.require_characters)
 
     return flags
 
@@ -119,7 +141,7 @@ def options(args):
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
         ("No Saves", args.no_saves, "no_saves"),
-        ("Require Umaro", args.require_umaro, "require_umaro"),
+        ("Require Characters", ", ".join(name.capitalize() for name in args.require_characters) if args.require_characters else "None", "require_characters"),
     ]
         
     return opts
@@ -149,6 +171,8 @@ def menu(args):
             entries[index] = ("No Free Chars/Espers", entry[1], unique_name)
         elif key == "Remove Learnable Spells":
             entries[index] = ("Remove Spells", FlagsRemoveLearnableSpells(value), unique_name) # flags sub-menu
+        elif key == "Require Characters":
+            entries[index] = ("Require Chars", entry[1], unique_name)
 
     return (name(), entries)
 

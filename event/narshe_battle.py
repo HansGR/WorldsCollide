@@ -1,4 +1,5 @@
 from event.event import *
+import event.required_characters as required_characters
 
 class NarsheBattle(Event):
     def name(self):
@@ -93,8 +94,8 @@ class NarsheBattle(Event):
         space.write(
             field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
         )
-        if self.args.require_umaro:
-            space.write(field.AddCharacterToParty(self.characters.UMARO, 1))
+        if self.args.required_character_ids:
+            space.write(field.Call(required_characters.two_party_placement()))
 
         space.write(
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),

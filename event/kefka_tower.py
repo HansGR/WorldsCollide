@@ -1,5 +1,6 @@
 from event.event import *
 import args
+import event.required_characters as required_characters
 
 class KefkaTower(Event):
     def name(self):
@@ -52,12 +53,12 @@ class KefkaTower(Event):
         self.log_reward(self.atma_reward)
 
     def statue_landing_mod(self):
-        if self.args.require_umaro:
-            # Modify party formation event
+        if self.args.required_character_ids:
+            # distribute the required characters across the three parties (KT skip entrance)
             src = [
                 field.Call(0xacbaf),
                 field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
-                field.AddCharacterToParty(self.characters.UMARO, 2),
+                *required_characters.three_party_placement(skip = True),
                 field.SelectParties(3),
                 Read(0xa02DE, 0xa030a),
             ]
@@ -192,19 +193,20 @@ class KefkaTower(Event):
                                dest1 = "STATUE_LANDING", dest2 = "ENTRANCE_LANDING", dest3 = "CANCEL_LANDING"),
         )
 
-        # Edit party selection dialog if require_umaro
-        if self.args.require_umaro:
+        # Edit party selection dialog to distribute the required characters (-rc)
+        if self.args.required_character_ids:
+            # distribute the required characters across the three parties (KT normal entrance)
             src = [
                 field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
-                field.AddCharacterToParty(self.characters.UMARO, 3),
+                *required_characters.three_party_placement(skip = False),
                 field.SelectParties(3),
                 field.Return()
             ]
-            space = Write(Bank.CA, src, "KT entrance require umaro patch")
-            require_umaro_select_3_parties = space.start_address
+            space = Write(Bank.CA, src, "KT entrance require characters patch")
+            require_characters_select_3_parties = space.start_address
 
             space = Reserve(0xA02DA, 0xA02DD, "KT entrance select parties hook", field.NOP())
-            space.write(field.Call(require_umaro_select_3_parties))
+            space.write(field.Call(require_characters_select_3_parties))
 
     def kefka_scene_mod(self):
         space = Reserve(0xc17ff, 0xc1801, "kefka tower defeat the statues, and magical power will not disappear", field.NOP())

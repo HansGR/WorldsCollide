@@ -1,4 +1,5 @@
 from event.event import *
+import event.required_characters as required_characters
 
 class Airship(Event):
     def name(self):
@@ -278,7 +279,8 @@ class Airship(Event):
             field.DialogBranch(change_party_unequip_dialog_id, dest1 = 0xaf5a8, dest2 = 0xc359d, dest3 = 0xc351e, dest4 = field.RETURN),
         )
 
-        # Force umaro in party:
+        # Re-emit the reform-party select so required characters (-rc) are kept unmovable.
+        # The required characters are already in the party here, so no pre-placement is needed.
         space = Reserve(0xacba3, 0xacba6, "airship reform party", field.NOP())
         space.write(field.SelectParties(1))
 
@@ -343,10 +345,9 @@ class Airship(Event):
             field.SetParty(1),
             field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
         )
-        if self.args.require_umaro:
-            space.write(
-                field.AddCharacterToParty(self.characters.UMARO, 1)
-            )
+        if self.args.required_character_ids:
+            # all parties were removed above, so the required characters must be re-added
+            space.write(*required_characters.one_party_placement())
         space.write(
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.UpdatePartyLeader(),

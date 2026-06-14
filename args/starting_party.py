@@ -19,12 +19,7 @@ def parse(parser):
                                 help = "Starting party member")
 
 def process(args):
-    # first handle challenge flag requiring Umaro
-    if args.require_umaro:
-        # override other commands
-        args.start_char1 = 'umaro'
-
-    # convert arguments to list of starting party
+    # convert the -scN arguments to a list of starting party members
     args.start_chars = []
     if args.start_char1:
         args.start_chars.append(args.start_char1)
@@ -35,16 +30,35 @@ def process(args):
     if args.start_char4:
         args.start_chars.append(args.start_char4)
 
+    # ensure no duplicate starting characters (random/randomngu may repeat)
+    start_chars_found = set()
+    for char in args.start_chars:
+        assert (char == "random" or char == "randomngu" or char not in start_chars_found), \
+            f"Duplicate starting character: {char}"
+        start_chars_found.add(char)
+
+    # the challenge flag -rc/--require-characters forces characters into the party.  required
+    # characters are compatible with the starting characters: any required character that is not
+    # already a starting character is added as an additional starting character.  if no starting
+    # characters were specified, the required characters constitute the starting party.
+    for char in (getattr(args, "require_characters", None) or []):
+        if char not in args.start_chars:
+            args.start_chars.append(char)
+
+    # the starting party (starting + required characters) must fit in the four party slots
+    assert len(args.start_chars) <= 4, \
+        "Not enough room in the starting party for the required characters " \
+        "(at most 4 starting + required characters are allowed)"
+
     if not args.start_chars:
         # no starting characters specified, pick one random starting character
         args.start_chars = ["random"]
+        args.start_char1, args.start_char2, args.start_char3, args.start_char4 = "", "", "", ""
     else:
-        # ensure only 4 starting characters and no duplicates (except random)
-        assert len(args.start_chars) <= 4
-        start_chars_found = set()
-        for char in args.start_chars:
-            assert (char == "random" or char == "randomngu" or char not in start_chars_found)
-            start_chars_found.add(char)
+        # reflect the merged starting party back into the -scN values so menus, logs and flags
+        # show the characters that will actually start in the party
+        slots = (args.start_chars + ["", "", "", ""])[:4]
+        args.start_char1, args.start_char2, args.start_char3, args.start_char4 = slots
 
 def flags(args):
     flags = ""
