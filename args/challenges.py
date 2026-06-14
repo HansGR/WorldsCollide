@@ -26,6 +26,8 @@ def parse(parser):
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
     challenges.add_argument("-nosaves", "--no-saves", action = "store_true",
                             help = "Ironmog Mode: You cannot save (but save points still work for Tents/Sleeping Bags)")
+    challenges.add_argument("-ru", "--require-umaro", action = "store_true",
+                            help="Force Umaro to be in the party at all times")
 
 def process(args):
     from constants.spells import black_magic_ids, white_magic_ids, gray_magic_ids, spell_id
@@ -94,6 +96,9 @@ def flags(args):
     if args.no_saves:
         flags += " -nosaves"
 
+    if args.require_umaro:
+        flags += f" -ru "
+
     return flags
 
 def options(args):
@@ -114,6 +119,7 @@ def options(args):
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
         ("No Saves", args.no_saves, "no_saves"),
+        ("Require Umaro", args.require_umaro, "require_umaro"),
     ]
         
     return opts

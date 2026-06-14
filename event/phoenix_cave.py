@@ -38,8 +38,19 @@ class PhoenixCave(Event):
 
         src = [
             Read(0xa0405, 0xa0408),
-            Read(0xa040c, 0xa0428),
+            Read(0xa040c, 0xa040f),
         ]
+        if self.args.require_umaro:
+            src += [
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.AddCharacterToParty(self.characters.UMARO, 1),
+                field.SelectParties(2),
+                Read(0xa0414, 0xa0428)
+            ]
+        else:
+            src += [
+                Read(0xa0410, 0xa0428)
+            ]
         space = Write(Bank.CA, src, "phoenix cave enter")
         enter_phoenix_cave = space.start_address
 

@@ -52,8 +52,20 @@ class KefkaTower(Event):
         self.log_reward(self.atma_reward)
 
     def statue_landing_mod(self):
-        src = [
-            Read(0xa02d6, 0xa030a),
+        if self.args.require_umaro:
+            # Modify party formation event
+            src = [
+                field.Call(0xacbaf),
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.AddCharacterToParty(self.characters.UMARO, 2),
+                field.SelectParties(3),
+                Read(0xa02DE, 0xa030a),
+            ]
+        else:
+            src = [
+                Read(0xa02d6, 0xa030a),
+            ]
+        src += [
             field.ClearEventBit(event_bit.UNLOCKED_KT_SKIP),
 
             field.SetEventBit(event_bit.LEFT_WEIGHT_PUSHED_KEFKA_TOWER),
@@ -179,6 +191,20 @@ class KefkaTower(Event):
             field.DialogBranch(statues_entrance,
                                dest1 = "STATUE_LANDING", dest2 = "ENTRANCE_LANDING", dest3 = "CANCEL_LANDING"),
         )
+
+        # Edit party selection dialog if require_umaro
+        if self.args.require_umaro:
+            src = [
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.AddCharacterToParty(self.characters.UMARO, 3),
+                field.SelectParties(3),
+                field.Return()
+            ]
+            space = Write(Bank.CA, src, "KT entrance require umaro patch")
+            require_umaro_select_3_parties = space.start_address
+
+            space = Reserve(0xA02DA, 0xA02DD, "KT entrance select parties hook", field.NOP())
+            space.write(field.Call(require_umaro_select_3_parties))
 
     def kefka_scene_mod(self):
         space = Reserve(0xc17ff, 0xc1801, "kefka tower defeat the statues, and magical power will not disappear", field.NOP())

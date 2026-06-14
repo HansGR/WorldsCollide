@@ -19,6 +19,11 @@ def parse(parser):
                                 help = "Starting party member")
 
 def process(args):
+    # first handle challenge flag requiring Umaro
+    if args.require_umaro:
+        # override other commands
+        args.start_char1 = 'umaro'
+
     # convert arguments to list of starting party
     args.start_chars = []
     if args.start_char1:
