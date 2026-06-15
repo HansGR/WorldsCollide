@@ -29,31 +29,22 @@ def parse(parser):
 
     from data.characters import Characters
     require_character_options = [name.lower() for name in Characters.DEFAULT_NAME]
+    require_character_options.append("random")
+    require_character_options.append("randomngu")
     challenges.add_argument("-rc", "--require-characters", nargs = "+", type = str.lower,
                             choices = require_character_options, default = [],
                             help = "Force the listed character(s) (1-4) to be in the party at all times. "
-                                   "Compatible with the starting character flags: a required character that "
-                                   "is not already a starting character is added as an additional one.")
+                                   "Accepts random/randomngu. Compatible with the starting character flags: "
+                                   "a required character that is not already a starting character is added "
+                                   "as an additional one.")
 
 def process(args):
     from constants.spells import black_magic_ids, white_magic_ids, gray_magic_ids, spell_id
     from data.esper_spell_tiers import top_spells
 
-    # Required characters (-rc): resolve names to ids, de-duplicate (preserving order) and
-    # compute the "unmovable" bitmask used by the party-select event command.
-    from data.characters import Characters
-    name_to_id = {name.lower(): char_id for char_id, name in enumerate(Characters.DEFAULT_NAME)}
-    args.required_character_ids = []
-    for char_name in args.require_characters:
-        char_id = name_to_id[char_name]
-        if char_id not in args.required_character_ids:
-            args.required_character_ids.append(char_id)
-    assert len(args.required_character_ids) <= 4, \
-        "At most 4 characters may be required (-rc/--require-characters)"
-    # canonical, de-duplicated list of required character names (preserving the given order,
-    # which determines how they are distributed across the Kefka Tower parties)
-    args.require_characters = [Characters.DEFAULT_NAME[char_id].lower() for char_id in args.required_character_ids]
-    args.required_character_unmovable = sum(1 << char_id for char_id in args.required_character_ids)
+    # NOTE: required characters (-rc) are de-duplicated/validated in args/starting_party.py and
+    # resolved (random choices, unmovable bitmask) in resolve_required_characters() once the rng
+    # is seeded -- see args/arguments.py.
 
     # If no_ultima is on, add it to our exclude list for downstream use
     # If permadeath is on, add it to our exclude list for downstream use
@@ -141,7 +132,7 @@ def options(args):
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
         ("No Saves", args.no_saves, "no_saves"),
-        ("Require Characters", ", ".join(name.capitalize() for name in args.require_characters) if args.require_characters else "None", "require_characters"),
+        ("Require Characters", args.require_characters, "require_characters"),
     ]
         
     return opts
@@ -159,8 +150,16 @@ def _format_spells_log_entries(spell_ids):
         spell_entries.append(("", id_spell[spell_id]))
     return spell_entries
 
+def _require_characters_label(name):
+    if name == "random":
+        return "Random"
+    if name == "randomngu":
+        return "Random (No Gogo/Umaro)"
+    return name.capitalize()
+
 def menu(args):
     from menus.flags_remove_learnable_spells import FlagsRemoveLearnableSpells
+    from menus.flags_require_characters import FlagsRequireCharacters
 
     entries = options(args)
     for index, entry in enumerate(entries):
@@ -172,7 +171,7 @@ def menu(args):
         elif key == "Remove Learnable Spells":
             entries[index] = ("Remove Spells", FlagsRemoveLearnableSpells(value), unique_name) # flags sub-menu
         elif key == "Require Characters":
-            entries[index] = ("Require Chars", entry[1], unique_name)
+            entries[index] = ("Require Chars", FlagsRequireCharacters(value), unique_name) # flags sub-menu
 
     return (name(), entries)
 
@@ -191,6 +190,12 @@ def log(args):
             log.append(format_option(*entry))
             for spell_entry in _format_spells_log_entries(value):
                 log.append(format_option(*spell_entry))
+        elif key == "Require Characters":
+            if len(value) == 0:
+                entry = (key, "None", unique_name)
+            else:
+                entry = (key, ", ".join(_require_characters_label(name) for name in value), unique_name)
+            log.append(format_option(*entry))
         else:
             log.append(format_option(*entry))
 
