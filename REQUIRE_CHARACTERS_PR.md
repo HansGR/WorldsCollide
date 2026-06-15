@@ -2,23 +2,12 @@
 
 ## Summary
 
-Adds a general challenge flag that forces 1–4 specified characters to remain in
-the party at all times. It generalizes the existing single-purpose "Require
-Umaro" (`-ru`) gag into a configurable feature, and fixes a class of
-party-select softlock that affects any forced character.
+Adds a challenge flag that forces 1–4 specified characters to remain in the party
+at all times.
 
 ```
 -rc, --require-characters CHAR [CHAR ...]
 ```
-
-`-rc umaro` reproduces the original "Require Umaro" behavior exactly.
-
-## Motivation
-
-"Require Umaro" was a one-off gag built for a marathon event. The same mechanic
-— pinning a character into every party the player forms — is broadly useful as a
-challenge modifier, so this promotes it to a first-class flag that accepts any
-1–4 characters.
 
 ## Behavior
 
@@ -28,7 +17,7 @@ challenge modifier, so this promotes it to a first-class flag that accepts any
   (`terra, locke, cyan, shadow, edgar, sabin, celes, strago, relm, setzer, mog,
   gau, gogo, umaro`).
 * Required characters are added to the seed flag string and participate in
-  seeding, so a seed cannot be changed without changing the rest of the game.
+  seeding.
 
 ### Interaction with the starting party (`-sc1`..`-sc4`)
 
@@ -36,8 +25,6 @@ Required characters are merged with the starting-character flags:
 
 * A required character that is **not** already a starting character is added as
   an additional starting character.
-  *Example:* three starting characters + one required character (not among them)
-  → the required character becomes the fourth starting character.
 * If no starting characters are specified, the required characters **constitute**
   the starting party.
 * If the combined starting + required characters exceed four, the compile fails
@@ -88,21 +75,20 @@ a valid party before each select. Where more than one party is formed:
 * **`event/airship.py`, `event/narshe_battle.py`, `event/phoenix_cave.py`,
   `event/kefka_tower.py`** — use the placement helpers / shared subroutines.
 
-### Softlock fix
+### Party-select pre-placement
 
 `REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES` followed by a party select (e.g. the end
 of the Narshe Battle, Narshe Moogle Defense, and every recruit-and-select event
-via `RecruitAndSelectParty`) previously left required characters unmovable but
-outside any party, which could softlock the party-select screen. Handling the
-pre-placement inside the shared subroutines fixes every current and future caller
-in one place — 15 `REFRESH_CHARACTERS_AND_SELECT_PARTY` call sites in the ROM
-route through the fixed code.
+via `RecruitAndSelectParty`) would leave required characters unmovable but outside
+any party, which can softlock the party-select screen. Handling the pre-placement
+inside the shared subroutines covers every current and future caller in one place
+— 15 `REFRESH_CHARACTERS_AND_SELECT_PARTY` call sites in the ROM route through it.
 
 ## Testing
 
 Built against `FFIII US v1.0` and decoded the generated event code:
 
-* All configurations build: `-rc umaro` (gag parity), required + starting
+* All configurations build: a single required character, required + starting
   characters, required-only full party, four required characters, and the no-flag
   default (unchanged output).
 * The overflow case (starting + required > 4) fails cleanly.
@@ -114,11 +100,3 @@ Built against `FFIII US v1.0` and decoded the generated event code:
 
 Recommended in-game spot checks: the Narshe Battle end, Narshe Moogle Defense,
 and a normal character recruitment with a required character active.
-
-## Notes
-
-* `data/item.py` contains a small unrelated change (round-tripping item byte 25,
-  `relic_equip_cond_byte`) carried over from the original "Require Umaro" commit.
-  It is inert (nothing reads the value) and unrelated to this feature; it can be
-  dropped before merge.
-* `-ru` / `--require-umaro` is removed in favor of `-rc umaro`.
