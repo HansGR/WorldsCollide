@@ -1,5 +1,5 @@
 from event.event import *
-import event.required_characters as required_characters
+import instruction.field.required_characters as required_characters
 
 class PhoenixCave(Event):
     def name(self):

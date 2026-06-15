@@ -1,6 +1,6 @@
 from event.event import *
 import args
-import event.required_characters as required_characters
+import instruction.field.required_characters as required_characters
 
 class KefkaTower(Event):
     def name(self):

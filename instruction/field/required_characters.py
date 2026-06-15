@@ -5,11 +5,15 @@
 # party cannot be placed by the player, so required characters must additionally be added to a
 # valid party before each party-select screen is shown.  These helpers generate the event code
 # that performs that pre-placement for the one-, two- and three-party selection events.
+#
+# This module lives in instruction.field (rather than the event package) so that the shared
+# select-party subroutines in functions.py can pre-place required characters without a circular
+# import.
 
 import args
-import instruction.field as field
+import instruction.field.instructions as field
 import data.event_bit as event_bit
-from data.characters import Characters
+from constants.entities import CHARACTER_COUNT
 from memory.space import Bank, Write
 
 # Distribution of required characters across the three Kefka Tower parties.  The list index is
@@ -38,13 +42,13 @@ def two_party_placement():
     placed in party 1.  If every available character is required, the last required character is
     placed in party 2 so that neither party is forced to be empty.
 
-    The subroutine is shared between events and only generated once."""
+    The subroutine is shared between callers and only generated once."""
     global _two_party_placement_address
     if _two_party_placement_address is not None:
         return _two_party_placement_address
 
     required = args.required_character_ids
-    non_required = [character for character in range(Characters.CHARACTER_COUNT)
+    non_required = [character for character in range(CHARACTER_COUNT)
                     if character not in required]
 
     src = []
