@@ -780,9 +780,22 @@ def minecart_event_mod(src, src_end):
     # C0    If ($1E80($069) is set), branch to $(new event) that sends you to MTek3 Vector map without animation
     from memory.space import Write, Bank
     from event.event import direction
+    # These two branches are alternate, fixed destinations (Vector, outdoors) taken
+    # AFTER the minecart event has progressed (DEFEATED_CRANES / RODE_MINE_CART set).
+    # They build their own LoadMap + Return tail, so they BYPASS the common state
+    # patches that Transitions.mod() appends to src_end (the default, randomized
+    # destination) -- in particular the raft add/remove handled by en_patch.
+    # If the minecart's randomized destination is an on-raft location (e.g. the Lete
+    # River / Returner's Hideout raft), the party can still be carrying the raft
+    # graphic when they re-ride the cart and get routed here.  Vector is never an
+    # on-raft map, so unconditionally clear the raft graphic (CB/04AA) to avoid the
+    # party being drawn persistently on a raft.  CB/04AA only sets the party's
+    # vehicle to "none" and leaves visibility untouched, so it is safe to call even
+    # when the party is not on a raft.
     go_to_vector = (
         #field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
         field.LoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.Call(0xb04aa),  # Remove raft (see note above)
         field.ShowEntity(field_entity.PARTY0),
         field.RefreshEntities(),
         field.FadeInScreen(),
@@ -791,6 +804,7 @@ def minecart_event_mod(src, src_end):
     go_to_mtek3_vector = (
         #field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
         field.LoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+        field.Call(0xb04aa),  # Remove raft (see note above)
         field.ShowEntity(field_entity.PARTY0),
         field.RefreshEntities(),
         field.FadeInScreen(),
