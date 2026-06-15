@@ -1,5 +1,4 @@
 from event.event import *
-import event.required_characters as required_characters
 
 class Airship(Event):
     def name(self):
@@ -344,11 +343,7 @@ class Airship(Event):
         space.write(
             field.SetParty(1),
             field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
-        )
-        if self.args.required_character_ids:
-            # all parties were removed above, so the required characters must be re-added
-            space.write(*required_characters.one_party_placement())
-        space.write(
+            # REFRESH_CHARACTERS_AND_SELECT_PARTY pre-places any required characters (-rc)
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
