@@ -49,6 +49,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 
 ### Bug Post-Mortems
 - [SelectParties Inventory Corruption Bug & Fix (2026-04)](#selectparties-inventory-corruption-bug--fix-2026-04)
+- [Persistent Raft Graphic After Re-riding the Magitek Minecart (2026-06)](#persistent-raft-graphic-after-re-riding-the-magitek-minecart-2026-06)
 
 ### Conventions
 - [Debug Output Routing (`-debug` vs `-debug-verbose`) (2026-04)](#debug-output-routing--debug-vs--debug-verbose-2026-04)
@@ -555,6 +556,43 @@ An earlier attempt tried to sanitize `$1A6D` / `$07FB` / `$0803` and save/restor
 
 - Detection method: write a debug hook that copies `$1880`/`$1881` to a known scratch address and inspect after reform-parties menu invocations.
 - Corruption was reproduced by reform sequences involving at least one away party; the vanilla flow (no away parties, no RemapPartiesToFreeSlots, no branch recruitment) does not trigger it because the pre-menu `$0803` always refers to a real character object.
+
+---
+
+## Persistent Raft Graphic After Re-riding the Magitek Minecart (2026-06)
+
+### Symptom
+
+In ruination / door-rando, a playtester took the Returner's Hideout raft exit, which connected (via the shuffled door graph) to the Magitek minecart. On a later pass the party was drawn **persistently on a raft** in Vector. Cosmetic only (gameplay unaffected, fixed by reforming the party), but undesirable.
+
+### Background: how raft state is normally handled
+
+Whether the party is drawn on a raft is a persistent field-RAM sprite state (vehicle `$60`). `data/transitions.py` `Transitions.mod()` is the single source of truth for correcting it across a shuffled connection: when `t.exit.is_on_raft != t.entr.is_on_raft` it appends a `Call` to one of two vanilla subroutines into the `en_patch` byte list:
+
+- **CB/050F** — place party on raft (`field.Call(0xb050f)`, bytes `b2 0f 05 01`)
+- **CB/04AA** — remove raft / set vehicle to "none" (`field.Call(0xb04aa)`, bytes `b2 aa 04 01`). Only changes the vehicle; leaves visibility untouched, so it is safe to call even when the party is *not* on a raft.
+
+`en_patch` (raft fix, entity-unhide, song-override, screen-hold, world-bit, parent-map, `require_event_bit`) is inserted into `src_end` — i.e. it only runs on the **default, randomized destination** of a transition.
+
+### Root cause
+
+The Magitek minecart exit (event tile `2028`) is the only entry in `exit_event_patch`/`entrance_event_patch` (`data/event_exit_info.py`) that introduces **alternate fixed destinations**. `minecart_event_mod()` injects two completion-gated branches *before* the default load:
+
+- `DEFEATED_CRANES` (`0x06b`) set → `go_to_vector` (Vector outdoors `0xf2`)
+- `RODE_MINE_CART_MAGITEK_FACTORY` (`0x069`) set → `go_to_mtek3_vector` (Vector outdoors `0xf0`)
+- otherwise → fall through to the randomized destination (the only path `en_patch` is attached to)
+
+Both `go_to_*` blocks build their **own** `LoadMap … ShowEntity … FadeInScreen … Return` tail and `Return` before reaching `src_end`, so they **bypass `en_patch` entirely**, including the raft correction. When the minecart's randomized destination is an on-raft location (Lete River / Returner's Hideout raft), the default path correctly placed the party on a raft (CB/050F via `en_patch`); once the party was carrying the raft graphic and re-rode the cart with one of those bits set, control diverted to a Vector branch that never removed the raft → stuck raft sprite.
+
+(Note: in door rando the part of the vanilla minecart event that sets `0x069` lives *after* the LoadMap split — CC/8148 — so it is replaced by the randomized destination; the bits that actually drive these branches are set by the crane scene / the `DEFEATED_NUMBER128` revisit hook in `event/magitek_factory.py:minecart_mod`.)
+
+### Fix (`data/event_exit_info.py`, `minecart_event_mod`)
+
+`go_to_vector` and `go_to_mtek3_vector` always land in Vector, which is never an on-raft map, so unconditionally clear the raft graphic by inserting `field.Call(0xb04aa)` immediately after each block's `LoadMap`. Verified in a generated ROM (ruination, `-s 12345`, minecart used as exit `2028 -> 3026`): both Vector blocks now read `6b f2/f0 30 3e 0d c0  b2 aa 04 01  41 31  45 96 fe` (LoadMap, **Call CB/04AA**, ShowEntity, Refresh, FadeIn, Return).
+
+### Generalizable lesson
+
+Any event patch that creates an alternate `LoadMap`+`Return` destination (rather than just inserting instructions into the default tail) sidesteps **all** of `Transitions.mod()`'s common `en_patch`/`ex_patch` state corrections. Such custom destinations must reproduce whatever state the destination map requires. `minecart_event_mod` was the only such patch in the transitions framework; the same pattern occurred twice within it (both Vector branches), and both were fixed.
 
 ---
 
