@@ -5632,8 +5632,10 @@ class ruination_map():
         log_lines.append(f"Starting Party: {', '.join(self.PARTY)}")
         log_lines.append("")
 
-        # Determine which rewards are accessible (on a branch with a path from the hub)
-        def is_accessible(entry):
+        # Physical reachability: a path of doors exists from the hub to the
+        # reward room. Necessary, but NOT sufficient — see the character-gating
+        # fixpoint below.
+        def is_physically_reachable(entry):
             if entry['branch'] == -1:
                 return False
             reward_room = entry.get('reward_room')
@@ -5652,6 +5654,59 @@ class ruination_map():
                 return True
             except nx.NetworkXNoPath:
                 return False
+
+        # Character-gating reachability.
+        #
+        # Physical connectivity is necessary but not sufficient: most reward
+        # rooms sit in a character-owned area (REWARD_OWNERS) and/or are locked
+        # in-game behind a specific character (REWARDS_LOCKED_BY_CHARACTER). A
+        # reward is only truly obtainable if every gating character is itself
+        # obtainable. Because character rewards are themselves keys, this is a
+        # fixpoint: seed the keychain with the starting party, then repeatedly
+        # admit any physically-reachable reward whose gates are all satisfied,
+        # feeding newly-obtained characters back into the keychain, until no
+        # further reward can be admitted.
+        #
+        # This is what drops circularly-gated characters from the log. The
+        # generator can leave such characters on the map (e.g. Cyan placed at
+        # Whelk which is Terra's area, Terra at Mt. Kolts which is Sabin's area,
+        # Sabin at Doma WOB which is Cyan's area): each is physically present
+        # and individually "reachable", but the cycle means none of their
+        # gating characters ever enters the keychain, so none can actually be
+        # obtained. Without this filter they were printed as findable rewards.
+        def gates_satisfied(entry, keychain):
+            name = entry['name']
+            locker = REWARDS_LOCKED_BY_CHARACTER.get(name)
+            if locker is not None and locker not in keychain:
+                return False
+            owners = REWARD_OWNERS.get(name)
+            if owners is not None and not any(o in keychain for o in owners):
+                return False
+            return True
+
+        reachable_keychain = set(self.PARTY)
+        if self.args.open_world:
+            # Open world: every character is immediately accessible, so the
+            # gating dicts don't apply (the generator clears the lock dict and
+            # admits all characters up front).
+            reachable_keychain.update(ALL_CHARACTERS)
+
+        candidate_entries = [e for e in self.reward_log if is_physically_reachable(e)]
+        accessible_entries = set()  # ids of entries determined accessible
+        changed = True
+        while changed:
+            changed = False
+            for e in candidate_entries:
+                if id(e) in accessible_entries:
+                    continue
+                if gates_satisfied(e, reachable_keychain):
+                    accessible_entries.add(id(e))
+                    changed = True
+                    if e['type'] == RewardType.CHARACTER:
+                        reachable_keychain.add(characters.DEFAULT_NAME[e['reward_id']])
+
+        def is_accessible(entry):
+            return id(entry) in accessible_entries
 
         # Separate character rewards from other rewards, filtering out inaccessible ones
         char_rewards = [e for e in self.reward_log if e['type'] == RewardType.CHARACTER and is_accessible(e)]
