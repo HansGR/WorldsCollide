@@ -1592,6 +1592,17 @@ class Maps():
             nikeah.x = e_id
             nikeah.y = 0
 
+        # Move unused Zozo Tower exits (638, 639, 640, 641) out of the way.
+        # These duplicate the live exits 634-637 on the same tiles (see rooms.py).
+        # They are never referenced by any room, so today they are only safe because
+        # they have higher indices than the live exits (the live exit wins the runtime
+        # first-match). Relocate them to (0, 0) so they can never shadow a randomized
+        # destination if exit ordering ever changes.
+        for e_id in [638, 639, 640, 641]:
+            zozo_tower = self.get_exit(e_id)
+            zozo_tower.x = 0
+            zozo_tower.y = 0
+
         # Note: This line caused SwdTech to break the game - because I forgot the EVENT_CODE_START offset!
         Free(0x17d69 + EVENT_CODE_START, 0x17d82 + EVENT_CODE_START)
 
