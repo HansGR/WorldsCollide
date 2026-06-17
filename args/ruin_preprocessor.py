@@ -114,7 +114,7 @@ RUIN_DEFAULT_FLAGS = {
     'magic': [
         '-esr', '2', '5', '-elrt', '-ebr', '82', '-emprp', '75', '125',
         '-nm1', 'random', '-rnl1', '-rns1', '-nm2', 'random', '-rnl2',
-        '-rns2', '-nmmi', '-mmprp', '75', '125'
+        '-rns2', '-nmmi', '-mmprp', '75', '125', '-emi'
     ],
 
     # Item flags
