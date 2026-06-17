@@ -704,7 +704,8 @@ room_data = {
     310 : [ [634], [ ], [ ], 0], #Zozo Tower 6F Chest Room
     311 : [ [635, 636], [ ], [ ], 0], #Zozo Tower Stairwell Room
     312 : [ [637], [ ], [ ], 0], #Zozo Tower 12F Chest Room
-    # Exits 638, 639, 640, 641 appear to be redundant with 634, 635, 636, 637
+    # Exits 638, 639, 640, 641 are redundant with 634, 635, 636, 637 (same tiles) and are
+    # unused; Maps.door_rando_cleanup() relocates them to (0,0) so they can't shadow them.
     313 : [ [1225], [ ], [ ], 0], #Zozo Tower Ramuh's Room
 
     # OPERA HOUSE - How is this handled?
