@@ -1487,8 +1487,13 @@ exit_data_patch = {
                        set_dest_y(95, info)),  # [58, "South Figaro West to World Map WoR"],
     1163: lambda info: set_dest_x(114,
                        set_dest_y(95, info)),  # [58, "South Figaro East to World Map WoR"],
-    1164: lambda info: set_dest_x(113,
-                       set_dest_y(94, info)),  # [58, "South Figaro North to World Map WoR"],
+    1164: lambda info: set_x(1,                 # Shrink north exit to avoid overlapping verticals
+                       set_size(55,             #   1162 (x=0) and 1163 (x=56) -> x[1..55]
+                       set_dest_x(113,
+                       set_dest_y(94, info)))),  # [58, "South Figaro North to World Map WoR"],
+    # South Figaro WoB north exit (1169) overlaps verticals 1167 (x=0) and 1168 (x=56); shrink to x[1..55]
+    1169: lambda info: set_x(1,
+                       set_size(55, info)),     # [6, "South Figaro North to World Map WoB"],
 
     # GAU'S DAD'S HOUSE
     1187: lambda info: set_dest_x(178,
@@ -1501,6 +1506,10 @@ exit_data_patch = {
                        set_dest_y(185, info)), # [63, "Maranda East to World Map WoR"],
 
     # ALBROOK
+    # Albrook WoB west exit (1245) overlaps horizontals 1246 (y=1) and 1247 (y=0).
+    # Mirror the Albrook WoR fix on 1249: shift to y[2..21] so it clears both rows.
+    1245: lambda info: set_y(2,
+                       set_size(20, info)),     # [35, "Albrook West to World Map WoB"]. Avoid overlap with 1246/1247.
     1249: lambda info: set_dest_x(140,
                        set_dest_y(208,
                        set_y(2,
