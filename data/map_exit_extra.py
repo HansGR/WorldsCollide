@@ -1488,12 +1488,12 @@ exit_data_patch = {
     1163: lambda info: set_dest_x(114,
                        set_dest_y(95, info)),  # [58, "South Figaro East to World Map WoR"],
     1164: lambda info: set_x(1,                 # Shrink north exit to avoid overlapping verticals
-                       set_size(55,             #   1162 (x=0) and 1163 (x=56) -> x[1..55]
+                       set_size(54,             #   1162 (x=0) and 1163 (x=56) -> x[1..55]
                        set_dest_x(113,
                        set_dest_y(94, info)))),  # [58, "South Figaro North to World Map WoR"],
     # South Figaro WoB north exit (1169) overlaps verticals 1167 (x=0) and 1168 (x=56); shrink to x[1..55]
     1169: lambda info: set_x(1,
-                       set_size(55, info)),     # [6, "South Figaro North to World Map WoB"],
+                       set_size(54, info)),     # [6, "South Figaro North to World Map WoB"],
 
     # GAU'S DAD'S HOUSE
     1187: lambda info: set_dest_x(178,
