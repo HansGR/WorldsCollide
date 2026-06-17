@@ -4,3 +4,7 @@ $py.class
 *-objective.json
 *-flag.json
 wip/
+
+# ROM files must never be committed (copyrighted)
+*.smc
+*.sfc
