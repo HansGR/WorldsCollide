@@ -1523,14 +1523,22 @@ exit_data_patch = {
                        set_dest_y(21, info)),   #  [79, "Duncan's House Outside South WoR"],
 
     # FIGARO CASTLE
+    1157: lambda info: set_y(1,                 # Change size to not overlap
+                       set_size(41, info)),     #  [1502, "Figaro Castle Outside East to World Map"],
+    1159: lambda info: set_y(1,                 # Change size to not overlap
+                       set_size(41, info)),     #  [1502, "Figaro Castle Outside West to World Map"],
     5156: lambda info: set_dest_x(82,
                        set_dest_y(86, info)),   #  [1502, "Figaro Castle Outside South to World Map"],
-    5157: lambda info: set_dest_x(83,
-                       set_dest_y(85, info)),   #  [1502, "Figaro Castle Outside East to World Map"],
+    5157: lambda info: set_y(1,
+                       set_size(41,
+                       set_dest_x(83,
+                       set_dest_y(85, info)))), #  [1502, "Figaro Castle Outside East to World Map"],
     5158: lambda info: set_dest_x(82,
                        set_dest_y(84, info)),   #  [1502, "Figaro Castle Outside North to World Map"],
-    5159: lambda info: set_dest_x(80,
-                       set_dest_y(85, info)),   #  [1502, "Figaro Castle Outside West to World Map"],
+    5159: lambda info: set_y(1,
+                       set_size(41,
+                       set_dest_x(80,
+                       set_dest_y(85, info)))),   #  [1502, "Figaro Castle Outside West to World Map"],
 
     # DOMA CASTLE
     5240: lambda info: set_dest_x(172,
