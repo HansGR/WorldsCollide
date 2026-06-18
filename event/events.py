@@ -271,11 +271,65 @@ class Events():
         # -debug (prints to stdout) or -debug-verbose (prints to a temp file
         # that is appended to the spoiler log at the end of the compile).
         ruin_verbose = bool(self.args.debug or getattr(self.args, "debug_verbose", False))
-        ruin_map = ruination_map(self.args, party, verbose=ruin_verbose, characters=self.characters)
 
-        # Build out the map & distribute characters
-        # Note: reward_slots are updated automatically via shared object references (see generate_map_with_characters docstring)
-        self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+        # Build out the map & distribute characters.
+        #
+        # Map generation is randomized and occasionally fails: roughly 1 seed in
+        # ~25 hits a RuinationMappingError because a branch's free exits can't be
+        # balanced into a valid closed topology in finalize_map (or a branch gets
+        # stuck with no reserve area to unstick it). These failures are unlucky
+        # rolls, not unsatisfiable configs — re-rolling almost always succeeds.
+        # So retry from a clean slate: re-instantiating ruination_map re-rolls the
+        # requested counts, planned characters, area distribution, and the entire
+        # branch build. We only have to roll back the *external* mutable state the
+        # generator consumes (character/esper pools and the shared ROOM_REWARD
+        # reward slots); items aren't depleted (get_good_random samples with
+        # replacement), and all per-attempt ruination_map state is discarded with
+        # the instance. Note: reward_slots are updated automatically via shared
+        # object references (see generate_map_with_characters docstring).
+        import copy
+        chars_avail_baseline = list(self.characters.available_characters)
+        char_paths_baseline = copy.deepcopy(self.characters.character_paths)
+        espers_avail_baseline = set(self.espers.available_espers)
+        # Capture the slot objects themselves (not ROOM_REWARD keys): -maze iso
+        # moves a slot between keys during __init__, but the object is stable.
+        reward_slot_baseline = [
+            (slot, slot.id, slot.type)
+            for rewards in ROOM_REWARD.values()
+            for slot in rewards.values()
+        ]
+
+        def _restore_reward_pools():
+            self.characters.available_characters = list(chars_avail_baseline)
+            self.characters.character_paths = copy.deepcopy(char_paths_baseline)
+            self.espers.available_espers = set(espers_avail_baseline)
+            for slot, slot_id, slot_type in reward_slot_baseline:
+                slot.id = slot_id
+                slot.type = slot_type
+
+        max_map_attempts = 10
+        ruin_map = None
+        last_error = None
+        for attempt in range(max_map_attempts):
+            if attempt > 0:
+                _restore_reward_pools()
+            ruin_map = ruination_map(self.args, party, verbose=ruin_verbose, characters=self.characters)
+            try:
+                self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+                if attempt > 0 and self.args.debug:
+                    print(f'Ruination map generated on attempt {attempt + 1}')
+                break
+            except RuinationMappingError as e:
+                last_error = e
+                if self.args.debug:
+                    headline = next((ln.strip() for ln in str(e).splitlines()
+                                     if ln.strip() and ln.strip('= ')), 'unknown reason')
+                    print(f'Ruination map generation attempt {attempt + 1}/{max_map_attempts} '
+                          f'failed; retrying. ({headline})')
+                continue
+        else:
+            # Exhausted all attempts - surface the last failure.
+            raise last_error
 
         # Store area-to-branch mapping so NPC clue scripts can reference it.
         # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),

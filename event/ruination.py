@@ -3840,7 +3840,10 @@ class ruination_map():
         elif dream_maze_mode == 'iso':
             # Isolate: replace the nine maze rooms with a single composite room
             RUIN_ROOM_SETS['DreamMaze'] = ['ruin-stooge-maze']
-            WARP_ROOMS.remove(424)
+            # discard (not remove): map generation may be retried, which
+            # re-instantiates ruination_map and re-runs this configuration. A
+            # bare remove() would KeyError on the second pass.
+            WARP_ROOMS.discard(424)
             WARP_ROOMS.add('ruin-stooge-maze')
             # Update ROOM_REWARD: move 429's reward to ruin-stooge-maze
             if 429 in ROOM_REWARD:
