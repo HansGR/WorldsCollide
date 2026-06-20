@@ -65,11 +65,18 @@ class Network:
         for d in forcing.keys():
             if d in these_doors:
                 df = forcing[d][0]
-                if self.verbose:
-                    vprint('Forcing: ', d, df)
-                self.connect(d, df, state=state)
-                if self.verbose:
-                    vprint('forcing successful.')
+                # Only force the connection when the partner entrance is actually
+                # present in this network. A forced exit can become live after some
+                # of its partner rooms are gone (e.g. a locked trap unlocked by a key
+                # later in finalization, so ForceConnections is re-run); connecting to
+                # an absent partner would crash. Skipping is safe: it is retried
+                # whenever the partner appears.
+                if self.rooms.get_room_from_element(df) is not None:
+                    if self.verbose:
+                        vprint('Forcing: ', d, df)
+                    self.connect(d, df, state=state)
+                    if self.verbose:
+                        vprint('forcing successful.')
             self.protected.add(d)
             self.protected.update(forcing[d])
         if self.verbose:
