@@ -295,7 +295,10 @@ class Maps():
 
     def get_short_event(self, map_id, x, y):
         first_event_id = (self.maps[map_id]["events_ptr"] - self.maps[0]["events_ptr"]) // MapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_event_count(map_id)
+        # last_event_id is an inclusive index, and get_event() searches [first_event_id : last_event_id + 1].
+        # Subtract 1 so the search is bounded to this map's own events; otherwise it overreaches by one and
+        # can falsely match the first event of the next populated map (see delete_short_event below).
+        last_event_id = first_event_id + self.get_event_count(map_id) - 1
         return self.events.get_event(first_event_id, last_event_id, x, y)
 
     def add_event(self, map_id, new_event):
@@ -334,7 +337,13 @@ class Maps():
 
     def get_long_event(self, map_id, x, y):
         first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_long_event_count(map_id)
+        # last_event_id is an inclusive index, and get_event() searches [first_event_id : last_event_id + 1].
+        # Subtract 1 so the search is bounded to this map's own long events; otherwise it overreaches by one
+        # and can falsely match the first long event of the next populated map. That false match makes
+        # create_exit_event() call delete_event(), which decrements every later map's long-event pointer but
+        # then raises IndexError (swallowed by its 'except IndexError'), desyncing the long-event pointer table
+        # by one entry for all subsequent maps (e.g. exit 1264's world-bit event landing on the wrong map).
+        last_event_id = first_event_id + self.get_long_event_count(map_id) - 1
         return self.long_events.get_event(first_event_id, last_event_id, x, y)
 
     def add_long_event(self, map_id, new_event):
