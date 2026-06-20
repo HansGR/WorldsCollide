@@ -437,6 +437,24 @@ AREA_SHOPS = {
 RUIN_TERMINI = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']  # list of terminal rooms for branches
 
 
+_EXIT_TO_ROOM_OWNER = None
+def _exit_to_room_owner(exit_id):
+    # Lazily build and cache a map from an exit id to the room_data room that owns
+    # it. Used to locate the partner room of a forced connection. Traps and pits
+    # are unique to one room; doors may map to either side (irrelevant here, since
+    # forced_connections only reference traps/pits).
+    global _EXIT_TO_ROOM_OWNER
+    if _EXIT_TO_ROOM_OWNER is None:
+        owner = {}
+        for rid, data in room_data.items():
+            for group in data[:3]:
+                if isinstance(group, (list, tuple, set)):
+                    for e in group:
+                        owner.setdefault(e, rid)
+        _EXIT_TO_ROOM_OWNER = owner
+    return _EXIT_TO_ROOM_OWNER.get(exit_id)
+
+
 class RuinationBranch(Network):
     def __init__(self, rooms):
         super().__init__(rooms)
@@ -520,6 +538,80 @@ class RuinationBranch(Network):
             if self.verbose:
                 vprint('CUSTOM add pit 3039 to', hub_room_id, '!', hub_room.count, hub_room.pits)
             self.rooms.reindex_room(hub_room_id)
+
+        # When a room is pulled from reserve during finalization (rescue/converter
+        # rooms), it may carry forced connections (hard-coded bridge jumps etc.)
+        # to other rooms in its area. Those partner rooms must also be present and
+        # the forced connection applied; otherwise the forced exit is protected
+        # (so finalize never connects it) yet keeps its vanilla destination,
+        # leaking into the unrandomized map. Pull the partners and re-run
+        # ForceConnections so the branch models the true state of the map.
+        reserve_areas = getattr(self, '_active_reserve_areas', None)
+        if reserve_areas is not None and not getattr(self, '_pulling_forced', False):
+            self._honor_forced_connections(room_id, reserve_areas)
+
+    def _honor_forced_connections(self, room_id, reserve_areas):
+        # Pull every room transitively connected to room_id by forced_connections
+        # (bridge-jump clusters share a physical map and must move together), then
+        # apply the forced connections. ForceConnections is idempotent here: an
+        # already-forced exit has been removed from its room, so re-running it only
+        # connects the newly added cluster.
+        self._pulling_forced = True
+        try:
+            pulled_any = False
+            queue = [room_id]
+            visited = set()
+            while queue:
+                cur = queue.pop()
+                if cur in visited:
+                    continue
+                visited.add(cur)
+                for partner_room in self._forced_partner_rooms(cur):
+                    if partner_room in self.net.nodes:
+                        continue
+                    # Only pull a partner that is still available in this branch's
+                    # reserve; if it was already consumed elsewhere, adding it here
+                    # would duplicate it across branches.
+                    found = False
+                    for _area_name, area_rooms in reserve_areas:
+                        if partner_room in area_rooms:
+                            area_rooms.remove(partner_room)
+                            found = True
+                            break
+                    if not found:
+                        continue
+                    self.add_room(partner_room)
+                    pulled_any = True
+                    queue.append(partner_room)
+            if pulled_any:
+                self.ForceConnections(forced_connections)
+        finally:
+            self._pulling_forced = False
+
+    @staticmethod
+    def _forced_partner_rooms(room_id):
+        # Rooms holding the partner exit of any forced connection that this room
+        # participates in (as a trap-key or as a pit-value).
+        data = room_data.get(room_id)
+        if not data:
+            return []
+        room_exits = set()
+        for group in data[:3]:
+            if isinstance(group, (list, tuple, set)):
+                room_exits.update(group)
+        partner_exits = set()
+        for e in room_exits:
+            if e in forced_connections:
+                partner_exits.update(forced_connections[e])
+            for key, values in forced_connections.items():
+                if e in values:
+                    partner_exits.add(key)
+        partner_rooms = set()
+        for pe in partner_exits:
+            owner = _exit_to_room_owner(pe)
+            if owner is not None:
+                partner_rooms.add(owner)
+        return partner_rooms
 
     def classify_rooms(self, rooms):
         for room in rooms:
@@ -2285,6 +2377,11 @@ class RuinationBranch(Network):
         if self.verbose:
             vprint(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
 
+        # Rooms pulled from reserve below (rescue/converter/hub rooms) must honor
+        # their forced connections; expose the reserve pool to add_room so it can
+        # pull in forced-cluster partners. Cleared again at branch close below.
+        self._active_reserve_areas = reserve_areas
+
         # PRE-CHECK: Handle "no doors but terminus unconnected" edge case
         # This happens when the branch has only traps/pits with no remaining doors.
         # In this scenario, we need to inject a door into the network by connecting
@@ -3204,6 +3301,8 @@ class RuinationBranch(Network):
                 f"This suggests keys are continuously unlocking new elements in a loop.\n"
                 f"{viz}"
             )
+
+        self._active_reserve_areas = None
 
         if self.verbose:
             vprint('... closing branch complete!')
