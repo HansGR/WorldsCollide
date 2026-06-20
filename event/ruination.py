@@ -437,6 +437,24 @@ AREA_SHOPS = {
 RUIN_TERMINI = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']  # list of terminal rooms for branches
 
 
+_EXIT_TO_ROOM_OWNER = None
+def _exit_to_room_owner(exit_id):
+    # Lazily build and cache a map from an exit id to the room_data room that owns
+    # it. Used to locate the partner room of a forced connection. Traps and pits
+    # are unique to one room; doors may map to either side (irrelevant here, since
+    # forced_connections only reference traps/pits).
+    global _EXIT_TO_ROOM_OWNER
+    if _EXIT_TO_ROOM_OWNER is None:
+        owner = {}
+        for rid, data in room_data.items():
+            for group in data[:3]:
+                if isinstance(group, (list, tuple, set)):
+                    for e in group:
+                        owner.setdefault(e, rid)
+        _EXIT_TO_ROOM_OWNER = owner
+    return _EXIT_TO_ROOM_OWNER.get(exit_id)
+
+
 class RuinationBranch(Network):
     def __init__(self, rooms):
         super().__init__(rooms)
@@ -520,6 +538,60 @@ class RuinationBranch(Network):
             if self.verbose:
                 vprint('CUSTOM add pit 3039 to', hub_room_id, '!', hub_room.count, hub_room.pits)
             self.rooms.reindex_room(hub_room_id)
+
+        # A room pulled from reserve during finalization (rescue/converter rooms)
+        # may carry forced connections (hard-coded bridge jumps etc.); honor them
+        # so the forced exit doesn't stay protected-but-unconnected (which would
+        # keep its vanilla destination and leak into the unrandomized map).
+        reserve_areas = getattr(self, '_active_reserve_areas', None)
+        if reserve_areas is not None and not getattr(self, '_pulling_forced', False):
+            self._honor_forced_connections(reserve_areas)
+
+    def _honor_forced_connections(self, reserve_areas):
+        # Apply forced connections for every *accessible* (live) forced exit in the
+        # branch right now. A forced exit is live only when it sits in a placed
+        # room's exit lists: a locked forced trap (e.g. Baren Falls behind Sabin,
+        # Lone Wolf behind the lw1 key) becomes live exactly when its key is applied,
+        # so this honors it precisely when the player can reach it and ignores it
+        # while still locked. Two ways a forced exit becomes live after the initial
+        # ForceConnections: a reserve room is added (rescue/converter), or a key
+        # unlocks a trap mid-finalization. Partner rooms that are absent are pulled
+        # from reserve when still available; ForceConnections then wires every live
+        # pair whose partner is present (and is idempotent, since a connected forced
+        # exit is removed from its room).
+        if getattr(self, '_pulling_forced', False):
+            return
+        self._pulling_forced = True
+        try:
+            while True:
+                pulled = False
+                for node_id in list(self.net.nodes):
+                    room = self.rooms.get_room(node_id)
+                    if room is None:
+                        continue
+                    for d in list(room.traps) + list(room.doors):
+                        if d not in forced_connections:
+                            continue
+                        for df in forced_connections[d]:
+                            if self.rooms.get_room_from_element(df) is not None:
+                                continue  # partner already present; will be wired
+                            owner = _exit_to_room_owner(df)
+                            if owner is None or owner in self.net.nodes:
+                                continue
+                            # Pull the partner only while it is still available in the
+                            # shared reserve; otherwise it was consumed by another
+                            # branch and adding it here would duplicate it.
+                            for _area_name, area_rooms in reserve_areas:
+                                if owner in area_rooms:
+                                    area_rooms.remove(owner)
+                                    self.add_room(owner)
+                                    pulled = True
+                                    break
+                if not pulled:
+                    break
+            self.ForceConnections(forced_connections)
+        finally:
+            self._pulling_forced = False
 
     def classify_rooms(self, rooms):
         for room in rooms:
@@ -2285,6 +2357,11 @@ class RuinationBranch(Network):
         if self.verbose:
             vprint(f'\tProtected elements after ForceConnections: {sorted(self.protected)}')
 
+        # Rooms pulled from reserve below (rescue/converter/hub rooms) must honor
+        # their forced connections; expose the reserve pool to add_room so it can
+        # pull in forced-cluster partners. Cleared again at branch close below.
+        self._active_reserve_areas = reserve_areas
+
         # PRE-CHECK: Handle "no doors but terminus unconnected" edge case
         # This happens when the branch has only traps/pits with no remaining doors.
         # In this scenario, we need to inject a door into the network by connecting
@@ -2300,6 +2377,12 @@ class RuinationBranch(Network):
             finalize_iteration += 1
             if finalize_iteration > 1 and self.verbose:
                 vprint(f'\n=== Finalize iteration {finalize_iteration} (new elements were unlocked) ===\n')
+
+            # Honor any forced connection that became accessible since the last
+            # pass (a key applied during the previous iteration may have unlocked a
+            # forced trap, e.g. the Lone Wolf or Baren Falls reward routes).
+            if reserve_areas is not None:
+                self._honor_forced_connections(reserve_areas)
 
             hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
             hub = self.rooms.get_room(hub_id)
@@ -3204,6 +3287,14 @@ class RuinationBranch(Network):
                 f"This suggests keys are continuously unlocking new elements in a loop.\n"
                 f"{viz}"
             )
+
+        # Final pass: a key applied in the last iteration can unlock a forced trap
+        # without triggering another loop (protected exits don't count as newly
+        # unlocked elements), so honor any forced connection that is now accessible.
+        if reserve_areas is not None:
+            self._honor_forced_connections(reserve_areas)
+
+        self._active_reserve_areas = None
 
         if self.verbose:
             vprint('... closing branch complete!')
