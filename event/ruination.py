@@ -455,6 +455,31 @@ def _exit_to_room_owner(exit_id):
     return _EXIT_TO_ROOM_OWNER.get(exit_id)
 
 
+def _room_data_locks(rid):
+    """Return a room_data entry's lock dict normalized to {tuple_of_keys: [items]}.
+
+    room_data rooms are either the short 4-element form (no keys/locks) or the
+    full 6-element form `[doors, traps, pits, start_keys, locks, world]`. Lock
+    keys may be written as a bare string or a list/tuple; normalize to a tuple.
+    """
+    data = room_data.get(rid)
+    if not data or len(data) < 6 or not isinstance(data[4], dict):
+        return {}
+    out = {}
+    for k, items in data[4].items():
+        ktuple = (k,) if isinstance(k, str) else tuple(k)
+        out[ktuple] = items
+    return out
+
+
+def _room_data_start_keys(rid):
+    """Return the unconditional starting keys a room_data entry grants."""
+    data = room_data.get(rid)
+    if not data or len(data) < 6:
+        return []
+    return [k for k in data[3] if isinstance(k, str)]
+
+
 class RuinationBranch(Network):
     def __init__(self, rooms):
         super().__init__(rooms)
@@ -5329,11 +5354,162 @@ class ruination_map():
         for i in range(3):
             map[1].append([traps_to_kt[i], pits_into_kt[i]])
 
+        # Reject any layout with a character-gated softlock: a region that can
+        # be entered with only the starting party but cannot be left without a
+        # character recruited elsewhere on the map. Caught by the retry loop in
+        # events.py, which regenerates the map.
+        self._verify_no_character_gated_softlock(map)
+
         # Debug: print shortest route if requested (after all finalization)
         if self.args.debug_route_destination:
             self.debug_print_shortest_route(self.args.debug_route_destination)
 
         return map
+
+    def _character_blocked_exits(self, branch):
+        """Exit IDs in `branch` that need a non-starting-party character to traverse.
+
+        Models the worst case where the player holds only the starting party:
+        any exit whose in-game lock is keyed (directly, or transitively via a
+        character-locked key such as 'lw1'/'zr1') on a character not yet
+        recruited is unusable. The branch mapper unlocks these the moment the
+        gating character is *planned* and then freely routes through them, but
+        in play a region can be entered (via two-way doors or one-way pits)
+        long before its gating character is obtained on some other branch. Such
+        exits must therefore not be the sole escape from any region the player
+        can otherwise reach (see _verify_no_character_gated_softlock).
+        """
+        party = set(self.PARTY)
+        placed = [r for r in branch.all_rooms_added if r in room_data]
+
+        # Party-only keychain: starting party plus every key obtainable without
+        # recruiting anyone (unconditional grants and non-character-gated locks).
+        keychain = set(party)
+        for rid in placed:
+            keychain.update(_room_data_start_keys(rid))
+        changed = True
+        while changed:
+            changed = False
+            for rid in placed:
+                for ktuple, items in _room_data_locks(rid).items():
+                    if set(ktuple) <= keychain:
+                        for item in items:
+                            if isinstance(item, str) and item not in keychain:
+                                keychain.add(item)
+                                changed = True
+
+        # Any locked exit whose lock the party-only keychain cannot satisfy is
+        # character-blocked (exits are ints; keys are strings).
+        blocked = set()
+        for rid in placed:
+            for ktuple, items in _room_data_locks(rid).items():
+                if set(ktuple) <= keychain:
+                    continue
+                for item in items:
+                    if isinstance(item, int):
+                        blocked.add(item)
+        return blocked
+
+    def _branch_exit_owner_map(self, branch):
+        """Static map from exit id -> owning room, scoped to a branch's placed rooms.
+
+        Built from room_data (not the live Room objects): once an exit is
+        connected during finalization it is removed from its Room and unindexed,
+        and branch.net is left edgeless, so the only durable record of the
+        topology is branch.map (the connection pairs) resolved through the
+        original room_data definitions. Locked exits (the character-gated ones
+        we care about) live in the locks dict, so index those too. Scoping to
+        branch.all_rooms_added keeps exits that several room_data entries share
+        (e.g. WoB/WoR variants) unambiguous, since only one variant is placed.
+        """
+        owner = {}
+        for rid in branch.all_rooms_added:
+            data = room_data.get(rid)
+            if not data:
+                continue
+            groups = [data[0], data[1], data[2]]  # doors, traps, pits
+            for items in _room_data_locks(rid).values():
+                groups.append(items)
+            for group in groups:
+                if isinstance(group, (list, tuple, set)):
+                    for e in group:
+                        if isinstance(e, int):
+                            owner.setdefault(e, rid)
+        return owner
+
+    def _verify_no_character_gated_softlock(self, full_map):
+        """Reject maps with a character-gated softlock.
+
+        For each branch, build two room-connectivity graphs from branch.map's
+        connection pairs (two-way doors plus one-way trap->pit edges), mapping
+        each exit to its room via _branch_exit_owner_map. The *full* graph
+        includes every exit; the *free* graph omits exits gated by a character
+        not in the starting party (_character_blocked_exits) -- i.e. exactly the
+        edges the player can traverse holding only the starting party.
+
+        A room is a character-gated softlock when it can be entered with the
+        starting party (reachable from the hub in the free graph) and could be
+        left if the gating character were held (can reach the hub in the full
+        graph) but cannot be left without it (cannot reach the hub in the free
+        graph). Comparing against the full graph excludes pre-existing one-way
+        dead ends and event-warp exits (which are escapes the graph never
+        models) so only genuine character gates trigger a reroll.
+
+        Raises RuinationMappingError, which the retry loop in events.py catches.
+        """
+        door_pairs = full_map[0]
+        trap_pairs = full_map[1]
+        for branch_id, branch in enumerate(self.branches):
+            if branch is None:
+                continue
+            placed = set(branch.all_rooms_added)
+            hub_candidates = [r for r in placed if 'ruin_hub_' in str(r)]
+            if not hub_candidates:
+                continue
+            hub_id = hub_candidates[0]
+
+            owner = self._branch_exit_owner_map(branch)
+            blocked = self._character_blocked_exits(branch)
+
+            full_g = nx.DiGraph()
+            free_g = nx.DiGraph()
+            full_g.add_nodes_from(placed)
+            free_g.add_nodes_from(placed)
+
+            for d1, d2 in door_pairs:  # two-way doors
+                a = owner.get(d1)
+                b = owner.get(d2)
+                if a is None or b is None:
+                    continue
+                full_g.add_edge(a, b)
+                full_g.add_edge(b, a)
+                if d1 not in blocked and d2 not in blocked:
+                    free_g.add_edge(a, b)
+                    free_g.add_edge(b, a)
+
+            for d1, d2 in trap_pairs:  # one-way trap -> pit
+                a = owner.get(d1)
+                b = owner.get(d2)
+                if a is None or b is None:
+                    continue
+                full_g.add_edge(a, b)
+                if d1 not in blocked and d2 not in blocked:
+                    free_g.add_edge(a, b)
+
+            reachable_free = nx.descendants(free_g, hub_id) | {hub_id}
+            can_return_free = nx.ancestors(free_g, hub_id) | {hub_id}
+            can_return_full = nx.ancestors(full_g, hub_id) | {hub_id}
+
+            stranded = {r for r in reachable_free
+                        if r in can_return_full and r not in can_return_free}
+            if stranded:
+                diag = self._collect_mapping_diagnostics(
+                    f"Character-gated softlock on branch {branch_id}: room(s) "
+                    f"{sorted(str(s) for s in stranded)} are reachable from the "
+                    f"hub with only the starting party but cannot return without "
+                    f"a recruited character (gated exits: {sorted(blocked)})",
+                    branch_id=branch_id)
+                raise RuinationMappingError(diag)
 
     def compute_actual_areas_used(self):
         """Determine which branch each area's rooms actually reached after finalization.
