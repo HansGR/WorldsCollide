@@ -5410,14 +5410,42 @@ class ruination_map():
                         blocked.add(item)
         return blocked
 
+    def _branch_exit_owner_map(self, branch):
+        """Static map from exit id -> owning room, scoped to a branch's placed rooms.
+
+        Built from room_data (not the live Room objects): once an exit is
+        connected during finalization it is removed from its Room and unindexed,
+        and branch.net is left edgeless, so the only durable record of the
+        topology is branch.map (the connection pairs) resolved through the
+        original room_data definitions. Locked exits (the character-gated ones
+        we care about) live in the locks dict, so index those too. Scoping to
+        branch.all_rooms_added keeps exits that several room_data entries share
+        (e.g. WoB/WoR variants) unambiguous, since only one variant is placed.
+        """
+        owner = {}
+        for rid in branch.all_rooms_added:
+            data = room_data.get(rid)
+            if not data:
+                continue
+            groups = [data[0], data[1], data[2]]  # doors, traps, pits
+            for items in _room_data_locks(rid).values():
+                groups.append(items)
+            for group in groups:
+                if isinstance(group, (list, tuple, set)):
+                    for e in group:
+                        if isinstance(e, int):
+                            owner.setdefault(e, rid)
+        return owner
+
     def _verify_no_character_gated_softlock(self, full_map):
         """Reject maps with a character-gated softlock.
 
-        For each branch, build two traversal graphs over the placed rooms:
-        two-way doors plus one-way trap->pit edges. The *full* graph includes
-        every exit; the *free* graph omits exits gated by a character not in the
-        starting party (_character_blocked_exits) -- i.e. exactly the edges the
-        player can traverse holding only the starting party.
+        For each branch, build two room-connectivity graphs from branch.map's
+        connection pairs (two-way doors plus one-way trap->pit edges), mapping
+        each exit to its room via _branch_exit_owner_map. The *full* graph
+        includes every exit; the *free* graph omits exits gated by a character
+        not in the starting party (_character_blocked_exits) -- i.e. exactly the
+        edges the player can traverse holding only the starting party.
 
         A room is a character-gated softlock when it can be entered with the
         starting party (reachable from the hub in the free graph) and could be
@@ -5434,33 +5462,25 @@ class ruination_map():
         for branch_id, branch in enumerate(self.branches):
             if branch is None:
                 continue
-            nodes = set(branch.net.nodes)
-            hub_candidates = [n for n in nodes if 'ruin_hub_' in str(n)]
+            placed = set(branch.all_rooms_added)
+            hub_candidates = [r for r in placed if 'ruin_hub_' in str(r)]
             if not hub_candidates:
                 continue
             hub_id = hub_candidates[0]
 
+            owner = self._branch_exit_owner_map(branch)
             blocked = self._character_blocked_exits(branch)
 
             full_g = nx.DiGraph()
             free_g = nx.DiGraph()
-            full_g.add_nodes_from(nodes)
-            free_g.add_nodes_from(nodes)
-
-            def _endpoints(d1, d2):
-                r1 = branch.rooms.get_room_from_element(d1)
-                r2 = branch.rooms.get_room_from_element(d2)
-                if r1 is None or r2 is None:
-                    return None
-                if r1.id not in nodes or r2.id not in nodes:
-                    return None
-                return r1.id, r2.id
+            full_g.add_nodes_from(placed)
+            free_g.add_nodes_from(placed)
 
             for d1, d2 in door_pairs:  # two-way doors
-                ends = _endpoints(d1, d2)
-                if ends is None:
+                a = owner.get(d1)
+                b = owner.get(d2)
+                if a is None or b is None:
                     continue
-                a, b = ends
                 full_g.add_edge(a, b)
                 full_g.add_edge(b, a)
                 if d1 not in blocked and d2 not in blocked:
@@ -5468,10 +5488,10 @@ class ruination_map():
                     free_g.add_edge(b, a)
 
             for d1, d2 in trap_pairs:  # one-way trap -> pit
-                ends = _endpoints(d1, d2)
-                if ends is None:
+                a = owner.get(d1)
+                b = owner.get(d2)
+                if a is None or b is None:
                     continue
-                a, b = ends
                 full_g.add_edge(a, b)
                 if d1 not in blocked and d2 not in blocked:
                     free_g.add_edge(a, b)
