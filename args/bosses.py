@@ -150,6 +150,7 @@ def options(args):
         ("Boss Experience", args.boss_experience, "boss_experience"),
         ("No Undead", args.boss_no_undead, "boss_no_undead"),
         ("Marshal Keep Lobos", args.boss_marshal_keep_lobos, "boss_marshal_keep_lobos"),
+        ("Who's There?", args.who_there, "who_there"),
         ("Oops All Boss ID", oops, "oops"),
     ]
 
