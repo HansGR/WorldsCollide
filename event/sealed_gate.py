@@ -52,6 +52,11 @@ class SealedGate(Event):
 
             self.log_reward(self.reward)
 
+        if self.args.ruination_mode or self.args.door_randomize_dungeon_crawl or self.args.door_randomize_crossworld or self.args.door_randomize_all:
+            # Patch lava room so you can't override exit events
+            self.lava_room_mod()
+
+
     def world_map_mod(self):
         import instruction.asm as asm
 
@@ -525,4 +530,68 @@ class SealedGate(Event):
 
         space = Reserve(patch_addr[0], patch_addr[1], "Edit Sealed Gate entrance event", field.NOP())
         space.write(field.Call(open_gate_addr))
+
+    def lava_room_mod(self):
+        # You can do something like the 'door timer glitch' in the lava room if you walk out of it exactly when a timer
+        # expires.  This causes event tiles on the actual door to not trigger, allowing world desyncs.
+        #turn_off_puzzle_addr = 0xb2b06  # CB/2B06: turn off timers, reset general event bits.
+        map_id = 0x181
+        from data.map_event import MapEvent, LongMapEvent
+
+        # Apparently you can carry it from 2 tiles away.  We need to turn off the event restrictively, as soon as the
+        # player steps off the bridge.
+
+        # First, move "start the event" tile @ (13, 11) to (14, 11)
+        start_south_event_tile = self.maps.get_event(map_id, 13, 11)
+        start_south_event_tile.x = 14
+
+        # Next, add "start the event" tiles at (12, 10) and (11, 11)
+        start_south_event_2 = MapEvent()
+        start_south_event_2.x = 12
+        start_south_event_2.y = 10
+        start_south_event_2.event_address = start_south_event_tile.event_address
+        self.maps.add_event(map_id, start_south_event_2)
+
+        start_south_event_3 = MapEvent()
+        start_south_event_3.x = 11
+        start_south_event_3.y = 11
+        start_south_event_3.event_address = start_south_event_tile.event_address
+        self.maps.add_event(map_id, start_south_event_3)
+
+        # Add "turn off south event" tiles everywhere you can step off one of those & at the north exit.
+        # Make sure the player has to step on at least two.  Use LongEvents to reduce the number.
+
+        # CB/2B06: B2    Call subroutine $CB2CAA
+        # CB/2B0A: B2    Call subroutine $CB2DFA (clears general purpose event bits)
+        # CB/2B0E: FE    Return
+        src = [
+            field.ReturnIfEventBitSet(0x1b5),
+            #field.ResetTimer(0),
+            field.Call(0xb2b06),   # clear all event timers, clears gen. purpose event bits.
+            field.SetEventBit(0x1b5),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, 'Reset event timer')
+
+        HORIZ = 0
+        VERT = 128
+        turn_off_locs = [(13, 10, 0, HORIZ), (12, 11, 1, HORIZ), (11, 12, 2, HORIZ), (2, 1, 1, HORIZ), (1, 2, 1, HORIZ)]
+        for tol in turn_off_locs:
+            if tol[2] == 0:
+                # Short event
+                new_event = MapEvent()
+                new_event.x = tol[0]
+                new_event.y = tol[1]
+                new_event.event_address = space.start_address - EVENT_CODE_START
+                self.maps.add_event(map_id, new_event)
+            else:
+                new_le = LongMapEvent()
+                new_le.x = tol[0]
+                new_le.y = tol[1]
+                new_le.size = tol[2]
+                new_le.direction = tol[3]
+                new_le.event_address = space.start_address - EVENT_CODE_START
+                self.maps.add_long_event(map_id, new_le)
+
+
 
