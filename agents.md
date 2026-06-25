@@ -163,3 +163,15 @@ AssertionError
 - Always preserve and restore modified registers using `PHX`/`PLX` or `PHY`/`PLY` at the boundaries of your subroutine.
 - Use 24-bit long addressing opcodes (`0xAF` for `LDA long`, `0xBF` for `LDA long,X`) when referencing addresses dynamically allocated to Bank `F0`.
 - Always load active monster IDs directly from the active monster ID table WRAM `$812F,Y` (indexed by slot index * 2) after clearing the 16-bit Accumulator (using `TDC` `0x7B`) at the very beginning of the subroutine to avoid index register pollution from caller active CPU registers.
+
+---
+
+## 8. Offline Ruination Spoiler Analysis (`ruination_spoiler/`)
+
+To inspect a finished Ruination seed for mapping problems (e.g. a suspected branch softlock) **without** re-running a seed, use the offline `ruination_spoiler/` package:
+
+```sh
+python -m ruination_spoiler tests/fixtures/ruin_sample_spoiler.txt -o tests/branch_map.png
+```
+
+It parses the spoiler log, prints a per-branch reachability/softlock report, and renders the same branch-map figure ruination emits during generation. The input log must come from a `-debug-verbose` run (branch reconstruction reads the "Debug Verbose Diagnostics" trace). The package is ROM-free and standard-library only except `render.py` (needs `networkx`+`matplotlib`). Regression test: `python -m unittest tests.test_ruination_spoiler`. Details and the door->room/`RUIN_ROOM_SETS` disambiguation are documented in `llms.md` section 9 and `ruination_spoiler/README.md`.
