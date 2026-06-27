@@ -905,6 +905,127 @@ class RemapPartiesToFreeSlots(_Instruction):
         RemapPartiesToFreeSlots.__init__ = lambda self, mark_away_count=0: super().__init__(opcode, mark_away_count)
         self.__init__(mark_away_count)
 
+def _write_sync_party_member_positions(character_party_start, char_byte_len):
+    """Write the 'sync party member positions' subroutine to Bank.C0 and return
+    its SNES address (a plain JSR target ending in RTS -- not a field opcode).
+
+    For each of parties 1, 2 and 3 it copies that party's visible leader's
+    object position -- both the rendering position (object offsets $02-$07) and
+    the tile/collision position (offsets $13-$14) -- onto every member of the
+    party.  Members that are already in sync (the normal case) are unaffected.
+
+    Why this is needed: in FF6 a party's non-leader members are invisible and
+    normally share the leader's tile; only the leader's object position tracks
+    the party as it walks.  When a party's leader is changed in the field (e.g.
+    via the Y party switch) and the party then moves, the demoted member keeps
+    the position it held while leading -- its object position goes stale.  If the
+    player later re-promotes that member (for example by reordering members in
+    the two-party swap menu), the engine redraws the whole party at the stale
+    coordinates and the party appears to teleport.  SetupBranchRecruit calls this
+    before it reorganises the party-slot bits, so the grouping below still
+    reflects the player's real parties.
+
+    Scratch RAM: $10 = party slot, $11 = char counter, $12-$13 = leader object
+    offset.  X/Y are 16-bit at entry (event-engine invariant) and the index
+    width is never changed, so X/Y stay 16-bit throughout.  Callers must not
+    rely on $10-$13 surviving the call."""
+    from constants.entities import CHARACTER_COUNT
+
+    settings   = character_party_start  # object offset $00: verbbppp (v=visible/leader, ppp=party)
+    pos_start  = character_party_start + 0x02  # offset $02: first of 6 X/Y sub-pixel render bytes
+    tile_start = character_party_start + 0x13  # offset $13: tile X (collision); +1 = tile Y
+    NO_LEADER  = 0xffff
+
+    # 8 position bytes to copy: render X/Y (offsets $02-$07) + tile X/Y ($13-$14).
+    pos_addrs = [pos_start + i for i in range(6)] + [tile_start, tile_start + 1]
+    copy_bytes = []
+    for addr in pos_addrs:
+        copy_bytes += [
+            asm.LDA(addr, asm.ABS_X),            # X = leader object offset (source)
+            asm.STA(addr, asm.ABS_Y),            # Y = member object offset (dest)
+        ]
+
+    # Per-party worker (party slot in $10).  Kept as its own JSR target so each
+    # internal branch stays well within range; the dispatcher calls it 3 times.
+    worker_src = [
+        # --- Find the visible leader of party $10 ---
+        asm.LDX(NO_LEADER, asm.IMM16),
+        asm.STX(0x12, asm.DIR),                  # $12 = leader offset (sentinel)
+        asm.LDX(0x0000, asm.IMM16),              # char index
+        asm.LDY(0x0000, asm.IMM16),              # object offset
+
+        "FIND_LOOP",
+        asm.LDA(settings, asm.ABS_Y),
+        asm.AND(0x07, asm.IMM8),
+        asm.CMP(0x10, asm.DIR),                  # in target party?
+        asm.BNE("FIND_NEXT"),
+        asm.LDA(settings, asm.ABS_Y),
+        asm.AND(0x80, asm.IMM8),                 # visible bit set (= leader)?
+        asm.BEQ("FIND_NEXT"),
+        asm.STY(0x12, asm.DIR),                  # leader offset = current Y
+        asm.BRA("FIND_DONE"),
+
+        "FIND_NEXT",
+        asm.INX(),
+        asm.REP(0x21),
+        asm.TYA(),
+        asm.ADC(char_byte_len, asm.IMM16),
+        asm.TAY(),
+        asm.TDC(),
+        asm.SEP(0x20),
+        asm.CPX(CHARACTER_COUNT, asm.IMM16),
+        asm.BNE("FIND_LOOP"),
+
+        "FIND_DONE",
+        asm.LDX(0x12, asm.DIR),
+        asm.CPX(NO_LEADER, asm.IMM16),
+        asm.BEQ("WORKER_RET"),                   # no leader found -> nothing to sync
+
+        # --- Copy leader position onto every member of party $10 ---
+        asm.STZ(0x11, asm.DIR),                  # char counter
+        asm.LDY(0x0000, asm.IMM16),              # object offset
+
+        "COPY_LOOP",
+        asm.LDA(settings, asm.ABS_Y),
+        asm.AND(0x07, asm.IMM8),
+        asm.CMP(0x10, asm.DIR),                  # in target party?
+        asm.BNE("COPY_NEXT"),
+        asm.LDX(0x12, asm.DIR),                  # X = leader offset (source)
+    ] + copy_bytes + [
+        "COPY_NEXT",
+        asm.INC(0x11, asm.DIR),
+        asm.REP(0x21),
+        asm.TYA(),
+        asm.ADC(char_byte_len, asm.IMM16),
+        asm.TAY(),
+        asm.TDC(),
+        asm.SEP(0x20),
+        asm.LDA(0x11, asm.DIR),
+        asm.CMP(CHARACTER_COUNT, asm.IMM8),
+        asm.BNE("COPY_LOOP"),
+
+        "WORKER_RET",
+        asm.RTS(),
+    ]
+    worker_space = Write(Bank.C0, worker_src, "sync party member positions: per-party worker")
+    worker_addr = worker_space.start_address
+
+    dispatch_src = [
+        asm.LDA(0x01, asm.IMM8),
+        asm.STA(0x10, asm.DIR),                  # party slot 1
+        asm.JSR(worker_addr, asm.ABS),
+        asm.LDA(0x02, asm.IMM8),
+        asm.STA(0x10, asm.DIR),                  # party slot 2
+        asm.JSR(worker_addr, asm.ABS),
+        asm.LDA(0x03, asm.IMM8),
+        asm.STA(0x10, asm.DIR),                  # party slot 3
+        asm.JSR(worker_addr, asm.ABS),
+        asm.RTS(),
+    ]
+    dispatch_space = Write(Bank.C0, dispatch_src, "sync party member positions")
+    return dispatch_space.start_address
+
+
 class SetupBranchRecruit(_Instruction):
     """Prepares the party select screen for branch recruitment or party management
     in ruination mode.
@@ -1142,6 +1263,12 @@ class SetupBranchRecruit(_Instruction):
         space = Write(Bank.C0, include_char_party_src, "Include Character's Party helper function")
         _include_char_party = space.start_address
 
+        # Sync each party's members to their leader's object position before the
+        # party-slot bits get reorganised below. Fixes the field party-swap
+        # "teleport" bug. See _write_sync_party_member_positions for details.
+        _sync_party_positions = _write_sync_party_member_positions(
+            character_party_start, char_byte_len)
+
 
         # Scratchpad usage:
         #   $10 = cccc's party index (looked up in step 3a)
@@ -1151,6 +1278,12 @@ class SetupBranchRecruit(_Instruction):
         #   $14 = cccc (bits 0-3 of argument)
 
         src = [
+            # === Step -1: Sync party member positions to their leaders ===
+            # Must run while parties are still in their natural slots (1-3),
+            # i.e. before _park_parties reorganises the slot bits. Clobbers
+            # $10-$13, which Step 0 onward re-initialise. (argument is in $eb.)
+            asm.JSR(_sync_party_positions, asm.ABS),
+
             # === Step 0: Parse argument and zero availability ===
             asm.LDA(0xeb, asm.DIR),                          # A = argument byte
             asm.AND(0x0f, asm.IMM8),                         # isolate cccc
