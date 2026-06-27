@@ -7204,11 +7204,18 @@ def create_party_interaction_scripts(dialogs):
                                dest1="JOIN", dest2="SWAP", dest3=field.RETURN),
 
             "JOIN",
+            # Sync every party's members to their leader's position before the
+            # party-select menu so a re-promoted member doesn't redraw the party
+            # at a stale leader position (the "party teleport" bug).
+            field.SyncPartyMemberPositions(),
             field.SetupBranchRecruit(join_arg),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.Branch(finish_addr),
 
             "SWAP",
+            # See JOIN above: avoid the stale-leader-position teleport when the
+            # two-party swap menu changes which member leads a party.
+            field.SyncPartyMemberPositions(),
             field.SetupBranchRecruit(swap_arg),
             field.Call(REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES),
             field.Branch(finish_addr),

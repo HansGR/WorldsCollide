@@ -5,7 +5,7 @@ import instruction.c0 as c0
 import args
 from enum import IntEnum
 
-# Remaining unused opcodes: 0x4a, 0x5b, 0xe6, 0xfc, 0xfd
+# Remaining unused opcodes: 0x4a, 0xe6, 0xfc, 0xfd
 # -nfh-only: 0xa4 (BedHealCharacter)
 # Also used in y_npc/instructions.py: 0x9e (SetYNPCGraphics), 0x9f (YNPCEffect)
 def _set_opcode_address(opcode, address):
@@ -904,6 +904,139 @@ class RemapPartiesToFreeSlots(_Instruction):
 
         RemapPartiesToFreeSlots.__init__ = lambda self, mark_away_count=0: super().__init__(opcode, mark_away_count)
         self.__init__(mark_away_count)
+
+class SyncPartyMemberPositions(_Instruction):
+    """Copy each party's leader (visible-bit) object position onto every member of
+    that party, for parties 1, 2 and 3.
+
+    Fixes a vanilla-style stale-coordinate bug exposed by ruination's field party
+    swap.  In FF6 a party's non-leader members are invisible and normally share
+    the leader's tile; only the leader's object position tracks the party as it
+    walks.  When a party's leader is changed in the field (e.g. via the Y party
+    switch) and the party then moves, the demoted follower keeps the position it
+    held while it was leader -- its object position goes stale.  If the player
+    later re-promotes that follower (for example by reordering members in the
+    two-party swap menu), the engine redraws the whole party at the follower's
+    stale coordinates and the party appears to teleport.
+
+    Running this immediately before the party-select menu copies the current
+    leader's rendering position (object offsets $02-$07) and tile/collision
+    position (offsets $13-$14) onto every member of each party, so whichever
+    member the menu promotes to leader is already at the correct location.
+    Members that are already in sync (the normal case) are unaffected.
+
+    No arguments.  Scratchpad RAM: $10 = party slot, $11 = char counter,
+    $12-$13 = leader object offset."""
+    def __init__(self):
+        from constants.entities import CHARACTER_COUNT
+
+        settings      = 0x0867  # object offset $00: verbbppp (v=visible/leader, ppp=party)
+        pos_start     = 0x0869  # object offset $02: first of 6 X/Y sub-pixel render bytes
+        tile_start    = 0x087a  # object offset $13: tile X (collision); $087b = tile Y
+        char_byte_len = 0x0029  # 41 bytes per object
+        NO_LEADER     = 0xffff
+
+        # 8 position bytes to copy: render X/Y (offsets $02-$07) + tile X/Y ($13-$14).
+        pos_addrs = [pos_start + i for i in range(6)] + [tile_start, tile_start + 1]
+
+        # Per-party worker subroutine: party slot in $10, leader offset scratch in
+        # $12-$13, member counter in $11.  Kept as its own JSR target so each
+        # internal branch stays well within range; the main routine just calls it
+        # three times.  X/Y are 16-bit at entry (event-engine invariant) and the
+        # index width is never changed, so X/Y stay 16-bit throughout.
+        copy_bytes = []
+        for addr in pos_addrs:
+            copy_bytes += [
+                asm.LDA(addr, asm.ABS_X),            # X = leader object offset (source)
+                asm.STA(addr, asm.ABS_Y),            # Y = member object offset (dest)
+            ]
+
+        worker_src = [
+            # --- Find the visible leader of party $10 ---
+            asm.LDX(NO_LEADER, asm.IMM16),
+            asm.STX(0x12, asm.DIR),                  # $12 = leader offset (sentinel)
+            asm.LDX(0x0000, asm.IMM16),              # char index
+            asm.LDY(0x0000, asm.IMM16),              # object offset
+
+            "FIND_LOOP",
+            asm.LDA(settings, asm.ABS_Y),
+            asm.AND(0x07, asm.IMM8),
+            asm.CMP(0x10, asm.DIR),                  # in target party?
+            asm.BNE("FIND_NEXT"),
+            asm.LDA(settings, asm.ABS_Y),
+            asm.AND(0x80, asm.IMM8),                 # visible bit set (= leader)?
+            asm.BEQ("FIND_NEXT"),
+            asm.STY(0x12, asm.DIR),                  # leader offset = current Y
+            asm.BRA("FIND_DONE"),
+
+            "FIND_NEXT",
+            asm.INX(),
+            asm.REP(0x21),
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),
+            asm.CPX(CHARACTER_COUNT, asm.IMM16),
+            asm.BNE("FIND_LOOP"),
+
+            "FIND_DONE",
+            asm.LDX(0x12, asm.DIR),
+            asm.CPX(NO_LEADER, asm.IMM16),
+            asm.BEQ("WORKER_RET"),                   # no leader found -> nothing to sync
+
+            # --- Copy leader position onto every member of party $10 ---
+            asm.STZ(0x11, asm.DIR),                  # char counter
+            asm.LDY(0x0000, asm.IMM16),              # object offset
+
+            "COPY_LOOP",
+            asm.LDA(settings, asm.ABS_Y),
+            asm.AND(0x07, asm.IMM8),
+            asm.CMP(0x10, asm.DIR),                  # in target party?
+            asm.BNE("COPY_NEXT"),
+            asm.LDX(0x12, asm.DIR),                  # X = leader offset (source)
+        ] + copy_bytes + [
+            "COPY_NEXT",
+            asm.INC(0x11, asm.DIR),
+            asm.REP(0x21),
+            asm.TYA(),
+            asm.ADC(char_byte_len, asm.IMM16),
+            asm.TAY(),
+            asm.TDC(),
+            asm.SEP(0x20),
+            asm.LDA(0x11, asm.DIR),
+            asm.CMP(CHARACTER_COUNT, asm.IMM8),
+            asm.BNE("COPY_LOOP"),
+
+            "WORKER_RET",
+            asm.RTS(),
+        ]
+        worker_space = Write(Bank.C0, worker_src,
+                             "sync party member positions: per-party worker")
+        worker_addr = worker_space.start_address
+
+        src = [
+            asm.LDA(0x01, asm.IMM8),
+            asm.STA(0x10, asm.DIR),                  # party slot 1
+            asm.JSR(worker_addr, asm.ABS),
+            asm.LDA(0x02, asm.IMM8),
+            asm.STA(0x10, asm.DIR),                  # party slot 2
+            asm.JSR(worker_addr, asm.ABS),
+            asm.LDA(0x03, asm.IMM8),
+            asm.STA(0x10, asm.DIR),                  # party slot 3
+            asm.JSR(worker_addr, asm.ABS),
+
+            asm.LDA(0x01, asm.IMM8),                 # command size = 1 (opcode only)
+            asm.JMP(0x9b5c, asm.ABS),                # advance to next event command
+        ]
+        space = Write(Bank.C0, src, "custom sync party member positions")
+        address = space.start_address
+
+        opcode = 0x5b
+        _set_opcode_address(opcode, address)
+
+        SyncPartyMemberPositions.__init__ = lambda self: super().__init__(opcode)
+        self.__init__()
 
 class SetupBranchRecruit(_Instruction):
     """Prepares the party select screen for branch recruitment or party management
