@@ -177,6 +177,16 @@ class ImperialCamp(Event):
                 field.ClearEventBit(event_bit.FINISHED_CHASING_KEFKA_IMPERIAL_CAMP),
                 field.ShowEntity(self.soldier_npc_id),
             ]
+            if self.args.ruination_mode:
+                # The camp event makes dynamic map edits that y-party switching
+                # would reset and break/softlock, so disable y-party switching
+                # for the duration of the event.  It is restored when the reward
+                # is given (character/esper/item_mod).  Uses the shared subroutine
+                # written by event.ruination.create_y_party_switch_subroutines().
+                from event.ruination import DISABLE_Y_PARTY_SWITCH
+                src += [
+                    field.Call(DISABLE_Y_PARTY_SWITCH),
+                ]
 
 
         else:
@@ -275,21 +285,37 @@ class ImperialCamp(Event):
         space = Reserve(0xb15df, 0xb15e1, "imperial camp sabin dialog to cyan before third battle", field.NOP())
         space = Reserve(0xb15f0, 0xb15f2, "imperial camp cyan dialog to sabin before third battle", field.NOP())
 
+    def restore_y_party_switch_src(self):
+        # Re-enable y-party switching (if it was on before the camp event) once
+        # the event is complete and the reward is given.  It was disabled when
+        # the player stepped on the activation tile (leo_and_chasing_kefka_mod).
+        # Uses the shared subroutine written by
+        # event.ruination.create_y_party_switch_subroutines().
+        if not self.args.ruination_mode:
+            return []
+        from event.ruination import RESTORE_Y_PARTY_SWITCH
+        return [
+            field.Call(RESTORE_Y_PARTY_SWITCH),
+        ]
+
     def character_mod(self, character):
         self.cyan_battles_mod(character, self.characters.get_palette(character))
 
         # after all battles complete
         space = Reserve(0xb1616, 0xb16a1, "imperial camp character finish", field.NOP())
-        space.write(
+        src = [
             field.ClearEventBit(npc_bit.WESTMOST_SOLDIER_IMPERIAL_CAMP),
             field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
-
+        ]
+        src += self.restore_y_party_switch_src()
+        src += [
             field.RecruitAndSelectParty(character),
             field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
             field.FinishCheck(),
             field.Return(),
-        )
+        ]
+        space.write(src)
 
     def esper_mod(self, esper):
         random_sprite = self.characters.get_random_esper_item_sprite()
@@ -297,17 +323,20 @@ class ImperialCamp(Event):
 
         # after all battles complete
         space = Reserve(0xb1616, 0xb16a1, "imperial camp esper finish", field.NOP())
-        space.write(
+        src = [
             field.ClearEventBit(npc_bit.WESTMOST_SOLDIER_IMPERIAL_CAMP),
             field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
-
+        ]
+        src += self.restore_y_party_switch_src()
+        src += [
             field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
             field.AddEsper(esper),
             field.Dialog(self.espers.get_receive_esper_dialog(esper)),
             field.FinishCheck(),
             field.Return(),
-        )
+        ]
+        space.write(src)
 
     def item_mod(self, item):
         random_sprite = self.characters.get_random_esper_item_sprite()
@@ -315,18 +344,21 @@ class ImperialCamp(Event):
 
         # after all battles complete
         space = Reserve(0xb1616, 0xb16a1, "imperial camp item finish", field.NOP())
-        space.write(
+        src = [
             field.ClearEventBit(npc_bit.WESTMOST_SOLDIER_IMPERIAL_CAMP),
             field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
-
+        ]
+        src += self.restore_y_party_switch_src()
+        src += [
             field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
 
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
             field.FinishCheck(),
             field.Return(),
-        )
+        ]
+        space.write(src)
 
     def dungeon_crawl_mod(self):
         # Add a map tile that enters imperial camp from the west

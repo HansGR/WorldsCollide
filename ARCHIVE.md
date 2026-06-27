@@ -1198,11 +1198,12 @@ Vanilla vehicle scripts (Bank EE, used by Lete River, Serpent Trench, ending seq
 
 **Why it exists**: Several ruination-mode events make dynamic map edits that get reset — breaking or softlocking the event — if the player presses "y" to switch parties mid-scene. Each such event disables y-party switching when its scene begins and restores it at the end. `DISABLE_Y_PARTY_SWITCH` saves the current `ENABLE_Y_PARTY_SWITCHING` value into the `SAVED_Y_PARTY_SWITCHING` event bit (`0x0bb`) then clears `ENABLE`; `RESTORE_Y_PARTY_SWITCH` reads `SAVED` back into `ENABLE`. The protected scenes never overlap, so a single pair of subroutines and a single save bit serve all of them. Both subroutines end in `Return`, so they work either as a `field.Call` target or directly as a map-event tile script.
 
-**Four consumers** (all ruination-only):
+**Five consumers** (all ruination-only):
 1. `event/doma_wob.py` `enter_exit_functions_mod()`: `field.Call(DISABLE_Y_PARTY_SWITCH)` at the start of `enter_event_function` (siege scene begins), `field.Call(RESTORE_Y_PARTY_SWITCH)` in `exit_function` (after the boss is defeated).
 2. `event/fanatics_tower.py` `ruination_mod()`: assigns `DISABLE_Y_PARTY_SWITCH - EVENT_CODE_START` / `RESTORE_Y_PARTY_SWITCH - EVENT_CODE_START` as the `event_address` of two map-event tiles on maps `0x16a` / `0x16b` (entry/exit).
 3. `event/floating_continent.py` `escape_mod()` and `map_shuffle_mod()`: `field.Call` the disable on landing and the restore on each of the three exit paths.
 4. `event/narshe_moogle_defense.py` `event_start_mod()` / `after_battle_mod()`: `field.Call` the disable before the battle and the restore after victory.
+5. `event/imperial_camp.py` `leo_and_chasing_kefka_mod()` / `restore_y_party_switch_src()`: `field.Call` the disable in the activation tile script (the "player jumps in front of kefka" scene that activates the camp, guarded by `BRIDGE_BLOCKED_IMPERIAL_CAMP` so it only fires once), and the restore in each of the three reward-finish blocks (`character_mod` / `esper_mod` / `item_mod`).
 
 **History**: Originally each event wrote its own private copy of the two subroutines (and Moogle Defense used a raw magic bit `0x1ca` instead of the named `SAVED_Y_PARTY_SWITCHING`). Consolidated into the single shared write in 2026-06.
 
