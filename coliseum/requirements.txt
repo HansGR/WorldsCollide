@@ -1,1 +1,4 @@
 Flask>=2.0
+# Only needed when POSTGRES_URL / DATABASE_URL is set (durable storage on
+# Vercel). Harmless to install otherwise; the SQLite path imports nothing here.
+psycopg[binary]>=3.1

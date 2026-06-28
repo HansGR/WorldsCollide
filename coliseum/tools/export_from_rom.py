@@ -100,11 +100,39 @@ def build(rom_path):
     boss_ids = set(bosses.enemy_name) - set(bosses.removed_enemy_name)
 
     # --- carry sprites/locations over from the existing dataset ---------
+    # ROM names use terse SNES labels ("Necromancr", "Areneid") that often
+    # differ from the Caves of Narshe display names, so match exactly first,
+    # then on a normalised key, then on a close fuzzy match.
+    import difflib
+
+    def normkey(s):
+        import re
+        return re.sub(r"[^a-z0-9]", "", s.lower())
+
     prior = {}
+    prior_norm = {}
     existing = os.path.join(PROJECT, "data", "enemies.json")
     if os.path.exists(existing):
         for e in json.load(open(existing, encoding="utf-8")).get("enemies", []):
-            prior[e["name"]] = e
+            if e.get("sprite") or e.get("sprite_cdn"):
+                prior[e["name"]] = e
+                prior_norm[normkey(e["name"])] = e
+    norm_keys = list(prior_norm)
+
+    def find_sprite(name):
+        if name in prior:
+            return prior[name]
+        nk = normkey(name)
+        if nk in prior_norm:
+            return prior_norm[nk]
+        close = difflib.get_close_matches(nk, norm_keys, n=1, cutoff=0.84)
+        if close:
+            return prior_norm[close[0]]
+        if len(nk) >= 4:  # e.g. ROM "Chupon" -> CoN "Chupon (Colosseum)"
+            for k in norm_keys:
+                if k.startswith(nk) or nk.startswith(k):
+                    return prior_norm[k]
+        return {}
 
     records = []
     powers = []
@@ -138,7 +166,7 @@ def build(rom_path):
             seen[slug] = 1
 
         p = seed_power(e)
-        carry = prior.get(e.name, {})
+        carry = find_sprite(e.name)
         records.append({
             "slug": slug,
             "name": e.name,

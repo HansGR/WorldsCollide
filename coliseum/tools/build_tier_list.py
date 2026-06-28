@@ -15,12 +15,12 @@ Usage:
     python tools/build_tier_list.py
 """
 import os
+import sys
 import json
-import sqlite3
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.dirname(HERE)
-DB_PATH = os.environ.get("COLISEUM_DB", os.path.join(PROJECT, "votes.db"))
+sys.path.insert(0, PROJECT)
 DATA_PATH = os.path.join(PROJECT, "data", "enemies.json")
 
 # (label, minimum rating).  Mirror the thresholds used in the web UI.
@@ -38,20 +38,22 @@ def tier_for(rating):
 def main():
     names = {e["slug"]: e for e in json.load(open(DATA_PATH, encoding="utf-8"))["enemies"]}
 
-    if not os.path.exists(DB_PATH):
-        raise SystemExit(f"No vote database at {DB_PATH}. Run app.py and collect votes first.")
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT * FROM ratings ORDER BY rating DESC").fetchall()
-    total_votes = conn.execute("SELECT COUNT(*) c FROM votes").fetchone()["c"]
+    # Read ratings from whichever backend the app uses (SQLite or Postgres).
+    from storage import get_store
+    store = get_store()
+    ratings = store.all_ratings()
+    if not ratings:
+        raise SystemExit("No ratings found. Run app.py and collect votes first.")
+    total_votes = store.vote_count()
 
     ordered = []
-    for rank, r in enumerate(rows, 1):
-        meta = names.get(r["slug"], {})
+    for rank, slug in enumerate(sorted(ratings, key=lambda s: ratings[s]["rating"], reverse=True), 1):
+        r = ratings[slug]
+        meta = names.get(slug, {})
         ordered.append({
             "rank": rank,
-            "slug": r["slug"],
-            "name": meta.get("name", r["slug"]),
+            "slug": slug,
+            "name": meta.get("name", slug),
             "tier": tier_for(r["rating"]),
             "rating": round(r["rating"]),
             "rd": round(r["rd"]),
