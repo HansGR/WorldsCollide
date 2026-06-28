@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "comment": "Branch claude/ff6-coliseum-tier-voting-*: deploy the coliseum/ app from the repo root (Vercel Root Directory = ./). For a project whose Root Directory is set to 'coliseum', that folder's own vercel.json is used instead.",
+  "version": 2,
+  "builds": [
+    {
+      "src": "coliseum/api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": "coliseum/{data/enemies.json,glicko2.py,pairing.py,storage.py,core.py}"
+      }
+    },
+    { "src": "coliseum/public/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/coliseum/api/index.py" },
+    { "src": "/sprites/(.*)", "dest": "/coliseum/public/sprites/$1" },
+    { "src": "/(style\\.css|app\\.js)", "dest": "/coliseum/public/$1" },
+    { "src": "/favicon.ico", "dest": "/coliseum/public/index.html" },
+    { "src": "/(.*)", "dest": "/coliseum/public/index.html" }
+  ]
+}

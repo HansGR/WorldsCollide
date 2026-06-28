@@ -1,0 +1,5 @@
+# Duplicated next to the entrypoint so the @vercel/python *builds* config
+# (repo-root vercel.json, Root Directory = ./) finds it. The Root-Directory =
+# coliseum setup uses coliseum/requirements.txt instead. Keep them in sync.
+Flask>=2.0
+psycopg[binary]>=3.1

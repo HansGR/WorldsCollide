@@ -58,17 +58,32 @@ the CDN) and a Python serverless function in `api/index.py` for the API. The
 logic is **stateless** — every request reads/writes ratings through the store —
 so it is correct across multiple serverless instances.
 
-1. In Vercel, **import the repo** and set **Root Directory = `coliseum`**.
-   (This is the key step — without it Vercel sees the WorldsCollide Python repo,
-   finds nothing web-servable, and returns 404.)
-2. Deploy. `vercel.json` routes `/api/*` to the function and serves `public/`
-   statically; `requirements.txt` installs Flask.
-3. **For durable votes, add storage.** Serverless filesystems are ephemeral, so
-   without a database the bundled SQLite store lives in `/tmp` and is wiped
-   between cold starts (fine for a quick demo, not for real crowd-sourcing).
-   Add a Vercel Postgres / Neon integration to the project — it sets
-   `POSTGRES_URL` automatically and the app switches to Postgres on the next
-   deploy (`storage.py`). No code change needed.
+There are **two committed configs**, so either Root Directory works:
+
+| Vercel **Root Directory** | Config used | Best for |
+|---|---|---|
+| `./` (repo root) | `/vercel.json` | An existing project that already points at `./` |
+| `coliseum` | `coliseum/vercel.json` | A dedicated project for this app |
+
+**Option A — Root Directory = `./` (matches an existing `./` project).**
+The repo-root `vercel.json` builds the app out of `coliseum/` via the
+`@vercel/python` + static builders, so nothing else needs to change. Since
+`vercel.json` is per-branch, this only affects deployments of this branch.
+
+**Option B — a separate Vercel project (recommended; isolated).**
+You can create more than one Project from the same Git repo:
+1. Vercel → **Add New… → Project** → import this repo again.
+2. **Settings → Git → Production Branch** = `claude/ff6-coliseum-tier-voting-…`.
+3. **Settings → Build & Output → Root Directory** = `coliseum`.
+   That folder's `coliseum/vercel.json` (rewrites) takes over.
+
+Either way:
+
+* **For durable votes, add storage.** Serverless filesystems are ephemeral, so
+  without a database the bundled SQLite store lives in `/tmp` and is wiped
+  between cold starts (fine for a quick demo, not for real crowd-sourcing). Add a
+  Vercel Postgres / Neon integration — it sets `POSTGRES_URL` automatically and
+  the app switches to Postgres on the next deploy (`storage.py`). No code change.
 
 > Prefer Vercel Postgres/Neon (one-click) over SQLite for any shared link.
 

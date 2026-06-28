@@ -40,3 +40,23 @@ def api_standings():
 @app.route("/api/stats")
 def api_stats():
     return jsonify(core.stats())
+
+
+def _normalize_path(wsgi_app):
+    """Make routing independent of how Vercel rewrites the request.
+
+    Depending on whether the deployment uses Root Directory = ``coliseum``
+    (rewrites) or = ``./`` (repo-root ``vercel.json`` builds/routes), the
+    function may receive ``/api/pair`` or a prefixed variant. Normalise so Flask
+    always sees the path from ``/api/`` onward.
+    """
+    def wrapped(environ, start_response):
+        path = environ.get("PATH_INFO", "")
+        idx = path.find("/api/")
+        if idx > 0:
+            environ["PATH_INFO"] = path[idx:]
+        return wsgi_app(environ, start_response)
+    return wrapped
+
+
+app.wsgi_app = _normalize_path(app.wsgi_app)
