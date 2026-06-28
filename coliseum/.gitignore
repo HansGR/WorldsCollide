@@ -1,0 +1,9 @@
+# Runtime vote database (regenerated from scratch / per-deployment)
+votes.db
+*.db
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/

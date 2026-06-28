@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FF6 Coliseum &mdash; Who Would Win?</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>FF6 <span class="accent">Coliseum</span></h1>
+  <p class="tagline">Two enemies enter. You decide who'd win the fight.</p>
+</header>
+
+<main>
+  <section id="arena" class="arena">
+    <button class="fighter" data-side="a" aria-label="Pick left fighter">
+      <div class="sprite-wrap"><img class="sprite" alt=""></div>
+      <div class="name"></div>
+      <div class="meta"></div>
+    </button>
+
+    <div class="versus">VS</div>
+
+    <button class="fighter" data-side="b" aria-label="Pick right fighter">
+      <div class="sprite-wrap"><img class="sprite" alt=""></div>
+      <div class="name"></div>
+      <div class="meta"></div>
+    </button>
+  </section>
+
+  <p class="hint">Click a fighter &mdash; or press <kbd>&larr;</kbd> / <kbd>&rarr;</kbd>.
+     <a href="#" id="skip">Skip &raquo;</a></p>
+
+  <section class="statusbar">
+    <span id="vote-count">0</span> votes cast &middot;
+    <span id="coverage">&mdash;</span> &middot;
+    <a href="#" id="toggle-standings">View tier list &raquo;</a>
+  </section>
+
+  <section id="standings" class="standings hidden">
+    <h2>Current Tier List <small>(live)</small></h2>
+    <div id="tiers"></div>
+  </section>
+</main>
+
+<footer>
+  <p>Ratings via Glicko-2 with active pair selection. Seeded from Caves of Narshe
+     vanilla stats, then refined by your votes. Built for
+     <a href="https://github.com/HansGR/WorldsCollide">FF6 WorldsCollide</a>.</p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
