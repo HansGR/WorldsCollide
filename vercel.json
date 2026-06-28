@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "comment": "Branch claude/ff6-coliseum-tier-voting-*: deploy the coliseum/ app from the repo root (Vercel Root Directory = ./). For a project whose Root Directory is set to 'coliseum', that folder's own vercel.json is used instead.",
   "version": 2,
   "builds": [
     {
