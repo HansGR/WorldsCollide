@@ -50,11 +50,21 @@ function render(side, enemy) {
   }
 
   el.querySelector(".name").textContent = enemy.name;
-  const bits = [`Lv ${enemy.level}`, `${enemy.hp.toLocaleString()} HP`];
-  if (enemy.location) bits.push(enemy.location);
-  let meta = bits.join(" &middot; ");
-  if (enemy.coliseum) meta += ' &middot; <span class="tag">Coliseum</span>';
-  el.querySelector(".meta").innerHTML = meta;
+
+  // Location (with a Coliseum tag when relevant) instead of level/HP.
+  let loc = enemy.location || "";
+  if (enemy.coliseum && !/colosseum/i.test(loc)) {
+    loc += (loc ? " &middot; " : "") + '<span class="tag">Coliseum</span>';
+  }
+  el.querySelector(".location").innerHTML = loc || "&mdash;";
+
+  // Non-scaling stat block.
+  for (const i of el.querySelectorAll(".stats i")) {
+    const v = enemy[i.dataset.k];
+    i.textContent = (v === null || v === undefined) ? "?" : v;
+  }
+
+  el.querySelector(".desc").textContent = enemy.description || "";
 }
 
 async function vote(winnerSide) {

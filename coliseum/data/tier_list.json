@@ -10,8 +10,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 77,
-      "hp": 46050,
+      "location": "World Map",
+      "atk": 55,
+      "matk": 25,
+      "dfn": 190,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -23,8 +26,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 54,
-      "hp": 4500,
+      "location": "World Map",
+      "atk": 180,
+      "matk": 10,
+      "dfn": 145,
+      "mdef": 100,
       "coliseum": true
     },
     {
@@ -36,8 +42,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 32760,
+      "location": "Phantom Train",
+      "atk": 53,
+      "matk": 25,
+      "dfn": 160,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -49,8 +58,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 50305,
+      "location": "Blackjack",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 55,
       "coliseum": true
     },
     {
@@ -62,8 +74,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 57,
-      "hp": 27000,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 15,
+      "dfn": 175,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -75,8 +90,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 73,
-      "hp": 18000,
+      "location": "Random encounter",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 125,
       "coliseum": false
     },
     {
@@ -88,8 +106,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 57,
-      "hp": 12770,
+      "location": "World Map",
+      "atk": 33,
+      "matk": 16,
+      "dfn": 125,
+      "mdef": 160,
       "coliseum": true
     },
     {
@@ -101,8 +122,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 49,
-      "hp": 12018,
+      "location": "World Map",
+      "atk": 54,
+      "matk": 22,
+      "dfn": 130,
+      "mdef": 60,
       "coliseum": true
     },
     {
@@ -114,8 +138,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 56,
-      "hp": 14500,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 170,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -127,8 +154,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 58,
-      "hp": 6000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 17,
+      "dfn": 200,
+      "mdef": 125,
       "coliseum": false
     },
     {
@@ -140,8 +170,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 49,
-      "hp": 19000,
+      "location": "Floating Continent",
+      "atk": 25,
+      "matk": 7,
+      "dfn": 100,
+      "mdef": 135,
       "coliseum": true
     },
     {
@@ -153,8 +186,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 59,
-      "hp": 12280,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 12,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -166,8 +202,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 56,
-      "hp": 7000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 16,
+      "dfn": 200,
+      "mdef": 120,
       "coliseum": false
     },
     {
@@ -179,8 +218,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 57,
-      "hp": 5000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 18,
+      "dfn": 200,
+      "mdef": 130,
       "coliseum": false
     },
     {
@@ -192,8 +234,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 55,
-      "hp": 9000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 14,
+      "dfn": 200,
+      "mdef": 110,
       "coliseum": false
     },
     {
@@ -205,8 +250,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 8000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 15,
+      "dfn": 200,
+      "mdef": 115,
       "coliseum": false
     },
     {
@@ -218,8 +266,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 7200,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 185,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -231,8 +282,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 47,
-      "hp": 9200,
+      "location": "Ancient Castle",
+      "atk": 18,
+      "matk": 15,
+      "dfn": 190,
+      "mdef": 125,
       "coliseum": true
     },
     {
@@ -244,8 +298,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 57,
-      "hp": 7500,
+      "location": "Kefka's Tower",
+      "atk": 22,
+      "matk": 9,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -257,8 +314,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 55,
-      "hp": 4000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 19,
+      "dfn": 200,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -270,8 +330,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 31,
-      "hp": 9845,
+      "location": "Narshe",
+      "atk": 13,
+      "matk": 5,
+      "dfn": 102,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -283,8 +346,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 54,
-      "hp": 9800,
+      "location": "Kefka's Tower",
+      "atk": 5,
+      "matk": 10,
+      "dfn": 160,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -296,8 +362,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 59,
-      "hp": 7050,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 5,
+      "dfn": 100,
+      "mdef": 180,
       "coliseum": true
     },
     {
@@ -309,8 +378,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 52,
-      "hp": 6600,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 12,
+      "dfn": 155,
+      "mdef": 155,
       "coliseum": true
     },
     {
@@ -322,8 +394,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 36,
-      "hp": 7191,
+      "location": "Cave in the Veldt",
+      "atk": 40,
+      "matk": 15,
+      "dfn": 150,
+      "mdef": 160,
       "coliseum": true
     },
     {
@@ -335,8 +410,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 54,
-      "hp": 18008,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 13,
+      "dfn": 110,
+      "mdef": 90,
       "coliseum": true
     },
     {
@@ -348,8 +426,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 54,
-      "hp": 3000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 20,
+      "dfn": 200,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -361,8 +442,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 45,
-      "hp": 4220,
+      "location": "Ancient Castle; Cave to the Ancient Castle",
+      "atk": 29,
+      "matk": 10,
+      "dfn": 90,
+      "mdef": 250,
       "coliseum": false
     },
     {
@@ -374,8 +458,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 51,
-      "hp": 10000,
+      "location": "Kefka's Tower",
+      "atk": 11,
+      "matk": 17,
+      "dfn": 110,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -387,8 +474,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 56,
-      "hp": 6800,
+      "location": "Kefka's Tower",
+      "atk": 12,
+      "matk": 14,
+      "dfn": 110,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -400,8 +490,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 59,
-      "hp": 12000,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 8,
+      "dfn": 80,
+      "mdef": 120,
       "coliseum": true
     },
     {
@@ -413,8 +506,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 55,
-      "hp": 8940,
+      "location": "Kefka's Tower",
+      "atk": 12,
+      "matk": 7,
+      "dfn": 105,
+      "mdef": 155,
       "coliseum": true
     },
     {
@@ -426,8 +522,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 54,
-      "hp": 5000,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 135,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -439,8 +538,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 32000,
+      "location": "World Map",
+      "atk": 25,
+      "matk": 10,
+      "dfn": 150,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -452,8 +554,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 50,
-      "hp": 10050,
+      "location": "Kefka's Tower",
+      "atk": 15,
+      "matk": 12,
+      "dfn": 130,
+      "mdef": 110,
       "coliseum": true
     },
     {
@@ -465,8 +570,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 8150,
+      "location": "Kefka's Tower",
+      "atk": 8,
+      "matk": 12,
+      "dfn": 100,
+      "mdef": 155,
       "coliseum": true
     },
     {
@@ -478,8 +586,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 51,
-      "hp": 2000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 21,
+      "dfn": 200,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -491,8 +602,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 46,
-      "hp": 5555,
+      "location": "Ancient Castle; Cave to the Ancient Castle",
+      "atk": 18,
+      "matk": 7,
+      "dfn": 70,
+      "mdef": 250,
       "coliseum": false
     },
     {
@@ -504,8 +618,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 58,
-      "hp": 11000,
+      "location": "Kefka's Tower",
+      "atk": 7,
+      "matk": 10,
+      "dfn": 90,
+      "mdef": 105,
       "coliseum": true
     },
     {
@@ -517,8 +634,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 56,
-      "hp": 7000,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 6,
+      "dfn": 115,
+      "mdef": 105,
       "coliseum": true
     },
     {
@@ -530,8 +650,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 52,
-      "hp": 6000,
+      "location": "Kefka's Tower",
+      "atk": 10,
+      "matk": 5,
+      "dfn": 140,
+      "mdef": 140,
       "coliseum": true
     },
     {
@@ -543,8 +666,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 49,
-      "hp": 6013,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 120,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -556,8 +682,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 59,
-      "hp": 2800,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 7,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -569,8 +698,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 45,
-      "hp": 4020,
+      "location": "Ancient Castle",
+      "atk": 13,
+      "matk": 7,
+      "dfn": 90,
+      "mdef": 250,
       "coliseum": false
     },
     {
@@ -582,8 +714,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 54,
-      "hp": 25000,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 15,
+      "dfn": 5,
+      "mdef": 70,
       "coliseum": true
     },
     {
@@ -595,8 +730,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 4500,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -608,8 +746,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 46,
-      "hp": 4635,
+      "location": "Cave to the Ancient Castle",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 50,
+      "mdef": 250,
       "coliseum": true
     },
     {
@@ -621,8 +762,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 53,
-      "hp": 2000,
+      "location": "Kefka's Tower",
+      "atk": 2,
+      "matk": 10,
+      "dfn": 190,
+      "mdef": 170,
       "coliseum": false
     },
     {
@@ -634,8 +778,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 55,
-      "hp": 6200,
+      "location": "World Map",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 120,
+      "mdef": 90,
       "coliseum": true
     },
     {
@@ -647,8 +794,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 52,
-      "hp": 3511,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 7,
+      "dfn": 130,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -660,8 +810,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 44,
-      "hp": 4530,
+      "location": "Zone Eater's Belly",
+      "atk": 25,
+      "matk": 11,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -673,8 +826,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 49,
-      "hp": 3815,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 7,
+      "dfn": 120,
+      "mdef": 165,
       "coliseum": true
     },
     {
@@ -686,8 +842,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 48,
-      "hp": 1000,
+      "location": "Tower of Fanatics",
+      "atk": 10,
+      "matk": 22,
+      "dfn": 200,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -699,8 +858,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 29,
-      "hp": 7000,
+      "location": "Floating Continent",
+      "atk": 45,
+      "matk": 10,
+      "dfn": 130,
+      "mdef": 110,
       "coliseum": false
     },
     {
@@ -712,8 +874,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 51,
-      "hp": 3200,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 8,
+      "dfn": 115,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -725,8 +890,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 44,
-      "hp": 4211,
+      "location": "Zone Eater's Belly",
+      "atk": 19,
+      "matk": 11,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -738,8 +906,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 44,
-      "hp": 3559,
+      "location": "Zone Eater's Belly",
+      "atk": 15,
+      "matk": 11,
+      "dfn": 120,
+      "mdef": 160,
       "coliseum": true
     },
     {
@@ -751,8 +922,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 47,
-      "hp": 4550,
+      "location": "Phoenix Cave",
+      "atk": 11,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -764,8 +938,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 39,
-      "hp": 7862,
+      "location": "Cyan's Soul",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -777,8 +954,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 35,
-      "hp": 4771,
+      "location": "Mt. Zozo",
+      "atk": 23,
+      "matk": 10,
+      "dfn": 150,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -790,8 +970,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 47,
-      "hp": 4200,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 135,
+      "mdef": 100,
       "coliseum": false
     },
     {
@@ -803,8 +986,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 43,
-      "hp": 4452,
+      "location": "Zone Eater's Belly",
+      "atk": 13,
+      "matk": 11,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -816,8 +1002,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 48,
-      "hp": 3525,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 7,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -829,8 +1018,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 43,
-      "hp": 3609,
+      "location": "Zone Eater's Belly",
+      "atk": 17,
+      "matk": 11,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -842,8 +1034,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 8000,
+      "location": "Umaro's Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 150,
+      "mdef": 180,
       "coliseum": true
     },
     {
@@ -855,8 +1050,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 38,
-      "hp": 3210,
+      "location": "Ebot's Rock",
+      "atk": 22,
+      "matk": 10,
+      "dfn": 135,
+      "mdef": 150,
       "coliseum": true
     },
     {
@@ -868,8 +1066,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 43,
-      "hp": 3850,
+      "location": "Zone Eater's Belly",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 155,
       "coliseum": true
     },
     {
@@ -881,8 +1082,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 52,
-      "hp": 2000,
+      "location": "Kefka's Tower",
+      "atk": 13,
+      "matk": 25,
+      "dfn": 20,
+      "mdef": 165,
       "coliseum": true
     },
     {
@@ -894,8 +1098,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 38,
-      "hp": 1300,
+      "location": "Ebot's Rock",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 180,
+      "mdef": 225,
       "coliseum": false
     },
     {
@@ -907,8 +1114,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 42,
-      "hp": 3615,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 145,
       "coliseum": true
     },
     {
@@ -920,8 +1130,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 38,
-      "hp": 3826,
+      "location": "Ebot's Rock",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 150,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -933,8 +1146,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 41,
-      "hp": 3300,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -946,8 +1162,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 3100,
+      "location": "Narshe",
+      "atk": 27,
+      "matk": 10,
+      "dfn": 135,
+      "mdef": 155,
       "coliseum": true
     },
     {
@@ -959,8 +1178,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 41,
-      "hp": 2905,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -972,8 +1194,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 30,
-      "hp": 1584,
+      "location": "Darill's Tomb",
+      "atk": 45,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -985,8 +1210,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 40,
-      "hp": 2912,
+      "location": "Ancient Castle; Cyan's Soul; Doma Castle",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -998,8 +1226,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 36,
-      "hp": 2500,
+      "location": "Cave in the Veldt",
+      "atk": 21,
+      "matk": 12,
+      "dfn": 125,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1011,8 +1242,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 40,
-      "hp": 3262,
+      "location": "Cyan's Soul",
+      "atk": 13,
+      "matk": 8,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1024,8 +1258,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 47,
-      "hp": 2077,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 80,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1037,8 +1274,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 39,
-      "hp": 3062,
+      "location": "Ancient Castle; Cyan's Soul; Doma Castle",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 160,
       "coliseum": false
     },
     {
@@ -1050,8 +1290,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 34,
-      "hp": 2079,
+      "location": "Mt. Zozo",
+      "atk": 12,
+      "matk": 10,
+      "dfn": 210,
+      "mdef": 125,
       "coliseum": false
     },
     {
@@ -1063,8 +1306,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 35,
-      "hp": 2191,
+      "location": "Mt. Zozo",
+      "atk": 28,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -1076,8 +1322,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 34,
-      "hp": 2409,
+      "location": "Mt. Zozo",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 165,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1089,8 +1338,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 37,
-      "hp": 2444,
+      "location": "Ebot's Rock",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 160,
       "coliseum": false
     },
     {
@@ -1102,8 +1354,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 39,
-      "hp": 2722,
+      "location": "Cyan's Soul; Doma Castle",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1115,8 +1370,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 39,
-      "hp": 2850,
+      "location": "Cyan's Soul",
+      "atk": 13,
+      "matk": 9,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1128,8 +1386,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 30,
-      "hp": 1584,
+      "location": "Darill's Tomb",
+      "atk": 45,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1141,8 +1402,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 37,
-      "hp": 2600,
+      "location": "Ebot's Rock",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1154,8 +1418,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 28,
-      "hp": 5800,
+      "location": "Floating Continent",
+      "atk": 25,
+      "matk": 7,
+      "dfn": 100,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -1167,8 +1434,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 50,
-      "hp": 250,
+      "location": "World Map",
+      "atk": 30,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 200,
       "coliseum": false
     },
     {
@@ -1180,8 +1450,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 37,
-      "hp": 2470,
+      "location": "Ebot's Rock",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -1193,8 +1466,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 38,
-      "hp": 2366,
+      "location": "Ebot's Rock",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -1206,8 +1482,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 44,
-      "hp": 9013,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 5,
+      "mdef": 85,
       "coliseum": true
     },
     {
@@ -1219,8 +1498,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 48,
-      "hp": 50,
+      "location": "Phoenix Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 252,
+      "mdef": 252,
       "coliseum": false
     },
     {
@@ -1232,8 +1514,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 51,
-      "hp": 120,
+      "location": "Kefka's Tower",
+      "atk": 20,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 254,
       "coliseum": false
     },
     {
@@ -1245,8 +1530,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 40,
-      "hp": 1200,
+      "location": "Cyan's Soul",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1258,8 +1546,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 30,
-      "hp": 2900,
+      "location": "Darill's Tomb",
+      "atk": 20,
+      "matk": 10,
+      "dfn": 95,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1271,8 +1562,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 33,
-      "hp": 2000,
+      "location": "Umaro's Cave",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 130,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1284,8 +1578,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 33,
-      "hp": 2000,
+      "location": "Umaro's Cave",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 150,
+      "mdef": 120,
       "coliseum": false
     },
     {
@@ -1297,8 +1594,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 29,
-      "hp": 2058,
+      "location": "Darill's Tomb",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 145,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1310,8 +1610,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 34,
-      "hp": 1759,
+      "location": "Mt. Zozo",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1323,8 +1626,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 1510,
+      "location": "Narshe",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 155,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1336,8 +1642,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 33,
-      "hp": 2000,
+      "location": "Umaro's Cave",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1349,8 +1658,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 18,
-      "hp": 8050,
+      "location": "Kefka's Tower",
+      "atk": 15,
+      "matk": 4,
+      "dfn": 105,
+      "mdef": 155,
       "coliseum": true
     },
     {
@@ -1362,8 +1674,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 1750,
+      "location": "Floating Continent",
+      "atk": 26,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -1375,8 +1690,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 39,
-      "hp": 1522,
+      "location": "Cyan's Soul; Doma Castle",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 140,
+      "mdef": 80,
       "coliseum": false
     },
     {
@@ -1388,8 +1706,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 1777,
+      "location": "Narshe",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1401,8 +1722,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 36,
-      "hp": 2095,
+      "location": "Jidoor",
+      "atk": 13,
+      "matk": 5,
+      "dfn": 145,
+      "mdef": 85,
       "coliseum": false
     },
     {
@@ -1414,8 +1738,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 33,
-      "hp": 2000,
+      "location": "Umaro's Cave",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1427,8 +1754,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 1877,
+      "location": "Narshe",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 145,
+      "mdef": 105,
       "coliseum": false
     },
     {
@@ -1440,8 +1770,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 36,
-      "hp": 1115,
+      "location": "Jidoor",
+      "atk": 17,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1453,8 +1786,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 28,
-      "hp": 1945,
+      "location": "Figaro Castle; South Figaro Cave",
+      "atk": 17,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1466,8 +1802,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 1650,
+      "location": "Cave to the Sealed Gate; Floating Continent",
+      "atk": 22,
+      "matk": 5,
+      "dfn": 135,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1479,8 +1818,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 1380,
+      "location": "Narshe",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1492,8 +1834,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 21,
-      "hp": 1991,
+      "location": "Cave to the Sealed Gate",
+      "atk": 29,
+      "matk": 10,
+      "dfn": 150,
+      "mdef": 100,
       "coliseum": false
     },
     {
@@ -1505,8 +1850,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 29,
-      "hp": 1418,
+      "location": "World Map",
+      "atk": 19,
+      "matk": 10,
+      "dfn": 102,
+      "mdef": 153,
       "coliseum": false
     },
     {
@@ -1518,8 +1866,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 900,
+      "location": "Narshe",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 165,
+      "mdef": 125,
       "coliseum": false
     },
     {
@@ -1531,8 +1882,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 2252,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1544,8 +1898,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 36,
-      "hp": 885,
+      "location": "Jidoor",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1557,8 +1914,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 1700,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 9,
+      "dfn": 125,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1570,8 +1930,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 31,
-      "hp": 100,
+      "location": "Tower of Fanatics",
+      "atk": 5,
+      "matk": 35,
+      "dfn": 220,
+      "mdef": 190,
       "coliseum": false
     },
     {
@@ -1583,8 +1946,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 24,
-      "hp": 1305,
+      "location": "Espers' Gathering Place",
+      "atk": 22,
+      "matk": 10,
+      "dfn": 225,
+      "mdef": 45,
       "coliseum": false
     },
     {
@@ -1596,8 +1962,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 22,
-      "hp": 2539,
+      "location": "Jidoor",
+      "atk": 1,
+      "matk": 30,
+      "dfn": 60,
+      "mdef": 170,
       "coliseum": false
     },
     {
@@ -1609,8 +1978,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 29,
-      "hp": 1318,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 102,
+      "mdef": 153,
       "coliseum": false
     },
     {
@@ -1622,8 +1994,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 38,
-      "hp": 3000,
+      "location": "Cyan's Soul",
+      "atk": 10,
+      "matk": 3,
+      "dfn": 105,
+      "mdef": 50,
       "coliseum": true
     },
     {
@@ -1635,8 +2010,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 1900,
+      "location": "Floating Continent",
+      "atk": 18,
+      "matk": 10,
+      "dfn": 80,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1648,8 +2026,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 1025,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 9,
+      "dfn": 135,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -1661,8 +2042,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 32,
-      "hp": 1677,
+      "location": "Narshe",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 50,
+      "mdef": 160,
       "coliseum": false
     },
     {
@@ -1674,8 +2058,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 1202,
+      "location": "Vector",
+      "atk": 13,
+      "matk": 8,
+      "dfn": 200,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1687,8 +2074,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 1412,
+      "location": "World Map",
+      "atk": 16,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1700,8 +2090,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 22,
-      "hp": 2237,
+      "location": "World Map",
+      "atk": 25,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 110,
       "coliseum": false
     },
     {
@@ -1713,8 +2106,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 28,
-      "hp": 1334,
+      "location": "World Map",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1726,8 +2122,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 25,
-      "hp": 1300,
+      "location": "Floating Continent",
+      "atk": 24,
+      "matk": 10,
+      "dfn": 120,
+      "mdef": 110,
       "coliseum": false
     },
     {
@@ -1739,8 +2138,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 33,
-      "hp": 1000,
+      "location": "Umaro's Cave",
+      "atk": 5,
+      "matk": 10,
+      "dfn": 120,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1752,8 +2154,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 1280,
+      "location": "World Map",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 102,
+      "mdef": 153,
       "coliseum": false
     },
     {
@@ -1765,8 +2170,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 1112,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1778,8 +2186,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 20,
-      "hp": 1399,
+      "location": "World Map",
+      "atk": 25,
+      "matk": 3,
+      "dfn": 100,
+      "mdef": 165,
       "coliseum": false
     },
     {
@@ -1791,8 +2202,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 28,
-      "hp": 1334,
+      "location": "Figaro Castle; South Figaro Cave",
+      "atk": 5,
+      "matk": 10,
+      "dfn": 102,
+      "mdef": 153,
       "coliseum": false
     },
     {
@@ -1804,8 +2218,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 615,
+      "location": "MagiTek Factory; Vector",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 220,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -1817,8 +2234,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 952,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1830,8 +2250,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 24,
-      "hp": 860,
+      "location": "Espers' Gathering Place",
+      "atk": 16,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1843,8 +2266,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 21,
-      "hp": 1100,
+      "location": "Cave to the Sealed Gate",
+      "atk": 18,
+      "matk": 12,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1856,8 +2282,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 582,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 155,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1869,8 +2298,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 23,
-      "hp": 977,
+      "location": "Espers' Gathering Place",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -1882,8 +2314,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 29,
-      "hp": 1200,
+      "location": "Darill's Tomb",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 105,
       "coliseum": false
     },
     {
@@ -1895,8 +2330,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 800,
+      "location": "Figaro Castle; South Figaro Cave",
+      "atk": 8,
+      "matk": 10,
+      "dfn": 145,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -1908,8 +2346,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 4000,
+      "location": "World Map",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 102,
+      "mdef": 20,
       "coliseum": false
     },
     {
@@ -1921,8 +2362,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 18,
-      "hp": 580,
+      "location": "Imperial Base; Imperial Palace; MagiTek Factory; Vector",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 210,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -1934,8 +2378,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 23,
-      "hp": 1150,
+      "location": "Espers' Gathering Place",
+      "atk": 16,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 125,
       "coliseum": false
     },
     {
@@ -1947,8 +2394,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 40,
-      "hp": 3000,
+      "location": "Ancient Castle; Cyan's Soul; Doma Castle",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 10,
+      "mdef": 20,
       "coliseum": false
     },
     {
@@ -1960,8 +2410,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 670,
+      "location": "Imperial Base; MagiTek Factory; Vector",
+      "atk": 12,
+      "matk": 7,
+      "dfn": 230,
+      "mdef": 110,
       "coliseum": false
     },
     {
@@ -1973,8 +2426,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 1000,
+      "location": "Figaro Castle",
+      "atk": 6,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -1986,8 +2442,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 1111,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 140,
+      "mdef": 80,
       "coliseum": false
     },
     {
@@ -1999,8 +2458,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 18,
-      "hp": 892,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 140,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2012,8 +2474,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 800,
+      "location": "MagiTek Research Facility",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 200,
+      "mdef": 100,
       "coliseum": false
     },
     {
@@ -2025,8 +2490,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 28,
-      "hp": 900,
+      "location": "World Map",
+      "atk": 11,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 105,
       "coliseum": false
     },
     {
@@ -2038,8 +2506,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 555,
+      "location": "MagiTek Factory; Vector",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 180,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -2051,8 +2522,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 850,
+      "location": "World Map",
+      "atk": 12,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 120,
       "coliseum": false
     },
     {
@@ -2064,8 +2538,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 20,
-      "hp": 781,
+      "location": "Cave to the Sealed Gate",
+      "atk": 17,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2077,8 +2554,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 22,
-      "hp": 750,
+      "location": "World Map",
+      "atk": 17,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 120,
       "coliseum": false
     },
     {
@@ -2090,8 +2570,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 28,
-      "hp": 1334,
+      "location": "Figaro Castle; South Figaro Cave",
+      "atk": 11,
+      "matk": 4,
+      "dfn": 110,
+      "mdef": 70,
       "coliseum": false
     },
     {
@@ -2103,8 +2586,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 16,
-      "hp": 1200,
+      "location": "Zozo",
+      "atk": 18,
+      "matk": 5,
+      "dfn": 125,
+      "mdef": 115,
       "coliseum": false
     },
     {
@@ -2116,8 +2602,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 612,
+      "location": "World Map",
+      "atk": 11,
+      "matk": 10,
+      "dfn": 220,
+      "mdef": 5,
       "coliseum": false
     },
     {
@@ -2129,8 +2618,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 17,
-      "hp": 3000,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 0,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2142,8 +2634,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 17,
-      "hp": 620,
+      "location": "World Map",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 135,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -2155,8 +2650,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 650,
+      "location": "MagiTek Factory",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 155,
+      "mdef": 105,
       "coliseum": false
     },
     {
@@ -2168,8 +2666,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 20,
-      "hp": 480,
+      "location": "Cave to the Sealed Gate",
+      "atk": 20,
+      "matk": 10,
+      "dfn": 120,
+      "mdef": 130,
       "coliseum": false
     },
     {
@@ -2181,8 +2682,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 18,
-      "hp": 250,
+      "location": "MagiTek Factory; Vector",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 200,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2194,8 +2698,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 39,
-      "hp": 1000,
+      "location": "Cyan's Soul; Doma Castle",
+      "atk": 1,
+      "matk": 1,
+      "dfn": 140,
+      "mdef": 5,
       "coliseum": false
     },
     {
@@ -2207,8 +2714,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 470,
+      "location": "MagiTek Research Facility",
+      "atk": 13,
+      "matk": 8,
+      "dfn": 170,
+      "mdef": 120,
       "coliseum": false
     },
     {
@@ -2220,8 +2730,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 458,
+      "location": "World Map",
+      "atk": 11,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 130,
       "coliseum": false
     },
     {
@@ -2233,8 +2746,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 18,
-      "hp": 545,
+      "location": "World Map",
+      "atk": 11,
+      "matk": 3,
+      "dfn": 150,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2246,8 +2762,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 17,
-      "hp": 467,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2259,8 +2778,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 17,
-      "hp": 480,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2272,8 +2794,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 27,
-      "hp": 3,
+      "location": "World Map",
+      "atk": 1,
+      "matk": 50,
+      "dfn": 255,
+      "mdef": 255,
       "coliseum": true
     },
     {
@@ -2285,8 +2810,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 12,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 254,
+      "mdef": 254,
       "coliseum": false
     },
     {
@@ -2298,8 +2826,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 21,
-      "hp": 420,
+      "location": "World Map",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -2311,8 +2842,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 265,
+      "location": "Tzen",
+      "atk": 9,
+      "matk": 6,
+      "dfn": 140,
+      "mdef": 115,
       "coliseum": false
     },
     {
@@ -2324,8 +2858,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 16,
-      "hp": 428,
+      "location": "Zozo",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2337,8 +2874,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 15,
-      "hp": 492,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 125,
+      "mdef": 125,
       "coliseum": false
     },
     {
@@ -2350,8 +2890,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 20,
-      "hp": 590,
+      "location": "Cave to the Sealed Gate",
+      "atk": 1,
+      "matk": 10,
+      "dfn": 50,
+      "mdef": 190,
       "coliseum": false
     },
     {
@@ -2363,8 +2906,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 290,
+      "location": "Tzen",
+      "atk": 10,
+      "matk": 9,
+      "dfn": 5,
+      "mdef": 215,
       "coliseum": false
     },
     {
@@ -2376,8 +2922,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 15,
-      "hp": 392,
+      "location": "Zozo",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 115,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -2389,8 +2938,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 15,
-      "hp": 412,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2402,8 +2954,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 16,
-      "hp": 310,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 120,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2415,8 +2970,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 15,
-      "hp": 290,
+      "location": "World Map",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 105,
+      "mdef": 165,
       "coliseum": false
     },
     {
@@ -2428,8 +2986,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 305,
+      "location": "Tzen",
+      "atk": 5,
+      "matk": 5,
+      "dfn": 150,
+      "mdef": 80,
       "coliseum": false
     },
     {
@@ -2441,8 +3002,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 15,
-      "hp": 350,
+      "location": "Zozo",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 85,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2454,8 +3018,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 10,
-      "hp": 270,
+      "location": "Mt. Kolts",
+      "atk": 28,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -2467,8 +3034,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 14,
-      "hp": 325,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 95,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2480,8 +3050,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 15,
-      "hp": 333,
+      "location": "World Map; Zozo",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 75,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -2493,8 +3066,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 8,
-      "hp": 232,
+      "location": "World Map",
+      "atk": 25,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2506,8 +3082,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 26,
-      "hp": 75,
+      "location": "World Map",
+      "atk": 7,
+      "matk": 30,
+      "dfn": 100,
+      "mdef": 100,
       "coliseum": false
     },
     {
@@ -2519,8 +3098,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 23,
-      "hp": 505,
+      "location": "Espers' Gathering Place",
+      "atk": 12,
+      "matk": 10,
+      "dfn": 50,
+      "mdef": 50,
       "coliseum": false
     },
     {
@@ -2532,8 +3114,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 13,
-      "hp": 390,
+      "location": "Phantom Train",
+      "atk": 12,
+      "matk": 7,
+      "dfn": 55,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2545,8 +3130,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 12,
-      "hp": 230,
+      "location": "Phantom Train",
+      "atk": 12,
+      "matk": 10,
+      "dfn": 95,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2558,8 +3146,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 11,
-      "hp": 290,
+      "location": "World Map",
+      "atk": 12,
+      "matk": 10,
+      "dfn": 80,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2571,8 +3162,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 12,
-      "hp": 200,
+      "location": "Phantom Train",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2584,8 +3178,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 9,
-      "hp": 147,
+      "location": "Mt. Kolts",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 102,
+      "mdef": 170,
       "coliseum": false
     },
     {
@@ -2597,8 +3194,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 13,
-      "hp": 275,
+      "location": "South Figaro Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 40,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -2610,8 +3210,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 11,
-      "hp": 166,
+      "location": "South Figaro",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 80,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2623,8 +3226,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 12,
-      "hp": 150,
+      "location": "South Figaro Cave",
+      "atk": 11,
+      "matk": 10,
+      "dfn": 90,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2636,8 +3242,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 11,
-      "hp": 243,
+      "location": "World Map",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 50,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2649,8 +3258,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 19,
-      "hp": 255,
+      "location": "MagiTek Factory",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 13,
+      "mdef": 100,
       "coliseum": false
     },
     {
@@ -2662,8 +3274,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 8,
-      "hp": 132,
+      "location": "World Map",
+      "atk": 15,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2675,8 +3290,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 10,
-      "hp": 102,
+      "location": "South Figaro",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2688,8 +3306,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 11,
-      "hp": 180,
+      "location": "Narshe",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 55,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -2701,8 +3322,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 12,
-      "hp": 120,
+      "location": "Phantom Train",
+      "atk": 5,
+      "matk": 7,
+      "dfn": 110,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2714,8 +3338,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 7,
-      "hp": 119,
+      "location": "South Figaro Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2727,8 +3354,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 11,
-      "hp": 145,
+      "location": "Phantom Forest",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 55,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2740,8 +3370,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 10,
-      "hp": 226,
+      "location": "Phantom Forest; Phantom Train",
+      "atk": 1,
+      "matk": 1,
+      "dfn": 105,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2753,8 +3386,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 11,
-      "hp": 145,
+      "location": "South Figaro Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 50,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2766,8 +3402,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 7,
-      "hp": 119,
+      "location": "World Map",
+      "atk": 11,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2779,8 +3418,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 12,
-      "hp": 160,
+      "location": "Narshe",
+      "atk": 10,
+      "matk": 10,
+      "dfn": 85,
+      "mdef": 100,
       "coliseum": false
     },
     {
@@ -2792,8 +3434,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 6,
-      "hp": 92,
+      "location": "South Figaro Cave",
+      "atk": 16,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2805,8 +3450,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 10,
-      "hp": 135,
+      "location": "World Map",
+      "atk": 9,
+      "matk": 10,
+      "dfn": 70,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -2818,8 +3466,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 8,
-      "hp": 160,
+      "location": "Phantom Train",
+      "atk": 10,
+      "matk": 1,
+      "dfn": 90,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2831,8 +3482,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 6,
-      "hp": 67,
+      "location": "World Map",
+      "atk": 20,
+      "matk": 10,
+      "dfn": 110,
+      "mdef": 145,
       "coliseum": false
     },
     {
@@ -2844,8 +3498,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 10,
-      "hp": 134,
+      "location": "Mt. Kolts",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 80,
+      "mdef": 110,
       "coliseum": false
     },
     {
@@ -2857,8 +3514,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 6,
-      "hp": 87,
+      "location": "World Map",
+      "atk": 20,
+      "matk": 10,
+      "dfn": 80,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -2870,8 +3530,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 9,
-      "hp": 137,
+      "location": "Mt. Kolts",
+      "atk": 14,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 70,
       "coliseum": false
     },
     {
@@ -2883,8 +3546,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 7,
-      "hp": 122,
+      "location": "South Figaro Cave",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 45,
+      "mdef": 155,
       "coliseum": false
     },
     {
@@ -2896,8 +3562,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 10,
-      "hp": 156,
+      "location": "World Map",
+      "atk": 9,
+      "matk": 10,
+      "dfn": 10,
+      "mdef": 135,
       "coliseum": false
     },
     {
@@ -2909,8 +3578,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 5,
-      "hp": 35,
+      "location": "Narshe",
+      "atk": 19,
+      "matk": 10,
+      "dfn": 90,
+      "mdef": 120,
       "coliseum": false
     },
     {
@@ -2922,8 +3594,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 4,
-      "hp": 24,
+      "location": "Narshe",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 100,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2935,8 +3610,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 5,
-      "hp": 33,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 60,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -2948,8 +3626,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 5,
-      "hp": 34,
+      "location": "World Map",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 55,
+      "mdef": 140,
       "coliseum": false
     },
     {
@@ -2961,8 +3642,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 5,
-      "hp": 15,
+      "location": "Mt. Kolts; Narshe",
+      "atk": 13,
+      "matk": 10,
+      "dfn": 95,
+      "mdef": 150,
       "coliseum": false
     },
     {
@@ -2974,8 +3658,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 23,
-      "hp": 1,
+      "location": "World Map",
+      "atk": 7,
+      "matk": 10,
+      "dfn": 5,
+      "mdef": 5,
       "coliseum": false
     },
     {
@@ -2987,8 +3674,11 @@
       "rd": 200,
       "comparisons": 0,
       "provisional": true,
-      "level": 23,
-      "hp": 1,
+      "location": "World Map",
+      "atk": 6,
+      "matk": 10,
+      "dfn": 5,
+      "mdef": 5,
       "coliseum": false
     }
   ]

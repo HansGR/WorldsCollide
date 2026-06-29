@@ -92,34 +92,36 @@ Either way:
 ## Data
 
 The roster lives in [`data/enemies.json`](data/enemies.json): name, sprite,
-vanilla stats, membership flags, a transparent `seed_power`/`seed_rating`, and an
-`include` flag. **The shipped dataset is exported from a vanilla ROM** (below);
-the Caves of Narshe path is the fallback when no ROM is handy.
+membership flags, a transparent `seed_power`/`seed_rating`, an `include` flag,
+and the display fields the card UI shows — **location**, the non-scaling combat
+stats **ATK / M.ATK / DEF / M.DEF**, and a brief battle **description**.
 
-### Authoritative — straight from a ROM (what ships here)
+Level and HP are intentionally *not* shown: in WorldsCollide both change through
+the game and with scaling, so they are poor, misleading difficulty cues. The
+displayed stats are the ones that don't scale.
 
-```bash
-# run from the WorldsCollide repo root
-python coliseum/tools/export_from_rom.py /path/to/ff3.smc
-```
+The dataset is built in two passes:
 
-Reads the real game data through this repo's own data classes and sets `include`
-precisely: an enemy is included when it is a **random encounter or a Coliseum
-opponent and is not a boss** (currently 230 of 371 enemy slots). Also fills
-`enemy_id`, World of Balance/Ruin presence, and mod-aware stats — so it stays
-correct for any (including randomized) ROM. Sprites are matched over from the
-Caves of Narshe set by name (exact → normalised → fuzzy).
-
-### Fallback — Caves of Narshe bestiary
+1. **Membership + base stats from a vanilla ROM** (`export_from_rom.py`) — the
+   authoritative `include` / `enemy_id` / random-encounter / coliseum flags.
+2. **Display enrichment from the Gamer Corner guide** (`build_from_gamercorner.py`)
+   — the comprehensive per-monster location, attack/defense, and battle notes.
 
 ```bash
-python tools/build_dataset.py /path/to/saved/"FF6_enemies"
+python coliseum/tools/export_from_rom.py /path/to/ff3.smc   # pass 1 (repo root)
+python coliseum/tools/build_from_gamercorner.py             # pass 2
 ```
 
-Parses a saved copy of the
-[CoN SNES bestiary](https://www.cavesofnarshe.com/ff6/enemies.php?ff6mode=snes)
-(271 enemies) and copies sprites into `public/sprites/`. Uses a small curated
-boss-exclusion list since the bestiary has no encounter/location flags.
+`build_from_gamercorner.py` reads the saved guide pages in
+[`resources/monsters/`](../resources/monsters) (matched by ROM short-name) and
+trims each strategy note to a brief 1–2 sentences. The older Caves of Narshe
+importer (`build_dataset.py`) remains as a no-ROM fallback for the sprites.
+
+`export_from_rom.py` sets `include` precisely: an enemy is included when it is a
+**random encounter or a Coliseum opponent and is not a boss** (currently 230 of
+371 enemy slots), and stays correct for any (including randomized) ROM. Sprites
+come from the Caves of Narshe set, copied by `build_dataset.py` (a no-ROM
+fallback importer that also parses the CoN bestiary).
 
 ---
 
@@ -139,10 +141,11 @@ coliseum/
 │   └── tier_list.{json,md}  Exported ranking (sample = seed order, 0 votes)
 ├── public/                Static frontend (index.html, app.js, style.css) + sprites/
 └── tools/
-    ├── export_from_rom.py   WorldsCollide ROM     -> enemies.json (authoritative)
-    ├── build_dataset.py     Caves of Narshe HTML  -> enemies.json + sprites
-    ├── build_tier_list.py   store                 -> tier_list.{json,md}
-    └── simulate.py          convergence check (active vs random pairing)
+    ├── export_from_rom.py        ROM            -> enemies.json (membership + ids)
+    ├── build_from_gamercorner.py guide pages    -> location/stats/description
+    ├── build_dataset.py          CoN bestiary   -> enemies.json + sprites (no-ROM)
+    ├── build_tier_list.py        store          -> tier_list.{json,md}
+    └── simulate.py               convergence check (active vs random pairing)
 ```
 
 ## API

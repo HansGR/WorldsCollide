@@ -81,8 +81,40 @@ main { flex: 1; width: 100%; max-width: 880px; margin: 0 auto; padding: 1rem; }
 }
 
 .name { font-size: 1.3rem; font-weight: 700; text-align: center; }
-.meta { color: var(--muted); font-size: .85rem; text-align: center; line-height: 1.4; }
-.meta .tag { color: var(--accent); }
+.location { color: var(--muted); font-size: .85rem; text-align: center; line-height: 1.4; min-height: 1.1em; }
+.location .tag {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 0 .35rem;
+  font-size: .72rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .3rem;
+  width: 100%;
+  margin: .2rem 0;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--panel-hi);
+  border-radius: 8px;
+  padding: .3rem .1rem;
+}
+.stat b { color: var(--muted); font-size: .6rem; letter-spacing: .5px; font-weight: 700; }
+.stat i { font-style: normal; font-size: 1rem; font-weight: 700; }
+
+.desc {
+  color: var(--muted);
+  font-size: .8rem;
+  line-height: 1.35;
+  text-align: left;
+  max-width: 320px;
+}
 
 .versus {
   align-self: center;

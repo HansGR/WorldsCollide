@@ -65,10 +65,14 @@ def public_enemy(slug, state):
         "name": e["name"],
         "sprite": f"/sprites/{e['sprite']}" if e.get("sprite") else None,
         "sprite_cdn": e.get("sprite_cdn"),
-        "level": e["level"],
-        "hp": e["hp"],
-        "type": e.get("type") or "",
+        # Non-scaling combat summary (level / HP intentionally omitted: they
+        # change throughout WC and with scaling).
         "location": e.get("location") or "",
+        "atk": e.get("bat_pwr"),
+        "matk": e.get("mag_pwr"),
+        "dfn": e.get("defense"),
+        "mdef": e.get("magic_def"),
+        "description": e.get("description") or "",
         "coliseum": e.get("coliseum", False),
         "rating": round(s["rating"]),
         "rd": round(s["rd"]),

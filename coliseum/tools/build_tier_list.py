@@ -59,8 +59,11 @@ def main():
             "rd": round(r["rd"]),
             "comparisons": r["n"],
             "provisional": r["rd"] > PROVISIONAL_RD,
-            "level": meta.get("level"),
-            "hp": meta.get("hp"),
+            "location": meta.get("location", ""),
+            "atk": meta.get("bat_pwr"),
+            "matk": meta.get("mag_pwr"),
+            "dfn": meta.get("defense"),
+            "mdef": meta.get("magic_def"),
             "coliseum": meta.get("coliseum", False),
         })
 
@@ -80,13 +83,16 @@ def main():
             continue
         lines.append(f"## {label} Tier")
         lines.append("")
-        lines.append("| Rank | Enemy | Rating | ± | Votes | Lv | HP |")
-        lines.append("|---:|---|---:|---:|---:|---:|---:|")
+        lines.append("| Rank | Enemy | Rating | ± | Votes | ATK | M.ATK | DEF | M.DEF | Found |")
+        lines.append("|---:|---|---:|---:|---:|---:|---:|---:|---:|---|")
         for e in members:
             star = "\\*" if e["provisional"] else ""
+            def s(v):
+                return "" if v is None else v
             lines.append(
                 f"| {e['rank']} | {e['name']}{star} | {e['rating']} | {e['rd']} | "
-                f"{e['comparisons']} | {e['level']} | {e['hp']} |"
+                f"{e['comparisons']} | {s(e['atk'])} | {s(e['matk'])} | {s(e['dfn'])} | "
+                f"{s(e['mdef'])} | {e['location']} |"
             )
         lines.append("")
     open(os.path.join(PROJECT, "data", "tier_list.md"), "w").write("\n".join(lines))
