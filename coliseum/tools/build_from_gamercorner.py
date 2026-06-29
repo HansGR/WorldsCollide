@@ -34,6 +34,46 @@ PROJECT = os.path.dirname(HERE)            # coliseum/
 WC_ROOT = os.path.dirname(PROJECT)         # repo root
 MON_DIR = os.path.join(WC_ROOT, "resources", "monsters")
 DATA_PATH = os.path.join(PROJECT, "data", "enemies.json")
+SPRITE_DIR = os.path.join(PROJECT, "public", "sprites")
+
+
+def extract_sprite(page_path, out_path):
+    """Crop a monster's sprite out of the Gamer Corner CSS sprite-sheet.
+
+    Each page embeds one base64 PNG sheet on `.ffvi-monster-sprite`; each
+    monster is a `background-position` into it, sized 128px (large) or 64px
+    (small). Needs Pillow; silently skips if it's unavailable.
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        return False
+    import base64, io
+    s = open(page_path, encoding="utf-8", errors="replace").read()
+    sheet_m = re.search(r'\.ffvi-monster-sprite\s*\{[^}]*?url\("data:image/png;base64,'
+                        r'([A-Za-z0-9+/=]+)"\)', s, re.S)
+    span_m = re.search(r'class="ffvi-monster-sprite ([^"]*)"', s)
+    if not sheet_m or not span_m:
+        return False
+    classes = span_m.group(1).split()
+    size = 128 if "ffvi-large-monster" in classes else 64
+    pos = None
+    for c in classes:
+        if c in ("ffvi-large-monster", "ffvi-small-monster"):
+            continue
+        r = re.search(r'\.' + re.escape(c) + r'\s*\{[^}]*?background-position:\s*'
+                      r'(-?\d+)(?:px)?\s+(-?\d+)(?:px)?', s)
+        if r:
+            pos = (-int(r.group(1)), -int(r.group(2)))
+            break
+    if pos is None:
+        return False
+    sheet = Image.open(io.BytesIO(base64.b64decode(sheet_m.group(1)))).convert("RGBA")
+    cell = sheet.crop((pos[0], pos[1], pos[0] + size, pos[1] + size))
+    if not cell.getbbox():          # entirely transparent -> wrong cell, skip
+        return False
+    cell.crop(cell.getbbox()).save(out_path)   # trim transparent margins
+    return True
 
 
 def _norm(s):
@@ -190,6 +230,7 @@ def parse_page(path):
         location = "; ".join(seen)
 
     return {
+        "path": path,
         "slug": p.slug or os.path.splitext(os.path.basename(path))[0],
         "name": (f.get("__name__") or [None])[0],
         "location": location,
@@ -326,6 +367,13 @@ def main():
         e["description"] = rec["description"]
         e["special"] = rec["special"] or rec["effect"] or ""
         e["gc_scores"] = rec["scores"]
+
+        # Backfill a sprite from the guide's sheet for enemies the CoN set
+        # didn't cover (no local sprite and no CDN fallback).
+        if not e.get("sprite") and not e.get("sprite_cdn") and rec.get("path"):
+            fn = f"{e['slug']}.png"
+            if extract_sprite(rec["path"], os.path.join(SPRITE_DIR, fn)):
+                e["sprite"] = fn
 
     for e in data["enemies"]:
         if e.get("include"):
