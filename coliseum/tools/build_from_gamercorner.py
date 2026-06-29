@@ -70,6 +70,9 @@ def extract_sprite(page_path, out_path):
         return False
     sheet = Image.open(io.BytesIO(base64.b64decode(sheet_m.group(1)))).convert("RGBA")
     cell = sheet.crop((pos[0], pos[1], pos[0] + size, pos[1] + size))
+    # The guide sheet is drawn at 2x FF6 native resolution; halve it (nearest
+    # neighbour, to keep the pixel art crisp) so these match the CoN sprites.
+    cell = cell.resize((cell.width // 2, cell.height // 2), Image.NEAREST)
     if not cell.getbbox():          # entirely transparent -> wrong cell, skip
         return False
     cell.crop(cell.getbbox()).save(out_path)   # trim transparent margins
