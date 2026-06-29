@@ -42,9 +42,23 @@ def api_vote():
     return jsonify(result)
 
 
+def _owner_ok():
+    secret = os.environ.get("SHEETS_TOKEN")
+    return (not secret) or request.args.get("token") == secret
+
+
 @app.route("/api/standings")
 def api_standings():
+    if not _owner_ok():
+        return jsonify({"error": "forbidden"}), 403
     return jsonify(core.standings())
+
+
+@app.route("/api/tierlist")
+def api_tierlist():
+    if not _owner_ok():
+        return jsonify({"error": "forbidden"}), 403
+    return jsonify(core.export_tierlist(write=request.args.get("write") in ("1", "true")))
 
 
 @app.route("/api/stats")

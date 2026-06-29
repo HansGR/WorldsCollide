@@ -156,11 +156,20 @@ coliseum/
 
 | Endpoint | Method | Purpose |
 |---|---|---|
-| `/api/pair` | GET | Next match-up (two enemies, chosen actively) |
+| `/api/pair` | GET | Next match-up (two enemies; ratings deliberately omitted) |
 | `/api/vote` | POST | `{winner, loser, voter, name}`; appends to the vote log |
-| `/api/standings` | GET | Full ranked list with bottom-heavy tier labels |
 | `/api/leaderboard` | GET | Players ranked by how well their picks match consensus |
 | `/api/stats` | GET | Vote count, coverage, average uncertainty |
+| `/api/standings` | GET | Full ranked list — **token-gated** (`?token=`) |
+| `/api/tierlist` | GET | Ranking; `?token=…&write=1` pushes it to the Sheet |
+| `/api/health` | GET | Active backend + read/write check (`?write=1`) |
+
+**The tier list is private.** Showing the live ranking would let someone always
+pick the higher-ranked enemy and game the leaderboard, so the pairing UI never
+exposes ratings and `/api/standings` requires the token. The current ranking is
+snapshotted to a private **`TierList`** tab in the Google Sheet (every
+`COLISEUM_TIERLIST_EVERY` votes, default 20); the owner reads it there or via
+`/api/tierlist?token=…`.
 
 **Tiers** are bottom-heavy by design (`core.TIER_PROPORTIONS`: S 5% / A 10% /
 B 15% / C 18% / D 22% / E 30% of the roster) — most enemies aren't that

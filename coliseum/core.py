@@ -106,10 +106,16 @@ def _tiers_by_rank(ranked):
     return tiers
 
 
-def public_enemy(slug, state, tier=None):
+def public_enemy(slug, state, tier=None, reveal=False):
+    """Display record for an enemy.
+
+    ``reveal`` controls whether the current rating / tier are included. It is
+    False for anything a voter can see (the pairing UI), because exposing the
+    live ranking would let people game the calibration leaderboard. Only the
+    owner-side tier-list export sets it True.
+    """
     e = _ENEMIES[slug]
-    s = state[slug]
-    return {
+    d = {
         "slug": slug,
         "name": e["name"],
         "sprite": f"/sprites/{e['sprite']}" if e.get("sprite") else None,
@@ -121,11 +127,12 @@ def public_enemy(slug, state, tier=None):
         "mdef": e.get("magic_def"),
         "description": e.get("description") or "",
         "coliseum": e.get("coliseum", False),
-        "rating": round(s["rating"]),
-        "rd": round(s["rd"]),
-        "comparisons": s["n"],
-        "tier": tier,
     }
+    if reveal:
+        s = state[slug]
+        d.update(rating=round(s["rating"]), rd=round(s["rd"]),
+                 comparisons=s["n"], tier=tier)
+    return d
 
 
 def get_pair():
@@ -141,18 +148,50 @@ def cast_vote(winner, loser, voter="", name=""):
     ens = enemies()
     if winner not in ens or loser not in ens or winner == loser:
         return None
+    s = store()
     try:
-        store().append_vote(voter or "anon", name or "", winner, loser)
+        s.append_vote(voter or "anon", name or "", winner, loser)
     except Exception as e:
         # Surface storage failures (e.g. Sheets misconfig) instead of pretending
         # the vote was recorded.
         return {"ok": False, "error": str(e)[:400]}
     global _cache
     _cache = None     # force recompute on next read
-    state, _ = _replay(store().get_votes())
-    return {"ok": True,
-            "winner": public_enemy(winner, state),
-            "loser": public_enemy(loser, state)}
+
+    # Periodically snapshot the (private) tier list into the Sheet so the owner
+    # can read the ranking without it being exposed to voters. Cheap: one extra
+    # write every TIERLIST_EVERY votes, and never fails the vote.
+    if hasattr(s, "write_tierlist"):
+        try:
+            if len(s.get_votes()) % TIERLIST_EVERY == 0:
+                s.write_tierlist(_tierlist_values())
+        except Exception:
+            pass
+    return {"ok": True}
+
+
+TIERLIST_EVERY = int(os.environ.get("COLISEUM_TIERLIST_EVERY", "20"))
+
+
+def _tierlist_values():
+    """Build a 2-D table (header + rows) of the current tier list for the Sheet."""
+    data = standings()
+    values = [["Rank", "Tier", "Enemy", "Rating", "RD", "Votes", "Location"]]
+    for e in data["standings"]:
+        values.append([e["rank"], e["tier"], e["name"], e["rating"], e["rd"],
+                       e["comparisons"], e["location"]])
+    return values
+
+
+def export_tierlist(write=False):
+    """Return the tier list; optionally push it to the Sheet now (owner action)."""
+    values = _tierlist_values()
+    pushed = False
+    s = store()
+    if write and hasattr(s, "write_tierlist"):
+        s.write_tierlist(values)
+        pushed = True
+    return {"rows": len(values) - 1, "pushed_to_sheet": pushed, "values": values}
 
 
 def health(write_test=False):
@@ -197,12 +236,14 @@ def health(write_test=False):
 
 
 def standings():
+    """Full ranked list with ratings + tiers. Owner-only (it reveals the
+    ranking); the HTTP route is token-gated."""
     state, _, votes = _compute()
     ranked = sorted(state, key=lambda s: state[s]["rating"], reverse=True)
     tiers = _tiers_by_rank(ranked)
     out = []
     for rank, slug in enumerate(ranked, 1):
-        d = public_enemy(slug, state, tiers[slug])
+        d = public_enemy(slug, state, tiers[slug], reveal=True)
         d["rank"] = rank
         out.append(d)
     return {"standings": out, "total_votes": len(votes)}

@@ -129,7 +129,10 @@ document.getElementById("skip").addEventListener("click", (e) => {
   if (!busy) loadPair();
 });
 
-// --- stats + live tier list ------------------------------------------------
+// --- stats + leaderboard ---------------------------------------------------
+// (The tier list is deliberately NOT shown here -- seeing the live ranking
+// would let someone game the calibration leaderboard. The owner reads it from
+// the private "TierList" tab in the Google Sheet.)
 async function refreshStats() {
   try {
     const s = await (await fetch("/api/stats")).json();
@@ -137,35 +140,6 @@ async function refreshStats() {
     document.getElementById("coverage").textContent =
       s.unrated > 0 ? `${s.unrated} enemies still unrated` : `avg uncertainty ±${s.avg_rd}`;
   } catch (e) { /* ignore */ }
-}
-
-// Tier colours (tiers themselves are decided server-side, bottom-heavy).
-const TIER_COLORS = {
-  S: "#ff7676", A: "#ffb24a", B: "#ffe14a",
-  C: "#9be15d", D: "#5dd6e1", E: "#9aa0d6",
-};
-const TIER_ORDER = ["S", "A", "B", "C", "D", "E"];
-
-async function showStandings() {
-  const data = await (await fetch("/api/standings")).json();
-  const buckets = {};
-  for (const e of data.standings) (buckets[e.tier] = buckets[e.tier] || []).push(e);
-  const root = document.getElementById("tiers");
-  root.innerHTML = "";
-  for (const label of TIER_ORDER) {
-    const items = buckets[label];
-    if (!items || !items.length) continue;
-    const chips = items.map((e) => {
-      const img = e.sprite ? `<img src="${e.sprite}" alt="" onerror="this.remove()">` : "";
-      return `<span class="chip">${img}${e.name} <span class="r">${e.rating}</span></span>`;
-    }).join("");
-    const row = document.createElement("div");
-    row.className = "tier-row";
-    row.innerHTML =
-      `<div class="tier-label" style="background:${TIER_COLORS[label]}">${label}</div>` +
-      `<div class="tier-items">${chips}</div>`;
-    root.appendChild(row);
-  }
 }
 
 async function showLeaderboard() {
@@ -200,13 +174,6 @@ function togglePanel(id, render) {
 document.getElementById("toggle-leaderboard").addEventListener("click", (e) => {
   e.preventDefault();
   togglePanel("leaderboard", showLeaderboard);
-});
-
-document.getElementById("toggle-standings").addEventListener("click", (e) => {
-  e.preventDefault();
-  const panel = document.getElementById("standings");
-  panel.classList.toggle("hidden");
-  if (!panel.classList.contains("hidden")) showStandings();
 });
 
 loadPair();

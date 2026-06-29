@@ -19,6 +19,13 @@ import core
 app = Flask(__name__)
 
 
+def _owner_ok():
+    """Gate ranking endpoints. If SHEETS_TOKEN is configured (production), a
+    matching ?token=... is required; with no token set (local dev), allow."""
+    secret = os.environ.get("SHEETS_TOKEN")
+    return (not secret) or request.args.get("token") == secret
+
+
 @app.route("/api/pair")
 def api_pair():
     pair = core.get_pair()
@@ -39,7 +46,17 @@ def api_vote():
 
 @app.route("/api/standings")
 def api_standings():
+    if not _owner_ok():
+        return jsonify({"error": "forbidden"}), 403
     return jsonify(core.standings())
+
+
+@app.route("/api/tierlist")
+def api_tierlist():
+    # Owner-only: view the ranking and (with ?write=1) push it to the Sheet.
+    if not _owner_ok():
+        return jsonify({"error": "forbidden"}), 403
+    return jsonify(core.export_tierlist(write=request.args.get("write") in ("1", "true")))
 
 
 @app.route("/api/stats")

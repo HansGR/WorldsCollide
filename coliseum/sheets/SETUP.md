@@ -71,6 +71,20 @@ Once healthy:
 - `https://your-site/api/stats` shows the rising `total_votes`.
 - `https://your-site/api/leaderboard` lists voters once some have 10+ votes.
 
+## Seeing the tier list (it's private on purpose)
+
+The live ranking is **not** shown on the site — if voters could see it, they
+could just always pick the higher-ranked enemy and top the leaderboard. Instead:
+
+- The server writes a snapshot to a **`TierList`** tab in your Sheet
+  automatically, every ~20 votes (tunable with `COLISEUM_TIERLIST_EVERY`). Just
+  open that tab.
+- To refresh it on demand or view it as JSON, hit (with your token):
+  `https://your-site/api/tierlist?token=YOUR_TOKEN&write=1`
+  (`write=1` also rewrites the `TierList` tab; omit it to just view).
+- `…/api/standings?token=YOUR_TOKEN` returns the full ranked list. Without the
+  token these endpoints return 403, so the ranking stays private.
+
 ## Notes
 
 - **Privacy:** rows store an anonymous random `voter` id and whatever optional

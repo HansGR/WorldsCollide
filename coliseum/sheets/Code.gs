@@ -41,6 +41,19 @@ function doPost(e) {
   var body = {};
   try { body = JSON.parse(e.postData.contents); } catch (err) {}
   if (!checkToken_(body.token)) return json_({ok: false, error: 'bad token'});
+
+  if (body.action === 'tierlist') {
+    // Owner-private ranking snapshot: overwrite a 'TierList' tab.
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var tl = ss.getSheetByName('TierList') || ss.insertSheet('TierList');
+    tl.clearContents();
+    var values = body.values || [];
+    if (values.length) {
+      tl.getRange(1, 1, values.length, values[0].length).setValues(values);
+    }
+    return json_({ok: true, rows: Math.max(values.length - 1, 0)});
+  }
+
   if (body.action !== 'vote') return json_({ok: false, error: 'unknown action'});
 
   var winner = String(body.winner || '').slice(0, 64);

@@ -130,6 +130,10 @@ class SheetsStore:
         self._fetched = time.time()
         return self._cache
 
+    def write_tierlist(self, values):
+        """Overwrite the Sheet's 'TierList' tab with a 2-D table (owner-private)."""
+        self._request({"action": "tierlist", "token": self.token, "values": values})
+
 
 def get_store():
     url = os.environ.get("SHEETS_WEBAPP_URL")

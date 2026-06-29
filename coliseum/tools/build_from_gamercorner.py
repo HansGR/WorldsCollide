@@ -250,6 +250,24 @@ def _reseed(enemies):
         e["seed_power"] = round(v, 4)
 
 
+WORLD_LABEL = {
+    "World of Balance": "World of Balance",
+    "World of Ruin": "World of Ruin",
+    "WOB + WOR": "World of Balance & Ruin",
+}
+
+
+def _worldify(location, world):
+    """Replace the guide's vague "World Map" with the WoB/WoR designation from
+    the ROM's zone data (which world's overworld the enemy roams)."""
+    if "World Map" not in location:
+        return location
+    label = WORLD_LABEL.get(world)
+    if not label:
+        return location                       # no ROM world info; leave as-is
+    return location.replace("World Map", label)
+
+
 def _fill_fallbacks(e):
     """Backfill display fields for enemies the guide didn't cover, using the
     ROM-derived stats already on the record."""
@@ -306,6 +324,10 @@ def main():
         e["description"] = rec["description"]
         e["special"] = rec["special"] or rec["effect"] or ""
         e["gc_scores"] = rec["scores"]
+
+    for e in data["enemies"]:
+        if e.get("include"):
+            e["location"] = _worldify(e.get("location", ""), e.get("world", ""))
 
     _reseed(data["enemies"])
 
