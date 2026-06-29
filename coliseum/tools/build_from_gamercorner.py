@@ -368,9 +368,9 @@ def main():
         e["special"] = rec["special"] or rec["effect"] or ""
         e["gc_scores"] = rec["scores"]
 
-        # Backfill a sprite from the guide's sheet for enemies the CoN set
-        # didn't cover (no local sprite and no CDN fallback).
-        if not e.get("sprite") and not e.get("sprite_cdn") and rec.get("path"):
+        # Backfill a sprite from the guide's sheet for *included* enemies the
+        # CoN set didn't cover (no local sprite and no CDN fallback).
+        if e.get("include") and not e.get("sprite") and not e.get("sprite_cdn") and rec.get("path"):
             fn = f"{e['slug']}.png"
             if extract_sprite(rec["path"], os.path.join(SPRITE_DIR, fn)):
                 e["sprite"] = fn
