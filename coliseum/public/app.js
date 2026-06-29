@@ -10,6 +10,8 @@ let busy = false;       // lock during the brief result animation
 let localVotes = 0;     // optimistic vote counter (server reconciles it)
 let votesSinceSync = 0; // refresh full stats every few votes
 let voteError = false;  // a background vote POST failed
+const voteQueue = [];   // pending votes, sent one at a time
+let sending = false;    // queue worker running?
 
 // --- voter identity (anonymous, persisted in the browser) ------------------
 function voterId() {
@@ -121,22 +123,41 @@ function vote(winnerSide) {
   setTimeout(loadPair, 150);
 }
 
+// Queue votes and POST them one at a time (with retry) so concurrent writes
+// can't race or get dropped on the Sheets side. The UI never waits on this.
 function sendVote(winner, loser) {
-  fetch("/api/vote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ winner, loser, voter: voterId(), name: voterName() }),
-  }).then(async (res) => {
-    if (!res.ok) {
-      console.error("vote failed:", await res.json().catch(() => ({})));
+  voteQueue.push({ winner, loser });
+  flushVotes();
+}
+
+async function flushVotes() {
+  if (sending) return;
+  sending = true;
+  while (voteQueue.length) {
+    const v = voteQueue[0];
+    let ok = false;
+    for (let attempt = 0; attempt < 3 && !ok; attempt++) {
+      try {
+        const res = await fetch("/api/vote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...v, voter: voterId(), name: voterName() }),
+        });
+        ok = res.ok;
+        if (!ok) console.error("vote rejected:", await res.json().catch(() => ({})));
+      } catch (e) {
+        console.error(e);
+      }
+      if (!ok) await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
+    voteQueue.shift();
+    if (!ok) {
       voteError = true;
       const cov = document.getElementById("coverage");
       if (cov) cov.textContent = "⚠ a vote didn't save — see /api/health";
     }
-  }).catch((e) => {
-    console.error(e);
-    voteError = true;
-  });
+  }
+  sending = false;
 }
 
 function bumpVoteCount() {
