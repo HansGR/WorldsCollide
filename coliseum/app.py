@@ -33,7 +33,8 @@ def api_pair():
 @app.route("/api/vote", methods=["POST"])
 def api_vote():
     p = request.get_json(force=True, silent=True) or {}
-    result = core.cast_vote(p.get("winner"), p.get("loser"))
+    result = core.cast_vote(p.get("winner"), p.get("loser"),
+                            voter=p.get("voter", ""), name=p.get("name", ""))
     return jsonify(result) if result else (jsonify({"error": "invalid pair"}), 400)
 
 
@@ -45,6 +46,11 @@ def api_standings():
 @app.route("/api/stats")
 def api_stats():
     return jsonify(core.stats())
+
+
+@app.route("/api/leaderboard")
+def api_leaderboard():
+    return jsonify(core.leaderboard())
 
 
 if __name__ == "__main__":

@@ -152,6 +152,28 @@ def parse_page(path):
 
     raw = open(path, encoding="utf-8", errors="replace").read()
 
+    # Gamer Corner's normalised 0-1 threat bars (HP, Physical Damage, Physical
+    # Defense, Magic Defense) - a curated difficulty signal we use to seed.
+    scores = {}
+    mbars = re.search(r'data-bars="([^"]+)"', raw)
+    if mbars:
+        try:
+            bars = json.loads(html.unescape(mbars.group(1)))
+            for b in bars:
+                name, h = b.get("name", ""), b.get("height")
+                if h is None:
+                    continue
+                if name.endswith("HP"):
+                    scores["hp"] = round(h, 3)
+                elif name == "Physical Damage":
+                    scores["phys_dmg"] = round(h, 3)
+                elif name == "Physical Defense":
+                    scores["phys_def"] = round(h, 3)
+                elif name == "Magic Defense":
+                    scores["mag_def"] = round(h, 3)
+        except Exception:
+            pass
+
     # Location: pull only the area-link texts from the "Encountered In" field,
     # so stray table text inside the field can't leak in (e.g. Cactrot).
     location = ""
@@ -166,16 +188,6 @@ def parse_page(path):
             if a and a not in seen:
                 seen.append(a)
         location = "; ".join(seen)
-
-    # Normalised threat scores from the embedded graph JSON.
-    scores = {}
-    for label, key in [("Physical Damage", "phys_dmg"), ("Magic Damage", "mag_dmg"),
-                       ("Physical Defense", "phys_def"), ("Magic Defense", "mag_def_score")]:
-        m = re.search(r'(?:"|&quot;)name(?:"|&quot;):(?:"|&quot;)%s(?:"|&quot;),'
-                      r'(?:"|&quot;)color(?:"|&quot;):(?:"|&quot;)\w+(?:"|&quot;),'
-                      r'(?:"|&quot;)height(?:"|&quot;):([0-9.]+)' % re.escape(label), raw)
-        if m:
-            scores[key] = round(float(m.group(1)), 3)
 
     return {
         "slug": p.slug or os.path.splitext(os.path.basename(path))[0],
@@ -202,6 +214,40 @@ OVERRIDES = {
     "mag-roader-4": "mag-roader/4.html",
     "whelk-head": "whelk/2.html",
 }
+
+
+def _reseed(enemies):
+    """Compute seed_rating from Gamer Corner's curated 0-1 threat scores.
+
+    These (offense, durability, tankiness) are a much better starting point
+    than enemy level. Magic offense isn't in the guide's bars, so we fold in a
+    normalised Mag.Pwr so casters aren't undersold. Enemies the guide didn't
+    cover keep their ROM-derived seed.
+    """
+    inc = [e for e in enemies if e.get("include")]
+    mags = [e.get("mag_pwr") or 0 for e in inc]
+    mmax = max(mags) if mags else 1
+
+    def score01(e):
+        s = e.get("gc_scores") or {}
+        if not s:
+            return None
+        offense = s.get("phys_dmg", 0.0)
+        magic_off = (e.get("mag_pwr") or 0) / mmax if mmax else 0.0
+        durability = s.get("hp", 0.0)
+        tankiness = (s.get("phys_def", 0.0) + s.get("mag_def", 0.0)) / 2.0
+        return (0.34 * offense + 0.18 * magic_off +
+                0.28 * durability + 0.20 * tankiness)
+
+    scored = [(e, score01(e)) for e in inc]
+    vals = [v for _, v in scored if v is not None]
+    lo, hi = (min(vals), max(vals)) if vals else (0.0, 1.0)
+    for e, v in scored:
+        if v is None:
+            continue  # keep ROM-derived seed_rating from export_from_rom
+        norm = (v - lo) / (hi - lo) if hi > lo else 0.5
+        e["seed_rating"] = round(1250 + 600 * norm, 1)
+        e["seed_power"] = round(v, 4)
 
 
 def _fill_fallbacks(e):
@@ -260,6 +306,8 @@ def main():
         e["description"] = rec["description"]
         e["special"] = rec["special"] or rec["effect"] or ""
         e["gc_scores"] = rec["scores"]
+
+    _reseed(data["enemies"])
 
     tag = " + Gamer Corner guide enrichment"
     if tag not in data.get("source", ""):

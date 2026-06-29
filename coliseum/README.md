@@ -77,15 +77,18 @@ You can create more than one Project from the same Git repo:
 3. **Settings → Build & Output → Root Directory** = `coliseum`.
    That folder's `coliseum/vercel.json` (rewrites) takes over.
 
-Either way:
+Either way you need **durable storage** for votes — serverless filesystems are
+ephemeral, so the default `/tmp` SQLite store is wiped between cold starts. Two
+options, picked automatically by environment variable (`storage.py`):
 
-* **For durable votes, add storage.** Serverless filesystems are ephemeral, so
-  without a database the bundled SQLite store lives in `/tmp` and is wiped
-  between cold starts (fine for a quick demo, not for real crowd-sourcing). Add a
-  Vercel Postgres / Neon integration — it sets `POSTGRES_URL` automatically and
-  the app switches to Postgres on the next deploy (`storage.py`). No code change.
+* **Google Sheet** (zero-infrastructure, good for a one-off): set
+  `SHEETS_WEBAPP_URL` + `SHEETS_TOKEN`. Step-by-step in
+  [`sheets/SETUP.md`](sheets/SETUP.md).
+* **Postgres** (durable, for heavier use): add a Vercel Postgres / Neon
+  integration — it sets `POSTGRES_URL` and the app switches over, no code change.
 
-> Prefer Vercel Postgres/Neon (one-click) over SQLite for any shared link.
+Votes are stored as an append-only log and the ratings are recomputed by
+replay, so all three backends (Sheets / Postgres / SQLite) behave identically.
 
 ---
 
@@ -132,7 +135,8 @@ coliseum/
 ├── app.py                 Local dev server (serves public/ + the API)
 ├── api/index.py           Vercel serverless function (API only)
 ├── core.py                Shared, stateless request logic
-├── storage.py             Vote/rating store: SQLite (local) | Postgres (prod)
+├── storage.py             Append-only vote log: Sheets | Postgres | SQLite
+├── sheets/                Google Sheets backend: Code.gs + SETUP.md
 ├── glicko2.py             Dependency-free Glicko-2
 ├── pairing.py             Active match-up selection
 ├── vercel.json            Vercel routing + file bundling
@@ -153,9 +157,24 @@ coliseum/
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/api/pair` | GET | Next match-up (two enemies, chosen actively) |
-| `/api/vote` | POST | `{winner, loser}` slugs; updates ratings |
-| `/api/standings` | GET | Full ranked list |
+| `/api/vote` | POST | `{winner, loser, voter, name}`; appends to the vote log |
+| `/api/standings` | GET | Full ranked list with bottom-heavy tier labels |
+| `/api/leaderboard` | GET | Players ranked by how well their picks match consensus |
 | `/api/stats` | GET | Vote count, coverage, average uncertainty |
+
+**Tiers** are bottom-heavy by design (`core.TIER_PROPORTIONS`: S 5% / A 10% /
+B 15% / C 18% / D 22% / E 30% of the roster) — most enemies aren't that
+dangerous, so the lower tiers are the largest.
+
+**Calibration leaderboard:** each voter gets an anonymous id (stored in their
+browser) and an optional display name. Their *accuracy* is how often their
+picked winner ends up higher-rated in the consensus; *calibration* is the mean
+consensus win-probability of their picks. A fun way to see who reads enemies
+best. (Mildly circular — voters shape the consensus they're judged against.)
+
+**Seeding** uses Gamer Corner's curated 0–1 threat scores (offense, durability,
+physical/magic tankiness) plus magic power — a far better starting point than
+enemy level — then votes take over.
 
 ## Notes & next steps
 

@@ -35,9 +35,10 @@
       "description": "Guards are nothing to write home about, as they are one of the weakest enemies in the game.",
       "special": "Critical",
       "gc_scores": {
+        "hp": 0.044,
         "phys_dmg": 0.053,
         "phys_def": 0.395,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -72,9 +73,10 @@
       "description": "Soldiers occasionally counter attacks with the appropriately-named Counter, but serve mostly as fodder in the encounters they appear in.",
       "special": "Counter",
       "gc_scores": {
+        "hp": 0.07,
         "phys_dmg": 0.1,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -109,9 +111,10 @@
       "description": "Templars are very basic enemies you'll only ever see once. They may counter any non-lethal attack with a double-damage Axe, but otherwise have no special abilities.",
       "special": "Axe",
       "gc_scores": {
+        "hp": 0.1,
         "phys_dmg": 0.108,
         "phys_def": 0.2,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -139,16 +142,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1242.5,
-      "seed_rating": 1489.5,
+      "seed_power": 0.3007,
+      "seed_rating": 1423.3,
       "bat_pwr": 22,
       "mag_pwr": 5,
       "description": "Ninjas have powerful attacks and can use the three basic Elemental skeans for significant damage. They can counter basic Fight commands by turning themselves Clear as well.",
       "special": "Inviz",
       "gc_scores": {
+        "hp": 0.284,
         "phys_dmg": 0.28,
         "phys_def": 0.53,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -176,16 +180,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1137.4,
-      "seed_rating": 1464.5,
+      "seed_power": 0.2785,
+      "seed_rating": 1403.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Samurai are no frills attackers, using normal attacks most of the time but the appropriately-named Fatal on occasion.",
       "special": "Fatal",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.361,
         "phys_def": 0.045,
-        "mag_def_score": 0.08
+        "mag_def": 0.08
       }
     },
     {
@@ -213,16 +218,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1345.0,
-      "seed_rating": 1513.8,
+      "seed_power": 0.3453,
+      "seed_rating": 1462.7,
       "bat_pwr": 45,
       "mag_pwr": 10,
       "description": "Like all the monsters in Darill's Tomb, Orogs like to inflict Zombie. Indeed, aside from counterattacks, that's all they do.",
       "special": "Zombite",
       "gc_scores": {
+        "hp": 0.279,
         "phys_dmg": 0.396,
         "phys_def": 0.415,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -278,16 +284,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1593.6,
-      "seed_rating": 1573.0,
+      "seed_power": 0.4732,
+      "seed_rating": 1575.7,
       "bat_pwr": 13,
       "mag_pwr": 5,
       "description": "Retainers can attack twice per round, and may use Wind Slash every fourth round, but the main threat they pose is that they use Tradeoff to Wound whoever killed them.",
       "special": "Tradeoff",
       "gc_scores": {
+        "hp": 0.588,
         "phys_dmg": 0.531,
         "phys_def": 0.395,
-        "mag_def_score": 0.705
+        "mag_def": 0.705
       }
     },
     {
@@ -315,16 +322,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 819.8,
-      "seed_rating": 1388.9,
+      "seed_power": 0.1812,
+      "seed_rating": 1317.8,
       "bat_pwr": 5,
       "mag_pwr": 7,
       "description": "Invizap deals double the damage of the normal attack Hazers never actually use. They like to frequently cast Drain, which only deals damage if the Hazer has lost HP.",
       "special": "Invizap",
       "gc_scores": {
+        "hp": 0.077,
         "phys_dmg": 0.094,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -359,9 +367,10 @@
       "description": "Dahlings alternate between inflicting the Charm or Dark statuses and dealing damage with Bolt 2 and Ice 2.",
       "special": "Sightless",
       "gc_scores": {
+        "hp": 0.419,
         "phys_dmg": 0.252,
         "phys_def": 0.435,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -389,16 +398,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1346.0,
-      "seed_rating": 1514.1,
+      "seed_power": 0.3701,
+      "seed_rating": 1484.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Rain Man aren't very dangerous in groups. They inflict Psyche and use Flash Rain, but don't offer a serious threat.",
       "special": "Umbrawler",
       "gc_scores": {
+        "hp": 0.365,
         "phys_dmg": 0.352,
         "phys_def": 0.501,
-        "mag_def_score": 0.621
+        "mag_def": 0.621
       }
     },
     {
@@ -426,16 +436,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 765.3,
-      "seed_rating": 1375.9,
+      "seed_power": 0.1549,
+      "seed_rating": 1294.5,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "Despite being human, Brawlers have no weakness to Poison–in fact, they absorb it! Their weakness to Ice is of no help to you early in the game.",
       "special": "Punch",
       "gc_scores": {
+        "hp": 0.082,
         "phys_dmg": 0.085,
         "phys_def": 0.395,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     },
     {
@@ -463,16 +474,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1205.8,
-      "seed_rating": 1480.7,
+      "seed_power": 0.2986,
+      "seed_rating": 1421.5,
       "bat_pwr": 18,
       "mag_pwr": 10,
       "description": "Apokryphoses have strong basic attacks and can inflict Mute.",
       "special": "Silencer",
       "gc_scores": {
+        "hp": 0.305,
         "phys_dmg": 0.255,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -500,16 +512,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1566.3,
-      "seed_rating": 1566.5,
+      "seed_power": 0.4783,
+      "seed_rating": 1580.2,
       "bat_pwr": 12,
       "mag_pwr": 7,
       "description": "Dark Forces exist to spam Lores. Strago can learn all but five Lores from a Dark Force (the exceptions are CleanSweep, Big Guard, ForceField, Pep Up, and GrandTrain).",
       "special": "Human, Wound at 0 MP",
       "gc_scores": {
+        "hp": 0.662,
         "phys_dmg": 0.486,
         "phys_def": 0.415,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -537,16 +550,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 901.3,
-      "seed_rating": 1408.3,
+      "seed_power": 0.1996,
+      "seed_rating": 1334.0,
       "bat_pwr": 12,
       "mag_pwr": 10,
       "description": "Whispers are supposed to auto-heal, but Seizure doesn't actually work like that so they constantly lose HP.",
       "special": "",
       "gc_scores": {
+        "hp": 0.106,
         "phys_dmg": 0.11,
         "phys_def": 0.375,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -574,16 +588,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 903.2,
-      "seed_rating": 1408.7,
+      "seed_power": 0.1846,
+      "seed_rating": 1320.8,
       "bat_pwr": 12,
       "mag_pwr": 7,
       "description": "Over-Minds are the toughest monsters on the Phantom Train, with 390 HP, though they have low Defense that makes them vulnerable to basic attacks.",
       "special": "Wild Touch",
       "gc_scores": {
+        "hp": 0.138,
         "phys_dmg": 0.117,
         "phys_def": 0.22,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -611,16 +626,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1370.0,
-      "seed_rating": 1519.8,
+      "seed_power": 0.3553,
+      "seed_rating": 1471.5,
       "bat_pwr": 45,
       "mag_pwr": 10,
       "description": "Osteosaurs only appear in the entrance hall of Darill's Tomb, and use Fossil to turn your characters into Zombies. They also have a powerful physical attack.",
       "special": "Fossil",
       "gc_scores": {
+        "hp": 0.279,
         "phys_dmg": 0.396,
         "phys_def": 0.455,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -648,16 +664,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 823.7,
-      "seed_rating": 1389.8,
+      "seed_power": 0.1863,
+      "seed_rating": 1322.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Commanders will generally just attack normally, but they will start using Grudge for double damage and taking extra turns if they are left alone.",
       "special": "Grudge",
       "gc_scores": {
+        "hp": 0.071,
         "phys_dmg": 0.094,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -685,16 +702,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 810.1,
-      "seed_rating": 1386.6,
+      "seed_power": 0.1802,
+      "seed_rating": 1316.9,
       "bat_pwr": 11,
       "mag_pwr": 10,
       "description": "Rhodoxes are completely uninteresting creatures with no weaknesses or resistances and a special attack they won't use.",
       "special": "Near Fatal",
       "gc_scores": {
+        "hp": 0.076,
         "phys_dmg": 0.066,
         "phys_def": 0.395,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -722,16 +740,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 650.0,
-      "seed_rating": 1348.5,
+      "seed_power": 0.1593,
+      "seed_rating": 1298.4,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Were-Rats are no particular threat, occasionally using Bite instead of a normal attack but also sometimes foregoing an attack entirely.",
       "special": "Bite",
       "gc_scores": {
+        "hp": 0.034,
         "phys_dmg": 0.045,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -759,16 +778,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1353.4,
-      "seed_rating": 1515.8,
+      "seed_power": 0.3601,
+      "seed_rating": 1475.8,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "Ursi will Steal thousands of GP from you, then run away in the next round of combat.",
       "special": "Scratch",
       "gc_scores": {
+        "hp": 0.344,
         "phys_dmg": 0.317,
         "phys_def": 0.65,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -796,16 +816,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 932.1,
-      "seed_rating": 1415.6,
+      "seed_power": 0.1967,
+      "seed_rating": 1331.5,
       "bat_pwr": 25,
       "mag_pwr": 10,
       "description": "Rhinotaurs are the first common enemy you will encounter with a significant counterattack. They will counter Magic with Mega Volt, so stick to physical attacks.",
       "special": "Redline",
       "gc_scores": {
+        "hp": 0.107,
         "phys_dmg": 0.089,
         "phys_def": 0.395,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -833,16 +854,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1498.6,
-      "seed_rating": 1550.4,
+      "seed_power": 0.4774,
+      "seed_rating": 1579.4,
       "bat_pwr": 13,
       "mag_pwr": 15,
       "description": "Steroidites have hilarious low Defense, and only two attacks of note: Rush and Giga Volt. They can also Freeze opponents with Cold Dust or N. Cross.",
       "special": "Rush",
       "gc_scores": {
+        "hp": 0.815,
         "phys_dmg": 0.486,
         "phys_def": 0.025,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     },
     {
@@ -870,16 +892,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 635.7,
-      "seed_rating": 1345.1,
+      "seed_power": 0.1442,
+      "seed_rating": 1285.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Leafers are very minor enemies with no special abilities except their ability to absorb Ice and their occasional Incisor attacks.",
       "special": "Incisor",
       "gc_scores": {
+        "hp": 0.04,
         "phys_dmg": 0.053,
         "phys_def": 0.24,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -907,16 +930,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 739.6,
-      "seed_rating": 1369.8,
+      "seed_power": 0.1474,
+      "seed_rating": 1287.9,
       "bat_pwr": 9,
       "mag_pwr": 10,
       "description": "Stray Cats are not very noteworthy except that every third round, they may use their quaduple(!)-damage Catscratch special.",
       "special": "Catscratch",
       "gc_scores": {
+        "hp": 0.087,
         "phys_dmg": 0.087,
         "phys_def": 0.045,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -951,9 +975,10 @@
       "description": "Lobos are weak enemies only encountered during the introductory sequence in Narshe.",
       "special": "Tusk",
       "gc_scores": {
+        "hp": 0.036,
         "phys_dmg": 0.057,
         "phys_def": 0.315,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -988,9 +1013,10 @@
       "description": "The only chance to fight Dobermans in the game is after kicking a chest in the Imperial Camp. Avoid normal attacks that trigger a Bite counterattack.",
       "special": "Bite",
       "gc_scores": {
+        "hp": 0.151,
         "phys_dmg": 0.104,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -1025,9 +1051,10 @@
       "description": "Vomammoths will open every fight with Blizzard, which will chip away at Locke and the Moogles' HP quite quickly.",
       "special": "Bear Claw",
       "gc_scores": {
+        "hp": 0.075,
         "phys_dmg": 0.028,
         "phys_def": 0.295,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -1062,9 +1089,10 @@
       "description": "Fidors are tough monsters with a lot of HP and high Mag.Def. Fortunately, they are highly vulnerable to physical attacks. They come at the party with powerful attacks including a double-damage Pounce.",
       "special": "Pounce",
       "gc_scores": {
+        "hp": 0.132,
         "phys_dmg": 0.141,
         "phys_def": 0.22,
-        "mag_def_score": 0.67
+        "mag_def": 0.67
       }
     },
     {
@@ -1092,16 +1120,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1089.0,
-      "seed_rating": 1452.9,
+      "seed_power": 0.2532,
+      "seed_rating": 1381.3,
       "bat_pwr": 17,
       "mag_pwr": 10,
       "description": "Baskervors have powerful physical attacks, but their most noteworthy ability is to Sneeze.",
       "special": "Claw",
       "gc_scores": {
+        "hp": 0.192,
         "phys_dmg": 0.213,
         "phys_def": 0.435,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -1129,16 +1158,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1364.8,
-      "seed_rating": 1518.6,
+      "seed_power": 0.3671,
+      "seed_rating": 1481.9,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Surianders can counter attacks with Sneeze, but are not otherwise much of a threat. Yawn inflicts Psyche but is rarely used. They have a weakness to Pearl.",
       "special": "Yawn",
       "gc_scores": {
+        "hp": 0.378,
         "phys_dmg": 0.361,
         "phys_def": 0.415,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -1166,16 +1196,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1195.9,
-      "seed_rating": 1478.4,
+      "seed_power": 0.2923,
+      "seed_rating": 1415.9,
       "bat_pwr": 25,
       "mag_pwr": 10,
       "description": "Chimeras are the most dangerous creature near Thamasa, appearing only in forests.",
       "special": "Frisky",
       "gc_scores": {
+        "hp": 0.331,
         "phys_dmg": 0.237,
         "phys_def": 0.395,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -1203,16 +1234,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1339.7,
-      "seed_rating": 1512.6,
+      "seed_power": 0.3696,
+      "seed_rating": 1484.2,
       "bat_pwr": 25,
       "mag_pwr": 7,
       "description": "Behemoths rely on the brutal Take Down attack to subdue their foes. They'll use it even more often when alone. Use Ice to defeat them, but avoid summons because the Behemoth will counter with Meteo.",
       "special": "Take Down",
       "gc_scores": {
+        "hp": 0.533,
         "phys_dmg": 0.302,
         "phys_def": 0.395,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -1240,16 +1272,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1169.2,
-      "seed_rating": 1472.0,
+      "seed_power": 0.2836,
+      "seed_rating": 1408.2,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "A Mesosaur in a group will usually run away, but they'll stand and fight when alone. They can cause Seizure with T. Lash as both a normal attack and a Fight counter.",
       "special": "T. Lash",
       "gc_scores": {
+        "hp": 0.233,
         "phys_dmg": 0.235,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -1284,9 +1317,10 @@
       "description": "The Pterodon is one of the first common enemies you'll see that has two different special attacks to worry about. Wing deals no damage itself, but inflicts the Seizure status.",
       "special": "Wing",
       "gc_scores": {
+        "hp": 0.136,
         "phys_dmg": 0.131,
         "phys_def": 0.26,
-        "mag_def_score": 0.705
+        "mag_def": 0.705
       }
     },
     {
@@ -1314,16 +1348,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1166.2,
-      "seed_rating": 1471.3,
+      "seed_power": 0.2621,
+      "seed_rating": 1389.2,
       "bat_pwr": 25,
       "mag_pwr": 3,
       "description": "FossilFang is a nasty enemy early in the game, with a lot of HP and three devastating attacks.",
       "special": "Bone",
       "gc_scores": {
+        "hp": 0.262,
         "phys_dmg": 0.216,
         "phys_def": 0.395,
-        "mag_def_score": 0.65
+        "mag_def": 0.65
       }
     },
     {
@@ -1358,9 +1393,10 @@
       "description": "The White Drgn does nothing but cast Pearl and respond to Magic with Dispel.",
       "special": "",
       "gc_scores": {
+        "hp": 0.772,
         "phys_dmg": 0.639,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -1388,16 +1424,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1587.1,
-      "seed_rating": 1571.5,
+      "seed_power": 0.5061,
+      "seed_rating": 1604.7,
       "bat_pwr": 13,
       "mag_pwr": 13,
       "description": "Doom Drgns are bad news, capable of using S. Cross for heavy Fire damage for the first four turns before turning to N. Cross or Flare Star.",
       "special": "Melt",
       "gc_scores": {
+        "hp": 0.768,
         "phys_dmg": 0.486,
         "phys_def": 0.435,
-        "mag_def_score": 0.355
+        "mag_def": 0.355
       }
     },
     {
@@ -1425,16 +1462,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 2203.6,
-      "seed_rating": 1718.2,
+      "seed_power": 0.7837,
+      "seed_rating": 1850.0,
       "bat_pwr": 55,
       "mag_pwr": 25,
       "description": "Brachosaurs have over 45,000 HP, good Defense and Mag.Def, and absolutely brutal attacks including Meteor and Ultima.",
       "special": "Swing",
       "gc_scores": {
+        "hp": 0.928,
         "phys_dmg": 0.85,
         "phys_def": 0.795,
-        "mag_def_score": 0.654
+        "mag_def": 0.654
       }
     },
     {
@@ -1462,16 +1500,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1758.2,
-      "seed_rating": 1612.2,
+      "seed_power": 0.6014,
+      "seed_rating": 1688.9,
       "bat_pwr": 33,
       "mag_pwr": 16,
       "description": "Tyranosaurs hit hard in general, and can use Meteor for major magic damage and Bite for devastating physical damage.",
       "special": "Bite",
       "gc_scores": {
+        "hp": 0.726,
         "phys_dmg": 0.672,
         "phys_def": 0.49,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -1499,16 +1538,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 633.3,
-      "seed_rating": 1344.5,
+      "seed_power": 0.1425,
+      "seed_rating": 1283.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Dark Winds are very similar to the Leafers they appear with. They are vulnerable to Fire and have no special attacks save their Dive attack that does slightly increased damage.",
       "special": "Dive",
       "gc_scores": {
+        "hp": 0.041,
         "phys_dmg": 0.053,
         "phys_def": 0.22,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -1536,16 +1576,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 898.5,
-      "seed_rating": 1407.6,
+      "seed_power": 0.1938,
+      "seed_rating": 1328.9,
       "bat_pwr": 12,
       "mag_pwr": 10,
       "description": "Beakors can counterattack normal attacks with one of their own, and other attacks with the Poison-inducing Duster. If you do use a special attack, be sure it finishes them off.",
       "special": "Duster",
       "gc_scores": {
+        "hp": 0.119,
         "phys_dmg": 0.1,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -1573,16 +1614,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 990.0,
-      "seed_rating": 1429.4,
+      "seed_power": 0.2228,
+      "seed_rating": 1354.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Shimsham will have a character's HP, and Vultures like to use it quite often if they are the last enemy left on the battlefield. Their Blinder is nothing to worry about, at least.",
       "special": "Blinder",
       "gc_scores": {
+        "hp": 0.142,
         "phys_dmg": 0.137,
         "phys_def": 0.395,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -1610,16 +1652,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1399.6,
-      "seed_rating": 1526.9,
+      "seed_power": 0.3849,
+      "seed_rating": 1497.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Harpies use Aero and can counter Magic with a basic attack or Cyclonic. This is best avoided unless the party has protection from Wound.",
       "special": "Grip",
       "gc_scores": {
+        "hp": 0.421,
         "phys_dmg": 0.378,
         "phys_def": 0.455,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -1647,16 +1690,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 974.9,
-      "seed_rating": 1425.8,
+      "seed_power": 0.2103,
+      "seed_rating": 1343.5,
       "bat_pwr": 5,
       "mag_pwr": 5,
       "description": "HermitCrabs can Petrify as a counterattack when they are left alone, but perhaps more dangerous is their ability to use Net.",
       "special": "Rock",
       "gc_scores": {
+        "hp": 0.122,
         "phys_dmg": 0.199,
         "phys_def": 0.59,
-        "mag_def_score": 0.315
+        "mag_def": 0.315
       }
     },
     {
@@ -1684,16 +1728,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1107.9,
-      "seed_rating": 1457.4,
+      "seed_power": 0.2642,
+      "seed_rating": 1391.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Trapper use the three main level-based Lores, which can be a serious problem or no threat at all, depending on the levels of your characters.",
       "special": "Program 18",
       "gc_scores": {
+        "hp": 0.165,
         "phys_dmg": 0.172,
         "phys_def": 0.705,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -1721,16 +1766,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 794.8,
-      "seed_rating": 1382.9,
+      "seed_power": 0.1747,
+      "seed_rating": 1312.0,
       "bat_pwr": 16,
       "mag_pwr": 10,
       "description": "Hornets are very basic enemies with a basic special attack (IronNeedle). They are vulnerable to Fire, but can be easily taken out with Edgar's AutoCrossbow.",
       "special": "IronNeedle",
       "gc_scores": {
+        "hp": 0.067,
         "phys_dmg": 0.063,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -1758,16 +1804,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 850.1,
-      "seed_rating": 1396.1,
+      "seed_power": 0.1802,
+      "seed_rating": 1316.8,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "CrassHopprs can use Wing Snap which causes Berserk. While this is technically a negative status, it's sometimes desirable—and it will generally only speed up combat with CrassHopprs.",
       "special": "Wing Snap",
       "gc_scores": {
+        "hp": 0.109,
         "phys_dmg": 0.096,
         "phys_def": 0.2,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -1795,16 +1842,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1074.4,
-      "seed_rating": 1449.5,
+      "seed_power": 0.2503,
+      "seed_rating": 1378.8,
       "bat_pwr": 11,
       "mag_pwr": 10,
       "description": "None of the Delta Bug's attacks are much of a threat in the World of Ruin. They have low HP but resist physical damage, so use Magic (particularly Fire) to defeat them quickly.",
       "special": "Rush",
       "gc_scores": {
+        "hp": 0.173,
         "phys_dmg": 0.226,
         "phys_def": 0.865,
-        "mag_def_score": 0.025
+        "mag_def": 0.025
       }
     },
     {
@@ -1832,16 +1880,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1197.0,
-      "seed_rating": 1478.6,
+      "seed_power": 0.2941,
+      "seed_rating": 1417.5,
       "bat_pwr": 16,
       "mag_pwr": 10,
       "description": "Gilomantises use basic attacks in normal combat, and counter Fight with the Sickle special. They have a lot of HP but are vulnerable to Fire attacks.",
       "special": "Sickle",
       "gc_scores": {
+        "hp": 0.263,
         "phys_dmg": 0.247,
         "phys_def": 0.455,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -1869,16 +1918,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 869.5,
-      "seed_rating": 1400.7,
+      "seed_power": 0.1957,
+      "seed_rating": 1330.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "How annoying Triliums are is inversely proportional to how many Star Pendants you have equipped. They can use Bane Touch on the first turn, inflicting Poison on one of your party members.",
       "special": "Bane Touch",
       "gc_scores": {
+        "hp": 0.085,
         "phys_dmg": 0.085,
         "phys_def": 0.4,
-        "mag_def_score": 0.67
+        "mag_def": 0.67
       }
     },
     {
@@ -1913,9 +1963,10 @@
       "description": "A trio of Nightshades will leap out of a painting and attack you in Owzer's House. They are easily defeated with Fire, but can open combat with Charm, so be careful.",
       "special": "Poison Pod",
       "gc_scores": {
+        "hp": 0.328,
         "phys_dmg": 0.333,
         "phys_def": 0.435,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -1943,16 +1994,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1488.5,
-      "seed_rating": 1548.0,
+      "seed_power": 0.4324,
+      "seed_rating": 1539.6,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "TumbleWeed have a lot of HP and are vulnerable to Fire. They can inflict Dark with Blinder, but the greatest danger is from their Lifeshaver counterattack.",
       "special": "Blinder",
       "gc_scores": {
+        "hp": 0.551,
         "phys_dmg": 0.468,
         "phys_def": 0.475,
-        "mag_def_score": 0.355
+        "mag_def": 0.355
       }
     },
     {
@@ -1980,16 +2032,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1023.8,
-      "seed_rating": 1437.4,
+      "seed_power": 0.3216,
+      "seed_rating": 1441.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Bloompires take very little damage from most attacks, so attacks that ignore Defense or Mag.Def are your safest bet. You can even kill them with Cure, since they are undead.",
       "special": "Energy Sap",
       "gc_scores": {
+        "hp": 0.024,
         "phys_dmg": 0.235,
         "phys_def": 0.995,
-        "mag_def_score": 0.995
+        "mag_def": 0.995
       }
     },
     {
@@ -2017,16 +2070,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 855.2,
-      "seed_rating": 1397.3,
+      "seed_power": 0.1913,
+      "seed_rating": 1326.7,
       "bat_pwr": 11,
       "mag_pwr": 10,
       "description": "Trilobiters don't have any useful vulnerabilities, and their inherent Safe status means none of your attacks is going to be especially great.",
       "special": "PoisonBarb",
       "gc_scores": {
+        "hp": 0.086,
         "phys_dmg": 0.108,
         "phys_def": 0.355,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2054,16 +2108,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1949.1,
-      "seed_rating": 1657.6,
+      "seed_power": 0.7136,
+      "seed_rating": 1788.1,
       "bat_pwr": 53,
       "mag_pwr": 25,
       "description": "The real Siegfried, encountered in the Colosseum when you wager a Megalixir, is quite a bit tougher than the impostor you've run into during the game.",
       "special": "Knuckles",
       "gc_scores": {
+        "hp": 0.861,
         "phys_dmg": 0.744,
         "phys_def": 0.666,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -2098,9 +2153,10 @@
       "description": "Nautiloids have a healthy HP total and a weakness to Fire. Their automatic Safe status makes them a good target for Fire or Sabin's Defense-ignoring Pummel Blitz.",
       "special": "Ink",
       "gc_scores": {
+        "hp": 0.108,
         "phys_dmg": 0.11,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2135,9 +2191,10 @@
       "description": "Exocites are pretty standard creatures. Like many in the early game (and especially on the Lete River), they have a weakness to Fire but a relative strength against magic in general.",
       "special": "Scissors",
       "gc_scores": {
+        "hp": 0.098,
         "phys_dmg": 0.111,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2172,9 +2229,10 @@
       "description": "Anguiforms have a nasty Garrote attack they can use on every third turn for five times their normal damage, but their most dangerous attack is Aqua Rake.",
       "special": "Garrote",
       "gc_scores": {
+        "hp": 0.124,
         "phys_dmg": 0.122,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2202,16 +2260,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1480.1,
-      "seed_rating": 1546.0,
+      "seed_power": 0.4085,
+      "seed_rating": 1518.6,
       "bat_pwr": 13,
       "mag_pwr": 7,
       "description": "Reach Frogs will Jump in the second round of combat, and every third round thereafter. This deals a lot of damage and makes the Reach Frog temporarily invulnerable.",
       "special": "Tongue",
       "gc_scores": {
+        "hp": 0.415,
         "phys_dmg": 0.468,
         "phys_def": 0.51,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -2239,16 +2298,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1180.4,
-      "seed_rating": 1474.7,
+      "seed_power": 0.2873,
+      "seed_rating": 1411.4,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "A throwback to FF1, Lizards have the ability to turn a character into an Imp with . They can do this on the first round, so have some Green Cherries handy.",
       "special": "Imp Glare",
       "gc_scores": {
+        "hp": 0.25,
         "phys_dmg": 0.239,
         "phys_def": 0.4,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -2276,16 +2336,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1047.3,
-      "seed_rating": 1443.0,
+      "seed_power": 0.2278,
+      "seed_rating": 1358.9,
       "bat_pwr": 11,
       "mag_pwr": 3,
       "description": "ChickenLips look ridiculous and for the most part are. They can use the Lash special to inflict Mute, but their attacks are generally not very powerful.",
       "special": "Lash",
       "gc_scores": {
+        "hp": 0.163,
         "phys_dmg": 0.157,
         "phys_def": 0.59,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2313,16 +2374,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1702.0,
-      "seed_rating": 1598.8,
+      "seed_power": 0.5911,
+      "seed_rating": 1679.9,
       "bat_pwr": 54,
       "mag_pwr": 22,
       "description": "Hoovers are dangerous creatures that can kill you with Crush or wear you down with repeated Sand Storm counterattacks.",
       "special": "Crush",
       "gc_scores": {
+        "hp": 0.719,
         "phys_dmg": 0.693,
         "phys_def": 0.51,
-        "mag_def_score": 0.24
+        "mag_def": 0.24
       }
     },
     {
@@ -2357,9 +2419,10 @@
       "description": "Rider's SilverPike attack is very dangerous and will be used to counter Steal as well as during his normal attack routine. He will also sometimes counter Fight with R.Polarity, which can be annoying.",
       "special": "SilverPike",
       "gc_scores": {
+        "hp": 0.252,
         "phys_dmg": 0.191,
         "phys_def": 0.475,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2387,16 +2450,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1836.3,
-      "seed_rating": 1630.8,
+      "seed_power": 0.3734,
+      "seed_rating": 1487.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Like his companion Ultros, Chupon has no special tricks during the fight above the Floating Continent. He'll use his basic attack and Fire Ball, but little else.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.7,
         "phys_dmg": 0.235,
         "phys_def": 0.395,
-        "mag_def_score": 0.22
+        "mag_def": 0.22
       }
     },
     {
@@ -2424,16 +2488,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1065.6,
-      "seed_rating": 1447.4,
+      "seed_power": 0.2603,
+      "seed_rating": 1387.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Pipsqueaks may respond to basic Fight commands with Exploder, so avoid doing that. They are highly resistant to physical damage anyway, so concentrate on Magic attacks.",
       "special": "Program 55",
       "gc_scores": {
+        "hp": 0.111,
         "phys_dmg": 0.164,
         "phys_def": 0.785,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2468,9 +2533,10 @@
       "description": "Your first encounter with M-TekArmor can be a little rough, since they have no weaknesses Terra can exploit (though it's still worth casting Fire just for the cutscene).",
       "special": "Metal Kick",
       "gc_scores": {
+        "hp": 0.101,
         "phys_dmg": 0.082,
         "phys_def": 0.12,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -2505,9 +2571,10 @@
       "description": "Sky Armors use Tek Laser and can inflict Mute normally, and start using Missile when they're the only monster on the battlefield.",
       "special": "Backlash",
       "gc_scores": {
+        "hp": 0.21,
         "phys_dmg": 0.228,
         "phys_def": 0.59,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -2542,9 +2609,10 @@
       "description": "The Telstar summons Soldiers as reinforcements, counters Blitzes, and has a ton of HP. It also has a unique Rage ability and isn't found anywhere else, so don't miss it in the Imperial Camp!",
       "special": "SonicBlast",
       "gc_scores": {
+        "hp": 0.297,
         "phys_dmg": 0.143,
         "phys_def": 0.475,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2572,16 +2640,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1615.8,
-      "seed_rating": 1578.3,
+      "seed_power": 0.5248,
+      "seed_rating": 1621.3,
       "bat_pwr": 18,
       "mag_pwr": 15,
       "description": "The Lethal Wpn specializes in abilities that reduce HP by fractions, and can dish out a lot of damage quickly.",
       "special": "Metal Arm",
       "gc_scores": {
+        "hp": 0.671,
         "phys_dmg": 0.46,
         "phys_def": 0.755,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -2609,16 +2678,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 612.2,
-      "seed_rating": 1339.5,
+      "seed_power": 0.1581,
+      "seed_rating": 1297.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Vaporites aren't much of a threat and have a measly 15 HP. They can potentially use Cling to cause Slow on every third round, but this isn't an issue in the early game.",
       "special": "Cling",
       "gc_scores": {
+        "hp": 0.027,
         "phys_dmg": 0.053,
         "phys_def": 0.375,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2646,16 +2716,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 838.3,
-      "seed_rating": 1393.3,
+      "seed_power": 0.1708,
+      "seed_rating": 1308.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Flans are weak to everything and offer little threat. When they appear alone, be prepared for a total of five more to appear (first two, then three) when each wave is defeated.",
       "special": "Slip Gunk",
       "gc_scores": {
+        "hp": 0.112,
         "phys_dmg": 0.172,
         "phys_def": 0.055,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -2683,16 +2754,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1156.3,
-      "seed_rating": 1468.9,
+      "seed_power": 0.281,
+      "seed_rating": 1405.9,
       "bat_pwr": 18,
       "mag_pwr": 12,
       "description": "The threat from Ings comes from Lifeshaver, a brutally powerful HP-draining attack. Take advantage of the fact that they can't drain more HP than they have lost. Defeat them quickly and one at a time.",
       "special": "Glare",
       "gc_scores": {
+        "hp": 0.232,
         "phys_dmg": 0.207,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2720,16 +2792,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1148.6,
-      "seed_rating": 1467.1,
+      "seed_power": 0.2766,
+      "seed_rating": 1402.0,
       "bat_pwr": 8,
       "mag_pwr": 10,
       "description": "Humpties are relatively weak undead that can use Hug on the second turn of battle to inflict Muddled. Other than that, they are a very straightforward monster.",
       "special": "Hug",
       "gc_scores": {
+        "hp": 0.198,
         "phys_dmg": 0.221,
         "phys_def": 0.57,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -2757,16 +2830,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1188.8,
-      "seed_rating": 1476.7,
+      "seed_power": 0.2883,
+      "seed_rating": 1412.4,
       "bat_pwr": 24,
       "mag_pwr": 10,
       "description": "Brainpans will use Blow Fish only when they are the sole remaining enemy, so don't let them be. Unless Strago is in the party, in which case you'll probably want to do that at least once.",
       "special": "Smirk",
       "gc_scores": {
+        "hp": 0.252,
         "phys_dmg": 0.267,
         "phys_def": 0.475,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -2794,16 +2868,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1089.0,
-      "seed_rating": 1452.9,
+      "seed_power": 0.24,
+      "seed_rating": 1369.7,
       "bat_pwr": 11,
       "mag_pwr": 4,
       "description": "Crullers can open the battle with Fire 2, though they lack the Mag.Pwr to make it really hurt. They can follow that up with Slimer and BrainStorm, which cause Slow and Muddled, respectively.",
       "special": "BrainStorm",
       "gc_scores": {
+        "hp": 0.256,
         "phys_dmg": 0.244,
         "phys_def": 0.435,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     },
     {
@@ -2831,16 +2906,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1025.4,
-      "seed_rating": 1437.8,
+      "seed_power": 0.4459,
+      "seed_rating": 1551.6,
       "bat_pwr": 1,
       "mag_pwr": 50,
       "description": "Cactrots only use Blow Fish, and will eventually use it 10 times to decimate your party.",
       "special": "Mind Sting",
       "gc_scores": {
+        "hp": 0.012,
         "phys_dmg": 0.184,
-        "phys_def": 1.0,
-        "mag_def_score": 1.0
+        "phys_def": 1,
+        "mag_def": 1
       }
     },
     {
@@ -2868,16 +2944,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 674.8,
-      "seed_rating": 1354.4,
+      "seed_power": 0.1499,
+      "seed_rating": 1290.1,
       "bat_pwr": 19,
       "mag_pwr": 10,
       "description": "The Repo Man will occasionally throw a Wrench at you for slightly increased damage, but they are notable for being the first monster you'll encounter with a counterattack: 1/3 of the time they will throw a Wrench at themself when attacked.",
       "special": "Wrench",
       "gc_scores": {
+        "hp": 0.041,
         "phys_dmg": 0.057,
         "phys_def": 0.355,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -2905,16 +2982,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1001.3,
-      "seed_rating": 1432.1,
+      "seed_power": 0.2267,
+      "seed_rating": 1358.0,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Harvesters use Potions to heal and have good items to Steal, but will counter by Stealing from you.",
       "special": "Sickle",
       "gc_scores": {
+        "hp": 0.145,
         "phys_dmg": 0.146,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2942,16 +3020,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 788.8,
-      "seed_rating": 1381.5,
+      "seed_power": 0.1475,
+      "seed_rating": 1288.0,
       "bat_pwr": 10,
       "mag_pwr": 1,
       "description": "Bombs can counter any attack with Exploder, but this can be avoided by defeating them with a single strong hit. They can use a powerful Blaze attack as well, so take them out quickly.",
       "special": "Teach Rydia Bomb Summon",
       "gc_scores": {
+        "hp": 0.089,
         "phys_dmg": 0.072,
         "phys_def": 0.355,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -2986,9 +3065,10 @@
       "description": "Still Life can use Bane Kiss or Lullaby to inflict Poison or Psyche, respectively. It will counter every attack by Condemning a random party member.",
       "special": "Bane Kiss",
       "gc_scores": {
+        "hp": 0.489,
         "phys_dmg": 0.333,
         "phys_def": 0.59,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3016,16 +3096,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1500.8,
-      "seed_rating": 1550.9,
+      "seed_power": 0.4207,
+      "seed_rating": 1529.3,
       "bat_pwr": 13,
       "mag_pwr": 7,
       "description": "Boxed Sets can hit hard with Mirror Orb, and start using Meteo and Cold Dust when alone.",
       "special": "Mirror Orb",
       "gc_scores": {
+        "hp": 0.444,
         "phys_dmg": 0.405,
         "phys_def": 0.355,
-        "mag_def_score": 0.98
+        "mag_def": 0.98
       }
     },
     {
@@ -3053,16 +3134,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 990.7,
-      "seed_rating": 1429.5,
+      "seed_power": 0.224,
+      "seed_rating": 1355.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "In a group, a SlamDancer is no real threat. The worst they can do is inflict Psyche with Daze Dance.",
       "special": "Daze Dance",
       "gc_scores": {
+        "hp": 0.139,
         "phys_dmg": 0.137,
         "phys_def": 0.455,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -3090,16 +3172,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1075.8,
-      "seed_rating": 1449.8,
+      "seed_power": 0.2343,
+      "seed_rating": 1364.7,
       "bat_pwr": 18,
       "mag_pwr": 5,
       "description": "The HadesGigas's Head Butt attack is devastating, especially combined with their propensity to use Magnitude8 as their final attack.",
       "special": "Head Butt",
       "gc_scores": {
+        "hp": 0.242,
         "phys_dmg": 0.159,
         "phys_def": 0.49,
-        "mag_def_score": 0.455
+        "mag_def": 0.455
       }
     },
     {
@@ -3127,16 +3210,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1418.6,
-      "seed_rating": 1531.4,
+      "seed_power": 0.4375,
+      "seed_rating": 1544.2,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "The Pug, more commonly called a Tonberry, uses an octuple-damage Cleaver attack and Step Mine as a counter to every attack, in addition to casting Step Mine normally.",
       "special": "Cleaver",
       "gc_scores": {
+        "hp": 0.626,
         "phys_dmg": 0.244,
         "phys_def": 0.67,
-        "mag_def_score": 0.763
+        "mag_def": 0.763
       }
     },
     {
@@ -3164,16 +3248,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1218.0,
-      "seed_rating": 1483.6,
+      "seed_power": 0.3872,
+      "seed_rating": 1499.7,
       "bat_pwr": 5,
       "mag_pwr": 35,
       "description": "Magic Urns do nothing but use items and healing spells on you before eventually running away and leaving you with free Magic Points.",
       "special": "",
       "gc_scores": {
+        "hp": 0.07,
         "phys_dmg": 0.237,
         "phys_def": 0.865,
-        "mag_def_score": 0.745
+        "mag_def": 0.745
       }
     },
     {
@@ -3201,16 +3286,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1312.8,
-      "seed_rating": 1506.2,
+      "seed_power": 0.377,
+      "seed_rating": 1490.7,
       "bat_pwr": 20,
       "mag_pwr": 10,
       "description": "Movers have very high Mag.Def and were intended to also have very high Evade %, which would make them hard to kill.",
       "special": "Silencer",
       "gc_scores": {
+        "hp": 0.077,
         "phys_dmg": 0.513,
         "phys_def": 0.455,
-        "mag_def_score": 0.995
+        "mag_def": 0.995
       }
     },
     {
@@ -3238,16 +3324,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1581.1,
-      "seed_rating": 1570.0,
+      "seed_power": 0.4696,
+      "seed_rating": 1572.5,
       "bat_pwr": 29,
       "mag_pwr": 10,
       "description": "Figalizes hit hard and can Poison opponents with Gunk. When they are alone in battle, they will use the Dischord Lore as well as Raid.",
       "special": "Gunk",
       "gc_scores": {
+        "hp": 0.455,
         "phys_dmg": 0.508,
         "phys_def": 0.355,
-        "mag_def_score": 0.98
+        "mag_def": 0.98
       }
     },
     {
@@ -3275,16 +3362,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1228.5,
-      "seed_rating": 1486.1,
+      "seed_power": 0.3101,
+      "seed_rating": 1431.6,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "The Buffalax will perform a three-hit combo on every fifth turn, but they probably won't make it that far. They are vulnerable to Fire, but may counter Magic with Sun Bath.",
       "special": "Riot",
       "gc_scores": {
+        "hp": 0.332,
         "phys_dmg": 0.243,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3319,9 +3407,10 @@
       "description": "Aspiks don't have potent offensive abilities, but their counterattack is another story.",
       "special": "NumbSpines",
       "gc_scores": {
+        "hp": 0.104,
         "phys_dmg": 0.087,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3349,16 +3438,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 813.8,
-      "seed_rating": 1387.5,
+      "seed_power": 0.158,
+      "seed_rating": 1297.2,
       "bat_pwr": 1,
       "mag_pwr": 1,
       "description": "Ghosts love to cast Fire and will also use the more powerful Fire Wall. Perhaps even more dangerous is their Pause attack, which inflicts Stop. Fortunately they aren't very tough.",
       "special": "Pause",
       "gc_scores": {
+        "hp": 0.105,
         "phys_dmg": 0.072,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3386,16 +3476,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1458.0,
-      "seed_rating": 1540.8,
+      "seed_power": 0.4002,
+      "seed_rating": 1511.2,
       "bat_pwr": 13,
       "mag_pwr": 8,
       "description": "Crawlers hit hard and cause Poison, and are tougher than you might expect for a World Map monster.",
       "special": "Feeler",
       "gc_scores": {
+        "hp": 0.396,
         "phys_dmg": 0.459,
         "phys_def": 0.455,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3423,16 +3514,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 788.2,
-      "seed_rating": 1381.4,
+      "seed_power": 0.1749,
+      "seed_rating": 1312.2,
       "bat_pwr": 20,
       "mag_pwr": 10,
       "description": "Sand Rays have more hit points that many early-game monsters and are not vulnerable to Fire, but offensively they are nothing special. Tail is a typical special attack that deals 50% extra damage.",
       "special": "Tail",
       "gc_scores": {
+        "hp": 0.057,
         "phys_dmg": 0.066,
         "phys_def": 0.435,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -3460,16 +3552,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 770.9,
-      "seed_rating": 1377.2,
+      "seed_power": 0.1611,
+      "seed_rating": 1300.0,
       "bat_pwr": 20,
       "mag_pwr": 10,
       "description": "Areneids have low Defense but high HP and no weakness to Fire, so they are a good target for physical attacks.",
       "special": "Numb",
       "gc_scores": {
+        "hp": 0.065,
         "phys_dmg": 0.066,
         "phys_def": 0.315,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -3504,9 +3597,10 @@
       "description": "Actaneons are basic monsters that pose little thread compared to the other denizens of the Serpent Trench. Save them for last, especially when they accompany Anguiforms.",
       "special": "Clamp",
       "gc_scores": {
+        "hp": 0.106,
         "phys_dmg": 0.111,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3534,16 +3628,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1204.1,
-      "seed_rating": 1480.3,
+      "seed_power": 0.2948,
+      "seed_rating": 1418.1,
       "bat_pwr": 15,
       "mag_pwr": 9,
       "description": "Sand Horses have two nasty attacks, the multi-target Sand Storm and Clamp, a 5× damage special. Try to take out their whole group with Ice or Water quickly.",
       "special": "Clamp",
       "gc_scores": {
+        "hp": 0.224,
         "phys_dmg": 0.252,
         "phys_def": 0.53,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -3578,9 +3673,10 @@
       "description": "Dark Sides are the toughest monster at the Narshe Security Checkpoint, but they don't have much in the way of offense. Save them for last, and don't sweat Slip Touch's Seizure effect.",
       "special": "Slip Touch",
       "gc_scores": {
+        "hp": 0.112,
         "phys_dmg": 0.113,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3608,16 +3704,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1292.5,
-      "seed_rating": 1501.4,
+      "seed_power": 0.3391,
+      "seed_rating": 1457.2,
       "bat_pwr": 20,
       "mag_pwr": 10,
       "description": "Mad Oscar gets the award for \"worst localization of Malboro/Morbol\" in the Final Fantasy series.",
       "special": "Drool",
       "gc_scores": {
+        "hp": 0.377,
         "phys_dmg": 0.303,
         "phys_def": 0.375,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -3645,16 +3742,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 765.3,
-      "seed_rating": 1375.9,
+      "seed_power": 0.159,
+      "seed_rating": 1298.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "The Crawly's Heart Burn special causes the Seizure status.",
       "special": "Heart Burn",
       "gc_scores": {
+        "hp": 0.077,
         "phys_dmg": 0.066,
         "phys_def": 0.18,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -3682,16 +3780,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 818.1,
-      "seed_rating": 1388.5,
+      "seed_power": 0.1802,
+      "seed_rating": 1316.9,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Blearies are the most resilient enemies in the South Figaro Cave, the only ones who may actually survive an AutoCrossbow attack.",
       "special": "Slumber",
       "gc_scores": {
+        "hp": 0.076,
         "phys_dmg": 0.066,
         "phys_def": 0.395,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -3726,9 +3825,10 @@
       "description": "The Marshal has an annoying Net ability that causes Stop. You have no way to counter this so early in the game, and it can be a real pain if he uses it on an important character like Mog.",
       "special": "Charge",
       "gc_scores": {
+        "hp": 0.143,
         "phys_dmg": 0.12,
         "phys_def": 0.435,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -3763,9 +3863,10 @@
       "description": "Troopers are basic foes that do nothing but normal attacks when left alone. They sometimes counter Fight with a double-damage Swing attack.",
       "special": "Swing",
       "gc_scores": {
+        "hp": 0.112,
         "phys_dmg": 0.123,
         "phys_def": 0.395,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -3793,16 +3894,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1066.6,
-      "seed_rating": 1447.6,
+      "seed_power": 0.2468,
+      "seed_rating": 1375.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Generals will sometimes heal themselves with Cure 2, but other than that they are very standard monsters.",
       "special": "Bio Attack",
       "gc_scores": {
+        "hp": 0.178,
         "phys_dmg": 0.172,
         "phys_def": 0.61,
-        "mag_def_score": 0.415
+        "mag_def": 0.415
       }
     },
     {
@@ -3830,16 +3932,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1477.2,
-      "seed_rating": 1545.3,
+      "seed_power": 0.4311,
+      "seed_rating": 1538.5,
       "bat_pwr": 25,
       "mag_pwr": 11,
       "description": "Coverts dish out a lot of damage with their attacks and skeans, and there's no obvious strategy to fight them.",
       "special": "Disappear",
       "gc_scores": {
+        "hp": 0.471,
         "phys_dmg": 0.474,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -3867,16 +3970,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1446.9,
-      "seed_rating": 1538.1,
+      "seed_power": 0.4257,
+      "seed_rating": 1533.7,
       "bat_pwr": 19,
       "mag_pwr": 11,
       "description": "Ogors spend every turn using Zombite to turn characters into Zombies. They also counter Magic with Bio and other attacks with a basic counterattack.",
       "special": "Zombite",
       "gc_scores": {
+        "hp": 0.454,
         "phys_dmg": 0.437,
         "phys_def": 0.466,
-        "mag_def_score": 0.638
+        "mag_def": 0.638
       }
     },
     {
@@ -3904,16 +4008,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1411.8,
-      "seed_rating": 1529.7,
+      "seed_power": 0.3757,
+      "seed_rating": 1489.6,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Warlocks like to try to steal your MP with MagicDrain, though they will fail to do so unless they've cast Pearl.",
       "special": "MagicDrain",
       "gc_scores": {
+        "hp": 0.252,
         "phys_dmg": 0.324,
         "phys_def": 0.705,
-        "mag_def_score": 0.885
+        "mag_def": 0.885
       }
     },
     {
@@ -3941,16 +4046,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1541.2,
-      "seed_rating": 1560.5,
+      "seed_power": 0.4675,
+      "seed_rating": 1570.7,
       "bat_pwr": 8,
       "mag_pwr": 12,
       "description": "Madams cast a wide variety of spells, double-casting a support spell with a tier-3 Elemental attack spell starting in their third round. They can counter with Cure 2, Meteor, or both.",
       "special": "Sightless",
       "gc_scores": {
+        "hp": 0.632,
         "phys_dmg": 0.432,
         "phys_def": 0.395,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -3978,16 +4084,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1036.9,
-      "seed_rating": 1440.5,
+      "seed_power": 0.239,
+      "seed_rating": 1368.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Jokers tend to use Acid Rain more frequently as battle continues. The main threat, though, is from a lone Joker who will use Bolt 2. Don't leave them for last, and try to take out groups all at once.",
       "special": "Parasol",
       "gc_scores": {
+        "hp": 0.151,
         "phys_dmg": 0.155,
         "phys_def": 0.49,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -4015,16 +4122,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 936.5,
-      "seed_rating": 1416.7,
+      "seed_power": 0.2049,
+      "seed_rating": 1338.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Iron Fists attack normally, occasionally mixing in a double-damage Knee Kick, as long as there are other monsters in the battle.",
       "special": "Knee Kick",
       "gc_scores": {
+        "hp": 0.128,
         "phys_dmg": 0.137,
         "phys_def": 0.295,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -4052,16 +4160,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1536.9,
-      "seed_rating": 1559.5,
+      "seed_power": 0.4499,
+      "seed_rating": 1555.1,
       "bat_pwr": 18,
       "mag_pwr": 7,
       "description": "Goblins are a great source of the three basic level-based Lores, all of which they will use only when alone on the battlefield.",
       "special": "Zap",
       "gc_scores": {
+        "hp": 0.522,
         "phys_dmg": 0.45,
         "phys_def": 0.275,
-        "mag_def_score": 0.98
+        "mag_def": 0.98
       }
     },
     {
@@ -4089,16 +4198,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1106.5,
-      "seed_rating": 1457.1,
+      "seed_power": 0.2593,
+      "seed_rating": 1386.8,
       "bat_pwr": 17,
       "mag_pwr": 10,
       "description": "The main threat from Apparites comes from their propensity to counter attacks with Imp Song. The only way to be certain they won't do this is to defeat them in a single blow.",
       "special": "Slip Touch",
       "gc_scores": {
+        "hp": 0.196,
         "phys_dmg": 0.194,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -4126,16 +4236,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1271.7,
-      "seed_rating": 1496.4,
+      "seed_power": 0.3261,
+      "seed_rating": 1445.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "PowerDemons have a moderate attack but can drain HP with the Daze Dance variant of it. As with most monsters in Darill's Tomb, they are undead and can inflict Zombie (with Soul Out).",
       "special": "Daze Dance",
       "gc_scores": {
+        "hp": 0.318,
         "phys_dmg": 0.262,
         "phys_def": 0.57,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -4163,16 +4274,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1397.5,
-      "seed_rating": 1526.4,
+      "seed_power": 0.3855,
+      "seed_rating": 1498.2,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Displayers rely on normal attacks and their double-damage Rib special. They try to use ChokeSmoke as well, but due to their targeting it will never actually work.",
       "special": "Rib",
       "gc_scores": {
+        "hp": 0.433,
         "phys_dmg": 0.342,
         "phys_def": 0.59,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -4200,16 +4312,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 858.0,
-      "seed_rating": 1398.0,
+      "seed_power": 0.1871,
+      "seed_rating": 1322.9,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "Vector Pups will sometimes counter Fight with Bite, but otherwise don't use any special attacks. If left alone, they will Escape.",
       "special": "Bite",
       "gc_scores": {
+        "hp": 0.09,
         "phys_dmg": 0.104,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -4237,16 +4350,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 262.0,
-      "seed_rating": 1256.2,
+      "seed_power": 0.1055,
+      "seed_rating": 1250.9,
       "bat_pwr": 7,
       "mag_pwr": 10,
       "description": "Peepers will die from Seizure almost immediately, and serve no real purpose when Celes first appears in the World of Ruin. Relm can Sketch them to teach Strago Pearl Wind later in the game, though.",
       "special": "Tail",
       "gc_scores": {
+        "hp": 0.007,
         "phys_dmg": 0.184,
         "phys_def": 0.025,
-        "mag_def_score": 0.025
+        "mag_def": 0.025
       }
     },
     {
@@ -4281,9 +4395,10 @@
       "description": "Sewer Rats are weak enemies that accompany the stronger and more dangerous Vermin, but you'll want to save them for last despite that.",
       "special": "Incisor",
       "gc_scores": {
+        "hp": 0.121,
         "phys_dmg": 0.146,
         "phys_def": 0.435,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -4311,16 +4426,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1341.0,
-      "seed_rating": 1512.9,
+      "seed_power": 0.3589,
+      "seed_rating": 1474.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Slatter use Choke in the first round and every third round thereafter. It's not much more powerful than their mediocre basic attack. They have a hard-to-exploit weakness against Pearl.",
       "special": "Choke",
       "gc_scores": {
+        "hp": 0.357,
         "phys_dmg": 0.333,
         "phys_def": 0.51,
-        "mag_def_score": 0.587
+        "mag_def": 0.587
       }
     },
     {
@@ -4348,16 +4464,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1124.6,
-      "seed_rating": 1461.4,
+      "seed_power": 0.2679,
+      "seed_rating": 1394.4,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Rhinoxes may look powerful and have a lot of HP, but they offer very little actual threat. When they are the last monster remaining, they will try (and fail) to cast Life 3.",
       "special": "BaneStrike",
       "gc_scores": {
+        "hp": 0.198,
         "phys_dmg": 0.172,
         "phys_def": 0.785,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -4385,16 +4502,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 792.1,
-      "seed_rating": 1382.3,
+      "seed_power": 0.1708,
+      "seed_rating": 1308.5,
       "bat_pwr": 9,
       "mag_pwr": 10,
       "description": "As with most bunny-type enemies, Rhobites are the weakest in the areas where they are encountered. Their Incisor is nothing to worry about, and they can't stand up to any kind of attack.",
       "special": "Incisor",
       "gc_scores": {
+        "hp": 0.081,
         "phys_dmg": 0.087,
         "phys_def": 0.275,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -4422,16 +4540,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1245.5,
-      "seed_rating": 1490.2,
+      "seed_power": 0.314,
+      "seed_rating": 1435.1,
       "bat_pwr": 17,
       "mag_pwr": 10,
       "description": "Wild Cats will use Fire Ball when alone, but otherwise rely on basic attacks and their moderately-damaging Pounce special. Fire and Water are both effective against them.",
       "special": "Pounce",
       "gc_scores": {
+        "hp": 0.234,
         "phys_dmg": 0.347,
         "phys_def": 0.395,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -4459,16 +4578,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 951.4,
-      "seed_rating": 1420.2,
+      "seed_power": 0.2113,
+      "seed_rating": 1344.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Red Fangs only use Rabies if they are the last remaining enemy, and will otherwise rely on basic attacks.",
       "special": "Rabies",
       "gc_scores": {
+        "hp": 0.126,
         "phys_dmg": 0.128,
         "phys_def": 0.375,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -4503,9 +4623,10 @@
       "description": "Bounty Men are similar to Vector Pups in that they will Escape if left alone. Otherwise, they rely on basic attacks and the occasional Bite.",
       "special": "Bite",
       "gc_scores": {
+        "hp": 0.118,
         "phys_dmg": 0.125,
         "phys_def": 0.295,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -4533,16 +4654,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 953.3,
-      "seed_rating": 1420.6,
+      "seed_power": 0.1998,
+      "seed_rating": 1334.2,
       "bat_pwr": 28,
       "mag_pwr": 10,
       "description": "Tuskers are the only creature that appears in all maps on Mt. Kolts. They have a lot of HP, but are weak to Terra's Fire spell.",
       "special": "Gore",
       "gc_scores": {
+        "hp": 0.115,
         "phys_dmg": 0.115,
         "phys_def": 0.395,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -4570,16 +4692,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1070.5,
-      "seed_rating": 1448.5,
+      "seed_power": 0.2481,
+      "seed_rating": 1376.8,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "Ralphs are tough, no-nonsense monsters that aren't terribly dangerous. Most of the monsters they pair with are if left to fight alone, though, so try to save the Ralphs for last.",
       "special": "Tackle",
       "gc_scores": {
+        "hp": 0.174,
         "phys_dmg": 0.157,
         "phys_def": 0.53,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -4607,16 +4730,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1129.1,
-      "seed_rating": 1462.5,
+      "seed_power": 0.2676,
+      "seed_rating": 1394.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Chitonids stick to normal attacks unless solo, at which point they may counter with Sneeze. They can be defeated easily with Thunder.",
       "special": "Carapace",
       "gc_scores": {
+        "hp": 0.233,
         "phys_dmg": 0.235,
         "phys_def": 0.55,
-        "mag_def_score": 0.315
+        "mag_def": 0.315
       }
     },
     {
@@ -4644,16 +4768,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1446.3,
-      "seed_rating": 1538.0,
+      "seed_power": 0.4065,
+      "seed_rating": 1516.8,
       "bat_pwr": 15,
       "mag_pwr": 11,
       "description": "Essentially a strong Suriander, Wart Pucks cause Psyche with Yawn and counter attacks with Sneeze. Unlike their yellow brethren, they have a weakness to a basic element, Fire.",
       "special": "Yawn",
       "gc_scores": {
+        "hp": 0.418,
         "phys_dmg": 0.41,
         "phys_def": 0.475,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -4681,16 +4806,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1589.4,
-      "seed_rating": 1572.0,
+      "seed_power": 0.497,
+      "seed_rating": 1596.7,
       "bat_pwr": 40,
       "mag_pwr": 15,
       "description": "Rhyos are a minor threat until the fourth round, at which point they will make four consecutive attacks.",
       "special": "Rage",
       "gc_scores": {
+        "hp": 0.594,
         "phys_dmg": 0.455,
         "phys_def": 0.59,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -4718,16 +4844,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1650.8,
-      "seed_rating": 1586.6,
+      "seed_power": 0.3696,
+      "seed_rating": 1484.2,
       "bat_pwr": 25,
       "mag_pwr": 7,
       "description": "Behemoths rely on the brutal Take Down attack to subdue their foes. They'll use it even more often when alone. Use Ice to defeat them, but avoid summons because the Behemoth will counter with Meteo.",
       "special": "Take Down",
       "gc_scores": {
+        "hp": 0.533,
         "phys_dmg": 0.302,
         "phys_def": 0.395,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -4755,16 +4882,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1501.4,
-      "seed_rating": 1551.1,
+      "seed_power": 0.4118,
+      "seed_rating": 1521.5,
       "bat_pwr": 13,
       "mag_pwr": 7,
       "description": "Vectaurs mix basic attacks with their Tusk special for moderate overall damage. They also use Fire Ball, though it lacks any real punch. They are vulnerable to Ice and Water.",
       "special": "Tusk",
       "gc_scores": {
+        "hp": 0.37,
         "phys_dmg": 0.531,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -4792,16 +4920,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1129.1,
-      "seed_rating": 1462.5,
+      "seed_power": 0.2683,
+      "seed_rating": 1394.7,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "Wyvern are tough but pose little threat unless they are left alone. In that case, they may use the devastating Cyclonic attack. It won't kill anyone, but it will burn through healing items or MP.",
       "special": "Slip Wing",
       "gc_scores": {
+        "hp": 0.209,
         "phys_dmg": 0.17,
         "phys_def": 0.55,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -4829,16 +4958,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1233.8,
-      "seed_rating": 1487.4,
+      "seed_power": 0.3028,
+      "seed_rating": 1425.1,
       "bat_pwr": 29,
       "mag_pwr": 10,
       "description": "Zombones mostly stick to their powerful basic attack.",
       "special": "Bone",
       "gc_scores": {
+        "hp": 0.312,
         "phys_dmg": 0.238,
         "phys_def": 0.59,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -4866,16 +4996,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1461.0,
-      "seed_rating": 1541.5,
+      "seed_power": 0.4248,
+      "seed_rating": 1532.9,
       "bat_pwr": 45,
       "mag_pwr": 10,
       "description": "Dragons are incredibly powerful and their propensity to counter attacks with Sneeze makes them hard to kill.",
       "special": "Tail",
       "gc_scores": {
+        "hp": 0.586,
         "phys_dmg": 0.383,
         "phys_def": 0.51,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -4903,16 +5034,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1548.4,
-      "seed_rating": 1562.3,
+      "seed_power": 0.4921,
+      "seed_rating": 1592.4,
       "bat_pwr": 15,
       "mag_pwr": 12,
       "description": "Brontaurs can hit very hard with Wail, and spend their second round using Lifeshaver up to twice. They will also use Atomic Ray later in the fight.",
       "special": "Wail",
       "gc_scores": {
+        "hp": 0.7,
         "phys_dmg": 0.466,
         "phys_def": 0.51,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -4940,16 +5072,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1206.4,
-      "seed_rating": 1480.9,
+      "seed_power": 0.2897,
+      "seed_rating": 1413.6,
       "bat_pwr": 10,
       "mag_pwr": 3,
       "description": "Allosauruses can Poison your characters with Virite or PoisonClaw, but never actually attack for damage directly. Fire will do nicely to defeat them, or you can rely on basic attacks.",
       "special": "PoisonClaw",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.324,
         "phys_def": 0.415,
-        "mag_def_score": 0.2
+        "mag_def": 0.2
       }
     },
     {
@@ -4977,16 +5110,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 787.4,
-      "seed_rating": 1381.2,
+      "seed_power": 0.1656,
+      "seed_rating": 1304.0,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Cirpii do not have a powerful attack, but they may use their Petrify-inflicting Beak attack on every third turn. Try to take them out before that happens.",
       "special": "Beak",
       "gc_scores": {
+        "hp": 0.081,
         "phys_dmg": 0.094,
         "phys_def": 0.315,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -5014,16 +5148,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1496.6,
-      "seed_rating": 1549.9,
+      "seed_power": 0.4283,
+      "seed_rating": 1536.0,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Sprinters will often use Drainbeak in the second round of combat for 0 damage, though if they've used Pearl Wind it may have some effect.",
       "special": "Drainbeak",
       "gc_scores": {
+        "hp": 0.47,
         "phys_dmg": 0.477,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5051,16 +5186,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1060.4,
-      "seed_rating": 1446.1,
+      "seed_power": 0.2443,
+      "seed_rating": 1373.5,
       "bat_pwr": 13,
       "mag_pwr": 8,
       "description": "Gobblers are no threat until they are the sole remaining monster, at which point they will cast Shimsham every turn. In mixed groups, it pays to defeat them first.",
       "special": "Silence",
       "gc_scores": {
+        "hp": 0.152,
         "phys_dmg": 0.172,
         "phys_def": 0.67,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -5088,16 +5224,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1233.3,
-      "seed_rating": 1487.3,
+      "seed_power": 0.3078,
+      "seed_rating": 1429.6,
       "bat_pwr": 19,
       "mag_pwr": 10,
       "description": "Harpiais use the Aero and Pearl Wind Lores. They are vulnerable to Wind and deal significant damage with their attacks, but they should not last long against your ever-growing party.",
       "special": "Nail",
       "gc_scores": {
+        "hp": 0.264,
         "phys_dmg": 0.288,
         "phys_def": 0.4,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -5125,16 +5262,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1377.6,
-      "seed_rating": 1521.6,
+      "seed_power": 0.3715,
+      "seed_rating": 1485.9,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "GloomShell can use Net to cause Stop on every other turn of battle. When left alone on the battlefield, they can use Rock to Petrify their enemies. Ice is especially effective against them.",
       "special": "Rock",
       "gc_scores": {
+        "hp": 0.377,
         "phys_dmg": 0.369,
         "phys_def": 0.455,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5162,16 +5300,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1130.0,
-      "seed_rating": 1462.7,
+      "seed_power": 0.2685,
+      "seed_rating": 1394.8,
       "bat_pwr": 6,
       "mag_pwr": 10,
       "description": "Like everything else in the area. Drops like to inflict Muddled on the party. If you have protection against it, they aren't much of a problem.",
       "special": "Mad Signal",
       "gc_scores": {
+        "hp": 0.221,
         "phys_dmg": 0.212,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5199,16 +5338,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 978.5,
-      "seed_rating": 1426.6,
+      "seed_power": 0.2234,
+      "seed_rating": 1355.0,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "As the only enemy in the Kohlingen Area forests that doesn't do anything nasty if it's left alone, Mind Candies should be saved for last in any battle in which they appear.",
       "special": "SleepSting",
       "gc_scores": {
+        "hp": 0.119,
         "phys_dmg": 0.14,
         "phys_def": 0.415,
-        "mag_def_score": 0.65
+        "mag_def": 0.65
       }
     },
     {
@@ -5236,16 +5376,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1029.2,
-      "seed_rating": 1438.7,
+      "seed_power": 0.236,
+      "seed_rating": 1366.2,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "WeedFeeders can inflict Berserk with Flap, which is their only notable attribute.",
       "special": "Flap",
       "gc_scores": {
+        "hp": 0.153,
         "phys_dmg": 0.155,
         "phys_def": 0.455,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5273,16 +5414,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1358.6,
-      "seed_rating": 1517.1,
+      "seed_power": 0.3592,
+      "seed_rating": 1475.0,
       "bat_pwr": 12,
       "mag_pwr": 10,
       "description": "Luridans appear in groups and can use the support abilities Harvester and Kitty on themselves and their allies. They are highly resistant to physical attacks, but vulnerable to Wind and Fire.",
       "special": "Horn",
       "gc_scores": {
+        "hp": 0.319,
         "phys_dmg": 0.301,
         "phys_def": 0.825,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -5310,16 +5452,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1364.6,
-      "seed_rating": 1518.5,
+      "seed_power": 0.3703,
+      "seed_rating": 1484.8,
       "bat_pwr": 21,
       "mag_pwr": 12,
       "description": "Toe Cutters have strong attacks but few tricks up their sleeves. They will sometimes counter with the HP-draining Doomsickle and they absorb Ice, but that's it.",
       "special": "Doomsickle",
       "gc_scores": {
+        "hp": 0.35,
         "phys_dmg": 0.368,
         "phys_def": 0.49,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -5347,16 +5490,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1000.4,
-      "seed_rating": 1431.9,
+      "seed_power": 0.224,
+      "seed_rating": 1355.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Over Grunks have a lot of HP and no exploitable vulnerabilities, but they aren't that strong and their only real threat is inflicting Poison with Bane Touch if they're the last monster standing.",
       "special": "Bane Touch",
       "gc_scores": {
+        "hp": 0.155,
         "phys_dmg": 0.137,
         "phys_def": 0.49,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -5384,16 +5528,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1149.8,
-      "seed_rating": 1467.4,
+      "seed_power": 0.2758,
+      "seed_rating": 1401.4,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Exorays use DoomPollen to inflict Zombie like most creatures in Darill's Tomb. When they are the sole remaining monster, they will switch the the Poison-inducing Virite.",
       "special": "DoomPollen",
       "gc_scores": {
+        "hp": 0.242,
         "phys_dmg": 0.262,
         "phys_def": 0.415,
-        "mag_def_score": 0.415
+        "mag_def": 0.415
       }
     },
     {
@@ -5421,16 +5566,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1254.2,
-      "seed_rating": 1492.3,
+      "seed_power": 0.3083,
+      "seed_rating": 1430.0,
       "bat_pwr": 13,
       "mag_pwr": 5,
       "description": "Crushers can use the powerful Blow special every other round. They'll use Lifeshaver to drain HP if they're alone on the battlefield. Use Fire to defeat them before they get the chance.",
       "special": "Blow",
       "gc_scores": {
+        "hp": 0.32,
         "phys_dmg": 0.324,
         "phys_def": 0.57,
-        "mag_def_score": 0.335
+        "mag_def": 0.335
       }
     },
     {
@@ -5458,16 +5604,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1319.8,
-      "seed_rating": 1507.9,
+      "seed_power": 0.3946,
+      "seed_rating": 1506.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Uroburoses have extremely high defensive attributes, but only 50 HP. They can cast Bio and use Doom Touch to turn a character into a Zombie.",
       "special": "Doom Touch",
       "gc_scores": {
+        "hp": 0.049,
         "phys_dmg": 0.432,
         "phys_def": 0.99,
-        "mag_def_score": 0.99
+        "mag_def": 0.99
       }
     },
     {
@@ -5495,16 +5642,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 812.3,
-      "seed_rating": 1387.1,
+      "seed_power": 0.1732,
+      "seed_rating": 1310.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Primordites are the weakest creatures you'll find during your second trek through the South Figaro Cave, with low HP and a high vulnerability to physical attacks.",
       "special": "Numblade",
       "gc_scores": {
+        "hp": 0.084,
         "phys_dmg": 0.102,
         "phys_def": 0.2,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5532,16 +5680,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1361.7,
-      "seed_rating": 1517.8,
+      "seed_power": 0.364,
+      "seed_rating": 1479.3,
       "bat_pwr": 13,
       "mag_pwr": 8,
       "description": "Sky Caps use Tek Laser and R.Polarity as long as they have allies on the battlefield. When left alone, they can use Missile or cause Seizure with SlipAnchor.",
       "special": "SlipAnchor",
       "gc_scores": {
+        "hp": 0.4,
         "phys_dmg": 0.361,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5569,16 +5718,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1012.6,
-      "seed_rating": 1434.8,
+      "seed_power": 0.2317,
+      "seed_rating": 1362.4,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Every other round, Cephalers can use Tentacle for significant damage. With only 420 HP, you shouldn't have a hard time taking them out before they do. Bolt 2 should take out entire groups if needed.",
       "special": "Husk",
       "gc_scores": {
+        "hp": 0.143,
         "phys_dmg": 0.18,
         "phys_def": 0.395,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -5606,16 +5756,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1158.7,
-      "seed_rating": 1469.5,
+      "seed_power": 0.2796,
+      "seed_rating": 1404.7,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "Maligas can make double attacks when left solo, but are fortunately easy to kill. They are vulnerable to two of the basic elements, Ice and Thunder, as well as Water.",
       "special": "Scissors",
       "gc_scores": {
+        "hp": 0.216,
         "phys_dmg": 0.243,
         "phys_def": 0.435,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -5643,16 +5794,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1054.2,
-      "seed_rating": 1444.7,
+      "seed_power": 0.2453,
+      "seed_rating": 1374.4,
       "bat_pwr": 11,
       "mag_pwr": 10,
       "description": "Gigan Toads are weak monsters who can inflict Slow with Slimer. They may attempt to cast Rippler, but lack the required MP.",
       "special": "Croak",
       "gc_scores": {
+        "hp": 0.15,
         "phys_dmg": 0.226,
         "phys_def": 0.395,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -5680,16 +5832,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1553.8,
-      "seed_rating": 1563.5,
+      "seed_power": 0.4571,
+      "seed_rating": 1561.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Geckorexes are tough, powerful, and can Petrify their opponents. They always appear alongside Reach Frogs, who share their vulnerability to Ice.",
       "special": "Petriglare",
       "gc_scores": {
+        "hp": 0.495,
         "phys_dmg": 0.486,
         "phys_def": 0.548,
-        "mag_def_score": 0.625
+        "mag_def": 0.625
       }
     },
     {
@@ -5717,16 +5870,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1330.8,
-      "seed_rating": 1510.5,
+      "seed_power": 0.35,
+      "seed_rating": 1466.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Clucks can use Quake for significant damage when alone, so don't leave them for last. In groups, they rely on basic attacks and the Petifying Lick special.",
       "special": "Lick",
       "gc_scores": {
+        "hp": 0.34,
         "phys_dmg": 0.342,
         "phys_def": 0.415,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -5754,16 +5908,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1571.8,
-      "seed_rating": 1567.8,
+      "seed_power": 0.4897,
+      "seed_rating": 1590.2,
       "bat_pwr": 13,
       "mag_pwr": 8,
       "description": "Land Worms rely on Magnitude8 as a primary attack. They can also use Lode Stone to deal 75% of a target's current HP in damage or attack with the powerful Compress special.",
       "special": "Compress",
       "gc_scores": {
+        "hp": 0.719,
         "phys_dmg": 0.531,
         "phys_def": 0.315,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -5791,16 +5946,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1392.3,
-      "seed_rating": 1525.1,
+      "seed_power": 0.3792,
+      "seed_rating": 1492.7,
       "bat_pwr": 27,
       "mag_pwr": 10,
       "description": "Test Riders are the most dangerous foe in Narshe's outdoor areas. Their Gold Lance special is powerful, but Bio and the Man Eater can make quick work of them.",
       "special": "Gold Lance",
       "gc_scores": {
+        "hp": 0.39,
         "phys_dmg": 0.353,
         "phys_def": 0.53,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -5828,16 +5984,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1346.0,
-      "seed_rating": 1514.1,
+      "seed_power": 0.3573,
+      "seed_rating": 1473.3,
       "bat_pwr": 13,
       "mag_pwr": 9,
       "description": "PlutoArmors use basic MagiTek attacks like Tek Laser, but can use the powerful Launcher and Shrapnel abilities when alone.",
       "special": "Crash",
       "gc_scores": {
+        "hp": 0.374,
         "phys_dmg": 0.352,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5865,16 +6022,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1274.2,
-      "seed_rating": 1497.0,
+      "seed_power": 0.3257,
+      "seed_rating": 1445.4,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Tomb Thumbs can Haste themselves with Dash, but don't offer much of a threat normally. When only one is left standing, though, it will start to use Imp Song, which can inflict Imp on the whole party.",
       "special": "Dash",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.281,
         "phys_def": 0.59,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -5909,9 +6067,10 @@
       "description": "HeavyArmors are deadly to Locke. They are powerful and hard to kill, with devastating Tek Laser and Metal Hand attacks.",
       "special": "Metal Hand",
       "gc_scores": {
+        "hp": 0.156,
         "phys_dmg": 0.184,
         "phys_def": 0.59,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -5939,16 +6098,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1202.0,
-      "seed_rating": 1479.8,
+      "seed_power": 0.2928,
+      "seed_rating": 1416.4,
       "bat_pwr": 13,
       "mag_pwr": 8,
       "description": "When Chasers appear alone, they will summon three Trappers on death.",
       "special": "Program 17",
       "gc_scores": {
+        "hp": 0.243,
         "phys_dmg": 0.172,
         "phys_def": 0.785,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -5976,16 +6136,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1774.3,
-      "seed_rating": 1616.0,
+      "seed_power": 0.5858,
+      "seed_rating": 1675.1,
       "bat_pwr": 13,
       "mag_pwr": 15,
       "description": "Scullions start the battle by using Gamma Rays to Condemn a party member, then let loose with Grav Bomb, Launcher, WaveCannon, and Atomic Ray. They also spitefully use Atomic Ray upon death.",
       "special": "Gamma Rays",
       "gc_scores": {
+        "hp": 0.828,
         "phys_dmg": 0.513,
         "phys_def": 0.685,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -6013,16 +6174,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 817.3,
-      "seed_rating": 1388.3,
+      "seed_power": 0.1752,
+      "seed_rating": 1312.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Popliums are weak and don't represent much of a threat, though they can inflict Slow with Cling. You'll generally want to take out any Ghosts before worrying about their Poplium allies.",
       "special": "Cling",
       "gc_scores": {
+        "hp": 0.084,
         "phys_dmg": 0.102,
         "phys_def": 0.22,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6050,16 +6212,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1549.0,
-      "seed_rating": 1562.4,
+      "seed_power": 0.4895,
+      "seed_rating": 1590.1,
       "bat_pwr": 25,
       "mag_pwr": 10,
       "description": "Intangirs start off Clear and respond to any attack with the devastating Meteo ability, followed by re-applying Clear. They also run away when their HP falls below 1,280.",
       "special": "Sleep",
       "gc_scores": {
+        "hp": 0.857,
         "phys_dmg": 0.281,
         "phys_def": 0.59,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6087,16 +6250,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1260.6,
-      "seed_rating": 1493.8,
+      "seed_power": 0.3171,
+      "seed_rating": 1437.8,
       "bat_pwr": 26,
       "mag_pwr": 10,
       "description": "Misfits can use Lifeshaver on their first and second turns, but they won't on their third.",
       "special": "Enmity",
       "gc_scores": {
+        "hp": 0.293,
         "phys_dmg": 0.284,
         "phys_def": 0.415,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -6124,16 +6288,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1331.5,
-      "seed_rating": 1510.7,
+      "seed_power": 0.3512,
+      "seed_rating": 1467.9,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Elands' main threat comes from Stench, which can inflict Muddled. They can only use it every other round, otherwise relying on basic attacks.",
       "special": "Stench",
       "gc_scores": {
+        "hp": 0.348,
         "phys_dmg": 0.333,
         "phys_def": 0.435,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -6161,16 +6326,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1493.2,
-      "seed_rating": 1549.1,
+      "seed_power": 0.4283,
+      "seed_rating": 1536.0,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Enuos rely on basic attacks and Slime, a special that causes Slow, during the normal course of combat. If you defeat their allies, however, they start using CleanSweep and Aqua Rake.",
       "special": "Slime",
       "gc_scores": {
+        "hp": 0.477,
         "phys_dmg": 0.414,
         "phys_def": 0.2,
-        "mag_def_score": 0.98
+        "mag_def": 0.98
       }
     },
     {
@@ -6198,16 +6364,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1195.0,
-      "seed_rating": 1478.2,
+      "seed_power": 0.2939,
+      "seed_rating": 1417.3,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "Deep Eyes open combat by either attacking or using Dreamland to inflict Psyche. Every other turn they have a chance to run away.",
       "special": "Dreamland",
       "gc_scores": {
+        "hp": 0.256,
         "phys_dmg": 0.258,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6235,16 +6402,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 838.1,
-      "seed_rating": 1393.2,
+      "seed_power": 0.1831,
+      "seed_rating": 1319.4,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "GreaseMonks will start using their slightly-more-powerful-than-normal-attacks LodeWrench special if they are the last creature standing on the battlefield.",
       "special": "LodeWrench",
       "gc_scores": {
+        "hp": 0.08,
         "phys_dmg": 0.077,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6272,16 +6440,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1164.0,
-      "seed_rating": 1470.8,
+      "seed_power": 0.2804,
+      "seed_rating": 1405.4,
       "bat_pwr": 5,
       "mag_pwr": 10,
       "description": "NeckHunters can open combat by using Mad Sickle to Muddle their opponents. Their allies can do the same, so protection from Muddled is highly recommended.",
       "special": "Mad Sickle",
       "gc_scores": {
+        "hp": 0.256,
         "phys_dmg": 0.214,
         "phys_def": 0.4,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -6309,16 +6478,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1073.4,
-      "seed_rating": 1449.2,
+      "seed_power": 0.2554,
+      "seed_rating": 1383.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Grenades are a rare, much tougher version of Bombs. With 3,000 HP, their Exploder counter is devastating.",
       "special": "Mezmerize",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.155,
         "phys_def": 0.005,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6346,16 +6516,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1302.8,
-      "seed_rating": 1503.8,
+      "seed_power": 0.3345,
+      "seed_rating": 1453.2,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Critics most dangerous attacks are all Lores that Strago can learn: Roulette may be used in the first turn, L? Pearl in the second, and Condemned in the third. This sequence repeats throughout combat.",
       "special": "Slip Seed",
       "gc_scores": {
+        "hp": 0.242,
         "phys_dmg": 0.361,
         "phys_def": 0.49,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6383,16 +6554,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1260.5,
-      "seed_rating": 1493.7,
+      "seed_power": 0.3186,
+      "seed_rating": 1439.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Pan Doras use Evil Toot to cause random statuses, which can be dangerous if luck isn't on your side.",
       "special": "Hypno Gas",
       "gc_scores": {
+        "hp": 0.273,
         "phys_dmg": 0.352,
         "phys_def": 0.55,
-        "mag_def_score": 0.315
+        "mag_def": 0.315
       }
     },
     {
@@ -6420,16 +6592,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1210.9,
-      "seed_rating": 1482.0,
+      "seed_power": 0.3492,
+      "seed_rating": 1466.1,
       "bat_pwr": 1,
       "mag_pwr": 30,
       "description": "SoulDancers Throw progressively more powerful weapons at you as battle progresses, from a lowly Dirk to an Assassin.",
       "special": "Red Dance",
       "gc_scores": {
+        "hp": 0.353,
         "phys_dmg": 0.151,
         "phys_def": 0.24,
-        "mag_def_score": 0.67
+        "mag_def": 0.67
       }
     },
     {
@@ -6464,9 +6637,10 @@
       "description": "Gigantos uses Throat Jab to devastating effect as both an opener (three times!) and part of a counter combo.",
       "special": "Throat Jab",
       "gc_scores": {
+        "hp": 0.542,
         "phys_dmg": 0.253,
         "phys_def": 0.01,
-        "mag_def_score": 0.01
+        "mag_def": 0.01
       }
     },
     {
@@ -6522,16 +6696,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1339.6,
-      "seed_rating": 1512.6,
+      "seed_power": 0.3792,
+      "seed_rating": 1492.7,
       "bat_pwr": 30,
       "mag_pwr": 10,
       "description": "Spek Tors have very little HP, though they have high Mag.Def and no basic Elemental weaknesses. Physical attacks are very effective since their high Evade % is ignored.",
       "special": "Scratch",
       "gc_scores": {
+        "hp": 0.111,
         "phys_dmg": 0.571,
         "phys_def": 0.395,
-        "mag_def_score": 0.785
+        "mag_def": 0.785
       }
     },
     {
@@ -6559,16 +6734,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1065.0,
-      "seed_rating": 1447.2,
+      "seed_power": 0.2134,
+      "seed_rating": 1346.2,
       "bat_pwr": 1,
       "mag_pwr": 1,
       "description": "Parasite can inflict Stop with their Mind Stop special on every third round, and will counter Fight with a relatively weak Giga Volt.",
       "special": "Mind Stop",
       "gc_scores": {
+        "hp": 0.221,
         "phys_dmg": 0.266,
         "phys_def": 0.55,
-        "mag_def_score": 0.025
+        "mag_def": 0.025
       }
     },
     {
@@ -6596,16 +6772,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 258.0,
-      "seed_rating": 1255.2,
+      "seed_power": 0.1045,
+      "seed_rating": 1250.0,
       "bat_pwr": 6,
       "mag_pwr": 10,
       "description": "Like the Peepers they appear with, EarthGuards will die shortly after battle begins. Relm can Sketch them to teach Strago the awesome Big Guard Lore if you come back later.",
       "special": "PoisonTail",
       "gc_scores": {
+        "hp": 0.007,
         "phys_dmg": 0.181,
         "phys_def": 0.025,
-        "mag_def_score": 0.025
+        "mag_def": 0.025
       }
     },
     {
@@ -6633,16 +6810,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1066.2,
-      "seed_rating": 1447.5,
+      "seed_power": 0.2464,
+      "seed_rating": 1375.3,
       "bat_pwr": 20,
       "mag_pwr": 10,
       "description": "Coelecites are Fiery monsters that are weak to Ice and can inflict Psyche with their HypnoSting special. A lone Coelecite will try to use Magnitude8 upon dying, but lacks the MP to actually cast it.",
       "special": "HypnoSting",
       "gc_scores": {
+        "hp": 0.153,
         "phys_dmg": 0.203,
         "phys_def": 0.475,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -6670,16 +6848,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1264.2,
-      "seed_rating": 1494.6,
+      "seed_power": 0.3217,
+      "seed_rating": 1441.8,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Anemones counter attacks by healing themselves with a shot of Mega Volt, and will start devastating the party with Giga Volt if left alone.",
       "special": "Imp Touch",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.281,
         "phys_def": 0.455,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -6707,16 +6886,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1348.6,
-      "seed_rating": 1514.7,
+      "seed_power": 0.3587,
+      "seed_rating": 1474.5,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "Hipocampi counter attacks with rain: Acid Rain for Magic, and Flash Rain for everything else. They are undead and have the usual undead vulnerability to Fire and Pearl while absorbing Poison.",
       "special": "Clamp",
       "gc_scores": {
+        "hp": 0.346,
         "phys_dmg": 0.345,
         "phys_def": 0.455,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -6751,9 +6931,10 @@
       "description": "Spectres can use all three basic Elemental spells, making them dangerous offensively. They also like to use Rod, which is much less threatening.",
       "special": "Rod",
       "gc_scores": {
+        "hp": 0.107,
         "phys_dmg": 0.092,
         "phys_def": 0.005,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -6781,16 +6962,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1513.0,
-      "seed_rating": 1553.8,
+      "seed_power": 0.444,
+      "seed_rating": 1549.9,
       "bat_pwr": 13,
       "mag_pwr": 6,
       "description": "Evil Oscars won't do much to hurt you until you try to hurt them. They can counter non-fatal Magic with Demon Kiss a Wound attack.",
       "special": "Demon Kiss",
       "gc_scores": {
+        "hp": 0.586,
         "phys_dmg": 0.504,
         "phys_def": 0.455,
-        "mag_def_score": 0.415
+        "mag_def": 0.415
       }
     },
     {
@@ -6818,16 +7000,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 912.7,
-      "seed_rating": 1411.0,
+      "seed_power": 0.1897,
+      "seed_rating": 1325.2,
       "bat_pwr": 12,
       "mag_pwr": 10,
       "description": "Slurm are weak and vulnerable to everything, but particularly Fire. Even a simple Fire spell by a powerful caster may be able to take out a group.",
       "special": "Dijestive",
       "gc_scores": {
+        "hp": 0.157,
         "phys_dmg": 0.205,
         "phys_def": 0.2,
-        "mag_def_score": 0.2
+        "mag_def": 0.2
       }
     },
     {
@@ -6855,16 +7038,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1223.1,
-      "seed_rating": 1484.8,
+      "seed_power": 0.303,
+      "seed_rating": 1425.3,
       "bat_pwr": 15,
       "mag_pwr": 9,
       "description": "Latimerias attack with Magnitude8 for heavy damage. Defeat them quickly before this becomes a problem. They are weak against Thunder attacks like Bolt 2.",
       "special": "Wind-up",
       "gc_scores": {
+        "hp": 0.289,
         "phys_dmg": 0.252,
         "phys_def": 0.49,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -6892,16 +7076,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 886.2,
-      "seed_rating": 1404.7,
+      "seed_power": 0.1976,
+      "seed_rating": 1332.2,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "StillGoings only have one special trick, the Seizure-inducing Slip Touch. They are reasonably tough but the monsters they appear with are generally more dangerous.",
       "special": "Slip Touch",
       "gc_scores": {
+        "hp": 0.099,
         "phys_dmg": 0.104,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -6936,9 +7121,10 @@
       "description": "Allo Ver uses the Wound spells Doom and Condemned on the party, but doesn't attack at first. If you let enough time go by, he will decimate the party with eight consecutive uses of Atomic Ray.",
       "special": "Dead End",
       "gc_scores": {
+        "hp": 0.626,
         "phys_dmg": 0.172,
         "phys_def": 0.55,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -6966,16 +7152,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1446.6,
-      "seed_rating": 1538.0,
+      "seed_power": 0.4074,
+      "seed_rating": 1517.5,
       "bat_pwr": 11,
       "mag_pwr": 10,
       "description": "An upgraded Brainpan, Phases will use Blow Fish as a counterattack as well as when they are alone. Their Smirk special is also problematic, inflicting the Stop status.",
       "special": "Smirk",
       "gc_scores": {
+        "hp": 0.472,
         "phys_dmg": 0.408,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -7003,16 +7190,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1261.2,
-      "seed_rating": 1493.9,
+      "seed_power": 0.3505,
+      "seed_rating": 1467.3,
       "bat_pwr": 15,
       "mag_pwr": 4,
       "description": "Outsiders repeatedly Throw weapons at you. They'll counter Fight with Shuriken, which are at least less deadly than the Ninja Stars and Tack Stars they counter everything else with.",
       "special": "Ruin",
       "gc_scores": {
+        "hp": 0.628,
         "phys_dmg": 0.17,
         "phys_def": 0.415,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -7040,16 +7228,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1361.2,
-      "seed_rating": 1517.7,
+      "seed_power": 0.3665,
+      "seed_rating": 1481.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Barb-es are annoying creatures that start combat with Imp, counter attacks by inflicting Mute, and can use the obnoxious Love Token ability to force your characters to take hits for them.",
       "special": "Slap",
       "gc_scores": {
+        "hp": 0.387,
         "phys_dmg": 0.352,
         "phys_def": 0.395,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -7077,16 +7266,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1361.5,
-      "seed_rating": 1517.8,
+      "seed_power": 0.3596,
+      "seed_rating": 1475.4,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Parasouls Muddle their opponents with Spin Slice and can deal Ice/Water damage with Flash Rain.",
       "special": "Spin Slice",
       "gc_scores": {
+        "hp": 0.319,
         "phys_dmg": 0.423,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -7114,16 +7304,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1007.6,
-      "seed_rating": 1433.6,
+      "seed_power": 0.2281,
+      "seed_rating": 1359.2,
       "bat_pwr": 9,
       "mag_pwr": 6,
       "description": "Pm Stalkers are a minor threat in terms of damage, but they can waste precious time. Fire will take them out quickly.",
       "special": "Slip Touch",
       "gc_scores": {
+        "hp": 0.114,
         "phys_dmg": 0.218,
         "phys_def": 0.55,
-        "mag_def_score": 0.455
+        "mag_def": 0.455
       }
     },
     {
@@ -7151,16 +7342,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1573.5,
-      "seed_rating": 1568.2,
+      "seed_power": 0.4808,
+      "seed_rating": 1582.4,
       "bat_pwr": 12,
       "mag_pwr": 14,
       "description": "Hemophytes can use ChokeSmoke, though they target living opponents so it does nothing. They will sometimes counter attacks with CursedGaze to give their attacker Seizure.",
       "special": "CursedGaze",
       "gc_scores": {
+        "hp": 0.577,
         "phys_dmg": 0.495,
         "phys_def": 0.435,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -7195,9 +7387,10 @@
       "description": "Sp Forces are vulnerable to Poison, but even without a weakness you should have no trouble defeating three of them within two minutes.",
       "special": "Blow",
       "gc_scores": {
+        "hp": 0.185,
         "phys_dmg": 0.191,
         "phys_def": 0.395,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -7225,16 +7418,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 931.0,
-      "seed_rating": 1415.3,
+      "seed_power": 0.2751,
+      "seed_rating": 1400.7,
       "bat_pwr": 7,
       "mag_pwr": 30,
       "description": "Nohrabbits are a minor threat, and any attack will likely cut through their 75 HP. Use of Fight is recommended, as they will respond by actually healing a party member with Cure, Cure 2, or Remedy.",
       "special": "Carrot",
       "gc_scores": {
+        "hp": 0.061,
         "phys_dmg": 0.209,
         "phys_def": 0.395,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -7262,16 +7456,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1202.9,
-      "seed_rating": 1480.0,
+      "seed_power": 0.2973,
+      "seed_rating": 1420.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "As the name implies, Wizards cast a lot of spells. Fortunately they usually cast Osmose in the first round when it will only gain them 1 MP.",
       "special": "Doom Step",
       "gc_scores": {
+        "hp": 0.287,
         "phys_dmg": 0.288,
         "phys_def": 0.2,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -7299,16 +7494,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1271.1,
-      "seed_rating": 1496.3,
+      "seed_power": 0.3229,
+      "seed_rating": 1442.9,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Scrappers use straightforward attacks during the course of battle, and may counter with them as well. They aren't terribly powerful but they are very fast due to their Haste effect.",
       "special": "Knife",
       "gc_scores": {
+        "hp": 0.294,
         "phys_dmg": 0.29,
         "phys_def": 0.49,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -7336,16 +7532,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1284.2,
-      "seed_rating": 1499.4,
+      "seed_power": 0.3292,
+      "seed_rating": 1448.5,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Ceritopses use Pal Maker to inflict Imp, are vulnerable to Fire, absorb Thunder, and drop White Capes. They also have pretty solid defenses, with high Mag.Def and an automatic Safe status.",
       "special": "Pal Maker",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.281,
         "phys_def": 0.51,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -7373,16 +7570,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1143.7,
-      "seed_rating": 1466.0,
+      "seed_power": 0.2786,
+      "seed_rating": 1403.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Commandos are boring enemies that are only noteworthy in their resistance to physical attacks. Magic is the order of the day in the heart of the Empire.",
       "special": "Program 65",
       "gc_scores": {
+        "hp": 0.169,
         "phys_dmg": 0.164,
         "phys_def": 0.825,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -7410,16 +7608,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1418.3,
-      "seed_rating": 1531.3,
+      "seed_power": 0.4,
+      "seed_rating": 1511.0,
       "bat_pwr": 22,
       "mag_pwr": 10,
       "description": "Opinici build up to a three-hit combo in the fifth round, and counter Magic with Wind Slash.",
       "special": "Riot",
       "gc_scores": {
+        "hp": 0.397,
         "phys_dmg": 0.394,
         "phys_def": 0.567,
-        "mag_def_score": 0.622
+        "mag_def": 0.622
       }
     },
     {
@@ -7447,16 +7646,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1184.0,
-      "seed_rating": 1475.5,
+      "seed_power": 0.2857,
+      "seed_rating": 1410.1,
       "bat_pwr": 5,
       "mag_pwr": 10,
       "description": "Poppers can use Tail to inflict Imp, but the more serious threat exists if anyone happens to be exactly level 33.",
       "special": "Tail",
       "gc_scores": {
+        "hp": 0.221,
         "phys_dmg": 0.251,
         "phys_def": 0.475,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -7484,16 +7684,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1153.0,
-      "seed_rating": 1468.2,
+      "seed_power": 0.2812,
+      "seed_rating": 1406.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Lunarises have moderately powerful attacks but do nothing especially threatening. They can use Face Bite to cause Dark, which may be a welcome reprieve from their basic attacks.",
       "special": "Face Bite",
       "gc_scores": {
+        "hp": 0.169,
         "phys_dmg": 0.235,
         "phys_def": 0.61,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -7521,16 +7722,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1161.8,
-      "seed_rating": 1470.3,
+      "seed_power": 0.2847,
+      "seed_rating": 1409.2,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Garms are straightforward monsters, and are a bit tougher than their counterpart Commandos.",
       "special": "Program 95",
       "gc_scores": {
+        "hp": 0.174,
         "phys_dmg": 0.172,
         "phys_def": 0.865,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -7558,16 +7760,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1223.4,
-      "seed_rating": 1484.9,
+      "seed_power": 0.3049,
+      "seed_rating": 1427.1,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "Vindr can use Beak to Petrify members of your party when they are alone, but they are weak and vulnerable to Fire so it shouldn't be a problem to take them out en masse.",
       "special": "Beak",
       "gc_scores": {
+        "hp": 0.208,
         "phys_dmg": 0.33,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -7595,16 +7798,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1254.2,
-      "seed_rating": 1492.3,
+      "seed_power": 0.3177,
+      "seed_rating": 1438.3,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Kiwoks can use Pick every other round. Like most special attacks in Umaro's Cave, it causes the Imp status. They have a weakness to Ice spells.",
       "special": "Pick",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.281,
         "phys_def": 0.415,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -7632,16 +7836,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1252.7,
-      "seed_rating": 1491.9,
+      "seed_power": 0.3173,
+      "seed_rating": 1437.9,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Nastidons have a high resistance to physical attacks, but Fire Magic is highly effective. They use no noteworthy special attacks.",
       "special": "Grab",
       "gc_scores": {
+        "hp": 0.303,
         "phys_dmg": 0.288,
         "phys_def": 0.57,
-        "mag_def_score": 0.415
+        "mag_def": 0.415
       }
     },
     {
@@ -7676,9 +7881,10 @@
       "description": "The Rinn's Cling attack causes Slow, but on balance they're not as dangerous as the monsters they appear with. Edgar's AutoCrossbow will take them out while softening up their allies.",
       "special": "Cling",
       "gc_scores": {
+        "hp": 0.073,
         "phys_dmg": 0.096,
         "phys_def": 0.22,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -7706,16 +7912,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1152.0,
-      "seed_rating": 1467.9,
+      "seed_power": 0.2769,
+      "seed_rating": 1402.3,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "Insecares cause Berserk like their cousins, the CrassHopprs and WeedFeeders.",
       "special": "Wing Whisp",
       "gc_scores": {
+        "hp": 0.219,
         "phys_dmg": 0.215,
         "phys_def": 0.455,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -7750,9 +7957,10 @@
       "description": "Vermin appear alongside the weaker Sewer Rats, but unlike most such situations, you want to be sure to take out the stronger Vermin first.",
       "special": "Bacteria",
       "gc_scores": {
+        "hp": 0.156,
         "phys_dmg": 0.162,
         "phys_def": 0.475,
-        "mag_def_score": 0.745
+        "mag_def": 0.745
       }
     },
     {
@@ -7780,16 +7988,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 2167.6,
-      "seed_rating": 1709.6,
+      "seed_power": 0.564,
+      "seed_rating": 1655.9,
       "bat_pwr": 180,
       "mag_pwr": 10,
       "description": "Mantodeas have one of the most powerful basic attacks of any non-boss.",
       "special": "MindReaper",
       "gc_scores": {
+        "hp": 0.47,
         "phys_dmg": 0.882,
         "phys_def": 0.57,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -7817,16 +8026,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1211.0,
-      "seed_rating": 1482.0,
+      "seed_power": 0.2993,
+      "seed_rating": 1422.0,
       "bat_pwr": 15,
       "mag_pwr": 10,
       "description": "Bogies hit hard and sometimes for double damage, but do little else of interest.",
       "special": "Oogyboog",
       "gc_scores": {
+        "hp": 0.254,
         "phys_dmg": 0.271,
         "phys_def": 0.4,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -7854,16 +8064,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1393.7,
-      "seed_rating": 1525.4,
+      "seed_power": 0.3805,
+      "seed_rating": 1493.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Prussians are no frills attackers who can use their triple-damage Bear Hug attack every other turn. They have no weaknesses, resistances, or counterattacks.",
       "special": "Bear Hug",
       "gc_scores": {
+        "hp": 0.402,
         "phys_dmg": 0.369,
         "phys_def": 0.455,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -7891,16 +8102,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1146.4,
-      "seed_rating": 1466.6,
+      "seed_power": 0.2893,
+      "seed_rating": 1413.2,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "Black Drgns often open battle with Sand Storm, and may follow up with BonePowder This can end your game in a hurry if Celes is alone and not immune to the Zombie status.",
       "special": "BonePowder",
       "gc_scores": {
+        "hp": 0.443,
         "phys_dmg": 0.239,
         "phys_def": 0.4,
-        "mag_def_score": 0.08
+        "mag_def": 0.08
       }
     },
     {
@@ -7928,16 +8140,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1213.1,
-      "seed_rating": 1482.5,
+      "seed_power": 0.2983,
+      "seed_rating": 1421.2,
       "bat_pwr": 22,
       "mag_pwr": 10,
       "description": "Adamanchyts may counter Fight with Sneeze, but they are practically immune to physical damage anyway. Use Magic, regardless of element, to defeat them.",
       "special": "Nail",
       "gc_scores": {
+        "hp": 0.253,
         "phys_dmg": 0.25,
         "phys_def": 0.885,
-        "mag_def_score": 0.18
+        "mag_def": 0.18
       }
     },
     {
@@ -7965,16 +8178,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1244.8,
-      "seed_rating": 1490.0,
+      "seed_power": 0.3152,
+      "seed_rating": 1436.1,
       "bat_pwr": 17,
       "mag_pwr": 10,
       "description": "Dantes make powerful attacks normally, and can use QuartzPike on every odd-numbered turn for triple damage.",
       "special": "QuartzPike",
       "gc_scores": {
+        "hp": 0.309,
         "phys_dmg": 0.271,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -8009,9 +8223,10 @@
       "description": "Wirey Drgns use their powerful physical attacks and have no weaknesses. To make things worse, they will start to use Cyclonic when solo.",
       "special": "Wing",
       "gc_scores": {
+        "hp": 0.371,
         "phys_dmg": 0.314,
         "phys_def": 0.59,
-        "mag_def_score": 0.455
+        "mag_def": 0.455
       }
     },
     {
@@ -8039,16 +8254,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1617.5,
-      "seed_rating": 1578.7,
+      "seed_power": 0.494,
+      "seed_rating": 1594.1,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Duellers use L.4 Flare and L.5 Doom in addition to their powerful Megashock special. Their most powerful attack is Shrapnel, which is used as a counterattack.",
       "special": "Megashock",
       "gc_scores": {
+        "hp": 0.594,
         "phys_dmg": 0.477,
         "phys_def": 0.725,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -8076,16 +8292,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1232.8,
-      "seed_rating": 1487.2,
+      "seed_power": 0.3088,
+      "seed_rating": 1430.4,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "On every other turn, a Psychot has a chance to use Mindshock to drain a character's MP. Since they never use any MP of their own, this won't actually be effective.",
       "special": "Mindshock",
       "gc_scores": {
+        "hp": 0.21,
         "phys_dmg": 0.294,
         "phys_def": 0.65,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -8113,16 +8330,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1113.8,
-      "seed_rating": 1458.9,
+      "seed_power": 0.2628,
+      "seed_rating": 1389.8,
       "bat_pwr": 11,
       "mag_pwr": 10,
       "description": "Muuses will sometimes use Pep Up, removing itself from combat to restore the HP and status of one of their allies. They can do this as a normal action, or in response to Magic.",
       "special": "Gunk",
       "gc_scores": {
+        "hp": 0.21,
         "phys_dmg": 0.244,
         "phys_def": 0.435,
-        "mag_def_score": 0.415
+        "mag_def": 0.415
       }
     },
     {
@@ -8150,16 +8368,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1413.1,
-      "seed_rating": 1530.1,
+      "seed_power": 0.3916,
+      "seed_rating": 1503.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Karkasses are content to try to turn your party into Imps with Figaro Tea, but will respond to any aggression with a variety of counterattacks.",
       "special": "Figaro Tea",
       "gc_scores": {
+        "hp": 0.434,
         "phys_dmg": 0.387,
         "phys_def": 0.415,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -8187,16 +8406,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1355.1,
-      "seed_rating": 1516.3,
+      "seed_power": 0.3613,
+      "seed_rating": 1476.8,
       "bat_pwr": 28,
       "mag_pwr": 10,
       "description": "Punisher have powerful attacks and can hit up to three times every third round. They'll also respond to Steal by Stealing some of your GP.",
       "special": "Pummel",
       "gc_scores": {
+        "hp": 0.328,
         "phys_dmg": 0.391,
         "phys_def": 0.395,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -8231,9 +8451,10 @@
       "description": "Unlike Bombs, Balloon can use Exploder as a normal attack and not just a counter. Fortunately, they are easy to take out before they have a chance to do so.",
       "special": "Flare Up",
       "gc_scores": {
+        "hp": 0.165,
         "phys_dmg": 0.192,
         "phys_def": 0.08,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -8261,16 +8482,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 960.8,
-      "seed_rating": 1422.4,
+      "seed_power": 0.2138,
+      "seed_rating": 1346.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Gabbldegaks are a relief in Zozo simply because they're the only enemy that's not particularly dangerous.",
       "special": "GoldWrench",
       "gc_scores": {
+        "hp": 0.131,
         "phys_dmg": 0.137,
         "phys_def": 0.335,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -8298,16 +8520,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1535.3,
-      "seed_rating": 1559.1,
+      "seed_power": 0.4692,
+      "seed_rating": 1572.2,
       "bat_pwr": 7,
       "mag_pwr": 10,
       "description": "GtBehemoths can use Meteor every other turn, so you'll want to dispose of them quickly. They have relatively low Defense and Mag.Def, but 11,000 HP and no Elemental weaknesses.",
       "special": "Hay Maker",
       "gc_scores": {
+        "hp": 0.71,
         "phys_dmg": 0.463,
         "phys_def": 0.355,
-        "mag_def_score": 0.415
+        "mag_def": 0.415
       }
     },
     {
@@ -8335,16 +8558,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 996.5,
-      "seed_rating": 1430.9,
+      "seed_power": 0.2282,
+      "seed_rating": 1359.3,
       "bat_pwr": 10,
       "mag_pwr": 9,
       "description": "Scorpions open by Condemning your characters with Doom Sting, then simply attack normally. Their incredibly high Mag.Def makes it difficult to take out a group quickly. A Black Belt helps immensely.",
       "special": "Doom Sting",
       "gc_scores": {
+        "hp": 0.119,
         "phys_dmg": 0.222,
         "phys_def": 0.025,
-        "mag_def_score": 0.845
+        "mag_def": 0.845
       }
     },
     {
@@ -8372,16 +8596,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1325.0,
-      "seed_rating": 1509.1,
+      "seed_power": 0.3928,
+      "seed_rating": 1504.7,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Chaos Drgns have a one in three chance to use Disaster on turn 2, and a one in three chance to Wound someone with Cinderizer on turn 6.",
       "special": "Cinderizer",
       "gc_scores": {
+        "hp": 0.665,
         "phys_dmg": 0.396,
         "phys_def": 0.025,
-        "mag_def_score": 0.335
+        "mag_def": 0.335
       }
     },
     {
@@ -8416,9 +8641,10 @@
       "description": "Spit Fires have powerful attacks like Absolute 0 which they abandon when they are alone. For that reason, concentrate on the defeating the weaker Sky Armors before finishing off the Spit Fires.",
       "special": "Propeller",
       "gc_scores": {
+        "hp": 0.262,
         "phys_dmg": 0.242,
         "phys_def": 0.61,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -8446,16 +8672,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1615.0,
-      "seed_rating": 1578.1,
+      "seed_power": 0.5166,
+      "seed_rating": 1614.0,
       "bat_pwr": 22,
       "mag_pwr": 9,
       "description": "Vectagoyles use a variety of Elemental abilities, the most powerful of which is Giga Volt. They can also attack with Aqua Rake, Blaze, and Blizzard.",
       "special": "Counter",
       "gc_scores": {
+        "hp": 0.606,
         "phys_dmg": 0.59,
         "phys_def": 0.501,
-        "mag_def_score": 0.638
+        "mag_def": 0.638
       }
     },
     {
@@ -8483,16 +8710,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 998.2,
-      "seed_rating": 1431.3,
+      "seed_power": 0.2254,
+      "seed_rating": 1356.8,
       "bat_pwr": 1,
       "mag_pwr": 10,
       "description": "Liches use powerful Fire spells and lack the usual undead vulnerability to Fire. Physical attacks are highly effective, but will often leave a single Lich alone to start casting Fire 3.",
       "special": "Mad Touch",
       "gc_scores": {
+        "hp": 0.17,
         "phys_dmg": 0.139,
         "phys_def": 0.2,
-        "mag_def_score": 0.745
+        "mag_def": 0.745
       }
     },
     {
@@ -8520,16 +8748,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1106.9,
-      "seed_rating": 1457.2,
+      "seed_power": 0.2607,
+      "seed_rating": 1387.9,
       "bat_pwr": 12,
       "mag_pwr": 10,
       "description": "Ospreys mix in their Petrifying Beak attack on every third round. They can also counter Magic with Shimsham.",
       "special": "Beak",
       "gc_scores": {
+        "hp": 0.204,
         "phys_dmg": 0.231,
         "phys_def": 0.415,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -8557,16 +8786,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1257.9,
-      "seed_rating": 1493.1,
+      "seed_power": 0.319,
+      "seed_rating": 1439.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "The large yellow Mag Roaders favor Ice spells but offer no special threat to the party.",
       "special": "Wheel",
       "gc_scores": {
+        "hp": 0.295,
         "phys_dmg": 0.288,
         "phys_def": 0.455,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -8594,16 +8824,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 988.3,
-      "seed_rating": 1429.0,
+      "seed_power": 0.2266,
+      "seed_rating": 1357.8,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "In a group, Bugs are little to no threat. Even alongside a FossilFang they can be mostly ignored.",
       "special": "StoneSpine",
       "gc_scores": {
+        "hp": 0.123,
         "phys_dmg": 0.146,
         "phys_def": 0.475,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -8631,16 +8862,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1427.6,
-      "seed_rating": 1533.5,
+      "seed_power": 0.3994,
+      "seed_rating": 1510.5,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Sea Flowers occasionally use Feeler to Poison an enemy, but mostly use basic attacks. They are vulnerable to both Fire and Thunder, and their high HP if offset somewhat by their low Mag.Def.",
       "special": "Feeler",
       "gc_scores": {
+        "hp": 0.454,
         "phys_dmg": 0.423,
         "phys_def": 0.53,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -8668,16 +8900,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1600.2,
-      "seed_rating": 1574.6,
+      "seed_power": 0.4918,
+      "seed_rating": 1592.1,
       "bat_pwr": 5,
       "mag_pwr": 10,
       "description": "Fortises use Missile and Snowball to deal fractional damage to targets, and Fire Ball to deal minor Fire damage.",
       "special": "Double Arm",
       "gc_scores": {
+        "hp": 0.693,
         "phys_dmg": 0.411,
         "phys_def": 0.63,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -8705,16 +8938,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1157.9,
-      "seed_rating": 1469.3,
+      "seed_power": 0.2789,
+      "seed_rating": 1404.1,
       "bat_pwr": 16,
       "mag_pwr": 10,
       "description": "When you encounter a pair of Abolishers, they will use Pearl Wind after two attacks, but only if you don't kill either one. Take advantage of this opportunity to easily learn a useful Lore.",
       "special": "Down Dust",
       "gc_scores": {
+        "hp": 0.205,
         "phys_dmg": 0.228,
         "phys_def": 0.49,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -8742,16 +8976,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1504.8,
-      "seed_rating": 1551.9,
+      "seed_power": 0.4425,
+      "seed_rating": 1548.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Aquilas can use the quintuple-damage Flap as well as Cyclonic, though fortunately neither of these will happen more than once per four turns. They also counter attacks with Shimsham.",
       "special": "Flap",
       "gc_scores": {
+        "hp": 0.543,
         "phys_dmg": 0.441,
         "phys_def": 0.475,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -8779,16 +9014,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1492.2,
-      "seed_rating": 1548.9,
+      "seed_power": 0.3913,
+      "seed_rating": 1503.3,
       "bat_pwr": 2,
       "mag_pwr": 10,
       "description": "Junks really like to destroy themselves, whether through Pep Up or Exploder. Strago can learn both, but be careful since Exploder will do 2,000 damage if an unhurt Junk uses it.",
       "special": "Parallout",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.371,
         "phys_def": 0.745,
-        "mag_def_score": 0.67
+        "mag_def": 0.67
       }
     },
     {
@@ -8816,16 +9052,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1140.1,
-      "seed_rating": 1465.1,
+      "seed_power": 0.2713,
+      "seed_rating": 1397.4,
       "bat_pwr": 16,
       "mag_pwr": 10,
       "description": "Mandrakes are powerful and can Petrify characters with StoneTouch, but their most devastating attack is their Raid counter.",
       "special": "StoneTouch",
       "gc_scores": {
+        "hp": 0.237,
         "phys_dmg": 0.219,
         "phys_def": 0.455,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -8853,16 +9090,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 821.1,
-      "seed_rating": 1389.2,
+      "seed_power": 0.172,
+      "seed_rating": 1309.6,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "1st Classes are similar to their Repo Man cousins without the counterattack. They will use Ore Wrench for slightly increased damage from time to time.",
       "special": "Ore Wrench",
       "gc_scores": {
+        "hp": 0.094,
         "phys_dmg": 0.102,
         "phys_def": 0.22,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -8890,16 +9128,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1424.7,
-      "seed_rating": 1532.8,
+      "seed_power": 0.4024,
+      "seed_rating": 1513.2,
       "bat_pwr": 13,
       "mag_pwr": 11,
       "description": "Tap Dancers will Muddle character with WaistShake, but don't do much else.",
       "special": "WaistShake",
       "gc_scores": {
+        "hp": 0.467,
         "phys_dmg": 0.387,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -8927,16 +9166,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1423.4,
-      "seed_rating": 1532.5,
+      "seed_power": 0.3871,
+      "seed_rating": 1499.6,
       "bat_pwr": 13,
       "mag_pwr": 7,
       "description": "Necromancrs cast Flare, Doom, and X-Zone when they are the last monster standing. They can counter anything other than Fight with Demi or Quartr as well.",
       "special": "ZombiStick",
       "gc_scores": {
+        "hp": 0.416,
         "phys_dmg": 0.432,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -8964,16 +9204,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1442.7,
-      "seed_rating": 1537.1,
+      "seed_power": 0.4159,
+      "seed_rating": 1525.1,
       "bat_pwr": 23,
       "mag_pwr": 10,
       "description": "Borras is big and hits hard, especially with his Uppercut special. They attack up to twice per round and have a lot of HP. Your best offense are Defense-ignoring attacks, Poison, or the Man Eater.",
       "special": "Uppercut",
       "gc_scores": {
+        "hp": 0.484,
         "phys_dmg": 0.368,
         "phys_def": 0.606,
-        "mag_def_score": 0.587
+        "mag_def": 0.587
       }
     },
     {
@@ -9001,16 +9242,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1235.0,
-      "seed_rating": 1487.7,
+      "seed_power": 0.3093,
+      "seed_rating": 1430.9,
       "bat_pwr": 14,
       "mag_pwr": 10,
       "description": "In addition to using Fire and Fire 2, the smaller brown Mag Roaders will sometimes use Fire Ball upon death. This is due to a bug, though it seems appropriate given their focus on Fire.",
       "special": "Rush",
       "gc_scores": {
+        "hp": 0.26,
         "phys_dmg": 0.294,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9038,16 +9280,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 801.8,
-      "seed_rating": 1384.6,
+      "seed_power": 0.1693,
+      "seed_rating": 1307.2,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Wild Rats are basically upgraded Were-Rats. They have the same vulnerability to Fire and immunity to Poison, and they even look the same.",
       "special": "Scratch",
       "gc_scores": {
+        "hp": 0.089,
         "phys_dmg": 0.104,
         "phys_def": 0.335,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -9075,16 +9318,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 863.9,
-      "seed_rating": 1399.4,
+      "seed_power": 0.1803,
+      "seed_rating": 1316.9,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Gold Bears have a lot of HP for two characters to cut through, but very low Defense which you can exploit with physical attacks.",
       "special": "Gouge",
       "gc_scores": {
+        "hp": 0.116,
         "phys_dmg": 0.12,
         "phys_def": 0.16,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -9112,16 +9356,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1589.9,
-      "seed_rating": 1572.1,
+      "seed_power": 0.4836,
+      "seed_rating": 1584.9,
       "bat_pwr": 13,
       "mag_pwr": 12,
       "description": "Innocs open by Muddling a target with BrainBlast, then start using a combination of Cold Dust (which causes Freeze) and Plasma (a single-target Thunder attack). On every fifth round they may use L?",
       "special": "BrainBlast",
       "gc_scores": {
+        "hp": 0.569,
         "phys_dmg": 0.468,
         "phys_def": 0.61,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -9149,16 +9394,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1473.3,
-      "seed_rating": 1544.4,
+      "seed_power": 0.4086,
+      "seed_rating": 1518.6,
       "bat_pwr": 13,
       "mag_pwr": 7,
       "description": "Trixters attack with Fire 2 normally, but start living up to their name if anyone in your party has Reflect.",
       "special": "",
       "gc_scores": {
+        "hp": 0.432,
         "phys_dmg": 0.441,
         "phys_def": 0.475,
-        "mag_def_score": 0.65
+        "mag_def": 0.65
       }
     },
     {
@@ -9186,16 +9432,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1266.8,
-      "seed_rating": 1495.2,
+      "seed_power": 0.321,
+      "seed_rating": 1441.2,
       "bat_pwr": 10,
       "mag_pwr": 10,
       "description": "Red Wolves are extremely basic enemies that attack and have no noteworthy attributes to speak of.",
       "special": "Rush",
       "gc_scores": {
+        "hp": 0.272,
         "phys_dmg": 0.273,
         "phys_def": 0.61,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -9223,16 +9470,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1644.8,
-      "seed_rating": 1585.2,
+      "seed_power": 0.5261,
+      "seed_rating": 1622.4,
       "bat_pwr": 13,
       "mag_pwr": 12,
       "description": "Didalos is similar to the Dullahan boss it shares its look with in some ways. It will use Reflect???",
       "special": "PoisonTusk",
       "gc_scores": {
+        "hp": 0.721,
         "phys_dmg": 0.531,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9260,16 +9508,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1422.5,
-      "seed_rating": 1532.3,
+      "seed_power": 0.3987,
+      "seed_rating": 1509.9,
       "bat_pwr": 17,
       "mag_pwr": 11,
       "description": "Woollies do not attack directly, but rather only counterattack basic hits. They use Frenzy to cause Berserk to trigger those hits.",
       "special": "Frenzy",
       "gc_scores": {
+        "hp": 0.421,
         "phys_dmg": 0.414,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9297,16 +9546,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1575.0,
-      "seed_rating": 1568.6,
+      "seed_power": 0.5083,
+      "seed_rating": 1606.7,
       "bat_pwr": 11,
       "mag_pwr": 17,
       "description": "Veterans (Ahriman to series fans) are Wound-dealers, often using Condemned on the first and second turns. They can also use Dread to inflict Petrify.",
       "special": "",
       "gc_scores": {
+        "hp": 0.7,
         "phys_dmg": 0.443,
         "phys_def": 0.435,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -9334,16 +9584,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1511.6,
-      "seed_rating": 1553.5,
+      "seed_power": 0.43,
+      "seed_rating": 1537.6,
       "bat_pwr": 10,
       "mag_pwr": 5,
       "description": "Sky Bases open with L.5 Doom and use Mind Slap to try to inflict Stop. They will counter any attack other than a basic Fight with up to four uses of Blaster.",
       "special": "Mind Slap",
       "gc_scores": {
+        "hp": 0.542,
         "phys_dmg": 0.442,
         "phys_def": 0.55,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -9371,16 +9622,17 @@
       "coliseum": true,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1413.2,
-      "seed_rating": 1530.1,
+      "seed_power": 0.4098,
+      "seed_rating": 1519.6,
       "bat_pwr": 13,
       "mag_pwr": 25,
       "description": "IronHitmen have only three actions: attack, attack for double damage with Destroy, or use Dischord. They have low HP and vulnerabilities to both Thunder and Water.",
       "special": "Destroy",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.468,
         "phys_def": 0.08,
-        "mag_def_score": 0.65
+        "mag_def": 0.65
       }
     },
     {
@@ -9408,16 +9660,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1443.1,
-      "seed_rating": 1537.2,
+      "seed_power": 0.4321,
+      "seed_rating": 1539.3,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Io will use Crush intermittently for three rounds before using either WaveCannon or Diffuser.",
       "special": "Crush",
       "gc_scores": {
+        "hp": 0.621,
         "phys_dmg": 0.352,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9452,9 +9705,10 @@
       "description": "There are three Pugs, and each hits very hard and very fast while walking toward the party. After they've moved up 8 times, they'll use Knife to kill someone, then start over at the beginning.",
       "special": "Knife",
       "gc_scores": {
+        "hp": 0.736,
         "phys_dmg": 0.752,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9545,9 +9799,10 @@
       "description": "Mega Armors mostly stick to their MetalPunch special, but will counter Fight with Tek Laser and Magic with Missile.",
       "special": "MetalPunch",
       "gc_scores": {
+        "hp": 0.221,
         "phys_dmg": 0.21,
         "phys_def": 0.475,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -9582,9 +9837,10 @@
       "description": "Don't be intimidated by Vargas's massive HP total, because the battle with him is largely scripted.",
       "special": "Doom Fist",
       "gc_scores": {
+        "hp": 0.715,
         "phys_dmg": 0.111,
         "phys_def": 0.335,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9619,9 +9875,10 @@
       "description": "TunnelArmr uses many spells (including Tek Laser at low HP) that Runic can absorb. It can also attack or use Drill, so don't expect to be completely safe.",
       "special": "Drill",
       "gc_scores": {
+        "hp": 0.252,
         "phys_dmg": 0.139,
         "phys_def": 0.115,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -9649,16 +9906,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1692.3,
-      "seed_rating": 1596.5,
+      "seed_power": 0.5408,
+      "seed_rating": 1635.4,
       "bat_pwr": 13,
       "mag_pwr": 10,
       "description": "Prometheus attacks with Drill or its most powerful attack, Shrapnel. Fight may provoke a response from the equally powerful Fire ability S. Cross, while Magic may be met with N.",
       "special": "Drill",
       "gc_scores": {
+        "hp": 0.741,
         "phys_dmg": 0.504,
         "phys_def": 0.67,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -9693,9 +9951,10 @@
       "description": "The GhostTrain's can use the double-damage Wheel as a counter or in place of its normal attacks, which often come in pairs.",
       "special": "Wheel",
       "gc_scores": {
+        "hp": 0.305,
         "phys_dmg": 0.122,
         "phys_def": 0.12,
-        "mag_def_score": 0.825
+        "mag_def": 0.825
       }
     },
     {
@@ -9730,9 +9989,10 @@
       "description": "Dadaluma has no particular weaknesses, though he is more vulnerable to physical attacks than magic ones. He'll eventually use Safe to shore up this weakness.",
       "special": "Sweep",
       "gc_scores": {
+        "hp": 0.4,
         "phys_dmg": 0.196,
         "phys_def": 0.361,
-        "mag_def_score": 0.577
+        "mag_def": 0.577
       }
     },
     {
@@ -9767,9 +10027,10 @@
       "description": "As you might expect, Shiva uses Ice-Elemental spells like Ice and Ice 2. She can also use Blizzard, which is less dangerous than you might fear.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.197,
         "phys_def": 0.785,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -9804,9 +10065,10 @@
       "description": "Ifrit uses several dangerous attacks such as Fire 2 and Blaze in addition to the basic Fire spell.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.402,
         "phys_dmg": 0.227,
         "phys_def": 0.845,
-        "mag_def_score": 0.455
+        "mag_def": 0.455
       }
     },
     {
@@ -9841,9 +10103,10 @@
       "description": "Number 024 can inflict Muddled early in the battle before using WallChange to change its weakness.",
       "special": "Overflow",
       "gc_scores": {
+        "hp": 0.484,
         "phys_dmg": 0.242,
         "phys_def": 0.67,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -9878,9 +10141,10 @@
       "description": "Number 128 doesn't actually do anything beyond countering attacks with Red Feast, a nasty HP-draining attack. That is, unless you defeat both the RightBlade and Left Blade at the same time.",
       "special": "Red Feast",
       "gc_scores": {
+        "hp": 0.401,
         "phys_dmg": 0.208,
         "phys_def": 0.475,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -9915,9 +10179,10 @@
       "description": "Inferno uses Delta Hit to cause a guaranteed Petrify approximately every 30 seconds, but only if Striker and Rough are both alive.",
       "special": "Sobat",
       "gc_scores": {
+        "hp": 0.85,
         "phys_dmg": 0.603,
         "phys_def": 0.51,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -10008,9 +10273,10 @@
       "description": "Umaro's basic attacks are surprisingly tame, but he will occasionally use nasty abilities like Surge, Snowball, and Lode Stone.",
       "special": "Tackle",
       "gc_scores": {
+        "hp": 0.762,
         "phys_dmg": 0.356,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -10045,9 +10311,10 @@
       "description": "Umaro's basic attacks are surprisingly tame, but he will occasionally use nasty abilities like Surge, Snowball, and Lode Stone.",
       "special": "Tackle",
       "gc_scores": {
+        "hp": 0.762,
         "phys_dmg": 0.356,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -10138,9 +10405,10 @@
       "description": "The threats during the fight against Air Force mostly come from the other monsters on the battlefield.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.626,
         "phys_dmg": 0.214,
         "phys_def": 0.59,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -10175,9 +10443,10 @@
       "description": "Tritoch is extremely vulnerable to Fire Magic, and very little else. It will counter Magic with Rasp and most special commands with Cold Dust. Focus on Fire and you should be fine.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.845,
         "phys_dmg": 0.615,
         "phys_def": 0.995,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     },
     {
@@ -10212,9 +10481,10 @@
       "description": "Tritoch is extremely vulnerable to Fire Magic, and very little else. It will counter Magic with Rasp and most special commands with Cold Dust. Focus on Fire and you should be fine.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.845,
         "phys_dmg": 0.615,
         "phys_def": 0.995,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     },
     {
@@ -10249,9 +10519,10 @@
       "description": "FlameEater's basic attacks are no real threat, but its Fire 2 counter is powerful.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.642,
         "phys_dmg": 0.235,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -10286,9 +10557,10 @@
       "description": "AtmaWeapon uses a host of different spells and abilities, many of which ignore Mag.Def. It has no weaknesses, but no resistances either.",
       "special": "Full Power",
       "gc_scores": {
+        "hp": 0.809,
         "phys_dmg": 0.488,
         "phys_def": 0.577,
-        "mag_def_score": 0.409
+        "mag_def": 0.409
       }
     },
     {
@@ -10323,9 +10595,10 @@
       "description": "Defeat AtmaWeapon and escape from the Floating Continent.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.37,
         "phys_dmg": 0.226,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -10444,9 +10717,10 @@
       "description": "Dullahan is a powerful spellcaster, using spells like Pearl and Ice 3 regularly. He'll change up his attacks after being attacked 8 times, and has a number of tricks up his sleeve like L?",
       "special": "Morn Star",
       "gc_scores": {
+        "hp": 0.806,
         "phys_dmg": 0.527,
         "phys_def": 0.51,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -10481,9 +10755,10 @@
       "description": "Doom Gaze can be encountered unexpectedly on the Falcon and always opens combat with L.5 Doom. It follows that up with the actual Doom spell as well as powerful versions of Ice 3 and Aero.",
       "special": "Bane Claw",
       "gc_scores": {
+        "hp": 0.97,
         "phys_dmg": 0.803,
         "phys_def": 0.638,
-        "mag_def_score": 0.709
+        "mag_def": 0.709
       }
     },
     {
@@ -10546,9 +10821,10 @@
       "description": "Curley is the key to defeating the Dream Stooges, because he can revive his brothers with Life 2.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.745,
         "phys_dmg": 0.32,
         "phys_def": 0.395,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -10583,9 +10859,10 @@
       "description": "Larry only gets serious once his brother Curley is defeated, at which point he'll start using Ice 2 and Ice 3.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.7,
         "phys_dmg": 0.33,
         "phys_def": 0.355,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -10620,9 +10897,10 @@
       "description": "Moe spends the beginning of the fight casting support Magic, so it's tempting to attack him first. Curley will just revive him if you do, though.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.723,
         "phys_dmg": 0.349,
         "phys_def": 0.315,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -10657,9 +10935,10 @@
       "description": "Wrexsoul possesses a random character with no indication as to who it is, and you'll need to Wound that character to bring him back to the battlefield.",
       "special": "KarmicBlow",
       "gc_scores": {
+        "hp": 0.803,
         "phys_dmg": 0.585,
         "phys_def": 0.275,
-        "mag_def_score": 0.865
+        "mag_def": 0.865
       }
     },
     {
@@ -10694,9 +10973,10 @@
       "description": "Hidon prefers Poison-based attacks, but will unleash GrandTrain if all of its Hidonites are defeated. Quake is especially effective in the battle against Hidon.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.815,
         "phys_dmg": 0.387,
         "phys_def": 0.435,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -10731,9 +11011,10 @@
       "description": "KatanaSoul will counter your sixth Fight with SlayerEdge and your third spell or Lore by Throwing something for massive damage. The main threat is its constant onslaught of skeans, though.",
       "special": "SlayerEdge",
       "gc_scores": {
+        "hp": 0.887,
         "phys_dmg": 0.656,
         "phys_def": 0.455,
-        "mag_def_score": 0.685
+        "mag_def": 0.685
       }
     },
     {
@@ -10761,16 +11042,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1587.4,
-      "seed_rating": 1571.5,
+      "seed_power": 0.4691,
+      "seed_rating": 1572.1,
       "bat_pwr": 10,
       "mag_pwr": 20,
       "description": "An improved version of L.10 Magic, L.30 Magics use Bolt 2, Fire 2, and Ice 2 as their primary attacks. They have two counters worth noting, Rflect and Osmose.",
       "special": "",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.46,
         "phys_def": 0.785,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -10833,9 +11115,10 @@
       "description": "Doom uses Ice attacks and inflicts Freeze until he has lost about half of his HP.",
       "special": "Demon Rage",
       "gc_scores": {
+        "hp": 1.0,
         "phys_dmg": 0.847,
         "phys_def": 0.435,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -10870,9 +11153,10 @@
       "description": "Goddess begins with Thunder and status attacks, but at about 75% HP she'll focus on Bolt 3, Flash Rain, and Quasar only.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.918,
         "phys_dmg": 0.612,
         "phys_def": 0.335,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -10907,9 +11191,10 @@
       "description": "Poltrgeist starts off using non-Elemental physical and magic attacks. He will use Stop then Wound the victim with Blaster.",
       "special": "Psychrip",
       "gc_scores": {
+        "hp": 0.98,
         "phys_dmg": 0.624,
         "phys_def": 0.705,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -10965,16 +11250,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1611.4,
-      "seed_rating": 1577.2,
+      "seed_power": 0.4831,
+      "seed_rating": 1584.4,
       "bat_pwr": 10,
       "mag_pwr": 19,
       "description": "L.40 Magics can cast Drain, which ignores Reflect. Their other spells pose little danger to the party.",
       "special": "",
       "gc_scores": {
+        "hp": 0.443,
         "phys_dmg": 0.468,
         "phys_def": 0.785,
-        "mag_def_score": 0.53
+        "mag_def": 0.53
       }
     },
     {
@@ -11114,16 +11400,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1537.2,
-      "seed_rating": 1559.6,
+      "seed_power": 0.4463,
+      "seed_rating": 1551.9,
       "bat_pwr": 10,
       "mag_pwr": 21,
       "description": "L.20 Magics are protected by Reflect and cast many spells that ignore Reflect, including Demi, Quartr, and X-Zone. They also cast Break, which can be Reflected but which they themselves are immune to.",
       "special": "",
       "gc_scores": {
+        "hp": 0.313,
         "phys_dmg": 0.434,
         "phys_def": 0.785,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -11179,16 +11466,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1462.0,
-      "seed_rating": 1541.7,
+      "seed_power": 0.4173,
+      "seed_rating": 1526.3,
       "bat_pwr": 10,
       "mag_pwr": 22,
       "description": "L.10 Magic attack with Bolt, Fire, and Ice for surprising damage. They'll also counter any spell that doesn't kill them with Slow, Stop, or Haste.",
       "special": "",
       "gc_scores": {
+        "hp": 0.221,
         "phys_dmg": 0.408,
         "phys_def": 0.785,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -11216,16 +11504,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1637.8,
-      "seed_rating": 1583.5,
+      "seed_power": 0.4978,
+      "seed_rating": 1597.4,
       "bat_pwr": 10,
       "mag_pwr": 18,
       "description": "L.50 Magics will cast Doom and Poison-Elemental spells.",
       "special": "",
       "gc_scores": {
+        "hp": 0.495,
         "phys_dmg": 0.485,
         "phys_def": 0.785,
-        "mag_def_score": 0.51
+        "mag_def": 0.51
       }
     },
     {
@@ -11281,16 +11570,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1604.6,
-      "seed_rating": 1575.6,
+      "seed_power": 0.3992,
+      "seed_rating": 1510.3,
       "bat_pwr": 13,
       "mag_pwr": 5,
       "description": "There isn't much you can do to the Whelk shell, and it generally won't do much to you. It will counter any attacks with Mega Volt, a nasty attack you should avoid if at all possible.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.946,
         "phys_dmg": 0.045,
         "phys_def": 0.4,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -11384,9 +11674,10 @@
       "description": "Master Pug slowly moves towards you, using WallChange and using powerful Elemental spells opposed to its weakness.",
       "special": "Cleaver",
       "gc_scores": {
+        "hp": 0.796,
         "phys_dmg": 0.657,
         "phys_def": 0.395,
-        "mag_def_score": 0.65
+        "mag_def": 0.65
       }
     },
     {
@@ -11414,16 +11705,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1652.6,
-      "seed_rating": 1587.1,
+      "seed_power": 0.5081,
+      "seed_rating": 1606.5,
       "bat_pwr": 10,
       "mag_pwr": 17,
       "description": "L.60 Magics can cast Quake, which is devastating even to a party protected with Reflect. Float should always be in effect while wandering the Tower of Fanatics.",
       "special": "",
       "gc_scores": {
+        "hp": 0.542,
         "phys_dmg": 0.493,
         "phys_def": 0.785,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -11458,9 +11750,10 @@
       "description": "Merchants are, statistically speaking, one of the most pathetic enemies in the game. They're easy to kill, but you actually want to Steal from them instead in most cases.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.076,
         "phys_dmg": 0.049,
         "phys_def": 0.2,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -11495,9 +11788,10 @@
       "description": "The B.Day Suit exists only as a sight gag, the result of stealing from Merchants or Officers. You never actually get a chance to attack them, since they immediately Escape.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.07,
         "phys_dmg": 0.06,
         "phys_def": 0.025,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -11616,9 +11910,10 @@
       "description": "Number 128's RightBlade dishes out powerful physical attacks, particularly with Rapier, and will respawn rather quickly if defeated.",
       "special": "Rapier",
       "gc_scores": {
+        "hp": 0.14,
         "phys_dmg": 0.213,
         "phys_def": 0.475,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -11653,9 +11948,10 @@
       "description": "Number 128's Left Blade deals less damage than its RightBlade with a normal attack, but its Slash special is the most dangerous attack from either blade. It can also use Shimsham.",
       "special": "Slash",
       "gc_scores": {
+        "hp": 0.185,
         "phys_dmg": 0.199,
         "phys_def": 0.475,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -11690,9 +11986,10 @@
       "description": "Rough attacks normally 2/3 of the time and uses the slightly more powerful Rapier the other 1/3. If defeated, it will restore itself after approximately 20 seconds.",
       "special": "Rapier",
       "gc_scores": {
+        "hp": 0.626,
         "phys_dmg": 0.621,
         "phys_def": 0.315,
-        "mag_def_score": 0.745
+        "mag_def": 0.745
       }
     },
     {
@@ -11727,9 +12024,10 @@
       "description": "Striker attacks 2/3 of the time, but can also use Shrapnel for heavy non-Elemental damage. If defeated, it will restore itself after approximately 40 seconds.",
       "special": "Slash",
       "gc_scores": {
+        "hp": 0.71,
         "phys_dmg": 0.603,
         "phys_def": 0.295,
-        "mag_def_score": 0.725
+        "mag_def": 0.725
       }
     },
     {
@@ -11757,16 +12055,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1641.0,
-      "seed_rating": 1584.3,
+      "seed_power": 0.5095,
+      "seed_rating": 1607.8,
       "bat_pwr": 10,
       "mag_pwr": 16,
       "description": "All of a L.70 Magic's spells are subject to Reflect. They can cast Bolt 3, Fire 3, and Ice 3, and counter with Rasp, Shell, and Sleep.",
       "special": "",
       "gc_scores": {
+        "hp": 0.586,
         "phys_dmg": 0.476,
         "phys_def": 0.785,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -11801,9 +12100,10 @@
       "description": "Tritoch is extremely vulnerable to Fire Magic, and very little else. It will counter Magic with Rasp and most special commands with Cold Dust. Focus on Fire and you should be fine.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.845,
         "phys_dmg": 0.615,
         "phys_def": 0.995,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     },
     {
@@ -11838,9 +12138,10 @@
       "description": "The Laser Gun uses Atomic Ray and Tek Laser for moderate damage. When it reaches 1,764 HP, it will start using Diffuser as its primary attack.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.402,
         "phys_dmg": 0.214,
         "phys_def": 0.51,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -11875,9 +12176,10 @@
       "description": "The Speck doesn't attack, but it does absorb all spells like Runic as long as it's on the battlefield. It has high Defense, so a physical attack needs to ignore that to be effective.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.143,
         "phys_dmg": 0.222,
         "phys_def": 0.9,
-        "mag_def_score": 0.63
+        "mag_def": 0.63
       }
     },
     {
@@ -11912,9 +12214,10 @@
       "description": "The MissileBay repeatedly uses Missile (as one would expect) until it has taken 1,464 damage.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.222,
         "phys_def": 0.53,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -11977,9 +12280,10 @@
       "description": "The Ice Dragon attacks as you'd expect, with powerful Ice abilities. N. Cross can inflict Freeze, a status that can be removed by Fire damage, such as by a Fire spell cast on your own party.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.812,
         "phys_dmg": 0.666,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12042,9 +12346,10 @@
       "description": "The Storm Drgn uses a variety of brutal attacks, many of which are Wind-Elemental. This can be a tough battle to survive while trying to dish out 42,000 damage.",
       "special": "Wing Saber",
       "gc_scores": {
+        "hp": 0.908,
         "phys_dmg": 0.666,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12079,9 +12384,10 @@
       "description": "Invulnerability to Earth, whether via Cherub Down or Gaia Gear, is vital when fighting the Dirt Drgn. Even then, its Honed Tusk counter is a major threat to your characters.",
       "special": "Honed Tusk",
       "gc_scores": {
+        "hp": 0.837,
         "phys_dmg": 0.556,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12116,9 +12422,10 @@
       "description": "There's really nothing special about the Ipoohs that accompany Vargas, except that you can't target Vargas until they have been taken out.",
       "special": "Claw",
       "gc_scores": {
+        "hp": 0.133,
         "phys_dmg": 0.11,
         "phys_def": 0.415,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12153,9 +12460,10 @@
       "description": "Cyan will fight the Leader in single combat. He can use Axe as a special attack or a counter, but Cyan's SwdTechs will make short work of him.",
       "special": "Axe",
       "gc_scores": {
+        "hp": 0.149,
         "phys_dmg": 0.12,
         "phys_def": 0.025,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -12190,9 +12498,10 @@
       "description": "Grunts are similar to Soldiers, but without a counterattack. They only appear in a brief sequence when Cyan and Sabin first meet.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.07,
         "phys_dmg": 0.108,
         "phys_def": 0.2,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12227,9 +12536,10 @@
       "description": "The Gold Drgn primarily attacks with weak Thunder spells like Bolt and Bolt 2, though it will sometimes use Giga Volt for significant damage.",
       "special": "",
       "gc_scores": {
+        "hp": 0.859,
         "phys_dmg": 0.558,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12264,9 +12574,10 @@
       "description": "The Skull Drgn will inflict a variety of statuses but doesn't offer much of a direct threat.",
       "special": "",
       "gc_scores": {
+        "hp": 0.861,
         "phys_dmg": 0.578,
         "phys_def": 0.55,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -12301,9 +12612,10 @@
       "description": "The Blue Drgn will repeatedly attack the party with Water-based abilities, but lacks the punch to be a real threat by the time you reach it. Thunder will make short work of this monster.",
       "special": "",
       "gc_scores": {
+        "hp": 0.827,
         "phys_dmg": 0.585,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12338,9 +12650,10 @@
       "description": "The Red Dragon will cast Fire 2 and use Fire Ball for most of the fight, but when it drops to 10,240 HP it will gets serious and start using Fire 3 and Flare instead.",
       "special": "Eraser",
       "gc_scores": {
+        "hp": 0.845,
         "phys_dmg": 0.603,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12375,9 +12688,10 @@
       "description": "Piranhas have a weak attack and go down in one hit from anything, so don't waste resources on them.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.022,
         "phys_dmg": 0.085,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12412,9 +12726,10 @@
       "description": "Rizopas has a pretty weak attack and its Bite special isn't much worse.",
       "special": "Bite",
       "gc_scores": {
+        "hp": 0.195,
         "phys_dmg": 0.122,
         "phys_def": 0.435,
-        "mag_def_score": 0.685
+        "mag_def": 0.685
       }
     },
     {
@@ -12449,9 +12764,10 @@
       "description": "The Specter is a dangerous foe that guards a powerful relic in the Hyper Wrist.",
       "special": "Lightning",
       "gc_scores": {
+        "hp": 0.271,
         "phys_dmg": 0.179,
         "phys_def": 0.475,
-        "mag_def_score": 0.705
+        "mag_def": 0.705
       }
     },
     {
@@ -12486,9 +12802,10 @@
       "description": "The left fist of the first tier of The Final Battle relies primarily on powerful basic attacks.",
       "special": "VacuumWave",
       "gc_scores": {
+        "hp": 0.828,
         "phys_dmg": 0.834,
         "phys_def": 0.455,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -12523,9 +12840,10 @@
       "description": "The right arm of the first tier of The Final Battle can use Shock Wave to deal moderate magic damage instead of attacking.",
       "special": "",
       "gc_scores": {
+        "hp": 0.862,
         "phys_dmg": 0.813,
         "phys_def": 0.435,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -12560,9 +12878,10 @@
       "description": "The Face of the first tier of The Final Battle uses R.Polarity to reverse the party's Rows and Slip Hit to cause Seizure. It can use Safe or Haste in the fifth round.",
       "special": "Slip Hit",
       "gc_scores": {
+        "hp": 0.845,
         "phys_dmg": 0.853,
         "phys_def": 0.55,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -12597,9 +12916,10 @@
       "description": "Early in the battle, Tiger rarely acts. It will use S. Cross, N. Cross, or Flare Star in the second round of its four-round cycle, and may attack in the fourth, but is otherwise idle.",
       "special": "Doom Tusk",
       "gc_scores": {
+        "hp": 0.845,
         "phys_dmg": 0.63,
         "phys_def": 0.475,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -12634,9 +12954,10 @@
       "description": "Tools uses a variety of MagiTek-style attacks including Diffuser, Grav Bomb, Tek Laser, Missile, and Atomic Ray. It can use Delta Hit to cause unavoidable Petrify every third round.",
       "special": "",
       "gc_scores": {
+        "hp": 0.809,
         "phys_dmg": 0.657,
         "phys_def": 0.415,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -12671,9 +12992,10 @@
       "description": "Magic casts a huge variety of spells, but is susceptible to Mute. What it casts depends on how much HP it has left, though not in any discernible pattern.",
       "special": "",
       "gc_scores": {
+        "hp": 0.904,
         "phys_dmg": 0.489,
         "phys_def": 0.57,
-        "mag_def_score": 0.49
+        "mag_def": 0.49
       }
     },
     {
@@ -12708,9 +13030,10 @@
       "description": "Hit simply attacks each round until defeated, at which point it will attack 10 times. The first of these (the one actually called 10 Hits) does 50% more damage than the follow ups.",
       "special": "10 Hits",
       "gc_scores": {
+        "hp": 0.834,
         "phys_dmg": 0.569,
         "phys_def": 0.455,
-        "mag_def_score": 0.6
+        "mag_def": 0.6
       }
     },
     {
@@ -12745,9 +13068,10 @@
       "description": "Girl is a support monster for Sleep. She'll frequently use Pearl Wind, and can inflict Psyche with her Calmness special (not to be confused with Sleep's Calmness special, which causes Wound).",
       "special": "Calmness",
       "gc_scores": {
+        "hp": 0.7,
         "phys_dmg": 0.821,
         "phys_def": 0.59,
-        "mag_def_score": 0.61
+        "mag_def": 0.61
       }
     },
     {
@@ -12782,9 +13106,10 @@
       "description": "Sleep uses Merton and W Wind on odd-numbered turns, and uses a powerful physical attack or Condemned on the others.",
       "special": "Calmness",
       "gc_scores": {
+        "hp": 0.899,
         "phys_dmg": 0.845,
         "phys_def": 0.55,
-        "mag_def_score": 0.475
+        "mag_def": 0.475
       }
     },
     {
@@ -12896,16 +13221,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1619.6,
-      "seed_rating": 1579.2,
+      "seed_power": 0.5066,
+      "seed_rating": 1605.2,
       "bat_pwr": 10,
       "mag_pwr": 15,
       "description": "If the party is equipped with Wall Rings, L.80 Magics will spend all their time bouncing healing and support spells of of your party and back to their own. They will even do this as a counterattack.",
       "special": "",
       "gc_scores": {
+        "hp": 0.626,
         "phys_dmg": 0.451,
         "phys_def": 0.785,
-        "mag_def_score": 0.455
+        "mag_def": 0.455
       }
     },
     {
@@ -12933,16 +13259,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1636.8,
-      "seed_rating": 1583.3,
+      "seed_power": 0.5174,
+      "seed_rating": 1614.8,
       "bat_pwr": 10,
       "mag_pwr": 14,
       "description": "L.90 Magics have two attacks that ignore Reflect. Meteor will deal heavy damage to the whole party and there's little you can do about it.",
       "special": "",
       "gc_scores": {
+        "hp": 0.664,
         "phys_dmg": 0.468,
         "phys_def": 0.785,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -12970,16 +13297,17 @@
       "coliseum": false,
       "include": true,
       "exclude_reason": "",
-      "seed_power": 1133.2,
-      "seed_rating": 1463.5,
+      "seed_power": 0.2672,
+      "seed_rating": 1393.7,
       "bat_pwr": 12,
       "mag_pwr": 7,
       "description": "ProtoArmors take very little damage from physical attacks, and will counter Fight with nasty attacks like Launcher.",
       "special": "Program 35",
       "gc_scores": {
+        "hp": 0.181,
         "phys_dmg": 0.17,
         "phys_def": 0.9,
-        "mag_def_score": 0.435
+        "mag_def": 0.435
       }
     },
     {
@@ -13014,9 +13342,10 @@
       "description": "The MagiMaster will use tier-2 and tier-3 Elemental attack spells, sometimes two at a time. After four rounds of this, it will twice cast Doom, Mute, or Bio.",
       "special": "",
       "gc_scores": {
+        "hp": 0.946,
         "phys_dmg": 0.462,
         "phys_def": 0.98,
-        "mag_def_score": 0.395
+        "mag_def": 0.395
       }
     },
     {
@@ -13051,9 +13380,10 @@
       "description": "SoulSavers use surprisingly weak tier-3 attack spells and immediately come back to life if killed. They should generally be ignored when fighting Wrexsoul.",
       "special": "MagicDrain",
       "gc_scores": {
+        "hp": 0.388,
         "phys_dmg": 0.563,
         "phys_def": 0.59,
-        "mag_def_score": 0.685
+        "mag_def": 0.685
       }
     },
     {
@@ -13116,9 +13446,10 @@
       "description": "Naughties like to use Ice abilities, and can use Cold Dust to Freeze a character on the first turn. Respond with Fire or Thunder attacks (or Pearl if you have them) and take them out quickly.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.383,
         "phys_dmg": 0.21,
         "phys_def": 0.455,
-        "mag_def_score": 0.57
+        "mag_def": 0.57
       }
     },
     {
@@ -13265,9 +13596,10 @@
       "description": "Zone Eaters don't have any means of actually Wounding their opponents, which is good because what you really want is for them to Engulf every party member.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.614,
         "phys_dmg": 0.64,
         "phys_def": 0.475,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -13302,9 +13634,10 @@
       "description": "Officers do nothing but attack, and aren't much of a threat to Locke. They exist for one purpose: to be Stolen from. In addition to a Tonic or Potion, Locke will Steal an imperial disguise.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.071,
         "phys_dmg": 0.066,
         "phys_def": 0.395,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -13339,9 +13672,10 @@
       "description": "The only Cadet in the game appears when Cyan and Sabin first meet.",
       "special": "Axe",
       "gc_scores": {
+        "hp": 0.136,
         "phys_dmg": 0.12,
         "phys_def": 0.315,
-        "mag_def_score": 0.55
+        "mag_def": 0.55
       }
     },
     {
@@ -13376,9 +13710,10 @@
       "description": "Soldiers occasionally counter attacks with the appropriately-named Counter, but serve mostly as fodder in the encounters they appear in.",
       "special": "Counter",
       "gc_scores": {
+        "hp": 0.07,
         "phys_dmg": 0.1,
         "phys_def": 0.315,
-        "mag_def_score": 0.59
+        "mag_def": 0.59
       }
     },
     {
@@ -13413,9 +13748,10 @@
       "description": "Atma begins the battle focused on tier-3 Elemental spells as well as the N. Cross and S. Cross abilities. After taking 22,360 damage, it will start using more powerful Magic like Quake and Meteor.",
       "special": "Hit",
       "gc_scores": {
+        "hp": 0.967,
         "phys_dmg": 0.674,
         "phys_def": 0.295,
-        "mag_def_score": 0.275
+        "mag_def": 0.275
       }
     }
   ]

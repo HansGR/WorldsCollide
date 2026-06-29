@@ -7,6 +7,25 @@ const fighters = {
 let current = null;     // {a, b} enemy records
 let busy = false;       // lock during the result animation
 
+// --- voter identity (anonymous, persisted in the browser) ------------------
+function voterId() {
+  let id = localStorage.getItem("coliseum_voter");
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+    localStorage.setItem("coliseum_voter", id);
+  }
+  return id;
+}
+function voterName() {
+  return localStorage.getItem("coliseum_name") || "";
+}
+const nameInput = document.getElementById("voter-name");
+if (nameInput) {
+  nameInput.value = voterName();
+  nameInput.addEventListener("change", () =>
+    localStorage.setItem("coliseum_name", nameInput.value.trim().slice(0, 24)));
+}
+
 async function loadPair() {
   busy = true;
   try {
@@ -80,7 +99,10 @@ async function vote(winnerSide) {
     await fetch("/api/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ winner: winner.slug, loser: loser.slug }),
+      body: JSON.stringify({
+        winner: winner.slug, loser: loser.slug,
+        voter: voterId(), name: voterName(),
+      }),
     });
   } catch (e) {
     console.error(e);
@@ -111,38 +133,68 @@ async function refreshStats() {
   } catch (e) { /* ignore */ }
 }
 
-// Tier thresholds applied to Glicko rating (tunable client-side display only).
-const TIERS = [
-  { label: "S", min: 1750, color: "#ff7676" },
-  { label: "A", min: 1600, color: "#ffb24a" },
-  { label: "B", min: 1480, color: "#ffe14a" },
-  { label: "C", min: 1360, color: "#9be15d" },
-  { label: "D", min: 1240, color: "#5dd6e1" },
-  { label: "E", min: 0,    color: "#9aa0d6" },
-];
+// Tier colours (tiers themselves are decided server-side, bottom-heavy).
+const TIER_COLORS = {
+  S: "#ff7676", A: "#ffb24a", B: "#ffe14a",
+  C: "#9be15d", D: "#5dd6e1", E: "#9aa0d6",
+};
+const TIER_ORDER = ["S", "A", "B", "C", "D", "E"];
 
 async function showStandings() {
   const data = await (await fetch("/api/standings")).json();
-  const buckets = TIERS.map((t) => ({ ...t, items: [] }));
-  for (const e of data.standings) {
-    (buckets.find((t) => e.rating >= t.min) || buckets[buckets.length - 1]).items.push(e);
-  }
+  const buckets = {};
+  for (const e of data.standings) (buckets[e.tier] = buckets[e.tier] || []).push(e);
   const root = document.getElementById("tiers");
   root.innerHTML = "";
-  for (const t of buckets) {
-    if (!t.items.length) continue;
-    const row = document.createElement("div");
-    row.className = "tier-row";
-    const chips = t.items.map((e) => {
+  for (const label of TIER_ORDER) {
+    const items = buckets[label];
+    if (!items || !items.length) continue;
+    const chips = items.map((e) => {
       const img = e.sprite ? `<img src="${e.sprite}" alt="" onerror="this.remove()">` : "";
       return `<span class="chip">${img}${e.name} <span class="r">${e.rating}</span></span>`;
     }).join("");
+    const row = document.createElement("div");
+    row.className = "tier-row";
     row.innerHTML =
-      `<div class="tier-label" style="background:${t.color}">${t.label}</div>` +
+      `<div class="tier-label" style="background:${TIER_COLORS[label]}">${label}</div>` +
       `<div class="tier-items">${chips}</div>`;
     root.appendChild(row);
   }
 }
+
+async function showLeaderboard() {
+  const data = await (await fetch("/api/leaderboard")).json();
+  const root = document.getElementById("leaderboard-body");
+  if (!data.leaderboard.length) {
+    root.innerHTML =
+      `<p class="empty">No one has cast ${data.min_votes}+ votes yet. Keep voting!</p>`;
+    return;
+  }
+  const rows = data.leaderboard.map((v) =>
+    `<tr><td>${v.rank}</td><td>${escapeHtml(v.name)}</td>` +
+    `<td>${v.accuracy}%</td><td>${v.calibration}%</td><td>${v.votes}</td></tr>`).join("");
+  root.innerHTML =
+    `<p class="empty">Ranked by how often your picks match the crowd consensus ` +
+    `(${data.total_voters} voters, ${data.min_votes}+ votes to qualify).</p>` +
+    `<table class="board"><thead><tr><th>#</th><th>Player</th>` +
+    `<th>Accuracy</th><th>Calibration</th><th>Votes</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function togglePanel(id, render) {
+  const panel = document.getElementById(id);
+  const hidden = panel.classList.toggle("hidden");
+  if (!hidden) render();
+}
+document.getElementById("toggle-leaderboard").addEventListener("click", (e) => {
+  e.preventDefault();
+  togglePanel("leaderboard", showLeaderboard);
+});
 
 document.getElementById("toggle-standings").addEventListener("click", (e) => {
   e.preventDefault();

@@ -137,6 +137,22 @@ a:hover { text-decoration: underline; }
 .statusbar { text-align: center; color: var(--muted); margin-top: 1.4rem; font-size: .9rem; }
 #vote-count { color: var(--text); font-weight: 700; }
 
+.namebar { text-align: center; color: var(--muted); margin-top: .8rem; font-size: .85rem; }
+.namebar input {
+  background: var(--panel);
+  border: 1px solid var(--panel-hi);
+  border-radius: 6px;
+  color: var(--text);
+  padding: .25rem .5rem;
+  margin-left: .4rem;
+}
+
+.board { width: 100%; border-collapse: collapse; margin-top: .4rem; }
+.board th, .board td { padding: .4rem .6rem; text-align: left; border-bottom: 1px solid var(--panel-hi); }
+.board th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+.board td:first-child, .board th:first-child { width: 2rem; color: var(--muted); }
+.empty { color: var(--muted); font-size: .85rem; text-align: center; }
+
 .standings { margin-top: 1.5rem; }
 .standings.hidden { display: none; }
 .standings h2 { text-align: center; }

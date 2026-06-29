@@ -46,21 +46,33 @@
   <p class="hint">Click a fighter &mdash; or press <kbd>&larr;</kbd> / <kbd>&rarr;</kbd>.
      <a href="#" id="skip">Skip &raquo;</a></p>
 
+  <p class="namebar">
+    <label>Name for the leaderboard (optional):
+      <input id="voter-name" type="text" maxlength="24" placeholder="Anon" autocomplete="off">
+    </label>
+  </p>
+
   <section class="statusbar">
     <span id="vote-count">0</span> votes cast &middot;
     <span id="coverage">&mdash;</span> &middot;
-    <a href="#" id="toggle-standings">View tier list &raquo;</a>
+    <a href="#" id="toggle-standings">Tier list &raquo;</a> &middot;
+    <a href="#" id="toggle-leaderboard">Leaderboard &raquo;</a>
   </section>
 
   <section id="standings" class="standings hidden">
     <h2>Current Tier List <small>(live)</small></h2>
     <div id="tiers"></div>
   </section>
+
+  <section id="leaderboard" class="standings hidden">
+    <h2>Calibration Leaderboard <small>(live)</small></h2>
+    <div id="leaderboard-body"></div>
+  </section>
 </main>
 
 <footer>
-  <p>Ratings via Glicko-2 with active pair selection. Seeded from Caves of Narshe
-     vanilla stats, then refined by your votes. Built for
+  <p>Ratings via Glicko-2 with active pair selection. Seeded from Gamer Corner
+     threat scores, then refined by your votes. Built for
      <a href="https://github.com/HansGR/WorldsCollide">FF6 WorldsCollide</a>.</p>
 </footer>
 
