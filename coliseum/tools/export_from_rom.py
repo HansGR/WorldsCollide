@@ -34,16 +34,21 @@ WC_ROOT = os.path.dirname(PROJECT)         # repo root
 sys.path.insert(0, WC_ROOT)
 
 
-# Bosses / special enemies that WC's data/bosses.py doesn't tag (separate
-# enemy IDs for coliseum forms or boss body-parts), so they slip through the
-# "random encounter or coliseum, not a boss" filter. Drop them from the
-# competition -- they aren't normal enemies you'd rank for difficulty.
+# The competition roster is "enemies that can show up in the WC Coliseum".
+# WC's standard flags randomize coliseum opponents via enemies.get_random(),
+# which draws from enemies[:255] -- i.e. the regular-monster bank, enemy IDs
+# 0-254. (256-383 is the boss/special bank, which the randomiser never draws,
+# so Colossus/310, Whelk Head/309, etc. can't appear.) So: include IDs 0-254,
+# minus bosses.
+COLISEUM_POOL_MAX_ID = 254
+
+# Boss-like enemies inside the 0-254 pool that data/bosses.py does NOT tag
+# (their boss versions have other IDs). These are the joke/boss vanilla
+# coliseum opponents; excluded per request.
 EXTRA_BOSS_IDS = {
-    55:  "Siegfried (event/coliseum boss)",
-    64:  "Chupon (coliseum boss)",
-    127: "SrBehemoth (coliseum boss)",
-    309: "Whelk Head (boss part)",
-    310: "Colossus (coliseum boss)",
+    55:  "Siegfried (boss-like coliseum opponent)",
+    64:  "Chupon (boss-like coliseum opponent)",
+    127: "SrBehemoth (boss-like coliseum opponent)",
 }
 
 
@@ -162,6 +167,7 @@ def build(rom_path):
         is_boss = e.id in boss_ids
         is_random = e.id in random_ids
         is_coliseum = e.id in coliseum_ids
+        in_pool = e.id <= COLISEUM_POOL_MAX_ID and bool(e.name.strip())
         if e.id in wob_ids and e.id in wor_ids:
             world = "WOB + WOR"
         elif e.id in wob_ids:
@@ -203,8 +209,10 @@ def build(rom_path):
             "is_boss": is_boss,
             "random_encounter": is_random,
             "coliseum": is_coliseum,
-            "include": (is_random or is_coliseum) and not is_boss,
-            "exclude_reason": "boss" if is_boss else ("" if (is_random or is_coliseum) else "not a random/coliseum enemy"),
+            "in_pool": in_pool,
+            "include": in_pool and not is_boss,
+            "exclude_reason": ("boss" if is_boss else
+                               ("" if in_pool else "ID >= 255 (boss/special bank; not a coliseum opponent)")),
             "seed_power": round(p, 1),
             "seed_rating": round(1200 + 700 * (p - pmin) / (pmax - pmin), 1) if pmax > pmin else 1500.0,
         })
@@ -227,7 +235,7 @@ def main():
     }
     json.dump(out, open(a.out, "w"), ensure_ascii=False, indent=2)
     print(f"Wrote {a.out}: {out['count']} enemies, {out['included']} included "
-          f"(random/coliseum, non-boss)")
+          f"(coliseum pool: enemy IDs 0-{COLISEUM_POOL_MAX_ID}, non-boss)")
 
 
 if __name__ == "__main__":

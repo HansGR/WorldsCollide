@@ -210,6 +210,8 @@ def parse_page(path):
 OVERRIDES = {
     "siegfried": "siegfried/2.html",     # the tough coliseum Siegfried
     "chupon": "chupon/1.html",
+    "mag-roader": "mag-roader/1.html",
+    "mag-roader-2": "mag-roader/2.html",
     "mag-roader-3": "mag-roader/3.html",
     "mag-roader-4": "mag-roader/4.html",
     "whelk-head": "whelk/2.html",

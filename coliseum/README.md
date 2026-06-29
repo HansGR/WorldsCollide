@@ -120,11 +120,14 @@ python coliseum/tools/build_from_gamercorner.py             # pass 2
 trims each strategy note to a brief 1–2 sentences. The older Caves of Narshe
 importer (`build_dataset.py`) remains as a no-ROM fallback for the sprites.
 
-`export_from_rom.py` sets `include` precisely: an enemy is included when it is a
-**random encounter or a Coliseum opponent and is not a boss** (currently 230 of
-371 enemy slots), and stays correct for any (including randomized) ROM. Sprites
-come from the Caves of Narshe set, copied by `build_dataset.py` (a no-ROM
-fallback importer that also parses the CoN bestiary).
+`export_from_rom.py` sets `include` to match the benchmark — **enemies that can
+appear in the WC Coliseum**. WC's standard flags randomize coliseum opponents via
+`enemies.get_random()`, which draws from `enemies[:255]` (the regular-monster
+bank, **enemy IDs 0–254**); IDs 256–383 are the boss/special bank the randomiser
+never draws. So the roster is **IDs 0–254, minus bosses** (data/bosses.py plus a
+few boss-like vanilla opponents — Chupon, Siegfried, SrBehemoth) — currently 250
+of 371 enemy slots. Sprites come from the Caves of Narshe set, copied by
+`build_dataset.py` (a no-ROM fallback importer that also parses the CoN bestiary).
 
 ---
 
