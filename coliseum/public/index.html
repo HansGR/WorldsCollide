@@ -13,6 +13,12 @@
 </header>
 
 <main>
+  <p class="namebar">
+    <label>Name for the leaderboard (optional):
+      <input id="voter-name" type="text" maxlength="24" placeholder="Anon" autocomplete="off">
+    </label>
+  </p>
+
   <section id="arena" class="arena">
     <button class="fighter" data-side="a" aria-label="Pick left fighter">
       <div class="sprite-wrap"><img class="sprite" alt=""></div>
@@ -45,12 +51,6 @@
 
   <p class="hint">Click a fighter &mdash; or press <kbd>&larr;</kbd> / <kbd>&rarr;</kbd>.
      <a href="#" id="skip">Skip &raquo;</a></p>
-
-  <p class="namebar">
-    <label>Name for the leaderboard (optional):
-      <input id="voter-name" type="text" maxlength="24" placeholder="Anon" autocomplete="off">
-    </label>
-  </p>
 
   <section class="statusbar">
     <span id="vote-count">0</span> votes cast &middot;

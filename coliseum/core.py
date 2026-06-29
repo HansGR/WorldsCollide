@@ -159,15 +159,24 @@ def cast_vote(winner, loser, voter="", name=""):
     _cache = None     # force recompute on next read
 
     # Periodically snapshot the (private) tier list into the Sheet so the owner
-    # can read the ranking without it being exposed to voters. Cheap: one extra
-    # write every TIERLIST_EVERY votes, and never fails the vote.
+    # can read the ranking without it being exposed to voters. Fire whenever the
+    # vote count has grown by TIERLIST_EVERY since the last snapshot (robust to
+    # the cached, per-instance count, unlike an exact modulo). Never fails a vote.
+    global _last_tierlist_push, _last_tierlist_error
     if hasattr(s, "write_tierlist"):
         try:
-            if len(s.get_votes()) % TIERLIST_EVERY == 0:
+            n = len(s.get_votes())
+            if n - _last_tierlist_push >= TIERLIST_EVERY:
                 s.write_tierlist(_tierlist_values())
-        except Exception:
-            pass
+                _last_tierlist_push = n
+                _last_tierlist_error = None
+        except Exception as e:
+            _last_tierlist_error = str(e)[:400]
     return {"ok": True}
+
+
+_last_tierlist_push = 0
+_last_tierlist_error = None
 
 
 TIERLIST_EVERY = int(os.environ.get("COLISEUM_TIERLIST_EVERY", "20"))
@@ -184,14 +193,28 @@ def _tierlist_values():
 
 
 def export_tierlist(write=False):
-    """Return the tier list; optionally push it to the Sheet now (owner action)."""
+    """Return the tier list; optionally push it to the Sheet now (owner action).
+
+    Surfaces any write failure (e.g. the Apps Script not having the 'tierlist'
+    action) instead of 500-ing, so the cause is obvious.
+    """
     values = _tierlist_values()
-    pushed = False
+    result = {"rows": len(values) - 1, "pushed_to_sheet": False}
     s = store()
-    if write and hasattr(s, "write_tierlist"):
-        s.write_tierlist(values)
-        pushed = True
-    return {"rows": len(values) - 1, "pushed_to_sheet": pushed, "values": values}
+    if write:
+        if not hasattr(s, "write_tierlist"):
+            result["error"] = ("active backend is not Google Sheets, so there's "
+                               "no sheet to write the tier list to")
+        else:
+            try:
+                s.write_tierlist(values)
+                result["pushed_to_sheet"] = True
+                global _last_tierlist_error
+                _last_tierlist_error = None
+            except Exception as e:
+                result["error"] = str(e)[:400]
+    result["values"] = values
+    return result
 
 
 def health(write_test=False):
@@ -209,6 +232,8 @@ def health(write_test=False):
     }
     if hasattr(s, "url"):
         info["sheets_token_set"] = bool(getattr(s, "token", ""))
+    if _last_tierlist_error:
+        info["tierlist_push_error"] = _last_tierlist_error
     try:
         if hasattr(s, "_cache"):
             s._cache = None              # force a fresh read for the check
