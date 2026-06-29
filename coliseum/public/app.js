@@ -4,8 +4,12 @@ const fighters = {
   a: document.querySelector('.fighter[data-side="a"]'),
   b: document.querySelector('.fighter[data-side="b"]'),
 };
-let current = null;     // {a, b} enemy records
-let busy = false;       // lock during the result animation
+let current = null;     // {a, b} enemy records currently shown
+let nextPair = null;    // promise for the prefetched next match-up
+let busy = false;       // lock during the brief result animation
+let localVotes = 0;     // optimistic vote counter (server reconciles it)
+let votesSinceSync = 0; // refresh full stats every few votes
+let voteError = false;  // a background vote POST failed
 
 // --- voter identity (anonymous, persisted in the browser) ------------------
 function voterId() {
@@ -26,18 +30,33 @@ if (nameInput) {
     localStorage.setItem("coliseum_name", nameInput.value.trim().slice(0, 24)));
 }
 
+async function fetchPair() {
+  const res = await fetch("/api/pair");
+  if (!res.ok) throw new Error("pair fetch failed");
+  return res.json();
+}
+
+function prefetch() {
+  // Grab the next match-up while the user looks at the current one, so the
+  // swap after a vote is instant.
+  nextPair = fetchPair().catch(() => null);
+}
+
 async function loadPair() {
   busy = true;
   try {
-    const res = await fetch("/api/pair");
-    current = await res.json();
+    const pending = nextPair;
+    nextPair = null;
+    current = (pending && (await pending)) || (await fetchPair());
     render("a", current.a);
     render("b", current.b);
     fighters.a.classList.remove("chosen", "faded");
     fighters.b.classList.remove("chosen", "faded");
-    busy = false;
+    prefetch();
   } catch (e) {
     console.error(e);
+  } finally {
+    busy = false;
   }
 }
 
@@ -86,7 +105,7 @@ function render(side, enemy) {
   el.querySelector(".desc").textContent = enemy.description || "";
 }
 
-async function vote(winnerSide) {
+function vote(winnerSide) {
   if (busy || !current) return;
   busy = true;
   const winner = current[winnerSide];
@@ -95,27 +114,38 @@ async function vote(winnerSide) {
   fighters[winnerSide].classList.add("chosen");
   fighters[winnerSide === "a" ? "b" : "a"].classList.add("faded");
 
-  try {
-    const res = await fetch("/api/vote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        winner: winner.slug, loser: loser.slug,
-        voter: voterId(), name: voterName(),
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      console.error("vote failed:", body);
-      const cov = document.getElementById("coverage");
-      if (cov) cov.textContent = "⚠ vote not saved — see /api/health";
-    }
-  } catch (e) {
-    console.error(e);
-  }
+  sendVote(winner.slug, loser.slug);   // background, don't block the UI
+  bumpVoteCount();                     // optimistic counter
 
-  refreshStats();
-  setTimeout(loadPair, 280);
+  // Swap to the prefetched next pair almost immediately.
+  setTimeout(loadPair, 150);
+}
+
+function sendVote(winner, loser) {
+  fetch("/api/vote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ winner, loser, voter: voterId(), name: voterName() }),
+  }).then(async (res) => {
+    if (!res.ok) {
+      console.error("vote failed:", await res.json().catch(() => ({})));
+      voteError = true;
+      const cov = document.getElementById("coverage");
+      if (cov) cov.textContent = "⚠ a vote didn't save — see /api/health";
+    }
+  }).catch((e) => {
+    console.error(e);
+    voteError = true;
+  });
+}
+
+function bumpVoteCount() {
+  localVotes += 1;
+  document.getElementById("vote-count").textContent = localVotes;
+  if (++votesSinceSync >= 8) {
+    votesSinceSync = 0;
+    refreshStats();      // reconcile count + coverage in the background
+  }
 }
 
 fighters.a.addEventListener("click", () => vote("a"));
@@ -136,9 +166,14 @@ document.getElementById("skip").addEventListener("click", (e) => {
 async function refreshStats() {
   try {
     const s = await (await fetch("/api/stats")).json();
-    document.getElementById("vote-count").textContent = s.total_votes;
-    document.getElementById("coverage").textContent =
-      s.unrated > 0 ? `${s.unrated} enemies still unrated` : `avg uncertainty ±${s.avg_rd}`;
+    // The Sheets vote log is cached server-side, so the server count can lag
+    // the optimistic one -- take the larger so it never ticks backwards.
+    localVotes = Math.max(localVotes, s.total_votes);
+    document.getElementById("vote-count").textContent = localVotes;
+    if (!voteError) {
+      document.getElementById("coverage").textContent =
+        s.unrated > 0 ? `${s.unrated} enemies still unrated` : `avg uncertainty ±${s.avg_rd}`;
+    }
   } catch (e) { /* ignore */ }
 }
 
