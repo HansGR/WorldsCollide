@@ -1,0 +1,19 @@
+# Files kept in git but excluded from the Vercel upload / function bundle.
+# (Applies when the Vercel Root Directory is the repo root, ./)
+#
+# Patterns use .gitignore semantics, so anything matched here at ANY depth is
+# excluded -- keep entries specific so they don't catch coliseum/ files the
+# serverless function needs (e.g. coliseum/data, coliseum/api).
+
+# ~1.5 GB of saved Gamer Corner guide pages. Used only at build time by
+# coliseum/tools/build_from_gamercorner.py to generate data/enemies.json; the
+# deployed app reads the generated JSON and never needs these at runtime.
+# (Everything else in the repo is only ~13 MB, well under the limit.)
+/resources/
+
+# Junk / local artifacts
+__pycache__/
+*.pyc
+*.smc
+*.sfc
+votes.db
