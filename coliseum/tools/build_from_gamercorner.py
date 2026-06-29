@@ -293,6 +293,14 @@ def _reseed(enemies):
         e["seed_power"] = round(v, 4)
 
 
+# Rename guide area names to WorldsCollide vernacular.
+LOCATION_RENAMES = {
+    "Tower of Fanatics": "Fanatics Tower",
+    "Espers' Gathering Place": "Esper Mountain",
+    "Esper's Gathering Place": "Esper Mountain",
+}
+
+
 WORLD_LABEL = {
     "World of Balance": "World of Balance",
     "World of Ruin": "World of Ruin",
@@ -377,7 +385,10 @@ def main():
 
     for e in data["enemies"]:
         if e.get("include"):
-            e["location"] = _worldify(e.get("location", ""), e.get("world", ""))
+            loc = _worldify(e.get("location", ""), e.get("world", ""))
+            for old, new in LOCATION_RENAMES.items():
+                loc = loc.replace(old, new)
+            e["location"] = loc
 
     _reseed(data["enemies"])
 

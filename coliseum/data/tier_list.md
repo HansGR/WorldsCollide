@@ -79,7 +79,7 @@ _Based on 0 head-to-head votes. \* = provisional (still uncertain)._
 | 61 | Prussian\* | 1496 | 200 | 0 | 13 | 10 | 115 | 155 | World of Ruin |
 | 62 | Test Rider\* | 1494 | 200 | 0 | 27 | 10 | 135 | 155 | Narshe |
 | 63 | Spek Tor\* | 1494 | 200 | 0 | 30 | 10 | 100 | 200 | World of Ruin |
-| 64 | Magic Urn\* | 1494 | 200 | 0 | 5 | 35 | 220 | 190 | Tower of Fanatics |
+| 64 | Magic Urn\* | 1494 | 200 | 0 | 5 | 35 | 220 | 190 | Fanatics Tower |
 | 65 | Mover\* | 1492 | 200 | 0 | 20 | 10 | 115 | 254 | Kefka's Tower |
 | 66 | Warlock\* | 1491 | 200 | 0 | 10 | 10 | 180 | 225 | Ebot's Rock |
 | 67 | GloomShell\* | 1488 | 200 | 0 | 13 | 10 | 115 | 150 | World of Ruin |
@@ -137,7 +137,7 @@ _Based on 0 head-to-head votes. \* = provisional (still uncertain)._
 | 114 | Ninja\* | 1426 | 200 | 0 | 22 | 5 | 135 | 140 | Cave to the Sealed Gate; Floating Continent |
 | 115 | Bogy\* | 1423 | 200 | 0 | 15 | 10 | 102 | 153 | World of Ruin |
 | 116 | Apokryphos\* | 1423 | 200 | 0 | 18 | 10 | 80 | 150 | Floating Continent |
-| 117 | Adamanchyt\* | 1422 | 200 | 0 | 22 | 10 | 225 | 45 | Espers' Gathering Place |
+| 117 | Adamanchyt\* | 1422 | 200 | 0 | 22 | 10 | 225 | 45 | Esper Mountain |
 | 118 | Wizard\* | 1422 | 200 | 0 | 13 | 10 | 50 | 160 | Narshe |
 | 119 | Sand Horse\* | 1420 | 200 | 0 | 15 | 9 | 135 | 155 | World of Ruin |
 | 120 | Gilomantis\* | 1419 | 200 | 0 | 16 | 10 | 115 | 140 | World of Ruin |
@@ -162,15 +162,15 @@ _Based on 0 head-to-head votes. \* = provisional (still uncertain)._
 | 134 | Ing\* | 1406 | 200 | 0 | 18 | 12 | 110 | 150 | Cave to the Sealed Gate |
 | 135 | NeckHunter\* | 1406 | 200 | 0 | 5 | 10 | 102 | 153 | Figaro Castle; South Figaro Cave |
 | 136 | Maliga\* | 1406 | 200 | 0 | 15 | 10 | 110 | 145 | World of Ruin |
-| 137 | Abolisher\* | 1405 | 200 | 0 | 16 | 10 | 125 | 150 | Espers' Gathering Place |
+| 137 | Abolisher\* | 1405 | 200 | 0 | 16 | 10 | 125 | 150 | Esper Mountain |
 | 138 | Commando\* | 1405 | 200 | 0 | 13 | 10 | 210 | 145 | Imperial Base; Imperial Palace; MagiTek Factory; Vector |
 | 139 | Samurai\* | 1405 | 200 | 0 | 13 | 10 | 10 | 20 | Ancient Castle; Cyan's Soul; Doma Castle |
 | 140 | Rider\* | 1404 | 200 | 0 | 48 | 10 | 120 | 150 | Narshe |
-| 141 | Insecare\* | 1403 | 200 | 0 | 15 | 10 | 115 | 155 | Espers' Gathering Place |
+| 141 | Insecare\* | 1403 | 200 | 0 | 15 | 10 | 115 | 155 | Esper Mountain |
 | 142 | Humpty\* | 1403 | 200 | 0 | 8 | 10 | 145 | 135 | Figaro Castle; South Figaro Cave |
 | 143 | Exoray\* | 1402 | 200 | 0 | 13 | 10 | 105 | 105 | Darill's Tomb |
 | 144 | Gigantos\* | 1402 | 200 | 0 | 20 | 10 | 1 | 1 | Floating Continent |
-| 145 | Mandrake\* | 1398 | 200 | 0 | 16 | 10 | 115 | 125 | Espers' Gathering Place |
+| 145 | Mandrake\* | 1398 | 200 | 0 | 16 | 10 | 115 | 125 | Esper Mountain |
 | 146 | Sky Armor\* | 1396 | 200 | 0 | 16 | 7 | 150 | 120 | Blackjack |
 | 147 | Nohrabbit\* | 1396 | 200 | 0 | 7 | 30 | 100 | 100 | World of Ruin |
 | 148 | Drop\* | 1396 | 200 | 0 | 6 | 10 | 100 | 150 | Figaro Castle |
@@ -237,7 +237,7 @@ _Based on 0 head-to-head votes. \* = provisional (still uncertain)._
 | 204 | Trilium\* | 1331 | 200 | 0 | 13 | 10 | 102 | 170 | Mt. Kolts |
 | 205 | Beakor\* | 1330 | 200 | 0 | 12 | 10 | 80 | 150 | World of Balance |
 | 206 | Trilobiter\* | 1327 | 200 | 0 | 11 | 10 | 90 | 150 | South Figaro Cave |
-| 207 | Slurm\* | 1326 | 200 | 0 | 12 | 10 | 50 | 50 | Espers' Gathering Place |
+| 207 | Slurm\* | 1326 | 200 | 0 | 12 | 10 | 50 | 50 | Esper Mountain |
 | 208 | Anguiform\* | 1326 | 200 | 0 | 14 | 6 | 80 | 150 | Serpent Trench |
 | 209 | Vector Pup\* | 1324 | 200 | 0 | 14 | 10 | 80 | 150 | South Figaro |
 | 210 | Commander\* | 1323 | 200 | 0 | 13 | 10 | 100 | 150 | South Figaro |

@@ -1022,7 +1022,7 @@
       "matk": 35,
       "dfn": 220,
       "mdef": 190,
-      "location": "Tower of Fanatics",
+      "location": "Fanatics Tower",
       "coliseum": false
     },
     {
@@ -1870,7 +1870,7 @@
       "matk": 10,
       "dfn": 225,
       "mdef": 45,
-      "location": "Espers' Gathering Place",
+      "location": "Esper Mountain",
       "coliseum": false
     },
     {
@@ -2190,7 +2190,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 150,
-      "location": "Espers' Gathering Place",
+      "location": "Esper Mountain",
       "coliseum": false
     },
     {
@@ -2254,7 +2254,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 155,
-      "location": "Espers' Gathering Place",
+      "location": "Esper Mountain",
       "coliseum": false
     },
     {
@@ -2318,7 +2318,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 125,
-      "location": "Espers' Gathering Place",
+      "location": "Esper Mountain",
       "coliseum": false
     },
     {
@@ -3310,7 +3310,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 50,
-      "location": "Espers' Gathering Place",
+      "location": "Esper Mountain",
       "coliseum": false
     },
     {
