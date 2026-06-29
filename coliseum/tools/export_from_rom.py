@@ -34,6 +34,19 @@ WC_ROOT = os.path.dirname(PROJECT)         # repo root
 sys.path.insert(0, WC_ROOT)
 
 
+# Bosses / special enemies that WC's data/bosses.py doesn't tag (separate
+# enemy IDs for coliseum forms or boss body-parts), so they slip through the
+# "random encounter or coliseum, not a boss" filter. Drop them from the
+# competition -- they aren't normal enemies you'd rank for difficulty.
+EXTRA_BOSS_IDS = {
+    55:  "Siegfried (event/coliseum boss)",
+    64:  "Chupon (coliseum boss)",
+    127: "SrBehemoth (coliseum boss)",
+    309: "Whelk Head (boss part)",
+    310: "Colossus (coliseum boss)",
+}
+
+
 def slugify(name):
     import re
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
@@ -97,7 +110,7 @@ def build(rom_path):
         match = Match(rom.get_bytes(COLISEUM_START + i * Match.DATA_SIZE, Match.DATA_SIZE))
         coliseum_ids.add(match.opponent)
 
-    boss_ids = set(bosses.enemy_name) - set(bosses.removed_enemy_name)
+    boss_ids = (set(bosses.enemy_name) - set(bosses.removed_enemy_name)) | set(EXTRA_BOSS_IDS)
 
     # --- carry sprites/locations over from the existing dataset ---------
     # ROM names use terse SNES labels ("Necromancr", "Areneid") that often

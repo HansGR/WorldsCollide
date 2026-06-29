@@ -19,22 +19,6 @@
     },
     {
       "rank": 2,
-      "slug": "siegfried",
-      "name": "Siegfried",
-      "tier": "S",
-      "rating": 1788,
-      "rd": 200,
-      "comparisons": 0,
-      "provisional": true,
-      "atk": 53,
-      "matk": 25,
-      "dfn": 160,
-      "mdef": 150,
-      "location": "Phantom Train",
-      "coliseum": true
-    },
-    {
-      "rank": 3,
       "slug": "tyranosaur",
       "name": "Tyranosaur",
       "tier": "S",
@@ -50,7 +34,7 @@
       "coliseum": true
     },
     {
-      "rank": 4,
+      "rank": 3,
       "slug": "hoover",
       "name": "Hoover",
       "tier": "S",
@@ -66,7 +50,7 @@
       "coliseum": true
     },
     {
-      "rank": 5,
+      "rank": 4,
       "slug": "scullion",
       "name": "Scullion",
       "tier": "S",
@@ -82,7 +66,7 @@
       "coliseum": true
     },
     {
-      "rank": 6,
+      "rank": 5,
       "slug": "mantodea",
       "name": "Mantodea",
       "tier": "S",
@@ -98,7 +82,7 @@
       "coliseum": true
     },
     {
-      "rank": 7,
+      "rank": 6,
       "slug": "prometheus",
       "name": "Prometheus",
       "tier": "S",
@@ -114,7 +98,7 @@
       "coliseum": false
     },
     {
-      "rank": 8,
+      "rank": 7,
       "slug": "didalos",
       "name": "Didalos",
       "tier": "S",
@@ -130,7 +114,7 @@
       "coliseum": true
     },
     {
-      "rank": 9,
+      "rank": 8,
       "slug": "lethal-wpn",
       "name": "Lethal Wpn",
       "tier": "S",
@@ -146,7 +130,7 @@
       "coliseum": true
     },
     {
-      "rank": 10,
+      "rank": 9,
       "slug": "l-90-magic",
       "name": "L.90 Magic",
       "tier": "S",
@@ -162,7 +146,7 @@
       "coliseum": false
     },
     {
-      "rank": 11,
+      "rank": 10,
       "slug": "vectagoyle",
       "name": "Vectagoyle",
       "tier": "S",
@@ -178,26 +162,10 @@
       "coliseum": true
     },
     {
-      "rank": 12,
-      "slug": "colossus",
-      "name": "Colossus",
-      "tier": "S",
-      "rating": 1614,
-      "rd": 200,
-      "comparisons": 0,
-      "provisional": true,
-      "atk": 10,
-      "matk": 10,
-      "dfn": 125,
-      "mdef": 125,
-      "location": "Random encounter",
-      "coliseum": false
-    },
-    {
-      "rank": 13,
+      "rank": 11,
       "slug": "l-70-magic",
       "name": "L.70 Magic",
-      "tier": "A",
+      "tier": "S",
       "rating": 1608,
       "rd": 200,
       "comparisons": 0,
@@ -210,7 +178,7 @@
       "coliseum": false
     },
     {
-      "rank": 14,
+      "rank": 12,
       "slug": "veteran",
       "name": "Veteran",
       "tier": "A",
@@ -226,7 +194,7 @@
       "coliseum": true
     },
     {
-      "rank": 15,
+      "rank": 13,
       "slug": "l-60-magic",
       "name": "L.60 Magic",
       "tier": "A",
@@ -242,7 +210,7 @@
       "coliseum": false
     },
     {
-      "rank": 16,
+      "rank": 14,
       "slug": "l-80-magic",
       "name": "L.80 Magic",
       "tier": "A",
@@ -258,7 +226,7 @@
       "coliseum": false
     },
     {
-      "rank": 17,
+      "rank": 15,
       "slug": "doom-drgn",
       "name": "Doom Drgn",
       "tier": "A",
@@ -274,7 +242,7 @@
       "coliseum": true
     },
     {
-      "rank": 18,
+      "rank": 16,
       "slug": "l-50-magic",
       "name": "L.50 Magic",
       "tier": "A",
@@ -290,7 +258,7 @@
       "coliseum": false
     },
     {
-      "rank": 19,
+      "rank": 17,
       "slug": "rhyos",
       "name": "Rhyos",
       "tier": "A",
@@ -306,7 +274,7 @@
       "coliseum": true
     },
     {
-      "rank": 20,
+      "rank": 18,
       "slug": "dueller",
       "name": "Dueller",
       "tier": "A",
@@ -322,7 +290,7 @@
       "coliseum": true
     },
     {
-      "rank": 21,
+      "rank": 19,
       "slug": "brontaur",
       "name": "Brontaur",
       "tier": "A",
@@ -338,7 +306,7 @@
       "coliseum": true
     },
     {
-      "rank": 22,
+      "rank": 20,
       "slug": "fortis",
       "name": "Fortis",
       "tier": "A",
@@ -354,7 +322,7 @@
       "coliseum": true
     },
     {
-      "rank": 23,
+      "rank": 21,
       "slug": "land-worm",
       "name": "Land Worm",
       "tier": "A",
@@ -370,7 +338,7 @@
       "coliseum": true
     },
     {
-      "rank": 24,
+      "rank": 22,
       "slug": "intangir",
       "name": "Intangir",
       "tier": "A",
@@ -386,7 +354,7 @@
       "coliseum": false
     },
     {
-      "rank": 25,
+      "rank": 23,
       "slug": "innoc",
       "name": "Innoc",
       "tier": "A",
@@ -402,7 +370,7 @@
       "coliseum": true
     },
     {
-      "rank": 26,
+      "rank": 24,
       "slug": "l-40-magic",
       "name": "L.40 Magic",
       "tier": "A",
@@ -418,7 +386,7 @@
       "coliseum": false
     },
     {
-      "rank": 27,
+      "rank": 25,
       "slug": "hemophyte",
       "name": "Hemophyte",
       "tier": "A",
@@ -434,7 +402,7 @@
       "coliseum": true
     },
     {
-      "rank": 28,
+      "rank": 26,
       "slug": "dark-force",
       "name": "Dark Force",
       "tier": "A",
@@ -450,7 +418,7 @@
       "coliseum": true
     },
     {
-      "rank": 29,
+      "rank": 27,
       "slug": "steroidite",
       "name": "Steroidite",
       "tier": "A",
@@ -466,7 +434,7 @@
       "coliseum": true
     },
     {
-      "rank": 30,
+      "rank": 28,
       "slug": "retainer",
       "name": "Retainer",
       "tier": "A",
@@ -482,7 +450,7 @@
       "coliseum": true
     },
     {
-      "rank": 31,
+      "rank": 29,
       "slug": "figaliz",
       "name": "Figaliz",
       "tier": "A",
@@ -498,7 +466,7 @@
       "coliseum": false
     },
     {
-      "rank": 32,
+      "rank": 30,
       "slug": "gtbehemoth",
       "name": "GtBehemoth",
       "tier": "A",
@@ -514,7 +482,7 @@
       "coliseum": true
     },
     {
-      "rank": 33,
+      "rank": 31,
       "slug": "l-30-magic",
       "name": "L.30 Magic",
       "tier": "A",
@@ -530,7 +498,7 @@
       "coliseum": false
     },
     {
-      "rank": 34,
+      "rank": 32,
       "slug": "madam",
       "name": "Madam",
       "tier": "A",
@@ -546,7 +514,7 @@
       "coliseum": true
     },
     {
-      "rank": 35,
+      "rank": 33,
       "slug": "geckorex",
       "name": "Geckorex",
       "tier": "A",
@@ -562,7 +530,7 @@
       "coliseum": false
     },
     {
-      "rank": 36,
+      "rank": 34,
       "slug": "goblin",
       "name": "Goblin",
       "tier": "B",
@@ -578,7 +546,7 @@
       "coliseum": false
     },
     {
-      "rank": 37,
+      "rank": 35,
       "slug": "l-20-magic",
       "name": "L.20 Magic",
       "tier": "B",
@@ -594,7 +562,7 @@
       "coliseum": false
     },
     {
-      "rank": 38,
+      "rank": 36,
       "slug": "cactrot",
       "name": "Cactrot",
       "tier": "B",
@@ -610,7 +578,7 @@
       "coliseum": true
     },
     {
-      "rank": 39,
+      "rank": 37,
       "slug": "evil-oscar",
       "name": "Evil Oscar",
       "tier": "B",
@@ -626,7 +594,7 @@
       "coliseum": true
     },
     {
-      "rank": 40,
+      "rank": 38,
       "slug": "aquila",
       "name": "Aquila",
       "tier": "B",
@@ -642,7 +610,7 @@
       "coliseum": true
     },
     {
-      "rank": 41,
+      "rank": 39,
       "slug": "pug",
       "name": "Pug",
       "tier": "B",
@@ -658,7 +626,7 @@
       "coliseum": true
     },
     {
-      "rank": 42,
+      "rank": 40,
       "slug": "tumbleweed",
       "name": "TumbleWeed",
       "tier": "B",
@@ -674,7 +642,7 @@
       "coliseum": true
     },
     {
-      "rank": 43,
+      "rank": 41,
       "slug": "io",
       "name": "Io",
       "tier": "B",
@@ -690,7 +658,7 @@
       "coliseum": false
     },
     {
-      "rank": 44,
+      "rank": 42,
       "slug": "covert",
       "name": "Covert",
       "tier": "B",
@@ -706,7 +674,7 @@
       "coliseum": true
     },
     {
-      "rank": 45,
+      "rank": 43,
       "slug": "sky-base",
       "name": "Sky Base",
       "tier": "B",
@@ -722,7 +690,7 @@
       "coliseum": true
     },
     {
-      "rank": 46,
+      "rank": 44,
       "slug": "sprinter",
       "name": "Sprinter",
       "tier": "B",
@@ -738,7 +706,7 @@
       "coliseum": false
     },
     {
-      "rank": 47,
+      "rank": 45,
       "slug": "enuo",
       "name": "Enuo",
       "tier": "B",
@@ -754,7 +722,7 @@
       "coliseum": true
     },
     {
-      "rank": 48,
+      "rank": 46,
       "slug": "ogor",
       "name": "Ogor",
       "tier": "B",
@@ -770,7 +738,7 @@
       "coliseum": false
     },
     {
-      "rank": 49,
+      "rank": 47,
       "slug": "dragon",
       "name": "Dragon",
       "tier": "B",
@@ -786,7 +754,7 @@
       "coliseum": false
     },
     {
-      "rank": 50,
+      "rank": 48,
       "slug": "boxed-set",
       "name": "Boxed Set",
       "tier": "B",
@@ -802,7 +770,7 @@
       "coliseum": false
     },
     {
-      "rank": 51,
+      "rank": 49,
       "slug": "l-10-magic",
       "name": "L.10 Magic",
       "tier": "B",
@@ -818,7 +786,7 @@
       "coliseum": false
     },
     {
-      "rank": 52,
+      "rank": 50,
       "slug": "borras",
       "name": "Borras",
       "tier": "B",
@@ -834,7 +802,7 @@
       "coliseum": true
     },
     {
-      "rank": 53,
+      "rank": 51,
       "slug": "vectaur",
       "name": "Vectaur",
       "tier": "B",
@@ -850,7 +818,7 @@
       "coliseum": true
     },
     {
-      "rank": 54,
+      "rank": 52,
       "slug": "ironhitman",
       "name": "IronHitman",
       "tier": "B",
@@ -866,7 +834,7 @@
       "coliseum": true
     },
     {
-      "rank": 55,
+      "rank": 53,
       "slug": "reach-frog",
       "name": "Reach Frog",
       "tier": "B",
@@ -882,7 +850,7 @@
       "coliseum": false
     },
     {
-      "rank": 56,
+      "rank": 54,
       "slug": "trixter",
       "name": "Trixter",
       "tier": "B",
@@ -898,7 +866,7 @@
       "coliseum": true
     },
     {
-      "rank": 57,
+      "rank": 55,
       "slug": "phase",
       "name": "Phase",
       "tier": "B",
@@ -914,7 +882,7 @@
       "coliseum": true
     },
     {
-      "rank": 58,
+      "rank": 56,
       "slug": "wart-puck",
       "name": "Wart Puck",
       "tier": "B",
@@ -930,7 +898,7 @@
       "coliseum": true
     },
     {
-      "rank": 59,
+      "rank": 57,
       "slug": "tap-dancer",
       "name": "Tap Dancer",
       "tier": "B",
@@ -946,7 +914,7 @@
       "coliseum": true
     },
     {
-      "rank": 60,
+      "rank": 58,
       "slug": "crawler",
       "name": "Crawler",
       "tier": "B",
@@ -962,7 +930,7 @@
       "coliseum": false
     },
     {
-      "rank": 61,
+      "rank": 59,
       "slug": "opinicus",
       "name": "Opinicus",
       "tier": "B",
@@ -978,7 +946,7 @@
       "coliseum": true
     },
     {
-      "rank": 62,
+      "rank": 60,
       "slug": "sea-flower",
       "name": "Sea Flower",
       "tier": "B",
@@ -994,23 +962,7 @@
       "coliseum": false
     },
     {
-      "rank": 63,
-      "slug": "whelk-head",
-      "name": "Whelk Head",
-      "tier": "B",
-      "rating": 1510,
-      "rd": 200,
-      "comparisons": 0,
-      "provisional": true,
-      "atk": 13,
-      "matk": 5,
-      "dfn": 102,
-      "mdef": 155,
-      "location": "Narshe",
-      "coliseum": false
-    },
-    {
-      "rank": 64,
+      "rank": 61,
       "slug": "woolly",
       "name": "Woolly",
       "tier": "B",
@@ -1026,7 +978,7 @@
       "coliseum": true
     },
     {
-      "rank": 65,
+      "rank": 62,
       "slug": "uroburos",
       "name": "Uroburos",
       "tier": "B",
@@ -1042,7 +994,7 @@
       "coliseum": false
     },
     {
-      "rank": 66,
+      "rank": 63,
       "slug": "chaos-drgn",
       "name": "Chaos Drgn",
       "tier": "B",
@@ -1058,7 +1010,7 @@
       "coliseum": true
     },
     {
-      "rank": 67,
+      "rank": 64,
       "slug": "karkass",
       "name": "Karkass",
       "tier": "B",
@@ -1074,7 +1026,7 @@
       "coliseum": true
     },
     {
-      "rank": 68,
+      "rank": 65,
       "slug": "junk",
       "name": "Junk",
       "tier": "B",
@@ -1090,7 +1042,7 @@
       "coliseum": false
     },
     {
-      "rank": 69,
+      "rank": 66,
       "slug": "magic-urn",
       "name": "Magic Urn",
       "tier": "B",
@@ -1106,10 +1058,10 @@
       "coliseum": false
     },
     {
-      "rank": 70,
+      "rank": 67,
       "slug": "necromancr",
       "name": "Necromancr",
-      "tier": "C",
+      "tier": "B",
       "rating": 1500,
       "rd": 200,
       "comparisons": 0,
@@ -1122,7 +1074,7 @@
       "coliseum": false
     },
     {
-      "rank": 71,
+      "rank": 68,
       "slug": "displayer",
       "name": "Displayer",
       "tier": "C",
@@ -1138,7 +1090,7 @@
       "coliseum": false
     },
     {
-      "rank": 72,
+      "rank": 69,
       "slug": "harpy",
       "name": "Harpy",
       "tier": "C",
@@ -1154,7 +1106,7 @@
       "coliseum": true
     },
     {
-      "rank": 73,
+      "rank": 70,
       "slug": "prussian",
       "name": "Prussian",
       "tier": "C",
@@ -1170,7 +1122,7 @@
       "coliseum": false
     },
     {
-      "rank": 74,
+      "rank": 71,
       "slug": "test-rider",
       "name": "Test Rider",
       "tier": "C",
@@ -1186,7 +1138,7 @@
       "coliseum": true
     },
     {
-      "rank": 75,
+      "rank": 72,
       "slug": "spek-tor",
       "name": "Spek Tor",
       "tier": "C",
@@ -1202,7 +1154,7 @@
       "coliseum": false
     },
     {
-      "rank": 76,
+      "rank": 73,
       "slug": "mover",
       "name": "Mover",
       "tier": "C",
@@ -1218,7 +1170,7 @@
       "coliseum": false
     },
     {
-      "rank": 77,
+      "rank": 74,
       "slug": "warlock",
       "name": "Warlock",
       "tier": "C",
@@ -1234,23 +1186,7 @@
       "coliseum": false
     },
     {
-      "rank": 78,
-      "slug": "chupon",
-      "name": "Chupon",
-      "tier": "C",
-      "rating": 1488,
-      "rd": 200,
-      "comparisons": 0,
-      "provisional": true,
-      "atk": 13,
-      "matk": 10,
-      "dfn": 100,
-      "mdef": 55,
-      "location": "Blackjack",
-      "coliseum": true
-    },
-    {
-      "rank": 79,
+      "rank": 75,
       "slug": "gloomshell",
       "name": "GloomShell",
       "tier": "C",
@@ -1266,7 +1202,7 @@
       "coliseum": false
     },
     {
-      "rank": 80,
+      "rank": 76,
       "slug": "toe-cutter",
       "name": "Toe Cutter",
       "tier": "C",
@@ -1282,7 +1218,7 @@
       "coliseum": false
     },
     {
-      "rank": 81,
+      "rank": 77,
       "slug": "rain-man",
       "name": "Rain Man",
       "tier": "C",
@@ -1298,7 +1234,7 @@
       "coliseum": false
     },
     {
-      "rank": 82,
+      "rank": 78,
       "slug": "behemoth",
       "name": "Behemoth",
       "tier": "C",
@@ -1314,23 +1250,7 @@
       "coliseum": false
     },
     {
-      "rank": 83,
-      "slug": "srbehemoth",
-      "name": "SrBehemoth",
-      "tier": "C",
-      "rating": 1484,
-      "rd": 200,
-      "comparisons": 0,
-      "provisional": true,
-      "atk": 25,
-      "matk": 7,
-      "dfn": 100,
-      "mdef": 135,
-      "location": "Floating Continent",
-      "coliseum": true
-    },
-    {
-      "rank": 84,
+      "rank": 79,
       "slug": "suriander",
       "name": "Suriander",
       "tier": "C",
@@ -1346,7 +1266,7 @@
       "coliseum": false
     },
     {
-      "rank": 85,
+      "rank": 80,
       "slug": "barb-e",
       "name": "Barb-e",
       "tier": "C",
@@ -1362,7 +1282,7 @@
       "coliseum": false
     },
     {
-      "rank": 86,
+      "rank": 81,
       "slug": "sky-cap",
       "name": "Sky Cap",
       "tier": "C",
@@ -1378,7 +1298,7 @@
       "coliseum": false
     },
     {
-      "rank": 87,
+      "rank": 82,
       "slug": "punisher",
       "name": "Punisher",
       "tier": "C",
@@ -1394,7 +1314,7 @@
       "coliseum": false
     },
     {
-      "rank": 88,
+      "rank": 83,
       "slug": "ursus",
       "name": "Ursus",
       "tier": "C",
@@ -1410,7 +1330,7 @@
       "coliseum": false
     },
     {
-      "rank": 89,
+      "rank": 84,
       "slug": "parasoul",
       "name": "Parasoul",
       "tier": "C",
@@ -1426,7 +1346,7 @@
       "coliseum": false
     },
     {
-      "rank": 90,
+      "rank": 85,
       "slug": "luridan",
       "name": "Luridan",
       "tier": "C",
@@ -1442,7 +1362,7 @@
       "coliseum": false
     },
     {
-      "rank": 91,
+      "rank": 86,
       "slug": "slatter",
       "name": "Slatter",
       "tier": "C",
@@ -1458,7 +1378,7 @@
       "coliseum": false
     },
     {
-      "rank": 92,
+      "rank": 87,
       "slug": "hipocampus",
       "name": "Hipocampus",
       "tier": "C",
@@ -1474,7 +1394,7 @@
       "coliseum": false
     },
     {
-      "rank": 93,
+      "rank": 88,
       "slug": "plutoarmor",
       "name": "PlutoArmor",
       "tier": "C",
@@ -1490,7 +1410,7 @@
       "coliseum": false
     },
     {
-      "rank": 94,
+      "rank": 89,
       "slug": "osteosaur",
       "name": "Osteosaur",
       "tier": "C",
@@ -1506,7 +1426,7 @@
       "coliseum": false
     },
     {
-      "rank": 95,
+      "rank": 90,
       "slug": "eland",
       "name": "Eland",
       "tier": "C",
@@ -1522,7 +1442,7 @@
       "coliseum": false
     },
     {
-      "rank": 96,
+      "rank": 91,
       "slug": "outsider",
       "name": "Outsider",
       "tier": "C",
@@ -1538,7 +1458,7 @@
       "coliseum": true
     },
     {
-      "rank": 97,
+      "rank": 92,
       "slug": "cluck",
       "name": "Cluck",
       "tier": "C",
@@ -1554,7 +1474,7 @@
       "coliseum": false
     },
     {
-      "rank": 98,
+      "rank": 93,
       "slug": "souldancer",
       "name": "SoulDancer",
       "tier": "C",
@@ -1570,7 +1490,7 @@
       "coliseum": false
     },
     {
-      "rank": 99,
+      "rank": 94,
       "slug": "orog",
       "name": "Orog",
       "tier": "C",
@@ -1586,7 +1506,7 @@
       "coliseum": false
     },
     {
-      "rank": 100,
+      "rank": 95,
       "slug": "mad-oscar",
       "name": "Mad Oscar",
       "tier": "C",
@@ -1602,7 +1522,7 @@
       "coliseum": false
     },
     {
-      "rank": 101,
+      "rank": 96,
       "slug": "critic",
       "name": "Critic",
       "tier": "C",
@@ -1618,7 +1538,7 @@
       "coliseum": false
     },
     {
-      "rank": 102,
+      "rank": 97,
       "slug": "ceritops",
       "name": "Ceritops",
       "tier": "C",
@@ -1634,7 +1554,7 @@
       "coliseum": false
     },
     {
-      "rank": 103,
+      "rank": 98,
       "slug": "powerdemon",
       "name": "PowerDemon",
       "tier": "C",
@@ -1650,7 +1570,7 @@
       "coliseum": false
     },
     {
-      "rank": 104,
+      "rank": 99,
       "slug": "tomb-thumb",
       "name": "Tomb Thumb",
       "tier": "C",
@@ -1666,7 +1586,7 @@
       "coliseum": false
     },
     {
-      "rank": 105,
+      "rank": 100,
       "slug": "scrapper",
       "name": "Scrapper",
       "tier": "C",
@@ -1682,7 +1602,7 @@
       "coliseum": false
     },
     {
-      "rank": 106,
+      "rank": 101,
       "slug": "bloompire",
       "name": "Bloompire",
       "tier": "C",
@@ -1698,7 +1618,7 @@
       "coliseum": false
     },
     {
-      "rank": 107,
+      "rank": 102,
       "slug": "anemone",
       "name": "Anemone",
       "tier": "C",
@@ -1714,7 +1634,7 @@
       "coliseum": false
     },
     {
-      "rank": 108,
+      "rank": 103,
       "slug": "red-wolf",
       "name": "Red Wolf",
       "tier": "C",
@@ -1730,7 +1650,7 @@
       "coliseum": false
     },
     {
-      "rank": 109,
+      "rank": 104,
       "slug": "mag-roader-3",
       "name": "Mag Roader",
       "tier": "C",
@@ -1746,7 +1666,7 @@
       "coliseum": false
     },
     {
-      "rank": 110,
+      "rank": 105,
       "slug": "pan-dora",
       "name": "Pan Dora",
       "tier": "C",
@@ -1762,10 +1682,10 @@
       "coliseum": false
     },
     {
-      "rank": 111,
+      "rank": 106,
       "slug": "kiwok",
       "name": "Kiwok",
-      "tier": "D",
+      "tier": "C",
       "rating": 1438,
       "rd": 200,
       "comparisons": 0,
@@ -1778,10 +1698,10 @@
       "coliseum": false
     },
     {
-      "rank": 112,
+      "rank": 107,
       "slug": "nastidon",
       "name": "Nastidon",
-      "tier": "D",
+      "tier": "C",
       "rating": 1438,
       "rd": 200,
       "comparisons": 0,
@@ -1794,7 +1714,7 @@
       "coliseum": false
     },
     {
-      "rank": 113,
+      "rank": 108,
       "slug": "misfit",
       "name": "Misfit",
       "tier": "D",
@@ -1810,7 +1730,7 @@
       "coliseum": false
     },
     {
-      "rank": 114,
+      "rank": 109,
       "slug": "dante",
       "name": "Dante",
       "tier": "D",
@@ -1826,7 +1746,7 @@
       "coliseum": false
     },
     {
-      "rank": 115,
+      "rank": 110,
       "slug": "wild-cat",
       "name": "Wild Cat",
       "tier": "D",
@@ -1842,7 +1762,7 @@
       "coliseum": false
     },
     {
-      "rank": 116,
+      "rank": 111,
       "slug": "buffalax",
       "name": "Buffalax",
       "tier": "D",
@@ -1858,7 +1778,7 @@
       "coliseum": false
     },
     {
-      "rank": 117,
+      "rank": 112,
       "slug": "mag-roader-4",
       "name": "Mag Roader",
       "tier": "D",
@@ -1874,7 +1794,7 @@
       "coliseum": false
     },
     {
-      "rank": 118,
+      "rank": 113,
       "slug": "psychot",
       "name": "Psychot",
       "tier": "D",
@@ -1890,7 +1810,7 @@
       "coliseum": false
     },
     {
-      "rank": 119,
+      "rank": 114,
       "slug": "crusher",
       "name": "Crusher",
       "tier": "D",
@@ -1906,7 +1826,7 @@
       "coliseum": false
     },
     {
-      "rank": 120,
+      "rank": 115,
       "slug": "harpiai",
       "name": "Harpiai",
       "tier": "D",
@@ -1922,7 +1842,7 @@
       "coliseum": false
     },
     {
-      "rank": 121,
+      "rank": 116,
       "slug": "vindr",
       "name": "Vindr",
       "tier": "D",
@@ -1938,7 +1858,7 @@
       "coliseum": false
     },
     {
-      "rank": 122,
+      "rank": 117,
       "slug": "latimeria",
       "name": "Latimeria",
       "tier": "D",
@@ -1954,7 +1874,7 @@
       "coliseum": false
     },
     {
-      "rank": 123,
+      "rank": 118,
       "slug": "zombone",
       "name": "Zombone",
       "tier": "D",
@@ -1970,7 +1890,7 @@
       "coliseum": false
     },
     {
-      "rank": 124,
+      "rank": 119,
       "slug": "ninja",
       "name": "Ninja",
       "tier": "D",
@@ -1986,7 +1906,7 @@
       "coliseum": false
     },
     {
-      "rank": 125,
+      "rank": 120,
       "slug": "bogy",
       "name": "Bogy",
       "tier": "D",
@@ -2002,7 +1922,7 @@
       "coliseum": false
     },
     {
-      "rank": 126,
+      "rank": 121,
       "slug": "apokryphos",
       "name": "Apokryphos",
       "tier": "D",
@@ -2018,7 +1938,7 @@
       "coliseum": false
     },
     {
-      "rank": 127,
+      "rank": 122,
       "slug": "adamanchyt",
       "name": "Adamanchyt",
       "tier": "D",
@@ -2034,7 +1954,7 @@
       "coliseum": false
     },
     {
-      "rank": 128,
+      "rank": 123,
       "slug": "wizard",
       "name": "Wizard",
       "tier": "D",
@@ -2050,7 +1970,7 @@
       "coliseum": false
     },
     {
-      "rank": 129,
+      "rank": 124,
       "slug": "sand-horse",
       "name": "Sand Horse",
       "tier": "D",
@@ -2066,7 +1986,7 @@
       "coliseum": false
     },
     {
-      "rank": 130,
+      "rank": 125,
       "slug": "gilomantis",
       "name": "Gilomantis",
       "tier": "D",
@@ -2082,7 +2002,7 @@
       "coliseum": false
     },
     {
-      "rank": 131,
+      "rank": 126,
       "slug": "deep-eye",
       "name": "Deep Eye",
       "tier": "D",
@@ -2098,7 +2018,7 @@
       "coliseum": false
     },
     {
-      "rank": 132,
+      "rank": 127,
       "slug": "chaser",
       "name": "Chaser",
       "tier": "D",
@@ -2114,7 +2034,7 @@
       "coliseum": false
     },
     {
-      "rank": 133,
+      "rank": 128,
       "slug": "chimera",
       "name": "Chimera",
       "tier": "D",
@@ -2130,7 +2050,7 @@
       "coliseum": false
     },
     {
-      "rank": 134,
+      "rank": 129,
       "slug": "allosaurus",
       "name": "Allosaurus",
       "tier": "D",
@@ -2146,7 +2066,7 @@
       "coliseum": true
     },
     {
-      "rank": 135,
+      "rank": 130,
       "slug": "black-drgn",
       "name": "Black Drgn",
       "tier": "D",
@@ -2162,7 +2082,7 @@
       "coliseum": false
     },
     {
-      "rank": 136,
+      "rank": 131,
       "slug": "brainpan",
       "name": "Brainpan",
       "tier": "D",
@@ -2178,7 +2098,7 @@
       "coliseum": false
     },
     {
-      "rank": 137,
+      "rank": 132,
       "slug": "lizard",
       "name": "Lizard",
       "tier": "D",
@@ -2194,7 +2114,7 @@
       "coliseum": false
     },
     {
-      "rank": 138,
+      "rank": 133,
       "slug": "poppers",
       "name": "Poppers",
       "tier": "D",
@@ -2210,7 +2130,7 @@
       "coliseum": false
     },
     {
-      "rank": 139,
+      "rank": 134,
       "slug": "garm",
       "name": "Garm",
       "tier": "D",
@@ -2226,7 +2146,7 @@
       "coliseum": false
     },
     {
-      "rank": 140,
+      "rank": 135,
       "slug": "mesosaur",
       "name": "Mesosaur",
       "tier": "D",
@@ -2242,7 +2162,7 @@
       "coliseum": false
     },
     {
-      "rank": 141,
+      "rank": 136,
       "slug": "lunaris",
       "name": "Lunaris",
       "tier": "D",
@@ -2258,7 +2178,7 @@
       "coliseum": false
     },
     {
-      "rank": 142,
+      "rank": 137,
       "slug": "ing",
       "name": "Ing",
       "tier": "D",
@@ -2274,7 +2194,7 @@
       "coliseum": false
     },
     {
-      "rank": 143,
+      "rank": 138,
       "slug": "neckhunter",
       "name": "NeckHunter",
       "tier": "D",
@@ -2290,7 +2210,7 @@
       "coliseum": false
     },
     {
-      "rank": 144,
+      "rank": 139,
       "slug": "maliga",
       "name": "Maliga",
       "tier": "D",
@@ -2306,7 +2226,7 @@
       "coliseum": false
     },
     {
-      "rank": 145,
+      "rank": 140,
       "slug": "abolisher",
       "name": "Abolisher",
       "tier": "D",
@@ -2322,7 +2242,7 @@
       "coliseum": false
     },
     {
-      "rank": 146,
+      "rank": 141,
       "slug": "commando",
       "name": "Commando",
       "tier": "D",
@@ -2338,7 +2258,7 @@
       "coliseum": false
     },
     {
-      "rank": 147,
+      "rank": 142,
       "slug": "samurai",
       "name": "Samurai",
       "tier": "D",
@@ -2354,7 +2274,7 @@
       "coliseum": false
     },
     {
-      "rank": 148,
+      "rank": 143,
       "slug": "insecare",
       "name": "Insecare",
       "tier": "D",
@@ -2370,7 +2290,7 @@
       "coliseum": false
     },
     {
-      "rank": 149,
+      "rank": 144,
       "slug": "humpty",
       "name": "Humpty",
       "tier": "D",
@@ -2386,7 +2306,7 @@
       "coliseum": false
     },
     {
-      "rank": 150,
+      "rank": 145,
       "slug": "exoray",
       "name": "Exoray",
       "tier": "D",
@@ -2402,7 +2322,7 @@
       "coliseum": false
     },
     {
-      "rank": 151,
+      "rank": 146,
       "slug": "nohrabbit",
       "name": "Nohrabbit",
       "tier": "D",
@@ -2418,7 +2338,7 @@
       "coliseum": false
     },
     {
-      "rank": 152,
+      "rank": 147,
       "slug": "mandrake",
       "name": "Mandrake",
       "tier": "D",
@@ -2434,7 +2354,7 @@
       "coliseum": false
     },
     {
-      "rank": 153,
+      "rank": 148,
       "slug": "drop",
       "name": "Drop",
       "tier": "D",
@@ -2450,7 +2370,7 @@
       "coliseum": false
     },
     {
-      "rank": 154,
+      "rank": 149,
       "slug": "wyvern",
       "name": "Wyvern",
       "tier": "D",
@@ -2466,7 +2386,7 @@
       "coliseum": false
     },
     {
-      "rank": 155,
+      "rank": 150,
       "slug": "rhinox",
       "name": "Rhinox",
       "tier": "D",
@@ -2482,7 +2402,7 @@
       "coliseum": false
     },
     {
-      "rank": 156,
+      "rank": 151,
       "slug": "chitonid",
       "name": "Chitonid",
       "tier": "D",
@@ -2498,7 +2418,7 @@
       "coliseum": false
     },
     {
-      "rank": 157,
+      "rank": 152,
       "slug": "protoarmor",
       "name": "ProtoArmor",
       "tier": "D",
@@ -2514,7 +2434,7 @@
       "coliseum": false
     },
     {
-      "rank": 158,
+      "rank": 153,
       "slug": "trapper",
       "name": "Trapper",
       "tier": "D",
@@ -2530,7 +2450,7 @@
       "coliseum": false
     },
     {
-      "rank": 159,
+      "rank": 154,
       "slug": "muus",
       "name": "Muus",
       "tier": "D",
@@ -2546,7 +2466,7 @@
       "coliseum": false
     },
     {
-      "rank": 160,
+      "rank": 155,
       "slug": "fossilfang",
       "name": "FossilFang",
       "tier": "D",
@@ -2562,7 +2482,7 @@
       "coliseum": false
     },
     {
-      "rank": 161,
+      "rank": 156,
       "slug": "osprey",
       "name": "Osprey",
       "tier": "D",
@@ -2578,10 +2498,10 @@
       "coliseum": false
     },
     {
-      "rank": 162,
+      "rank": 157,
       "slug": "pipsqueak",
       "name": "Pipsqueak",
-      "tier": "E",
+      "tier": "D",
       "rating": 1388,
       "rd": 200,
       "comparisons": 0,
@@ -2594,7 +2514,7 @@
       "coliseum": false
     },
     {
-      "rank": 163,
+      "rank": 158,
       "slug": "apparite",
       "name": "Apparite",
       "tier": "E",
@@ -2610,7 +2530,7 @@
       "coliseum": false
     },
     {
-      "rank": 164,
+      "rank": 159,
       "slug": "grenade",
       "name": "Grenade",
       "tier": "E",
@@ -2626,7 +2546,7 @@
       "coliseum": false
     },
     {
-      "rank": 165,
+      "rank": 160,
       "slug": "baskervor",
       "name": "Baskervor",
       "tier": "E",
@@ -2642,7 +2562,7 @@
       "coliseum": false
     },
     {
-      "rank": 166,
+      "rank": 161,
       "slug": "delta-bug",
       "name": "Delta Bug",
       "tier": "E",
@@ -2658,7 +2578,7 @@
       "coliseum": false
     },
     {
-      "rank": 167,
+      "rank": 162,
       "slug": "ralph",
       "name": "Ralph",
       "tier": "E",
@@ -2674,7 +2594,7 @@
       "coliseum": false
     },
     {
-      "rank": 168,
+      "rank": 163,
       "slug": "general",
       "name": "General",
       "tier": "E",
@@ -2690,7 +2610,7 @@
       "coliseum": false
     },
     {
-      "rank": 169,
+      "rank": 164,
       "slug": "coelecite",
       "name": "Coelecite",
       "tier": "E",
@@ -2706,7 +2626,7 @@
       "coliseum": false
     },
     {
-      "rank": 170,
+      "rank": 165,
       "slug": "gigan-toad",
       "name": "Gigan Toad",
       "tier": "E",
@@ -2722,7 +2642,7 @@
       "coliseum": false
     },
     {
-      "rank": 171,
+      "rank": 166,
       "slug": "gobbler",
       "name": "Gobbler",
       "tier": "E",
@@ -2738,7 +2658,7 @@
       "coliseum": false
     },
     {
-      "rank": 172,
+      "rank": 167,
       "slug": "cruller",
       "name": "Cruller",
       "tier": "E",
@@ -2754,7 +2674,7 @@
       "coliseum": false
     },
     {
-      "rank": 173,
+      "rank": 168,
       "slug": "joker",
       "name": "Joker",
       "tier": "E",
@@ -2770,7 +2690,7 @@
       "coliseum": false
     },
     {
-      "rank": 174,
+      "rank": 169,
       "slug": "weedfeeder",
       "name": "WeedFeeder",
       "tier": "E",
@@ -2786,7 +2706,7 @@
       "coliseum": false
     },
     {
-      "rank": 175,
+      "rank": 170,
       "slug": "hadesgigas",
       "name": "HadesGigas",
       "tier": "E",
@@ -2802,7 +2722,7 @@
       "coliseum": false
     },
     {
-      "rank": 176,
+      "rank": 171,
       "slug": "cephaler",
       "name": "Cephaler",
       "tier": "E",
@@ -2818,7 +2738,7 @@
       "coliseum": false
     },
     {
-      "rank": 177,
+      "rank": 172,
       "slug": "scorpion",
       "name": "Scorpion",
       "tier": "E",
@@ -2834,7 +2754,7 @@
       "coliseum": false
     },
     {
-      "rank": 178,
+      "rank": 173,
       "slug": "pm-stalker",
       "name": "Pm Stalker",
       "tier": "E",
@@ -2850,7 +2770,7 @@
       "coliseum": false
     },
     {
-      "rank": 179,
+      "rank": 174,
       "slug": "chickenlip",
       "name": "ChickenLip",
       "tier": "E",
@@ -2866,7 +2786,7 @@
       "coliseum": false
     },
     {
-      "rank": 180,
+      "rank": 175,
       "slug": "harvester",
       "name": "Harvester",
       "tier": "E",
@@ -2882,7 +2802,7 @@
       "coliseum": false
     },
     {
-      "rank": 181,
+      "rank": 176,
       "slug": "bug",
       "name": "Bug",
       "tier": "E",
@@ -2898,7 +2818,7 @@
       "coliseum": false
     },
     {
-      "rank": 182,
+      "rank": 177,
       "slug": "lich",
       "name": "Lich",
       "tier": "E",
@@ -2914,7 +2834,7 @@
       "coliseum": false
     },
     {
-      "rank": 183,
+      "rank": 178,
       "slug": "slamdancer",
       "name": "SlamDancer",
       "tier": "E",
@@ -2930,7 +2850,7 @@
       "coliseum": false
     },
     {
-      "rank": 184,
+      "rank": 179,
       "slug": "over-grunk",
       "name": "Over Grunk",
       "tier": "E",
@@ -2946,7 +2866,7 @@
       "coliseum": false
     },
     {
-      "rank": 185,
+      "rank": 180,
       "slug": "mind-candy",
       "name": "Mind Candy",
       "tier": "E",
@@ -2962,7 +2882,7 @@
       "coliseum": false
     },
     {
-      "rank": 186,
+      "rank": 181,
       "slug": "vulture",
       "name": "Vulture",
       "tier": "E",
@@ -2978,7 +2898,7 @@
       "coliseum": false
     },
     {
-      "rank": 187,
+      "rank": 182,
       "slug": "gabbldegak",
       "name": "Gabbldegak",
       "tier": "E",
@@ -2994,7 +2914,7 @@
       "coliseum": false
     },
     {
-      "rank": 188,
+      "rank": 183,
       "slug": "parasite",
       "name": "Parasite",
       "tier": "E",
@@ -3010,7 +2930,7 @@
       "coliseum": false
     },
     {
-      "rank": 189,
+      "rank": 184,
       "slug": "red-fang",
       "name": "Red Fang",
       "tier": "E",
@@ -3026,7 +2946,7 @@
       "coliseum": false
     },
     {
-      "rank": 190,
+      "rank": 185,
       "slug": "hermitcrab",
       "name": "HermitCrab",
       "tier": "E",
@@ -3042,7 +2962,7 @@
       "coliseum": false
     },
     {
-      "rank": 191,
+      "rank": 186,
       "slug": "iron-fist",
       "name": "Iron Fist",
       "tier": "E",
@@ -3058,7 +2978,7 @@
       "coliseum": false
     },
     {
-      "rank": 192,
+      "rank": 187,
       "slug": "tusker",
       "name": "Tusker",
       "tier": "E",
@@ -3074,7 +2994,7 @@
       "coliseum": false
     },
     {
-      "rank": 193,
+      "rank": 188,
       "slug": "whisper",
       "name": "Whisper",
       "tier": "E",
@@ -3090,7 +3010,7 @@
       "coliseum": false
     },
     {
-      "rank": 194,
+      "rank": 189,
       "slug": "stillgoing",
       "name": "StillGoing",
       "tier": "E",
@@ -3106,7 +3026,7 @@
       "coliseum": false
     },
     {
-      "rank": 195,
+      "rank": 190,
       "slug": "rhinotaur",
       "name": "Rhinotaur",
       "tier": "E",
@@ -3122,7 +3042,7 @@
       "coliseum": false
     },
     {
-      "rank": 196,
+      "rank": 191,
       "slug": "trilium",
       "name": "Trilium",
       "tier": "E",
@@ -3138,7 +3058,7 @@
       "coliseum": false
     },
     {
-      "rank": 197,
+      "rank": 192,
       "slug": "beakor",
       "name": "Beakor",
       "tier": "E",
@@ -3154,7 +3074,7 @@
       "coliseum": false
     },
     {
-      "rank": 198,
+      "rank": 193,
       "slug": "trilobiter",
       "name": "Trilobiter",
       "tier": "E",
@@ -3170,7 +3090,7 @@
       "coliseum": false
     },
     {
-      "rank": 199,
+      "rank": 194,
       "slug": "slurm",
       "name": "Slurm",
       "tier": "E",
@@ -3186,7 +3106,7 @@
       "coliseum": false
     },
     {
-      "rank": 200,
+      "rank": 195,
       "slug": "vector-pup",
       "name": "Vector Pup",
       "tier": "E",
@@ -3202,7 +3122,7 @@
       "coliseum": false
     },
     {
-      "rank": 201,
+      "rank": 196,
       "slug": "commander",
       "name": "Commander",
       "tier": "E",
@@ -3218,7 +3138,7 @@
       "coliseum": false
     },
     {
-      "rank": 202,
+      "rank": 197,
       "slug": "over-mind",
       "name": "Over-Mind",
       "tier": "E",
@@ -3234,7 +3154,7 @@
       "coliseum": false
     },
     {
-      "rank": 203,
+      "rank": 198,
       "slug": "greasemonk",
       "name": "GreaseMonk",
       "tier": "E",
@@ -3250,7 +3170,7 @@
       "coliseum": false
     },
     {
-      "rank": 204,
+      "rank": 199,
       "slug": "hazer",
       "name": "Hazer",
       "tier": "E",
@@ -3266,7 +3186,7 @@
       "coliseum": false
     },
     {
-      "rank": 205,
+      "rank": 200,
       "slug": "rhodox",
       "name": "Rhodox",
       "tier": "E",
@@ -3282,7 +3202,7 @@
       "coliseum": false
     },
     {
-      "rank": 206,
+      "rank": 201,
       "slug": "bleary",
       "name": "Bleary",
       "tier": "E",
@@ -3298,7 +3218,7 @@
       "coliseum": false
     },
     {
-      "rank": 207,
+      "rank": 202,
       "slug": "gold-bear",
       "name": "Gold Bear",
       "tier": "E",
@@ -3314,7 +3234,7 @@
       "coliseum": false
     },
     {
-      "rank": 208,
+      "rank": 203,
       "slug": "crasshoppr",
       "name": "CrassHoppr",
       "tier": "E",
@@ -3330,7 +3250,7 @@
       "coliseum": false
     },
     {
-      "rank": 209,
+      "rank": 204,
       "slug": "poplium",
       "name": "Poplium",
       "tier": "E",
@@ -3346,7 +3266,7 @@
       "coliseum": false
     },
     {
-      "rank": 210,
+      "rank": 205,
       "slug": "sand-ray",
       "name": "Sand Ray",
       "tier": "E",
@@ -3362,7 +3282,7 @@
       "coliseum": false
     },
     {
-      "rank": 211,
+      "rank": 206,
       "slug": "hornet",
       "name": "Hornet",
       "tier": "E",
@@ -3378,7 +3298,7 @@
       "coliseum": false
     },
     {
-      "rank": 212,
+      "rank": 207,
       "slug": "primordite",
       "name": "Primordite",
       "tier": "E",
@@ -3394,7 +3314,7 @@
       "coliseum": false
     },
     {
-      "rank": 213,
+      "rank": 208,
       "slug": "1st-class",
       "name": "1st Class",
       "tier": "E",
@@ -3410,7 +3330,7 @@
       "coliseum": false
     },
     {
-      "rank": 214,
+      "rank": 209,
       "slug": "flan",
       "name": "Flan",
       "tier": "E",
@@ -3426,7 +3346,7 @@
       "coliseum": false
     },
     {
-      "rank": 215,
+      "rank": 210,
       "slug": "rhobite",
       "name": "Rhobite",
       "tier": "E",
@@ -3442,7 +3362,7 @@
       "coliseum": false
     },
     {
-      "rank": 216,
+      "rank": 211,
       "slug": "wild-rat",
       "name": "Wild Rat",
       "tier": "E",
@@ -3458,7 +3378,7 @@
       "coliseum": false
     },
     {
-      "rank": 217,
+      "rank": 212,
       "slug": "cirpius",
       "name": "Cirpius",
       "tier": "E",
@@ -3474,7 +3394,7 @@
       "coliseum": false
     },
     {
-      "rank": 218,
+      "rank": 213,
       "slug": "areneid",
       "name": "Areneid",
       "tier": "E",
@@ -3490,7 +3410,7 @@
       "coliseum": false
     },
     {
-      "rank": 219,
+      "rank": 214,
       "slug": "were-rat",
       "name": "Were-Rat",
       "tier": "E",
@@ -3506,7 +3426,7 @@
       "coliseum": false
     },
     {
-      "rank": 220,
+      "rank": 215,
       "slug": "crawly",
       "name": "Crawly",
       "tier": "E",
@@ -3522,7 +3442,7 @@
       "coliseum": false
     },
     {
-      "rank": 221,
+      "rank": 216,
       "slug": "vaporite",
       "name": "Vaporite",
       "tier": "E",
@@ -3538,7 +3458,7 @@
       "coliseum": false
     },
     {
-      "rank": 222,
+      "rank": 217,
       "slug": "ghost",
       "name": "Ghost",
       "tier": "E",
@@ -3554,7 +3474,7 @@
       "coliseum": false
     },
     {
-      "rank": 223,
+      "rank": 218,
       "slug": "brawler",
       "name": "Brawler",
       "tier": "E",
@@ -3570,7 +3490,7 @@
       "coliseum": false
     },
     {
-      "rank": 224,
+      "rank": 219,
       "slug": "repo-man",
       "name": "Repo Man",
       "tier": "E",
@@ -3586,7 +3506,7 @@
       "coliseum": false
     },
     {
-      "rank": 225,
+      "rank": 220,
       "slug": "bomb",
       "name": "Bomb",
       "tier": "E",
@@ -3602,7 +3522,7 @@
       "coliseum": false
     },
     {
-      "rank": 226,
+      "rank": 221,
       "slug": "stray-cat",
       "name": "Stray Cat",
       "tier": "E",
@@ -3618,7 +3538,7 @@
       "coliseum": false
     },
     {
-      "rank": 227,
+      "rank": 222,
       "slug": "leafer",
       "name": "Leafer",
       "tier": "E",
@@ -3634,7 +3554,7 @@
       "coliseum": false
     },
     {
-      "rank": 228,
+      "rank": 223,
       "slug": "dark-wind",
       "name": "Dark Wind",
       "tier": "E",
@@ -3650,7 +3570,7 @@
       "coliseum": false
     },
     {
-      "rank": 229,
+      "rank": 224,
       "slug": "peepers",
       "name": "Peepers",
       "tier": "E",
@@ -3666,7 +3586,7 @@
       "coliseum": false
     },
     {
-      "rank": 230,
+      "rank": 225,
       "slug": "earthguard",
       "name": "EarthGuard",
       "tier": "E",
