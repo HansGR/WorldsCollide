@@ -35,7 +35,11 @@ def api_vote():
     p = request.get_json(force=True, silent=True) or {}
     result = core.cast_vote(p.get("winner"), p.get("loser"),
                             voter=p.get("voter", ""), name=p.get("name", ""))
-    return jsonify(result) if result else (jsonify({"error": "invalid pair"}), 400)
+    if result is None:
+        return jsonify({"error": "invalid pair"}), 400
+    if not result.get("ok"):
+        return jsonify(result), 502
+    return jsonify(result)
 
 
 @app.route("/api/standings")
@@ -51,6 +55,11 @@ def api_stats():
 @app.route("/api/leaderboard")
 def api_leaderboard():
     return jsonify(core.leaderboard())
+
+
+@app.route("/api/health")
+def api_health():
+    return jsonify(core.health(write_test=request.args.get("write") in ("1", "true")))
 
 
 if __name__ == "__main__":

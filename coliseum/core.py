@@ -141,13 +141,59 @@ def cast_vote(winner, loser, voter="", name=""):
     ens = enemies()
     if winner not in ens or loser not in ens or winner == loser:
         return None
-    store().append_vote(voter or "anon", name or "", winner, loser)
+    try:
+        store().append_vote(voter or "anon", name or "", winner, loser)
+    except Exception as e:
+        # Surface storage failures (e.g. Sheets misconfig) instead of pretending
+        # the vote was recorded.
+        return {"ok": False, "error": str(e)[:400]}
     global _cache
     _cache = None     # force recompute on next read
     state, _ = _replay(store().get_votes())
     return {"ok": True,
             "winner": public_enemy(winner, state),
             "loser": public_enemy(loser, state)}
+
+
+def health(write_test=False):
+    """Report which storage backend is active and whether it actually works.
+
+    GET /api/health           - backend + a live read test
+    GET /api/health?write=1   - also append a 'healthcheck' vote (writes a row)
+    """
+    s = store()
+    info = {
+        "backend": type(s).__name__,
+        "env": {k: bool(os.environ.get(k)) for k in
+                ("SHEETS_WEBAPP_URL", "SHEETS_TOKEN", "POSTGRES_URL",
+                 "DATABASE_URL", "VERCEL")},
+    }
+    if hasattr(s, "url"):
+        info["sheets_token_set"] = bool(getattr(s, "token", ""))
+    try:
+        if hasattr(s, "_cache"):
+            s._cache = None              # force a fresh read for the check
+        info["vote_count"] = len(s.get_votes())
+        info["can_read"] = True
+    except Exception as e:
+        info["can_read"] = False
+        info["error"] = str(e)[:400]
+        return info
+
+    if write_test:
+        _load_dataset()
+        a, b = list(_ENEMIES)[:2]
+        try:
+            s.append_vote("healthcheck", "healthcheck", a, b)
+            if hasattr(s, "_cache"):
+                s._cache = None
+            info["can_write"] = True
+            info["vote_count_after_write"] = len(s.get_votes())
+            info["note"] = "Wrote a 'healthcheck' row; you can delete it from the sheet."
+        except Exception as e:
+            info["can_write"] = False
+            info["error"] = str(e)[:400]
+    return info
 
 
 def standings():

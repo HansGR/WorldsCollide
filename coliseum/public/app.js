@@ -96,7 +96,7 @@ async function vote(winnerSide) {
   fighters[winnerSide === "a" ? "b" : "a"].classList.add("faded");
 
   try {
-    await fetch("/api/vote", {
+    const res = await fetch("/api/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -104,6 +104,12 @@ async function vote(winnerSide) {
         voter: voterId(), name: voterName(),
       }),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      console.error("vote failed:", body);
+      const cov = document.getElementById("coverage");
+      if (cov) cov.textContent = "⚠ vote not saved — see /api/health";
+    }
   } catch (e) {
     console.error(e);
   }

@@ -50,8 +50,23 @@ Optionally `SHEETS_TTL` (seconds the server caches the vote log; default `15`).
 votes now land in your Sheet, and the live tier list / leaderboard are computed
 from it.
 
-## Verify
+## Verify / troubleshoot
 
+Open **`https://your-site/api/health`** — it tells you exactly what's wrong:
+
+- `"backend": "SQLiteStore"` → the env vars didn't reach this deployment. Make
+  sure `SHEETS_WEBAPP_URL` is set for the **Production** environment and that you
+  **redeployed** after adding it. (`"backend": "SheetsStore"` is what you want.)
+- `"can_read": false` with an `error` mentioning **HTML** → the web app's
+  "Who has access" isn't **Anyone**; redeploy it that way.
+- `error` mentioning **token** → `SHEETS_TOKEN` (Vercel) ≠ `TOKEN` (Script
+  Property). Make them identical.
+- `"can_read": true` → reads work. Then hit
+  **`/api/health?write=1`**: it appends a `healthcheck` row. If `can_write` is
+  true a row should appear in the sheet (delete it after); if false, the `error`
+  explains why.
+
+Once healthy:
 - Cast a vote on the site → a new row appears in the **Votes** tab.
 - `https://your-site/api/stats` shows the rising `total_votes`.
 - `https://your-site/api/leaderboard` lists voters once some have 10+ votes.

@@ -93,13 +93,28 @@ class SheetsStore:
             url = self.url + ("&" if "?" in self.url else "?") + "action=votes"
             if self.token:
                 url += "&token=" + urllib.parse.quote(self.token)
-            req = urllib.request.Request(url)
+            req = urllib.request.Request(url, headers={"User-Agent": "ff6-coliseum"})
         else:                                     # POST
             data = json.dumps(payload).encode()
             req = urllib.request.Request(self.url, data=data,
-                                         headers={"Content-Type": "application/json"})
+                                         headers={"Content-Type": "application/json",
+                                                  "User-Agent": "ff6-coliseum"})
         with urllib.request.urlopen(req, timeout=20) as r:
-            return json.loads(r.read().decode())
+            raw = r.read().decode("utf-8", "replace")
+        try:
+            resp = json.loads(raw)
+        except ValueError:
+            # Apps Script returned HTML (usually a Google sign-in page) instead
+            # of JSON -- almost always "Who has access" is not set to "Anyone".
+            raise RuntimeError(
+                "Sheets web app did not return JSON (got HTML). Re-deploy the "
+                "Apps Script web app with 'Who has access: Anyone'. First bytes: "
+                + raw.strip()[:120])
+        if isinstance(resp, dict) and resp.get("ok") is False:
+            raise RuntimeError("Sheets web app rejected the request: "
+                               + str(resp.get("error", "unknown")) +
+                               " (check SHEETS_TOKEN matches the Script Property TOKEN)")
+        return resp
 
     def append_vote(self, voter, name, winner, loser):
         row = {"voter": voter, "name": name, "winner": winner, "loser": loser}
@@ -111,7 +126,7 @@ class SheetsStore:
         if self._cache is not None and (time.time() - self._fetched) < self.ttl:
             return self._cache
         resp = self._request()
-        self._cache = resp.get("votes", resp if isinstance(resp, list) else [])
+        self._cache = resp.get("votes", []) if isinstance(resp, dict) else (resp or [])
         self._fetched = time.time()
         return self._cache
 
