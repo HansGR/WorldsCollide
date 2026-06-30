@@ -141,6 +141,8 @@ event_exit_info = {
     2083: [0xc13c6, 82, 35, [False, False, False, False, False], "Kefka's Tower inferno return north", [0x19a, 43, 23], 'JMP'],  # Enter conveyor belt from inferno room
     2084: [0xc13f4, 36, 1, [False, False, False, False, False], "Kefka's Tower inferno return south", [0x19a, None, None], 'JMP'],  # Exit conveyor belt from inferno room
 
+    # EBOT'S ROCK
+    2085: [0xb7244, 7, 1, [None, None, None, None, False], 'Ebots Rock teleport to Thamasa if recruited a character', [0x195, 23, 5], None],  # If recruiting a character, forced connection to Thamasa.  No randomization.
 
     # EVENT TILES that behave as if they are doors:
     #       WOB: Imperial Camp; Figaro Castle (@ Figaro & Kohlingen); Thamasa; Vector; Cave to SF south entrance
