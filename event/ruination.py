@@ -181,7 +181,7 @@ ROOM_REWARD = {
     284: {"Owzer Mansion": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Owzer's Basement
     
     # MOG
-    '41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},
+    'ruin-narshepeak': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},
     'ruin-lonewolf': {"Lone Wolf": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Lone Wolf reward gated by lw1 key from ruin-narshe
     65: {"Narshe Moogle Defense": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Moogle Defense WOR (need to update how this starts); 65 in WOB
 
