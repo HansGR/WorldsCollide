@@ -125,6 +125,9 @@ def public_enemy(slug, state, tier=None, reveal=False):
         "matk": e.get("mag_pwr"),
         "dfn": e.get("defense"),
         "mdef": e.get("magic_def"),
+        # HP-per-level: a rough "bulk" measure that's steadier than raw HP/level
+        # (both of which scale through the game).
+        "hpl": round(e["hp"] / e["level"]) if e.get("level") else None,
         "description": e.get("description") or "",
         "coliseum": e.get("coliseum", False),
     }
@@ -185,10 +188,12 @@ TIERLIST_EVERY = int(os.environ.get("COLISEUM_TIERLIST_EVERY", "20"))
 def _tierlist_values():
     """Build a 2-D table (header + rows) of the current tier list for the Sheet."""
     data = standings()
-    values = [["Rank", "Tier", "Enemy", "Rating", "RD", "Votes", "Location"]]
+    values = [["Rank", "Tier", "Enemy", "Rating", "RD", "Votes",
+               "ATK", "M.ATK", "DEF", "M.DEF", "HP/Lv", "Location"]]
     for e in data["standings"]:
         values.append([e["rank"], e["tier"], e["name"], e["rating"], e["rd"],
-                       e["comparisons"], e["location"]])
+                       e["comparisons"], e["atk"], e["matk"], e["dfn"], e["mdef"],
+                       e["hpl"], e["location"]])
     return values
 
 

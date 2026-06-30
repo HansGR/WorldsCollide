@@ -39,7 +39,7 @@ def main():
             "rating": e["rating"], "rd": e["rd"], "comparisons": e["comparisons"],
             "provisional": e["rd"] > PROVISIONAL_RD,
             "atk": e["atk"], "matk": e["matk"], "dfn": e["dfn"], "mdef": e["mdef"],
-            "location": e["location"], "coliseum": e["coliseum"],
+            "hpl": e["hpl"], "location": e["location"], "coliseum": e["coliseum"],
         })
 
     json.dump({"total_votes": total_votes, "enemies": ordered},
@@ -54,15 +54,15 @@ def main():
         if not members:
             continue
         lines += [f"## {label} Tier", "",
-                  "| Rank | Enemy | Rating | ± | Votes | ATK | M.ATK | DEF | M.DEF | Found |",
-                  "|---:|---|---:|---:|---:|---:|---:|---:|---:|---|"]
+                  "| Rank | Enemy | Rating | ± | Votes | ATK | M.ATK | DEF | M.DEF | HP/Lv | Found |",
+                  "|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|"]
         for e in members:
             star = "\\*" if e["provisional"] else ""
             cell = lambda v: "" if v is None else v
             lines.append(
                 f"| {e['rank']} | {e['name']}{star} | {e['rating']} | {e['rd']} | "
                 f"{e['comparisons']} | {cell(e['atk'])} | {cell(e['matk'])} | "
-                f"{cell(e['dfn'])} | {cell(e['mdef'])} | {e['location']} |")
+                f"{cell(e['dfn'])} | {cell(e['mdef'])} | {cell(e['hpl'])} | {e['location']} |")
         lines.append("")
     open(os.path.join(PROJECT, "data", "tier_list.md"), "w").write("\n".join(lines))
 

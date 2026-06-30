@@ -14,6 +14,7 @@
       "matk": 25,
       "dfn": 190,
       "mdef": 145,
+      "hpl": 598,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -30,6 +31,7 @@
       "matk": 16,
       "dfn": 125,
       "mdef": 160,
+      "hpl": 224,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -46,6 +48,7 @@
       "matk": 22,
       "dfn": 130,
       "mdef": 60,
+      "hpl": 245,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -62,6 +65,7 @@
       "matk": 15,
       "dfn": 175,
       "mdef": 145,
+      "hpl": 474,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -78,6 +82,7 @@
       "matk": 10,
       "dfn": 145,
       "mdef": 100,
+      "hpl": 83,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -94,6 +99,7 @@
       "matk": 55,
       "dfn": 140,
       "mdef": 160,
+      "hpl": 421,
       "location": "Cave in the Veldt",
       "coliseum": false
     },
@@ -110,6 +116,7 @@
       "matk": 12,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 208,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -126,6 +133,7 @@
       "matk": 15,
       "dfn": 190,
       "mdef": 125,
+      "hpl": 196,
       "location": "Ancient Castle",
       "coliseum": true
     },
@@ -142,6 +150,7 @@
       "matk": 9,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 132,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -158,6 +167,7 @@
       "matk": 17,
       "dfn": 110,
       "mdef": 145,
+      "hpl": 196,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -174,6 +184,7 @@
       "matk": 13,
       "dfn": 110,
       "mdef": 90,
+      "hpl": 333,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -190,6 +201,7 @@
       "matk": 15,
       "dfn": 150,
       "mdef": 160,
+      "hpl": 200,
       "location": "Cave in the Veldt",
       "coliseum": true
     },
@@ -206,6 +218,7 @@
       "matk": 10,
       "dfn": 185,
       "mdef": 145,
+      "hpl": 136,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -222,6 +235,7 @@
       "matk": 10,
       "dfn": 160,
       "mdef": 150,
+      "hpl": 181,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -238,6 +252,7 @@
       "matk": 12,
       "dfn": 130,
       "mdef": 110,
+      "hpl": 201,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -254,6 +269,7 @@
       "matk": 8,
       "dfn": 80,
       "mdef": 120,
+      "hpl": 203,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -270,6 +286,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 150,
+      "hpl": 1231,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -286,6 +303,7 @@
       "matk": 12,
       "dfn": 155,
       "mdef": 155,
+      "hpl": 127,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -302,6 +320,7 @@
       "matk": 14,
       "dfn": 110,
       "mdef": 145,
+      "hpl": 121,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -318,6 +337,7 @@
       "matk": 7,
       "dfn": 105,
       "mdef": 155,
+      "hpl": 163,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -334,6 +354,7 @@
       "matk": 15,
       "dfn": 5,
       "mdef": 70,
+      "hpl": 463,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -350,6 +371,7 @@
       "matk": 5,
       "dfn": 100,
       "mdef": 180,
+      "hpl": 119,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -366,6 +388,7 @@
       "matk": 10,
       "dfn": 90,
       "mdef": 250,
+      "hpl": 94,
       "location": "Ancient Castle; Cave to the Ancient Castle",
       "coliseum": false
     },
@@ -382,6 +405,7 @@
       "matk": 10,
       "dfn": 90,
       "mdef": 105,
+      "hpl": 190,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -398,6 +422,7 @@
       "matk": 12,
       "dfn": 100,
       "mdef": 155,
+      "hpl": 154,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -414,6 +439,7 @@
       "matk": 10,
       "dfn": 135,
       "mdef": 155,
+      "hpl": 93,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -430,6 +456,7 @@
       "matk": 7,
       "dfn": 70,
       "mdef": 250,
+      "hpl": 121,
       "location": "Ancient Castle; Cave to the Ancient Castle",
       "coliseum": false
     },
@@ -446,6 +473,7 @@
       "matk": 6,
       "dfn": 115,
       "mdef": 105,
+      "hpl": 125,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -462,6 +490,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 145,
+      "hpl": 123,
       "location": "Phoenix Cave",
       "coliseum": true
     },
@@ -478,6 +507,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 180,
+      "hpl": 296,
       "location": "Umaro's Cave",
       "coliseum": true
     },
@@ -494,6 +524,7 @@
       "matk": 50,
       "dfn": 255,
       "mdef": 255,
+      "hpl": 0,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -510,6 +541,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 90,
+      "hpl": 113,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -526,6 +558,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 202,
       "location": "Cyan's Soul",
       "coliseum": false
     },
@@ -542,6 +575,7 @@
       "matk": 5,
       "dfn": 140,
       "mdef": 140,
+      "hpl": 115,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -558,6 +592,7 @@
       "matk": 11,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 103,
       "location": "Zone Eater's Belly",
       "coliseum": true
     },
@@ -574,6 +609,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 85,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -590,6 +626,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 250,
+      "hpl": 101,
       "location": "Cave to the Ancient Castle",
       "coliseum": true
     },
@@ -606,6 +643,7 @@
       "matk": 11,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 96,
       "location": "Zone Eater's Belly",
       "coliseum": false
     },
@@ -622,6 +660,7 @@
       "matk": 10,
       "dfn": 130,
       "mdef": 110,
+      "hpl": 241,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -638,6 +677,7 @@
       "matk": 7,
       "dfn": 90,
       "mdef": 250,
+      "hpl": 89,
       "location": "Ancient Castle",
       "coliseum": false
     },
@@ -654,6 +694,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 145,
+      "hpl": 136,
       "location": "Mt. Zozo",
       "coliseum": true
     },
@@ -670,6 +711,7 @@
       "matk": 7,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 47,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -686,6 +728,7 @@
       "matk": 7,
       "dfn": 120,
       "mdef": 165,
+      "hpl": 78,
       "location": "Phoenix Cave",
       "coliseum": true
     },
@@ -702,6 +745,7 @@
       "matk": 7,
       "dfn": 130,
       "mdef": 145,
+      "hpl": 68,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -718,6 +762,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 97,
       "location": "Phoenix Cave",
       "coliseum": true
     },
@@ -734,6 +779,7 @@
       "matk": 11,
       "dfn": 120,
       "mdef": 160,
+      "hpl": 81,
       "location": "Zone Eater's Belly",
       "coliseum": true
     },
@@ -750,6 +796,7 @@
       "matk": 25,
       "dfn": 20,
       "mdef": 165,
+      "hpl": 38,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -766,6 +813,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 150,
+      "hpl": 132,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -782,6 +830,7 @@
       "matk": 11,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 104,
       "location": "Zone Eater's Belly",
       "coliseum": true
     },
@@ -798,6 +847,7 @@
       "matk": 8,
       "dfn": 115,
       "mdef": 150,
+      "hpl": 63,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -814,6 +864,7 @@
       "matk": 10,
       "dfn": 135,
       "mdef": 150,
+      "hpl": 84,
       "location": "Ebot's Rock",
       "coliseum": true
     },
@@ -830,6 +881,7 @@
       "matk": 10,
       "dfn": 135,
       "mdef": 100,
+      "hpl": 89,
       "location": "Phoenix Cave",
       "coliseum": false
     },
@@ -846,6 +898,7 @@
       "matk": 11,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 84,
       "location": "Zone Eater's Belly",
       "coliseum": true
     },
@@ -862,6 +915,7 @@
       "matk": 10,
       "dfn": 252,
       "mdef": 252,
+      "hpl": 1,
       "location": "Phoenix Cave",
       "coliseum": false
     },
@@ -878,6 +932,7 @@
       "matk": 10,
       "dfn": 5,
       "mdef": 85,
+      "hpl": 205,
       "location": "Phoenix Cave",
       "coliseum": true
     },
@@ -894,6 +949,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 155,
+      "hpl": 90,
       "location": "Zone Eater's Belly",
       "coliseum": true
     },
@@ -910,6 +966,7 @@
       "matk": 10,
       "dfn": 190,
       "mdef": 170,
+      "hpl": 38,
       "location": "Kefka's Tower",
       "coliseum": false
     },
@@ -926,6 +983,7 @@
       "matk": 7,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 73,
       "location": "Phoenix Cave",
       "coliseum": false
     },
@@ -942,6 +1000,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 135,
+      "hpl": 101,
       "location": "Ebot's Rock",
       "coliseum": false
     },
@@ -958,6 +1017,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 145,
+      "hpl": 86,
       "location": "World of Ruin",
       "coliseum": true
     },
@@ -974,6 +1034,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 155,
+      "hpl": 80,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -990,6 +1051,7 @@
       "matk": 10,
       "dfn": 135,
       "mdef": 155,
+      "hpl": 97,
       "location": "Narshe",
       "coliseum": true
     },
@@ -1006,6 +1068,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 200,
+      "hpl": 5,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1022,6 +1085,7 @@
       "matk": 35,
       "dfn": 220,
       "mdef": 190,
+      "hpl": 3,
       "location": "Fanatics Tower",
       "coliseum": false
     },
@@ -1038,6 +1102,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 254,
+      "hpl": 2,
       "location": "Kefka's Tower",
       "coliseum": false
     },
@@ -1054,6 +1119,7 @@
       "matk": 10,
       "dfn": 180,
       "mdef": 225,
+      "hpl": 34,
       "location": "Ebot's Rock",
       "coliseum": false
     },
@@ -1070,6 +1136,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 150,
+      "hpl": 71,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1086,6 +1153,7 @@
       "matk": 7,
       "dfn": 100,
       "mdef": 135,
+      "hpl": 207,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -1102,6 +1170,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 145,
+      "hpl": 70,
       "location": "Cyan's Soul; Doma Castle",
       "coliseum": false
     },
@@ -1118,6 +1187,7 @@
       "matk": 12,
       "dfn": 125,
       "mdef": 140,
+      "hpl": 69,
       "location": "Cave in the Veldt",
       "coliseum": false
     },
@@ -1134,6 +1204,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 155,
+      "hpl": 73,
       "location": "Ancient Castle; Cyan's Soul; Doma Castle",
       "coliseum": false
     },
@@ -1150,6 +1221,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 160,
+      "hpl": 79,
       "location": "Ancient Castle; Cyan's Soul; Doma Castle",
       "coliseum": false
     },
@@ -1166,6 +1238,7 @@
       "matk": 8,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 82,
       "location": "Cyan's Soul",
       "coliseum": false
     },
@@ -1182,6 +1255,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 155,
+      "hpl": 63,
       "location": "Mt. Zozo",
       "coliseum": false
     },
@@ -1198,6 +1272,7 @@
       "matk": 10,
       "dfn": 165,
       "mdef": 140,
+      "hpl": 71,
       "location": "Mt. Zozo",
       "coliseum": false
     },
@@ -1214,6 +1289,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 150,
+      "hpl": 44,
       "location": "Phoenix Cave",
       "coliseum": false
     },
@@ -1230,6 +1306,7 @@
       "matk": 10,
       "dfn": 210,
       "mdef": 125,
+      "hpl": 61,
       "location": "Mt. Zozo",
       "coliseum": false
     },
@@ -1246,6 +1323,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 145,
+      "hpl": 70,
       "location": "Ebot's Rock",
       "coliseum": false
     },
@@ -1262,6 +1340,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 160,
+      "hpl": 66,
       "location": "Ebot's Rock",
       "coliseum": false
     },
@@ -1278,6 +1357,7 @@
       "matk": 9,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 73,
       "location": "Cyan's Soul",
       "coliseum": false
     },
@@ -1294,6 +1374,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 155,
+      "hpl": 53,
       "location": "Darill's Tomb",
       "coliseum": false
     },
@@ -1310,6 +1391,7 @@
       "matk": 4,
       "dfn": 105,
       "mdef": 155,
+      "hpl": 447,
       "location": "Kefka's Tower",
       "coliseum": true
     },
@@ -1326,6 +1408,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 155,
+      "hpl": 67,
       "location": "Ebot's Rock",
       "coliseum": false
     },
@@ -1342,6 +1425,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 115,
+      "hpl": 108,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -1358,6 +1442,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 155,
+      "hpl": 62,
       "location": "Ebot's Rock",
       "coliseum": false
     },
@@ -1374,6 +1459,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 140,
+      "hpl": 53,
       "location": "Darill's Tomb",
       "coliseum": false
     },
@@ -1390,6 +1476,7 @@
       "matk": 30,
       "dfn": 60,
       "mdef": 170,
+      "hpl": 115,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -1406,6 +1493,7 @@
       "matk": 10,
       "dfn": 95,
       "mdef": 145,
+      "hpl": 97,
       "location": "Darill's Tomb",
       "coliseum": false
     },
@@ -1422,6 +1510,7 @@
       "matk": 9,
       "dfn": 110,
       "mdef": 140,
+      "hpl": 59,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -1438,6 +1527,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 150,
+      "hpl": 30,
       "location": "Cyan's Soul",
       "coliseum": false
     },
@@ -1454,6 +1544,7 @@
       "matk": 8,
       "dfn": 110,
       "mdef": 145,
+      "hpl": 97,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -1470,6 +1561,7 @@
       "matk": 10,
       "dfn": 130,
       "mdef": 150,
+      "hpl": 61,
       "location": "Umaro's Cave",
       "coliseum": false
     },
@@ -1486,6 +1578,7 @@
       "matk": 10,
       "dfn": 145,
       "mdef": 140,
+      "hpl": 71,
       "location": "Darill's Tomb",
       "coliseum": false
     },
@@ -1502,6 +1595,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 120,
+      "hpl": 61,
       "location": "Umaro's Cave",
       "coliseum": false
     },
@@ -1518,6 +1612,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 145,
+      "hpl": 52,
       "location": "Mt. Zozo",
       "coliseum": false
     },
@@ -1534,6 +1629,7 @@
       "matk": 10,
       "dfn": 254,
       "mdef": 254,
+      "hpl": 0,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1550,6 +1646,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 145,
+      "hpl": 61,
       "location": "Umaro's Cave",
       "coliseum": false
     },
@@ -1566,6 +1663,7 @@
       "matk": 10,
       "dfn": 155,
       "mdef": 140,
+      "hpl": 47,
       "location": "Narshe",
       "coliseum": false
     },
@@ -1582,6 +1680,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 145,
+      "hpl": 56,
       "location": "Narshe",
       "coliseum": false
     },
@@ -1598,6 +1697,7 @@
       "matk": 10,
       "dfn": 140,
       "mdef": 80,
+      "hpl": 39,
       "location": "Cyan's Soul; Doma Castle",
       "coliseum": false
     },
@@ -1614,6 +1714,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 145,
+      "hpl": 61,
       "location": "Umaro's Cave",
       "coliseum": false
     },
@@ -1630,6 +1731,7 @@
       "matk": 10,
       "dfn": 145,
       "mdef": 105,
+      "hpl": 59,
       "location": "Narshe",
       "coliseum": false
     },
@@ -1646,6 +1748,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 155,
+      "hpl": 67,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -1662,6 +1765,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 69,
       "location": "Figaro Castle; South Figaro Cave",
       "coliseum": false
     },
@@ -1678,6 +1782,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 140,
+      "hpl": 31,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -1694,6 +1799,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 87,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1710,6 +1816,7 @@
       "matk": 5,
       "dfn": 145,
       "mdef": 85,
+      "hpl": 58,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -1726,6 +1833,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 43,
       "location": "Narshe",
       "coliseum": false
     },
@@ -1742,6 +1850,7 @@
       "matk": 10,
       "dfn": 165,
       "mdef": 125,
+      "hpl": 28,
       "location": "Narshe",
       "coliseum": false
     },
@@ -1758,6 +1867,7 @@
       "matk": 10,
       "dfn": 102,
       "mdef": 153,
+      "hpl": 49,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1774,6 +1884,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 25,
       "location": "Jidoor",
       "coliseum": false
     },
@@ -1790,6 +1901,7 @@
       "matk": 9,
       "dfn": 125,
       "mdef": 140,
+      "hpl": 63,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1806,6 +1918,7 @@
       "matk": 10,
       "dfn": 150,
       "mdef": 100,
+      "hpl": 95,
       "location": "Cave to the Sealed Gate",
       "coliseum": false
     },
@@ -1822,6 +1935,7 @@
       "matk": 5,
       "dfn": 135,
       "mdef": 140,
+      "hpl": 61,
       "location": "Cave to the Sealed Gate; Floating Continent",
       "coliseum": false
     },
@@ -1838,6 +1952,7 @@
       "matk": 10,
       "dfn": 102,
       "mdef": 153,
+      "hpl": 45,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1854,6 +1969,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 150,
+      "hpl": 73,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -1870,6 +1986,7 @@
       "matk": 10,
       "dfn": 225,
       "mdef": 45,
+      "hpl": 54,
       "location": "Esper Mountain",
       "coliseum": false
     },
@@ -1886,6 +2003,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 160,
+      "hpl": 52,
       "location": "Narshe",
       "coliseum": false
     },
@@ -1902,6 +2020,7 @@
       "matk": 9,
       "dfn": 135,
       "mdef": 155,
+      "hpl": 38,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1918,6 +2037,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 140,
+      "hpl": 54,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1934,6 +2054,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 48,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -1950,6 +2071,7 @@
       "matk": 8,
       "dfn": 200,
       "mdef": 150,
+      "hpl": 63,
       "location": "Vector",
       "coliseum": false
     },
@@ -1966,6 +2088,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 110,
+      "hpl": 102,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -1982,6 +2105,7 @@
       "matk": 3,
       "dfn": 105,
       "mdef": 50,
+      "hpl": 79,
       "location": "Cyan's Soul",
       "coliseum": true
     },
@@ -1998,6 +2122,7 @@
       "matk": 10,
       "dfn": 102,
       "mdef": 20,
+      "hpl": 154,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2014,6 +2139,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 110,
+      "hpl": 52,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -2030,6 +2156,7 @@
       "matk": 10,
       "dfn": 102,
       "mdef": 153,
+      "hpl": 49,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2046,6 +2173,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 140,
+      "hpl": 30,
       "location": "Umaro's Cave",
       "coliseum": false
     },
@@ -2062,6 +2190,7 @@
       "matk": 10,
       "dfn": 220,
       "mdef": 140,
+      "hpl": 32,
       "location": "MagiTek Factory; Vector",
       "coliseum": false
     },
@@ -2078,6 +2207,7 @@
       "matk": 13,
       "dfn": 120,
       "mdef": 150,
+      "hpl": 129,
       "location": "Imperial Camp",
       "coliseum": false
     },
@@ -2094,6 +2224,7 @@
       "matk": 4,
       "dfn": 155,
       "mdef": 130,
+      "hpl": 56,
       "location": "Blackjack",
       "coliseum": false
     },
@@ -2110,6 +2241,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 43,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2126,6 +2258,7 @@
       "matk": 10,
       "dfn": 155,
       "mdef": 145,
+      "hpl": 22,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2142,6 +2275,7 @@
       "matk": 12,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 52,
       "location": "Cave to the Sealed Gate",
       "coliseum": false
     },
@@ -2158,6 +2292,7 @@
       "matk": 10,
       "dfn": 102,
       "mdef": 153,
+      "hpl": 48,
       "location": "Figaro Castle; South Figaro Cave",
       "coliseum": false
     },
@@ -2174,6 +2309,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 145,
+      "hpl": 37,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2190,6 +2326,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 150,
+      "hpl": 36,
       "location": "Esper Mountain",
       "coliseum": false
     },
@@ -2206,6 +2343,7 @@
       "matk": 10,
       "dfn": 210,
       "mdef": 145,
+      "hpl": 32,
       "location": "Imperial Base; Imperial Palace; MagiTek Factory; Vector",
       "coliseum": false
     },
@@ -2222,6 +2360,7 @@
       "matk": 10,
       "dfn": 10,
       "mdef": 20,
+      "hpl": 75,
       "location": "Ancient Castle; Cyan's Soul; Doma Castle",
       "coliseum": false
     },
@@ -2238,6 +2377,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 150,
+      "hpl": 93,
       "location": "Narshe",
       "coliseum": false
     },
@@ -2254,6 +2394,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 155,
+      "hpl": 42,
       "location": "Esper Mountain",
       "coliseum": false
     },
@@ -2270,6 +2411,7 @@
       "matk": 10,
       "dfn": 145,
       "mdef": 135,
+      "hpl": 30,
       "location": "Figaro Castle; South Figaro Cave",
       "coliseum": false
     },
@@ -2286,6 +2428,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 105,
+      "hpl": 41,
       "location": "Darill's Tomb",
       "coliseum": false
     },
@@ -2302,6 +2445,7 @@
       "matk": 10,
       "dfn": 1,
       "mdef": 1,
+      "hpl": 240,
       "location": "Floating Continent",
       "coliseum": false
     },
@@ -2318,6 +2462,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 125,
+      "hpl": 50,
       "location": "Esper Mountain",
       "coliseum": false
     },
@@ -2334,6 +2479,7 @@
       "matk": 7,
       "dfn": 150,
       "mdef": 120,
+      "hpl": 38,
       "location": "Blackjack",
       "coliseum": false
     },
@@ -2350,6 +2496,7 @@
       "matk": 30,
       "dfn": 100,
       "mdef": 100,
+      "hpl": 3,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2366,6 +2513,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 37,
       "location": "Figaro Castle",
       "coliseum": false
     },
@@ -2382,6 +2530,7 @@
       "matk": 10,
       "dfn": 140,
       "mdef": 155,
+      "hpl": 50,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2398,6 +2547,7 @@
       "matk": 10,
       "dfn": 200,
       "mdef": 100,
+      "hpl": 42,
       "location": "MagiTek Research Facility",
       "coliseum": false
     },
@@ -2414,6 +2564,7 @@
       "matk": 10,
       "dfn": 140,
       "mdef": 80,
+      "hpl": 43,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2430,6 +2581,7 @@
       "matk": 3,
       "dfn": 100,
       "mdef": 165,
+      "hpl": 70,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2446,6 +2598,7 @@
       "matk": 10,
       "dfn": 180,
       "mdef": 135,
+      "hpl": 29,
       "location": "MagiTek Factory; Vector",
       "coliseum": false
     },
@@ -2462,6 +2615,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 105,
+      "hpl": 32,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2478,6 +2632,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 120,
+      "hpl": 33,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2494,6 +2649,7 @@
       "matk": 10,
       "dfn": 200,
       "mdef": 150,
+      "hpl": 14,
       "location": "MagiTek Factory; Vector",
       "coliseum": false
     },
@@ -2510,6 +2666,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 39,
       "location": "Cave to the Sealed Gate",
       "coliseum": false
     },
@@ -2526,6 +2683,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 190,
+      "hpl": 31,
       "location": "Opera House",
       "coliseum": false
     },
@@ -2542,6 +2700,7 @@
       "matk": 10,
       "dfn": 0,
       "mdef": 150,
+      "hpl": 176,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2558,6 +2717,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 120,
+      "hpl": 34,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2574,6 +2734,7 @@
       "matk": 10,
       "dfn": 220,
       "mdef": 5,
+      "hpl": 24,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2590,6 +2751,7 @@
       "matk": 10,
       "dfn": 135,
       "mdef": 145,
+      "hpl": 36,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2606,6 +2768,7 @@
       "matk": 11,
       "dfn": 150,
       "mdef": 110,
+      "hpl": 38,
       "location": "Narshe; South Figaro",
       "coliseum": false
     },
@@ -2622,6 +2785,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 140,
+      "hpl": 33,
       "location": "Imperial Palace",
       "coliseum": false
     },
@@ -2638,6 +2802,7 @@
       "matk": 10,
       "dfn": 155,
       "mdef": 105,
+      "hpl": 34,
       "location": "MagiTek Factory",
       "coliseum": false
     },
@@ -2654,6 +2819,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 130,
+      "hpl": 24,
       "location": "Cave to the Sealed Gate",
       "coliseum": false
     },
@@ -2670,6 +2836,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 130,
+      "hpl": 18,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -2686,6 +2853,7 @@
       "matk": 8,
       "dfn": 170,
       "mdef": 120,
+      "hpl": 25,
       "location": "MagiTek Research Facility",
       "coliseum": false
     },
@@ -2702,6 +2870,7 @@
       "matk": 4,
       "dfn": 110,
       "mdef": 70,
+      "hpl": 48,
       "location": "Figaro Castle; South Figaro Cave",
       "coliseum": false
     },
@@ -2718,6 +2887,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 150,
+      "hpl": 27,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2734,6 +2904,7 @@
       "matk": 5,
       "dfn": 125,
       "mdef": 115,
+      "hpl": 75,
       "location": "Zozo",
       "coliseum": false
     },
@@ -2750,6 +2921,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 150,
+      "hpl": 28,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2766,6 +2938,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 140,
+      "hpl": 20,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2782,6 +2955,7 @@
       "matk": 3,
       "dfn": 150,
       "mdef": 150,
+      "hpl": 30,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2798,6 +2972,7 @@
       "matk": 6,
       "dfn": 140,
       "mdef": 115,
+      "hpl": 10,
       "location": "Tzen",
       "coliseum": false
     },
@@ -2814,6 +2989,7 @@
       "matk": 9,
       "dfn": 5,
       "mdef": 215,
+      "hpl": 11,
       "location": "Tzen",
       "coliseum": false
     },
@@ -2830,6 +3006,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 27,
       "location": "Zozo",
       "coliseum": false
     },
@@ -2846,6 +3023,7 @@
       "matk": 10,
       "dfn": 120,
       "mdef": 150,
+      "hpl": 19,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2862,6 +3040,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 160,
+      "hpl": 19,
       "location": "Opera House",
       "coliseum": false
     },
@@ -2878,6 +3057,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 190,
+      "hpl": 30,
       "location": "Cave to the Sealed Gate",
       "coliseum": false
     },
@@ -2894,6 +3074,7 @@
       "matk": 10,
       "dfn": 115,
       "mdef": 145,
+      "hpl": 26,
       "location": "Zozo",
       "coliseum": false
     },
@@ -2910,6 +3091,7 @@
       "matk": 10,
       "dfn": 125,
       "mdef": 125,
+      "hpl": 33,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2926,6 +3108,7 @@
       "matk": 10,
       "dfn": 105,
       "mdef": 165,
+      "hpl": 19,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2942,6 +3125,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 155,
+      "hpl": 27,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -2958,6 +3142,7 @@
       "matk": 1,
       "dfn": 140,
       "mdef": 5,
+      "hpl": 26,
       "location": "Cyan's Soul; Doma Castle",
       "coliseum": false
     },
@@ -2974,6 +3159,7 @@
       "matk": 10,
       "dfn": 65,
       "mdef": 180,
+      "hpl": 32,
       "location": "Lete River",
       "coliseum": false
     },
@@ -2990,6 +3176,7 @@
       "matk": 10,
       "dfn": 85,
       "mdef": 155,
+      "hpl": 23,
       "location": "Zozo",
       "coliseum": false
     },
@@ -3006,6 +3193,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 39,
       "location": "Imperial Camp",
       "coliseum": false
     },
@@ -3022,6 +3210,7 @@
       "matk": 5,
       "dfn": 150,
       "mdef": 80,
+      "hpl": 12,
       "location": "Tzen",
       "coliseum": false
     },
@@ -3038,6 +3227,7 @@
       "matk": 10,
       "dfn": 95,
       "mdef": 150,
+      "hpl": 23,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3054,6 +3244,7 @@
       "matk": 10,
       "dfn": 55,
       "mdef": 170,
+      "hpl": 27,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3070,6 +3261,7 @@
       "matk": 10,
       "dfn": 20,
       "mdef": 130,
+      "hpl": 25,
       "location": "Thamasa",
       "coliseum": false
     },
@@ -3086,6 +3278,7 @@
       "matk": 10,
       "dfn": 75,
       "mdef": 145,
+      "hpl": 22,
       "location": "World of Balance; Zozo",
       "coliseum": false
     },
@@ -3102,6 +3295,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 21,
       "location": "Lete River",
       "coliseum": false
     },
@@ -3118,6 +3312,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 19,
       "location": "Serpent Trench",
       "coliseum": false
     },
@@ -3134,6 +3329,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 135,
+      "hpl": 27,
       "location": "Mt. Kolts",
       "coliseum": false
     },
@@ -3150,6 +3346,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 18,
       "location": "Lete River",
       "coliseum": false
     },
@@ -3166,6 +3363,7 @@
       "matk": 10,
       "dfn": 95,
       "mdef": 150,
+      "hpl": 19,
       "location": "Phantom Train",
       "coliseum": false
     },
@@ -3182,6 +3380,7 @@
       "matk": 8,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 20,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3198,6 +3397,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 125,
+      "hpl": 20,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3214,6 +3414,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 17,
       "location": "Phantom Train",
       "coliseum": false
     },
@@ -3230,6 +3431,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 155,
+      "hpl": 29,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3246,6 +3448,7 @@
       "matk": 10,
       "dfn": 75,
       "mdef": 140,
+      "hpl": 22,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3262,6 +3465,7 @@
       "matk": 10,
       "dfn": 102,
       "mdef": 170,
+      "hpl": 16,
       "location": "Mt. Kolts",
       "coliseum": false
     },
@@ -3278,6 +3482,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 150,
+      "hpl": 26,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3294,6 +3499,7 @@
       "matk": 10,
       "dfn": 90,
       "mdef": 150,
+      "hpl": 12,
       "location": "South Figaro Cave",
       "coliseum": false
     },
@@ -3310,6 +3516,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 50,
+      "hpl": 22,
       "location": "Esper Mountain",
       "coliseum": false
     },
@@ -3326,6 +3533,7 @@
       "matk": 6,
       "dfn": 80,
       "mdef": 150,
+      "hpl": 24,
       "location": "Serpent Trench",
       "coliseum": false
     },
@@ -3342,6 +3550,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 150,
+      "hpl": 15,
       "location": "South Figaro",
       "coliseum": false
     },
@@ -3358,6 +3567,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 10,
       "location": "South Figaro",
       "coliseum": false
     },
@@ -3374,6 +3584,7 @@
       "matk": 7,
       "dfn": 55,
       "mdef": 150,
+      "hpl": 30,
       "location": "Phantom Train",
       "coliseum": false
     },
@@ -3390,6 +3601,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 16,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3406,6 +3618,7 @@
       "matk": 7,
       "dfn": 110,
       "mdef": 150,
+      "hpl": 10,
       "location": "Phantom Train",
       "coliseum": false
     },
@@ -3422,6 +3635,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 155,
+      "hpl": 17,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3438,6 +3652,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 155,
+      "hpl": 17,
       "location": "South Figaro Cave",
       "coliseum": false
     },
@@ -3454,6 +3669,7 @@
       "matk": 10,
       "dfn": 40,
       "mdef": 140,
+      "hpl": 21,
       "location": "South Figaro Cave",
       "coliseum": false
     },
@@ -3470,6 +3686,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 150,
+      "hpl": 9,
       "location": "Doma Castle; Imperial Camp",
       "coliseum": false
     },
@@ -3486,6 +3703,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 155,
+      "hpl": 22,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3502,6 +3720,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 150,
+      "hpl": 19,
       "location": "Imperial Camp",
       "coliseum": false
     },
@@ -3518,6 +3737,7 @@
       "matk": 10,
       "dfn": 55,
       "mdef": 150,
+      "hpl": 13,
       "location": "Phantom Forest",
       "coliseum": false
     },
@@ -3534,6 +3754,7 @@
       "matk": 10,
       "dfn": 110,
       "mdef": 145,
+      "hpl": 11,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3550,6 +3771,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 15,
       "location": "South Figaro Cave",
       "coliseum": false
     },
@@ -3566,6 +3788,7 @@
       "matk": 10,
       "dfn": 50,
       "mdef": 150,
+      "hpl": 13,
       "location": "South Figaro Cave",
       "coliseum": false
     },
@@ -3582,6 +3805,7 @@
       "matk": 10,
       "dfn": 55,
       "mdef": 135,
+      "hpl": 16,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3598,6 +3822,7 @@
       "matk": 10,
       "dfn": 13,
       "mdef": 100,
+      "hpl": 13,
       "location": "MagiTek Factory",
       "coliseum": false
     },
@@ -3614,6 +3839,7 @@
       "matk": 10,
       "dfn": 70,
       "mdef": 140,
+      "hpl": 14,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3630,6 +3856,7 @@
       "matk": 1,
       "dfn": 25,
       "mdef": 140,
+      "hpl": 22,
       "location": "MagiTek Research Facility",
       "coliseum": false
     },
@@ -3646,6 +3873,7 @@
       "matk": 10,
       "dfn": 85,
       "mdef": 100,
+      "hpl": 13,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3662,6 +3890,7 @@
       "matk": 2,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 18,
       "location": "Serpent Trench",
       "coliseum": false
     },
@@ -3678,6 +3907,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 110,
+      "hpl": 13,
       "location": "Mt. Kolts",
       "coliseum": false
     },
@@ -3694,6 +3924,7 @@
       "matk": 10,
       "dfn": 80,
       "mdef": 135,
+      "hpl": 14,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3710,6 +3941,7 @@
       "matk": 1,
       "dfn": 105,
       "mdef": 150,
+      "hpl": 23,
       "location": "Phantom Forest; Phantom Train",
       "coliseum": false
     },
@@ -3726,6 +3958,7 @@
       "matk": 10,
       "dfn": 55,
       "mdef": 125,
+      "hpl": 10,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3742,6 +3975,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 150,
+      "hpl": 6,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3758,6 +3992,7 @@
       "matk": 10,
       "dfn": 45,
       "mdef": 155,
+      "hpl": 17,
       "location": "South Figaro Cave",
       "coliseum": false
     },
@@ -3774,6 +4009,7 @@
       "matk": 10,
       "dfn": 95,
       "mdef": 150,
+      "hpl": 3,
       "location": "Mt. Kolts; Narshe",
       "coliseum": false
     },
@@ -3790,6 +4026,7 @@
       "matk": 10,
       "dfn": 100,
       "mdef": 70,
+      "hpl": 15,
       "location": "Mt. Kolts",
       "coliseum": false
     },
@@ -3806,6 +4043,7 @@
       "matk": 8,
       "dfn": 0,
       "mdef": 160,
+      "hpl": 18,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3822,6 +4060,7 @@
       "matk": 1,
       "dfn": 20,
       "mdef": 140,
+      "hpl": 14,
       "location": "MagiTek Research Facility",
       "coliseum": false
     },
@@ -3838,6 +4077,7 @@
       "matk": 1,
       "dfn": 90,
       "mdef": 150,
+      "hpl": 20,
       "location": "Phantom Train",
       "coliseum": false
     },
@@ -3854,6 +4094,7 @@
       "matk": 10,
       "dfn": 90,
       "mdef": 120,
+      "hpl": 7,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3870,6 +4111,7 @@
       "matk": 6,
       "dfn": 100,
       "mdef": 140,
+      "hpl": 8,
       "location": "Narshe; Vector",
       "coliseum": false
     },
@@ -3886,6 +4128,7 @@
       "matk": 10,
       "dfn": 10,
       "mdef": 135,
+      "hpl": 16,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3902,6 +4145,7 @@
       "matk": 10,
       "dfn": 60,
       "mdef": 140,
+      "hpl": 7,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3918,6 +4162,7 @@
       "matk": 10,
       "dfn": 55,
       "mdef": 140,
+      "hpl": 7,
       "location": "World of Balance",
       "coliseum": false
     },
@@ -3934,6 +4179,7 @@
       "matk": 3,
       "dfn": 30,
       "mdef": 130,
+      "hpl": 26,
       "location": "Figaro Castle; Imperial Camp",
       "coliseum": false
     },
@@ -3950,6 +4196,7 @@
       "matk": 0,
       "dfn": 75,
       "mdef": 160,
+      "hpl": 115,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3966,6 +4213,7 @@
       "matk": 3,
       "dfn": 80,
       "mdef": 120,
+      "hpl": 5,
       "location": "Narshe",
       "coliseum": false
     },
@@ -3982,6 +4230,7 @@
       "matk": 10,
       "dfn": 5,
       "mdef": 5,
+      "hpl": 0,
       "location": "World of Ruin",
       "coliseum": false
     },
@@ -3998,6 +4247,7 @@
       "matk": 10,
       "dfn": 5,
       "mdef": 5,
+      "hpl": 0,
       "location": "World of Ruin",
       "coliseum": false
     }
