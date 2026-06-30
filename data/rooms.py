@@ -181,7 +181,7 @@ room_data = {
     'ruin-201' : [ [469], [2065], [3068], 0],   #Phantom Train Station + custom return from train
     'ruin-202' : [ [470, 471, 472, 473, 1528, 1529, 1530, 1531, 1532], [ ], [ ], [], {('pt2','SABIN'): [2068]}, 0], #Phantom Train Outside Front Section with character gating
     'ruin-phantomforest' : [ [1188, 465, 468], [], [], 0],   #Phantom Forest, all rooms + spring (internally randomized)
-    'ruin-thamasa': [[1261, 1260], [], [3055, 3075], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house
+    'ruin-thamasa': [[1261, 1260], [], [3055, 3075, 3085], [], {'STRAGO': [2054]}, 1],     # Thamasa WOR + Veldt Cave dest + burning house + Ebot's Rock character reward dest (pit 3085)
     'ruin-figarocastle': [[5156, 5157, 5158, 5159], [], [], ['fcer'], {('EDGAR', 'fcer'): [1558]}, 1],  # Figaro Castle world map entrances (Ancient Castle entrance 1558 locked by engine room, which is locked by Edgar)
     'ruin-returners': [ [399], [2034], [ ], 0],  # Returners Hideout & Lete River Jumpoff
     'ruin-baren-falls': [[504], [], [], [], {"SABIN": [2076]}, 0],           # Baren Falls + one-way exit to Veldt.  Skip outside entry room (1196)
@@ -1118,6 +1118,7 @@ forced_connections = {
     2153: [3153],    # ST reward --> nikeah, trickery
 
     2055: [3055],    # Burning House defeating boss --> Thamasa Inn.  This *could* be randomized.
+    2085: [3085],    # Ebot's Rock character reward --> Thamasa.  Trap injected onto ms-wor-78 only when its reward is a character (see ruination.process_rewards).
 
     2059: [3059],    # Daryl's Tomb, Turtle #2 left to right
     2060: [3060],    # Daryl's Tomb, Turtle #2 right to left

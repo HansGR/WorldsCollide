@@ -3263,6 +3263,23 @@ class RuinationBranch(Network):
                 for this_exit in remaining_doors:
                     room_id = ordered_dead_ends.pop(0)
                     room = self.rooms.get_room(room_id)
+
+                    # Ebot's Rock is only a true dead end when it does NOT reward a
+                    # character: a character reward gains a forced exit to Thamasa
+                    # (injected in process_rewards), making it non-terminal so it is
+                    # connected via that trap in earlier finalize steps, never here.
+                    # Reaching step 6 as a dead end therefore means its reward was
+                    # never mapped and will be backfilled (events.py). Pin the slot to
+                    # esper/item so the backfill can't assign a character, which would
+                    # teleport the player into an unconnected, leaking Thamasa.
+                    if 'ms-wor-78' in str(room_id):
+                        er_reward = ROOM_REWARD.get('ms-wor-78', {}).get("Ebot's Rock")
+                        if er_reward is not None and er_reward.id is None:
+                            er_reward.possible_types &= (RewardType.ESPER | RewardType.ITEM)
+                            if self.verbose:
+                                vprint("\t(6) Ebot's Rock connected as a dead end -> "
+                                       "restricting its reward to esper/item (no character backfill)")
+
                     unprotected_room_doors = [d for d in room.doors if d not in self.protected]
                     this_conn = unprotected_room_doors.pop() if unprotected_room_doors else room.doors.pop()
                     if self.verbose:
@@ -5669,6 +5686,33 @@ class ruination_map():
                 new_areas = list(CHARACTER_AREAS[new_char])
                 new_areas = self._add_conditional_areas(new_areas, new_char)
                 self.distribute_areas(new_areas, method='shortest')
+
+                # Ebot's Rock diverts the party to Thamasa only when its reward is a
+                # character (esper/item rewards leave via door 1546). Model that forced
+                # one-way exit by injecting trap 2085 onto the live Ebot's Rock room;
+                # forced_connections[2085] = [3085] (pit 3085 in ruin-thamasa) is wired by
+                # finalize_map's ForceConnections, so Thamasa becomes a proper downstream
+                # node and its exits get connected instead of leaking to the world map.
+                # Kept out of static room_data so it stays conditional on the character
+                # reward. Both 2085 and 3085 are already in `protected` from distribution
+                # time (ForceConnections protects every forced pair regardless of presence),
+                # so injecting here can't be consumed early by branch extension.
+                if reward_name in ROOM_REWARD.get('ms-wor-78', {}):
+                    er_branch = self.branches[branch_id]
+                    er_room = er_branch.rooms.get_room('ms-wor-78')
+                    if er_room is None:
+                        # ms-wor-78 may have been merged into a compound room by
+                        # compress_loop; find the live node that contains it.
+                        for _node in er_branch.net.nodes:
+                            if 'ms-wor-78' in str(_node):
+                                er_room = er_branch.rooms.get_room(_node)
+                                break
+                    if er_room is not None and 2085 not in er_room.traps:
+                        er_room.add_traps([2085])
+                        er_branch.rooms.reindex_room(er_room.id)
+                        if self.verbose:
+                            vprint("\tEbot's Rock character reward: injected forced exit "
+                                   "(trap 2085 --> Thamasa pit 3085)")
 
             elif slot.type is RewardType.ESPER:
                 self.RewardsObtained[1] += 1
