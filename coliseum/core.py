@@ -292,25 +292,43 @@ def stats():
 
 
 def leaderboard(min_votes=10):
-    """Rank voters by how well their picks agree with the crowd consensus.
+    """Rank players by how well their picks agree with the crowd consensus.
 
-    Using the final replayed ratings, each of a voter's picks scores the
-    consensus probability that their chosen winner beats the loser
-    (Glicko expected score). ``accuracy`` is the share of picks where their
-    winner ended up higher-rated; ``calibration`` is the mean consensus
-    win-probability of their picks. (There is mild circularity - voters shape
-    the consensus they're judged against - acceptable for a fun one-off.)
+    Aggregated by **display name** so the same person across several
+    devices/browsers (each with its own anonymous id) is merged: every id that
+    ever used a given name is folded together, including that person's votes
+    cast before they set the name. Voters who never set a name stay separate
+    (shown as Anon-xxxx). Name matching is case-insensitive.
+
+    Using the final replayed ratings, each pick scores the consensus probability
+    that the chosen winner beats the loser (Glicko expected score). ``accuracy``
+    is the share of picks where the winner ended up higher-rated; ``calibration``
+    is the mean consensus win-probability of the picks. (Mild circularity -
+    voters shape the consensus they're judged against - fine for a one-off.)
     """
     state, _, votes = _compute()
+
+    # Each anonymous id -> the latest non-empty name it ever used.
+    id_name = {}
+    for v in votes:
+        if v.get("name"):
+            id_name[v.get("voter") or "anon"] = v["name"].strip()
+
+    def bucket(v):
+        vid = v.get("voter") or "anon"
+        name = id_name.get(vid)
+        if name:                                  # merge everyone who used a name
+            return ("name:" + name.lower(), name)
+        return ("id:" + vid, f"Anon-{vid[:4]}")   # unnamed -> keep separate
+
     agg = {}
     for v in votes:
         w, l = v.get("winner"), v.get("loser")
         if w not in state or l not in state:
             continue
-        voter = v.get("voter") or "anon"
-        a = agg.setdefault(voter, {"name": "", "n": 0, "correct": 0, "prob": 0.0})
-        if v.get("name"):
-            a["name"] = v["name"]
+        key, disp = bucket(v)
+        a = agg.setdefault(key, {"name": disp, "n": 0, "correct": 0, "prob": 0.0})
+        a["name"] = disp
         p = glicko2.expected_score(glicko2.Rating(state[w]["rating"], state[w]["rd"]),
                                    glicko2.Rating(state[l]["rating"], state[l]["rd"]))
         a["n"] += 1
@@ -319,12 +337,11 @@ def leaderboard(min_votes=10):
             a["correct"] += 1
 
     board = []
-    for voter, a in agg.items():
+    for key, a in agg.items():
         if a["n"] < min_votes:
             continue
         board.append({
-            "voter": voter,
-            "name": a["name"] or f"Anon-{voter[:4]}",
+            "name": a["name"],
             "votes": a["n"],
             "accuracy": round(100 * a["correct"] / a["n"], 1),
             "calibration": round(100 * a["prob"] / a["n"], 1),
