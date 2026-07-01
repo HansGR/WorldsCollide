@@ -150,9 +150,9 @@ ROOM_REWARD = {
     # CYAN
     #'ms-wob-18': {"Doma WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Doma Siege (non-ruination)
     371: {"Doma WOB": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Doma Siege (ruination)
-    429: {"Doma WOR_2": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 1: stooges
-    'ruin-wrexsoul': {"Doma WOR_1": [RewardType.CHARACTER, RewardType.ESPER]},  # Doma Dream 2: Wrexsoul
-    'ruin-doma': {"Doma WOR_3": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 3: throne (gated by Wrexsoul, though it's not a character so this doesn't affect gating)
+    429: {"Doma WOR_3": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 3: stooges
+    'ruin-wrexsoul': {"Doma WOR_1": [RewardType.CHARACTER, RewardType.ESPER]},  # Doma Dream 1: Wrexsoul
+    'ruin-doma': {"Doma WOR_2": [RewardType.ESPER, RewardType.ITEM]},  # Doma Dream 2: throne (gated by Wrexsoul, though it's not a character so this doesn't affect gating)
     256: {"Mt. Zozo": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Mt Zozo
     
     # SHADOW
