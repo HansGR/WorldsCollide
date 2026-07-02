@@ -109,7 +109,7 @@ Quick orientation by file. Detailed sections are in ARCHIVE.md.
 - **data/rooms.py** — Room definitions (incl. `ruin-*` variants) and `forced_connections`.
 - **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
 - **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
-- **data/walks.py** — `Network` class: connection graph, `apply_key()`, `initially_locked_exits` (excluded as targets — see ARCHIVE.md "Key/Lock Softlock Analysis").
+- **data/walks.py** — `Network` class: connection graph, `apply_key()`, `initially_locked_exits` (excluded as targets — see ARCHIVE.md "Key/Lock Softlock Analysis"). `add_room()` assesses the new room's locks against the current keychain (`_assess_room_locks`) — rooms can arrive after their lock's key was applied (character areas are distributed *after* the character key in `process_rewards`), and without this the lock stays shut forever (the Mog→lw1→Lone Wolf bug).
 
 ### Ruination Mode
 - **event/ruination.py** (~4700 lines) — `ruination_map` orchestrator, `RuinationBranch(Network)`, `generate_map_with_characters`, `extend_branch_path`, `finalize_map`, `RUIN_ROOM_SETS`, `ROOM_REWARD`. All `room_data` lookups in reserve searches must filter by `self.protected`.
