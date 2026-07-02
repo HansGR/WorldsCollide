@@ -55,8 +55,15 @@ class Network:
     def add_room(self, room_id):
         # Handler for adding a room after initialization
         self.original_room_ids.append(room_id)
-        self.rooms.add_room(Room(room_id, self.rooms))
+        room = Room(room_id, self.rooms)
+        self.rooms.add_room(room)
         self.net.add_node(room_id)
+        # A room can arrive after its lock's key was already applied (e.g. a
+        # character's areas are distributed only when that character is
+        # recruited, but the character key is applied to every branch first).
+        # Its locks load pristine, so assess them against the keychain now;
+        # otherwise they stay locked forever even though the key is held.
+        self._assess_room_locks(room)
 
     def ForceConnections(self, forcing, state='forced'):
         these_doors = self.rooms.doors + self.rooms.traps
@@ -184,58 +191,64 @@ class Network:
             #if self.verbose:
             #    print('\t\t\t\t\t\tchecking room ', room_id)
             room = self.rooms.get_room(room_id)
-            #if key in room.locks.keys():
-            room_keys = [k for k in room.locks.keys()]
-            for required_keys in room_keys:
-                # Check if key still exists - recursive apply_key calls may have already popped it
-                if required_keys not in room.locks:
-                    continue
-                if set(required_keys).issubset(self.keychain):
-                    if self.verbose:
-                        vprint('\t\t\tApplying key:', required_keys, 'in room', room.id)
-                    locked = room.locks.pop(required_keys)  # this also removes the item from room.locks
-                    for item in locked:
-                        if isinstance(item, str):
-                            # This is a key.  Move it to the room's keys (the room may not have been visited yet)
-                            # If the room is active, it will be caught next time we traverse it.
-                            if self.verbose:
-                                #vprint('\t\t\tApplying a new key:', item)
-                                vprint('\t\t\tadding a key:', item)
-                            #self.apply_key(item)
-                            room.add_keys([item])
-                        elif isinstance(item, dict):
-                            # This is another locked item.  Should not happen with tuple keys
-                            if self.verbose:
-                                vprint('\t\t\tApplying a new lock:', item)
-                            print('\t\t\tWARNING: found a nested lock in ', room_id,' : ', item)
-                            room.add_locks(item)
-                            unlockable = [k for k in item.keys() if set(k).issubset(self.keychain)]
-                            for k in unlockable:
-                                # unlock the nested lock, if we already have the key.
-                                if self.verbose:
-                                    vprint('\t\t\talready have key ', k,', applying it')
-                                self.apply_key(k)
-                        elif room.element_type(item) == 0:  # item < 2000
-                            # This is a door.
-                            if self.verbose:
-                                vprint('\t\t\tadding a door...', item)
-                            room.add_doors([item])
-                            self.initially_locked_exits.add(item)
-                        elif room.element_type(item) == 1:
-                            # This is a trap.
-                            if self.verbose:
-                                vprint('\t\t\tadding a trap...', item)
-                            room.add_traps([item])
-                            self.initially_locked_exits.add(item)
-                        else:
-                            # Error
-                            raise RoomError(f"Unknown item unlocked by key {required_keys} in room {room_id}: {item}")
+            self._assess_room_locks(room)
 
             # Delete the key, we already have it.
             if key in room.keys:
                 if self.verbose:
                     vprint('\t\t\tremoving key ', key, 'from', room.id)
                 room.remove(key)
+
+    def _assess_room_locks(self, room):
+        # Open every lock in `room` whose complete key set is already on the
+        # keychain. Released keys go to room.keys (applied when the room is
+        # connected); released doors/traps become live exits, recorded in
+        # initially_locked_exits so they are still excluded as walk targets.
+        room_keys = [k for k in room.locks.keys()]
+        for required_keys in room_keys:
+            # Check if key still exists - recursive apply_key calls may have already popped it
+            if required_keys not in room.locks:
+                continue
+            if set(required_keys).issubset(self.keychain):
+                if self.verbose:
+                    vprint('\t\t\tApplying key:', required_keys, 'in room', room.id)
+                locked = room.locks.pop(required_keys)  # this also removes the item from room.locks
+                for item in locked:
+                    if isinstance(item, str):
+                        # This is a key.  Move it to the room's keys (the room may not have been visited yet)
+                        # If the room is active, it will be caught next time we traverse it.
+                        if self.verbose:
+                            #vprint('\t\t\tApplying a new key:', item)
+                            vprint('\t\t\tadding a key:', item)
+                        #self.apply_key(item)
+                        room.add_keys([item])
+                    elif isinstance(item, dict):
+                        # This is another locked item.  Should not happen with tuple keys
+                        if self.verbose:
+                            vprint('\t\t\tApplying a new lock:', item)
+                        print('\t\t\tWARNING: found a nested lock in ', room.id,' : ', item)
+                        room.add_locks(item)
+                        unlockable = [k for k in item.keys() if set(k).issubset(self.keychain)]
+                        for k in unlockable:
+                            # unlock the nested lock, if we already have the key.
+                            if self.verbose:
+                                vprint('\t\t\talready have key ', k,', applying it')
+                            self.apply_key(k)
+                    elif room.element_type(item) == 0:  # item < 2000
+                        # This is a door.
+                        if self.verbose:
+                            vprint('\t\t\tadding a door...', item)
+                        room.add_doors([item])
+                        self.initially_locked_exits.add(item)
+                    elif room.element_type(item) == 1:
+                        # This is a trap.
+                        if self.verbose:
+                            vprint('\t\t\tadding a trap...', item)
+                        room.add_traps([item])
+                        self.initially_locked_exits.add(item)
+                    else:
+                        # Error
+                        raise RoomError(f"Unknown item unlocked by key {required_keys} in room {room.id}: {item}")
 
     def get_loop(self, room_id):
         # Look for a loop containing this room.  If found, return [list of nodes in loop]; if not, return [].
