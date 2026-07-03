@@ -3180,11 +3180,14 @@ class RuinationBranch(Network):
         else:
             # Get the most downstream nodes
             downstream_paths = self.get_downstream_paths(self.active)
+            # Sorted: room ids may be strings (compound rooms), whose set
+            # iteration order varies with PYTHONHASHSEED; the order shapes
+            # available_exits and the exit_room_id pick (seed reproducibility).
             if downstream_paths:
                 max_depth = max(len(p) for p in downstream_paths)
-                deepest_rooms = set(p[-1] for p in downstream_paths if len(p) == max_depth)
+                deepest_rooms = sorted(set(p[-1] for p in downstream_paths if len(p) == max_depth), key=str)
             else:
-                deepest_rooms = {self.active}
+                deepest_rooms = [self.active]
 
             for room_id in deepest_rooms:
                 room = self.rooms.get_room(room_id)
@@ -3195,7 +3198,7 @@ class RuinationBranch(Network):
                     available_exits['traps'].extend(
                         [t for t in room.traps if t not in self.protected
                          and (not is_downstream or t not in self.initially_locked_exits)])
-            exit_room_id = list(deepest_rooms)[0] if deepest_rooms else self.active
+            exit_room_id = deepest_rooms[0] if deepest_rooms else self.active
 
         if self.verbose:
             vprint(f'\tAvailable exits: {len(available_exits["doors"])} doors, {len(available_exits["traps"])} traps')
@@ -3565,9 +3568,10 @@ class ruination_map():
         if self.verbose:
             vprint('Rewards available: ', self.RewardsAvailable)
 
-        # Apply keys to branches
+        # Apply keys to branches (sorted: keychain is a string set, and its
+        # iteration order must not depend on PYTHONHASHSEED)
         for branch in self.branches:
-            for k in self.keychain:
+            for k in sorted(self.keychain):
                 branch.apply_key(k)
 
         #print(branch.original_room_ids)
@@ -3815,7 +3819,9 @@ class ruination_map():
         def connect_lane(lane):
             """Walk out a connected layout for one lane. Returns (door_pairs,
             trap_pits) with platform ids stripped, or None if the walk fails."""
-            net = Network(list(lane))
+            # Sorted: lanes are string sets; node insertion order must not
+            # depend on PYTHONHASHSEED (seed reproducibility).
+            net = Network(sorted(lane))
             net.should_stop = None
             # Unlock both platforms so the walk can rely on the gated crossings
             # for connectivity; key timing is checked separately in verify().
@@ -4147,8 +4153,12 @@ class ruination_map():
                 return False
             return False
 
-        # Make sure we don't double-add areas
-        areas = [a for a in areas if a not in self.AreasUsed.keys()]
+        # Make sure we don't double-add areas. Sorted for seed reproducibility:
+        # callers may pass a set, and string-set iteration order varies with
+        # PYTHONHASHSEED; the order feeds the random.* draws below, so an
+        # unsorted iteration makes the same seed produce different maps in
+        # different processes (review item 3.9).
+        areas = sorted((a for a in areas if a not in self.AreasUsed.keys()), key=str)
 
         # PRIORITY DISTRIBUTION: If any branches are stuck, try to send them areas
         # that have the right connector types to unstick them
@@ -4266,10 +4276,12 @@ class ruination_map():
             for i, b in enumerate(branch_areas):
                 vprint('\t', i, ': ', b)
 
-        # Expand to list of rooms to add to each branch
+        # Expand to list of rooms to add to each branch.
+        # Sorted iteration keeps accessible_shops append order (and everything
+        # downstream of it) independent of PYTHONHASHSEED.
         branch_rooms = [set(), set(), set()]
         for i, areas in enumerate(branch_areas):
-            for area in areas:
+            for area in sorted(areas, key=str):
                 branch_rooms[i].update(RUIN_ROOM_SETS[area])
                 # Track accessible shops from areas with shops
                 if area in AREA_SHOPS:
@@ -4304,7 +4316,9 @@ class ruination_map():
             all_existing_rooms.update(branch.all_rooms_added)
 
         for i, branch in enumerate(self.branches):
-            for room in branch_rooms[i]:
+            # Sorted: room addition order sets net.nodes insertion order, which
+            # every candidate list downstream iterates (seed reproducibility).
+            for room in sorted(branch_rooms[i], key=str):
                 if room not in all_existing_rooms:
                     branch.add_room(room)
                     all_existing_rooms.add(room)
@@ -4772,7 +4786,7 @@ class ruination_map():
                 branch.active = new_active[0]
 
             # Apply any keys we have found in other branches
-            for k in self.keychain.difference(branch.keychain):
+            for k in sorted(self.keychain.difference(branch.keychain)):
                 branch.apply_key(k)
 
             found_reward = False
@@ -5061,7 +5075,10 @@ class ruination_map():
         (e.g. WoB/WoR variants) unambiguous, since only one variant is placed.
         """
         owner = {}
-        for rid in branch.all_rooms_added:
+        # Sorted: which room "owns" an exit shared by several placed room_data
+        # entries must not depend on set iteration order (seed reproducibility
+        # of the softlock verifier's graph).
+        for rid in sorted(branch.all_rooms_added, key=str):
             data = room_data.get(rid)
             if not data:
                 continue

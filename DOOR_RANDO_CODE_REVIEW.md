@@ -302,6 +302,19 @@ sharing/racing for `-ruin`. Fix by sorting (with a `str()` key) anywhere a set
 is iterated before a random choice, or by converting the relevant sets to
 insertion-ordered structures. Not fixed in p2 (behavioral change requiring a
 careful audit of every set-iteration site in the generation path).
+**STATUS: fixed 2026-07 on branch `door-rando-review-p3`.** Canonicalized
+(sorted, `key=str`) the RNG-facing set iterations: `distribute_areas`'s area
+list and its area→room / room→branch expansion loops (which also set
+`accessible_shops` order and `net.nodes` insertion order — the order every
+downstream candidate list inherits), the keychain application loops,
+`extend_branch_path`'s `deepest_rooms`, the `-rkt` lane `Network`
+construction, and `_branch_exit_owner_map` (softlock-verifier edge
+determinism). Set iterations that only feed order-free sums/booleans/
+membership tests were left alone. Note int-only sets (door/trap/pit IDs)
+were never affected — CPython only randomizes *string* hashing. Verified:
+same-seed `-ruin` builds are now byte-identical across PYTHONHASHSEED values
+(1, 2, and unpinned) for 5 seeds; `-drdc` output is byte-identical to
+`door-rando-review-p2` (untouched by this change).
 
 ### 3.10 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
 `args/ruin_preprocessor.py:203-221` and `:192-201` scan
