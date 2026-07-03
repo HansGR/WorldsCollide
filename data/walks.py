@@ -539,7 +539,7 @@ class Network:
 
                             # 2. Verify there is an exit from this room that isn't locked by keys in these 2 rooms
                             flags.append(True)
-                            otherdoors = [d for d in Ra.alldoors if d is not da]
+                            otherdoors = [d for d in Ra.alldoors if d != da]
                             available_keys = [k for k in Rd.keys] + [k for k in Ra.keys]
                             for d in otherdoors:
                                 if d in Ra.locked('doors'):
@@ -906,7 +906,7 @@ class Network:
                     vprint('selected: ', d1, ', type ', d1_type, ' (', R1.id, ')')
 
                 # if d1 was in a downstream node, R1 might have a key that hasn't been used yet.
-                if R1.id is not R_active.id:
+                if R1.id != R_active.id:
                     trail = [R1.id]
                     if R_active.id not in net_state.net.predecessors(R1.id):
                         # R_active is significantly upstream.  Find the traversed nodes.
@@ -931,7 +931,7 @@ class Network:
                 for node_id in net_state.net.nodes:
                     node = self.rooms.get_room(node_id)
                     if d1_type == 0:
-                        node_entr = [d for d in node.doors if d is not d1]
+                        node_entr = [d for d in node.doors if d != d1]
                     else:
                         node_entr = [p for p in node.pits]
                     if self.verbose:
@@ -1536,13 +1536,19 @@ class Room:
         """
         if isinstance(element_id, str) or element_id in self.elements['keys']:
             return 3
-        if (element_id < 2000 or (4000 <= element_id < 6000)) and element_id not in doors_as_traps:
+        # >= 10000 covers the synthetic door IDs: virtual root doors (10000+,
+        # -dra/-drx), crossworld links (20000+, -mapx) and map-shuffle protected
+        # doors (30000+). These previously fell through to `return False`, which
+        # compared equal to 0 ("door") by accident; classify them explicitly.
+        if (element_id < 2000 or (4000 <= element_id < 6000) or element_id >= 10000) \
+                and element_id not in doors_as_traps:
             return 0
         if (2000 <= element_id < 3000) or element_id in doors_as_traps:
             return 1
         if (3000 <= element_id < 4000) or (6000 <= element_id < 8000):
             return 2
-        return False
+        # 8000-9999 is unallocated; anything landing here is a data error.
+        raise InvalidElementError(f"Cannot classify element ID: {element_id}")
 
     def get_elements(self, element_type):
         """Get all elements of a given type"""

@@ -693,16 +693,27 @@ class Doors():
                     # Directly connect the network
                     fully_connected = walks.connect_network()
                 else:
-                    try:
-                        vprint('\tstarting room... ', start_room_id)
-                        fully_connected = connect_with_timeout(walks, self.timeout)
-
-                        if fully_connected is None:
-                            print('Door connection timed out')
-                            #Ncount += 1
-
-                    except Exception as e:
-                        vprint(f"Network connection failed: {e}")
+                    # connect_network only mutates a deepcopy of the network, so a
+                    # timed-out or failed attempt can be retried on the same walks
+                    # object; each retry re-rolls the start room and random order.
+                    max_attempts = 5
+                    fully_connected = None
+                    last_error = None
+                    for attempt in range(max_attempts):
+                        try:
+                            vprint('\tstarting room... ', walks.active)
+                            fully_connected = connect_with_timeout(walks, self.timeout)
+                        except Exception as e:
+                            last_error = e
+                            vprint(f"Network connection failed: {e}")
+                        if fully_connected is not None:
+                            break
+                        print(f'Door connection attempt {attempt + 1}/{max_attempts} for area '
+                              f'{area_id} timed out or failed; retrying')
+                        walks.active = random.choice(start_room_ids)
+                    if fully_connected is None:
+                        raise Exception(f'Door randomization failed for area {area_id} '
+                                        f'after {max_attempts} attempts') from last_error
 
                 fcm_doors = [m for m in fully_connected.map[0]]
                 fcm_oneways = [m for m in fully_connected.map[1]]
@@ -718,7 +729,9 @@ class Doors():
             ll[l[0]] = l[1]
             ll[l[1]] = l[0]
         llink = {}
-        for m in map[0]:
+        # Iterate over a snapshot: removing from the live list while iterating
+        # skips the element after each removal (could silently drop a link pair).
+        for m in list(map[0]):
             remove_flag = False
             if m[0] in ll.keys():
                 llink[m[0]] = m[1]
@@ -1831,7 +1844,9 @@ class NetworkConnector:
 def connect_with_timeout(walks, timeout=10):
     walks.should_stop = threading.Event()
     connector = NetworkConnector(walks)
-    thread = threading.Thread(target=connector.run)
+    # Daemon: a timed-out walk may keep running briefly after should_stop is
+    # set (it only polls at frame entry); it must not block interpreter exit.
+    thread = threading.Thread(target=connector.run, daemon=True)
     thread.start()
     thread.join(timeout)
 

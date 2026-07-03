@@ -234,7 +234,7 @@ def flags(args):
         if args.door_randomize_cyans_dream:
             flags += " -drcd"
 
-        if args.door_randomize_cyans_dream:
+        if args.door_randomize_mt_kolts:
             flags += " -drmk"
 
         if args.door_randomize_veldt_cave:
