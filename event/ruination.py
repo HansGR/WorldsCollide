@@ -2524,6 +2524,18 @@ class RuinationBranch(Network):
                         if self.verbose:
                             vprint(f'(1) added room from reserve area {best_area}: {best_rid}')
 
+                if winner == '':
+                    # Neither the network nor the reserve pool has a room with more
+                    # pits than traps; fail with diagnostics instead of crashing on
+                    # get_room('') below (the caller wraps this in RuinationMappingError).
+                    viz = self.visualize_branch_topology()
+                    raise RuntimeError(
+                        f"finalize_map step 1: no room with more pits than traps available "
+                        f"(network or reserve). all_traps={all_traps}, all_pits={all_pits}, "
+                        f"reserve_areas={'None' if reserve_areas is None else [(a, len(r)) for a, r in reserve_areas]}\n"
+                        f"{viz}"
+                    )
+
                 # connect a hub trapdoor to this node
                 this_exit = random.choice(all_traps)
                 room = self.rooms.get_room(winner)
@@ -5666,18 +5678,20 @@ class ruination_map():
                 self.RewardsObtained[0] += 1
 
                 # Set character path using the event's character_gate method
-                # This returns the character ID that gates this reward (or None for starting areas)
-                characters.set_character_path(slot.id, slot.event.character_gate())
-                unlocker_name = characters.DEFAULT_NAME[slot.event.character_gate()]
-                if self.verbose and slot.event.character_gate() is not None:
-                    new_char_name = characters.DEFAULT_NAME[slot.id]
-                    vprint(f'\tSet character path: {new_char_name} depends on {unlocker_name}')
-                if slot.event.character_gate() is not None and unlocker_name not in self.keychain:
-                    # Error:
-                    event_name = slot.event.name()
-                    new_char_name = characters.DEFAULT_NAME[slot.id]
-                    diag = f'\tMAPPING ERROR: got {new_char_name} at {event_name} reward before {unlocker_name} was recruited!'
-                    raise RuinationMappingError(diag)
+                # This returns the character ID that gates this reward (or None for ungated checks)
+                gate = slot.event.character_gate()
+                characters.set_character_path(slot.id, gate)
+                if gate is not None:
+                    unlocker_name = characters.DEFAULT_NAME[gate]
+                    if self.verbose:
+                        new_char_name = characters.DEFAULT_NAME[slot.id]
+                        vprint(f'\tSet character path: {new_char_name} depends on {unlocker_name}')
+                    if unlocker_name not in self.keychain:
+                        # Error:
+                        event_name = slot.event.name()
+                        new_char_name = characters.DEFAULT_NAME[slot.id]
+                        diag = f'\tMAPPING ERROR: got {new_char_name} at {event_name} reward before {unlocker_name} was recruited!'
+                        raise RuinationMappingError(diag)
 
 
                 # If a character, add new areas to the map

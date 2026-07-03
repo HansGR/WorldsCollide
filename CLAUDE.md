@@ -98,6 +98,7 @@ For the lookups above, prefer the JSON files over reading the corresponding .py 
 ## Module Map
 
 Quick orientation by file. Detailed sections are in ARCHIVE.md.
+For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_GUIDE.md** is the programmer's guide (execution flow, ID conventions, mapper algorithms, global-mutable-state table, extension recipes); **DOOR_RANDO_CODE_REVIEW.md** is the 2026-07 review of known bugs/fragilities in those modes — check it before "fixing" surprising behavior there.
 
 ### Memory & ROM
 - **memory/space.py** — `Reserve` (in-place patch), `Allocate` (new code into free space), `Write` (Allocate + write), `Read` (extract bytes), `Free` (mark range free). All take `Bank.XX` enum.
