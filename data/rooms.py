@@ -1379,3 +1379,38 @@ for r in room_data.keys():
 test = [d for d in doors_as_traps if d not in doors_as_traps_2] +  [d for d in doors_as_traps_2 if d not in doors_as_traps]
 if len(test) > 0:
     print('BROKEN DOOR/TRAP pairs:', test)
+
+
+# ---------------------------------------------------------------------------
+# Reset boundary for the shared mutable tables.
+#
+# Several consumers treat the tables in this module as scratch space at run
+# time: Doors.__init__ splits dungeon-crawl/ruination town exits out of
+# shared_exits and pops forced_connections entries; Doors.mod appends virtual
+# root doors into room_data lists (-dra/-drx) and edits room lists for map
+# shuffle; ruination adds hub rooms and rewrites the isolated dream maze
+# entry. That is fine for a single build, but a second build in the same
+# process (retries, tests, a reroll server) would start from corrupted
+# tables. Doors.__init__ calls reset_room_tables() so that every build
+# starts from the pristine import-time state. The reset preserves the dict
+# object identities (clear + update), so existing `from data.rooms import
+# room_data`-style references stay valid.
+#
+# exit_room / exit_world / doors_as_traps are derived once above and are not
+# mutated at run time, so they do not need to be re-derived here.
+import copy as _copy
+
+_ROOM_DATA_PRISTINE = _copy.deepcopy(room_data)
+_FORCED_CONNECTIONS_PRISTINE = _copy.deepcopy(forced_connections)
+_SHARED_EXITS_PRISTINE = _copy.deepcopy(shared_exits)
+
+
+def reset_room_tables():
+    """Restore room_data, forced_connections and shared_exits to their
+    pristine import-time contents (fresh copies, same dict objects)."""
+    room_data.clear()
+    room_data.update(_copy.deepcopy(_ROOM_DATA_PRISTINE))
+    forced_connections.clear()
+    forced_connections.update(_copy.deepcopy(_FORCED_CONNECTIONS_PRISTINE))
+    shared_exits.clear()
+    shared_exits.update(_copy.deepcopy(_SHARED_EXITS_PRISTINE))

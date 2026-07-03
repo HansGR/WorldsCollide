@@ -1428,7 +1428,10 @@ class Room:
                     vprint(f"Warning: Merging lock {key_tuple} in room {self.id}")
                 self.elements['locks'][key_tuple].extend(locked_items)
             else:
-                self.elements['locks'][key_tuple] = locked_items
+                # Copy: rooms built from room_data would otherwise alias the
+                # module-level lock lists, and Room.remove()/attach_dead_ends
+                # would then mutate the shared data table in place.
+                self.elements['locks'][key_tuple] = list(locked_items)
 
         # Notify parent collection of lock changes
         if self.rooms_ref is not None:

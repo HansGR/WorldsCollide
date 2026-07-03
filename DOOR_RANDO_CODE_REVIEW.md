@@ -288,7 +288,22 @@ testable standalone.
 to silence the walk. Add a public `verbose.suppress()` context manager instead
 of poking module privates.
 
-### 3.9 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
+### 3.9 [BUG] Ruination seeds are not reproducible across processes
+Found while validating the p2 changes: building the same seed with the same
+flags twice produces byte-identical ROMs for `-drdc`, but **different ROMs for
+`-ruin`** — unless `PYTHONHASHSEED` is pinned, in which case `-ruin` is also
+byte-identical. The cause is Python's per-process string-hash randomization:
+ruination iterates unordered sets of strings in RNG-consuming paths (e.g.
+`initial_areas`/`new_areas` sets feeding `distribute_areas`, `self.keychain`,
+`WARP_ROOMS`/`TOWN_ROOMS` membership-driven choices, `net.nodes` insertion
+orders derived from set-built room lists), so the sequence of `random.*` draws
+differs between processes even with an identical seed. This breaks seed
+sharing/racing for `-ruin`. Fix by sorting (with a `str()` key) anywhere a set
+is iterated before a random choice, or by converting the relevant sets to
+insertion-ordered structures. Not fixed in p2 (behavioral change requiring a
+careful audit of every set-iteration site in the generation path).
+
+### 3.10 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
 `args/ruin_preprocessor.py:203-221` and `:192-201` scan
 `argv[ruin_index + 1:]`, so a user flag placed *before* `-ruin`
 (`wc.py -i rom.smc -lsa 3 -ruin`) is not seen by the mutual-exclusion
@@ -496,6 +511,20 @@ Recorded so future reviews don't re-litigate them:
    flag strings, and `-ruin` ×3.
 2. **Robustness investment:** 3.1 (copy lock lists — one line), then converge
    the remaining shared-state mutations behind a reset/copy boundary (3.2-3.4).
+   **STATUS: implemented 2026-07 on branch `door-rando-review-p2`**: 3.1
+   (Room.add_locks copies), `reset_room_tables()` in data/rooms.py +
+   `reset_exit_data()` in data/map_exit_extra.py (called from
+   `Doors.__init__`), `_reset_ruination_tables()` in event/ruination.py
+   (called from `ruination_map.__init__`, so the retry loop can no longer see
+   consumed EXTRA areas / migrated ROOM_REWARD keys / dream-maze table edits
+   from a failed attempt), and `slot.possible_types` added to the retry
+   rollback in events.ruination_mod (the Ebot's Rock pin no longer leaks
+   across attempts). Verified: reset-boundary idempotency tests (Doors
+   constructed twice; lock-list aliasing gone; ruination tables restored with
+   slot-object identity preserved) plus the full build matrix; same-seed
+   builds are byte-identical p1 vs p2 under a pinned PYTHONHASHSEED (see 3.9
+   for the pre-existing `-ruin` hash-randomization nondeterminism this
+   validation uncovered).
 3. **Deletions:** 5.1, 5.2, 5.4 — roughly 1,600 lines removed with zero
    behavior change; do this before further refactoring so diffs stay readable.
 4. **Refactors:** 5.3 (reserve-pull helper), 6 (hub accessor), then 4.1/4.3 if

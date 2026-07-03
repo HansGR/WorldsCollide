@@ -293,8 +293,12 @@ class Events():
         espers_avail_baseline = set(self.espers.available_espers)
         # Capture the slot objects themselves (not ROOM_REWARD keys): -maze iso
         # moves a slot between keys during __init__, but the object is stable.
+        # possible_types must be restored too: finalize_map step 6 can pin a
+        # slot's possible_types (e.g. Ebot's Rock connected as a dead end is
+        # restricted to esper/item), and that restriction must not leak from a
+        # failed attempt into the next one.
         reward_slot_baseline = [
-            (slot, slot.id, slot.type)
+            (slot, slot.id, slot.type, slot.possible_types)
             for rewards in ROOM_REWARD.values()
             for slot in rewards.values()
         ]
@@ -303,9 +307,10 @@ class Events():
             self.characters.available_characters = list(chars_avail_baseline)
             self.characters.character_paths = copy.deepcopy(char_paths_baseline)
             self.espers.available_espers = set(espers_avail_baseline)
-            for slot, slot_id, slot_type in reward_slot_baseline:
+            for slot, slot_id, slot_type, slot_possible_types in reward_slot_baseline:
                 slot.id = slot_id
                 slot.type = slot_type
+                slot.possible_types = slot_possible_types
 
         max_map_attempts = 10
         ruin_map = None

@@ -329,9 +329,16 @@ transition owns tile `(id % 128, id // 128)` there.
 
 ## 8. Global mutable state — read before writing any code here
 
-These module-level tables are mutated at run time. The process builds one seed
-and exits, so this *works*, but every new consumer (retry loops, tests,
-long-lived processes) must account for it:
+These module-level tables are mutated at run time. Since the
+`door-rando-review-p2` changes there is an explicit reset boundary:
+`Doors.__init__` calls `data.rooms.reset_room_tables()` and
+`data.map_exit_extra.reset_exit_data()`, and `ruination_map.__init__` calls
+`event.ruination._reset_ruination_tables()`, so every build (and every
+ruination retry attempt) starts from pristine tables. If you add a new
+run-time mutation of module data, either make it idempotent or add it to the
+appropriate reset function — and if it can fire inside a single generation
+attempt (like the reward-slot `possible_types` pin), add it to the retry
+rollback in `events.ruination_mod` as well. The mutation inventory:
 
 | Table | Mutated by |
 |---|---|

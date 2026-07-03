@@ -2040,3 +2040,21 @@ for k in eventname_to_door.keys():
         door_to_eventname[eventname_to_door[k]].append(k)
     else:
         door_to_eventname[eventname_to_door[k]] = [k]
+
+
+# ---------------------------------------------------------------------------
+# Reset boundary: exit_data is mutated at run time by
+# Maps.postprocess_door_map (the dungeon-crawl/ruination destination
+# overrides rewrite partner ids and add new entries in the 1281-1300 safe_id
+# range). Doors.__init__ calls reset_exit_data() so a second build in the
+# same process starts from the pristine table. Preserves dict identity
+# (clear + update) so existing imports of exit_data stay valid.
+import copy as _copy
+
+_EXIT_DATA_PRISTINE = _copy.deepcopy(exit_data)
+
+
+def reset_exit_data():
+    """Restore exit_data to its pristine import-time contents."""
+    exit_data.clear()
+    exit_data.update(_copy.deepcopy(_EXIT_DATA_PRISTINE))
