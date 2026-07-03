@@ -560,3 +560,20 @@ Recorded so future reviews don't re-litigate them:
    `door-rando-review-p2` for the same seeds under pinned PYTHONHASHSEED.
 4. **Refactors:** 5.3 (reserve-pull helper), 6 (hub accessor), then 4.1/4.3 if
    `-drdc` generation time or the timeout rate is a live complaint.
+   **STATUS: 5.3 and the hub accessor implemented 2026-07 on branch
+   `door-rando-review-p4`.** The nine reserve-search loops in `finalize_map` /
+   `_inject_door_if_needed_for_terminus` are now one
+   `RuinationBranch._pull_from_reserve(reserve_areas, score, description)` —
+   a boolean predicate acts as first-match, a numeric score picks the
+   strictly-best room (preserving step (1)'s best-pit-surplus semantics); all
+   copies now share the `rid in self.net.nodes` guard some were missing. Hub
+   discovery goes through `require_hub_id()` (17 former `[...][0]` sites; a
+   missing hub now reports the branch's nodes instead of a bare IndexError),
+   with `get_hub_id()` kept for the two call sites that handle absence
+   gracefully. Also fixed here: the §6 `node` shadowing in finalize_map step 2
+   and the `ruin_preprocessor` 'minimum'→'custom' docstring. Verified:
+   `-ruin` ×3 and `-drdc` builds byte-identical to `door-rando-review-p3`;
+   unit tests for `_pull_from_reserve` (first-match, best-score, pool
+   consumption, None/empty/no-match) and `require_hub_id`; 12-seed `-ruin`
+   sweep. 4.1/4.3 (walk-performance) deliberately deferred pending a live
+   complaint about `-drdc` generation time.

@@ -620,7 +620,7 @@ class RuinationBranch(Network):
         # We need a custom handler for return from Lete River!
         if room_id == 'LeteRiver3':
             # add pit 3039 to ruin_hub
-            hub_room_id = [n for n in self.net.nodes if 'ruin_hub' in str(n)][0]
+            hub_room_id = self.require_hub_id()
             hub_room = self.rooms.get_room(hub_room_id)
             hub_room.add_pits([3039])
             if self.verbose:
@@ -807,7 +807,7 @@ class RuinationBranch(Network):
         issues = []
 
         if hub is not None:
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             hub_obj = self.rooms.get_room(hub_id)
 
             # Count all elements in the hub network
@@ -878,7 +878,7 @@ class RuinationBranch(Network):
                 nodes. This is useful during finalization, where upstream rooms are inaccessible
                 (only connected TO the hub via one-way pits) and their doors don't need connecting.
         """
-        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub_id = self.require_hub_id()
         hub = self.rooms.get_room(hub_id)
 
         all_pits = [p for p in hub.pits if p not in self.protected]
@@ -1015,11 +1015,70 @@ class RuinationBranch(Network):
     # These methods support the new topology-aware extend_branch_path algorithm
 
     def get_hub_id(self):
-        """Find the hub room ID for this branch."""
+        """Find the hub room ID for this branch, or None if no hub exists yet."""
         hub_candidates = [n for n in self.net.nodes if 'ruin_hub_' in str(n)]
         if hub_candidates:
             return hub_candidates[0]
         return None
+
+    def require_hub_id(self):
+        """Find the hub room ID; raise a diagnostic error if it is missing.
+
+        Use this instead of `[n for n in self.net.nodes if 'ruin_hub_' in
+        str(n)][0]` — a missing hub then reports what the branch looked like
+        rather than a bare IndexError.
+        """
+        hub_id = self.get_hub_id()
+        if hub_id is None:
+            raise RuntimeError(
+                f"Branch has no hub room (no node contains 'ruin_hub_'). "
+                f"Nodes: {sorted(str(n) for n in self.net.nodes)}")
+        return hub_id
+
+    def _pull_from_reserve(self, reserve_areas, score, description=''):
+        """Pull the best-scoring room from the shared reserve pool into this branch.
+
+        `reserve_areas` is the list of (area_name, room_list) pairs shared by
+        all rescue paths (see RuinationMapping.get_reserve_area_rooms). Each
+        candidate room's unprotected element lists are passed to
+        `score(doors, traps, pits)`; the first room with the strictly highest
+        positive score is added to the branch (add_room, which also honors any
+        forced connections it carries) and consumed from the pool. A boolean
+        predicate works as a score: the first room returning True wins.
+
+        Returns the pulled room id, or None if no reserve room qualifies
+        (including when reserve_areas is None).
+        """
+        if reserve_areas is None:
+            return None
+        best_score = 0
+        best_rid = None
+        best_area = None
+        best_area_rooms = None
+        for area_name, area_rooms in reserve_areas:
+            for rid in area_rooms:
+                if rid in self.net.nodes:
+                    continue
+                data = room_data.get(rid)
+                if data is None:
+                    continue
+                doors = [d for d in data[0] if d not in self.protected]
+                traps = [t for t in data[1] if t not in self.protected]
+                pits = [p for p in data[2] if p not in self.protected]
+                s = score(doors, traps, pits)
+                if s > best_score:
+                    best_score = s
+                    best_rid = rid
+                    best_area = area_name
+                    best_area_rooms = area_rooms
+        if best_rid is None:
+            return None
+        self.add_room(best_rid)
+        best_area_rooms.remove(best_rid)
+        if self.verbose:
+            what = f' ({description})' if description else ''
+            vprint(f'\tpulled {best_rid} from reserve area {best_area}{what}')
+        return best_rid
 
     def classify_topology(self):
         """Classify all connected rooms into Hub, Upstream, and Downstream regions.
@@ -1613,12 +1672,10 @@ class RuinationBranch(Network):
         lines.append("=" * 70)
 
         # Find the hub
-        hub_candidates = [n for n in self.net.nodes if 'ruin_hub_' in str(n)]
-        if not hub_candidates:
+        hub_id = self.get_hub_id()
+        if hub_id is None:
             lines.append("ERROR: No hub found in branch!")
             return "\n".join(lines)
-
-        hub_id = hub_candidates[0]
         hub = self.rooms.get_room(hub_id)
 
         # Get upstream and downstream
@@ -1851,7 +1908,7 @@ class RuinationBranch(Network):
             return  # Terminus already merged, no fix needed
 
         # Get current hub and topology
-        hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+        hub_id = self.require_hub_id()
         hub = self.rooms.get_room(hub_id)
         upstream = self.get_upstream_nodes(hub_id)
         downstream = self.get_downstream_nodes(hub_id)
@@ -1907,31 +1964,14 @@ class RuinationBranch(Network):
                 break
 
         # If no suitable room in network, check reserve areas
-        if suitable_room is None and reserve_areas is not None:
+        if suitable_room is None:
             if self.verbose:
                 vprint('\tNo suitable room in network, checking reserve areas...')
-
-            for area_name, area_rooms in reserve_areas:
-                for room_id in area_rooms:
-                    if room_id in room_data:
-                        data = room_data[room_id]
-                        doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                        traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
-                        pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-
-                        # Need: at least 1 pit, at least 1 door, at least 1 other exit
-                        total_exits = len(doors) + len(traps)
-                        if len(pits) >= 1 and len(doors) >= 1 and total_exits >= 2:
-                            # Add this room to the network
-                            self.add_room(room_id)
-                            area_rooms.remove(room_id)
-                            suitable_room = room_id
-                            if self.verbose:
-                                vprint(f'\tAdded suitable room from area {area_name}: {room_id}')
-                                vprint(f'\t  pits={pits}, doors={doors}, traps={traps}')
-                            break
-                if suitable_room is not None:
-                    break
+            # Need: at least 1 pit, at least 1 door, at least 1 other exit
+            suitable_room = self._pull_from_reserve(
+                reserve_areas,
+                lambda doors, traps, pits: len(pits) >= 1 and len(doors) >= 1 and len(doors) + len(traps) >= 2,
+                description='pit+door converter for terminus door injection')
 
         if suitable_room is None:
             # This is a serious issue - log diagnostic info
@@ -1981,7 +2021,7 @@ class RuinationBranch(Network):
 
         # Verify we now have doors
         if self.verbose:
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             hub = self.rooms.get_room(hub_id)
             new_doors = [d for d in hub.doors if d not in self.protected]
             downstream = self.get_downstream_nodes(hub_id)
@@ -2154,7 +2194,7 @@ class RuinationBranch(Network):
             if reserve_areas is not None:
                 self._honor_forced_connections(reserve_areas)
 
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             hub = self.rooms.get_room(hub_id)
             if self.verbose:
                 vprint('\thub:', hub_id, hub.count)
@@ -2241,33 +2281,16 @@ class RuinationBranch(Network):
                             diff = len(unprotected_pits) - len(unprotected_traps)
                             winner = n
 
-                # Fallback: search reserve areas for a room with more pits than traps
-                if winner == '' and reserve_areas is not None:
+                # Fallback: pull the reserve room with the largest pit surplus
+                if winner == '':
                     if self.verbose:
                         vprint('(1) no suitable node in network, checking reserve areas...')
-                    best_diff = 0
-                    best_rid = None
-                    best_area_rooms = None
-                    for area_name, area_rooms in reserve_areas:
-                        for rid in area_rooms:
-                            if rid in self.net.nodes:
-                                continue
-                            if rid in room_data:
-                                data = room_data[rid]
-                                r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-                                r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
-                                rd = len(r_pits) - len(r_traps)
-                                if rd > best_diff:
-                                    best_diff = rd
-                                    best_rid = rid
-                                    best_area = area_name
-                                    best_area_rooms = area_rooms
-                    if best_rid is not None:
-                        self.add_room(best_rid)
-                        best_area_rooms.remove(best_rid)
-                        winner = best_rid
-                        if self.verbose:
-                            vprint(f'(1) added room from reserve area {best_area}: {best_rid}')
+                    pulled = self._pull_from_reserve(
+                        reserve_areas,
+                        lambda doors, traps, pits: len(pits) - len(traps),
+                        description='largest pit surplus for step (1)')
+                    if pulled is not None:
+                        winner = pulled
 
                 if winner == '':
                     # Neither the network nor the reserve pool has a room with more
@@ -2296,7 +2319,7 @@ class RuinationBranch(Network):
                 self.connect(this_exit, this_entr)
 
                 # Recollect data on pits/traps (filtering protected elements)
-                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub_id = self.require_hub_id()
                 hub = self.rooms.get_room(hub_id)
                 all_pits = [p for p in hub.pits if p not in self.protected]
                 all_traps = [t for t in hub.traps if t not in self.protected]
@@ -2350,8 +2373,10 @@ class RuinationBranch(Network):
 
                 upstream_doors = [d for d in hub.doors if d not in self.protected]
                 upstream_pits = [p for p in hub.pits if p not in self.protected]
-                for node in upstream:
-                    uproom = self.rooms.get_room(node)
+                # up_node, not node: this loop must not shadow the downstream
+                # node selected from delta above.
+                for up_node in upstream:
+                    uproom = self.rooms.get_room(up_node)
                     upstream_pits.extend([p for p in uproom.pits if p not in self.protected])
                     upstream_doors.extend([d for d in uproom.doors if d not in self.protected])
 
@@ -2405,28 +2430,16 @@ class RuinationBranch(Network):
                                             vprint(f'    Found converter room {node_id} in network')
                                         break
 
-                                # Fallback: search reserve areas
-                                if this_conn is None and reserve_areas is not None:
-                                    for area_name, area_rooms in reserve_areas:
-                                        for rid in list(area_rooms):
-                                            if rid in self.net.nodes:
-                                                continue
-                                            if rid in room_data:
-                                                data = room_data[rid]
-                                                r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                                                r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
-                                                r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-                                                if len(r_pits) >= 1 and len(r_doors) >= 1 and (len(r_doors) + len(r_traps)) >= 2:
-                                                    self.add_room(rid)
-                                                    area_rooms.remove(rid)
-                                                    added_room = self.rooms.get_room(rid)
-                                                    added_pits = [p for p in added_room.pits if p not in self.protected]
-                                                    this_conn = random.choice(added_pits)
-                                                    if self.verbose:
-                                                        vprint(f'    Added converter room {rid} from {area_name}')
-                                                    break
-                                        if this_conn is not None:
-                                            break
+                                # Fallback: pull a converter room from reserve
+                                if this_conn is None:
+                                    pulled = self._pull_from_reserve(
+                                        reserve_areas,
+                                        lambda doors, traps, pits: len(pits) >= 1 and len(doors) >= 1 and (len(doors) + len(traps)) >= 2,
+                                        description='converter for terminus exit preservation')
+                                    if pulled is not None:
+                                        added_room = self.rooms.get_room(pulled)
+                                        added_pits = [p for p in added_room.pits if p not in self.protected]
+                                        this_conn = random.choice(added_pits)
                             else:
                                 this_conn = random.choice(upstream_pits)
                         else:
@@ -2440,35 +2453,23 @@ class RuinationBranch(Network):
                     # doors remain, connect to a hub room (3+ doors) from reserve instead.
                     _, _, all_branch_doors = self.collect_network_traps_and_pits(include_doors=True)
                     total_branch_doors = len(all_branch_doors)
-                    if total_branch_doors <= 2 and reserve_areas is not None:
+                    if total_branch_doors <= 2:
                         if self.verbose:
                             vprint(f'(2) Fix B: only {total_branch_doors} doors remain in branch, '
                                   f'searching for hub room (3+ doors) in reserve...')
-                        hub_room_found = False
-                        for area_name, area_rooms in reserve_areas:
-                            for rid in list(area_rooms):
-                                if rid in self.net.nodes:
-                                    continue
-                                if rid in room_data:
-                                    data = room_data[rid]
-                                    r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                                    if len(r_doors) >= 3:
-                                        self.add_room(rid)
-                                        area_rooms.remove(rid)
-                                        hub_room = self.rooms.get_room(rid)
-                                        unprotected_hub_doors = [d for d in hub_room.doors if d not in self.protected]
-                                        this_conn = random.choice(unprotected_hub_doors)
-                                        this_exit = random.choice(unprotected_room_doors)
-                                        if self.verbose:
-                                            vprint(f'(2) Fix B: added hub room {rid} from {area_name} '
-                                                  f'({len(r_doors)} doors), connecting {this_exit} --> {this_conn}')
-                                        self.connect(this_exit, this_conn)
-                                        hub_room_found = True
-                                        restart_finalization = True
-                                        break
-                            if hub_room_found:
-                                break
-                        if restart_finalization:
+                        pulled = self._pull_from_reserve(
+                            reserve_areas,
+                            lambda doors, traps, pits: len(doors) >= 3,
+                            description='Fix B hub room (3+ doors)')
+                        if pulled is not None:
+                            hub_room = self.rooms.get_room(pulled)
+                            unprotected_hub_doors = [d for d in hub_room.doors if d not in self.protected]
+                            this_conn = random.choice(unprotected_hub_doors)
+                            this_exit = random.choice(unprotected_room_doors)
+                            if self.verbose:
+                                vprint(f'(2) Fix B: connecting {this_exit} --> {this_conn}')
+                            self.connect(this_exit, this_conn)
+                            restart_finalization = True
                             break
                     if this_conn is None:
                         this_exit = random.choice(unprotected_room_doors)
@@ -2511,29 +2512,17 @@ class RuinationBranch(Network):
                             this_conn = random.choice(unprotected_pido_pits)
 
                         # Fallback: search reserve areas for a pido room
-                        if len(pido) == 0 and reserve_areas is not None:
+                        if len(pido) == 0:
                             if self.verbose:
                                 vprint('\t\tno pido in network, checking reserve areas...')
-                            for area_name, area_rooms in reserve_areas:
-                                for rid in area_rooms:
-                                    if rid in self.net.nodes:
-                                        continue
-                                    if rid in room_data:
-                                        data = room_data[rid]
-                                        r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                                        r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
-                                        r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-                                        if len(r_pits) > 0 and len(r_doors) > 0 and len(r_pits) > len(r_traps):
-                                            self.add_room(rid)
-                                            area_rooms.remove(rid)
-                                            pido_room = self.rooms.get_room(rid)
-                                            unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
-                                            this_conn = random.choice(unprotected_pido_pits)
-                                            if self.verbose:
-                                                vprint(f'\t\tadded pido room from reserve area {area_name}: {rid}')
-                                            break
-                                if this_conn is not None:
-                                    break
+                            pulled = self._pull_from_reserve(
+                                reserve_areas,
+                                lambda doors, traps, pits: len(pits) > 0 and len(doors) > 0 and len(pits) > len(traps),
+                                description='pido converter')
+                            if pulled is not None:
+                                pido_room = self.rooms.get_room(pulled)
+                                unprotected_pido_pits = [p for p in pido_room.pits if p not in self.protected]
+                                this_conn = random.choice(unprotected_pido_pits)
 
                     elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) > 0:
                         # Need a door-in, trap-out converter
@@ -2557,30 +2546,18 @@ class RuinationBranch(Network):
                             unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
                             this_conn = random.choice(unprotected_dito_doors)
 
-                        # Fallback: search reserve areas for a dito room
-                        if len(dito) == 0 and reserve_areas is not None:
+                        # Fallback: pull a dito room from reserve
+                        if len(dito) == 0:
                             if self.verbose:
                                 vprint('\t\tno dito in network, checking reserve areas...')
-                            for area_name, area_rooms in reserve_areas:
-                                for rid in area_rooms:
-                                    if rid in self.net.nodes:
-                                        continue
-                                    if rid in room_data:
-                                        data = room_data[rid]
-                                        r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                                        r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
-                                        r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-                                        if len(r_traps) > 0 and len(r_doors) > 0 and len(r_traps) > len(r_pits):
-                                            self.add_room(rid)
-                                            area_rooms.remove(rid)
-                                            dito_room = self.rooms.get_room(rid)
-                                            unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
-                                            this_conn = random.choice(unprotected_dito_doors)
-                                            if self.verbose:
-                                                vprint(f'\t\tadded dito room from reserve area {area_name}: {rid}')
-                                            break
-                                if this_conn is not None:
-                                    break
+                            pulled = self._pull_from_reserve(
+                                reserve_areas,
+                                lambda doors, traps, pits: len(traps) > 0 and len(doors) > 0 and len(traps) > len(pits),
+                                description='dito converter')
+                            if pulled is not None:
+                                dito_room = self.rooms.get_room(pulled)
+                                unprotected_dito_doors = [d for d in dito_room.doors if d not in self.protected]
+                                this_conn = random.choice(unprotected_dito_doors)
 
                     elif len(unprotected_room_doors) > 0 and len(upstream_doors) == 0 and len(upstream_pits) == 0:
                         # Upstream has nothing at all - need to add any room with a door
@@ -2596,28 +2573,18 @@ class RuinationBranch(Network):
                                     vprint(f'\t\tfound door {this_conn} in network node {node_id}')
                                 break
 
-                        # Fallback: search reserve areas for any room with a door
-                        if this_conn is None and reserve_areas is not None:
+                        # Fallback: pull any door-bearing room from reserve
+                        if this_conn is None:
                             if self.verbose:
                                 vprint('\t\tno door-bearing room in network, checking reserve areas...')
-                            for area_name, area_rooms in reserve_areas:
-                                for rid in area_rooms:
-                                    if rid in self.net.nodes:
-                                        continue
-                                    if rid in room_data:
-                                        data = room_data[rid]
-                                        r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                                        if len(r_doors) > 0:
-                                            self.add_room(rid)
-                                            area_rooms.remove(rid)
-                                            added_room = self.rooms.get_room(rid)
-                                            unprotected_added_doors = [d for d in added_room.doors if d not in self.protected]
-                                            this_conn = random.choice(unprotected_added_doors)
-                                            if self.verbose:
-                                                vprint(f'\t\tadded room with door from reserve area {area_name}: {rid}')
-                                            break
-                                if this_conn is not None:
-                                    break
+                            pulled = self._pull_from_reserve(
+                                reserve_areas,
+                                lambda doors, traps, pits: len(doors) > 0,
+                                description='any door-bearing room')
+                            if pulled is not None:
+                                added_room = self.rooms.get_room(pulled)
+                                unprotected_added_doors = [d for d in added_room.doors if d not in self.protected]
+                                this_conn = random.choice(unprotected_added_doors)
 
                 if this_conn is None:
                     viz = self.visualize_branch_topology()
@@ -2634,7 +2601,7 @@ class RuinationBranch(Network):
                 self.connect(this_exit, this_conn)
 
                 # Update hub, upstream, downstream, delta
-                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub_id = self.require_hub_id()
                 hub = self.rooms.get_room(hub_id)
                 upstream = self.get_upstream_nodes(hub_id)
                 downstream = self.get_downstream_nodes(hub_id)
@@ -2655,7 +2622,7 @@ class RuinationBranch(Network):
                 continue
 
             # Post-step-2 check: all downstream nodes should be merged into hub
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             remaining_downstream = self.get_downstream_nodes(hub_id)
             if len(remaining_downstream) > 0:
                 viz = self.visualize_branch_topology()
@@ -2670,7 +2637,7 @@ class RuinationBranch(Network):
             # If no doors remain but traps and pits exist, we can rescue by adding a room
             # from reserve_areas that has at least (1 trap, 1 pit, 1 door). Step (3) will
             # then connect the trap, and the room's door becomes available for the terminus.
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             hub = self.rooms.get_room(hub_id)
             post_step2_doors = [d for d in hub.doors if d not in self.protected]
             terminus = self.rooms.get_room(self.terminus)
@@ -2706,39 +2673,27 @@ class RuinationBranch(Network):
                                 rescue_found = True
                                 break
 
-                    # Fallback: search reserve areas for a new rescue room, add and connect it.
+                    # Fallback: pull a new rescue room from reserve, add and connect it.
                     if not rescue_found:
                         hub_traps = [t for t in hub.traps if t not in self.protected]  # refresh
-                        for area_name, area_rooms in reserve_areas:
-                            for rid in list(area_rooms):
-                                if rid in self.net.nodes:
-                                    continue
-                                if rid in room_data:
-                                    data = room_data[rid]
-                                    r_doors = [d for d in data[0] if d not in self.protected] if len(data) > 0 else []
-                                    r_traps = [t for t in data[1] if t not in self.protected] if len(data) > 1 else []
-                                    r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-                                    if len(r_pits) >= 1 and len(r_doors) >= 1 and (len(r_doors) + len(r_traps)) >= 2:
-                                        self.add_room(rid)
-                                        area_rooms.remove(rid)
-                                        added_room = self.rooms.get_room(rid)
-                                        added_pits = [p for p in added_room.pits if p not in self.protected]
-                                        if len(hub_traps) > 0:
-                                            this_trap = random.choice(hub_traps)
-                                            this_pit = random.choice(added_pits)
-                                            self.connect(this_trap, this_pit)
-                                            print(f'WARNING: Added rescue room {rid} from {area_name} '
-                                                  f'(doors={len(r_doors)}, traps={len(r_traps)}, pits={len(r_pits)}) '
-                                                  f'and connected trap {this_trap} to pit {this_pit}. '
-                                                  f'Restarting finalization.')
-                                        else:
-                                            print(f'WARNING: Added rescue room {rid} from {area_name} '
-                                                  f'(doors={len(r_doors)}, traps={len(r_traps)}, pits={len(r_pits)}). '
-                                                  f'Restarting finalization.')
-                                        rescue_found = True
-                                        break
-                            if rescue_found:
-                                break
+                        pulled = self._pull_from_reserve(
+                            reserve_areas,
+                            lambda doors, traps, pits: len(pits) >= 1 and len(doors) >= 1 and (len(doors) + len(traps)) >= 2,
+                            description='post-step-2 terminus rescue')
+                        if pulled is not None:
+                            added_room = self.rooms.get_room(pulled)
+                            added_pits = [p for p in added_room.pits if p not in self.protected]
+                            if len(hub_traps) > 0:
+                                this_trap = random.choice(hub_traps)
+                                this_pit = random.choice(added_pits)
+                                self.connect(this_trap, this_pit)
+                                print(f'WARNING: Added rescue room {pulled} '
+                                      f'and connected trap {this_trap} to pit {this_pit}. '
+                                      f'Restarting finalization.')
+                            else:
+                                print(f'WARNING: Added rescue room {pulled}. '
+                                      f'Restarting finalization.')
+                            rescue_found = True
                     if rescue_found:
                         continue  # Restart finalization from step 1
 
@@ -2763,28 +2718,14 @@ class RuinationBranch(Network):
             # If we still have traps but no pits, try reserve areas for rooms with pits.
             # Adding a room creates a new downstream node that must be handled by steps 1-2,
             # so restart finalization from step 1 after adding.
-            if len(remaining_traps) > 0 and reserve_areas is not None:
+            if len(remaining_traps) > 0:
                 if self.verbose:
                     vprint(f'(3) {len(remaining_traps)} traps remaining with no pits, checking reserve areas...')
-                rescue_found = False
-                for area_name, area_rooms in reserve_areas:
-                    for rid in list(area_rooms):
-                        if rid in self.net.nodes:
-                            continue
-                        if rid in room_data:
-                            data = room_data[rid]
-                            r_pits = [p for p in data[2] if p not in self.protected] if len(data) > 2 else []
-                            if len(r_pits) > 0:
-                                self.add_room(rid)
-                                area_rooms.remove(rid)
-                                if self.verbose:
-                                    vprint(f'(3) added room with pits from reserve area {area_name}: {rid}. '
-                                          f'Restarting finalization.')
-                                rescue_found = True
-                                break
-                    if rescue_found:
-                        break
-                if rescue_found:
+                pulled = self._pull_from_reserve(
+                    reserve_areas,
+                    lambda doors, traps, pits: len(pits) > 0,
+                    description='pit-bearing room for step (3); restarting finalization')
+                if pulled is not None:
                     continue  # Restart finalization from step 1
 
             # If we still have traps but no pits, this is an unrecoverable state
@@ -2800,7 +2741,7 @@ class RuinationBranch(Network):
             # However, the terminus may have been merged into the hub through loop compression.
             # If so, we skip this step since the terminus is already connected.
             # Re-fetch hub in case it changed during steps 1-3
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             hub = self.rooms.get_room(hub_id)
             remaining_doors = [d for d in hub.doors if d not in self.protected]
             random.shuffle(remaining_doors)
@@ -2854,7 +2795,7 @@ class RuinationBranch(Network):
                     vprint(f'(5b) orphan door situation: {orphan_count} excess door(s), searching for available rooms')
 
                 # Find rooms not yet in the network that can absorb the orphan doors
-                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub_id = self.require_hub_id()
                 available_rooms = [n for n in self.net.nodes
                                  if n not in self.get_upstream_nodes(hub_id)
                                  and n not in self.get_downstream_nodes(hub_id)
@@ -2931,7 +2872,7 @@ class RuinationBranch(Network):
             # Step 4's terminus connect (and any prior step) may have merged the
             # hub into a new compound node, so re-fetch hub_id before passing it
             # into the digraph-aware classifier.
-            hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = self.require_hub_id()
             connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
             while (len(connected_warps) < 2
                    and len(remaining_doors) > 0
@@ -2949,7 +2890,7 @@ class RuinationBranch(Network):
                 if warp_id in self.dead_ends:
                     self.dead_ends.remove(warp_id)
                 # connect() may have merged the warp into the hub; refresh.
-                hub_id = [n for n in self.net.nodes if 'ruin_hub_' in str(n)][0]
+                hub_id = self.require_hub_id()
                 connected_warps, unconnected_warps = self._classify_branch_warp_rooms(hub_id)
 
             # Skip entirely if no doors to connect
@@ -4722,7 +4663,7 @@ class ruination_map():
 
                     # CRITICAL: Reset the active room to the hub so we can try a different path
                     # Without this, the branch stays at the stuck position and immediately gets stuck again
-                    hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+                    hub_id = branch.require_hub_id()
                     branch.active = hub_id
                     if self.verbose:
                         vprint(f'\tReset branch {branch_id} active room to hub: {hub_id}')
@@ -4745,7 +4686,7 @@ class ruination_map():
                     self.stuck_branches.pop(branch_id, None)
 
                     # CRITICAL: Reset the active room to the hub so we can try a different path
-                    hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+                    hub_id = branch.require_hub_id()
                     branch.active = hub_id
                     if self.verbose:
                         vprint(f'\tReset branch {branch_id} active room to hub: {hub_id}')
@@ -4941,7 +4882,7 @@ class ruination_map():
         # (It's OK if other rooms are unconnected - they just won't be accessible)
         for branch_id, branch in enumerate(self.branches):
             # Find the hub room for this branch
-            hub_id = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)][0]
+            hub_id = branch.require_hub_id()
             hub = branch.rooms.get_room(hub_id)
 
             # Check hub's unconnected exits (doors and traps only - pits are entrances)
@@ -5197,11 +5138,11 @@ class ruination_map():
             if branch is None:
                 connected_per_branch.append(set())
                 continue
-            hub_ids = [n for n in branch.net.nodes if 'ruin_hub_' in str(n)]
-            if not hub_ids:
+            hub_id = branch.get_hub_id()
+            if hub_id is None:
                 connected_per_branch.append(set())
                 continue
-            hub_bracketed = f"_{hub_ids[0]}_"
+            hub_bracketed = f"_{hub_id}_"
             connected = {
                 r for r in branch.all_rooms_added
                 if f"_{r}_" in hub_bracketed
