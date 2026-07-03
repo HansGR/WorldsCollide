@@ -366,6 +366,31 @@ semantics make those lists larger than the node count). Combined with 4.1 this
 makes each connection O(N²)-ish. Caching per-frame reachability (the graph
 only changes by one edge between frames) would collapse most of this.
 
+**STATUS (4.1 + 4.3): implemented 2026-07 on branch `door-rando-review-p5`,
+under a byte-identical constraint.** Profiling showed generic `copy.deepcopy`
+was ~80% of the `-drdc` walk. `Network.__deepcopy__` now uses hand-rolled,
+order-preserving fast copies (`_fast_copy_digraph`, `Rooms.fast_copy`,
+`Room.fast_copy`), with generic deepcopy retained for subclass attributes.
+Two order-preservation subtleties are load-bearing and documented in the
+code: (a) a DiGraph's `_pred` dicts must be copied directly — rebuilding via
+`add_edges_from` reorders `predecessors()` iteration; (b) sets must be copied
+as `set(list(s))`, not `set(s)` — the merge path presizes the hash table
+differently and can change iteration order versus deepcopy's element-by-
+element rebuild (this was caught because `-drdc` output diverged and was then
+verified over 70 randomized trials). For 4.3, `check_network_invalidity` now
+computes `count_unprotected` once per room per frame instead of per
+(room, neighbor) pair, and the `_nodes` traversals use set-based visited
+membership and O(1) `has_edge` two-way tests (result order untouched; the
+full reachability-caching idea was deliberately NOT done — the duplicate-
+emission semantics feed shuffled candidate lists, so replacing them risks
+changing outputs). Result: walk time ~3× faster (3.3s → 1.1s on the profiled
+`-drdc` workload; full 3-seed `-drdc` wall time 11.2s → 6.9s — the remainder
+is ROM/data/event work). Verified byte-identical vs pre-change references on
+8 seeds across `-drdc` ×3, `-dra`, `-mapx`, `-ruin` ×3. Caveat: seeds whose
+walks previously hit the 10-second timeout may now complete within it and
+produce a different (valid) map — but those outcomes were already
+hardware-dependent by construction.
+
 ### 4.4 [FRAGILE] Bare `except:` hides real failures during the walk
 `data/walks.py:967` — the backtracking `try/except` catches *everything*,
 including `NetworkRecursionError`, `RecursionError`, `KeyboardInterrupt`, and
@@ -373,6 +398,10 @@ genuine bugs (e.g. an `AttributeError` from a data error), converting them
 into "this connection failed, try the next entrance" — which multiplies the
 cost of real failures by the full backtrack tree and hides their origin. Catch
 a specific exception type raised for "invalid network state".
+**STATUS: partially addressed on `door-rando-review-p5`** — narrowed to
+`except Exception` so Ctrl-C/SystemExit abort the walk. Catching a dedicated
+invalid-state exception type remains open (it would change which data-error
+bugs surface vs. backtrack, so it needs its own careful pass).
 
 ### 4.5 [PERF] Reserve-area scans re-walk `room_data` lists repeatedly
 `finalize_map` re-derives `[x for x in data[i] if x not in self.protected]`
@@ -575,5 +604,5 @@ Recorded so future reviews don't re-litigate them:
    `-ruin` ×3 and `-drdc` builds byte-identical to `door-rando-review-p3`;
    unit tests for `_pull_from_reserve` (first-match, best-score, pool
    consumption, None/empty/no-match) and `require_hub_id`; 12-seed `-ruin`
-   sweep. 4.1/4.3 (walk-performance) deliberately deferred pending a live
-   complaint about `-drdc` generation time.
+   sweep. 4.1/4.3 (walk-performance) subsequently implemented on
+   `door-rando-review-p5` — see the STATUS note under 4.3.

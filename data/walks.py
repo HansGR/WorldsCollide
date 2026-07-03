@@ -6,6 +6,28 @@ import numpy as np
 from log.verbose import vprint, is_enabled as _verbose_enabled
 
 
+def _fast_copy_digraph(g):
+    """Order-preserving fast copy of a networkx DiGraph without attributes.
+
+    Equivalent to copy.deepcopy(g) for the graphs used here (no node/edge
+    attributes), but copies the internal dicts directly. Insertion order of
+    _node, _adj[u] and _pred[v] is preserved exactly — nx.DiGraph(g) or
+    g.copy() would rebuild _pred in edge-major order instead, which changes
+    predecessors() iteration order and therefore downstream RNG outcomes.
+    The per-edge attribute dict is shared between _adj[u][v] and _pred[v][u]
+    in the copy, matching networkx's own invariant.
+    """
+    new = g.__class__()
+    new.graph.update(g.graph)
+    new._node = {n: d.copy() for n, d in g._node.items()}
+    new_adj = {u: {v: d.copy() for v, d in nbrs.items()} for u, nbrs in g._adj.items()}
+    new._adj = new_adj
+    new._succ = new_adj
+    new._pred = {v: {u: new_adj[u][v] for u in preds} for v, preds in g._pred.items()}
+    new.__networkx_cache__ = {}
+    return new
+
+
 class NetworkRecursionError(Exception):
     """Raised when a network traversal hits unexpected infinite recursion.
 
@@ -42,14 +64,48 @@ class Network:
         self.version = 'Claude'
         self.initially_locked_exits = set()  # Exits unlocked by apply_key(); not free at start
 
+    # Attributes copied by the hand-rolled fast paths below. Anything else
+    # (e.g. subclass attributes) falls back to generic deepcopy.
+    _FAST_COPY_ATTRS = frozenset([
+        'should_stop', 'net', 'rooms', 'original_room_ids', 'keychain',
+        'map', 'protected', 'active', 'version', 'initially_locked_exits',
+    ])
+
     def __deepcopy__(self, memo):
+        # connect_network deep-copies the whole network once per attempted
+        # connection, which made generic copy.deepcopy ~80% of -drdc's walk
+        # time. All element ids are immutable (ints/strings), so hand-rolled
+        # container copies produce an equivalent independent network far
+        # faster. CRITICAL invariant: every copied dict/set must be rebuilt
+        # by inserting in the original's iteration order (exactly what
+        # generic deepcopy did), because iteration order feeds the candidate
+        # lists that random.shuffle/choice consume — this keeps same-seed
+        # output byte-identical to the generic-deepcopy implementation.
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
+        result.should_stop = self.should_stop  # shared, never copied
+        result.net = _fast_copy_digraph(self.net)
+        result.rooms = self.rooms.fast_copy()
+        result.original_room_ids = list(self.original_room_ids)
+        # Sets are copied as set(list(s)), NOT set(s): set(s) merges into a
+        # presized table while deepcopy rebuilds by inserting the elements
+        # one-by-one (via __reduce_ex__), and the two can produce different
+        # iteration orders for the same contents. set(list(s)) reproduces
+        # deepcopy's insertion sequence exactly.
+        result.keychain = set(list(self.keychain))
+        # Connection pairs are never mutated in place after creation, but
+        # copy them anyway — they're tiny.
+        result.map = [[list(m) for m in self.map[0]],
+                      [list(m) for m in self.map[1]]]
+        result.protected = set(list(self.protected)) if self.protected is not None else None
+        result.active = self.active
+        result.version = self.version
+        result.initially_locked_exits = set(list(self.initially_locked_exits))
+        # Subclass attributes (RuinationBranch etc.): generic deepcopy.
         for k, v in self.__dict__.items():
-            if k != 'should_stop':
+            if k not in self._FAST_COPY_ATTRS:
                 setattr(result, k, deepcopy(v, memo))
-        result.should_stop = self.should_stop
         return result
 
     def add_room(self, room_id):
@@ -351,13 +407,15 @@ class Network:
         if visited is None:
             visited = []
         try:
-            # Stack entry: (cur_room, visited_path, emit_path).
-            # `visited_path` blocks revisits along the current branch;
-            # `emit_path` is what gets appended to the result at a leaf.
-            stack = [(room_id, list(visited), list(visited))]
+            # Stack entry: (cur_room, visited_set, emit_path).
+            # `visited_set` blocks revisits along the current branch (a set:
+            # only membership matters); `emit_path` is the ordered path that
+            # gets appended to the result at a leaf.
+            stack = [(room_id, set(visited), list(visited))]
             result = []
             max_iterations = 200000   # safety net; real graphs are tiny
             iterations = 0
+            has_edge = self.net.has_edge
             while stack:
                 iterations += 1
                 if iterations > max_iterations:
@@ -370,8 +428,8 @@ class Network:
                     result += cur_emit
                     continue
                 for p in pred:
-                    new_visited = cur_visited + [p]
-                    if cur_room in self.net.predecessors(p):
+                    new_visited = cur_visited | {p}
+                    if has_edge(cur_room, p):
                         # 2-way edge: skip p in the emitted path but mark it
                         # visited so we cannot bounce back across the edge.
                         stack.append((p, new_visited, cur_emit))
@@ -410,10 +468,11 @@ class Network:
         if visited is None:
             visited = []
         try:
-            stack = [(room_id, list(visited), list(visited))]
+            stack = [(room_id, set(visited), list(visited))]
             result = []
             max_iterations = 200000
             iterations = 0
+            has_edge = self.net.has_edge
             while stack:
                 iterations += 1
                 if iterations > max_iterations:
@@ -426,8 +485,8 @@ class Network:
                     result += cur_emit
                     continue
                 for s in succ:
-                    new_visited = cur_visited + [s]
-                    if cur_room in self.net.successors(s):
+                    new_visited = cur_visited | {s}
+                    if has_edge(s, cur_room):
                         # 2-way edge: skip s in the emitted path but mark it
                         # visited so we cannot bounce back across the edge.
                         stack.append((s, new_visited, cur_emit))
@@ -650,28 +709,29 @@ class Network:
         dead_end_count = 0
         doors_in_non_dead_ends = 0
         total_count = np.array([c for c in self.rooms.count])
-        #if self.verbose:
-        #    print('\t\tbug hunting: total count', total_count)
         total_self_count = np.array([0, 0, 0])
 
+        # count_unprotected is pure per room and this loop needs it for every
+        # (room, upstream room) / (room, downstream room) pair — compute each
+        # room's count once instead of O(N^2) times. The cached arrays are
+        # only ever read (+= accumulates into a fresh array).
+        unprot_count = {room_id: self.count_unprotected(room_id)
+                        for room_id in self.net.nodes}
+
         for room_id in self.net.nodes:
-            #if self.verbose:
-            #    print('\t\tbug hunting: room analysis', room_id)
             room = self.rooms.get_room(room_id)
-            self_count = self.count_unprotected(room_id)  #   room.full_count[:3]  #
+            self_count = unprot_count[room_id]
             total_self_count += np.array(room.count[:3])
 
             up_count = np.array([0, 0, 0])
             up_nodes = self.get_upstream_nodes(room_id)
             for up_id in set(up_nodes):   # for up_id in up_nodes:  don't doublecount?
-                up_room = self.rooms.get_room(up_id)
-                up_count += self.count_unprotected(up_id)  #  up_room.full_count[:3]  #
+                up_count += unprot_count[up_id]
 
             down_count = np.array([0, 0, 0])
             down_nodes = self.get_downstream_nodes(room_id)
             for down_id in set(down_nodes):   # for down_id in down_nodes:  don't doublecount?
-                down_room = self.rooms.get_room(down_id)
-                down_count += self.count_unprotected(down_id)  #  down_room.full_count[:3]  #
+                down_count += unprot_count[down_id]
 
             #if self.verbose:
             #    print('\t\tbug hunting 0. self:', self_count, '.', up_count,'in', len(up_nodes),': ', up_nodes, '; ',
@@ -892,7 +952,9 @@ class Network:
                         # up_propagate the successful connection
                         return net_state
 
-                    except:
+                    except Exception:
+                        # Not a bare except: KeyboardInterrupt/SystemExit must
+                        # abort the walk, not be treated as a failed attempt.
                         if self.verbose:
                             vprint('\t\t(' + str(d1) + ',' + str(d2) + ') failed')
                         net_state = net_backup  # reset the network
@@ -1043,6 +1105,21 @@ class Rooms:
 
         # Index all elements
         self._index_room_elements(room)
+
+    def fast_copy(self):
+        """Order-preserving fast copy of the collection and its rooms.
+
+        Equivalent to copy.deepcopy for the data actually stored here
+        (element ids are ints/strings; lock lists are owned by each Room),
+        preserving dict insertion order exactly. Used by
+        Network.__deepcopy__ — see the invariant note there.
+        """
+        new = Rooms.__new__(Rooms)
+        new.rooms = {}
+        new._element_to_room = dict(self._element_to_room)
+        for rid, room in self.rooms.items():
+            new.rooms[rid] = room.fast_copy(new)
+        return new
 
     def _index_room_elements(self, room):
         """Index all elements in a room for reverse lookup"""
@@ -1281,6 +1358,34 @@ class Room:
 
             # Handle shared exits
             self._handle_shared_exits()
+
+    def fast_copy(self, rooms_ref):
+        """Order-preserving fast copy of this room, bound to `rooms_ref`.
+
+        Element ids are immutable (ints/strings) and lock lists are owned by
+        the room (copied in add_locks), so shallow container copies produce
+        an independent room. Sets/dicts are rebuilt in the original's
+        iteration order — same as generic deepcopy — which matters for RNG
+        reproducibility (see Network.__deepcopy__). Nested lock dicts (which
+        add_locks warns about and current data never contains) are shallow-
+        copied defensively.
+        """
+        new = Room.__new__(Room)
+        new.id = self.id
+        new.rooms_ref = rooms_ref
+        elements = self.elements
+        # set(list(s)) rather than set(s): reproduces deepcopy's element-by-
+        # element rebuild so iteration order matches the generic-deepcopy
+        # implementation exactly (see Network.__deepcopy__).
+        new.elements = {
+            'doors': set(list(elements['doors'])),
+            'traps': set(list(elements['traps'])),
+            'pits': set(list(elements['pits'])),
+            'keys': set(list(elements['keys'])),
+            'locks': {k: [dict(i) if isinstance(i, dict) else i for i in v]
+                      for k, v in elements['locks'].items()},
+        }
+        return new
 
     def _handle_shared_exits(self):
         """Remove shared exits defined in shared_exits global"""
