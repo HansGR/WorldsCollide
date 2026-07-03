@@ -437,6 +437,58 @@ AREA_SHOPS = {
 RUIN_TERMINI = ['ruin_terminus_1', 'ruin_terminus_2', 'ruin_terminus_3']  # list of terminal rooms for branches
 
 
+# ---------------------------------------------------------------------------
+# Reset boundary for ruination's shared mutable tables.
+#
+# Map generation mutates several module-level tables: _configure_dream_maze
+# edits CHARACTER_AREAS / RUIN_ROOM_SETS / WARP_ROOMS / forced_same_branch and
+# migrates ROOM_REWARD[429]; generate_map_with_characters pops areas from
+# CHARACTER_AREAS['EXTRA']; -open clears CHARACTER_LOCKED_REWARDS. The retry
+# loop in events.ruination_mod re-instantiates ruination_map on failure, so
+# without a reset a retry starts from a contaminated table (e.g. an EXTRA area
+# consumed by a failed attempt would be unavailable to every later attempt).
+# ruination_map.__init__ calls _reset_ruination_tables() first so each attempt
+# starts pristine. Resets preserve dict/set object identity (clear + update).
+#
+# ROOM_REWARD is deliberately NOT blanket-restored: events.ruination_mod binds
+# its values to the live Reward slot objects before ruination_map is built,
+# and those bindings must survive. Only the -maze iso key migration
+# (429 <-> 'ruin-stooge-maze') is undone, preserving the value object.
+import copy as _copy
+
+_CHARACTER_AREAS_PRISTINE = _copy.deepcopy(CHARACTER_AREAS)
+_RUIN_ROOM_SETS_PRISTINE = _copy.deepcopy(RUIN_ROOM_SETS)
+_WARP_ROOMS_PRISTINE = set(WARP_ROOMS)
+_FORCED_SAME_BRANCH_PRISTINE = _copy.deepcopy(forced_same_branch)
+_CHARACTER_LOCKED_REWARDS_PRISTINE = _copy.deepcopy(CHARACTER_LOCKED_REWARDS)
+
+
+def _reset_ruination_tables():
+    """Restore ruination's module-level tables to their import-time state."""
+    global _EXIT_TO_ROOM_OWNER
+    CHARACTER_AREAS.clear()
+    CHARACTER_AREAS.update(_copy.deepcopy(_CHARACTER_AREAS_PRISTINE))
+    RUIN_ROOM_SETS.clear()
+    RUIN_ROOM_SETS.update(_copy.deepcopy(_RUIN_ROOM_SETS_PRISTINE))
+    WARP_ROOMS.clear()
+    WARP_ROOMS.update(_WARP_ROOMS_PRISTINE)
+    forced_same_branch.clear()
+    forced_same_branch.update(_copy.deepcopy(_FORCED_SAME_BRANCH_PRISTINE))
+    CHARACTER_LOCKED_REWARDS.clear()
+    CHARACTER_LOCKED_REWARDS.update(_copy.deepcopy(_CHARACTER_LOCKED_REWARDS_PRISTINE))
+    REWARDS_LOCKED_BY_CHARACTER.clear()
+    for _clr, _rewards in CHARACTER_LOCKED_REWARDS.items():
+        for _reward in _rewards:
+            REWARDS_LOCKED_BY_CHARACTER[_reward] = _clr
+    # Undo the -maze iso key migration, keeping the (possibly slot-bound) value.
+    if 'ruin-stooge-maze' in ROOM_REWARD and 429 not in ROOM_REWARD:
+        ROOM_REWARD[429] = ROOM_REWARD.pop('ruin-stooge-maze')
+    # room_data gains ruin_hub_* rooms and an edited 'ruin-stooge-maze' entry
+    # during __init__; both writes are idempotent overwrites, but the lazy
+    # exit->room cache built from room_data must not go stale across attempts.
+    _EXIT_TO_ROOM_OWNER = None
+
+
 _EXIT_TO_ROOM_OWNER = None
 def _exit_to_room_owner(exit_id):
     # Lazily build and cache a map from an exit id to the room_data room that owns
@@ -3847,6 +3899,12 @@ class ruination_map():
     TOWN_COOLDOWN_INITIAL = 4
 
     def __init__(self, args, starting_party, verbose=False, characters=None):
+        # Restore module-level tables first: a previous (failed) generation
+        # attempt in this process may have consumed EXTRA areas, moved
+        # DreamMaze gating, or migrated ROOM_REWARD keys. See
+        # _reset_ruination_tables for what is (and isn't) restored.
+        _reset_ruination_tables()
+
         # Verbose flag controls debug output throughout map generation
         self.verbose = verbose
 

@@ -2,8 +2,8 @@
 import threading
 from random import randrange, choices
 from data.rooms import forced_connections, shared_oneways, exit_room, logical_links, map_shuffle_protected_doors, \
-    dungeon_crawl_split_exits
-from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door  # for door descriptions, WOR/WOB equivalent doors
+    dungeon_crawl_split_exits, reset_room_tables
+from data.map_exit_extra import exit_data, doors_WOB_WOR, eventname_to_door, reset_exit_data  # for door descriptions, WOR/WOB equivalent doors
 from data.event_exit_info import event_exit_info  # for one-way exit descriptions
 from data.walks import *
 from log.verbose import vprint, is_enabled as _verbose_enabled
@@ -140,6 +140,15 @@ class Doors():
         return _verbose_enabled()
 
     def __init__(self, args):
+        # Doors (and the mapping code downstream of it) treats the shared data
+        # tables as scratch space: shared_exits gets split-exit entries removed,
+        # forced_connections gets popped, and room_data lists get edited for
+        # map shuffle / -dra root doors / ruination hub rooms. Restore all of
+        # them to their pristine import-time state first so that constructing
+        # Doors a second time in the same process (retries, tests) starts clean.
+        reset_room_tables()
+        reset_exit_data()
+
         # Hard overrides for testing
         self.OVERRIDE = [
             #[1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
@@ -164,6 +173,9 @@ class Doors():
         self.rooms = []
         self.room_doors = {}
         self.room_counts = {}
+        # Intentional alias (not a copy): the ruination-mode pop below must be
+        # visible to the walk code, which reads the module-level table.
+        # reset_room_tables() above makes the mutation safe across builds.
         self.forcing = forced_connections
         self.sharing = {}
         self.invalid = {}
