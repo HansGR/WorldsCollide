@@ -606,3 +606,128 @@ Recorded so future reviews don't re-litigate them:
    consumption, None/empty/no-match) and `require_hub_id`; 12-seed `-ruin`
    sweep. 4.1/4.3 (walk-performance) subsequently implemented on
    `door-rando-review-p5` — see the STATUS note under 4.3.
+
+---
+
+## 9. Speedup menu if seed compatibility is relaxed
+
+The p5 optimizations were done under a byte-identical constraint: the same
+seed produces the same map. This section documents what *else* is on the
+table if that constraint is dropped — i.e., a given seed may produce a
+different map, but every map must still be legal and valid. Estimates are
+grounded in post-p5 profiles (2026-07, this container; profiler overhead
+~2.5×, ratios are what matter).
+
+### 9.0 Where the time goes today (post-p5)
+
+**`-drdc`** (~2.3s/seed wall, of which walk ≈ 1.1s, rest is ROM/data/event
+work): inside the walk, ~48% is still the copy-per-attempted-connection in
+`connect_network` (now the fast copy, not generic deepcopy), ~42% is
+`check_network_invalidity` (per-frame, per-node path-enumeration
+traversals), ~10% is `attach_dead_ends` + `nx.relabel_nodes` + misc.
+
+**`-ruin`** (~1.4s/seed wall): the branch mapper itself is ~0.08s and
+`finalize_map` costs are negligible; `-rkt` adds ~0.3s typical
+(`connect_lane` walks 0.16s + `verify` 0.10s over ~3-20 partitions, budget
+400). Everything else (~1s) is event-script writing and data mods —
+outside door-rando scope. The dominant `-ruin` latency risk is the retry
+loop: ~1 seed in 25 regenerates the whole map up to 10×.
+
+### 9.1 Undo-log backtracking (drop the copy entirely) — biggest `-drdc` win
+
+Replace copy-per-attempt with mutate-live + undo-on-failure. `connect()`
+makes a bounded, journalable set of mutations (2 element removals, ≤2
+edges, 1 map append) — the hard part is `compress_loop` (node merges) and
+key cascades (`apply_key`/`_assess_room_locks`), which are easiest to
+handle by snapshotting only when they fire (they are a minority of
+attempts). Under byte-identity this was rejected because restoring exact
+hash-table iteration order after undo is impractical; without it, only
+logical state must be restored.
+**Estimated gain: removes ~48% of walk time; with 9.2, walk drops an
+estimated 5-10× (to ~0.1-0.2s), making `-drdc` builds ROM-work-bound.**
+Effort: the largest item here; needs care around compress_loop/keys.
+
+### 9.2 Linear-time reachability instead of path enumeration
+
+`check_network_invalidity`, `is_dead_end`, `is_attachable`, and `get_loop`
+all consume the duplicate-emitting path enumerations
+(`get_*_nodes`/`get_*_paths`) whose worst case is exponential (currently
+fenced by the 200k-iteration cap). Their *consumers* only need
+reachable-sets and cycle existence:
+- up/down streams → plain BFS/DFS reachable sets, O(V+E) per node (or one
+  Tarjan SCC condensation per frame for all nodes at once);
+- `get_loop` after connecting d1→d2 → a targeted "path from R2 back to
+  R1" search, O(V+E), instead of enumerating all upstream paths. When
+  multiple cycles exist it may pick a different (equally valid) loop to
+  compress — that is exactly the seed-compatibility break.
+**Estimated gain: most of the ~42% invalidity share plus the get_loop cost
+inside every connect; also removes the exponential worst case and the
+NetworkRecursionError fence entirely (a robustness win, review 4.2).**
+Effort: moderate; the invalidity rules must be re-derived on reachable-set
+semantics and re-validated (the rules are documented in §5 of the guide
+and ARCHIVE.md).
+
+### 9.3 Deterministic backtrack budget instead of the 10s wall-clock timeout
+
+Not a raw speedup, but strongly recommended the moment compatibility is
+relaxed: replace `connect_with_timeout`'s wall-clock limit with a budget
+counted in backtracks (or attempted connections). Today a seed whose walk
+runs ~10s produces *different maps on faster vs slower hardware*; a
+deterministic budget makes every seed hardware-independent, lets doomed
+walks abort earlier (lower tail latency), and removes the last
+reproducibility caveat noted in p5. The budget number can be calibrated
+from the retry telemetry (a healthy dc walk completes in ~200 frames).
+
+### 9.4 Candidate-ordering heuristics in the walk
+
+`connect_network` currently shuffles exits/entrances uniformly; failures
+burn deep backtrack trees. Biasing candidate order (e.g., prefer entrances
+in rooms with more remaining exits; connect low-connectivity rooms early —
+the intuition behind the deleted legacy "drafting" mapper) reduces
+backtrack depth and, more importantly, failure/timeout variance. Gains are
+seed-dependent: small on average, large on the tail that currently
+retries. This is also the likely fix for the chronically retry-hungry
+`-dre` MapShuffleWOR area.
+
+### 9.5 `-ruin`: cut the retry tail, not the mapper
+
+The mapper is not the cost; regeneration is. Options, in value order:
+1. **Reduce the ~4% failure rate** — feed `StuckReason` telemetry back
+   into area distribution more aggressively, or allow `finalize_map` to
+   pull one extra converter room preemptively when trap/pit parity looks
+   tight. Every avoided failure saves a full ~0.4s regeneration (×10 worst
+   case).
+2. **Constraint-guided `-rkt` partitioning** — `split_lanes` currently
+   rejection-samples partitions against parity/boss constraints (guard
+   5000) and then walks/verifies up to 400 of them. Placing the glued
+   pairs and bosses first under running parity constraints would cut
+   rejected partitions by an order of magnitude. Typical saving ~0.2s,
+   worst case much more; `verify()` itself is exact and cheap, keep it.
+3. **Cached topology in finalize/extend** — `classify_topology` and
+   `get_downstream_levels` (which still does substring matching over
+   `self.map[1]` per path node) are recomputed per step; a reachability
+   cache invalidated on `connect` would simplify the code, but absolute
+   numbers are small (<0.05s/seed). Do it for clarity, not speed.
+
+### 9.6 Parallel seed racing (wall-clock, not CPU, savings)
+
+For batch/website generation: run k generation attempts in parallel worker
+processes with sub-seeds derived from the master seed (`seed:0`,
+`seed:1`, ...) and deterministically take the lowest-index success. Output
+is still a pure function of the master seed, retries overlap instead of
+serializing, and the tail (retry-prone `-ruin` seeds, timeout-prone
+`-drdc` walks) collapses toward the median. Costs: process startup and
+memory; the walk itself needs no ROM, but module import currently does
+(review 3.7) — fork-after-import sidesteps that on Linux.
+
+### 9.7 Guardrails for any of the above
+
+Legality does not come from seed stability; it comes from the constructive
+rules plus the explicit verifiers. Whatever changes: keep (a)
+`postprocess_door_map`'s reciprocity check, (b) the trap/pit parity and
+terminus assertions in `finalize_map`, (c)
+`_verify_no_character_gated_softlock`, and (d) the `-rkt` joint-state
+`verify()` as the acceptance gate, and re-run the review's standard sweep
+(N-seed build matrix across `-drdc`/`-dra`/`-dre -maps`/`-mapx`/`-ruin`)
+plus a spot-check of spoiler-log routes. A seed that builds and passes all
+four verifiers is a legal map regardless of which map it is.
