@@ -411,8 +411,11 @@ mutation) and some use `for rid in area_rooms` while removing from it.
   `event/ruination.py:6465` with near-identical logic; the inner
   `get_door_name` helper is additionally triplicated inside `ruination.py`
   (5826, 6229, 6486).
-- `data/rooms.py` `shared_oneways` is now all-commented (superseded by logical
-  rooms + forced connections) but still exported and imported by `doors.py`.
+- `data/rooms.py` `shared_oneways` has all its *entries* commented out
+  (superseded by logical rooms + forced connections), but the empty dict is
+  still consulted live by `data/transitions.py:58` — so it is an extension
+  point, not dead code. Only the unused import in `doors.py` can go.
+  *(Correction: originally misclassified as fully dead.)*
 - `data/walks.py:448-455` `get_top_nodes` commented out.
 - `check_network_invalidity` contains a ~60-line commented "locked forced"
   block (`data/walks.py:689-750`).
@@ -527,5 +530,20 @@ Recorded so future reviews don't re-litigate them:
    validation uncovered).
 3. **Deletions:** 5.1, 5.2, 5.4 — roughly 1,600 lines removed with zero
    behavior change; do this before further refactoring so diffs stay readable.
+   **STATUS: implemented 2026-07 on branch `door-rando-review-p3`** (~1,590
+   lines deleted): the legacy mapper in `data/doors.py` (5.1) plus its dead
+   attributes and unused imports; the v1 target-finders and
+   `extend_branch_path_old` in `event/ruination.py` (5.2), with the `_v2`
+   methods renamed to the plain names (call sites, ARCHIVE.md and
+   event/TODO.md updated); `Maps.doorRandoOverride`, the `get_top_nodes` and
+   locked-forced commented blocks in `data/walks.py`, the door-360/1291 debug
+   traces in `data/maps.py`, and the triplicated `get_door_name` hoisted to a
+   module-level `_door_description` (5.4). Deliberately kept:
+   `shared_oneways` (live extension point — see corrected 5.4 bullet),
+   `Doors.OVERRIDE`/`force_vanilla` (documented dev switches, guide §9), the
+   generic safe_id warnings in `postprocess_door_map` (real diagnostics), and
+   the `ruination_start_game_mod` choreography (content, not logic).
+   Verified: `-drdc` and `-ruin` builds byte-identical to
+   `door-rando-review-p2` for the same seeds under pinned PYTHONHASHSEED.
 4. **Refactors:** 5.3 (reserve-pull helper), 6 (hub accessor), then 4.1/4.3 if
    `-drdc` generation time or the timeout rate is a live complaint.

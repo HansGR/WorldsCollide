@@ -4,7 +4,7 @@
 
 ✅ **FIXED** - Track "initially locked" exits to prevent softlocks from key ordering mismatch. The algorithm applies keys at connection time, but the player applies them at visit time. Rooms whose exits are all key-unlocked (e.g., Room 391 in Daryl's Tomb) could trap a player entering via pit before obtaining keys. See ARCHIVE.md for full analysis, room catalog, and implementation details.
 
-**Implementation**: `initially_locked_exits` set on Network class (`data/walks.py`), checked in `apply_key()`, `get_valid_door_targets_v2`, `get_valid_pit_targets_v2`, `extend_branch_path`, and `finalize_map` step 1.
+**Implementation**: `initially_locked_exits` set on Network class (`data/walks.py`), checked in `apply_key()`, `get_valid_door_targets`, `get_valid_pit_targets`, `extend_branch_path`, and `finalize_map` step 1.
 
 ❌ **TODO** - Review the 3 character-gated exits and decide how to handle them:
   - `ruin-thamasa`: trap 2054 locked by STRAGO

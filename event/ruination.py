@@ -532,6 +532,17 @@ def _room_data_start_keys(rid):
     return [k for k in data[3] if isinstance(k, str)]
 
 
+def _door_description(door_id):
+    """Human-readable name for a door/exit ID (spoiler log / map image / debug)."""
+    from data.map_exit_extra import exit_data
+    from data.event_exit_info import event_exit_info
+    if door_id in exit_data:
+        return exit_data[door_id][1]
+    if door_id in event_exit_info:
+        return event_exit_info[door_id][4]
+    return f"Door {door_id}"
+
+
 class RuinationBranch(Network):
     def __init__(self, rooms):
         super().__init__(rooms)
@@ -1240,325 +1251,7 @@ class RuinationBranch(Network):
         return {'doors': escape_doors, 'traps': escape_traps}
 
     def get_valid_pit_targets(self, trap_exit, exit_room_id, topology):
-        """Get valid pit targets for a trap exit, respecting topology rules.
-
-        Rules applied:
-        0. Never connect to last entrance to hub/upstream
-        1. Can connect to PITO room (kicks the can down the road)
-        2a. Can connect to PIDO room if branch has exits after
-        3. Can connect to upstream pit ONLY IF loop compression leaves exits
-        GLOBAL: Never make a connection that leaves the branch with zero exits
-        ONLY-TRAP-PIT: If branch has exactly 1 trap, 1 pit, and 0 doors,
-                       don't connect them (must find unconnected room instead)
-
-        Returns list of valid pit IDs.
-        """
-        valid_pits = []
-        hub_and_upstream = topology['hub_and_upstream']
-        room_levels = topology['room_levels']
-        room_level = room_levels.get(exit_room_id, 0)
-        exit_room = self.rooms.get_room(exit_room_id)
-
-        # NOTE: We intentionally do NOT pre-filter exits based on whether the source room
-        # would be "stranded" (left with no exits). Instead, we check each potential
-        # CONNECTION to see if the destination provides a valid continuation path.
-        # A trap exit from a room with no other exits is still valid if the destination
-        # room has its own exits (e.g., connecting to a PITO room that has traps).
-
-        # === GLOBAL PROTECTION: Count total exits in connected branch ===
-        # Using this trap consumes 1 exit. We must ensure the branch still has exits after.
-        connected_rooms = set(room_levels.keys())
-        current_doors, current_traps = self.count_exits_in_region(connected_rooms)
-        current_total_exits = current_doors + current_traps
-        # After using this trap: current_total_exits - 1
-        # For the connection to be valid, we need: (current_total_exits - 1) + dest_room_exits > 0
-        # For loops (destination in connected branch): dest_room_exits = 0
-        # For new rooms: dest_room_exits = destination room's doors + traps
-
-        # Count doors available in hub/upstream (for rule 2a)
-        hub_upstream_doors, _ = self.count_exits_in_region(hub_and_upstream)
-
-        # NEW FILTER: Check if this is the only trap and only pit scenario
-        # If the branch has exactly 1 trap (exit) and only pits in hub/upstream,
-        # AND no doors, connecting them would strand the branch with no exits and no entrances.
-        # If there are doors, they provide both exits and entrances, so it's OK to connect.
-        _, total_hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
-        is_only_trap_and_pits = (current_traps == 1 and total_hub_upstream_pits >= 1 and current_doors == 0)
-
-        # Get upstream pits of the exit room (for rule 3)
-        local_upstream = self.get_upstream_nodes(exit_room_id)
-        local_upstream_pits = set()
-        for up_id in local_upstream:
-            up_room = self.rooms.get_room(up_id)
-            if up_room:
-                local_upstream_pits.update([p for p in up_room.pits if p not in self.protected])
-
-        # Include hub/upstream pits
-        hub_upstream_pits = set()
-        for h_id in hub_and_upstream:
-            h_room = self.rooms.get_room(h_id)
-            if h_room:
-                hub_upstream_pits.update([p for p in h_room.pits if p not in self.protected])
-
-        # === RULE 3: Connecting to upstream pits ===
-        # Can connect to local upstream (not hub's upstream) IF loop compression leaves exits
-        for pit_id in local_upstream_pits:
-            if pit_id in self.protected:
-                continue
-            pit_room = self.rooms.get_room_from_element(pit_id)
-            if pit_room is None:
-                continue
-
-            # NEW FILTER: Skip if this is the only trap connecting to an upstream pit
-            if is_only_trap_and_pits:
-                continue  # Must find an unconnected room that adds entrances/exits
-
-            # If pit is in hub/upstream, check rule 0 (not last entrance)
-            if pit_room.id in hub_and_upstream:
-                hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
-                total_entrances = hub_doors + hub_pits
-                if total_entrances <= 1:
-                    continue  # Rule 0: don't use last entrance to hub/upstream
-
-            # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
-            # After using this trap, we lose 1 exit and gain 0 new exits.
-            # Only allow if the branch would still have exits.
-            if current_total_exits <= 1:
-                continue  # This is the last exit; can't connect to an already-connected room
-
-            # Check if loop compression would leave exits
-            # After connecting trap->pit, the rooms from exit_room up to pit_room compress
-            # Need to check if the compressed room has exits
-            #
-            # Example: Level 2 has trap 2005, Level A has pit 3003
-            # If Level A -> Level 2 already exists (via 2007->3007),
-            # then connecting 2005->3003 creates loop: Level 2 -> Level A -> Level 2
-            # All rooms in the loop (Level 2, Level A) compress into one room.
-            # We need exits > 0 after compression.
-
-            # Collect all rooms that would be in the loop
-            # Start with exit_room, then add all rooms on paths to pit_room (including pit_room)
-            loop_rooms = {exit_room_id}
-            paths = self.get_upstream_paths(exit_room_id)
-            found_pit_room = False
-            for path in paths:
-                for node in path:
-                    loop_rooms.add(node)
-                    # Check if this node IS the pit_room or CONTAINS the pit_room (compound room)
-                    if node == pit_room.id or str(pit_room.id) in str(node):
-                        found_pit_room = True
-                        break
-                if found_pit_room:
-                    break
-
-            # Always include the pit_room itself (it must be in the loop)
-            loop_rooms.add(pit_room.id)
-
-            # Count exits in all loop rooms (excluding the trap we're using)
-            loop_doors = 0
-            loop_traps = 0
-            for r_id in loop_rooms:
-                r = self.rooms.get_room(r_id)
-                if r:
-                    loop_doors += len([d for d in r.doors if d not in self.protected])
-                    loop_traps += len([t for t in r.traps if t not in self.protected])
-
-            # Subtract the trap we're using
-            loop_traps -= 1
-
-            if loop_doors + loop_traps > 0:
-                valid_pits.append(pit_id)
-
-        # === Check unconnected rooms ===
-        currently_connected = set(topology['room_levels'].keys())
-
-        for room_id in self.net.nodes:
-            if room_id in currently_connected:
-                continue
-            if room_id == self.terminus:
-                continue  # Reserve terminus for finalize_map
-
-            room = self.rooms.get_room(room_id)
-            if room is None:
-                continue
-
-            room_type = self.classify_unconnected_room(room_id)
-            room_pits = [p for p in room.pits if p not in self.protected]
-            room_traps = [t for t in room.traps if t not in self.protected]
-            room_doors = [d for d in room.doors if d not in self.protected]
-
-            if len(room_pits) == 0:
-                continue  # No pits to receive the trap
-
-            # === RULE 1: PITO rooms (can kick the can down the road) ===
-            if room_type == 'PITO' or (len(room_pits) > 0 and len(room_traps) > 0):
-                # This room can receive the trap and continue downstream with its own trap
-                valid_pits.extend(room_pits)
-                continue
-
-            # === RULE 2a: PIDO rooms ===
-            # A PIDO room (pit-in, door-out) can receive a trap if the branch still has exits after.
-            # After connecting: we lose 1 trap exit, but gain the new room's exits.
-            # New doors can then connect to other rooms (including DITO rooms whose traps
-            # can loop back to upstream pits), so we don't require hub to already have doors.
-            if room_type == 'PIDO' or (len(room_pits) > 0 and len(room_doors) > 0 and len(room_traps) == 0):
-                exits_after_connection = (current_total_exits - 1) + len(room_doors)
-                if exits_after_connection > 0:
-                    valid_pits.extend(room_pits)
-                continue
-
-            # === RULE: HUB rooms ===
-            if room_type == 'HUB':
-                # Hub rooms have enough exits to handle downstream
-                valid_pits.extend(room_pits)
-                continue
-
-        # === Connect to hub/upstream pits (forms loop, compresses to hub) ===
-        # GLOBAL PROTECTION: Loop connections don't add new exits to the branch.
-        # Only allow if the branch would still have exits after using this trap.
-        # Also skip entirely if this is the only trap connecting to the only pit.
-        if current_total_exits > 1 and not is_only_trap_and_pits:
-            for pit_id in hub_upstream_pits:
-                if pit_id in self.protected:
-                    continue
-                # Rule 0 check: not the last entrance (must have entrances remaining)
-                hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
-                total_entrances = hub_doors + hub_pits
-                if total_entrances <= 1:
-                    continue
-                if pit_id not in valid_pits:
-                    valid_pits.append(pit_id)
-
-        return valid_pits
-
-    def get_valid_door_targets(self, door_exit, exit_room_id, topology, available_doors=None, available_traps=None):
-        """Get valid door targets for a door exit, respecting topology rules.
-
-        Rules applied:
-        0. Never connect to last door in hub/upstream (until finalize)
-        2b. If unconnected pit in hub/upstream, can connect to DITO room
-        GLOBAL: Never make a connection that leaves the branch with zero exits
-
-        Args:
-            door_exit: The door ID being used for exit
-            exit_room_id: The room containing the exit door
-            topology: Branch topology dict
-            available_doors: Count of available doors at current level (optional, for stricter check)
-            available_traps: Count of available traps at current level (optional, for stricter check)
-
-        Returns list of valid door IDs.
-        """
-        valid_doors = []
-        hub_and_upstream = topology['hub_and_upstream']
-        room_levels = topology['room_levels']
-
-        # === GLOBAL PROTECTION: Count total exits in connected branch ===
-        # Using this door consumes 1 exit. We must ensure the branch still has exits after.
-        connected_rooms = set(room_levels.keys())
-        current_doors, current_traps = self.count_exits_in_region(connected_rooms)
-        current_total_exits = current_doors + current_traps
-
-        # Count pits available in hub/upstream (for rule 2b)
-        _, hub_upstream_pits = self.count_entrances_in_region(hub_and_upstream)
-
-        # === Check unconnected rooms ===
-        currently_connected = set(topology['room_levels'].keys())
-
-        for room_id in self.net.nodes:
-            if room_id in currently_connected:
-                continue
-            if room_id == self.terminus:
-                continue  # Reserve terminus for finalize_map
-
-            room = self.rooms.get_room(room_id)
-            if room is None:
-                continue
-
-            room_type = self.classify_unconnected_room(room_id)
-            room_doors = [d for d in room.doors if d not in self.protected]
-            room_traps = [t for t in room.traps if t not in self.protected]
-            room_pits = [p for p in room.pits if p not in self.protected]
-
-            if len(room_doors) == 0:
-                continue  # No doors to connect to
-
-            # === RULE 2b: DITO rooms (if hub/upstream has pits) ===
-            if room_type == 'DITO' or (len(room_doors) > 0 and len(room_traps) > 0 and len(room_pits) == 0):
-                if hub_upstream_pits > 0:
-                    # Hub/upstream has pits to receive the new trap path
-                    valid_doors.extend(room_doors)
-                continue
-
-            # Door-only rooms (DIDO, HUB, connectors) can always be connected
-            if room_type in ['DIDO', 'HUB'] or (len(room_doors) >= 2):
-                valid_doors.extend(room_doors)
-                continue
-
-            # Dead-end rooms with single door - skip true dead ends, defer to finalize_map
-            if room_type == 'DEAD_END':
-                # Skip true dead ends (no keys, no locks, no checks) - connect them in finalize_map
-                if self.is_true_dead_end(room_id):
-                    continue
-                # GLOBAL PROTECTION: Dead-end rooms add no new exits.
-                # Using our door (-1) and connecting to a room with 0 other exits = -1 total.
-                # Only allow if we have other exits remaining.
-                #
-                # When available_doors/available_traps are provided, use stricter check:
-                # - Need at least 2 doors at current level (one for dead-end, one remaining), OR
-                # - Need 1 door + trap AND hub/upstream has pit (loop can be closed)
-                if available_doors is not None and available_traps is not None:
-                    # Stricter current-level check
-                    has_enough_exits = (
-                        available_doors >= 2 or
-                        (available_doors >= 1 and available_traps >= 1 and hub_upstream_pits > 0)
-                    )
-                    if has_enough_exits:
-                        valid_doors.extend(room_doors)
-                elif current_total_exits > 1:
-                    # Fallback to original check if available counts not provided
-                    valid_doors.extend(room_doors)
-
-        # === Connect to upstream/hub doors (forms loop) ===
-        # Loop connections consume TWO exits: the source door AND the target door.
-        # CRITICAL: Only count exits from rooms that will be usable after the connection:
-        #   - Source-side: active path exits (available_doors + available_traps)
-        #   - Target-side: exits in the target room h_id (absorbed into hub after connection)
-        # Exits in OTHER upstream rooms are NOT usable by extend_branch_path, so don't count them.
-        if current_total_exits > 2:  # Quick pre-filter (necessary condition)
-            for h_id in hub_and_upstream:
-                h_room = self.rooms.get_room(h_id)
-                if h_room:
-                    h_doors = [d for d in h_room.doors if d not in self.protected]
-                    # Rule 0: check not last entrance (must have entrances remaining)
-                    hub_doors, hub_pits = self.count_entrances_in_region(hub_and_upstream)
-                    total_entrances = hub_doors + hub_pits
-                    if total_entrances > 1:  # Leave at least one entrance
-                        # Count exits from target room (will be absorbed after connection)
-                        h_exits_doors, h_exits_traps = self.count_exits_in_region({h_id})
-                        h_total_exits = h_exits_doors + h_exits_traps
-
-                        for d in h_doors:
-                            if d == door_exit:  # Don't connect to self
-                                continue
-                            # Per-target check: after consuming door_exit and d,
-                            # are there still usable exits?
-                            if available_doors is not None and available_traps is not None:
-                                if h_id == exit_room_id:
-                                    # Source and target in same room - exits overlap
-                                    remaining = (available_doors + available_traps) - 2
-                                else:
-                                    # Different rooms - independent exit pools
-                                    remaining = (available_doors + available_traps - 1) + (h_total_exits - 1)
-                                if remaining <= 0:
-                                    continue  # Would leave no usable exits
-                            elif current_total_exits <= 2:
-                                continue  # Fallback: not enough exits
-                            valid_doors.append(d)
-
-        return valid_doors
-
-    def get_valid_pit_targets_v2(self, trap_exit, exit_room_id, topology):
-        """V2: Get valid pit targets by directly assessing each connection's result.
+        """Get valid pit targets by directly assessing each connection's result.
 
         Instead of classifying room types and applying categorical rules, this method
         directly evaluates whether each potential connection maintains branch invariants:
@@ -1721,8 +1414,8 @@ class RuinationBranch(Network):
 
         return valid_pits
 
-    def get_valid_door_targets_v2(self, door_exit, exit_room_id, topology, available_doors=None, available_traps=None):
-        """V2: Get valid door targets by directly assessing each connection's result.
+    def get_valid_door_targets(self, door_exit, exit_room_id, topology, available_doors=None, available_traps=None):
+        """Get valid door targets by directly assessing each connection's result.
 
         Instead of classifying room types and applying categorical rules, this method
         directly evaluates whether each potential connection maintains branch invariants:
@@ -3581,9 +3274,9 @@ class RuinationBranch(Network):
                 # Find valid targets - this method checks if each potential destination
                 # would leave the branch with exits (handles unconnected rooms, loops, etc.)
                 if exit_type == 'traps':
-                    valid_targets = self.get_valid_pit_targets_v2(exit_id, exit_room_id, topology)
+                    valid_targets = self.get_valid_pit_targets(exit_id, exit_room_id, topology)
                 else:
-                    valid_targets = self.get_valid_door_targets_v2(
+                    valid_targets = self.get_valid_door_targets(
                         exit_id, exit_room_id, topology,
                         available_doors=len(available_exits['doors']),
                         available_traps=len(available_exits['traps'])
@@ -3708,148 +3401,6 @@ class RuinationBranch(Network):
             self.last_stuck_reason = StuckReason.NEED_DOORS
         else:
             self.last_stuck_reason = StuckReason.NO_SAFE_EXITS
-
-    def extend_branch_path_old(self):
-        # Extend this branch by (1) adding a node or (2) closing a loop, without terminating the branch.
-        active_room = self.rooms.get_room(self.active)
-        all_entrances = list(active_room.doors) + list(active_room.pits)
-        upstream = self.get_upstream_nodes(self.active)
-        downstream = self.get_downstream_nodes(self.active)
-        if self.verbose:
-            vprint('\tActive room: ', self.active, '.\n\tUpstream nodes: ', upstream,
-                  '\n\tDownstream nodes: ', downstream,
-                  '\n\tAll entrances: ', all_entrances)
-        hub_is_upstream = len([n for n in upstream if 'ruin_hub_' in str(n)]) > 0
-        if hub_is_upstream and self.verbose:
-            vprint('\tHub is upstream!')
-        for node in upstream:
-            room = self.rooms.get_room(node)
-            all_entrances += list(room.doors) + list(room.pits)
-
-        allow_traps = len(all_entrances) >= 1
-        dito_ok = len(
-            all_entrances) >= 2  # a door-in, trap-out room effectively replaces a door (entrance) with a trap (not entrance), so an extra entrance is required
-        if self.verbose and not allow_traps:
-            vprint('\ttraps not allowed!')
-        elif self.verbose:
-            vprint('\ttraps allowed!')
-
-        # Look at unconnected hubs.
-        currently_used = [self.active] + list(downstream) + list(upstream)
-        if self.verbose:
-            vprint('\tCurrently used rooms:', currently_used)
-        new_hub_door_conns = self.get_available_hub_connections(element_type=0, excluded=currently_used,
-                                                                  dito_ok=dito_ok)
-        new_hub_pit_conns = self.get_available_hub_connections(element_type=1, excluded=currently_used)
-        # If hub is upstream, possibly allow connecting back to the hub (closing the loop)
-        if hub_is_upstream:
-            # Requirements: total exits after connection > 0
-            uppaths = self.get_upstream_paths(self.active)
-            for path in uppaths:
-                if self.verbose:
-                    vprint('\tchecking upstream path:', path)
-                path_door_count = 0
-                path_trap_count = 0
-                tracker = [False, False]
-                for node_id in path:
-                    node = self.rooms.get_room(node_id)
-                    path_door_count += len(node.doors)
-                    path_trap_count += len(node.traps)
-                    if (path_door_count + path_trap_count) > 1:
-                        # We've met the condition for trapdoor connections.  Add pits.
-                        new_hub_pit_conns.update(node.pits)
-                        if self.verbose and tracker[0] is False:
-                            vprint('\t\tTrapdoor condition met at', node_id)
-                            tracker[0] = True
-                        if self.verbose:
-                            vprint('\t\tAdding', node_id, node.pits)
-                    if (path_door_count + path_trap_count) > 2:
-                        # We've met the condition for door connections.  Add doors.
-                        new_hub_door_conns.update(node.doors)
-                        if self.verbose and tracker[1] is False:
-                            vprint('\t\tDoor condition met at', node_id)
-                            tracker[1] = True
-                        if self.verbose:
-                            vprint('\t\tAdding', node_id, node.doors)
-
-        if self.verbose:
-            vprint('\tCollected available hub connections:')
-            vprint('\t\tdoors:', new_hub_door_conns)
-            vprint('\t\tpits:', new_hub_pit_conns)
-
-        # Select which exits are permissable based on what is available.
-        # WE HAVE TO BE CAREFUL to not fully map a branch before we run out of checks.
-        # Imagine if a branch had only Serpent Trench on it.  hub --> crescent --> ST --> nikeah has no way back
-        #   (This case would have to do hub --> nikeah --> crescent --> ST --> nikeah)
-        # (a) do this in a nested way, as before?
-        # (b) catch the errors in one pass?  Active room + upstream must always have entrances.
-        all_exits = []
-        available_connections = [[], []]
-        if len(new_hub_door_conns) > 0:
-            all_exits += list(active_room.doors)
-            for node_id in downstream:
-                node = self.rooms.get_room(node_id)
-                all_exits += list(node.doors)
-            available_connections[0] += new_hub_door_conns
-        if len(new_hub_pit_conns) > 0 and allow_traps:
-            all_exits += list(active_room.traps)
-            for node_id in downstream:
-                node = self.rooms.get_room(node_id)
-                all_exits += list(node.traps)
-            available_connections[1] += new_hub_pit_conns
-        if self.verbose:
-            vprint('\tCollected available active room exits:', len(all_exits))
-            vprint('\t\t', all_exits)
-
-        # Handle failure modes: no exits available
-        legal_exits = True
-        if len(all_exits) == 0:
-            # I think the main way we get here is if there are no more hub rooms, and a check is in a dead end.
-            check_door_cons = self.get_all_check_connections(element_type=0)
-            check_pit_cons = self.get_all_check_connections(element_type=1)
-            if len(check_door_cons) > 0:
-                all_exits += list(active_room.doors)
-                available_connections[0] += check_door_cons
-                if self.verbose:
-                    vprint('\tInstead using rooms with checks (doors):', len(all_exits))
-                    vprint('\t\t', all_exits)
-            elif len(check_pit_cons) > 0 and allow_traps:
-                all_exits += list(active_room.traps)
-                available_connections[1] += check_pit_cons
-                if self.verbose:
-                    vprint('\tInstead using rooms with checks (traps):', len(all_exits))
-                    vprint('\t\t', all_exits)
-            else:
-                if self.verbose:
-                    vprint('No legal exits found on branch!')
-                legal_exits = False
-
-        # If any exits are forced, apply them
-        if legal_exits:
-            forced_exits = [e for e in all_exits if e in forced_connections.keys()]
-            if len(forced_exits) > 0:
-                this_exit = forced_exits.pop()
-                this_conn = forced_connections[this_exit][0]
-                if self.verbose:
-                    vprint('Found forced exit!', this_exit, '-->', this_conn)
-            else:
-                this_exit = random.choice(all_exits)
-                this_type = active_room.element_type(this_exit)
-                if self.verbose:
-                    vprint('All allowed exits:', all_exits, '.  Choose: ', this_exit, '(type ', this_type, ')')
-                # Reconstruct available connections for this exit?
-
-                if this_exit in available_connections[this_type]:
-                    available_connections[this_type].remove(this_exit)
-                this_conn = random.choice(available_connections[this_type])
-                if self.verbose:
-                    vprint('Available connections:', available_connections[this_type], '. Choose: ', this_conn)
-
-        else:
-            this_exit = None
-            this_conn = None
-
-        return this_exit, this_conn
 
     def check_for_rewards(self, this_conn):
         # Look at the room(s) being connected & return any rewards found
@@ -5893,13 +5444,7 @@ class ruination_map():
         from data.map_exit_extra import exit_data
         from data.event_exit_info import event_exit_info
 
-        def get_door_name(door_id):
-            if door_id in exit_data:
-                return exit_data[door_id][1]
-            elif door_id in event_exit_info:
-                return event_exit_info[door_id][4]
-            else:
-                return f"Door {door_id}"
+        get_door_name = _door_description
 
         # Rebuild fresh networks for pathfinding (same approach as debug_print_shortest_route)
         rebuilt = {}
@@ -6296,12 +5841,7 @@ class ruination_map():
                 return area
             return str(node_id)[:15]
 
-        def get_door_name(door_id):
-            if door_id in exit_data:
-                return exit_data[door_id][1]
-            elif door_id in event_exit_info:
-                return event_exit_info[door_id][4]
-            return f"Door {door_id}"
+        get_door_name = _door_description
 
         # Rebuild networks (same as spoiler log)
         rebuilt = {}
@@ -6552,14 +6092,7 @@ class ruination_map():
         from data.map_exit_extra import exit_data
         from data.event_exit_info import event_exit_info
 
-        def get_door_name(door_id):
-            """Get human-readable name for a door/exit ID."""
-            if door_id in exit_data:
-                return exit_data[door_id][1]
-            elif door_id in event_exit_info:
-                return event_exit_info[door_id][4]
-            else:
-                return f"Door {door_id}"
+        get_door_name = _door_description
 
         # Rebuild fresh networks for each branch from original rooms + connections.
         # This gives us individual room nodes (not collapsed compounds) for pathfinding.

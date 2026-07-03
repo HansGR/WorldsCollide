@@ -537,13 +537,9 @@ class Maps():
 
     def postprocess_door_map(self):
         # Postprocess the door map
-        #import traceback
         if self.doors.verbose:
             vprint("=== postprocess_door_map() CALLED ===")
-            #print("Call stack:")
-            #traceback.print_stack(limit=5)
             vprint(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
-            vprint(f"exit_data[360][0] BEFORE processing: {exit_data[360][0]}")
 
         self.door_map = {}
         self.trap_map = {}
@@ -658,8 +654,6 @@ class Maps():
                     this_data = dungeon_crawl_exit_destination_override[d]
                     self.exits.exit_original_data[safe_id] = this_data
                     # print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
-                if self.doors.verbose:
-                    vprint(f"exit_data[360][0] AFTER dungeon_crawl override: {exit_data[360][0]}")
 
             # Create a trapdoor map for reference
             for m in self.doors.map[1]:
@@ -678,11 +672,6 @@ class Maps():
                 vprint(f"  door_map[{sid}] = {self.door_map[sid]}")
         if safe_ids_as_values and self.doors.verbose:
             vprint(f"WARNING: safe_id VALUES in door_map: {[(k, self.door_map[k]) for k in safe_ids_as_values]}")
-        if 1291 in self.door_map and self.doors.verbose:
-            vprint(f"CRITICAL: 1291 is in door_map! door_map[1291] = {self.door_map[1291]}")
-        if 1291 in self.door_map.values() and self.doors.verbose:
-            keys_with_1291 = [k for k, v in self.door_map.items() if v == 1291]
-            vprint(f"CRITICAL: 1291 is a VALUE in door_map! Keys: {keys_with_1291}")
 
         if self.doors.verbose:
             vprint('Door connections:')
@@ -696,20 +685,6 @@ class Maps():
             vprint('One-way connections:')
             for m in self.doors.map[1]:
                 vprint('\t', m[0], " -> ", m[1])
-
-    def doorRandoOverride(self, newmap):
-        from data.map_exit_extra import exit_data as ed
-        for r in room_data.keys():
-            for d in room_data[r][0]:
-                self.doors.door_rooms[d] = r
-                if d > 4000:
-                    self.doors.door_descr[d] = ed[d - 4000][1] + "LOGICAL WOR"
-                else:
-                    self.doors.door_descr[d] = ed[d][1]
-        for d in room_data[r][1]:
-            self.doors.door_descr[d] = event_exit_info[d][4]
-            self.doors.door_descr[d + 1000] = event_exit_info[d][4] + "DEST"
-        self.doors.map = newmap
 
     def testLongEvents(self):
         ### FOR TESTING: MAKE SOME LONG EVENTS TO VERIFY THE CODE WORKS CORRECTLY
