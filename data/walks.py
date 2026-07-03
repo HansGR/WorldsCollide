@@ -445,15 +445,6 @@ class Network:
             elements.extend(R.get_elements(element_type))
         return elements
 
-    # def get_top_nodes(self):
-    #     top_nodes = set([])
-    #     for n in self.net.nodes:
-    #         paths = self.get_upstream_paths(n)
-    #         for path in paths:
-    #             # Add the ultimate node to the set
-    #             top_nodes.add(path[-1])
-    #     return top_nodes
-
     def is_attachable(self, room_id):
         # Return True if the node can accept a dead end.
         up = self.get_upstream_nodes(room_id)
@@ -685,69 +676,6 @@ class Network:
             #if self.verbose:
             #    print('\t\tbug hunting 0. self:', self_count, '.', up_count,'in', len(up_nodes),': ', up_nodes, '; ',
             #          down_count, 'in', len(down_nodes), ': ', down_nodes)
-
-            ### Using count_unprotected.  All forced exits should be protected, and therefore not counted.
-            # # Look for the small number of cases in which a forced exit is still locked
-            # locked_forced = [lf for lf in room.locked() if lf in forced_connections.keys()]  # locked forced traps
-            # if 'forced' in room.locks.keys():
-            #     locked_protected = [lf for lf in room.locks['forced']]   # locked forced entrances
-            # else:
-            #     locked_protected = []
-            # for lf in locked_forced:
-            #     if self.verbose:
-            #         print('\t\t\tFound locked forced connection:', lf, 'in', room_id)
-            #     [l_type, c_type] = [[0, 1][[True, False].index(room.element_type(lf) == 0)],
-            #                         [0, 2][[True, False].index(room.element_type(lf) == 0)]]
-            #     fc = forced_connections[lf][0]
-            #     if self.verbose:
-            #         print('\t\t\t\t-->', fc)
-            #     if fc in locked_protected:
-            #         # Forced connection is in the same room.  Remove 1 entrance & 1 exit from here.
-            #         if self.verbose:
-            #             print('\t\t\t\tforced connection in same room!')
-            #         self_count[l_type] -= 1
-            #         self_count[c_type] -= 1
-            #         locked_protected.remove(fc)
-            #     else:
-            #         Rconn = self.rooms.get_room_from_element(fc)
-            #         if self.verbose:
-            #             print('\t\t\t\tforced connection in room:', Rconn.id)
-            #         if Rconn.id in up_nodes:
-            #             # Forced connection is upstream.  Remove 1 exit from here & 1 entrance from upstream
-            #             self_count[l_type] -= 1
-            #             up_count[c_type] -= 1
-            #             if self.verbose:
-            #                 print('\t\t\t\t... in upstream')
-            #         elif Rconn.id in down_nodes:
-            #             # Forced connection is downstream.  Remove 1 exit from here & 1 entrance from downstream
-            #             self_count[l_type] -= 1
-            #             down_count[c_type] -= 1
-            #             if self.verbose:
-            #                 print('\t\t\t\t... in downstream')
-            # for lp in locked_protected:
-            #     if self.verbose:
-            #         print('\t\t\tFound locked forced connection:', lp, 'in', room_id)
-            #     # already handled case where lf and lp are in the same room
-            #     [l_type, c_type] = [[0, 2][[True, False].index(room.element_type(lp) == 0)],
-            #                         [0, 1][[True, False].index(room.element_type(lp) == 0)]]
-            #     fc = [lf for lf in forced_connections.keys() if lp in forced_connections[lf]][0]
-            #     if self.verbose:
-            #         print('\t\t\t\t-->', fc)
-            #     Rconn = self.rooms.get_room_from_element(fc)
-            #     if self.verbose:
-            #         print('\t\t\t\tForced connection is in room:', Rconn.id)
-            #     if Rconn.id in up_nodes:
-            #         # Forced connection is upstream.  Remove 1 entrance from here & 1 exit from upstream
-            #         self_count[l_type] -= 1
-            #         up_count[c_type] -= 1
-            #         if self.verbose:
-            #             print('\t\t\t\t... in upstream')
-            #     elif Rconn.id in down_nodes:
-            #         # Forced connection is downstream.  Remove 1 entrance from here & 1 exit from downstream
-            #         self_count[l_type] -= 1
-            #         down_count[c_type] -= 1
-            #         if self.verbose:
-            #             print('\t\t\t\t... in downstream')
 
             # Assess classifications
             #if self.verbose:

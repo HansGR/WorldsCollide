@@ -302,6 +302,19 @@ sharing/racing for `-ruin`. Fix by sorting (with a `str()` key) anywhere a set
 is iterated before a random choice, or by converting the relevant sets to
 insertion-ordered structures. Not fixed in p2 (behavioral change requiring a
 careful audit of every set-iteration site in the generation path).
+**STATUS: fixed 2026-07 on branch `door-rando-review-p3`.** Canonicalized
+(sorted, `key=str`) the RNG-facing set iterations: `distribute_areas`'s area
+list and its area→room / room→branch expansion loops (which also set
+`accessible_shops` order and `net.nodes` insertion order — the order every
+downstream candidate list inherits), the keychain application loops,
+`extend_branch_path`'s `deepest_rooms`, the `-rkt` lane `Network`
+construction, and `_branch_exit_owner_map` (softlock-verifier edge
+determinism). Set iterations that only feed order-free sums/booleans/
+membership tests were left alone. Note int-only sets (door/trap/pit IDs)
+were never affected — CPython only randomizes *string* hashing. Verified:
+same-seed `-ruin` builds are now byte-identical across PYTHONHASHSEED values
+(1, 2, and unpinned) for 5 seeds; `-drdc` output is byte-identical to
+`door-rando-review-p2` (untouched by this change).
 
 ### 3.10 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
 `args/ruin_preprocessor.py:203-221` and `:192-201` scan
@@ -411,8 +424,11 @@ mutation) and some use `for rid in area_rooms` while removing from it.
   `event/ruination.py:6465` with near-identical logic; the inner
   `get_door_name` helper is additionally triplicated inside `ruination.py`
   (5826, 6229, 6486).
-- `data/rooms.py` `shared_oneways` is now all-commented (superseded by logical
-  rooms + forced connections) but still exported and imported by `doors.py`.
+- `data/rooms.py` `shared_oneways` has all its *entries* commented out
+  (superseded by logical rooms + forced connections), but the empty dict is
+  still consulted live by `data/transitions.py:58` — so it is an extension
+  point, not dead code. Only the unused import in `doors.py` can go.
+  *(Correction: originally misclassified as fully dead.)*
 - `data/walks.py:448-455` `get_top_nodes` commented out.
 - `check_network_invalidity` contains a ~60-line commented "locked forced"
   block (`data/walks.py:689-750`).
@@ -527,5 +543,20 @@ Recorded so future reviews don't re-litigate them:
    validation uncovered).
 3. **Deletions:** 5.1, 5.2, 5.4 — roughly 1,600 lines removed with zero
    behavior change; do this before further refactoring so diffs stay readable.
+   **STATUS: implemented 2026-07 on branch `door-rando-review-p3`** (~1,590
+   lines deleted): the legacy mapper in `data/doors.py` (5.1) plus its dead
+   attributes and unused imports; the v1 target-finders and
+   `extend_branch_path_old` in `event/ruination.py` (5.2), with the `_v2`
+   methods renamed to the plain names (call sites, ARCHIVE.md and
+   event/TODO.md updated); `Maps.doorRandoOverride`, the `get_top_nodes` and
+   locked-forced commented blocks in `data/walks.py`, the door-360/1291 debug
+   traces in `data/maps.py`, and the triplicated `get_door_name` hoisted to a
+   module-level `_door_description` (5.4). Deliberately kept:
+   `shared_oneways` (live extension point — see corrected 5.4 bullet),
+   `Doors.OVERRIDE`/`force_vanilla` (documented dev switches, guide §9), the
+   generic safe_id warnings in `postprocess_door_map` (real diagnostics), and
+   the `ruination_start_game_mod` choreography (content, not logic).
+   Verified: `-drdc` and `-ruin` builds byte-identical to
+   `door-rando-review-p2` for the same seeds under pinned PYTHONHASHSEED.
 4. **Refactors:** 5.3 (reserve-pull helper), 6 (hub accessor), then 4.1/4.3 if
    `-drdc` generation time or the timeout rate is a live complaint.
