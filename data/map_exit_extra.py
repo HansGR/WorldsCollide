@@ -1039,7 +1039,7 @@ exit_data = {
     1250: [49, "Albrook North to World Map WoR"],
     1251: [49, "Albrook Further North to World Map WoR"],
     1252: [None, "Albrook South to Docks WoR"],
-    884: [677, "Kefka's Tower Falldown Room Entry Right Door "],  # fall-in door, inaccessible as an exit; was a self-reference. 677 is the door whose position matches its destination.
+    884: [None, "Kefka's Tower Falldown Room Entry Right Door "],  # unreachable in game and unused in any mode; was a self-reference
     885: [1110, "Kefka's Tower Falldown Room Left Door"],
     886: [915, "Kefka's Tower Atma Room Right Door"],
     887: [799, "Kefka's Tower Outside Left Side First Room to Left Side 2 Conveyor Room"],

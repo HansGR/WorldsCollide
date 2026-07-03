@@ -100,7 +100,7 @@ these doors participate in randomization. Verified against
 | `exit_data[552]` (Kohlingen Rachel's House Outside WoR) | 567 | **566** |
 | `exit_data[506]` (Mobliz Inn Outside) | 517 | **516** |
 | `exit_data[752]` (Maranda Armor Inside) | 741 | 742 (verify) |
-| `exit_data[884]` (KT Falldown Room Entry Right Door) | 884 (self!) | 677 (unused door; verify) |
+| `exit_data[884]` (KT Falldown Room Entry Right Door) | 884 (self!) | **None** (unreachable in game, unused in any mode) |
 
 Also suspicious (need domain confirmation): `exit_data[509]`/`exit_data[513]`
 (Mobliz Mail House Outside → 519), `exit_data[519]` (→ 521), `exit_data[647]`
@@ -487,9 +487,10 @@ Recorded so future reviews don't re-litigate them:
    verification).
    **STATUS: implemented 2026-07 on this branch** (all of 1.1/1.2/1.3/1.6/1.7/
    2.4/3.5, the daemon-thread half of 3.6, and every coordinate-verified
-   `exit_data` fix from 1.4/1.5 — including 752→742 and 884→677, both
-   confirmed against `exits_raw.json`; the ambiguous 509/519/647 entries were
-   left untouched pending domain confirmation). Verified by building seeds
+   `exit_data` fix from 1.4/1.5 — including 752→742, confirmed against
+   `exits_raw.json`; the self-referencing 884 was set to None per HansGR
+   (unreachable in game, unused in any mode); the ambiguous 509/519/647
+   entries were left untouched pending domain confirmation). Verified by building seeds
    against a vanilla ROM for: baseline, `-drdc` ×3, `-dra`, `-dre -maps` ×2
    (the timeout-retry path fired live and recovered), `-mapx`, `-drcd`/`-drmk`
    flag strings, and `-ruin` ×3.
