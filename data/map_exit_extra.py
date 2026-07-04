@@ -571,9 +571,9 @@ exit_data = {
     506: [516, "Mobliz Inn Outside"],
     507: [520, "Mobliz Item Outside"],
     508: [517, "Mobliz Arsenal West Outside"],
-    509: [519, "Mobliz Mail House Outside WoB"],
-    510: [None, "Mobliz Relic Outside WoB"],
-    511: [None, "Mobliz Injured Lad Outside WoB"],
+    509: [None, "Mobliz Mail House Outside WoB"],  # Return door from Mobliz Mail House is an event tile: [0x0a3, 50, 17, 0xc5136]
+    510: [None, "Mobliz Relic Outside WoB"],       # Return door from Mobliz Relics is an event tile:  [0x0a2, 29, 26, 0xc5082]
+    511: [None, "Mobliz Injured Lad Outside WoB"], # Return door from Mobliz Relics is an event tile:  [0x0a5, 11, 26, 0xc50B2]
     512: [518, "Mobliz Arsenal East Outside"],
     1190: [26, "Mobliz South to World Map WoB"],
     1191: [26, "Mobliz East to World Map WoB"],
@@ -752,7 +752,7 @@ exit_data = {
     644: [None, "Opera House Balcony To Lobby Left WoR"],
     645: [None, "Opera House Balcony To Lobby Right WoR"],
     646: [657, "Opera House Catwalk Stairwell North"],
-    647: [62, "Opera House Catwalk Stairwell South"],
+    647: [642, "Opera House Catwalk Stairwell South"],
     648: [643, "Opera House Switch Room"],
     649: [660, "Opera House Balcony Left Door to Catwalk Stairwell WoB"],
     650: [661, "Opera House Balcony Right Door to Switch Room WoB"],
