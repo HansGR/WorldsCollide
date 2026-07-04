@@ -225,7 +225,7 @@ def preprocess_ruin_flag(argv=None):
     Preprocess command-line arguments to expand -ruin meta-flag.
 
     If -ruin is present:
-    - If followed by 'minimum', don't inject defaults
+    - If followed by 'custom', don't inject defaults
     - Otherwise, inject all default flags
     - Process -no flags to remove specific defaults
     - If user specifies starting character flags, remove default starting chars
