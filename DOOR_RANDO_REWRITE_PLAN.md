@@ -296,6 +296,106 @@ naming rather than assuming the partner is a world-map door.
   loops catch precisely what they mean to (the bare-`except` era ends).
 - **Logging**: `vprint`/`-dv`/`-dv all` unchanged.
 
+### 3.7 The event layer: mode-conditioned event code
+
+The elephant the layers above don't cover: 45 `event/*.py` files carry
+mode conditionals today — 144 `args.ruination_mode` sites, ~96
+`args.door_randomize*`, 27 `args.map_shuffle*` — modifying event flow,
+sometimes extensively. This is not an accident of door rando: vanilla WC
+already conditions event code on flags (`character_gating`, boss/esper
+settings, `-stray`, …). Game modes having different event-code
+requirements is baked into WC's architecture.
+
+**The organizing question is the classic expression problem**: the grid
+is events × modes, and you must pick a major axis. WC picked
+**event-major** (each event file owns all of its variants), and that is
+the *right* choice — when Mt. Kolts misbehaves, everything about
+Mt. Kolts is in `mt_kolts.py`, whatever combination of flags produced
+the bug. A mode-major reorganization ("centralize all ruination event
+patches") would just recreate today's 7,275-line `event/ruination.py`
+problem in a new place and scatter each event's logic across N mode
+modules. So the rewrite explicitly **keeps mode-specific event content
+in the event files** (this is also CLAUDE.md's long-standing rule #5).
+
+What should *not* stay ad-hoc are the mechanics around that content.
+Four systematizations, all cheap:
+
+1. **Derived capability predicates instead of flag or-chains.**
+   28 files currently open with a hand-maintained variant of:
+
+   ```python
+   self.DOOR_RANDOMIZE = (args.door_randomize_mt_kolts
+                     or args.door_randomize_all
+                     or args.door_randomize_crossworld
+                     or args.door_randomize_dungeon_crawl
+                     or args.door_randomize_each
+                     or args.ruination_mode)
+   ```
+
+   Every one of these lists is an opportunity to forget a flag (and
+   adding a mode means editing 28 files). The plan already knows the
+   answer: an event's maps/exits either were or were not rewired.
+   Replace all of them with `plan.touches(<map ids / pool>)`, computed
+   from the DoorPlan + atlas pool membership — zero per-event flag
+   knowledge, automatically correct for any future mode.
+
+   For behaviors rather than door-touching, the `ModeSpec` (§3.3)
+   declares **capabilities** — `world_map_traversable`,
+   `hub_recruitment`, `rebind_npc_pointers_on_entry`,
+   `y_switch_control`, `airship_available`, … — and event code tests
+   `caps.X` instead of naming the mode. Today's compound conditions
+   become legible: `if args.character_gating and not
+   args.ruination_mode` is really "character gating, but not when
+   recruitment happens at the hub" — write that. The raw mode test
+   remains available for genuinely mode-unique content (Narshe hub
+   party formation *is* ruination); capabilities are a vocabulary, not
+   a straitjacket. New modes then get most event behavior for free by
+   composing existing capabilities.
+
+2. **Uniform lifecycle hooks, dispatched by the framework.** The
+   half-adopted convention (17 files define `ruination_mod()`, 13
+   define `door_rando_mod()`/`dungeon_crawl_mod()`, each called — or
+   forgotten — by that file's own `mod()`) becomes enforced: the
+   Events loop invokes, in documented order, `mod()` (vanilla +
+   generic), then `door_rando_mod()` when `plan.touches(event)`, then
+   the mode hook (`dungeon_crawl_mod()` / `ruination_mod()`) when the
+   mode is active and the method exists. Inline `if` blocks inside
+   `mod()` remain legal only where variant code is genuinely
+   interleaved mid-sequence; everything else migrates into hooks.
+   `init_event_bits` stays a separate documented pass (its shared
+   buffer-size contract stated once, not per event), and ordering
+   guarantees make the FinishCheck-before-transition rule enforceable
+   in one place.
+
+3. **Shared machinery with a rule of three.** The good pattern that
+   emerged late and ad hoc — `SET_PARTY_INTERACTION_POINTERS`,
+   `DISABLE_Y_PARTY_SWITCH`/`RESTORE_Y_PARTY_SWITCH`, the
+   `event/free_heals.py` cross-event sweeper — becomes policy:
+   `event/door_rando_support.py` and `event/ruination_support.py` own
+   shared subroutines and sweepers; the third event needing a pattern
+   triggers extraction. Likewise the repeated plan-query idioms (e.g.
+   Mt. Kolts' airship-teleport re-pointing via
+   `get_connection_location`) become helpers on the plan API
+   (`plan.teleport_target(exit_id)`), killing the copy-pasted lookup
+   chains and their commented-out remains.
+
+4. **A generated manifest, not a hand-maintained one.** "What does
+   `-drdc` change?" is currently answerable only by grep. Introspecting
+   the hook methods and capability tests yields a mode × event manifest
+   table emitted by a tool (CI artifact / doc appendix). Tooling, not
+   architecture — it never goes stale because it is derived.
+
+Safety net for all event-layer refactoring: **event-script goldens** —
+decompile the generated event code for touched events over a pinned
+seed set and diff across changes (extends test #6 in §5). Moving an
+inline block into a hook must produce a byte-identical script; the diff
+proves it.
+
+Notably, items 1, 2 and 4 do not depend on the rewrite at all — the
+capability layer is args post-processing plus one helper, and the hook
+dispatch is a small change to the Events loop. They are §8 fallback
+candidates that would pay for themselves in the current codebase.
+
 ## 4. Package layout (proposed)
 
 ```
@@ -388,11 +488,15 @@ double as the porting sequence.
   The snapshot/rollback machinery in `events.ruination_mod` is deleted.
   Parity via test #4 aggregates + full sweeps; keep the old path callable
   until a few hundred-seed sweeps are clean.
-- **Stage E — mini-planners + gating unification.** KT lanes, dream
-  maze, `realize/gating.py` replacing the three mechanisms (this touches
-  the `ruin-*` room variants in curation — they become plain gate
-  annotations). Re-point the ~20 event-file consumers at the plan API
-  and drop the `door_map` adapter.
+- **Stage E — mini-planners, gating unification, event-layer cleanup.**
+  KT lanes, dream maze, `realize/gating.py` replacing the three
+  mechanisms (this touches the `ruin-*` room variants in curation —
+  they become plain gate annotations). Event layer (§3.7): replace the
+  28 `DOOR_RANDOMIZE` or-chains with `plan.touches()`, introduce
+  capability predicates and framework-dispatched hooks, extract shared
+  machinery into the support modules, re-point the ~20 event-file
+  consumers at the plan API, and drop the `door_map` adapter — one
+  event file at a time, each proven by script goldens.
 - **Stage F — deletion + docs.** Remove the old modules and reset
   functions; rewrite `DOOR_RANDO_GUIDE.md` against the new layout; the
   code review retires to historical record. CI sweep harness becomes the
@@ -442,6 +546,11 @@ independently worthwhile, in this order of value:
    contraption in the codebase — without touching the walk at all.
 4. **Splitting `event/ruination.py`** along the §3.3 seams, mechanically,
    with no logic changes.
+5. **Event-layer mechanics from §3.7** — capability predicates replacing
+   the 28 `DOOR_RANDOMIZE` or-chains, framework-dispatched lifecycle
+   hooks, and the generated mode × event manifest. None of these need
+   the new planner; script goldens make each migration provable in the
+   current codebase.
 
 ## 9. Rough effort map
 
