@@ -377,22 +377,41 @@ class Network:
                 temp.append(p)
         return temp
 
-    def get_upstream_paths(self, room_id, visited=None):
-        """Return list of paths heading upstream from room_id"""
-        if visited is None:
-            visited = []
+    # Budget for the recursive path enumerators below. Path enumeration is
+    # exponential in the worst case; the budget converts a pathological
+    # graph (e.g. an uncompressed dense cluster) from a hang into a
+    # NetworkRecursionError with diagnostics, exactly like the iteration
+    # cap on the *_nodes traversals. Healthy graphs use a tiny fraction.
+    _PATH_ENUM_BUDGET = 200000
 
-        pred = [p for p in self.net.predecessors(room_id) if p not in visited]
-        if len(pred) > 0:
-            if len(pred) == 1:
-                p = pred[0]
-                return self.get_upstream_paths(p, visited + [p])
-            else:
-                temp = []
-                for p in pred:
-                    temp.append(self.get_upstream_paths(p, visited + [p]))
-                return self.flatten_paths(temp)
-        return self.flatten_paths([visited])
+    def get_upstream_paths(self, room_id, visited=None, _budget=None):
+        """Return list of paths heading upstream from room_id"""
+        at_root = visited is None
+        if at_root:
+            visited = []
+            _budget = [self._PATH_ENUM_BUDGET]
+        _budget[0] -= 1
+        if _budget[0] < 0:
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_upstream_paths', room_id,
+                extra=f'path-enumeration budget {self._PATH_ENUM_BUDGET} exceeded'))
+        try:
+            pred = [p for p in self.net.predecessors(room_id) if p not in visited]
+            if len(pred) > 0:
+                if len(pred) == 1:
+                    p = pred[0]
+                    return self.get_upstream_paths(p, visited + [p], _budget)
+                else:
+                    temp = []
+                    for p in pred:
+                        temp.append(self.get_upstream_paths(p, visited + [p], _budget))
+                    return self.flatten_paths(temp)
+            return self.flatten_paths([visited])
+        except RecursionError as e:
+            if not at_root:
+                raise
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_upstream_paths', room_id)) from e
 
     def get_upstream_nodes(self, room_id, visited=None):
         """Get nodes upstream from room_id (iterative).
@@ -440,22 +459,34 @@ class Network:
             raise NetworkRecursionError(self._format_recursion_diagnostics(
                 'get_upstream_nodes', room_id)) from e
 
-    def get_downstream_paths(self, room_id, visited=None):
+    def get_downstream_paths(self, room_id, visited=None, _budget=None):
         """Return list of paths heading downstream from room_id"""
-        if visited is None:
+        at_root = visited is None
+        if at_root:
             visited = []
-
-        succ = [s for s in self.net.successors(room_id) if s not in visited]
-        if len(succ) > 0:
-            if len(succ) == 1:
-                s = succ[0]
-                return self.get_downstream_paths(s, visited + [s])
-            else:
-                temp = []
-                for s in succ:
-                    temp.append(self.get_downstream_paths(s, visited + [s]))
-                return self.flatten_paths(temp)
-        return self.flatten_paths([visited])
+            _budget = [self._PATH_ENUM_BUDGET]
+        _budget[0] -= 1
+        if _budget[0] < 0:
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_downstream_paths', room_id,
+                extra=f'path-enumeration budget {self._PATH_ENUM_BUDGET} exceeded'))
+        try:
+            succ = [s for s in self.net.successors(room_id) if s not in visited]
+            if len(succ) > 0:
+                if len(succ) == 1:
+                    s = succ[0]
+                    return self.get_downstream_paths(s, visited + [s], _budget)
+                else:
+                    temp = []
+                    for s in succ:
+                        temp.append(self.get_downstream_paths(s, visited + [s], _budget))
+                    return self.flatten_paths(temp)
+            return self.flatten_paths([visited])
+        except RecursionError as e:
+            if not at_root:
+                raise
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_downstream_paths', room_id)) from e
 
     def get_downstream_nodes(self, room_id, visited=None):
         """Get nodes downstream from room_id (iterative).
@@ -1213,7 +1244,8 @@ class Rooms:
 
     @property
     def count(self):
-        """Count of all elements by type across all rooms"""
+        """Unlocked element counts across all rooms, as
+        [doors, traps, pits, keys, lock groups] (same layout as Room.count)."""
         totals = [0, 0, 0, 0, 0]  # [doors, traps, pits, keys, locks]
         for room in self.rooms.values():
             for i, count in enumerate(room.count):
@@ -1327,7 +1359,14 @@ class Room:
     - locks: dictionary mapping key strings to lists of locked elements
     """
 
-    verbose = False  # Class-level verbose flag
+    @property
+    def verbose(self):
+        # Same idiom as Network.verbose: verbose output is controlled
+        # centrally by -debug / -debug-verbose. (Previously a class-level
+        # `verbose = False` that nothing ever set, so Room debug prints were
+        # unreachable.) The `if self.verbose:` guards around vprint calls in
+        # this class also skip building the debug strings, so keep them.
+        return _verbose_enabled()
 
     def __init__(self, room_id=None, rooms_ref=None):
         """Initialize a room with optional room_data"""
@@ -1654,7 +1693,13 @@ class Room:
 
     @property
     def count(self):
-        """Count of each basic element type"""
+        """Unlocked element counts as [doors, traps, pits, keys, locks].
+
+        Index meanings (used all over the mapping code as e.g.
+        `nc[:3] == [1, 0, 0]` for "exactly one door, nothing else"):
+            [0]=doors, [1]=traps, [2]=pits, [3]=keys, [4]=lock groups.
+        Locked elements are NOT included; see full_count.
+        """
         return [
             len(self.elements['doors']),
             len(self.elements['traps']),
@@ -1665,7 +1710,8 @@ class Room:
 
     @property
     def full_count(self):
-        """Count including locked elements"""
+        """Element counts including locked elements, as an np.array
+        [doors, traps, pits, keys] (no locks slot, unlike `count`)."""
         return np.array(self.count[:4]) + np.array([
             len(self.locked('doors')),
             len(self.locked('traps')),

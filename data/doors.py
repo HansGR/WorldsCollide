@@ -6,12 +6,19 @@ from data.event_exit_info import event_exit_info  # for one-way exit description
 from data.walks import *
 from log.verbose import vprint, is_enabled as _verbose_enabled
 
+# Comment convention in the sets below: room ids trailing a `#` comment
+# (e.g. "# South Figaro Cave WOB  102, 105,") are rooms deliberately
+# EXCLUDED from that set — usually dead ends, rooms replaced by a
+# root-/mapsafe variant, or rooms whose doors must stay vanilla.
 ROOM_SETS = {
     'Umaro': [364, 365, 366, '367a', '367b', '367c', 'share_east', 'share_west', 368, 'root-u'],
     'UpperNarshe_WoB': [19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb'],
     'UpperNarshe_WoR': [37, 38, 40, 41, 42, 43, 44, 46, 47, 'root-unr'],
     'EsperMountain': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em'],
-    'EsperMountain_mapsafe': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe_each'],  # 495,
+    # 495 IS included here (unlike the 'WoB' meta-set below): the -dre mapsafe
+    # root ('root-em_mapsafe_each') protects the world-map entrance as door
+    # 30044, paired with 495's entrance 1047 via map_shuffle_protected_doors.
+    'EsperMountain_mapsafe': [488, 489, 490, 491, 492, 493, 494, 495, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe_each'],
     'OwzerBasement' : [277, 278, 279, 280, 281, 282, 283, 284, 'root-ob'],
     'MagitekFactory' : [345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf'],
     'SealedGate' : [503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg'],
@@ -45,7 +52,10 @@ ROOM_SETS = {
     # Meta rooms:
     'WoB': [
         19, 20, 22, 23, 53, 54, 55, 59, 60, 'root-unb',  # Upper Narshe WoB
-        488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe',  # Esper Mountain  495,
+        # Esper Mountain: 495 excluded — 'root-em_mapsafe' stands in for it,
+        # carrying 495's interior doors (1046/1048/1049) while its world-map
+        # entrance 1047 stays vanilla so map shuffle can manage it.
+        488, 489, 490, 491, 492, 493, 494, 496, 497, 498, 499, 500, 501, 'root-em_mapsafe',
         345, 346, 347, 349, 351, 352, 353, 354, 355, '355a', 'root-mf',  # Magitek Factory
         503, 504, '504a', 505, 506, 507, 508, 509, 510, 511, 512, 513, 514, 'root-sg',  # Cave to the Sealed Gate
         294, 295, 296, 297, 298, 299, 300, 301, 302, '303a', '303b', 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 'root-zb', # Zozo-WoB
@@ -165,7 +175,7 @@ class Doors():
 
         self.door_rooms = {}
         self.door_descr = {}
-        self.rooms = []
+        self.area_room_sets = []  # one list of room ids per randomized area (parallel to area_name)
         self.room_doors = {}
         self.room_counts = {}
         # Intentional alias (not a copy): the ruination-mode pop below must be
@@ -418,15 +428,8 @@ class Doors():
             room_sets.append(ROOM_SETS['MapShuffleXW'])
             self.area_name.append('MapShuffleXW')
 
-        self.read(room_sets)
-
-    def read(self, whichRooms=None):
-        # Collect & organize data on rooms and doors
-        for area in whichRooms:
-            self.rooms.append(area)
-        #if self.verbose:
-        #    print(self.area_name)
-        #    print(self.rooms)
+        # One room list per area to randomize (parallel to self.area_name).
+        self.area_room_sets.extend(room_sets)
 
     def debug_print_shortest_route(self, door_map, destination_room):
         """Find and print the shortest route from any world map room to the destination room.
@@ -446,7 +449,7 @@ class Doors():
             pass  # Keep as string
 
         # Build a fresh Network with all rooms from room_data
-        for area in self.rooms:
+        for area in self.area_room_sets:
             if destination_room in area:
                 walks = Network(area)
 
@@ -565,14 +568,14 @@ class Doors():
 
     def mod(self):
         # Create list of randomized connections using walks
-        map = [[], []]
+        full_map = [[], []]
 
         if self.args.door_randomize_crossworld:
             all_id = self.area_name.index('All')
             # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
             # This encodes that you can reach all roots from all roots.
             # This is not done for old door-randomize-dungeon-crawl (using 'All' room)
-            root_rooms = [r for r in self.rooms[all_id] if 'root' in str(r)]
+            root_rooms = [r for r in self.area_room_sets[all_id] if 'root' in str(r)]
             offset = 10000
             root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
             root_doors = []
@@ -580,7 +583,7 @@ class Doors():
                 room_data[root_rooms[ri]][0].append(root_map[ri][0])
                 root_doors.append(root_map[ri][1])
                 self.forcing[root_map[ri][1]] = [root_map[ri][0]]
-            self.rooms[all_id].append('root')
+            self.area_room_sets[all_id].append('root')
             room_data['root'] = [ root_doors, [], [], [], {}, 0]
             self.room_counts['root'] = [len(r) for r in room_data['root'][:-1]]
             self.room_doors['root'] = [r for r in room_data['root'][:-1]]
@@ -593,7 +596,7 @@ class Doors():
                 # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
                 # This encodes that you can reach all roots from all roots.
                 # This is not done for old door-randomize-dungeon-crawl (using 'All' room)
-                root_rooms = [r for r in self.rooms[a_id] if 'root' in str(r)]
+                root_rooms = [r for r in self.area_room_sets[a_id] if 'root' in str(r)]
                 offset = 10000 + offset_0
                 root_map = [[offset + i, offset + len(root_rooms) + i] for i in range(len(root_rooms))]
                 root_doors = []
@@ -602,7 +605,7 @@ class Doors():
                     root_doors.append(root_map[ri][1])
                     self.forcing[root_map[ri][1]] = [root_map[ri][0]]
                 rn = 'root_'+name
-                self.rooms[a_id].append(rn)
+                self.area_room_sets[a_id].append(rn)
                 room_data[rn] = [ root_doors, [], [], [], {}, 0]
                 self.room_counts[rn] = [len(r) for r in room_data[rn][:-1]]
                 self.room_doors[rn] = [r for r in room_data[rn][:-1]]
@@ -625,7 +628,7 @@ class Doors():
 
         for area_id in self.area_name:
             ai = self.area_name.index(area_id)
-            area = self.rooms[ai]
+            area = self.area_room_sets[ai]
 
             vprint('Now Randomizing:' , area_id)
 
@@ -695,9 +698,9 @@ class Doors():
                 fcm_doors = [m for m in fully_connected.map[0]]
                 fcm_oneways = [m for m in fully_connected.map[1]]
 
-                # Copy the results into the map
-                map[0].extend(fcm_doors)
-                map[1].extend(fcm_oneways)
+                # Copy the results into the full map
+                full_map[0].extend(fcm_doors)
+                full_map[1].extend(fcm_oneways)
 
         # Postprocess the mapping algorithm results
         # Patch out logical link
@@ -708,7 +711,7 @@ class Doors():
         llink = {}
         # Iterate over a snapshot: removing from the live list while iterating
         # skips the element after each removal (could silently drop a link pair).
-        for m in list(map[0]):
+        for m in list(full_map[0]):
             remove_flag = False
             if m[0] in ll.keys():
                 llink[m[0]] = m[1]
@@ -717,12 +720,12 @@ class Doors():
                 llink[m[1]] = m[0]
                 remove_flag = True
             if remove_flag:
-                map[0].remove(m)
+                full_map[0].remove(m)
                 vprint('Removing logical link: ', m)
         for L in logical_links:
             if L[0] in llink.keys():
                 patched_m = [llink[L[0]], llink[L[1]]]
-                map[0].append(patched_m)
+                full_map[0].append(patched_m)
                 vprint('Patching logical link: ', patched_m)
 
         # Process OVERRIDE
@@ -730,71 +733,71 @@ class Doors():
             target = set(op)
             containing_pairs = []
             pair_indices = []
-            for i, pair in enumerate(map[0]):
+            for i, pair in enumerate(full_map[0]):
                 if op[0] in pair or op[1] in pair:
                     containing_pairs.append(set(pair))
                     pair_indices.append(i)
             if len(containing_pairs) == 2:
                 other_elements = (containing_pairs[0] | containing_pairs[1]) - target
-                # new_map = map[0].copy()
-                print('OVERRIDE: ', map[0][pair_indices[0]], "-->", list(target), ', ', map[0][pair_indices[1]],
+                # new_map = full_map[0].copy()
+                print('OVERRIDE: ', full_map[0][pair_indices[0]], "-->", list(target), ', ', full_map[0][pair_indices[1]],
                       "-->", list(other_elements))
-                map[0][pair_indices[0]] = list(target)
-                map[0][pair_indices[1]] = list(other_elements)
+                full_map[0][pair_indices[0]] = list(target)
+                full_map[0][pair_indices[1]] = list(other_elements)
             else:
                 print('warning: did not find ', op, '. found pairs: ', containing_pairs)
 
-        # Append shared doors to the map
-        for m in map[0]:
+        # Append shared doors to the full_map
+        for m in full_map[0]:
             if m[0] in shared_exits.keys():
                 for se in shared_exits[m[0]]:
                     # Send shared exits to the same destination
-                    map[0].append([se, m[1]])
+                    full_map[0].append([se, m[1]])
             if m[1] in shared_exits.keys():
                 for se in shared_exits[m[1]]:
                     # Send shared exits to the same destination
-                    map[0].append([m[0], se])
+                    full_map[0].append([m[0], se])
 
         # Remove root doors
         if self.args.door_randomize_all or self.args.door_randomize_crossworld:
-            # Remove the (logical) root doors from the map
-            map[0] = [m for m in map[0] if m[0] not in root_doors and m[1] not in root_doors]
+            # Remove the (logical) root doors from the full_map
+            full_map[0] = [m for m in full_map[0] if m[0] not in root_doors and m[1] not in root_doors]
         if self.args.map_shuffle_crossworld:
-            map[0] = [m for m in map[0] if m[0] not in xw_root_doors and m[1] not in xw_root_doors]
+            full_map[0] = [m for m in full_map[0] if m[0] not in xw_root_doors and m[1] not in xw_root_doors]
 
 
         if self.match_WOB_WOR:
-            # Make the WOR map match the WOB map in relevant areas
+            # Make the WOR full_map match the WOB full_map in relevant areas
             vprint('Mapping WoR to match WoB ...')
             WOR_map = []
-            for m in map[0]:
+            for m in full_map[0]:
                 if m[0] in doors_WOB_WOR.keys():
                     WOR_map.append([doors_WOB_WOR[j] for j in m])
-            map[0].extend(WOR_map)
+            full_map[0].extend(WOR_map)
 
         if self.force_vanilla:
             # disregard everything above.  Force vanilla connections to be written.
             vprint('OVERWRITING MAP: ')
-            vprint(map)
-            vanilla_map = [tuple( sorted((m[0], exit_data[m[0]][0])) ) for m in map[0]] + \
-                          [tuple( sorted((m[1], exit_data[m[1]][0])) ) for m in map[0]]
+            vprint(full_map)
+            vanilla_map = [tuple( sorted((m[0], exit_data[m[0]][0])) ) for m in full_map[0]] + \
+                          [tuple( sorted((m[1], exit_data[m[1]][0])) ) for m in full_map[0]]
             vanilla_map = list(set(vanilla_map))
-            vanilla_oneways = [ [m[0], m[0]+1000] for m in map[1] ]
-            map = [vanilla_map, vanilla_oneways]
-            print(map)
+            vanilla_oneways = [ [m[0], m[0]+1000] for m in full_map[1] ]
+            full_map = [vanilla_map, vanilla_oneways]
+            print(full_map)
 
-        # Assess map for repeats
+        # Assess full_map for repeats
         all_shared = []
         for s in shared_exits.keys():
             all_shared += shared_exits[s]
-        doors_used = [d[0] for d in map[0] if d[0] not in all_shared and d[1] not in all_shared] \
-                     + [d[1] for d in map[0] if d[0] not in all_shared and d[1] not in all_shared]
+        doors_used = [d[0] for d in full_map[0] if d[0] not in all_shared and d[1] not in all_shared] \
+                     + [d[1] for d in full_map[0] if d[0] not in all_shared and d[1] not in all_shared]
         unique_doors = set(doors_used)
         if len(unique_doors) < len(doors_used):
             repeat_doors = [d for d in unique_doors if doors_used.count(d) > 1]
             repeat_doors.sort()
             print('Warning: repeat doors:', repeat_doors)
-            for m in map[0]:
+            for m in full_map[0]:
                 if m[0] in repeat_doors:
                     print('\t',m)
                 elif m[1] in repeat_doors:
@@ -803,10 +806,10 @@ class Doors():
         # Debug: print shortest route if requested (after all postprocessing)
         if self.args.debug_route_destination:
             for dest in self.args.debug_route_destination:
-                self.debug_print_shortest_route(map, dest)
+                self.debug_print_shortest_route(full_map, dest)
 
-        # Return map
-        self.map = map
+        # Return full_map
+        self.map = full_map
 
     def print(self):
         if self.args.spoiler_log:

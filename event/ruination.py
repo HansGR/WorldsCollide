@@ -4538,7 +4538,7 @@ class ruination_map():
         return "\n".join(lines)
 
     def generate_map_with_characters(self, characters, espers, items):
-        """Generate the ruination mode dungeon map and assign character/esper/item rewards.
+        """Generate the ruination mode dungeon full_map and assign character/esper/item rewards.
 
         Note: reward_slots (from events.py) are updated automatically through shared object references.
         ROOM_REWARD dictionary is populated with Reward objects from event.rewards in events.py (lines 228-237).
@@ -4568,7 +4568,7 @@ class ruination_map():
                 forced_connections.pop(fc)
 
         if self.verbose:
-            vprint('Generating map with characters...')
+            vprint('Generating full_map with characters...')
 
         ### This approach fails if a branch has only dead ends on it.  For example: a branch could initially get just
         # 'Gau Father House', 'Floating Continent', both of which are dead ends.
@@ -4866,7 +4866,7 @@ class ruination_map():
                 if self.verbose:
                     vprint(f'Added ALL area {area_name} to branch {target_branch_id}')
 
-        # After satisfying conditions, fully connect map
+        # After satisfying conditions, fully connect the map
         reserve_areas = self.get_reserve_area_rooms()
         for branch_id, branch in enumerate(self.branches):
             try:
@@ -4914,50 +4914,50 @@ class ruination_map():
                 raise RuinationMappingError(diag)
 
         # Wrap up: create & export a total map
-        map = [[], []]
+        full_map = [[], []]
         for branch in self.branches:
-            map[0].extend([m for m in branch.map[0]])
-            map[1].extend([m for m in branch.map[1]])
+            full_map[0].extend([m for m in branch.map[0]])
+            full_map[1].extend([m for m in branch.map[1]])
 
         # Append shared doors to the map
-        for m in map[0]:
+        for m in full_map[0]:
             if m[0] in shared_exits.keys():
                 for se in shared_exits[m[0]]:
                     # Send shared exits to the same destination
-                    map[0].append([se, m[1]])
+                    full_map[0].append([se, m[1]])
             if m[1] in shared_exits.keys():
                 for se in shared_exits[m[1]]:
                     # Send shared exits to the same destination
-                    map[0].append([m[0], se])
+                    full_map[0].append([m[0], se])
 
         # Add isolated maze internal connections (if -maze iso)
         if self.isolated_maze_map is not None:
-            map[0].extend(self.isolated_maze_map[0])
-            map[1].extend(self.isolated_maze_map[1])
+            full_map[0].extend(self.isolated_maze_map[0])
+            full_map[1].extend(self.isolated_maze_map[1])
 
         # Add randomized Kefka's Tower lane connections (if -rkt)
         if self.kt_lane_map is not None:
-            map[0].extend(self.kt_lane_map[0])
-            map[1].extend(self.kt_lane_map[1])
+            full_map[0].extend(self.kt_lane_map[0])
+            full_map[1].extend(self.kt_lane_map[1])
 
         # Add mapping for connections to KT
         traps_to_kt = [2077, 2078, 2079]
         pits_into_kt = [t + 1000 for t in traps_to_kt]
         random.shuffle(traps_to_kt)
         for i in range(3):
-            map[1].append([traps_to_kt[i], pits_into_kt[i]])
+            full_map[1].append([traps_to_kt[i], pits_into_kt[i]])
 
         # Reject any layout with a character-gated softlock: a region that can
         # be entered with only the starting party but cannot be left without a
         # character recruited elsewhere on the map. Caught by the retry loop in
         # events.py, which regenerates the map.
-        self._verify_no_character_gated_softlock(map)
+        self._verify_no_character_gated_softlock(full_map)
 
         # Debug: print shortest route if requested (after all finalization)
         if self.args.debug_route_destination:
             self.debug_print_shortest_route(self.args.debug_route_destination)
 
-        return map
+        return full_map
 
     def _character_blocked_exits(self, branch):
         """Exit IDs in `branch` that need a non-starting-party character to traverse.
