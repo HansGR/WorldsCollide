@@ -374,7 +374,12 @@ Space.rom = ROM(dummy_rom_path); free()
 - `-debug` — verbose mapping output to stdout; also makes all maps warpable.
 - `-dv` / `-debug-verbose` — verbose output to a temp file appended to the
   spoiler log (`log/verbose.py:vprint`; it self-gates — never wrap it in
-  `if self.verbose:`).
+  `if self.verbose:` unless the guard exists to skip building expensive
+  debug strings). Takes an optional level: plain `-dv` gives
+  network/branch-level diagnostics; `-dv all` additionally enables
+  element-level (Room) diagnostics — per-element removals, lock changes —
+  which are far too chatty for normal debugging
+  (`log/verbose.py:detail_enabled`, consumed by `Room.verbose`).
 - `-debug_dest <room ...>` — prints the shortest route from any world-map/hub
   room to the target room(s) after mapping (`DEBUG_SHORTEST_ROUTE.md`).
 - `-sl` with `-ruin` — ruination spoiler log section plus a rendered map image

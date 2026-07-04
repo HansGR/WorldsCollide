@@ -18,6 +18,9 @@ else:
 verbose_log.init(
     to_stdout = bool(getattr(args, "debug", False)),
     to_file = bool(getattr(args, "debug_verbose", False)),
+    # '-dv all' adds element-level (Room) diagnostics on top of the normal
+    # network/branch-level output.
+    detail = getattr(args, "debug_verbose", None) == "all",
 )
 
 hash = ', '.join([entry.name for entry in args.sprite_hash])

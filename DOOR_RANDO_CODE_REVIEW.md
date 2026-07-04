@@ -321,7 +321,18 @@ same-seed `-ruin` builds are now byte-identical across PYTHONHASHSEED values
 (1, 2, and unpinned) for 5 seeds; `-drdc` output is byte-identical to
 `door-rando-review-p2` (untouched by this change).
 
-### 3.10 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
+### 3.10 [OBSERVATION] Spoiler/debug flags are not ROM-neutral
+Noticed while validating the `-dv` level change (not investigated further):
+for the same seed and otherwise identical flags, adding `-sl` produces a
+different ROM, and adding `-dv` (which implies `-sl`) produces yet another —
+even though neither flag participates in `seed_rng_flags`. Some code gated on
+`spoiler_log`/debug consumes RNG or otherwise perturbs generation mid-build
+(`-debug` at least is expected: it makes all maps warpable). Reproduce:
+build `-s dc001 -drdc -open` with and without `-sl` and compare md5s. If
+same-seed racing with mixed logging settings matters, this deserves its own
+investigation (likely not door-rando-specific).
+
+### 3.11 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
 `args/ruin_preprocessor.py:203-221` and `:192-201` scan
 `argv[ruin_index + 1:]`, so a user flag placed *before* `-ruin`
 (`wc.py -i rom.smc -lsa 3 -ruin`) is not seen by the mutual-exclusion
@@ -525,9 +536,13 @@ hub accessor, step-2 `node` shadowing, preprocessor docstring. Implemented on
 (`full_map`), `Maps.connect_exits` (`door_map`) and
 `generate_map_with_characters` (`full_map`), with the obsolete commented-out
 map-construction block at the top of `connect_exits` removed;
-`Room.verbose` now delegates to the central -debug/-dv flag like
-`Network.verbose` (the `if self.verbose:` guards stay — they skip building
-debug strings); `Room.count`/`Rooms.count`/`full_count` docstrings document
+`Room.verbose` now delegates to the central verbose flags like
+`Network.verbose` — refined per HansGR feedback: Room-level output is a
+separate *detail* level enabled only by `-dv all`
+(`log/verbose.py:detail_enabled`), since plain `-debug`/`-dv` should stay
+at network/branch verbosity (the `if self.verbose:` guards stay — they
+skip building debug strings); `Room.count`/`Rooms.count`/`full_count`
+docstrings document
 the index layout; the ROOM_SETS trailing-id comment convention is documented
 and the stale/ambiguous 495 comments corrected. NOT converted:
 `count` to a NamedTuple — tuple-vs-list comparisons (`nc[:3] == [1, 0, 0]`)

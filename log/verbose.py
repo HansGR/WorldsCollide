@@ -16,15 +16,21 @@ import tempfile
 
 _to_stdout = False
 _to_file = False
+_detail = False
 _temp_file = None
 _temp_path = None
 
 
-def init(to_stdout=False, to_file=False):
-    """Configure verbose destinations. Safe to call more than once."""
-    global _to_stdout, _to_file, _temp_file, _temp_path
+def init(to_stdout=False, to_file=False, detail=False):
+    """Configure verbose destinations. Safe to call more than once.
+
+    `detail` enables the element-level (Room) diagnostics on top of the
+    normal network/branch-level output; it is set by `-dv all`.
+    """
+    global _to_stdout, _to_file, _detail, _temp_file, _temp_path
     _to_stdout = bool(to_stdout)
     _to_file = bool(to_file)
+    _detail = bool(detail)
     if _to_file and _temp_file is None:
         _temp_file = tempfile.NamedTemporaryFile(
             mode="w",
@@ -38,6 +44,15 @@ def init(to_stdout=False, to_file=False):
 
 def is_enabled():
     return _to_stdout or _to_file
+
+
+def detail_enabled():
+    """True when element-level (Room) diagnostics should be produced.
+
+    Gated on is_enabled() as well, so temporarily silencing the destinations
+    (e.g. the -rkt lane search) silences detail output too.
+    """
+    return _detail and (_to_stdout or _to_file)
 
 
 def vprint(*args, **kwargs):

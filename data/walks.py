@@ -3,7 +3,7 @@ import networkx as nx
 import random
 from copy import deepcopy
 import numpy as np
-from log.verbose import vprint, is_enabled as _verbose_enabled
+from log.verbose import vprint, is_enabled as _verbose_enabled, detail_enabled as _detail_enabled
 
 
 def _fast_copy_digraph(g):
@@ -1361,12 +1361,13 @@ class Room:
 
     @property
     def verbose(self):
-        # Same idiom as Network.verbose: verbose output is controlled
-        # centrally by -debug / -debug-verbose. (Previously a class-level
-        # `verbose = False` that nothing ever set, so Room debug prints were
-        # unreachable.) The `if self.verbose:` guards around vprint calls in
-        # this class also skip building the debug strings, so keep them.
-        return _verbose_enabled()
+        # Element-level diagnostics are a *detail* verbosity level, enabled
+        # only by `-dv all` (Room prints per element removal/lock change are
+        # far too chatty for normal debugging, where network/branch-level
+        # output from -debug / -dv suffices). The `if self.verbose:` guards
+        # around vprint calls in this class also skip building the debug
+        # strings, so keep them.
+        return _detail_enabled()
 
     def __init__(self, room_id=None, rooms_ref=None):
         """Initialize a room with optional room_data"""
