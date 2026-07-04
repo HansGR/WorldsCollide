@@ -115,8 +115,10 @@ records), `claude_reference/room_map_reference.json` (room → SNES map),
    mode-specific data surgery (splitting `dungeon_crawl_split_exits` out of
    `shared_exits`), and stores areas in `self.rooms`.
 2. `Doors.mod()` — per area: build a `Network`, apply immediate keys, force
-   connections, `attach_dead_ends()`, pick a start room, then
-   `connect_with_timeout(walks, 10s)` runs the recursive walk. Post-processing
+   connections, `attach_dead_ends()`, pick a start room, then run
+   `walks.connect_network()` under a deterministic attempted-connection
+   budget (`walk_budget`, 5000; healthy walks use ≤~215) with up to 5
+   start-room re-rolls on failure or budget exhaustion. Post-processing
    patches logical links, applies shared exits, strips virtual root doors,
    mirrors WoB→WoR (`-drun`), and stores `self.map = [[door pairs], [trap→pit pairs]]`.
 3. `Maps.mod()` immediately calls `postprocess_door_map()` (non-ruin), which
@@ -150,17 +152,31 @@ records), `claude_reference/room_map_reference.json` (room → SNES map),
 
 ## 5. The core walk: `Network.connect_network` (used by DC and KT lanes)
 
-The walk is a recursive backtracking search. Each frame:
-1. **Deep-copies the whole network** (`net_state = deepcopy(self)`) — all
-   mutations happen on the copy; backtracking = discarding it. This is
-   correct-by-construction and very expensive (see review §4.1).
-2. Runs `check_network_invalidity()` — rule-based rejection (network
+The walk is a recursive backtracking search. `connect_network()` is a thin
+wrapper that deep-copies once so the caller's object survives failure, then
+runs the recursive worker `_connect_network_inplace()`. Each frame:
+1. Runs `check_network_invalidity()` — rule-based rejection (network
    bifurcation, one-way imbalance, door in/out imbalance, dead-ends with
    internally-locked exits). Invalid ⇒ raise ⇒ caller backtracks.
-3. Gathers exits from the active room + everything downstream, shuffles,
-   prioritizes forced exits ("fail fast"), then for each exit gathers
-   candidate entrances (excluding `protected`), shuffles, and recurses after
-   each `connect()`.
+2. Applies keys in the active room / along the trail to the exit's room
+   **in place** — the frame's network is a private trial owned by this call
+   chain, discarded wholesale by the parent on failure.
+3. Gathers exits from the active room + everything downstream (BFS
+   reachable set), shuffles, prioritizes forced exits ("fail fast"), then
+   for each exit gathers candidate entrances (excluding `protected`),
+   shuffles, and for each attempt makes **one deepcopy** (`trial`),
+   `trial.connect(d1, d2)`, and recurses into the trial. A failed subtree
+   discards the trial; the frame's own state needs no restoring.
+   Each attempt charges one unit of the shared `walk_budget` (if armed);
+   exhaustion raises `WalkBudgetExceeded`, which the backtracker re-raises
+   past every frame so `Doors.mod` can retry the whole walk
+   deterministically (this replaced the old 10s wall-clock thread timeout).
+
+Reachability helpers (`get_upstream_nodes`/`get_downstream_nodes`,
+`get_loop`, `_upstream_trail`) are plain BFS — each room once, discovery
+order, linear. The path enumerators (`get_upstream_paths`/
+`get_downstream_paths`, budget-capped) remain only for ruination consumers
+that need actual path lists.
 
 `connect(d1, d2)` adds graph edges (both directions for doors), appends to
 `self.map[0]`/`map[1]`, removes both elements from their rooms, then looks for

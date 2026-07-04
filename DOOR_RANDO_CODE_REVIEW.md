@@ -165,6 +165,21 @@ methods feed topology levels and connection attribution during mapping, so a
 false match mislabels a connection between merged rooms. Apply the same
 bracketed convention here.
 
+### 1.10 [BUG] Airship FC-destination text crash under `-dre -maps`
+`event/airship.py:110` — the Blackjack console text looks up
+`door_short_text[exit_data[door_map[1556]][0]]`, assuming the shuffled
+Floating Continent slot leads to a location entrance whose `exit_data`
+partner is a world-map door. When map shuffle lands the FC slot on Esper
+Mountain with `-dre`, the logical link `[30044, 31047]` composes the slot
+directly with a random re-randomized *interior* door, whose partner is
+another interior door with no `door_short_text` entry → `KeyError`
+(~1-3% of `-dre -maps` seeds; confirmed pre-existing by reproducing on the
+pre-p7 baseline). Found by the p7 validation sweep.
+
+**STATUS: fixed 2026-07 on branch `door-rando-review-p7`** — the lookup
+falls back to "Esper Mountain", the only area protected this way
+(`map_shuffle_protected_doors`).
+
 ---
 
 ## 2. Data errors and inconsistencies
@@ -279,6 +294,11 @@ before an expensive `deepcopy`+validity check, so the thread routinely
 outlives the join; it is non-daemon, so a "timed out" run may hang at
 interpreter exit until the walk finishes anyway. Mark the thread `daemon=True`
 and poll `should_stop` inside the entrance loop as well.
+
+**STATUS: resolved 2026-07 on branch `door-rando-review-p7`** — the daemon
+mitigation (p2) was superseded by 9.3: the threading machinery
+(`NetworkConnector`, `connect_with_timeout`, `should_stop`) is deleted
+entirely in favor of the deterministic walk budget.
 
 ### 3.7 [FRAGILE] `data/event_exit_info.py` mixes data with ROM-dependent code
 Line 311 imports `instruction.field`, which allocates ROM space at import
@@ -679,6 +699,17 @@ different map, but every map must still be legal and valid. Estimates are
 grounded in post-p5 profiles (2026-07, this container; profiler overhead
 ~2.5×, ratios are what matter).
 
+**Decisions (2026-07):** 9.2 + 9.3 and the one-copy-per-attempt phase of
+9.1 are implemented on branch `door-rando-review-p7`; the full undo
+journal is deferred (see 9.1 STATUS). 9.4 is **rejected** — no added bias
+toward hub rooms beyond the multiplicity their door count already gives
+them. 9.6 is **rejected** — racing parallel attempts and taking the first
+success would bias output toward simpler/shorter maps. For 9.5, rejection
+sampling is deliberately kept for the small maps (KT lanes, FC, dream
+maze) so all legal layouts remain reachable, as long as they don't
+dominate wall-clock; investigating the ~4% `-ruin` regeneration rate for
+better controls remains open.
+
 ### 9.0 Where the time goes today (post-p5)
 
 **`-drdc`** (~2.3s/seed wall, of which walk ≈ 1.1s, rest is ROM/data/event
@@ -694,6 +725,12 @@ traversals), ~10% is `attach_dead_ends` + `nx.relabel_nodes` + misc.
 outside door-rando scope. The dominant `-ruin` latency risk is the retry
 loop: ~1 seed in 25 regenerates the whole map up to 10×.
 
+*Post-p7 (9.1 phase 1 + 9.2 + 9.3 implemented):* inside the `-drdc` walk,
+copying is down to ~20% and `check_network_invalidity` dominates at ~65%
+(196 copies per healthy walk, one per attempt). The next meaningful walk
+speedup would be incremental/cached reachability for the invalidity
+check, not further copy elimination.
+
 ### 9.1 Undo-log backtracking (drop the copy entirely) — biggest `-drdc` win
 
 Replace copy-per-attempt with mutate-live + undo-on-failure. `connect()`
@@ -707,6 +744,24 @@ logical state must be restored.
 **Estimated gain: removes ~48% of walk time; with 9.2, walk drops an
 estimated 5-10× (to ~0.1-0.2s), making `-drdc` builds ROM-work-bound.**
 Effort: the largest item here; needs care around compress_loop/keys.
+
+**STATUS: phase 1 implemented 2026-07 on branch `door-rando-review-p7`.**
+`connect_network` is now a thin copying wrapper around an in-place
+recursive worker (`_connect_network_inplace`): each frame mutates its own
+trial copy freely (frame-entry and trail key applications) and makes
+exactly **one** deepcopy per attempted connection instead of two
+(frame-entry copy + per-attempt backup). Copy count on a healthy `-drdc`
+walk: 391 → 196; ~15% faster end-to-end over a 10-seed `-drdc` batch.
+Side effect of in-place key application: doors unlocked by a key in the
+active room become candidates in the *same* frame rather than the next
+one (equally legal, different maps).
+The full undo journal (phase 2) is **deferred**: after phase 1 plus 9.2,
+copying is only ~20% of walk time (invalidity checking dominates at
+~65%), while the journal would have to faithfully undo `connect`,
+`compress_loop` (room merges + `Rooms` element reindexing + node renames)
+and `apply_key` cascades — a wide, high-risk mutation surface for a small
+remaining win. Revisit only if walk time matters again after the
+invalidity check is attacked directly (e.g. incremental reachability).
 
 ### 9.2 Linear-time reachability instead of path enumeration
 
@@ -728,6 +783,19 @@ Effort: moderate; the invalidity rules must be re-derived on reachable-set
 semantics and re-validated (the rules are documented in §5 of the guide
 and ARCHIVE.md).
 
+**STATUS: implemented 2026-07 on branch `door-rando-review-p7`.**
+`get_upstream_nodes`/`get_downstream_nodes` are plain BFS reachability
+(each room once, discovery order, linear, no iteration cap needed);
+`get_loop` finds a shortest cycle by BFS; the key-trail in
+`connect_network` uses a BFS shortest path (`_upstream_trail`). The
+duplicate-emission semantics are gone, so rooms reachable multiple ways
+are no longer double-weighted in exit-candidate lists (consistent with
+the 9.4 rejection). Average-case timing on healthy seeds was flat — the
+real graphs are chain-like, so the old enumeration was near-linear in
+practice — but the exponential worst case (the thing that made the old
+10s timeout fire) is gone. `get_upstream_paths`/`get_downstream_paths`
+remain, budget-capped, for the ruination consumers that need path lists.
+
 ### 9.3 Deterministic backtrack budget instead of the 10s wall-clock timeout
 
 Not a raw speedup, but strongly recommended the moment compatibility is
@@ -738,6 +806,19 @@ deterministic budget makes every seed hardware-independent, lets doomed
 walks abort earlier (lower tail latency), and removes the last
 reproducibility caveat noted in p5. The budget number can be calibrated
 from the retry telemetry (a healthy dc walk completes in ~200 frames).
+
+**STATUS: implemented 2026-07 on branch `door-rando-review-p7`.**
+`Network.walk_budget` is a `[remaining]` counter shared by every copy the
+recursive search makes; `connect_network` charges one unit per attempted
+connection and raises `WalkBudgetExceeded` (re-raised past the
+backtracker as a global stop signal). `Doors.mod` arms it at 5000 —
+measured healthy usage is ≤~215 attempts (`-drdc`) and far less elsewhere
+— around the existing 5-attempt start-room re-roll loop, and logs
+consumption to the verbose log ("walk budget used: N/5000"). The
+threading timeout machinery is deleted (resolves 3.6 and the p5
+hardware-dependence caveat). KT lane walks keep no budget (9.5 decision:
+pure rejection sampling). Same-seed output verified byte-identical across
+different `PYTHONHASHSEED` values for `-drdc`/`-dra`/`-ruin`.
 
 ### 9.4 Candidate-ordering heuristics in the walk
 
