@@ -1,4 +1,3 @@
-import threading
 from data.rooms import forced_connections, logical_links, map_shuffle_protected_doors, \
     dungeon_crawl_split_exits, reset_room_tables
 from data.map_exit_extra import exit_data, doors_WOB_WOR, reset_exit_data  # for door descriptions, WOR/WOB equivalent doors
@@ -188,7 +187,14 @@ class Doors():
         self.combine_areas = True  # make individually called flags get mixed together
         self.area_name = []
 
-        self.timeout = 10   # seconds allowed for connecting the network
+        # Attempted-connection budget for each walk (see Network.walk_budget).
+        # Healthy walks use ~200 attempts on the biggest area (-drdc) and far
+        # fewer elsewhere; 5000 is ~25x that headroom while bounding a
+        # pathological start to roughly the old 10s wall-clock timeout this
+        # replaces. Unlike the timeout, the budget is deterministic: the same
+        # seed stops (and retries) at the same point on any machine.
+        # <= 0 disables the budget entirely.
+        self.walk_budget = 5000
 
         # Read in the doors to be randomized.
         room_sets = []
@@ -669,28 +675,37 @@ class Doors():
                 walks.active = start_room_id   # walks.rooms.rooms.index(walks.rooms.get_room(start_room_id))
 
                 # Connect the network
-                if self.timeout <= 0:
-                    # Directly connect the network
+                if self.walk_budget <= 0:
+                    # Directly connect the network, no budget
                     fully_connected = walks.connect_network()
                 else:
                     # connect_network only mutates a deepcopy of the network, so a
-                    # timed-out or failed attempt can be retried on the same walks
-                    # object; each retry re-rolls the start room and random order.
+                    # failed or budget-exhausted attempt can be retried on the same
+                    # walks object; each retry re-rolls the start room and random
+                    # order. The budget list is shared by every copy the recursive
+                    # search makes, so it bounds the whole attempt.
                     max_attempts = 5
                     fully_connected = None
                     last_error = None
                     for attempt in range(max_attempts):
+                        walks.walk_budget = [self.walk_budget]
                         try:
                             vprint('\tstarting room... ', walks.active)
-                            fully_connected = connect_with_timeout(walks, self.timeout)
+                            fully_connected = walks.connect_network()
+                        except WalkBudgetExceeded as e:
+                            last_error = e
+                            vprint(f"Walk budget ({self.walk_budget}) exhausted")
                         except Exception as e:
                             last_error = e
                             vprint(f"Network connection failed: {e}")
                         if fully_connected is not None:
+                            vprint(f'\twalk budget used: '
+                                   f'{self.walk_budget - walks.walk_budget[0]}/{self.walk_budget}')
                             break
                         print(f'Door connection attempt {attempt + 1}/{max_attempts} for area '
-                              f'{area_id} timed out or failed; retrying')
+                              f'{area_id} failed or exceeded budget; retrying')
                         walks.active = random.choice(start_room_ids)
+                    walks.walk_budget = None
                     if fully_connected is None:
                         raise Exception(f'Door randomization failed for area {area_id} '
                                         f'after {max_attempts} attempts') from last_error
@@ -844,36 +859,3 @@ class Doors():
                         door_descr[m[1]]) + ')')
 
             section("Door Rando: ", lcolumn, [])
-
-
-class NetworkConnector:
-    def __init__(self, walks):
-        self.walks = walks
-        self.result = None
-        self.exception = None
-
-    def run(self):
-        try:
-            self.result = self.walks.connect_network()
-        except Exception as e:
-            self.exception = e
-
-
-def connect_with_timeout(walks, timeout=10):
-    walks.should_stop = threading.Event()
-    connector = NetworkConnector(walks)
-    # Daemon: a timed-out walk may keep running briefly after should_stop is
-    # set (it only polls at frame entry); it must not block interpreter exit.
-    thread = threading.Thread(target=connector.run, daemon=True)
-    thread.start()
-    thread.join(timeout)
-
-    if thread.is_alive():
-        walks.should_stop.set()
-        thread.join(1)
-        return None  # Timeout occurred
-
-    walks.should_stop = None  # Reset the flag
-    if connector.exception:
-        raise connector.exception
-    return connector.result

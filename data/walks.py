@@ -1,6 +1,7 @@
 from data.rooms import room_data, shared_exits, forced_connections, keys_applied_immediately, doors_as_traps
 import networkx as nx
 import random
+from collections import deque
 from copy import deepcopy
 import numpy as np
 from log.verbose import vprint, is_enabled as _verbose_enabled, detail_enabled as _detail_enabled
@@ -37,6 +38,18 @@ class NetworkRecursionError(Exception):
     pass
 
 
+class WalkBudgetExceeded(Exception):
+    """Raised when connect_network exhausts its attempted-connection budget.
+
+    Unlike an ordinary attempt failure this is a global stop signal: the
+    backtracking search re-raises it past every frame so the caller can
+    retry the whole walk (e.g. from a different start room). Because the
+    budget counts work done rather than wall-clock time, a given seed always
+    stops at exactly the same point on every machine.
+    """
+    pass
+
+
 class Network:
     @property
     def verbose(self):
@@ -60,14 +73,18 @@ class Network:
         self.protected = None
 
         self.active = None  # next(iter(self.rooms)).id  # Set first room's ID as active
-        self.should_stop = None
+        # Optional attempted-connection budget for connect_network: either None
+        # (unlimited) or a single-element list [remaining] that is SHARED by
+        # every copy of the network, so the whole recursive search draws from
+        # one counter. Set by Doors.mod before each walk attempt.
+        self.walk_budget = None
         self.version = 'Claude'
         self.initially_locked_exits = set()  # Exits unlocked by apply_key(); not free at start
 
     # Attributes copied by the hand-rolled fast paths below. Anything else
     # (e.g. subclass attributes) falls back to generic deepcopy.
     _FAST_COPY_ATTRS = frozenset([
-        'should_stop', 'net', 'rooms', 'original_room_ids', 'keychain',
+        'walk_budget', 'net', 'rooms', 'original_room_ids', 'keychain',
         'map', 'protected', 'active', 'version', 'initially_locked_exits',
     ])
 
@@ -84,7 +101,7 @@ class Network:
         cls = self.__class__
         result = cls.__new__(cls)
         memo[id(self)] = result
-        result.should_stop = self.should_stop  # shared, never copied
+        result.walk_budget = self.walk_budget  # shared, never copied
         result.net = _fast_copy_digraph(self.net)
         result.rooms = self.rooms.fast_copy()
         result.original_room_ids = list(self.original_room_ids)
@@ -204,9 +221,10 @@ class Network:
                     print('\t\t\tcompressed loop', loop_room.id)
 
             # Sanity check: after compression, no 2-cycles should remain.
-            # If they do, get_upstream/downstream_nodes would loop forever
-            # were it not for their iteration cap. Surface the violation
-            # immediately so we can localise the cause.
+            # A residual 2-cycle means two rooms that should have been merged
+            # into one; traversal handles it (BFS is cycle-safe) but the
+            # element counts treat them as distinct rooms. Surface the
+            # violation immediately so we can localise the cause.
             if self.verbose:
                 edge_set = set(self.net.edges)
                 residual = [(u, v) for (u, v) in edge_set
@@ -307,13 +325,32 @@ class Network:
                         raise RoomError(f"Unknown item unlocked by key {required_keys} in room {room.id}: {item}")
 
     def get_loop(self, room_id):
-        # Look for a loop containing this room.  If found, return [list of nodes in loop]; if not, return [].
-        paths = self.get_upstream_paths(room_id)
-        is_loop = [path.__contains__(room_id) for path in paths]
-        if True in is_loop:
-            loop = paths[is_loop.index(True)]
-            loop = loop[:loop.index(room_id) + 1]
-            return loop
+        """Look for a loop containing this room (BFS over predecessors).
+
+        Returns a shortest cycle through room_id as [p1, p2, ..., room_id],
+        ordered walking upstream from room_id (p1 is a predecessor of
+        room_id, each p_{i+1} a predecessor of p_i, and room_id a
+        predecessor of the last p), or [] if room_id is not on a cycle.
+        """
+        preds = self.net.predecessors
+        parent = {}
+        queue = deque()
+        for p in preds(room_id):
+            parent[p] = None
+            queue.append(p)
+        while queue:
+            cur = queue.popleft()
+            for p in preds(cur):
+                if p == room_id:
+                    # Cycle closed: room_id -> cur -> ... -> p1 -> room_id.
+                    chain = [cur]
+                    while parent[chain[-1]] is not None:
+                        chain.append(parent[chain[-1]])
+                    chain.reverse()
+                    return chain + [room_id]
+                if p not in parent:
+                    parent[p] = cur
+                    queue.append(p)
         return []
 
     def compress_loop(self, loop_ids):
@@ -413,51 +450,27 @@ class Network:
             raise NetworkRecursionError(self._format_recursion_diagnostics(
                 'get_upstream_paths', room_id)) from e
 
-    def get_upstream_nodes(self, room_id, visited=None):
-        """Get nodes upstream from room_id (iterative).
+    def get_upstream_nodes(self, room_id):
+        """All rooms with a path to room_id (BFS over predecessors).
 
-        Preserves the original recursive semantics:
-        - When a leaf is reached, the accumulated emit-path is returned.
-        - 2-way edges (cur_room <-> p) skip past p without including it in
-          the emit-path, but DO mark p as visited so we cannot infinite-loop.
-        Duplicate emissions are intentional: a node reachable via multiple
-        path-disjoint chains appears once per chain.
+        Returns each reachable room exactly once, in BFS discovery order;
+        room_id itself is never included. Linear in the size of the graph.
+        (The pre-9.2 implementation enumerated every path and emitted a
+        room once per path-disjoint chain, which was exponential in the
+        worst case and double-weighted rooms reachable more than one way
+        wherever the caller accumulated over the result.)
         """
-        if visited is None:
-            visited = []
-        try:
-            # Stack entry: (cur_room, visited_set, emit_path).
-            # `visited_set` blocks revisits along the current branch (a set:
-            # only membership matters); `emit_path` is the ordered path that
-            # gets appended to the result at a leaf.
-            stack = [(room_id, set(visited), list(visited))]
-            result = []
-            max_iterations = 200000   # safety net; real graphs are tiny
-            iterations = 0
-            has_edge = self.net.has_edge
-            while stack:
-                iterations += 1
-                if iterations > max_iterations:
-                    raise NetworkRecursionError(self._format_recursion_diagnostics(
-                        'get_upstream_nodes', room_id,
-                        extra=f'iteration limit {max_iterations} exceeded'))
-                cur_room, cur_visited, cur_emit = stack.pop()
-                pred = [p for p in self.net.predecessors(cur_room) if p not in cur_visited]
-                if not pred:
-                    result += cur_emit
-                    continue
-                for p in pred:
-                    new_visited = cur_visited | {p}
-                    if has_edge(cur_room, p):
-                        # 2-way edge: skip p in the emitted path but mark it
-                        # visited so we cannot bounce back across the edge.
-                        stack.append((p, new_visited, cur_emit))
-                    else:
-                        stack.append((p, new_visited, cur_emit + [p]))
-            return result
-        except RecursionError as e:
-            raise NetworkRecursionError(self._format_recursion_diagnostics(
-                'get_upstream_nodes', room_id)) from e
+        visited = {room_id}
+        result = []
+        queue = deque([room_id])
+        preds = self.net.predecessors
+        while queue:
+            for p in preds(queue.popleft()):
+                if p not in visited:
+                    visited.add(p)
+                    result.append(p)
+                    queue.append(p)
+        return result
 
     def get_downstream_paths(self, room_id, visited=None, _budget=None):
         """Return list of paths heading downstream from room_id"""
@@ -488,45 +501,49 @@ class Network:
             raise NetworkRecursionError(self._format_recursion_diagnostics(
                 'get_downstream_paths', room_id)) from e
 
-    def get_downstream_nodes(self, room_id, visited=None):
-        """Get nodes downstream from room_id (iterative).
+    def get_downstream_nodes(self, room_id):
+        """All rooms reachable from room_id (BFS over successors).
 
-        Mirror of get_upstream_nodes; preserves the original recursive
-        semantics (including duplicate emissions for nodes reachable via
-        multiple path-disjoint chains) and 2-way edge skipping, while
-        always tracking visited so traversal cannot infinite-loop.
+        Mirror of get_upstream_nodes: each reachable room exactly once, in
+        BFS discovery order, excluding room_id itself.
         """
-        if visited is None:
-            visited = []
-        try:
-            stack = [(room_id, set(visited), list(visited))]
-            result = []
-            max_iterations = 200000
-            iterations = 0
-            has_edge = self.net.has_edge
-            while stack:
-                iterations += 1
-                if iterations > max_iterations:
-                    raise NetworkRecursionError(self._format_recursion_diagnostics(
-                        'get_downstream_nodes', room_id,
-                        extra=f'iteration limit {max_iterations} exceeded'))
-                cur_room, cur_visited, cur_emit = stack.pop()
-                succ = [s for s in self.net.successors(cur_room) if s not in cur_visited]
-                if not succ:
-                    result += cur_emit
-                    continue
-                for s in succ:
-                    new_visited = cur_visited | {s}
-                    if has_edge(s, cur_room):
-                        # 2-way edge: skip s in the emitted path but mark it
-                        # visited so we cannot bounce back across the edge.
-                        stack.append((s, new_visited, cur_emit))
-                    else:
-                        stack.append((s, new_visited, cur_emit + [s]))
-            return result
-        except RecursionError as e:
-            raise NetworkRecursionError(self._format_recursion_diagnostics(
-                'get_downstream_nodes', room_id)) from e
+        visited = {room_id}
+        result = []
+        queue = deque([room_id])
+        succs = self.net.successors
+        while queue:
+            for s in succs(queue.popleft()):
+                if s not in visited:
+                    visited.add(s)
+                    result.append(s)
+                    queue.append(s)
+        return result
+
+    def _upstream_trail(self, from_id, to_id):
+        """Shortest chain of rooms walking upstream from from_id to to_id.
+
+        BFS over predecessors. Returns the intermediate rooms only (both
+        endpoints excluded), ordered from from_id's side toward to_id's,
+        or None if to_id is not upstream of from_id.
+        """
+        preds = self.net.predecessors
+        parent = {from_id: None}
+        queue = deque([from_id])
+        while queue:
+            cur = queue.popleft()
+            for p in preds(cur):
+                if p == to_id:
+                    chain = []
+                    node = cur
+                    while node != from_id:
+                        chain.append(node)
+                        node = parent[node]
+                    chain.reverse()
+                    return chain
+                if p not in parent:
+                    parent[p] = cur
+                    queue.append(p)
+        return None
 
     def get_elements(self, node_list, element_type):
         elements = []
@@ -756,12 +773,12 @@ class Network:
 
             up_count = np.array([0, 0, 0])
             up_nodes = self.get_upstream_nodes(room_id)
-            for up_id in set(up_nodes):   # for up_id in up_nodes:  don't doublecount?
+            for up_id in up_nodes:
                 up_count += unprot_count[up_id]
 
             down_count = np.array([0, 0, 0])
             down_nodes = self.get_downstream_nodes(room_id)
-            for down_id in set(down_nodes):   # for down_id in down_nodes:  don't doublecount?
+            for down_id in down_nodes:
                 down_count += unprot_count[down_id]
 
             #if self.verbose:
@@ -851,9 +868,6 @@ class Network:
         ]
 
     def connect_network(self):
-        if self.should_stop and self.should_stop.is_set():
-            raise TimeoutError('Operation cancelled')
-
         net_state = deepcopy(self)
 
         if sum(net_state.rooms.count[:3]) == 0:
@@ -928,11 +942,15 @@ class Network:
                 if R1.id != R_active.id:
                     trail = [R1.id]
                     if R_active.id not in net_state.net.predecessors(R1.id):
-                        # R_active is significantly upstream.  Find the traversed nodes.
-                        trails = [p for p in net_state.get_upstream_paths(R1.id) if R_active.id in p]
-                        if self.verbose:
-                            vprint('trails = ', trails)
-                        trail += trails[0][:trails[0].index(R_active.id)]
+                        # R_active is significantly upstream.  Find the traversed
+                        # nodes: a shortest chain from R1 back up to R_active.
+                        between = net_state._upstream_trail(R1.id, R_active.id)
+                        if between is None:
+                            # d1 came from get_downstream_nodes(R_active), so a
+                            # path must exist; treat its absence as a failed state.
+                            raise Exception(f'no upstream path from {R1.id} '
+                                            f'to active room {R_active.id}')
+                        trail += between
                         if self.verbose:
                             vprint('Traversed: ', [r for r in trail])
                     # Apply any keys found along the way.
@@ -971,6 +989,14 @@ class Network:
                 while len(possible_entrances) > 0:
                     d2 = possible_entrances.pop()
 
+                    # Charge one unit of budget per attempted connection (the
+                    # unit of work: one deepcopy + one recursive descent).
+                    if self.walk_budget is not None:
+                        self.walk_budget[0] -= 1
+                        if self.walk_budget[0] < 0:
+                            raise WalkBudgetExceeded(
+                                'connect_network exceeded its attempted-connection budget')
+
                     try:
                         net_backup = deepcopy(net_state)
                         if self.verbose:
@@ -983,6 +1009,10 @@ class Network:
                         # up_propagate the successful connection
                         return net_state
 
+                    except WalkBudgetExceeded:
+                        # Global stop signal, not an attempt failure: unwind
+                        # the whole search so the caller can retry the walk.
+                        raise
                     except Exception:
                         # Not a bare except: KeyboardInterrupt/SystemExit must
                         # abort the walk, not be treated as a failed attempt.

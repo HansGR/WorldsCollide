@@ -3762,8 +3762,9 @@ class ruination_map():
             trap_pits) with platform ids stripped, or None if the walk fails."""
             # Sorted: lanes are string sets; node insertion order must not
             # depend on PYTHONHASHSEED (seed reproducibility).
+            # No walk_budget: KT lanes are small and keep pure rejection
+            # sampling so every legal layout stays possible.
             net = Network(sorted(lane))
-            net.should_stop = None
             # Unlock both platforms so the walk can rely on the gated crossings
             # for connectivity; key timing is checked separately in verify().
             net.apply_key('KT1')
