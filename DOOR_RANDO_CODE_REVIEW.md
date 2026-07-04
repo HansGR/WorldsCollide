@@ -321,16 +321,34 @@ same-seed `-ruin` builds are now byte-identical across PYTHONHASHSEED values
 (1, 2, and unpinned) for 5 seeds; `-drdc` output is byte-identical to
 `door-rando-review-p2` (untouched by this change).
 
-### 3.10 [OBSERVATION] Spoiler/debug flags are not ROM-neutral
-Noticed while validating the `-dv` level change (not investigated further):
-for the same seed and otherwise identical flags, adding `-sl` produces a
-different ROM, and adding `-dv` (which implies `-sl`) produces yet another —
-even though neither flag participates in `seed_rng_flags`. Some code gated on
-`spoiler_log`/debug consumes RNG or otherwise perturbs generation mid-build
-(`-debug` at least is expected: it makes all maps warpable). Reproduce:
-build `-s dc001 -drdc -open` with and without `-sl` and compare md5s. If
-same-seed racing with mixed logging settings matters, this deserves its own
-investigation (likely not door-rando-specific).
+### 3.10 [OBSERVATION] `-sl` changes the generated game — vanilla WC behavior
+Investigated 2026-07 (initially misreported as mid-build RNG consumption;
+that was wrong). Two distinct mechanisms, **neither door-rando-specific**:
+
+1. **`-sl` seeds a different game — vanilla WC since the initial public
+   commit.** `args/settings.py:flags()` appends `" -sl"` to the settings
+   flag string; `args/arguments.py` builds `seed_rng_flags` from every
+   group's flags (excluding only `graphics`); `seed.py` then calls
+   `random.seed(seed + flags)`. Same `-s` seed ± `-sl` therefore seeds the
+   RNG with a different string and produces an entirely different game
+   (verified: vanilla-flags build `-s dc001 -open` vs `-open -sl` differ in
+   ~103k bytes / 148 regions). No spoiler-log code consumes RNG at all —
+   probing `random.getstate()` at the Memory/Data/Events phase boundaries
+   with `spoiler_log` toggled shows identical streams throughout.
+2. **`-debug`/`-dv` do NOT change the seed** — they set `spoiler_log = True`
+   *after* the flag string is computed (`arguments.py:73-78`). Their only
+   ROM effect from the spoiler-log path is a single byte: the
+   "Spoiler Log: T/F" value character in the in-game Flags menu
+   (byte 0x303216 on the vanilla-flags build, 0x85 'F' vs 0x93 'T').
+   (`-debug` additionally makes maps warpable by design.)
+
+Decision needed (team-level, since it is core WC): if racers/players should
+be able to generate a spoiler-logged copy of the *same* game, `-sl` must be
+excluded from `seed_rng_flags` the way graphics flags are (or dropped from
+`flags()` emission). Note the compatibility cost: any change breaks
+reproduction of previously shared seed+flag strings that included `-sl`.
+The late-set `-debug`/`-dv` path demonstrates the seed-neutral behavior
+already works correctly.
 
 ### 3.11 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
 `args/ruin_preprocessor.py:203-221` and `:192-201` scan
