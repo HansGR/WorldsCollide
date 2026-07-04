@@ -101,15 +101,18 @@ class Start(Event):
         self.start_game_mod()
 
         # Warp modifications
-        if self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all or self.args.door_randomize_crossworld:
-            # Safety: make warp remove magitek armor.
+        if (self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all
+                or self.args.door_randomize_crossworld or self.args.ruination_mode):
+            # Safety: make warp remove magitek armor (and clear any vehicle, e.g. raft).
             # Bugs can let the player carry MTek armor out of Dream, we want a way to clear that.
+            # This runs as additional_code, which executes before any warp_override, so it
+            # applies to the ruination Esper-World warp override as well.
             src_safety = [
                 field.Call(field.REMOVE_PARTY_MAGITEK),
                 field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
             ]
             self.warps.add_code(src_safety)
-            
+
         if self.args.ruination_mode:
             # Ruination mode: warps should send you to the starting position in the Esper World
             # Warps should also NOT clear or set any bits!  Just the map transition.
