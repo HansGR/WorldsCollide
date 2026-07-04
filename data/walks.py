@@ -868,12 +868,23 @@ class Network:
         ]
 
     def connect_network(self):
-        net_state = deepcopy(self)
+        """Recursively connect every element in the network; returns the
+        fully connected network (a new object; self is left untouched, so a
+        failed or budget-exhausted walk can be retried on the same object).
+        """
+        return deepcopy(self)._connect_network_inplace()
 
-        if sum(net_state.rooms.count[:3]) == 0:
-            return net_state
+    def _connect_network_inplace(self):
+        # Recursive worker for connect_network. `self` here is a private
+        # trial copy owned by this call chain: this frame mutates it freely
+        # (key applications) and each attempted connection deep-copies it
+        # exactly once — the pre-9.1 shape copied twice per attempt (once at
+        # frame entry plus one backup per attempt). On failure the caller
+        # discards the whole trial, so nothing needs restoring.
+        if sum(self.rooms.count[:3]) == 0:
+            return self
         else:
-            [invalidity, by_rules, classification, cl, td, dec] = net_state.check_network_invalidity()
+            [invalidity, by_rules, classification, cl, td, dec] = self.check_network_invalidity()
             if self.verbose:
                 vprint('Network classification: ', classification)
             if invalidity:
@@ -895,12 +906,12 @@ class Network:
                 #print('classified nodes: ', [r.id for r in cl.keys()])
                 #r_classified = [r for r in cl.keys() if r.id == R_active.id][0]
 
-            # Rest of method remains similar but uses new Room/Rooms methods
-            # Apply any keys in this node if they haven't been already
-            for k in R_active.keys:
+            # Apply any keys in this node if they haven't been already.
+            # (list(): apply_key removes the key from the room's list.)
+            for k in list(R_active.keys):
                 if self.verbose:
                     vprint('Found an unused key: ', k)
-                net_state.apply_key(k)
+                self.apply_key(k)
 
             # Collect possible exits
             possible_exits = [[d for d in R_active.doors], [t for t in R_active.traps]]
@@ -908,7 +919,7 @@ class Network:
                 vprint('Possible exits: ')
                 vprint('\t' + str(R_active.id) + ': ', possible_exits, ' - (', R_active.count[:3], '). K: ',
                       R_active.keys, ', L: ', R_active.locks, '. [U/s/D]:', cl[R_active.id][4])
-            for node_id in net_state.get_downstream_nodes(R_active.id):
+            for node_id in self.get_downstream_nodes(R_active.id):
                 # Collect exits from downstream nodes.
                 ### AS WE DO THIS: do we need to look for keys & apply them?  but only along the present branch???
                 node = self.rooms.get_room(node_id)
@@ -933,7 +944,7 @@ class Network:
             # Start trying exits
             while len(possible_exits) > 0:
                 d1 = possible_exits.pop()
-                R1 = net_state.rooms.get_room_from_element(d1)
+                R1 = self.rooms.get_room_from_element(d1)
                 d1_type = R1.element_type(d1)
                 if self.verbose:
                     vprint('selected: ', d1, ', type ', d1_type, ' (', R1.id, ')')
@@ -941,10 +952,10 @@ class Network:
                 # if d1 was in a downstream node, R1 might have a key that hasn't been used yet.
                 if R1.id != R_active.id:
                     trail = [R1.id]
-                    if R_active.id not in net_state.net.predecessors(R1.id):
+                    if R_active.id not in self.net.predecessors(R1.id):
                         # R_active is significantly upstream.  Find the traversed
                         # nodes: a shortest chain from R1 back up to R_active.
-                        between = net_state._upstream_trail(R1.id, R_active.id)
+                        between = self._upstream_trail(R1.id, R_active.id)
                         if between is None:
                             # d1 came from get_downstream_nodes(R_active), so a
                             # path must exist; treat its absence as a failed state.
@@ -956,16 +967,16 @@ class Network:
                     # Apply any keys found along the way.
                     for Rt_id in trail:
                         Rt = self.rooms.get_room(Rt_id)
-                        for k in Rt.keys:
+                        for k in list(Rt.keys):
                             if self.verbose:
                                 vprint('Found an unused key: ', k, 'in', Rt_id)
-                            net_state.apply_key(k)
+                            self.apply_key(k)
 
                 # Collect possible entrances for d1
                 possible_entrances = []
                 if self.verbose:
-                    vprint('Possible entrances: (', len(net_state.net.nodes), ' rooms)')
-                for node_id in net_state.net.nodes:
+                    vprint('Possible entrances: (', len(self.net.nodes), ' rooms)')
+                for node_id in self.net.nodes:
                     node = self.rooms.get_room(node_id)
                     if d1_type == 0:
                         node_entr = [d for d in node.doors if d != d1]
@@ -982,7 +993,7 @@ class Network:
                     if self.verbose:
                         vprint('\t\tForced connection: ', possible_entrances)
                 else:
-                    possible_entrances = [p for p in possible_entrances if p not in net_state.protected]
+                    possible_entrances = [p for p in possible_entrances if p not in self.protected]
 
                 random.shuffle(possible_entrances)  # randomize order
 
@@ -997,17 +1008,18 @@ class Network:
                             raise WalkBudgetExceeded(
                                 'connect_network exceeded its attempted-connection budget')
 
+                    # The one copy per attempt: connect and recurse on the
+                    # trial; a failure anywhere in that subtree discards the
+                    # trial and leaves self as it was before the attempt.
+                    trial = deepcopy(self)
                     try:
-                        net_backup = deepcopy(net_state)
                         if self.verbose:
                             vprint('\t\tTrying Connection: ', str(d1), str(d2))
-                        net_state.connect(d1, d2)
+                        trial.connect(d1, d2)
                         if self.verbose:
                             vprint('\t\t...')
-                        net_state = net_state.connect_network()
-
                         # up_propagate the successful connection
-                        return net_state
+                        return trial._connect_network_inplace()
 
                     except WalkBudgetExceeded:
                         # Global stop signal, not an attempt failure: unwind
@@ -1018,7 +1030,6 @@ class Network:
                         # abort the walk, not be treated as a failed attempt.
                         if self.verbose:
                             vprint('\t\t(' + str(d1) + ',' + str(d2) + ') failed')
-                        net_state = net_backup  # reset the network
 
                 # If you get here, you ran out of possible entrances.
                 if self.verbose:
