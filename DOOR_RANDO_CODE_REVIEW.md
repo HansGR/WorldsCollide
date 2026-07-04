@@ -105,6 +105,7 @@ these doors participate in randomization. Verified against
 Also suspicious (need domain confirmation): `exit_data[509]`/`exit_data[513]`
 (Mobliz Mail House Outside → 519), `exit_data[519]` (→ 521), `exit_data[647]`
 (Opera House Catwalk Stairwell South → 62, a world-map tile).
+*(Resolved: HansGR reviewed and fixed 509/519/647 directly, 2026-07.)*
 
 Most of these doors are in town interiors that current room sets don't
 randomize, so the errors are latent — but they are landmines for any future
@@ -194,6 +195,10 @@ No lock currently contains a 4xxx id, but Ruination's lock dictionaries grow
 regularly (`ruin-zozo` already locks door `4608`!). `locked('doors')` will not
 report 4608 as a locked door, while `element_type(4608)` calls it a door.
 Centralize classification in one function and have both call it.
+**Deliberately deferred (2026-07):** fixing this changes `alldoors`/
+`full_count` for rooms with locked 4xxx doors, which feeds mapping decisions
+— i.e., it changes generated maps. Schedule it together with the first
+relaxed-compatibility change (§9).
 
 ### 2.4 [STYLE] `Room.element_type` returns `False` as its error sentinel
 `data/walks.py:1545` — `return False` for unknown IDs, but callers compare
@@ -316,7 +321,36 @@ same-seed `-ruin` builds are now byte-identical across PYTHONHASHSEED values
 (1, 2, and unpinned) for 5 seeds; `-drdc` output is byte-identical to
 `door-rando-review-p2` (untouched by this change).
 
-### 3.10 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
+### 3.10 [OBSERVATION] `-sl` changes the generated game — vanilla WC behavior
+Investigated 2026-07 (initially misreported as mid-build RNG consumption;
+that was wrong). Two distinct mechanisms, **neither door-rando-specific**:
+
+1. **`-sl` seeds a different game — vanilla WC since the initial public
+   commit.** `args/settings.py:flags()` appends `" -sl"` to the settings
+   flag string; `args/arguments.py` builds `seed_rng_flags` from every
+   group's flags (excluding only `graphics`); `seed.py` then calls
+   `random.seed(seed + flags)`. Same `-s` seed ± `-sl` therefore seeds the
+   RNG with a different string and produces an entirely different game
+   (verified: vanilla-flags build `-s dc001 -open` vs `-open -sl` differ in
+   ~103k bytes / 148 regions). No spoiler-log code consumes RNG at all —
+   probing `random.getstate()` at the Memory/Data/Events phase boundaries
+   with `spoiler_log` toggled shows identical streams throughout.
+2. **`-debug`/`-dv` do NOT change the seed** — they set `spoiler_log = True`
+   *after* the flag string is computed (`arguments.py:73-78`). Their only
+   ROM effect from the spoiler-log path is a single byte: the
+   "Spoiler Log: T/F" value character in the in-game Flags menu
+   (byte 0x303216 on the vanilla-flags build, 0x85 'F' vs 0x93 'T').
+   (`-debug` additionally makes maps warpable by design.)
+
+Decision needed (team-level, since it is core WC): if racers/players should
+be able to generate a spoiler-logged copy of the *same* game, `-sl` must be
+excluded from `seed_rng_flags` the way graphics flags are (or dropped from
+`flags()` emission). Note the compatibility cost: any change breaks
+reproduction of previously shared seed+flag strings that included `-sl`.
+The late-set `-debug`/`-dv` path demonstrates the seed-neutral behavior
+already works correctly.
+
+### 3.11 [FRAGILE] `ruin_preprocessor` only sees flags *after* `-ruin`
 `args/ruin_preprocessor.py:203-221` and `:192-201` scan
 `argv[ruin_index + 1:]`, so a user flag placed *before* `-ruin`
 (`wc.py -i rom.smc -lsa 3 -ruin`) is not seen by the mutual-exclusion
@@ -358,6 +392,13 @@ failure), but the `_paths` variants were not. On the DC-sized graphs the
 branching is low enough to pass; on dense compound graphs this is the next
 hang. Same treatment (iterative + cap, or a proper SCC/condensation) is
 warranted.
+**STATUS: implemented 2026-07 on branch `door-rando-review-p6`** — both
+`_paths` enumerators now carry a shared 200k step budget (threaded through
+the recursion, so output order is untouched) and convert both budget
+exhaustion and deep `RecursionError` into `NetworkRecursionError` with the
+standard diagnostics, matching the `_nodes` variants. Verified: budget fires
+on a pathological dense-DAG test, healthy outputs unchanged, and the full
+8-seed matrix is byte-identical to `door-rando-review-p5`.
 
 ### 4.3 [PERF] `check_network_invalidity` recomputes global reachability per node, per connection
 `data/walks.py:645-832` runs `get_upstream_nodes` + `get_downstream_nodes` for
@@ -505,6 +546,26 @@ mutation) and some use `for rid in area_rooms` while removing from it.
   is injected at runtime by `process_rewards`), and `ruin_hub`'s pit 3039 is
   added dynamically when `LeteRiver3` enters a branch. Both look like data
   errors until you find the injection sites.
+
+**STATUS (2026-07, branches p4/p6):** implemented on `door-rando-review-p4`:
+hub accessor, step-2 `node` shadowing, preprocessor docstring. Implemented on
+`door-rando-review-p6`: `Doors.read()` inlined; `Doors.rooms` renamed to
+`area_room_sets`; the `map` builtin shadowing renamed in `Doors.mod`
+(`full_map`), `Maps.connect_exits` (`door_map`) and
+`generate_map_with_characters` (`full_map`), with the obsolete commented-out
+map-construction block at the top of `connect_exits` removed;
+`Room.verbose` now delegates to the central verbose flags like
+`Network.verbose` — refined per HansGR feedback: Room-level output is a
+separate *detail* level enabled only by `-dv all`
+(`log/verbose.py:detail_enabled`), since plain `-debug`/`-dv` should stay
+at network/branch verbosity (the `if self.verbose:` guards stay — they
+skip building debug strings); `Room.count`/`Rooms.count`/`full_count`
+docstrings document
+the index layout; the ROOM_SETS trailing-id comment convention is documented
+and the stale/ambiguous 495 comments corrected. NOT converted:
+`count` to a NamedTuple — tuple-vs-list comparisons (`nc[:3] == [1, 0, 0]`)
+would silently change semantics; revisit only with a full call-site audit.
+All verified byte-identical to `door-rando-review-p5` on the 8-seed matrix.
 
 ---
 
