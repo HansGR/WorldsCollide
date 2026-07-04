@@ -106,8 +106,17 @@ class Airship(Event):
             if self.MAP_SHUFFLE:
                 self.FC_id = 1556
                 if self.FC_id in self.maps.door_map.keys():
-                    # Find the new location and set the message
-                    location_text = door_short_text[exit_data[self.maps.door_map[self.FC_id]][0]]
+                    # Find the new location and set the message.
+                    # Normally door_map[1556] is a location's entrance door and
+                    # its exit_data partner is the world-map door indexing
+                    # door_short_text. But when the FC slot lands on Esper
+                    # Mountain with -dre, the logical link 30044<->31047
+                    # composes the shuffled entrance directly with a random
+                    # re-randomized interior door, whose partner is another
+                    # interior door. Esper Mountain is the only area protected
+                    # this way (map_shuffle_protected_doors), so name it.
+                    partner = exit_data[self.maps.door_map[self.FC_id]][0]
+                    location_text = door_short_text.get(partner, "Esper Mountain")
                     fc_dest_str = '(Find ' + location_text + ')'
                     fly_wor_cancel_text += '(Go to ' + location_text + ')<line><choice> '
                 else:
