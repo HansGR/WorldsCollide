@@ -118,6 +118,11 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # New: Display price, take GP, then jump to original movement code at 0xCAF659
     RETURNERS_DIALOG_ID = 0x111
     RETURNERS_ORIGINAL_YES_CODE = 0xCAF659
+    # Vanilla "You don't have enough money." dialog shown by paid inns on the
+    # insufficient-funds path (also reused by the airship and phantom train
+    # heals under -nfh). Already contains the right text in the base ROM, so no
+    # set_text is needed.
+    NOT_ENOUGH_GP_DIALOG_ID = 2748
 
     returners_price = min(RETURNERS_HIDEOUT_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
@@ -135,6 +140,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
 
         "RETURNERS_NO_MONEY",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+        field.Dialog(NOT_ENOUGH_GP_DIALOG_ID),
         "RETURNERS_NO",
         field.Return(),
     ]
