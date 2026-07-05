@@ -105,6 +105,15 @@ class SerpentTrench(Event):
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
+        if not self.args.fixed_encounters_original:
+            # Fixed-encounter variety (upstream, -fer). Must run BEFORE
+            # ruination_battles_mod: that mod reads each battle's pack byte
+            # and re-emits it inside its respawn wrapper, so the swapped pack
+            # is preserved (see its "even if some other mod has changed the
+            # pack byte" note). Both only patch existing event code, so their
+            # Reserves are no-ops on the free list and never conflict.
+            self.fixed_battles_mod()
+
         if self.args.ruination_mode:
             self.ruination_battles_mod()
 

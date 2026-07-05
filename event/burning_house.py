@@ -79,6 +79,13 @@ class BurningHouse(Event):
         if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
             self.map_shuffle_mod()
 
+        if not self.args.fixed_encounters_original:
+            # Fixed-encounter variety (upstream). Writes only the pack byte at
+            # each flame's event_addr+1, which is disjoint from the door-rando
+            # flame_eater_mod (0xbe767+) and ruination_fireballs_mod back-halves
+            # (event_addr+7..+12), so it is safe in every mode.
+            self.fixed_battles_mod()
+
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
