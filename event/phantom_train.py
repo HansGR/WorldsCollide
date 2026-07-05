@@ -455,6 +455,146 @@ class PhantomTrain(Event):
         if self.args.no_free_heals:
             self.ruination_restaurant_mod()
 
+    def ziegfried_mod(self):
+        space = Reserve(0xbb809, 0xbb862, "phantom train before ziegfried appears", field.NOP())
+
+        space = Reserve(0xbb871, 0xbb885, "phantom train face ziegfriend", field.NOP())
+        space.write(
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.Turn(direction.RIGHT)
+            ),
+        )
+
+        space = Reserve(0xbb888, 0xbb8a6, "phantom train before ziegfried attacks", field.NOP())
+        space = Reserve(0xbb8cd, 0xbb8cf, "phantom train ziegfried what a bag of wind", field.NOP())
+        space = Reserve(0xbb8d4, 0xbb8d6, "phantom train ziegfried impossible", field.NOP())
+        space = Reserve(0xbb900, 0xbb902, "phantom train ziegfried uwa, ha, ha", field.NOP())
+
+    def ghosts_leave_mod(self):
+        space = Reserve(0xbad52, 0xbaee2, "phantom train ghosts leave party event before the last two cars", field.NOP())
+        self.maps.delete_event(0x8d, 55, 8)
+
+    def phantom_train_battle_mod(self):
+        boss_pack_id = self.get_boss("GhostTrain")
+        battle_background = 33 # ghost train tracks
+
+        battle_type = field.BattleType.BACK
+        if boss_pack_id == self.enemies.packs.get_id("SrBehemoth"):
+            battle_type = field.BattleType.FRONT
+
+        space = Reserve(0xbb9ff, 0xbba05, "phantom train invoke battle ghosttrain", field.NOP())
+        space.write(
+            field.InvokeBattleType(boss_pack_id, battle_type, battle_background),
+        )
+
+    def phantom_train_mod(self):
+        # remove cyan/shadow from final phantom train scene on platform
+        self.maps.remove_npc(0x89, 0x10) # cyan
+        self.maps.remove_npc(0x89, 0x10) # shadow
+
+        space = Reserve(0xba6b9, 0xba6bb, "phantom train gotta stop this thing", field.NOP())
+        space = Reserve(0xbb9e6, 0xbb9e8, "phantom train press this switch", field.NOP())
+        if not (self.DOOR_RANDOMIZE or self.RUINATION_MODE) or not self.args.character_gating:
+            # Use this space for local character gating if necessary
+            space = Reserve(0xbb9f4, 0xbb9f6, "phantom train so you've been slowing", field.NOP())
+            space = Reserve(0xbb9fb, 0xbb9fe, "phantom train sound and delay before fight", field.NOP())
+
+        src = []
+        if self.reward.type == RewardType.CHARACTER:
+            src += [
+                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                field.RecruitAndSelectParty(self.reward.id),
+                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                field.FadeInScreen(),
+                field.FinishCheck(),
+            ]
+        elif self.reward.type == RewardType.ESPER:
+            src += [
+                field.FadeInScreen(),
+                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                field.AddEsper(self.reward.id),
+                field.Dialog(self.espers.get_receive_esper_dialog(self.reward.id)),
+                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                field.FinishCheck(),
+            ]
+        elif self.reward.type == RewardType.ITEM:
+            src += [
+                field.FadeInScreen(),
+                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                field.AddItem(self.reward.id),
+                field.Dialog(self.items.get_receive_dialog(self.reward.id)),
+                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                field.FinishCheck(),
+            ]
+
+        src += [
+            "AFTER_REWARD",
+            field.SetEventBit(event_bit.DEFEATED_PHANTOM_TRAIN),
+            field.SetEventBit(npc_bit.GHOST_SHOP_PHANTOM_FOREST),
+            field.ClearEventBit(npc_bit.PHANTOM_TRAIN_SAVE_POINT),
+            field.ClearEventBit(npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN),
+            field.ClearEventBit(event_bit.LUMP_OF_METAL_CHESTS),
+            field.Branch(self.load_world_map),
+        ]
+        space = Write(Bank.CB, src, "phantom train ensure reward and exit forest")
+        end_event = space.start_address
+
+        space = Reserve(0xbba06, 0xbba0b, "phantom train defeated call ensure reward and exit forest", field.NOP())
+        space.write(
+            field.Branch(end_event),
+        )
+
+    def random_forest_mod(self):
+        # after completing phantom train, allow for finding it again
+        # northeast path in crossroads randomly leads to phantom train or a random map
+
+        random_destinations = [
+            field.FadeLoadMap(0x084, direction.RIGHT, True, 1, 9, fade_in = True),  # map 1 west
+            field.FadeLoadMap(0x084, direction.DOWN, True, 28, 8, fade_in = True),  # map 1 east
+            field.FadeLoadMap(0x085, direction.UP, True, 3, 13, fade_in = True),    # map 2 west
+            field.FadeLoadMap(0x085, direction.UP, True, 20, 13, fade_in = True),   # map 2 east
+            field.FadeLoadMap(0x086, direction.DOWN, True, 5, 8, fade_in = True),   # map 3 northwest
+            field.FadeLoadMap(0x086, direction.UP, True, 12, 11, fade_in = True),   # map 3 southeast
+        ]
+
+        addresses = []
+        for destination in random_destinations:
+            src = [
+                destination,
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "phantom forest random destination")
+            addresses.append(space.start_address)
+
+        src = [
+            field.BranchChance(2 / 3, "RANDOMLY_EXIT"),
+            field.FadeLoadMap(0x087, direction.UP, True, 3, 12, fade_in = True),    # path to phantom train
+            field.Return(),
+
+            "RANDOMLY_EXIT",
+            field.BranchChance(5 / 6, "RANDOM_DESTINATION"),
+            field.Return(),                                                         # path to world map
+
+            "RANDOM_DESTINATION",
+        ]
+
+        count = len(addresses)
+        for i in range(count):
+            probability = (count / (count - i)) / count
+            src += [
+                field.BranchChance(probability, addresses[i]),
+            ]
+        src += [
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "phantom forest randomly find phantom train or a random map")
+        random_destination = space.start_address
+
+        space = Reserve(0xba3c4, 0xba3c9, "phantom forest last map branch if finished phantom train", field.NOP())
+        space.write(
+            field.BranchIfEventBitSet(event_bit.STOPPED_PHANTOM_TRAIN, random_destination),
+        )
+
     def ruination_restaurant_mod(self):
         """
         Modifies the Phantom Train restaurant for ruination mode.
@@ -705,7 +845,7 @@ class PhantomTrain(Event):
         ]
         space = Write(Bank.CB, new_menu_src, "phantom train ruination restaurant menu")
         new_menu_addr = space.start_address
-        
+
         space = Reserve(0xbb032, 0xbb03c, "phantom train ruination restaurant redirect", field.NOP())
         space.write(
             field.DialogBranch(0x28C,
@@ -723,147 +863,9 @@ class PhantomTrain(Event):
             field.Return()
         ]
         space.write(src)
-        
 
-    def ziegfried_mod(self):
-        space = Reserve(0xbb809, 0xbb862, "phantom train before ziegfried appears", field.NOP())
 
-        space = Reserve(0xbb871, 0xbb885, "phantom train face ziegfriend", field.NOP())
-        space.write(
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.Turn(direction.RIGHT)
-            ),
-        )
 
-        space = Reserve(0xbb888, 0xbb8a6, "phantom train before ziegfried attacks", field.NOP())
-        space = Reserve(0xbb8cd, 0xbb8cf, "phantom train ziegfried what a bag of wind", field.NOP())
-        space = Reserve(0xbb8d4, 0xbb8d6, "phantom train ziegfried impossible", field.NOP())
-        space = Reserve(0xbb900, 0xbb902, "phantom train ziegfried uwa, ha, ha", field.NOP())
-
-    def ghosts_leave_mod(self):
-        space = Reserve(0xbad52, 0xbaee2, "phantom train ghosts leave party event before the last two cars", field.NOP())
-        self.maps.delete_event(0x8d, 55, 8)
-
-    def phantom_train_battle_mod(self):
-        boss_pack_id = self.get_boss("GhostTrain")
-        battle_background = 33 # ghost train tracks
-
-        battle_type = field.BattleType.BACK
-        if boss_pack_id == self.enemies.packs.get_id("SrBehemoth"):
-            battle_type = field.BattleType.FRONT
-
-        space = Reserve(0xbb9ff, 0xbba05, "phantom train invoke battle ghosttrain", field.NOP())
-        space.write(
-            field.InvokeBattleType(boss_pack_id, battle_type, battle_background),
-        )
-
-    def phantom_train_mod(self):
-        # remove cyan/shadow from final phantom train scene on platform
-        self.maps.remove_npc(0x89, 0x10) # cyan
-        self.maps.remove_npc(0x89, 0x10) # shadow
-
-        space = Reserve(0xba6b9, 0xba6bb, "phantom train gotta stop this thing", field.NOP())
-        space = Reserve(0xbb9e6, 0xbb9e8, "phantom train press this switch", field.NOP())
-        if not (self.DOOR_RANDOMIZE or self.RUINATION_MODE) or not self.args.character_gating:
-            # Use this space for local character gating if necessary
-            space = Reserve(0xbb9f4, 0xbb9f6, "phantom train so you've been slowing", field.NOP())
-            space = Reserve(0xbb9fb, 0xbb9fe, "phantom train sound and delay before fight", field.NOP())
-
-        src = []
-        if self.reward.type == RewardType.CHARACTER:
-            src += [
-                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.RecruitAndSelectParty(self.reward.id),
-                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
-                field.FadeInScreen(),
-                field.FinishCheck(),
-            ]
-        elif self.reward.type == RewardType.ESPER:
-            src += [
-                field.FadeInScreen(),
-                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.AddEsper(self.reward.id),
-                field.Dialog(self.espers.get_receive_esper_dialog(self.reward.id)),
-                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
-                field.FinishCheck(),
-            ]
-        elif self.reward.type == RewardType.ITEM:
-            src += [
-                field.FadeInScreen(),
-                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.AddItem(self.reward.id),
-                field.Dialog(self.items.get_receive_dialog(self.reward.id)),
-                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
-                field.FinishCheck(),
-            ]
-
-        src += [
-            "AFTER_REWARD",
-            field.SetEventBit(event_bit.DEFEATED_PHANTOM_TRAIN),
-            field.SetEventBit(npc_bit.GHOST_SHOP_PHANTOM_FOREST),
-            field.ClearEventBit(npc_bit.PHANTOM_TRAIN_SAVE_POINT),
-            field.ClearEventBit(npc_bit.ATTACK_GHOSTS_PHANTOM_TRAIN),
-            field.ClearEventBit(event_bit.LUMP_OF_METAL_CHESTS),
-            field.Branch(self.load_world_map),
-        ]
-        space = Write(Bank.CB, src, "phantom train ensure reward and exit forest")
-        end_event = space.start_address
-
-        space = Reserve(0xbba06, 0xbba0b, "phantom train defeated call ensure reward and exit forest", field.NOP())
-        space.write(
-            field.Branch(end_event),
-        )
-
-    def random_forest_mod(self):
-        # after completing phantom train, allow for finding it again
-        # northeast path in crossroads randomly leads to phantom train or a random map
-
-        random_destinations = [
-            field.FadeLoadMap(0x084, direction.RIGHT, True, 1, 9, fade_in = True),  # map 1 west
-            field.FadeLoadMap(0x084, direction.DOWN, True, 28, 8, fade_in = True),  # map 1 east
-            field.FadeLoadMap(0x085, direction.UP, True, 3, 13, fade_in = True),    # map 2 west
-            field.FadeLoadMap(0x085, direction.UP, True, 20, 13, fade_in = True),   # map 2 east
-            field.FadeLoadMap(0x086, direction.DOWN, True, 5, 8, fade_in = True),   # map 3 northwest
-            field.FadeLoadMap(0x086, direction.UP, True, 12, 11, fade_in = True),   # map 3 southeast
-        ]
-
-        addresses = []
-        for destination in random_destinations:
-            src = [
-                destination,
-                field.Return(),
-            ]
-            space = Write(Bank.CB, src, "phantom forest random destination")
-            addresses.append(space.start_address)
-
-        src = [
-            field.BranchChance(2 / 3, "RANDOMLY_EXIT"),
-            field.FadeLoadMap(0x087, direction.UP, True, 3, 12, fade_in = True),    # path to phantom train
-            field.Return(),
-
-            "RANDOMLY_EXIT",
-            field.BranchChance(5 / 6, "RANDOM_DESTINATION"),
-            field.Return(),                                                         # path to world map
-
-            "RANDOM_DESTINATION",
-        ]
-
-        count = len(addresses)
-        for i in range(count):
-            probability = (count / (count - i)) / count
-            src += [
-                field.BranchChance(probability, addresses[i]),
-            ]
-        src += [
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "phantom forest randomly find phantom train or a random map")
-        random_destination = space.start_address
-
-        space = Reserve(0xba3c4, 0xba3c9, "phantom forest last map branch if finished phantom train", field.NOP())
-        space.write(
-            field.BranchIfEventBitSet(event_bit.STOPPED_PHANTOM_TRAIN, random_destination),
-        )
 
     def door_rando_mod(self):
         # change the platform entrance event so the exit is returnable

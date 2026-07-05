@@ -82,6 +82,9 @@ class MagitekFactory(Event):
         self.after_cranes_mod()
         self.guardian_mod()
 
+        if self.args.no_free_heals:
+            self.vector_heal_hut_mod()
+
         self.log_reward(self.reward1)
         self.log_reward(self.reward2)
         self.log_reward(self.reward3)
@@ -91,9 +94,6 @@ class MagitekFactory(Event):
 
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
-
-        if self.args.no_free_heals:
-            self.vector_heal_hut_mod()
 
 
     def vector_mod(self):

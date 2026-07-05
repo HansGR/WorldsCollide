@@ -23,7 +23,7 @@ def parse(parser):
                              "become paid), recovery springs and Phantom Train restaurant get random "
                              "effects, free beds may trigger ambush, and scripted full heals "
                              "(Doma WoB Leader, Magitek 3 pre-crane, Vector heal hut, Narshe school "
-                             "pot) are removed or limited. Included in -ruin defaults.")
+                             "pot) are removed or limited.")
 
     from data.movement import ALL
     movement = misc.add_mutually_exclusive_group()

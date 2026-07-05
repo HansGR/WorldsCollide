@@ -27,7 +27,7 @@ in their respective event files (e.g. ``event/baren_falls.py``,
 
 import random
 
-from memory.space import Bank, Reserve, Write
+from memory.space import Bank, Reserve, Write, Read
 from instruction.event import EVENT_CODE_START
 import instruction.asm as asm
 import instruction.field as field
@@ -118,6 +118,11 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # New: Display price, take GP, then jump to original movement code at 0xCAF659
     RETURNERS_DIALOG_ID = 0x111
     RETURNERS_ORIGINAL_YES_CODE = 0xCAF659
+    # Vanilla "You don't have enough money." dialog shown by paid inns on the
+    # insufficient-funds path (also reused by the airship and phantom train
+    # heals under -nfh). Already contains the right text in the base ROM, so no
+    # set_text is needed.
+    NOT_ENOUGH_GP_DIALOG_ID = 2748
 
     returners_price = min(RETURNERS_HIDEOUT_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
@@ -135,6 +140,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
 
         "RETURNERS_NO_MONEY",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+        field.Dialog(NOT_ENOUGH_GP_DIALOG_ID),
         "RETURNERS_NO",
         field.Return(),
     ]
@@ -164,7 +170,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
     dialogs.set_text(FIGARO_DIALOG_ID,
         f"{figaro_price} GP per night!<line>Need a rest?<line><choice>(Yes)<line><choice>(No)<end>")
 
-    animation_src = [field.Read(0xa71d9, 0xa71dd), field.Branch(0xa71d4)]
+    animation_src = [Read(0xa71d9, 0xa71dd), field.Branch(0xa71d4)]
     space = Reserve(0xa71d9, 0xa71e8, "Figaro Castle Inn simplify", field.NOP())
     space.write(animation_src)
     animation_addr = space.start_address

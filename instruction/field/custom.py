@@ -155,8 +155,9 @@ class BedHealCharacter(_Instruction):
     # Effect per character (mutually exclusive):
     #   dead                   -> revive to 1 HP (no-op if -permadeath)
     #   alive + any status     -> clear all field status bytes ($1614, $1615)
-    #   alive + HP < max HP    -> current HP += max HP / 2 (capped at max)
-    #   alive + at max HP      -> current MP += max MP / 2 (capped at max)
+    #   alive + HP < max HP or MP < max MP:
+    #                          -> current HP += max HP / 4 (capped at max)
+    #                          -> current MP += max MP / 4 (capped at max)
     def __init__(self, character):
         from instruction.c0 import character_data_offset
 
@@ -238,7 +239,6 @@ class BedHealCharacter(_Instruction):
             "STORE_HP",
             asm.STA(CURRENT_HP, asm.ABS_Y),
             asm.A8(),
-            # asm.BRA("DONE"),  # ALSO heal MP
 
             "HEAL_MP",
             # Reached from BCS above while still in A16. Vanilla MAX_MP
@@ -1441,7 +1441,7 @@ class FinalizeBranchRecruit(_Instruction):
             # that SetupBranchRecruit set.
             asm.LDA(event_word.address(event_word.SCRATCH) + 1, asm.ABS),  # SCRATCH high byte ($1FFB)
             asm.STA(party_away_byte, asm.ABS),
-            
+
             # === Step 0: Load SCRATCH, extract flags ===
             asm.LDA(event_word.address(event_word.SCRATCH), asm.ABS),
             asm.AND(0x07, asm.IMM8),                         # isolate original party index

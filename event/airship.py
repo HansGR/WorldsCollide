@@ -284,8 +284,10 @@ class Airship(Event):
             field.ClearEventBit(npc_bit.MOBLIZ_CITIZENS),
             field.ClearEventBit(npc_bit.MOBLIZ_SOLDIERS_LETTER),
 
+            field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
             field.ClearEventBit(npc_bit.LONE_WOLF_FIGARO_CASTLE),
             field.ClearEventBit(npc_bit.PRISONERS_FIGARO_CASTLE),
+
             field.SetEventBit(npc_bit.MAN_AT_COUNTER_OPERA),
             field.SetEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
             field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_SITTING),
@@ -591,4 +593,3 @@ class Airship(Event):
 
         space = Reserve(0xb2240, 0xb224A, "edit free airship heal nfh", field.NOP())
         space.write(field.DialogBranch(heal_dialog_id, airship_heal_address, field.RETURN))
-

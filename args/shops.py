@@ -47,8 +47,8 @@ def parse(parser):
     shops.add_argument("-sesb", "--shops-expensive-super-balls", action = "store_true",
                        help = "Super Balls base price increase")
 
-    shops.add_argument("-seri", "--shops-expensive-restorative-items", action = "store_true",
-                       help = "Fenix Down, Tonic, Dried Meat, Potion, X-Potion, Tincture, Ether, X-Ether, Sleeping Bag, Tent, Remedy, Antidote, Eyedrop, Echo Screen, Soft, Revivify, and Green Cherry base price increased")
+    shops.add_argument("-seri", "--shops-expensive-restorative-items", action="store_true",
+                       help = "Increase base price of most restorative items (Potions, Ethers, Tents, etc.)")
 
     shops.add_argument("-snee", "--shops-no-exp-eggs", action = "store_true",
                        help = "Exp. Eggs not sold in shops")

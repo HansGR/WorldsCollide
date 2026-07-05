@@ -1,7 +1,5 @@
 from event.event import *
 
-NUM_HEALS = 3
-
 class NarsheWOB(Event):
     def name(self):
         return "Narshe WOB"

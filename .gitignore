@@ -4,7 +4,13 @@ $py.class
 *-objective.json
 *-flag.json
 wip/
-ffiii_wc_*
-# ROM files (never commit - legal)
+
+# ROM files must never be committed (legal requirement)
 *.smc
 *.sfc
+*.SMC
+*.SFC
+
+# generated test artifacts (seed logs, manifests) - see agents.md "Test Data Isolation"
+tests/*.txt
+tests/*.json

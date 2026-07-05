@@ -1,5 +1,6 @@
 from memory.space import Bank, Allocate
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
+from event.free_heals import modify_inn_costs, modify_free_bed_heals, modify_recovery_springs, remove_coliseum_heal, modify_vector_inn
 import instruction.field as field
 from data.map_exit_extra import exit_data, door_to_eventname
 from data.warps import Warps, WarpPoints
@@ -83,11 +84,6 @@ class Events():
         else:
             self.open_world_mod(events)
 
-        #if self.verbose:
-        #    print('Character tree:')
-        #    for i in range(self.characters.CHARACTER_COUNT):
-        #        print(self.characters.DEFAULT_NAME[i],': ', self.characters.character_location[i], [self.characters.DEFAULT_NAME[p] for p in self.characters.character_paths[i]])
-
         # Create party interaction scripts before event mod loop so addresses
         # are available for ChangeNPCEventAddress in individual event mods.
         if self.args.ruination_mode:
@@ -96,8 +92,7 @@ class Events():
             # the several events that must suppress party switching mid-scene.
             create_y_party_switch_subroutines()
 
-        # Apply -nfh (no free heals) modifications. Works both with -ruin
-        # (where -nfh is on by default) and standalone.
+        # Apply -nfh (no free heals) modifications.
         if self.args.no_free_heals:
             self.no_free_heals_mod()
 
