@@ -1,0 +1,291 @@
+"""Atlas compiler for door randomization (rewrite Stage A).
+
+Derives the mechanical layer of the door-rando atlas from the vanilla ROM
+data dumps in claude_reference/ and cross-checks it against the curated
+tables in data/map_exit_extra.py:
+
+  1. Assigns every vanilla exit (short 0-1128, long 1129-1280) to its map
+     using the per-map exit counts (the same concatenation convention
+     Maps.exit_maps uses), giving each exit a ROM-free record of
+     kind/map/position/destination.
+  2. Derives each exit's vanilla PARTNER (the door you return through)
+     from destination coordinates + round-trip agreement, instead of
+     trusting the hand-maintained partner column.
+  3. Applies the explicit curation in doors/atlas/curation.py (semantic
+     choices coordinates cannot express: world-return doors, shared
+     interiors, event-mediated doors, unused exits).
+  4. Verifies the result reproduces data/map_exit_extra.exit_data exactly
+     for every vanilla exit, and reports every non-derived entry with its
+     category - so any future edit to either side that breaks agreement
+     fails loudly.
+
+Usage:
+    python3 tools/compile_atlas.py            # check + emit doors/atlas/compiled.py
+    python3 tools/compile_atlas.py --check    # verify only (exit code 1 on failure)
+    python3 tools/compile_atlas.py --report   # verbose per-category report
+
+Runs without a ROM: only the reference JSONs and importable data tables
+are consulted.
+"""
+
+import argparse
+import json
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+
+WORLD_RETURN = 511      # dest_map sentinel: "return to parent (world) map"
+WORLD_MAPS = (0, 1)     # WoB, WoR
+NUM_SHORT = 1129
+NUM_EXITS = 1281        # short + long
+MAX_SNAP = 3            # max Chebyshev distance between arrival point and partner tile
+
+
+def load_exit_records():
+    """Build one record per vanilla exit, keyed by global exit id.
+
+    Global ids follow the ROM convention Maps.exit_maps re-derives at
+    runtime: short exits concatenated in map order (0-1128), then long
+    exits (1129-1280).
+    """
+    with open(os.path.join(ROOT, 'claude_reference/exits_raw.json')) as f:
+        raw = json.load(f)
+    with open(os.path.join(ROOT, 'claude_reference/maps_data.json')) as f:
+        maps_data = json.load(f)
+
+    num_short = {m['map_id']: len(m['short_exits']) for m in maps_data}
+    num_long = {m['map_id']: len(m['long_exits']) for m in maps_data}
+
+    exit_map = {}
+    gid = 0
+    for map_id in sorted(num_short):
+        for _ in range(num_short[map_id]):
+            exit_map[gid] = map_id
+            gid += 1
+    if gid != NUM_SHORT:
+        raise AssertionError(f'short exit count {gid} != {NUM_SHORT}')
+    for map_id in sorted(num_long):
+        for _ in range(num_long[map_id]):
+            exit_map[gid] = map_id
+            gid += 1
+    if gid != NUM_EXITS:
+        raise AssertionError(f'total exit count {gid} != {NUM_EXITS}')
+
+    records = {}
+    for i, r in enumerate(raw['short_exits']):
+        if r['index'] != i:
+            raise AssertionError(f'short exit {i} has index {r["index"]}')
+        records[i] = {
+            'kind': 'short', 'map': exit_map[i],
+            'x': r['x'], 'y': r['y'], 'size': 1, 'direction': None,
+            'dest_map': r['dest_map'], 'dest_x': r['dest_x'], 'dest_y': r['dest_y'],
+        }
+    for i, r in enumerate(raw['long_exits']):
+        if r['index'] != i:
+            raise AssertionError(f'long exit {i} has index {r["index"]}')
+        gid = NUM_SHORT + i
+        records[gid] = {
+            'kind': 'long', 'map': exit_map[gid],
+            'x': r['x'], 'y': r['y'], 'size': r['size'], 'direction': r['direction'],
+            'dest_map': r['dest_map'], 'dest_x': r['dest_x'], 'dest_y': r['dest_y'],
+        }
+    return records
+
+
+def _span(rec):
+    """Tile positions covered by an exit (long exits span several)."""
+    if rec['kind'] == 'short' or rec['size'] <= 1:
+        return [(rec['x'], rec['y'])]
+    if rec['direction'] == 'horizontal':
+        return [(rec['x'] + i, rec['y']) for i in range(rec['size'])]
+    return [(rec['x'], rec['y'] + i) for i in range(rec['size'])]
+
+
+def _dist(rec, x, y):
+    """Chebyshev distance from point (x, y) to the exit's tile span."""
+    return min(max(abs(px - x), abs(py - y)) for (px, py) in _span(rec))
+
+
+def derive_partners(records):
+    """Derive each exit's vanilla partner from coordinates.
+
+    The partner of exit X is the exit standing at (or next to) X's arrival
+    point whose own destination leads back to X's map near X's position.
+    Exits to the world map (dest_map == WORLD_RETURN) are matched against
+    both world maps; the round-trip test picks the right world when the
+    coordinates alone are ambiguous. Returns {id: partner id or None}.
+    """
+    by_map = {}
+    for gid, rec in records.items():
+        by_map.setdefault(rec['map'], []).append(gid)
+
+    partners = {}
+    for gid, rec in sorted(records.items()):
+        dest_map = rec['dest_map']
+        candidate_maps = WORLD_MAPS if dest_map == WORLD_RETURN else (dest_map,)
+        dx, dy = rec['dest_x'], rec['dest_y']
+        best, best_score = None, None
+        for cm in candidate_maps:
+            for cid in by_map.get(cm, ()):
+                if cid == gid:
+                    continue
+                cand = records[cid]
+                d_here = _dist(cand, dx, dy)
+                if d_here > MAX_SNAP:
+                    continue
+                # Round trip: does the candidate lead back to us?
+                if cand['dest_map'] == rec['map'] or \
+                        (cand['dest_map'] == WORLD_RETURN and rec['map'] in WORLD_MAPS):
+                    d_back = _dist(rec, cand['dest_x'], cand['dest_y'])
+                else:
+                    d_back = 50  # no round trip: usable only if nothing better
+                score = (d_here + d_back, d_here, cid)
+                if best_score is None or score < best_score:
+                    best_score, best = score, cid
+        partners[gid] = best
+    return partners
+
+
+def build_partner_table(records):
+    """Derived partners with curation applied: the atlas's final answer."""
+    from doors.atlas import curation
+    partners = derive_partners(records)
+    final = {}
+    for gid in sorted(records):
+        if gid in curation.PARTNER_OVERRIDES:
+            final[gid] = curation.PARTNER_OVERRIDES[gid][0]
+        elif gid in curation.UNUSED_EXITS:
+            final[gid] = None
+        else:
+            final[gid] = partners[gid]
+    return final, partners
+
+
+def check(records, report=False):
+    """Verify the atlas reproduces data/map_exit_extra.exit_data exactly.
+
+    Every vanilla exit must either derive to the curated partner, or be
+    explained by an entry in curation (with a reason). Returns the number
+    of failures.
+    """
+    from data.map_exit_extra import exit_data
+    from data.rooms import shared_exits
+    from doors.atlas import curation
+
+    final, derived = build_partner_table(records)
+
+    failures = []
+    stats = {'derived': 0, 'override': 0, 'unused': 0}
+    shared_group = {}
+    for k, sibs in shared_exits.items():
+        group = {k, *sibs}
+        for member in group:
+            shared_group.setdefault(member, set()).update(group)
+
+    for gid in sorted(records):
+        curated = exit_data.get(gid)
+        if curated is None:
+            failures.append(f'exit {gid}: present in ROM data but missing from exit_data')
+            continue
+        curated_partner = curated[0]
+
+        if final[gid] != curated_partner:
+            failures.append(
+                f'exit {gid} ({curated[1]}): atlas says {final[gid]}, '
+                f'exit_data says {curated_partner} (derived: {derived[gid]})')
+            continue
+
+        if gid in curation.PARTNER_OVERRIDES:
+            stats['override'] += 1
+            # Overrides should stay honest: if derivation now agrees, the
+            # override is stale and should be deleted.
+            if derived[gid] == curated_partner:
+                failures.append(
+                    f'exit {gid}: PARTNER_OVERRIDES entry is redundant '
+                    f'(derivation already yields {curated_partner})')
+        elif gid in curation.UNUSED_EXITS:
+            stats['unused'] += 1
+        else:
+            stats['derived'] += 1
+
+    # Reciprocity: partner(partner(x)) == x, except where curation declares
+    # the pairing asymmetric (multi-tile entrances, WoB/WoR shared interiors,
+    # dead returns, event-mediated chains). Declared entries must actually be
+    # asymmetric, so a stale declaration also fails.
+    for gid, partner in final.items():
+        if partner is None or not isinstance(partner, int) or partner not in final:
+            continue
+        back = final[partner]
+        reciprocal = (back == gid) or \
+                     (back is not None and back in shared_group.get(gid, ()))
+        declared = gid in curation.ASYMMETRIC_PARTNERS
+        if reciprocal and declared:
+            failures.append(
+                f'exit {gid}: ASYMMETRIC_PARTNERS entry is stale (pairing is reciprocal)')
+        elif not reciprocal and not declared:
+            failures.append(
+                f'reciprocity: {gid} -> {partner} but {partner} -> {back} '
+                f'(declare in ASYMMETRIC_PARTNERS with a tag if intentional)')
+
+    if report:
+        print(f"derived: {stats['derived']}  overrides: {stats['override']}  "
+              f"unused: {stats['unused']}  failures: {len(failures)}")
+        by_reason = {}
+        for gid, (partner, reason) in sorted(curation.PARTNER_OVERRIDES.items()):
+            by_reason.setdefault(reason, []).append(gid)
+        for reason, gids in sorted(by_reason.items()):
+            print(f'  [{reason}] {len(gids)}: {gids}')
+
+    for f in failures:
+        print('FAIL:', f)
+    return len(failures)
+
+
+def emit(records):
+    """Write doors/atlas/compiled.py (generated; do not edit by hand)."""
+    final, derived = build_partner_table(records)
+    path = os.path.join(ROOT, 'doors/atlas/compiled.py')
+    with open(path, 'w') as f:
+        f.write('"""GENERATED by tools/compile_atlas.py - do not edit.\n\n')
+        f.write('Mechanical layer of the door-rando atlas: one record per vanilla\n')
+        f.write('exit (id, kind, map, position, destination) plus the vanilla\n')
+        f.write('partner table (coordinate-derived, curation applied).\n')
+        f.write('"""\n\n')
+        f.write('EXIT_RECORDS = {\n')
+        for gid in sorted(records):
+            r = records[gid]
+            f.write(f"    {gid}: {{'kind': {r['kind']!r}, 'map': {r['map']}, "
+                    f"'x': {r['x']}, 'y': {r['y']}, 'size': {r['size']}, "
+                    f"'direction': {r['direction']!r}, 'dest_map': {r['dest_map']}, "
+                    f"'dest_x': {r['dest_x']}, 'dest_y': {r['dest_y']}}},\n")
+        f.write('}\n\n')
+        f.write('# Vanilla partner of each exit (None = unused/unreachable).\n')
+        f.write('PARTNERS = {\n')
+        for gid in sorted(final):
+            f.write(f'    {gid}: {final[gid]!r},\n')
+        f.write('}\n')
+    print(f'wrote {os.path.relpath(path, ROOT)} '
+          f'({len(records)} exits, {sum(1 for v in final.values() if v is not None)} partnered)')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true', help='verify only')
+    parser.add_argument('--report', action='store_true', help='verbose category report')
+    args = parser.parse_args()
+
+    records = load_exit_records()
+    n_fail = check(records, report=args.report)
+    if n_fail:
+        print(f'{n_fail} failure(s)')
+        return 1
+    if not args.check:
+        emit(records)
+    print('atlas check OK')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
