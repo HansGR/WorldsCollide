@@ -56,6 +56,20 @@ class SerpentTrench(Event):
         (0xa8c6c, 4, True,  0xa8c73),   # Battle B1 - segment 5
     ]
 
+    # -fer encounter variety: two of the three "276" battles and two of the
+    # three "277" battles are swapped to the otherwise-unused fixed encounters
+    # 410-413, keyed by battle-invocation address. Single source of truth for
+    # both fixed_battles_mod (vanilla/door-rando: patches the pack byte in
+    # place) and ruination_battles_mod (which re-emits these bytes elsewhere
+    # and applies the swap itself, so its 6-byte redirect never conflicts with
+    # a Reserve on the pack byte).
+    FIXED_BATTLE_PACK_SWAPS = {
+        0xa8bb7: 410,
+        0xa8c25: 411,
+        0xa8bd0: 412,
+        0xa8c6c: 413,
+    }
+
     def init_event_bits(self, space):
         if self.args.ruination_mode:
             for bit in self.RUINATION_SEGMENT_DONE_BITS:
@@ -105,13 +119,11 @@ class SerpentTrench(Event):
         if self.DOOR_RANDOMIZE:
             self.door_rando_mod()
 
-        if not self.args.fixed_encounters_original:
-            # Fixed-encounter variety (upstream, -fer). Must run BEFORE
-            # ruination_battles_mod: that mod reads each battle's pack byte
-            # and re-emits it inside its respawn wrapper, so the swapped pack
-            # is preserved (see its "even if some other mod has changed the
-            # pack byte" note). Both only patch existing event code, so their
-            # Reserves are no-ops on the free list and never conflict.
+        if not self.args.fixed_encounters_original and not self.args.ruination_mode:
+            # Vanilla/door-rando: patch the pack bytes in place. In ruination
+            # mode ruination_battles_mod applies the same -fer swap while it
+            # re-emits each battle, since the two cannot both Reserve the pack
+            # byte (the redirect it installs overlaps battle_addr+1).
             self.fixed_battles_mod()
 
         if self.args.ruination_mode:
@@ -177,6 +189,14 @@ class SerpentTrench(Event):
             # Battle bytes (CF, pack, bg) - read so we re-emit the same
             # encounter even if some other mod has changed the pack byte.
             battle_bytes = list(self.rom.get_bytes(battle_addr, 3))
+            # Respect -fer here rather than via fixed_battles_mod: that mod
+            # Reserves the pack byte (battle_addr+1), which overlaps the 6-byte
+            # redirect installed below. Applying the same swap to the bytes we
+            # re-emit keeps the mapping single-sourced and conflict-free.
+            if (not self.args.fixed_encounters_original
+                    and battle_addr in self.FIXED_BATTLE_PACK_SWAPS):
+                # subtract 256 since WC stores fixed encounter IDs starting at 256
+                battle_bytes[1] = self.FIXED_BATTLE_PACK_SWAPS[battle_addr] - 0x100
 
             custom_src = [
                 # First visit (done bit clear): always fight.
@@ -209,22 +229,14 @@ class SerpentTrench(Event):
         #  275 - encountered once (first battle)
         #  276 - encountered 3 times
         #  277 - encountered 3 times
-        # to increase the variety of encounters, we are adding 4 more and swapping 2 of the 276 and 2 of the 277s
-        # 410 - 413 are otherwise unused fixed encounters
-
-        replaced_encounters = [
-            (410, 0xA8BB7), 
-            (411, 0xA8C25),
-            (412, 0xA8BD0),
-            (413, 0xA8C6C),
-        ]
-        for pack_id_address in replaced_encounters:
-            pack_id = pack_id_address[0]
-            # first byte of the command is the pack_id
-            invoke_encounter_pack_address = pack_id_address[1]+1
+        # To increase variety we swap 2 of the 276s and 2 of the 277s to the
+        # otherwise-unused fixed encounters 410-413 (see FIXED_BATTLE_PACK_SWAPS).
+        for battle_addr, pack_id in self.FIXED_BATTLE_PACK_SWAPS.items():
+            # the `CF pack bg` command stores the pack in its second byte
+            invoke_encounter_pack_address = battle_addr + 1
             space = Reserve(invoke_encounter_pack_address, invoke_encounter_pack_address, "serpent trench invoke fixed battle (battle byte)")
             space.write(
-                # subtrack 256 since WC stores fixed encounter IDs starting at 256
+                # subtract 256 since WC stores fixed encounter IDs starting at 256
                 pack_id - 0x100
             )
 
