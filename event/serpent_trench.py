@@ -108,6 +108,14 @@ class SerpentTrench(Event):
         if self.args.ruination_mode:
             self.ruination_battles_mod()
 
+        if not self.args.fixed_encounters_original and not self.args.ruination_mode:
+            # Fixed-encounter variety (upstream). Skipped in ruination mode:
+            # ruination_battles_mod replaces each battle site with a 6-byte
+            # redirect (Reserve battle_addr..+5) that overlaps the pack byte
+            # (battle_addr+1) this would write. Safe alongside door_rando_mod,
+            # whose reserves (0xa8c3a+) are clear of the pack bytes.
+            self.fixed_battles_mod()
+
         self.log_reward(self.reward)
 
     def ruination_battles_mod(self):

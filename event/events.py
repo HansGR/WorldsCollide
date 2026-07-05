@@ -5,7 +5,6 @@ import instruction.field as field
 from data.map_exit_extra import exit_data, door_to_eventname
 from data.warps import Warps, WarpPoints
 from event.ruination import *
-from event.free_heals import modify_inn_costs, modify_free_bed_heals, modify_recovery_springs, remove_coliseum_heal, modify_vector_inn
 from log.verbose import vprint
 
 class Events():
