@@ -20,7 +20,7 @@ description accessor below delegates) until the dependency direction
 flips in Stage B.
 """
 
-from doors.atlas.compiled import EXIT_RECORDS, PARTNERS
+from doors.atlas.compiled import EXIT_RECORDS, PARTNERS, TRAP_RECORDS, EVENT_DOOR_RECORDS
 from doors.atlas import curation
 
 
@@ -44,6 +44,16 @@ def exit_position(exit_id):
     """(x, y) tile of an exit (first tile of a long exit's span)."""
     rec = EXIT_RECORDS.get(exit_id)
     return (rec['x'], rec['y']) if rec else None
+
+
+def trap_record(trap_id):
+    """Location record for a one-way exit (2000-2999 or '2035a' variants)."""
+    return TRAP_RECORDS.get(trap_id)
+
+
+def event_door_record(door_id):
+    """Location record for an event-tile door (1500-1999, +4000 copies)."""
+    return EVENT_DOOR_RECORDS.get(door_id)
 
 
 def description(exit_id):

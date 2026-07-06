@@ -315,4 +315,8 @@ ASYMMETRIC_PARTNERS = {
     1132: 'extra-entrance',  # -> 1131 -> 1129  (Chocobo Stable Exterior to Inside WoR)
     1165: 'extra-entrance',  # -> 1173 -> 1170  (South Figaro To Docks WoR)
     1166: 'extra-entrance',  # -> 1172 -> 1171  (South Figaro To Chocobo Stable WoR)
+    # Event-door layer (extended reciprocity, milestone 2):
+    1503: 'extra-entrance',  # -> 1156 -> 1502  (Figaro Castle WoB (kohlingen) - castle surfaces at two world spots)
+    1508: 'extra-entrance',  # -> 5156 -> 1507  (Figaro Castle WoR (kohlingen))
+    1547: 'extra-entrance',  # -> 1240 -> 18    (Doma entrance event tile; 1240 pairs two-way with world tile 18)
 }

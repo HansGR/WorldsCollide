@@ -29,10 +29,13 @@ def main():
     print('PASS: atlas consistency check')
 
     # 2. compiled.py in sync with a fresh emit.
-    final, _ = compile_atlas.build_partner_table(records)
+    extended, final, _ = compile_atlas.build_extended_partners(records)
+    traps, event_doors = compile_atlas.load_oneway_records()
     from doors.atlas import compiled
     assert compiled.EXIT_RECORDS == records, 'compiled.EXIT_RECORDS out of date - re-run tools/compile_atlas.py'
-    assert compiled.PARTNERS == final, 'compiled.PARTNERS out of date - re-run tools/compile_atlas.py'
+    assert compiled.PARTNERS == extended, 'compiled.PARTNERS out of date - re-run tools/compile_atlas.py'
+    assert compiled.TRAP_RECORDS == traps, 'compiled.TRAP_RECORDS out of date - re-run tools/compile_atlas.py'
+    assert compiled.EVENT_DOOR_RECORDS == event_doors, 'compiled.EVENT_DOOR_RECORDS out of date - re-run tools/compile_atlas.py'
     print('PASS: compiled.py in sync with compiler output')
 
     # 3. API smoke test.
@@ -42,6 +45,10 @@ def main():
     assert atlas.vanilla_partner(884) is None            # unused (p1 finding)
     assert atlas.exit_position(0) is not None
     assert atlas.description(4)                          # legacy delegate
+    assert atlas.trap_record(2001) is not None           # Umaro cave trapdoor
+    assert atlas.event_door_record(1556) is not None     # Floating Continent entry
+    assert atlas.vanilla_partner(1546) == 78             # event-door layer partner
+    assert atlas.vanilla_partner(4658) is not None       # logical-WoR layer partner
     print('PASS: doors.atlas API')
 
     print('\nAll atlas tests passed.')

@@ -43,6 +43,21 @@ NUM_EXITS = 1281        # short + long
 MAX_SNAP = 3            # max Chebyshev distance between arrival point and partner tile
 
 
+def _load_curation():
+    """Load doors/atlas/curation.py directly by path.
+
+    The compiler is the producer of doors/atlas/compiled.py; importing the
+    doors.atlas package here would require compiled.py to already be up to
+    date (bootstrap circle), so curation is loaded standalone.
+    """
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        'atlas_curation', os.path.join(ROOT, 'doors/atlas/curation.py'))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def load_exit_records():
     """Build one record per vanilla exit, keyed by global exit id.
 
@@ -123,6 +138,41 @@ def _event_tile_near(tiles, map_id, x, y, snap=MAX_SNAP):
                for t in tiles)
 
 
+def load_oneway_records():
+    """Trap and event-door records from data.event_exit_data (ROM-free).
+
+    Traps (2000-2999, plus '2035a'-style variants) are one-way exits; their
+    pit twin (trap + 1000) is purely logical - the landing side of the
+    connection - and has no record of its own. Event doors (1500-1999, plus
+    logical WoR copies at +4000) are doors realized as event tiles.
+    Returns (traps, event_doors): {id: {'map','x','y','desc'}}.
+    """
+    from data.event_exit_data import event_exit_info
+    traps, event_doors = {}, {}
+    for eid, info in event_exit_info.items():
+        loc, desc = info[5], info[4]
+        rec = {'map': loc[0], 'x': loc[1], 'y': loc[2], 'desc': desc}
+        if isinstance(eid, str) or 2000 <= eid < 3000:
+            traps[eid] = rec
+        else:
+            event_doors[eid] = rec
+    return traps, event_doors
+
+
+def build_extended_partners(records):
+    """Vanilla partner table extended with the event-door and logical-WoR
+    layers carried from exit_data (they are curated there, not derivable;
+    the compiler validates their structure and copies them).
+    """
+    from data.map_exit_extra import exit_data
+    final, derived = build_partner_table(records)
+    extended = dict(final)
+    for key, entry in exit_data.items():
+        if isinstance(key, int) and (1500 <= key < 2000 or 4000 <= key < 6000):
+            extended[key] = entry[0]
+    return extended, final, derived
+
+
 def _span(rec):
     """Tile positions covered by an exit (long exits span several)."""
     if rec['kind'] == 'short' or rec['size'] <= 1:
@@ -190,7 +240,7 @@ def derive_partners(records):
 
 def build_partner_table(records):
     """Derived partners with curation applied: the atlas's final answer."""
-    from doors.atlas import curation
+    curation = _load_curation()
     partners = derive_partners(records)
     final = {}
     for gid in sorted(records):
@@ -212,9 +262,9 @@ def check(records, report=False):
     """
     from data.map_exit_extra import exit_data
     from data.rooms import shared_exits
-    from doors.atlas import curation
+    curation = _load_curation()
 
-    final, derived = build_partner_table(records)
+    extended, final, derived = build_extended_partners(records)
 
     failures = []
     stats = {'derived': 0, 'override': 0, 'no-partner': 0}
@@ -296,16 +346,24 @@ def check(records, report=False):
         if gid in curation.NO_VANILLA_PARTNER and curation.NO_VANILLA_PARTNER[gid] != 'door-as-trap':
             failures.append(f'{gid}: in doors_as_traps but tagged {curation.NO_VANILLA_PARTNER[gid]}')
 
-    # Reciprocity: partner(partner(x)) == x, except where curation declares
-    # the pairing asymmetric (multi-tile entrances, WoB/WoR shared interiors,
-    # dead returns, event-mediated chains). Declared entries must actually be
-    # asymmetric, so a stale declaration also fails.
-    for gid, partner in final.items():
-        if partner is None or not isinstance(partner, int) or partner not in final:
+    # Reciprocity: partner(partner(x)) == x over the EXTENDED table (vanilla
+    # exits + event doors + logical-WoR copies), except where curation
+    # declares the pairing asymmetric (multi-tile entrances, WoB/WoR shared
+    # interiors, dead returns, event-mediated chains). Declared entries must
+    # actually be asymmetric, so a stale declaration also fails. Sibling
+    # groups apply across the +4000 layer (5199/5200 are siblings because
+    # 1199/1200 are).
+    def sibling_set(gid):
+        if isinstance(gid, int) and 4000 <= gid < 6000:
+            return {s + 4000 for s in shared_group.get(gid - 4000, ())}
+        return shared_group.get(gid, set())
+
+    for gid, partner in extended.items():
+        if partner is None or not isinstance(partner, int) or partner not in extended:
             continue
-        back = final[partner]
+        back = extended[partner]
         reciprocal = (back == gid) or \
-                     (back is not None and back in shared_group.get(gid, ()))
+                     (back is not None and back in sibling_set(gid))
         declared = gid in curation.ASYMMETRIC_PARTNERS
         if reciprocal and declared:
             failures.append(
@@ -314,6 +372,9 @@ def check(records, report=False):
             failures.append(
                 f'reciprocity: {gid} -> {partner} but {partner} -> {back} '
                 f'(declare in ASYMMETRIC_PARTNERS with a tag if intentional)')
+
+    failures += check_layers(records)
+    failures += check_rooms(records)
 
     if report:
         print(f"derived: {stats['derived']}  overrides: {stats['override']}  "
@@ -342,15 +403,153 @@ def check(records, report=False):
     return len(failures)
 
 
+def check_layers(records):
+    """Validate the non-vanilla id layers against each other.
+
+    - exit_data's event-door (1500+) and trap (2000+) entries must exist in
+      event_exit_info (they describe the same objects);
+    - logical ids (+4000) must have a base in the vanilla records or the
+      event-door table;
+    - eei's own logical entries likewise.
+    """
+    from data.map_exit_extra import exit_data
+    from data.event_exit_data import event_exit_info as eei
+    failures = []
+    for key, entry in exit_data.items():
+        if not isinstance(key, int) or key < 1281:
+            continue
+        if 1500 <= key < 2000 or 2000 <= key < 3000:
+            # Partner-less trap entries are description-only stubs (e.g. 2018,
+            # whose one-way is realized by its sibling's event script).
+            if key not in eei and entry[0] is not None:
+                failures.append(
+                    f'exit_data[{key}] ({entry[1]}): no event_exit_info record')
+        elif 4000 <= key < 6000:
+            base = key - 4000
+            if base not in records and base not in eei:
+                failures.append(
+                    f'exit_data[{key}] ({entry[1]}): logical id has no base exit {base}')
+    for eid in eei:
+        if isinstance(eid, int) and 4000 <= eid < 6000:
+            if (eid - 4000) not in eei:
+                failures.append(
+                    f'event_exit_info[{eid}]: logical event door has no base {eid - 4000}')
+    return failures
+
+
+# All world event-door tiles (both worlds) live on the shared world event
+# layer, map 5 - a virtual layer, not a physical map. Rooms may pair such a
+# tile with physical exits (world rooms, Phoenix Cave 536), so map 5 never
+# counts toward a room's physical-map coherence.
+WORLD_EVENT_LAYER = 5
+
+
+def check_rooms(records):
+    """Validate room_data's element references against the layered id space.
+
+    Every element of every room must resolve: vanilla exits (0-1280) to the
+    exit records; event doors (1500-1999, and +4000 logical copies) to
+    event_exit_info; traps (2000-2999) to event_exit_info OR to the
+    'trickery' shape (a logical reward-route one-way: no ROM record, but a
+    forced connection onto its own +1000 pit); pits (3000-3999) to a trap
+    twin; door-as-trap pits (6000-7999) to a base door; synthetic ids
+    (10000+) are the planner's own. Physical (int-id) rooms must not span
+    maps, except within the world cluster.
+    """
+    from data.rooms import room_data, forced_connections, doors_as_traps
+    from data.event_exit_data import event_exit_info as eei
+    failures = []
+
+    def trap_exists(t):
+        if t in eei:
+            return True
+        # Trickery one-way: forced onto its own logical pit.
+        return t in forced_connections and forced_connections[t] == [t + 1000]
+
+    for rid, rd in room_data.items():
+        doors, traps, pits = rd[0], rd[1], rd[2]
+        maps = set()
+        for d in doors:
+            if not isinstance(d, int):
+                failures.append(f'room {rid!r}: non-int door {d!r}')
+            elif d < 1281:
+                if d in records:
+                    maps.add(records[d]['map'])
+                else:
+                    failures.append(f'room {rid!r}: unknown vanilla exit {d}')
+            elif d < 1500:
+                failures.append(f'room {rid!r}: door {d} in reserved range 1281-1499')
+            elif d < 2000:
+                if d in eei:
+                    maps.add(eei[d][5][0])
+                else:
+                    failures.append(f'room {rid!r}: event door {d} not in event_exit_info')
+            elif d < 4000:
+                failures.append(f'room {rid!r}: trap/pit id {d} listed as a door')
+            elif d < 6000:
+                if (d - 4000) not in records and (d - 4000) not in eei:
+                    failures.append(f'room {rid!r}: logical door {d} has no base exit')
+            elif d < 10000:
+                failures.append(f'room {rid!r}: door {d} in unassigned range')
+            # >= 10000: synthetic (roots, crossworld, shuffle-protected) - planner-owned
+        for t in traps:
+            if isinstance(t, str):
+                if t not in eei:
+                    failures.append(f'room {rid!r}: variant trap {t!r} not in event_exit_info')
+            elif t < 1281:
+                # A door acting as a one-way exit (its landing is 6000 + id).
+                if t not in doors_as_traps:
+                    failures.append(
+                        f'room {rid!r}: door {t} in trap bucket but not in doors_as_traps')
+                elif t in records:
+                    maps.add(records[t]['map'])
+                else:
+                    failures.append(f'room {rid!r}: door-as-trap {t} is not a vanilla exit')
+            elif 2000 <= t < 3000:
+                if not trap_exists(t):
+                    failures.append(
+                        f'room {rid!r}: trap {t} has no event_exit_info record '
+                        f'and is not a forced trickery one-way')
+            elif 6000 <= t < 8000:
+                if (t - 6000) not in records:
+                    failures.append(f'room {rid!r}: door-as-trap {t} has no base door')
+            else:
+                failures.append(f'room {rid!r}: trap id {t} out of range')
+        for p in pits:
+            if isinstance(p, str):
+                continue
+            if 3000 <= p < 4000:
+                if not trap_exists(p - 1000) and \
+                        not any(isinstance(k, str) and k.startswith(str(p - 1000)) for k in eei):
+                    failures.append(f'room {rid!r}: pit {p} has no trap twin {p - 1000}')
+            elif 6000 <= p < 8000:
+                if (p - 6000) not in records:
+                    failures.append(f'room {rid!r}: door-as-trap pit {p} has no base door')
+            else:
+                failures.append(f'room {rid!r}: pit id {p} out of range')
+        # Physical rooms are single-map (ignoring the virtual world layer).
+        maps.discard(WORLD_EVENT_LAYER)
+        if isinstance(rid, int) and len(maps) > 1:
+            failures.append(f'room {rid!r}: elements span maps {sorted(maps)}')
+    return failures
+
+
 def emit(records):
     """Write doors/atlas/compiled.py (generated; do not edit by hand)."""
-    final, derived = build_partner_table(records)
+    extended, final, derived = build_extended_partners(records)
+    traps, event_doors = load_oneway_records()
     path = os.path.join(ROOT, 'doors/atlas/compiled.py')
+
+    def sort_key(k):
+        return (0, k, '') if isinstance(k, int) else (1, 0, k)
+
     with open(path, 'w') as f:
         f.write('"""GENERATED by tools/compile_atlas.py - do not edit.\n\n')
         f.write('Mechanical layer of the door-rando atlas: one record per vanilla\n')
-        f.write('exit (id, kind, map, position, destination) plus the vanilla\n')
-        f.write('partner table (coordinate-derived, curation applied).\n')
+        f.write('exit (id, kind, map, position, destination), the partner table\n')
+        f.write('(coordinate-derived, curation applied, extended with the\n')
+        f.write('event-door and logical-WoR layers), and the one-way (trap) and\n')
+        f.write('event-door location records.\n')
         f.write('"""\n\n')
         f.write('EXIT_RECORDS = {\n')
         for gid in sorted(records):
@@ -360,13 +559,26 @@ def emit(records):
                     f"'direction': {r['direction']!r}, 'dest_map': {r['dest_map']}, "
                     f"'dest_x': {r['dest_x']}, 'dest_y': {r['dest_y']}}},\n")
         f.write('}\n\n')
-        f.write('# Vanilla partner of each exit (None = unused/unreachable).\n')
+        f.write('# Vanilla partner of each exit, including the event-door (1500+) and\n')
+        f.write('# logical-WoR (4000+) layers (None = no vanilla exit-table partner).\n')
         f.write('PARTNERS = {\n')
-        for gid in sorted(final):
-            f.write(f'    {gid}: {final[gid]!r},\n')
+        for gid in sorted(extended, key=sort_key):
+            f.write(f'    {gid}: {extended[gid]!r},\n')
+        f.write('}\n\n')
+        f.write("# One-way exits (traps): {id: {'map','x','y','desc'}}. The pit twin\n")
+        f.write('# (trap + 1000) is the logical landing side and has no record.\n')
+        f.write('TRAP_RECORDS = {\n')
+        for tid in sorted(traps, key=sort_key):
+            f.write(f'    {tid!r}: {traps[tid]!r},\n')
+        f.write('}\n\n')
+        f.write('# Doors realized as event tiles (1500-1999, +4000 logical copies).\n')
+        f.write('EVENT_DOOR_RECORDS = {\n')
+        for did in sorted(event_doors, key=sort_key):
+            f.write(f'    {did}: {event_doors[did]!r},\n')
         f.write('}\n')
     print(f'wrote {os.path.relpath(path, ROOT)} '
-          f'({len(records)} exits, {sum(1 for v in final.values() if v is not None)} partnered)')
+          f'({len(records)} exits, {sum(1 for v in final.values() if v is not None)} partnered, '
+          f'{len(traps)} traps, {len(event_doors)} event doors)')
 
 
 def main():
