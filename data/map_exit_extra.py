@@ -577,7 +577,7 @@ exit_data = {
     512: [518, "Mobliz Arsenal East Outside"],
     1190: [26, "Mobliz South to World Map WoB"],
     1191: [26, "Mobliz East to World Map WoB"],
-    513: [519, "Mobliz Mail House Outside WoR"],
+    513: [None, "Mobliz Mail House Outside WoR"],  # Return door from Mobliz Mail House is an event tile: [0x0a3, 50, 17, 0xc5136]
     514: [None, "Mobliz Relic Outside WoR"],
     515: [None, "Mobliz Injured Lad Outside WoR"],
     1192: [52, "Mobliz East to World Map WoR"],
