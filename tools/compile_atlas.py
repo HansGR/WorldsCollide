@@ -94,6 +94,35 @@ def load_exit_records():
     return records
 
 
+def load_event_tiles():
+    """Event-tile records with map assignment (same concatenation convention).
+
+    Used to validate the 'event-tile-return' tag: a door whose return is an
+    event tile has no vanilla exit partner, but an event tile must exist
+    near its arrival point.
+    """
+    with open(os.path.join(ROOT, 'claude_reference/events_raw.json')) as f:
+        raw = json.load(f)
+    with open(os.path.join(ROOT, 'claude_reference/maps_data.json')) as f:
+        maps_data = json.load(f)
+    num_events = {m['map_id']: len(m['events']) for m in maps_data}
+    tiles = []
+    gid = 0
+    for map_id in sorted(num_events):
+        for _ in range(num_events[map_id]):
+            r = raw[gid]
+            tiles.append({'map': map_id, 'x': r['x'], 'y': r['y']})
+            gid += 1
+    if gid != len(raw):
+        raise AssertionError(f'event tile count mismatch: {gid} != {len(raw)}')
+    return tiles
+
+
+def _event_tile_near(tiles, map_id, x, y, snap=MAX_SNAP):
+    return any(t['map'] == map_id and max(abs(t['x'] - x), abs(t['y'] - y)) <= snap
+               for t in tiles)
+
+
 def _span(rec):
     """Tile positions covered by an exit (long exits span several)."""
     if rec['kind'] == 'short' or rec['size'] <= 1:
@@ -156,7 +185,7 @@ def build_partner_table(records):
     for gid in sorted(records):
         if gid in curation.PARTNER_OVERRIDES:
             final[gid] = curation.PARTNER_OVERRIDES[gid][0]
-        elif gid in curation.UNUSED_EXITS:
+        elif gid in curation.NO_VANILLA_PARTNER:
             final[gid] = None
         else:
             final[gid] = partners[gid]
@@ -177,7 +206,7 @@ def check(records, report=False):
     final, derived = build_partner_table(records)
 
     failures = []
-    stats = {'derived': 0, 'override': 0, 'unused': 0}
+    stats = {'derived': 0, 'override': 0, 'no-partner': 0}
     shared_group = {}
     for k, sibs in shared_exits.items():
         group = {k, *sibs}
@@ -205,10 +234,33 @@ def check(records, report=False):
                 failures.append(
                     f'exit {gid}: PARTNER_OVERRIDES entry is redundant '
                     f'(derivation already yields {curated_partner})')
-        elif gid in curation.UNUSED_EXITS:
-            stats['unused'] += 1
+        elif gid in curation.NO_VANILLA_PARTNER:
+            stats['no-partner'] += 1
         else:
             stats['derived'] += 1
+
+    # NO_VANILLA_PARTNER tags are validated mechanically where possible:
+    #   door-as-trap      must be listed in data.rooms.doors_as_traps
+    #   event-tile-return an event tile must exist near the arrival point
+    #   unreachable       must be neither of the above
+    from data.rooms import doors_as_traps
+    tiles = load_event_tiles()
+    for gid, tag in curation.NO_VANILLA_PARTNER.items():
+        rec = records.get(gid)
+        if rec is None:
+            failures.append(f'NO_VANILLA_PARTNER {gid}: no such exit')
+            continue
+        is_trap = gid in doors_as_traps
+        near_tile = _event_tile_near(tiles, rec['dest_map'], rec['dest_x'], rec['dest_y'])
+        if tag == 'door-as-trap' and not is_trap:
+            failures.append(f'NO_VANILLA_PARTNER {gid}: tagged door-as-trap but not in doors_as_traps')
+        elif tag == 'event-tile-return' and not near_tile:
+            failures.append(f'NO_VANILLA_PARTNER {gid}: tagged event-tile-return but no event tile near arrival')
+        elif tag in ('unreachable', 'scenario-variant') and is_trap:
+            failures.append(f'NO_VANILLA_PARTNER {gid}: tagged {tag} but is a door-as-trap')
+    for gid in doors_as_traps:
+        if gid in curation.NO_VANILLA_PARTNER and curation.NO_VANILLA_PARTNER[gid] != 'door-as-trap':
+            failures.append(f'{gid}: in doors_as_traps but tagged {curation.NO_VANILLA_PARTNER[gid]}')
 
     # Reciprocity: partner(partner(x)) == x, except where curation declares
     # the pairing asymmetric (multi-tile entrances, WoB/WoR shared interiors,
@@ -231,7 +283,7 @@ def check(records, report=False):
 
     if report:
         print(f"derived: {stats['derived']}  overrides: {stats['override']}  "
-              f"unused: {stats['unused']}  failures: {len(failures)}")
+              f"no-partner: {stats['no-partner']}  failures: {len(failures)}")
         by_reason = {}
         for gid, (partner, reason) in sorted(curation.PARTNER_OVERRIDES.items()):
             by_reason.setdefault(reason, []).append(gid)

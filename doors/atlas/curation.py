@@ -1,28 +1,41 @@
 """Hand-curated semantic layer of the door-rando atlas (Stage A).
 
-Everything here is a fact coordinates cannot express. Each entry names
-its reason; tools/compile_atlas.py fails the build if an entry becomes
-redundant (derivation now agrees) or contradicts the ROM data.
+Everything here is a fact the ROM coordinates cannot express, tagged
+with WHY. tools/compile_atlas.py validates entries mechanically where
+possible and fails the build when an entry is redundant (derivation
+now agrees), stale (asymmetry became reciprocal), or contradicts the
+ROM data (door-as-trap not in doors_as_traps; event-tile-return with
+no tile near the arrival point).
+
+NOTE (Stage A milestone 2): the logical-WoR id layer (4000+) is not
+yet modeled, so pairings that resolve through a +4000 twin currently
+appear in ASYMMETRIC_PARTNERS as 'extra-entrance'; they will re-home
+when that layer lands. Realization-time edits (exit_data_patch,
+exit_make_explicit, dungeon_crawl_exit_destination_override,
+event_door_connection_data) are deliberately NOT part of the vanilla
+partner table; they join the atlas as realization metadata later in
+Stage A.
 """
 
-# reason tags
-#   sibling   shared/split-exit sibling tiles; curated tile is canonical
-#   interior  shared interior serves WoB and WoR; curated (WoR) door is the canonical return
-#   world     world-return door (dest_map 511 is dynamic parent map); curated return tile
-#   stable    chocobo stables share one interior; all stable tiles return via 1132
-#   variant   event-variant twin door occupies the same tile; curated standard door
-#   falldown  one-way falldown pairing; no spatially adjacent return exit
-#   hans      ambiguous coordinates; resolved by HansGR 2026-07
-#   logical-wor partner is the logical WoR copy (base + 4000) of a shared-map door
-#   event-door partner is an event-tile door (1500+), not in the vanilla exit table
+# reason tags for PARTNER_OVERRIDES
+#   sibling           shared/split-exit sibling tiles; curated tile is canonical
+#   interior          shared interior serves WoB and WoR; curated (WoR) door is the canonical return
+#   world             world-return door (dest_map 511 is dynamic parent map); curated return tile
+#   stable            chocobo stables share one interior; all stable tiles return via 1132
+#   canonical-return  several exits lead back to this door; curated one is its canonical partner
+#   variant           event-variant twin door occupies the same tile; curated standard door
+#   falldown          one-way falldown pairing; no spatially adjacent return exit
+#   hans              ambiguous coordinates; resolved by HansGR 2026-07
+#   logical-wor       partner is the logical WoR copy (base + 4000) of a shared-map door
+#   event-door        partner is an event-tile door (1500+), not in the vanilla exit table
 
-# {exit id: (vanilla partner, reason tag)}  - overrides coordinate derivation
+# {exit id: (vanilla partner, reason tag)} - overrides coordinate derivation
 PARTNER_OVERRIDES = {
     10: (360, 'sibling'),  # Sabin's House WoB
     45: (1132, 'stable'),  # Mobliz Chocobo Stable WoR
     46: (1132, 'stable'),  # Tzen Chocobo Stable WoR
     47: (1132, 'stable'),  # Kohlingen Chocobo Stable WoR
-    48: (1267, 'stable'),  # Solitary Island Cid's House
+    48: (1267, 'canonical-return'),  # Solitary Island Cid's House
     62: (4658, 'logical-wor'),  # Opera House WoR
     63: (5238, 'logical-wor'),  # Maranda Left Tile WoR
     64: (5238, 'logical-wor'),  # Maranda Right Tile WoR
@@ -56,7 +69,7 @@ PARTNER_OVERRIDES = {
     566: (552, 'interior'),  # Kohlingen Rachel's House Inside
     722: (1511, 'event-door'),  # Zone Eater Hallway to Falling Ceiling Room
     726: (1510, 'event-door'),  # Zone Eater Save Point Room West
-    793: (1512, 'sibling'),  # Darill's Tomb B2 Water Room Left Top Door
+    793: (1512, 'event-door'),  # Darill's Tomb B2 Water Room Left Top Door
     864: (861, 'sibling'),  # Doma Dream Caves Loop Room South
     885: (1110, 'falldown'),  # Kefka's Tower Falldown Room Left Door
     1046: (1035, 'sibling'),  # Esper Mountain Inside First Room North Door to Outside Loop
@@ -102,135 +115,144 @@ PARTNER_OVERRIDES = {
     1272: (1509, 'event-door'),  # Solitary Island Cliff
 }
 
-# Exits that exist in the ROM but are unused/unreachable: no partner.
-UNUSED_EXITS = {
-    80,  # Serpent Trench
-    196,  # Cave to South Figaro Siegfried Tunnel West
-    273,  # Cave to South Figaro Small Hallway West WoB - vanilla Terra/Locke/Edgar
-    274,  # Cave to South Figaro Small Hallway East to Big Room WoB - vanilla Terra/Locke/Edgar
-    275,  # Cave to South Figaro Big Room to Turtle Room WoB - vanilla Terra/Locke/Edgar
-    276,  # Cave to South Figaro Big Room to Single Chest Room WoB - vanilla Terra/Locke/Edgar
-    277,  # Cave to South Figaro Big Room to Small Hallway WoB - vanilla Terra/Locke/Edgar
-    278,  # Cave to South Figaro Entrance Room to Small Hallway WoB - vanilla Terra/Locke/Edgar
-    279,  # Cave to South Figaro to World Map WoB - vanilla Terra/Locke/Edgar
-    280,  # Cave to South Figaro Single Chest Room WoB - vanilla Terra/Locke/Edgar
-    281,  # Cave to South Figaro Turtle Room to Big Room WoB - vanilla Terra/Locke/Edgar
-    282,  # Cave to South Figaro Turtle Room to Outside WoB - vanilla Terra/Locke/Edgar
-    413,  # Doma Poisoning Event - 3F Outside to Inside
-    414,  # Doma Poisoning Event - 1F Outside Main Door
-    415,  # Doma Poisoning Event - 2F Outside to Main Room
-    416,  # Doma Poisoning Event - 2F Outside to Treasure Room
-    495,  # Mobliz Left House Basement
-    509,  # Mobliz Mail House Outside WoB
-    510,  # Mobliz Relic Outside WoB
-    511,  # Mobliz Injured Lad Outside WoB
-    514,  # Mobliz Relic Outside WoR
-    515,  # Mobliz Injured Lad Outside WoR
-    590,  # Owzer's Basement Floating Chest Room Door
-    638,  # Zozo Tower 6F Single Chest Room Inside
-    639,  # Zozo Tower 7F Inside
-    640,  # Zozo Tower 10F Inside
-    641,  # Zozo Tower 12F Single Chest Room Inside
-    644,  # Opera House Balcony To Lobby Left WoR
-    645,  # Opera House Balcony To Lobby Right WoR
-    651,  # Opera House Balcony To Lobby Left WoB
-    652,  # Opera House Balcony To Lobby Right WoB
-    655,  # Opera House Balcony To Lobby Left
-    656,  # Opera House Balcony To Lobby Right
-    665,  # Vector Pub Outside
-    666,  # Vector Armor Outside
-    667,  # Vector Weapon Outside
-    668,  # Vector Healer House Outside
-    669,  # Vector Inn Outside
-    697,  # Vector Burning Pub Outside
-    698,  # Vector Burning Armor Outside
-    699,  # Vector Burning Weapon Outside
-    700,  # Vector Burning Healer House Outside
-    701,  # Vector Burning Inn Outside
-    707,  # unused connector to Kefka's Tower?
-    708,  # unused connector to Kefka's Tower?
-    781,  # Darill's Tomb B2 Turtle Hallway South
-    787,  # Darill's Tomb B2 Right Side Secret Room
-    803,  # Tzen WoR Collapsing House Outside
-    804,  # Tzen Armor Outside WoR
-    805,  # Tzen Weapon Outside WoR
-    806,  # Tzen Inn Outside WoR
-    807,  # Tzen Item Outside WoR
-    808,  # Tzen Relic Outside WoR
-    809,  # Tzen Armor Outside WoB
-    810,  # Tzen Weapon Outside WoB
-    811,  # Tzen Inn Outside WoB
-    812,  # Tzen Item Outside WoB
-    813,  # Tzen Relic Outside WoB
-    827,  # Phoenix Cave ?
-    840,  # Phoenix Cave ?
-    841,  # Phoenix Cave ?
-    842,  # Phoenix Cave ?
-    843,  # Doma Dream 3 Stooges Maze Northwest Section North Door
-    844,  # Doma Dream 3 Stooges Maze Northwest Section South Door
-    845,  # Doma Dream 3 Stooges Maze West Section Door
-    846,  # Doma Dream 3 Stooges Maze North Section Door
-    847,  # Doma Dream 3 Stooges Maze Middle Section Left Door
-    848,  # Doma Dream 3 Stooges Maze Middle Section Middle Door
-    849,  # Doma Dream 3 Stooges Maze Middle Section Right Door
-    852,  # Doma Dream 3 Stooges Maze Northeast Section Right Door
-    853,  # Doma Dream 3 Stooges Maze East Section Door
-    854,  # Doma Dream 3 Stooges Maze South Section Right Door
-    859,  # Doma Dream Cliffs Outside Loop East Door
-    862,  # Doma Dream Caves Starting Room to Cliffs
-    872,  # Albrook Inn Outside WoB
-    873,  # Albrook Weapon Outside WoB
-    874,  # Albrook Armor Outside WoB
-    875,  # Albrook Item Outside WoB
-    876,  # Albrook Pub Outside WoB
-    877,  # Albrook Relic Outside WoB
-    878,  # Albrook Inn Outside WoR
-    879,  # Albrook Weapon Outside WoR
-    880,  # Albrook Armor Outside WoR
-    881,  # Albrook Item Outside WoR
-    882,  # Albrook Pub Outside WoR
-    883,  # Albrook Relic Outside WoR
-    884,  # Kefka's Tower Falldown Room Entry Right Door 
-    905,  # Kefka's Tower 4 Ton Switch Room Middle Upstairs North
-    906,  # Kefka's Tower 4 Ton Switch Room Middle Downstairs North
-    929,  # Thamasa Kefka Attack Arsenal West Outside WoB
-    930,  # Thamasa Kefka Attack Arsenal East Outside WoB
-    931,  # Thamasa Kefka Attack Item Outside WoB
-    932,  # Thamasa Kefka Attack Relic Outside WoB
-    933,  # Thamasa Kefka Attack Strago's House Outside WoB
-    934,  # Thamasa Kefka Attack Elder's House Outside WoB
-    935,  # Thamasa Kefka Attack Inn Outside WoB
-    943,  # Thamasa Arsenal West Outside WoR
-    944,  # Thamasa Arsenal East Outside WoR
-    945,  # Thamasa Item Outside WoR
-    946,  # Thamasa Relic Outside WoR
-    947,  # Thamasa Strago's House Outside WoR
-    948,  # Thamasa Elder's House Outside WoR
-    949,  # Thamasa Inn Outside WoR
-    1068,  # Cave to Sealed Gate ?
-    1097,  # Ancient Castle Dragon Room Stairs Up
-    1130,  # Chocobo Stable Exterior to World Map WoB
-    1133,  # Chocobo Stable Exterior to World Map WoR
-    1134,  # Narshe To Northern Mines Outside Intro Sequence
-    1152,  # Narshe Northern Mines Outside to Inside Intro Sequence
-    1153,  # Narshe Northern Mines Outside to Town Intro Sequence
-    1185,  # Doma Poisoning Event - Outside to World Map
-    1227,  # Vector To Imperial Castle
-    1234,  # Vector Burning To Imperial Castle
-    1235,  # Vector Burning South to World Map
-    1236,  # Magitek Upper Room Conveyor to Lower Room
-    1237,  # Magitek Factory Lower Room Unreachable
-    1248,  # Albrook South to Docks WoB
-    1252,  # Albrook South to Docks WoR
-    1256,  # Thamasa North to World Map WoB
-    1257,  # Thamasa West to World Map WoB
-    1258,  # Thamasa South to World Map WoB
-    1273,  # Cid's House Beach with No Fish
+# Exits with no vanilla exit-table partner, tagged with why:
+#   door-as-trap       one-way door; return handled by trap/pit machinery
+#                      (validated against data.rooms.doors_as_traps)
+#   event-tile-return  the way back is an event tile, not a vanilla exit
+#                      (validated against events_raw.json near arrival)
+#   scenario-variant   door on an event-scenario copy of a map (intro mines,
+#                      SF cave escape, Doma poisoning, Vector burning, WoB
+#                      Thamasa); used in-game but never randomized
+#   unreachable        genuinely unused/unreachable in game
+NO_VANILLA_PARTNER = {
+    80: 'unreachable',  # Serpent Trench
+    196: 'event-tile-return',  # Cave to South Figaro Siegfried Tunnel West
+    273: 'scenario-variant',  # Cave to South Figaro Small Hallway West WoB - vanilla Terra/Locke/Edgar
+    274: 'scenario-variant',  # Cave to South Figaro Small Hallway East to Big Room WoB - vanilla Terra/Locke/Edgar
+    275: 'scenario-variant',  # Cave to South Figaro Big Room to Turtle Room WoB - vanilla Terra/Locke/Edgar
+    276: 'scenario-variant',  # Cave to South Figaro Big Room to Single Chest Room WoB - vanilla Terra/Locke/Edgar
+    277: 'scenario-variant',  # Cave to South Figaro Big Room to Small Hallway WoB - vanilla Terra/Locke/Edgar
+    278: 'scenario-variant',  # Cave to South Figaro Entrance Room to Small Hallway WoB - vanilla Terra/Locke/Edgar
+    279: 'event-tile-return',  # Cave to South Figaro to World Map WoB - vanilla Terra/Locke/Edgar
+    280: 'scenario-variant',  # Cave to South Figaro Single Chest Room WoB - vanilla Terra/Locke/Edgar
+    281: 'scenario-variant',  # Cave to South Figaro Turtle Room to Big Room WoB - vanilla Terra/Locke/Edgar
+    282: 'event-tile-return',  # Cave to South Figaro Turtle Room to Outside WoB - vanilla Terra/Locke/Edgar
+    413: 'event-tile-return',  # Doma Poisoning Event - 3F Outside to Inside
+    414: 'event-tile-return',  # Doma Poisoning Event - 1F Outside Main Door
+    415: 'event-tile-return',  # Doma Poisoning Event - 2F Outside to Main Room
+    416: 'scenario-variant',  # Doma Poisoning Event - 2F Outside to Treasure Room
+    495: 'event-tile-return',  # Mobliz Left House Basement
+    509: 'event-tile-return',  # Mobliz Mail House Outside WoB
+    510: 'event-tile-return',  # Mobliz Relic Outside WoB
+    511: 'event-tile-return',  # Mobliz Injured Lad Outside WoB
+    514: 'event-tile-return',  # Mobliz Relic Outside WoR
+    515: 'event-tile-return',  # Mobliz Injured Lad Outside WoR
+    590: 'unreachable',  # Owzer's Basement Floating Chest Room Door
+    638: 'unreachable',  # Zozo Tower 6F Single Chest Room Inside
+    639: 'event-tile-return',  # Zozo Tower 7F Inside
+    640: 'unreachable',  # Zozo Tower 10F Inside
+    641: 'unreachable',  # Zozo Tower 12F Single Chest Room Inside
+    644: 'event-tile-return',  # Opera House Balcony To Lobby Left WoR
+    645: 'event-tile-return',  # Opera House Balcony To Lobby Right WoR
+    651: 'event-tile-return',  # Opera House Balcony To Lobby Left WoB
+    652: 'event-tile-return',  # Opera House Balcony To Lobby Right WoB
+    655: 'event-tile-return',  # Opera House Balcony To Lobby Left
+    656: 'event-tile-return',  # Opera House Balcony To Lobby Right
+    665: 'event-tile-return',  # Vector Pub Outside
+    666: 'event-tile-return',  # Vector Armor Outside
+    667: 'event-tile-return',  # Vector Weapon Outside
+    668: 'event-tile-return',  # Vector Healer House Outside
+    669: 'event-tile-return',  # Vector Inn Outside
+    697: 'event-tile-return',  # Vector Burning Pub Outside
+    698: 'event-tile-return',  # Vector Burning Armor Outside
+    699: 'event-tile-return',  # Vector Burning Weapon Outside
+    700: 'event-tile-return',  # Vector Burning Healer House Outside
+    701: 'event-tile-return',  # Vector Burning Inn Outside
+    707: 'event-tile-return',  # unused connector to Kefka's Tower?
+    708: 'event-tile-return',  # unused connector to Kefka's Tower?
+    781: 'event-tile-return',  # Darill's Tomb B2 Turtle Hallway South
+    787: 'event-tile-return',  # Darill's Tomb B2 Right Side Secret Room
+    803: 'event-tile-return',  # Tzen WoR Collapsing House Outside
+    804: 'event-tile-return',  # Tzen Armor Outside WoR
+    805: 'event-tile-return',  # Tzen Weapon Outside WoR
+    806: 'event-tile-return',  # Tzen Inn Outside WoR
+    807: 'event-tile-return',  # Tzen Item Outside WoR
+    808: 'event-tile-return',  # Tzen Relic Outside WoR
+    809: 'event-tile-return',  # Tzen Armor Outside WoB
+    810: 'event-tile-return',  # Tzen Weapon Outside WoB
+    811: 'event-tile-return',  # Tzen Inn Outside WoB
+    812: 'event-tile-return',  # Tzen Item Outside WoB
+    813: 'event-tile-return',  # Tzen Relic Outside WoB
+    827: 'unreachable',  # Phoenix Cave ?
+    840: 'unreachable',  # Phoenix Cave ?
+    841: 'unreachable',  # Phoenix Cave ?
+    842: 'event-tile-return',  # Phoenix Cave ?
+    843: 'door-as-trap',  # Doma Dream 3 Stooges Maze Northwest Section North Door
+    844: 'door-as-trap',  # Doma Dream 3 Stooges Maze Northwest Section South Door
+    845: 'door-as-trap',  # Doma Dream 3 Stooges Maze West Section Door
+    846: 'door-as-trap',  # Doma Dream 3 Stooges Maze North Section Door
+    847: 'door-as-trap',  # Doma Dream 3 Stooges Maze Middle Section Left Door
+    848: 'door-as-trap',  # Doma Dream 3 Stooges Maze Middle Section Middle Door
+    849: 'door-as-trap',  # Doma Dream 3 Stooges Maze Middle Section Right Door
+    852: 'door-as-trap',  # Doma Dream 3 Stooges Maze Northeast Section Right Door
+    853: 'door-as-trap',  # Doma Dream 3 Stooges Maze East Section Door
+    854: 'door-as-trap',  # Doma Dream 3 Stooges Maze South Section Right Door
+    859: 'door-as-trap',  # Doma Dream Cliffs Outside Loop East Door
+    862: 'door-as-trap',  # Doma Dream Caves Starting Room to Cliffs
+    872: 'event-tile-return',  # Albrook Inn Outside WoB
+    873: 'event-tile-return',  # Albrook Weapon Outside WoB
+    874: 'event-tile-return',  # Albrook Armor Outside WoB
+    875: 'event-tile-return',  # Albrook Item Outside WoB
+    876: 'event-tile-return',  # Albrook Pub Outside WoB
+    877: 'event-tile-return',  # Albrook Relic Outside WoB
+    878: 'event-tile-return',  # Albrook Inn Outside WoR
+    879: 'event-tile-return',  # Albrook Weapon Outside WoR
+    880: 'event-tile-return',  # Albrook Armor Outside WoR
+    881: 'event-tile-return',  # Albrook Item Outside WoR
+    882: 'event-tile-return',  # Albrook Pub Outside WoR
+    883: 'event-tile-return',  # Albrook Relic Outside WoR
+    884: 'event-tile-return',  # Kefka's Tower Falldown Room Entry Right Door 
+    905: 'event-tile-return',  # Kefka's Tower 4 Ton Switch Room Middle Upstairs North
+    906: 'event-tile-return',  # Kefka's Tower 4 Ton Switch Room Middle Downstairs North
+    929: 'event-tile-return',  # Thamasa Kefka Attack Arsenal West Outside WoB
+    930: 'event-tile-return',  # Thamasa Kefka Attack Arsenal East Outside WoB
+    931: 'event-tile-return',  # Thamasa Kefka Attack Item Outside WoB
+    932: 'event-tile-return',  # Thamasa Kefka Attack Relic Outside WoB
+    933: 'event-tile-return',  # Thamasa Kefka Attack Strago's House Outside WoB
+    934: 'event-tile-return',  # Thamasa Kefka Attack Elder's House Outside WoB
+    935: 'event-tile-return',  # Thamasa Kefka Attack Inn Outside WoB
+    943: 'event-tile-return',  # Thamasa Arsenal West Outside WoR
+    944: 'event-tile-return',  # Thamasa Arsenal East Outside WoR
+    945: 'event-tile-return',  # Thamasa Item Outside WoR
+    946: 'event-tile-return',  # Thamasa Relic Outside WoR
+    947: 'event-tile-return',  # Thamasa Strago's House Outside WoR
+    948: 'event-tile-return',  # Thamasa Elder's House Outside WoR
+    949: 'event-tile-return',  # Thamasa Inn Outside WoR
+    1068: 'unreachable',  # Cave to Sealed Gate ?
+    1097: 'unreachable',  # Ancient Castle Dragon Room Stairs Up
+    1130: 'unreachable',  # Chocobo Stable Exterior to World Map WoB
+    1133: 'unreachable',  # Chocobo Stable Exterior to World Map WoR
+    1134: 'scenario-variant',  # Narshe To Northern Mines Outside Intro Sequence
+    1152: 'event-tile-return',  # Narshe Northern Mines Outside to Inside Intro Sequence
+    1153: 'scenario-variant',  # Narshe Northern Mines Outside to Town Intro Sequence
+    1185: 'scenario-variant',  # Doma Poisoning Event - Outside to World Map
+    1227: 'event-tile-return',  # Vector To Imperial Castle
+    1234: 'event-tile-return',  # Vector Burning To Imperial Castle
+    1235: 'scenario-variant',  # Vector Burning South to World Map
+    1236: 'unreachable',  # Magitek Upper Room Conveyor to Lower Room
+    1237: 'unreachable',  # Magitek Factory Lower Room Unreachable
+    1248: 'event-tile-return',  # Albrook South to Docks WoB
+    1252: 'event-tile-return',  # Albrook South to Docks WoR
+    1256: 'scenario-variant',  # Thamasa North to World Map WoB
+    1257: 'scenario-variant',  # Thamasa West to World Map WoB
+    1258: 'scenario-variant',  # Thamasa South to World Map WoB
+    1273: 'unreachable',  # Cid's House Beach with No Fish
 }
 
 # Pairings that are intentionally not reciprocal. Tag explains the shape:
 #   extra-entrance  partner already pairs two-way with another door
-#                   (multi-tile entrances, WoB/WoR shared interiors)
+#                   (multi-tile entrances, WoB/WoR shared interiors,
+#                   and - until the 4000+ layer lands - logical-WoR towns)
 #   dead-return     partner's own exit record is unused/event-variant
 #   chain           multi-hop event-mediated pairing
 # compile_atlas fails if an entry here has become reciprocal (stale).
