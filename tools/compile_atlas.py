@@ -173,6 +173,17 @@ def derive_partners(records):
                 score = (d_here + d_back, d_here, cid)
                 if best_score is None or score < best_score:
                     best_score, best = score, cid
+        if best is None:
+            # Reverse fallback: some arrivals land far from the return door
+            # (drops/falls, e.g. KT falldown 885 lands 5 tiles above 1110).
+            # Accept a unique exit on the destination map whose OWN
+            # destination points back at us within snap distance.
+            reverse = [cid for cm in candidate_maps for cid in by_map.get(cm, ())
+                       if cid != gid
+                       and records[cid]['dest_map'] == rec['map']
+                       and _dist(rec, records[cid]['dest_x'], records[cid]['dest_y']) <= MAX_SNAP]
+            if len(reverse) == 1:
+                best = reverse[0]
         partners[gid] = best
     return partners
 
@@ -239,6 +250,29 @@ def check(records, report=False):
         else:
             stats['derived'] += 1
 
+    # Shared-exit groups (multi-tile doorways sharing one destination): all
+    # members must resolve to the same partner. This also makes the silent
+    # reciprocity exemption below auditable - use --report to list groups.
+    seen_groups = set()
+    for member, group in shared_group.items():
+        key = tuple(sorted(group, key=str))
+        if key in seen_groups:
+            continue
+        seen_groups.add(key)
+        group_partners = {final[m] for m in group if m in final}
+        if len(group_partners) > 1:
+            # Partners may legitimately differ if they are sibling tiles of
+            # one doorway themselves (normalize logical-WoR ids to their
+            # base first, e.g. Nikeah tiles 65/66 -> 5199/5200 -> 1199/1200).
+            bases = {p - 4000 if isinstance(p, int) and 4000 <= p < 6000 else p
+                     for p in group_partners}
+            sample = next(iter(bases))
+            if not (len(bases) == 1 or
+                    (isinstance(sample, int) and bases <= shared_group.get(sample, set()) | {sample})):
+                failures.append(
+                    f'shared-exit group {sorted(group, key=str)}: members resolve to '
+                    f'different partners {sorted(group_partners, key=str)}')
+
     # NO_VANILLA_PARTNER tags are validated mechanically where possible:
     #   door-as-trap      must be listed in data.rooms.doors_as_traps
     #   event-tile-return an event tile must exist near the arrival point
@@ -289,6 +323,19 @@ def check(records, report=False):
             by_reason.setdefault(reason, []).append(gid)
         for reason, gids in sorted(by_reason.items()):
             print(f'  [{reason}] {len(gids)}: {gids}')
+        # Multi-tile doorways whose reciprocity resolves through a sibling
+        # tile (handled automatically; listed here so the handling is
+        # visible rather than silent).
+        sibling_recip = []
+        for gid, partner in sorted(final.items(), key=lambda kv: str(kv[0])):
+            if partner is None or not isinstance(partner, int) or partner not in final:
+                continue
+            back = final[partner]
+            if back != gid and back is not None and back in shared_group.get(gid, ()):
+                sibling_recip.append((gid, partner, back))
+        print(f'  reciprocal-via-sibling-tile ({len(sibling_recip)}):')
+        for gid, partner, back in sibling_recip:
+            print(f'    {gid} -> {partner} -> {back} (sibling of {gid})')
 
     for f in failures:
         print('FAIL:', f)

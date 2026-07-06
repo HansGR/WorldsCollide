@@ -1,33 +1,36 @@
 """Hand-curated semantic layer of the door-rando atlas (Stage A).
 
-Everything here is a fact the ROM coordinates cannot express, tagged
-with WHY. tools/compile_atlas.py validates entries mechanically where
-possible and fails the build when an entry is redundant (derivation
-now agrees), stale (asymmetry became reciprocal), or contradicts the
-ROM data (door-as-trap not in doors_as_traps; event-tile-return with
-no tile near the arrival point).
+THIS FILE IS HAND-MAINTAINED (the generation bootstrap is retired).
+Edit entries directly, then run tools/compile_atlas.py to validate and
+regenerate compiled.py. The checker fails when an entry is redundant
+(derivation now agrees), stale (asymmetry became reciprocal), or
+contradicts the ROM data (door-as-trap not in doors_as_traps;
+event-tile-return with no tile near the arrival point; shared-exit
+group members resolving to different partners).
+
+Tag priority when several apply: value-class (logical-wor, event-door
+- what the partner IS) beats mechanism (world - why derivation cannot
+verify it) beats tie-class (sibling - which tile was picked).
 
 NOTE (Stage A milestone 2): the logical-WoR id layer (4000+) is not
 yet modeled, so pairings that resolve through a +4000 twin currently
 appear in ASYMMETRIC_PARTNERS as 'extra-entrance'; they will re-home
 when that layer lands. Realization-time edits (exit_data_patch,
 exit_make_explicit, dungeon_crawl_exit_destination_override,
-event_door_connection_data) are deliberately NOT part of the vanilla
-partner table; they join the atlas as realization metadata later in
-Stage A.
+event_door_connection_data, Maps.door_rando_cleanup) are deliberately
+NOT part of the vanilla partner table; they join the atlas as
+realization metadata later in Stage A.
 """
 
-# reason tags for PARTNER_OVERRIDES
-#   sibling           shared/split-exit sibling tiles; curated tile is canonical
-#   interior          shared interior serves WoB and WoR; curated (WoR) door is the canonical return
+# reason tags for PARTNER_OVERRIDES (in priority order)
+#   logical-wor       partner is the logical WoR copy (base + 4000) of a shared-map door
+#   event-door        partner is an event-tile door (1500+), not in the vanilla exit table
 #   world             world-return door (dest_map 511 is dynamic parent map); curated return tile
+#   interior          shared interior serves WoB and WoR; curated (WoR) door is the canonical return
+#   sibling           shared/split-exit sibling tiles; curated tile is canonical
 #   stable            chocobo stables share one interior; all stable tiles return via 1132
 #   canonical-return  several exits lead back to this door; curated one is its canonical partner
 #   variant           event-variant twin door occupies the same tile; curated standard door
-#   falldown          one-way falldown pairing; no spatially adjacent return exit
-#   hans              ambiguous coordinates; resolved by HansGR 2026-07
-#   logical-wor       partner is the logical WoR copy (base + 4000) of a shared-map door
-#   event-door        partner is an event-tile door (1500+), not in the vanilla exit table
 
 # {exit id: (vanilla partner, reason tag)} - overrides coordinate derivation
 PARTNER_OVERRIDES = {
@@ -59,7 +62,6 @@ PARTNER_OVERRIDES = {
     477: (866, 'sibling'),  # Doma Dream Train Outside Puzzle Room West
     481: (869, 'sibling'),  # Doma Dream Train Outside First Room West
     483: (4502, 'logical-wor'),  # Doma Dream Train Outside Save Point Room
-    513: (519, 'hans'),  # Mobliz Mail House Outside WoR
     540: (532, 'sibling'),  # Mt Zozo Inside to Bridge Room West
     558: (555, 'interior'),  # Kohlingen Inn Inside
     559: (553, 'interior'),  # Kohlingen General Store West Inside
@@ -71,7 +73,6 @@ PARTNER_OVERRIDES = {
     726: (1510, 'event-door'),  # Zone Eater Save Point Room West
     793: (1512, 'event-door'),  # Darill's Tomb B2 Water Room Left Top Door
     864: (861, 'sibling'),  # Doma Dream Caves Loop Room South
-    885: (1110, 'falldown'),  # Kefka's Tower Falldown Room Left Door
     1046: (1035, 'sibling'),  # Esper Mountain Inside First Room North Door to Outside Loop
     1056: (1039, 'sibling'),  # Esper Mountain Inside Second Room North Door
     1057: (1041, 'sibling'),  # Esper Mountain Inside Final Room Dead End
@@ -84,19 +85,18 @@ PARTNER_OVERRIDES = {
     1162: (58, 'world'),  # South Figaro West to World Map WoR
     1163: (58, 'world'),  # South Figaro East to World Map WoR
     1164: (58, 'world'),  # South Figaro North to World Map WoR
-    1167: (6, 'sibling'),  # South Figaro West to World Map WoB
+    1167: (6, 'world'),  # South Figaro West to World Map WoB
     1184: (1501, 'event-door'),  # Imperial Camp
     1187: (68, 'world'),  # Crazy Old Man's House to World Map WoR
-    1192: (52, 'world'),  # Mobliz East to World Map WoR
     1194: (1561, 'event-door'),  # Veldt Shore South to World Map
     1195: (1561, 'event-door'),  # Veldt Shore East to World Map
-    1200: (16, 'sibling'),  # Nikeah East to World Map
-    1213: (28, 'sibling'),  # Jidoor South to World Map
-    1214: (28, 'sibling'),  # Jidoor West to World Map
-    1215: (28, 'sibling'),  # Jidoor East to World Map
-    1224: (37, 'sibling'),  # Zozo East to World Map
+    1200: (16, 'world'),  # Nikeah East to World Map
+    1213: (28, 'world'),  # Jidoor South to World Map
+    1214: (28, 'world'),  # Jidoor West to World Map
+    1215: (28, 'world'),  # Jidoor East to World Map
+    1224: (37, 'world'),  # Zozo East to World Map
     1228: (1505, 'event-door'),  # Vector South to World Map
-    1238: (31, 'sibling'),  # Maranda South to World Map
+    1238: (31, 'world'),  # Maranda South to World Map
     1243: (51, 'world'),  # Tzen South to World Map WoR
     1249: (49, 'world'),  # Albrook West to World Map WoR
     1250: (49, 'world'),  # Albrook North to World Map WoR
@@ -106,7 +106,6 @@ PARTNER_OVERRIDES = {
     1255: (1504, 'event-door'),  # Thamasa After Kefka South to World Map WoB
     1259: (75, 'world'),  # Thamasa North to World Map WoR
     1260: (75, 'world'),  # Thamasa West to World Map WoR
-    1261: (75, 'world'),  # Thamasa South to World Map WoR
     1266: (48, 'world'),  # Cid's House East to World Map
     1267: (48, 'world'),  # Cid's House West to World Map
     1268: (48, 'world'),  # Cid's House Northwest to World Map
@@ -120,6 +119,8 @@ PARTNER_OVERRIDES = {
 #                      (validated against data.rooms.doors_as_traps)
 #   event-tile-return  the way back is an event tile, not a vanilla exit
 #                      (validated against events_raw.json near arrival)
+#   redundant-shadow   duplicate record on the same tiles as a live exit;
+#                      Maps.door_rando_cleanup relocates it to (0,0)
 #   scenario-variant   door on an event-scenario copy of a map (intro mines,
 #                      SF cave escape, Doma poisoning, Vector burning, WoB
 #                      Thamasa); used in-game but never randomized
@@ -145,13 +146,14 @@ NO_VANILLA_PARTNER = {
     509: 'event-tile-return',  # Mobliz Mail House Outside WoB
     510: 'event-tile-return',  # Mobliz Relic Outside WoB
     511: 'event-tile-return',  # Mobliz Injured Lad Outside WoB
+    513: 'event-tile-return',  # Mobliz Mail House Outside WoR
     514: 'event-tile-return',  # Mobliz Relic Outside WoR
     515: 'event-tile-return',  # Mobliz Injured Lad Outside WoR
     590: 'unreachable',  # Owzer's Basement Floating Chest Room Door
-    638: 'unreachable',  # Zozo Tower 6F Single Chest Room Inside
-    639: 'event-tile-return',  # Zozo Tower 7F Inside
-    640: 'unreachable',  # Zozo Tower 10F Inside
-    641: 'unreachable',  # Zozo Tower 12F Single Chest Room Inside
+    638: 'redundant-shadow',  # Zozo Tower 6F Single Chest Room Inside
+    639: 'redundant-shadow',  # Zozo Tower 7F Inside
+    640: 'redundant-shadow',  # Zozo Tower 10F Inside
+    641: 'redundant-shadow',  # Zozo Tower 12F Single Chest Room Inside
     644: 'event-tile-return',  # Opera House Balcony To Lobby Left WoR
     645: 'event-tile-return',  # Opera House Balcony To Lobby Right WoR
     651: 'event-tile-return',  # Opera House Balcony To Lobby Left WoB
@@ -294,7 +296,6 @@ ASYMMETRIC_PARTNERS = {
     460: 'extra-entrance',  # -> 412 -> 411  (Crazy Old Man's House Outside to Inside WoR)
     466: 'extra-entrance',  # -> 461 -> 462  (Phantom Forest Fork Room to North Room)
     467: 'extra-entrance',  # -> 465 -> 21  (Phantom Forest Room Before Train to Fork)
-    513: 'extra-entrance',  # -> 519 -> 521  (Mobliz Mail House Outside WoR)
     546: 'extra-entrance',  # -> 566 -> 552  (Kohlingen Rachel's House Outside WoB)
     547: 'extra-entrance',  # -> 559 -> 553  (Kohlingen General Store West Outside WoB)
     548: 'extra-entrance',  # -> 560 -> 554  (Kohlingen General Store East Outside WoB)
