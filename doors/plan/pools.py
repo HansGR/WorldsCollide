@@ -41,8 +41,14 @@ def load_pool(pool_rooms):
 
 
 def pool_forcing(specs):
-    """Forced connections whose exit lives in this pool (read-only view
-    of data.rooms.forced_connections; legacy pops entries instead)."""
+    """Forced connections relevant to this pool (read-only view of
+    data.rooms.forced_connections; legacy pops entries instead).
+
+    Legacy ForceConnections protects EVERY forcing id globally, so a pool
+    pit that is the target of an out-of-pool forced trap must still be
+    excluded as a walk target: include entries where either side is in
+    the pool (the walk only connects when both are)."""
     elements = {e for s in specs.values() for kind in ('doors', 'traps', 'pits')
                 for e in s[kind]}
-    return {d: list(t) for d, t in forced_connections.items() if d in elements}
+    return {d: list(t) for d, t in forced_connections.items()
+            if d in elements or any(x in elements for x in t)}

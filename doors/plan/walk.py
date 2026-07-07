@@ -155,11 +155,15 @@ def walk(world, active, rng, budget):
     for k in list(world.class_keys(active)):
         world.apply_key(k)
 
-    exits = list(world.class_elements(active, DOOR, unprotected_only=True)) + \
-        list(world.class_elements(active, TRAP, unprotected_only=True))
+    # NOTE: protection filters TARGETS (entrances) only. Exits are offered
+    # unfiltered - forced/protected exits (a forced trap unlocked mid-walk,
+    # a 30000+ mapsafe root door) must still be walked out; their forced
+    # entrance list bypasses protection, exactly as legacy.
+    exits = list(world.class_elements(active, DOOR)) + \
+        list(world.class_elements(active, TRAP))
     for c in world.downstream(active):
-        exits += world.class_elements(c, DOOR, unprotected_only=True)
-        exits += world.class_elements(c, TRAP, unprotected_only=True)
+        exits += world.class_elements(c, DOOR)
+        exits += world.class_elements(c, TRAP)
     rng.shuffle(exits)
 
     forced = [e for e in exits if e in world.forcing]
@@ -234,11 +238,14 @@ def _trail(world, c1, active):
     return [c1]
 
 
-def run(specs, forcing, seed, start_room=None, budget_limit=5000, attempts=5):
+def run(specs, forcing, seed=None, rng=None, start_room=None,
+        budget_limit=5000, attempts=5):
     """Full pool run: build model, force, attach dead ends, walk with
-    start re-rolls. Returns the solved WorldModel."""
+    start re-rolls. Returns the solved WorldModel. Pass `rng` to share one
+    stream across pools (a whole mode), or `seed` for a standalone run."""
     from doors.model import WorldModel
-    rng = random.Random(seed)
+    if rng is None:
+        rng = random.Random(seed)
     last = None
     for _ in range(attempts):
         world = WorldModel(specs)
