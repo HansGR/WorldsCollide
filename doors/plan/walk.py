@@ -9,10 +9,9 @@ over unchanged.
 
 Deliberate distribution-affecting differences from legacy, both approved:
 - the class graph is always DAG-clean (model invariant; legacy could
-  carry residual 2-cycles), and
-- dead-end attachment offers only live doors as attachment points
-  (legacy also offered locked doors and re-parked the dead end's keys
-  behind the lock; support pending if parity runs show it matters).
+  carry residual 2-cycles). Dead-end attachment offers locked doors as
+  attachment points exactly as legacy does (attachment runs BEFORE the
+  walk, so excluding them would bias locked doors toward progression).
 """
 
 import random
@@ -93,12 +92,32 @@ def attach_dead_ends(world, rng):
                 continue  # merged away by an earlier attachment this pass
             dd = world.class_elements(dc, DOOR)[0]
             candidates = []
+            locked_info = {}
             for c in world.classes():
                 if c != world.find(dc) and is_attachable(world, c):
                     candidates.extend(world.class_elements(c, DOOR))
+                    for door, key_tuple in world.locked_doors(c):
+                        candidates.append(door)
+                        locked_info[door] = key_tuple
             rng.shuffle(candidates)
             dead_keys = set(world.class_keys(dc))
             for da in candidates:
+                if da in locked_info:
+                    # Legacy flag 0: never attach a dead end holding the very
+                    # key that opens the lock it would sit behind.
+                    if dead_keys & set(locked_info[da]):
+                        continue
+                    lock_room = world.room_ids[world._find_locked(da)[0]]
+                    dead_rooms = [world.room_ids[h] for h in world.class_rooms(dc)]
+                    world.connect_door_via_lock(dd, da)
+                    # The dead end's keys are now reachable only through the
+                    # lock: park them behind it (legacy Ra.locks[ka].append).
+                    for k in list(dead_keys):
+                        holder = next(r for r in dead_rooms
+                                      if k in world.keys[world._index[r]])
+                        world.park_key_behind_lock(holder, k, lock_room,
+                                                   locked_info[da])
+                    break
                 target = world.owner_class(da)
                 # Legacy key-safety: don't attach a key into a room whose
                 # every other exit is locked only by keys inside these rooms.

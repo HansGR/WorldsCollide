@@ -152,6 +152,12 @@ class WorldModel:
             elif op == 'unlock':
                 _, h, key_tuple, items = entry
                 self.locks[h][key_tuple] = items
+            elif op == 'rm_locked':
+                _, h, key_tuple, elem, pos = entry
+                self.locks[h][key_tuple].insert(pos, elem)
+            elif op == 'parked_key':
+                _, h, key_tuple = entry
+                self.locks[h][key_tuple].pop()
             elif op == 'ile_add':
                 self.initially_locked_exits.discard(entry[1])
             else:                                    # pragma: no cover
@@ -187,6 +193,51 @@ class WorldModel:
             # The new edge closes a cycle: merge every class on it.
             self._merge_cycle(c1, c2)
         return self.find(c1)
+
+    def connect_door_via_lock(self, live_door, locked_door):
+        """Pair a live door with a door still inside a lock list.
+
+        Used by dead-end attachment (which runs BEFORE the walk): the dead
+        end is physically joined through the locked door, so its class
+        merges, and the pairing is recorded, but the locked door never
+        becomes a live element. Legacy equivalent: connect(dd, da, 'static')
+        where da is in Ra.locked('doors')."""
+        h1 = self._owner[live_door]
+        h2, key_tuple, pos = self._find_locked(locked_door)
+        self._remove_element(h1, DOOR, live_door)
+        self.locks[h2][key_tuple].pop(pos)
+        self._journal.append(('rm_locked', h2, key_tuple, locked_door, pos))
+        self.door_pairs.append((live_door, locked_door))
+        self._journal.append(('pair',))
+        c = self._union(self.find(h1), self.find(h2))
+        return self._absorb_cycles(c)
+
+    def park_key_behind_lock(self, key_room, key, lock_room, key_tuple):
+        """Move a key from a room's live keys into a lock's item list
+        (legacy: dead-end keys become reachable only once the lock opens)."""
+        h1, h2 = self._index[key_room], self._index[lock_room]
+        pos = self.keys[h1].index(key)
+        self.keys[h1].pop(pos)
+        self._journal.append(('rm_key', h1, key, pos))
+        self.locks[h2][key_tuple].append(key)
+        self._journal.append(('parked_key', h2, key_tuple))
+
+    def _find_locked(self, element):
+        for h in range(len(self.room_ids)):
+            for key_tuple, items in self.locks[h].items():
+                if element in items:
+                    return h, key_tuple, items.index(element)
+        raise KeyError(f'{element!r} is not a locked element')
+
+    def locked_doors(self, c):
+        """Locked doors across class c with their key tuples: [(door, kt)]."""
+        out = []
+        for h in self.class_rooms(c):
+            for key_tuple, items in self.locks[h].items():
+                for item in items:
+                    if not isinstance(item, str) and self._element_kind(item) == DOOR:
+                        out.append((item, key_tuple))
+        return out
 
     def apply_key(self, key):
         """Add `key` to the keychain and open everything it (now) unlocks."""
