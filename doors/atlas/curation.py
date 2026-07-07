@@ -31,13 +31,16 @@ realization metadata later in Stage A.
 #   stable            chocobo stables share one interior; all stable tiles return via 1132
 #   canonical-return  several exits lead back to this door; curated one is its canonical partner
 #   variant           event-variant twin door occupies the same tile; curated standard door
+#   wc-effective      WC forces CYAN_FOUND_POISONED_FAMILY_DOMA, so Doma interior
+#                     doors exit to the 0x11D exterior (743/744/745), not the
+#                     vanilla poisoning-variant maps (413/414/415)
+#   chocobo           world-shared stable interior: exterior-to-parent doors
+#                     (1130/1133) have no single partner; WoR interior return is
+#                     the logical copy 5131
 
 # {exit id: (vanilla partner, reason tag)} - overrides coordinate derivation
 PARTNER_OVERRIDES = {
     10: (360, 'sibling'),  # Sabin's House WoB
-    45: (1132, 'stable'),  # Mobliz Chocobo Stable WoR
-    46: (1132, 'stable'),  # Tzen Chocobo Stable WoR
-    47: (1132, 'stable'),  # Kohlingen Chocobo Stable WoR
     48: (1267, 'canonical-return'),  # Solitary Island Cid's House
     62: (4658, 'logical-wor'),  # Opera House WoR
     63: (5238, 'logical-wor'),  # Maranda Left Tile WoR
@@ -56,7 +59,9 @@ PARTNER_OVERRIDES = {
     269: (1506, 'event-door'),  # Cave to South Figaro to World Map WoB
     272: (1513, 'event-door'),  # Cave to South Figaro Turtle Room to Outside WoB
     375: (365, 'sibling'),  # Mt. Kolts First Room Inside to 1F Outside
-    418: (744, 'variant'),  # Doma Interior to Front Outside
+    417: (743, 'wc-effective'),  # Doma 3F Inside to 3F Outside
+    418: (744, 'wc-effective'),  # Doma Interior to Front Outside
+    419: (745, 'wc-effective'),  # Doma Interior to 2F Outside
     470: (490, 'sibling'),  # Phantom Train Outside Dining Room West  Door
     471: (492, 'sibling'),  # Phantom Train Outside Dining Room East Door
     477: (866, 'sibling'),  # Doma Dream Train Outside Puzzle Room West
@@ -77,6 +82,7 @@ PARTNER_OVERRIDES = {
     1056: (1039, 'sibling'),  # Esper Mountain Inside Second Room North Door
     1057: (1041, 'sibling'),  # Esper Mountain Inside Final Room Dead End
     1082: (1558, 'event-door'),  # Ancient Cave North to Figaro Castle
+    1132: (5131, 'chocobo'),  # Chocobo Stable Exterior to Inside WoR (shared interior map 0x00f; WoR side is the logical copy)
     1143: (67, 'world'),  # Narshe To World Map WoR
     1156: (1502, 'event-door'),  # Figaro Castle Outside South to World Map
     1157: (1502, 'event-door'),  # Figaro Castle Outside East to World Map
@@ -134,13 +140,13 @@ NO_VANILLA_PARTNER = {
     276: 'scenario-variant',  # Cave to South Figaro Big Room to Single Chest Room WoB - vanilla Terra/Locke/Edgar
     277: 'scenario-variant',  # Cave to South Figaro Big Room to Small Hallway WoB - vanilla Terra/Locke/Edgar
     278: 'scenario-variant',  # Cave to South Figaro Entrance Room to Small Hallway WoB - vanilla Terra/Locke/Edgar
-    279: 'event-tile-return',  # Cave to South Figaro to World Map WoB - vanilla Terra/Locke/Edgar
+    279: 'scenario-variant',  # Cave to South Figaro to World Map WoB - vanilla Terra/Locke/Edgar
     280: 'scenario-variant',  # Cave to South Figaro Single Chest Room WoB - vanilla Terra/Locke/Edgar
     281: 'scenario-variant',  # Cave to South Figaro Turtle Room to Big Room WoB - vanilla Terra/Locke/Edgar
-    282: 'event-tile-return',  # Cave to South Figaro Turtle Room to Outside WoB - vanilla Terra/Locke/Edgar
-    413: 'event-tile-return',  # Doma Poisoning Event - 3F Outside to Inside
-    414: 'event-tile-return',  # Doma Poisoning Event - 1F Outside Main Door
-    415: 'event-tile-return',  # Doma Poisoning Event - 2F Outside to Main Room
+    282: 'scenario-variant',  # Cave to South Figaro Turtle Room to Outside WoB - vanilla Terra/Locke/Edgar
+    413: 'scenario-variant',  # Doma Poisoning Event - 3F Outside to Inside
+    414: 'scenario-variant',  # Doma Poisoning Event - 1F Outside Main Door
+    415: 'scenario-variant',  # Doma Poisoning Event - 2F Outside to Main Room
     416: 'scenario-variant',  # Doma Poisoning Event - 2F Outside to Treasure Room
     495: 'event-tile-return',  # Mobliz Left House Basement
     509: 'event-tile-return',  # Mobliz Mail House Outside WoB
@@ -165,11 +171,11 @@ NO_VANILLA_PARTNER = {
     667: 'event-tile-return',  # Vector Weapon Outside
     668: 'event-tile-return',  # Vector Healer House Outside
     669: 'event-tile-return',  # Vector Inn Outside
-    697: 'event-tile-return',  # Vector Burning Pub Outside
-    698: 'event-tile-return',  # Vector Burning Armor Outside
-    699: 'event-tile-return',  # Vector Burning Weapon Outside
-    700: 'event-tile-return',  # Vector Burning Healer House Outside
-    701: 'event-tile-return',  # Vector Burning Inn Outside
+    697: 'scenario-variant',  # Vector Burning Pub Outside
+    698: 'scenario-variant',  # Vector Burning Armor Outside
+    699: 'scenario-variant',  # Vector Burning Weapon Outside
+    700: 'scenario-variant',  # Vector Burning Healer House Outside
+    701: 'scenario-variant',  # Vector Burning Inn Outside
     707: 'event-tile-return',  # unused connector to Kefka's Tower?
     708: 'event-tile-return',  # unused connector to Kefka's Tower?
     781: 'event-tile-return',  # Darill's Tomb B2 Turtle Hallway South
@@ -188,7 +194,7 @@ NO_VANILLA_PARTNER = {
     827: 'unreachable',  # Phoenix Cave ?
     840: 'unreachable',  # Phoenix Cave ?
     841: 'unreachable',  # Phoenix Cave ?
-    842: 'event-tile-return',  # Phoenix Cave ?
+    842: 'unreachable',  # Phoenix Cave ?
     843: 'door-as-trap',  # Doma Dream 3 Stooges Maze Northwest Section North Door
     844: 'door-as-trap',  # Doma Dream 3 Stooges Maze Northwest Section South Door
     845: 'door-as-trap',  # Doma Dream 3 Stooges Maze West Section Door
@@ -232,14 +238,14 @@ NO_VANILLA_PARTNER = {
     949: 'event-tile-return',  # Thamasa Inn Outside WoR
     1068: 'unreachable',  # Cave to Sealed Gate ?
     1097: 'unreachable',  # Ancient Castle Dragon Room Stairs Up
-    1130: 'unreachable',  # Chocobo Stable Exterior to World Map WoB
-    1133: 'unreachable',  # Chocobo Stable Exterior to World Map WoR
+    1130: 'chocobo',  # Chocobo Stable Exterior to World Map WoB
+    1133: 'chocobo',  # Chocobo Stable Exterior to World Map WoR
     1134: 'scenario-variant',  # Narshe To Northern Mines Outside Intro Sequence
-    1152: 'event-tile-return',  # Narshe Northern Mines Outside to Inside Intro Sequence
+    1152: 'scenario-variant',  # Narshe Northern Mines Outside to Inside Intro Sequence
     1153: 'scenario-variant',  # Narshe Northern Mines Outside to Town Intro Sequence
     1185: 'scenario-variant',  # Doma Poisoning Event - Outside to World Map
     1227: 'event-tile-return',  # Vector To Imperial Castle
-    1234: 'event-tile-return',  # Vector Burning To Imperial Castle
+    1234: 'scenario-variant',  # Vector Burning To Imperial Castle
     1235: 'scenario-variant',  # Vector Burning South to World Map
     1236: 'unreachable',  # Magitek Upper Room Conveyor to Lower Room
     1237: 'unreachable',  # Magitek Factory Lower Room Unreachable
@@ -263,9 +269,9 @@ ASYMMETRIC_PARTNERS = {
     1: 'dead-return',  # -> 1130 -> None  (Figaro Chocobo Stable WoB)
     2: 'dead-return',  # -> 1130 -> None  (Tzen Chocobo Stable WoB)
     3: 'dead-return',  # -> 1130 -> None  (Maranda Chocobo Stable WoB)
-    45: 'chain',  # -> 1132 -> 1131  (Mobliz Chocobo Stable WoR)
-    46: 'chain',  # -> 1132 -> 1131  (Tzen Chocobo Stable WoR)
-    47: 'chain',  # -> 1132 -> 1131  (Kohlingen Chocobo Stable WoR)
+    45: 'dead-return',  # -> 1133 -> None  (Mobliz Chocobo Stable WoR)
+    46: 'dead-return',  # -> 1133 -> None  (Tzen Chocobo Stable WoR)
+    47: 'dead-return',  # -> 1133 -> None  (Kohlingen Chocobo Stable WoR)
     54: 'extra-entrance',  # -> 1199 -> 16  (Nikeah Left Tile WoR)
     55: 'extra-entrance',  # -> 1199 -> 16  (Nikeah Right Tile WoR)
     129: 'extra-entrance',  # -> 123 -> 97  (Narshe Inn Outside WoR)
@@ -291,8 +297,6 @@ ASYMMETRIC_PARTNERS = {
     292: 'extra-entrance',  # -> 312 -> 304  (South Figaro Armory East Outside WoR)
     293: 'extra-entrance',  # -> 337 -> 305  (South Figaro Item Outside WoR)
     294: 'extra-entrance',  # -> 345 -> 306  (South Figaro Duncan's House Outside WoR)
-    417: 'dead-return',  # -> 413 -> None  (Doma 3F Inside to 3F Outside)
-    419: 'dead-return',  # -> 415 -> None  (Doma Interior to 2F Outside)
     460: 'extra-entrance',  # -> 412 -> 411  (Crazy Old Man's House Outside to Inside WoR)
     466: 'extra-entrance',  # -> 461 -> 462  (Phantom Forest Fork Room to North Room)
     467: 'extra-entrance',  # -> 465 -> 21  (Phantom Forest Room Before Train to Fork)
@@ -303,8 +307,6 @@ ASYMMETRIC_PARTNERS = {
     550: 'extra-entrance',  # -> 563 -> 556  (Kohlingen Chemist's House Front Door Outside WoB)
     551: 'extra-entrance',  # -> 564 -> 557  (Kohlingen Chemist's House Back Door Outside WoB)
     687: 'extra-entrance',  # -> 1233 -> 686  (Imperial Castle Right Door Behind Throne)
-    743: 'chain',  # -> 417 -> 413  (Doma 3F Outside to Inside)
-    745: 'chain',  # -> 419 -> 415  (Doma 2F Outside to Main Room)
     922: 'extra-entrance',  # -> 950 -> 936  (Thamasa After Kefka Arsenal West Outside WoB)
     923: 'extra-entrance',  # -> 951 -> 937  (Thamasa After Kefka Arsenal East Outside WoB)
     924: 'extra-entrance',  # -> 953 -> 938  (Thamasa After Kefka Item Outside WoB)
@@ -312,7 +314,6 @@ ASYMMETRIC_PARTNERS = {
     926: 'extra-entrance',  # -> 955 -> 940  (Thamasa After Kefka Strago's House Outside WoB)
     927: 'extra-entrance',  # -> 954 -> 941  (Thamasa After Kefka Elder's House Outside WoB)
     928: 'extra-entrance',  # -> 952 -> 942  (Thamasa After Kefka Inn Outside WoB)
-    1132: 'extra-entrance',  # -> 1131 -> 1129  (Chocobo Stable Exterior to Inside WoR)
     1165: 'extra-entrance',  # -> 1173 -> 1170  (South Figaro To Docks WoR)
     1166: 'extra-entrance',  # -> 1172 -> 1171  (South Figaro To Chocobo Stable WoR)
     # Event-door layer (extended reciprocity, milestone 2):

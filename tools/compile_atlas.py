@@ -397,6 +397,14 @@ def check(records, report=False):
             back = final[partner]
             if back != gid and back is not None and back in shared_group.get(gid, ()):
                 sibling_recip.append((gid, partner, back))
+        # All world-return doors (dest 511), whether derived or curated,
+        # so the complete set is reviewable in one place.
+        world_doors = [(g, r) for g, r in sorted(records.items()) if r['dest_map'] == WORLD_RETURN]
+        print(f'  world-return doors ({len(world_doors)}):')
+        for g, r in world_doors:
+            prov = ('override' if g in curation.PARTNER_OVERRIDES else
+                    'no-partner' if g in curation.NO_VANILLA_PARTNER else 'derived')
+            print(f'    {g} -> {final[g]!r} [{prov}] {exit_data[g][1]}')
         print(f'  reciprocal-via-sibling-tile ({len(sibling_recip)}):')
         for gid, partner, back in sibling_recip:
             print(f'    {gid} -> {partner} -> {back} (sibling of {gid})')

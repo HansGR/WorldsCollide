@@ -45,9 +45,9 @@ exit_data = {
     42: [1059, "Imperial Base Left Tile WoB"],
     43: [1064, "Cave to Sealed Gate"],
     44: [1047, "Esper Mountain"],
-    45: [1132, "Mobliz Chocobo Stable WoR"],
-    46: [1132, "Tzen Chocobo Stable WoR"],
-    47: [1132, "Kohlingen Chocobo Stable WoR"],
+    45: [1133, "Mobliz Chocobo Stable WoR"],     # all stable tiles return via the shared exterior-to-parent door
+    46: [1133, "Tzen Chocobo Stable WoR"],
+    47: [1133, "Kohlingen Chocobo Stable WoR"],
     48: [1267, "Solitary Island Cid's House"],
     49: [1249, "Albrook Left Tile WoR"],
     50: [1249, "Albrook Right Tile WoR"],
@@ -100,7 +100,8 @@ exit_data = {
     1129: [1131, "Chocobo Stable Exterior to Inside WoB"],
     1130: [None, "Chocobo Stable Exterior to World Map WoB"],
     1131: [1129, "Chocobo Stable Interior"],
-    1132: [1131, "Chocobo Stable Exterior to Inside WoR"],
+    1132: [5131, "Chocobo Stable Exterior to Inside WoR"],  # interior map 0x00f is world-shared; WoR side is the logical copy
+    5131: [1132, "Chocobo Stable Interior WoR"],            # logical-WoR copy of 1131
     1133: [None, "Chocobo Stable Exterior to World Map WoR"],
     1134: [None, "Narshe To Northern Mines Outside Intro Sequence"],
     97: [123, "Narshe Inn Outside WoB"],
@@ -474,10 +475,10 @@ exit_data = {
     415: [None, "Doma Poisoning Event - 2F Outside to Main Room"],
     416: [None, "Doma Poisoning Event - 2F Outside to Treasure Room"],
     1185: [None, "Doma Poisoning Event - Outside to World Map"],
-    417: [413, "Doma 3F Inside to 3F Outside"],
+    417: [743, "Doma 3F Inside to 3F Outside"],  # WC always sets CYAN_FOUND_POISONED_FAMILY_DOMA, so exterior is 0x11D (743), not the poisoning variant (413)
     #418: [414, "Doma Interior to Front Outside"],
     418: [744, "Doma Interior to Front Outside"],
-    419: [415, "Doma Interior to 2F Outside"],
+    419: [745, "Doma Interior to 2F Outside"],   # WC-effective exterior 0x11D (745), not poisoning variant (415)
     420: [746, "Doma Treasure Room to 2F Outside"],
     421: [422, "Doma Right Side Bedroom"],
     422: [421, "Doma 1F Door to Right Side Bedroom"],
