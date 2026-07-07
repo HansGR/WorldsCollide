@@ -10,7 +10,7 @@ does, and returns specs plus the pool's forced connections.
 from data.rooms import room_data, shared_exits, forced_connections
 
 
-def load_pool(pool_rooms, shared=None):
+def load_pool(pool_rooms, shared=None, drop=()):
     """{room_id: spec} for WorldModel, from pristine room_data.
 
     `shared` is the shared-exits view to strip with (defaults to the full
@@ -18,10 +18,12 @@ def load_pool(pool_rooms, shared=None):
     mutates the global table instead)."""
     if shared is None:
         shared = shared_exits
+    drop = set(drop)
     specs = {}
     for rid in pool_rooms:
         rd = room_data[rid]
-        doors, traps, pits = list(rd[0]), list(rd[1]), list(rd[2])
+        doors = [d for d in rd[0] if d not in drop]
+        traps, pits = list(rd[1]), list(rd[2])
         keys, locks = [], {}
         if len(rd) == 6:
             keys = list(rd[3])

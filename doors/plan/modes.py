@@ -1,24 +1,51 @@
 """Mode orchestration for the v2 planner (rewrite Stage C).
 
-Assembles the same per-area pools Doors.__init__/mod select for each door
-randomization mode, walks them with the v2 planner, and applies the
-legacy post-steps to produce the mode's full connection map - without
-mutating any shared table (flaw F3): split exits become a shared-exits
-VIEW, virtual root doors are injected into fresh pool specs.
+Assembles the same per-area pools Doors.__init__/mod select for every
+door-randomization mode (including map shuffle and the individual-area
+flags), walks them with the v2 planner, and applies the legacy
+post-steps - without mutating any shared table (flaw F3): split exits
+and protect-door replacements become pool-spec transforms, virtual
+root/crossworld doors are injected into fresh specs.
 
-This is the seed of the ModeSpec layer (plan section 3.3).
+This is the ModeSpec layer of the rewrite plan (section 3.3).
 """
 
 import random
 
 from data.room_sets import ROOM_SETS
 from data.rooms import (logical_links, shared_exits,
-                        dungeon_crawl_split_exits)
+                        dungeon_crawl_split_exits,
+                        map_shuffle_protected_doors)
+from data.map_exit_extra import doors_WOB_WOR
 from doors.plan.pools import load_pool, pool_forcing
 from doors.plan.walk import run
 
 META_SETS = ('All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR',
              'MapShuffleXW', 'DungeonCrawl', 'Ruination')
+IGNORE_MAPS = (1552, 1553)    # zone eater stays a transition, not a shuffled door
+IGNORE_DOORS = (1554, 1555)   # phoenix cave doors dropped when map shuffle is on
+
+# (args attribute, area key, gets _mapsafe under map shuffle)
+INDIVIDUAL_FLAGS = (
+    ('door_randomize_umaro', 'Umaro', False),
+    ('door_randomize_esper_mountain', 'EsperMountain', True),
+    ('door_randomize_owzer_basement', 'OwzerBasement', False),
+    ('door_randomize_magitek_factory', 'MagitekFactory', False),
+    ('door_randomize_sealed_gate', 'SealedGate', False),
+    ('door_randomize_zozo_wob', 'Zozo', False),
+    ('door_randomize_zozo_wor', 'Zozo-WOR', False),
+    ('door_randomize_mt_zozo', 'MtZozo', False),
+    ('door_randomize_lete_river', 'Lete', False),
+    ('door_randomize_zone_eater', 'ZoneEater', False),
+    ('door_randomize_serpent_trench', 'SerpentTrench', False),
+    ('door_randomize_burning_house', 'BurningHouse', False),
+    ('door_randomize_daryls_tomb', 'DarylsTomb', False),
+    ('door_randomize_south_figaro_cave_wob', 'SouthFigaroCaveWOB', True),
+    ('door_randomize_phantom_train', 'PhantomTrain', False),
+    ('door_randomize_cyans_dream', 'CyansDream', False),
+    ('door_randomize_mt_kolts', 'MtKolts', True),
+    ('door_randomize_veldt_cave', 'VeldtCave', True),
+)
 
 
 def dre_area_names(map_shuffle=False):
@@ -51,8 +78,7 @@ def split_shared_view():
 def inject_meta_root(specs, forcing, meta_name, offset):
     """Legacy Doors.mod root-door meta room (-dra/-drx): every root room
     gains a virtual door (offset+i), a meta room holds the partners
-    (offset+n+i), each partner forced onto its virtual door. Returns
-    (meta door ids incl. virtual sides, next free offset)."""
+    (offset+n+i), each partner forced onto its virtual door."""
     root_rooms = [r for r in specs if 'root' in str(r)]
     n = len(root_rooms)
     meta_doors = []
@@ -65,9 +91,19 @@ def inject_meta_root(specs, forcing, meta_name, offset):
     return meta_doors, offset + 2 * n
 
 
+def shuffle_transform(specs, protect):
+    """Legacy deconflict for shuffle pools under door randomization:
+    remove the ignore_maps ids and replace protected doors with their
+    30000+ stand-ins (legacy mutates room_data instead)."""
+    for rid, s in specs.items():
+        doors = [d for d in s['doors'] if d not in IGNORE_MAPS]
+        doors = [protect.get(d, d) for d in doors]
+        specs[rid] = dict(s, doors=doors)
+    return specs
+
+
 def apply_logical_links(door_pairs):
-    """Patch out logical-link virtual doors (Doors.mod post-step): the two
-    connections [L0, X] and [L1, Y] become one real connection [X, Y]."""
+    """Patch out logical-link virtual doors (Doors.mod post-step)."""
     link_of = {}
     for a, b in logical_links:
         link_of[a] = b
@@ -78,8 +114,7 @@ def apply_logical_links(door_pairs):
         ends = [e for e in m if e in link_of]
         if ends:
             for e in ends:
-                other = m[1] if m[0] == e else m[0]
-                partner[e] = other
+                partner[e] = m[1] if m[0] == e else m[0]
         else:
             kept.append(m)
     for a, b in logical_links:
@@ -90,7 +125,7 @@ def apply_logical_links(door_pairs):
 
 def reattach_shared_exits(door_pairs, shared=None):
     """Send each shared sibling tile to its canonical tile's destination
-    (Doors.mod post-step; uses the mode's shared view)."""
+    (Doors.mod post-step, minus legacy's iterate-while-append duplicates)."""
     if shared is None:
         shared = shared_exits
     out = list(door_pairs)
@@ -102,102 +137,156 @@ def reattach_shared_exits(door_pairs, shared=None):
     return out
 
 
-def _finish(door_pairs, oneways, shared=None, strip=()):
-    door_pairs = apply_logical_links(door_pairs)
-    door_pairs = reattach_shared_exits(door_pairs, shared)
-    if strip:
-        strip = set(strip)
-        door_pairs = [m for m in door_pairs
-                      if m[0] not in strip and m[1] not in strip]
-    return door_pairs, oneways
+def plan_mode(flags, rng, budget_limit=5000):
+    """Plan the full map for any -dr*/-maps/-mapx combination.
 
-
-def plan_dre(seed=None, rng=None, budget_limit=5000):
-    """-dre: every area walked separately."""
-    if rng is None:
-        rng = random.Random(seed)
-    door_pairs, oneways, worlds = [], [], {}
-    for area in dre_area_names():
-        specs = load_pool(ROOM_SETS[area])
-        forcing = pool_forcing(specs)
-        world = run(specs, forcing, rng=rng, budget_limit=budget_limit)
-        worlds[area] = world
-        door_pairs.extend(world.door_pairs)
-        oneways.extend(world.oneways)
-    door_pairs, oneways = _finish(door_pairs, oneways)
-    return door_pairs, oneways, worlds
-
-
-def plan_drdc(seed=None, rng=None, budget_limit=5000):
-    """-drdc: one giant DungeonCrawl pool, split shared exits, start from
-    the biggest class."""
-    if rng is None:
-        rng = random.Random(seed)
-    shared = split_shared_view()
-    specs = load_pool(ROOM_SETS['DungeonCrawl'], shared=shared)
-    forcing = pool_forcing(specs)
-    world = run(specs, forcing, rng=rng, start_rule='biggest',
-                budget_limit=budget_limit)
-    door_pairs, oneways = _finish(world.door_pairs, world.oneways, shared)
-    return door_pairs, oneways, {'DungeonCrawl': world}
-
-
-def plan_dra(seed=None, rng=None, budget_limit=5000):
-    """-dra: WoB and WoR pools, each with a meta-root room; root pairs
-    stripped afterward."""
-    if rng is None:
-        rng = random.Random(seed)
-    door_pairs, oneways, worlds = [], [], {}
-    offset = 10000
+    `flags` is args or any namespace with the door randomization
+    attributes. Returns (door_pairs, oneways, worlds)."""
+    g = lambda name: getattr(flags, name, False)
+    map_shuffle = bool(g('map_shuffle'))
+    segments = []      # (name, specs, forcing, start_rule, budget)
+    protect = {}
     strip = []
-    for name in ('WoB', 'WoR'):
-        specs = load_pool(ROOM_SETS[name])
+    shared_view = None
+    match_wob_wor = False
+    dr_active = False
+
+    def add(name, pool, shared=None, start_rule='roots', budget=None,
+            drop=()):
+        specs = load_pool(pool, shared=shared, drop=drop)
         forcing = pool_forcing(specs)
-        meta_doors, offset = inject_meta_root(specs, forcing,
-                                              'root_' + name, offset)
-        strip.extend(meta_doors)
-        world = run(specs, forcing, rng=rng, budget_limit=budget_limit)
+        segments.append([name, specs, forcing, start_rule,
+                         budget or budget_limit])
+        return segments[-1]
+
+    drop = IGNORE_DOORS if map_shuffle else ()
+
+    if g('door_randomize_crossworld'):                       # -drx
+        dr_active = True
+        seg = add('All', ROOM_SETS['All'], start_rule='first_root',
+                  budget=50000, drop=drop)
+        meta, _ = inject_meta_root(seg[1], seg[2], 'root', 10000)
+        strip += meta
+    elif g('door_randomize_dungeon_crawl'):                  # -drdc
+        dr_active = True
+        shared_view = split_shared_view()
+        add('DungeonCrawl', ROOM_SETS['DungeonCrawl'], shared=shared_view,
+            start_rule='biggest')
+        map_shuffle = False                                  # -drdc overrides
+    elif g('door_randomize_all'):                            # -dra
+        dr_active = True
+        offset = 10000
+        for name in ('WoB', 'WoR'):
+            seg = add(name, ROOM_SETS[name], drop=drop)
+            meta, offset = inject_meta_root(seg[1], seg[2],
+                                            'root_' + name, offset)
+            strip += meta
+    elif g('door_randomize_each'):                           # -dre
+        dr_active = True
+        for area in dre_area_names(map_shuffle):
+            add(area, ROOM_SETS[area], drop=drop)
+            if map_shuffle and area in map_shuffle_protected_doors:
+                d = map_shuffle_protected_doors[area]
+                protect[d] = d + 30000
+    else:                                                    # individual flags
+        keys = []
+        if g('door_randomize_upper_narshe'):                 # -drun
+            keys.append('UpperNarshe_WoB')
+            match_wob_wor = True
+        else:
+            if g('door_randomize_upper_narshe_wob'):
+                keys.append('UpperNarshe_WoB')
+            if g('door_randomize_upper_narshe_wor'):
+                keys.append('UpperNarshe_WoR')
+        for attr, key, mapsafe in INDIVIDUAL_FLAGS:
+            if g(attr):
+                if mapsafe and map_shuffle:
+                    key += '_mapsafe'
+                    if key in map_shuffle_protected_doors:
+                        d = map_shuffle_protected_doors[key]
+                        protect[d] = d + 30000
+                keys.append(key)
+        if keys:
+            dr_active = True
+            combined = []
+            for k in keys:
+                combined.extend(ROOM_SETS[k])
+            add('_'.join(keys), combined, drop=drop)
+
+    if map_shuffle:
+        deconflict = shuffle_transform if dr_active else (lambda s, p: s)
+        if g('map_shuffle_separate'):                        # -maps
+            for name in ('MapShuffleWOB', 'MapShuffleWOR'):
+                seg = add(name, ROOM_SETS[name])
+                seg[1] = deconflict(seg[1], protect)
+        elif g('map_shuffle_crossworld'):                    # -mapx
+            seg = add('MapShuffleXW', ROOM_SETS['MapShuffleXW'])
+            seg[1] = deconflict(seg[1], protect)
+            seg[1]['shuffle-wob'] = dict(
+                seg[1]['shuffle-wob'],
+                doors=seg[1]['shuffle-wob']['doors'] + [20000])
+            seg[1]['shuffle-wor'] = dict(
+                seg[1]['shuffle-wor'],
+                doors=seg[1]['shuffle-wor']['doors'] + [20001])
+            seg[2][20000] = [20001]
+            strip += [20000, 20001]
+
+    door_pairs, oneways, worlds = [], [], {}
+    for name, specs, forcing, start_rule, budget in segments:
+        world = run(specs, forcing, rng=rng, start_rule=start_rule,
+                    budget_limit=budget)
         worlds[name] = world
         door_pairs.extend(world.door_pairs)
         oneways.extend(world.oneways)
-    door_pairs, oneways = _finish(door_pairs, oneways, strip=strip)
+
+    door_pairs = apply_logical_links(door_pairs)
+    door_pairs = reattach_shared_exits(door_pairs, shared_view)
+    if strip:
+        s = set(strip)
+        door_pairs = [m for m in door_pairs if m[0] not in s and m[1] not in s]
+    if match_wob_wor:                                        # -drun mirror
+        door_pairs += [(doors_WOB_WOR[a], doors_WOB_WOR[b])
+                       for a, b in door_pairs
+                       if a in doors_WOB_WOR and b in doors_WOB_WOR]
     return door_pairs, oneways, worlds
 
 
-def plan_drx(seed=None, rng=None, budget_limit=50000):
-    """-drx: the combined 'All' pool with one meta-root room. The ~300-room
-    walk needs more budget headroom than the per-area walks; journal
-    rollback makes that cheap (~4s at 50k)."""
+class _Flags:
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
+
+def plan_dre(seed=None, rng=None, budget_limit=5000):
     if rng is None:
         rng = random.Random(seed)
-    specs = load_pool(ROOM_SETS['All'])
-    forcing = pool_forcing(specs)
-    meta_doors, _ = inject_meta_root(specs, forcing, 'root', 10000)
-    world = run(specs, forcing, rng=rng, start_rule='first_root',
-                budget_limit=budget_limit)
-    door_pairs, oneways = _finish(world.door_pairs, world.oneways,
-                                  strip=meta_doors)
-    return door_pairs, oneways, {'All': world}
+    return plan_mode(_Flags(door_randomize_each=True), rng, budget_limit)
+
+
+def plan_drdc(seed=None, rng=None, budget_limit=5000):
+    if rng is None:
+        rng = random.Random(seed)
+    return plan_mode(_Flags(door_randomize_dungeon_crawl=True), rng,
+                     budget_limit)
+
+
+def plan_dra(seed=None, rng=None, budget_limit=5000):
+    if rng is None:
+        rng = random.Random(seed)
+    return plan_mode(_Flags(door_randomize_all=True), rng, budget_limit)
+
+
+def plan_drx(seed=None, rng=None, budget_limit=5000):
+    if rng is None:
+        rng = random.Random(seed)
+    return plan_mode(_Flags(door_randomize_crossworld=True), rng, budget_limit)
 
 
 def plan_for_args(args, rng):
-    """Mode dispatch for the -d2 dev flag in Doors.mod. Returns
-    (door_pairs, oneways) or raises for modes not yet on the v2 path."""
+    """Mode dispatch for the -d2 dev flag in Doors.mod."""
     from doors.validate.structural import check_solved
     if getattr(args, 'ruination_mode', None):
         raise NotImplementedError('v2 planner: ruination is Stage D')
-    if getattr(args, 'map_shuffle', False):
-        raise NotImplementedError('v2 planner: map shuffle pending (Stage C)')
-    if getattr(args, 'door_randomize_crossworld', False):
-        pairs, oneways, worlds = plan_drx(rng=rng)
-    elif getattr(args, 'door_randomize_dungeon_crawl', False):
-        pairs, oneways, worlds = plan_drdc(rng=rng)
-    elif getattr(args, 'door_randomize_all', False):
-        pairs, oneways, worlds = plan_dra(rng=rng)
-    elif getattr(args, 'door_randomize_each', False):
-        pairs, oneways, worlds = plan_dre(rng=rng)
-    else:
-        raise NotImplementedError('v2 planner: individual-area flags pending')
+    pairs, oneways, worlds = plan_mode(args, rng)
     for world in worlds.values():
         check_solved(world, world.forcing)
     return pairs, oneways
