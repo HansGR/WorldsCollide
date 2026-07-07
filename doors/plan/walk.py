@@ -239,10 +239,15 @@ def _trail(world, c1, active):
 
 
 def run(specs, forcing, seed=None, rng=None, start_room=None,
-        budget_limit=5000, attempts=5):
+        start_rule='roots', budget_limit=5000, attempts=5):
     """Full pool run: build model, force, attach dead ends, walk with
     start re-rolls. Returns the solved WorldModel. Pass `rng` to share one
-    stream across pools (a whole mode), or `seed` for a standalone run."""
+    stream across pools (a whole mode), or `seed` for a standalone run.
+
+    start_rule (legacy Doors.mod start selection):
+      'roots'      random root room, else any room (-dre and friends)
+      'biggest'    class with the most live doors, ties random (-drdc)
+      'first_root' the first root room in pool order (-drx/-dra 'All')"""
     from doors.model import WorldModel
     if rng is None:
         rng = random.Random(seed)
@@ -254,10 +259,18 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
         attach_dead_ends(world, rng)
         if start_room is not None:
             starts = [start_room]
+        elif start_rule == 'biggest':
+            sizes = {c: len(world.class_elements(c, DOOR)) for c in world.classes()}
+            best = max(sizes.values())
+            active = rng.choice([c for c in world.classes() if sizes[c] == best])
+            starts = None
+        elif start_rule == 'first_root':
+            starts = [next(r for r in specs if 'root' in str(r))]
         else:
             roots = [r for r in specs if 'root' in str(r)]
             starts = roots or list(specs)
-        active = world.class_of_room(rng.choice(starts))
+        if starts is not None:
+            active = world.class_of_room(rng.choice(starts))
         try:
             walk(world, active, rng, [budget_limit])
             return world

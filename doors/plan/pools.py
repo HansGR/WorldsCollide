@@ -10,8 +10,14 @@ does, and returns specs plus the pool's forced connections.
 from data.rooms import room_data, shared_exits, forced_connections
 
 
-def load_pool(pool_rooms):
-    """{room_id: spec} for WorldModel, from pristine room_data."""
+def load_pool(pool_rooms, shared=None):
+    """{room_id: spec} for WorldModel, from pristine room_data.
+
+    `shared` is the shared-exits view to strip with (defaults to the full
+    table; -drdc/-ruin pass a view with the split exits removed - legacy
+    mutates the global table instead)."""
+    if shared is None:
+        shared = shared_exits
     specs = {}
     for rid in pool_rooms:
         rd = room_data[rid]
@@ -28,7 +34,7 @@ def load_pool(pool_rooms):
         locked_items = [i for items in locks.values() for i in items
                         if not isinstance(i, str)]
         shared_siblings = {s for d in list(doors) + locked_items
-                           if d in shared_exits for s in shared_exits[d]}
+                           if d in shared for s in shared[d]}
         if shared_siblings:
             doors = [d for d in doors if d not in shared_siblings]
             traps = [t for t in traps if t not in shared_siblings]

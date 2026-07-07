@@ -447,6 +447,17 @@ class Doors():
         # Create list of randomized connections using walks
         full_map = [[], []]
 
+        if getattr(self.args, 'door_rando_v2', False):
+            # Dev cutover flag (-d2): plan with the v2 planner (doors/plan).
+            # It consumes the same seeded global RNG stream and produces the
+            # finished full map (post-steps included); everything downstream
+            # (postprocess_door_map, ROM writing) is unchanged.
+            from doors.plan.modes import plan_for_args
+            import random as _random
+            pairs, oneways = plan_for_args(self.args, _random)
+            self.map = [[list(m) for m in pairs], [list(m) for m in oneways]]
+            return
+
         if self.args.door_randomize_crossworld:
             all_id = self.area_name.index('All')
             # Make a meta-World Map 'root' room that connects to all the 'root-zone' rooms.
