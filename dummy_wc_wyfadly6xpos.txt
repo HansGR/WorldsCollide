@@ -1,0 +1,219 @@
+Version   1.4.4d
+Generated 2026-07-07 02:49:32
+Input     dummy
+Output    dummy_wc_wyfadly6xpos
+Log       dummy_wc_wyfadly6xpos.txt
+Seed      wyfadly6xpos
+Flags     -drloc shuffle -stloc shuffle -ir standard -chrm 0 0
+Hash      Vargas, Maduin, Maduin, Behemoth
+
+--------------------------------------------------------- Game ---------------------------------------------------------
+
+Settings
+    Mode                       Open World
+    Seed                       wyfadly6xpos
+    Spoiler Log                False
+
+------------------------------------------------------ Objectives ------------------------------------------------------
+
+-------------------------------------------------------- Party ---------------------------------------------------------
+
+Starting Party                                              Characters
+    Start Character 1          None                             Start Average Level        False
+    Start Character 2          None                             Start Level                3
+    Start Character 3          None                             Start Naked                False
+    Start Character 4          None                             Equipable Umaro            False
+                                                                Character Stats            100-100%
+SwdTechs
+    Fast SwdTech               False                        Commands
+    Everyone Learns            False                            Morph                      Morph
+                                                                Steal                      Steal
+Blitzes                                                         SwdTech                    SwdTech
+    Bum Rush Last              False                            Throw                      Throw
+    Everyone Learns            False                            Tools                      Tools
+                                                                Blitz                      Blitz
+Lores                                                           Runic                      Runic
+    Start Lores                Original                         Lore                       Lore
+    MP                         Original                         Sketch                     Sketch
+    Everyone Learns            False                            Slot                       Slot
+    L.x Spells                 Original                         Dance                      Dance
+                                                                Rage                       Rage
+Rages                                                           Leap                       Leap
+    Start Rages                Original
+    No Leap                    False                            Shuffle Commands           False
+    No Charm                   False                            Random Exclude             None
+                                                                Random Exclude             None
+Dances                                                          Random Exclude             None
+    Start Dances               None                             Random Exclude             None
+    Shuffle Abilities          False                            Random Exclude             None
+    Display Abilities          False                            Random Exclude             None
+    No Stumble                 False
+    Everyone Learns            False
+
+Steal
+    Chances                    Original
+    Shuffle Steals             None
+    Shuffle Drops              None
+
+Sketch/Control
+    Sketch Ability             Original
+    Sketch Accuracy            Original
+    Sketch Stats               Original
+    Control Ability            Original
+    Control Stats              Original
+
+-------------------------------------------------------- Battle --------------------------------------------------------
+
+Experience, Magic Points, Gold                              Scaling
+    Experience Multiplier      1                                Level Scaling              None
+    Magic Points Multiplier    1                                HP/MP Scaling              None
+    Gold Multiplier            1                                Exp/GP Scaling             None
+    No Exp Party Divide        False                            Ability Scaling            None
+                                                                Max Scale Level            99
+Bosses                                                          Scale Eight Dragons        False
+    Boss Battles               Original                         Scale Final Battles        False
+    Dragons                    Shuffle
+    Statues                    Shuffle                      Encounters
+    Shuffle/Random Phunbaba 3  False                            Random Encounters          Original
+    Normalize & Distort Stats  False                            Fixed Encounters           Original
+    Boss Experience            False                            Escapable                  Original
+    No Undead                  False
+    Marshal Keep Lobos         False
+    Who's There?               False
+    Oops All Boss ID           None
+
+Boss AI
+    Doom Gaze No Escape        False
+    Wrexsoul No Zinger         False
+    MagiMaster No Ultima       False
+    Chadarnook More Demon      False
+
+-------------------------------------------------------- Magic ---------------------------------------------------------
+
+Espers                                                      Natural Magic
+    Starting Espers            0-0                              Natural Magic              None
+    Spells                     Original                         Randomize Levels           False
+    Rates                      Original                         Randomize Spells           False
+    Bonuses                    Original                         Natural Magic              None
+    MP                         Original                         Randomize Levels           False
+    Equipable                  All                              Randomize Spells           False
+    Multi Summon               False                            Menu Indicator             False
+    Mastered Icon              False
+
+Misc. Magic
+    MP                         Original
+
+-------------------------------------------------------- Items ---------------------------------------------------------
+
+Starting Gold/Items                                         Shops
+    Start Gold                 0                                Inventory                  Original
+    Start Tools                0                                Price                      Original
+                                                                Sell Fraction              1/2
+Items                                                           Dried Meat                 1
+    Equipable                  Original                         No Priceless Items         False
+    Equipable Relics           Original                         No Breakable Rods          False
+    Cursed Shield Battles      256-256                          Expensive Rods             False
+    Moogle Charm All           False                            No Elemental Shields       False
+    SwdTech Runic All          False                            No Super Balls             False
+    Stronger Atma Weapon       False                            Expensive Balls            False
+    Item Rewards                                                Expensive Restoratives     False
+                               ValiantKnife                     No Exp. Eggs               False
+                               Illumina                         No Illuminas               False
+                               Ragnarok                         Limited Inventory          False
+                               Pearl Lance
+                               Aura Lance                   Chests
+                               Magus Rod                        Contents                   Original
+                               Fixed Dice                       MIAB Percent               0%
+                               Aegis Shld                         Boss Percent             0%
+                               Flame Shld                       MIAB Shuffled              False
+                               Ice Shld
+                               Thunder Shld
+                               Genji Shld
+                               Paladin Shld
+                               Force Shld
+                               Red Cap
+                               Cat Hood
+                               Genji Helmet
+                               Force Armor
+                               Genji Armor
+                               Minerva
+                               BehemothSuit
+                               Snow Muffler
+                               Economizer
+                               Genji Glove
+                               Offering
+                               Gem Box
+                               Dragon Horn
+                               Marvel Shoes
+                               Exp. Egg
+
+------------------------------------------------------- Graphics -------------------------------------------------------
+
+Sprite Palettes                                             Character Customization
+    Palette 0                  Original 0                       TERRA  -> TERRA            Terra
+    Palette 1                  Original 1                                                  Terra
+    Palette 2                  Original 2                                                  Palette 2
+    Palette 3                  Original 3                       LOCKE  -> LOCKE            Locke
+    Palette 4                  Original 4                                                  Locke
+    Palette 5                  Original 5                                                  Palette 1
+    Palette 6                  Original 6                       CYAN   -> CYAN             Cyan
+                                                                                           Cyan
+Other Portraits & Sprites                                                                  Palette 4
+    Soldier                    Soldier                          SHADOW -> SHADOW           Shadow
+                               Palette 1                                                   Shadow
+    Imp                        Imp                                                         Palette 4
+                               Imp                              EDGAR  -> EDGAR            Edgar
+                               Palette 0                                                   Edgar
+    Esper Terra                General Leo                                                 Palette 0
+                               Palette 6                        SABIN  -> SABIN            Sabin
+    Merchant                   Banon-Duncan                                                Sabin
+                               Palette 1                                                   Palette 0
+    Ghost                      Esper Terra                      CELES  -> CELES            Celes
+                               Palette 0                                                   Celes
+    Kefka                      Merchant                                                    Palette 0
+                               Palette 3                        STRAGO -> STRAGO           Strago
+                                                                                           Strago
+Other Graphics                                                                             Palette 3
+    Remove Flashes             Original                         RELM   -> RELM             Relm
+    Minimap                    Original                                                    Relm
+    Healing Text               Original                                                    Palette 3
+    Steveify                   None                             SETZER -> SETZER           Setzer
+                                                                                           Setzer
+                                                                                           Palette 4
+                                                                MOG    -> MOG              Mog
+                                                                                           Mog
+                                                                                           Palette 5
+                                                                GAU    -> GAU              Gau
+                                                                                           Gau
+                                                                                           Palette 3
+                                                                GOGO   -> GOGO             Gogo
+                                                                                           Gogo
+                                                                                           Palette 3
+                                                                UMARO  -> UMARO            Umaro
+                                                                                           Umaro
+                                                                                           Palette 5
+
+-------------------------------------------------------- Other ---------------------------------------------------------
+
+Coliseum                                                    Challenges
+    Opponents                  Original                         No Moogle Charms           False
+    Rewards                    Original                         No Exp Eggs                False
+    Rewards Visible            F                                No Illuminas               False
+    No Exp. Eggs               False                            No Sprint Shoes            False
+    No Illuminas               False                            No Free Paladin Shields    False
+                                                                No Free Characters/Espers  False
+Auction House                                                   Permadeath                 False
+    Randomize Items            False                            Ultima                     Original
+    No Chocobo/Airship         False                            Remove Learnable Spells    None
+    Door Esper Hint            False                            No Saves                   False
+    Max Espers                 2
+                                                            Bug Fixes
+Misc.                                                           Sketch                     False
+    Movement                   AUTO_SPRINT                      Evade                      False
+    Original Name Display      False                            Vanish/Doom                False
+    Scan All                   False                            Retort                     False
+    Warp All                   False                            Jump                       False
+    Event Timers               Original                         Boss Skip                  False
+    Y NPC                      None                             Enemy Damage Counter       False
+    NPC Tips                   False                            Capture                    False
+    No Free Heals              False

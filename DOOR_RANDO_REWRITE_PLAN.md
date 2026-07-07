@@ -470,7 +470,13 @@ module set is deleted at the end. On top of `ff6wc/dev`, the same stages
 double as the porting sequence.
 
 - **Stage A — atlas.** Write `compile_atlas.py` + curation migration +
-  consistency checker. Prove it by *generating today's tables from it*
+  consistency checker. **STATUS: completed 2026-07 on branch
+  `door_rando_ruin_rewrite`** — exit records + coordinate-derived
+  partners (94% mechanical, tagged curation for the rest), one-way and
+  event-door layers, extended reciprocity, room_data element validation,
+  the room naming registry (57 areas, 851 rooms, HansGR-reviewed), and
+  structural validation of the realization tables and pools. ROM-free
+  splits landed for event_exit_data, ruin_areas, room_sets. Prove it by *generating today's tables from it*
   (emit `exit_data`-shaped dicts and diff against the current, p1-fixed
   files). No behavior change lands. This stage alone would have caught
   every 1.4/1.5-class data bug ever introduced.

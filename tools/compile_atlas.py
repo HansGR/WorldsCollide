@@ -376,6 +376,8 @@ def check(records, report=False):
     failures += check_layers(records)
     failures += check_rooms(records)
     failures += check_room_names()
+    failures += check_realization(records)
+    failures += check_pools(records)
 
     if report:
         print(f"derived: {stats['derived']}  overrides: {stats['override']}  "
@@ -585,6 +587,98 @@ def check_room_names():
                 failures.append(
                     f'room_names: {rid!r} -> {name!r}: world letter {world!r} '
                     f'but room world field says {expect!r}')
+    return failures
+
+
+def check_realization(records):
+    """Structural validation of the realization-time edit tables.
+
+    These tables stay in data/map_exit_extra.py (they are consumed at ROM
+    write time); the atlas validates that every id they name resolves
+    through the layered id space, so a typo'd key fails the build here
+    instead of silently patching nothing.
+    """
+    from data.map_exit_extra import (exit_data, exit_data_patch, exit_make_explicit,
+                                     dungeon_crawl_exit_destination_override,
+                                     event_door_connection_data)
+    from data.event_exit_data import event_exit_info as eei
+    failures = []
+
+    def resolves(key):
+        if not isinstance(key, int):
+            return False
+        if key in records or key in eei:
+            return True
+        if 4000 <= key < 6000:
+            return (key - 4000) in records or (key - 4000) in eei
+        return False
+
+    for name, table in (('exit_data_patch', exit_data_patch),
+                        ('exit_make_explicit', exit_make_explicit),
+                        ('dungeon_crawl_exit_destination_override',
+                         dungeon_crawl_exit_destination_override),
+                        ('event_door_connection_data', event_door_connection_data)):
+        for key in table:
+            if not resolves(key):
+                failures.append(f'{name}[{key!r}]: id does not resolve to any exit layer')
+    for key, val in dungeon_crawl_exit_destination_override.items():
+        if len(val) != 13:
+            failures.append(
+                f'dungeon_crawl_exit_destination_override[{key}]: expected 13 fields, got {len(val)}')
+
+    # Maps.door_rando_cleanup relocates the redundant-shadow exits; the
+    # curation tags and the cleanup routine must agree.
+    curation = _load_curation()
+    shadows = {gid for gid, tag in curation.NO_VANILLA_PARTNER.items()
+               if tag == 'redundant-shadow'}
+    cleanup_src = ''
+    maps_src = open(os.path.join(ROOT, 'data/maps.py')).read()
+    if 'def door_rando_cleanup' in maps_src:
+        i = maps_src.index('def door_rando_cleanup')
+        cleanup_src = maps_src[i:i + 2000]
+    for gid in sorted(shadows):
+        if str(gid) not in cleanup_src:
+            failures.append(
+                f'exit {gid}: tagged redundant-shadow but not relocated by Maps.door_rando_cleanup')
+    return failures
+
+
+def check_pools(records):
+    """Validate mode pool definitions (ROOM_SETS, RUIN_ROOM_SETS).
+
+    Every member must be a room_data room, and no pool may contain the
+    same physical room twice via different mode variants (guide section 2:
+    "each mode's room set must include at most one variant").
+    """
+    from data.room_sets import ROOM_SETS
+    from data.ruin_areas import RUIN_ROOM_SETS
+    from data.rooms import room_data
+    rn = None
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            'atlas_room_names', os.path.join(ROOT, 'doors/atlas/room_names.py'))
+        rn = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(rn)
+    except Exception:
+        pass
+    failures = []
+    for src_name, pools in (('ROOM_SETS', ROOM_SETS), ('RUIN_ROOM_SETS', RUIN_ROOM_SETS)):
+        for pool, members in pools.items():
+            seen_base = {}
+            for m in members:
+                if m not in room_data:
+                    failures.append(f'{src_name}[{pool!r}]: {m!r} is not a room_data room')
+                    continue
+                if rn:
+                    name = rn.ROOM_NAMES.get(m)
+                    base = name.split('-')[0] if name else None
+                    if base and base in seen_base and seen_base[base] != m:
+                        failures.append(
+                            f'{src_name}[{pool!r}]: {m!r} and {seen_base[base]!r} are '
+                            f'variants of the same physical room ({base})')
+                    elif base:
+                        seen_base[base] = m
     return failures
 
 
