@@ -375,6 +375,7 @@ def check(records, report=False):
 
     failures += check_layers(records)
     failures += check_rooms(records)
+    failures += check_room_names()
 
     if report:
         print(f"derived: {stats['derived']}  overrides: {stats['override']}  "
@@ -531,6 +532,59 @@ def check_rooms(records):
         maps.discard(WORLD_EVENT_LAYER)
         if isinstance(rid, int) and len(maps) > 1:
             failures.append(f'room {rid!r}: elements span maps {sorted(maps)}')
+    return failures
+
+
+def check_room_names():
+    """Validate doors/atlas/room_names.py against data/rooms.room_data.
+
+    Bijection (every room mapped, no extras), unique names, area code
+    registered, and the world letter consistent with the room's world
+    field (b=0, r=1, x=None). Kefka's Tower rooms may keep their legacy
+    structured ids (KTa1...).
+    """
+    import importlib.util, re
+    spec = importlib.util.spec_from_file_location(
+        'atlas_room_names', os.path.join(ROOT, 'doors/atlas/room_names.py'))
+    rn = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rn)
+    from data.rooms import room_data
+    failures = []
+
+    mapped, rooms = set(rn.ROOM_NAMES), set(room_data)
+    for missing in sorted(rooms - mapped, key=str):
+        failures.append(f'room_names: room {missing!r} has no atlas name')
+    for extra in sorted(mapped - rooms, key=str):
+        failures.append(f'room_names: {extra!r} is not a room_data room')
+
+    seen = {}
+    pat = re.compile(r'^([A-Z][A-Z0-9])([brx])(\d{2,3})([a-z]*)(-[a-z-]+)?$')
+    kt_pat = re.compile(r'^KT[abcx]?\d*[ab]?(-[a-z-]+)?$')
+    for rid, name in rn.ROOM_NAMES.items():
+        if name in seen:
+            failures.append(f'room_names: {name!r} used by both {seen[name]!r} and {rid!r}')
+        seen[name] = rid
+        if name == str(rid) and name.startswith('KT'):
+            # Kefka's Tower rooms keep their legacy structured ids; the
+            # letter is the LANE (a/b/c), not a world marker.
+            continue
+        m = pat.match(name)
+        if not m:
+            if kt_pat.match(name):
+                continue
+            failures.append(f'room_names: {rid!r} -> {name!r} does not match the format')
+            continue
+        code, world = m.group(1), m.group(2)
+        if code not in rn.AREA_CODES:
+            failures.append(f'room_names: {rid!r} -> {name!r}: code {code!r} not in AREA_CODES')
+        if rid in room_data:
+            rd = room_data[rid]
+            w = rd[5] if len(rd) == 6 else rd[3]
+            expect = {0: 'b', 1: 'r'}.get(w, 'x')
+            if world != expect:
+                failures.append(
+                    f'room_names: {rid!r} -> {name!r}: world letter {world!r} '
+                    f'but room world field says {expect!r}')
     return failures
 
 

@@ -1,7 +1,7 @@
 from data.rooms import forced_connections, logical_links, map_shuffle_protected_doors, \
     dungeon_crawl_split_exits, reset_room_tables
 from data.map_exit_extra import exit_data, doors_WOB_WOR, reset_exit_data  # for door descriptions, WOR/WOB equivalent doors
-from data.event_exit_info import event_exit_info  # for one-way exit descriptions
+from data.event_exit_data import event_exit_info  # for one-way exit descriptions (ROM-free)
 from data.walks import *
 from log.verbose import vprint, is_enabled as _verbose_enabled
 

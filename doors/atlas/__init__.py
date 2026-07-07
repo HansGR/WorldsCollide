@@ -56,6 +56,12 @@ def event_door_record(door_id):
     return EVENT_DOOR_RECORDS.get(door_id)
 
 
+def room_name(legacy_room_id):
+    """Atlas name for a legacy room_data id (see doors/atlas/room_names.py)."""
+    from doors.atlas.room_names import ROOM_NAMES
+    return ROOM_NAMES.get(legacy_room_id)
+
+
 def description(exit_id):
     """Human name of an exit. Delegates to the legacy table for now."""
     from data.map_exit_extra import exit_data
