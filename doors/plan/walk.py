@@ -119,13 +119,14 @@ def attach_dead_ends(world, rng):
                                                    locked_info[da])
                     break
                 target = world.owner_class(da)
-                # Legacy key-safety: don't attach a key into a room whose
-                # every other exit is locked only by keys inside these rooms.
+                # Legacy key-safety (runs when EITHER side holds keys): don't
+                # let the attachment leave the target with every other exit
+                # locked solely by keys inside these two rooms.
                 held = dead_keys | set(world.class_keys(target))
                 other_doors = [d for d in world.class_elements(target, DOOR,
                                                                include_locked=True)
                                if d != da]
-                if dead_keys and other_doors:
+                if held and other_doors:
                     all_locked_internally = True
                     locked = {}
                     for h in world.class_rooms(target):
