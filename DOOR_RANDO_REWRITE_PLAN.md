@@ -492,6 +492,18 @@ double as the porting sequence.
   topology, finalize, rewards as §3.3; Events-side binding shrinks to
   "look up plan, bind Reward objects, call per-event `ruination_mod`s".
   The snapshot/rollback machinery in `events.ruination_mod` is deleted.
+  **STATUS: planner completed 2026-07 on `door_rando_ruin_rewrite`**
+  (`doors/plan/ruination/`: branch views on one shared WorldModel,
+  extension rules oracle-verified against ~1,500 real legacy calls,
+  growth orchestrator with RuinConfig table copies replacing the
+  module-table reset machinery, six-step finalize + rescues, dream maze
+  + KT lanes, BFS softlock verifier that agrees with legacy's on every
+  cross-checked rejection). Whole-plan distribution parity at matched
+  config (60 accepted maps/side, tools/ruin_parity.py): room-adjacency
+  TVD 0.526 vs 0.608 legacy self-baseline, oneway TVD 0.233 vs 0.299 —
+  below the noise floor on both projections; scalar shape within ~5%
+  (v2 maps slightly leaner: far fewer stuck-rescue reserve pulls, 83%
+  vs 41% per-attempt acceptance). Events-side binding + cutover remain.
   Parity via test #4 aggregates + full sweeps; keep the old path callable
   until a few hundred-seed sweeps are clean.
 - **Stage E — mini-planners, gating unification, event-layer cleanup.**
