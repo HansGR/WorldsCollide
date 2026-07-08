@@ -173,8 +173,8 @@ class WorldModel:
     def connect_door(self, d1, d2):
         """Pair two-way door sides d1 and d2 (both become matched)."""
         h1, h2 = self._owner[d1], self._owner[d2]
-        self._remove_element(h1, DOOR, d1)
-        self._remove_element(h2, DOOR, d2)
+        self._remove_live(h1, d1)
+        self._remove_live(h2, d2)
         self.door_pairs.append((d1, d2))
         self._journal.append(('pair',))
         # Mutual reachability: merge the endpoint classes, then any one-way
@@ -186,8 +186,8 @@ class WorldModel:
     def connect_oneway(self, trap, pit):
         """Send one-way exit `trap` to landing `pit`."""
         h1, h2 = self._owner[trap], self._owner[pit]
-        self._remove_element(h1, TRAP, trap)
-        self._remove_element(h2, PIT, pit)
+        self._remove_live(h1, trap)
+        self._remove_live(h2, pit)
         self.oneways.append((trap, pit))
         self._journal.append(('oneway',))
         self.edges.append((h1, h2))
@@ -499,6 +499,17 @@ class WorldModel:
         pos = self.elements[h][kind].index(elem)
         self.elements[h][kind].pop(pos)
         self._journal.append(('rm_elem', h, kind, elem, pos))
+
+    def _remove_live(self, h, elem):
+        """Remove a live element from whichever list holds it (legacy
+        Room.remove searches all lists). Role and list can disagree: KT's
+        platform receivers are pit-role elements with trap-range ids that
+        key release files under TRAP by id arithmetic."""
+        for kind in (DOOR, TRAP, PIT):
+            if elem in self.elements[h][kind]:
+                self._remove_element(h, kind, elem)
+                return
+        raise ValueError(f'{elem!r} is not live in {self.room_ids[h]!r}')
 
     @staticmethod
     def _element_kind(element):

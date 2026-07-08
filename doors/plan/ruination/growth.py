@@ -66,14 +66,18 @@ class RuinConfig:
 
     def __init__(self, party, char_range=(3, 3), esper_range=(0, 0),
                  open_world=False, maze=None, blitz_characters=(),
-                 espers_available=27):
+                 espers_available=27, kefka_tower=False):
         self.party = list(party)
         self.char_range = char_range
         self.esper_range = esper_range
         self.open_world = open_world
         self.maze = maze
+        self.kefka_tower = kefka_tower
         self.blitz_characters = list(blitz_characters)
         self.espers_available = espers_available
+        # Per-plan room spec replacements (e.g. the -maze iso composite
+        # room's rolled entry pit); legacy writes these into room_data.
+        self.spec_overrides = {}
 
         self.character_areas = copy.deepcopy(RC.CHARACTER_AREAS)
         self.room_sets = copy.deepcopy(RUIN_ROOM_SETS)
@@ -126,6 +130,11 @@ class RuinConfig:
 
     def spec_for(self, rid):
         """WorldModel spec for one room, shared-exit-stripped."""
+        if rid in self.spec_overrides:
+            base = {'doors': [], 'traps': [], 'pits': [], 'keys': [], 'locks': {}}
+            base.update({k: list(v) if isinstance(v, list) else dict(v)
+                         for k, v in self.spec_overrides[rid].items()})
+            return base
         return load_pool([rid], shared=self._shared)[rid]
 
     def check_flags(self, reward_name):
@@ -188,6 +197,22 @@ class RuinPlanner:
         # (Ebot's Rock as a dead end: esper/item only); Events reads this
         # when backfilling dead checks.
         self.dead_check_restrictions = {}
+
+        # -maze iso: roll the composite maze's internals + entry pit, and
+        # record the entry pit as a spec override (legacy edits room_data).
+        self.isolated_maze_map = None
+        if config.maze == 'iso':
+            from doors.plan.ruination.dream_maze import randomize_isolated_maze
+            self.isolated_maze_map, entry_pit = randomize_isolated_maze(rng)
+            config.spec_overrides['ruin-stooge-maze'] = {
+                'doors': [], 'traps': [2070], 'pits': [entry_pit]}
+
+        # -rkt: roll the KT lanes (independent of the branch graph; spliced
+        # into the full map at finalize).
+        self.kt_lane_map = None
+        if config.kefka_tower:
+            from doors.plan.ruination.kefka_tower import randomize_kefka_tower
+            self.kt_lane_map = randomize_kefka_tower(rng)
 
         # Requested counts (legacy rolls these from the arg ranges)
         c_lo, c_hi = config.char_range

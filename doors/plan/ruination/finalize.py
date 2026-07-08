@@ -753,6 +753,14 @@ def finalize_plan(planner):
     oneways = [list(m) for m in w.oneways]
     pairs = [list(m) for m in reattach_shared_exits(pairs, planner.config._shared)]
 
+    # Splice the independent sub-maps (legacy order: maze, then KT lanes).
+    if getattr(planner, 'isolated_maze_map', None) is not None:
+        pairs.extend(list(m) for m in planner.isolated_maze_map[0])
+        oneways.extend(list(m) for m in planner.isolated_maze_map[1])
+    if getattr(planner, 'kt_lane_map', None) is not None:
+        pairs.extend(list(m) for m in planner.kt_lane_map[0])
+        oneways.extend(list(m) for m in planner.kt_lane_map[1])
+
     # Hub-side KT traps land on the three KT entry pits, shuffled.
     traps_to_kt = [2077, 2078, 2079]
     pits_into_kt = [t + 1000 for t in traps_to_kt]
@@ -832,13 +840,21 @@ def verify_no_character_gated_softlock(planner, pairs, oneways):
                         blocked.add(item)
 
         # Exit -> room, from the static room_data (sorted; shared variants).
+        # Spec overrides (e.g. the -maze iso composite's rolled entry pit)
+        # take precedence - legacy mutates room_data instead.
+        overrides = planner.config.spec_overrides
         owner = {}
         for rid in sorted(branch.rooms, key=str):
-            data = room_data.get(rid)
-            if not data:
-                continue
-            groups = [data[0], data[1], data[2]]
-            groups += list(_room_data_locks(rid).values())
+            if rid in overrides:
+                spec = overrides[rid]
+                groups = [spec.get('doors', ()), spec.get('traps', ()),
+                          spec.get('pits', ())]
+            else:
+                data = room_data.get(rid)
+                if not data:
+                    continue
+                groups = [data[0], data[1], data[2]]
+                groups += list(_room_data_locks(rid).values())
             for group in groups:
                 for e in group:
                     if isinstance(e, int):

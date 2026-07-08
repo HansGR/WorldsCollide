@@ -30,10 +30,10 @@ PARTIES = [
 ]
 
 
-def run_one(seed, party, maze=None):
+def run_one(seed, party, maze=None, kt=False):
     rng = random.Random(seed)
     cfg = RuinConfig(party, char_range=(2, 6), esper_range=(1, 4),
-                     maze=maze, blitz_characters=['SABIN'])
+                     maze=maze, blitz_characters=['SABIN'], kefka_tower=kt)
     planner = RuinPlanner(cfg, rng)
     planner.grow()
     full_map = finalize_plan(planner)
@@ -50,6 +50,13 @@ def check_closure(p, full_map):
     kt = {t: pt for t, pt in oneways if t in (2077, 2078, 2079)}
     assert sorted(kt) == [2077, 2078, 2079]
     assert sorted(kt.values()) == [3077, 3078, 3079]
+    # Sub-map splices reached the output.
+    if p.isolated_maze_map is not None:
+        for m in p.isolated_maze_map[0]:
+            assert list(m) in pairs
+    if p.kt_lane_map is not None:
+        for m in p.kt_lane_map[1]:
+            assert list(m) in oneways
     for i, branch in enumerate(p.branches):
         hub = branch.hub_class()
         assert w.class_of_room(branch.terminus) == hub, f'branch {i} terminus'
@@ -68,8 +75,9 @@ def main(n=40):
     for i in range(n):
         party = PARTIES[i % len(PARTIES)]
         maze = [None, 'sep', 'iso'][i % 3]
+        kt = (i % 4 == 1)
         try:
-            p, full_map = run_one(f'fin{i}', party, maze=maze)
+            p, full_map = run_one(f'fin{i}', party, maze=maze, kt=kt)
             check_closure(p, full_map)
             ok += 1
         except RuinPlanError as e:

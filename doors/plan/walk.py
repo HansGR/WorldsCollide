@@ -30,15 +30,22 @@ class WalkFailed(Exception):
 
 def force_connections(world, forcing):
     """Apply forced connections whose partner is present; protect both
-    sides either way (legacy ForceConnections)."""
+    sides either way (legacy ForceConnections).
+
+    Presence tests membership in ANY live list (legacy
+    get_room_from_element): role and list can disagree for key-released
+    elements whose ids lie (KT's platform receivers are pit-role elements
+    with trap-range ids), and the pair must still be consumed up front so
+    the walk can't misuse either side."""
     for d, targets in forcing.items():
         partner = targets[0]
         if partner in world._owner and d in world._owner:
-            live = any(d in world.elements[world._owner[d]][k] for k in (DOOR, TRAP))
+            all_kinds = (DOOR, TRAP, PIT)
+            live = any(d in world.elements[world._owner[d]][k] for k in all_kinds)
             plive = any(partner in world.elements[world._owner[partner]][k]
-                        for k in (DOOR, PIT))
+                        for k in all_kinds)
             if live and plive:
-                if world._element_kind(d) == DOOR:
+                if world.live_kind(d) == DOOR:
                     world.connect_door(d, partner)
                 else:
                     world.connect_oneway(d, partner)
@@ -239,15 +246,19 @@ def _trail(world, c1, active):
 
 
 def run(specs, forcing, seed=None, rng=None, start_room=None,
-        start_rule='roots', budget_limit=5000, attempts=5):
+        start_rule='roots', budget_limit=5000, attempts=5, keys=()):
     """Full pool run: build model, force, attach dead ends, walk with
     start re-rolls. Returns the solved WorldModel. Pass `rng` to share one
     stream across pools (a whole mode), or `seed` for a standalone run.
+    `keys` are applied before forcing (KT lanes pre-unlock the gated
+    platforms so the walk can rely on the crossings for connectivity).
 
     start_rule (legacy Doors.mod start selection):
       'roots'      random root room, else any room (-dre and friends)
       'biggest'    class with the most live doors, ties random (-drdc)
-      'first_root' the first root room in pool order (-drx/-dra 'All')"""
+      'first_root' the first root room in pool order (-drx/-dra 'All')
+      'most_exits' class with the most live doors+traps, first maximal in
+                   room order (KT lane walks)"""
     from doors.model import WorldModel
     if rng is None:
         rng = random.Random(seed)
@@ -255,10 +266,18 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
     for _ in range(attempts):
         world = WorldModel(specs)
         world.forcing = forcing
+        for k in keys:
+            world.apply_key(k)
         force_connections(world, forcing)
         attach_dead_ends(world, rng)
         if start_room is not None:
             starts = [start_room]
+        elif start_rule == 'most_exits':
+            sizes = {c: len(world.class_elements(c, DOOR))
+                     + len(world.class_elements(c, TRAP))
+                     for c in world.classes()}
+            active = max(world.classes(), key=lambda c: sizes[c])
+            starts = None
         elif start_rule == 'biggest':
             sizes = {c: len(world.class_elements(c, DOOR)) for c in world.classes()}
             best = max(sizes.values())
