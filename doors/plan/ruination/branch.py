@@ -48,6 +48,7 @@ class RuinBranch:
         classification stay in sync."""
         self.world = world
         self.hub_room = hub_room
+        self.active = hub_room       # the growth loop's current position
         self.rooms = []              # insertion order: deterministic RNG feeds
         self.dead_ends = []
         self.check_rooms = []        # ROOM_REWARD rooms with pending checks
