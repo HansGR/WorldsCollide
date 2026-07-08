@@ -184,6 +184,10 @@ class RuinPlanner:
         self.assignments = {}        # reward name -> (kind, char_name or None)
         self.reward_log = []         # acquisition order, for spoilers/parity
         self.espers_left = config.espers_available
+        # Checks never claimed during growth may be restricted at finalize
+        # (Ebot's Rock as a dead end: esper/item only); Events reads this
+        # when backfilling dead checks.
+        self.dead_check_restrictions = {}
 
         # Requested counts (legacy rolls these from the arg ranges)
         c_lo, c_hi = config.char_range
