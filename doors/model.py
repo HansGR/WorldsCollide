@@ -335,6 +335,21 @@ class WorldModel:
         self._assess_locks(h)
         return h
 
+    def add_element(self, room_id, kind, elem):
+        """Inject a live element into an existing room (journaled).
+
+        Ruination adds conditional exits mid-plan: LeteRiver3 gives the hub
+        a return pit, an Ebot's Rock character reward grows a forced trap
+        to Thamasa. The element must be globally new."""
+        if elem in self._owner:
+            raise ValueError(f'element {elem!r} already owned by '
+                             f'{self.room_ids[self._owner[elem]]!r}')
+        h = self._index[room_id]
+        self.elements[h][kind].append(elem)
+        self._journal.append(('add_elem', h, kind, elem))
+        self._owner[elem] = h
+        return h
+
     def _rollback_add_room(self, h):
         """Remove the most recently added room (h == len(room_ids) - 1)."""
         rid = self.room_ids.pop()
@@ -450,6 +465,16 @@ class WorldModel:
 
     def owner_room(self, element):
         return self.room_ids[self._owner[element]]
+
+    def live_kind(self, element):
+        """Kind of a LIVE element by list membership in its owner room -
+        the authoritative answer where id ranges lie (door-as-trap ids:
+        a door-range id sitting in a trap list is a one-way exit)."""
+        h = self._owner[element]
+        for kind in (DOOR, TRAP, PIT):
+            if element in self.elements[h][kind]:
+                return kind
+        raise KeyError(f'{element!r} is not live')
 
     def owner_class(self, element):
         return self.find(self._owner[element])

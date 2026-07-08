@@ -42,16 +42,25 @@ HUB, UPSTREAM, DOWNSTREAM, UNPLACED = 'hub', 'upstream', 'downstream', 'unplaced
 
 
 class RuinBranch:
-    def __init__(self, world, hub_room, rooms=()):
+    def __init__(self, world, hub_room, rooms=(), warp_rooms=None,
+                 town_rooms=None, check_ids=None, termini=None):
         """`hub_room` and every id in `rooms` must already be in `world`;
         rooms added later go through self.add_room so membership and
-        classification stay in sync."""
+        classification stay in sync.
+
+        The table views (warp/town rooms, check-room ids, termini) default
+        to the shared data tables; the planner passes its RuinConfig copies
+        so mode adjustments (-maze etc.) never mutate the module tables."""
         self.world = world
         self.hub_room = hub_room
         self.active = hub_room       # the growth loop's current position
+        self.warp_rooms = WARP_ROOMS if warp_rooms is None else warp_rooms
+        self.town_rooms = TOWN_ROOMS if town_rooms is None else town_rooms
+        self.check_ids = set(ROOM_REWARD) if check_ids is None else set(check_ids)
+        self.termini = set(RUIN_TERMINI) if termini is None else set(termini)
         self.rooms = []              # insertion order: deterministic RNG feeds
         self.dead_ends = []
-        self.check_rooms = []        # ROOM_REWARD rooms with pending checks
+        self.check_rooms = []        # reward rooms with pending checks
         self.terminus = None
         self.last_stuck_reason = StuckReason.NONE
         self.warp_cooldown = WARP_COOLDOWN_INITIAL
@@ -71,11 +80,11 @@ class RuinBranch:
     def _classify(self, room_id):
         """Legacy RuinationBranch.classify_rooms, per room, at add time."""
         self.rooms.append(room_id)
-        if room_id in RUIN_TERMINI:
+        if room_id in self.termini:
             self.terminus = room_id
         if self._is_dead_end(room_id):
             self.dead_ends.append(room_id)
-        if room_id in ROOM_REWARD:
+        if room_id in self.check_ids:
             self.check_rooms.append(room_id)
 
     def _is_dead_end(self, room_id):
@@ -126,14 +135,20 @@ class RuinBranch:
         return [r for r in self.rooms if self.level(r) is UNPLACED]
 
     def has_a_hub(self):
-        """True if some placed non-dead-end room retains 3+ door/trap exits
-        (legacy has_a_hub, on live element counts)."""
-        for rid in self.placed_rooms():
-            if rid in self.dead_ends:
+        """True if some member class retains 3+ door/trap exits (legacy
+        has_a_hub counts per NODE - a class here - over raw live lists,
+        placed or not). The legacy dead-end exclusion is a no-op for the
+        threshold: a listed dead end is a single 1-door room, which can
+        never reach 3 exits."""
+        w = self.world
+        seen = set()
+        for rid in self.rooms:
+            c = w.class_of_room(rid)
+            if c in seen:
                 continue
-            h = self.world._index[rid]
-            e = self.world.elements[h]
-            if len(e[DOOR]) + len(e[TRAP]) >= 3:
+            seen.add(c)
+            if (len(w.class_elements(c, DOOR))
+                    + len(w.class_elements(c, TRAP))) >= 3:
                 return True
         return False
 
@@ -151,7 +166,7 @@ class RuinBranch:
         """How many of this branch's check rooms have been claimed (feeds
         the less-extended-branch weighting)."""
         return sum(1 for r in self.rooms
-                   if r in ROOM_REWARD and r not in self.check_rooms)
+                   if r in self.check_ids and r not in self.check_rooms)
 
     def update_cooldowns(self, mapped_room_id):
         """Tick anti-clustering counters after an unplaced room is mapped;
@@ -160,7 +175,7 @@ class RuinBranch:
             self.warp_cooldown -= 1
         if self.town_cooldown > 0:
             self.town_cooldown -= 1
-        if mapped_room_id in WARP_ROOMS:
+        if mapped_room_id in self.warp_rooms:
             self.warp_cooldown = WARP_COOLDOWN_INITIAL
-        if mapped_room_id in TOWN_ROOMS:
+        if mapped_room_id in self.town_rooms:
             self.town_cooldown = TOWN_COOLDOWN_INITIAL

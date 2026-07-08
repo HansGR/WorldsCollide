@@ -69,11 +69,12 @@ def test_hub_topology():
     assert b0.unplaced_rooms() == ['ruin_terminus_1']
     # Other branch is untouched by all of this.
     assert b1.placed_rooms() == ['ruin_hub_1']
-    # 'mid' had 4 exits, 2 consumed: 1 door + 1 trap left; hub class total
-    # door+trap count per live room: mid has 21 and no trap -> below 3.
+    # No member class holds 3+ live exits: hub class has door 21 only,
+    # 'below'/'above' one exit each, terminus two doors.
     assert not b0.has_a_hub()
+    # Legacy counts hub capability on ALL nodes, placed or not.
     b0.add_room('bighub', {'doors': [30, 31, 32], 'traps': [2030]})
-    assert not b0.has_a_hub()                      # not placed yet
+    assert b0.has_a_hub()
     w.connect_door(21, 30)
     assert b0.has_a_hub()                          # placed, retains 2 doors + 1 trap
     print('PASS: hub trichotomy + placed/unplaced views')

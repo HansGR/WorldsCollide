@@ -26,7 +26,6 @@ Deliberate divergences from legacy, all in compound-node edge cases:
   runs.
 """
 
-from data.ruin_constants import WARP_ROOMS, TOWN_ROOMS
 from doors.model import DOOR, TRAP, PIT
 from doors.plan.ruination.branch import StuckReason
 
@@ -80,9 +79,9 @@ def _cooldown_blocks(branch, c):
     """Warp/town rooms may only be mapped once their cooldown reaches zero."""
     w = branch.world
     rooms = [w.room_ids[h] for h in w.class_rooms(c)]
-    if branch.warp_cooldown > 0 and any(r in WARP_ROOMS for r in rooms):
+    if branch.warp_cooldown > 0 and any(r in branch.warp_rooms for r in rooms):
         return True
-    if branch.town_cooldown > 0 and any(r in TOWN_ROOMS for r in rooms):
+    if branch.town_cooldown > 0 and any(r in branch.town_rooms for r in rooms):
         return True
     return False
 
