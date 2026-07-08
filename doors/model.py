@@ -2,10 +2,12 @@
 
 The mutable state a planner explores: rooms grouped into mutually-reachable
 CLASSES (a rollback union-find), one-way reachability edges between classes,
-per-room unmatched elements, a keychain, and the growing matching. Exactly
-three operations mutate it - connect_door, connect_oneway, apply_key - and
-every effect is journaled, so backtracking is checkpoint()/rollback(mark)
-instead of the legacy deepcopy-per-attempt (plan flaw F4).
+per-room unmatched elements, a keychain, and the growing matching. A small
+set of operations mutates it - connect_door, connect_oneway, apply_key, the
+lock-aware dead-end helpers, and add_room (dynamic pool growth for the
+ruination planner) - and every effect is journaled, so backtracking is
+checkpoint()/rollback(mark) instead of the legacy deepcopy-per-attempt
+(plan flaw F4).
 
 Design notes:
 - Room handles are indices into the pool's room list; classes are union-find
@@ -160,6 +162,8 @@ class WorldModel:
                 self.locks[h][key_tuple].pop()
             elif op == 'ile_add':
                 self.initially_locked_exits.discard(entry[1])
+            elif op == 'add_room':
+                self._rollback_add_room(entry[1])
             else:                                    # pragma: no cover
                 raise AssertionError(f'unknown journal op {op!r}')
 
@@ -254,27 +258,100 @@ class WorldModel:
         # cascade.
         released_keys = []
         for h in range(len(self.room_ids)):
-            for key_tuple in list(self.locks[h]):
-                if key_tuple not in self.locks[h]:
-                    continue
-                if set(key_tuple).issubset(self.keychain):
-                    items = self.locks[h].pop(key_tuple)
-                    self._journal.append(('unlock', h, key_tuple, items))
-                    for item in items:
-                        if isinstance(item, str):
-                            self.keys[h].append(item)
-                            self._journal.append(('add_key', h, item))
-                            released_keys.append(item)
-                        else:
-                            kind = self._element_kind(item)
-                            self.elements[h][kind].append(item)
-                            self._journal.append(('add_elem', h, kind, item))
-                            self._owner[item] = h
-                            if kind in (DOOR, TRAP):
-                                if item not in self.initially_locked_exits:
-                                    self.initially_locked_exits.add(item)
-                                    self._journal.append(('ile_add', item))
+            released_keys.extend(self._assess_locks(h))
         return released_keys
+
+    def _assess_locks(self, h):
+        """Open every lock in room h whose complete key set is already on the
+        keychain; returns the key strings released. Released elements go live
+        (doors/traps also into initially_locked_exits); released keys join the
+        room's key list but are NOT applied - legacy semantics, they apply
+        when the room is connected."""
+        released_keys = []
+        for key_tuple in list(self.locks[h]):
+            if key_tuple not in self.locks[h]:
+                continue
+            if set(key_tuple).issubset(self.keychain):
+                items = self.locks[h].pop(key_tuple)
+                self._journal.append(('unlock', h, key_tuple, items))
+                for item in items:
+                    if isinstance(item, str):
+                        self.keys[h].append(item)
+                        self._journal.append(('add_key', h, item))
+                        released_keys.append(item)
+                    else:
+                        kind = self._element_kind(item)
+                        self.elements[h][kind].append(item)
+                        self._journal.append(('add_elem', h, kind, item))
+                        self._owner[item] = h
+                        if kind in (DOOR, TRAP):
+                            if item not in self.initially_locked_exits:
+                                self.initially_locked_exits.add(item)
+                                self._journal.append(('ile_add', item))
+        return released_keys
+
+    # ------------------------------------------------------------------
+    # Dynamic pool growth (ruination: areas arrive as rewards are found)
+
+    def add_room(self, room_id, spec):
+        """Add a room to the pool mid-plan (journaled; rollback removes it).
+
+        The room's locks are assessed against the CURRENT keychain: a room can
+        arrive after its lock's key was already applied (character areas are
+        distributed only when the character is recruited, but the character
+        key is applied first - the Mog->lw1->Lone Wolf bug class). Released
+        keys stay in the room's key list until it is connected, exactly as
+        apply_key leaves them for unvisited rooms.
+
+        Returns the new room's handle (its own class root until connected).
+        """
+        if room_id in self._index:
+            raise ValueError(f'room {room_id!r} already in pool')
+        h = len(self.room_ids)
+        self.room_ids.append(room_id)
+        self._index[room_id] = h
+        self._parent.append(h)
+        self._size.append(1)
+        self.elements.append({
+            DOOR: list(spec.get('doors', ())),
+            TRAP: list(spec.get('traps', ())),
+            PIT: list(spec.get('pits', ())),
+        })
+        self.keys.append(list(spec.get('keys', ())))
+        self.locks.append({tuple(k) if isinstance(k, tuple) else (k,): list(v)
+                           for k, v in spec.get('locks', {}).items()})
+        for kind in (DOOR, TRAP, PIT):
+            for e in self.elements[h][kind]:
+                if e in self._owner:
+                    self._rollback_add_room(h)
+                    raise ValueError(f'element {e!r} in two rooms: '
+                                     f'{self.room_ids[self._owner[e]]!r} and {room_id!r}')
+                self._owner[e] = h
+        for items in self.locks[h].values():
+            for item in items:
+                if not isinstance(item, str):
+                    self._owner.setdefault(item, h)
+        self._journal.append(('add_room', h))
+        self._assess_locks(h)
+        return h
+
+    def _rollback_add_room(self, h):
+        """Remove the most recently added room (h == len(room_ids) - 1)."""
+        rid = self.room_ids.pop()
+        del self._index[rid]
+        self._parent.pop()
+        self._size.pop()
+        elems = self.elements.pop()
+        self.keys.pop()
+        locks = self.locks.pop()
+        for kind in (DOOR, TRAP, PIT):
+            for e in elems[kind]:
+                if self._owner.get(e) == h:
+                    del self._owner[e]
+        for items in locks.values():
+            for item in items:
+                if not isinstance(item, str) and self._owner.get(item) == h:
+                    del self._owner[item]
 
     # ------------------------------------------------------------------
     # Reachability (all BFS, dedup, deterministic order)

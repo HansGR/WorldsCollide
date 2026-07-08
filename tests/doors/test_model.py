@@ -76,6 +76,44 @@ def test_key_unlock_cascade():
     print('PASS: apply_key unlock cascade + rollback')
 
 
+def test_add_room():
+    """Rooms arriving after their lock's key was applied must open on
+    arrival (Mog->lw1->Lone Wolf bug class), and rollback must remove an
+    added room even after it was connected."""
+    w = tiny_world()
+    w.apply_key('k1')                              # k1 applied before arrival
+    base = w.snapshot()
+    m = w.checkpoint()
+    h = w.add_room('E', {'doors': [7], 'locks': {('k1',): [8, 'k3']}})
+    # Lock assessed against current keychain: 8 goes live (and into
+    # initially_locked_exits), k3 waits in the room's key list.
+    assert sorted(w.class_elements(h, DOOR)) == [7, 8]
+    assert 8 in w.initially_locked_exits
+    assert w.class_keys(h) == ['k3']
+    assert w.locks[h] == {}
+    c = w.connect_door(7, 1)                       # join A through the new room
+    assert w.class_of_room('E') == w.class_of_room('A') == c
+    w.rollback(m)
+    assert w.snapshot() == base
+    assert 'E' not in w._index and len(w.room_ids) == 4
+    # A lock whose key is NOT held stays shut on arrival.
+    h2 = w.add_room('F', {'doors': [9], 'locks': {('k9',): [10]}})
+    assert w.class_elements(h2, DOOR) == [9]
+    assert ('k9',) in w.locks[h2]
+    try:
+        w.add_room('F', {'doors': [11]})
+        raise AssertionError('duplicate room id accepted')
+    except ValueError:
+        pass
+    try:
+        w.add_room('G', {'doors': [9]})            # element already owned
+        raise AssertionError('duplicate element accepted')
+    except ValueError:
+        pass
+    assert 'G' not in w._index                     # failed add left no residue
+    print('PASS: add_room keychain assessment + rollback + validation')
+
+
 def test_fuzz_rollback():
     """Randomized ops with nested checkpoints: every rollback must restore
     the exact snapshot taken at its checkpoint."""
@@ -108,11 +146,19 @@ def test_fuzz_rollback():
                 mark, snap = stack.pop()
                 w.rollback(mark)
                 assert w.snapshot() == snap, f'trial {trial}: rollback mismatch'
+            elif roll < 0.58:
+                spec = {'doors': [eid, eid + 1]}
+                eid += 2
+                if rng.random() < 0.5:
+                    spec['locks'] = {(f'key{rng.randrange(n)}',): [eid, f'nk{eid}']}
+                    eid += 1
+                w.add_room(f'x{eid}', spec)
             else:
-                doors = [e for h in range(n) for e in w.elements[h][DOOR]]
-                traps = [e for h in range(n) for e in w.elements[h][TRAP]]
-                pits = [e for h in range(n) for e in w.elements[h][PIT]]
-                keys = [k for h in range(n) for k in w.keys[h]]
+                nr = len(w.room_ids)
+                doors = [e for h in range(nr) for e in w.elements[h][DOOR]]
+                traps = [e for h in range(nr) for e in w.elements[h][TRAP]]
+                pits = [e for h in range(nr) for e in w.elements[h][PIT]]
+                keys = [k for h in range(nr) for k in w.keys[h]]
                 choices = []
                 if len(doors) >= 2:
                     choices.append('door')
@@ -167,6 +213,7 @@ if __name__ == '__main__':
     test_connect_and_rollback()
     test_oneway_cycle_merges()
     test_key_unlock_cascade()
+    test_add_room()
     test_fuzz_rollback()
     test_dag_invariant()
     print('\nAll model tests passed.')
