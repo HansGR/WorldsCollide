@@ -639,10 +639,12 @@ class RuinPlanner:
         order, first available wins, item as fallback. Returns (kind,
         character_name or None) and consumes the pools."""
         rng = self.rng
-        # Granted characters enter the keychain immediately, so the pool is
-        # simply planned-minus-keychain (legacy: available minus excluded).
-        chars_left = [c for c in self.planned_characters
-                      if c not in self.keychain]
+        # Planned characters not yet assigned as a reward (legacy: available
+        # minus excluded). Track by assignment, NOT keychain membership: under
+        # -open every character starts in the keychain, so a keychain test
+        # would leave nothing to place.
+        assigned = {v[1] for v in self.assignments.values() if v[0] == 'CHARACTER'}
+        chars_left = [c for c in self.planned_characters if c not in assigned]
         if force_character:
             return CHARACTER, rng.choice(chars_left)
         all_types = list(RewardType)

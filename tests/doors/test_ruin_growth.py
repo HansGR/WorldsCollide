@@ -30,10 +30,10 @@ PARTIES = [
 ]
 
 
-def run_one(seed, party, maze=None):
+def run_one(seed, party, maze=None, open_world=False):
     rng = random.Random(seed)
     cfg = RuinConfig(party, char_range=(2, 6), esper_range=(1, 4),
-                     maze=maze, blitz_characters=['SABIN'])
+                     maze=maze, open_world=open_world, blitz_characters=['SABIN'])
     planner = RuinPlanner(cfg, rng)
     planner.grow()
     return planner
@@ -92,8 +92,9 @@ def main(n=40):
     for i in range(n):
         party = PARTIES[i % len(PARTIES)]
         maze = [None, 'sep', 'iso'][i % 3]
+        open_world = (i % 5 == 2)          # exercise -open (all chars pre-keyed)
         try:
-            p = run_one(f'growth{i}', party, maze=maze)
+            p = run_one(f'growth{i}', party, maze=maze, open_world=open_world)
             check_invariants(p)
             ok += 1
         except RuinPlanError as e:

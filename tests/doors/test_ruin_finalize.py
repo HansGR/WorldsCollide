@@ -30,10 +30,11 @@ PARTIES = [
 ]
 
 
-def run_one(seed, party, maze=None, kt=False):
+def run_one(seed, party, maze=None, kt=False, open_world=False):
     rng = random.Random(seed)
     cfg = RuinConfig(party, char_range=(2, 6), esper_range=(1, 4),
-                     maze=maze, blitz_characters=['SABIN'], kefka_tower=kt)
+                     maze=maze, blitz_characters=['SABIN'], kefka_tower=kt,
+                     open_world=open_world)
     planner = RuinPlanner(cfg, rng)
     planner.grow()
     full_map = finalize_plan(planner)
@@ -76,8 +77,10 @@ def main(n=40):
         party = PARTIES[i % len(PARTIES)]
         maze = [None, 'sep', 'iso'][i % 3]
         kt = (i % 4 == 1)
+        open_world = (i % 5 == 3)
         try:
-            p, full_map = run_one(f'fin{i}', party, maze=maze, kt=kt)
+            p, full_map = run_one(f'fin{i}', party, maze=maze, kt=kt,
+                                  open_world=open_world)
             check_closure(p, full_map)
             ok += 1
         except RuinPlanError as e:
