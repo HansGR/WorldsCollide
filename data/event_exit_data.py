@@ -270,20 +270,16 @@ event_exit_info = {
     1563: [0xa435d, 7, 1, [False, False, False, False, False], 'Daryls Tomb quickexit as door', [0x12b, 100, 7], 'JMP'],  # Door behind daryl's tomb itself.
     1564: [None, 7, 1, [False, False, False, False, False], 'Daryls Tomb staircase top', [0x12d, 27, 7], 'JMP'],  # Door at top of Daryls tomb staircase. see CA/436B
 
+    # KT FORCED CONNECTIONS (RUINATION)
+    1565: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, switch platform top', [0x124, None, None], None],    # forced connection, no mod
+    1566: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, switch platform bottom', [0x124, None, None], None], # forced connection, no mod
+    1567: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, broken stairs bottom', [0x14E, None, None], None],   # forced connection, no mod
+    1568: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, broken stairs top', [0x14E, None, None], None],      # forced connection, no mod
+
     # LONE WOLF REWARD (RUINATION)
     2180: [0x00000, 0, 0, [None, None, None, None, False], 'Lone Wolf reward logical exit from Narshe Peak', [0x23, None, None], None],
     # forced connection, no mod
     2181: [0x00000, 0, 0, [None, None, None, None, False], 'Lone Wolf reward logical return to Narshe Peak', [0x23, None, None], None],
-    # forced connection, no mod
-
-    # KT Forced connections (RUINATION)
-    2182: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, switch platform top', [0x124, None, None], None],
-    # forced connection, no mod
-    2183: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, switch platform bottom', [0x124, None, None], None],
-    # forced connection, no mod
-    2184: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, broken stairs bottom', [0x14E, None, None], None],
-    # forced connection, no mod
-    2185: [0x00000, 0, 0, [None, None, None, None, False], 'KT Left logical conn, broken stairs top', [0x14E, None, None], None],
     # forced connection, no mod
 
 }

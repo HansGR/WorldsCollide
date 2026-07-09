@@ -1398,7 +1398,7 @@ KT's door graph is **deliberately sparse** — ~28 two-way door-edges across ~34
 
 ### The coupling (why lanes can't be solved independently of keys)
 
-Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced one-way crossing** in *another* lane: `KTa5a→KTa5b` (platform `2182→2183`, needs `KT1`) and `KTa8a→KTa8b` (`2184→2185`, needs `KT2`). Constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_GATED` (the `(a, b, key)` crossings), `KT_KEY_ROOM` (`{'KTb8':'KT1','KTc10':'KT2'}`), `KT_FORCED` (`{2182:[2183], 2184:[2185]}`), `KT_PLATFORM_IDS`, `KT_MAX_SPLITS = 400`.
+Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced one-way crossing** in *another* lane: `KTa5a→KTa5b` (platform `1565→1566`, needs `KT1`) and `KTa8a→KTa8b` (`1567→1568`, needs `KT2`). Constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_GATED` (the `(a, b, key)` crossings), `KT_KEY_ROOM` (`{'KTb8':'KT1','KTc10':'KT2'}`), `KT_FORCED` (`{1565:[1566], 1567:[1568]}`), `KT_PLATFORM_IDS`, `KT_MAX_SPLITS = 400`.
 
 ### Three-phase design (propose → verify, in a retry loop, up to `KT_MAX_SPLITS`)
 
@@ -1417,7 +1417,7 @@ The soundness argument is the **optimistic-generator / pessimistic-verifier spli
 ### Gotchas worth remembering (these caused real bugs)
 
 1. **`ForceConnections` must always be called**, even for a lane with no platform — it initialises `Network.protected` (which is `None` otherwise). Skipping it makes `connect_network` crash with `'NoneType' object is not iterable` when it filters against `self.protected`.
-2. **The platform traps live in `room_data` *locks*, not in the door/trap slots**, so they are invisible to the walk until unlocked — hence the up-front `apply_key('KT1'/'KT2')`, which lets the walk *use* the platforms for connectivity. They must then be **stripped** from the output: `2182–2185` are vanilla map features, **not writable ROM exits**, and re-enter only as *gated* edges inside `verify`. (Also why `room_of` — built from slots `[0]/[1]/[2]` — does **not** contain them; don't filter `KT_FORCED` through `room_of`.)
+2. **The platform traps live in `room_data` *locks*, not in the door/trap slots**, so they are invisible to the walk until unlocked — hence the up-front `apply_key('KT1'/'KT2')`, which lets the walk *use* the platforms for connectivity. They must then be **stripped** from the output: `1565–1568` are vanilla map features, **not writable ROM exits**, and re-enter only as *gated* edges inside `verify`. (Also why `room_of` — built from slots `[0]/[1]/[2]` — does **not** contain them; don't filter `KT_FORCED` through `room_of`.)
 3. **Suppress verbose during the search.** The walk is extremely chatty and far slower with logging on; the search toggles `log.verbose._to_stdout/_to_file` off around the loop and restores them in a `finally`, then logs the *chosen* layout. Under `-debug` an unsuppressed search would emit hundreds of pages.
 4. **Latent walks.py bug fixed here:** `Network.connect_network`'s verbose "Invalid network state" branch did `vprint(k.id, …)` where `k` is already a string room-id (→ `AttributeError`). The KT search is the first caller to exercise that path heavily; fixed to `vprint(k, …)`.
 

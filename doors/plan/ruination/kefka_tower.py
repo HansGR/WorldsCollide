@@ -20,8 +20,8 @@ KT_BOSSES = ['KTb4', 'KTb10', 'KTc7', 'KTc12']
 # Rooms joined by a key-gated forced crossing share a lane; the crossing
 # is a one-way edge a -> b, gated by the named switch key.
 KT_GATED = [('KTa5a', 'KTa5b', 'KT1'), ('KTa8a', 'KTa8b', 'KT2')]
-KT_FORCED = {2182: [2183], 2184: [2185]}
-KT_PLATFORM_IDS = {2182, 2183, 2184, 2185}
+KT_FORCED = {1565: [1566], 1567: [1568]}
+KT_PLATFORM_IDS = {1565, 1566, 1567, 1568}
 KT_KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
 KT_MAX_SPLITS = 400
 
