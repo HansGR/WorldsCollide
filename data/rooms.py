@@ -1038,12 +1038,12 @@ room_data = {
     'KTa2': [ [799, 800], [], [], [], {}, 1],  # 0x12F,  KT left side, conveyor belts room
     'KTa3': [ [801, 802], [], [], [], {}, 1],  # 0x130,  KT left side, third room (horseshoe with chest)
     'KTa4': [ [888, 889], [], [], [], {}, 1],  # 0x14E, KT left side, fourth room (outside connector)
-    'KTa5a': [ [760], [], [], [], {'KT1': [2182]}, 1],  # 0x124, KT left side, fifth room entry (switch platform left)
-    'KTa5b': [ [761], [], [], [], {'KT1': [2183]}, 1],  # 0x124, KT left side, fifth room exit
+    'KTa5a': [ [760], [], [], [], {'KT1': [1565]}, 1],  # 0x124, KT left side, fifth room entry (switch platform left)
+    'KTa5b': [ [761], [], [], [], {'KT1': [1566]}, 1],  # 0x124, KT left side, fifth room exit
     'KTa6': [ [976, 977], [], [], [], {}, 1],  # 0x160, KT left side, sixth room (broken tubes)
     'KTa7': [ [769, 768], [], [], [], {}, 1],  # 0x127, KT left side, seventh room (after-tubes connector)
-    'KTa8a': [ [890], [], [], [], {'KT2': [2184]}, 1],  # 0x14E, KT left side, eighth room (outside before broken stairs)
-    'KTa8b': [ [894], [], [], [], {'KT2': [2185]}, 1],  # 0x14E, KT left side, eighth room (outside after broken stairs)
+    'KTa8a': [ [890], [], [], [], {'KT2': [1567]}, 1],  # 0x14E, KT left side, eighth room (outside before broken stairs)
+    'KTa8b': [ [894], [], [], [], {'KT2': [1568]}, 1],  # 0x14E, KT left side, eighth room (outside after broken stairs)
     'KTa-final': [ [904], [], [], [], {}, 1],  # 0x151, KT left side, ninth room (4-ton switch room middle)
 
     # MIDDLE LANE
@@ -1138,8 +1138,8 @@ forced_connections = {
 
     4418: [744],    # Doma WOR Main Room --> Doma WoB Outside (ruination: splits indoor WoR from outdoor WoB for siege).  If Doma interior were ever randomized, this would cause problems.
 
-    2182: [2183],   # Kefka's Tower switch platform room
-    2184: [2185],   # Kefka's Tower, broken stairs
+    1565: [1566],   # Kefka's Tower switch platform room
+    1567: [1568],   # Kefka's Tower, broken stairs
 }
 
 # Add forced connections for virtual doors (-dra)
