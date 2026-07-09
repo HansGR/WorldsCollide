@@ -3661,8 +3661,8 @@ class ruination_map():
     # traps living in room_data locks). Fed to ForceConnections during the
     # walk, then stripped from the output (they are vanilla map features, not
     # writable ROM exits).
-    KT_FORCED = {2182: [2183], 2184: [2185]}
-    KT_PLATFORM_IDS = {2182, 2183, 2184, 2185}
+    KT_FORCED = {1565: [1566], 1567: [1568]}
+    KT_PLATFORM_IDS = {1565, 1566, 1567, 1568}
     # Room that holds each switch key (key enters the global keychain when the
     # room is first reached by any party).
     KT_KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
