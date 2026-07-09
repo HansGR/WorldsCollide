@@ -281,12 +281,20 @@ def plan_drx(seed=None, rng=None, budget_limit=5000):
     return plan_mode(_Flags(door_randomize_crossworld=True), rng, budget_limit)
 
 
-def plan_for_args(args, rng):
-    """Mode dispatch for the -d2 dev flag in Doors.mod."""
+def plan_for_args(args, rng, characters=None):
+    """Mode dispatch for the -d2 dev flag in Doors.mod. Every mode returns
+    the same DoorPlan artifact; ruination is just another view of it
+    (plan.ruination carries the abstract reward plan + party) -- one
+    planning site, in the Data phase (F5)."""
+    from doors.plan.artifact import DoorPlan
     from doors.validate.structural import check_solved
     if getattr(args, 'ruination_mode', None):
-        raise NotImplementedError('v2 planner: ruination is Stage D')
+        # Ruination's own verifiers run inside finalize_plan (hub closure,
+        # terminus merge, softlock check); check_solved's full-consumption
+        # rule doesn't apply there (orphan rooms are legal).
+        from doors.plan.ruination.plan import plan_ruination
+        return plan_ruination(args, rng, characters)
     pairs, oneways, worlds = plan_mode(args, rng)
     for world in worlds.values():
         check_solved(world, world.forcing)
-    return pairs, oneways
+    return DoorPlan(pairs, oneways)

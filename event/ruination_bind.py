@@ -1,32 +1,25 @@
 """v2 ruination binding (rewrite Stage E).
 
-The ROM-free planner (doors/plan/ruination) decides the map and an abstract
-reward plan: reward name -> kind (character/esper/item) and, for characters,
-the character name. This module *realizes* that plan against the ROM objects
-the rest of Events needs -- binding the live Reward slots, claiming
-characters and picking esper/item ids from their pools, and recording the
-character dependency paths -- then presents a `ruination_map`-shaped surface
-(`V2RuinMap`) so events.ruination_mod and its downstream consumers
-(area clues, dried meat, ferry, spoiler) read it unchanged.
+Events-side realization of the DoorPlan's ruination view. Planning already
+happened in the Data phase (Doors.mod -> doors/plan/ruination/plan.py); the
+plan arrives here as doors.plan.ruination -- an abstract reward plan:
+reward name -> kind (character/esper/item) and, for characters, the
+character name. bind_ruin_plan() *realizes* it against the ROM objects --
+binding the live Reward slots, claiming characters and picking esper/item
+ids from their pools, and recording the character dependency paths -- then
+presents a `ruination_map`-shaped surface (`V2RuinMap`) so
+events.ruination_mod and its downstream consumers (area clues, dried meat,
+ferry, spoiler) read it unchanged.
 
-Determinism: the planner is driven by a private RNG seeded once off the
-shared global stream, so the same input seed yields the same plan; the
-binding then draws esper/item ids from the same global stream in a fixed
-(reward_log) order. No snapshot/rollback of external pools is needed -- a
-failed attempt never touches the ROM pools (binding only runs after a plan
-succeeds), which is why the legacy retry machinery has no v2 counterpart.
+No snapshot/rollback of external pools exists here: a failed plan never
+reaches binding (the planner's retry loop is pure and Data-phase), so
+there is nothing to roll back -- the F5 promise.
 """
 
-import random
-
 from event.event_reward import RewardType
-from doors.plan.ruination.growth import RuinConfig, RuinPlanner, RuinPlanError
-from doors.plan.ruination.finalize import finalize_plan
 from data import ruin_constants as RC
 
 CHARACTER, ESPER, ITEM = RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM
-
-MAX_ATTEMPTS = 10
 
 
 def build_name_to_slot(events):
@@ -53,43 +46,14 @@ def build_name_to_slot(events):
     return name_to_slot
 
 
-def build_v2_ruin_map(args, party_names, characters, espers, items, events,
-                      verbose=False):
-    """Plan ruination with the v2 planner (retrying on failure) and bind its
-    rewards. Returns a V2RuinMap, or raises the last RuinPlanError."""
+def bind_ruin_plan(plan, characters, espers, items, events, verbose=False):
+    """Realize a DoorPlan's ruination view: bind Reward slots and pools.
+    Returns the V2RuinMap adapter for the downstream consumers."""
+    rp = plan.ruination
     name_to_slot = build_name_to_slot(events)
-    blitz = [characters.DEFAULT_NAME[c]
-             for c in characters.get_characters_with_command("Blitz")]
-    base = random.random()          # one deterministic draw off the seeded stream
-    last_error = None
-    for attempt in range(MAX_ATTEMPTS):
-        rng = random.Random(f'{base}:{attempt}')
-        config = RuinConfig(
-            party_names,
-            char_range=tuple(args.ruin_characters_required),
-            esper_range=tuple(args.ruin_espers_required),
-            open_world=bool(getattr(args, 'open_world', False)),
-            maze=getattr(args, 'ruin_dream_maze', None),
-            kefka_tower=bool(getattr(args, 'ruin_kefka_tower', False)),
-            blitz_characters=blitz,
-            espers_available=espers.available(),
-        )
-        try:
-            planner = RuinPlanner(config, rng)
-            planner.grow()
-            full_map = finalize_plan(planner)
-        except RuinPlanError as e:
-            last_error = e
-            if getattr(args, 'debug', False):
-                print(f'v2 ruination attempt {attempt + 1}/{MAX_ATTEMPTS} '
-                      f'failed; retrying. ({str(e)[:80]})')
-            continue
-        ruin_map = V2RuinMap(planner, full_map, party_names, verbose=verbose)
-        ruin_map.bind(name_to_slot, characters, espers, items)
-        if attempt > 0 and getattr(args, 'debug', False):
-            print(f'v2 ruination map generated on attempt {attempt + 1}')
-        return ruin_map
-    raise last_error
+    ruin_map = V2RuinMap(rp.planner, plan.as_map(), rp.party, verbose=verbose)
+    ruin_map.bind(name_to_slot, characters, espers, items)
+    return ruin_map
 
 
 class V2RuinMap:

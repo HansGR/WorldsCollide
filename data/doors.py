@@ -53,6 +53,10 @@ class Doors():
         # reset_room_tables() above makes the mutation safe across builds.
         self.forcing = forced_connections
         self.map = []
+        # The v2 DoorPlan artifact (-d2): constructed in mod() and owned by
+        # the Data phase; Events receives it (events.ruination_mod binds the
+        # ruination view's rewards). None on the legacy path.
+        self.plan = None
 
         self.match_WOB_WOR = False
         self.combine_areas = True  # make individually called flags get mixed together
@@ -443,23 +447,27 @@ class Doors():
 
         return "(connection not found in map)"
 
-    def mod(self):
+    def mod(self, characters=None):
         # Create list of randomized connections using walks
         full_map = [[], []]
 
-        if getattr(self.args, 'door_rando_v2', False) and not self.args.ruination_mode:
-            # Dev cutover flag (-d2): plan with the v2 planner (doors/plan).
-            # It consumes the same seeded global RNG stream and produces the
-            # finished full map (post-steps included); everything downstream
-            # (postprocess_door_map, ROM writing) is unchanged.
-            #
-            # Ruination is excluded here: its map is generated in
-            # events.ruination_mod (v2 path in event/ruination_bind.py), so
-            # Doors.mod leaves self.map empty exactly as the legacy path does.
+        if getattr(self.args, 'door_rando_v2', False):
+            # Dev cutover flag (-d2): plan with the v2 planner (doors/plan),
+            # one planning site for every mode including ruination. Planning
+            # consumes the seeded global RNG stream in one contiguous window
+            # here; the resulting DoorPlan is owned by the Data phase
+            # (self.plan) and received by Events.
             from doors.plan.modes import plan_for_args
             import random as _random
-            pairs, oneways = plan_for_args(self.args, _random)
-            self.map = [[list(m) for m in pairs], [list(m) for m in oneways]]
+            self.plan = plan_for_args(self.args, _random, characters=characters)
+            if self.args.ruination_mode:
+                # Realization timing matches legacy: the ruination map is
+                # applied to self.map (and postprocessed) in
+                # events.ruination_mod, after the Start event has consumed
+                # the planned party. self.map stays empty through the rest
+                # of the Data phase, as on the legacy path.
+                return
+            self.map = self.plan.as_map()
             return
 
         if self.args.door_randomize_crossworld:

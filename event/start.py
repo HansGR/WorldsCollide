@@ -7,21 +7,30 @@ class Start(Event):
         return "Start"
 
     def init_rewards(self):
-        party = [None] * len(self.args.start_chars)
+        plan = getattr(getattr(self.maps, 'doors', None), 'plan', None)
+        if plan is not None and plan.ruination is not None:
+            # v2 ruination (-d2 -ruin): the party was resolved inside the
+            # Data-phase planning window (doors/plan/ruination/plan.py, same
+            # explicit-first-then-random semantics as below); consume it.
+            party = list(plan.ruination.party_ids)
+            for character_id in party:
+                self.characters.set_unavailable(character_id)
+        else:
+            party = [None] * len(self.args.start_chars)
 
-        # assign explicit character rewards first to prevent randomly choosing them first
-        # e.g. random, random, random, terra choosing terra first, second or third and making her unavailable fourth
-        for index, start_char in enumerate(self.args.start_chars):
-            if start_char != "random" and start_char != "randomngu":
-                party[index] = self.characters.get_by_name(start_char).id
-                self.characters.set_unavailable(party[index])
+            # assign explicit character rewards first to prevent randomly choosing them first
+            # e.g. random, random, random, terra choosing terra first, second or third and making her unavailable fourth
+            for index, start_char in enumerate(self.args.start_chars):
+                if start_char != "random" and start_char != "randomngu":
+                    party[index] = self.characters.get_by_name(start_char).id
+                    self.characters.set_unavailable(party[index])
 
-        gogo_umaro = [self.characters.GOGO, self.characters.UMARO]
-        for index, start_char in enumerate(self.args.start_chars):
-            if start_char == "random":
-                party[index] = self.characters.get_random_available()
-            elif start_char == "randomngu":
-                party[index] = self.characters.get_random_available(exclude = gogo_umaro)
+            gogo_umaro = [self.characters.GOGO, self.characters.UMARO]
+            for index, start_char in enumerate(self.args.start_chars):
+                if start_char == "random":
+                    party[index] = self.characters.get_random_available()
+                elif start_char == "randomngu":
+                    party[index] = self.characters.get_random_available(exclude = gogo_umaro)
 
         # assign chosen character rewards
         for character_id in party:

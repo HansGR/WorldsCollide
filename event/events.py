@@ -338,15 +338,15 @@ class Events():
         ruin_verbose = bool(self.args.debug or getattr(self.args, "debug_verbose", False))
 
         if getattr(self.args, 'door_rando_v2', False):
-            # v2 planner path (-d2): plan with doors/plan/ruination and realize
-            # the abstract reward plan onto the live Reward slots. The v2 planner
-            # uses per-plan table copies and only binds ROM pools after a plan
-            # succeeds, so no external snapshot/retry machinery is needed.
-            from event.ruination_bind import build_v2_ruin_map
-            ruin_map = build_v2_ruin_map(
-                self.args, party, self.characters, self.espers, self.items,
-                events, verbose=ruin_verbose)
-            self.maps.doors.map = ruin_map.full_map
+            # v2 path (-d2): the plan was constructed in the Data phase
+            # (Doors.mod, one planning site); look it up, bind the live
+            # Reward objects, and apply the map. No snapshot/retry
+            # machinery exists here -- a failed plan never reaches Events.
+            from event.ruination_bind import bind_ruin_plan
+            plan = self.maps.doors.plan
+            ruin_map = bind_ruin_plan(plan, self.characters, self.espers,
+                                      self.items, events, verbose=ruin_verbose)
+            self.maps.doors.map = plan.as_map()
         else:
             ruin_map = self._legacy_ruination_map(events, party, ruin_verbose)
 
