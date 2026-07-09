@@ -30,22 +30,15 @@ class WalkFailed(Exception):
 
 def force_connections(world, forcing):
     """Apply forced connections whose partner is present; protect both
-    sides either way (legacy ForceConnections).
-
-    Presence tests membership in ANY live list (legacy
-    get_room_from_element): role and list can disagree for key-released
-    elements whose ids lie (KT's platform receivers are pit-role elements
-    with trap-range ids), and the pair must still be consumed up front so
-    the walk can't misuse either side."""
+    sides either way (legacy ForceConnections)."""
     for d, targets in forcing.items():
         partner = targets[0]
         if partner in world._owner and d in world._owner:
-            all_kinds = (DOOR, TRAP, PIT)
-            live = any(d in world.elements[world._owner[d]][k] for k in all_kinds)
+            live = any(d in world.elements[world._owner[d]][k] for k in (DOOR, TRAP))
             plive = any(partner in world.elements[world._owner[partner]][k]
-                        for k in all_kinds)
+                        for k in (DOOR, PIT))
             if live and plive:
-                if world.live_kind(d) == DOOR:
+                if world._element_kind(d) == DOOR:
                     world.connect_door(d, partner)
                 else:
                     world.connect_oneway(d, partner)
