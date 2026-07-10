@@ -67,7 +67,7 @@ def classify(err):
 
 
 def run_plan(seed, char_range=(6, 6), esper_range=(9, 9), maze='iso',
-             kt=True, open_world=False):
+             kt=True, open_world=False, max_attempts=MAX_ATTEMPTS):
     """One full plan with the production retry loop. Returns
     (planner_or_None, attempts_used, [cause labels], party, elapsed)."""
     rng = random.Random(seed)
@@ -75,7 +75,7 @@ def run_plan(seed, char_range=(6, 6), esper_range=(9, 9), maze='iso',
     base = rng.random()
     causes = []
     t0 = time.time()
-    for attempt in range(MAX_ATTEMPTS):
+    for attempt in range(max_attempts):
         attempt_rng = random.Random(f'{base}:{attempt}')
         cfg = RuinConfig(party, char_range=char_range, esper_range=esper_range,
                          maze=maze, kefka_tower=kt, open_world=open_world,
@@ -88,7 +88,7 @@ def run_plan(seed, char_range=(6, 6), esper_range=(9, 9), maze='iso',
         except (RuinPlanError, RecursionError) as e:
             causes.append(classify(e) if isinstance(e, RuinPlanError)
                           else 'recursion-error')
-    return None, MAX_ATTEMPTS, causes, party, time.time() - t0
+    return None, max_attempts, causes, party, time.time() - t0
 
 
 # ---------------------------------------------------------------------------
@@ -169,30 +169,33 @@ def sweep(n):
 
 # ---------------------------------------------------------------------------
 def matrix(n):
-    print(f'=== CONFIG STRESS MATRIX ({n} plans per cell) ===')
-    print(f'{"chars":>5s} {"espers":>6s} {"ok":>5s} {"fail":>5s} '
-          f'{"mean att":>8s} {"mean s":>7s} {"max s":>6s}  top causes')
+    """Per-ATTEMPT success probability per cell (attempts capped at 3 to
+    bound runtime on pathological cells); the production whole-plan failure
+    rate is (1 - p)^10 and is derived in the summary column."""
+    cap = 3
+    print(f'=== CONFIG STRESS MATRIX ({n} plans per cell, attempts capped at {cap}) ===')
+    print(f'{"chars":>5s} {"espers":>6s} {"att ok%":>8s} {"whole-plan fail (derived)":>26s} '
+          f'{"mean s/att":>10s}  top causes')
     for chars in (3, 6, 10, 14):
         for espers in (0, 9, 18, 27):
-            ok = fail = 0
-            attempts_sum = 0.0
+            successes = attempts_total = 0
             times = []
             causes = collections.Counter()
             for i in range(n):
                 planner, attempts, cs, _, dt = run_plan(
                     f'mx{chars}.{espers}.{i}',
-                    char_range=(chars, chars), esper_range=(espers, espers))
-                attempts_sum += attempts
-                times.append(dt)
+                    char_range=(chars, chars), esper_range=(espers, espers),
+                    max_attempts=cap)
+                attempts_total += attempts
+                times.append(dt / attempts)
                 causes.update(cs)
-                if planner is None:
-                    fail += 1
-                else:
-                    ok += 1
+                if planner is not None:
+                    successes += 1
+            p = successes / max(attempts_total, 1)
+            derived = (1 - p) ** MAX_ATTEMPTS
             top = ', '.join(f'{c} {k}' for k, c in causes.most_common(2))
-            print(f'{chars:5d} {espers:6d} {ok:5d} {fail:5d} '
-                  f'{attempts_sum / n:8.2f} {sum(times) / n:7.2f} '
-                  f'{max(times):6.2f}  {top}')
+            print(f'{chars:5d} {espers:6d} {p:8.1%} {derived:26.2%} '
+                  f'{sum(times) / n:10.2f}  {top}', flush=True)
 
 
 if __name__ == '__main__':
