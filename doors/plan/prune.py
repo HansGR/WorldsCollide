@@ -15,7 +15,7 @@ always-DAG class graph:
 (Rule E is computed but not enforced, as in legacy.)
 """
 
-from doors.model import DOOR, TRAP, PIT
+from doors.model import DOOR
 
 
 class PruneReject(Exception):

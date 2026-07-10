@@ -515,6 +515,17 @@ double as the porting sequence.
   machinery into the support modules, re-point the ~20 event-file
   consumers at the plan API, and drop the `door_map` adapter — one
   event file at a time, each proven by script goldens.
+  **STATUS: binding + one-planning-site completed 2026-07** — the
+  DoorPlan artifact (`doors/plan/artifact.py`, `ruination: RuinPlan |
+  None`) is constructed by `Doors.mod` for every `-d2` mode in one
+  contiguous Data-phase RNG window (ruination's starting party resolved
+  in-window; `Start.init_rewards` consumes it); Events binds via
+  `event/ruination_bind.py` (Reward slots, character paths, pools) with
+  ZERO snapshot/retry machinery on the v2 path. `-d2 -ruin` builds real
+  ROMs across the full config matrix. Remaining in this stage: cutover
+  + legacy deletion (gated on playtest sign-off), gating unification,
+  §3.7 event-layer mechanics. Mini-planners (KT lanes, dream maze)
+  landed in Stage D.
 - **Stage F — deletion + docs.** Remove the old modules and reset
   functions; rewrite `DOOR_RANDO_GUIDE.md` against the new layout; the
   code review retires to historical record. CI sweep harness becomes the

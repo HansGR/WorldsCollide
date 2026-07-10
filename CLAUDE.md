@@ -41,6 +41,14 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 3. **Events** - Modifies event scripts, distributes rewards
 4. **Memory.write()** - Outputs the modified ROM
 
+Under `-d2` (v2 planner, `doors/` package): **all** door planning — including
+ruination — happens in one contiguous RNG window inside `Doors.mod` (Data
+phase), producing a `DoorPlan` on `doors.plan` (one planning site). Events
+only *binds* it: `Start.init_rewards` consumes the planned party,
+`events.ruination_mod` → `event/ruination_bind.py` binds Reward slots and
+applies the map. Legacy (no `-d2`) still plans ruination inside
+`events.ruination_mod` with the snapshot/retry machinery.
+
 ### 7. Persistent Event State Across Reloads
 Field RAM (NPC pointers, party state, etc.) is **not** preserved in saves. Events that need post-defeat state to persist across reloads must use event bits, with two halves:
 1. **`init_event_bits`** (called once on every game start, in each event's `init_event_bits(space)`) sets/clears the bit so the world starts in a known state.
@@ -98,7 +106,7 @@ For the lookups above, prefer the JSON files over reading the corresponding .py 
 ## Module Map
 
 Quick orientation by file. Detailed sections are in ARCHIVE.md.
-For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_GUIDE.md** is the programmer's guide (execution flow, ID conventions, mapper algorithms, global-mutable-state table, extension recipes); **DOOR_RANDO_CODE_REVIEW.md** is the 2026-07 review of known bugs/fragilities in those modes — check it before "fixing" surprising behavior there.
+For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_V2_GUIDE.md** is the programmer's guide for the v2 rewrite (`doors/` package, active under `-d2`, slated to become the only implementation); **DOOR_RANDO_GUIDE.md** documents the legacy implementation (still the default path until cutover); **DOOR_RANDO_CODE_REVIEW.md** is the 2026-07 review of known bugs/fragilities in the legacy code — check it before "fixing" surprising behavior there; **DOOR_RANDO_REWRITE_PLAN.md** is the governing design document for the rewrite (five layers, flaw table F1–F10, stage status).
 
 ### Memory & ROM
 - **memory/space.py** — `Reserve` (in-place patch), `Allocate` (new code into free space), `Write` (Allocate + write), `Read` (extract bytes), `Free` (mark range free). All take `Bank.XX` enum.
@@ -112,7 +120,17 @@ For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_GUIDE.md** is 
 - **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
 - **data/walks.py** — `Network` class: connection graph, `apply_key()`, `initially_locked_exits` (excluded as targets — see ARCHIVE.md "Key/Lock Softlock Analysis"). `add_room()` assesses the new room's locks against the current keychain (`_assess_room_locks`) — rooms can arrive after their lock's key was applied (character areas are distributed *after* the character key in `process_rewards`), and without this the lock stays shut forever (the Mog→lw1→Lone Wolf bug). `connect_network()` = copying wrapper around in-place recursive worker (one deepcopy per attempted connection); bounded by `walk_budget` (shared `[remaining]` counter, `WalkBudgetExceeded` re-raised past the backtracker — armed by `Doors.mod`, unlimited for KT lanes). Reachability (`get_*_nodes`, `get_loop`, `_upstream_trail`) is dedup BFS; `get_*_paths` (budget-capped) only for ruination path-list consumers.
 
+### Door rando v2 (`doors/`, active under `-d2`)
+The rewrite of everything above (see DOOR_RANDO_V2_GUIDE.md; `doors/__init__.py` has the layer map). Key facts:
+- **ROM-free + argv-free**: the whole package imports without a ROM (tests/harnesses run offline). Never add an `args`/ROM import to it.
+- **`doors/atlas/`** — generated exit truth (partners, coordinates, one-ways, room names). Never hand-edit `compiled.py`; curation lives in `curation.py`, regenerate + verify with `python3 tools/compile_atlas.py --check`.
+- **`doors/model.py`** — `WorldModel`: journaled union-find of room classes + one-way DAG + keys/locks. Backtracking = `checkpoint()`/`rollback()`, never deepcopy. `live_kind()` (list membership) is authoritative where id ranges lie (door-as-trap exits).
+- **`doors/plan/`** — `walk.py` (backtracking walk + `prune.py` Rules A–F), `modes.py` (`plan_for_args` = the one dispatch for every mode), `artifact.py` (`DoorPlan`, `ruination: RuinPlan | None`), `ruination/` (planner: growth/extend/finalize/kefka_tower/dream_maze; `plan.py` is the Data-phase entry, resolves the starting party in-window).
+- **`event/ruination_bind.py`** — the ONLY Events-side v2 code: binds the plan's abstract rewards to live `Reward` slots; `V2RuinMap` adapts the plan for downstream consumers (area clues, dried meat, ferry, spoiler).
+- Tests: `tests/doors/*` (run directly, no pytest needed). Harnesses: `tools/walk_parity.py`, `tools/ruin_parity.py` (TVD vs legacy self-baseline), `tools/ruin_extend_oracle.py` (per-call oracle inside real builds).
+
 ### Ruination Mode
+*(Legacy generator — still the default path; the v2 equivalent in `doors/plan/ruination/` runs under `-d2` and is slated to replace all of the below after playtest sign-off. Pure data tables were split to `data/ruin_constants.py` + `data/ruin_areas.py`, imported back as shared objects.)*
 - **event/ruination.py** (~4700 lines) — `ruination_map` orchestrator, `RuinationBranch(Network)`, `generate_map_with_characters`, `extend_branch_path`, `finalize_map`, `RUIN_ROOM_SETS`, `ROOM_REWARD`. All `room_data` lookups in reserve searches must filter by `self.protected`.
   - `compute_actual_areas_used()` — area_name → branch_id from rooms actually placed AND reachable. Use this (not raw `AreasUsed`) for Narshe school clue scripts. See ARCHIVE.md "Branch Area Detection for Narshe Clues".
   - Branch selection weighted toward less-extended branches via `branch_rewards_found`.

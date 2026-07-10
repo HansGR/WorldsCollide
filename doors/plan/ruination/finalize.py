@@ -328,6 +328,12 @@ def _inject_door_if_needed(planner, branch, reserve_areas):
 # The six-step closer
 
 def finalize_branch(planner, branch, reserve_areas=None):
+    """Close one branch: consume every remaining exit so the hub compound
+    ends with zero loose doors/traps and the terminus is merged in.
+
+    Steps 1-6 run in a loop because connecting things applies keys, and a
+    key can release brand-new exits mid-close; any such release restarts
+    the whole sequence so the new exits get topology-aware treatment."""
     w = planner.world
     rng = planner.rng
     _honor_forced(planner, branch, reserve_areas)

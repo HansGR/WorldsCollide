@@ -3,8 +3,10 @@
 Port of ruination_map's setup + generate_map_with_characters onto the shared
 WorldModel: pre-planning, area distribution, the pick-branch / extend /
 connect / check-rewards loop, reward processing with character keys and
-banked (locked) rewards, and the reserve rescue paths. Finalization, the
-dream-maze internals and KT lanes are separate modules (later milestones).
+banked (locked) rewards, and the reserve rescue paths. Branch closing lives
+in finalize.py; the -rkt / -maze iso sub-maps in kefka_tower.py /
+dream_maze.py; the Data-phase entry point (party resolution + retry loop)
+in plan.py.
 
 Structural changes vs legacy, with equivalence arguments:
 
@@ -667,12 +669,17 @@ class RuinPlanner:
         process_rewards, minus the ROM slot binding)."""
         cfg = self.config
         for reward_name, flags in rewards:
+            # If this is the LAST character-capable check on the map and we
+            # still owe characters, it must grant one.
             remaining_chars = len(self.planned_characters) - self.RewardsObtained[0]
             force_char = (remaining_chars >= 1 and self.RewardsAvailable[0] == 1
                           and bool(flags & CHARACTER))
             kind, char_name = self._choose_kind(flags, force_character=force_char)
 
             if kind is CHARACTER:
+                # A new recruit unlocks things everywhere: their key opens
+                # locks on every branch, their home areas join the map, and
+                # any rewards banked behind them are granted immediately.
                 self.RewardsObtained[0] += 1
                 # Gate sanity (legacy uses the event's character_gate; the
                 # data-level locks must already be satisfied here).
@@ -752,6 +759,10 @@ class RuinPlanner:
 
         while (self.RewardsObtained[0] < len(self.planned_characters)
                or self.RewardsObtained[1] < self.Requested[1]):
+            # Pick which branch to grow this turn: prefer branches that still
+            # have pending checks and a hub-capable room, weighted toward the
+            # ones that have found the fewest rewards so far (so no branch
+            # ends up a stub while the others grow long).
             viable = [b.has_a_hub() for b in self.branches]
             candidates = [i for i in range(3)
                           if self.branch_checks[i] and viable[i]
@@ -762,6 +773,8 @@ class RuinPlanner:
                            for i in candidates]
                 branch_id = rng.choices(candidates, weights=weights, k=1)[0]
             else:
+                # Everything with checks is stuck: feed the first such branch
+                # an unused reserve area and give it another chance.
                 checkable = [i for i in range(3) if self.branch_checks[i]]
                 if not checkable:
                     raise RuinPlanError(
@@ -773,6 +786,8 @@ class RuinPlanner:
 
             self._force_connections(branch)
 
+            # Keep extending this branch one connection at a time until it
+            # reaches an (unlocked) reward room or gets stuck.
             found_reward = False
             accessible = []
             retries = 0
@@ -798,6 +813,9 @@ class RuinPlanner:
 
                 rewards = self.check_for_rewards(branch, target)
                 if rewards is not None:
+                    # A check that needs a character we don't hold yet is
+                    # BANKED under that character and granted the moment
+                    # they are recruited (process_rewards' unlock cascade).
                     accessible = []
                     for r in rewards:
                         name = r[0]
