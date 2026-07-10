@@ -269,7 +269,12 @@ class RuinPlanner:
 
     def _pre_plan(self):
         """Legacy pre_plan_character_acquisition: choose planned characters
-        and verify the implied areas have enough esper-capable slots."""
+        and verify the implied areas have enough esper-capable slots.
+
+        Known corner: the slot count applies no REWARD_OWNERS filter, so
+        checks owned by never-planned characters inflate believed capacity
+        (only bites at >=18 requested espers). See ARCHIVE.md "Ruination
+        Esper-Capacity Corner" for the sanctioned fix."""
         cfg = self.config
         obtainable = [c for c in RC.ALL_CHARACTERS if c not in cfg.party]
         self.rng.shuffle(obtainable)
@@ -639,7 +644,11 @@ class RuinPlanner:
     def _choose_kind(self, flags, force_character=False):
         """Legacy choose_reward/_choose_reward_with_exclusion: shuffled type
         order, first available wins, item as fallback. Returns (kind,
-        character_name or None) and consumes the pools."""
+        character_name or None) and consumes the pools.
+
+        Known corner at high esper counts (no esper-forcing exists): see
+        ARCHIVE.md "Ruination Esper-Capacity Corner" for the sanctioned
+        future forcing rules."""
         rng = self.rng
         # Planned characters not yet assigned as a reward (legacy: available
         # minus excluded). Track by assignment, NOT keychain membership: under

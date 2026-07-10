@@ -108,6 +108,12 @@ ROOM_REWARD = {
     363: {"Zone Eater": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Zone Eater
     
     # UNGATED
+    # NOTE: room 22 is deliberately in NO RUIN_ROOM_SETS area, so "Narshe
+    # Battle" is never claimable during map generation - it is always a dead
+    # check backfilled by events.py. Intentional (HansGR): the WoB Snowfield
+    # would mirror the WoR Snowfield (warp point + dragon), and its boss is
+    # transposed to the Ferry Boss. Inclusion guidelines: ARCHIVE.md
+    # "Narshe Battle Exclusion + Ruination Boss Budget".
     22: {"Narshe Battle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Kefka @ Narshe
     #'41a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},   # Tritoch
     #'ms-wor-51': {"Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'ms-wob-33'

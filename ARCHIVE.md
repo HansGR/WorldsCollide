@@ -1426,3 +1426,73 @@ The soundness argument is the **optimistic-generator / pessimistic-verifier spli
 Integrated method across 40 seeds (joint-verifier): **0 fallbacks, 0 invalid-or-softlockable layouts** (checked by an independently-written joint dead-state detector — all rooms reachable AND 0 dead states), median 0.60s (p90 2.71s, max 3.64s). Full `-ruin -rkt` ROM compiles (several seeds): every KT room reachable, every door/trap/pit used exactly once, no self-loops, no platform-id leakage into written exits.
 
 **Open caveat:** several KT "rooms" share one physical SNES map (e.g. `KTa5a`/`KTa5b`/`KTb8` on `0x124`; many outdoor rooms on `0x14E`). The model is purely logical (room graph); whether parties can *physically* walk between lane regions on a shared map is map geometry the randomizer doesn't capture — worth a playtest on a generated ROM.
+
+## Narshe Battle Exclusion + Ruination Boss Budget (2026-07)
+
+The "Narshe Battle" check (room 22, Kefka @ Narshe, listed UNGATED in
+`ROOM_REWARD`) is **deliberately unclaimable** in ruination: room 22 appears
+in no `RUIN_ROOM_SETS` area, so its check is never registered during map
+generation and is always backfilled as a dead check by events.py. Two
+reasons (HansGR, 2026-07):
+
+1. **Mirrored-map avoidance.** The check plays on Narshe Snowfield **WoB**,
+   which mirrors the Narshe Snowfield **WoR** map already used for both a
+   warp point and a dragon. Ruination avoids mirrored maps. It *could* be
+   mirrored unobtrusively the way Opera House is (the WoR dragon only
+   available after the WoB check completes), but the entry doors and the
+   warp point would then need special logic choosing which map (WoB/WoR) to
+   send the player to based on check completion.
+
+2. **The unique-boss budget is spent.** Ruination uses every unique boss,
+   including three transpositions: Doom Gaze → KT airship entry;
+   Ultros 4 → Sealed Gate; **Narshe Battle → Ferry Boss**. Including the
+   Narshe Battle check would require duplicating a boss or removing a
+   transposition — both rejected.
+
+**Guidelines if inclusion is ever attempted:** (a) add room 22 to a
+Narshe-area room set; (b) implement Opera-House-style WoB/WoR mirroring
+with completion-dependent routing for the Snowfield entry doors and the
+warp point; (c) find the check a boss — either a new duplicate or by
+unwinding the Ferry Boss transposition (which then needs its own boss).
+
+## Ruination Esper-Capacity Corner (High Esper Counts) (2026-07)
+
+Found by the 2026-07 v2 exercise (`tools/ruin_stress.py`), shared verbatim
+with legacy. At extreme requested-esper counts (≥18, especially 27), plans
+fail at rates up to ~48% whole-plan (derived) with `no-checks-left` /
+`stuck-no-reserve`. Root causes:
+
+1. **Pre-plan capacity overcount**: `pre_plan_character_acquisition` counts
+   esper-capable slots in planned areas WITHOUT the `REWARD_OWNERS` filter.
+   Checks owned by never-planned characters are permanently unclaimable, so
+   believed capacity exceeds true capacity; plans die at N−1 espers with
+   every claimable check spent.
+2. **No esper-forcing rule**: only the last character-capable slot is
+   forced (`process_rewards`); an item/character draw near the esper
+   boundary can waste a needed esper slot.
+3. At 14 requested characters the reserve pool is empty by construction,
+   so stuck branches have no rescue (`stuck-no-reserve`).
+
+Empirically (27 espers): pre-plan extension pulls a mean of 10.1/14
+characters into the game regardless of the requested count (min 8, max 12,
+~34/47 checks claimed) — the esper demand, not the character request,
+determines the roster. Defaults (≤9 espers) have ample slack and are
+unaffected (0/1000 whole-plan failures).
+
+**Status: accepted for now** (fringe config; it builds, retries recover
+most seeds). **Sanctioned future fix** (HansGR, 2026-07), if the failure
+rate ever matters:
+
+- Force a CHARACTER when it is the last character-capable slot and we do
+  not have enough characters, OR we do not have enough total slots left to
+  deliver all required espers (character areas are what add slots).
+- Force an ESPER (never an item) once the character count is satisfied and
+  the number of claimable slots remaining equals the number of espers still
+  required — from then on every remaining slot must be an esper.
+- Additionally, pre-plan should count only owner-satisfiable slots
+  (owners ⊆ party ∪ planned) and keep planning characters until TRUE
+  capacity suffices.
+
+Implementation sites: `doors/plan/ruination/growth.py` `_choose_kind` /
+`process_rewards` (forcing) and `_pre_plan` (capacity count); legacy
+equivalents in `event/ruination.py` if ever backported.
