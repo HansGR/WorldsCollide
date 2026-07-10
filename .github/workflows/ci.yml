@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fail if ROM or oversized files are tracked
+      - name: Fail if ROM files are tracked
         run: |
           set -e
           rom_files=$(git ls-files | grep -iE '\.(smc|sfc)$' || true)
@@ -19,13 +19,8 @@ jobs:
             echo "$rom_files"
             exit 1
           fi
-          # largest legitimate source file is ~56KB; anything over 512KB is suspect
-          big_files=$(git ls-files -z | xargs -0 du -b 2>/dev/null | awk '$1 > 524288 {print $2 " (" $1 " bytes)"}')
-          if [ -n "$big_files" ]; then
-            echo "::error::Unexpectedly large files tracked (possible ROM or binary data):"
-            echo "$big_files"
-            exit 1
-          fi
+          # No file-size check on this branch: it intentionally tracks large
+          # reference files (claude_reference/, LocationRandomizer-WC.xlsm).
 
   test:
     name: Tests (Python ${{ matrix.python-version }})
