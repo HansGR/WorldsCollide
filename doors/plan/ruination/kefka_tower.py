@@ -2,12 +2,21 @@
 
 Port of legacy _randomize_kefka_tower: partition the KT rooms into three
 lanes under cheap necessary invariants, walk each lane with the v2 walk
-(pre-unlocked platforms, forced crossings, effectively unlimited budget -
-KT lanes keep pure rejection sampling), then verify the joint three-party
-system over the shared monotonic keychain: every room reachable AND every
-reachable situation can still finish. Returns [[door pairs], [trap->pit
-pairs]] with the platform pseudo-ids stripped, or None (callers keep the
-vanilla KT layout).
+(pre-unlocked platforms, forced crossings), then verify the joint
+three-party system over the shared monotonic keychain: every room
+reachable AND every reachable situation can still finish. Returns
+[[door pairs], [trap->pit pairs]] with the platform pseudo-ids stripped,
+or None (callers keep the vanilla KT layout).
+
+Each lane walk carries a generous attempt budget (KT_LANE_BUDGET; healthy
+lane walks need well under 200 attempts). A rare partition (~0.3-1% of
+rolls) passes the cheap invariants but presents an enormous backtracking
+tree; unbounded, such a lane could search for hours (observed: 37 min in
+a 1000-seed sweep). The budget aborts it in under a second and a fresh
+partition is drawn. This removes no layout from the reachable
+distribution: partitions re-draw across KT_MAX_SPLITS tries and the
+walk's exploration order is random, so every legal layout keeps a
+nonzero find-probability within budget.
 """
 
 from data.rooms import room_data
@@ -24,6 +33,7 @@ KT_FORCED = {1565: [1566], 1567: [1568]}
 KT_PLATFORM_IDS = {1565, 1566, 1567, 1568}
 KT_KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
 KT_MAX_SPLITS = 400
+KT_LANE_BUDGET = 20000    # per-lane walk attempts (see module docstring)
 
 
 def randomize_kefka_tower(rng):
@@ -62,12 +72,13 @@ def randomize_kefka_tower(rng):
 
     def connect_lane(lane):
         """Walk one lane; returns (door_pairs, trap_pits) with the platform
-        ids stripped, or None. The platforms are pre-unlocked so the walk
-        can rely on the crossings; key timing is verify()'s job."""
+        ids stripped, or None (budget exhaustion included - the caller
+        just draws a fresh partition). The platforms are pre-unlocked so
+        the walk can rely on the crossings; key timing is verify()'s job."""
         specs = load_pool(sorted(lane))
         try:
             world = run(specs, KT_FORCED, rng=rng, start_rule='most_exits',
-                        budget_limit=10 ** 9, attempts=1,
+                        budget_limit=KT_LANE_BUDGET, attempts=1,
                         keys=('KT1', 'KT2'))
         except (WalkFailed, WalkBudgetExhausted):
             return None
