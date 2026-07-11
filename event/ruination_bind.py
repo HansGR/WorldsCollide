@@ -66,12 +66,14 @@ class V2RuinMap:
         self.planned_characters = list(planner.planned_characters)
         self.accessible_shops = list(planner.accessible_shops)
         self.verbose = verbose
+        self._name_to_slot = {}   # stashed by bind() for the spoiler log
 
     # ------------------------------------------------------------------
     # Realization: abstract plan -> ROM Reward slots / pools / paths
 
     def bind(self, name_to_slot, characters, espers, items):
         planner = self.planner
+        self._name_to_slot = name_to_slot
         for entry in planner.reward_log:
             name, kind = entry['name'], entry['kind']
             slot = name_to_slot.get(name)
@@ -162,44 +164,222 @@ class V2RuinMap:
         return non_veldt
 
     def generate_spoiler_log(self, characters, espers, items):
-        """A functional ruination spoiler from the plan's reward log and
-        branch structure (v2 replacement for the legacy path-reconstructing
-        version)."""
+        """Legacy-parity ruination spoiler (-sl): starting party, obtainable
+        character rewards with the shortest hub->room route, other obtainable
+        rewards, and the shortest hub->terminus route per branch.
+
+        "Obtainable" is the legacy semantics, which can differ from the
+        planned reward list in both directions: rewards backfilled after
+        planning (rooms attached in finalize, filled by the events.py safety
+        pass) are captured from the live slots, and rewards that are
+        physically unreachable or character-gated beyond the starting-party
+        closure (circular gating) are dropped."""
+        from data.map_exit_extra import exit_data
+        from data.event_exit_info import event_exit_info
+        from data import ruin_constants as RC
+
         planner = self.planner
+        cfg = planner.config
         w = planner.world
 
-        def reward_desc(entry):
-            kind = entry['kind']
-            if kind is CHARACTER:
-                return f"CHARACTER: {entry['character']}"
+        def door_name(door_id):
+            if door_id in exit_data:
+                return exit_data[door_id][1]
+            if door_id in event_exit_info:
+                return event_exit_info[door_id][4]
+            return f"Door {door_id}"
+
+        def room_of(element):
+            h = w._owner.get(element)
+            return w.room_ids[h] if h is not None else None
+
+        # Room adjacency over the final assembled map (door pairs two-way,
+        # trap->pit one-way), with the connecting elements as edge payload.
+        adj = {}
+
+        def add_edge(r1, r2, payload):
+            if r1 is not None and r2 is not None:
+                adj.setdefault(r1, []).append((r2, payload))
+
+        for d1, d2 in self.full_map[0]:
+            r1, r2 = room_of(d1), room_of(d2)
+            add_edge(r1, r2, ('door', d1, d2))
+            add_edge(r2, r1, ('door', d2, d1))
+        for t, p in self.full_map[1]:
+            add_edge(room_of(t), room_of(p), ('trap', t, p))
+
+        def bfs_path(src, dst):
+            """[(room, payload, next_room), ...] along a shortest src->dst
+            route, or None. Empty list when src == dst."""
+            if src == dst:
+                return []
+            prev = {src: None}
+            queue = [src]
+            i = 0
+            while i < len(queue):
+                r = queue[i]
+                i += 1
+                for nxt, payload in adj.get(r, ()):
+                    if nxt in prev:
+                        continue
+                    prev[nxt] = (r, payload)
+                    if nxt == dst:
+                        steps = []
+                        node = dst
+                        while prev[node] is not None:
+                            r0, pl = prev[node]
+                            steps.append((r0, pl, node))
+                            node = r0
+                        return list(reversed(steps))
+                    queue.append(nxt)
+            return None
+
+        def format_path(hub_room, target):
+            if target == hub_room:
+                return ["  (in hub)"]
+            steps = bfs_path(hub_room, target)
+            if steps is None:
+                return ["  (no path found)"]
+            lines = [f"  Path: {len(steps) + 1} rooms"]
+            for r0, (kind, e1, e2), _r1 in steps:
+                if kind == 'door':
+                    conn = f"{e1} ({door_name(e1)}) <--> {e2} ({door_name(e2)})"
+                else:
+                    conn = f"TRAP {e1} ({door_name(e1)}) --> PIT {e2} ({door_name(e2)})"
+                lines.append(f"    {r0}: {conn}")
+            lines.append(f"    {target}: (destination)")
+            return lines
+
+        room_branch = {}
+        for i, b in enumerate(planner.branches):
+            for r in b.rooms:
+                room_branch.setdefault(r, i)
+        hub_of_branch = [b.hub_room for b in planner.branches]
+
+        # Capture rewards assigned after planning (rooms attached in
+        # finalize, filled by the events.py safety pass): any bound slot
+        # whose check the planner never claimed.
+        entries = [dict(e) for e in planner.reward_log]
+        logged = {e['name'] for e in entries}
+        for rid, rewards in RC.ROOM_REWARD.items():
+            for name in rewards:
+                if name in logged:
+                    continue
+                slot = self._name_to_slot.get(name)
+                if slot is None or slot.id is None or slot.type is None:
+                    continue
+                room = cfg.check_room_of(name)
+                if room is None:
+                    room = rid
+                entries.append({
+                    'order': len(entries) + 1, 'name': name,
+                    'branch': room_branch.get(room, -1), 'kind': slot.type,
+                    'character': (characters.DEFAULT_NAME[slot.id]
+                                  if slot.type == CHARACTER else None),
+                    'reward_room': room, 'slot_id': slot.id})
+
+        # Physical reachability: a path of doors exists from the branch hub
+        # to the reward room. Necessary but not sufficient (gating below).
+        reach_cache = {}
+
+        def physically_reachable(entry):
+            room, bid = entry.get('reward_room'), entry['branch']
+            if room is None or bid < 0:
+                return False
+            if (bid, room) not in reach_cache:
+                hub = hub_of_branch[bid]
+                reach_cache[(bid, room)] = (
+                    room == hub or bfs_path(hub, room) is not None)
+            return reach_cache[(bid, room)]
+
+        # Character-gating fixpoint (same semantics as legacy): seed the
+        # keychain with the starting party, repeatedly admit any physically
+        # reachable reward whose REWARD_OWNERS / locked-by gates are all
+        # satisfied, feeding newly-obtained characters back in. This drops
+        # circularly-gated characters from the log.
+        def gates_satisfied(entry, keychain):
+            locker = cfg.rewards_locked_by_character.get(entry['name'])
+            if locker is not None and locker not in keychain:
+                return False
+            owners = cfg.reward_owners.get(entry['name'])
+            if owners is not None and not any(o in keychain for o in owners):
+                return False
+            return True
+
+        keychain = set(self.PARTY)
+        if cfg.open_world:
+            keychain.update(RC.ALL_CHARACTERS)
+        candidates = [e for e in entries if physically_reachable(e)]
+        accessible = set()
+        changed = True
+        while changed:
+            changed = False
+            for e in candidates:
+                if id(e) in accessible or not gates_satisfied(e, keychain):
+                    continue
+                accessible.add(id(e))
+                changed = True
+                if e['kind'] == CHARACTER and e['character'] is not None:
+                    keychain.add(e['character'])
+
+        char_rewards = [e for e in entries
+                        if e['kind'] == CHARACTER and id(e) in accessible]
+        other_rewards = [e for e in entries
+                         if e['kind'] != CHARACTER and id(e) in accessible]
+
+        def reward_name(entry):
+            if entry['kind'] == CHARACTER:
+                return characters.get_name(
+                    characters.DEFAULT_NAME.index(entry['character']))
             slot_id = entry.get('slot_id')
-            if kind is ESPER:
-                return f"ESPER: {espers.get_name(slot_id) if slot_id is not None else '?'}"
-            return f"ITEM: {items.get_name(slot_id) if slot_id is not None else '?'}"
+            if slot_id is None:
+                return '?'
+            return (espers.get_name(slot_id) if entry['kind'] == ESPER
+                    else items.get_name(slot_id))
 
-        lines = []
-        lines.append(f"Starting party: {', '.join(self.PARTY)}")
-        lines.append(f"Planned characters: {', '.join(self.planned_characters)}")
-        lines.append(f"Requested: {planner.Requested[0]} characters, "
-                     f"{planner.Requested[1]} espers")
-        lines.append("")
-        lines.append("Rewards obtained (in order):")
-        for entry in planner.reward_log:
-            lines.append(f"  {entry['order']:2d}. [branch {entry['branch']}] "
-                         f"{entry['name']} -> {reward_desc(entry)}")
+        type_label = {CHARACTER: 'Char', ESPER: 'Esper', ITEM: 'Item'}
 
-        lines.append("")
-        lines.append("Areas used (area -> branch):")
+        # --- Build the log output (legacy section layout) ---
+        log_lines = []
+        log_lines.append(f"Starting Party: {', '.join(self.PARTY)}")
+        log_lines.append(f"Planned characters: {', '.join(self.planned_characters)}")
+        log_lines.append(f"Requested: {planner.Requested[0]} characters, "
+                         f"{planner.Requested[1]} espers")
+        log_lines.append("")
+
+        log_lines.append("Character Rewards:")
+        log_lines.append(f"  {'#':<4} {'Character':<14} {'Branch':<8} {'Check':<28}")
+        char_number = len(self.PARTY) + 1
+        for entry in char_rewards:
+            log_lines.append(f"  {char_number:<4} {reward_name(entry):<14} "
+                             f"{entry['branch']:<8} {entry['name']:<28}")
+            log_lines.extend(format_path(hub_of_branch[entry['branch']],
+                                         entry['reward_room']))
+            char_number += 1
+        log_lines.append("")
+
+        log_lines.append("Other Rewards:")
+        log_lines.append(f"  {'#':<4} {'Type':<8} {'Reward':<20} {'Branch':<8} {'Check':<28}")
+        for entry in other_rewards:
+            log_lines.append(
+                f"  {entry['order']:<4} {type_label.get(entry['kind'], '?'):<8} "
+                f"{reward_name(entry):<20} {entry['branch']:<8} {entry['name']:<28}")
+        log_lines.append("")
+
+        log_lines.append("Areas used (area -> branch):")
         for area, branch_id in sorted(self.compute_actual_areas_used().items()):
-            lines.append(f"  {area}: branch {branch_id}")
+            log_lines.append(f"  {area}: branch {branch_id}")
+        log_lines.append("")
 
-        lines.append("")
-        lines.append("Branch termini:")
-        for i, branch in enumerate(planner.branches):
-            merged = w.class_of_room(branch.terminus) == branch.hub_class()
-            lines.append(f"  branch {i}: {branch.terminus} "
-                         f"({'merged into hub' if merged else 'SEPARATE'})")
-        return lines
+        log_lines.append("Branch Terminus Routes:")
+        for branch_id, branch in enumerate(planner.branches):
+            log_lines.append(f"  Branch {branch_id} terminus: {branch.terminus}")
+            if branch.terminus is None:
+                log_lines.append("    (no terminus)")
+                continue
+            log_lines.extend(format_path(hub_of_branch[branch_id],
+                                         branch.terminus))
+        return log_lines
 
     def generate_map_image(self, *args, **kwargs):
         """Graphical map export is not ported to v2; skip cleanly."""
