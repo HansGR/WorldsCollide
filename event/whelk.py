@@ -1,6 +1,15 @@
 from event.event import *
 
 class Whelk(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_upper_narshe
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+
     def name(self):
         return "Whelk"
 
@@ -97,12 +106,24 @@ class Whelk(Event):
         space.write(guard_npc_id)
 
         # add guard calls whelk event to map 0x2b
+        call_whelk_event_addr = 0xc9f37
+        if self.args.character_gating and self.DOOR_RANDOMIZE:
+            # add local gating condition: in ruination mode, you can come on the event from the rear side
+            src = [
+                field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                field.Branch(call_whelk_event_addr),
+            ]
+            space = Write(Bank.CC, src, "whelk local gating condition")
+            call_whelk_event = space.start_address - EVENT_CODE_START
+        else:
+            call_whelk_event = call_whelk_event_addr - EVENT_CODE_START
+
         from data.map_event import MapEvent
         for x in range(3):
             new_event = MapEvent()
             new_event.x = 111 + x
             new_event.y = 30
-            new_event.event_address = 0xc9f37 - EVENT_CODE_START # guard calls whelk event
+            new_event.event_address = call_whelk_event  # guard calls whelk event
 
             self.maps.add_event(0x2b, new_event)
 
