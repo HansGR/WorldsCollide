@@ -103,7 +103,9 @@ class Events():
         space = Allocate(Bank.CC, init_bits_size, "event/npc bit initialization", field.NOP())
         for event in events:
             event.init_event_bits(space)
+            ran = self._instrument_hooks(event)
             event.mod()
+            self._dispatch_hooks(event, ran)
 
             if self.args.spoiler_log and (event.rewards_log or event.changes_log):
                 log_strings.append(event.log_string())
@@ -117,6 +119,45 @@ class Events():
         self.warps.mod()
 
         return events
+
+    # Lifecycle hooks (plan section 3.7 item 2). Documented order:
+    # mod() (vanilla + generic), then door_rando_mod() when the event's doors
+    # are rewired, then the mode hook (dungeon_crawl_mod / ruination_mod)
+    # when the mode is active. Events may still invoke a hook inline where
+    # the variant code is genuinely interleaved mid-sequence (space
+    # allocation order, attributes consumed later in mod()); the dispatcher
+    # detects that and only fires hooks mod() did NOT run itself, so
+    # defining a hook and forgetting to wire it is no longer possible.
+    _HOOK_NAMES = ('door_rando_mod', 'dungeon_crawl_mod', 'ruination_mod')
+
+    def _instrument_hooks(self, event):
+        """Wrap the event's defined hooks so inline invocations from mod()
+        are recorded; returns the (live) set of hook names that ran."""
+        ran = set()
+        for name in self._HOOK_NAMES:
+            if not hasattr(type(event), name):
+                continue
+            bound = getattr(event, name)
+
+            def wrapper(*a, _bound=bound, _name=name, **kw):
+                ran.add(_name)
+                return _bound(*a, **kw)
+
+            setattr(event, name, wrapper)
+        return ran
+
+    def _dispatch_hooks(self, event, ran):
+        """Fire any defined-but-not-yet-run hook, in documented order."""
+        guards = {
+            'door_rando_mod': getattr(event, 'DOOR_RANDOMIZE', False),
+            'dungeon_crawl_mod': self.args.door_randomize_dungeon_crawl,
+            'ruination_mod': self.args.ruination_mode,
+        }
+        for name in self._HOOK_NAMES:
+            if name in ran or not hasattr(type(event), name):
+                continue
+            if guards[name]:
+                getattr(event, name)()
 
     def init_reward_slots(self, events):
         import random
