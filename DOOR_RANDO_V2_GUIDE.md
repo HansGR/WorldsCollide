@@ -156,15 +156,38 @@ All tests run directly with `python3` (no pytest) and need no ROM.
 - The legacy no-hub extension fallback is not ported (unreachable in real
   runs).
 
-## 9. Remaining work (tracked in DOOR_RANDO_REWRITE_PLAN.md)
+## 9. Event-layer mechanics (Stage E, done 2026-07)
 
-- **Stage E (rest):** ~~cutover~~ (done 2026-07: `-d2` gating removed,
-  `_legacy_ruination_map` + the generator half of `event/ruination.py`
-  and `data/walks.py` deleted, byte-identical golden proof across 8
-  modes). Gating unification (`entrance_door_patch` / in-event gates /
-  `ruin-*` room variants → one `gates` table on the plan, the
-  `DoorPlan.gates` field reserved for it). Event-layer mechanics (§3.7
-  hooks/predicates).
+- **Derived predicates:** event files no longer keep flag or-chains;
+  they declare their territory and call `self.doors_touched(<ROOM_SETS
+  key>)` (or `rooms=(<room ids>,)` for areas without their own key).
+  `doors/plan/modes.py door_rando_pool_keys` is the single key
+  authority — `plan_mode` consumes it too, and
+  `tests/doors/test_walk.py` pins the truth table. Ruination stays an
+  explicit `or args.ruination_mode` where an event wants it (five
+  events deliberately exclude it and handle ruination in their own
+  hook).
+- **Framework-dispatched hooks:** the Events loop fires any defined
+  `door_rando_mod` / `dungeon_crawl_mod` / `ruination_mod` that `mod()`
+  did not invoke inline (documented order: mod → door_rando → mode
+  hook). Inline calls remain legal where variant code is interleaved
+  mid-sequence; defining a hook and forgetting to wire it is no longer
+  possible (`event/events.py _instrument_hooks/_dispatch_hooks`).
+- **Plan query API:** `plan.destination_of / description_of /
+  location_name`, and **`plan.gates`** — the unified gate table
+  (exit → key tuple, from the pool lock dicts; `character_gates()` for
+  the local-character-gating subset). Listed in the spoiler's Door
+  Rando section.
+- **Manifest:** `python3 tools/mode_manifest.py [--markdown]` derives
+  the mode × event table (hooks / predicates / raw flags per file).
+
+## 10. Remaining work (tracked in DOOR_RANDO_REWRITE_PLAN.md)
+
 - **Stage F:** extract the realization layer (`postprocess_door_map`,
-  transitions) into `doors/realize/`, port the spoiler map image, delete
-  legacy, rewrite the guides.
+  transitions, event-tile updates) into `doors/realize/`, with
+  `realize/gating.py` reading `plan.gates` to replace the three gating
+  write-mechanisms (`entrance_door_patch` / in-event branches / `ruin-*`
+  room variants, which become curation gate annotations); re-point the
+  ~20 `maps.door_map` consumers at the plan API and drop the adapter;
+  remove the inert `-d2` flag; port the spoiler map image; rewrite the
+  guides.

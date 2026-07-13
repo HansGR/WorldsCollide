@@ -539,13 +539,48 @@ double as the porting sequence.
   `dre_parity.py`, `drdc_stats.py`); `tools/ruin_stress.py` stays.
   Cutover proof: 8 golden builds (ruin/drdc/dre/dra/drx/dre+maps/mapx/
   individual flags) byte-identical (ROM and spoiler) to the pre-cutover
-  `-d2` path at pinned seeds. Remaining in this stage: gating
-  unification, §3.7 event-layer mechanics. The graphical ruination map
-  image (matplotlib) was legacy-only and is retired with it.
-- **Stage F — deletion + docs.** Remove the old modules and reset
-  functions; rewrite `DOOR_RANDO_GUIDE.md` against the new layout; the
-  code review retires to historical record. CI sweep harness becomes the
-  permanent regression gate.
+  `-d2` path at pinned seeds. The graphical ruination map image
+  (matplotlib) was legacy-only and is retired with it.
+  **§3.7 MECHANICS completed 2026-07:**
+  (1) the 21 hand-maintained `DOOR_RANDOMIZE` flag or-chains are gone —
+  events declare their territory (a ROOM_SETS key or literal room ids)
+  and `Event.doors_touched()` derives the predicate from pool membership
+  (`doors/plan/modes.py door_rando_pool_keys`, the same key authority
+  `plan_mode` consumes; exhaustive truth-table proof, byte-identical
+  goldens except two latent legacy bugs fixed by construction: Lete's
+  LEFT/RIGHT forks not re-pointed under `-dre`, whelk's gate missing
+  `-drunb`);
+  (2) lifecycle hooks are framework-dispatched — the Events loop
+  instruments each event's defined hooks and fires any that `mod()` did
+  not invoke inline (inline stays legal where interleaved; forgetting
+  is impossible; byte-identical everywhere);
+  (3) `DoorPlan` carries the consumer query API (`destination_of` /
+  `description_of` / `location_name` via the atlas naming chain) and
+  **`DoorPlan.gates`** — the unified gate table (exit → key tuple)
+  derived from the pool lock dicts in both plan_mode and the ruination
+  planner, exposed in the spoiler; `doors.atlas.exit_description` is
+  the one naming chain (three copies consolidated);
+  (4) `tools/mode_manifest.py` emits the derived mode × event table.
+  **Deliberately sequenced with Stage F** (recorded here, not dropped):
+  gating *emission* unification (`realize/gating.py` replacing the
+  three mechanisms' write sites + migrating `ruin-*` room variants to
+  curation annotations) — the `entrance_door_patch` table it replaces
+  is a general on-entry-code facility (several entries are transition
+  logic, not gates) consumed inside `data/maps.py` realization; and the
+  re-pointing of ~20 `maps.door_map` consumers — they read
+  realization-level truth (+4000 ids, shared-exit resolution) that only
+  exists post-`postprocess_door_map` until realization is extracted.
+  `maps.get_connection_location` already centralizes the
+  teleport-target idiom (15 sites).
+- **Stage F — realization extraction, deletion + docs.** Extract
+  realization into `realize/` (§3.5) — exits/transitions/event-tiles
+  writers, `realize/gating.py` reading `DoorPlan.gates`, `ruin-*`
+  variants → curation gate annotations, re-point the `door_map`
+  consumers at the plan API and drop the adapter; remove the inert
+  `-d2` flag and the dead `Doors.__init__` planning attributes; rewrite
+  `DOOR_RANDO_GUIDE.md` against the new layout; the code review retires
+  to historical record. CI sweep harness becomes the permanent
+  regression gate.
 
 Each stage is a reviewable branch in the established `door-rando-*`
 convention and leaves the tree in a releasable state.
