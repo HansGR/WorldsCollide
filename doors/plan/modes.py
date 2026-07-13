@@ -137,6 +137,67 @@ def reattach_shared_exits(door_pairs, shared=None):
     return out
 
 
+def door_rando_pool_keys(flags):
+    """ROOM_SETS keys the active door-randomization mode walks.
+
+    This mirrors plan_mode's segment selection and MUST stay in lockstep
+    with it (tests/doors/test_walk.py asserts agreement across every flag
+    combination). Map-shuffle pools are excluded on purpose: event files
+    treat MAP_SHUFFLE as a separate concern."""
+    g = lambda name: getattr(flags, name, False)
+    map_shuffle = bool(g('map_shuffle'))
+    if g('door_randomize_crossworld'):
+        return ['All']
+    if g('door_randomize_dungeon_crawl'):
+        return ['DungeonCrawl']
+    if g('door_randomize_all'):
+        return ['WoB', 'WoR']
+    if g('door_randomize_each'):
+        return dre_area_names(map_shuffle)
+    keys = []
+    if g('door_randomize_upper_narshe'):
+        keys.append('UpperNarshe_WoB')
+    else:
+        if g('door_randomize_upper_narshe_wob'):
+            keys.append('UpperNarshe_WoB')
+        if g('door_randomize_upper_narshe_wor'):
+            keys.append('UpperNarshe_WoR')
+    for attr, key, mapsafe in INDIVIDUAL_FLAGS:
+        if g(attr):
+            if mapsafe and map_shuffle:
+                key += '_mapsafe'
+            keys.append(key)
+    return keys
+
+
+def touched_rooms(flags):
+    """Room ids whose exits the active door-randomization mode rewires.
+    Static per flags (pool membership), seed-independent."""
+    rooms = set()
+    for key in door_rando_pool_keys(flags):
+        rooms.update(ROOM_SETS[key])
+    if getattr(flags, 'door_randomize_upper_narshe', False):
+        # -drun walks WoB and mirrors the writes onto the WoR equivalents.
+        rooms.update(ROOM_SETS['UpperNarshe_WoR'])
+    return rooms
+
+
+def doors_touch(flags, *area_keys, rooms=()):
+    """The derived DOOR_RANDOMIZE predicate (plan section 3.7 item 1):
+    True iff the active door-randomization mode rewires any door of the
+    given ROOM_SETS areas / explicit room ids. Replaces the hand-maintained
+    per-event flag or-chains; ruination stays an explicit separate test at
+    the call sites that want it (its rewiring is seed-dependent and events
+    opt in deliberately)."""
+    touched = touched_rooms(flags)
+    if not touched:
+        return False
+    for key in area_keys:
+        if any(r in touched for r in ROOM_SETS[key]):
+            return True
+    return any(r in touched for r in rooms)
+
+
 def plan_mode(flags, rng, budget_limit=5000):
     """Plan the full map for any -dr*/-maps/-mapx combination.
 
@@ -189,23 +250,12 @@ def plan_mode(flags, rng, budget_limit=5000):
                 d = map_shuffle_protected_doors[area]
                 protect[d] = d + 30000
     else:                                                    # individual flags
-        keys = []
-        if g('door_randomize_upper_narshe'):                 # -drun
-            keys.append('UpperNarshe_WoB')
-            match_wob_wor = True
-        else:
-            if g('door_randomize_upper_narshe_wob'):
-                keys.append('UpperNarshe_WoB')
-            if g('door_randomize_upper_narshe_wor'):
-                keys.append('UpperNarshe_WoR')
-        for attr, key, mapsafe in INDIVIDUAL_FLAGS:
-            if g(attr):
-                if mapsafe and map_shuffle:
-                    key += '_mapsafe'
-                    if key in map_shuffle_protected_doors:
-                        d = map_shuffle_protected_doors[key]
-                        protect[d] = d + 30000
-                keys.append(key)
+        keys = door_rando_pool_keys(flags)   # shared key authority
+        match_wob_wor = bool(g('door_randomize_upper_narshe'))
+        for key in keys:
+            if key.endswith('_mapsafe') and key in map_shuffle_protected_doors:
+                d = map_shuffle_protected_doors[key]
+                protect[d] = d + 30000
         if keys:
             dr_active = True
             combined = []

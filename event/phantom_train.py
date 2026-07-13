@@ -6,11 +6,7 @@ from data.rooms import exit_world
 class PhantomTrain(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = (args.door_randomize_phantom_train
-                          or args.door_randomize_all
-                          or args.door_randomize_crossworld
-                          or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+        self.DOOR_RANDOMIZE = self.doors_touched('PhantomTrain')
         self.MAP_SHUFFLE = args.map_shuffle
         self.RUINATION_MODE = args.ruination_mode
 

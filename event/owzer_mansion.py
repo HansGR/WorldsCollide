@@ -3,12 +3,7 @@ from event.event import *
 class OwzerMansion(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = (args.door_randomize_owzer_basement
-                          or args.door_randomize_all
-                          or args.door_randomize_crossworld
-                          or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each
-                          or args.ruination_mode)
+        self.DOOR_RANDOMIZE = self.doors_touched('OwzerBasement') or args.ruination_mode
     def name(self):
         return "Owzer Mansion"
 

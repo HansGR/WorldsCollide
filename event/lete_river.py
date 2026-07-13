@@ -8,11 +8,7 @@ class LeteRiver(Event):
 
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = args.door_randomize_all \
-                              or args.door_randomize_crossworld \
-                              or args.door_randomize_dungeon_crawl \
-                              or args.door_randomize_lete_river \
-                              or args.ruination_mode
+        self.DOOR_RANDOMIZE = self.doors_touched('Lete') or args.ruination_mode
 
     def name(self):
         return "Lete River"

@@ -36,6 +36,14 @@ class Event():
     def name(self):
         raise NotImplementedError(self.__class__.__name__ + " event name")
 
+    def doors_touched(self, *area_keys, rooms=()):
+        """True iff the active door-randomization mode rewires this event's
+        doors (derived from pool membership -- no per-event flag lists;
+        adding a mode updates doors/plan/modes.py once). Ruination stays an
+        explicit `or args.ruination_mode` where the event wants it."""
+        from doors.plan.modes import doors_touch
+        return doors_touch(self.args, *area_keys, rooms=rooms)
+
     def character_gate(self):
         return None
 

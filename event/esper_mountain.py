@@ -3,11 +3,7 @@ from event.event import *
 class EsperMountain(Event):
     def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
         super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = (args.door_randomize_esper_mountain
-                          or args.door_randomize_all
-                          or args.door_randomize_crossworld
-                          or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each)
+        self.DOOR_RANDOMIZE = self.doors_touched('EsperMountain')
 
     def name(self):
         return "Esper Mountain"
