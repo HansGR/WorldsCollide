@@ -572,15 +572,30 @@ double as the porting sequence.
   exists post-`postprocess_door_map` until realization is extracted.
   `maps.get_connection_location` already centralizes the
   teleport-target idiom (15 sites).
-- **Stage F — realization extraction, deletion + docs.** Extract
-  realization into `realize/` (§3.5) — exits/transitions/event-tiles
-  writers, `realize/gating.py` reading `DoorPlan.gates`, `ruin-*`
-  variants → curation gate annotations, re-point the `door_map`
-  consumers at the plan API and drop the adapter; remove the inert
-  `-d2` flag and the dead `Doors.__init__` planning attributes; rewrite
-  `DOOR_RANDO_GUIDE.md` against the new layout; the code review retires
-  to historical record. CI sweep harness becomes the permanent
-  regression gate.
+- **Stage F — realization extraction, deletion + docs.**
+  **STATUS: completed 2026-07.** Realization re-homed verbatim into
+  `doors/realize/` (door_map / exits / transitions / event_tiles;
+  functions take the live Maps object, import-time ROM-free); the
+  `Doors.__init__` shared-table side effects became the documented
+  `apply_mode_table_adjustments(args)` (Sealed Gate terminus pop, town
+  split exits, zone-eater doors-vs-traps precedence — rationales from
+  the project owner recorded in its docstring); dead legacy planning
+  attributes and the `-d2` dev flag deleted; guides updated (the legacy
+  guide and code review stand as historical record).
+  **Scope decisions made with the project owner during this stage:**
+  the entrance/exit door patches remain unified transition logic — no
+  gating/transition split and no `realize/gating.py` (character gating
+  is a line inside those patches, not a separate mechanism; the
+  `ruin-*` room variant lock dicts remain the authoritative gate
+  source, surfaced on `DoorPlan.gates`); `maps.door_map` remains the
+  realization-level lookup the event files consume (plan-level queries
+  use the DoorPlan API); the four remaining ungated checks stay
+  ungated; the legacy matplotlib ruination map image stays retired.
+  **Permanent regression gate:** `tools/golden_sweep.py` — 15 pinned
+  mode × seed configs, ROM + spoiler SHA256s vs the committed
+  `tools/golden_manifest.json` (every Stage F commit was proven
+  byte-identical against it); CI runs the ROM-free planner suite
+  (`tests/test_doors_v2.py`).
 
 Each stage is a reviewable branch in the established `door-rando-*`
 convention and leaves the tree in a releasable state.

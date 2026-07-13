@@ -47,7 +47,8 @@ window inside `Doors.mod` (Data phase) via the `doors/` package, producing a
 `Start.init_rewards` consumes the planned party, `events.ruination_mod` →
 `event/ruination_bind.py` binds Reward slots and applies the map. (The
 legacy walk-based planner and its snapshot/retry machinery were deleted in
-the Stage E2 cutover, 2026-07; the `-d2` flag still parses but is inert.)
+the Stage E2 cutover, 2026-07, and the `-d2` dev flag was removed in
+Stage F; realization lives in `doors/realize/`.)
 
 ### 7. Persistent Event State Across Reloads
 Field RAM (NPC pointers, party state, etc.) is **not** preserved in saves. Events that need post-defeat state to persist across reloads must use event bits, with two halves:
@@ -114,7 +115,7 @@ For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_V2_GUIDE.md** 
 
 ### Maps & Doors
 - **data/maps.py** — `Maps` class: NPC/event tile management, `door_map`, runtime patching.
-- **data/doors.py** — `Doors`: thin Data-phase shell around the `doors/` planner (`mod()` calls `plan_for_args`, owns `self.plan`/`self.map`); also `print()` (spoiler section) and the `-debug_dest` BFS route printer. `verbose` is a property of `verbose.is_enabled()` — don't add an instance attribute. `__init__` still applies the historical shared-table adjustments (split exits, forced-connection pops) that realization relies on.
+- **data/doors.py** — `Doors`: thin Data-phase shell around the `doors/` planner (`mod()` calls `plan_for_args`, owns `self.plan`/`self.map`); also `print()` (spoiler section), the `-debug_dest` BFS route printer, and `apply_mode_table_adjustments(args)` (the documented per-mode shared-table setup: -ruin Sealed Gate terminus pop, -ruin/-drdc town split exits, zone-eater doors-vs-traps under map shuffle + door rando). `verbose` is a property of `verbose.is_enabled()` — don't add an instance attribute.
 - **data/rooms.py** — Room definitions (incl. `ruin-*` variants) and `forced_connections`.
 - **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
 - **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
@@ -125,6 +126,7 @@ The v2 rewrite — the only planner since the Stage E2 cutover (see DOOR_RANDO_V
 - **`doors/atlas/`** — generated exit truth (partners, coordinates, one-ways, room names). Never hand-edit `compiled.py`; curation lives in `curation.py`, regenerate + verify with `python3 tools/compile_atlas.py --check`.
 - **`doors/model.py`** — `WorldModel`: journaled union-find of room classes + one-way DAG + keys/locks. Backtracking = `checkpoint()`/`rollback()`, never deepcopy. `live_kind()` (list membership) is authoritative where id ranges lie (door-as-trap exits).
 - **`doors/plan/`** — `walk.py` (backtracking walk + `prune.py` Rules A–F), `modes.py` (`plan_for_args` = the one dispatch for every mode; `door_rando_pool_keys`/`doors_touch` = the derived DOOR_RANDOMIZE predicate events use via `Event.doors_touched()`), `artifact.py` (`DoorPlan`: `ruination: RuinPlan | None`, `gates` = unified exit→keys table, query API `destination_of`/`description_of`/`location_name`), `ruination/` (planner: growth/extend/finalize/kefka_tower/dream_maze; `plan.py` is the Data-phase entry, resolves the starting party in-window).
+- **`doors/realize/`** — realization (Stage F): `door_map.py` (`postprocess_door_map`: plan pairs → realized `door_map`/`trap_map`, +4000 logical WOR ids), `exits.py` (`connect_exits` + exit-event writers + `door_rando_cleanup`; entrance/exit door patches applied here as unified transition logic), `event_tiles.py` (`realize_doors`: runtime event-exit address updates for Maps.write), `transitions.py` (one-way writer). Functions take the live `Maps` object; import-time ROM-free. Regression gate: `tools/golden_sweep.py` vs the committed 15-config manifest.
 - **Event lifecycle hooks** — the Events loop framework-dispatches `door_rando_mod`/`dungeon_crawl_mod`/`ruination_mod` for any event that defines but doesn't inline-call them (`event/events.py`); `tools/mode_manifest.py` derives the mode × event table.
 - **`event/ruination_bind.py`** — the ONLY Events-side v2 code: binds the plan's abstract rewards to live `Reward` slots; `V2RuinMap` adapts the plan for downstream consumers (area clues, dried meat, ferry, spoiler).
 - Tests: `tests/doors/*` (run directly, no pytest needed; CI runs them via `tests/test_doors_v2.py`). Harness: `tools/ruin_stress.py` (offline failure/usage studies).
