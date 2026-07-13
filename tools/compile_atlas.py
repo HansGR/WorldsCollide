@@ -634,13 +634,14 @@ def check_realization(records):
             failures.append(
                 f'dungeon_crawl_exit_destination_override[{key}]: expected 13 fields, got {len(val)}')
 
-    # Maps.door_rando_cleanup relocates the redundant-shadow exits; the
-    # curation tags and the cleanup routine must agree.
+    # door_rando_cleanup (doors/realize/exits.py) relocates the
+    # redundant-shadow exits; the curation tags and the cleanup routine
+    # must agree.
     curation = _load_curation()
     shadows = {gid for gid, tag in curation.NO_VANILLA_PARTNER.items()
                if tag == 'redundant-shadow'}
     cleanup_src = ''
-    maps_src = open(os.path.join(ROOT, 'data/maps.py')).read()
+    maps_src = open(os.path.join(ROOT, 'doors/realize/exits.py')).read()
     if 'def door_rando_cleanup' in maps_src:
         i = maps_src.index('def door_rando_cleanup')
         cleanup_src = maps_src[i:i + 2000]

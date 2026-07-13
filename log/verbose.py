@@ -1,7 +1,7 @@
 """Verbose diagnostic logging for ruin mode.
 
 Provides vprint() for diagnostic output produced by data.doors, data.maps,
-data.transitions, data.warps, and the door planner.
+data.warps, and the door planner/realizer (doors/).
 
 Destinations are chosen by init():
     -debug           -> stdout (legacy behaviour)
