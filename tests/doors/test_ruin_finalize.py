@@ -1,7 +1,7 @@
 """End-to-end tests for the ruination planner: grow + finalize
-(Stage D milestone 4).
+.
 
-Runs the full v2 pipeline (growth loop, six-step branch closing, map
+Runs the full pipeline (growth loop, six-step branch closing, map
 assembly, softlock verifier) on the real room pool and checks closure:
 - every branch hub ends with zero live unprotected exits (checked inside
   finalize_plan) and the terminus merged into the hub
@@ -59,13 +59,13 @@ def check_closure(p, full_map):
         for m in p.kt_lane_map[1]:
             assert list(m) in oneways
     for i, branch in enumerate(p.branches):
-        hub = branch.hub_class()
-        assert w.class_of_room(branch.terminus) == hub, f'branch {i} terminus'
+        hub = branch.hub_cluster()
+        assert w.cluster_of_room(branch.terminus) == hub, f'branch {i} terminus'
         # Claimed check rooms must be in the hub component (they were
         # reached during growth and nothing disconnects them).
         for rid in branch.rooms:
             if rid in branch.check_ids and rid not in branch.check_rooms:
-                c = w.class_of_room(rid)
+                c = w.cluster_of_room(rid)
                 assert (c == hub or c in w.upstream(hub)
                         or c in w.downstream(hub)), (i, rid)
 
@@ -89,7 +89,7 @@ def main(n=40):
     print(f'grow+finalize: {ok}/{n} complete, {fail} failed')
     for i, msg in failures[:6]:
         print(f'  seed {i}: {msg}')
-    # Legacy's whole-map retry rate is a few percent; grow+finalize should
+    # The whole-map retry rate should be a few percent at most;
     # complete for the large majority of seeds.
     assert ok >= n * 0.8, f'too many failures: {fail}/{n}'
     print('PASS: grow+finalize closure across seeds')

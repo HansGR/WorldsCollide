@@ -1,4 +1,4 @@
-"""v2 ruination binding (rewrite Stage E).
+"""Ruination reward binding.
 
 Events-side realization of the DoorPlan's ruination view. Planning already
 happened in the Data phase (Doors.mod -> doors/plan/ruination/plan.py); the
@@ -7,13 +7,13 @@ reward name -> kind (character/esper/item) and, for characters, the
 character name. bind_ruin_plan() *realizes* it against the ROM objects --
 binding the live Reward slots, claiming characters and picking esper/item
 ids from their pools, and recording the character dependency paths -- then
-presents a `ruination_map`-shaped surface (`V2RuinMap`) so
+presents a `ruination_map`-shaped surface (`RuinMap`) so
 events.ruination_mod and its downstream consumers (area clues, dried meat,
 ferry, spoiler) read it unchanged.
 
 No snapshot/rollback of external pools exists here: a failed plan never
 reaches binding (the planner's retry loop is pure and Data-phase), so
-there is nothing to roll back -- the F5 promise.
+there is nothing to roll back.
 """
 
 from event.event_reward import RewardType
@@ -25,9 +25,8 @@ CHARACTER, ESPER, ITEM = RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM
 def build_name_to_slot(events):
     """reward_name -> live Reward slot object.
 
-    Same name -> slot resolution the legacy events.ruination_mod does: a
-    plain name binds the event's first reward; a numeric suffix ("Auction
-    House_2") binds the (1-based) reward at that index."""
+    A plain name binds the event's first reward; a numeric suffix
+    ("Auction House_2") binds the (1-based) reward at that index."""
     name_to_slot = {}
     for room, rewards in RC.ROOM_REWARD.items():
         for name in rewards:
@@ -48,16 +47,17 @@ def build_name_to_slot(events):
 
 def bind_ruin_plan(plan, characters, espers, items, events, verbose=False):
     """Realize a DoorPlan's ruination view: bind Reward slots and pools.
-    Returns the V2RuinMap adapter for the downstream consumers."""
+    Returns the RuinMap adapter for the downstream consumers."""
     rp = plan.ruination
     name_to_slot = build_name_to_slot(events)
-    ruin_map = V2RuinMap(rp.planner, plan.as_map(), rp.party, verbose=verbose)
+    ruin_map = RuinMap(rp.planner, plan.as_map(), rp.party, verbose=verbose)
     ruin_map.bind(name_to_slot, characters, espers, items)
     return ruin_map
 
 
-class V2RuinMap:
-    """`ruination_map`-shaped adapter over a solved v2 RuinPlanner."""
+class RuinMap:
+    """Adapter over a solved RuinPlanner for the event-side consumers
+    (area clues, dried meat, ferry, spoiler log)."""
 
     def __init__(self, planner, full_map, party_names, verbose=False):
         self.planner = planner
@@ -85,9 +85,8 @@ class V2RuinMap:
                 slot.type = CHARACTER
                 if char_id in characters.available_characters:
                     characters.set_unavailable(char_id)
-                # Record the dependency path exactly as legacy process_rewards
-                # does (per-event gate); the planner already ordered rewards so
-                # the gate is recruited first.
+                # Record the dependency path (per-event gate); the planner
+                # already ordered rewards so the gate is recruited first.
                 characters.set_character_path(char_id, slot.event.character_gate())
             elif kind is ESPER:
                 slot.id = espers.get_random_esper()
@@ -105,22 +104,22 @@ class V2RuinMap:
                 slot.possible_types &= flags
 
     # ------------------------------------------------------------------
-    # Downstream-consumer surface (matches legacy ruination_map)
+    # Downstream-consumer surface
 
     def compute_actual_areas_used(self):
         """area_name -> branch_id for areas with a reachable room (a room is
-        reachable iff its class is the branch's hub class after finalize).
+        reachable iff its cluster is the branch's hub cluster after finalize).
         For split areas, the branch holding the most reachable rooms wins."""
         planner = self.planner
         w = planner.world
-        hub_of = [b.hub_class() for b in planner.branches]
+        hub_of = [b.hub_cluster() for b in planner.branches]
         result = {}
         for area_name, room_ids in planner.config.room_sets.items():
             counts = [0, 0, 0]
             for r in room_ids:
                 if r not in w._index:
                     continue
-                c = w.class_of_room(r)
+                c = w.cluster_of_room(r)
                 for i, hub in enumerate(hub_of):
                     if c == hub:
                         counts[i] += 1
@@ -132,8 +131,8 @@ class V2RuinMap:
 
     def get_non_veldt_gated_shops(self, characters):
         """Shops NOT gated behind the Veldt character (dried meat must be
-        buyable before Gau is recruited). Port of legacy, reading the bound
-        character paths and the plan's assignments."""
+        buyable before Gau is recruited), read from the bound character
+        paths and the plan's assignments."""
         planner = self.planner
         all_game = set(self.PARTY) | set(self.planned_characters)
         if 'GAU' not in all_game:
@@ -164,11 +163,11 @@ class V2RuinMap:
         return non_veldt
 
     def generate_spoiler_log(self, characters, espers, items):
-        """Legacy-parity ruination spoiler (-sl): starting party, obtainable
+        """The ruination spoiler section (-sl): starting party, obtainable
         character rewards with the shortest hub->room route, other obtainable
         rewards, and the shortest hub->terminus route per branch.
 
-        "Obtainable" is the legacy semantics, which can differ from the
+        "Obtainable" can differ from the
         planned reward list in both directions: rewards backfilled after
         planning (rooms attached in finalize, filled by the events.py safety
         pass) are captured from the live slots, and rewards that are
@@ -284,7 +283,7 @@ class V2RuinMap:
                     room == hub or bfs_path(hub, room) is not None)
             return reach_cache[(bid, room)]
 
-        # Character-gating fixpoint (same semantics as legacy): seed the
+        # Character-gating fixpoint: seed the
         # keychain with the starting party, repeatedly admit any physically
         # reachable reward whose REWARD_OWNERS / locked-by gates are all
         # satisfied, feeding newly-obtained characters back in. This drops
@@ -331,7 +330,7 @@ class V2RuinMap:
 
         type_label = {CHARACTER: 'Char', ESPER: 'Esper', ITEM: 'Item'}
 
-        # --- Build the log output (legacy section layout) ---
+        # --- Build the log output ---
         log_lines = []
         log_lines.append(f"Starting Party: {', '.join(self.PARTY)}")
         log_lines.append(f"Planned characters: {', '.join(self.planned_characters)}")
@@ -374,5 +373,5 @@ class V2RuinMap:
         return log_lines
 
     def generate_map_image(self, *args, **kwargs):
-        """Graphical map export is not ported to v2; skip cleanly."""
+        """Graphical map export is not implemented; skip cleanly."""
         return None

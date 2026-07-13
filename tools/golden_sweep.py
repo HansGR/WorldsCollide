@@ -1,4 +1,4 @@
-"""Byte-golden regression sweep for door randomization (Stage F gate).
+"""Byte-golden regression sweep for door randomization.
 
 Builds a pinned matrix of mode x seed configurations and compares the
 SHA256 of each output ROM and spoiler log (normalized: the Generated

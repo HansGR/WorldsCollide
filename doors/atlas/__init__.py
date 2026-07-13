@@ -1,4 +1,4 @@
-"""Door-rando atlas: static description of the vanilla world (rewrite Stage A).
+"""Door-rando atlas: static description of the vanilla world.
 
 The atlas is immutable and ROM-free. It has two layers:
 
@@ -9,15 +9,11 @@ The atlas is immutable and ROM-free. It has two layers:
   express: partner overrides (each with a reason tag), unused exits, and
   intentionally asymmetric pairings.
 
-tools/compile_atlas.py --check proves compiled+curation reproduce the
-legacy data/map_exit_extra.exit_data partner column exactly; run it after
-editing curation.py, and re-run without --check to regenerate compiled.py.
-
-During the staged rewrite the legacy tables remain the live data source;
-this package is the parallel, machine-checked source that later stages
-build on. Exit *descriptions* still live in data/map_exit_extra.py (the
-description accessor below delegates) until the dependency direction
-flips in Stage B.
+tools/compile_atlas.py --check proves compiled+curation agree with the
+data/map_exit_extra.exit_data partner column exactly; run it after
+editing curation.py, and re-run without --check to regenerate
+compiled.py. Exit *descriptions* live in data/map_exit_extra.py (the
+description accessors below delegate).
 """
 
 from doors.atlas.compiled import EXIT_RECORDS, PARTNERS, TRAP_RECORDS, EVENT_DOOR_RECORDS
@@ -56,14 +52,14 @@ def event_door_record(door_id):
     return EVENT_DOOR_RECORDS.get(door_id)
 
 
-def room_name(legacy_room_id):
-    """Atlas name for a legacy room_data id (see doors/atlas/room_names.py)."""
+def room_name(room_id):
+    """Atlas name for a room_data id (see doors/atlas/room_names.py)."""
     from doors.atlas.room_names import ROOM_NAMES
-    return ROOM_NAMES.get(legacy_room_id)
+    return ROOM_NAMES.get(room_id)
 
 
 def description(exit_id):
-    """Human name of an exit. Delegates to the legacy table for now."""
+    """Human name of an exit (exit_data description column)."""
     from data.map_exit_extra import exit_data
     entry = exit_data.get(exit_id)
     return entry[1] if entry else None

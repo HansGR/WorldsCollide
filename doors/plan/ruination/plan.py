@@ -1,4 +1,4 @@
-"""Data-phase entry point for ruination planning (rewrite Stage E).
+"""Data-phase entry point for ruination planning.
 
 plan_ruination() is called from plan_for_args inside Doors.mod: it resolves
 the starting party from args.start_chars (same explicit-first-then-random
@@ -7,7 +7,7 @@ Start event consumes the planned party later), then runs the pure planner
 with an internal retry loop (a failed plan is discarded and re-rolled; no
 rollback exists because nothing external was touched -- F5).
 
-The party is resolved ONCE and held fixed across retries, matching legacy
+The party is resolved ONCE and held fixed across retries, matching
 (the party is chosen before ruination_map is ever built).
 
 `characters` is the Data-phase Characters object, used read-only (names,
@@ -82,11 +82,11 @@ def plan_ruination(args, rng, characters):
         except RuinPlanError as e:
             last_error = e
             if getattr(args, 'debug', False):
-                print(f'v2 ruination plan attempt {attempt + 1}/{MAX_ATTEMPTS} '
+                print(f'ruination plan attempt {attempt + 1}/{MAX_ATTEMPTS} '
                       f'failed; re-rolling. ({str(e)[:80]})')
             continue
         if attempt > 0 and getattr(args, 'debug', False):
-            print(f'v2 ruination plan succeeded on attempt {attempt + 1}')
+            print(f'ruination plan succeeded on attempt {attempt + 1}')
         # Unified gate table over the rooms actually placed (their spec
         # lock dicts -- the same locks the planner honored while walking).
         from doors.plan.modes import gates_from_specs

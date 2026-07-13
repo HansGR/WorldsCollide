@@ -1,10 +1,9 @@
-"""Ruination planner (rewrite Stages D-E).
+"""Ruination planner.
 
 Plans the three-branch ruination world on a single shared WorldModel:
 branches are RuinBranch views anchored at their hub rooms, the reserve is
-just rooms not yet added to the model, and the keychain is global (legacy
-fans every key out to all three branch networks, so one chain is
-equivalent). Modules, mirroring plan section 3.3:
+just rooms not yet added to the model, and the keychain is global (a
+character recruited on one branch opens locks on every branch). Modules:
 
 - plan.py         Data-phase entry point: resolves the starting party,
                   runs the pure retry loop, returns the DoorPlan

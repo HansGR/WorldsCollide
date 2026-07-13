@@ -1,7 +1,7 @@
-"""Tests for doors.plan.ruination.branch (rewrite Stage D).
+"""Tests for doors.plan.ruination.branch.
 
 Two branches share one WorldModel: membership is enforced by the model
-(no double placement), topology queries are live views of the class graph,
+(no double placement), topology queries are live views of the cluster graph,
 and check rooms keep their own ids across class merges.
 
 Run: python3 tests/doors/test_ruin_branch.py
@@ -63,16 +63,16 @@ def test_hub_topology():
     w.connect_oneway(2020, 3022)                   # mid --> below
     assert b0.level('below') is DOWNSTREAM
     b0.add_room('above', {'doors': [23], 'traps': [2023]})
-    w.connect_oneway(2023, 3020)                   # above --> mid(=hub class)
+    w.connect_oneway(2023, 3020)                   # above --> mid(=hub cluster)
     assert b0.level('above') is UPSTREAM
     assert b0.placed_rooms() == ['ruin_hub_0', 'mid', 'below', 'above']
     assert b0.unplaced_rooms() == ['ruin_terminus_1']
     # Other branch is untouched by all of this.
     assert b1.placed_rooms() == ['ruin_hub_1']
-    # No member class holds 3+ live exits: hub class has door 21 only,
+    # No member class holds 3+ live exits: hub cluster has door 21 only,
     # 'below'/'above' one exit each, terminus two doors.
     assert not b0.has_a_hub()
-    # Legacy counts hub capability on ALL nodes, placed or not.
+    # Hub capability counts ALL member clusters, placed or not.
     b0.add_room('bighub', {'doors': [30, 31, 32], 'traps': [2030]})
     assert b0.has_a_hub()
     w.connect_door(21, 30)

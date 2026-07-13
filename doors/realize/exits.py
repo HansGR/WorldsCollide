@@ -1,5 +1,6 @@
-"""connect_exits and the exit-event writers, moved verbatim from
-data/maps.py (Stage F). The entrance/exit door patches applied here are
+"""connect_exits and the exit-event writers.
+
+The entrance/exit door patches applied here are
 unified transition logic: their job is making transitions work with
 randomized doors (character gating, where present, is a line inside
 them, not a separate mechanism)."""

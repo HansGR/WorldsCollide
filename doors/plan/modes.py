@@ -1,13 +1,15 @@
-"""Mode orchestration for the v2 planner (rewrite Stage C).
+"""Mode orchestration: which pools each flag walks, and how.
 
-Assembles the same per-area pools Doors.__init__/mod select for every
-door-randomization mode (including map shuffle and the individual-area
-flags), walks them with the v2 planner, and applies the legacy
-post-steps - without mutating any shared table (flaw F3): split exits
-and protect-door replacements become pool-spec transforms, virtual
-root/crossworld doors are injected into fresh specs.
+Assembles the per-area room pools for every door-randomization mode
+(including map shuffle and the individual-area flags), walks them, and
+applies the post-steps -- without mutating any shared table: split exits
+and protect-door replacements are pool-spec transforms on fresh copies,
+virtual root/crossworld doors are injected into fresh specs.
 
-This is the ModeSpec layer of the rewrite plan (section 3.3).
+To add a mode: give it a pool (data/room_sets.py), a branch here
+selecting that pool (INDIVIDUAL_FLAGS for a simple area flag), and, if
+events must react to it, nothing more -- Event.doors_touched() derives
+its answer from the same tables.
 """
 
 import random
@@ -68,7 +70,7 @@ def dre_area_names(map_shuffle=False):
 
 def split_shared_view():
     """shared_exits with the dungeon-crawl split exits removed (-drdc and
-    -ruin; legacy mutates the global table in Doors.__init__ instead)."""
+    -ruin)."""
     view = {k: list(v) for k, v in shared_exits.items()}
     for se, splits in dungeon_crawl_split_exits.items():
         view[se] = [x for x in view[se] if x not in splits]
@@ -76,7 +78,7 @@ def split_shared_view():
 
 
 def inject_meta_root(specs, forcing, meta_name, offset):
-    """Legacy Doors.mod root-door meta room (-dra/-drx): every root room
+    """Root-door meta room (-dra/-drx): every root room
     gains a virtual door (offset+i), a meta room holds the partners
     (offset+n+i), each partner forced onto its virtual door."""
     root_rooms = [r for r in specs if 'root' in str(r)]
@@ -92,9 +94,9 @@ def inject_meta_root(specs, forcing, meta_name, offset):
 
 
 def shuffle_transform(specs, protect):
-    """Legacy deconflict for shuffle pools under door randomization:
-    remove the ignore_maps ids and replace protected doors with their
-    30000+ stand-ins (legacy mutates room_data instead)."""
+    """Deconflict shuffle pools under door randomization: remove the
+    ignore_maps ids and replace protected doors with their 30000+
+    stand-ins."""
     for rid, s in specs.items():
         doors = [d for d in s['doors'] if d not in IGNORE_MAPS]
         doors = [protect.get(d, d) for d in doors]
@@ -125,7 +127,7 @@ def apply_logical_links(door_pairs):
 
 def reattach_shared_exits(door_pairs, shared=None):
     """Send each shared sibling tile to its canonical tile's destination
-    (Doors.mod post-step, minus legacy's iterate-while-append duplicates)."""
+    (post-step after all pools are walked)."""
     if shared is None:
         shared = shared_exits
     out = list(door_pairs)
@@ -183,10 +185,11 @@ def touched_rooms(flags):
 
 
 def doors_touch(flags, *area_keys, rooms=()):
-    """The derived DOOR_RANDOMIZE predicate (plan section 3.7 item 1):
-    True iff the active door-randomization mode rewires any door of the
-    given ROOM_SETS areas / explicit room ids. Replaces the hand-maintained
-    per-event flag or-chains; ruination stays an explicit separate test at
+    """The derived DOOR_RANDOMIZE predicate: True iff the active
+    door-randomization mode rewires any door of the given ROOM_SETS areas
+    / explicit room ids. Event files use it via Event.doors_touched()
+    instead of keeping per-event flag lists; ruination stays an explicit
+    separate test at
     the call sites that want it (its rewiring is seed-dependent and events
     opt in deliberately)."""
     touched = touched_rooms(flags)
@@ -201,10 +204,7 @@ def doors_touch(flags, *area_keys, rooms=()):
 def gates_from_specs(specs):
     """Element-level gate table from pool specs: exit id -> key tuple
     (the room lock dicts, before the walk consumes them). This is the one
-    place gate knowledge is derived for DoorPlan.gates (plan section 3.5:
-    the emission side -- entrance scripts / in-event branches -- reads the
-    plan instead of three ad-hoc sources; emission unification itself
-    lands with the Stage F realization extraction)."""
+    place gate knowledge is derived for DoorPlan.gates."""
     gates = {}
     for spec in specs.values():
         for keys, items in spec.get('locks', {}).items():
@@ -350,11 +350,11 @@ def plan_drx(seed=None, rng=None, budget_limit=5000):
 
 
 def plan_for_args(args, rng, characters=None):
-    """Mode dispatch for Doors.mod (the one planning entry point since the
-    Stage E2 cutover). Every mode returns the same DoorPlan artifact;
+    """Mode dispatch for Doors.mod -- the one planning entry point.
+    Every mode returns the same DoorPlan artifact;
     ruination is just another view of it (plan.ruination carries the
-    abstract reward plan + party) -- one planning site, in the Data phase
-    (F5)."""
+    abstract reward plan + party) -- one planning site, in the Data
+    phase."""
     from doors.plan.artifact import DoorPlan
     from doors.validate.structural import check_solved
     if getattr(args, 'ruination_mode', None):

@@ -1,5 +1,5 @@
 """event_exit_info runtime updates + door-realization orchestration for
-Maps.write(). Moved verbatim from data/maps.py (Stage F)."""
+Maps.write()."""
 
 from log.verbose import vprint
 from instruction.event import EVENT_CODE_START

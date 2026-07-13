@@ -1,24 +1,23 @@
-"""Branch extension for the ruination planner (rewrite Stage D milestone 2).
+"""Branch extension for the ruination planner.
 
-Port of the legacy location-aware extension (RuinationBranch.extend_branch_path
-with get_valid_pit_targets / get_valid_door_targets) onto WorldModel class
-views. Legacy operates on Network nodes, which are rooms or compound rooms
-produced by compress_loop; a v2 class IS that compound, so every per-node
-count becomes a per-class count, and the forced-connection "downstream rooms"
-special cases collapse into ordinary class-graph queries (an unplaced room
-already wired to its forced partners is just a small class component with its
+The location-aware extension step (one new room or loop per growth turn,
+with get_valid_pit_targets / get_valid_door_targets: WorldModel cluster
+of rooms; a cluster IS that compound, so every per-node
+count becomes a per-cluster count, and the forced-connection "downstream rooms"
+special cases collapse into ordinary cluster-graph queries (an unplaced room
+already wired to its forced partners is just a small cluster component with its
 own local downstream).
 
-CORE RULE (unchanged from legacy): never make a connection that leaves no
+CORE RULE: never make a connection that leaves no
 exits downstream of the new active position, and never consume the hub
 region's last entrance - downstream nodes must always be able to loop back
 during finalize.
 
-Deliberate divergences from legacy, all in compound-node edge cases:
-- Warp/town cooldown gating applies if ANY room of the candidate class is a
-  warp/town room; legacy tests the node id, so a warp room absorbed into a
+Cluster-level semantics worth noting:
+- Warp/town cooldown gating applies if ANY room of the candidate cluster is a
+  warp/town room (not just its first-added room, so a warp room absorbed into a
   compound node escaped its cooldown.
-- The terminus is skipped as a target by CLASS; legacy skips the node id, so
+- The terminus is skipped as a target by CLUSTER, so
   a terminus absorbed into a compound stopped being skipped (extension never
   runs after the terminus merges, so this is theoretical).
 - The no-hub fallback (_extend_branch_path_simple) is not ported: the hub
@@ -31,10 +30,10 @@ from doors.plan.ruination.branch import StuckReason
 
 
 def _elements(world, c, kind, exclude=(), free_only=False):
-    """Live elements of `kind` in class c, minus protected (and minus
+    """Live elements of `kind` in cluster c, minus protected (and minus
     initially-locked when free_only - exits a key had to release)."""
     out = []
-    for e in world.class_elements(c, kind):
+    for e in world.cluster_elements(c, kind):
         if e in world.protected or e in exclude:
             continue
         if free_only and e in world.initially_locked_exits:
@@ -48,10 +47,10 @@ def _count(world, c, kind, exclude=(), free_only=False):
 
 
 def member_classes(branch):
-    """Distinct classes among the branch's member rooms, insertion order."""
+    """Distinct clusters among the branch's member rooms, insertion order."""
     seen, out = set(), []
     for rid in branch.rooms:
-        c = branch.world.class_of_room(rid)
+        c = branch.world.cluster_of_room(rid)
         if c not in seen:
             seen.add(c)
             out.append(c)
@@ -59,9 +58,9 @@ def member_classes(branch):
 
 
 def topology(branch):
-    """The branch trichotomy as class sets (legacy classify_topology)."""
+    """The branch trichotomy as cluster sets: hub, upstream, downstream."""
     w = branch.world
-    hub = branch.hub_class()
+    hub = branch.hub_cluster()
     up = set(w.upstream(hub))
     down = set(w.downstream(hub))
     return {'hub': hub, 'upstream': up, 'downstream': down,
@@ -72,13 +71,13 @@ def topology(branch):
 def _terminus_class(branch):
     if branch.terminus is None:
         return None
-    return branch.world.class_of_room(branch.terminus)
+    return branch.world.cluster_of_room(branch.terminus)
 
 
 def _cooldown_blocks(branch, c):
     """Warp/town rooms may only be mapped once their cooldown reaches zero."""
     w = branch.world
-    rooms = [w.room_ids[h] for h in w.class_rooms(c)]
+    rooms = [w.room_ids[h] for h in w.cluster_rooms(c)]
     if branch.warp_cooldown > 0 and any(r in branch.warp_rooms for r in rooms):
         return True
     if branch.town_cooldown > 0 and any(r in branch.town_rooms for r in rooms):
@@ -87,8 +86,7 @@ def _cooldown_blocks(branch, c):
 
 
 def _hub_entrances(branch, topo):
-    """Unprotected doors + pits across hub-and-upstream (legacy
-    count_entrances_in_region over hub_and_upstream)."""
+    """Unprotected doors + pits across hub-and-upstream."""
     w = branch.world
     return sum(_count(w, c, DOOR) + _count(w, c, PIT)
                for c in topo['hub_and_upstream'])
@@ -96,16 +94,15 @@ def _hub_entrances(branch, topo):
 
 def is_true_dead_end(branch, c):
     """One door, nothing else, nothing behind it - safe to defer to
-    finalize, so extension shouldn't waste exits on it (legacy
-    is_true_dead_end, per class)."""
+    finalize, so extension shouldn't waste exits on it."""
     w = branch.world
     if (_count(w, c, DOOR), _count(w, c, TRAP), _count(w, c, PIT)) != (1, 0, 0):
         return False
     if w.downstream(c):                            # forced partners behind it
         return False
-    if w.class_keys(c):
+    if w.cluster_keys(c):
         return False
-    for h in w.class_rooms(c):
+    for h in w.cluster_rooms(c):
         if w.locks[h]:
             return False
         if w.room_ids[h] in branch.check_rooms:
@@ -114,15 +111,14 @@ def is_true_dead_end(branch, c):
 
 
 def valid_pit_targets(branch, trap_exit, exit_class, topo):
-    """Pits that `trap_exit` may legally connect to (legacy
-    get_valid_pit_targets).
+    """Pits that `trap_exit` may legally connect to.
 
-    A1. Unplaced target class: must keep at least one exit (its own, or via
+    A1. Unplaced target cluster: must keep at least one exit (its own, or via
         its local downstream), at least one of them originally free (not
         key-released), and the hub region must keep an entrance when needed.
     B1. Placed target: (target + its downstream) retains an exit besides
         trap_exit.
-    C.  Hub/upstream target (loop): (exit class + its upstream) retains an
+    C.  Hub/upstream target (loop): (exit cluster + its upstream) retains an
         entrance besides the chosen pit.
     """
     w = branch.world
@@ -189,16 +185,15 @@ def valid_pit_targets(branch, trap_exit, exit_class, topo):
 
 
 def valid_door_targets(branch, door_exit, exit_class, topo):
-    """Doors that `door_exit` may legally connect to (legacy
-    get_valid_door_targets).
+    """Doors that `door_exit` may legally connect to.
 
-    A2. Unplaced target class: (exit class + target) must retain an exit
+    A2. Unplaced target cluster: (exit cluster + target) must retain an exit
         after both doors are consumed - or, if the target's exits are all
         behind its forced downstream, the hub region must keep an entrance.
         True dead ends are skipped (deferred to finalize).
-    B2. Placed target: (exit class + target + target's downstream) retains
+    B2. Placed target: (exit cluster + target + target's downstream) retains
         an exit after both doors are consumed.
-    C.  Hub/upstream target (loop): (exit class + its upstream) retains an
+    C.  Hub/upstream target (loop): (exit cluster + its upstream) retains an
         entrance besides the target door.
     """
     w = branch.world
@@ -279,8 +274,7 @@ def valid_door_targets(branch, door_exit, exit_class, topo):
 
 
 def _deepest_classes(world, start, downstream):
-    """Ends of the LONGEST paths from `start` through the class DAG (legacy
-    collects exits from the deepest nodes of get_downstream_paths)."""
+    """Ends of the LONGEST paths from `start` through the cluster DAG."""
     nodes = {start} | set(downstream)
     edges = []
     for h1, h2 in world.edges:
@@ -302,19 +296,19 @@ def _deepest_classes(world, start, downstream):
 
 def extend_branch(branch, forcing, rng):
     """One extension step: pick (exit_id, target_id) or (None, None) with
-    branch.last_stuck_reason set (legacy extend_branch_path).
+    branch.last_stuck_reason set.
 
     The caller performs the connection on the model, updates the active
-    room, ticks cooldowns, and applies the target class's keys.
+    room, ticks cooldowns, and applies the target cluster's keys.
     """
     w = branch.world
     topo = topology(branch)
-    active_class = w.class_of_room(branch.active)
+    active_class = w.cluster_of_room(branch.active)
     act_downstream = w.downstream(active_class)
 
     # === STEP 1: forced exits anywhere on the active path go first ===
     for c in [active_class] + act_downstream:
-        for e in w.class_elements(c, DOOR) + w.class_elements(c, TRAP):
+        for e in w.cluster_elements(c, DOOR) + w.cluster_elements(c, TRAP):
             if e in forcing:
                 return e, forcing[e][0]
 
@@ -355,7 +349,7 @@ def extend_branch(branch, forcing, rng):
 
     # === STEP 4: shuffle exits, first exit with a valid target wins ===
     for exit_type in order:
-        pool = [(e, w.owner_class(e)) for e in available[exit_type]]
+        pool = [(e, w.owner_cluster(e)) for e in available[exit_type]]
         rng.shuffle(pool)
         for exit_id, exit_class in pool:
             if exit_type == 'traps':
@@ -372,8 +366,7 @@ def extend_branch(branch, forcing, rng):
 
 
 def _diagnose_stuck(branch, available, topo):
-    """Set branch.last_stuck_reason from what was missing (legacy
-    _diagnose_stuck_reason)."""
+    """Set branch.last_stuck_reason from what was missing."""
     w = branch.world
     have_traps = len(available['traps']) > 0
     have_doors = len(available['doors']) > 0

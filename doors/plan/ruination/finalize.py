@@ -1,19 +1,22 @@
-"""Branch finalization + map assembly for the ruination planner
-(rewrite Stage D milestone 4).
+"""Branch finalization + map assembly for the ruination planner.
 
-Port of legacy finalize_map (the iterated six-step closer), its rescue
-helpers, the full-map assembly tail of generate_map_with_characters, and
-_verify_no_character_gated_softlock (BFS instead of networkx).
+When growth ends, each branch is an open network: unmatched doors, traps
+without pits, dead ends waiting for attachment. The iterated six-step
+closer turns it into a finished branch (terminus merged, warps wired,
+every trap fed, no unmatched exits), pulling rescue rooms from the
+reserve when a step cannot be satisfied; finalize_plan then assembles
+the full map (all branches + the -maze iso and -rkt sub-map splices) and
+runs the character-gated softlock verifier (a BFS over the assembled
+map: everything enterable with the starting party must be leavable with
+it).
 
-Legacy nodes are v2 classes throughout: "hub + upstream + downstream"
-regions become class sets, compound-id bookkeeping disappears, and the
-step-5b/warp-rescue corner cases where legacy could leave a stale merged
-id in dead_ends are handled uniformly by trimming non-singleton classes
+"Hub + upstream + downstream" is the branch trichotomy; regions are
+cluster sets. Dead-end bookkeeping is trimmed to singleton clusters
 (a connected room always merges; merged rooms can't serve as dead ends).
 
-Finalize-time connections apply the target class's keys at the model
-level only (legacy Network.connect tail): growth is over, so no planner
-check bookkeeping happens here.
+Finalize-time connections apply the target cluster's keys at the model
+level only: growth is over, so no planner check bookkeeping happens
+here.
 """
 
 from data.rooms import room_data
@@ -25,18 +28,18 @@ from event.event_reward import RewardType
 
 
 # ---------------------------------------------------------------------------
-# Region + element helpers (all per class)
+# Region + element helpers (all per cluster)
 
 def _region(branch):
-    """(hub_class, upstream classes, downstream classes)."""
+    """(hub_cluster, upstream clusters, downstream clusters)."""
     w = branch.world
-    hub = branch.hub_class()
+    hub = branch.hub_cluster()
     return hub, w.upstream(hub), w.downstream(hub)
 
 
 def _collect_region(branch, include_doors=False, exclude_upstream_doors=False):
     """Unprotected traps/pits (and doors) across hub + upstream + downstream
-    (legacy collect_network_traps_and_pits)."""
+    """
     w = branch.world
     hub, upstream, downstream = _region(branch)
     traps = _elements(w, hub, TRAP)
@@ -58,21 +61,20 @@ def _collect_region(branch, include_doors=False, exclude_upstream_doors=False):
 
 
 def _raw(world, c, kind):
-    """Raw live elements of a class (protected included), as legacy room
-    lists are."""
-    return world.class_elements(c, kind)
+    """Raw live elements of a cluster (protected included)."""
+    return world.cluster_elements(c, kind)
 
 
 def _singleton(world, rid):
-    return len(world.class_rooms(world.class_of_room(rid))) == 1
+    return len(world.cluster_rooms(world.cluster_of_room(rid))) == 1
 
 
 def _is_dead_end_now(branch, rid):
-    """Live legacy Network.is_dead_end: unconnected (singleton class, no
+    """Is this room a live dead end: unconnected (singleton cluster, no
     one-way edges), raw counts exactly (1,0,0), no locks."""
     w = branch.world
-    c = w.class_of_room(rid)
-    if len(w.class_rooms(c)) != 1:
+    c = w.cluster_of_room(rid)
+    if len(w.cluster_rooms(c)) != 1:
         return False
     if w.downstream(c) or w.upstream(c):
         return False
@@ -84,8 +86,7 @@ def _is_dead_end_now(branch, rid):
 
 
 def _trim_dead_ends(branch):
-    """Drop dead ends that have been connected (merged classes); legacy
-    removes ids that left net.nodes."""
+    """Drop dead ends that have been connected (merged clusters)."""
     branch.dead_ends = [d for d in branch.dead_ends
                         if _singleton(branch.world, d)]
 
@@ -102,7 +103,7 @@ _EXIT_OWNER = None
 
 
 def _exit_owner(exit_id):
-    """room_data room owning an exit (legacy _exit_to_room_owner)."""
+    """room_data room owning an exit."""
     global _EXIT_OWNER
     if _EXIT_OWNER is None:
         owner = {}
@@ -116,8 +117,8 @@ def _exit_owner(exit_id):
 
 
 def _pull_from_reserve(planner, branch, reserve_areas, score):
-    """Add the best-scoring reserve room to this branch (legacy
-    _pull_from_reserve); honors any forced connections it carries."""
+    """Add the best-scoring reserve room to this branch; honors any
+    forced connections it carries."""
     if reserve_areas is None:
         return None
     w = planner.world
@@ -144,9 +145,8 @@ def _pull_from_reserve(planner, branch, reserve_areas, score):
 
 
 def _honor_forced(planner, branch, reserve_areas):
-    """Wire every live forced exit; pull absent partner rooms from reserve
-    while they are still available (legacy _honor_forced_connections +
-    ForceConnections)."""
+    """Wire every live forced exit; pull absent partner rooms from
+    reserve while they are still available."""
     w = planner.world
     forcing = planner.config.forcing
     if reserve_areas is not None:
@@ -179,16 +179,16 @@ def _honor_forced(planner, branch, reserve_areas):
 # Finalize-time connect
 
 def _connect(planner, branch, exit_id, target):
-    """Model connection + target-class key application to fixpoint (legacy
-    Network.connect during finalize; no planner check bookkeeping)."""
+    """Model connection + target-cluster key application to fixpoint
+    (no planner check bookkeeping: growth is over)."""
     w = planner.world
     if w.live_kind(exit_id) == DOOR:
         w.connect_door(exit_id, target)
     else:
         w.connect_oneway(exit_id, target)
-    c = w.class_of_room(w.owner_room(target))
+    c = w.cluster_of_room(w.owner_room(target))
     while True:
-        keys = w.class_keys(c)
+        keys = w.cluster_keys(c)
         if not keys:
             break
         for k in list(keys):
@@ -200,9 +200,8 @@ def _connect(planner, branch, exit_id, target):
 # Warp-room rescue
 
 def _classify_warp_rooms(branch):
-    """(connected, unconnected) warp CLASS representatives, reported by a
-    member room id (legacy _classify_branch_warp_rooms; compound string
-    matching becomes class membership)."""
+    """(connected, unconnected) warp CLUSTER representatives, reported
+    by a member room id."""
     w = branch.world
     hub, upstream, downstream = _region(branch)
     region = {hub} | set(upstream) | set(downstream)
@@ -211,7 +210,7 @@ def _classify_warp_rooms(branch):
     for rid in branch.rooms:
         if rid not in branch.warp_rooms:
             continue
-        c = w.class_of_room(rid)
+        c = w.cluster_of_room(rid)
         if c in seen:
             continue
         seen.add(c)
@@ -220,15 +219,15 @@ def _classify_warp_rooms(branch):
 
 
 def _connect_orphan_warp(planner, branch, unconnected_warps):
-    """Wire one hallway warp room into the branch (legacy
-    _connect_orphan_warp_room); dead-end warps defer to step 6."""
+    """Wire one hallway warp room into the branch; dead-end warps
+    defer to step 6."""
     w = planner.world
     rng = planner.rng
     hub, _, downstream = _region(branch)
     rng.shuffle(unconnected_warps)
     targets = [hub] + list(downstream)
     for warp_id in unconnected_warps:
-        wc = w.class_of_room(warp_id)
+        wc = w.cluster_of_room(warp_id)
         warp_doors = _elements(w, wc, DOOR)
         warp_pits = _elements(w, wc, PIT)
         if not warp_doors and not warp_pits:
@@ -259,7 +258,7 @@ def _connect_orphan_warp(planner, branch, unconnected_warps):
 def _inject_door_if_needed(planner, branch, reserve_areas):
     """If the terminus is unconnected and the region has traps but NO doors,
     connect a trap into a (pit, door, other-exit) converter room so step 4
-    has a door to give the terminus (legacy _inject_door_if_needed...)."""
+    has a door to give the terminus."""
     w = planner.world
     rng = planner.rng
     if not _terminus_separate(branch):
@@ -291,13 +290,13 @@ def _inject_door_if_needed(planner, branch, reserve_areas):
             lambda doors, traps, pits: (len(pits) >= 1 and len(doors) >= 1
                                         and len(doors) + len(traps) >= 2))
         if pulled is not None:
-            suitable = w.class_of_room(pulled)
+            suitable = w.cluster_of_room(pulled)
     if suitable is None:
         raise RuinPlanError(
             f'inject_door: no (pit, door, other-exit) room available for '
             f'terminus {branch.terminus}')
 
-    # Deepest downstream trap preferred (legacy walks paths deep-first).
+    # Deepest downstream trap preferred (walk paths deep-first).
     selected_trap = None
     if downstream:
         dist = {c: 0 for c in [hub] + list(downstream)}
@@ -380,7 +379,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                     planner, branch, reserve_areas,
                     lambda doors, traps, pits: len(pits) - len(traps))
                 if pulled is not None:
-                    winner = w.class_of_room(pulled)
+                    winner = w.cluster_of_room(pulled)
             if winner is None:
                 raise RuinPlanError(
                     f'finalize step 1: no pit-surplus room available '
@@ -389,7 +388,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                      rng.choice(_elements(w, winner, PIT)))
             all_traps, all_pits = region_traps_pits()
 
-        # (2) Loop every downstream class back to hub/upstream.
+        # (2) Loop every downstream cluster back to hub/upstream.
         hub, upstream, downstream = _region(branch)
         def build_delta():
             out = []
@@ -398,7 +397,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                 entr = len(doors) + len(_raw(w, c, PIT))
                 exits = len(doors) + len(_raw(w, c, TRAP))
                 out.append((entr - exits, c))
-            # Trap-bearing classes sort last (pop()'d first).
+            # Trap-bearing clusters sort last (pop()'d first).
             out.sort(key=lambda item: (
                 1 if _count(w, item[1], TRAP) > 0 else 0, item[0]))
             return out
@@ -431,9 +430,9 @@ def finalize_branch(planner, branch, reserve_areas=None):
                         if accessible <= 0:
                             region = {hub} | set(upstream) | set(downstream)
                             for nc in member_classes(branch):
-                                if (nc in region or nc == w.class_of_room(branch.terminus)
+                                if (nc in region or nc == w.cluster_of_room(branch.terminus)
                                         or any(w.room_ids[h] in branch.dead_ends
-                                               for h in w.class_rooms(nc))):
+                                               for h in w.cluster_rooms(nc))):
                                     continue
                                 n_pits = _elements(w, nc, PIT)
                                 n_doors = _elements(w, nc, DOOR)
@@ -450,7 +449,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                                         and len(doors) + len(traps) >= 2))
                                 if pulled is not None:
                                     this_conn = rng.choice(_elements(
-                                        w, w.class_of_room(pulled), PIT))
+                                        w, w.cluster_of_room(pulled), PIT))
                         else:
                             this_conn = rng.choice(up_pits)
                     else:
@@ -464,7 +463,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                         planner, branch, reserve_areas,
                         lambda doors, traps, pits: len(doors) >= 3)
                     if pulled is not None:
-                        hub_doors = _elements(w, w.class_of_room(pulled), DOOR)
+                        hub_doors = _elements(w, w.cluster_of_room(pulled), DOOR)
                         _connect(planner, branch, rng.choice(room_doors),
                                  rng.choice(hub_doors))
                         restart = True
@@ -480,7 +479,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                 avail = [nc for nc in member_classes(branch)
                          if nc != hub and not any(
                              w.room_ids[h] in branch.dead_ends
-                             for h in w.class_rooms(nc))]
+                             for h in w.cluster_rooms(nc))]
                 if room_traps and not up_pits and up_doors:
                     pido = [nc for nc in avail
                             if _count(w, nc, PIT) > 0 and _count(w, nc, DOOR) > 0
@@ -495,7 +494,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                                 and len(pits) > len(traps)))
                         if pulled is not None:
                             this_conn = rng.choice(_elements(
-                                w, w.class_of_room(pulled), PIT))
+                                w, w.cluster_of_room(pulled), PIT))
                 elif room_doors and not up_doors and up_pits:
                     dito = [nc for nc in avail
                             if _count(w, nc, TRAP) > 0 and _count(w, nc, DOOR) > 0
@@ -510,7 +509,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                                 and len(traps) > len(pits)))
                         if pulled is not None:
                             this_conn = rng.choice(_elements(
-                                w, w.class_of_room(pulled), DOOR))
+                                w, w.cluster_of_room(pulled), DOOR))
                     if this_conn is not None:
                         this_exit = rng.choice(room_doors)
                 elif room_doors and not up_doors and not up_pits:
@@ -527,13 +526,13 @@ def finalize_branch(planner, branch, reserve_areas=None):
                             lambda doors, traps, pits: len(doors) > 0)
                         if pulled is not None:
                             this_conn = rng.choice(_elements(
-                                w, w.class_of_room(pulled), DOOR))
+                                w, w.cluster_of_room(pulled), DOOR))
                     if this_conn is not None:
                         this_exit = rng.choice(room_doors)
 
             if this_conn is None:
                 raise RuinPlanError(
-                    f'finalize step 2: inescapable downstream class '
+                    f'finalize step 2: inescapable downstream cluster '
                     f'(doors={room_doors}, traps={room_traps}, '
                     f'up_doors={up_doors}, up_pits={up_pits})')
 
@@ -548,7 +547,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
         if downstream:
             raise RuinPlanError(
                 f'finalize step 2 post-check: {len(downstream)} downstream '
-                f'class(es) remain')
+                f'cluster(s) remain')
 
         # Post-step-2 terminus door check with rescue.
         post2_doors = _elements(w, hub, DOOR)
@@ -560,7 +559,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                 hub_traps = _elements(w, hub, TRAP)
                 if hub_traps:
                     for nc in member_classes(branch):
-                        if nc in region or nc == w.class_of_room(branch.terminus):
+                        if nc in region or nc == w.cluster_of_room(branch.terminus):
                             continue
                         n_pits = _elements(w, nc, PIT)
                         n_doors = _elements(w, nc, DOOR)
@@ -582,7 +581,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                         if hub_traps:
                             _connect(planner, branch, rng.choice(hub_traps),
                                      rng.choice(_elements(
-                                         w, w.class_of_room(pulled), PIT)))
+                                         w, w.cluster_of_room(pulled), PIT)))
                         rescued = True
                 if rescued:
                     continue
@@ -611,7 +610,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
             this_exit = remaining_doors.pop()
             if branch.terminus in branch.dead_ends:
                 branch.dead_ends.remove(branch.terminus)
-            tc = w.class_of_room(branch.terminus)
+            tc = w.cluster_of_room(branch.terminus)
             t_doors = _elements(w, tc, DOOR)
             this_conn = t_doors.pop() if t_doors else _raw(w, tc, DOOR)[-1]
             _connect(planner, branch, this_exit, this_conn)
@@ -641,7 +640,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                         this_conn = rng.choice(n_doors)
                         target_room = w.owner_room(this_conn)
                         _connect(planner, branch, remaining_doors.pop(), this_conn)
-                        # Legacy: the absorbed room joins dead_ends when one
+                        # The absorbed room joins dead_ends when one
                         # raw door remains (rebalances the step-6 counts).
                         th = w._index[target_room]
                         if (target_room not in branch.dead_ends
@@ -734,7 +733,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
 
 def finalize_plan(planner):
     """Close all branches and return the full [door pairs, oneways] map
-    (legacy generate_map_with_characters tail; -maze iso / -rkt splices are
+    (-maze iso / -rkt splices are
     later milestones and appended by the caller when present)."""
     w = planner.world
     rng = planner.rng
@@ -744,14 +743,14 @@ def finalize_plan(planner):
 
     # Hub validation: no live unprotected exits; terminus merged into hub.
     for i, branch in enumerate(planner.branches):
-        hub = branch.hub_class()
+        hub = branch.hub_cluster()
         loose_doors = _elements(w, hub, DOOR)
         loose_traps = _elements(w, hub, TRAP)
         if loose_doors or loose_traps:
             raise RuinPlanError(
                 f'branch {i} hub has unconnected exits after finalize: '
                 f'doors={loose_doors}, traps={loose_traps}')
-        if w.class_of_room(branch.terminus) != hub:
+        if w.cluster_of_room(branch.terminus) != hub:
             raise RuinPlanError(
                 f'branch {i} terminus {branch.terminus!r} not merged into hub')
 
@@ -759,7 +758,7 @@ def finalize_plan(planner):
     oneways = [list(m) for m in w.oneways]
     pairs = [list(m) for m in reattach_shared_exits(pairs, planner.config._shared)]
 
-    # Splice the independent sub-maps (legacy order: maze, then KT lanes).
+    # Splice the independent sub-maps (maze first, then KT lanes).
     if getattr(planner, 'isolated_maze_map', None) is not None:
         pairs.extend(list(m) for m in planner.isolated_maze_map[0])
         oneways.extend(list(m) for m in planner.isolated_maze_map[1])
@@ -815,8 +814,7 @@ def _bfs_set(adj, start):
 def verify_no_character_gated_softlock(planner, pairs, oneways):
     """Free-graph (starting party only) vs full-graph reachability per
     branch: a room enterable without a recruit but leavable only with one
-    is a softlock - reject the plan (legacy
-    _verify_no_character_gated_softlock, networkx-free)."""
+    is a softlock - reject the plan."""
     party = set(planner.config.party)
     for branch_id, branch in enumerate(planner.branches):
         placed = [r for r in branch.rooms if r in room_data]
@@ -847,7 +845,7 @@ def verify_no_character_gated_softlock(planner, pairs, oneways):
 
         # Exit -> room, from the static room_data (sorted; shared variants).
         # Spec overrides (e.g. the -maze iso composite's rolled entry pit)
-        # take precedence - legacy mutates room_data instead.
+        # take precedence.
         overrides = planner.config.spec_overrides
         owner = {}
         for rid in sorted(branch.rooms, key=str):

@@ -1,10 +1,10 @@
-"""Property tests for doors.model.WorldModel (rewrite Stage B).
+"""Property tests for doors.model.WorldModel.
 
 The model's contract: every mutating operation is journaled, and
 rollback(mark) restores the exact pre-checkpoint state (verified by full
-snapshot fingerprint); door connections merge classes; one-way cycles
-merge every class on the cycle (the class graph is always a DAG); key
-application unlocks per legacy semantics and cascades.
+snapshot fingerprint); door connections merge clusters; one-way cycles
+merge every cluster on the cycle (the cluster graph is always a DAG); key
+application unlocks and cascades correctly.
 
 Run: python3 tests/doors/test_model.py
 """
@@ -35,9 +35,9 @@ def test_connect_and_rollback():
     base = w.snapshot()
     m = w.checkpoint()
     c = w.connect_door(1, 3)                       # A + B merge
-    assert w.class_of_room('A') == w.class_of_room('B') == c
+    assert w.cluster_of_room('A') == w.cluster_of_room('B') == c
     assert w.door_pairs == [(1, 3)]
-    assert sorted(w.class_elements(c, DOOR)) == [2]
+    assert sorted(w.cluster_elements(c, DOOR)) == [2]
     w.rollback(m)
     assert w.snapshot() == base
     print('PASS: connect_door + rollback roundtrip')
@@ -46,18 +46,18 @@ def test_connect_and_rollback():
 def test_oneway_cycle_merges():
     w = tiny_world()
     w.connect_door(1, 3)                           # A+B
-    cAB = w.class_of_room('A')
+    cAB = w.cluster_of_room('A')
     w.connect_oneway(2001, 3001)                   # A+B --> C
-    assert w.class_of_room('C') in w.downstream(cAB)
+    assert w.cluster_of_room('C') in w.downstream(cAB)
     m = w.checkpoint()
     # Close the loop: C's door to A+B's remaining door -> everything merges
     # (a two-way connection makes the trap cycle mutually traversable).
     c = w.connect_door(4, 2)
-    assert w.class_of_room('C') == w.class_of_room('A') == c
+    assert w.cluster_of_room('C') == w.cluster_of_room('A') == c
     assert w.downstream(c) == [] and w.upstream(c) == []   # DAG-clean
     w.rollback(m)
-    assert w.class_of_room('C') != w.class_of_room('A')
-    print('PASS: cycle closure merges classes, rollback splits them')
+    assert w.cluster_of_room('C') != w.cluster_of_room('A')
+    print('PASS: cycle closure merges clusters, rollback splits them')
 
 
 def test_key_unlock_cascade():
@@ -66,11 +66,11 @@ def test_key_unlock_cascade():
     m = w.checkpoint()
     released = w.apply_key('k1')
     assert released == ['k2']
-    assert 6 in w.class_elements(w.class_of_room('D'), DOOR)
+    assert 6 in w.cluster_elements(w.cluster_of_room('D'), DOOR)
     assert 6 in w.initially_locked_exits
-    assert 'k2' in w.class_keys(w.class_of_room('D'))
+    assert 'k2' in w.cluster_keys(w.cluster_of_room('D'))
     # k1 held in A is consumed
-    assert 'k1' not in w.class_keys(w.class_of_room('A'))
+    assert 'k1' not in w.cluster_keys(w.cluster_of_room('A'))
     w.rollback(m)
     assert w.snapshot() == base
     print('PASS: apply_key unlock cascade + rollback')
@@ -87,18 +87,18 @@ def test_add_room():
     h = w.add_room('E', {'doors': [7], 'locks': {('k1',): [8, 'k3']}})
     # Lock assessed against current keychain: 8 goes live (and into
     # initially_locked_exits), k3 waits in the room's key list.
-    assert sorted(w.class_elements(h, DOOR)) == [7, 8]
+    assert sorted(w.cluster_elements(h, DOOR)) == [7, 8]
     assert 8 in w.initially_locked_exits
-    assert w.class_keys(h) == ['k3']
+    assert w.cluster_keys(h) == ['k3']
     assert w.locks[h] == {}
     c = w.connect_door(7, 1)                       # join A through the new room
-    assert w.class_of_room('E') == w.class_of_room('A') == c
+    assert w.cluster_of_room('E') == w.cluster_of_room('A') == c
     w.rollback(m)
     assert w.snapshot() == base
     assert 'E' not in w._index and len(w.room_ids) == 4
     # A lock whose key is NOT held stays shut on arrival.
     h2 = w.add_room('F', {'doors': [9], 'locks': {('k9',): [10]}})
-    assert w.class_elements(h2, DOOR) == [9]
+    assert w.cluster_elements(h2, DOOR) == [9]
     assert ('k9',) in w.locks[h2]
     try:
         w.add_room('F', {'doors': [11]})
@@ -184,7 +184,7 @@ def test_fuzz_rollback():
 
 
 def test_dag_invariant():
-    """After any sequence of connections the class graph has no cycles."""
+    """After any sequence of connections the cluster graph has no cycles."""
     rng = random.Random(99)
     for trial in range(100):
         n = rng.randint(4, 10)
@@ -201,7 +201,7 @@ def test_dag_invariant():
             elif len(doors) >= 2:
                 d1, d2 = rng.sample(doors, 2)
                 w.connect_door(d1, d2)
-        for c in w.classes():
+        for c in w.clusters():
             down = w.downstream(c)
             assert c not in down, f'trial {trial}: cycle through {c}'
             up = set(w.upstream(c))

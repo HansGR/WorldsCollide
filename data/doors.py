@@ -4,7 +4,7 @@ from data.map_exit_extra import exit_data, reset_exit_data  # for door descripti
 from data.event_exit_data import event_exit_info  # for one-way exit descriptions (ROM-free)
 from log.verbose import vprint, is_enabled as _verbose_enabled
 
-# ROOM_SETS lives in data/room_sets.py (ROM-free; Stage A 3b split)
+# ROOM_SETS lives in data/room_sets.py (ROM-free)
 from data.room_sets import ROOM_SETS
 
 
@@ -101,8 +101,7 @@ class Doors():
     def debug_print_shortest_route(self, door_map, destination_room):
         """Print the shortest route from any world-map room (or ruination
         hub) to destination_room over the final map (-debug_dest). Pure BFS
-        with the connecting elements as edge payloads (the legacy version
-        walked a networkx Network)."""
+        with the connecting elements as edge payloads."""
         from data.rooms import room_data
         from doors.atlas import exit_description as get_door_name
 
@@ -184,9 +183,8 @@ class Doors():
         print("=" * 80 + "\n")
 
     def mod(self, characters=None):
-        """Plan the door map with the v2 planner (doors/plan) -- one planning
-        site for every mode including ruination (Stage E2 cutover; the
-        walk-based legacy planner was deleted). Planning consumes the seeded
+        """Plan the door map (doors/plan) -- one planning site for every
+        mode including ruination. Planning consumes the seeded
         global RNG stream in one contiguous window here; the resulting
         DoorPlan is owned by the Data phase (self.plan) and received by
         Events."""

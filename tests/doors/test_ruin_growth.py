@@ -1,6 +1,6 @@
-"""Integration tests for doors.plan.ruination.growth (Stage D milestone 3).
+"""Integration tests for doors.plan.ruination.growth.
 
-Runs the v2 growth orchestrator on the REAL room pool across many seeds
+Runs the growth orchestrator on the REAL room pool across many seeds
 and checks the plan invariants:
 - requested characters/espers are all placed, kinds match check flags
 - a granted character's in-game lock was already on the keychain
@@ -106,7 +106,7 @@ def main(n=40):
     print(f'growth integration: {ok}/{n} plans complete, {fail} failed')
     for i, msg in failures[:5]:
         print(f'  seed {i}: {msg}')
-    # Legacy regenerates on failure (~4% observed); the growth stage alone
+    # Whole plans retry on failure; the growth stage alone
     # should complete for the large majority of seeds.
     assert ok >= n * 0.8, f'too many failures: {fail}/{n}'
     print('PASS: growth invariants across seeds')

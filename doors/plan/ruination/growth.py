@@ -1,4 +1,4 @@
-"""Ruination growth orchestrator (rewrite Stage D milestone 3).
+"""Ruination growth orchestrator.
 
 Port of ruination_map's setup + generate_map_with_characters onto the shared
 WorldModel: pre-planning, area distribution, the pick-branch / extend /
@@ -8,22 +8,20 @@ in finalize.py; the -rkt / -maze iso sub-maps in kefka_tower.py /
 dream_maze.py; the Data-phase entry point (party resolution + retry loop)
 in plan.py.
 
-Structural changes vs legacy, with equivalence arguments:
+Design notes:
 
 - All tables are COPIES held on RuinConfig, with -maze adjustments applied
-  at construction. Nothing module-level is mutated, so the legacy
-  _reset_ruination_tables machinery has no v2 counterpart (plan flaw F3);
+  at construction. Nothing module-level is mutated;
   a retry just builds a fresh planner.
 
 - One shared WorldModel hosts all branches; the keychain is global.
-  Legacy applies character keys to every branch explicitly, and every
   non-character key's lock lives in the same area as the key (areas are
   distributed atomically, forced_same_branch covers cross-area pairs), so
   a key found on one branch never has a lock to open on another - the
   global chain is behaviorally identical.
 
 - Forced connections are wired per branch (both elements' rooms must be
-  members of the SAME branch), mirroring legacy's branch-local
+  members of the SAME branch), preserving branch-local
   ForceConnections; with a shared model an unscoped wiring could merge
   branches.
 
@@ -63,8 +61,8 @@ def possible_flags(type_list):
 
 class RuinConfig:
     """Immutable-per-plan copies of the ruination tables, with mode
-    adjustments applied at construction (legacy: _configure_dream_maze and
-    -open mutate the module tables in place)."""
+    adjustments applied at construction, so mode flags never mutate
+    the module tables."""
 
     def __init__(self, party, char_range=(3, 3), esper_range=(0, 0),
                  open_world=False, maze=None, blitz_characters=(),
@@ -78,7 +76,7 @@ class RuinConfig:
         self.blitz_characters = list(blitz_characters)
         self.espers_available = espers_available
         # Per-plan room spec replacements (e.g. the -maze iso composite
-        # room's rolled entry pit); legacy writes these into room_data.
+        # room's rolled entry pit).
         self.spec_overrides = {}
 
         self.character_areas = copy.deepcopy(RC.CHARACTER_AREAS)
@@ -100,7 +98,7 @@ class RuinConfig:
             self.character_locked_rewards = copy.deepcopy(RC.CHARACTER_LOCKED_REWARDS)
             self.rewards_locked_by_character = dict(RC.REWARDS_LOCKED_BY_CHARACTER)
 
-        # -maze adjustments (legacy _configure_dream_maze)
+        # -maze adjustments
         if maze == 'sep':
             if 'DreamMaze' in self.character_areas['CYAN']:
                 self.character_areas['CYAN'].remove('DreamMaze')
@@ -118,8 +116,8 @@ class RuinConfig:
 
         self._shared = split_shared_view()
         # Forcing view: ruination drops the ruination_dont_force entries and
-        # the final-room->sealed-gate pair (legacy pops both from the global
-        # table: Doors.__init__ pops 1079, generate_map pops dont_force).
+        # the final-room->sealed-gate pair: the Sealed Gate is a branch
+        # terminus in ruination and must not be pinned.
         skip = set(ruination_dont_force) | {1079}
         self.forcing = {k: list(v) for k, v in forced_connections.items()
                         if k not in skip}
@@ -153,8 +151,9 @@ class RuinConfig:
 
 
 def _area_connectors(config, area_name):
-    """has_pido / has_hub analysis of an area's raw rooms (legacy
-    _analyze_area_connectors on room_data)."""
+    """has_pido / has_hub analysis of an area's raw rooms: can the area
+    accept a pit-in/door-out landing, and does it contain a hub-capable
+    room (3+ exits)?"""
     out = {'has_pido': False, 'has_hub': False}
     for rid in config.room_sets.get(area_name, ()):
         rd = room_data.get(rid)
@@ -175,8 +174,7 @@ class RuinPlanner:
         self.verbose = False
 
         self.world = WorldModel({})
-        # Protect every forcing id up front (legacy ForceConnections
-        # protects all pairs on its first run, present or not).
+        # Protect every forcing id up front (all pairs, present or not).
         for k, v in config.forcing.items():
             self.world.protected.add(k)
             self.world.protected.update(v)
@@ -201,7 +199,7 @@ class RuinPlanner:
         self.dead_check_restrictions = {}
 
         # -maze iso: roll the composite maze's internals + entry pit, and
-        # record the entry pit as a spec override (legacy edits room_data).
+        # record the entry pit as a spec override.
         self.isolated_maze_map = None
         if config.maze == 'iso':
             from doors.plan.ruination.dream_maze import randomize_isolated_maze
@@ -216,7 +214,7 @@ class RuinPlanner:
             from doors.plan.ruination.kefka_tower import randomize_kefka_tower
             self.kt_lane_map = randomize_kefka_tower(rng)
 
-        # Requested counts (legacy rolls these from the arg ranges)
+        # Requested counts, rolled from the arg ranges
         c_lo, c_hi = config.char_range
         e_lo, e_hi = config.esper_range
         self.Requested = [rng.randint(max(c_lo, 3), max(c_hi, 3)),
@@ -226,7 +224,7 @@ class RuinPlanner:
          self.dead_checks_allowed) = self._pre_plan()
 
         # Duncan's House: 50% inclusion when a Blitz character is in the
-        # starting party or planned list (legacy order: party first).
+        # starting party or planned list (party first).
         self.include_duncan_house = False
         self.duncan_house_character = None
         blitz = [c for c in config.party if c in config.blitz_characters]
@@ -268,7 +266,7 @@ class RuinPlanner:
     # Pre-planning
 
     def _pre_plan(self):
-        """Legacy pre_plan_character_acquisition: choose planned characters
+        """Choose planned characters
         and verify the implied areas have enough esper-capable slots.
 
         Known corner: the slot count applies no REWARD_OWNERS filter, so
@@ -359,8 +357,8 @@ class RuinPlanner:
         return True
 
     def apply_key(self, key):
-        """Global key application + check bookkeeping (legacy
-        ruination_map.apply_key; branch fan-out is implicit in the shared
+        """Global key application + check bookkeeping (branch fan-out
+        is implicit in the shared
         model)."""
         cfg = self.config
         self.keychain.add(key)
@@ -391,7 +389,7 @@ class RuinPlanner:
 
     def _force_connections(self, branch):
         """Wire every forcing pair whose two elements are live in THIS
-        branch (legacy ForceConnections per branch turn; idempotent since
+        branch (idempotent since
         connected elements leave the live lists)."""
         w = self.world
         members = set(branch.rooms)
@@ -434,7 +432,7 @@ class RuinPlanner:
                 self.accessible_shops.append(shop_id)
 
     def distribute_areas(self, areas, method='random'):
-        """Legacy distribute_areas: stuck-branch priority, standalone-town
+        """Distribute new areas to branches: stuck-branch priority, standalone-town
         spreading, then random/shortest dispatch; expands areas to rooms,
         registers checks, and adds rooms to branches."""
         cfg = self.config
@@ -525,7 +523,7 @@ class RuinPlanner:
                     self._add_room_to_branch(branch, rid)
                     existing.add(rid)
 
-        # New areas may unstick a branch (legacy post-distribution check).
+        # New areas may unstick a branch.
         for i, branch in enumerate(self.branches):
             if i in self.stuck_branches and branch_rooms[i]:
                 reason = self.stuck_branches[i]
@@ -545,7 +543,7 @@ class RuinPlanner:
 
     def _assign_area_pre(self, area, branch_id):
         """AreasUsed entry during dispatch (shop tracking happens in the
-        room-expansion pass, as in legacy)."""
+        room-expansion pass)."""
         self.AreasUsed[area] = branch_id
 
     # ------------------------------------------------------------------
@@ -585,7 +583,7 @@ class RuinPlanner:
         return [(a, r) for a, r, _, _ in out]
 
     def _unstick_with_reserve(self, branch_id):
-        """Legacy no-viable-branches path: pull the best reserve (or EXTRA)
+        """No-viable-branches rescue: pull the best reserve (or EXTRA)
         area onto the branch and reset its active room to the hub."""
         branch = self.branches[branch_id]
         reserve_areas = self.get_reserve_area_rooms()
@@ -621,15 +619,15 @@ class RuinPlanner:
 
     def check_for_rewards(self, branch, this_conn):
         """Check rooms newly reached by connecting `this_conn`: the target
-        class first, else the first downstream class holding one; claims
-        every check room in that class (legacy compound components)."""
+        cluster first, else the first downstream cluster holding one;
+        claims every check room in that cluster."""
         w = self.world
-        c = w.owner_class(this_conn)
-        found = [r for r in branch.check_rooms if w.class_of_room(r) == c]
+        c = w.owner_cluster(this_conn)
+        found = [r for r in branch.check_rooms if w.cluster_of_room(r) == c]
         if not found:
             for dc in w.downstream(c):
                 found = [r for r in branch.check_rooms
-                         if w.class_of_room(r) == dc]
+                         if w.cluster_of_room(r) == dc]
                 if found:
                     break
         if not found:
@@ -642,7 +640,7 @@ class RuinPlanner:
         return rewards
 
     def _choose_kind(self, flags, force_character=False):
-        """Legacy choose_reward/_choose_reward_with_exclusion: shuffled type
+        """Choose a reward kind for a claimed check: shuffled type
         order, first available wins, item as fallback. Returns (kind,
         character_name or None) and consumes the pools.
 
@@ -650,7 +648,7 @@ class RuinPlanner:
         ARCHIVE.md "Ruination Esper-Capacity Corner" for the sanctioned
         future forcing rules."""
         rng = self.rng
-        # Planned characters not yet assigned as a reward (legacy: available
+        # Planned characters not yet assigned as a reward (available
         # minus excluded). Track by assignment, NOT keychain membership: under
         # -open every character starts in the keychain, so a keychain test
         # would leave nothing to place.
@@ -674,8 +672,7 @@ class RuinPlanner:
 
     def process_rewards(self, rewards, branch_id):
         """Assign kinds to found checks; characters cascade: key to all
-        branches, areas distributed, banked rewards re-processed (legacy
-        process_rewards, minus the ROM slot binding)."""
+        branches, areas distributed, banked rewards re-processed."""
         cfg = self.config
         for reward_name, flags in rewards:
             # If this is the LAST character-capable check on the map and we
@@ -690,7 +687,7 @@ class RuinPlanner:
                 # locks on every branch, their home areas join the map, and
                 # any rewards banked behind them are granted immediately.
                 self.RewardsObtained[0] += 1
-                # Gate sanity (legacy uses the event's character_gate; the
+                # Gate sanity (the event's character_gate; the
                 # data-level locks must already be satisfied here).
                 locker = cfg.rewards_locked_by_character.get(reward_name)
                 if locker is not None and locker not in self.keychain:
@@ -813,7 +810,7 @@ class RuinPlanner:
                 # cooldowns only for freshly mapped rooms).
                 w = self.world
                 target_room = w.owner_room(target)
-                target_class = w.class_of_room(target_room)
+                target_class = w.cluster_of_room(target_room)
                 target_was_connected = any(
                     w.find(h1) == target_class or w.find(h2) == target_class
                     for h1, h2 in w.edges)
@@ -876,9 +873,9 @@ class RuinPlanner:
 
     def _connect(self, branch, exit_id, target):
         """Perform the chosen connection, move the active position, and
-        apply the target class's keys (legacy Network.connect tail).
+        apply the target cluster's keys.
 
-        Kind comes from list membership (live_kind), as in legacy: id
+        Kind comes from list membership (live_kind): id
         arithmetic misclassifies door-as-trap exits (door-range ids in a
         trap list, e.g. 182 in room 61)."""
         w = self.world
@@ -888,5 +885,5 @@ class RuinPlanner:
         else:
             c = w.connect_oneway(exit_id, target)
         branch.active = w.owner_room(target)
-        for k in list(w.class_keys(w.class_of_room(branch.active))):
+        for k in list(w.cluster_keys(w.cluster_of_room(branch.active))):
             self.apply_key(k)

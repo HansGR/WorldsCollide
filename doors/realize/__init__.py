@@ -1,6 +1,6 @@
-"""Realization: write a finished DoorPlan into the ROM (rewrite plan
-section 3.5). Re-homed verbatim from data/maps.py / data/transitions.py
-in Stage F -- functions take the live Maps object; nothing here runs at
+"""Realization: write a finished DoorPlan into the ROM.
+
+Functions take the live Maps object at call time; nothing here runs at
 import time, so the doors/ package stays importable without a ROM.
 
     door_map.py     postprocess_door_map: plan pairs -> the realized

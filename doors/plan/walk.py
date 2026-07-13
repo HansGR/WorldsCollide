@@ -1,17 +1,17 @@
-"""The v2 backtracking walk (rewrite Stage B).
+"""The backtracking walk: the sampling algorithm behind every door mode.
 
-A faithful port of the legacy Network.connect_network sampling algorithm
-onto the journaled WorldModel: grow from an active class, offer its and
-its downstream classes' exits in random order, try random legal entrances
-for each, prune with Rules A-F, and backtrack by journal rollback (no
-copies). The deterministic attempted-connection budget from p7 carries
-over unchanged.
+Grow from an active cluster, offer its and its downstream clusters' exits
+in random order, try random legal entrances for each, prune with Rules
+A-F, and backtrack by journal rollback (no copies). A deterministic
+attempted-connection budget bounds pathological searches identically on
+every machine (no timeouts).
 
-Deliberate distribution-affecting differences from legacy, both approved:
-- the class graph is always DAG-clean (model invariant; legacy could
-  carry residual 2-cycles). Dead-end attachment offers locked doors as
-  attachment points exactly as legacy does (attachment runs BEFORE the
-  walk, so excluding them would bias locked doors toward progression).
+Two sampling-character decisions worth knowing:
+- the cluster graph is kept DAG-clean at all times (closing a one-way
+  cycle merges the clusters on it);
+- dead-end attachment offers locked doors as attachment points
+  (attachment runs BEFORE the walk, so excluding them would bias locked
+  doors toward progression).
 """
 
 import random
@@ -21,7 +21,7 @@ from doors.plan.prune import check_invalid, PruneReject
 
 
 class WalkBudgetExhausted(Exception):
-    """Global stop signal: re-raised past every frame (p7 semantics)."""
+    """Global stop signal: re-raised past every backtracking frame."""
 
 
 class WalkFailed(Exception):
@@ -30,7 +30,7 @@ class WalkFailed(Exception):
 
 def force_connections(world, forcing):
     """Apply forced connections whose partner is present; protect both
-    sides either way (legacy ForceConnections)."""
+    sides either way."""
     for d, targets in forcing.items():
         partner = targets[0]
         if partner in world._owner and d in world._owner:
@@ -47,10 +47,10 @@ def force_connections(world, forcing):
 
 
 def is_attachable(world, c):
-    """Legacy Network.is_attachable on a class."""
-    doors = len(world.class_elements(c, DOOR, include_locked=True))
-    traps = len(world.class_elements(c, TRAP, include_locked=True))
-    pits = len(world.class_elements(c, PIT))
+    """Can a dead end be attached at this cluster?"""
+    doors = len(world.cluster_elements(c, DOOR, include_locked=True))
+    traps = len(world.cluster_elements(c, TRAP, include_locked=True))
+    pits = len(world.cluster_elements(c, PIT))
     up = [0, 0, 0]
     for u in world.upstream(c):
         rc = _raw_counts(world, u)
@@ -66,70 +66,70 @@ def is_attachable(world, c):
 
 
 def _raw_counts(world, c):
-    return (len(world.class_elements(c, DOOR, include_locked=True)),
-            len(world.class_elements(c, TRAP, include_locked=True)),
-            len(world.class_elements(c, PIT, include_locked=True)))
+    return (len(world.cluster_elements(c, DOOR, include_locked=True)),
+            len(world.cluster_elements(c, TRAP, include_locked=True)),
+            len(world.cluster_elements(c, PIT, include_locked=True)))
 
 
 def _is_dead_end(world, c):
     if world.upstream(c) or world.downstream(c):
         return False
-    live = tuple(len(world.class_elements(c, k)) for k in (DOOR, TRAP, PIT))
-    locks = sum(len(world.locks[h]) for h in world.class_rooms(c))
+    live = tuple(len(world.cluster_elements(c, k)) for k in (DOOR, TRAP, PIT))
+    locks = sum(len(world.locks[h]) for h in world.cluster_rooms(c))
     return live == (1, 0, 0) and locks == 0
 
 
 def attach_dead_ends(world, rng):
-    """Connect dead-end classes to attachable doors (legacy port, live
+    """Connect dead-end clusters to attachable doors (live
     doors only)."""
-    for _ in range(21):  # legacy max_loop_number = 20, plus initial pass
-        dead = [c for c in world.classes() if _is_dead_end(world, c)]
+    for _ in range(21):  # up to 20 retry passes after the initial one
+        dead = [c for c in world.clusters() if _is_dead_end(world, c)]
         if not dead:
             return
         rng.shuffle(dead)
         for dc in dead:
             if not _is_dead_end(world, dc):
                 continue  # merged away by an earlier attachment this pass
-            dd = world.class_elements(dc, DOOR)[0]
+            dd = world.cluster_elements(dc, DOOR)[0]
             candidates = []
             locked_info = {}
-            for c in world.classes():
+            for c in world.clusters():
                 if c != world.find(dc) and is_attachable(world, c):
-                    candidates.extend(world.class_elements(c, DOOR))
+                    candidates.extend(world.cluster_elements(c, DOOR))
                     for door, key_tuple in world.locked_doors(c):
                         candidates.append(door)
                         locked_info[door] = key_tuple
             rng.shuffle(candidates)
-            dead_keys = set(world.class_keys(dc))
+            dead_keys = set(world.cluster_keys(dc))
             for da in candidates:
                 if da in locked_info:
-                    # Legacy flag 0: never attach a dead end holding the very
+                    # Never attach a dead end holding the very
                     # key that opens the lock it would sit behind.
                     if dead_keys & set(locked_info[da]):
                         continue
                     lock_room = world.room_ids[world._find_locked(da)[0]]
-                    dead_rooms = [world.room_ids[h] for h in world.class_rooms(dc)]
+                    dead_rooms = [world.room_ids[h] for h in world.cluster_rooms(dc)]
                     world.connect_door_via_lock(dd, da)
                     # The dead end's keys are now reachable only through the
-                    # lock: park them behind it (legacy Ra.locks[ka].append).
+                    # lock: park them behind it.
                     for k in list(dead_keys):
                         holder = next(r for r in dead_rooms
                                       if k in world.keys[world._index[r]])
                         world.park_key_behind_lock(holder, k, lock_room,
                                                    locked_info[da])
                     break
-                target = world.owner_class(da)
-                # Legacy key-safety (runs when EITHER side holds keys): don't
+                target = world.owner_cluster(da)
+                # Key-safety (runs when EITHER side holds keys): don't
                 # let the attachment leave the target with every other exit
                 # locked solely by keys inside these two rooms.
-                held = dead_keys | set(world.class_keys(target))
-                other_doors = [d for d in world.class_elements(target, DOOR,
+                held = dead_keys | set(world.cluster_keys(target))
+                other_doors = [d for d in world.cluster_elements(target, DOOR,
                                                                include_locked=True)
                                if d != da]
                 if held and other_doors:
                     all_locked_internally = True
                     locked = {}
-                    for h in world.class_rooms(target):
+                    for h in world.cluster_rooms(target):
                         for kt, items in world.locks[h].items():
                             for it in items:
                                 locked[it] = kt
@@ -141,7 +141,7 @@ def attach_dead_ends(world, rng):
                         continue
                 world.connect_door(dd, da)
                 break
-    # Leftover dead ends are tolerated (legacy: "it'll probably get
+    # Leftover dead ends are tolerated ("it'll probably get
     # straightened out in the walk").
 
 
@@ -152,32 +152,32 @@ def walk(world, active, rng, budget):
         return
     check_invalid(world)
 
-    for k in list(world.class_keys(active)):
+    for k in list(world.cluster_keys(active)):
         world.apply_key(k)
 
     # NOTE: protection filters TARGETS (entrances) only. Exits are offered
     # unfiltered - forced/protected exits (a forced trap unlocked mid-walk,
     # a 30000+ mapsafe root door) must still be walked out; their forced
-    # entrance list bypasses protection, exactly as legacy.
-    exits = list(world.class_elements(active, DOOR)) + \
-        list(world.class_elements(active, TRAP))
+    # entrance list bypasses protection on purpose.
+    exits = list(world.cluster_elements(active, DOOR)) + \
+        list(world.cluster_elements(active, TRAP))
     for c in world.downstream(active):
-        exits += world.class_elements(c, DOOR)
-        exits += world.class_elements(c, TRAP)
+        exits += world.cluster_elements(c, DOOR)
+        exits += world.cluster_elements(c, TRAP)
     rng.shuffle(exits)
 
     forced = [e for e in exits if e in world.forcing]
     if forced:
-        exits = [forced[0]]  # fail fast, as legacy
+        exits = [forced[0]]  # fail fast on the forced exit
 
     while exits:
         d1 = exits.pop()
-        c1 = world.owner_class(d1)
+        c1 = world.owner_cluster(d1)
         d1_is_door = d1 in world.elements[world._owner[d1]][DOOR]
-        # Keys along the trail from the active class down to d1's class.
+        # Keys along the trail from the active cluster down to d1's class.
         if c1 != world.find(active):
             for tc in _trail(world, c1, active):
-                for k in list(world.class_keys(tc)):
+                for k in list(world.cluster_keys(tc)):
                     world.apply_key(k)
 
         if d1 in world.forcing:
@@ -185,8 +185,8 @@ def walk(world, active, rng, budget):
         else:
             kind = DOOR if d1_is_door else PIT
             entrances = []
-            for c in world.classes():
-                entrances += [e for e in world.class_elements(c, kind)
+            for c in world.clusters():
+                entrances += [e for e in world.cluster_elements(c, kind)
                               if e != d1 and e not in world.protected]
             rng.shuffle(entrances)
 
@@ -201,8 +201,8 @@ def walk(world, active, rng, budget):
                     new_active = world.connect_door(d1, d2)
                 else:
                     world.connect_oneway(d1, d2)
-                    new_active = world.owner_class(d2)
-                for k in list(world.class_keys(new_active)):
+                    new_active = world.owner_cluster(d2)
+                for k in list(world.cluster_keys(new_active)):
                     world.apply_key(k)
                 walk(world, new_active, rng, budget)
                 return
@@ -216,7 +216,7 @@ def walk(world, active, rng, budget):
 
 def _trail(world, c1, active):
     """Classes on a shortest upstream path from c1 to active, including c1,
-    excluding active (legacy key-trail semantics)."""
+    excluding active."""
     active = world.find(active)
     parent = {c1: None}
     queue = [c1]
@@ -246,11 +246,11 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
     `keys` are applied before forcing (KT lanes pre-unlock the gated
     platforms so the walk can rely on the crossings for connectivity).
 
-    start_rule (legacy Doors.mod start selection):
+    start_rule:
       'roots'      random root room, else any room (-dre and friends)
-      'biggest'    class with the most live doors, ties random (-drdc)
+      'biggest'    cluster with the most live doors, ties random (-drdc)
       'first_root' the first root room in pool order (-drx/-dra 'All')
-      'most_exits' class with the most live doors+traps, first maximal in
+      'most_exits' cluster with the most live doors+traps, first maximal in
                    room order (KT lane walks)"""
     from doors.model import WorldModel
     if rng is None:
@@ -266,15 +266,15 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
         if start_room is not None:
             starts = [start_room]
         elif start_rule == 'most_exits':
-            sizes = {c: len(world.class_elements(c, DOOR))
-                     + len(world.class_elements(c, TRAP))
-                     for c in world.classes()}
-            active = max(world.classes(), key=lambda c: sizes[c])
+            sizes = {c: len(world.cluster_elements(c, DOOR))
+                     + len(world.cluster_elements(c, TRAP))
+                     for c in world.clusters()}
+            active = max(world.clusters(), key=lambda c: sizes[c])
             starts = None
         elif start_rule == 'biggest':
-            sizes = {c: len(world.class_elements(c, DOOR)) for c in world.classes()}
+            sizes = {c: len(world.cluster_elements(c, DOOR)) for c in world.clusters()}
             best = max(sizes.values())
-            active = rng.choice([c for c in world.classes() if sizes[c] == best])
+            active = rng.choice([c for c in world.clusters() if sizes[c] == best])
             starts = None
         elif start_rule == 'first_root':
             starts = [next(r for r in specs if 'root' in str(r))]
@@ -282,7 +282,7 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
             roots = [r for r in specs if 'root' in str(r)]
             starts = roots or list(specs)
         if starts is not None:
-            active = world.class_of_room(rng.choice(starts))
+            active = world.cluster_of_room(rng.choice(starts))
         try:
             walk(world, active, rng, [budget_limit])
             return world

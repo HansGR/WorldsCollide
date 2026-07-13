@@ -1,10 +1,11 @@
-"""The DoorPlan artifact (rewrite Stage E).
+"""The DoorPlan artifact.
 
-Every planner returns the same object (plan section 3): the door/oneway
-matching plus, when ruination is active, a RuinPlan view carrying the
-abstract reward plan and party. Data constructs the plan (one contiguous
-RNG window) and owns it on Doors.plan; Events receives it and binds the
-live Reward objects (event/ruination_bind.py) -- one planning site (F5).
+Every planner returns the same object: the door/oneway matching plus,
+when ruination is active, a RuinPlan view carrying the abstract reward
+plan and party. The Data phase constructs the plan (one contiguous RNG
+window) and owns it on Doors.plan; the Events phase receives it and
+binds the live Reward objects (event/ruination_bind.py) -- one planning
+site.
 
 Everything here is ROM-free: RuinPlan wraps the solved (pure) RuinPlanner
 for structural queries; nothing references ROM objects.
@@ -16,8 +17,8 @@ class DoorPlan:
         self.door_pairs = [list(m) for m in door_pairs]
         self.oneways = [list(m) for m in oneways]
         self.ruination = ruination          # RuinPlan | None
-        # The unified gate table (plan sections 3.5/3.7): exit id -> key
-        # tuple (character names and/or named keys like 'dtboss'), derived
+        # The unified gate table: exit id -> key tuple (character names
+        # and/or named keys like 'dtboss'), derived
         # from the walked pools' room lock dicts -- the same source the
         # planner honors. Query with plan.gates / plan.gate_of(exit_id);
         # character_gates() filters to character keys.
@@ -25,16 +26,16 @@ class DoorPlan:
         self._dest = None                   # lazy exit -> partner index
 
     def as_map(self):
-        """The legacy Doors.map shape: [[door pairs], [oneways]]."""
+        """The Doors.map shape: [[door pairs], [oneways]]."""
         return [[list(m) for m in self.door_pairs],
                 [list(m) for m in self.oneways]]
 
     # ------------------------------------------------------------------
-    # Consumer query API (plan section 3.5): event-side code asks the plan
+    # Consumer query API: event-side code asks the plan
     # rather than walking raw pair lists. NOTE: these answer at PLAN level
     # (as-planned pairs). Realization-level truth (the postprocessed
     # maps.door_map with its +4000 destination ids and shared-exit
-    # resolution) stays on Maps until the Stage F realization extraction.
+    # resolution) lives on Maps (postprocess_door_map).
 
     def gate_of(self, exit_id):
         """Key tuple locking this exit, or None if it is ungated."""
@@ -71,8 +72,8 @@ class DoorPlan:
 
     def location_name(self, exit_id):
         """Name of the ROOM that owns the exit (atlas room registry), never
-        assuming the partner is a world-map door -- the 1.10 airship-text
-        class of bug is unrepresentable here. None if unregistered."""
+        assuming the partner is a world-map door (a door can legally lead
+        to another interior). None if unregistered."""
         from doors.atlas import room_name
         from data.rooms import room_data
         for rid, spec in room_data.items():

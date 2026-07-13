@@ -1,4 +1,4 @@
-"""Hand-curated semantic layer of the door-rando atlas (Stage A).
+"""Hand-curated semantic layer of the door-rando atlas.
 
 THIS FILE IS HAND-MAINTAINED (the generation bootstrap is retired).
 Edit entries directly, then run tools/compile_atlas.py to validate and
@@ -12,14 +12,14 @@ Tag priority when several apply: value-class (logical-wor, event-door
 - what the partner IS) beats mechanism (world - why derivation cannot
 verify it) beats tie-class (sibling - which tile was picked).
 
-NOTE (Stage A milestone 2): the logical-WoR id layer (4000+) is not
+NOTE: the logical-WoR id layer (4000+) is not
 yet modeled, so pairings that resolve through a +4000 twin currently
 appear in ASYMMETRIC_PARTNERS as 'extra-entrance'; they will re-home
 when that layer lands. Realization-time edits (exit_data_patch,
 exit_make_explicit, dungeon_crawl_exit_destination_override,
 event_door_connection_data, Maps.door_rando_cleanup) are deliberately
 NOT part of the vanilla partner table; they join the atlas as
-realization metadata later in Stage A.
+realization metadata.
 """
 
 # reason tags for PARTNER_OVERRIDES (in priority order)

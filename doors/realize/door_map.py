@@ -1,6 +1,6 @@
 """postprocess_door_map: the plan's pair lists -> the realized door_map /
 trap_map dictionaries (+4000 logical WOR destination ids, shared-exit
-conflict detection). Moved verbatim from data/maps.py (Stage F)."""
+conflict detection)."""
 
 from log.verbose import vprint
 from data.map_exit_extra import exit_data, exit_data_patch, \

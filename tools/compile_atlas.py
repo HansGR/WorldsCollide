@@ -1,4 +1,4 @@
-"""Atlas compiler for door randomization (rewrite Stage A).
+"""Atlas compiler for door randomization.
 
 Derives the mechanical layer of the door-rando atlas from the vanilla ROM
 data dumps in claude_reference/ and cross-checks it against the curated
@@ -550,7 +550,7 @@ def check_room_names():
 
     Bijection (every room mapped, no extras), unique names, area code
     registered, and the world letter consistent with the room's world
-    field (b=0, r=1, x=None). Kefka's Tower rooms may keep their legacy
+    field (b=0, r=1, x=None). Kefka's Tower rooms may keep their
     structured ids (KTa1...).
     """
     import importlib.util, re
@@ -575,7 +575,7 @@ def check_room_names():
             failures.append(f'room_names: {name!r} used by both {seen[name]!r} and {rid!r}')
         seen[name] = rid
         if name == str(rid) and name.startswith('KT'):
-            # Kefka's Tower rooms keep their legacy structured ids; the
+            # Kefka's Tower rooms keep their structured ids; the
             # letter is the LANE (a/b/c), not a world marker.
             continue
         m = pat.match(name)

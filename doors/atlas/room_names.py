@@ -1,6 +1,6 @@
-"""Atlas room naming: area-code registry and legacy -> atlas id mapping.
+"""Atlas room naming: area-code registry and room-id -> name mapping.
 
-PROPOSAL (Stage A milestone 3) - hand-maintained after review; edit
+Hand-maintained after review; edit
 freely and run tools/compile_atlas.py to re-validate.
 
 Name format:  CODE + world + NN + subletter? + (-variant)?

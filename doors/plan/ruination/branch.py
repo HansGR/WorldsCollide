@@ -1,21 +1,21 @@
 """RuinBranch: one branch of the ruination world as a view over the shared
-WorldModel (rewrite Stage D).
+WorldModel.
 
-Legacy runs three separate Network instances plus hand-managed reserve
+All three branches share ONE world model, plus hand-managed reserve
 bookkeeping to keep rooms from being placed twice; here all branches share
 one WorldModel, so element/room uniqueness is enforced by the model's owner
 map and adding a room to any branch removes it from contention everywhere.
-The keychain is global on the model - equivalent to legacy, which fans every
+The keychain is global on the model - equivalent to fanning every
 applied key out to all three branches.
 
 Check rooms are tracked by their own room ids for the life of the plan:
-classes never rename rooms (flaw F2), so the legacy compound-id re-pointing
+clusters never rename rooms, so compound-id re-pointing
 that RuinationBranch.compress_loop performs (check_rooms surgery plus the
-_compound_check_rooms map) has no v2 counterpart. Ask the model which class
+compound-room bookkeeping is unnecessary here: ask the model which cluster
 a check room is in when you need its current location.
 
 Branch-side bookkeeping (membership, cooldowns, check rooms) is NOT
-journaled: the legacy growth loop never backtracks branch state - extension
+journaled on purpose: the growth loop never backtracks branch state - extension
 validates candidates before connecting, and failures regenerate the whole
 map - so only the model-level walk (KT lanes etc.) needs rollback.
 """
@@ -78,7 +78,7 @@ class RuinBranch:
         self._classify(room_id)
 
     def _classify(self, room_id):
-        """Legacy RuinationBranch.classify_rooms, per room, at add time."""
+        """Classify a room (warp/town/check/terminus/dead end) at add time."""
         self.rooms.append(room_id)
         if room_id in self.termini:
             self.terminus = room_id
@@ -89,7 +89,7 @@ class RuinBranch:
 
     def _is_dead_end(self, room_id):
         """Exactly one door, no traps/pits, no locked items (keys allowed) -
-        legacy Network.is_dead_end at add time (no edges exist yet)."""
+        a dead-end test at add time (no edges exist yet)."""
         h = self.world._index[room_id]
         e = self.world.elements[h]
         if (len(e[DOOR]), len(e[TRAP]), len(e[PIT])) != (1, 0, 0):
@@ -102,23 +102,23 @@ class RuinBranch:
     # ------------------------------------------------------------------
     # Hub topology (all live queries against the model; nothing cached)
 
-    def hub_class(self):
-        return self.world.class_of_room(self.hub_room)
+    def hub_cluster(self):
+        return self.world.cluster_of_room(self.hub_room)
 
     def downstream_classes(self):
         """Classes reached from the hub by falling through traps."""
-        return self.world.downstream(self.hub_class())
+        return self.world.downstream(self.hub_cluster())
 
     def upstream_classes(self):
         """Classes that flow INTO the hub (their traps land hubward)."""
-        return self.world.upstream(self.hub_class())
+        return self.world.upstream(self.hub_cluster())
 
     def level(self, room_id):
         """Trichotomy of a member room relative to the hub: HUB (mutually
         reachable with it), UPSTREAM, DOWNSTREAM, or UNPLACED (not yet
         wired to the hub component)."""
-        c = self.world.class_of_room(room_id)
-        hub = self.hub_class()
+        c = self.world.cluster_of_room(room_id)
+        hub = self.hub_cluster()
         if c == hub:
             return HUB
         if c in self.world.downstream(hub):
@@ -135,20 +135,20 @@ class RuinBranch:
         return [r for r in self.rooms if self.level(r) is UNPLACED]
 
     def has_a_hub(self):
-        """True if some member class retains 3+ door/trap exits (legacy
-        has_a_hub counts per NODE - a class here - over raw live lists,
-        placed or not). The legacy dead-end exclusion is a no-op for the
+        """True if some member cluster retains 3+ door/trap exits
+        (counted per cluster over raw live lists,
+        placed or not). Excluding dead ends would be a no-op for the
         threshold: a listed dead end is a single 1-door room, which can
         never reach 3 exits."""
         w = self.world
         seen = set()
         for rid in self.rooms:
-            c = w.class_of_room(rid)
+            c = w.cluster_of_room(rid)
             if c in seen:
                 continue
             seen.add(c)
-            if (len(w.class_elements(c, DOOR))
-                    + len(w.class_elements(c, TRAP))) >= 3:
+            if (len(w.cluster_elements(c, DOOR))
+                    + len(w.cluster_elements(c, TRAP))) >= 3:
                 return True
         return False
 
