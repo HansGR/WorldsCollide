@@ -61,8 +61,38 @@ def test_mode_predicates():
 
 
 
+def test_gates():
+    """DoorPlan.gates: the unified gate table (plan 3.5/3.7) is derived
+    from the pool lock dicts and carried on the plan artifact."""
+    import random
+    from doors.plan.modes import gates_from_specs, plan_mode, _Flags
+    from doors.plan.artifact import DoorPlan
+
+    # Direct collection from a spec.
+    specs = {'x': {'doors': [1], 'traps': [], 'pits': [],
+                   'keys': ['k'], 'locks': {('k', 'SETZER'): [2, 'k2']}}}
+    assert gates_from_specs(specs) == {2: ('k', 'SETZER')}
+
+    # A -drdc plan carries the DungeonCrawl pool's named-key gates.
+    pairs, oneways, worlds, gates = plan_mode(
+        _Flags(door_randomize_dungeon_crawl=True), random.Random('gates'))
+    assert gates[1558] == ('ac1',)          # Ancient Castle stairs switch
+    assert gates[2070] == ('cd1', 'cd2')    # Cyan's dream stooges
+
+    plan = DoorPlan(pairs, oneways, gates=gates)
+    assert plan.gate_of(1558) == ('ac1',)
+    assert plan.gate_of(-1) is None
+    # Named keys are not characters; the character view filters them out.
+    assert 1558 not in plan.character_gates()
+    plan2 = DoorPlan([], [], gates={9: ('dtboss', 'SETZER')})
+    assert plan2.character_gates() == {9: ('SETZER',)}
+    print('PASS: DoorPlan.gates (unified gate table)')
+
+
+
 def main():
     test_mode_predicates()
+    test_gates()
     total = solved = 0
     for pool in POOLS:
         specs = load_pool(ROOM_SETS[pool])

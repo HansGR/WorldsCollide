@@ -198,11 +198,28 @@ def doors_touch(flags, *area_keys, rooms=()):
     return any(r in touched for r in rooms)
 
 
+def gates_from_specs(specs):
+    """Element-level gate table from pool specs: exit id -> key tuple
+    (the room lock dicts, before the walk consumes them). This is the one
+    place gate knowledge is derived for DoorPlan.gates (plan section 3.5:
+    the emission side -- entrance scripts / in-event branches -- reads the
+    plan instead of three ad-hoc sources; emission unification itself
+    lands with the Stage F realization extraction)."""
+    gates = {}
+    for spec in specs.values():
+        for keys, items in spec.get('locks', {}).items():
+            key_tuple = tuple(keys) if isinstance(keys, tuple) else (keys,)
+            for item in items:
+                if not isinstance(item, str):
+                    gates[item] = key_tuple
+    return gates
+
+
 def plan_mode(flags, rng, budget_limit=5000):
     """Plan the full map for any -dr*/-maps/-mapx combination.
 
     `flags` is args or any namespace with the door randomization
-    attributes. Returns (door_pairs, oneways, worlds)."""
+    attributes. Returns (door_pairs, oneways, worlds, gates)."""
     g = lambda name: getattr(flags, name, False)
     map_shuffle = bool(g('map_shuffle'))
     segments = []      # (name, specs, forcing, start_rule, budget)
@@ -281,8 +298,9 @@ def plan_mode(flags, rng, budget_limit=5000):
             seg[2][20000] = [20001]
             strip += [20000, 20001]
 
-    door_pairs, oneways, worlds = [], [], {}
+    door_pairs, oneways, worlds, gates = [], [], {}, {}
     for name, specs, forcing, start_rule, budget in segments:
+        gates.update(gates_from_specs(specs))
         world = run(specs, forcing, rng=rng, start_rule=start_rule,
                     budget_limit=budget)
         worlds[name] = world
@@ -298,7 +316,7 @@ def plan_mode(flags, rng, budget_limit=5000):
         door_pairs += [(doors_WOB_WOR[a], doors_WOB_WOR[b])
                        for a, b in door_pairs
                        if a in doors_WOB_WOR and b in doors_WOB_WOR]
-    return door_pairs, oneways, worlds
+    return door_pairs, oneways, worlds, gates
 
 
 class _Flags:
@@ -345,7 +363,7 @@ def plan_for_args(args, rng, characters=None):
         # rule doesn't apply there (orphan rooms are legal).
         from doors.plan.ruination.plan import plan_ruination
         return plan_ruination(args, rng, characters)
-    pairs, oneways, worlds = plan_mode(args, rng)
+    pairs, oneways, worlds, gates = plan_mode(args, rng)
     for world in worlds.values():
         check_solved(world, world.forcing)
-    return DoorPlan(pairs, oneways)
+    return DoorPlan(pairs, oneways, gates=gates)

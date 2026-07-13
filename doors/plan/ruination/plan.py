@@ -87,6 +87,14 @@ def plan_ruination(args, rng, characters):
             continue
         if attempt > 0 and getattr(args, 'debug', False):
             print(f'v2 ruination plan succeeded on attempt {attempt + 1}')
+        # Unified gate table over the rooms actually placed (their spec
+        # lock dicts -- the same locks the planner honored while walking).
+        from doors.plan.modes import gates_from_specs
+        from data.rooms import room_data
+        gates = gates_from_specs({
+            rid: config.spec_for(rid) for rid in planner.world.room_ids
+            if rid in room_data or rid in config.spec_overrides})
         return DoorPlan(full_map[0], full_map[1],
-                        ruination=RuinPlan(planner, party_names, party_ids))
+                        ruination=RuinPlan(planner, party_names, party_ids),
+                        gates=gates)
     raise last_error

@@ -12,10 +12,16 @@ for structural queries; nothing references ROM objects.
 
 
 class DoorPlan:
-    def __init__(self, door_pairs, oneways, ruination=None):
+    def __init__(self, door_pairs, oneways, ruination=None, gates=None):
         self.door_pairs = [list(m) for m in door_pairs]
         self.oneways = [list(m) for m in oneways]
         self.ruination = ruination          # RuinPlan | None
+        # The unified gate table (plan sections 3.5/3.7): exit id -> key
+        # tuple (character names and/or named keys like 'dtboss'), derived
+        # from the walked pools' room lock dicts -- the same source the
+        # planner honors. Query with plan.gates / plan.gate_of(exit_id);
+        # character_gates() filters to character keys.
+        self.gates = dict(gates or {})
         self._dest = None                   # lazy exit -> partner index
 
     def as_map(self):
@@ -29,6 +35,22 @@ class DoorPlan:
     # (as-planned pairs). Realization-level truth (the postprocessed
     # maps.door_map with its +4000 destination ids and shared-exit
     # resolution) stays on Maps until the Stage F realization extraction.
+
+    def gate_of(self, exit_id):
+        """Key tuple locking this exit, or None if it is ungated."""
+        return self.gates.get(exit_id)
+
+    def character_gates(self):
+        """{exit id: (character names,)} -- the gates whose keys are
+        characters (the local-character-gating subset of self.gates)."""
+        from data.ruin_constants import ALL_CHARACTERS
+        chars = set(ALL_CHARACTERS)
+        out = {}
+        for exit_id, keys in self.gates.items():
+            gating = tuple(k for k in keys if k in chars)
+            if gating:
+                out[exit_id] = gating
+        return out
 
     def destination_of(self, exit_id):
         """The planned partner of an exit: the other side of its door pair,

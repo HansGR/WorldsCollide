@@ -443,6 +443,12 @@ class Doors():
             lcolumn.append('Forced connections:')
             for d in self.forcing.keys():
                 lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
+            if self.plan is not None and self.plan.gates:
+                from doors.atlas import exit_description
+                lcolumn.append('Gated exits (exit: required keys):')
+                for d in sorted(self.plan.gates, key=str):
+                    keys = ', '.join(str(k) for k in self.plan.gates[d])
+                    lcolumn.append(f'{d} ({exit_description(d)}): {keys}')
             if len(self.map) > 0:
                 lcolumn.append('Map:')
                 for m in self.map[0]:
