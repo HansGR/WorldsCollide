@@ -174,20 +174,12 @@ class V2RuinMap:
         pass) are captured from the live slots, and rewards that are
         physically unreachable or character-gated beyond the starting-party
         closure (circular gating) are dropped."""
-        from data.map_exit_extra import exit_data
-        from data.event_exit_info import event_exit_info
+        from doors.atlas import exit_description as door_name
         from data import ruin_constants as RC
 
         planner = self.planner
         cfg = planner.config
         w = planner.world
-
-        def door_name(door_id):
-            if door_id in exit_data:
-                return exit_data[door_id][1]
-            if door_id in event_exit_info:
-                return event_exit_info[door_id][4]
-            return f"Door {door_id}"
 
         def room_of(element):
             h = w._owner.get(element)

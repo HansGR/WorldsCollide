@@ -67,3 +67,15 @@ def description(exit_id):
     from data.map_exit_extra import exit_data
     entry = exit_data.get(exit_id)
     return entry[1] if entry else None
+
+
+def exit_description(exit_id):
+    """Human name for any door/trap/pit/event-tile id, with a stable
+    fallback -- the one naming chain for spoiler logs and debug output."""
+    from data.map_exit_extra import exit_data
+    from data.event_exit_data import event_exit_info
+    if exit_id in exit_data:
+        return exit_data[exit_id][1]
+    if exit_id in event_exit_info:
+        return event_exit_info[exit_id][4]
+    return f"Door {exit_id}"

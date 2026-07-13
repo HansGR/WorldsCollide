@@ -317,19 +317,12 @@ class Doors():
         with the connecting elements as edge payloads (the legacy version
         walked a networkx Network)."""
         from data.rooms import room_data
-        from data.event_exit_data import event_exit_info
+        from doors.atlas import exit_description as get_door_name
 
         try:
             destination_room = int(destination_room)
         except (ValueError, TypeError):
             pass  # room ids can be strings
-
-        def get_door_name(door_id):
-            if door_id in exit_data:
-                return exit_data[door_id][1]
-            if door_id in event_exit_info:
-                return event_exit_info[door_id][4]
-            return f"Door {door_id}"
 
         # element -> room: exact ownership from the ruination plan's world
         # when available, otherwise a room_data scan (first owner wins).
