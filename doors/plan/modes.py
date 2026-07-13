@@ -282,10 +282,11 @@ def plan_drx(seed=None, rng=None, budget_limit=5000):
 
 
 def plan_for_args(args, rng, characters=None):
-    """Mode dispatch for the -d2 dev flag in Doors.mod. Every mode returns
-    the same DoorPlan artifact; ruination is just another view of it
-    (plan.ruination carries the abstract reward plan + party) -- one
-    planning site, in the Data phase (F5)."""
+    """Mode dispatch for Doors.mod (the one planning entry point since the
+    Stage E2 cutover). Every mode returns the same DoorPlan artifact;
+    ruination is just another view of it (plan.ruination carries the
+    abstract reward plan + party) -- one planning site, in the Data phase
+    (F5)."""
     from doors.plan.artifact import DoorPlan
     from doors.validate.structural import check_solved
     if getattr(args, 'ruination_mode', None):

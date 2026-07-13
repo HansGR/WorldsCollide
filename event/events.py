@@ -236,119 +236,23 @@ class Events():
         # choose the rest of the rewards, items given to events after all characters/events assigned
         self.choose_item_possible_rewards(reward_slots)
 
-    def _legacy_ruination_map(self, events, party, ruin_verbose):
-        """Legacy ruination map generation + reward binding (pre-v2 path).
-
-        Binds ROOM_REWARD to the live Reward slots, then retries
-        ruination_map generation from a clean slate, restoring the external
-        pools between attempts. Returns the ruination_map object (and sets
-        self.maps.doors.map). Retained until the -d2 path is cut over.
-        """
-        # Update ROOM_REWARD data
-        for room in ROOM_REWARD.keys():
-            for name in ROOM_REWARD[room].keys():
-                # Extract base event name: "Auction House_1" -> "Auction House", "Veldt Cave WOR" -> "Veldt Cave WOR"
-                if '_' in name and name.rsplit('_', 1)[1].isdigit():
-                    base_name = name.rsplit('_', 1)[0]
-                else:
-                    base_name = name
-                event = [e for e in events if e.name() == base_name]
-                if len(event) > 0:
-                    if '_' not in name:
-                        ROOM_REWARD[room][name] = event[0].rewards[0]
-                    else:
-                        reward_index = int(name[name.find('_')+1:])
-                        ROOM_REWARD[room][name] = event[0].rewards[reward_index-1]
-
-        # Build out the map & distribute characters.
-        #
-        # Map generation is randomized and occasionally fails: roughly 1 seed in
-        # ~25 hits a RuinationMappingError because a branch's free exits can't be
-        # balanced into a valid closed topology in finalize_map (or a branch gets
-        # stuck with no reserve area to unstick it). These failures are unlucky
-        # rolls, not unsatisfiable configs — re-rolling almost always succeeds.
-        # So retry from a clean slate: re-instantiating ruination_map re-rolls the
-        # requested counts, planned characters, area distribution, and the entire
-        # branch build. We only have to roll back the *external* mutable state the
-        # generator consumes (character/esper pools and the shared ROOM_REWARD
-        # reward slots); items aren't depleted (get_good_random samples with
-        # replacement), and all per-attempt ruination_map state is discarded with
-        # the instance. Note: reward_slots are updated automatically via shared
-        # object references (see generate_map_with_characters docstring).
-        import copy
-        chars_avail_baseline = list(self.characters.available_characters)
-        char_paths_baseline = copy.deepcopy(self.characters.character_paths)
-        espers_avail_baseline = set(self.espers.available_espers)
-        # Capture the slot objects themselves (not ROOM_REWARD keys): -maze iso
-        # moves a slot between keys during __init__, but the object is stable.
-        # possible_types must be restored too: finalize_map step 6 can pin a
-        # slot's possible_types (e.g. Ebot's Rock connected as a dead end is
-        # restricted to esper/item), and that restriction must not leak from a
-        # failed attempt into the next one.
-        reward_slot_baseline = [
-            (slot, slot.id, slot.type, slot.possible_types)
-            for rewards in ROOM_REWARD.values()
-            for slot in rewards.values()
-        ]
-
-        def _restore_reward_pools():
-            self.characters.available_characters = list(chars_avail_baseline)
-            self.characters.character_paths = copy.deepcopy(char_paths_baseline)
-            self.espers.available_espers = set(espers_avail_baseline)
-            for slot, slot_id, slot_type, slot_possible_types in reward_slot_baseline:
-                slot.id = slot_id
-                slot.type = slot_type
-                slot.possible_types = slot_possible_types
-
-        max_map_attempts = 10
-        ruin_map = None
-        last_error = None
-        for attempt in range(max_map_attempts):
-            if attempt > 0:
-                _restore_reward_pools()
-            ruin_map = ruination_map(self.args, party, verbose=ruin_verbose, characters=self.characters)
-            try:
-                self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
-                if attempt > 0 and self.args.debug:
-                    print(f'Ruination map generated on attempt {attempt + 1}')
-                break
-            except RuinationMappingError as e:
-                last_error = e
-                if self.args.debug:
-                    headline = next((ln.strip() for ln in str(e).splitlines()
-                                     if ln.strip() and ln.strip('= ')), 'unknown reason')
-                    print(f'Ruination map generation attempt {attempt + 1}/{max_map_attempts} '
-                          f'failed; retrying. ({headline})')
-                continue
-        else:
-            # Exhausted all attempts - surface the last failure.
-            raise last_error
-        return ruin_map
-
     def ruination_mod(self, events, name_event):
         reward_slots = self.init_reward_slots(events)
-
-        # Choose starting party (shared by both planner paths)
-        characters_available = [reward.id for reward in name_event["Start"].rewards]
-        party = [self.characters.DEFAULT_NAME[c] for c in characters_available]
 
         # Verbose output for map generation diagnostics is enabled by either
         # -debug (prints to stdout) or -debug-verbose (prints to a temp file
         # that is appended to the spoiler log at the end of the compile).
         ruin_verbose = bool(self.args.debug or getattr(self.args, "debug_verbose", False))
 
-        if getattr(self.args, 'door_rando_v2', False):
-            # v2 path (-d2): the plan was constructed in the Data phase
-            # (Doors.mod, one planning site); look it up, bind the live
-            # Reward objects, and apply the map. No snapshot/retry
-            # machinery exists here -- a failed plan never reaches Events.
-            from event.ruination_bind import bind_ruin_plan
-            plan = self.maps.doors.plan
-            ruin_map = bind_ruin_plan(plan, self.characters, self.espers,
-                                      self.items, events, verbose=ruin_verbose)
-            self.maps.doors.map = plan.as_map()
-        else:
-            ruin_map = self._legacy_ruination_map(events, party, ruin_verbose)
+        # The plan was constructed in the Data phase (Doors.mod, one planning
+        # site); look it up, bind the live Reward objects, and apply the map.
+        # No snapshot/retry machinery exists here -- a failed plan never
+        # reaches Events.
+        from event.ruination_bind import bind_ruin_plan
+        plan = self.maps.doors.plan
+        ruin_map = bind_ruin_plan(plan, self.characters, self.espers,
+                                  self.items, events, verbose=ruin_verbose)
+        self.maps.doors.map = plan.as_map()
 
         # Store area-to-branch mapping so NPC clue scripts can reference it.
         # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),
@@ -404,18 +308,10 @@ class Events():
             log_lines = ruin_map.generate_spoiler_log(self.characters, self.espers, self.items)
             section("Ruination Rewards", log_lines, [])
 
-            # Generate graphical map image alongside spoiler log (legacy path
-            # only; the v2 adapter does not render an image).
-            if not getattr(self.args, 'door_rando_v2', False):
-                try:
-                    import os
-                    import args as wc_args
-                    name, ext = os.path.splitext(wc_args.output_file)
-                    map_image_path = f"{name}_ruination_map.png"
-                    ruin_map.generate_map_image(map_image_path, self.characters, self.espers, self.items)
-                    print(f"Ruination map: {os.path.basename(map_image_path)}")
-                except Exception as e:
-                    print(f"Warning: Could not generate ruination map image: {e}")
+        # Debug: print shortest route(s) if requested (map is now final)
+        if self.args.debug_route_destination:
+            for dest in self.args.debug_route_destination:
+                self.maps.doors.debug_print_shortest_route(self.maps.doors.map, dest)
 
         # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
         self.maps.postprocess_door_map()

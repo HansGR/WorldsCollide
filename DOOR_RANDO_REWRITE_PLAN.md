@@ -522,10 +522,26 @@ double as the porting sequence.
   in-window; `Start.init_rewards` consumes it); Events binds via
   `event/ruination_bind.py` (Reward slots, character paths, pools) with
   ZERO snapshot/retry machinery on the v2 path. `-d2 -ruin` builds real
-  ROMs across the full config matrix. Remaining in this stage: cutover
-  + legacy deletion (gated on playtest sign-off), gating unification,
-  §3.7 event-layer mechanics. Mini-planners (KT lanes, dream maze)
-  landed in Stage D.
+  ROMs across the full config matrix. Mini-planners (KT lanes, dream
+  maze) landed in Stage D.
+  **CUTOVER completed 2026-07 (E2, after playtest sign-off):** v2 is the
+  only planner — `Doors.mod` always calls `plan_for_args` (`-d2` parses
+  but is inert). Deleted: `data/walks.py`, the walk half of
+  `data/doors.py`, `events._legacy_ruination_map`, and the generator
+  half of `event/ruination.py` (~5,900 lines; the file keeps only the
+  event-side machinery: start-game script, party interaction, y-switch
+  subroutines, chocobo/ferry). The legacy ruination spoiler semantics
+  (obtainable-reward capture + gating fixpoint, hub->reward and
+  hub->terminus routes) were ported to `V2RuinMap.generate_spoiler_log`
+  first; `-debug_dest` was ported to a BFS route printer in
+  `data/doors.py`. Bring-up parity harnesses retired with the legacy
+  code (`tools/walk_parity.py`, `ruin_parity.py`, `ruin_extend_oracle.py`,
+  `dre_parity.py`, `drdc_stats.py`); `tools/ruin_stress.py` stays.
+  Cutover proof: 8 golden builds (ruin/drdc/dre/dra/drx/dre+maps/mapx/
+  individual flags) byte-identical (ROM and spoiler) to the pre-cutover
+  `-d2` path at pinned seeds. Remaining in this stage: gating
+  unification, §3.7 event-layer mechanics. The graphical ruination map
+  image (matplotlib) was legacy-only and is retired with it.
 - **Stage F — deletion + docs.** Remove the old modules and reset
   functions; rewrite `DOOR_RANDO_GUIDE.md` against the new layout; the
   code review retires to historical record. CI sweep harness becomes the

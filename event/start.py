@@ -9,8 +9,8 @@ class Start(Event):
     def init_rewards(self):
         plan = getattr(getattr(self.maps, 'doors', None), 'plan', None)
         if plan is not None and plan.ruination is not None:
-            # v2 ruination (-d2 -ruin): the party was resolved inside the
-            # Data-phase planning window (doors/plan/ruination/plan.py, same
+            # Ruination: the party was resolved inside the Data-phase
+            # planning window (doors/plan/ruination/plan.py, same
             # explicit-first-then-random semantics as below); consume it.
             party = list(plan.ruination.party_ids)
             for character_id in party:

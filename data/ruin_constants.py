@@ -4,12 +4,10 @@ Split out of event/ruination.py (Stage D) so the v2 planner can import the
 area/reward tables without touching the ROM-coupled event machinery, mirroring
 the data/ruin_areas.py split for RUIN_ROOM_SETS.
 
-These tables are shared MUTABLE objects: event/ruination.py's
-_reset_ruination_tables() restores them in place between map-generation
-attempts, and events.ruination_mod binds ROOM_REWARD values to live Reward
-slot objects before the legacy generator runs. Consumers that need pristine
-data must read them before Events runs, or snapshot at import time as
-event/ruination.py does.
+The planner never mutates these tables (RuinConfig takes per-plan copies),
+and since the Stage E2 cutover nothing else does either: ROOM_REWARD values
+stay abstract RewardType lists (the live Reward slots are resolved by name
+in event/ruination_bind.py), so the tables can be read at any time.
 """
 
 from event.event_reward import RewardType

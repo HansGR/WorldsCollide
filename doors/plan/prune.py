@@ -4,8 +4,8 @@
 Each class of the world model is classified by what can flow through it
 (door-in/door-out, door-in/trap-out, pit-in/door-out, pit-in/trap-out),
 and the network is rejected when the classification proves it cannot be
-completed. Semantics match data/walks.py check_network_invalidity on the
-always-DAG class graph:
+completed. Semantics match the legacy data/walks.py check_network_invalidity
+(deleted at the E2 cutover) on the always-DAG class graph:
 
   A: network bifurcation - both a DiDo and a PiTo component exist without
      the one-way classes that could join them

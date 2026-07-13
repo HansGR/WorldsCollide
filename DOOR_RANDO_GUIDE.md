@@ -1,12 +1,13 @@
 # Programmer's Guide: Door Randomization Modes (LEGACY)
 
-> **Status (2026-07):** this guide documents the LEGACY implementation
-> (`data/walks.py`, `data/doors.py`, the generator half of
-> `event/ruination.py`). A ground-up rewrite lives in the `doors/` package,
-> runs under the `-d2` flag, and is slated to replace all of it after
-> playtest sign-off — see **DOOR_RANDO_V2_GUIDE.md** for that stack and
-> DOOR_RANDO_REWRITE_PLAN.md for the migration status. The legacy path is
-> still the default, so this guide remains accurate for non-`-d2` builds.
+> **Status (2026-07): HISTORICAL RECORD.** The implementation this guide
+> describes (`data/walks.py`, the legacy half of `data/doors.py`, the
+> generator half of `event/ruination.py`) was **deleted in the Stage E2
+> cutover** — the `doors/` package is now the only planner. See
+> **DOOR_RANDO_V2_GUIDE.md** for the live stack and
+> DOOR_RANDO_REWRITE_PLAN.md for the migration record. This file is kept
+> because its invariants/gotchas sections informed the rewrite and remain
+> useful background for the event-side machinery that survived.
 
 A map of the Dungeon Crawl (`-drdc`) and Ruination (`-ruin`) codebases: what
 the pieces are, how a seed flows through them, and the invariants and gotchas

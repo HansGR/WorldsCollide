@@ -7,7 +7,7 @@ def parse(parser):
 
     # Individual zone randomization
     doors.add_argument("-d2", "--door-rando-v2", action = "store_true",
-                       help = argparse.SUPPRESS)  # dev flag: route door planning through the v2 planner (doors/plan)
+                       help = argparse.SUPPRESS)  # inert since the Stage E2 cutover (v2 is the only planner); kept so old flag strings still parse
     doors.add_argument("-dru", "--door-randomize-umaro", action = "store_true",
                          help = "Randomize the doors in Umaro's cave")
     doors.add_argument("-drun", "--door-randomize-upper-narshe", action="store_true",

@@ -1,4 +1,5 @@
-"""Worlds Collide door randomization, v2 (the `-d2` planner).
+"""Worlds Collide door randomization (the v2 planner — the only
+implementation since the Stage E2 cutover).
 
 This package is the ground-up rewrite of the door-randomization core
 (DOOR_RANDO_REWRITE_PLAN.md). It is deliberately layered, and the layers

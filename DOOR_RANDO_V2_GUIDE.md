@@ -1,12 +1,13 @@
 # Programmer's Guide: Door Randomization v2 (`doors/`)
 
 The v2 stack is the ground-up rewrite of door randomization described in
-DOOR_RANDO_REWRITE_PLAN.md. It is **active under the dev flag `-d2`** for
-every mode (`-dre`, `-drdc`, `-dra`, `-drx`, `-maps`/`-mapx`, the individual
-`-dr*` flags, and `-ruin`), and is slated to become the only implementation
-once playtesting signs off (Stage F deletes the legacy path). This guide is
-for working *inside* the v2 stack; DOOR_RANDO_GUIDE.md documents the legacy
-implementation it replaces.
+DOOR_RANDO_REWRITE_PLAN.md. Since the **Stage E2 cutover (2026-07)** it is
+the **only** implementation, for every mode (`-dre`, `-drdc`, `-dra`,
+`-drx`, `-maps`/`-mapx`, the individual `-dr*` flags, and `-ruin`); the
+legacy planner (`data/walks.py`, the walk half of `data/doors.py`, the
+generator half of `event/ruination.py`) is deleted. The `-d2` flag still
+parses but is inert. This guide is for working *inside* the stack;
+DOOR_RANDO_GUIDE.md is the historical record of what it replaced.
 
 ## 1. The two sentences that matter
 
@@ -80,7 +81,7 @@ doors/
   `-open` adjustments applied at construction), so retries need no reset
   or rollback of anything.
 
-## 5. Execution flow under `-d2`
+## 5. Execution flow
 
 ```
 wc.py: Memory → Data → Events → write
@@ -115,8 +116,12 @@ no unordered iteration at RNG boundaries).
 | Walk vs legacy semantics (18 pools × seeds) | `python3 tests/doors/test_walk.py` |
 | Ruination units (branch/extend/sub-maps) | `tests/doors/test_ruin_branch.py`, `test_ruin_extend.py`, `test_ruin_submaps.py` |
 | Ruination end-to-end invariants | `tests/doors/test_ruin_growth.py`, `test_ruin_finalize.py` (real pool, N seeds) |
-| Distribution parity vs legacy | `tools/walk_parity.py` (per-pool), `tools/ruin_parity.py` (whole `-ruin` plan). Yardstick: v2-vs-legacy TVD at or below the legacy split-half self-baseline. |
-| Per-call oracle inside real builds | `tools/ruin_extend_oracle.py <rom> <seed>` |
+| Failure-rate / usage studies at scale | `tools/ruin_stress.py sweep 1000` / `matrix 60` (ROM-free) |
+
+(The legacy-comparison harnesses — `walk_parity.py`, `ruin_parity.py`,
+`ruin_extend_oracle.py`, `dre_parity.py`, `drdc_stats.py` — were retired at
+the E2 cutover with the legacy code they compared against; their final
+results are recorded in DOOR_RANDO_REWRITE_PLAN.md's stage statuses.)
 
 All tests run directly with `python3` (no pytest) and need no ROM.
 
@@ -153,12 +158,13 @@ All tests run directly with `python3` (no pytest) and need no ROM.
 
 ## 9. Remaining work (tracked in DOOR_RANDO_REWRITE_PLAN.md)
 
-- **Stage E (rest):** cutover — flip modes off `-d2` gating; delete
+- **Stage E (rest):** ~~cutover~~ (done 2026-07: `-d2` gating removed,
   `_legacy_ruination_map` + the generator half of `event/ruination.py`
-  and `data/walks.py`. Gating unification (`entrance_door_patch` /
-  in-event gates / `ruin-*` room variants → one `gates` table on the
-  plan, the `DoorPlan.gates` field reserved for it). Event-layer
-  mechanics (§3.7 hooks/predicates).
+  and `data/walks.py` deleted, byte-identical golden proof across 8
+  modes). Gating unification (`entrance_door_patch` / in-event gates /
+  `ruin-*` room variants → one `gates` table on the plan, the
+  `DoorPlan.gates` field reserved for it). Event-layer mechanics (§3.7
+  hooks/predicates).
 - **Stage F:** extract the realization layer (`postprocess_door_map`,
   transitions) into `doors/realize/`, port the spoiler map image, delete
   legacy, rewrite the guides.

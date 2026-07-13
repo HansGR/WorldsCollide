@@ -1,5 +1,9 @@
 # Door Randomization Code Review (Dungeon Crawl & Ruination Mode)
 
+> **Status (2026-07): HISTORICAL RECORD.** The code this review covers was
+> replaced by the `doors/` package and deleted in the Stage E2 cutover.
+> Kept because the findings motivated the rewrite's flaw table (F1-F10).
+
 Reviewed: `args/doors.py`, `args/ruin_preprocessor.py`, `data/doors.py`, `data/walks.py`,
 `data/rooms.py`, `data/maps.py` (door-writing paths), `data/map_exit_extra.py`,
 `data/event_exit_info.py`, `data/transitions.py` (skim), `event/ruination.py`,
