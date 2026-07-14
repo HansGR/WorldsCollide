@@ -1,18 +1,16 @@
-"""Feasibility pruning for the v2 walk: legacy Rules A-F, ported verbatim
-(rewrite Stage B; plan flaw F9 says port first, improve later).
+"""Feasibility pruning for the walk: Rules A-F.
 
-Each class of the world model is classified by what can flow through it
+Each cluster of the world model is classified by what can flow through it
 (door-in/door-out, door-in/trap-out, pit-in/door-out, pit-in/trap-out),
 and the network is rejected when the classification proves it cannot be
-completed. Semantics match the legacy data/walks.py check_network_invalidity
-(deleted at the E2 cutover) on the always-DAG class graph:
+completed. The rules operate on the always-DAG cluster graph:
 
   A: network bifurcation - both a DiDo and a PiTo component exist without
-     the one-way classes that could join them
+     the one-way clusters that could join them
   B/C: one-way imbalance (a DiTo with no PiDo, or vice versa)
   D: door in/out count imbalance
-  F: a dead-end class whose only exit is locked by a key inside itself
-(Rule E is computed but not enforced, as in legacy.)
+  F: a dead-end cluster whose only exit is locked by a key inside itself
+(Rule E is computed but deliberately not enforced.)
 """
 
 from doors.model import DOOR
@@ -24,8 +22,8 @@ class PruneReject(Exception):
 
 def check_invalid(world):
     """Raise PruneReject if the world fails Rules A/B/C/D/F."""
-    classes = world.classes()
-    counts = {c: world.counts(c) for c in classes}  # unprotected, incl locked
+    clusters = world.clusters()
+    counts = {c: world.counts(c) for c in clusters}  # unprotected, incl locked
 
     DiDo = DiTo = PiDo = PiTo = False
     doors_in = doors_out = doors_either = 0
@@ -33,7 +31,7 @@ def check_invalid(world):
     doors_in_non_dead_ends = 0
     rule_f = False
 
-    for c in classes:
+    for c in clusters:
         self_c = counts[c]
         up = [0, 0, 0]
         for u in world.upstream(c):
@@ -55,8 +53,8 @@ def check_invalid(world):
 
         # Rule F: a dead end whose exit is locked by keys held inside it.
         if is_dead_end:
-            held = set(world.class_keys(c))
-            for h in world.class_rooms(c):
+            held = set(world.cluster_keys(c))
+            for h in world.cluster_rooms(c):
                 for key_tuple, items in world.locks[h].items():
                     if set(key_tuple).issubset(held) and any(
                             not isinstance(i, str)

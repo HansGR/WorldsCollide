@@ -1,11 +1,73 @@
-from data.rooms import forced_connections, logical_links, map_shuffle_protected_doors, \
+from data.rooms import forced_connections, map_shuffle_protected_doors, \
     dungeon_crawl_split_exits, reset_room_tables, room_data, shared_exits
-from data.map_exit_extra import exit_data, doors_WOB_WOR, reset_exit_data  # for door descriptions, WOR/WOB equivalent doors
+from data.map_exit_extra import exit_data, reset_exit_data  # for door descriptions
 from data.event_exit_data import event_exit_info  # for one-way exit descriptions (ROM-free)
 from log.verbose import vprint, is_enabled as _verbose_enabled
 
-# ROOM_SETS lives in data/room_sets.py (ROM-free; Stage A 3b split)
+# ROOM_SETS lives in data/room_sets.py (ROM-free)
 from data.room_sets import ROOM_SETS
+
+
+def apply_mode_table_adjustments(args):
+    """Deliver the correct initial state of the room/exit tables for the
+    active mode, before planning connects them (applied once per build;
+    reset_room_tables()/reset_exit_data() make it idempotent across
+    retries and tests). Three adjustments, each with its own reason:
+
+    1. -ruin: drop the forced connection from the penultimate Sealed Gate
+       Cave room to the Sealed Gate (forced_connections[1079]). Ruination
+       uses the Sealed Gate differently from every other mode -- as a
+       branch terminus -- and it must not be pinned to the same spot.
+    2. -ruin and -drdc: split some town exits (dungeon_crawl_split_exits
+       out of shared_exits) so those towns can have two different exits,
+       making them walk-through rooms instead of dead ends.
+    3. Door randomization (-dra/-drx/-dre) combined with map shuffle:
+       Zone Eater entry/exit is handled as doors (1552/1553) by pure map
+       shuffle for simplicity, but as traps (2040/2041) by the door-rando
+       modes. When both are active, traps win: the door ids are removed
+       from the shuffle rooms. Phoenix Cave's doors (1554/1555) leave the
+       door pools for the same both-modes-active reason, and the
+       map_shuffle_protected_doors get their 30000+ stand-ins swapped
+       into the shuffle rooms.
+    """
+    if args.ruination_mode or args.door_randomize_dungeon_crawl:
+        for se in dungeon_crawl_split_exits.keys():
+            for exit in dungeon_crawl_split_exits[se]:
+                shared_exits[se].remove(exit)
+
+    if args.ruination_mode:
+        forced_connections.pop(1079)
+
+    if args.door_randomize_dungeon_crawl:
+        args.map_shuffle = False    # -drdc overrides -maps/-mapx
+
+    if (args.door_randomize_all or args.door_randomize_crossworld
+            or args.door_randomize_each) and args.map_shuffle:
+        from doors.plan.modes import door_rando_pool_keys
+        protect_doors = {}
+        for key in door_rando_pool_keys(args):
+            if key in map_shuffle_protected_doors:
+                d = map_shuffle_protected_doors[key]
+                protect_doors[d] = d + 30000
+        ignore_maps = [1552, 1553]  # zone eater: traps win over doors
+        shuffle_rooms = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
+        for r in shuffle_rooms:
+            for dk in [d for d in room_data[r][0]]:
+                if dk in ignore_maps:
+                    vprint('removing ', dk, ' from ', r)
+                    room_data[r][0].remove(dk)
+                if dk in protect_doors.keys():
+                    vprint('protecting ', dk, ' in ', r, ' --> ', protect_doors[dk])
+                    room_data[r][0].remove(dk)
+                    room_data[r][0].append(protect_doors[dk])
+
+        ignore_doors = [1554, 1555]  # phoenix cave leaves the door pools
+        for a in room_data.keys():
+            if a not in shuffle_rooms:
+                for dk in [d for d in room_data[a][0]]:
+                    if dk in ignore_doors:
+                        vprint('removing ', dk, ' from ', a)
+                        room_data[a][0].remove(dk)
 
 
 class Doors():
@@ -17,305 +79,29 @@ class Doors():
         return _verbose_enabled()
 
     def __init__(self, args):
-        # Doors (and the mapping code downstream of it) treats the shared data
-        # tables as scratch space: shared_exits gets split-exit entries removed,
-        # forced_connections gets popped, and room_data lists get edited for
-        # map shuffle / -dra root doors / ruination hub rooms. Restore all of
-        # them to their pristine import-time state first so that constructing
-        # Doors a second time in the same process (retries, tests) starts clean.
+        # Restore the shared data tables to their pristine import-time
+        # state (constructing Doors twice in one process -- tests, tools --
+        # must start clean), then apply the per-mode adjustments.
         reset_room_tables()
         reset_exit_data()
 
-        # Hard overrides for testing
-        self.OVERRIDE = [
-            #[1558, 978],  # Connect Ancient Castle spot to Cave in the Veldt WOR
-            #[1558, 10],  # Connect Ancient Castle spot to Sabin's House WOB
-            #[56, 262],  # Connect Coliseum to Figaro Cave
-            #[62, 1261]   # Connect Opera House to Thamasa
-            #[1559, 1560]    # Imperial camp west force connection
-            #[4, 1218],    # Narshe to esper world
-            #[4, 1557],  # Narshe to Floating Continent
-            #[10, 674]    #  Sabin's house to Vector Castle interior
-            #[1563, 397]    #  Sabin's house to Vector Castle interior
-        ]
-
-        # self.rom = rom
         self.args = args
-
-        self.door_rooms = {}
-        self.door_descr = {}
-        self.area_room_sets = []  # one list of room ids per randomized area (parallel to area_name)
-        self.room_doors = {}
-        self.room_counts = {}
-        # Intentional alias (not a copy): the ruination-mode pop below must be
-        # visible to the walk code, which reads the module-level table.
-        # reset_room_tables() above makes the mutation safe across builds.
+        self.door_rooms = {}   # populated and read by realization (data/maps.py)
+        self.door_descr = {}   # read by realization for spoiler descriptions
+        # Intentional alias (not a copy): the -ruin pop in
+        # apply_mode_table_adjustments must be visible to the spoiler print.
         self.forcing = forced_connections
         self.map = []
-        # The v2 DoorPlan artifact (-d2): constructed in mod() and owned by
-        # the Data phase; Events receives it (events.ruination_mod binds the
-        # ruination view's rewards). None on the legacy path.
+        # The DoorPlan artifact: constructed in mod() (one planning site,
+        # Data phase); Events receives it and binds the ruination view.
         self.plan = None
 
-        self.match_WOB_WOR = False
-        self.combine_areas = True  # make individually called flags get mixed together
-        self.area_name = []
-
-        # Attempted-connection budget for each walk (see Network.walk_budget).
-        # Healthy walks use ~200 attempts on the biggest area (-drdc) and far
-        # fewer elsewhere; 5000 is ~25x that headroom while bounding a
-        # pathological start to roughly the old 10s wall-clock timeout this
-        # replaces. Unlike the timeout, the budget is deterministic: the same
-        # seed stops (and retries) at the same point on any machine.
-        # <= 0 disables the budget entirely.
-        self.walk_budget = 5000
-
-        # Read in the doors to be randomized.
-        room_sets = []
-        protect_doors = {}
-
-        if self.args.ruination_mode:
-            # Ruination mode overrides all others.
-            # It will probably have a custom sorting algorithm, but for now...
-            ruin_override = False
-            if ruin_override:
-                room_sets.append(ROOM_SETS['Ruination'])
-                self.area_name.append('Ruination')
-            # Door mapping is now done in events.ruination_mod()
-
-            # Split some town exits in ruination mode (same as for dungeon crawl mode):
-            for se in dungeon_crawl_split_exits.keys():
-                for exit in dungeon_crawl_split_exits[se]:
-                    shared_exits[se].remove(exit)
-
-            self.forcing.pop(1079)  # Final room --> Sealed gate connection.  Sealed gate is used differently in -ruin.
-
-        elif self.args.door_randomize_crossworld: # -drx, old version of -drdc
-            # Prioritize randomizing all doors.
-            # Both options the same room list.  -dra uses drafting; -drdc does not.
-            room_sets.append(ROOM_SETS['All'])
-            self.area_name.append('All')
-
-        elif self.args.door_randomize_dungeon_crawl:  # -drdc, updated with towns
-            # for Dungeon Crawl to work, all doors on the world map should be made into dead ends.
-            # This forces the dungeon to be fully connected.
-
-            # Uses 'real' world map rooms, most of which are not dead ends.
-
-            # Split some town exits in dungeon crawl mode:
-            for se in dungeon_crawl_split_exits.keys():
-                for exit in dungeon_crawl_split_exits[se]:
-                    shared_exits[se].remove(exit)
-                #print('Updated shared_exits[', se, '] = ', shared_exits[se])
-
-            room_sets.append(ROOM_SETS['DungeonCrawl'])
-            self.area_name.append('DungeonCrawl')
-
-            # Redundant: -drdc overrides -maps, -mapx
-            self.args.map_shuffle = False  # Do not allow -drdc with -maps or -mapx
-
-
-        elif self.args.door_randomize_all:  # -dra
-            room_sets.append(ROOM_SETS['WoB'])
-            self.area_name.append('WoB')
-            room_sets.append(ROOM_SETS['WoR'])
-            self.area_name.append('WoR')
-
-        elif self.args.door_randomize_each:  # -dre
-            # Randomize all areas separately
-
-            # Regardless of shuffle, we want to use mapsafe sets & protections for MtZozo and Zozo-WOR
-            use_mapsafe = ['MtZozo', 'Zozo-WOR']
-            for key in ROOM_SETS.keys():
-                if key not in ['All', 'WoB', 'WoR', 'MapShuffleWOB', 'MapShuffleWOR', 'MapShuffleXW', 'DungeonCrawl', 'Ruination']:
-                    if self.args.map_shuffle:
-                        # Check for _mapsafe
-                        if '_mapsafe' in key or key+'_mapsafe' not in ROOM_SETS.keys():
-                            room_sets.append(ROOM_SETS[key])
-                            self.area_name.append(key)
-                            if key in map_shuffle_protected_doors.keys():
-                                d = map_shuffle_protected_doors[key]
-                                protect_doors[d] = d + 30000
-                    else:
-                        if key in [name + '_mapsafe' for name in use_mapsafe]:
-                            room_sets.append(ROOM_SETS[key])
-                            self.area_name.append(key)
-                        elif '_mapsafe' not in key and key not in use_mapsafe:
-                            room_sets.append(ROOM_SETS[key])
-                            self.area_name.append(key)
-
-            self.combine_areas = False
-
-        else:
-            # Randomize separately
-            if self.args.door_randomize_umaro:  # -dru
-                key = 'Umaro'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_upper_narshe:  # -drun
-                key = 'UpperNarshe_WoB'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-                self.match_WOB_WOR = True
-
-            else:
-                if self.args.door_randomize_upper_narshe_wob:  # -drunb
-                    key = 'UpperNarshe_WoB'
-                    room_sets.append(ROOM_SETS[key])
-                    self.area_name.append(key)
-                if self.args.door_randomize_upper_narshe_wor:  # -drunr
-                    key = 'UpperNarshe_WoR'
-                    room_sets.append(ROOM_SETS[key])
-                    self.area_name.append(key)
-
-            if self.args.door_randomize_esper_mountain:  # -drem
-                key = 'EsperMountain'
-                if self.args.map_shuffle:
-                    key += '_mapsafe'
-                    pd = map_shuffle_protected_doors[key]
-                    protect_doors[pd] = pd + 30000  # protect map shuffle
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_owzer_basement:  # -drob
-                key = 'OwzerBasement'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_magitek_factory:  # -drmf
-                key = 'MagitekFactory'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_sealed_gate:  # -drsg
-                key = 'SealedGate'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_zozo_wob:  # -drzb
-                key = 'Zozo'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_zozo_wor:  # -drzr  ***
-                key = 'Zozo-WOR'  # not using _mapsafe here, it's for -dre only
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_mt_zozo:  # -drmz
-                key = 'MtZozo'   # not using _mapsafe here, it's for -dre only
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_lete_river:  # -drlr
-                key = 'Lete'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_zone_eater:  # -drze
-                key = 'ZoneEater'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_serpent_trench:  # -drst
-                key = 'SerpentTrench'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_burning_house:  # -drbh
-                key = 'BurningHouse'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_daryls_tomb:  # -drdt
-                key = 'DarylsTomb'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_south_figaro_cave_wob:  # -drsfcb
-                key = 'SouthFigaroCaveWOB'
-                if self.args.map_shuffle:
-                    key += '_mapsafe'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_phantom_train:  # -drpt
-                key = 'PhantomTrain'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_cyans_dream:  # -drcd
-                key = 'CyansDream'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_mt_kolts:  # -drmk
-                key = 'MtKolts'
-                if self.args.map_shuffle:
-                    key += '_mapsafe'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.args.door_randomize_veldt_cave:  # -drvc
-                key = 'VeldtCave'
-                if self.args.map_shuffle:
-                    key += '_mapsafe'
-                room_sets.append(ROOM_SETS[key])
-                self.area_name.append(key)
-
-            if self.combine_areas:
-                temp = []
-                temp_name = ''
-                for r_id in range(len(room_sets)):
-                    temp.extend(room_sets[r_id])
-                    temp_name += self.area_name[r_id] + '_'
-                if len(temp) > 0:
-                    room_sets = [temp]
-                    self.area_name = [temp_name]
-
-        # Deconflict door_randomize and map_shuffle
-        if (self.args.door_randomize_all or self.args.door_randomize_crossworld or self.args.door_randomize_each) \
-                and self.args.map_shuffle:
-            ignore_maps = [1552, 1553]  # don't include zone-eater as doors if included as transitions
-            shuffle_rooms = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
-            for r in shuffle_rooms:
-                for dk in [d for d in room_data[r][0]]:
-                    if dk in ignore_maps:
-                        vprint('removing ', dk, ' from ', r)
-                        room_data[r][0].remove(dk)
-                    if dk in protect_doors.keys():
-                        vprint('protecting ', dk, ' in ', r, ' --> ', protect_doors[dk])
-                        room_data[r][0].remove(dk)
-                        room_data[r][0].append(protect_doors[dk])
-
-            ignore_doors = [1554, 1555]  # don't include phoenix cave in doors if doing map shuffle
-            for a in room_data.keys():
-                if a not in shuffle_rooms:
-                    for dk in [d for d in room_data[a][0]]:
-                        if dk in ignore_doors:
-                            vprint('removing ', dk, ' from ', a)
-                            room_data[a][0].remove(dk)
-
-        if self.args.map_shuffle_separate:  # -maps
-            # Separately:  add rooms for WOR, WOB
-            room_sets.append(ROOM_SETS['MapShuffleWOB'])
-            self.area_name.append('MapShuffleWOB')
-            room_sets.append(ROOM_SETS['MapShuffleWOR'])
-            self.area_name.append('MapShuffleWOR')
-
-        elif self.args.map_shuffle_crossworld:  # -mapx
-            room_sets.append(ROOM_SETS['MapShuffleXW'])
-            self.area_name.append('MapShuffleXW')
-
-        # One room list per area to randomize (parallel to self.area_name).
-        self.area_room_sets.extend(room_sets)
+        apply_mode_table_adjustments(args)
 
     def debug_print_shortest_route(self, door_map, destination_room):
         """Print the shortest route from any world-map room (or ruination
         hub) to destination_room over the final map (-debug_dest). Pure BFS
-        with the connecting elements as edge payloads (the legacy version
-        walked a networkx Network)."""
+        with the connecting elements as edge payloads."""
         from data.rooms import room_data
         from doors.atlas import exit_description as get_door_name
 
@@ -397,9 +183,8 @@ class Doors():
         print("=" * 80 + "\n")
 
     def mod(self, characters=None):
-        """Plan the door map with the v2 planner (doors/plan) -- one planning
-        site for every mode including ruination (Stage E2 cutover; the
-        walk-based legacy planner was deleted). Planning consumes the seeded
+        """Plan the door map (doors/plan) -- one planning site for every
+        mode including ruination. Planning consumes the seeded
         global RNG stream in one contiguous window here; the resulting
         DoorPlan is owned by the Data phase (self.plan) and received by
         Events."""
@@ -443,12 +228,6 @@ class Doors():
             lcolumn.append('Forced connections:')
             for d in self.forcing.keys():
                 lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
-            if self.plan is not None and self.plan.gates:
-                from doors.atlas import exit_description
-                lcolumn.append('Gated exits (exit: required keys):')
-                for d in sorted(self.plan.gates, key=str):
-                    keys = ', '.join(str(k) for k in self.plan.gates[d])
-                    lcolumn.append(f'{d} ({exit_description(d)}): {keys}')
             if len(self.map) > 0:
                 lcolumn.append('Map:')
                 for m in self.map[0]:

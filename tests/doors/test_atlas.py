@@ -1,4 +1,4 @@
-"""Stage A regression test: the atlas must stay in sync with everything.
+"""Atlas regression test: the atlas must stay in sync with everything.
 
 Checks, without a ROM:
   1. compile_atlas's full consistency check passes (partner parity with
@@ -44,7 +44,7 @@ def main():
     assert atlas.exit_map(360) is not None               # Sabin's house door
     assert atlas.vanilla_partner(884) is None            # unused (p1 finding)
     assert atlas.exit_position(0) is not None
-    assert atlas.description(4)                          # legacy delegate
+    assert atlas.description(4)                          # exit_data delegate
     assert atlas.trap_record(2001) is not None           # Umaro cave trapdoor
     assert atlas.event_door_record(1556) is not None     # Floating Continent entry
     assert atlas.vanilla_partner(1546) == 78             # event-door layer partner

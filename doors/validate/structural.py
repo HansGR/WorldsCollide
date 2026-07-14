@@ -1,7 +1,7 @@
-"""Structural validation of a solved plan (rewrite Stage B).
+"""Structural validation of a solved plan.
 
-The acceptance gate every planner output must pass, independent of how it
-was generated (plan section 3.4). Raises ValidationError with specifics.
+The acceptance gate every planner output must pass, independent of how
+it was generated. Raises ValidationError with specifics.
 """
 
 from doors.model import DOOR, TRAP, PIT
@@ -16,7 +16,7 @@ def check_solved(world, forcing=None):
     - every live element consumed (no unmatched doors/traps/pits),
     - every element used at most once across pairs and oneways,
     - door pairs door-to-door and oneways trap-to-pit (by bucket at load),
-    - a DAG-clean class graph,
+    - a DAG-clean cluster graph,
     - every applicable forced connection present,
     - no protected element consumed by a non-forced connection.
     """
@@ -31,9 +31,9 @@ def check_solved(world, forcing=None):
         dupes = sorted({str(x) for x in used if used.count(x) > 1})
         raise ValidationError(f'elements used twice: {dupes[:8]}')
 
-    for c in world.classes():
+    for c in world.clusters():
         if world.find(c) in world.downstream(c):
-            raise ValidationError(f'cycle through class {world.class_name(c)}')
+            raise ValidationError(f'cycle through class {world.cluster_name(c)}')
 
     if forcing:
         made = {tuple(p) for p in world.door_pairs} | {tuple(o) for o in world.oneways}

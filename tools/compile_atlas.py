@@ -1,4 +1,4 @@
-"""Atlas compiler for door randomization (rewrite Stage A).
+"""Atlas compiler for door randomization.
 
 Derives the mechanical layer of the door-rando atlas from the vanilla ROM
 data dumps in claude_reference/ and cross-checks it against the curated
@@ -550,7 +550,7 @@ def check_room_names():
 
     Bijection (every room mapped, no extras), unique names, area code
     registered, and the world letter consistent with the room's world
-    field (b=0, r=1, x=None). Kefka's Tower rooms may keep their legacy
+    field (b=0, r=1, x=None). Kefka's Tower rooms may keep their
     structured ids (KTa1...).
     """
     import importlib.util, re
@@ -575,7 +575,7 @@ def check_room_names():
             failures.append(f'room_names: {name!r} used by both {seen[name]!r} and {rid!r}')
         seen[name] = rid
         if name == str(rid) and name.startswith('KT'):
-            # Kefka's Tower rooms keep their legacy structured ids; the
+            # Kefka's Tower rooms keep their structured ids; the
             # letter is the LANE (a/b/c), not a world marker.
             continue
         m = pat.match(name)
@@ -634,13 +634,14 @@ def check_realization(records):
             failures.append(
                 f'dungeon_crawl_exit_destination_override[{key}]: expected 13 fields, got {len(val)}')
 
-    # Maps.door_rando_cleanup relocates the redundant-shadow exits; the
-    # curation tags and the cleanup routine must agree.
+    # door_rando_cleanup (doors/realize/exits.py) relocates the
+    # redundant-shadow exits; the curation tags and the cleanup routine
+    # must agree.
     curation = _load_curation()
     shadows = {gid for gid, tag in curation.NO_VANILLA_PARTNER.items()
                if tag == 'redundant-shadow'}
     cleanup_src = ''
-    maps_src = open(os.path.join(ROOT, 'data/maps.py')).read()
+    maps_src = open(os.path.join(ROOT, 'doors/realize/exits.py')).read()
     if 'def door_rando_cleanup' in maps_src:
         i = maps_src.index('def door_rando_cleanup')
         cleanup_src = maps_src[i:i + 2000]

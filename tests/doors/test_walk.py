@@ -1,4 +1,4 @@
-"""Stage B walk regression: solve every -dre pool, verify structure.
+"""Walk regression: solve every -dre pool, verify structure.
 
 Run: python3 tests/doors/test_walk.py
 """

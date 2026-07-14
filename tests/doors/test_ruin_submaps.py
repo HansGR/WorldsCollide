@@ -1,4 +1,4 @@
-"""Tests for the ruination sub-map randomizers (Stage D milestone 5):
+"""Tests for the ruination sub-map randomizers:
 the isolated dream maze and the KT lane randomizer.
 
 Both are rejection samplers that only return verified layouts, so the

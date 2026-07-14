@@ -1,10 +1,9 @@
-"""Pool loading for the v2 planners (rewrite Stage B).
+"""Pool loading: room specs for the planners.
 
-Builds WorldModel room specs from the legacy tables (which remain the
-data source during the strangler migration): copies each room's element
-lists out of data.rooms.room_data (never mutating them - flaw F3),
-strips shared-exit sibling tiles exactly as the legacy Room constructor
-does, and returns specs plus the pool's forced connections.
+Builds WorldModel room specs from the data tables: copies each room's
+element lists out of data.rooms.room_data (never mutating them), strips
+shared-exit sibling tiles so only the canonical tile of each shared
+group is planned, and returns specs plus the pool's forced connections.
 """
 
 from data.rooms import room_data, shared_exits, forced_connections
@@ -13,9 +12,8 @@ from data.rooms import room_data, shared_exits, forced_connections
 def load_pool(pool_rooms, shared=None, drop=()):
     """{room_id: spec} for WorldModel, from pristine room_data.
 
-    `shared` is the shared-exits view to strip with (defaults to the full
-    table; -drdc/-ruin pass a view with the split exits removed - legacy
-    mutates the global table instead)."""
+    `shared` is the shared-exits view to strip with (defaults to the
+    full table; -drdc/-ruin pass a view with the split exits removed)."""
     if shared is None:
         shared = shared_exits
     drop = set(drop)
@@ -28,10 +26,10 @@ def load_pool(pool_rooms, shared=None, drop=()):
         if len(rd) == 6:
             keys = list(rd[3])
             locks = {k: list(v) for k, v in rd[4].items()}
-        # Legacy Room._handle_shared_exits: a room holding the canonical
+        # A room holding the canonical
         # tile of a shared doorway drops the sibling tiles. The canonical
         # tile may itself be LOCKED (Phantom Train 493 behind pt1), and the
-        # siblings may live inside lock lists - legacy scans alldoors and
+        # siblings may live inside lock lists - scan those and
         # removes from anywhere, so both must be covered here.
         locked_items = [i for items in locks.values() for i in items
                         if not isinstance(i, str)]
@@ -50,9 +48,9 @@ def load_pool(pool_rooms, shared=None, drop=()):
 
 def pool_forcing(specs):
     """Forced connections relevant to this pool (read-only view of
-    data.rooms.forced_connections; legacy pops entries instead).
+    data.rooms.forced_connections).
 
-    Legacy ForceConnections protects EVERY forcing id globally, so a pool
+    Forcing ids are protected globally, so a pool
     pit that is the target of an out-of-pool forced trap must still be
     excluded as a walk target: include entries where either side is in
     the pool (the walk only connects when both are)."""

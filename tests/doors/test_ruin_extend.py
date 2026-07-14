@@ -1,6 +1,6 @@
-"""Tests for doors.plan.ruination.extend (rewrite Stage D milestone 2).
+"""Tests for doors.plan.ruination.extend.
 
-Each legacy rule (A1/B1/C for pits, A2/B2/C for doors), the cooldown and
+Each extension rule (A1/B1/C for pits, A2/B2/C for doors), the cooldown and
 true-dead-end gates, the forced-exit fast path, deepest-point exit
 collection, and stuck diagnosis - on small synthetic worlds.
 
@@ -40,7 +40,7 @@ def test_pit_rule_A1():
     hub = topo['hub']
     got = valid_pit_targets(b, 2001, hub, topo)
     # Hub's own pit is a legal self-loop (B1/C pass via door 1, as in
-    # legacy); pito qualifies (free exit); noexit has no exit at all;
+    # design); pito qualifies (free exit); noexit has no exit at all;
     # keyonly's only exit was key-released, so a pit entry could trap the
     # player.
     assert got == [3001, 3010], got
@@ -61,7 +61,7 @@ def test_pit_rule_A1_hub_entrance_guard():
 
 def test_pit_rule_A1_forced_downstream():
     # Target has a pit and no exits of its own, but its forced trap (already
-    # wired, hence consumed) leads to a class with free exits.
+    # wired, hence consumed) leads to a cluster with free exits.
     w, b = make({
         'ruin_hub_0': {'doors': [1], 'traps': [2001], 'pits': [3001]},
         'entry': {'pits': [3013], 'traps': [2013]},
@@ -83,7 +83,7 @@ def test_pit_rules_B1_C():
     })
     w.connect_oneway(2001, 3020)         # hub --> down: 'down' is placed
     topo = topology(b)
-    down_c = w.class_of_room('down')
+    down_c = w.cluster_of_room('down')
     # B1: connecting down's trap 2020 to the hub pit - target (hub) must
     # keep an exit besides 2020: hub has door 1. C: entrance region
     # (down + its upstream = hub) must keep an entrance besides 3001:
@@ -108,15 +108,15 @@ def test_door_rules_A2():
     w.apply_key('k')                     # door 33 live but key-released
     topo = topology(b)
     hub = topo['hub']
-    assert is_true_dead_end(b, w.class_of_room('tde'))
+    assert is_true_dead_end(b, w.cluster_of_room('tde'))
     got = valid_door_targets(b, 1, hub, topo)
-    # Hub's own door 2 is a legal same-class pairing (trap 2001 remains an
+    # Hub's own door 2 is a legal same-cluster pairing (trap 2001 remains an
     # exit, pit 3001 an entrance); tde skipped; keydoor's door is
     # key-released (never targeted); twodoor offers both doors.
     assert got == [2, 31, 32], got
     # A check room is never a true dead end (313 is a ROOM_REWARD id).
     b.add_room(313, {'doors': [40]})
-    assert not is_true_dead_end(b, w.class_of_room(313))
+    assert not is_true_dead_end(b, w.cluster_of_room(313))
     assert 40 in valid_door_targets(b, 1, hub, topo)
     print('PASS: A2 - true-dead-end skip, key-released doors untargetable')
 
@@ -128,7 +128,7 @@ def test_door_rules_B2_C():
     })
     w.connect_oneway(2001, 3020)
     topo = topology(b)
-    down_c = w.class_of_room('down')
+    down_c = w.cluster_of_room('down')
     # Door 21 (down, placed) connecting back to hub door 1: B2 region keeps
     # exits (door 2, door 22); C entrance region (down + hub) keeps
     # entrances besides door 1 (door 2, pit 3001, door 22). Both hub doors valid.
@@ -176,9 +176,9 @@ def test_extend_forced_first_and_deepest():
     # collected from the DEEPEST class (bb), so the chosen exit is bb's.
     w.connect_oneway(2001, 3010)
     w.connect_oneway(2010, 3011)
-    hub_c = w.class_of_room('ruin_hub_0')
+    hub_c = w.cluster_of_room('ruin_hub_0')
     deep = _deepest_classes(w, hub_c, w.downstream(hub_c))
-    assert deep == [w.class_of_room('bb')]
+    assert deep == [w.cluster_of_room('bb')]
     exit_id, target = extend_branch(b, {}, rng)
     assert exit_id in (2011, 15), (exit_id, target)
     assert target == 3012                # only unplaced pit; c has a free trap

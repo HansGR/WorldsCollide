@@ -1,8 +1,8 @@
-"""Kefka's Tower lane randomizer (-rkt; rewrite Stage D milestone 5).
+"""Kefka's Tower lane randomizer (-rkt).
 
-Port of legacy _randomize_kefka_tower: partition the KT rooms into three
-lanes under cheap necessary invariants, walk each lane with the v2 walk
-(pre-unlocked platforms, forced crossings), then verify the joint
+Partition the KT rooms into three lanes under cheap necessary
+invariants, walk each lane (pre-unlocked platforms, forced crossings),
+then verify the joint
 three-party system over the shared monotonic keychain: every room
 reachable AND every reachable situation can still finish. Returns
 [[door pairs], [trap->pit pairs]] with the platform pseudo-ids stripped,

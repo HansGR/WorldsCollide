@@ -1,11 +1,11 @@
-"""Exercise harness for the v2 ruination planner (Stage E validation).
+"""Exercise harness for the ruination planner.
 
 Runs the ROM-free planner at scale (no ROM, no build) to answer:
 
   sweep [n]    Failure study + usage statistics at the default -ruin
                config (6 chars / 9 espers / -maze iso / -rkt, random
                3-character party). Reports the whole-plan failure rate
-               (all 10 attempts exhausted - the legacy "~4%" question),
+               (all 10 attempts exhausted),
                a per-attempt failure-cause taxonomy, and usage tables:
                party/recruit frequency per character, area frequency,
                and per-check reward-kind distribution.

@@ -1,31 +1,29 @@
-"""World model for the door-rando planners (rewrite Stage B).
+"""World model for the door-rando planners.
 
-The mutable state a planner explores: rooms grouped into mutually-reachable
-CLASSES (a rollback union-find), one-way reachability edges between classes,
-per-room unmatched elements, a keychain, and the growing matching. A small
-set of operations mutates it - connect_door, connect_oneway, apply_key, the
-lock-aware dead-end helpers, and add_room (dynamic pool growth for the
-ruination planner) - and every effect is journaled, so backtracking is
-checkpoint()/rollback(mark) instead of the legacy deepcopy-per-attempt
-(plan flaw F4).
+The mutable state a planner explores: rooms grouped into mutually-
+reachable CLUSTERS (a rollback union-find), one-way reachability edges
+between clusters, per-room unmatched elements, a keychain, and the
+growing matching. A small set of operations mutates it - connect_door,
+connect_oneway, apply_key, the lock-aware dead-end helpers, and add_room
+(dynamic pool growth for the ruination planner) - and every effect is
+journaled, so backtracking is checkpoint()/rollback(mark) rather than
+copying the world per attempt.
 
 Design notes:
-- Room handles are indices into the pool's room list; classes are union-find
-  roots. Merged-class identity never appears in ids (F2: no compound ids).
+- Room handles are indices into the pool's room list; clusters are
+  union-find roots. Merged-cluster identity never appears in ids.
   Display names come from doors.atlas.room_names when needed for logs.
 - The union-find uses union-by-size WITHOUT path compression so unions are
   cheaply reversible; depth stays O(log n) and pools are <= ~300 rooms.
-- Two-way door connections merge their endpoint classes immediately, and any
-  one-way cycle closed by a connection merges every class on it (incremental
-  SCC maintenance). The legacy compress_loop merged only the first loop it
-  found, occasionally leaving residual 2-cycles; here the invariant "the
-  class graph is a DAG" always holds.
+- Two-way door connections merge their endpoint clusters immediately, and
+  any one-way cycle closed by a connection merges every cluster on it, so
+  the invariant "the cluster graph is a DAG" always holds.
 - Element containers are lists and all iteration is insertion-ordered, so
   candidate collection feeds the RNG deterministically (no set-order traps).
-- Locks follow legacy semantics: apply_key unlocks any lock whose full key
-  tuple is on the keychain; released keys join the room's keys, released
-  exits go live AND into initially_locked_exits (usable by the planner as
-  sources but never targeted - ARCHIVE "Key/Lock Softlock Analysis").
+- Locks: apply_key unlocks any lock whose full key tuple is on the
+  keychain; released keys join the room's keys, released exits go live
+  AND into initially_locked_exits (usable by the planner as sources but
+  never targeted - ARCHIVE "Key/Lock Softlock Analysis").
 """
 
 DOOR, TRAP, PIT = 'doors', 'traps', 'pits'
@@ -87,7 +85,7 @@ class WorldModel:
             h = self._parent[h]
         return h
 
-    def class_of_room(self, room_id):
+    def cluster_of_room(self, room_id):
         return self.find(self._index[room_id])
 
     def _union(self, a, b):
@@ -101,12 +99,12 @@ class WorldModel:
         self._size[ra] += self._size[rb]
         return ra
 
-    def class_rooms(self, c):
-        """Room handles in class c (linear scan; pools are small)."""
+    def cluster_rooms(self, c):
+        """Room handles in cluster c (linear scan; pools are small)."""
         c = self.find(c)
         return [h for h in range(len(self.room_ids)) if self.find(h) == c]
 
-    def classes(self):
+    def clusters(self):
         """Canonical roots, in room order (deterministic)."""
         seen, out = set(), []
         for h in range(len(self.room_ids)):
@@ -177,7 +175,7 @@ class WorldModel:
         self._remove_element(h2, DOOR, d2)
         self.door_pairs.append((d1, d2))
         self._journal.append(('pair',))
-        # Mutual reachability: merge the endpoint classes, then any one-way
+        # Mutual reachability: merge the endpoint clusters, then any one-way
         # cycles this closes.
         c = self._union(self.find(h1), self.find(h2))
         self._absorb_cycles(c)
@@ -194,7 +192,7 @@ class WorldModel:
         self._journal.append(('edge',))
         c1, c2 = self.find(h1), self.find(h2)
         if c1 != c2 and self._reaches(c2, c1):
-            # The new edge closes a cycle: merge every class on it.
+            # The new edge closes a cycle: merge every cluster on it.
             self._merge_cycle(c1, c2)
         return self.find(c1)
 
@@ -202,9 +200,9 @@ class WorldModel:
         """Pair a live door with a door still inside a lock list.
 
         Used by dead-end attachment (which runs BEFORE the walk): the dead
-        end is physically joined through the locked door, so its class
+        end is physically joined through the locked door, so its cluster
         merges, and the pairing is recorded, but the locked door never
-        becomes a live element. Legacy equivalent: connect(dd, da, 'static')
+        becomes a live element.
         where da is in Ra.locked('doors')."""
         h1 = self._owner[live_door]
         h2, key_tuple, pos = self._find_locked(locked_door)
@@ -218,7 +216,7 @@ class WorldModel:
 
     def park_key_behind_lock(self, key_room, key, lock_room, key_tuple):
         """Move a key from a room's live keys into a lock's item list
-        (legacy: dead-end keys become reachable only once the lock opens)."""
+        (dead-end keys become reachable only once the lock opens)."""
         h1, h2 = self._index[key_room], self._index[lock_room]
         pos = self.keys[h1].index(key)
         self.keys[h1].pop(pos)
@@ -234,9 +232,9 @@ class WorldModel:
         raise KeyError(f'{element!r} is not a locked element')
 
     def locked_doors(self, c):
-        """Locked doors across class c with their key tuples: [(door, kt)]."""
+        """Locked doors across cluster c with their key tuples: [(door, kt)]."""
         out = []
-        for h in self.class_rooms(c):
+        for h in self.cluster_rooms(c):
             for key_tuple, items in self.locks[h].items():
                 for item in items:
                     if not isinstance(item, str) and self._element_kind(item) == DOOR:
@@ -248,7 +246,7 @@ class WorldModel:
         if key not in self.keychain:
             self.keychain.add(key)
             self._journal.append(('key_add', key))
-        # Remove the key from any room still holding it (legacy semantics).
+        # Remove the key from any room still holding it.
         for h in range(len(self.room_ids)):
             if key in self.keys[h]:
                 pos = self.keys[h].index(key)
@@ -265,7 +263,7 @@ class WorldModel:
         """Open every lock in room h whose complete key set is already on the
         keychain; returns the key strings released. Released elements go live
         (doors/traps also into initially_locked_exits); released keys join the
-        room's key list but are NOT applied - legacy semantics, they apply
+        room's key list but are NOT applied - they apply
         when the room is connected."""
         released_keys = []
         for key_tuple in list(self.locks[h]):
@@ -303,7 +301,7 @@ class WorldModel:
         keys stay in the room's key list until it is connected, exactly as
         apply_key leaves them for unvisited rooms.
 
-        Returns the new room's handle (its own class root until connected).
+        Returns the new room's handle (its own cluster root until connected).
         """
         if room_id in self._index:
             raise ValueError(f'room {room_id!r} already in pool')
@@ -372,7 +370,7 @@ class WorldModel:
     # Reachability (all BFS, dedup, deterministic order)
 
     def _neighbors(self, forward):
-        """Canonical class adjacency from the edge list."""
+        """Canonical cluster adjacency from the edge list."""
         adj = {}
         for h1, h2 in self.edges:
             a, b = self.find(h1), self.find(h2)
@@ -412,7 +410,7 @@ class WorldModel:
         return src == dst or dst in self._bfs(src, True)
 
     def _merge_cycle(self, c1, c2):
-        """Merge every class on a cycle through the (c1 -> c2) edge."""
+        """Merge every cluster on a cycle through the (c1 -> c2) edge."""
         fwd = set(self._bfs(c2, True)) | {c2}     # reachable from c2
         back = set(self._bfs(c1, False)) | {c1}   # can reach c1
         c = self._union(c1, c2)
@@ -421,7 +419,7 @@ class WorldModel:
         self._absorb_cycles(c)
 
     def _absorb_cycles(self, c):
-        """Merge any remaining cycles through class c until it is DAG-clean."""
+        """Merge any remaining cycles through cluster c until it is DAG-clean."""
         while True:
             c = self.find(c)
             down = set(self._bfs(c, True))
@@ -435,10 +433,10 @@ class WorldModel:
     # ------------------------------------------------------------------
     # Views for planners / pruners
 
-    def class_elements(self, c, kind, include_locked=False, unprotected_only=False):
-        """Elements of `kind` across all rooms of class c, room order."""
+    def cluster_elements(self, c, kind, include_locked=False, unprotected_only=False):
+        """Elements of `kind` across all rooms of cluster c, room order."""
         out = []
-        for h in self.class_rooms(c):
+        for h in self.cluster_rooms(c):
             out.extend(self.elements[h][kind])
             if include_locked:
                 for items in self.locks[h].values():
@@ -449,17 +447,17 @@ class WorldModel:
             out = [e for e in out if e not in self.protected]
         return out
 
-    def class_keys(self, c):
+    def cluster_keys(self, c):
         out = []
-        for h in self.class_rooms(c):
+        for h in self.cluster_rooms(c):
             out.extend(self.keys[h])
         return out
 
     def counts(self, c, include_locked=True):
-        """(doors, traps, pits) counts for class c, excluding protected -
-        the legacy count_unprotected."""
+        """(doors, traps, pits) counts for cluster c, excluding protected -
+        excluding protected doors."""
         return tuple(
-            len(self.class_elements(c, kind, include_locked=include_locked,
+            len(self.cluster_elements(c, kind, include_locked=include_locked,
                                     unprotected_only=True))
             for kind in (DOOR, TRAP, PIT))
 
@@ -476,21 +474,21 @@ class WorldModel:
                 return kind
         raise KeyError(f'{element!r} is not live')
 
-    def owner_class(self, element):
+    def owner_cluster(self, element):
         return self.find(self._owner[element])
 
     def total_unmatched(self):
         return sum(len(self.elements[h][k]) for h in range(len(self.room_ids))
                    for k in (DOOR, TRAP, PIT))
 
-    def class_name(self, c):
+    def cluster_name(self, c):
         """Display name for logs: atlas names of member rooms."""
         try:
             from doors.atlas.room_names import ROOM_NAMES
             return '+'.join(str(ROOM_NAMES.get(self.room_ids[h], self.room_ids[h]))
-                            for h in self.class_rooms(c))
+                            for h in self.cluster_rooms(c))
         except ImportError:                          # pragma: no cover
-            return '+'.join(str(self.room_ids[h]) for h in self.class_rooms(c))
+            return '+'.join(str(self.room_ids[h]) for h in self.cluster_rooms(c))
 
     # ------------------------------------------------------------------
     # Internals
@@ -502,7 +500,7 @@ class WorldModel:
 
     @staticmethod
     def _element_kind(element):
-        """Kind of a locked element id (legacy id ranges; F1 confines the
+        """Kind of a locked element id (numeric id ranges; confined to
         arithmetic to this one function)."""
         e = element
         if isinstance(e, str):
