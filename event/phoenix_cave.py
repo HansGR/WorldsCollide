@@ -677,7 +677,7 @@ class PhoenixCave(Event):
 
     @staticmethod
     def entrance_door_patch():
-        # self-contained code to be called in door rando after entering Doma WoB
+        # self-contained code to be called in door rando after entering Phoenix Cave
         # to be used in event_exit_info.entrance_door_patch()
         return [field.Branch(ENTRY_EVENT_CODE_ADDR)]
 
