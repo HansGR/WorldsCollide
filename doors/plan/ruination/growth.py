@@ -757,8 +757,8 @@ class RuinPlanner:
     # The growth loop
 
     def grow(self):
-        """generate_map_with_characters' main loop: grow branches until the
-        planned characters and requested espers are all placed."""
+        """The main growth loop: grow branches until the planned
+        characters and requested espers are all placed."""
         cfg = self.config
         rng = self.rng
         max_retries = 3
