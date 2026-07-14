@@ -1,9 +1,9 @@
 """Ruination growth orchestrator.
 
-Port of ruination_map's setup + generate_map_with_characters onto the shared
-WorldModel: pre-planning, area distribution, the pick-branch / extend /
-connect / check-rewards loop, reward processing with character keys and
-banked (locked) rewards, and the reserve rescue paths. Branch closing lives
+The heart of ruination planning: pre-planning, area distribution, the
+pick-branch / extend / connect / check-rewards loop, reward processing
+with character keys and banked (locked) rewards, and the reserve rescue
+paths. Branch closing lives
 in finalize.py; the -rkt / -maze iso sub-maps in kefka_tower.py /
 dream_maze.py; the Data-phase entry point (party resolution + retry loop)
 in plan.py.
@@ -542,8 +542,8 @@ class RuinPlanner:
                     self.stuck_branches.pop(i, None)
 
     def _assign_area_pre(self, area, branch_id):
-        """AreasUsed entry during dispatch (shop tracking happens in the
-        room-expansion pass)."""
+        """Record the AreasUsed entry during dispatch (shop tracking
+        happens in the room-expansion pass)."""
         self.AreasUsed[area] = branch_id
 
     # ------------------------------------------------------------------

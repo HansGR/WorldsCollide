@@ -1,7 +1,7 @@
 """Structural validation of a solved plan.
 
-The acceptance gate every planner output must pass, independent of how it
-was generated (plan section 3.4). Raises ValidationError with specifics.
+The acceptance gate every planner output must pass, independent of how
+it was generated. Raises ValidationError with specifics.
 """
 
 from doors.model import DOOR, TRAP, PIT

@@ -1,11 +1,10 @@
 """Isolated dream maze randomizer (-maze iso).
 
-Random door/trap matchings over
-the nine Stooges Maze rooms, rejection-sampled against an exact
-solvability check (every room reaches the boss room; both stooge key
-rooms are round-trippable from it). The chosen entry pit
-is RETURNED instead of written into room_data - the caller records it as
-a spec override on RuinConfig.
+Random door/trap matchings over the nine Stooges Maze rooms,
+rejection-sampled against an exact solvability check (every room reaches
+the boss room; both stooge key rooms are round-trippable from it). The
+chosen entry pit is RETURNED instead of written into room_data - the
+caller records it as a spec override on RuinConfig.
 """
 
 from data.rooms import room_data

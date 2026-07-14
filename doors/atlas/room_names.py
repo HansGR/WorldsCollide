@@ -1,7 +1,7 @@
 """Atlas room naming: area-code registry and room-id -> name mapping.
 
-Hand-maintained after review; edit
-freely and run tools/compile_atlas.py to re-validate.
+Hand-maintained; edit freely and run tools/compile_atlas.py to
+re-validate.
 
 Name format:  CODE + world + NN + subletter? + (-variant)?
   CODE     2-letter area code from AREA_CODES

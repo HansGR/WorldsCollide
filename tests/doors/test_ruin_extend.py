@@ -110,7 +110,7 @@ def test_door_rules_A2():
     hub = topo['hub']
     assert is_true_dead_end(b, w.cluster_of_room('tde'))
     got = valid_door_targets(b, 1, hub, topo)
-    # Hub's own door 2 is a legal same-class pairing (trap 2001 remains an
+    # Hub's own door 2 is a legal same-cluster pairing (trap 2001 remains an
     # exit, pit 3001 an entrance); tde skipped; keydoor's door is
     # key-released (never targeted); twodoor offers both doors.
     assert got == [2, 31, 32], got

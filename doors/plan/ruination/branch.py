@@ -1,23 +1,22 @@
 """RuinBranch: one branch of the ruination world as a view over the shared
 WorldModel.
 
-All three branches share ONE world model, plus hand-managed reserve
-bookkeeping to keep rooms from being placed twice; here all branches share
-one WorldModel, so element/room uniqueness is enforced by the model's owner
-map and adding a room to any branch removes it from contention everywhere.
-The keychain is global on the model - equivalent to fanning every
-applied key out to all three branches.
+All three branches share ONE world model, so element/room uniqueness is
+enforced by the model's owner map: adding a room to any branch removes
+it from contention everywhere, with no separate reserve bookkeeping.
+The keychain is global on the model - a character recruited on one
+branch opens that character's locks on every branch.
 
 Check rooms are tracked by their own room ids for the life of the plan:
-clusters never rename rooms, so compound-id re-pointing
-that RuinationBranch.compress_loop performs (check_rooms surgery plus the
-compound-room bookkeeping is unnecessary here: ask the model which cluster
-a check room is in when you need its current location.
+clusters never rename rooms, so when a check room merges into a larger
+cluster its id stays valid - ask the model which cluster it is in when
+you need its current location.
 
 Branch-side bookkeeping (membership, cooldowns, check rooms) is NOT
-journaled on purpose: the growth loop never backtracks branch state - extension
-validates candidates before connecting, and failures regenerate the whole
-map - so only the model-level walk (KT lanes etc.) needs rollback.
+journaled on purpose: the growth loop never backtracks branch state -
+extension validates candidates before connecting, and failures
+regenerate the whole map - so only the model-level walk (KT lanes etc.)
+needs rollback.
 """
 
 from data.ruin_constants import ROOM_REWARD, RUIN_TERMINI, WARP_ROOMS, TOWN_ROOMS

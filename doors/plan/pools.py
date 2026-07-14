@@ -1,10 +1,9 @@
 """Pool loading: room specs for the planners.
 
-Builds WorldModel room specs from the data tables (which remain the
-data source during the strangler migration): copies each room's element
-lists out of data.rooms.room_data (never mutating them - flaw F3),
-strips shared-exit sibling tiles so only the canonical tile of each
-does, and returns specs plus the pool's forced connections.
+Builds WorldModel room specs from the data tables: copies each room's
+element lists out of data.rooms.room_data (never mutating them), strips
+shared-exit sibling tiles so only the canonical tile of each shared
+group is planned, and returns specs plus the pool's forced connections.
 """
 
 from data.rooms import room_data, shared_exits, forced_connections
@@ -13,9 +12,8 @@ from data.rooms import room_data, shared_exits, forced_connections
 def load_pool(pool_rooms, shared=None, drop=()):
     """{room_id: spec} for WorldModel, from pristine room_data.
 
-    `shared` is the shared-exits view to strip with (defaults to the full
-    table; -drdc/-ruin pass a view with the split exits removed
-    mutates the global table instead)."""
+    `shared` is the shared-exits view to strip with (defaults to the
+    full table; -drdc/-ruin pass a view with the split exits removed)."""
     if shared is None:
         shared = shared_exits
     drop = set(drop)

@@ -1,28 +1,28 @@
 """Branch extension for the ruination planner.
 
-The location-aware extension step (one new room or loop per growth turn,
-with get_valid_pit_targets / get_valid_door_targets: WorldModel cluster
-of rooms; a cluster IS that compound, so every per-node
-count becomes a per-cluster count, and the forced-connection "downstream rooms"
-special cases collapse into ordinary cluster-graph queries (an unplaced room
-already wired to its forced partners is just a small cluster component with its
-own local downstream).
+The location-aware extension step: each growth turn, the branch either
+places one new room (pit drop or door connection into an unplaced room)
+or closes one loop (a connection back into its own hub/upstream region).
+get_valid_pit_targets / get_valid_door_targets enumerate the legal
+choices; extend_branch either applies one at random or reports why it is
+stuck. All counting is per cluster, so rooms that have merged are
+handled uniformly (an unplaced room already wired to its forced partners
+is just a small cluster component with its own local downstream).
 
-CORE RULE: never make a connection that leaves no
-exits downstream of the new active position, and never consume the hub
-region's last entrance - downstream nodes must always be able to loop back
-during finalize.
+CORE RULE: never make a connection that leaves no exits downstream of
+the new active position, and never consume the hub region's last
+entrance - downstream clusters must always be able to loop back during
+finalize.
 
 Cluster-level semantics worth noting:
-- Warp/town cooldown gating applies if ANY room of the candidate cluster is a
-  warp/town room (not just its first-added room, so a warp room absorbed into a
-  compound node escaped its cooldown.
-- The terminus is skipped as a target by CLUSTER, so
-  a terminus absorbed into a compound stopped being skipped (extension never
-  runs after the terminus merges, so this is theoretical).
-- The no-hub fallback (_extend_branch_path_simple) is not ported: the hub
-  room is created with the branch, so the fallback is unreachable in real
-  runs.
+- Warp/town cooldown gating applies if ANY room of the candidate cluster
+  is a warp/town room, so a warp room absorbed into a larger cluster
+  still respects its cooldown.
+- The terminus is skipped as a target by CLUSTER, so it stays skipped
+  even after merging (theoretical: extension never runs after the
+  terminus merges).
+- There is no hub-less fallback: the hub room is created with the
+  branch, so extension always has a hub region to protect.
 """
 
 from doors.model import DOOR, TRAP, PIT
