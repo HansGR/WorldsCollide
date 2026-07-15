@@ -578,12 +578,15 @@ def check_room_names():
     root_pat = re.compile(r'^([A-Z][A-Z0-9])([brx]?)-root(-[a-z-]+)?$')
     ms_pat = re.compile(r'^MS([br])-([A-Z][A-Z0-9])(\d?)$')
     kt_pat = re.compile(r'^KT[abcx]?\d*[ab]?(-[a-z-]+)?$')
+    # Cyan's Dream is lane-structured like KT (CDa/CDb/CDc = train/caves/
+    # Doma castle); the lane letter is not a world marker.
+    cd_pat = re.compile(r'^CD[abc]\d{2}([a-z]*)(-[a-z-]+)?$')
 
     # Which areas span both worlds, from the registry itself.
     worlds_by_code = {}
     for rid, name in rn.ROOM_NAMES.items():
         m = room_pat.match(name) or root_pat.match(name)
-        if m and not name.startswith('KT') and rid in room_data:
+        if m and not name.startswith(('KT', 'CD')) and rid in room_data:
             w = world_of(rid)
             if w in (0, 1):
                 worlds_by_code.setdefault(m.group(1), set()).add(w)
@@ -609,6 +612,8 @@ def check_room_names():
         if str(rid).startswith('KT') or name.startswith('KT'):
             if not kt_pat.match(name):
                 failures.append(f'room_names: {rid!r} -> {name!r} is not a KT structured id')
+            continue
+        if cd_pat.match(name):
             continue
 
         m = ms_pat.match(name)
