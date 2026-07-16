@@ -574,7 +574,7 @@ def check_room_names():
         w = rd[5] if len(rd) == 6 else rd[3]
         return w
 
-    room_pat = re.compile(r'^([A-Z][A-Z0-9])([brx]?)(\d{2,3})([a-z]*)(-[a-z-]+)?$')
+    room_pat = re.compile(r'^([A-Z][A-Z0-9])([brx]?)(\d{2,3})([a-z]*)(-[a-z0-9-]+)?$')
     root_pat = re.compile(r'^([A-Z][A-Z0-9])([brx]?)-root(-[a-z-]+)?$')
     ms_pat = re.compile(r'^MS([br])-([A-Z][A-Z0-9])(\d?)$')
     kt_pat = re.compile(r'^KT[abcx]?\d*[ab]?(-[a-z-]+)?$')
