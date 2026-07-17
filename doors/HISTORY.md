@@ -28,6 +28,7 @@ to the branches noted; everything here is reachable through git history
 | 18 | 2026-07-13 | `4ecb1fc` | **Cutover**: the `doors/` planner becomes the only implementation; the previous walk engine and ruination generator (~8,900 lines) are deleted, proven byte-identical across an 8-mode golden matrix. |
 | 19 | 2026-07-13 | `4ee7994`–`10c6a51` | Event-layer mechanics: per-event flag chains replaced by the derived `doors_touched` predicate, lifecycle hooks dispatched by the Events loop, `DoorPlan` query API and unified `gates` table, generated mode × event manifest (`tools/mode_manifest.py`). |
 | 20 | 2026-07-13 | `00369d7`–`dd97e8d` | **Realization** re-homed into `doors/realize/` (exit connection, one-way transitions, event-tile updates); per-mode table setup becomes the documented `apply_mode_table_adjustments`; `tools/golden_sweep.py` and its committed 15-config manifest become the permanent byte-level regression gate. |
+| 21 | 2026-07-17 | `479f376`, `c05d065` | **Room names become the room ids**: after the naming registry converged (3-letter area codes, WoB/WoR twin ordinals, variant suffixes), `data/rooms.py` is re-keyed to the names and the registry layer is deleted — numbers are always exits, formatted strings are always rooms. `# was:` comments preserve the old numeric ids. Non-ruin output byte-identical; `-ruin` seeds re-recorded (room iteration order at the planner's sorted RNG boundaries follows the new ids). |
 
 Design records that shaped these milestones (review findings, rewrite
 rationale, parity results) live in the git history of
