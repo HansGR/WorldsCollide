@@ -114,9 +114,9 @@ def test_door_rules_A2():
     # exit, pit 3001 an entrance); tde skipped; keydoor's door is
     # key-released (never targeted); twodoor offers both doors.
     assert got == [2, 31, 32], got
-    # A check room is never a true dead end (313 is a ROOM_REWARD id).
-    b.add_room(313, {'doors': [40]})
-    assert not is_true_dead_end(b, w.cluster_of_room(313))
+    # A check room is never a true dead end ('ZOZb21' is a ROOM_REWARD id).
+    b.add_room('ZOZb21', {'doors': [40]})
+    assert not is_true_dead_end(b, w.cluster_of_room('ZOZb21'))
     assert 40 in valid_door_targets(b, 1, hub, topo)
     print('PASS: A2 - true-dead-end skip, key-released doors untargetable')
 
@@ -143,12 +143,12 @@ def test_door_rules_B2_C():
 
 
 def test_cooldown_gating():
-    # Room 40 is in WARP_ROOMS; 'ms-wor-59' is in TOWN_ROOMS.
+    # 'UPNr03' is in WARP_ROOMS; 'MAPr-KOH' is in TOWN_ROOMS.
     # (No hub pit here, so the hub self-loop doesn't muddy the assertions.)
     w, b = make({
         'ruin_hub_0': {'doors': [1], 'traps': [2001]},
-        40: {'pits': [3040], 'traps': [2040]},
-        'ms-wor-59': {'doors': [41, 42]},
+        'UPNr03': {'pits': [3040], 'traps': [2040]},
+        'MAPr-KOH': {'doors': [41, 42]},
     })
     topo = topology(b)
     hub = topo['hub']

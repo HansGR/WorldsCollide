@@ -289,12 +289,12 @@ def plan_mode(flags, rng, budget_limit=5000):
         elif g('map_shuffle_crossworld'):                    # -mapx
             seg = add('MapShuffleXW', ROOM_SETS['MapShuffleXW'])
             seg[1] = deconflict(seg[1], protect)
-            seg[1]['shuffle-wob'] = dict(
-                seg[1]['shuffle-wob'],
-                doors=seg[1]['shuffle-wob']['doors'] + [20000])
-            seg[1]['shuffle-wor'] = dict(
-                seg[1]['shuffle-wor'],
-                doors=seg[1]['shuffle-wor']['doors'] + [20001])
+            seg[1]['MAPb-root'] = dict(
+                seg[1]['MAPb-root'],
+                doors=seg[1]['MAPb-root']['doors'] + [20000])
+            seg[1]['MAPr-root'] = dict(
+                seg[1]['MAPr-root'],
+                doors=seg[1]['MAPr-root']['doors'] + [20001])
             seg[2][20000] = [20001]
             strip += [20000, 20001]
 

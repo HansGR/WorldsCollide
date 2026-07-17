@@ -47,9 +47,9 @@ def test_mode_predicates():
     assert not doors_touch(F(door_randomize_upper_narshe_wor=True), 'UpperNarshe_WoB')
 
     # Room-id form: Phoenix Cave is in All/WoR/DungeonCrawl but no -dre area.
-    assert doors_touch(F(door_randomize_all=True), rooms=('branch-pc',))
-    assert doors_touch(F(door_randomize_dungeon_crawl=True), rooms=('branch-pc',))
-    assert not doors_touch(F(door_randomize_each=True), rooms=('branch-pc',))
+    assert doors_touch(F(door_randomize_all=True), rooms=('PHO52-branch',))
+    assert doors_touch(F(door_randomize_dungeon_crawl=True), rooms=('PHO52-branch',))
+    assert not doors_touch(F(door_randomize_each=True), rooms=('PHO52-branch',))
     # Ebot's Rock exists only in the DungeonCrawl pool.
     assert doors_touch(F(door_randomize_dungeon_crawl=True), rooms=('wor-ebots',))
     assert not doors_touch(F(door_randomize_all=True), rooms=('wor-ebots',))

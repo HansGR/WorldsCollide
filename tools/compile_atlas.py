@@ -31,6 +31,7 @@ are consulted.
 import argparse
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -375,7 +376,7 @@ def check(records, report=False):
 
     failures += check_layers(records)
     failures += check_rooms(records)
-    failures += check_room_names()
+    failures += check_room_ids()
     failures += check_realization(records)
     failures += check_pools(records)
 
@@ -539,40 +540,31 @@ def check_rooms(records):
             else:
                 failures.append(f'room {rid!r}: pit id {p} out of range')
         # Physical rooms are single-map (ignoring the virtual world layer).
+        # Physical = the ordinary room grammar with an ordinal below the
+        # logical band (50); roots, stubs, world-map rooms, and banded
+        # logical/mode rooms may legitimately span maps.
         maps.discard(WORLD_EVENT_LAYER)
-        if isinstance(rid, int) and len(maps) > 1:
+        m = re.match(r'^[A-Z]{3}[brx]?(\d{2,3})[a-z]*$', str(rid))
+        if m and int(m.group(1)) < 50 and len(maps) > 1:
             failures.append(f'room {rid!r}: elements span maps {sorted(maps)}')
     return failures
 
 
-def check_room_names():
-    """Validate doors/atlas/room_names.py against data/rooms.room_data.
+def check_room_ids():
+    """Validate data/rooms.py room ids against the naming grammar in that
+    module's docstring.
 
-    Bijection (every room mapped, no extras), unique names, area code
-    registered, and the world letter present exactly when the area spans
-    both worlds (and consistent with the room's world field: b=0, r=1,
-    x=None). Special formats: identity names for world-map rooms,
-    map-shuffle stub names (MAPb-XXX), ordinal-less root names, and
-    Kefka's Tower's structured tails (KTA1...).
+    Every id is a string built on a registered AREA_CODES code, and the
+    world letter is present exactly when the area spans both worlds (and
+    consistent with the room's world field: b=0, r=1, x=None). Special
+    formats: 'wob'/'wor' world-map ids, map-shuffle stub ids (MAPb-XXX),
+    ordinal-less root ids, and Kefka's Tower's structured tails (KTA1...).
     """
-    import importlib.util, re
-    spec = importlib.util.spec_from_file_location(
-        'atlas_room_names', os.path.join(ROOT, 'doors/atlas/room_names.py'))
-    rn = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(rn)
-    from data.rooms import room_data
+    from data.rooms import room_data, AREA_CODES
     failures = []
 
-    mapped, rooms = set(rn.ROOM_NAMES), set(room_data)
-    for missing in sorted(rooms - mapped, key=str):
-        failures.append(f'room_names: room {missing!r} has no atlas name')
-    for extra in sorted(mapped - rooms, key=str):
-        failures.append(f'room_names: {extra!r} is not a room_data room')
-
     def world_of(rid):
-        rd = room_data[rid]
-        w = rd[5] if len(rd) == 6 else rd[3]
-        return w
+        return room_data[rid][-1]
 
     room_pat = re.compile(r'^([A-Z]{3})([brx]?)(\d{2,3})([a-z]*)(-[a-z0-9-]+)?$')
     root_pat = re.compile(r'^([A-Z]{3})([brx]?)-root(-[a-z-]+)?$')
@@ -581,65 +573,58 @@ def check_room_names():
     # (KTA1, KTA5a, KTA-final) instead of the two-digit room grammar.
     kt_pat = re.compile(r'^KT[ABC]\d*[ab]?(-[a-z-]+)?$')
 
-    # Which areas span both worlds, from the registry itself.
+    # Which areas span both worlds, from the ids themselves.
     worlds_by_code = {}
-    for rid, name in rn.ROOM_NAMES.items():
-        m = room_pat.match(name) or root_pat.match(name)
-        if m and not name.startswith('KT') and rid in room_data:
+    for rid in room_data:
+        if not isinstance(rid, str):
+            continue
+        m = room_pat.match(rid) or root_pat.match(rid)
+        if m and not rid.startswith('KT'):
             w = world_of(rid)
             if w in (0, 1):
                 worlds_by_code.setdefault(m.group(1), set()).add(w)
     two_world = {c for c, ws in worlds_by_code.items() if len(ws) == 2}
 
-    seen = {}
-    for rid, name in rn.ROOM_NAMES.items():
-        if name in seen:
-            failures.append(f'room_names: {name!r} used by both {seen[name]!r} and {rid!r}')
-        seen[name] = rid
-        if rid not in room_data:
+    for rid in room_data:
+        if not isinstance(rid, str):
+            failures.append(f'room id {rid!r}: ids are the room names; no bare ints')
             continue
 
-        # World-map rooms: the id is the name.
-        if isinstance(rid, str) and (rid.startswith('wob') or rid.startswith('wor')):
-            if name != rid:
-                failures.append(f'room_names: {rid!r} -> {name!r}: world-map rooms use their id as name')
+        # World-map rooms belong to no area.
+        if rid in ('wob', 'wor') or rid.startswith(('wob-', 'wor-')):
             continue
-        if rid == 0 or rid == 1:
-            if name != ('wob' if rid == 0 else 'wor'):
-                failures.append(f'room_names: {rid!r} -> {name!r}: expected wob/wor')
-            continue
-        if str(rid).startswith('KT') or name.startswith('KT'):
-            if not kt_pat.match(name):
-                failures.append(f'room_names: {rid!r} -> {name!r} is not a KT structured id')
+        if rid.startswith('KT'):
+            if not kt_pat.match(rid):
+                failures.append(f'room id {rid!r} is not a KT structured id')
             continue
 
-        m = ms_pat.match(name)
+        m = ms_pat.match(rid)
         if m:
-            if m.group(2) not in rn.AREA_CODES:
-                failures.append(f'room_names: {rid!r} -> {name!r}: code {m.group(2)!r} not in AREA_CODES')
+            if m.group(2) not in AREA_CODES:
+                failures.append(f'room id {rid!r}: code {m.group(2)!r} not in AREA_CODES')
             expect = 'b' if world_of(rid) == 0 else 'r'
             if m.group(1) != expect:
-                failures.append(f'room_names: {rid!r} -> {name!r}: world letter should be {expect!r}')
+                failures.append(f'room id {rid!r}: world letter should be {expect!r}')
             continue
 
-        m = room_pat.match(name) or root_pat.match(name)
+        m = room_pat.match(rid) or root_pat.match(rid)
         if not m:
-            failures.append(f'room_names: {rid!r} -> {name!r} does not match any format')
+            failures.append(f'room id {rid!r} does not match any format')
             continue
         code, world = m.group(1), m.group(2)
-        if code not in rn.AREA_CODES:
-            failures.append(f'room_names: {rid!r} -> {name!r}: code {code!r} not in AREA_CODES')
+        if code not in AREA_CODES:
+            failures.append(f'room id {rid!r}: code {code!r} not in AREA_CODES')
             continue
         expect = {0: 'b', 1: 'r'}.get(world_of(rid), 'x')
         if code in two_world:
             if world != expect:
                 failures.append(
-                    f'room_names: {rid!r} -> {name!r}: world letter {world!r} '
+                    f'room id {rid!r}: world letter {world!r} '
                     f'but room world field says {expect!r}')
         else:
             if world:
                 failures.append(
-                    f'room_names: {rid!r} -> {name!r}: area {code!r} lives in one '
+                    f'room id {rid!r}: area {code!r} lives in one '
                     f'world; drop the letter')
     return failures
 
@@ -708,15 +693,6 @@ def check_pools(records):
     from data.room_sets import ROOM_SETS
     from data.ruin_areas import RUIN_ROOM_SETS
     from data.rooms import room_data
-    rn = None
-    try:
-        import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            'atlas_room_names', os.path.join(ROOT, 'doors/atlas/room_names.py'))
-        rn = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(rn)
-    except Exception:
-        pass
     failures = []
     for src_name, pools in (('ROOM_SETS', ROOM_SETS), ('RUIN_ROOM_SETS', RUIN_ROOM_SETS)):
         for pool, members in pools.items():
@@ -725,21 +701,19 @@ def check_pools(records):
                 if m not in room_data:
                     failures.append(f'{src_name}[{pool!r}]: {m!r} is not a room_data room')
                     continue
-                if rn:
-                    name = rn.ROOM_NAMES.get(m)
-                    # Physical-room base = name minus the -variant suffix.
-                    # Map-shuffle stub names (MAPb-XXX) and world-map
-                    # identity names contain structural dashes, not variant
-                    # suffixes, and each is its own physical room.
-                    base = None
-                    if name and not name.startswith('MAP') and not name.startswith(('wob', 'wor')):
-                        base = name.split('-')[0]
-                    if base and base in seen_base and seen_base[base] != m:
-                        failures.append(
-                            f'{src_name}[{pool!r}]: {m!r} and {seen_base[base]!r} are '
-                            f'variants of the same physical room ({base})')
-                    elif base:
-                        seen_base[base] = m
+                # Physical-room base = id minus the -variant suffix.
+                # Map-shuffle stub ids (MAPb-XXX) and world-map ids
+                # contain structural dashes, not variant suffixes, and
+                # each is its own physical room.
+                base = None
+                if not m.startswith('MAP') and not m.startswith(('wob', 'wor')):
+                    base = m.split('-')[0]
+                if base and base in seen_base and seen_base[base] != m:
+                    failures.append(
+                        f'{src_name}[{pool!r}]: {m!r} and {seen_base[base]!r} are '
+                        f'variants of the same physical room ({base})')
+                elif base:
+                    seen_base[base] = m
     return failures
 
 

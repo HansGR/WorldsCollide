@@ -23,21 +23,24 @@ from data.rooms import room_data
 from doors.plan.pools import load_pool
 from doors.plan.walk import run, WalkFailed, WalkBudgetExhausted
 
-KT_ENTRIES = ['KTa1', 'KTb1', 'KTc1']
-KT_FINALS = ['KTa-final', 'KTb-final', 'KTc-final']
-KT_BOSSES = ['KTb4', 'KTb10', 'KTc7', 'KTc12']
+KT_ENTRIES = ['KTA1', 'KTB1', 'KTC1']
+KT_FINALS = ['KTA-final', 'KTB-final', 'KTC-final']
+KT_BOSSES = ['KTB4', 'KTB10', 'KTC7', 'KTC12']
 # Rooms joined by a key-gated forced crossing share a lane; the crossing
 # is a one-way edge a -> b, gated by the named switch key.
-KT_GATED = [('KTa5a', 'KTa5b', 'KT1'), ('KTa8a', 'KTa8b', 'KT2')]
+KT_GATED = [('KTA5a', 'KTA5b', 'KT1'), ('KTA8a', 'KTA8b', 'KT2')]
 KT_FORCED = {1565: [1566], 1567: [1568]}
 KT_PLATFORM_IDS = {1565, 1566, 1567, 1568}
-KT_KEY_ROOM = {'KTb8': 'KT1', 'KTc10': 'KT2'}
+KT_KEY_ROOM = {'KTB8': 'KT1', 'KTC10': 'KT2'}
 KT_MAX_SPLITS = 400
 KT_LANE_BUDGET = 20000    # per-lane walk attempts (see module docstring)
 
 
 def randomize_kefka_tower(rng):
-    KT = [r for r in room_data if isinstance(r, str) and r.startswith('KT')]
+    # The vanilla tower rooms only: the ruination composites share the
+    # KTA/KTB/KTC codes but carry a -ruin suffix.
+    KT = [r for r in room_data
+          if r.startswith('KT') and not r.endswith('-ruin')]
 
     doors_of = {r: list(room_data[r][0]) for r in KT}
     traps_of = {r: list(room_data[r][1]) for r in KT}

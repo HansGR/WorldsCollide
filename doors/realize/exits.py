@@ -65,7 +65,7 @@ def connect_exits(maps):
         entrance_door_patch.pop(1558, None)
 
         # Disable require_event_bit for Figaro Castle entrance doors.
-        # Rooms 68 (WoB) and '68R' (WoR) propagate bits to doors 197/1156
+        # Rooms 68 (WoB) and 'FIGr01' (WoR) propagate bits to doors 197/1156
         # and 4197/5156 via room_require_event_bit. These are only needed
         # for classic door randomization.
         for door in [197, 1156, 4197, 5156]:

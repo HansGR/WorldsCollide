@@ -70,7 +70,8 @@ def test_dream_maze():
 
 
 def test_kefka_tower():
-    KT = [r for r in room_data if isinstance(r, str) and r.startswith('KT')]
+    KT = [r for r in room_data
+          if r.startswith('KT') and not r.endswith('-ruin')]
     all_elements = set()
     for r in KT:
         for group in room_data[r][:3]:

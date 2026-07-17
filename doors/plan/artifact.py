@@ -71,14 +71,13 @@ class DoorPlan:
         return exit_description(exit_id)
 
     def location_name(self, exit_id):
-        """Name of the ROOM that owns the exit (atlas room registry), never
-        assuming the partner is a world-map door (a door can legally lead
-        to another interior). None if unregistered."""
-        from doors.atlas import room_name
+        """Id of the ROOM that owns the exit (room ids are the room
+        names), never assuming the partner is a world-map door (a door
+        can legally lead to another interior). None if unowned."""
         from data.rooms import room_data
         for rid, spec in room_data.items():
             if exit_id in spec[0] or exit_id in spec[1] or exit_id in spec[2]:
-                return room_name(rid)
+                return rid
         return None
 
 

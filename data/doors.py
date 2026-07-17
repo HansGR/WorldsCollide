@@ -105,11 +105,6 @@ class Doors():
         from data.rooms import room_data
         from doors.atlas import exit_description as get_door_name
 
-        try:
-            destination_room = int(destination_room)
-        except (ValueError, TypeError):
-            pass  # room ids can be strings
-
         # element -> room: exact ownership from the ruination plan's world
         # when available, otherwise a room_data scan (first owner wins).
         owner = {}
@@ -140,8 +135,11 @@ class Doors():
             print(f"DEBUG ERROR: Destination room '{destination_room}' not found in map.")
             return
 
+        # Ruination's live hubs are the synthetic per-branch rooms
+        # ('ruin_hub_0/1/2'), not the 'HUB50-ruin' template they are cut from.
         starts = [r for r in rooms_on_map if isinstance(r, str) and
-                  (r.startswith('wob-') or r.startswith('wor-') or 'ruin_hub' in r)]
+                  (r.startswith('wob-') or r.startswith('wor-') or
+                   r.startswith('ruin_hub'))]
         if not starts:
             print("DEBUG: No world map rooms found in the network.")
             return

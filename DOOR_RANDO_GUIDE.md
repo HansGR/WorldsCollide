@@ -38,8 +38,13 @@ destination and partner.  Utilities for reading these data are included in `atla
     to regenerate the atlas.
   - After editing, run `--check` to assess consistency (partner parity, reciprocity, 
     room coverage, pool solvability).  Stale curation entries will be detected and refused.
-- **`atlas/room_names.py`** includes a human-legible room registry; `doors.atlas.room_name(id)`
-  resolves them.  Codes are in the format `AREA CODE`+`world`+`room #`+`modifier`, e.g.: `ZOZb01` for Zozo WoB.
+- Room ids (`data/rooms.py`) ARE the human-legible room names: numbers are always
+  exits, formatted strings are always rooms.  Ids are in the format
+  `AREA CODE`+`world`+`room #`+`modifier`, e.g.: `ZOZb01` for Zozo WoB; the grammar
+  and the `AREA_CODES` registry live at the top of `data/rooms.py`, and
+  `tools/compile_atlas.py --check` validates every id against them.  `# was:`
+  comments in `room_data` record the pre-name numeric ids used by
+  `claude_reference/` data.
 
 ### 2b. The model (`doors/model.py`)
 

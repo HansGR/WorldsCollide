@@ -12,7 +12,6 @@ copying the world per attempt.
 Design notes:
 - Room handles are indices into the pool's room list; clusters are
   union-find roots. Merged-cluster identity never appears in ids.
-  Display names come from doors.atlas.room_names when needed for logs.
 - The union-find uses union-by-size WITHOUT path compression so unions are
   cheaply reversible; depth stays O(log n) and pools are <= ~300 rooms.
 - Two-way door connections merge their endpoint clusters immediately, and
@@ -482,13 +481,8 @@ class WorldModel:
                    for k in (DOOR, TRAP, PIT))
 
     def cluster_name(self, c):
-        """Display name for logs: atlas names of member rooms."""
-        try:
-            from doors.atlas.room_names import ROOM_NAMES
-            return '+'.join(str(ROOM_NAMES.get(self.room_ids[h], self.room_ids[h]))
-                            for h in self.cluster_rooms(c))
-        except ImportError:                          # pragma: no cover
-            return '+'.join(str(self.room_ids[h]) for h in self.cluster_rooms(c))
+        """Display name for logs: ids of member rooms."""
+        return '+'.join(str(self.room_ids[h]) for h in self.cluster_rooms(c))
 
     # ------------------------------------------------------------------
     # Internals

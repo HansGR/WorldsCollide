@@ -105,11 +105,11 @@ class RuinConfig:
             if 'DreamMaze' not in self.character_areas['ALL']:
                 self.character_areas['ALL'].append('DreamMaze')
         elif maze == 'iso':
-            self.room_sets['DreamMaze'] = ['ruin-stooge-maze']
-            self.warp_rooms.discard(424)
-            self.warp_rooms.add('ruin-stooge-maze')
-            if 429 in self.room_reward:
-                self.room_reward['ruin-stooge-maze'] = self.room_reward.pop(429)
+            self.room_sets['DreamMaze'] = ['DRM50-ruin']
+            self.warp_rooms.discard('DRM04')
+            self.warp_rooms.add('DRM50-ruin')
+            if 'DRM09' in self.room_reward:
+                self.room_reward['DRM50-ruin'] = self.room_reward.pop('DRM09')
             self._couple_doma_dream_maze()
         else:
             self._couple_doma_dream_maze()
@@ -204,7 +204,7 @@ class RuinPlanner:
         if config.maze == 'iso':
             from doors.plan.ruination.dream_maze import randomize_isolated_maze
             self.isolated_maze_map, entry_pit = randomize_isolated_maze(rng)
-            config.spec_overrides['ruin-stooge-maze'] = {
+            config.spec_overrides['DRM50-ruin'] = {
                 'doors': [], 'traps': [2070], 'pits': [entry_pit]}
 
         # -rkt: roll the KT lanes (independent of the branch graph; spliced
@@ -235,7 +235,7 @@ class RuinPlanner:
             self.duncan_house_character = blitz[0]
 
         # Branch creation: synthetic one-door hubs + shuffled termini.
-        hub_doors = list(room_data['ruin_hub'][0])
+        hub_doors = list(room_data['HUB50-ruin'][0])
         termini = list(config.termini)
         rng.shuffle(termini)
         self.branches = []
@@ -328,7 +328,7 @@ class RuinPlanner:
     def _add_room_to_branch(self, branch, rid):
         branch.add_room(rid, self.config.spec_for(rid))
         # Custom handler: returning from Lete River lands in the hub.
-        if rid == 'LeteRiver3':
+        if rid == 'LET05':
             self.world.add_element(branch.hub_room, PIT, 3039)
 
     # ------------------------------------------------------------------
@@ -705,9 +705,9 @@ class RuinPlanner:
                 self.distribute_areas(new_areas, method='shortest')
                 # Ebot's Rock character reward: the party is diverted to
                 # Thamasa - inject the forced one-way exit.
-                if reward_name in cfg.room_reward.get('ms-wor-78', {}):
+                if reward_name in cfg.room_reward.get('MAPr-EBO', {}):
                     if 2085 not in self.world._owner:
-                        self.world.add_element('ms-wor-78', TRAP, 2085)
+                        self.world.add_element('MAPr-EBO', TRAP, 2085)
             elif kind is ESPER:
                 self.RewardsObtained[1] += 1
                 self.espers_left -= 1

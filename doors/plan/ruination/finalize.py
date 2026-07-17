@@ -701,7 +701,7 @@ def finalize_branch(planner, branch, reserve_areas=None):
                 # Ebot's Rock reaching step 6 as a dead end means its check
                 # was never claimed; restrict the backfill to esper/item so a
                 # character reward can't teleport into a leaking Thamasa.
-                if rid == 'ms-wor-78' and "Ebot's Rock" not in planner.assignments:
+                if rid == 'MAPr-EBO' and "Ebot's Rock" not in planner.assignments:
                     planner.dead_check_restrictions["Ebot's Rock"] = (
                         RewardType.ESPER | RewardType.ITEM)
                 h = w._index[rid]
@@ -864,9 +864,9 @@ def verify_no_character_gated_softlock(planner, pairs, oneways):
                     if isinstance(e, int):
                         owner.setdefault(e, rid)
         # The synthetic hub rooms aren't in room_data: their single door id
-        # comes from room_data['ruin_hub'].
+        # comes from room_data['HUB50-ruin'].
         for i, b2 in enumerate(planner.branches):
-            hub_door = room_data['ruin_hub'][0][i]
+            hub_door = room_data['HUB50-ruin'][0][i]
             owner.setdefault(hub_door, b2.hub_room)
 
         full_fwd, full_rev = {}, {}

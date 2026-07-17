@@ -378,22 +378,22 @@ require_event_bit = {
 
 room_require_event_bit = {
     # Narshe WoB NPC bits
-    16: {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False},
-    21: {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False}, # north entrance from caves
+    'NARb01': {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False},
+    'NARb04': {npc_bit.STORES_NARSHE: True, npc_bit.WEAPON_ELDER_NARSHE: False, npc_bit.WEAPON_ROOM_ESPER_NARSHE: False}, # north entrance from caves
 
     # Narshe WoR NPC bits
-    34: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True},
-    39: {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # north entrance from caves
-    'ruin-narshe': {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # ruination mode
+    'NARr01': {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True},
+    'NARr04': {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # north entrance from caves
+    'NARr01-ruin': {npc_bit.STORES_NARSHE: False, npc_bit.WEAPON_ELDER_NARSHE: True, npc_bit.WEAPON_ROOM_ESPER_NARSHE: True}, # ruination mode
 
     # Mobliz WoB NPC bits
-    228: {npc_bit.MOBLIZ_CITIZENS: True, npc_bit.MOBLIZ_SOLDIERS_LETTER: True},
+    'MOBb01': {npc_bit.MOBLIZ_CITIZENS: True, npc_bit.MOBLIZ_SOLDIERS_LETTER: True},
 
     # Mobliz WoR NPC bits
-    229: {npc_bit.MOBLIZ_CITIZENS: False, npc_bit.MOBLIZ_SOLDIERS_LETTER: False},
+    'MOBr01': {npc_bit.MOBLIZ_CITIZENS: False, npc_bit.MOBLIZ_SOLDIERS_LETTER: False},
 
     # Figaro Castle WoB NPC & event bits:
-    68: {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: False,
+    'FIGb01': {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: False,
          npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE: False,
          npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE: False,
          npc_bit.LONE_WOLF_FIGARO_CASTLE: True,
@@ -402,7 +402,7 @@ room_require_event_bit = {
          event_bit.GOT_FALCON: False},  # Required to not go to AC in WOB
 
     # Figaro Castle WoR NPC & event bits:
-    '68R': {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: True,
+    'FIGr01': {event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE: True,
             npc_bit.LONE_WOLF_FIGARO_CASTLE: False,
             npc_bit.PRISONERS_FIGARO_CASTLE: False,
             event_bit.GOT_FALCON: True},  # Required to go to AC
@@ -413,7 +413,7 @@ room_require_event_bit = {
             #   field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
 
     # Opera House WoB NPC & event bits:
-    319: {npc_bit.MAN_AT_COUNTER_OPERA: False,
+    'OPEb06': {npc_bit.MAN_AT_COUNTER_OPERA: False,
           npc_bit.IMPRESARIO_OPERA_PANICKING: False,
           npc_bit.IMPRESARIO_OPERA_LOBBY: False,
           npc_bit.IMPRESARIO_OPERA_SITTING: True,
@@ -432,7 +432,7 @@ room_require_event_bit = {
           #   field.SetEventBit(npc_bit.DANCING_COUPLE2_OPERA),
           #   field.SetEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING),
 
-    '319r': {npc_bit.MAN_AT_COUNTER_OPERA: True,
+    'OPEr06': {npc_bit.MAN_AT_COUNTER_OPERA: True,
              npc_bit.IMPRESARIO_OPERA_LOBBY: True,
              npc_bit.IMPRESARIO_OPERA_SITTING: False,
              event_bit.BEGAN_OPERA_DISRUPTION: True,
@@ -459,8 +459,8 @@ room_require_event_bit = {
     # Albrook make sure General Leo is turned off so you don't trigger the cutscene on the boat
     # 1F2C:5, 1F20:7, 1F21:0, 1F20:6, 1F28:2, 1F22:3, 1F22:1, 1F24:2
     # n, y0x507, n, y0x506, n0x542 (global in albrook.py), n, n, n
-    437: {0x507: False, 0x506: False},  # World of Balance   # bits shared with phantom train.
-    438: {0x507: False, 0x506: False},  # World of Ruin
+    'ALBb01': {0x507: False, 0x506: False},  # World of Balance   # bits shared with phantom train.
+    'ALBr01': {0x507: False, 0x506: False},  # World of Ruin
 
 }
 

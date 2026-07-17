@@ -52,12 +52,6 @@ def event_door_record(door_id):
     return EVENT_DOOR_RECORDS.get(door_id)
 
 
-def room_name(room_id):
-    """Atlas name for a room_data id (see doors/atlas/room_names.py)."""
-    from doors.atlas.room_names import ROOM_NAMES
-    return ROOM_NAMES.get(room_id)
-
-
 def description(exit_id):
     """Human name of an exit (exit_data description column)."""
     from data.map_exit_extra import exit_data

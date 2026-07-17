@@ -114,7 +114,7 @@ For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_GUIDE.md** is 
 ### Maps & Doors
 - **data/maps.py** — `Maps` class: NPC/event tile management, `door_map`, runtime patching.
 - **data/doors.py** — `Doors`: thin Data-phase shell around the `doors/` planner (`mod()` calls `plan_for_args`, owns `self.plan`/`self.map`); also `print()` (spoiler section), the `-debug_dest` BFS route printer, and `apply_mode_table_adjustments(args)` (the documented per-mode shared-table setup: -ruin Sealed Gate terminus pop, -ruin/-drdc town split exits, zone-eater doors-vs-traps under map shuffle + door rando). `verbose` is a property of `verbose.is_enabled()` — don't add an instance attribute.
-- **data/rooms.py** — Room definitions (incl. `ruin-*` variants) and `forced_connections`.
+- **data/rooms.py** — Room definitions and `forced_connections`. Room ids ARE the human-readable room names (3-letter area codes, grammar + `AREA_CODES` registry at the top of the file; `# was:` comments give the old numeric ids used by `claude_reference/` data). Mode variants carry a `-ruin`/`-dc`/... suffix.
 - **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
 - **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
 
@@ -153,7 +153,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 
 ### Door-rando integration
 - **instruction/field/instructions.py** `RecruitAndSelectParty` — In ruin mode, wraps recruitment with `SetupBranchRecruit`/`FinalizeBranchRecruit` to restrict party select on branches.
-- **Local character gating** (door rando) — Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating, `ruin-*` room variants with lock dicts. See ARCHIVE.md "Local Character Gating".
+- **Local character gating** (door rando) — Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating, `-ruin` room variants with lock dicts. See ARCHIVE.md "Local Character Gating".
   - **Gotcha:** `entrance_door_patch` source must NOT terminate with `field.Return()` — see ARCHIVE.md "entrance_door_patch must fall through".
 
 ### Conventions

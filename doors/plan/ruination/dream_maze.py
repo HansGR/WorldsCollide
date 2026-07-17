@@ -9,11 +9,11 @@ caller records it as a spec override on RuinConfig.
 
 from data.rooms import room_data
 
-MAZE_ROOMS = [421, 422, 423, 424, 425, 426, 427, 428, 429]
-STOOGE_ROOMS = [423, 427]     # rooms holding the stooge keys cd1 / cd2
-END_ROOM = 429                # boss room (locked exit 2070 needs cd1+cd2)
-# Entry pits exclude the two stooge rooms (6847/423, 6852/427) and the
-# west room (6844/422) so the party never starts inside a key room.
+MAZE_ROOMS = ['DRM01', 'DRM02', 'DRM03', 'DRM04', 'DRM05', 'DRM06', 'DRM07', 'DRM08', 'DRM09']
+STOOGE_ROOMS = ['DRM03', 'DRM07']     # rooms holding the stooge keys cd1 / cd2
+END_ROOM = 'DRM09'                # boss room (locked exit 2070 needs cd1+cd2)
+# Entry pits exclude the two stooge rooms (6847/DRM03, 6852/DRM07) and
+# the west room (6844/DRM02) so the party never starts inside a key room.
 ENTRY_PITS = [6845, 6846, 6854, 3069, 6849, 6843, 6848, 6853]
 MAX_TRIES = 20000
 
