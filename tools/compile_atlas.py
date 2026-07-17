@@ -551,9 +551,9 @@ def check_room_names():
     Bijection (every room mapped, no extras), unique names, area code
     registered, and the world letter present exactly when the area spans
     both worlds (and consistent with the room's world field: b=0, r=1,
-    x=None). Special formats: identity names for world-map rooms, MS
-    stub names (MSb-XX), ordinal-less root names, and Kefka's Tower's
-    structured ids (KTa1...).
+    x=None). Special formats: identity names for world-map rooms,
+    map-shuffle stub names (MAPb-XXX), ordinal-less root names, and
+    Kefka's Tower's structured tails (KTA1...).
     """
     import importlib.util, re
     spec = importlib.util.spec_from_file_location(
@@ -574,19 +574,18 @@ def check_room_names():
         w = rd[5] if len(rd) == 6 else rd[3]
         return w
 
-    room_pat = re.compile(r'^([A-Z][A-Z0-9])([brx]?)(\d{2,3})([a-z]*)(-[a-z0-9-]+)?$')
-    root_pat = re.compile(r'^([A-Z][A-Z0-9])([brx]?)-root(-[a-z-]+)?$')
-    ms_pat = re.compile(r'^MS([br])-([A-Z][A-Z0-9])(\d?)$')
-    kt_pat = re.compile(r'^KT[abcx]?\d*[ab]?(-[a-z-]+)?$')
-    # Cyan's Dream is lane-structured like KT (CDa/CDb/CDc = train/caves/
-    # Doma castle); the lane letter is not a world marker.
-    cd_pat = re.compile(r'^CD[abc]\d{2}([a-z]*)(-[a-z-]+)?$')
+    room_pat = re.compile(r'^([A-Z]{3})([brx]?)(\d{2,3})([a-z]*)(-[a-z0-9-]+)?$')
+    root_pat = re.compile(r'^([A-Z]{3})([brx]?)-root(-[a-z-]+)?$')
+    ms_pat = re.compile(r'^MAP([br])-([A-Z]{3})(\d?)$')
+    # Kefka's Tower keeps structured tails on its lane codes
+    # (KTA1, KTA5a, KTA-final) instead of the two-digit room grammar.
+    kt_pat = re.compile(r'^KT[ABC]\d*[ab]?(-[a-z-]+)?$')
 
     # Which areas span both worlds, from the registry itself.
     worlds_by_code = {}
     for rid, name in rn.ROOM_NAMES.items():
         m = room_pat.match(name) or root_pat.match(name)
-        if m and not name.startswith(('KT', 'CD')) and rid in room_data:
+        if m and not name.startswith('KT') and rid in room_data:
             w = world_of(rid)
             if w in (0, 1):
                 worlds_by_code.setdefault(m.group(1), set()).add(w)
@@ -612,8 +611,6 @@ def check_room_names():
         if str(rid).startswith('KT') or name.startswith('KT'):
             if not kt_pat.match(name):
                 failures.append(f'room_names: {rid!r} -> {name!r} is not a KT structured id')
-            continue
-        if cd_pat.match(name):
             continue
 
         m = ms_pat.match(name)
@@ -731,11 +728,11 @@ def check_pools(records):
                 if rn:
                     name = rn.ROOM_NAMES.get(m)
                     # Physical-room base = name minus the -variant suffix.
-                    # MS stub names (MSb-XX) and world-map identity names
-                    # contain structural dashes, not variant suffixes, and
-                    # each is its own physical room.
+                    # Map-shuffle stub names (MAPb-XXX) and world-map
+                    # identity names contain structural dashes, not variant
+                    # suffixes, and each is its own physical room.
                     base = None
-                    if name and not name.startswith('MS') and not name.startswith(('wob', 'wor')):
+                    if name and not name.startswith('MAP') and not name.startswith(('wob', 'wor')):
                         base = name.split('-')[0]
                     if base and base in seen_base and seen_base[base] != m:
                         failures.append(

@@ -39,7 +39,7 @@ destination and partner.  Utilities for reading these data are included in `atla
   - After editing, run `--check` to assess consistency (partner parity, reciprocity, 
     room coverage, pool solvability).  Stale curation entries will be detected and refused.
 - **`atlas/room_names.py`** includes a human-legible room registry; `doors.atlas.room_name(id)`
-  resolves them.  Codes are in the format `AREA CODE`+`world`+`room #`+`modifier`, e.g.: `ZOb01` for Zozo WoB.
+  resolves them.  Codes are in the format `AREA CODE`+`world`+`room #`+`modifier`, e.g.: `ZOZb01` for Zozo WoB.
 
 ### 2b. The model (`doors/model.py`)
 
