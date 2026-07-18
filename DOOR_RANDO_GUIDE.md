@@ -38,59 +38,60 @@ destination and partner.  Utilities for reading these data are included in `atla
     to regenerate the atlas.
   - After editing, run `--check` to assess consistency (partner parity, reciprocity, 
     room coverage, pool solvability).  Stale curation entries will be detected and refused.
-- Room ids (`data/rooms.py`) ARE the human-legible room names: numbers are always
-  exits, formatted strings are always rooms.  Ids are in the format
-  `AREA CODE`+`world`+`room #`+`modifier`, e.g.: `ZOZb01` for Zozo WoB; the grammar
-  and the `AREA_CODES` registry live at the top of `data/rooms.py`, and
-  `tools/compile_atlas.py --check` validates every id against them.  `# was:`
-  comments in `room_data` record the pre-name numeric ids used by
-  `claude_reference/` data.
+- `data/rooms.py` contains the room definitions: doors, traps, pits, keys, and locked elements
+  in each room, plus room variants for different modes.  
+  - Room ids are in the format
+    `AREA CODE`+`world`+`room #`+`modifier`, e.g.: `ZOZb01` for Zozo WoB (the 3-letter `AREA_CODES`
+    are included).
 
 ### 2b. The model (`doors/model.py`)
 
 `WorldModel(rooms)` holds the planner's whole mutable state:
 
-- Rooms merge into **clusters** (mutually-reachable sets) via a rollback
-  union-find; one-way trap→pit edges form a cluster graph that is kept a
-  **DAG at all times** (closing a cycle merges every cluster on it).
+- Rooms merge into **clusters** (mutually-reachable sets) via a union-find.  One-way trap→pit edges form a cluster graph that is always a
+  *directed acyclic graph* (DAG): closing a cycle merges every cluster on it.
 - Keys/locks: `apply_key` opens every lock whose
-  key tuple is held; released exits go live *and* into
-  `initially_locked_exits` (usable as sources, never as walk targets).
-- **Every mutation is journaled.** Backtracking is
-  `mark = w.checkpoint()` … `w.rollback(mark)` — no deepcopy anywhere.
+  key tuple is held.  Released exits go live, but are documented in 
+  `initially_locked_exits` (they are usable as sources, but not 
+  as targets).
+- Every mutation is journaled. Backtracking is done via
+  `mark = w.checkpoint()` … `w.rollback(mark)`.
 - `add_room` (dynamic pool growth for ruination) assesses the new room's
-  locks against the current keychain — the Mog→`lw1`→Lone Wolf rule.
+  locks against the current keychain, to make sure all locks are correctly released.
 - Two id caveats confined here: `_element_kind` classifies *locked* ids by
   range; `live_kind` classifies *live* elements by list membership and is
   authoritative where ranges lie (door-as-trap exits like 182 in room 61).
 
-## 4. Planning
+### 2c. The planner
 
-- **`plan/walk.py`** — the backtracking walk: offer exits from the
-  active cluster + its downstream,
-  try random legal entrances, prune with `plan/prune.py` Rules A–F,
-  rollback on failure, deterministic attempt budget. Protection filters
-  **targets only**; forced exits fail fast to their forced entrance.
-- **`plan/modes.py`** — `plan_for_args(args, rng, characters)` is the one
-  dispatch for every mode. Pools come from `data/room_sets.py`; shared-exit
-  splits, protect-door replacement (30000+), virtual roots (10000+), and
-  crossworld links (20000/20001) are **spec transforms on fresh copies** —
-  no shared table is ever mutated.
-- **`plan/artifact.py`** — every mode returns the same `DoorPlan`
+- **`plan/walk.py`** connects the rooms in the world model.  From a starting
+  room, it runs a recursive loop until rooms are fully connected:
+  - Find exits from the active cluster + its downstream; 
+  - try connections to random legal entrances;
+  - prune failures (`plan/prune.py`) and rollback on failure;
+  - continue until fully connected or walk budget exceeded.
+- **`plan/prune.py`** checks five Rules (A-F) that determine an invalid 
+  mapping on the basis of number of remaining doors, traps, and pits; number of 
+  remaining conversion rooms ('door-in-trap-out' [Dito] vs 'pit-in-door-out' [Pido]); 
+  and key accessibility.
+- **`plan/modes.py`**: the method `plan_for_args(args, rng, characters)` is the
+  dispatcher for every mode. Pools are imported from `data/room_sets.py` and 
+  processed to implement mode-specific mutations by `plan_mode()` (or the
+  custom planner `plan_ruination()`).  
+- **`plan/artifact.py`**: every mode returns the same `DoorPlan`
   (`door_pairs`, `oneways`, `ruination: RuinPlan | None`). `Doors.mod`
-  stores it on `doors.plan`; Events receives it.
-- **`plan/ruination/`** — see the package docstring for the module map.
-  The shape in one paragraph: three `RuinBranch` views share ONE
-  `WorldModel` (element uniqueness across branches is automatic; the
-  keychain is global: a recruit on one branch unlocks all). `growth.py` grows
-  branches toward reward rooms, banking character-locked checks and
-  cascading recruits (key → areas → banked rewards); `finalize.py` closes
-  each branch with the six-step procedure and runs the BFS softlock
-  verifier; `RuinConfig` holds per-plan COPIES of every table (`-maze` /
-  `-open` adjustments applied at construction), so retries need no reset
-  or rollback of anything.
+  stores it on `doors.plan`, where it is later used by Events and realize.
+- **`plan/ruination/`** implements the custom world model required for Ruination mode. 
+  - Three `RuinBranch` views share one `WorldModel` (elements are only added to one branch; 
+    the keychain is global, so a recruit on one branch is applied everywhere).
+  - `growth.py` grows branches to find reward rooms, banking character-locked checks 
+    until they become available; 
+  - `finalize.py` closes each branch following a six-step procedure and runs the 
+    'no-softlock' verifier using a breadth-first search (BFS);
+  - `RuinConfig` holds per-plan copies of every table (`-maze` / `-open` adjustments 
+    applied at construction) in case retries are required.
 
-## 5. Execution flow
+## 3. Execution flow
 
 ```
 wc.py: Memory → Data → Events → write
@@ -113,10 +114,13 @@ wc.py: Memory → Data → Events → write
 ```
 
 Planning consumes the seeded global RNG in one contiguous window, so seeds
-are deterministic and machine-independent (attempt budgets, no timeouts,
-no unordered iteration at RNG boundaries).
+are deterministic and machine-independent (attempt budgets are used instead of 
+hardware timeouts; no unordered iteration is performed at RNG boundaries).
 
-## 6. Validation inventory (run these before trusting a change)
+## 4. Codebase validation inventory 
+
+These tests should be run prior to trusting a change to the codebase. All tests 
+run directly with `python3` (no pytest) and no ROM is required.
 
 | What | How |
 |---|---|
@@ -128,41 +132,41 @@ no unordered iteration at RNG boundaries).
 | Failure-rate / usage studies at scale | `tools/ruin_stress.py sweep 1000` / `matrix 60` (ROM-free) |
 | Whole-build byte regression (planning + realization) | `python3 tools/golden_sweep.py -i <rom>` — 15 mode × seed configs vs the committed manifest (needs a ROM; ~12 min) |
 
-All tests run directly with `python3` (no pytest) and need no ROM.
 
-## 7. Recipes
 
-- **Add/repair a door partnership** → `doors/atlas/curation.py` (+ tag),
-  regenerate, `--check`.
-- **Add a randomizable area** → add its room list to `data/room_sets.py`,
-  wire the flag in `plan/modes.py` (`INDIVIDUAL_FLAGS` table), done — the
+## 5. Recipes
+
+- **Add/repair a door partnership**: edit `doors/atlas/curation.py` (+ tag),
+  regenerate atlas with `--check`.
+- **Add a randomizable area**: add its room list to `data/room_sets.py`,
+  wire the flag in `plan/modes.py` (`INDIVIDUAL_FLAGS` table).  The
   walk, validation, and realization are generic.
-- **Add a ruination area** → `data/ruin_areas.py` (rooms) +
+- **Add a ruination area**: `data/ruin_areas.py` (rooms) +
   `data/ruin_constants.py` (CHARACTER_AREAS / ROOM_REWARD / owners /
   shops). The planner picks it up from `RuinConfig`'s copies.
-- **Change ruination behavior for a mode flag** → adjust the table copies
+- **Change ruination behavior for a mode flag**: adjust the table copies
   in `RuinConfig.__init__` (the `-maze` blocks are the template). Never
   mutate the `data/` tables.
-- **Debug a bad seed** → the planner runs offline:
+- **Debug a bad seed**: the planner runs offline:
   `RuinConfig(party, …)` + `RuinPlanner(cfg, random.Random(seed))` +
   `grow()` + `finalize_plan()` in a REPL reproduces the exact plan with
   no ROM and no build.
 
-## 8. Design properties worth knowing
+## 6. Design properties worth knowing
 
 - The cluster graph is always DAG-clean; shared-exit reattachment adds
   no duplicate pairs.
-- Warp/town cooldown gating applies if *any* room of a candidate cluster
+- In Ruination mode, warp/town cooldown gating applies if *any* room of a candidate cluster
   is a warp/town room; the terminus is skipped as a target by cluster.
 - Ruination accepts ~83% of growth attempts per try, so whole plans
   essentially always complete inside the 10-attempt retry loop and maps
   run lean (few rescue reserve pulls).
 
-## 9. Event-layer mechanics
+## 7. Event-layer mechanics
 
-- **Derived predicates:** event files no longer keep flag or-chains;
-  they declare their territory and call `self.doors_touched(<ROOM_SETS
-  key>)` (or `rooms=(<room ids>,)` for areas without their own key).
+- **Derived predicates:** event files declare their territory and call 
+  `self.doors_touched(<ROOM_SETS key>)` (or `rooms=(<room ids>,)` for 
+  areas without their own key).
   `doors/plan/modes.py door_rando_pool_keys` is the single key
   authority — `plan_mode` consumes it too, and
   `tests/doors/test_walk.py` pins the truth table. Ruination stays an
@@ -183,7 +187,7 @@ All tests run directly with `python3` (no pytest) and need no ROM.
 - **Manifest:** `python3 tools/mode_manifest.py [--markdown]` derives
   the mode × event table (hooks / predicates / raw flags per file).
 
-## 10. Regression protection
+## 8. Regression protection
 
 Any change that should not alter output is proven harmless by one run of
 `python3 tools/golden_sweep.py -i <rom>` (15 mode x seed configs,
