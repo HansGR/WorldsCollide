@@ -91,6 +91,31 @@ destination and partner.  Utilities for reading these data are included in `atla
   - `RuinConfig` holds per-plan copies of every table (`-maze` / `-open` adjustments 
     applied at construction) in case retries are required.
 
+### 2d. The validator
+
+- `validate/structural.py` contains the `check_solved` function to confirm a valid 
+  solution for solved WorldModels, confirming:
+  - every live element consumed (no unmatched doors/traps/pits),
+  - every element is used at most once,
+  - doors pair door-to-door; oneways pair trap-to-pit,
+  - the map is a directed acyclic graph (DAG): i.e. a cluster graph without stray loops,
+  - every applicable forced connection is present,
+  - no protected element is consumed by a non-forced connection.
+
+### 2e.  The realizer
+
+`doors/realize` contains tools to write a finished DoorPlan into the ROM.
+
+- `door_map.py` converts planned element pairs into the realized `door_map`/`trap_map`
+  lookup table (including +4000 logical WOR ids) and performs shared-exit conflict resolution.
+- `exits.py` contains `connect_exits` to redirect doors, and exit-event writers that handle
+  required event code and shared WoB/WoR connections with unified transition logic.  Also handles
+  event-trigger relocation and cleanup.
+- `transitions.py` writes the one-way (trap->pit) event code modifications and related event tiles.
+- `event_tiles.py` handles event_exit_info runtime address updates, then performs the 
+  Transitions/connect_exits orchestration for write().  **This file is misnamed: it looks like this
+  is the primary entry point for realization.  Shouldn't this code be in `__init__`?**
+
 ## 3. Execution flow
 
 ```

@@ -16,7 +16,7 @@ def check_solved(world, forcing=None):
     - every live element consumed (no unmatched doors/traps/pits),
     - every element used at most once across pairs and oneways,
     - door pairs door-to-door and oneways trap-to-pit (by bucket at load),
-    - a DAG-clean cluster graph,
+    - a directed acyclic graph (DAG): i.e. a cluster graph without stray loops,
     - every applicable forced connection present,
     - no protected element consumed by a non-forced connection.
     """
@@ -33,7 +33,7 @@ def check_solved(world, forcing=None):
 
     for c in world.clusters():
         if world.find(c) in world.downstream(c):
-            raise ValidationError(f'cycle through class {world.cluster_name(c)}')
+            raise ValidationError(f'cycle through cluster {world.cluster_name(c)}')
 
     if forcing:
         made = {tuple(p) for p in world.door_pairs} | {tuple(o) for o in world.oneways}
