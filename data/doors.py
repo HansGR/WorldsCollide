@@ -189,13 +189,6 @@ class Doors():
         from doors.plan.modes import plan_for_args
         import random as _random
         self.plan = plan_for_args(self.args, _random, characters=characters)
-        if self.args.ruination_mode:
-            # Realization timing matches the historical flow: the ruination
-            # map is applied to self.map (and postprocessed) in
-            # events.ruination_mod, after the Start event has consumed the
-            # planned party. self.map stays empty through the rest of the
-            # Data phase.
-            return
         self.map = self.plan.as_map()
 
         # Debug: print shortest route if requested

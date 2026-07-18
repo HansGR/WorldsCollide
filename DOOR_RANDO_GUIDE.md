@@ -112,9 +112,11 @@ destination and partner.  Utilities for reading these data are included in `atla
   required event code and shared WoB/WoR connections with unified transition logic.  Also handles
   event-trigger relocation and cleanup.
 - `transitions.py` writes the one-way (trap->pit) event code modifications and related event tiles.
-- `event_tiles.py` handles event_exit_info runtime address updates, then performs the 
-  Transitions/connect_exits orchestration for write().  **This file is misnamed: it looks like this
-  is the primary entry point for realization.  Shouldn't this code be in `__init__`?**
+- `event_tiles.py` handles event_exit_info runtime address updates for the event tiles used
+  on the final map.
+- `realize/__init__.py` contains the entry point `realize_doors()`, called by `Maps.write()`:
+  it updates the event-tile addresses, writes the one-way transitions, then connects the
+  two-way doors.
 
 ## 3. Execution flow
 
@@ -126,16 +128,18 @@ wc.py: Memory → Data → Events → write
               │     -ruin: plan.py resolves the party, retries the pure
               │            planner (grow → finalize → verify) up to 10x
               │     else:  per-mode pools → walk → post-steps → validate
-              │   doors.plan = DoorPlan;  doors.map = plan (non-ruin)
+              │   doors.plan = DoorPlan;  doors.map = plan.as_map()
+              │   Maps.mod: postprocess_door_map() (every mode)
               │
               ├ Start.init_rewards consumes plan.ruination.party_ids
               ├ events.ruination_mod:                     [Events phase]
               │   bind_ruin_plan(doors.plan, …)   event/ruination_bind.py
               │     reward_log entries → live Reward slots (characters
               │     claim ids + dependency paths; espers/items drawn)
-              │   doors.map = plan.as_map(); postprocess_door_map()
               │   downstream consumers: area clues, dried meat,
               │   ferry, spoiler (all read the RuinMap adapter)
+              │
+              └ Maps.write(): realize_doors(maps)   doors/realize/
 ```
 
 Planning consumes the seeded global RNG in one contiguous window, so seeds

@@ -1,5 +1,6 @@
 """Realization: write a finished DoorPlan into the ROM.
 
+realize_doors() below is the entry point, called by Maps.write().
 Functions take the live Maps object at call time; nothing here runs at
 import time, so the doors/ package stays importable without a ROM.
 
@@ -10,6 +11,28 @@ import time, so the doors/ package stays importable without a ROM.
                     door patches are applied here as unified transition
                     logic), event-trigger relocation, cleanup.
     transitions.py  the one-way (trap->pit) and event-tile writer.
-    event_tiles.py  event_exit_info runtime address updates + the
-                    Transitions/connect_exits orchestration for write().
+    event_tiles.py  event_exit_info runtime address updates for the
+                    event tiles used on the final map.
 """
+
+
+def realize_doors(maps):
+    """The door-realization half of Maps.write(): update the runtime
+    event-exit addresses (both partners of used event connections -- the
+    Top-10 #4 gotcha), write the one-way transitions, then connect the
+    two-way doors."""
+    from data.event_exit_info import event_exit_info
+    from doors.realize.event_tiles import update_event_exit_addresses
+    from doors.realize.transitions import Transitions
+    from doors.realize.exits import connect_exits
+
+    update_event_exit_addresses(maps)
+
+    # Connect one-way event exits using the Transitions class
+    maps.transitions = Transitions(maps.doors.map[1], maps.rom,
+                                   maps.exits.exit_original_data,
+                                   event_exit_info, args=maps.args)
+    maps.transitions.write(maps=maps)
+
+    # Connect two-way doors
+    connect_exits(maps)

@@ -45,7 +45,7 @@ Event-specific modifications go in their respective event files (e.g., `event/bu
 window inside `Doors.mod` (Data phase) via the `doors/` package, producing a
 `DoorPlan` on `doors.plan` (one planning site). Events only *binds* it:
 `Start.init_rewards` consumes the planned party, `events.ruination_mod` →
-`event/ruination_bind.py` binds Reward slots and applies the map.
+`event/ruination_bind.py` binds Reward slots. The door map is applied and postprocessed in the Data phase for every mode (Doors.mod / Maps.mod).
 Realization lives in `doors/realize/`.
 
 ### 7. Persistent Event State Across Reloads
@@ -124,7 +124,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 - **`doors/atlas/`** — generated exit truth (partners, coordinates, one-ways, room names). Never hand-edit `compiled.py`; curation lives in `curation.py`, regenerate + verify with `python3 tools/compile_atlas.py --check`.
 - **`doors/model.py`** — `WorldModel`: journaled union-find of room clusters + one-way DAG + keys/locks. Backtracking = `checkpoint()`/`rollback()`, never deepcopy. `live_kind()` (list membership) is authoritative where id ranges lie (door-as-trap exits).
 - **`doors/plan/`** — `walk.py` (backtracking walk + `prune.py` Rules A–F), `modes.py` (`plan_for_args` = the one dispatch for every mode; `door_rando_pool_keys`/`doors_touch` = the derived DOOR_RANDOMIZE predicate events use via `Event.doors_touched()`), `artifact.py` (`DoorPlan`: `ruination: RuinPlan | None`, `gates` = unified exit→keys table, query API `destination_of`/`description_of`/`location_name`), `ruination/` (planner: growth/extend/finalize/kefka_tower/dream_maze; `plan.py` is the Data-phase entry, resolves the starting party in-window).
-- **`doors/realize/`** — realization: `door_map.py` (`postprocess_door_map`: plan pairs → realized `door_map`/`trap_map`, +4000 logical WOR ids), `exits.py` (`connect_exits` + exit-event writers + `door_rando_cleanup`; entrance/exit door patches applied here as unified transition logic), `event_tiles.py` (`realize_doors`: runtime event-exit address updates for Maps.write), `transitions.py` (one-way writer). Functions take the live `Maps` object; import-time ROM-free. Regression gate: `tools/golden_sweep.py` vs the committed 15-config manifest.
+- **`doors/realize/`** — realization: `door_map.py` (`postprocess_door_map`: plan pairs → realized `door_map`/`trap_map`, +4000 logical WOR ids), `exits.py` (`connect_exits` + exit-event writers + `door_rando_cleanup`; entrance/exit door patches applied here as unified transition logic), `event_tiles.py` (runtime event-exit address updates), `transitions.py` (one-way writer); the entry point `realize_doors` lives in `realize/__init__.py` (called by Maps.write). Functions take the live `Maps` object; import-time ROM-free. Regression gate: `tools/golden_sweep.py` vs the committed 15-config manifest.
 - **Event lifecycle hooks** — the Events loop framework-dispatches `door_rando_mod`/`dungeon_crawl_mod`/`ruination_mod` for any event that defines but doesn't inline-call them (`event/events.py`); `tools/mode_manifest.py` derives the mode × event table.
 - **`event/ruination_bind.py`** — the ONLY Events-side planner consumer: binds the plan's abstract rewards to live `Reward` slots; `RuinMap` adapts the plan for downstream consumers (area clues, dried meat, ferry, spoiler).
 - Tests: `tests/doors/*` (run directly, no pytest needed; CI runs them via `tests/test_doors_v2.py`). Harness: `tools/ruin_stress.py` (offline failure/usage studies).

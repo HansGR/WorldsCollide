@@ -285,15 +285,14 @@ class Events():
         # that is appended to the spoiler log at the end of the compile).
         ruin_verbose = bool(self.args.debug or getattr(self.args, "debug_verbose", False))
 
-        # The plan was constructed in the Data phase (Doors.mod, one planning
-        # site); look it up, bind the live Reward objects, and apply the map.
-        # No snapshot/retry machinery exists here -- a failed plan never
-        # reaches Events.
+        # The plan was constructed (and the door map applied and
+        # postprocessed) in the Data phase -- Doors.mod, one planning site;
+        # look it up and bind the live Reward objects. No snapshot/retry
+        # machinery exists here -- a failed plan never reaches Events.
         from event.ruination_bind import bind_ruin_plan
         plan = self.maps.doors.plan
         ruin_map = bind_ruin_plan(plan, self.characters, self.espers,
                                   self.items, events, verbose=ruin_verbose)
-        self.maps.doors.map = plan.as_map()
 
         # Store area-to-branch mapping so NPC clue scripts can reference it.
         # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),
@@ -348,14 +347,6 @@ class Events():
             from log import section
             log_lines = ruin_map.generate_spoiler_log(self.characters, self.espers, self.items)
             section("Ruination Rewards", log_lines, [])
-
-        # Debug: print shortest route(s) if requested (map is now final)
-        if self.args.debug_route_destination:
-            for dest in self.args.debug_route_destination:
-                self.maps.doors.debug_print_shortest_route(self.maps.doors.map, dest)
-
-        # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
-        self.maps.postprocess_door_map()
 
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs, self.args)

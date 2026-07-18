@@ -1,20 +1,16 @@
-"""event_exit_info runtime updates + door-realization orchestration for
-Maps.write()."""
+"""event_exit_info runtime address updates for the event tiles used on
+the final map (called by doors.realize.realize_doors)."""
 
 from log.verbose import vprint
 from instruction.event import EVENT_CODE_START
 from data.map_exit_extra import exit_data
 from data.event_exit_info import event_exit_info
-from doors.realize.transitions import Transitions
-from doors.realize.exits import connect_exits
 from event.switchyard import SWITCHYARD_MAP, switchyard_xy
 
 
-def realize_doors(maps):
-    """The door-realization half of Maps.write(): update the runtime
-    event-exit addresses (both partners of used event connections -- the
-    Top-10 #4 gotcha), write the one-way transitions, then connect the
-    two-way doors."""
+def update_event_exit_addresses(maps):
+    """Fill in the runtime event addresses for every event-tile exit the
+    final map uses (entries with a None address in event_exit_info)."""
     # Patch exits if necessary
     used_exits = [m for m in maps.door_map.keys()]
 
@@ -25,7 +21,7 @@ def realize_doors(maps):
     # IMPORTANT: When Transitions creates an entrance EventExit for an event tile (1500-2000),
     # it checks if the vanilla partner is also an event tile. If so, it uses the partner's
     # event code via use_event_info=partner_id. This means the PARTNER's event_exit_info
-    # must have a valid address, not just the entrance itmaps.
+    # must have a valid address, not just the entrance itself.
     #
     # Connections are stored as [exit_id, entrance_id]. We must include partners for BOTH:
     # - m[1] partners: when the entrance is an event tile (e.g., [1515, 1560] -> partner of 1560)
@@ -49,9 +45,6 @@ def realize_doors(maps):
             if maps.doors.verbose:
                 vprint('attempting to update event exit info: ', e)
             # Update the event addresses
-            #mapid = event_exit_info[e][5][0]
-            #ex = event_exit_info[e][5][1]
-            #ey = event_exit_info[e][5][2]
             if event_exit_info[e][5][0] is SWITCHYARD_MAP:
                 mapid = SWITCHYARD_MAP
                 [ex, ey] = switchyard_xy(e)
@@ -63,16 +56,3 @@ def realize_doors(maps):
             event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
             if maps.doors.verbose:
                 vprint('Updated event exit info: ', e, hex(event_exit_info[e][0]))
-
-    # Connect one-way event exits using the Transitions class
-    maps.transitions = Transitions(maps.doors.map[1], maps.rom, maps.exits.exit_original_data, event_exit_info, args=maps.args)
-    maps.transitions.write(maps=maps)
-
-    # Connect two-way doors
-    connect_exits(maps)
-
-    #if maps.doors.verbose:
-    #    print('Switchyard indexes:')
-    #    for s, id in enumerate(id_to_switchyard_xy):
-    #        print(s, id, id_to_switchyard_xy[id])
-

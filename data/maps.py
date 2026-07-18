@@ -472,8 +472,7 @@ class Maps():
         self.chests.mod()
         self.world_map.mod()
         self.doors.mod(characters)
-        if (self.args.door_randomize or self.args.map_shuffle) and not self.args.ruination_mode:
-            # Skip for ruination mode - door map is constructed later in ruination_mod()
+        if self.args.door_randomize or self.args.map_shuffle:
             self.postprocess_door_map()
         self.events.mod()  # self.events.mod(self.doors, self)
         self.long_events.mod()  # LONG EVENTS
@@ -600,7 +599,7 @@ class Maps():
         # self.write_post_diagnostic_info()
         # Patch the door randomizer exits & events before writing:
         if self.args.door_randomize or self.args.map_shuffle or self.args.ruination_mode:
-            from doors.realize.event_tiles import realize_doors
+            from doors.realize import realize_doors
             realize_doors(self)
 
         # Move Event Trigger pointer & data location in ROM
