@@ -88,7 +88,9 @@ for group in MUTUALLY_EXCLUSIVE_GROUPS:
 # Default flags for -ruin mode, organized by category
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
-    'objectives': ['-oa', '2.2.2.2.6.6.4.9.9'],
+    'objectives': ['-oa', '2.2.2.2.6.6.4.9.9',
+                   '-ob', '59.3.3.11.29.11.30.11.31.10.12.12',
+                   '-oc', '30.8.8.3.3.11.6.11.7.11.8.10.12.12'],  #
 
     # Party flags
     'starting_chars': ['-sc1', 'random', '-sc2', 'random', '-sc3', 'random'],
@@ -120,14 +122,14 @@ RUIN_DEFAULT_FLAGS = {
     # Item flags
     'items': [
         '-gp', '6000', '-smc', '3', '-sto', '1', '-ieor', '33', '-ieror', '33',
-        '-ir', 'stronger', '-csb', '6', '14', '-mca', '-stra', '-saw',
+        '-ir', 'stronger', '-csb', '10', '18', '-mca', '-stra', '-saw',
         '-sisr', '20', '-sprp', '75', '125', '-sdm', '4', '-npi', '-sebr', '-sli', '-ssf4',
-        '-snsb', '-snee', '-snil', '-ccsr', '20', '-chrm', '7', '0', '-cms'
+        '-snsb', '-snee', '-snil', '-ccsr', '20', '-chrm', '7', '0', '-cms', '-nee'
     ],
 
     # Other flags
     'other': [
-        '-frw', '-wmhc', '-cor', '100', '-crr', '100', '-crvr', '150', '200',
+        '-frw', '-wmhc', '-cor', '100', '-crr', '100', '-crvr', '50', '100', '-cnee',
         '-crm', '-ari', '-anca', '-adeh', '-ame', '1', '-nmc', '-noshoes',
         '-u254', '-nfps', '-fs', '-fe', '-fvd', '-fr', '-fj', '-fbs',
         '-fedc', '-fc', '-ond', '-etn', '-move', 'bd', '-sl', '-maze', 'iso', '-dv',
