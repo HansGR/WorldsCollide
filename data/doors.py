@@ -71,8 +71,6 @@ def apply_mode_table_adjustments(args):
 
 
 class Doors():
-    force_vanilla = False  # for debugging purposes
-
     @property
     def verbose(self):
         """Delegates to the centralized verbose logging flag."""
@@ -86,8 +84,6 @@ class Doors():
         reset_exit_data()
 
         self.args = args
-        self.door_rooms = {}   # populated and read by realization (data/maps.py)
-        self.door_descr = {}   # read by realization for spoiler descriptions
         # Intentional alias (not a copy): the -ruin pop in
         # apply_mode_table_adjustments must be visible to the spoiler print.
         self.forcing = forced_connections

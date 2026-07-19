@@ -33,32 +33,13 @@ def connect_exits(maps):
         for m in exit_make_explicit.keys():
             if m not in door_map.keys():
                 door_map[m] = exit_data[m][0]
-                # Look up the rooms of these exits
-                # this_room = [r for r in room_data.keys() if m in room_data[r][0]]
-                # if len(this_room)> 0:
-                #    maps.doors.door_rooms[m] = this_room[0]
-                # that_room = [r for r in room_data.keys() if door_map[m] in room_data[r][0]]
-                # if len(that_room)> 0:
-                #    maps.doors.door_rooms[door_map[m]] = that_room[0]
-
 
     # Build dictionary of maps with entrance events that will need to be called
-    # maps.exit_event_addr_to_call = {}
     maps.exit_event_data_to_include = {}
     # Must be referenced in:
     # (A) create_exit_event(maps, m, door_map[m])     # for normal doors, m < 1500
     # (B) dt = Transitions(new_map, ...)        # for event tiles acting as doors, 1500 <= m < 4000
     # (C) shared_map_exit_event(maps, m, door_map[m]) # for logical WOR exits
-
-    ### There is only one of these (1204, mt zozo).  Let's replace it with an explicit entrance_door_patch.
-    # for m in has_event_entrance.keys():
-    #     if m in door_map.keys():
-    #         # Record the event script address to call
-    #         info = has_event_entrance[m]
-    #         this_event = maps.get_event(info[0], info[1], info[2])
-    #         maps.exit_event_addr_to_call[door_map[m]] = this_event.event_address + EVENT_CODE_START
-    #         # Delete the event tile
-    #         maps.delete_event(info[0], info[1], info[2])  # delete the original event
 
     # In ruination mode, disable the entrance_door_patch for door 1558
     if maps.args.ruination_mode:
@@ -147,7 +128,7 @@ def connect_exits(maps):
             vprint('Connecting: ' + str(m) + ' to ' + str(door_map[m]))
         transition_map.append([m, door_map[m]])
     dt = Transitions(transition_map, maps.rom, maps.exits.exit_original_data, event_exit_info,
-                     maps.exit_event_data_to_include, args=maps.args)  # maps.exit_event_addr_to_call
+                     maps.exit_event_data_to_include, args=maps.args)
     dt.write(maps=maps)
 
     # Connect logical WOR exits: 4000 <= m,  m_WOB = (m - 4000).
@@ -178,13 +159,13 @@ def create_exit_event(maps, d, d_ref):
     # (1) the connection is in the other world
     # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
     # (3) the door requires special code (in exit_door_patch[d])
-    # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
+    # (4) the connection has an event script that should be run upon entry (in exit_event_data_to_include)
     # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
     require_event_flags = [
         (this_world != that_world),
         d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
         d in exit_door_patch.keys(),
-        d in maps.exit_event_data_to_include.keys(),  # maps.exit_event_addr_to_call.keys()
+        d in maps.exit_event_data_to_include.keys(),
         that_map in [0x000, 0x001]
     ]
     if maps.args.map_shuffle and not maps.args.door_randomize:
@@ -261,26 +242,8 @@ def create_exit_event(maps, d, d_ref):
 
             # (2) Add call to entrance script, if any
             if require_event_flags[3]:
-                # THIS should NEVER HAPPEN NOW!  We replaced exit_event_addr_to_call for all normal doors with entrance_door_patch!
+                # Entrance event scripts are handled by entrance_door_patch; nothing should reach here.
                 print("WARNING: THIS SHOULD NOT OCCUR.  Check entrance_door_patch!", d, d_ref)
-                # # This could be more elegant.
-                # if map_id > 2:
-                #     # This is a normal door, just call the expected script
-                #     src = [field.Call(maps.exit_event_addr_to_call[d])] + src
-                # else:
-                #     # This is a worldmap door, and will be replaced by an event tile going to the switchyard.
-                #     # Parse the requested branching condition
-                #     load_address = maps.exit_event_addr_to_call[d]
-                #     srcdata = maps.rom.get_bytes(load_address, 6)
-                #     [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
-                #
-                #     if branch_addr == 0x5eb3:
-                #         # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
-                #         branch_addr = load_address + 6
-                #         is_set = not is_set
-                #
-                #     # Prepend the required branch condition to the switchyard script
-                #     src = get_branch_code(ebit, is_set, branch_addr, SWITCHYARD_MAP) + src
 
             # (3) Prepend call to force world bit event, if required
             if require_event_flags[0]:
@@ -448,13 +411,13 @@ def shared_map_exit_event(maps, d, d_ref):
     # (1) the connection requires a specific world that is not this world
     # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
     # (3) the door requires special code (in exit_door_patch[d])
-    # (4) the door needs to run an entrance event script (in exit_event_addr_to_call[d])
+    # (4) the door needs to run an entrance event script (in exit_event_data_to_include)
     # (5) the connection is a world map: also summon the airship.
     require_event_flags = [
         ((this_world != that_world)),
         d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
         d in exit_door_patch.keys(),
-        d in maps.exit_event_data_to_include.keys(),  # maps.exit_event_addr_to_call.keys().  SHOULD NOT HAPPEN!
+        d in maps.exit_event_data_to_include.keys(),  # SHOULD NOT HAPPEN -- see (0) below
         that_map in [0x0, 0x1]
     ]
 
@@ -519,43 +482,9 @@ def shared_map_exit_event(maps, d, d_ref):
     if SOUND_EFFECT is not None:
         wor_src = [field.PlaySoundEffect(SOUND_EFFECT)] + wor_src
 
-    # (0) Prepend a call to entrance event script, if any
-    # NOTES: This is trying to replicate the event-tile passthru to a door.
-    # It's probably not going to work - it will complete the event script, and then ALWAYS load the map.
-    # What we need is to replicate the event script code by doing *here*:
-    #   [field.BranchIfEventBitCONDITION(eventbit, branchaddr)]
-    # for whatever the appropriate branch condition is.
-    # So for example, the entry script to Cyan's Cliff is:
-    #   CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
-    #   ... <continue script until hitting an 0xfe>
-    # ... And the one for Doma Siege is:
-    #   ['b0', '40', '80', 'c2', '9a', '1',   # world.BranchIfEventBitSet(0x40, 0x19ac2)
-    #    'd3', '78', '0', '21', '2a', '40',   # world.LoadMap(0x78, x=0x21, y = 0x2a, ...)
-    #    'fe']                                # field.Return()
-    # In these cases (also in Transitions version), we want to:
-    #   (1) In the case of Cyan's Cliff:
-    #       wor_src = [field.BranchIfEventBitClear(0x0d2, 0xc3fa7 + 6] + wor_src
-    #   (2) In the case of Doma Siege:
-    #       wor_src = [field.BranchIfEventBitSet(0x40, doma_siege_addr)] + wor_src
-    # Right now, we're just copying the address from the tile.  our options are:
-    #   (A) Parse the data in the event script; make the right choice based on it
-    #   (B) Track what needs to happen for each exit as metadata, in has_entrance_event
-    # Let's try A for now.
+    # (0) Entrance event scripts are handled by entrance_door_patch; nothing should reach here.
     if require_event_flags[3]:
-        # THIS SHOULD NOT HAPPEN.  Funcionality replaced with entrance_door_patch!
         print('WARNING: THIS SHOULD NOT OCCUR.  Check entrance_door_patch! ', d, d_ref)
-        # # Parse the requested branching condition
-        # load_address = maps.exit_event_addr_to_call[d]
-        # srcdata = maps.rom.get_bytes(load_address, 6)
-        # [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
-        #
-        # if branch_addr == 0x5eb3:
-        #     # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
-        #     branch_addr = load_address + 6
-        #     is_set = not is_set
-        #
-        # # Prepend the required branch condition
-        # wor_src = get_branch_code(ebit, is_set, branch_addr, map_id) + wor_src
 
     # (1) Prepend call to force world bit event, if required
     if require_event_flags[0]:

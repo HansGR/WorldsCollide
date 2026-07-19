@@ -71,13 +71,7 @@ class Events():
 
         # select event rewards
         if self.args.ruination_mode:
-            ruin_override = False
-            if ruin_override:
-                self.open_world_mod(events)   # OVERRIDE for testing
-            else:
-                self.ruination_mod(events, name_event)
-
-
+            self.ruination_mod(events, name_event)
         elif self.args.character_gating:
             self.character_gating_mod(events, name_event, extra_gating)
         else:

@@ -372,6 +372,3 @@ class RuinMap:
                                          branch.terminus))
         return log_lines
 
-    def generate_map_image(self, *args, **kwargs):
-        """Graphical map export is not implemented; skip cleanly."""
-        return None

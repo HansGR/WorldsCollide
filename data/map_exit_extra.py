@@ -1854,16 +1854,6 @@ event_door_connection_data = {
     # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 }
 
-# Some doors have event tiles on their partner door that do something important (e.g. Cyan's cliff).
-# Doors listed here will move that event tile to the new partner in maps.connect_exits().
-### 1/1/25: in the rare cases where there's an event that needs to happen before using a door, we should actually write
-# the necessary code rather than trying to call or branch to it (because sometimes it needs a call, sometimes a branch).
-# So we will get rid of has_event_entrance and deal with each case individually.
-has_event_entrance = {
-    # door_id : [map_id, x, y] for event entrance to this door
-#    1204 : [0xb4, 44, 55] # Cyan's cliff: start the reward cutscene
-}
-
 # Add exits to make the vanilla rom consistent (it handles some non-event exits using events)
 # [dest_map, dest_x, dest_y, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, x, y, size, direction]
 add_new_exits = {

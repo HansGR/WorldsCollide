@@ -1483,17 +1483,16 @@ if len(test) > 0:
 # ---------------------------------------------------------------------------
 # Reset boundary for the shared mutable tables.
 #
-# Several consumers treat the tables in this module as scratch space at run
-# time: Doors.__init__ splits dungeon-crawl/ruination town exits out of
-# shared_exits and pops forced_connections entries; Doors.mod appends virtual
-# root doors into room_data lists (-dra/-drx) and edits room lists for map
-# shuffle; ruination adds hub rooms and rewrites the isolated dream maze
-# entry. That is fine for a single build, but a second build in the same
-# process (retries, tests, a reroll server) would start from corrupted
-# tables. Doors.__init__ calls reset_room_tables() so that every build
-# starts from the pristine import-time state. The reset preserves the dict
-# object identities (clear + update), so existing `from data.rooms import
-# room_data`-style references stay valid.
+# The per-mode table setup (apply_mode_table_adjustments in data/doors.py,
+# run by Doors.__init__) mutates the tables in this module: it splits
+# dungeon-crawl/ruination town exits out of shared_exits, pops the -ruin
+# forced connection, and edits shuffle-room door lists when map shuffle and
+# door randomization combine. That is fine for a single build, but a second
+# build in the same process (retries, tests, a reroll server) would start
+# from corrupted tables. Doors.__init__ calls reset_room_tables() first so
+# that every build starts from the pristine import-time state. The reset
+# preserves the dict object identities (clear + update), so existing
+# `from data.rooms import room_data`-style references stay valid.
 #
 # exit_room / exit_world / doors_as_traps are derived once above and are not
 # mutated at run time, so they do not need to be re-derived here.

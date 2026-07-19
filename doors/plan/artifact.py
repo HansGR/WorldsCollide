@@ -82,17 +82,11 @@ class DoorPlan:
 
 
 class RuinPlan:
-    """The ruination view of a DoorPlan: starting party, abstract reward
-    plan (names/kinds from the planner's reward_log), and the solved
-    planner for structural queries (areas actually used, spoiler data)."""
+    """The ruination view of a DoorPlan: the starting party and the
+    solved planner. Everything else (reward_log, assignments, areas
+    used, spoiler data) is queried through .planner."""
 
     def __init__(self, planner, party_names, party_ids):
         self.planner = planner              # solved RuinPlanner (pure)
         self.party = list(party_names)      # starting party, slot order
         self.party_ids = list(party_ids)
-        self.planned_characters = list(planner.planned_characters)
-        self.requested = list(planner.Requested)
-        self.reward_log = planner.reward_log
-        self.assignments = planner.assignments
-        self.accessible_shops = list(planner.accessible_shops)
-        self.dead_check_restrictions = dict(planner.dead_check_restrictions)

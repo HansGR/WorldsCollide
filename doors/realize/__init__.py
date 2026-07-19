@@ -29,10 +29,10 @@ def realize_doors(maps):
     update_event_exit_addresses(maps)
 
     # Connect one-way event exits using the Transitions class
-    maps.transitions = Transitions(maps.doors.map[1], maps.rom,
-                                   maps.exits.exit_original_data,
-                                   event_exit_info, args=maps.args)
-    maps.transitions.write(maps=maps)
+    transitions = Transitions(maps.doors.map[1], maps.rom,
+                              maps.exits.exit_original_data,
+                              event_exit_info, args=maps.args)
+    transitions.write(maps=maps)
 
     # Connect two-way doors
     connect_exits(maps)

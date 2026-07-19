@@ -11,15 +11,6 @@ from data.rooms import shared_exits
 from event.switchyard import SWITCHYARD_MAP
 
 
-def find_room_for_door(door_id):
-    """Room id owning a door element (first match in room_data)."""
-    from data.rooms import room_data
-    for room_id, room in room_data.items():
-        if door_id in room[0]:
-            return room_id
-    return None
-
-
 def postprocess_door_map(maps):
     # Postprocess the door map
     if maps.doors.verbose:
@@ -80,14 +71,6 @@ def postprocess_door_map(maps):
             # Don't overwrite the mapping for wor_pair if it is mapped
             if wor_pair not in exit_data.keys():
                 maps.door_map[wor_pair] = wor_door
-
-            # Look up the rooms of these exits (including character-locked doors)
-            this_room = find_room_for_door(m + 4000)
-            if this_room is not None:
-                maps.doors.door_rooms[m + 4000] = this_room
-            that_room = find_room_for_door(maps.door_map[m + 4000])
-            if that_room is not None:
-                maps.doors.door_rooms[maps.door_map[m + 4000]] = that_room
 
         # Check if any safe_id values ended up in door_map
         safe_ids_in_map = [d for d in maps.door_map.keys() if 1281 <= d <= 1300]
@@ -163,9 +146,9 @@ def postprocess_door_map(maps):
         for m in maps.doors.map[0]:
             ma = [a for a in m]
             ma.sort()
-            # Use door_descr if available, otherwise try exit_data, otherwise show ID
-            desc0 = maps.doors.door_descr.get(ma[0], exit_data.get(ma[0], [None, f'ID:{ma[0]}'])[1])
-            desc1 = maps.doors.door_descr.get(ma[1], exit_data.get(ma[1], [None, f'ID:{ma[1]}'])[1])
+            # exit_data description, or the bare id when unlisted
+            desc0 = exit_data.get(ma[0], [None, f'ID:{ma[0]}'])[1]
+            desc1 = exit_data.get(ma[1], [None, f'ID:{ma[1]}'])[1]
             vprint('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + desc0 + '<-->' + desc1 + ')')
         vprint('One-way connections:')
         for m in maps.doors.map[1]:
