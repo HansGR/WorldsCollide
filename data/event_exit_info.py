@@ -407,14 +407,21 @@ def opera_disruption_bit_check(bytes=False):
     else:
         return src
 
-def opera_dragon_bit_check(bytes=False):
+def opera_dragon_bit_check(bytes=False, hide_lobby_impresario=True):
+    # hide_lobby_impresario: entity 0x13 is the Impresario on the lobby map (0xED).  The HideEntity
+    # runtime fixup is only valid (and only needed) when this code runs AFTER the lobby has loaded
+    # with IMPRESARIO_OPERA_LOBBY set (door 4658).  When running BEFORE map load, omit it: the bit
+    # clear alone prevents the NPC from being created, and entity 0x13 would refer to the source map.
     src = [
         field.ReturnIfEventBitSet(event_bit.DEFEATED_OPERA_HOUSE_DRAGON),
         field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
         field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
         field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
-        field.HideEntity(0x13)   # hide the Impressario in the lobby, since he's not supposed to be there.
     ]
+    if hide_lobby_impresario:
+        src += [
+            field.HideEntity(0x13)   # hide the Impressario in the lobby, since he's not supposed to be there.
+        ]
     if bytes:
         src_bit = []
         for s in src:
@@ -429,6 +436,10 @@ def opera_entrance_bit_check(args):
     # require_event_bit applies room 319's WoB baseline on entry (clearing DRAGON_OPERA_HOUSE etc.),
     # so once FINISHED_OPERA_DISRUPTION is set we must instead apply the WoR bit set
     # (room '319r' baseline + opera_dragon_bit_check, i.e. the door 4658 entrance logic).
+    # NOTE: NPC bits only take effect when their map loads, and the lobby (0xED) contains NPCs
+    # gated by MAN_AT_COUNTER_OPERA and IMPRESARIO_OPERA_LOBBY.  In ruination mode this patch is
+    # therefore run BEFORE map load (maps.py flips entrance_door_patch[658][1] to True), and the
+    # after-load HideEntity fixup is omitted from the dragon check.
     if not args.ruination_mode:
         return opera_disruption_bit_check()
 
@@ -436,7 +447,7 @@ def opera_entrance_bit_check(args):
     wor_src = []
     for bit, is_set in room_require_event_bit['319r'].items():
         wor_src.append(field.SetEventBit(bit) if is_set else field.ClearEventBit(bit))
-    wor_src += opera_dragon_bit_check()
+    wor_src += opera_dragon_bit_check(hide_lobby_impresario=False)
     wor_src += [field.Return()]
     space = Write(Bank.CC, wor_src, "opera house ruination WoR entrance bit check")
 
