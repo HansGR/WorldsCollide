@@ -67,7 +67,16 @@ class Arguments:
         if self.debug:
             self.spoiler_log = True
 
-        # resolve required characters (-rc) now that the rng is seeded: this may choose random
+        # Update the global args module attributes to match this Arguments instance,
+        # which is helpful if a wrapper script instantiates Arguments dynamically
+        # instead of importing the args module directly.
+        import sys
+        if "args" in sys.modules:
+            module = sys.modules["args"]
+            for name, value in self.__dict__.items():
+                setattr(module, name, value)
+
+        # Resolve required characters (-rc) now that the rng is seeded: this may choose random
         # required characters and finalizes the starting party and the party-select unmovable mask
         self.group_modules["starting_party"].resolve_required_characters(self)
 
