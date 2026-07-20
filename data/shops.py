@@ -281,7 +281,7 @@ class Shops():
         if item_id in RELICS:
             if item_id in self.SPECIAL_RELICS:
                 return 1
-            elif item_id in (name_id["Earrings"]):
+            elif item_id == name_id["Earrings"]:
                 return random.randint(1,2)
             return random.randint(1, 4)
 
