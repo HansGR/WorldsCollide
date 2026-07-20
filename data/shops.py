@@ -285,7 +285,7 @@ class Shops():
                 return random.randint(1, 2)
             return random.randint(1, 4)
 
-        # Basic healing items: 1-5 for Fenix Down, 2-6 for everything else
+        # Basic healing items: 1-4 for Fenix Down, 2-6 for everything else
         if item_id in self.BASIC_HEALING:
             if item_id == name_id["Fenix Down"]:
                 return random.randint(1, 4)
