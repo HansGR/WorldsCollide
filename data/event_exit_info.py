@@ -437,9 +437,9 @@ def opera_entrance_bit_check(args):
     # so once FINISHED_OPERA_DISRUPTION is set we must instead apply the WoR bit set
     # (room '319r' baseline + opera_dragon_bit_check, i.e. the door 4658 entrance logic).
     # NOTE: NPC bits only take effect when their map loads, and the lobby (0xED) contains NPCs
-    # gated by MAN_AT_COUNTER_OPERA and IMPRESARIO_OPERA_LOBBY.  In ruination mode this patch is
-    # therefore run BEFORE map load (maps.py flips entrance_door_patch[658][1] to True), and the
-    # after-load HideEntity fixup is omitted from the dragon check.
+    # gated by MAN_AT_COUNTER_OPERA, IMPRESARIO_OPERA_LOBBY and the ceiling door (0x355).  This
+    # patch is therefore registered to run BEFORE map load (entrance_door_patch[658][1] = True),
+    # and the after-load HideEntity fixup is omitted from the dragon check.
     if not args.ruination_mode:
         return opera_disruption_bit_check()
 
@@ -605,7 +605,8 @@ entrance_door_patch = {
 
     # Opera House WoB completed opera bit check patch
     # (callable: in ruination mode the single entrance also handles the post-disruption WoR/dragon state)
-    658: [opera_entrance_bit_check, False],
+    # Run BEFORE map load: the lobby (0xED) has NPCs gated by these bits (see opera_entrance_bit_check)
+    658: [opera_entrance_bit_check, True],
 
     # Opera House WoR defeated dragon bit check patch
     4658: [opera_dragon_bit_check(), False],

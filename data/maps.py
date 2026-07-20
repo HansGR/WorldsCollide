@@ -907,11 +907,6 @@ class Maps():
         if self.args.ruination_mode:
             entrance_door_patch.pop(1558, None)
 
-            # Opera House entrance (658): run the bit check BEFORE map load so the
-            # lobby NPC bits (man at counter, impresario) take effect when the lobby
-            # loads.  See opera_entrance_bit_check in data/event_exit_info.py.
-            entrance_door_patch[658] = [entrance_door_patch[658][0], True]
-
             # Disable require_event_bit for Figaro Castle entrance doors.
             # Rooms 68 (WoB) and '68R' (WoR) propagate bits to doors 197/1156
             # and 4197/5156 via room_require_event_bit. These are only needed
