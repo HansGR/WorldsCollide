@@ -186,6 +186,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
 
         "FIGARO_NO_MONEY",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+        field.Dialog(NOT_ENOUGH_GP_DIALOG_ID),
         "FIGARO_RETURN",
         field.Return(),
     ]
