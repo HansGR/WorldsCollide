@@ -234,6 +234,7 @@ class Shops():
         name_id["Dragon Horn"], name_id["Gem Box"], name_id["Merit Award"],
         name_id["Exp. Egg"], name_id["Marvel Shoes"], name_id["Ribbon"],
         name_id["Genji Glove"], name_id["Gauntlet"], name_id["Moogle Charm"],
+        name_id["Atlas Armlet"], name_id["DragoonBoots"],
     }
 
     # Basic healing items: larger packs (3-10)
@@ -276,22 +277,24 @@ class Shops():
             else:
                 return 1
 
-        # Relics: 1-4, except special relics which are singles
+        # Relics: 1-4, except special relics (1) and earrings (1-2)
         if item_id in RELICS:
             if item_id in self.SPECIAL_RELICS:
                 return 1
+            elif item_id in (name_id["Earrings"]):
+                return random.randint(1,2)
             return random.randint(1, 4)
 
-        # Basic healing items: 1-5 for Fenix Down, 3-8 for everything else
+        # Basic healing items: 1-5 for Fenix Down, 2-6 for everything else
         if item_id in self.BASIC_HEALING:
             if item_id == name_id["Fenix Down"]:
-                return random.randint(1, 5)
+                return random.randint(1, 4)
             else:
-                return random.randint(3, 8)
+                return random.randint(2, 6)
 
-        # High healing items: 1-3
+        # High healing items: 1-2
         if item_id in self.HIGH_HEALING:
-            return random.randint(1, 3)
+            return random.randint(1, 2)
 
         # Elixir, Megalixir: singles
         if item_id in (name_id["Elixir"], name_id["Megalixir"]):
