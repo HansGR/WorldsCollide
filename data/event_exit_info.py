@@ -384,9 +384,16 @@ def tentacles_bit_check(bytes=False):
     else:
         return src
 
-def opera_disruption_bit_check(bytes=False):
+def opera_disruption_bit_check(bytes=False, skip_to=None):
+    # skip_to: label to branch to (instead of returning) when the disruption is already finished.
+    # A label is required when this code runs BEFORE the map load: an early Return there would
+    # short-circuit the load that follows (see the note in MtZozo.entrance_door_patch).
+    if skip_to is None:
+        guard = field.ReturnIfEventBitSet(event_bit.FINISHED_OPERA_DISRUPTION)
+    else:
+        guard = field.BranchIfEventBitSet(event_bit.FINISHED_OPERA_DISRUPTION, skip_to)
     src = [
-        field.ReturnIfEventBitSet(event_bit.FINISHED_OPERA_DISRUPTION),
+        guard,
         field.ClearEventBit(event_bit.BEGAN_OPERA_DISRUPTION),
         field.SetEventBit(npc_bit.ULTROS_OPERA_CEILING),
         field.SetEventBit(npc_bit.RAT1_OPERA_CEILING),
@@ -407,21 +414,22 @@ def opera_disruption_bit_check(bytes=False):
     else:
         return src
 
-def opera_dragon_bit_check(bytes=False, hide_lobby_impresario=True):
-    # hide_lobby_impresario: entity 0x13 is the Impresario on the lobby map (0xED).  The HideEntity
-    # runtime fixup is only valid (and only needed) when this code runs AFTER the lobby has loaded
-    # with IMPRESARIO_OPERA_LOBBY set (door 4658).  When running BEFORE map load, omit it: the bit
-    # clear alone prevents the NPC from being created, and entity 0x13 would refer to the source map.
+def opera_dragon_bit_check(bytes=False, skip_to=None):
+    # skip_to: label to branch to (instead of returning) when the dragon is already defeated.
+    # A label is required when this code runs BEFORE the map load: an early Return there would
+    # short-circuit the load that follows (see the note in MtZozo.entrance_door_patch).
+    # NOTE: this runs before map load, so clearing IMPRESARIO_OPERA_LOBBY is enough to keep the
+    # lobby Impresario from being created (no after-load HideEntity fixup needed).
+    if skip_to is None:
+        guard = field.ReturnIfEventBitSet(event_bit.DEFEATED_OPERA_HOUSE_DRAGON)
+    else:
+        guard = field.BranchIfEventBitSet(event_bit.DEFEATED_OPERA_HOUSE_DRAGON, skip_to)
     src = [
-        field.ReturnIfEventBitSet(event_bit.DEFEATED_OPERA_HOUSE_DRAGON),
+        guard,
         field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
         field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
         field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
     ]
-    if hide_lobby_impresario:
-        src += [
-            field.HideEntity(0x13)   # hide the Impressario in the lobby, since he's not supposed to be there.
-        ]
     if bytes:
         src_bit = []
         for s in src:
@@ -439,21 +447,22 @@ def opera_entrance_bit_check(args):
     # NOTE: NPC bits only take effect when their map loads, and the lobby (0xED) contains NPCs
     # gated by MAN_AT_COUNTER_OPERA, IMPRESARIO_OPERA_LOBBY and the ceiling door (0x355).  This
     # patch is therefore registered to run BEFORE map load (entrance_door_patch[658][1] = True),
-    # and the after-load HideEntity fixup is omitted from the dragon check.
+    # and all guards use label skips so the fragment always falls through to the load that follows.
     if not args.ruination_mode:
-        return opera_disruption_bit_check()
+        return opera_disruption_bit_check(skip_to="OPERA_ENTRANCE_END") + ["OPERA_ENTRANCE_END"]
 
-    from memory.space import Write, Bank
-    wor_src = []
+    # WoB bits, with the "already finished" guard branching to the WoR section
+    src = opera_disruption_bit_check(skip_to="OPERA_ENTRANCE_WOR")
+    src += [
+        field.Branch("OPERA_ENTRANCE_END"),
+        "OPERA_ENTRANCE_WOR",
+    ]
+    # WoR baseline (room '319r'), then the dragon bits
     for bit, is_set in room_require_event_bit['319r'].items():
-        wor_src.append(field.SetEventBit(bit) if is_set else field.ClearEventBit(bit))
-    wor_src += opera_dragon_bit_check(hide_lobby_impresario=False)
-    wor_src += [field.Return()]
-    space = Write(Bank.CC, wor_src, "opera house ruination WoR entrance bit check")
-
-    return [
-        field.BranchIfEventBitSet(event_bit.FINISHED_OPERA_DISRUPTION, space.start_address),
-    ] + opera_disruption_bit_check()
+        src.append(field.SetEventBit(bit) if is_set else field.ClearEventBit(bit))
+    src += opera_dragon_bit_check(skip_to="OPERA_ENTRANCE_END")
+    src += ["OPERA_ENTRANCE_END"]
+    return src
 
 
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
@@ -609,7 +618,8 @@ entrance_door_patch = {
     658: [opera_entrance_bit_check, True],
 
     # Opera House WoR defeated dragon bit check patch
-    4658: [opera_dragon_bit_check(), False],
+    # Run BEFORE map load: IMPRESARIO_OPERA_LOBBY gates an NPC on the lobby map (0xED) itself
+    4658: [opera_dragon_bit_check(skip_to="OPERA_DRAGON_END") + ["OPERA_DRAGON_END"], True],
 
     # Mt Zozo cliff entrance patch
     1204: [mt_zozo_cliff_check, True],
