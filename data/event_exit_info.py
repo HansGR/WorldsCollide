@@ -423,6 +423,27 @@ def opera_dragon_bit_check(bytes=False):
     else:
         return src
 
+def opera_entrance_bit_check(args):
+    # In ruination mode the Opera House uses the single WoB entrance (658, room 'ms-wob-40')
+    # for both phases: the disruption (WoB bits) and the dragon fight afterward (WoR bits).
+    # require_event_bit applies room 319's WoB baseline on entry (clearing DRAGON_OPERA_HOUSE etc.),
+    # so once FINISHED_OPERA_DISRUPTION is set we must instead apply the WoR bit set
+    # (room '319r' baseline + opera_dragon_bit_check, i.e. the door 4658 entrance logic).
+    if not args.ruination_mode:
+        return opera_disruption_bit_check()
+
+    from memory.space import Write, Bank
+    wor_src = []
+    for bit, is_set in room_require_event_bit['319r'].items():
+        wor_src.append(field.SetEventBit(bit) if is_set else field.ClearEventBit(bit))
+    wor_src += opera_dragon_bit_check()
+    wor_src += [field.Return()]
+    space = Write(Bank.CC, wor_src, "opera house ruination WoR entrance bit check")
+
+    return [
+        field.BranchIfEventBitSet(event_bit.FINISHED_OPERA_DISRUPTION, space.start_address),
+    ] + opera_disruption_bit_check()
+
 
 # from instruction.field.functions import ORIGINAL_CHECK_GAME_OVER
 exit_event_patch = {
@@ -572,7 +593,8 @@ entrance_door_patch = {
     262: [tentacles_bit_check(), False],
 
     # Opera House WoB completed opera bit check patch
-    658: [opera_disruption_bit_check(), False],
+    # (callable: in ruination mode the single entrance also handles the post-disruption WoR/dragon state)
+    658: [opera_entrance_bit_check, False],
 
     # Opera House WoR defeated dragon bit check patch
     4658: [opera_dragon_bit_check(), False],
