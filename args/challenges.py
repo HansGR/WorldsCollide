@@ -134,14 +134,6 @@ def options(args):
         ("No Saves", args.no_saves, "no_saves"),
         ("Require Characters", args.require_characters, "require_characters"),
     ]
-        
-    return opts
-def _format_spells_log_entries(spell_ids):
-    from constants.spells import id_spell
-    spell_entries = []
-    for i, spell_id in enumerate(spell_ids):
-        spell_entries.append(("", id_spell[spell_id], f"rls_{i}"))
-    return spell_entries
 
 def _format_spells_log_entries(spell_ids):
     from constants.spells import id_spell
