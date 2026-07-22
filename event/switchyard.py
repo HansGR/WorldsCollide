@@ -3,7 +3,7 @@ from memory.space import Write, Bank
 import instruction.field as field
 from instruction import world, vehicle
 from instruction.event import EVENT_CODE_START
-from data.event_exit_info import event_exit_info
+from data.event_exit_data import event_exit_info
 import data.direction as direction
 import data.event_bit as event_bit
 from data.parse import functions_to_bytes

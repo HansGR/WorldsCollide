@@ -4,7 +4,7 @@ the final map (called by doors.realize.realize_doors)."""
 from log.verbose import vprint
 from instruction.event import EVENT_CODE_START
 from data.map_exit_extra import exit_data
-from data.event_exit_info import event_exit_info
+from data.event_exit_data import event_exit_info
 from event.switchyard import SWITCHYARD_MAP, switchyard_xy
 
 

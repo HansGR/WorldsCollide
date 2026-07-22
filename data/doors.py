@@ -198,7 +198,7 @@ class Doors():
             lcolumn = []
 
             # Construct door descriptions
-            from data.event_exit_info import event_exit_info
+            from data.event_exit_data import event_exit_info
             door_descr = {}
             for mmm in self.map:
                 for m in mmm:

@@ -1,4 +1,4 @@
-"""CI wrapper for the door-rando v2 test scripts in tests/doors/.
+"""CI wrapper for the door-rando test scripts in tests/doors/.
 
 Those scripts are standalone (run directly: `python3 tests/doors/test_X.py`)
 because they insert the repo root on sys.path themselves. They must NOT be
@@ -29,7 +29,7 @@ SCRIPTS = [
 ]
 
 
-class DoorsV2Scripts(unittest.TestCase):
+class DoorsScripts(unittest.TestCase):
     pass
 
 
@@ -47,7 +47,7 @@ def _make_test(script, args):
 
 for _script, _args in SCRIPTS:
     _name = 'test_' + _script[:-3].replace('test_', '', 1)
-    setattr(DoorsV2Scripts, _name, _make_test(_script, _args))
+    setattr(DoorsScripts, _name, _make_test(_script, _args))
 
 
 if __name__ == '__main__':

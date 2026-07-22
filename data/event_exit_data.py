@@ -1,10 +1,6 @@
-"""Pure event-exit tables (ROM-free).
-
-Split out of event_exit_info.py (rewrite Stage A milestone 2, review 3.7)
-so the door-rando data layer can be imported without a loaded ROM. The
-patch machinery (which needs instruction.* and event.*) stays in
-data/event_exit_info.py, which re-exports these tables - existing
-consumers are unaffected.
+"""Pure event-exit tables (ROM-free), so the door-rando data layer can
+be imported without a loaded ROM. The patch machinery (which needs
+instruction.* and event.*) lives in data/event_exit_patches.py.
 """
 
 # event exit information:

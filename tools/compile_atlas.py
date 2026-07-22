@@ -1,8 +1,9 @@
 """Atlas compiler for door randomization.
 
 Derives the mechanical layer of the door-rando atlas from the vanilla ROM
-data dumps in claude_reference/ and cross-checks it against the curated
-tables in data/map_exit_extra.py:
+exit dump (doors/atlas/exits_raw.json, with map/event layout data from
+claude_reference/) and cross-checks it against the curated tables in
+data/map_exit_extra.py:
 
   1. Assigns every vanilla exit (short 0-1128, long 1129-1280) to its map
      using the per-map exit counts (the same concatenation convention
@@ -66,7 +67,7 @@ def load_exit_records():
     runtime: short exits concatenated in map order (0-1128), then long
     exits (1129-1280).
     """
-    with open(os.path.join(ROOT, 'claude_reference/exits_raw.json')) as f:
+    with open(os.path.join(ROOT, 'doors/atlas/exits_raw.json')) as f:
         raw = json.load(f)
     with open(os.path.join(ROOT, 'claude_reference/maps_data.json')) as f:
         maps_data = json.load(f)
@@ -471,6 +472,13 @@ def check_rooms(records):
     from data.rooms import room_data, forced_connections, doors_as_traps
     from data.event_exit_data import event_exit_info as eei
     failures = []
+
+    # Door-as-trap pairing: every trap-bucket door (id < 2000) needs a
+    # 6000+id landing pit somewhere, and vice versa.
+    landings = {p - 6000 for spec in room_data.values() for p in spec[2]
+                if isinstance(p, int) and p >= 6000}
+    for d in sorted(set(doors_as_traps) ^ landings):
+        failures.append(f'door-as-trap {d}: door/landing-pit pairing is one-sided')
 
     def trap_exists(t):
         if t in eei:

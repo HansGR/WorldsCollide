@@ -21,7 +21,7 @@ def realize_doors(maps):
     event-exit addresses (both partners of used event connections -- the
     Top-10 #4 gotcha), write the one-way transitions, then connect the
     two-way doors."""
-    from data.event_exit_info import event_exit_info
+    from data.event_exit_data import event_exit_info
     from doors.realize.event_tiles import update_event_exit_addresses
     from doors.realize.transitions import Transitions
     from doors.realize.exits import connect_exits

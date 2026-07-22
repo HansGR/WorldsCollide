@@ -262,7 +262,7 @@ class BarenFalls(Event):
         # space = Write(Bank.CB, src, description='Veldt exit to world map id=1561')
         #
         # # Update event_exit_info[1561] with this information
-        # from data.event_exit_info import event_exit_info
+        # from data.event_exit_data import event_exit_info
         # event_exit_info[event_id][0:3] = [space.start_address, 7, 1]
 
 

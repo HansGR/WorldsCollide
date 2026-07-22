@@ -49,6 +49,15 @@ INDIVIDUAL_FLAGS = (
     ('door_randomize_veldt_cave', 'VeldtCave', True),
 )
 
+# Every individual-area flag attribute: INDIVIDUAL_FLAGS plus the
+# upper-narshe trio, which has its own WoB/WoR/mirror semantics (see
+# door_rando_pool_keys). args/doors.py derives door_randomize from this.
+INDIVIDUAL_AREA_ATTRS = tuple(attr for attr, _, _ in INDIVIDUAL_FLAGS) + (
+    'door_randomize_upper_narshe',
+    'door_randomize_upper_narshe_wob',
+    'door_randomize_upper_narshe_wor',
+)
+
 
 def dre_area_names(map_shuffle=False):
     """The area list Doors.__init__ builds for -dre, in ROOM_SETS order."""

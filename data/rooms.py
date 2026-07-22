@@ -1461,23 +1461,14 @@ for r in room_data.keys():
         exit_world[p] = room_data[r][-1]
         exit_room[p] = r
 
-# Generate a list of doors that act as trapdoors
+# Generate a list of doors that act as trapdoors (trap bucket, id < 2000).
+# Each must have a 6000+id landing pit somewhere; tools/compile_atlas.py
+# --check validates the pairing.
 doors_as_traps = []
-doors_as_traps_2 = []
 for r in room_data.keys():
-    traps = [t for t in room_data[r][1]]
-    for t in traps:
-        if isinstance(t, int):
-            if t < 2000:
-                doors_as_traps.append(t)
-    pits = [p for p in room_data[r][2]]
-    for p in pits:
-        if isinstance(p, int):
-            if p >= 6000:
-                doors_as_traps_2.append(p-6000)
-test = [d for d in doors_as_traps if d not in doors_as_traps_2] +  [d for d in doors_as_traps_2 if d not in doors_as_traps]
-if len(test) > 0:
-    print('BROKEN DOOR/TRAP pairs:', test)
+    for t in room_data[r][1]:
+        if isinstance(t, int) and t < 2000:
+            doors_as_traps.append(t)
 
 
 # ---------------------------------------------------------------------------

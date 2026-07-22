@@ -24,8 +24,9 @@ from instruction import field, world, asm
 from instruction.event import EVENT_CODE_START
 import instruction.field.entity as field_entity
 
-from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
-    multi_events, entrance_door_patch, exit_door_patch, require_event_bit, event_return_map
+from data.event_exit_data import event_exit_info, event_return_map
+from data.event_exit_patches import exit_event_patch, entrance_event_patch, event_address_patch, \
+    multi_events, entrance_door_patch, exit_door_patch, require_event_bit
 
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, \
     event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit, \
@@ -473,6 +474,10 @@ class Maps():
         self.world_map.mod()
         self.doors.mod(characters)
         if self.args.door_randomize or self.args.map_shuffle:
+            # Spoiler log Door Rando section (before postprocess: the
+            # dungeon-crawl override edits exit_data descriptions).
+            if self.doors.map:
+                self.doors.print()
             self.postprocess_door_map()
         self.events.mod()  # self.events.mod(self.doors, self)
         self.long_events.mod()  # LONG EVENTS

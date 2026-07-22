@@ -14,8 +14,9 @@ import data.event_bit as event_bit
 from data.map_event import MapEvent, LongMapEvent
 from data.map_exit_extra import exit_data, exit_make_explicit, \
     map_shuffle_airship_warp, map_shuffle_force_explicit
-from data.event_exit_info import event_exit_info, entrance_door_patch, \
-    exit_door_patch, require_event_bit, event_return_map
+from data.event_exit_data import event_exit_info, event_return_map
+from data.event_exit_patches import entrance_door_patch, exit_door_patch, \
+    require_event_bit
 from doors.realize.transitions import Transitions
 from event.switchyard import SWITCHYARD_MAP, AddSwitchyardEvent, \
     GoToSwitchyard, SummonAirship

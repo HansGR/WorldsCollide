@@ -86,21 +86,14 @@ def parse(parser):
                        help="Output the shortest route to specified room(s). Supports multiple rooms. (use with -drdc or -ruin)")
 
 def process(args):
-    #pass
-    if args.door_randomize_all or args.door_randomize_crossworld or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
-            args.door_randomize_umaro or args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob or \
-            args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or \
-            args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or \
-            args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor \
-            or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
-            or args.door_randomize_serpent_trench or args.door_randomize_burning_house \
-            or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
-            or args.door_randomize_phantom_train or args.door_randomize_cyans_dream or args.door_randomize_mt_kolts \
-            or args.door_randomize_veldt_cave \
-            or args.ruination_mode is not None:
-        args.door_randomize = True
-    else:
-        args.door_randomize = False
+    # The individual-area flag list is owned by doors/plan/modes.py; a new
+    # area added there is picked up here automatically.
+    from doors.plan.modes import INDIVIDUAL_AREA_ATTRS
+    args.door_randomize = bool(
+        args.door_randomize_all or args.door_randomize_crossworld
+        or args.door_randomize_dungeon_crawl or args.door_randomize_each
+        or args.ruination_mode is not None
+        or any(getattr(args, attr) for attr in INDIVIDUAL_AREA_ATTRS))
 
     if args.ruination_mode is not None:
         # Override:  ruination mode is incompatible with map shuffle and other door rando modes, and takes precedence

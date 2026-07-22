@@ -160,7 +160,7 @@ class VeldtCaveWOR(Event):
             self.gotoswitchyard_addr = space.next_address
 
             # Update event_exit_info[2075] with this information
-            from data.event_exit_info import event_exit_info
+            from data.event_exit_data import event_exit_info
             event_exit_info[2075][0:3] = [self.gotoswitchyard_addr, 7, 1]
             
             space.write([

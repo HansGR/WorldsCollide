@@ -1,4 +1,8 @@
-from data.event_exit_info import *
+from data.event_exit_data import event_exit_info
+from data.event_exit_patches import entrance_event_patch, event_address_patch, \
+    exit_event_patch, multi_events, require_event_bit
+from instruction.event import EVENT_CODE_START
+import data.direction as direction
 from data.rooms import exit_world, shared_oneways
 from data.parse import delete_nops, branch_parser, get_branch_code
 from instruction import field

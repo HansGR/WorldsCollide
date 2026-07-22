@@ -60,7 +60,7 @@ Companion gotchas:
 ### 8. Finding Map IDs by Name
 1. Search `data/map_exit_extra.py` for location name in `exit_data`
 2. Identify the entrance door ("Door Outside" goes INTO building)
-3. Look up entrance door in `claude_reference/exits_raw.json` - the `dest_map` field is the interior map ID
+3. Look up entrance door in `doors/atlas/exits_raw.json` - the `dest_map` field is the interior map ID
 
 ### 9. NPC_BIT Calculation
 Each NPC has a visibility bit determining if it appears when the map loads. Formula: `npc_bit = (event_byte + 0x60) * 8 + event_bit`. Special values: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` (in `data/npc_bit.py`).
@@ -79,7 +79,7 @@ Quick lookup procedures I re-derive every session. Most JSONs are in `claude_ref
 
 | Looking for | Where / how |
 |-------------|-------------|
-| **Map ID by name** | `grep "<name>" data/map_exit_extra.py` → identify the entrance door (e.g. "Door Outside" goes INTO the building) → `grep '"index": <door_id>' claude_reference/exits_raw.json` → `dest_map` is the interior map ID. (Top 10 #8.) |
+| **Map ID by name** | `grep "<name>" data/map_exit_extra.py` → identify the entrance door (e.g. "Door Outside" goes INTO the building) → `grep '"index": <door_id>' doors/atlas/exits_raw.json` → `dest_map` is the interior map ID. (Top 10 #8.) |
 | **NPC by sprite/position** | `claude_reference/maps_data.json` `maps[map_id].npcs` array (position, sprite). Index in array = map-local index; **`npc_id = map_local_index + 0x10`** for `maps.get_npc(map_id, npc_id)` (Top 10 #2). Cross-reference `claude_reference/npcs_raw.json` for full properties (event_byte, event_bit). |
 | **Event bit by name** | `grep -i "<name>" data/event_bit.py`. `npc_bit = (event_byte + 0x60) * 8 + event_bit` (Top 10 #9). Special: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` in `data/npc_bit.py`. |
 | **Event word by name** | `grep -i "<name>" data/event_word.py`. Address: `event_word.address(event_word.NAME)`. |
@@ -89,7 +89,7 @@ Quick lookup procedures I re-derive every session. Most JSONs are in `claude_ref
 | **Vanilla event script for a ROM address** | `claude_reference/EventScriptTxt.txt` — search by SNES address (e.g. `CC/8022`). Decompile is comprehensive. |
 | **Dialog text by ID** | `claude_reference/dialog_file.txt` — IDs are decimal. Modify with `dialogs.set_text(dialog_id, "...")`. |
 | **Room ID → SNES map ID + name** | `claude_reference/room_map_reference.json` (covers 784/801; Mobliz/switchyard/ruin-logical rooms unresolved). |
-| **Door ID → endpoints** | `data/map_exit_extra.py` `exit_data[door_id]` = `[partner_id, description]`. Door ranges: <2000 two-way, 2000-2999 trap (one-way exit), 3000+ pit (one-way entrance) — Top 10 #3. Full data: `claude_reference/exits_raw.json` (`dest_map`/`dest_x`/`dest_y`). |
+| **Door ID → endpoints** | `data/map_exit_extra.py` `exit_data[door_id]` = `[partner_id, description]`. Door ranges: <2000 two-way, 2000-2999 trap (one-way exit), 3000+ pit (one-way entrance) — Top 10 #3. Full data: `doors/atlas/exits_raw.json` (`dest_map`/`dest_x`/`dest_y`). |
 | **Reward room for character X (ruin)** | `ROOM_REWARD` dict in `data/ruin_constants.py`. |
 | **Area name → rooms (ruin)** | `RUIN_ROOM_SETS` dict in `data/ruin_areas.py`. |
 | **Which branch holds area X (ruin)** | `args.ruination_areas_used[area_name]` (populated from `ruin_map.compute_actual_areas_used()`, NOT raw `AreasUsed`). |
@@ -116,7 +116,7 @@ For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_GUIDE.md** is 
 - **data/doors.py** — `Doors`: thin Data-phase shell around the `doors/` planner (`mod()` calls `plan_for_args`, owns `self.plan`/`self.map`); also `print()` (spoiler section), the `-debug_dest` BFS route printer, and `apply_mode_table_adjustments(args)` (the documented per-mode shared-table setup: -ruin Sealed Gate terminus pop, -ruin/-drdc town split exits, zone-eater doors-vs-traps under map shuffle + door rando). `verbose` is a property of `verbose.is_enabled()` — don't add an instance attribute.
 - **data/rooms.py** — Room definitions and `forced_connections`. Room ids ARE the human-readable room names (3-letter area codes, grammar + `AREA_CODES` registry at the top of the file; `# was:` comments give the old numeric ids used by `claude_reference/` data). Mode variants carry a `-ruin`/`-dc`/... suffix.
 - **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
-- **data/event_exit_info.py** — Event tile (1500-2000) connection metadata. `entrance_door_patch` callables live here.
+- **data/event_exit_data.py** — Event tile (1500-2000) connection metadata (`event_exit_info` table, ROM-free). **data/event_exit_patches.py** — the ROM-side patch machinery; `entrance_door_patch` callables live here.
 
 ### Door planner (`doors/`)
 See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md the milestones. Key facts:
@@ -127,7 +127,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 - **`doors/realize/`** — realization: `door_map.py` (`postprocess_door_map`: plan pairs → realized `door_map`/`trap_map`, +4000 logical WOR ids), `exits.py` (`connect_exits` + exit-event writers + `door_rando_cleanup`; entrance/exit door patches applied here as unified transition logic), `event_tiles.py` (runtime event-exit address updates), `transitions.py` (one-way writer); the entry point `realize_doors` lives in `realize/__init__.py` (called by Maps.write). Functions take the live `Maps` object; import-time ROM-free. Regression gate: `tools/golden_sweep.py` vs the committed 15-config manifest.
 - **Event lifecycle hooks** — the Events loop framework-dispatches `door_rando_mod`/`dungeon_crawl_mod`/`ruination_mod` for any event that defines but doesn't inline-call them (`event/events.py`); `tools/mode_manifest.py` derives the mode × event table.
 - **`event/ruination_bind.py`** — the ONLY Events-side planner consumer: binds the plan's abstract rewards to live `Reward` slots; `RuinMap` adapts the plan for downstream consumers (area clues, dried meat, ferry, spoiler).
-- Tests: `tests/doors/*` (run directly, no pytest needed; CI runs them via `tests/test_doors_v2.py`). Harness: `tools/ruin_stress.py` (offline failure/usage studies).
+- Tests: `tests/doors/*` (run directly, no pytest needed; CI runs them via `tests/test_doors.py`). Harness: `tools/ruin_stress.py` (offline failure/usage studies).
 
 ### Ruination Mode
 *(Planner: `doors/plan/ruination/` — growth/extend/finalize/kefka_tower/dream_maze, planned in the Data phase. Pure data tables live in `data/ruin_constants.py` (`ROOM_REWARD`, `REWARD_OWNERS`, …) + `data/ruin_areas.py` (`RUIN_ROOM_SETS`). Event-side machinery lives in `event/ruination.py`; reward binding in `event/ruination_bind.py`.)*
@@ -193,6 +193,6 @@ Note these files are LARGE. Only access them when necessary and be smart about r
 - Original map, event, and NPC JSON files: see `MAP_DATA_STRUCTURES.md`
   - Chests data: `./claude_reference/chests_raw.json`
   - MapEvents data: `./claude_reference/events_raw.json`
-  - MapExits data: `./claude_reference/exits_raw.json`
+  - MapExits data: `./doors/atlas/exits_raw.json`
   - Maps data: `./claude_reference/maps_data.json`
   - NPC data: `./claude_reference/npcs_raw.json`

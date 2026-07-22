@@ -1,6 +1,8 @@
-# ROM-dependent event-exit patch machinery. The pure data tables live in
-# data/event_exit_data.py (importable without a ROM - review 3.7); they are
-# re-exported here so existing imports keep working.
+"""ROM-dependent event-exit patch machinery: the realization-time edit
+tables (exit_event_patch, entrance_door_patch, require_event_bit, ...)
+and the patch-source functions they reference. The pure connection
+tables (event_exit_info, event_return_map) live in
+data/event_exit_data.py, importable without a ROM."""
 from data.event_exit_data import event_exit_info, event_return_map
 
 from instruction.event import EVENT_CODE_START

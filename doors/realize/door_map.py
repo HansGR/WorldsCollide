@@ -6,7 +6,7 @@ from log.verbose import vprint
 from data.map_exit_extra import exit_data, exit_data_patch, \
     map_shuffle_force_explicit, map_shuffle_partner_explicit, \
     event_door_connection_data, dungeon_crawl_exit_destination_override
-from data.event_exit_info import event_return_map
+from data.event_exit_data import event_return_map
 from data.rooms import shared_exits
 from event.switchyard import SWITCHYARD_MAP
 
@@ -20,9 +20,6 @@ def postprocess_door_map(maps):
     maps.door_map = {}
     maps.trap_map = {}
     if len(maps.doors.map) > 0:
-        # Add doors to the spoiler log
-        maps.doors.print()
-
         # Create sorted map, so they are connected in order:
         shared_exits_sets = []
         for se in shared_exits.keys():

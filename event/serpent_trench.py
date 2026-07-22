@@ -359,7 +359,7 @@ class SerpentTrench(Event):
 
     def door_rando_mod(self):
         # Modifications for door rando
-        from data.event_exit_info import event_exit_info
+        from data.event_exit_data import event_exit_info
         from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
 
         # (1a) Change the entry event to load the switchyard location
