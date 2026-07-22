@@ -106,17 +106,20 @@ destination and partner.  Utilities for reading these data are included in `atla
 
 `doors/realize` contains tools to write a finished DoorPlan into the ROM.
 
-- `door_map.py` converts planned element pairs into the realized `door_map`/`trap_map`
+- `postprocess_door_map()` in `door_map.py` is called in `Maps.mod()` immediately after the plan completes.
+  It converts planned element pairs into the realized `door_map`/`trap_map`
   lookup table (including +4000 logical WOR ids) and performs shared-exit conflict resolution.
-- `exits.py` contains `connect_exits` to redirect doors, and exit-event writers that handle
-  required event code and shared WoB/WoR connections with unified transition logic.  Also handles
-  event-trigger relocation and cleanup.
-- `transitions.py` writes the one-way (trap->pit) event code modifications and related event tiles.
-- `event_tiles.py` handles event_exit_info runtime address updates for the event tiles used
-  on the final map.
-- `realize/__init__.py` contains the entry point `realize_doors()`, called by `Maps.write()`:
+- `realize_doors()` in `__init__.py` is called by `Maps.write()`:
   it updates the event-tile addresses, writes the one-way transitions, then connects the
   two-way doors.
+  - `event_tiles.py` handles event_exit_info runtime address updates for the event tiles used
+    on the final map.
+  - `transitions.py` writes the one-way (trap->pit) event code modifications and related event tiles.
+  - `exits.py` contains `connect_exits` to redirect doors, and exit-event writers that handle
+    required event code and shared WoB/WoR connections with unified transition logic.  Also handles
+    event-trigger relocation and cleanup.
+
+
 
 ## 3. Execution flow
 
