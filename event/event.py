@@ -5,6 +5,7 @@ import data.event_bit as event_bit
 import data.event_word as event_word
 import data.npc_bit as npc_bit
 import data.battle_bit as battle_bit
+import data.dialog as dialog
 
 import instruction.asm as asm
 import instruction.field as field
