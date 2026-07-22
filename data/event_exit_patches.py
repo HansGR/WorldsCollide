@@ -511,6 +511,30 @@ room_require_event_bit = {
 
 }
 
+
+def entrance_door_patch_view(args):
+    """Per-build entrance_door_patch: ruination suppresses the door-1558
+    patch (the Ancient Castle stairs are wired by ruination's own
+    entrance logic). The shared table is never mutated."""
+    view = dict(entrance_door_patch)
+    if args is not None and getattr(args, 'ruination_mode', None):
+        view.pop(1558, None)
+    return view
+
+
+def require_event_bit_view(args):
+    """Per-build require_event_bit: ruination suppresses the Figaro
+    Castle entrance doors (rooms 'FIGb01'/'FIGr01' propagate bits to
+    doors 197/1156 and 4197/5156 via room_require_event_bit; those are
+    only needed for classic door randomization). The shared table is
+    never mutated."""
+    view = dict(require_event_bit)
+    if args is not None and getattr(args, 'ruination_mode', None):
+        for door in (197, 1156, 4197, 5156):
+            view.pop(door, None)
+    return view
+
+
 # push room required event bits to door required event bits
 from data.rooms import room_data
 for rb in room_require_event_bit.keys():

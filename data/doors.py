@@ -1,73 +1,7 @@
-from data.rooms import forced_connections, map_shuffle_protected_doors, \
-    dungeon_crawl_split_exits, reset_room_tables, room_data, shared_exits
 from data.map_exit_extra import exit_data, reset_exit_data  # for door descriptions
-from data.event_exit_data import event_exit_info  # for one-way exit descriptions (ROM-free)
+from data.event_exit_data import event_exit_info, \
+    reset_event_exit_addresses  # for one-way exit descriptions (ROM-free)
 from log.verbose import vprint, is_enabled as _verbose_enabled
-
-# ROOM_SETS lives in data/room_sets.py (ROM-free)
-from data.room_sets import ROOM_SETS
-
-
-def apply_mode_table_adjustments(args):
-    """Deliver the correct initial state of the room/exit tables for the
-    active mode, before planning connects them (applied once per build;
-    reset_room_tables()/reset_exit_data() make it idempotent across
-    retries and tests). Three adjustments, each with its own reason:
-
-    1. -ruin: drop the forced connection from the penultimate Sealed Gate
-       Cave room to the Sealed Gate (forced_connections[1079]). Ruination
-       uses the Sealed Gate differently from every other mode -- as a
-       branch terminus -- and it must not be pinned to the same spot.
-    2. -ruin and -drdc: split some town exits (dungeon_crawl_split_exits
-       out of shared_exits) so those towns can have two different exits,
-       making them walk-through rooms instead of dead ends.
-    3. Door randomization (-dra/-drx/-dre) combined with map shuffle:
-       Zone Eater entry/exit is handled as doors (1552/1553) by pure map
-       shuffle for simplicity, but as traps (2040/2041) by the door-rando
-       modes. When both are active, traps win: the door ids are removed
-       from the shuffle rooms. Phoenix Cave's doors (1554/1555) leave the
-       door pools for the same both-modes-active reason, and the
-       map_shuffle_protected_doors get their 30000+ stand-ins swapped
-       into the shuffle rooms.
-    """
-    if args.ruination_mode or args.door_randomize_dungeon_crawl:
-        for se in dungeon_crawl_split_exits.keys():
-            for exit in dungeon_crawl_split_exits[se]:
-                shared_exits[se].remove(exit)
-
-    if args.ruination_mode:
-        forced_connections.pop(1079)
-
-    if args.door_randomize_dungeon_crawl:
-        args.map_shuffle = False    # -drdc overrides -maps/-mapx
-
-    if (args.door_randomize_all or args.door_randomize_crossworld
-            or args.door_randomize_each) and args.map_shuffle:
-        from doors.plan.modes import door_rando_pool_keys
-        protect_doors = {}
-        for key in door_rando_pool_keys(args):
-            if key in map_shuffle_protected_doors:
-                d = map_shuffle_protected_doors[key]
-                protect_doors[d] = d + 30000
-        ignore_maps = [1552, 1553]  # zone eater: traps win over doors
-        shuffle_rooms = [r for r in ROOM_SETS['MapShuffleWOB']] + [r for r in ROOM_SETS['MapShuffleWOR']]
-        for r in shuffle_rooms:
-            for dk in [d for d in room_data[r][0]]:
-                if dk in ignore_maps:
-                    vprint('removing ', dk, ' from ', r)
-                    room_data[r][0].remove(dk)
-                if dk in protect_doors.keys():
-                    vprint('protecting ', dk, ' in ', r, ' --> ', protect_doors[dk])
-                    room_data[r][0].remove(dk)
-                    room_data[r][0].append(protect_doors[dk])
-
-        ignore_doors = [1554, 1555]  # phoenix cave leaves the door pools
-        for a in room_data.keys():
-            if a not in shuffle_rooms:
-                for dk in [d for d in room_data[a][0]]:
-                    if dk in ignore_doors:
-                        vprint('removing ', dk, ' from ', a)
-                        room_data[a][0].remove(dk)
 
 
 class Doors():
@@ -77,22 +11,23 @@ class Doors():
         return _verbose_enabled()
 
     def __init__(self, args):
-        # Restore the shared data tables to their pristine import-time
-        # state (constructing Doors twice in one process -- tests, tools --
-        # must start clean), then apply the per-mode adjustments.
-        reset_room_tables()
+        # Per-build scratch reset. Realization treats exactly two shared
+        # tables as scratch: exit_data (the dungeon-crawl destination
+        # override edits partner entries) and the event_exit_info runtime
+        # address column (filled from the built ROM). Restore both so a
+        # second build in the same process (tests, tools, a reroll
+        # server) starts clean. Everything else the modes adjust travels
+        # on the DoorPlan as a per-plan view, never by table mutation.
         reset_exit_data()
+        reset_event_exit_addresses()
 
         self.args = args
-        # Intentional alias (not a copy): the -ruin pop in
-        # apply_mode_table_adjustments must be visible to the spoiler print.
-        self.forcing = forced_connections
         self.map = []
         # The DoorPlan artifact: constructed in mod() (one planning site,
         # Data phase); Events receives it and binds the ruination view.
+        # It carries the mode-adjusted table views (plan.shared_exits,
+        # plan.forcing) that realization and the spoiler read.
         self.plan = None
-
-        apply_mode_table_adjustments(args)
 
     def debug_print_shortest_route(self, door_map, destination_room):
         """Print the shortest route from any world-map room (or ruination
@@ -213,8 +148,8 @@ class Doors():
                             door_descr[d] = 'UNKNOWN'
 
             lcolumn.append('Forced connections:')
-            for d in self.forcing.keys():
-                lcolumn.append(str(d) + ' --> ' + str(self.forcing[d]))
+            for d in self.plan.forcing.keys():
+                lcolumn.append(str(d) + ' --> ' + str(self.plan.forcing[d]))
             if len(self.map) > 0:
                 lcolumn.append('Map:')
                 for m in self.map[0]:

@@ -13,10 +13,18 @@ for structural queries; nothing references ROM objects.
 
 
 class DoorPlan:
-    def __init__(self, door_pairs, oneways, ruination=None, gates=None):
+    def __init__(self, door_pairs, oneways, ruination=None, gates=None,
+                 shared_exits=None, forcing=None):
         self.door_pairs = [list(m) for m in door_pairs]
         self.oneways = [list(m) for m in oneways]
         self.ruination = ruination          # RuinPlan | None
+        # The mode-adjusted table views this plan was built with (the
+        # shared data tables themselves are never mutated): shared_exits
+        # has the town split applied for -drdc/-ruin; forcing has the
+        # ruination exclusions applied. Realization and the spoiler read
+        # these instead of the data/rooms.py tables.
+        self.shared_exits = {k: list(v) for k, v in (shared_exits or {}).items()}
+        self.forcing = {k: list(v) for k, v in (forcing or {}).items()}
         # The unified gate table: exit id -> key tuple (character names
         # and/or named keys like 'dtboss'), derived
         # from the walked pools' room lock dicts -- the same source the

@@ -97,5 +97,6 @@ def plan_ruination(args, rng, characters):
             if rid in room_data or rid in config.spec_overrides})
         return DoorPlan(full_map[0], full_map[1],
                         ruination=RuinPlan(planner, party_names, party_ids),
-                        gates=gates)
+                        gates=gates, shared_exits=config._shared,
+                        forcing=config.forcing)
     raise last_error

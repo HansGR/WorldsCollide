@@ -7,7 +7,6 @@ from data.map_exit_extra import exit_data, exit_data_patch, \
     map_shuffle_force_explicit, map_shuffle_partner_explicit, \
     event_door_connection_data, dungeon_crawl_exit_destination_override
 from data.event_exit_data import event_return_map
-from data.rooms import shared_exits
 from event.switchyard import SWITCHYARD_MAP
 
 
@@ -21,9 +20,10 @@ def postprocess_door_map(maps):
     maps.trap_map = {}
     if len(maps.doors.map) > 0:
         # Create sorted map, so they are connected in order:
+        # (shared-exit sets from the plan's mode-adjusted view)
         shared_exits_sets = []
-        for se in shared_exits.keys():
-            shared_exits_sets.append([se] + shared_exits[se])
+        for se, sibs in maps.doors.plan.shared_exits.items():
+            shared_exits_sets.append([se] + list(sibs))
 
         for m in maps.doors.map[0]:
             if m[0] not in maps.door_map.keys():
@@ -97,10 +97,12 @@ def postprocess_door_map(maps):
                 else:
                     maps.exits.exit_original_data[e].append(this_map)
 
-        # Add required explicit exits, if required
+        # Per-build force-explicit set: the static list plus this map's
+        # partner-explicit destinations (the shared table is never mutated).
+        maps.force_explicit_ids = list(map_shuffle_force_explicit)
         for m in map_shuffle_partner_explicit:
             if m in maps.door_map.keys():
-                map_shuffle_force_explicit.append(maps.door_map[m])
+                maps.force_explicit_ids.append(maps.door_map[m])
 
         # If dungeon crawl mode, add override exits
         if maps.args.door_randomize_dungeon_crawl or maps.args.ruination_mode:

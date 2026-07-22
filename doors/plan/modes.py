@@ -15,7 +15,7 @@ its answer from the same tables.
 import random
 
 from data.room_sets import ROOM_SETS
-from data.rooms import (logical_links, shared_exits,
+from data.rooms import (logical_links, shared_exits, forced_connections,
                         dungeon_crawl_split_exits,
                         map_shuffle_protected_doors)
 from data.map_exit_extra import doors_WOB_WOR
@@ -103,12 +103,14 @@ def inject_meta_root(specs, forcing, meta_name, offset):
 
 
 def shuffle_transform(specs, protect):
-    """Deconflict shuffle pools under door randomization: remove the
-    ignore_maps ids and replace protected doors with their 30000+
-    stand-ins."""
+    """Deconflict shuffle pools under door randomization: drop the
+    IGNORE_MAPS ids and swap protected doors for their 30000+ stand-ins.
+    Stand-ins are appended after the room's other doors; the walk offers
+    doors in list order, so this ordering is part of every seed."""
     for rid, s in specs.items():
-        doors = [d for d in s['doors'] if d not in IGNORE_MAPS]
-        doors = [protect.get(d, d) for d in doors]
+        doors = [d for d in s['doors']
+                 if d not in IGNORE_MAPS and d not in protect]
+        doors += [protect[d] for d in s['doors'] if d in protect]
         specs[rid] = dict(s, doors=doors)
     return specs
 
@@ -325,7 +327,9 @@ def plan_mode(flags, rng, budget_limit=5000):
         door_pairs += [(doors_WOB_WOR[a], doors_WOB_WOR[b])
                        for a, b in door_pairs
                        if a in doors_WOB_WOR and b in doors_WOB_WOR]
-    return door_pairs, oneways, worlds, gates
+    if shared_view is None:
+        shared_view = {k: list(v) for k, v in shared_exits.items()}
+    return door_pairs, oneways, worlds, gates, shared_view
 
 
 class _Flags:
@@ -372,7 +376,8 @@ def plan_for_args(args, rng, characters=None):
         # rule doesn't apply there (orphan rooms are legal).
         from doors.plan.ruination.plan import plan_ruination
         return plan_ruination(args, rng, characters)
-    pairs, oneways, worlds, gates = plan_mode(args, rng)
+    pairs, oneways, worlds, gates, shared_view = plan_mode(args, rng)
     for world in worlds.values():
         check_solved(world, world.forcing)
-    return DoorPlan(pairs, oneways, gates=gates)
+    return DoorPlan(pairs, oneways, gates=gates, shared_exits=shared_view,
+                    forcing={k: list(v) for k, v in forced_connections.items()})

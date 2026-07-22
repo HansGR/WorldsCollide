@@ -1471,35 +1471,7 @@ for r in room_data.keys():
             doors_as_traps.append(t)
 
 
-# ---------------------------------------------------------------------------
-# Reset boundary for the shared mutable tables.
-#
-# The per-mode table setup (apply_mode_table_adjustments in data/doors.py,
-# run by Doors.__init__) mutates the tables in this module: it splits
-# dungeon-crawl/ruination town exits out of shared_exits, pops the -ruin
-# forced connection, and edits shuffle-room door lists when map shuffle and
-# door randomization combine. That is fine for a single build, but a second
-# build in the same process (retries, tests, a reroll server) would start
-# from corrupted tables. Doors.__init__ calls reset_room_tables() first so
-# that every build starts from the pristine import-time state. The reset
-# preserves the dict object identities (clear + update), so existing
-# `from data.rooms import room_data`-style references stay valid.
-#
-# exit_room / exit_world / doors_as_traps are derived once above and are not
-# mutated at run time, so they do not need to be re-derived here.
-import copy as _copy
-
-_ROOM_DATA_PRISTINE = _copy.deepcopy(room_data)
-_FORCED_CONNECTIONS_PRISTINE = _copy.deepcopy(forced_connections)
-_SHARED_EXITS_PRISTINE = _copy.deepcopy(shared_exits)
-
-
-def reset_room_tables():
-    """Restore room_data, forced_connections and shared_exits to their
-    pristine import-time contents (fresh copies, same dict objects)."""
-    room_data.clear()
-    room_data.update(_copy.deepcopy(_ROOM_DATA_PRISTINE))
-    forced_connections.clear()
-    forced_connections.update(_copy.deepcopy(_FORCED_CONNECTIONS_PRISTINE))
-    shared_exits.clear()
-    shared_exits.update(_copy.deepcopy(_SHARED_EXITS_PRISTINE))
+# The tables in this module are never mutated at run time: the per-mode
+# adjustments (town split exits, ruination forcing exclusions, shuffle-room
+# door edits) are per-plan views built by doors/plan and carried on the
+# DoorPlan. exit_room / exit_world / doors_as_traps are derived once above.

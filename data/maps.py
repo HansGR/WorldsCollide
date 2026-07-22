@@ -31,7 +31,7 @@ from data.event_exit_patches import exit_event_patch, entrance_event_patch, even
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, \
     event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit, \
     dungeon_crawl_exit_destination_override
-from data.rooms import room_data, exit_world, shared_exits
+from data.rooms import exit_world
 
 from data.parse import delete_nops, branch_parser, get_branch_code
 

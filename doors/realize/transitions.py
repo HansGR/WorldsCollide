@@ -1,6 +1,6 @@
 from data.event_exit_data import event_exit_info
 from data.event_exit_patches import entrance_event_patch, event_address_patch, \
-    exit_event_patch, multi_events, require_event_bit
+    exit_event_patch, multi_events, require_event_bit_view
 from instruction.event import EVENT_CODE_START
 import data.direction as direction
 from data.rooms import exit_world, shared_oneways
@@ -43,6 +43,8 @@ class Transitions:
         self.include_script_data = include_script_data
         if self.include_script_data is None:
             self.include_script_data = {}
+        # Per-build require_event_bit view (mode suppressions applied)
+        self.require_event_bit = require_event_bit_view(args)
 
         for m in mapping:
             # Check reasons to overwrite this transition
@@ -163,8 +165,8 @@ class Transitions:
 
             # Include code for required event bit states
             entr_bits = {}
-            if t.entr.id in require_event_bit.keys():
-                entr_bits = require_event_bit[t.entr.id]
+            if t.entr.id in self.require_event_bit.keys():
+                entr_bits = self.require_event_bit[t.entr.id]
             if len(entr_bits) > 0:
                 t.patches[5] = 'bit'
                 for k in entr_bits.keys():

@@ -13,10 +13,10 @@ from instruction.event import EVENT_CODE_START
 import data.event_bit as event_bit
 from data.map_event import MapEvent, LongMapEvent
 from data.map_exit_extra import exit_data, exit_make_explicit, \
-    map_shuffle_airship_warp, map_shuffle_force_explicit
+    map_shuffle_airship_warp
 from data.event_exit_data import event_exit_info, event_return_map
-from data.event_exit_patches import entrance_door_patch, exit_door_patch, \
-    require_event_bit
+from data.event_exit_patches import exit_door_patch, \
+    entrance_door_patch_view, require_event_bit_view
 from doors.realize.transitions import Transitions
 from event.switchyard import SWITCHYARD_MAP, AddSwitchyardEvent, \
     GoToSwitchyard, SummonAirship
@@ -42,16 +42,11 @@ def connect_exits(maps):
     # (B) dt = Transitions(new_map, ...)        # for event tiles acting as doors, 1500 <= m < 4000
     # (C) shared_map_exit_event(maps, m, door_map[m]) # for logical WOR exits
 
-    # In ruination mode, disable the entrance_door_patch for door 1558
-    if maps.args.ruination_mode:
-        entrance_door_patch.pop(1558, None)
-
-        # Disable require_event_bit for Figaro Castle entrance doors.
-        # Rooms 68 (WoB) and 'FIGr01' (WoR) propagate bits to doors 197/1156
-        # and 4197/5156 via room_require_event_bit. These are only needed
-        # for classic door randomization.
-        for door in [197, 1156, 4197, 5156]:
-            require_event_bit.pop(door, None)
+    # Per-build patch views (mode suppressions applied; the shared
+    # tables are never mutated). create_exit_event and
+    # shared_map_exit_event read these off maps.
+    maps.entrance_door_patch = entrance_door_patch_view(maps.args)
+    maps.require_event_bit = require_event_bit_view(maps.args)
 
     # Bundle exit_door_patch and entrance_door_patch data for transitions
     for m in exit_door_patch.keys():
@@ -65,14 +60,14 @@ def connect_exits(maps):
                     vprint('Passed exit door patch for ', str(m), ' --> ', str(door_map[m]))
                     # print([a.__str__() for a in info[0]])
 
-    for m in entrance_door_patch.keys():
+    for m in maps.entrance_door_patch.keys():
         if m in door_map.keys():
             # select connections acting as doors
             if 1500 <= door_map[m] < 4000:
-                if isinstance(entrance_door_patch[m][0], list):
-                    info = entrance_door_patch[m]
+                if isinstance(maps.entrance_door_patch[m][0], list):
+                    info = maps.entrance_door_patch[m]
                 else:
-                    info = [entrance_door_patch[m][0](maps.args), entrance_door_patch[m][1]]
+                    info = [maps.entrance_door_patch[m][0](maps.args), maps.entrance_door_patch[m][1]]
                 # Pass the script data to exit_event_data_to_include
                 maps.exit_event_data_to_include[door_map[m]] = info
                 if maps.doors.verbose:
@@ -109,7 +104,7 @@ def connect_exits(maps):
         maps.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
 
         # For a very few exits, must force explicit
-        if m in map_shuffle_force_explicit:
+        if m in maps.force_explicit_ids:
             #if maps.doors.verbose:
             #    print('Checking if ', m, 'must be forced explicit...', hex(exitA.dest_map))
             if exitA.dest_map == 0x1ff:
@@ -164,7 +159,7 @@ def create_exit_event(maps, d, d_ref):
     # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
     require_event_flags = [
         (this_world != that_world),
-        d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
+        d_ref in maps.entrance_door_patch.keys() or d_ref in maps.require_event_bit.keys(),
         d in exit_door_patch.keys(),
         d in maps.exit_event_data_to_include.keys(),
         that_map in [0x000, 0x001]
@@ -255,24 +250,24 @@ def create_exit_event(maps, d, d_ref):
 
             # (4) Prepend any data required by the connection
             if require_event_flags[1]:
-                if d_ref in entrance_door_patch.keys():
+                if d_ref in maps.entrance_door_patch.keys():
                     # Check whether this is BEFORE (True) or AFTER (False) loading the map.
-                    if entrance_door_patch[d_ref][1]:
+                    if maps.entrance_door_patch[d_ref][1]:
                         load_map_src = []
                     else:
                         # Generate map load code for this door; the door itself will not be used.
                         load_map_src = _get_load_map_code(maps, d_ref)
                         is_map_already_loaded = True
 
-                    if isinstance(entrance_door_patch[d_ref][0], list):
-                        edp = entrance_door_patch[d_ref][0]
+                    if isinstance(maps.entrance_door_patch[d_ref][0], list):
+                        edp = maps.entrance_door_patch[d_ref][0]
                     else:
                         # patch requires knowledge of arguments
-                        edp = entrance_door_patch[d_ref][0](maps.args)
+                        edp = maps.entrance_door_patch[d_ref][0](maps.args)
                     src = src[:-1] + load_map_src + edp + src[-1:]
 
-                if d_ref in require_event_bit.keys():
-                    entr_bits = require_event_bit[d_ref]
+                if d_ref in maps.require_event_bit.keys():
+                    entr_bits = maps.require_event_bit[d_ref]
                     for k in entr_bits:
                         if entr_bits[k]:
                             src = [field.SetEventBit(k)] + src
@@ -416,7 +411,7 @@ def shared_map_exit_event(maps, d, d_ref):
     # (5) the connection is a world map: also summon the airship.
     require_event_flags = [
         ((this_world != that_world)),
-        d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
+        d_ref in maps.entrance_door_patch.keys() or d_ref in maps.require_event_bit.keys(),
         d in exit_door_patch.keys(),
         d in maps.exit_event_data_to_include.keys(),  # SHOULD NOT HAPPEN -- see (0) below
         that_map in [0x0, 0x1]
@@ -463,7 +458,7 @@ def shared_map_exit_event(maps, d, d_ref):
     else:
         # This is a logical exit without tweaks.  Can use vanilla connection info.
         conn_data = maps.exits.exit_original_data[d_ref_partner - 4000]
-    if d in map_shuffle_force_explicit:
+    if d in maps.force_explicit_ids:
         # Update conn_data to not return to parent map
         if conn_data[0] in [0x1ff, 0x1fe]:
             conn_data[0] = maps.exits.exit_original_data[d_ref][-1]
@@ -496,24 +491,24 @@ def shared_map_exit_event(maps, d, d_ref):
 
     # (2) Prepend any data required by the connection
     if require_event_flags[1]:
-        if d_ref in entrance_door_patch.keys():
+        if d_ref in maps.entrance_door_patch.keys():
             # Check whether this is BEFORE (True) or AFTER (False) loading the map.
-            if isinstance(entrance_door_patch[d_ref][0], list):
-                edp = entrance_door_patch[d_ref][0]
+            if isinstance(maps.entrance_door_patch[d_ref][0], list):
+                edp = maps.entrance_door_patch[d_ref][0]
             else:
                 # patch requires knowledge of arguments
-                edp = entrance_door_patch[d_ref][0](maps.args)
+                edp = maps.entrance_door_patch[d_ref][0](maps.args)
 
             world_map_override = (conn_data[0] in [0, 1, 2, 511])
-            if entrance_door_patch[d_ref][1] or world_map_override:
+            if maps.entrance_door_patch[d_ref][1] or world_map_override:
                 # Put code before map load
                 wor_src = edp + wor_src
             else:
                 # Put code after map load
                 wor_src = wor_src[:-1] + edp + wor_src[-1:]
 
-        if d_ref in require_event_bit.keys():
-            entr_bits = require_event_bit[d_ref]
+        if d_ref in maps.require_event_bit.keys():
+            entr_bits = maps.require_event_bit[d_ref]
             for k in entr_bits:
                 if entr_bits[k]:
                     wor_src = [field.SetEventBit(k)] + wor_src

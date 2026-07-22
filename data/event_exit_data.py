@@ -306,3 +306,17 @@ event_return_map = {
     1560: 0x075,  # 'Imperial Camp new west exit to world map'
     1561: 0x000,  # 'Veldt WOB to Veldt shore'
 }
+
+
+# Ids whose runtime event address (field [0]) is None at import: they are
+# filled in from the built ROM by doors/realize/event_tiles.py each run.
+_RUNTIME_ADDRESS_IDS = [e for e, info in event_exit_info.items()
+                        if info[0] is None]
+
+
+def reset_event_exit_addresses():
+    """Clear the realization-filled runtime event addresses so a second
+    build in the same process re-derives them from its own ROM instead
+    of reusing stale ones."""
+    for e in _RUNTIME_ADDRESS_IDS:
+        event_exit_info[e][0] = None

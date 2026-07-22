@@ -74,7 +74,7 @@ def test_gates():
     assert gates_from_specs(specs) == {2: ('k', 'SETZER')}
 
     # A -drdc plan carries the DungeonCrawl pool's named-key gates.
-    pairs, oneways, worlds, gates = plan_mode(
+    pairs, oneways, worlds, gates, _shared = plan_mode(
         _Flags(door_randomize_dungeon_crawl=True), random.Random('gates'))
     assert gates[1558] == ('ac1',)          # Ancient Castle stairs switch
     assert gates[2070] == ('cd1', 'cd2')    # Cyan's dream stooges
