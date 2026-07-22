@@ -1973,10 +1973,6 @@ door_short_text = {
     1558: "the Ancient Cave"
 }
 
-import random
-if random.random() >= 0.5:
-    door_short_text[53] = "Daryl's Tomb"
-
 # Note: we don't need to keep track of locations with multiple entrances... for now
 eventname_to_door = {
     "Lone Wolf": 4,

@@ -117,6 +117,12 @@ class Airship(Event):
                     # this way (map_shuffle_protected_doors), so name it.
                     partner = exit_data[self.maps.door_map[self.FC_id]][0]
                     location_text = door_short_text.get(partner, "Esper Mountain")
+                    if partner == 53:
+                        # 50/50 spelling flavor for the tomb (drawn here, at
+                        # a fixed point in the stream -- never at import time)
+                        import random
+                        if random.random() >= 0.5:
+                            location_text = "Daryl's Tomb"
                     fc_dest_str = '(Find ' + location_text + ')'
                     fly_wor_cancel_text += '(Go to ' + location_text + ')<line><choice> '
                 else:
