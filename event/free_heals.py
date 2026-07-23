@@ -157,15 +157,15 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # Original event at 0xCA71BF checks conditions then displays "Need a rest? Yes/No"
     # If yes: movement, check more conditions, call $CACD31 (sleep)
     # New: Same condition checks, display price, take GP, jump to original code
-    # Note: dialog.FIGARO_CASTLE_REST is ID 1461 (0x5B5) rather than the original
-    # 0xB80 because 0xB80 is also used by a Doma Castle event.
     FIGARO_ORIGINAL_YES_CODE = 0xCA71D9
     FIGARO_USED_ONCE_BIT = 0x1B5
     FIGARO_BANON_BIT = 0x1B0
 
     figaro_price = min(FIGARO_CASTLE_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
-    dialogs.set_text(dialog.FIGARO_CASTLE_REST,
+    # Claim a free dialog slot for the reworked rest prompt. (The original rest
+    # dialog 0xB80 is shared with a Doma Castle event, so we can't reuse it.)
+    figaro_rest_dialog = dialogs.allocate_dialog(
         f"{figaro_price} GP per night!<line>Need a rest?<line><choice>(Yes)<line><choice>(No)<end>")
 
     animation_src = [Read(0xa71d9, 0xa71dd), field.Branch(0xa71d4)]
@@ -176,7 +176,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
     figaro_src = [
         field.BranchIfEventBitSet(event_bit.multipurpose_map(1), "FIGARO_RETURN"),
         field.SetEventBit(event_bit.multipurpose_map(1)),
-        field.DialogBranch(dialog.FIGARO_CASTLE_REST, "FIGARO_YES", "FIGARO_RETURN"),
+        field.DialogBranch(figaro_rest_dialog, "FIGARO_YES", "FIGARO_RETURN"),
         "FIGARO_YES",
         field.RemoveGP(figaro_price),
         field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "FIGARO_NO_MONEY"),
@@ -264,10 +264,10 @@ VECTOR_STEAL_TAKE = 0xc94d4          # CC/94D4 "Take 1000 GP" + branch + dialog 
 VECTOR_STEAL_TAKE_END = 0xc94e0      # ...through the pause that precedes the thief leaving
 VECTOR_AFTER_STEAL = 0xc94e1         # CC/94E1 thief leaves
 
-# Dialog IDs live in data/dialog.py (dialog.VECTOR_INN_*): the stay prompt and
-# full-theft message reuse vanilla slots 0x559/0x55A, while the no-room and
-# half/quarter-theft messages sit in the reserved Maduin/Madonna esper-world
-# free band (1474-1479, dialog.VECTOR_INN_FREE_BAND).
+# The Vector inn's own "have a snooze?" / "<N> GP stolen!" dialogs are named in
+# data/dialog.py (dialog.VECTOR_INN_STAY / dialog.VECTOR_INN_STOLEN_FULL). The
+# reworked inn's three extra messages (no room, half/quarter thefts) are scratch
+# dialogs claimed from the free pool via dialogs.allocate_dialog().
 
 
 def modify_vector_inn(dialogs, args):
@@ -286,10 +286,11 @@ def modify_vector_inn(dialogs, args):
     N_half = N // 2
     N_quarter = N // 4
 
-    dialogs.set_text(dialog.VECTOR_INN_NO_ROOM, "No room for yeh!<end>")
     dialogs.set_text(dialog.VECTOR_INN_STOLEN_FULL, f"{N} GP stolen!<end>")
-    dialogs.set_text(dialog.VECTOR_INN_STOLEN_HALF, f"{N_half} GP stolen!<end>")
-    dialogs.set_text(dialog.VECTOR_INN_STOLEN_QUARTER, f"{N_quarter} GP stolen!<end>")
+    # Three extra scratch dialogs for the reworked inn; claim them from the pool.
+    no_room_dialog = dialogs.allocate_dialog("No room for yeh!<end>")
+    stolen_half_dialog = dialogs.allocate_dialog(f"{N_half} GP stolen!<end>")
+    stolen_quarter_dialog = dialogs.allocate_dialog(f"{N_quarter} GP stolen!<end>")
 
     # Entry gate: require N/4 GP to stay, then refund it (the stay is free).
     gate_src = [
@@ -306,7 +307,7 @@ def modify_vector_inn(dialogs, args):
 
         "NO_ROOM",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-        field.Dialog(dialog.VECTOR_INN_NO_ROOM),
+        field.Dialog(no_room_dialog),
         field.Return(),
     ]
     space = Write(Bank.CC, gate_src, "Vector inn entry gate")
@@ -327,11 +328,11 @@ def modify_vector_inn(dialogs, args):
         field.BranchIfEventBitClear(event_bit.NOT_ENOUGH_GP, "STOLEN_HALF"),
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
         field.RemoveGP(N_quarter),
-        field.Dialog(dialog.VECTOR_INN_STOLEN_QUARTER),
+        field.Dialog(stolen_quarter_dialog),
         field.Branch("STOLEN_DONE"),
 
         "STOLEN_HALF",
-        field.Dialog(dialog.VECTOR_INN_STOLEN_HALF),
+        field.Dialog(stolen_half_dialog),
         field.Branch("STOLEN_DONE"),
 
         "STOLEN_FULL",
@@ -537,10 +538,8 @@ SPRING_FLASH_COLORS = {
     SpringEffect.REDUCE_TO_1_HP: field.Flash.RED,
 }
 
-# Dialog IDs for spring messages are laid out sequentially from
-# dialog.SPRING_MESSAGE_BASE (range 1480-1495 reserved, dialog.SPRING_MESSAGE_RANGE).
-# The block sits in the vanilla Maduin/Madonna esper-world conversation that
-# never plays in WC -- check data/dialog.py before claiming new IDs nearby.
+# Spring message dialogs (the "drink?" prompt plus one result per area) are
+# scratch dialogs claimed from the free pool via dialogs.allocate_dialog().
 
 
 def modify_recovery_springs(maps, rom, dialogs, args):
@@ -590,12 +589,8 @@ def modify_recovery_springs(maps, rom, dialogs, args):
         SpringEffect.REDUCE_TO_1_HP: "The water drained your strength!<end>",
     }
 
-    dialog_id = dialog.SPRING_MESSAGE_BASE
-
-    # Set up the "Drink from the pool?" dialog
-    drink_dialog_id = dialog_id
-    dialogs.set_text(drink_dialog_id, "Drink from the pool?<line><choice> Yes<line><choice> No<end>")
-    dialog_id += 1
+    # Set up the "Drink from the pool?" dialog (shared across all spring areas)
+    drink_dialog_id = dialogs.allocate_dialog("Drink from the pool?<line><choice> Yes<line><choice> No<end>")
 
     # Process each spring location area
     for area_name, locations in SPRING_LOCATIONS.items():
@@ -603,9 +598,7 @@ def modify_recovery_springs(maps, rom, dialogs, args):
         effect = random.choice(ALL_EFFECTS)
 
         # Set up result message dialog
-        result_dialog_id = dialog_id
-        dialogs.set_text(result_dialog_id, EFFECT_MESSAGES[effect])
-        dialog_id += 1
+        result_dialog_id = dialogs.allocate_dialog(EFFECT_MESSAGES[effect])
 
         # Get flash color for this effect
         flash_color = SPRING_FLASH_COLORS[effect]
