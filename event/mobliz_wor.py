@@ -160,12 +160,12 @@ class MoblizWOR(Event):
 
         # change children's dialog to replace terra's name with the esper/item name for fun
         # espers/items do not have a single byte dedicated to their name so need to use other, longer dialogs
-        self.dialogs.set_text(dialog.MOBLIZ_CHILD_TAKE_AWAY, "You're not gonna take " + esper_item_name + " away, are you?<end>")
-        self.dialogs.set_text(dialog.MOBLIZ_CHILD_CRY, "I'm not gonna cry.<line>If I do, " + esper_item_name + "'ll feel sad…<end>")
+        self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_TAKE_AWAY, "You're not gonna take " + esper_item_name + " away, are you?<end>")
+        self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_CRY, "I'm not gonna cry.<line>If I do, " + esper_item_name + "'ll feel sad…<end>")
         space = Reserve(0xc4549, 0xc454b, "mobliz wor you're not gonna take terra away")
-        space.write(field.Dialog(dialog.MOBLIZ_CHILD_TAKE_AWAY))
+        space.write(field.Dialog(dialog_id.MOBLIZ_CHILD_TAKE_AWAY))
         space = Reserve(0xc506a, 0xc506c, "mobliz I'm not gonna cry")
-        space.write(field.Dialog(dialog.MOBLIZ_CHILD_CRY))
+        space.write(field.Dialog(dialog_id.MOBLIZ_CHILD_CRY))
 
         boss_pack_id = self.get_boss("Phunbaba 4")
 

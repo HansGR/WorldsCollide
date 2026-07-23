@@ -51,7 +51,7 @@ class BurningHouse(Event):
 
     def add_gating_condition(self):
         # increase the price from 1500
-        self.dialogs.set_text(dialog.THAMASA_STRANGERS_INN, "You're strangers…<page>100000000 GP<line><choice> (Well, okay.)<line><choice> (No way!)<end>")
+        self.dialogs.set_text(dialog_id.THAMASA_STRANGERS_INN, "You're strangers…<page>100000000 GP<line><choice> (Well, okay.)<line><choice> (No way!)<end>")
 
         space = Reserve(0xbd774, 0xbd79c, "burning house inn stranger sleep", field.NOP())
         space.write(
@@ -82,7 +82,7 @@ class BurningHouse(Event):
             field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "STRANGERS_PRICE"),
         )
 
-        self.dialogs.set_text(dialog.THAMASA_STRANGERS_INN,
+        self.dialogs.set_text(dialog_id.THAMASA_STRANGERS_INN,
                               f"You're strangers...<line>{new_price} GP if you wanna stay.<line>"
                               f"<choice> (Well, okay.)<line><choice> (No way!)<end>")
 

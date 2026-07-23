@@ -42,4 +42,4 @@ FREE_RANGE = range(1423, 1498)  # 0x58F - 0x5D9 inclusive
 
 class DialogSpaceError(Exception):
     """Raised when Dialogs.allocate_dialog() exhausts the free dialog pool
-    (dialog.FREE_RANGE). Free up slots or widen the range."""
+    (dialog_id.FREE_RANGE). Free up slots or widen the range."""
