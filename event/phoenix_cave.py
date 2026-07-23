@@ -1,4 +1,5 @@
 from event.event import *
+import instruction.field.required_characters as required_characters
 
 class PhoenixCave(Event):
     def name(self):
@@ -38,8 +39,19 @@ class PhoenixCave(Event):
 
         src = [
             Read(0xa0405, 0xa0408),
-            Read(0xa040c, 0xa0428),
+            Read(0xa040c, 0xa040f),
         ]
+        if self.args.required_character_ids:
+            src += [
+                field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+                field.Call(required_characters.two_party_placement()),
+                field.SelectParties(2),
+                Read(0xa0414, 0xa0428)
+            ]
+        else:
+            src += [
+                Read(0xa0410, 0xa0428)
+            ]
         space = Write(Bank.CA, src, "phoenix cave enter")
         enter_phoenix_cave = space.start_address
 

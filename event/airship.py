@@ -21,6 +21,9 @@ class Airship(Event):
         self.return_to_airship()
         self.fix_fly_offscreen_bug()
 
+        if self.args.no_free_heals:
+            self.no_free_heals_mod()
+
     def controls_mod(self):
         fly_wor_fc_cancel_dialog = 1315
         fly_wor_cancel_dialog = 1318
@@ -278,6 +281,11 @@ class Airship(Event):
             field.DialogBranch(change_party_unequip_dialog_id, dest1 = 0xaf5a8, dest2 = 0xc359d, dest3 = 0xc351e, dest4 = field.RETURN),
         )
 
+        # Re-emit the reform-party select so required characters (-rc) are kept unmovable.
+        # The required characters are already in the party here, so no pre-placement is needed.
+        space = Reserve(0xacba3, 0xacba6, "airship reform party", field.NOP())
+        space.write(field.SelectParties(1))
+
         space = Reserve(0xc3510, 0xc351d, "airship unequip some party members dialog choice", field.NOP())
         space.write(
             field.Branch(change_party_unequip_dialog),
@@ -338,6 +346,7 @@ class Airship(Event):
         space.write(
             field.SetParty(1),
             field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            # REFRESH_CHARACTERS_AND_SELECT_PARTY pre-places any required characters (-rc)
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
@@ -358,3 +367,34 @@ class Airship(Event):
         # CA/F5C2: Call subroutine $CAF601
         #  -> Replace with four [FD] (no-op)
         Reserve(0xaf5bc, 0xaf5c5, "skip force Locke/Celes into party", field.NOP())
+
+    def no_free_heals_mod(self):
+        # Remove the free heal in the WoB airship.
+        # CB/2240: 4B    Display dialogue message $0517, wait for button press
+        #                G'ho! Customers!
+        #                Need any refreshment?
+        #                ^ Yes
+        #                ^ No
+        # CB/2243: B6    Indexed branch based on prior dialogue selection [$CB224B, $CA5EB3]
+        # CB/224A: FE    Return
+        heal_cost = 3000   # GP
+        heal_dialog_id = 0x517
+        heal_text = f"G'ho! Customers!<line>Need refreshment? ({heal_cost} GP)<line><choice> Yes<line><choice> No<end>"
+        self.dialogs.set_text(heal_dialog_id, heal_text)
+
+        ORIGINAL_YES_CODE = 0xb224b
+        src = [
+            field.RemoveGP(heal_cost),
+            field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "INSUFFICIENT_MONEY"),
+            field.Branch(ORIGINAL_YES_CODE),
+
+            "INSUFFICIENT_MONEY",
+            field.Dialog(dialog_id.NOT_ENOUGH_GP),   # not enough money...
+            field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "no free airship heal")
+        airship_heal_address = space.start_address
+
+        space = Reserve(0xb2240, 0xb224A, "edit free airship heal nfh", field.NOP())
+        space.write(field.DialogBranch(heal_dialog_id, airship_heal_address, field.RETURN))
