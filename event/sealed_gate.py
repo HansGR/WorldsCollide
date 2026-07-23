@@ -1,8 +1,5 @@
 from event.event import *
 
-SET_PARTY_LAYER2 = 0xb3980
-SET_PARTY_LAYER0 = 0xb3995
-
 class SealedGate(Event):
     def name(self):
         return "Sealed Gate"
@@ -26,36 +23,23 @@ class SealedGate(Event):
         # arbitrarily using kefka npc for char/esper/item
         self.kefka_npc_id = 0x16
         self.kefka_npc = self.maps.get_npc(0x187, self.kefka_npc_id)
-        if self.args.ruination_mode:
-            pass
-            #self.kefka_npc.y = 30
-        else:
-            self.kefka_npc.x = 8
-            self.kefka_npc.y = 10
+
+        self.kefka_npc.x = 8
+        self.kefka_npc.y = 10
 
         self.world_map_mod()
         self.exit_shortcut_mod()
         self.ninja_mod()
 
         self.lightning_strike = 0xb3890
+        if self.reward.type == RewardType.CHARACTER:
+            self.character_mod(self.reward.id)
+        elif self.reward.type == RewardType.ESPER:
+            self.esper_mod(self.reward.id)
+        elif self.reward.type == RewardType.ITEM:
+            self.item_mod(self.reward.id)
 
-        if self.args.ruination_mode:
-            # We will use this as an entry point to KT.  Don't set up the reward.
-            self.ruination_mod()
-        else:
-            if self.reward.type == RewardType.CHARACTER:
-                self.character_mod(self.reward.id)
-            elif self.reward.type == RewardType.ESPER:
-                self.esper_mod(self.reward.id)
-            elif self.reward.type == RewardType.ITEM:
-                self.item_mod(self.reward.id)
-
-            self.log_reward(self.reward)
-
-        if self.args.ruination_mode or self.args.door_randomize_dungeon_crawl or self.args.door_randomize_crossworld or self.args.door_randomize_all:
-            # Patch lava room so you can't override exit events
-            self.lava_room_mod()
-
+        self.log_reward(self.reward)
 
     def world_map_mod(self):
         import instruction.asm as asm
@@ -76,6 +60,9 @@ class SealedGate(Event):
         # because these modified map chunks are never used that more ee bank free space available
 
     def gate_scene_mod(self, char_esper_item_instructions):
+        SET_PARTY_LAYER2 = 0xb3980
+        SET_PARTY_LAYER0 = 0xb3995
+
         src = [
             field.Call(SET_PARTY_LAYER2),
 
@@ -180,10 +167,9 @@ class SealedGate(Event):
     def exit_shortcut_mod(self):
         # change event bit which triggers shortcut exit since 0x79 is not set above
         space = Reserve(0xb2eb1, 0xb2eb6, "sealed gate exit shortcut event bit condition", field.NOP())
-        if not self.args.ruination_mode:
-            space.write(
-                field.ReturnIfEventBitClear(npc_bit.BLOCK_SEALED_GATE),
-            )
+        space.write(
+            field.ReturnIfEventBitClear(npc_bit.BLOCK_SEALED_GATE),
+        )
 
     def ninja_mod(self):
         src = [
@@ -198,400 +184,3 @@ class SealedGate(Event):
         space.write(
             field.Call(check_objectives),
         )
-
-    def ruination_mod(self):
-        # (1) New event at Sealed Gate (branch Terminus --> KT)
-        map_id = 0x187
-
-        # Set Kefka to not be shown at the beginning
-        self.kefka_npc.event_bit = npc_bit.event_bit(npc_bit.ALWAYS_OFF)
-        self.kefka_npc.event_byte = npc_bit.event_byte(npc_bit.ALWAYS_OFF)
-
-        # Move event tile up one square, to allow party to retreat
-        event_in = self.maps.get_event(map_id, 8, 21)
-        event_in.y -= 1
-
-        # Get boss pack for the battle
-        boss_pack_id = self.get_boss("Ultros/Chupon")
-
-        # Write complete new sealed gate event using Python field functions
-        # This replaces the complex original event with surgical patches
-        src = [
-            # Check if event already completed - if so, return immediately
-            field.ReturnIfEventBitSet(event_bit.SEALED_GATE_OPENED),
-
-            # Play wind song and set party to layer 2 (above background)
-            field.StartSongAtVolume(0x39, 0x78),
-            field.Call(self.lightning_strike),
-            field.Call(SET_PARTY_LAYER2),
-
-            # Create the gate guardian NPCs (espers behind gate)
-            field.CreateEntity(0x16),
-            field.CreateEntity(0x17),
-            field.CreateEntity(0x18),
-            field.RefreshEntities(),
-
-            # Party walks up toward the gate
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.UP, 4)),
-
-            # Hold screen and pause before panning up
-            field.HoldScreen(),
-            field.Pause(1.0),
-
-            # Camera pans up to show the gate
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.UP, 7)),
-
-            # Pause to let player see the gate
-            field.Pause(1.5),
-
-            # Increase song volume and lightning strike
-            field.FadeSongVolume(100, 0x96),
-            field.Call(0xb38ac),  # lightning strike variant (right side)
-
-            # Pause to build tension
-            field.Pause(2.0),
-
-            # Camera pans back down
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.DOWN, 4)),
-
-            # Lightning strike and pause
-            field.Call(self.lightning_strike),
-            field.Pause(1.5),
-
-            # Increase song volume more
-            field.FadeSongVolume(50, 0xc8),
-            field.Pause(1.5),
-
-            # Free screen briefly for party movement
-            field.FreeScreen(),
-
-            # Party approaches the gate
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.UP, 5)),
-
-            # Increase to full volume and lightning
-            field.Pause(0.5),
-            field.FadeSongVolume(100, 0xff),
-            field.Call(self.lightning_strike),
-            field.Pause(0.5),
-
-            # Show the esper NPCs
-            field.ShowEntity(0x16),
-            field.ShowEntity(0x17),
-            field.ShowEntity(0x18),
-
-            # Set NPCs to layer 2
-            field.EntityAct(0x16, True,
-                            field_entity.SetSpriteLayer(2)),
-            field.EntityAct(0x17, True,
-                            field_entity.SetSpriteLayer(2)),
-            field.EntityAct(0x18, True,
-                            field_entity.SetSpriteLayer(2)),
-
-            # Pause and hold screen
-            field.Pause(0.75),
-            field.HoldScreen(),
-            field.Pause(1.0),
-
-            # Mute song, play Kefka's laugh
-            field.FadeSongVolume(0, 0x00),
-            field.PlaySoundEffect(205),
-            field.Pause(2.0),
-
-            # Camera quickly moves down
-            field.PauseUnits(15),
-            field.EntityAct(field_entity.CAMERA, False,
-                            field_entity.SetSpeed(field_entity.Speed.FAST),
-                            field_entity.Move(direction.DOWN, 7)),
-
-            # Play battle music
-            field.StartSongAtVolume(0x1f, 0xff),  # Metamorphosis
-            field.WaitForEntityAct(field_entity.CAMERA),
-            field.Pause(0.5),
-
-            # Party turns down to face threat
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.Turn(direction.DOWN)),
-
-            field.Pause(0.75),
-
-            # Fade out and invoke battle
-            field.FadeOutScreen(),
-            field.WaitForFade(),
-
-            # Boss battle
-            field.SetEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
-            field.InvokeBattleType(boss_pack_id, field.BattleType.BACK),
-
-            # After battle - set event bit to prevent repeat
-            field.SetEventBit(event_bit.SEALED_GATE_OPENED),
-            field.ClearEventBit(event_bit.CONTINUE_MUSIC_DURING_BATTLE),
-
-            # Hide the NPCs
-            field.HideEntity(0x16),
-            field.HideEntity(0x17),
-            field.HideEntity(0x18),
-            field.RefreshEntities(),
-
-
-            # Play wind song and fade in
-            field.StartSongAtVolume(0x39, 0x96),
-            field.FadeInScreen(),
-
-            # Party turns up toward the gate
-            field.EntityAct(field_entity.PARTY0, False,
-                            field_entity.Turn(direction.UP)),
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.SetSpeed(field_entity.Speed.FAST),
-                            field_entity.Move(direction.UP, 6)),
-
-            field.Pause(0.5),
-
-            # Play gate opening sound
-            field.FadeSoundEffect(0, 0xf0),
-            field.PlaySoundEffect(165),
-            field.ShakeScreen(intensity=3, permanent=1, layer1=True, layer2=True, layer3=True, sprite_layer=True),
-            field.Pause(2.0),
-
-            # Gate opens - move the gate NPCs (door pieces) apart
-            field.EntityAct(0x10, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.LEFT, 1)),
-            field.EntityAct(0x12, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.LEFT, 1)),
-            field.EntityAct(0x13, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.LEFT, 1)),
-            field.EntityAct(0x11, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.RIGHT, 1)),
-            field.EntityAct(0x14, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.RIGHT, 1)),
-            field.EntityAct(0x15, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.RIGHT, 1)),
-
-            # Wait for gate animation
-            field.Pause(1.5),
-
-            # Fade out sound effect
-            field.FadeSoundEffect(40, 0x00),
-            field.StopScreenShake(),
-
-            # Camera moves down a bit
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.DOWN, 2)),
-
-            # Set party back to layer 0 and free screen
-            #field.Call(SET_PARTY_LAYER0),
-            field.FreeScreen(),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "sealed gate ruination event")
-        new_event_addr = space.start_address
-
-        # Patch the original event start to branch to our new event
-        # Original event starts at 0xb39ca with a check for event bit 0x079
-        space = Reserve(0xb39ca, 0xb39d7, "sealed gate branch to new event", field.NOP())
-        space.write(
-            field.Branch(new_event_addr),
-        )
-
-        # (2) Add exit tile at sealed gate to KT
-        from event.switchyard import GoToSwitchyard
-        kt_enter_id = 2077
-
-        dialog_entry_id = 0x0666
-        self.dialogs.set_text(dialog_entry_id, "Enter Kefka's Tower? There's no going back.<line><choice> Let's go<line><choice> Not just yet<end>")
-        no_return_text = 1293   # same as airship.py
-        need_three_parties_text = 1294  # ruination: another terminus used but < 3 parties formed
-        self.dialogs.set_text(need_three_parties_text, "Another group has already gone to Kefka's Tower. Three parties must be formed before sending another.<end>")
-
-        src = [
-            # Check if terminus already used - if so, return immediately
-            field.ReturnIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED),
-
-            field.HoldScreen(),
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.UP, 2)),
-            field.BranchIfEventBitSet(event_bit.ENABLE_Y_PARTY_SWITCHING, "HAVE_SWITCH"),
-            field.Dialog(no_return_text),
-            "DO_NOT_ENTER",
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.Move(direction.DOWN, 2)),
-            field.FreeScreen(),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.DOWN, 2)),
-            field.Return(),
-            # Check if three parties are formed when another terminus is already in use
-            "HAVE_SWITCH",
-            field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "ALLOW_ENTRY"),
-            field.BranchIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED, "NEED_THREE"),
-            field.BranchIfEventBitSet(event_bit.ESPER_MTN_TERMINUS_USED, "NEED_THREE"),
-            field.Branch("ALLOW_ENTRY"),
-            "NEED_THREE",
-            field.Dialog(need_three_parties_text),
-            field.Branch("DO_NOT_ENTER"),
-            "ALLOW_ENTRY",
-            field.DialogBranch(dialog_entry_id, dest1="ENTER_KT", dest2="DO_NOT_ENTER"),
-            "ENTER_KT",
-            # Mark terminus as used before entering KT
-            field.SetEventBit(event_bit.SEALED_GATE_TERMINUS_USED),
-            field.EntityAct(field_entity.PARTY0, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),
-                            field_entity.Move(direction.UP, 3)),
-            field.EntityAct(field_entity.CAMERA, True,
-                            field_entity.Move(direction.UP, 2)),
-            field.Call(0xb38ac),  # lightning strike
-            field.HideEntity(field_entity.PARTY0),
-            field.Pause(0.5),
-
-            # Gate closes behind the player (reverse of opening animation)
-            field.PlaySoundEffect(165),  # gate rumble sound
-            field.ShakeScreen(intensity=3, permanent=1, layer1=True, layer2=True, layer3=True, sprite_layer=True),
-            field.Pause(0.5),
-
-            # Move gate NPCs back together (opposite of opening)
-            field.EntityAct(0x10, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.RIGHT, 1)),
-            field.EntityAct(0x12, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.RIGHT, 1)),
-            field.EntityAct(0x13, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.RIGHT, 1)),
-            field.EntityAct(0x11, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.LEFT, 1)),
-            field.EntityAct(0x14, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.LEFT, 1)),
-            field.EntityAct(0x15, False,
-                            field_entity.SetSpeed(field_entity.Speed.SLOWEST),
-                            field_entity.Move(direction.LEFT, 1)),
-
-            # Wait for gate to close
-            field.Pause(1.5),
-            field.StopScreenShake(),
-            field.Pause(0.5),
-
-            field.FadeOutScreen(),
-            field.FreeScreen(),
-        ] + GoToSwitchyard(kt_enter_id)
-        space = Write(Bank.CB, src, "Sealed Gate access to Kefka's Tower")
-
-        from data.map_event import MapEvent
-        new_event = MapEvent()
-        new_event.x = 8
-        new_event.y = 9
-        new_event.event_address = space.start_address - EVENT_CODE_START
-        self.maps.add_event(map_id, new_event)
-
-        # (3) Set Sealed Gate map song to "wind" 0x39
-        sealed_gate_properties = self.maps.properties[map_id]
-        sealed_gate_properties.song = 0x39
-
-        # (4) Edit entrance event to show sealed gate as "open" if event already happened: CB/39BE
-        patch_addr = [0xb39c3, 0xb39c8]
-        src = [
-            Read(patch_addr[0], patch_addr[1]),
-            field.ReturnIfEventBitClear(event_bit.SEALED_GATE_OPENED),
-            # If terminus was used, keep gate closed (don't show open position)
-            field.ReturnIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED),
-            field.EntityAct(0x10, False,
-                            field_entity.SetPosition(6, 5)),
-            field.EntityAct(0x12, False,
-                            field_entity.SetPosition(6, 7)),
-            field.EntityAct(0x13, False,
-                            field_entity.SetPosition(7, 7)),
-            field.EntityAct(0x11, False,
-                            field_entity.SetPosition(9, 5)),
-            field.EntityAct(0x14, False,
-                            field_entity.SetPosition(10, 7)),
-            field.EntityAct(0x15, False,
-                            field_entity.SetPosition(9, 7)),
-            field.Return()
-        ]
-        space = Write(Bank.CB, src, 'Sealed Gate entrance event check if gate open')
-        open_gate_addr = space.start_address
-
-        space = Reserve(patch_addr[0], patch_addr[1], "Edit Sealed Gate entrance event", field.NOP())
-        space.write(field.Call(open_gate_addr))
-
-    def lava_room_mod(self):
-        # You can do something like the 'door timer glitch' in the lava room if you walk out of it exactly when a timer
-        # expires.  This causes event tiles on the actual door to not trigger, allowing world desyncs.
-        #turn_off_puzzle_addr = 0xb2b06  # CB/2B06: turn off timers, reset general event bits.
-        map_id = 0x181
-        from data.map_event import MapEvent, LongMapEvent
-
-        # Apparently you can carry it from 2 tiles away.  We need to turn off the event restrictively, as soon as the
-        # player steps off the bridge.
-
-        # First, move "start the event" tile @ (13, 11) to (14, 11)
-        start_south_event_tile = self.maps.get_event(map_id, 13, 11)
-        start_south_event_tile.x = 14
-
-        # Next, add "start the event" tiles at (12, 10) and (11, 11)
-        start_south_event_2 = MapEvent()
-        start_south_event_2.x = 12
-        start_south_event_2.y = 10
-        start_south_event_2.event_address = start_south_event_tile.event_address
-        self.maps.add_event(map_id, start_south_event_2)
-
-        start_south_event_3 = MapEvent()
-        start_south_event_3.x = 11
-        start_south_event_3.y = 11
-        start_south_event_3.event_address = start_south_event_tile.event_address
-        self.maps.add_event(map_id, start_south_event_3)
-
-        # Add "turn off south event" tiles everywhere you can step off one of those & at the north exit.
-        # Make sure the player has to step on at least two.  Use LongEvents to reduce the number.
-
-        # CB/2B06: B2    Call subroutine $CB2CAA
-        # CB/2B0A: B2    Call subroutine $CB2DFA (clears general purpose event bits)
-        # CB/2B0E: FE    Return
-        src = [
-            field.ReturnIfEventBitSet(0x1b5),
-            #field.ResetTimer(0),
-            field.Call(0xb2b06),   # clear all event timers, clears gen. purpose event bits.
-            field.SetEventBit(0x1b5),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, 'Reset event timer')
-
-        HORIZ = 0
-        VERT = 128
-        turn_off_locs = [(13, 10, 0, HORIZ), (12, 11, 1, HORIZ), (11, 12, 2, HORIZ), (2, 1, 1, HORIZ), (1, 2, 1, HORIZ)]
-        for tol in turn_off_locs:
-            if tol[2] == 0:
-                # Short event
-                new_event = MapEvent()
-                new_event.x = tol[0]
-                new_event.y = tol[1]
-                new_event.event_address = space.start_address - EVENT_CODE_START
-                self.maps.add_event(map_id, new_event)
-            else:
-                new_le = LongMapEvent()
-                new_le.x = tol[0]
-                new_le.y = tol[1]
-                new_le.size = tol[2]
-                new_le.direction = tol[3]
-                new_le.event_address = space.start_address - EVENT_CODE_START
-                self.maps.add_long_event(map_id, new_le)
-
-
-

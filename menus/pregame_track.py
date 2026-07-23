@@ -142,14 +142,9 @@ class PreGameTrack:
         import version
         import data.text as text
 
-        if args.ruination_mode:
-            title = "FFVI Ruination"
-            version_string = "v0.3"
-        else:
-            title = "FFVI Worlds Collide"
-            version_string = "v" + version.__version__.split(' ')[0] # remove substrings such as ' (dev)'
+        version_string = "v" + version.__version__.split(' ')[0] # remove substrings such as ' (dev)'
         text_positions = [
-            (title, 0x78cd),
+            ("FFVI Worlds Collide", 0x78cd),
             (f"{version_string}", 0x7905 - len(version_string) * 2),
         ]
 

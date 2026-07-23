@@ -9,7 +9,6 @@ import menus.coliseum as coliseum
 import menus.sell as sell
 import menus.buy as buy
 import menus.magic as magic
-import menus.save as save
 
 class Menus:
     def __init__(self, characters, dances, rages, enemies):
@@ -29,7 +28,6 @@ class Menus:
         self.sell_menu = sell.SellMenu()
         self.buy_menu = buy.BuyMenu()
         self.magic_menu = magic.MagicMenu()
-        self.save_menu = save.SaveMenu()
 
         self.scrollbar_bugfix()
 

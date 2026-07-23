@@ -1,14 +1,6 @@
 from event.event import *
 
 class OwzerMansion(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = (args.door_randomize_owzer_basement
-                          or args.door_randomize_all
-                          or args.door_randomize_crossworld
-                          or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each
-                          or args.ruination_mode)
     def name(self):
         return "Owzer Mansion"
 
@@ -27,7 +19,7 @@ class OwzerMansion(Event):
         if(self.args.flashes_remove_most):
             self.flash_mod()
 
-        if self.args.character_gating and not self.DOOR_RANDOMIZE:
+        if self.args.character_gating:
             self.add_gating_condition()
 
         if not self.args.fixed_encounters_original:
@@ -49,22 +41,6 @@ class OwzerMansion(Event):
 
         self.log_reward(self.reward)
 
-        if self.DOOR_RANDOMIZE:
-            if self.args.character_gating:
-                self.add_local_gating_condition()
-
-            # Remove warp-to-Jidoor from end of Chadarnook cutscene
-            space = Reserve(0xb4e1f, 0xb4e24, "owzer mansion warp to Jidoor", field.NOP())
-            src = [
-                field.HideEntity(self.relm_npc_id),
-                field.RefreshEntities(),
-                field.FadeInScreen()
-            ]
-            space.write(src)
-
-            self.door_timer_mod()
-            self.painting_mod()
-
     def flash_mod(self):
         space = Reserve(0xb4d10, 0xb4d11, "owzer mansion flash", field.FlashScreen(field.Flash.NONE))
 
@@ -77,46 +53,6 @@ class OwzerMansion(Event):
         space = Reserve(0xb4d9d, 0xb4d9f, "owzer mansion where is the stone", field.NOP())
         space = Reserve(0xb4dde, 0xb4de0, "owzer mansion this is magicite", field.NOP())
         space = Reserve(0xb4df5, 0xb4df7, "owzer mansion i have to go", field.NOP())
-
-    def add_local_gating_condition(self):
-        # In door rando, gate Chadarnook battle locally: tint black + rejection if Relm not recruited.
-        # Inject at 0xb4d00 (the already-defeated check), before hold screen / camera movement.
-        DEFEATED_CHECK_START = 0xb4d00
-        DEFEATED_CHECK_END = 0xb4d05      # 6-byte conditional branch
-        CONTINUE_ADDRESS = 0xb4d06        # hold screen, camera, then battle
-
-        src = [
-            # Relocated: if already defeated Chadarnook, branch to post-battle cutscene
-            Read(DEFEATED_CHECK_START, DEFEATED_CHECK_END),
-
-            # Local gate: check if Relm is recruited
-            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
-
-            # Relm not recruited: rejection animation
-            field.Repeat(10, field.TintBackground(field.Tint.BLACK)),
-            field.PlaySoundEffect(0x1f),  # Demi sound
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.DisableWalkingAnimation(),
-                            field_entity.SetSpeed(field_entity.Speed.SLOW),  # SLOWEST?
-                            field_entity.AnimateAttacked(),
-                            field_entity.Move(direction.DOWN, 2),
-                            field_entity.EnableWalkingAnimation(),
-                            field_entity.Turn(direction.UP),
-            ),
-            field.Repeat(10, field.TintBackground(field.Tint.BLACK, invert=True)),
-            field.Return(),
-
-            "GATE_MET",
-            field.Branch(CONTINUE_ADDRESS),
-        ]
-        space = Write(Bank.CB, src, "owzer mansion chadarnook local gating condition")
-        gate_address = space.start_address
-
-        space = Reserve(DEFEATED_CHECK_START, DEFEATED_CHECK_END,
-                        "owzer mansion local gate branch", field.NOP())
-        space.write(
-            field.Branch(gate_address),
-        )
 
     def add_gating_condition(self):
         src = [
@@ -232,25 +168,3 @@ class OwzerMansion(Event):
         space.write(
             field.Call(finish_check),
         )
-
-    def door_timer_mod(self):
-        # Overwrite the check to see if Chadarnook has been killed (so this room always works)
-        space = Reserve(0xb4962, 0xb4967, "owzer mansion start door timer", field.NOP())
-        space.write([0x3a])  # enable player to move while commands execute
-
-        # Write a 2nd event tile (so the door timer will start if entering the room through other door)
-        from data.map_event import MapEvent
-        new_event = MapEvent()
-        new_event.x = 88
-        new_event.y = 51
-        new_event.event_address = space.start_address - EVENT_CODE_START
-        self.maps.add_event(0x0cf, new_event)
-
-    def painting_mod(self):
-        # Overwrite the check to see if Chadarnook has been killed (so you can always fight the painting)
-        # Painting 1:
-        space = Reserve(0xb47c2, 0xb47c7, "owzer mansion painting 1")
-        space.write([
-            field.BranchIfEventBitClear(event_bit.DEFEATED_PAINTING_1, 0xb47ce)
-        ])
-

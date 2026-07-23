@@ -1,11 +1,6 @@
 from event.event import *
-from data.map_exit_extra import exit_data, door_short_text
 
 class Airship(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.MAP_SHUFFLE = args.map_shuffle
-
     def name(self):
         return "Airship"
 
@@ -35,194 +30,80 @@ class Airship(Event):
         fly_wob_dg_cancel_dialog = 1293
         fly_wob_cancel_dialog = 1319
 
-        if self.args.ruination_mode:
-            # We will only ever use the Falcon console, and only to go to KT.
-            fly_kt_text_1 = "We can attack Kefka's Tower from the air.<page>Ready? There's no going back.<line><choice> Take off<line><choice> Not just yet<end>"
-            fly_kt_text_2 = "Go to Kefka's Tower?<line><choice> Take off<line><choice> Not just yet<end>"
-            fly_kt_text_3 = "There's no returning from Kefka's Tower. We need to split the party first.<end>"
-            fly_kt_text_4 = "Another group has already gone to Kefka's Tower. Three parties must be formed before sending another.<end>"
+        self.dialogs.set_text(fly_wor_fc_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> (Floating Continent)<line><choice> (Not just yet)<end>')
+        self.dialogs.set_text(fly_wor_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> (Not just yet)<end>')
+        self.dialogs.set_text(fly_wob_dg_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Search The Skies)<line><choice> (Not just yet)<end>')
+        self.dialogs.set_text(fly_wob_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Not just yet)<end>')
 
-            self.dialogs.set_text(fly_wor_fc_cancel_dialog, fly_kt_text_1)
-            self.dialogs.set_text(fly_wor_cancel_dialog, fly_kt_text_2)
-            self.dialogs.set_text(fly_wob_dg_cancel_dialog, fly_kt_text_3)
-            need_three_parties_text = 1294  # ruination: another terminus used but < 3 parties formed
-            self.dialogs.set_text(need_three_parties_text, fly_kt_text_4)
+        lift_off = 0xaf58d
+        enter_floating_continent = 0xa581a
 
-            space = Allocate(Bank.CA, 270, "airship controls dialog/choices", field.NOP())
+        space = Allocate(Bank.CA, 298, "airship controls dialog/choices", field.NOP())
 
-            self.doom_gaze_mod(space)
-            self.ruination_mod(space)
+        self.enter_wor_mod(space)
+        self.enter_wob_mod(space)
+        self.doom_gaze_mod(space)
 
-            cannot_fly_kt = space.next_address
+        fly_wor_fc_cancel_choice = space.next_address
+        space.write(
+            field.DialogBranch(fly_wor_fc_cancel_dialog,
+                               dest1 = lift_off,
+                               dest2 = self.enter_wor,
+                               dest3 = enter_floating_continent,
+                               dest4 = field.RETURN),
+        )
+
+        fly_wor_cancel_choice = space.next_address
+        space.write(
+            field.DialogBranch(fly_wor_cancel_dialog,
+                               dest1 = lift_off,
+                               dest2 = self.enter_wor,
+                               dest3 = field.RETURN),
+        )
+
+        fly_wob_dg_cancel_choice = space.next_address
+        space.write(
+            field.DialogBranch(fly_wob_dg_cancel_dialog,
+                               dest1 = lift_off,
+                               dest2 = self.enter_wob,
+                               dest3 = self.find_doom_gaze,
+                               dest4 = field.RETURN),
+        )
+
+        fly_wob_cancel_choice = space.next_address
+        space.write(
+            field.DialogBranch(fly_wob_cancel_dialog,
+                               dest1 = lift_off,
+                               dest2 = self.enter_wob,
+                               dest3 = field.RETURN),
+        )
+
+        # airship wor controls branching
+        wor_control_checks = space.next_address
+        if self.args.character_gating:
             space.write(
-                field.Dialog(fly_wob_dg_cancel_dialog),
-                field.Return()
+                field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Doom Gaze"].character_gate()),
+                                            fly_wob_cancel_choice),
             )
+        space.write(
+            field.BranchIfBattleEventBitClear(battle_bit.DEFEATED_DOOM_GAZE, fly_wob_dg_cancel_choice),
+            field.Branch(fly_wob_cancel_choice),
+        )
 
-            fly_kt = space.next_address
+        # airship controls branching
+        space = Reserve(0xaf53a, 0xaf559, "airship controls wor event bit check", field.NOP())
+        space.write(
+            field.BranchIfEventBitSet(event_bit.IN_WOR, wor_control_checks),
+            field.BranchIfEventBitSet(event_bit.FINISHED_FLOATING_CONTINENT, fly_wor_cancel_choice),
+        )
+        if self.args.character_gating:
             space.write(
-                field.DialogBranch(fly_wor_fc_cancel_dialog,
-                                   dest1=self.attack_kt_event,  # defined in self.ruination_mod()
-                                   dest2=field.RETURN),
+                field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
+                                            fly_wor_cancel_choice),
             )
-
-            fly_kt_direct = space.next_address
-            space.write(
-                field.DialogBranch(fly_wor_cancel_dialog,
-                                   dest1=self.enter_kt_event,  # defined in self.ruination_mod()
-                                   dest2=field.RETURN),
-            )
-
-            cannot_fly_kt_need_three = space.next_address
-            space.write(
-                field.Dialog(need_three_parties_text),
-                field.Return()
-            )
-
-            # New entry point from the Reserve block: checks THREE_PARTIES_CREATED
-            # before proceeding to the doom gaze / direct-entry branches.
-            check_three_kt = space.next_address
-            space.write(
-                field.BranchIfEventBitSet(event_bit.THREE_PARTIES_CREATED, "CHECK_DOOM_AIR"),
-                field.BranchIfEventBitSet(event_bit.SEALED_GATE_TERMINUS_USED, cannot_fly_kt_need_three),
-                field.BranchIfEventBitSet(event_bit.ESPER_MTN_TERMINUS_USED, cannot_fly_kt_need_three),
-                "CHECK_DOOM_AIR",
-                field.BranchIfBattleEventBitClear(battle_bit.DEFEATED_DOOM_GAZE, fly_kt),
-                field.Branch(fly_kt_direct),
-            )
-
-            space = Reserve(0xaf53a, 0xaf559, "airship controls ruination mode", field.NOP())
-            space.write(
-                field.BranchIfEventBitClear(event_bit.ENABLE_Y_PARTY_SWITCHING, cannot_fly_kt),
-                field.Branch(check_three_kt),
-            )
-
-        else:
-            # Edit Blackjack console text for map shuffle
-            fly_wor_fc_text = '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> '
-            fly_wor_cancel_text = '<choice> (Lift-off)<line><choice> (World of Ruin)<line><choice> '
-
-            fc_dest_str = '(Floating Continent)'
-            if self.MAP_SHUFFLE:
-                self.FC_id = 1556
-                if self.FC_id in self.maps.door_map.keys():
-                    # Find the new location and set the message.
-                    # Normally door_map[1556] is a location's entrance door and
-                    # its exit_data partner is the world-map door indexing
-                    # door_short_text. But when the FC slot lands on Esper
-                    # Mountain with -dre, the logical link 30044<->31047
-                    # composes the shuffled entrance directly with a random
-                    # re-randomized interior door, whose partner is another
-                    # interior door. Esper Mountain is the only area protected
-                    # this way (map_shuffle_protected_doors), so name it.
-                    partner = exit_data[self.maps.door_map[self.FC_id]][0]
-                    location_text = door_short_text.get(partner, "Esper Mountain")
-                    fc_dest_str = '(Find ' + location_text + ')'
-                    fly_wor_cancel_text += '(Go to ' + location_text + ')<line><choice> '
-                else:
-                    fly_wor_cancel_text += '(Go to Floating Continent)<line><choice> '
-            elif self.args.door_randomize_dungeon_crawl:
-                fc_dest_str = '(Engage the IAF)'
-                fly_wor_cancel_text += '(Enter the dungeon)<line><choice> '
-
-            fly_wor_fc_text += fc_dest_str + '<line><choice> (Not just yet)<end>'
-            fly_wor_cancel_text += '(Not just yet)<end>'
-
-            self.dialogs.set_text(fly_wor_fc_cancel_dialog, fly_wor_fc_text)
-            self.dialogs.set_text(fly_wor_cancel_dialog, fly_wor_cancel_text)
-            self.dialogs.set_text(fly_wob_dg_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Search The Skies)<line><choice> (Not just yet)<end>')
-            self.dialogs.set_text(fly_wob_cancel_dialog, '<choice> (Lift-off)<line><choice> (World of Balance)<line><choice> (Not just yet)<end>')
-
-            lift_off = 0xaf58d
-            enter_floating_continent = 0xa581a
-            enter_floating_continent_skip_reform_iaf = 0xa5980
-
-            space = Allocate(Bank.CA, 319, "airship controls dialog/choices", field.NOP())
-
-            self.enter_wor_mod(space)
-            self.enter_wob_mod(space)
-            self.doom_gaze_mod(space)
-
-            fly_wor_fc_cancel_choice = space.next_address
-            space.write(
-                field.DialogBranch(fly_wor_fc_cancel_dialog,
-                                   dest1 = lift_off,
-                                   dest2 = self.enter_wor,
-                                   dest3 = enter_floating_continent,
-                                   dest4 = field.RETURN),
-            )
-
-            if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
-                # If FC completed, skip reform party & go to animation
-                fly_wor_skip_cancel_choice = space.next_address
-                space.write(
-                    field.DialogBranch(fly_wor_cancel_dialog,
-                                       dest1=lift_off,
-                                       dest2=self.enter_wor,
-                                       dest3=enter_floating_continent_skip_reform_iaf,
-                                       dest4=field.RETURN),
-                )
-            else:
-                fly_wor_cancel_choice = space.next_address
-                space.write(
-                    field.DialogBranch(fly_wor_cancel_dialog,
-                                       dest1 = lift_off,
-                                       dest2 = self.enter_wor,
-                                       dest3 = field.RETURN),
-                )
-
-            fly_wob_dg_cancel_choice = space.next_address
-            space.write(
-                field.DialogBranch(fly_wob_dg_cancel_dialog,
-                                   dest1 = lift_off,
-                                   dest2 = self.enter_wob,
-                                   dest3 = self.find_doom_gaze,
-                                   dest4 = field.RETURN),
-            )
-
-            fly_wob_cancel_choice = space.next_address
-            space.write(
-                field.DialogBranch(fly_wob_cancel_dialog,
-                                   dest1 = lift_off,
-                                   dest2 = self.enter_wob,
-                                   dest3 = field.RETURN),
-            )
-
-            # airship wor controls branching
-            wor_control_checks = space.next_address
-            if self.args.character_gating:
-                space.write(
-                    field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Doom Gaze"].character_gate()),
-                                                fly_wob_cancel_choice),
-                )
-            space.write(
-                field.BranchIfBattleEventBitClear(battle_bit.DEFEATED_DOOM_GAZE, fly_wob_dg_cancel_choice),
-                field.Branch(fly_wob_cancel_choice),
-            )
-
-            # airship controls branching
-            space = Reserve(0xaf53a, 0xaf559, "airship controls wor event bit check", field.NOP())
-            space.write(
-                field.BranchIfEventBitSet(event_bit.IN_WOR, wor_control_checks),
-            )
-            if self.MAP_SHUFFLE or self.args.door_randomize_dungeon_crawl:
-                # Skip party reform if IAF already defeated.
-                # Do not turn off the "Find ..." option if character gated.
-                space.write(
-                    field.BranchIfEventBitSet(event_bit.DEFEATED_IAF, fly_wor_skip_cancel_choice),
-                )
-            else:
-                space.write(
-                    field.BranchIfEventBitSet(event_bit.FINISHED_FLOATING_CONTINENT, fly_wor_cancel_choice),
-                )
-                if self.args.character_gating:
-                    space.write(
-                        field.BranchIfEventBitClear(event_bit.character_recruited(self.events["Floating Continent"].character_gate()),
-                                                    fly_wor_cancel_choice),
-                    )
-            space.write(
-                field.Branch(fly_wor_fc_cancel_choice),
-            )
+        space.write(
+            field.Branch(fly_wor_fc_cancel_choice),
+        )
 
     def enter_wor_mod(self, space):
         self.enter_wor = space.next_address
@@ -235,12 +116,7 @@ class Airship(Event):
                 field_entity.Pause(6),
                 field_entity.Turn(direction.LEFT),
             ),
-            #field.ToggleWorlds(),  # Update for world safety
-            field.SetParentWorld(0x1),
-            # same args as airship lift-off load map:  args = [0xff, 0x25, 0x00, 0x00, 0x81]
-            # return to parent map at same position/direction, continue music, on airship.
-            field.FadeLoadMap(map_id=0x1ff, direction=direction.DOWN, default_music=False, x=0, y=0, fade_in = True,
-                              airship=True, entrance_event=True),
+            field.ToggleWorlds(),
             vehicle.End(),
             field.Return(),
         )
@@ -256,12 +132,7 @@ class Airship(Event):
                 field_entity.Pause(6),
                 field_entity.Turn(direction.LEFT),
             ),
-            # field.ToggleWorlds(),  # Update for world safety
-            field.SetParentWorld(0x0),
-            # same args as airship lift-off load map:  args = [0xff, 0x25, 0x00, 0x00, 0x81]
-            # return to parent map at same position/direction, continue music, on airship.
-            field.FadeLoadMap(map_id=0x1ff, direction=direction.DOWN, default_music=False, x=0, y=0, fade_in=True,
-                              airship=True, entrance_event=True),
+            field.ToggleWorlds(),
             vehicle.End(),
             field.Return(),
         )
@@ -270,22 +141,13 @@ class Airship(Event):
         # if tentacles not defeated yet, figaro castle still underground, block doors
         #                                also hide guard and show scattered dead soldiers
         # in wob and after tentacles dead, can't be both underground and in airship
-        # If defeated tentacles, have the airship transition bring FC back to the surface
         space.write(
             field.BranchIfEventBitSet(event_bit.DEFEATED_TENTACLES_FIGARO, "DEFEATED_TENTACLES"),
             field.SetEventBit(npc_bit.BLOCK_INSIDE_DOORS_FIGARO_CASTLE),
             field.SetEventBit(npc_bit.DEAD_SOLDIERS_FIGARO_CASTLE),
             field.ClearEventBit(npc_bit.PRISON_GUARD_FIGARO_CASTLE),
-            field.SetEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
 
             "DEFEATED_TENTACLES",
-            field.BranchIfEventBitClear(event_bit.DEFEATED_TENTACLES_FIGARO, "DID_NOT_DEFEAT_TENTACLES"),
-            field.SetEventBit(event_bit.FIGARO_CASTLE_IN_SF_DESERT_WOR),
-            field.ClearEventBit(event_bit.FIGARO_CASTLE_IN_KOHL_DESERT_WOR),
-            field.ClearEventBit(event_bit.FIGARO_CASTLE_AT_ANCIENT_CASTLE_WOR),
-            field.ClearEventBit(event_bit.PRISON_DOOR_OPEN_FIGARO_CASTLE),
-
-            "DID_NOT_DEFEAT_TENTACLES",
             field.ClearEventBit(npc_bit.STORES_NARSHE),
             field.SetEventBit(npc_bit.WEAPON_ELDER_NARSHE),
             field.SetEventBit(npc_bit.WEAPON_ROOM_ESPER_NARSHE),
@@ -499,78 +361,6 @@ class Airship(Event):
         # CA/F5C2: Call subroutine $CAF601
         #  -> Replace with four [FD] (no-op)
         Reserve(0xaf5bc, 0xaf5c5, "skip force Locke/Celes into party", field.NOP())
-
-    def ruination_mod(self, space):
-        # Write event: "Takeoff falcon; encounter Doom Gaze; receive reward;  drop into Kefka's Tower.
-        from event.switchyard import GoToSwitchyard
-        self.KT_entry_id = 2079
-
-        self.attack_kt_event = space.next_address
-        src = [
-            # Mark terminus as used - airship deck will be inaccessible after this
-            field.SetEventBit(event_bit.AIRSHIP_TERMINUS_USED),
-            field.StartSong(76),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.AnimateHandsUp(),
-                            field_entity.Pause(6),
-                            field_entity.AnimateAttack(),
-                            ),
-            #Read(0xa476a, 0xa478c),  # animate takeoff, load falcon map
-            # Need to manually add a "turn off minimap" here for aesthetics!
-            Read(0xa476a, 0xa4780),  # animate takeoff, load falcon map
-            world.HideMinimap(),
-            Read(0xa4781, 0xa478c),  # animate takeoff, load falcon map
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetPosition(16, 8),
-                            field_entity.AnimateAttack()
-                            ),
-            field.FadeInScreen(),
-            field.Call(self.find_doom_gaze + 7),  # skip animation.  In ruination mode, after Bahamut, return to this script (see below)
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.AnimateStandingHeadDown(),
-                            field_entity.Pause(1),
-                            field_entity.AnimateStandingFront(),
-                            field_entity.Pause(6),
-                            field_entity.Move(direction.LEFT, 1),
-                            ),
-            Read(0xa0405, 0xa0408),  # animate walk to railing
-            field.HoldScreen(),
-            field.Call(0xa0469),  # animate jumping off railing
-            field.FreeScreen(),
-            field.FadeOutScreen()
-        ] + GoToSwitchyard(self.KT_entry_id, map='field')   # Switchyard event added in kefka_tower.ruination_mod()
-        space.write(src)
-        #space = Write(Bank.CA, src, "Takeoff Falcon, encounter doom gaze")
-
-        # Write event: "Takeoff falcon;  drop into Kefka's Tower."
-        self.enter_kt_event = space.next_address
-        src = [
-          # Mark terminus as used - airship deck will be inaccessible after this
-          field.SetEventBit(event_bit.AIRSHIP_TERMINUS_USED),
-          field.StartSong(76),
-          field.EntityAct(field_entity.PARTY0, True,
-                          field_entity.AnimateHandsUp(),
-                          field_entity.Pause(6),
-                          field_entity.AnimateAttack(),
-                          ),
-          Read(0xa476a, 0xa478c),  # animate takeoff, load falcon map
-          field.EntityAct(field_entity.PARTY0, True,
-                          field_entity.SetPosition(16, 8),
-                          field_entity.AnimateAttack()
-                          ),
-          field.FadeInScreen(),
-          Read(0xa0405, 0xa0408),  # animate walk to railing
-          field.HoldScreen(),
-          field.Call(0xa0469),  # animate jumping off railing
-          field.FreeScreen(),
-          field.FadeOutScreen()
-        ] + GoToSwitchyard(self.KT_entry_id, map='field')  # Switchyard event added in kefka_tower.ruination_mod()
-        space.write(src)
-
-        # After recieve reward, return to the above script
-        # CA/00E3: 6A    Load map $01FF (world map) after fade out, (upper bits $2400), place party at (0, 0), facing down, party is in the airship
-        dg_space = Reserve(0xa00e3, 0xa00e8, 'Return after receive doom gaze reward', field.NOP())
-        dg_space.write(field.Return())
 
     def no_free_heals_mod(self):
         # Remove the free heal in the WoB airship.

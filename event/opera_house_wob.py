@@ -1,13 +1,7 @@
 from constants.entities import SETZER
 from event.event import *
-from data.map_exit_extra import exit_data
-from data.rooms import exit_world
 
 class OperaHouseWOB(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.MAP_CROSSWORLD = args.map_shuffle_crossworld
-
     def name(self):
         return "Opera House"
 
@@ -48,24 +42,6 @@ class OperaHouseWOB(Event):
         self.celes_after_maria_npc.sprite = self.characters.CELES
         self.celes_after_maria_npc.palette = self.characters.get_palette(self.characters.CELES)
         self.celes_after_maria_npc.unknown1 = 0 # this was set to 1 and prevented animating character
-
-        self.airship_loc = [0x06, 16, 6]
-        self.mod_world_src = []
-        if self.MAP_CROSSWORLD:
-            # modify airship & world:
-            exit_id = 658
-            if exit_id in self.maps.door_map.keys():
-                conn_id = self.maps.door_map[exit_id]  # connecting exit south
-                conn_pair = exit_data[conn_id][0]  # original connecting exit
-                if exit_world[conn_pair] == 0x1:
-                    # Modify to return to the falcon; update world bit
-                    self.airship_loc = [0x0b, 17, 8]
-                    self.mod_world_src += [field.SetEventBit(event_bit.IN_WOR)]
-
-        #print('OPERA HOUSE FIX: ', self.MAP_CROSSWORLD, self.airship_loc, self.mod_world_src)
-
-        if self.args.ruination_mode:
-            self.ruination_mod()
 
         self.begin_performance_mod()
         self.performance_mod()
@@ -403,59 +379,26 @@ class OperaHouseWOB(Event):
         self.setzer_npc.sprite = character
         self.setzer_npc.palette = self.characters.get_palette(character)
 
-        if self.args.ruination_mode:
-            # In ruination mode, place player in Opera House lobby instead of airship
-            reward_src = [
-                field.RecruitAndSelectParty(character),
-                field.StartSong(61),  # Spinach Rag
-                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            ] + self.ruination_set_wor_opera_bits() + [
-                field.LoadMap(0xed, direction.DOWN, default_music=True,
-                              x=60, y=44, fade_in=True)
-            ]
-        else:
-            reward_src = [
-                field.RecruitAndSelectParty(character),
-                field.StartSong(53),
-                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            ] + self.mod_world_src + [
-                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True,
-                              x = self.airship_loc[1], y = self.airship_loc[2], fade_in = True)
-            ]
-
-        self.reward_mod(reward_src)
+        self.reward_mod([
+            field.RecruitAndSelectParty(character),
+            field.StartSong(53),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+        ])
 
     def esper_item_mod(self, esper_item_instructions):
         self.setzer_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.setzer_npc.palette = self.characters.get_palette(self.setzer_npc.sprite)
 
-        if self.args.ruination_mode:
-            # In ruination mode, place player in Opera House lobby instead of airship
-            reward_src = [
-                field.RefreshEntities(),
-                field.UpdatePartyLeader(),
-                field.ShowEntity(field_entity.PARTY0),
-                field.StartSong(61),  # Spinach Rag
-                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            ] + self.ruination_set_wor_opera_bits() + [
-                field.LoadMap(0xed, direction.DOWN, default_music=True,
-                              x=60, y=44, fade_in=True),
-                esper_item_instructions,
-            ]
-        else:
-            reward_src = [
-                field.RefreshEntities(),
-                field.UpdatePartyLeader(),
-                field.ShowEntity(field_entity.PARTY0),
-                field.StartSong(53),
-                field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
-            ] + self.mod_world_src + [
-                field.LoadMap(self.airship_loc[0], direction.DOWN, default_music = True, x = self.airship_loc[1],
-                              y = self.airship_loc[2], fade_in = True),
-                esper_item_instructions,
-            ]
-
-        self.reward_mod(reward_src)
+        self.reward_mod([
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.StartSong(53),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+            esper_item_instructions,
+        ])
 
     def esper_mod(self, esper):
         self.esper_item_mod([
@@ -468,53 +411,3 @@ class OperaHouseWOB(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
-
-    def ruination_set_wor_opera_bits(self):
-        """Set/clear NPC bits to transition Opera House from WoB to WoR state"""
-        return [
-            field.SetEventBit(npc_bit.MAN_AT_COUNTER_OPERA),
-            #field.SetEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
-            field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_SITTING),
-            field.SetEventBit(event_bit.BEGAN_OPERA_DISRUPTION),
-            field.ClearEventBit(npc_bit.ULTROS_OPERA_CEILING),
-            field.ClearEventBit(npc_bit.RAT1_OPERA_CEILING),
-            field.ClearEventBit(npc_bit.RAT2_OPERA_CEILING),
-            field.ClearEventBit(npc_bit.RAT3_OPERA_CEILING),
-            field.ClearEventBit(npc_bit.RAT4_OPERA_CEILING),
-            field.ClearEventBit(npc_bit.RAT5_OPERA_CEILING),
-            field.ClearEventBit(npc_bit.CEILING_DOOR_OPERA_HOUSE),
-            field.ClearEventBit(npc_bit.DANCING_COUPLE1_OPERA),
-            field.ClearEventBit(npc_bit.DANCING_COUPLE2_OPERA),
-            field.ClearEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA),
-            field.ClearEventBit(npc_bit.FIGHTING_SOLDIERS_OPERA_CEILING),
-
-            field.ClearEventBit(npc_bit.IMPRESARIO_OPERA_LOBBY),
-            field.SetEventBit(npc_bit.IMPRESARIO_OPERA_PANICKING),
-            field.SetEventBit(npc_bit.DRAGON_OPERA_HOUSE),
-        ]
-
-    def ruination_mod(self):
-        # Remove softlock potential if y-switching parties while in switch room
-        # Edit NPC starting event: CA/B455: C0    If ($1E80($110) [$1EA2, bit 0] is set), branch to $CAB45F
-        # Change event script to animate party out of the way if party is facing left
-        src = [
-            field.BranchIfEventBitClear(event_bit.FACING_LEFT, "GO_TO_ORIGINAL_SCRIPT"),
-            field.EntityAct(field_entity.PARTY0, True,
-                            field_entity.SetSpeed(field_entity.Speed.FASTEST),
-                            field_entity.Move(direction.UP, 1),
-                            field_entity.Move(direction.LEFT, 1),
-                            field_entity.Turn(direction.DOWN)
-                            ),
-            "GO_TO_ORIGINAL_SCRIPT",
-            field.Branch(0xab455),
-            field.Return()
-        ]
-        space = Write(Bank.CA, src, 'Opera House switchmaster Remove Softlock Potential')
-        map_id = 0xe8
-        switchmaster_id = 0x11
-        switchmaster_npc = self.maps.get_npc(map_id, switchmaster_id)
-        switchmaster_npc.event_address = space.start_address - EVENT_CODE_START
-
-        # Edit switch event: remove "wait for party animation to complete"
-        # If the player y-switches and the NPC is in the wrong place, the player sprite can collide with the NPC sprite
-        space = Reserve(0xab4dc, 0xab4dd, "Opera House switch remove softlock potential", field.NOP())
