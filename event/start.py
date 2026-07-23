@@ -1,4 +1,5 @@
 from event.event import *
+from event.ruination import *
 import random
 
 class Start(Event):
@@ -31,7 +32,7 @@ class Start(Event):
 
     def init_event_bits(self, space):
         self.event_bit_init = space.start_address
-        space.write(
+        initialize_event_bits = [
             field.SetEventBit(event_bit.NAMED_SABIN),
             field.SetEventBit(event_bit.NAMED_SHADOW),
 
@@ -57,7 +58,38 @@ class Start(Event):
             field.SetEventWord(event_word.ESPERS_FOUND, 0),
 
             field.SetBattleEventBit(battle_bit.MAGIC_POINTS_AFTER_BATTLE),
-        )
+        ]
+
+        # Handle event bits specific to door randomizer
+        if self.args.door_randomize_all or self.args.door_randomize_crossworld \
+                or self.args.door_randomize_each or self.args.door_randomize_dungeon_crawl \
+                or self.args.door_randomize_phantom_train or self.args.door_randomize_cyans_dream \
+                or self.args.ruination_mode:
+            # Deconflict Siegfried event bit:  shared with Lump Of Metal event bit 0x187 in vanilla.
+            # CB/B7F8: C2    If ($1E80($1B0) [$1EB6, bit 0] is clear) or ($1E80($187) [$1EB0, bit 7] is set) or ($1E80($188) [$1EB1, bit 0] is set), branch to $CA5EB3 (simply returns)
+            spc = Reserve(0xbb7f8, 0xbb801, "Siegfried event tile bit check", field.NOP())
+            spc.write([field.ReturnIfAny([0x1B0, False, event_bit.FOUGHT_SIEGFRIED, True])])
+            # CB/B8FC: D2    Set event bit $1E80($187) [$1EB0, bit 7]
+            spc = Reserve(0xbb8fc, 0xbb8fd, "Fought Siegfried", field.NOP())
+            spc.write([field.SetEventBit(event_bit.FOUGHT_SIEGFRIED)])
+
+            # Deconflict "Lump of metal" bit from "Phantom Train" bit.  Originally 0x180
+            # CB/91D9: C0    If ($1E80($180) [$1EB0, bit 0] is set), branch to $CB91E8
+            spc = Reserve(0xb91d9, 0xb91de, "Lump of metal bit check", field.NOP())
+            spc.write([field.BranchIfEventBitSet(event_bit.LUMP_OF_METAL_CHEST, 0xb91e8)])
+            # CB/922D: D2    Set event bit $1E80($180) [$1EB0, bit 0]
+            spc = Reserve(0xb922d, 0xb922e, "Lump of metal bit set", field.NOP())
+            spc.write([field.SetEventBit(event_bit.LUMP_OF_METAL_CHEST)])
+
+            # initialize new event bits
+            initialize_event_bits += [
+                field.ClearEventBit(event_bit.SET_PHANTOM_TRAIN_SWITCHES),
+                field.ClearEventBit(event_bit.FOUGHT_SIEGFRIED),
+                field.ClearEventBit(event_bit.LUMP_OF_METAL_CHEST)
+            ]
+
+        space.write(initialize_event_bits)
+
 
     def mod(self):
         self.intro_loop_mod()
@@ -67,6 +99,62 @@ class Start(Event):
         self.start_gold_mod()
         self.start_items_mod()
         self.start_game_mod()
+
+        # Warp modifications
+        if (self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all
+                or self.args.door_randomize_crossworld or self.args.ruination_mode):
+            # Safety: make warp remove magitek armor (and clear any vehicle, e.g. raft).
+            # Bugs can let the player carry MTek armor out of Dream, we want a way to clear that.
+            # This runs as additional_code, which executes before any warp_override, so it
+            # applies to the ruination Esper-World warp override as well.
+            src_safety = [
+                field.Call(field.REMOVE_PARTY_MAGITEK),
+                field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
+            ]
+            self.warps.add_code(src_safety)
+
+        if self.args.ruination_mode:
+            # Ruination mode: warps should send you to the starting position in the Esper World
+            # Warps should also NOT clear or set any bits!  Just the map transition.
+            # Note that warping out of Kefka's Tower should then be prohibited, except via warp points.
+            warp_to_esper_world_src = [
+                field.LoadMap(0xda, direction.DOWN, default_music=True,
+                              x=55, y=33, fade_in=True, airship=False),
+                field.ClearEventBit(event_bit.IN_WOR),  # we're going back to WoB
+                field.Return(),  # return
+            ]
+            self.warps.add_warp_override(warp_to_esper_world_src)
+
+            # Note that custom warps will be disallowed (Phoenix Cave, Kefka's Tower)
+
+        elif self.args.debug or self.args.door_randomize_dungeon_crawl:
+            # Dungeon Crawl mode doesn't have a well-defined parent map.
+            # Warp stones will always go to the airship over WOB Narshe.
+            warp_to_narshe_src = [
+                # 0x6b, 0xff, 0x25, 0x00, 0x00, 0x00, 0xff, 0xfe,  <- original warp to parent map
+                field.LoadMap(0x00, direction.UP, default_music=False,
+                              x=84, y=34, fade_in=True, airship=True),
+                vehicle.SetPosition(84, 34),
+                vehicle.ClearEventBit(event_bit.IN_WOR),  # we're going back to WoB
+                field.End(),  # end of script
+                field.Return(),  # return
+            ]
+            self.warps.add_warp_override(warp_to_narshe_src)
+
+            # Turn off other custom warps
+            from data.warps import CUSTOM_WARP_BITS
+            for bit in CUSTOM_WARP_BITS:
+                self.warps.add_bit(bit, 'clear')
+
+        elif self.args.map_shuffle:
+            # In Map Shuffle, parent map is well-defined, but sometimes the parent world is different.
+            # Update the world bit and return to parent map.
+            src = [
+                field.UpdateWorldReturnToParentMap(),
+                world.End(),  # end of script
+            ]
+            self.warps.add_warp_override(src)
+
 
         # where the game begins after intro/pregame
         space = Reserve(0xc9a4f, 0xc9ad4, "setup and start game", field.NOP())
@@ -134,6 +222,16 @@ class Start(Event):
                     field.RecruitCharacter(character),
                     field.AddCharacterToParty(character, 1),
                 ]
+
+        # In ruination mode, set each starting character's talk-event pointer
+        # to the party interaction script so they can be talked to by other parties.
+        if self.args.ruination_mode:
+            from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
+            for reward in self.rewards:
+                if reward.type == RewardType.CHARACTER:
+                    char_id = reward.id
+                    addr = PARTY_INTERACTION_SCRIPT_ADDRS[char_id]
+                    src.append(field.ChangeNPCEventAddress(char_id, addr))
 
         src += [
             field.SetParty(1),
@@ -227,6 +325,11 @@ class Start(Event):
                 field.AddItem("Warp Stone", sound_effect = False),
                 field.AddItem("Warp Stone", sound_effect = False),
             ]
+            for fd in range(99):
+                src += [
+                    field.AddItem("Warp Stone", sound_effect=False),
+                ]
+
         src += [
             field.Return(),
         ]
@@ -234,22 +337,27 @@ class Start(Event):
         self.start_items = space.start_address
 
     def start_game_mod(self):
-        src = [
-            # place airship on wob, right outside narshe, start on airship deck
-            field.LoadMap(0x00, direction.DOWN, default_music = False,
-                          x = 84, y = 34, fade_in = True, airship = True),
-            vehicle.SetPosition(84, 34),
-            vehicle.LoadMap(0x06, direction.DOWN, default_music = True,
-                            x = 16, y = 6, entrance_event = True),
+        if self.args.ruination_mode:
+            self.start_game = ruination_start_game_mod(self.dialogs, len(self.args.start_chars))
 
-            field.EntityAct(field_entity.PARTY0, True,
-                field_entity.CenterScreen(),
-            ),
-            field.ShowEntity(field_entity.PARTY0),
-            field.RefreshEntities(),
-            field.FreeScreen(),
-            field.FadeInScreen(speed = 4),
-            field.Return(),
-        ]
-        space = Write(Bank.CC, src, "start game")
-        self.start_game = space.start_address
+        else:
+            src = [
+                # place airship on wob, right outside narshe, start on airship deck
+                field.LoadMap(0x00, direction.DOWN, default_music = False,
+                              x = 84, y = 34, fade_in = True, airship = True),
+                vehicle.SetPosition(84, 34),
+                vehicle.LoadMap(0x06, direction.DOWN, default_music = True,
+                                x = 16, y = 6, entrance_event = True),
+
+                field.EntityAct(field_entity.PARTY0, True,
+                    field_entity.CenterScreen(),
+                ),
+                field.ShowEntity(field_entity.PARTY0),
+                field.RefreshEntities(),
+                field.FreeScreen(),
+                field.FadeInScreen(speed = 4),
+                field.Return(),
+            ]
+            space = Write(Bank.CC, src, "start game")
+            self.start_game = space.start_address
+

@@ -2,11 +2,18 @@ from memory.space import Bank, Allocate
 from event.event_reward import CHARACTER_ESPER_ONLY_REWARDS, RewardType, choose_reward, weighted_reward_choice
 from event.free_heals import modify_inn_costs, modify_free_bed_heals, modify_recovery_springs, remove_coliseum_heal, modify_vector_inn
 import instruction.field as field
+from data.map_exit_extra import exit_data, door_to_eventname
+from data.warps import Warps, WarpPoints
+from event.ruination import *
+from log.verbose import vprint
 
 class Events():
     def __init__(self, rom, args, data):
         self.rom = rom
         self.args = args
+        # Verbose diagnostics: enabled by -debug (stdout) or -debug-verbose
+        # (temp file appended to spoiler log).
+        self.verbose = bool(getattr(args, "debug", False) or getattr(args, "debug_verbose", False))
 
         self.dialogs = data.dialogs
         self.characters = data.characters
@@ -15,10 +22,14 @@ class Events():
         self.enemies = data.enemies
         self.espers = data.espers
         self.shops = data.shops
+        self.warps = Warps()
+        if self.args.ruination_mode:
+            self.warp_points = WarpPoints()
 
         events = self.mod()
 
         self.validate(events)
+
 
     def mod(self):
         # generate list of events from files
@@ -36,15 +47,49 @@ class Events():
             for event_name, event_class in inspect.getmembers(event_module, inspect.isclass):
                 if event_name.lower() != module_name.replace('_', '').lower():
                     continue
-                event = event_class(name_event, self.rom, self.args, self.dialogs, self.characters, self.items, self.maps, self.enemies, self.espers, self.shops)
+                event = event_class(name_event, self.rom, self.args, self.dialogs, self.characters, self.items, self.maps, self.enemies, self.espers, self.shops, self.warps)
                 events.append(event)
                 name_event[event.name()] = event
 
+        # Extra gating from map shuffle
+        extra_gating = {}
+        if self.args.map_shuffle:
+            ac_id = 1558
+            if ac_id in self.maps.door_map.keys():
+                conn_id = exit_data[self.maps.door_map[ac_id]][0]
+                if conn_id in door_to_eventname.keys():
+                    location_list = door_to_eventname[conn_id]
+                    for loc in location_list:
+                        extra_gating[loc] = self.characters.EDGAR
+            if self.verbose:
+                vprint('Added extra gating logic:', extra_gating)
+
+        if self.args.ruination_mode:
+            self.warp_points.mod(self.dialogs, self.maps)
+            # Share warp out animation code
+            self.warps.warp_out_animation_addr = self.warp_points.warp_out_animation_addr
+
         # select event rewards
-        if self.args.character_gating:
-            self.character_gating_mod(events, name_event)
+        if self.args.ruination_mode:
+            ruin_override = False
+            if ruin_override:
+                self.open_world_mod(events)   # OVERRIDE for testing
+            else:
+                self.ruination_mod(events, name_event)
+
+
+        elif self.args.character_gating:
+            self.character_gating_mod(events, name_event, extra_gating)
         else:
             self.open_world_mod(events)
+
+        # Create party interaction scripts before event mod loop so addresses
+        # are available for ChangeNPCEventAddress in individual event mods.
+        if self.args.ruination_mode:
+            create_party_interaction_scripts(self.dialogs)
+            # Shared y-party-switch save/disable and restore subroutines, Call'd by
+            # the several events that must suppress party switching mid-scene.
+            create_y_party_switch_subroutines()
 
         # Apply -nfh (no free heals) modifications.
         if self.args.no_free_heals:
@@ -52,7 +97,10 @@ class Events():
 
         # initialize event bits, mod events, log rewards
         log_strings = []
-        space = Allocate(Bank.CC, 400, "event/npc bit initialization", field.NOP())
+        # Ruination mode adds extra init_event_bits writes (e.g. burning house
+        # fireball NPC visibility bits), so reserve a bit more room.
+        init_bits_size = 450 if self.args.ruination_mode else 400
+        space = Allocate(Bank.CC, init_bits_size, "event/npc bit initialization", field.NOP())
         for event in events:
             event.init_event_bits(space)
             event.mod()
@@ -64,6 +112,9 @@ class Events():
         if self.args.spoiler_log:
             from log import section
             section("Events", log_strings, [])
+
+        # Write modified warps
+        self.warps.mod()
 
         return events
 
@@ -93,7 +144,7 @@ class Events():
         for slot in reward_slots:
             slot.id, slot.type = choose_reward(slot.possible_types, self.characters, self.espers, self.items)
 
-    def character_gating_mod(self, events, name_event):
+    def character_gating_mod(self, events, name_event, extra_gate={}):
         import random
         reward_slots = self.init_reward_slots(events)
 
@@ -103,6 +154,8 @@ class Events():
 
         # find characters that were assigned to start
         characters_available = [reward.id for reward in name_event["Start"].rewards]
+        #for c in characters_available:
+        #    self.characters.character_location[c] = 'Start'
 
         # find all the rewards that can be a character
         character_slots = []
@@ -120,7 +173,18 @@ class Events():
             unlocked_slot_iterations = []
             for slot in character_slots:
                 slot_empty = slot.id is None
-                gate_char_available = (slot.event.character_gate() in characters_available or slot.event.character_gate() is None)
+
+                # Extra gating logic from map shuffle:
+                extra_gate_flag = True
+                if slot.event.name() in extra_gate.keys():
+                    if extra_gate[slot.event.name()] not in characters_available:
+                        extra_gate_flag = False
+                        if self.verbose:
+                            vprint('Extra gate flag FALSE!: ', slot.event.name(), self.characters.get_available_count())
+
+                gate_char_available = (slot.event.character_gate() in characters_available or slot.event.character_gate() is None) \
+                                      and extra_gate_flag
+
                 enough_chars_available = len(characters_available) >= slot.event.characters_required()
                 if slot_empty and gate_char_available and enough_chars_available:
                     if slot in slot_iterations:
@@ -137,6 +201,7 @@ class Events():
             slot.type = RewardType.CHARACTER
             characters_available.append(slot.id)
             self.characters.set_character_path(slot.id, slot.event.character_gate())
+            #self.characters.character_location[slot.id] = slot.event.name()   # store where the character was found for map shuffle
             iteration += 1
 
         # get all reward slots still available
@@ -170,6 +235,176 @@ class Events():
 
         # choose the rest of the rewards, items given to events after all characters/events assigned
         self.choose_item_possible_rewards(reward_slots)
+
+    def ruination_mod(self, events, name_event):
+        reward_slots = self.init_reward_slots(events)
+
+        # Update ROOM_REWARD data
+        for room in ROOM_REWARD.keys():
+            for name in ROOM_REWARD[room].keys():
+                # Extract base event name: "Auction House_1" -> "Auction House", "Veldt Cave WOR" -> "Veldt Cave WOR"
+                if '_' in name and name.rsplit('_', 1)[1].isdigit():
+                    base_name = name.rsplit('_', 1)[0]
+                else:
+                    base_name = name
+                event = [e for e in events if e.name() == base_name]
+                if len(event) > 0:
+                    if '_' not in name:
+                        ROOM_REWARD[room][name] = event[0].rewards[0]
+                    else:
+                        reward_index = int(name[name.find('_')+1:])
+                        ROOM_REWARD[room][name] = event[0].rewards[reward_index-1]
+
+        # Choose starting party
+        characters_available = [reward.id for reward in name_event["Start"].rewards]
+        #start_slots = [s for s in reward_slots if s.event.name() == "Start"]
+        party = [self.characters.DEFAULT_NAME[c] for c in characters_available]
+
+        # Initialize ruination_map object
+        # Verbose output for map generation diagnostics is enabled by either
+        # -debug (prints to stdout) or -debug-verbose (prints to a temp file
+        # that is appended to the spoiler log at the end of the compile).
+        ruin_verbose = bool(self.args.debug or getattr(self.args, "debug_verbose", False))
+
+        # Build out the map & distribute characters.
+        #
+        # Map generation is randomized and occasionally fails: roughly 1 seed in
+        # ~25 hits a RuinationMappingError because a branch's free exits can't be
+        # balanced into a valid closed topology in finalize_map (or a branch gets
+        # stuck with no reserve area to unstick it). These failures are unlucky
+        # rolls, not unsatisfiable configs — re-rolling almost always succeeds.
+        # So retry from a clean slate: re-instantiating ruination_map re-rolls the
+        # requested counts, planned characters, area distribution, and the entire
+        # branch build. We only have to roll back the *external* mutable state the
+        # generator consumes (character/esper pools and the shared ROOM_REWARD
+        # reward slots); items aren't depleted (get_good_random samples with
+        # replacement), and all per-attempt ruination_map state is discarded with
+        # the instance. Note: reward_slots are updated automatically via shared
+        # object references (see generate_map_with_characters docstring).
+        import copy
+        chars_avail_baseline = list(self.characters.available_characters)
+        char_paths_baseline = copy.deepcopy(self.characters.character_paths)
+        espers_avail_baseline = set(self.espers.available_espers)
+        # Capture the slot objects themselves (not ROOM_REWARD keys): -maze iso
+        # moves a slot between keys during __init__, but the object is stable.
+        # possible_types must be restored too: finalize_map step 6 can pin a
+        # slot's possible_types (e.g. Ebot's Rock connected as a dead end is
+        # restricted to esper/item), and that restriction must not leak from a
+        # failed attempt into the next one.
+        reward_slot_baseline = [
+            (slot, slot.id, slot.type, slot.possible_types)
+            for rewards in ROOM_REWARD.values()
+            for slot in rewards.values()
+        ]
+
+        def _restore_reward_pools():
+            self.characters.available_characters = list(chars_avail_baseline)
+            self.characters.character_paths = copy.deepcopy(char_paths_baseline)
+            self.espers.available_espers = set(espers_avail_baseline)
+            for slot, slot_id, slot_type, slot_possible_types in reward_slot_baseline:
+                slot.id = slot_id
+                slot.type = slot_type
+                slot.possible_types = slot_possible_types
+
+        max_map_attempts = 10
+        ruin_map = None
+        last_error = None
+        for attempt in range(max_map_attempts):
+            if attempt > 0:
+                _restore_reward_pools()
+            ruin_map = ruination_map(self.args, party, verbose=ruin_verbose, characters=self.characters)
+            try:
+                self.maps.doors.map = ruin_map.generate_map_with_characters(self.characters, self.espers, self.items)
+                if attempt > 0 and self.args.debug:
+                    print(f'Ruination map generated on attempt {attempt + 1}')
+                break
+            except RuinationMappingError as e:
+                last_error = e
+                if self.args.debug:
+                    headline = next((ln.strip() for ln in str(e).splitlines()
+                                     if ln.strip() and ln.strip('= ')), 'unknown reason')
+                    print(f'Ruination map generation attempt {attempt + 1}/{max_map_attempts} '
+                          f'failed; retrying. ({headline})')
+                continue
+        else:
+            # Exhausted all attempts - surface the last failure.
+            raise last_error
+
+        # Store area-to-branch mapping so NPC clue scripts can reference it.
+        # Use the rooms actually placed in each branch (not ruin_map.AreasUsed),
+        # because distribution can tag an area with a branch whose rooms already
+        # lived elsewhere — which would produce clues for areas that aren't
+        # really on that branch.
+        self.args.ruination_areas_used = ruin_map.compute_actual_areas_used()
+
+        # Handle dried meat for Gau: ensure it's available in non-Veldt-gated shops
+        # This ensures dried meat is accessible BEFORE Gau is obtained (needed for Veldt recruitment)
+        if self.args.shop_dried_meat > 0:
+            all_game_chars = set(ruin_map.PARTY) | set(ruin_map.planned_characters)
+            if self.args.debug and 'GAU' in all_game_chars:
+                print(f'Gau is in game characters, ensuring dried meat in {self.args.shop_dried_meat} non-Veldt-gated shops')
+            non_veldt_shops = ruin_map.get_non_veldt_gated_shops(self.characters)
+            self.shops.assign_dried_meats_ruination(non_veldt_shops)
+
+        # Enable limited inventory for ruination shops if flag is set.
+        # compute_pack_sizes must run here (after dried meat assignment) so that
+        # replaced items get the correct pack size for dried meat.
+        # Apply to all shops (not just accessible_shops) so any shop reachable
+        # via door rando — including ones not tracked in accessible_shops, like
+        # the phantom train shop — runs with limited inventory.
+        if self.args.shop_limited_inventory:
+            self.shops.compute_pack_sizes()
+            all_shop_ids = [shop.id for shop in self.shops.shops]  # don't use shops.all_shops, some are inaccessible
+            self.shops.enable_limited_shops(all_shop_ids)
+            if self.args.debug:
+                print(f'Limited inventory enabled for {len(all_shop_ids)} shops')
+
+        # Check state of reward_slots
+        if self.args.debug:
+            print('REWARD STATE AFTER RUIN MAPPING:')
+            for slot in reward_slots:
+                print(slot.event.name(), slot.id, slot.type)
+
+        # For safety (?) distribute any remaining rewards
+        reward_slots = [slot for slot in reward_slots if slot.id is None]
+        self.choose_single_possible_type_rewards(reward_slots)
+        reward_slots = [slot for slot in reward_slots if not slot.single_possible_type()]
+        self.choose_char_esper_possible_rewards(reward_slots)
+        reward_slots = [slot for slot in reward_slots if slot.id is None]
+        self.choose_item_possible_rewards(reward_slots)
+
+        if self.args.debug:
+            print('REWARD STATE FINAL:')
+            for slot in reward_slots:
+                print(slot.event.name(), slot.id, slot.type)
+
+        # Generate ruination spoiler log if -sl flag is set
+        if self.args.spoiler_log:
+            from log import section
+            log_lines = ruin_map.generate_spoiler_log(self.characters, self.espers, self.items)
+            section("Ruination Rewards", log_lines, [])
+
+            # Generate graphical map image alongside spoiler log
+            try:
+                import os
+                import args as wc_args
+                name, ext = os.path.splitext(wc_args.output_file)
+                map_image_path = f"{name}_ruination_map.png"
+                ruin_map.generate_map_image(map_image_path, self.characters, self.espers, self.items)
+                print(f"Ruination map: {os.path.basename(map_image_path)}")
+            except Exception as e:
+                print(f"Warning: Could not generate ruination map image: {e}")
+
+        # Door map is constructed in ruination_mod.  We need to postprocess it before editing events.
+        self.maps.postprocess_door_map()
+
+        # Disable in-town chocobo stables for ruination mode
+        disable_chocobo_stables(self.rom, self.dialogs, self.args)
+
+        # Wire up SF / Nikeah / Albrook ferry network based on which ports are mapped
+        # Reuse Kefka @ Narshe boss for the possible sea boss attack
+        sea_boss_id = self.enemies.get_event_boss("Kefka (Narshe)")
+        fix_ferry_connections(self.rom, self.dialogs, self.maps, ruin_map, self.args, sea_boss_id)
 
     def no_free_heals_mod(self):
         """Apply -nfh changes that wrap up free-heal removals/restrictions.

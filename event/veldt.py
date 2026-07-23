@@ -5,6 +5,10 @@ from event.veldt_helpers import *
 #       if gau not in menus he has not been recruited yet
 #       if gau is available it also means he is not leapt
 #       if gau is not available he can either be leapt or not recruited yet
+#
+# In ruination mode, the above inference breaks because away-party characters also
+# have their character_available bit cleared. A dedicated GAU_LEAPT event bit is used
+# instead, and character_available/character_recruited are left untouched by leap/return.
 
 class Veldt(Event):
     def name(self):
@@ -65,12 +69,21 @@ class Veldt(Event):
         space = Reserve(0x248e1, 0x248e1, "veldt remove gau from party after leap")
         space.write(self.leap_char)
 
-        src = [
-            asm.LDA(char_available_event_bit(self.leap_char), asm.IMM8),
-            asm.TRB(char_available_event_byte(self.leap_char), asm.ABS),    # clear leap_char available bit
-            asm.DEC(characters_available_address, asm.ABS),                 # decrement available chars count
-            asm.RTS(),
-        ]
+        if self.args.ruination_mode is not None:
+            # In ruination mode, only set GAU_LEAPT; don't touch character_available
+            # (the away-party system manages character_available separately)
+            src = [
+                asm.LDA(ram_event_bit(event_bit.GAU_LEAPT), asm.IMM8),
+                asm.TSB(ram_event_byte(event_bit.GAU_LEAPT), asm.ABS),         # set GAU_LEAPT bit
+                asm.RTS(),
+            ]
+        else:
+            src = [
+                asm.LDA(char_available_event_bit(self.leap_char), asm.IMM8),
+                asm.TRB(char_available_event_byte(self.leap_char), asm.ABS),    # clear leap_char available bit
+                asm.DEC(characters_available_address, asm.ABS),                 # decrement available chars count
+                asm.RTS(),
+            ]
         space = Write(Bank.C2, src, "veldt set gau unavailable after leap")
         set_unavailable = space.start_address
 
@@ -86,16 +99,25 @@ class Veldt(Event):
         self.gau_returns_ai_data_offset = 0xf0
 
         # for 8 bit lda $d0fd04
-        space = Allocate(Bank.C2, 34, "veldt load hide/flip/char function", asm.NOP())
+        if self.args.ruination_mode is not None:
+            space = Allocate(Bank.C2, 27, "veldt load hide/flip/char function", asm.NOP())
+        else:
+            space = Allocate(Bank.C2, 34, "veldt load hide/flip/char function", asm.NOP())
         self.load_sprite_function = space.next_address
         space.write(
             asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
             asm.BNE("LOAD_CHAR"),
-
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
-            "CHECK_CHAR_RECRUITED",
         )
+        if self.args.ruination_mode is not None:
+            space.write(
+                branch_if_event_bit_set(event_bit.GAU_LEAPT, "LOAD_CHAR"),
+            )
+        else:
+            space.write(
+                branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
+                branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
+                "CHECK_CHAR_RECRUITED",
+            )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
                 branch_if_char_available(self.char, "LOAD_CHAR"),
@@ -119,16 +141,25 @@ class Veldt(Event):
         )
 
         # for 16 bit lda $d0fd04
-        space = Allocate(Bank.C2, 39, "veldt load hide/flip/char/sprite function", asm.NOP())
+        if self.args.ruination_mode is not None:
+            space = Allocate(Bank.C2, 32, "veldt load hide/flip/char/sprite function", asm.NOP())
+        else:
+            space = Allocate(Bank.C2, 39, "veldt load hide/flip/char/sprite function", asm.NOP())
         self.load_sprite_function16 = space.next_address
         space.write(
             asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
             asm.BNE("LOAD_CHAR"),
-
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
-            "CHECK_CHAR_RECRUITED",
         )
+        if self.args.ruination_mode is not None:
+            space.write(
+                branch_if_event_bit_set(event_bit.GAU_LEAPT, "LOAD_CHAR"),
+            )
+        else:
+            space.write(
+                branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
+                branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
+                "CHECK_CHAR_RECRUITED",
+            )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
                 branch_if_char_available(self.char, "LOAD_CHAR"),
@@ -169,13 +200,21 @@ class Veldt(Event):
         )
 
     def check_gau_appear_conditions(self):
-        space = Allocate(Bank.C2, 42, "veldt check if gau can return function", asm.NOP())
+        if self.args.ruination_mode is not None:
+            space = Allocate(Bank.C2, 35, "veldt check if gau can return function", asm.NOP())
+        else:
+            space = Allocate(Bank.C2, 42, "veldt check if gau can return function", asm.NOP())
         return_check_function = space.next_address
-        space.write(
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "CHECK_ENEMY/CHAR_SLOTS"),
-            "CHECK_CHAR_RECRUITED",
-        )
+        if self.args.ruination_mode is not None:
+            space.write(
+                branch_if_event_bit_set(event_bit.GAU_LEAPT, "CHECK_ENEMY/CHAR_SLOTS"),
+            )
+        else:
+            space.write(
+                branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
+                branch_if_char_not_available(self.leap_char, "CHECK_ENEMY/CHAR_SLOTS"),
+                "CHECK_CHAR_RECRUITED",
+            )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
                 branch_if_char_available(self.char, "CLEAR_GAU/CHAR_CAN_RETURN"),
@@ -226,10 +265,16 @@ class Veldt(Event):
             space.write(
                 branch_if_char_not_recruited(self.character_gate(), "SKIP_GAU_EVENT"),
             )
+        if self.args.ruination_mode is not None:
+            space.write(
+                branch_if_event_bit_clear(event_bit.GAU_LEAPT, "CHAR_RECRUITED_CHECK"),
+            )
+        else:
+            space.write(
+                branch_if_char_not_recruited(self.leap_char, "CHAR_RECRUITED_CHECK"),
+                branch_if_char_available(self.leap_char, "CHAR_RECRUITED_CHECK"),
+            )
         space.write(
-            branch_if_char_not_recruited(self.leap_char, "CHAR_RECRUITED_CHECK"),
-            branch_if_char_available(self.leap_char, "CHAR_RECRUITED_CHECK"),
-
             asm.LDX(0x3000 + self.leap_char, asm.ABS),  # x = leap character's slot
             asm.LDA(0x02, asm.IMM8),
             asm.TSB(0x3ebd, asm.ABS),       # set gau already recruited bit (so dried meat is not required)
@@ -268,12 +313,21 @@ class Veldt(Event):
     def add_gau_party(self):
         import data.event_word as event_word
 
-        space = Allocate(Bank.C2, 56, "veldt recruit gau/char function", asm.NOP())
+        if self.args.ruination_mode is not None:
+            space = Allocate(Bank.C2, 43, "veldt recruit gau/char function", asm.NOP())
+        else:
+            space = Allocate(Bank.C2, 56, "veldt recruit gau/char function", asm.NOP())
         recruit_function = space.next_address
+        if self.args.ruination_mode is not None:
+            space.write(
+                branch_if_event_bit_set(event_bit.GAU_LEAPT, "RECRUIT_GAU"),
+            )
+        else:
+            space.write(
+                branch_if_char_not_recruited(self.leap_char, "RECRUIT_CHAR"),
+                branch_if_char_not_available(self.leap_char, "RECRUIT_GAU"),
+            )
         space.write(
-            branch_if_char_not_recruited(self.leap_char, "RECRUIT_CHAR"),
-            branch_if_char_not_available(self.leap_char, "RECRUIT_GAU"),
-
             "RECRUIT_CHAR",
         )
         if self.reward.type == RewardType.CHARACTER:
@@ -313,17 +367,29 @@ class Veldt(Event):
                 asm.RTS(),
             )
 
-        characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
-        space.write(
-            "RECRUIT_GAU",
-            asm.LDA(char_available_event_bit(self.leap_char), asm.IMM8),
-            asm.TSB(char_available_event_byte(self.leap_char), asm.ABS),
-            asm.TSB(char_recruited_event_byte(self.leap_char), asm.ABS),
-            asm.INC(characters_available_address, asm.ABS),
+        if self.args.ruination_mode is not None:
+            # In ruination mode, only clear GAU_LEAPT; don't touch character_available
+            # or character_recruited (the away-party system manages those)
+            space.write(
+                "RECRUIT_GAU",
+                asm.LDA(ram_event_bit(event_bit.GAU_LEAPT), asm.IMM8),
+                asm.TRB(ram_event_byte(event_bit.GAU_LEAPT), asm.ABS),         # clear GAU_LEAPT bit
 
-            asm.LDA(0x3ed9, asm.ABS_Y), # a = character id
-            asm.RTS(),
-        )
+                asm.LDA(0x3ed9, asm.ABS_Y), # a = character id
+                asm.RTS(),
+            )
+        else:
+            characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
+            space.write(
+                "RECRUIT_GAU",
+                asm.LDA(char_available_event_bit(self.leap_char), asm.IMM8),
+                asm.TSB(char_available_event_byte(self.leap_char), asm.ABS),
+                asm.TSB(char_recruited_event_byte(self.leap_char), asm.ABS),
+                asm.INC(characters_available_address, asm.ABS),
+
+                asm.LDA(0x3ed9, asm.ABS_Y), # a = character id
+                asm.RTS(),
+            )
 
         space = Reserve(0x21ea9, 0x21eb0, "veldt call recruit gau/char function", asm.NOP())
         space.add_label("RETURN", 0x21ec6)

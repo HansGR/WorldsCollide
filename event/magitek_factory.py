@@ -1,6 +1,19 @@
 from event.event import *
+from event.switchyard import AddSwitchyardEvent, GoToSwitchyard
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class MagitekFactory(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_magitek_factory
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+        self.MAP_SHUFFLE = args.map_shuffle or args.door_randomize_dungeon_crawl
+
     def name(self):
         return "Magitek Factory"
 
@@ -27,7 +40,20 @@ class MagitekFactory(Event):
         self.setzer_npc_id = 0x18
         self.setzer_npc = self.maps.get_npc(0x0f0, self.setzer_npc_id)
 
+        self.airship_position = [0x00, 120, 188]
+        if self.MAP_SHUFFLE:
+            exit_id = 1228
+            if exit_id in self.maps.door_map.keys():
+                self.airship_position = self.maps.get_connection_location(exit_id)
+                # conn_id = self.maps.door_map[exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.airship_position = [exit_world[conn_pair]] + \
+                #                    self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+
         self.vector_mod()
+
+        if self.args.character_gating and self.DOOR_RANDOMIZE:
+            self.add_local_gating_condition()
 
         if self.reward1.type == RewardType.ESPER:
             self.ifrit_shiva_esper_mod(self.reward1.id)
@@ -63,12 +89,23 @@ class MagitekFactory(Event):
         self.log_reward(self.reward2)
         self.log_reward(self.reward3)
 
+        if self.DOOR_RANDOMIZE:
+            self.mtek_1_mod()
+
+        if self.MAP_SHUFFLE:
+            self.map_shuffle_mod()
+
+
     def vector_mod(self):
         # npcs used to block/enter magitek factory
         sympathizer_npc_id = 0x10
         north_soldier_id = 0x11
         red_soldier_id = 0x12
         south_soldier_id = 0x13
+
+        mtek_block_left_id = 0x20
+        mtek_block_mid_id = 0x21
+        mtek_block_right_id = 0x22
 
         # never show vector redish while burning, so hide npcs here instead
         # also do not conditionally branch to 0xc9540, always execute npc queues/movement
@@ -77,7 +114,7 @@ class MagitekFactory(Event):
         space.write(
             field.HideEntity(sympathizer_npc_id),
         )
-        if self.args.character_gating:
+        if self.args.character_gating and not self.DOOR_RANDOMIZE:
             space.write(
                 field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "NPC_QUEUES"),
             )
@@ -85,7 +122,15 @@ class MagitekFactory(Event):
             field.HideEntity(north_soldier_id),
             field.HideEntity(red_soldier_id),
             field.HideEntity(south_soldier_id),
+        )
 
+        if self.DOOR_RANDOMIZE:
+            space.write(
+                field.HideEntity(mtek_block_mid_id),
+                #field.HideEntity(mtek_block_right_id),
+            )
+
+        space.write(
             field.Branch("NPC_QUEUES"),
         )
 
@@ -96,6 +141,41 @@ class MagitekFactory(Event):
         self.maps.delete_event(0x0f2, 56, 39)
         self.maps.delete_event(0x0f2, 57, 39)
         self.maps.delete_event(0x0f2, 58, 39)
+
+    def add_local_gating_condition(self):
+        # In door rando, gate Ifrit NPC locally: red glow + return if Celes not recruited.
+        # Shiva is implicitly gated because her script requires event bit $060,
+        # which is only set after the Ifrit battle sequence.
+        IFRIT_EVENT_START = 0xc7937
+        IFRIT_FIRST_INSTR_END = 0xc793c  # 6-byte conditional branch
+        CONTINUE_ADDRESS = 0xc793d        # next instruction after displaced one
+
+        src = [
+            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
+        ]
+        # if self.args.flashes_remove_most or self.args.flashes_remove_worst:
+        src.append([
+            field.Repeat(10, field.TintBackground(field.Tint.RED)),
+            field.Pause(0.25),
+            field.Repeat(10, field.TintBackground(field.Tint.RED, invert=True)),
+        ])
+        # src.append(field.FlashScreen(field.Flash.RED))
+
+        src += [
+            field.Return(),
+
+            "GATE_MET",
+            Read(IFRIT_EVENT_START, IFRIT_FIRST_INSTR_END),  # displaced: if $060 set, branch to $CC7986
+            field.Branch(CONTINUE_ADDRESS),
+        ]
+        space = Write(Bank.CC, src, "magitek factory ifrit local gating condition")
+        gate_address = space.start_address
+
+        space = Reserve(IFRIT_EVENT_START, IFRIT_FIRST_INSTR_END,
+                        "magitek factory ifrit local gating branch", field.NOP())
+        space.write(
+            field.Branch(gate_address),
+        )
 
     def ifrit_shiva_mod(self, esper_item_instructions):
         ifrit_npc_id = 0x14
@@ -157,9 +237,20 @@ class MagitekFactory(Event):
         boss_pack_id = self.get_boss("Number 024")
 
         space = Reserve(0xc79ed, 0xc79f3, "magitek factory number 024 battle", field.NOP())
-        space.write(
-            field.InvokeBattle(boss_pack_id),
-        )
+        if self.args.character_gating and self.DOOR_RANDOMIZE:
+            src = [
+                field.ReturnIfEventBitClear(event_bit.character_recruited(self.character_gate())),
+                field.InvokeBattle(boss_pack_id),
+                field.Branch(0xc79f4),  # continue to post-battle hide/reward
+            ]
+            gate_space = Write(Bank.CC, src, "magitek factory number 024 local gate")
+            space.write(
+                field.Branch(gate_space.start_address),
+            )
+        else:
+            space.write(
+                field.InvokeBattle(boss_pack_id),
+            )
 
         # use some of the receive ifrit/shiva magicite space
         space = Reserve(0xc79d0, 0xc79ec, "magitek factory ifrit/shiva magicite", field.NOP())
@@ -192,6 +283,14 @@ class MagitekFactory(Event):
     def esper_tubes_mod(self):
         cid_npc_id = 0x1c
         elevator_npc_id = 0x22 # elevator is also an npc
+
+        if self.DOOR_RANDOMIZE:
+            # Make switch scene repeatable: write over switch condition
+            # CC/7A60: C2    If ($1E80($1B0) [$1EB6, bit 0] is clear) or ($1E80($1B4) [$1EB6, bit 4] is clear) or ($1E80($068) [$1E8D, bit 0] is set), branch to $CA5EB3 (simply returns)
+            space = Reserve(0xc7a60, 0xc7a69, "magitek factory esper room switch", field.NOP())
+            space.write(
+                field.BranchIfAny([0x1b0, False, 0x1b4, False], 0xa5eb3)
+            )
 
         space = Reserve(0xc7ec9, 0xc7ecb, "magitek factory cid ooh, ooh", field.NOP())
         space = Reserve(0xc7ed1, 0xc7edc, "magitek factory characters turn down after screen shake", field.NOP())
@@ -227,9 +326,10 @@ class MagitekFactory(Event):
     def minecart_mod(self):
         space = Reserve(0xc7f6c, 0xc7f71, "magitek factory load elevator ride down with cid map", field.NOP())
         space = Reserve(0xc7f80, 0xc7fc2, "magitek factory elevator ride down with cid", field.NOP())
-        space.write(
-            field.Branch(space.end_address + 1), # skip nops
-        )
+        # if not self.DOOR_RANDOMIZE:   # Not needed with JMP technique
+        #     space.write(
+        #         field.Branch(space.end_address + 1), # skip nops
+        #     )
         space = Reserve(0xc8014, 0xc801a, "magitek factory move party down after elevator", field.NOP())
         space = Reserve(0xc8027, 0xc802a, "magitek factory celes i've known her", field.NOP())
         space = Reserve(0xc803a, 0xc803d, "magitek factory no! it's kefka!", field.NOP())
@@ -246,6 +346,48 @@ class MagitekFactory(Event):
         space.copy_from(0x2e2f7e, 0x2e2f91) # ride data and battle with mag roaders
         space.copy_from(0x2e2f92, 0x2e2fa5) # ride data and battle with Number 128
         space.copy_from(0x2e2fa6, 0x2e2faf) # ride data and end script
+
+        # In dungeon-crawl / ruination mode, the minecart exit can be revisited
+        # (the destination of the LoadMap at CC/80B9 is patched by the Transition
+        # class). Avoid replaying the full minecart/Number 128 sequence on revisit
+        # by hooking in just after the fade-in-complete at CC/80A7. Split logic:
+        #   - If DEFEATED_NUMBER128 is set: branch to the event-bit block at CC/80B1
+        #     so music-state hygiene (TEMP_SONG_OVERRIDE, CONTINUE_MUSIC_DURING_BATTLE)
+        #     and Vector-outdoors NPC-visibility bits run before the LoadMap at CC/80B9.
+        #   - Otherwise: set the bit, replay the displaced pre-ride bytes (PlaySong +
+        #     SetEventBit + train-car anim at CC/80A8-CC/80AC) plus the
+        #     Call(ORIGINAL_CHECK_GAME_OVER) that number128_battle_mod would write
+        #     at CC/80AD, then branch back to CC/80B1 to continue.
+        # Uses Branch (not Call) so that the SKIP path does not leave an
+        # unbalanced entry on the event subroutine stack. The hook covers the
+        # full CC/80A8-CC/80B0 region (9 bytes) to fit a 6-byte Branch and the
+        # absorbed Call at CC/80AD; number128_battle_mod skips its own Reserve
+        # in this mode to avoid overlap.
+        if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
+            # Capture the original bytes BEFORE reserving them so Read() returns
+            # the untouched ROM contents.
+            displaced_pre_ride = Read(0xc80a8, 0xc80ac)  # PlaySong + SetEventBit + train car
+
+            src = [
+                # If the ride has already run, fall straight through to the
+                # event-bit block at CC/80B1 (music-state hygiene + Vector
+                # NPC-visibility setup) and then into the LoadMap at CC/80B9.
+                field.BranchIfEventBitSet(event_bit.DEFEATED_NUMBER128, 0xc80b3),  # was 0xc80b3 to include TEMP_MUSIC_OVERRIDE
+                field.SetEventBit(event_bit.DEFEATED_NUMBER128),
+                displaced_pre_ride,                                # replay CC/80A8-CC/80AC
+                field.Call(field.ORIGINAL_CHECK_GAME_OVER),        # absorb number128_battle_mod's patch at CC/80AD
+                field.Branch(0xc80b3),                             # continue past the absorbed region
+            ]
+            space = Write(Bank.CC, src, "magitek factory minecart revisit check")
+            minecart_revisit_check = space.start_address
+
+            space = Reserve(0xc80a8, 0xc80b0, "magitek factory minecart revisit hook", field.NOP())
+            space.write(field.Branch(minecart_revisit_check))
+
+            # Also try a music fix: set Mtek 3 Vector map music to "Save Them!" and don't turn on TEMP_MUSIC_OVERRIDE
+            #space = Reserve(0xc80b1, 0xc80b2, "minecart end dont turn on TEMP_MUSIC_OVERRIDE", field.NOP())
+            mtek3_vector_properties = self.maps.properties[0xf0]
+            mtek3_vector_properties.song = 26  # SAVE THEM!
 
     def fixed_battles_mod(self):
         import instruction.asm as asm
@@ -294,10 +436,13 @@ class MagitekFactory(Event):
 
         # use original game over check function after mine cart ride, the custom one cannot be used here
         # refreshing objects or updating the party leader causes a hard lock at the end of the ride (never return from black screen)
-        space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
-        space.write(
-            field.Call(field.ORIGINAL_CHECK_GAME_OVER),
-        )
+        # In dungeon-crawl / ruination mode this patch is absorbed into the
+        # minecart revisit hook in minecart_mod (which reserves CC/80A8-CC/80B0).
+        if not (self.args.door_randomize_dungeon_crawl or self.args.ruination_mode):
+            space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
+            space.write(
+                field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+            )
 
     def character_mod(self, character):
         self.setzer_npc.sprite = character
@@ -331,12 +476,24 @@ class MagitekFactory(Event):
 
     def crane_battle_mod(self):
         boss_pack_id = self.get_boss("Cranes")
+        IS_CRANES = (boss_pack_id == self.enemies.packs.get_id("Cranes"))
 
         battle_type = field.BattleType.FRONT
-        battle_background = 48 # airship, right
-        if boss_pack_id == self.enemies.packs.get_id("Cranes"):
+        if IS_CRANES:
             battle_type = field.BattleType.PINCER
-            battle_background = 37 # airship, center
+
+        if self.args.ruination_mode:
+            battle_background = 19  # Vector
+        else:
+            this_world = self.airship_position[-1]
+            if this_world == 0 and not IS_CRANES:
+                battle_background = 48  # airship, right
+            elif this_world == 0 and IS_CRANES:
+                battle_background = 37  # airship, center
+            elif this_world == 1 and not IS_CRANES:
+                battle_background = 41  # airship WOR, right
+            else:
+                battle_background = 37  # airship WOR, center (does not exist!)
 
         if self.args.no_free_heals:
             # Remove full heal before crane battle
@@ -353,16 +510,39 @@ class MagitekFactory(Event):
         space.write(
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.IncrementEventWord(event_word.CHECKS_COMPLETE), # objectives finished after battle
+        )
+        if self.airship_position[0] == 0x1:
+            # Update world bit, if required
+            space.write(field.SetEventBit(event_bit.IN_WOR))
+        space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
 
         space = Reserve(0xc8303, 0xc8304, "after magitek factory do not delete vector townspeople", field.NOP())
 
         space = Reserve(0xc8319, 0xc831f, "after magitek factory do not call go to zozo scenes", field.Return())
-        space.write(
-            field.LoadMap(0x00, direction.DOWN, default_music = True, x = 120, y = 188, airship = True),
-            vehicle.End(),
-        )
+        if self.args.ruination_mode:
+            # Just return to Vector
+            src = [
+                field.LoadMap(map_id=0x0f2, direction=direction.LEFT, default_music=True,
+                              x=51, y=40, fade_in=True, entrance_event=True),
+                field.Return()
+            ]
+        elif self.airship_position[0] in [0x0, 0x1, 0x1ff]:
+            # Return to airship
+            src = [
+                field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
+                          y=self.airship_position[2], airship=True, fade_in=True),
+                vehicle.End()
+                ]
+        else:
+            # Return to wherever
+            src = [
+                field.LoadMap(self.airship_position[0], direction.DOWN, default_music=True, x=self.airship_position[1],
+                              y=self.airship_position[2], fade_in=True),
+                field.Return()
+            ]
+        space.write(src)
 
     def guardian_mod(self):
         # guardian is made up of 9 npcs, remove them all
@@ -375,6 +555,37 @@ class MagitekFactory(Event):
         self.maps.delete_event(0x0f2, 32, 60)
         self.maps.delete_event(0x0f2, 33, 60)
         self.maps.delete_event(0x0f2, 34, 59)
+
+    def mtek_1_mod(self):
+        # Fix behavior of MTek room 1 if you re-enter after minecart ride
+        # Remove event tile that sends you to Mtek-escape-Vector:
+        self.maps.delete_event(0x106, 28, 9)
+
+        # Modify entrance event:
+        space = Reserve(0xc72dc, 0xc7315, "after MTek minecart do not change MTek1", field.NOP())
+
+        # Modify pipe events to remove check for RODE_MINE_CART
+        space = Reserve(0xc7735, 0xc773a, "after MTek minecart do not change MTek1 pipeL1", field.NOP())
+        space = Reserve(0xc7753, 0xc7758, "after MTek minecart do not change MTek1 pipeL2", field.NOP())
+        space = Reserve(0xc7771, 0xc7776, "after MTek minecart do not change MTek1 pipeL3", field.NOP())
+        space = Reserve(0xc77b0, 0xc77b5, "after MTek minecart do not change MTek1 pipeR1", field.NOP())
+        space = Reserve(0xc77ce, 0xc77d3, "after MTek minecart do not change MTek1 pipeR2", field.NOP())
+        space = Reserve(0xc77ec, 0xc77f1, "after MTek minecart do not change MTek1 pipeR3", field.NOP())
+        space = Reserve(0xc781b, 0xc7820, "after MTek minecart do not change MTek1 pipeR4", field.NOP())
+
+    def map_shuffle_mod(self):
+        # (1a) Change the entry event to load the switchyard location
+        event_id = 1505  # ID of Vector event entrance
+
+        # We don't use Burning Vector so we can just write over the event bit check
+        space = Reserve(0xa5ecf, 0xa5edb, 'Vector WOB entrance', field.NOP())
+        space.write(GoToSwitchyard(event_id, map='world'))
+        # (1b) Add the switchyard event tile that handles entry to Vector
+        src = [
+            field.LoadMap(0x0f2, direction=direction.UP, x=32, y=61, default_music=True, fade_in=True),
+            field.Return()
+        ]
+        AddSwitchyardEvent(event_id, self.maps, src=src)
 
     def vector_heal_hut_mod(self):
         # Write branching code to make the Vector full-heal NPC a one-off (after the fight)
@@ -394,3 +605,34 @@ class MagitekFactory(Event):
         space.write([
             field.BranchIfEventBitSet(destination=heal_hut_npc_branch_addr, event_bit=0x136)
         ])
+
+    # def reride_minecart_mod(src):
+    #     # Special event for outro of minecart ride: return to Vector if cranes have been defeated.
+    #     # C0    If ($1E80($06B) is set), branch to $(new event) that sends you to Vector map instead
+    #     # C0    If ($1E80($069) is set), branch to $(new event) that sends you to MTek3 Vector map without animation
+    #     #from memory.space import Write, Bank
+    #     #from event.event import direction
+    #
+    #     # Hook in at CC/80B5.  Need 4 bytes for field.Call().  LoadMap at CC/80B9.
+    #     patch_magitek_minecart = (
+    #         field.SetEventBit(0x6a3),   # CC/80B5
+    #         field.ClearEventBit(0x6ae), # CC/80B7
+    #         field.BranchIfEventBitSet(event_bit.DEFEATED_CRANES, 'GO_TO_VECTOR'),
+    #         field.BranchIfEventBitSet(event_bit.RODE_MINE_CART_MAGITEK_FACTORY, 'GO_TO_MTEK3_VECTOR'),
+    #         field.Return(),
+    #         'GO_TO_VECTOR',
+    #         field.LoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+    #         field.FadeInScreen(),
+    #         field.Return(),
+    #         'GO_TO_MTEK3_VECTOR',
+    #         field.LoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
+    #         field.FadeInScreen(),
+    #         field.Return()
+    #     )
+    #     space = Write(Bank.CC, patch_magitek_minecart, 'Patch for re-rideable minecart')
+    #
+    #     hook = Reserve(0xc80b5, 0xc80b8, 'Hook for Minecart Exit Patch')
+    #     hook_code = (
+    #         field.Call(space.start_address)
+    #     )
+    #     hook.write(hook_code)

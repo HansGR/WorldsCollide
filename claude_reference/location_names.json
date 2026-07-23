@@ -1,0 +1,1378 @@
+[
+  {
+    "name_index": 0,
+    "name": "",
+    "pointer_address": "0x268400",
+    "string_address": "0xEF100",
+    "raw_bytes": []
+  },
+  {
+    "name_index": 1,
+    "name": "INN",
+    "pointer_address": "0x268402",
+    "string_address": "0xEF101",
+    "raw_bytes": [
+      "0x28",
+      "0x2d",
+      "0x2d"
+    ]
+  },
+  {
+    "name_index": 2,
+    "name": "WEAPON SHOP",
+    "pointer_address": "0x268404",
+    "string_address": "0xEF105",
+    "raw_bytes": [
+      "0x36",
+      "0x24",
+      "0x20",
+      "0x2f",
+      "0x2e",
+      "0x2d",
+      "0x7f",
+      "0x32",
+      "0x27",
+      "0x2e",
+      "0x2f"
+    ]
+  },
+  {
+    "name_index": 3,
+    "name": "ARMOR SHOP",
+    "pointer_address": "0x268406",
+    "string_address": "0xEF111",
+    "raw_bytes": [
+      "0x20",
+      "0x31",
+      "0x2c",
+      "0x2e",
+      "0x31",
+      "0x7f",
+      "0x32",
+      "0x27",
+      "0x2e",
+      "0x2f"
+    ]
+  },
+  {
+    "name_index": 4,
+    "name": "ARSENAL",
+    "pointer_address": "0x268408",
+    "string_address": "0xEF11C",
+    "raw_bytes": [
+      "0x20",
+      "0x31",
+      "0x32",
+      "0x24",
+      "0x2d",
+      "0x20",
+      "0x2b"
+    ]
+  },
+  {
+    "name_index": 5,
+    "name": "RELICS",
+    "pointer_address": "0x26840A",
+    "string_address": "0xEF124",
+    "raw_bytes": [
+      "0x31",
+      "0x24",
+      "0x2b",
+      "0x28",
+      "0x22",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 6,
+    "name": "ITEM SHOP",
+    "pointer_address": "0x26840C",
+    "string_address": "0xEF12B",
+    "raw_bytes": [
+      "0x28",
+      "0x33",
+      "0x24",
+      "0x2c",
+      "0x7f",
+      "0x32",
+      "0x27",
+      "0x2e",
+      "0x2f"
+    ]
+  },
+  {
+    "name_index": 7,
+    "name": "CAFE",
+    "pointer_address": "0x26840E",
+    "string_address": "0xEF135",
+    "raw_bytes": [
+      "0x22",
+      "0x20",
+      "0x25",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 8,
+    "name": "ENGINE ROOM",
+    "pointer_address": "0x268410",
+    "string_address": "0xEF13A",
+    "raw_bytes": [
+      "0x24",
+      "0x2d",
+      "0x26",
+      "0x28",
+      "0x2d",
+      "0x24",
+      "0x7f",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 9,
+    "name": "BASEMENT 1",
+    "pointer_address": "0x268412",
+    "string_address": "0xEF146",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x55"
+    ]
+  },
+  {
+    "name_index": 10,
+    "name": "BASEMENT 2",
+    "pointer_address": "0x268414",
+    "string_address": "0xEF151",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x56"
+    ]
+  },
+  {
+    "name_index": 11,
+    "name": "BASEMENT 3",
+    "pointer_address": "0x268416",
+    "string_address": "0xEF15C",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x57"
+    ]
+  },
+  {
+    "name_index": 12,
+    "name": "BASEMENT 4",
+    "pointer_address": "0x268418",
+    "string_address": "0xEF167",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x58"
+    ]
+  },
+  {
+    "name_index": 13,
+    "name": "1ST FLOOR",
+    "pointer_address": "0x26841A",
+    "string_address": "0xEF172",
+    "raw_bytes": [
+      "0x55",
+      "0x32",
+      "0x33",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 14,
+    "name": "2ND FLOOR",
+    "pointer_address": "0x26841C",
+    "string_address": "0xEF17C",
+    "raw_bytes": [
+      "0x56",
+      "0x2d",
+      "0x23",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 15,
+    "name": "3RD FLOOR",
+    "pointer_address": "0x26841E",
+    "string_address": "0xEF186",
+    "raw_bytes": [
+      "0x57",
+      "0x31",
+      "0x23",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 16,
+    "name": "4TH FLOOR",
+    "pointer_address": "0x268420",
+    "string_address": "0xEF190",
+    "raw_bytes": [
+      "0x58",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 17,
+    "name": "5TH FLOOR",
+    "pointer_address": "0x268422",
+    "string_address": "0xEF19A",
+    "raw_bytes": [
+      "0x59",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 18,
+    "name": "6TH FLOOR",
+    "pointer_address": "0x268424",
+    "string_address": "0xEF1A4",
+    "raw_bytes": [
+      "0x5a",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 19,
+    "name": "7TH FLOOR",
+    "pointer_address": "0x268426",
+    "string_address": "0xEF1AE",
+    "raw_bytes": [
+      "0x5b",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 20,
+    "name": "8TH FLOOR",
+    "pointer_address": "0x268428",
+    "string_address": "0xEF1B8",
+    "raw_bytes": [
+      "0x5c",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 21,
+    "name": "9TH FLOOR",
+    "pointer_address": "0x26842A",
+    "string_address": "0xEF1C2",
+    "raw_bytes": [
+      "0x5d",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 22,
+    "name": "10TH FLOOR",
+    "pointer_address": "0x26842C",
+    "string_address": "0xEF1CC",
+    "raw_bytes": [
+      "0x55",
+      "0x54",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 23,
+    "name": "CHOCOBO STABLE",
+    "pointer_address": "0x26842E",
+    "string_address": "0xEF1D7",
+    "raw_bytes": [
+      "0x22",
+      "0x27",
+      "0x2e",
+      "0x22",
+      "0x2e",
+      "0x21",
+      "0x2e",
+      "0x7f",
+      "0x32",
+      "0x33",
+      "0x20",
+      "0x21",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 24,
+    "name": "FIGARO CASTLE",
+    "pointer_address": "0x268430",
+    "string_address": "0xEF1E6",
+    "raw_bytes": [
+      "0x25",
+      "0x28",
+      "0x26",
+      "0x20",
+      "0x31",
+      "0x2e",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x32",
+      "0x33",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 25,
+    "name": "SOUTH FIGARO",
+    "pointer_address": "0x268432",
+    "string_address": "0xEF1F4",
+    "raw_bytes": [
+      "0x32",
+      "0x2e",
+      "0x34",
+      "0x33",
+      "0x27",
+      "0x7f",
+      "0x25",
+      "0x28",
+      "0x26",
+      "0x20",
+      "0x31",
+      "0x2e"
+    ]
+  },
+  {
+    "name_index": 26,
+    "name": "RETURNERS' HIDEOUT",
+    "pointer_address": "0x268434",
+    "string_address": "0xEF201",
+    "raw_bytes": [
+      "0x31",
+      "0x24",
+      "0x33",
+      "0x34",
+      "0x31",
+      "0x2d",
+      "0x24",
+      "0x31",
+      "0x32",
+      "0x63",
+      "0x7f",
+      "0x27",
+      "0x28",
+      "0x23",
+      "0x24",
+      "0x2e",
+      "0x34",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 27,
+    "name": "ELDER'S HOUSE",
+    "pointer_address": "0x268436",
+    "string_address": "0xEF214",
+    "raw_bytes": [
+      "0x24",
+      "0x2b",
+      "0x23",
+      "0x24",
+      "0x31",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 28,
+    "name": "DUNCAN'S HOUSE",
+    "pointer_address": "0x268438",
+    "string_address": "0xEF222",
+    "raw_bytes": [
+      "0x23",
+      "0x34",
+      "0x2d",
+      "0x22",
+      "0x20",
+      "0x2d",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 29,
+    "name": "MT. KOLTS",
+    "pointer_address": "0x26843A",
+    "string_address": "0xEF231",
+    "raw_bytes": [
+      "0x2c",
+      "0x33",
+      "0x65",
+      "0x7f",
+      "0x2a",
+      "0x2e",
+      "0x2b",
+      "0x33",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 30,
+    "name": "KING'S ROOM",
+    "pointer_address": "0x26843C",
+    "string_address": "0xEF23B",
+    "raw_bytes": [
+      "0x2a",
+      "0x28",
+      "0x2d",
+      "0x26",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 31,
+    "name": "MOOGLE'S CAVE",
+    "pointer_address": "0x26843E",
+    "string_address": "0xEF247",
+    "raw_bytes": [
+      "0x2c",
+      "0x2e",
+      "0x2e",
+      "0x26",
+      "0x2b",
+      "0x24",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 32,
+    "name": "NARSHE",
+    "pointer_address": "0x268440",
+    "string_address": "0xEF255",
+    "raw_bytes": [
+      "0x2d",
+      "0x20",
+      "0x31",
+      "0x32",
+      "0x27",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 33,
+    "name": "AUCTION HOUSE",
+    "pointer_address": "0x268442",
+    "string_address": "0xEF25C",
+    "raw_bytes": [
+      "0x20",
+      "0x34",
+      "0x22",
+      "0x33",
+      "0x28",
+      "0x2e",
+      "0x2d",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 34,
+    "name": "OWZER'S HOUSE",
+    "pointer_address": "0x268444",
+    "string_address": "0xEF26A",
+    "raw_bytes": [
+      "0x2e",
+      "0x36",
+      "0x39",
+      "0x24",
+      "0x31",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 35,
+    "name": "BAREN FALLS",
+    "pointer_address": "0x268446",
+    "string_address": "0xEF278",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x31",
+      "0x24",
+      "0x2d",
+      "0x7f",
+      "0x25",
+      "0x20",
+      "0x2b",
+      "0x2b",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 36,
+    "name": "MOBLIZ",
+    "pointer_address": "0x268448",
+    "string_address": "0xEF284",
+    "raw_bytes": [
+      "0x2c",
+      "0x2e",
+      "0x21",
+      "0x2b",
+      "0x28",
+      "0x39"
+    ]
+  },
+  {
+    "name_index": 37,
+    "name": "NIKEAH",
+    "pointer_address": "0x26844A",
+    "string_address": "0xEF28B",
+    "raw_bytes": [
+      "0x2d",
+      "0x28",
+      "0x2a",
+      "0x24",
+      "0x20",
+      "0x27"
+    ]
+  },
+  {
+    "name_index": 38,
+    "name": "TZEN",
+    "pointer_address": "0x26844C",
+    "string_address": "0xEF292",
+    "raw_bytes": [
+      "0x33",
+      "0x39",
+      "0x24",
+      "0x2d"
+    ]
+  },
+  {
+    "name_index": 39,
+    "name": "RETURNERS' HIDEOUT",
+    "pointer_address": "0x26844E",
+    "string_address": "0xEF297",
+    "raw_bytes": [
+      "0x31",
+      "0x24",
+      "0x33",
+      "0x34",
+      "0x31",
+      "0x2d",
+      "0x24",
+      "0x31",
+      "0x32",
+      "0x63",
+      "0x7f",
+      "0x27",
+      "0x28",
+      "0x23",
+      "0x24",
+      "0x2e",
+      "0x34",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 40,
+    "name": "LETE RIVER",
+    "pointer_address": "0x268450",
+    "string_address": "0xEF2AA",
+    "raw_bytes": [
+      "0x2b",
+      "0x24",
+      "0x33",
+      "0x24",
+      "0x7f",
+      "0x31",
+      "0x28",
+      "0x35",
+      "0x24",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 41,
+    "name": "IMPERIAL CAMP",
+    "pointer_address": "0x268452",
+    "string_address": "0xEF2B5",
+    "raw_bytes": [
+      "0x28",
+      "0x2c",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x28",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x2c",
+      "0x2f"
+    ]
+  },
+  {
+    "name_index": 42,
+    "name": "DOMA CASTLE",
+    "pointer_address": "0x268454",
+    "string_address": "0xEF2C3",
+    "raw_bytes": [
+      "0x23",
+      "0x2e",
+      "0x2c",
+      "0x20",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x32",
+      "0x33",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 43,
+    "name": "PHANTOM FOREST",
+    "pointer_address": "0x268456",
+    "string_address": "0xEF2CF",
+    "raw_bytes": [
+      "0x2f",
+      "0x27",
+      "0x20",
+      "0x2d",
+      "0x33",
+      "0x2e",
+      "0x2c",
+      "0x7f",
+      "0x25",
+      "0x2e",
+      "0x31",
+      "0x24",
+      "0x32",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 44,
+    "name": "SERPENT TRENCH",
+    "pointer_address": "0x268458",
+    "string_address": "0xEF2DE",
+    "raw_bytes": [
+      "0x32",
+      "0x24",
+      "0x31",
+      "0x2f",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x7f",
+      "0x33",
+      "0x31",
+      "0x24",
+      "0x2d",
+      "0x22",
+      "0x27"
+    ]
+  },
+  {
+    "name_index": 45,
+    "name": "KOHLINGEN",
+    "pointer_address": "0x26845A",
+    "string_address": "0xEF2ED",
+    "raw_bytes": [
+      "0x2a",
+      "0x2e",
+      "0x27",
+      "0x2b",
+      "0x28",
+      "0x2d",
+      "0x26",
+      "0x24",
+      "0x2d"
+    ]
+  },
+  {
+    "name_index": 46,
+    "name": "ZOZO",
+    "pointer_address": "0x26845C",
+    "string_address": "0xEF2F7",
+    "raw_bytes": [
+      "0x39",
+      "0x2e",
+      "0x39",
+      "0x2e"
+    ]
+  },
+  {
+    "name_index": 47,
+    "name": "JIDOOR",
+    "pointer_address": "0x26845E",
+    "string_address": "0xEF2FC",
+    "raw_bytes": [
+      "0x29",
+      "0x28",
+      "0x23",
+      "0x2e",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 48,
+    "name": "OPERA HOUSE",
+    "pointer_address": "0x268460",
+    "string_address": "0xEF303",
+    "raw_bytes": [
+      "0x2e",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x20",
+      "0x7f",
+      "0x27",
+      "0x2e",
+      "0x34",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 49,
+    "name": "VECTOR",
+    "pointer_address": "0x268462",
+    "string_address": "0xEF30F",
+    "raw_bytes": [
+      "0x35",
+      "0x24",
+      "0x22",
+      "0x33",
+      "0x2e",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 50,
+    "name": "IMPERIAL CASTLE",
+    "pointer_address": "0x268464",
+    "string_address": "0xEF316",
+    "raw_bytes": [
+      "0x28",
+      "0x2c",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x28",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x32",
+      "0x33",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 51,
+    "name": "MAGITEK RES. FACILITY",
+    "pointer_address": "0x268466",
+    "string_address": "0xEF326",
+    "raw_bytes": [
+      "0x2c",
+      "0x20",
+      "0x26",
+      "0x28",
+      "0x33",
+      "0x24",
+      "0x2a",
+      "0x7f",
+      "0x31",
+      "0x24",
+      "0x32",
+      "0x65",
+      "0x7f",
+      "0x25",
+      "0x20",
+      "0x22",
+      "0x28",
+      "0x2b",
+      "0x28",
+      "0x33",
+      "0x38"
+    ]
+  },
+  {
+    "name_index": 52,
+    "name": "MARANDA",
+    "pointer_address": "0x268468",
+    "string_address": "0xEF33C",
+    "raw_bytes": [
+      "0x2c",
+      "0x20",
+      "0x31",
+      "0x20",
+      "0x2d",
+      "0x23",
+      "0x20"
+    ]
+  },
+  {
+    "name_index": 53,
+    "name": "ALBROOK",
+    "pointer_address": "0x26846A",
+    "string_address": "0xEF344",
+    "raw_bytes": [
+      "0x20",
+      "0x2b",
+      "0x21",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2a"
+    ]
+  },
+  {
+    "name_index": 54,
+    "name": "IMPERIAL BASE",
+    "pointer_address": "0x26846C",
+    "string_address": "0xEF34C",
+    "raw_bytes": [
+      "0x28",
+      "0x2c",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x28",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x21",
+      "0x20",
+      "0x32",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 55,
+    "name": "SEALED GATE",
+    "pointer_address": "0x26846E",
+    "string_address": "0xEF35A",
+    "raw_bytes": [
+      "0x32",
+      "0x24",
+      "0x20",
+      "0x2b",
+      "0x24",
+      "0x23",
+      "0x7f",
+      "0x26",
+      "0x20",
+      "0x33",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 56,
+    "name": "THAMASA",
+    "pointer_address": "0x268470",
+    "string_address": "0xEF366",
+    "raw_bytes": [
+      "0x33",
+      "0x27",
+      "0x20",
+      "0x2c",
+      "0x20",
+      "0x32",
+      "0x20"
+    ]
+  },
+  {
+    "name_index": 57,
+    "name": "COLOSSEUM",
+    "pointer_address": "0x268472",
+    "string_address": "0xEF36E",
+    "raw_bytes": [
+      "0x22",
+      "0x2e",
+      "0x2b",
+      "0x2e",
+      "0x32",
+      "0x32",
+      "0x24",
+      "0x34",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 58,
+    "name": "DARILL'S TOMB/B1",
+    "pointer_address": "0x268474",
+    "string_address": "0xEF378",
+    "raw_bytes": [
+      "0x23",
+      "0x20",
+      "0x31",
+      "0x28",
+      "0x2b",
+      "0x2b",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x33",
+      "0x2e",
+      "0x2c",
+      "0x21",
+      "0x60",
+      "0x21",
+      "0x55"
+    ]
+  },
+  {
+    "name_index": 59,
+    "name": "THE FLOATING LAND",
+    "pointer_address": "0x268476",
+    "string_address": "0xEF38A",
+    "raw_bytes": [
+      "0x33",
+      "0x27",
+      "0x24",
+      "0x7f",
+      "0x25",
+      "0x2b",
+      "0x2e",
+      "0x20",
+      "0x33",
+      "0x28",
+      "0x2d",
+      "0x26",
+      "0x7f",
+      "0x2b",
+      "0x20",
+      "0x2d",
+      "0x23"
+    ]
+  },
+  {
+    "name_index": 60,
+    "name": "ESPERVILLE",
+    "pointer_address": "0x268478",
+    "string_address": "0xEF39C",
+    "raw_bytes": [
+      "0x24",
+      "0x32",
+      "0x2f",
+      "0x24",
+      "0x31",
+      "0x35",
+      "0x28",
+      "0x2b",
+      "0x2b",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 61,
+    "name": "MT. ZOZO",
+    "pointer_address": "0x26847A",
+    "string_address": "0xEF3A7",
+    "raw_bytes": [
+      "0x2c",
+      "0x33",
+      "0x65",
+      "0x7f",
+      "0x39",
+      "0x2e",
+      "0x39",
+      "0x2e"
+    ]
+  },
+  {
+    "name_index": 62,
+    "name": "MAGITEK FACTORY",
+    "pointer_address": "0x26847C",
+    "string_address": "0xEF3B0",
+    "raw_bytes": [
+      "0x2c",
+      "0x20",
+      "0x26",
+      "0x28",
+      "0x33",
+      "0x24",
+      "0x2a",
+      "0x7f",
+      "0x25",
+      "0x20",
+      "0x22",
+      "0x33",
+      "0x2e",
+      "0x31",
+      "0x38"
+    ]
+  },
+  {
+    "name_index": 63,
+    "name": "MT. CRESCENT",
+    "pointer_address": "0x26847E",
+    "string_address": "0xEF3C0",
+    "raw_bytes": [
+      "0x2c",
+      "0x33",
+      "0x65",
+      "0x7f",
+      "0x22",
+      "0x31",
+      "0x24",
+      "0x32",
+      "0x22",
+      "0x24",
+      "0x2d",
+      "0x33"
+    ]
+  },
+  {
+    "name_index": 64,
+    "name": "CLASSROOM",
+    "pointer_address": "0x268480",
+    "string_address": "0xEF3CD",
+    "raw_bytes": [
+      "0x22",
+      "0x2b",
+      "0x20",
+      "0x32",
+      "0x32",
+      "0x31",
+      "0x2e",
+      "0x2e",
+      "0x2c"
+    ]
+  },
+  {
+    "name_index": 65,
+    "name": "KEFKA'S TOWER",
+    "pointer_address": "0x268482",
+    "string_address": "0xEF3D7",
+    "raw_bytes": [
+      "0x2a",
+      "0x24",
+      "0x25",
+      "0x2a",
+      "0x20",
+      "0x63",
+      "0x32",
+      "0x7f",
+      "0x33",
+      "0x2e",
+      "0x36",
+      "0x24",
+      "0x31"
+    ]
+  },
+  {
+    "name_index": 66,
+    "name": "ADV. BATTLE TACTICS",
+    "pointer_address": "0x268484",
+    "string_address": "0xEF3E5",
+    "raw_bytes": [
+      "0x20",
+      "0x23",
+      "0x35",
+      "0x65",
+      "0x7f",
+      "0x21",
+      "0x20",
+      "0x33",
+      "0x33",
+      "0x2b",
+      "0x24",
+      "0x7f",
+      "0x33",
+      "0x20",
+      "0x22",
+      "0x33",
+      "0x28",
+      "0x22",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 67,
+    "name": "BATTLE TACTICS",
+    "pointer_address": "0x268486",
+    "string_address": "0xEF3F9",
+    "raw_bytes": [
+      "0x21",
+      "0x20",
+      "0x33",
+      "0x33",
+      "0x2b",
+      "0x24",
+      "0x7f",
+      "0x33",
+      "0x20",
+      "0x22",
+      "0x33",
+      "0x28",
+      "0x22",
+      "0x32"
+    ]
+  },
+  {
+    "name_index": 68,
+    "name": "ENVIRONMENTAL SCIENCE",
+    "pointer_address": "0x268488",
+    "string_address": "0xEF408",
+    "raw_bytes": [
+      "0x24",
+      "0x2d",
+      "0x35",
+      "0x28",
+      "0x31",
+      "0x2e",
+      "0x2d",
+      "0x2c",
+      "0x24",
+      "0x2d",
+      "0x33",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x32",
+      "0x22",
+      "0x28",
+      "0x24",
+      "0x2d",
+      "0x22",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 69,
+    "name": "CAVE TO THE SEALED GATE",
+    "pointer_address": "0x26848A",
+    "string_address": "0xEF41E",
+    "raw_bytes": [
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24",
+      "0x7f",
+      "0x33",
+      "0x2e",
+      "0x7f",
+      "0x33",
+      "0x27",
+      "0x24",
+      "0x7f",
+      "0x32",
+      "0x24",
+      "0x20",
+      "0x2b",
+      "0x24",
+      "0x23",
+      "0x7f",
+      "0x26",
+      "0x20",
+      "0x33",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 70,
+    "name": "GENERAL STORE",
+    "pointer_address": "0x26848C",
+    "string_address": "0xEF436",
+    "raw_bytes": [
+      "0x26",
+      "0x24",
+      "0x2d",
+      "0x24",
+      "0x31",
+      "0x20",
+      "0x2b",
+      "0x7f",
+      "0x32",
+      "0x33",
+      "0x2e",
+      "0x31",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 71,
+    "name": "PHOENIX CAVE",
+    "pointer_address": "0x26848E",
+    "string_address": "0xEF444",
+    "raw_bytes": [
+      "0x2f",
+      "0x27",
+      "0x2e",
+      "0x24",
+      "0x2d",
+      "0x28",
+      "0x37",
+      "0x7f",
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24"
+    ]
+  },
+  {
+    "name_index": 72,
+    "name": "CAVE IN THE VELDT",
+    "pointer_address": "0x268490",
+    "string_address": "0xEF451",
+    "raw_bytes": [
+      "0x22",
+      "0x20",
+      "0x35",
+      "0x24",
+      "0x7f",
+      "0x28",
+      "0x2d",
+      "0x7f",
+      "0x33",
+      "0x27",
+      "0x24",
+      "0x7f",
+      "0x35",
+      "0x24",
+      "0x2b",
+      "0x23",
+      "0x33"
+    ]
+  }
+]

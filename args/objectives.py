@@ -1,4 +1,9 @@
 from constants.objectives import MAX_OBJECTIVES, MAX_CONDITIONS
+import sys
+
+# KT objective result IDs that should be excluded in ruination mode:
+# 1 = "Kefka's Tower" (Random KT), 2 = "Unlock Final Kefka", 3 = "Unlock KT Skip"
+KT_OBJECTIVE_RESULT_IDS = {1, 2, 3}
 
 def parse(parser):
     objectives = parser.add_argument_group("Objectives")
@@ -35,6 +40,16 @@ def process(args):
             self.conditions_required_min = conditions_required_min
             self.conditions_required_max = conditions_required_max
 
+    # Check for ruination mode by looking at sys.argv
+    # (args.ruination_mode isn't set yet since doors.py is processed later)
+    is_ruination_mode = '-ruin' in sys.argv or '--ruination-mode' in sys.argv
+
+    # Initialize ruination-specific character/esper requirements with defaults
+    # These are read from the "Unlock Final Kefka" objective in ruination mode
+    # Stored as [min, max] ranges to support random selection within range
+    args.ruin_characters_required = [3, 3]  # default: 3 characters
+    args.ruin_espers_required = [0, 0]      # default: 0 espers
+
     args.objectives = []
     args.final_kefka_objective = False
     for oi in range(MAX_OBJECTIVES):
@@ -63,7 +78,6 @@ def process(args):
 
             for arg in result_args:
                 if arg not in result_type.value_range:
-                    import sys
                     args.parser.print_usage()
                     print(f"{sys.argv[0]}: error: {result_type.name}: invalid argument {arg}")
                     sys.exit(1)
@@ -92,7 +106,6 @@ def process(args):
 
                 for arg in condition_args:
                     if arg not in condition_type.value_range:
-                        import sys
                         args.parser.print_usage()
                         print(f"{sys.argv[0]}: error: {condition_type.name}: invalid argument {arg}")
                         sys.exit(1)
@@ -104,6 +117,21 @@ def process(args):
             conditions_required_max = max(min(conditions_required_max, len(conditions)), 0)
 
             objective = Objective(upper_letter, result, conditions, conditions_required_min, conditions_required_max)
+
+            # In ruination mode, filter out KT objectives but extract character/esper requirements
+            if is_ruination_mode and result.id in KT_OBJECTIVE_RESULT_IDS:
+                # Extract character/esper requirements from "Unlock Final Kefka" objective (ID 2)
+                if result.id == 2:
+                    for condition in conditions:
+                        if condition.name == "Characters":
+                            # Characters has min_max=True, so args is [min, max]
+                            args.ruin_characters_required = list(condition.args)
+                        elif condition.name == "Espers":
+                            # Espers has min_max=True, so args is [min, max]
+                            args.ruin_espers_required = list(condition.args)
+                # Skip adding KT objectives to args.objectives in ruination mode
+                continue
+
             args.objectives.append(objective)
 
 def flags(args):
