@@ -152,11 +152,7 @@ AVAILABLE_NPC_BITS = [     # list of available NPC bits for warp points
     0x62d, 0x62e, 0x630  # Imperial castle NPCs
 ]
 NPC_OFF_BIT = 0x306      # An npc_bit that is always off in WC
-# Dialog IDs 1426-1460 (35 IDs) — 2 per warp point + 1 esper-world prompt.
-# Sits inside the vanilla Maduin/Madonna esper-world conversation block, which
-# never plays in ruination mode. See ARCHIVE.md
-# "Ruination Mode — Dialog ID Reservations" before claiming new IDs in this range.
-WARP_DIALOG_IDS = [i for i in range(1426, 1426+2*len(AVAILABLE_NPC_BITS)+1)]  # range(1426, 1461)
+
 WARP_POINTS = {
     # "name":  [map_id, x, y, "Location name", world] for warp location in Esper World
     #           world: 0 = WoB, 1 = WoR
@@ -206,9 +202,8 @@ class WarpPoints:
 
 
     def mod(self, dialogs, maps):
-        # Set dialogs for warp points
-        self.warp_to_esper_world_dialog = WARP_DIALOG_IDS.pop()
-        dialogs.set_text(self.warp_to_esper_world_dialog,
+        # Set dialogs for warp points.  Use the allocator:  dialogs.allocate_dialog("Text<end>")
+        self.warp_to_esper_world_dialog = dialogs.allocate_dialog(
                          "Warp to the Esper world?<line><choice> Yes<line><choice> No<end>")
 
         # Write common animations for warp points
@@ -223,11 +218,9 @@ class WarpPoints:
             self.npc_bits_used.append(this_bit)
 
             # Edit text
-            wp.activated_point_dialog_id = WARP_DIALOG_IDS.pop()
-            dialogs.set_text(wp.activated_point_dialog_id, wp.activated_point_text)
+            wp.activated_point_dialog_id = dialogs.allocate_dialog(wp.activated_point_text)
 
-            wp.warp_to_point_dialog_id = WARP_DIALOG_IDS.pop()
-            dialogs.set_text(wp.warp_to_point_dialog_id, wp.warp_to_point_text)
+            wp.warp_to_point_dialog_id = dialogs.allocate_dialog(wp.warp_to_point_text)
 
             # Write code & modify tile event
             dest = WARP_POINTS[wp.name][:3]

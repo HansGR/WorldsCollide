@@ -111,19 +111,11 @@ class NarsheWOB(Event):
         school_map_id = 0x068
         pot_heal_address = 0xc33ae
 
-        # Dialog IDs for the bucket prompts. 1461 is used by Figaro Castle inn;
-        # 1462-1466 are left for ruination_mod's reform dialogs.
-        # See ARCHIVE.md "Ruination Mode — Dialog ID Reservations" for the
-        # complete Maduin-block layout.
-        three_id = 1470
-        two_id = 1469
-        one_id = 1468
-        empty_id = 1467
-
-        self.dialogs.set_text(three_id, "Drink from the bucket?<line>(3 drinks left)<line><choice> Yes<line><choice> No<end>")
-        self.dialogs.set_text(two_id, "Drink from the bucket?<line>(2 drinks left)<line><choice> Yes<line><choice> No<end>")
-        self.dialogs.set_text(one_id, "Drink from the bucket?<line>(1 drink left)<line><choice> Yes<line><choice> No<end>")
-        self.dialogs.set_text(empty_id, "The bucket is empty.<end>")
+        # Claim scratch dialog slots for the limited-heals bucket prompts.
+        three_id = self.dialogs.allocate_dialog("Drink from the bucket?<line>(3 drinks left)<line><choice> Yes<line><choice> No<end>")
+        two_id = self.dialogs.allocate_dialog("Drink from the bucket?<line>(2 drinks left)<line><choice> Yes<line><choice> No<end>")
+        one_id = self.dialogs.allocate_dialog("Drink from the bucket?<line>(1 drink left)<line><choice> Yes<line><choice> No<end>")
+        empty_id = self.dialogs.allocate_dialog("The bucket is empty.<end>")
 
         drink_src = [
             # Check top bit (SCHOOL_LIMITED_HEALS_1)
@@ -189,9 +181,8 @@ class NarsheWOB(Event):
         pot_npc = self.maps.get_npc(school_map_id, pot_npc_id)
 
         # (3) Update the NPC dialogs & actions
-        # 1461 used by Figaro Castle inn; 1467-1470 reserved for limited_heals.
-        # See ARCHIVE.md "Ruination Mode — Dialog ID Reservations".
-        NARSHE_DIALOG_IDS = [i for i in range(1462, 1467)]
+        # Use self.dialogs.allocate_dialog("Text") to get dialog_ids from the free pool
+        #NARSHE_DIALOG_IDS = [i for i in range(1462, 1467)]
         counter_npc_id = 0x10
         right_npc_id = 0x11
         left_npc_id = 0x13
@@ -209,14 +200,9 @@ class NarsheWOB(Event):
         space = Reserve(0xc33a2, 0xc33a4, "make npc dialog the same in both worlds")
         space.write(field.Dialog(info_id, top_of_screen=False))
 
-        reform_id = NARSHE_DIALOG_IDS.pop()
-        self.dialogs.set_text(reform_id, "<choice> Reform parties.<line><choice> Unequip those not in party.<line><choice> Unequip all members.<line><choice> Don't do a thing!<end>")
-        reform_id_2 = NARSHE_DIALOG_IDS.pop()
-        self.dialogs.set_text(reform_id_2,
-                              "How many parties?<line><choice> 1<line><choice> 2<line><choice> never mind<end>")
-        reform_id_3 = NARSHE_DIALOG_IDS.pop()
-        self.dialogs.set_text(reform_id_3,
-                              "How many parties?<line><choice> 1      <choice> 2<line><choice> 3      <choice> never mind<end>")
+        reform_id = self.dialogs.allocate_dialog("<choice> Reform parties.<line><choice> Unequip those not in party.<line><choice> Unequip all members.<line><choice> Don't do a thing!<end>")
+        reform_id_2 = self.dialogs.allocate_dialog("How many parties?<line><choice> 1<line><choice> 2<line><choice> never mind<end>")
+        reform_id_3 = self.dialogs.allocate_dialog("How many parties?<line><choice> 1      <choice> 2<line><choice> 3      <choice> never mind<end>")
 
         from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY, \
             REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES, REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES, \

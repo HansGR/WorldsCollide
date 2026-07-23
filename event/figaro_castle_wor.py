@@ -90,9 +90,9 @@ class FigaroCastleWOR(Event):
         else:
             # remote gate: Siegfried at SF cave
             if self.args.npc_dialog_tips:
-                self.dialogs.set_text(2379, "I won't budge from this spot until you have recruited <EDGAR>!<end>")
+                self.dialogs.set_text(dialog_id.FIGARO_CAVE_SIEGFRIED, "I won't budge from this spot until you have recruited <EDGAR>!<end>")
             else:
-                self.dialogs.set_text(2379, "SIGFRIED: Pretty dangerous from here on. Wait here.<end>")
+                self.dialogs.set_text(dialog_id.FIGARO_CAVE_SIEGFRIED, "SIGFRIED: Pretty dangerous from here on. Wait here.<end>")
 
             space = Reserve(0xa7778, 0xa7781, "figaro cave siegfried enters", field.NOP())
             space.write(

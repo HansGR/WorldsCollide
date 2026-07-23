@@ -34,6 +34,7 @@ import instruction.field as field
 import instruction.field.entity as field_entity
 import data.event_bit as event_bit
 import data.battle_bit as battle_bit
+import data.dialog_id as dialog_id
 
 
 # Inn cost multiplier applied to every paid inn price and to the converted
@@ -58,8 +59,8 @@ def modify_inn_costs(maps, rom, dialogs, args):
         args: Command line arguments
     """
     # List of all inn GP cost addresses in the ROM
-    # Format: (address, original_cost, dialog_id, dialog_template, description)
-    # dialog_id is None for entries that share a dialog with another entry
+    # Format: (address, original_cost, inn_dialog_id, dialog_template, description)
+    # inn_dialog_id is None for entries that share a dialog with another entry
     # dialog_template uses {price} as placeholder for the GP amount
     # Chocobo stables are handled separately by event/ruination.py
     # disable_chocobo_stables() (ruination-only); the Thamasa inn price bump is
@@ -81,7 +82,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # Track which dialogs we've already updated to avoid double-updating shared dialogs
     updated_dialogs = set()
 
-    for address, original_cost, dialog_id, dialog_template, description in inn_costs:
+    for address, original_cost, inn_dialog_id, dialog_template, description in inn_costs:
         # Calculate new cost
         new_cost = min(original_cost * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
@@ -89,13 +90,13 @@ def modify_inn_costs(maps, rom, dialogs, args):
         rom.set_bytes(address, new_cost.to_bytes(2, 'little'))
 
         # Update dialog text if this entry has its own dialog ID
-        if dialog_id is not None and dialog_id not in updated_dialogs:
+        if inn_dialog_id is not None and inn_dialog_id not in updated_dialogs:
             new_text = dialog_template.format(price=new_cost)
-            dialogs.set_text(dialog_id, new_text)
-            updated_dialogs.add(dialog_id)
+            dialogs.set_text(inn_dialog_id, new_text)
+            updated_dialogs.add(inn_dialog_id)
 
             if args.debug:
-                print(f"Updated dialog {dialog_id:#x} for {description}: {original_cost} GP -> {new_cost} GP")
+                print(f"Updated dialog {inn_dialog_id:#x} for {description}: {original_cost} GP -> {new_cost} GP")
 
         if args.debug:
             print(f"Modified {description}: {original_cost} GP -> {new_cost} GP")
@@ -116,21 +117,19 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # Original event at 0xCAF64E displays "Take a nap? Yes/No"
     # If yes: movement animation, call $CACD3C (sleep), load inn map, call $CACF96 (wake)
     # New: Display price, take GP, then jump to original movement code at 0xCAF659
-    RETURNERS_DIALOG_ID = 0x111
     RETURNERS_ORIGINAL_YES_CODE = 0xCAF659
-    # Vanilla "You don't have enough money." dialog shown by paid inns on the
-    # insufficient-funds path (also reused by the airship and phantom train
-    # heals under -nfh). Already contains the right text in the base ROM, so no
-    # set_text is needed.
-    NOT_ENOUGH_GP_DIALOG_ID = 2748
+    # dialog_id.NOT_ENOUGH_GP is the vanilla "You don't have enough money." message
+    # shown by paid inns on the insufficient-funds path (also reused by the
+    # airship and phantom train heals under -nfh). It already contains the right
+    # text in the base ROM, so no set_text is needed.
 
     returners_price = min(RETURNERS_HIDEOUT_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
-    dialogs.set_text(RETURNERS_DIALOG_ID,
+    dialogs.set_text(dialog_id.RETURNERS_HIDEOUT_INN,
         f"{returners_price} GP per night!<line>Take a nap?<line><choice> Yes<line><choice> No<end>")
 
     returners_src = [
-        field.DialogBranch(RETURNERS_DIALOG_ID, "RETURNERS_YES", "RETURNERS_NO"),
+        field.DialogBranch(dialog_id.RETURNERS_HIDEOUT_INN, "RETURNERS_YES", "RETURNERS_NO"),
         field.Return(),
 
         "RETURNERS_YES",
@@ -140,7 +139,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
 
         "RETURNERS_NO_MONEY",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-        field.Dialog(NOT_ENOUGH_GP_DIALOG_ID),
+        field.Dialog(dialog_id.NOT_ENOUGH_GP),
         "RETURNERS_NO",
         field.Return(),
     ]
@@ -158,16 +157,15 @@ def modify_inn_costs(maps, rom, dialogs, args):
     # Original event at 0xCA71BF checks conditions then displays "Need a rest? Yes/No"
     # If yes: movement, check more conditions, call $CACD31 (sleep)
     # New: Same condition checks, display price, take GP, jump to original code
-    # Note: We use dialog ID 1461 (0x5B5) instead of the original 0xB80 because
-    # 0xB80 is also used by a Doma Castle event.
-    FIGARO_DIALOG_ID = 1461
     FIGARO_ORIGINAL_YES_CODE = 0xCA71D9
     FIGARO_USED_ONCE_BIT = 0x1B5
     FIGARO_BANON_BIT = 0x1B0
 
     figaro_price = min(FIGARO_CASTLE_INN_PRICE * INN_COST_MULTIPLIER, field.RemoveGP.MAX)
 
-    dialogs.set_text(FIGARO_DIALOG_ID,
+    # Claim a free dialog slot for the reworked rest prompt. (The original rest
+    # dialog 0xB80 is shared with a Doma Castle event, so we can't reuse it.)
+    figaro_rest_dialog = dialogs.allocate_dialog(
         f"{figaro_price} GP per night!<line>Need a rest?<line><choice>(Yes)<line><choice>(No)<end>")
 
     animation_src = [Read(0xa71d9, 0xa71dd), field.Branch(0xa71d4)]
@@ -178,7 +176,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
     figaro_src = [
         field.BranchIfEventBitSet(event_bit.multipurpose_map(1), "FIGARO_RETURN"),
         field.SetEventBit(event_bit.multipurpose_map(1)),
-        field.DialogBranch(FIGARO_DIALOG_ID, "FIGARO_YES", "FIGARO_RETURN"),
+        field.DialogBranch(figaro_rest_dialog, "FIGARO_YES", "FIGARO_RETURN"),
         "FIGARO_YES",
         field.RemoveGP(figaro_price),
         field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "FIGARO_NO_MONEY"),
@@ -186,7 +184,7 @@ def modify_inn_costs(maps, rom, dialogs, args):
 
         "FIGARO_NO_MONEY",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-        field.Dialog(NOT_ENOUGH_GP_DIALOG_ID),
+        field.Dialog(dialog_id.NOT_ENOUGH_GP),
         "FIGARO_RETURN",
         field.Return(),
     ]
@@ -266,14 +264,10 @@ VECTOR_STEAL_TAKE = 0xc94d4          # CC/94D4 "Take 1000 GP" + branch + dialog 
 VECTOR_STEAL_TAKE_END = 0xc94e0      # ...through the pause that precedes the thief leaving
 VECTOR_AFTER_STEAL = 0xc94e1         # CC/94E1 thief leaves
 
-VECTOR_STAY_DIALOG_ID = 0x0559       # "It's on the house.<line>Have a snooze!" Yes/No
-VECTOR_STOLEN_FULL_DIALOG_ID = 0x055a    # repurposed for "<N> GP stolen!"
-# Free slots in the Maduin/Madonna esper-world block. That conversation never
-# plays in WC, so the IDs are safe -- see ARCHIVE.md "Ruination Mode -- Dialog
-# ID Reservations" (range 1474-1479 is the free band).
-VECTOR_NO_ROOM_DIALOG_ID = 1474          # $05C2: "No room for yeh!"
-VECTOR_STOLEN_HALF_DIALOG_ID = 1475      # $05C3: "<N/2> GP stolen!"
-VECTOR_STOLEN_QUARTER_DIALOG_ID = 1476   # $05C4: "<N/4> GP stolen!"
+# The Vector inn's own "have a snooze?" / "<N> GP stolen!" dialogs are named in
+# data/dialog_id.py (dialog_id.VECTOR_INN_STAY / dialog_id.VECTOR_INN_STOLEN_FULL). The
+# reworked inn's three extra messages (no room, half/quarter thefts) are scratch
+# dialogs claimed from the free pool via dialogs.allocate_dialog().
 
 
 def modify_vector_inn(dialogs, args):
@@ -292,17 +286,18 @@ def modify_vector_inn(dialogs, args):
     N_half = N // 2
     N_quarter = N // 4
 
-    dialogs.set_text(VECTOR_NO_ROOM_DIALOG_ID, "No room for yeh!<end>")
-    dialogs.set_text(VECTOR_STOLEN_FULL_DIALOG_ID, f"{N} GP stolen!<end>")
-    dialogs.set_text(VECTOR_STOLEN_HALF_DIALOG_ID, f"{N_half} GP stolen!<end>")
-    dialogs.set_text(VECTOR_STOLEN_QUARTER_DIALOG_ID, f"{N_quarter} GP stolen!<end>")
+    dialogs.set_text(dialog_id.VECTOR_INN_STOLEN_FULL, f"{N} GP stolen!<end>")
+    # Three extra scratch dialogs for the reworked inn; claim them from the pool.
+    no_room_dialog = dialogs.allocate_dialog("No room for yeh!<end>")
+    stolen_half_dialog = dialogs.allocate_dialog(f"{N_half} GP stolen!<end>")
+    stolen_quarter_dialog = dialogs.allocate_dialog(f"{N_quarter} GP stolen!<end>")
 
     # Entry gate: require N/4 GP to stay, then refund it (the stay is free).
     gate_src = [
         field.RemoveGP(N_quarter),
         field.BranchIfEventBitSet(event_bit.NOT_ENOUGH_GP, "NO_ROOM"),
         field.AddGP(N_quarter),
-        field.DialogBranch(VECTOR_STAY_DIALOG_ID, "STAY", "NO_STAY"),
+        field.DialogBranch(dialog_id.VECTOR_INN_STAY, "STAY", "NO_STAY"),
 
         "STAY",
         field.Branch(VECTOR_STAY_EVENT),
@@ -312,7 +307,7 @@ def modify_vector_inn(dialogs, args):
 
         "NO_ROOM",
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-        field.Dialog(VECTOR_NO_ROOM_DIALOG_ID),
+        field.Dialog(no_room_dialog),
         field.Return(),
     ]
     space = Write(Bank.CC, gate_src, "Vector inn entry gate")
@@ -333,15 +328,15 @@ def modify_vector_inn(dialogs, args):
         field.BranchIfEventBitClear(event_bit.NOT_ENOUGH_GP, "STOLEN_HALF"),
         field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
         field.RemoveGP(N_quarter),
-        field.Dialog(VECTOR_STOLEN_QUARTER_DIALOG_ID),
+        field.Dialog(stolen_quarter_dialog),
         field.Branch("STOLEN_DONE"),
 
         "STOLEN_HALF",
-        field.Dialog(VECTOR_STOLEN_HALF_DIALOG_ID),
+        field.Dialog(stolen_half_dialog),
         field.Branch("STOLEN_DONE"),
 
         "STOLEN_FULL",
-        field.Dialog(VECTOR_STOLEN_FULL_DIALOG_ID),
+        field.Dialog(dialog_id.VECTOR_INN_STOLEN_FULL),
 
         "STOLEN_DONE",
         field.Pause(0.50),
@@ -363,7 +358,7 @@ def modify_vector_inn(dialogs, args):
 # address PACK2 slots. Pack 416 is unused elsewhere, so we can overwrite its
 # two formation slots without affecting other encounters.
 FREE_BED_AMBUSH_PACK = 416
-FREE_BED_DIALOG_ID = 443  # "Take a nap?" at Gau's Dad's House
+# "Take a nap?" prompt (dialog_id.FREE_BED) shared by the reworked free bed heals.
 
 # Vanilla free bed heal subroutine address (used by multiple bed event tiles)
 VANILLA_BED_HEAL_ADDRESS = 0xcd17
@@ -409,7 +404,7 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
     NIGHTY_NIGHT = 56 | 0x80  # High bit set for temporary song
 
     free_bed_dialog = "Sleep for the night?<line><choice> (Yes)<line><choice> (No)<end>"
-    dialogs.set_text(FREE_BED_DIALOG_ID, free_bed_dialog)
+    dialogs.set_text(dialog_id.FREE_BED, free_bed_dialog)
 
     # Pick two different random formations that allow pincer attacks and
     # install them in the ambush pack's two slots.
@@ -434,7 +429,7 @@ def modify_free_bed_heals(maps, dialogs, enemies, args):
         field.SetEventBit(event_bit.multipurpose_map(0)),
 
         # Ask if player wants to sleep for the night
-        field.DialogBranch(FREE_BED_DIALOG_ID, dest1="CONTINUE", dest2="RETURN"),
+        field.DialogBranch(dialog_id.FREE_BED, dest1="CONTINUE", dest2="RETURN"),
         "CONTINUE",
 
         # Fade out current song
@@ -543,10 +538,8 @@ SPRING_FLASH_COLORS = {
     SpringEffect.REDUCE_TO_1_HP: field.Flash.RED,
 }
 
-# Dialog IDs for spring messages (range 1480-1495 reserved). Sits in the vanilla
-# Maduin/Madonna esper-world conversation block — see ARCHIVE.md
-# "Ruination Mode — Dialog ID Reservations" before claiming new IDs nearby.
-SPRING_DIALOG_BASE = 1480
+# Spring message dialogs (the "drink?" prompt plus one result per area) are
+# scratch dialogs claimed from the free pool via dialogs.allocate_dialog().
 
 
 def modify_recovery_springs(maps, rom, dialogs, args):
@@ -596,12 +589,8 @@ def modify_recovery_springs(maps, rom, dialogs, args):
         SpringEffect.REDUCE_TO_1_HP: "The water drained your strength!<end>",
     }
 
-    dialog_id = SPRING_DIALOG_BASE
-
-    # Set up the "Drink from the pool?" dialog
-    drink_dialog_id = dialog_id
-    dialogs.set_text(drink_dialog_id, "Drink from the pool?<line><choice> Yes<line><choice> No<end>")
-    dialog_id += 1
+    # Set up the "Drink from the pool?" dialog (shared across all spring areas)
+    drink_dialog_id = dialogs.allocate_dialog("Drink from the pool?<line><choice> Yes<line><choice> No<end>")
 
     # Process each spring location area
     for area_name, locations in SPRING_LOCATIONS.items():
@@ -609,9 +598,7 @@ def modify_recovery_springs(maps, rom, dialogs, args):
         effect = random.choice(ALL_EFFECTS)
 
         # Set up result message dialog
-        result_dialog_id = dialog_id
-        dialogs.set_text(result_dialog_id, EFFECT_MESSAGES[effect])
-        dialog_id += 1
+        result_dialog_id = dialogs.allocate_dialog(EFFECT_MESSAGES[effect])
 
         # Get flash color for this effect
         flash_color = SPRING_FLASH_COLORS[effect]

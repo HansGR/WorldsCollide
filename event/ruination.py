@@ -16,16 +16,14 @@ ESPER_GATE_MAPID = 0x0da
 def ruination_start_game_mod(dialogs, party):
     # Write the event that starts the game in ruination mode
 
-    # Dialog IDs $0590/$0591 sit in the vanilla Maduin/Madonna esper-world
-    # conversation block, which never plays in ruination mode. See ARCHIVE.md
-    # "Ruination Mode — Dialog ID Reservations" for the complete map.
-    ruination_start_1 = 0x0590
+    # Claim dialog id's from the allocator as:
+    # new_dialog_id = dialogs.allocate_dialog(text_str)
     if party >= 2:
-        dialogs.set_text(ruination_start_1, "After Kefka broke the world, we woke up here.<wait 60 frames><end>")
+        ruination_start_1 = dialogs.allocate_dialog("After Kefka broke the world, we woke up here.<wait 60 frames><end>")
     else:
-        dialogs.set_text(ruination_start_1, "After Kefka broke the world, I woke up here.<wait 60 frames><end>")
-    ruination_start_2 = 0x0591
-    dialogs.set_text(ruination_start_2, "This new world is dark and full of monsters.<wait 30 frames> Let's find our friends and bring hope to the darkness.<end>")
+        ruination_start_1 = dialogs.allocate_dialog("After Kefka broke the world, I woke up here.<wait 60 frames><end>")
+
+    ruination_start_2 = dialogs.allocate_dialog("This new world is dark and full of monsters.<wait 30 frames> Let's find our friends and bring hope to the darkness.<end>")
 
     src = [
         field.LoadMap(ESPER_GATE_MAPID, direction.DOWN, default_music=False,
@@ -792,16 +790,8 @@ FERRY_PROMPT_DIALOG = {
 }
 
 # Per-port flavor dialog shown before the ferry prompt while the sea boss
-# (event_bit.FINISHED_NARSHE_BATTLE) is undefeated. IDs sit in the vanilla
-# Maduin/Madonna esper-world conversation block, which never plays in ruination.
-# Placed in the gap between limited_heals (1467-1470) and SPRING_DIALOG_BASE
-# (1480-1495) — outside WARP_DIALOG_IDS (1426-1460). See ARCHIVE.md
-# "Ruination Mode — Dialog ID Reservations" for the full Maduin-block layout.
-FERRY_FLAVOR_DIALOG = {
-    'SouthFigaro': 0x05BF,  # 1471
-    'Nikeah':      0x05C0,  # 1472
-    'Albrook':     0x05C1,  # 1473
-}
+# (event_bit.FINISHED_NARSHE_BATTLE) is undefeated. IDs are allocated at
+# build-time using the allocator: flavor_id = dialogs.allocate_dialog(text)
 
 FERRY_FLAVOR_TOWN1_TEXT = (
     "We sent out a ship, but it was destroyed by a terrible monster!<end>"
@@ -984,13 +974,11 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
     other_text_for = dict(zip(other_ports, other_texts))
     flavor_dialog = {}
     for port in mapped:
-        flavor_id = FERRY_FLAVOR_DIALOG[port]
         if port == town1_port:
             text = FERRY_FLAVOR_TOWN1_TEXT
         else:
             text = other_text_for[port].format(town1=town1_display)
-        dialogs.set_text(flavor_id, text)
-        flavor_dialog[port] = flavor_id
+        flavor_dialog[port] = dialogs.allocate_dialog(text)
 
     # Build all ordered trip subroutines we will need.
     trips = {}
