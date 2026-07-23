@@ -6227,7 +6227,7 @@ def ruination_start_game_mod(dialogs, party):
     else:
         ruination_start_1 = dialogs.allocate_dialog("After Kefka broke the world, I woke up here.<wait 60 frames><end>")
 
-    ruination_start_2 = ruination_start_1 = dialogs.allocate_dialog("This new world is dark and full of monsters.<wait 30 frames> Let's find our friends and bring hope to the darkness.<end>")
+    ruination_start_2 = dialogs.allocate_dialog("This new world is dark and full of monsters.<wait 30 frames> Let's find our friends and bring hope to the darkness.<end>")
 
     src = [
         field.LoadMap(ESPER_GATE_MAPID, direction.DOWN, default_music=False,
