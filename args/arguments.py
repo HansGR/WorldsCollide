@@ -76,6 +76,10 @@ class Arguments:
             for name, value in self.__dict__.items():
                 setattr(module, name, value)
 
+        # Resolve required characters (-rc) now that the rng is seeded: this may choose random
+        # required characters and finalizes the starting party and the party-select unmovable mask
+        self.group_modules["starting_party"].resolve_required_characters(self)
+
     def _process_min_max(self, arg_name):
         values = getattr(self, arg_name)
         if values:

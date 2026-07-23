@@ -11,6 +11,6 @@ wip/
 *.SMC
 *.SFC
 
-# generated test artifacts (seed logs, manifests) - see agents.md "Test Data Isolation"
+# generated test artifacts (seed logs, manifests)
 tests/*.txt
 tests/*.json
