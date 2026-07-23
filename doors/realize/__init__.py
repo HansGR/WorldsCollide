@@ -21,9 +21,10 @@ documented in doors/ids.py.
 
 def realize_doors(maps):
     """The door-realization half of Maps.write(): update the runtime
-    event-exit addresses (both partners of used event connections -- the
-    Top-10 #4 gotcha), write the one-way transitions, then connect the
-    two-way doors."""
+    event-exit addresses (both partners of every used event connection:
+    a transition may execute its vanilla partner's event code, so the
+    partner's address must be current too), write the one-way
+    transitions, then connect the two-way doors."""
     from data.event_exit_data import event_exit_info
     from doors.realize.event_tiles import update_event_exit_addresses
     from doors.realize.transitions import Transitions

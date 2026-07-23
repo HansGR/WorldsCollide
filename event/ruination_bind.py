@@ -7,9 +7,8 @@ reward name -> kind (character/esper/item) and, for characters, the
 character name. bind_ruin_plan() *realizes* it against the ROM objects --
 binding the live Reward slots, claiming characters and picking esper/item
 ids from their pools, and recording the character dependency paths -- then
-presents a `ruination_map`-shaped surface (`RuinMap`) so
-events.ruination_mod and its downstream consumers (area clues, dried meat,
-ferry, spoiler) read it unchanged.
+presents the `RuinMap` adapter that events.ruination_mod and its
+downstream consumers (area clues, dried meat, ferry, spoiler) read.
 
 No snapshot/rollback of external pools exists here: a failed plan never
 reaches binding (the planner's retry loop is pure and Data-phase), so

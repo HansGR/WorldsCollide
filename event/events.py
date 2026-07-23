@@ -114,14 +114,14 @@ class Events():
 
         return events
 
-    # Lifecycle hooks (plan section 3.7 item 2). Documented order:
+    # Lifecycle hooks. Documented order:
     # mod() (vanilla + generic), then door_rando_mod() when the event's doors
     # are rewired, then the mode hook (dungeon_crawl_mod / ruination_mod)
     # when the mode is active. Events may still invoke a hook inline where
     # the variant code is genuinely interleaved mid-sequence (space
     # allocation order, attributes consumed later in mod()); the dispatcher
-    # detects that and only fires hooks mod() did NOT run itself, so
-    # defining a hook and forgetting to wire it is no longer possible.
+    # detects that and only fires hooks mod() did NOT run itself, so a
+    # defined hook cannot silently go unwired.
     _HOOK_NAMES = ('door_rando_mod', 'dungeon_crawl_mod', 'ruination_mod')
 
     def _instrument_hooks(self, event):

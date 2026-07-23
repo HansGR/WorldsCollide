@@ -1,7 +1,7 @@
-"""Generated mode x event manifest (rewrite plan section 3.7 item 4).
+"""Generated mode x event manifest.
 
-"What does -drdc change?" used to be answerable only by grep. This tool
-derives the answer from the code itself -- which lifecycle hooks each
+"What does -drdc change?" This tool derives the answer from the code
+itself -- which lifecycle hooks each
 event file defines, which derived predicates it computes, and which raw
 mode flags it still tests -- so the table never goes stale.
 

@@ -1496,3 +1496,89 @@ rate ever matters:
 Implementation sites: `doors/plan/ruination/growth.py` `_choose_kind` /
 `process_rewards` (forcing) and `_pre_plan` (capacity count); legacy
 equivalents in `event/ruination.py` if ever backported.
+
+## Post-Rewrite Structural Review + Commentary Sweep (2026-07)
+
+The review pass after V2 completion (HISTORY.md milestone 22; commits
+`06b1c88`…`931596a` + the commentary sweep). This section records the
+doctrine those commits put in force and the deliberate non-fixes, in the
+detail I'll want when touching this code again.
+
+### Doctrine now in force
+
+1. **No shared-table mutation, anywhere.** Mode adjustments are per-plan
+   views: `plan.shared_exits` (town split for -drdc/-ruin, from
+   `split_shared_view()` / `RuinConfig._shared`) and `plan.forcing`
+   (ruination exclusions, from `RuinConfig.forcing`). Realization
+   (`postprocess_door_map` conflict sets) and the spoiler
+   (`Doors.print`) read the plan, never `data/rooms.py`. Ruination patch
+   suppressions are view builders next to their tables
+   (`entrance_door_patch_view` / `require_event_bit_view` in
+   `data/event_exit_patches.py`); realization stashes them on `maps`.
+   The force-explicit list is `maps.force_explicit_ids`.
+2. **Exactly two blessed scratch tables**, reset in `Doors.__init__`:
+   `exit_data` (dc-override rewrites partner entries; a read-only view
+   is impractical — consumers span events AND realization) and the
+   `event_exit_info` runtime address column (`reset_event_exit_addresses`;
+   the `is None` guard means a stale address would silently survive a
+   second in-process build without the reset). Do not add a third.
+3. **`shuffle_transform` ordering is a seed contract**: protected doors'
+   30000+ stand-ins are APPENDED after the room's other doors. The walk
+   offers doors in list order, so changing this reshuffles every
+   map-shuffle+door-rando seed.
+4. **Never draw RNG at import.** Found the hard way: map_exit_extra drew
+   `random.random()` at module scope (Darill/Daryl spelling flip). An
+   import-time draw's stream position depends on which module imports
+   the file first, so ANY import reordering silently shifts every seed —
+   my args-time import of the planner moved the draw before
+   `random.seed` entirely, which is how it surfaced. The flip now draws
+   at its consumption site (event/airship.py, partner == 53). All 15
+   goldens re-anchored once at `06b1c88`.
+5. **One flag registry**: `INDIVIDUAL_AREA_ATTRS` in `doors/plan/modes.py`
+   (INDIVIDUAL_FLAGS + the upper-narshe trio) drives
+   `args.door_randomize`. New areas register in modes.py only.
+6. **Element id space**: `doors/ids.py` is the contract. Literals in
+   established range arithmetic are blessed; named constants are for
+   spots where the number alone says nothing (planner synthetics).
+
+### Deliberate non-fixes (agreed with Hans, revisit conditions noted)
+
+- `-dv` stays bundled in RUIN_DEFAULT_FLAGS while ROM failures are being
+  debugged. Consequence: every -ruin spoiler carries planner
+  diagnostics, and the golden -ruin spoiler hashes include them. Remove
+  it later → shrinks spoilers, decouples goldens from diagnostics.
+- Verbose double-gating in realize (`if maps.doors.verbose: vprint`) is
+  intentional extra verbosity control for door rando (may export to WC
+  broadly later). Don't "fix" it to bare vprint.
+- In-process rebuilds: door rando's resets are necessary but NOT
+  sufficient — memory/space heap state and import-time event allocations
+  also persist. A reroll server needs WC-wide work, not just door rando.
+- `Transitions` reads several tables as module globals despite receiving
+  `event_data` as a parameter. Converting the runtime-address fills to a
+  passed view requires ending that dual access first.
+
+### Deleted as dead this cycle (don't resurrect from old branches)
+
+`apply_mode_table_adjustments`, `reset_room_tables`, `multi_events`
+(empty table + never-taken reads), `has_event_entrance` /
+`exit_event_addr_to_call` (superseded by entrance_door_patch),
+`Doors.force_vanilla` / `door_rooms` / `door_descr`, `find_room_for_door`
+(door_map.py), RuinPlan's six mirrored planner attributes,
+`generate_map_image`.
+
+### Golden-sweep operational lessons
+
+- After rebasing Hans's concurrent pushes, RECAPTURE the baseline before
+  measuring your own change: his gameplay/flag commits legitimately move
+  -ruin outputs (default-flag expansion feeds `random.seed(seed+flags)`).
+- ROM-only mismatch = realization/event-code change; spoiler-only =
+  presentation/section order; both = planning/RNG stream. Use the
+  pattern to locate the layer before diffing bytes.
+- The sweep prints per-config lines; failed builds emit tracebacks that
+  can push earlier lines out of a tail. When triaging, rebuild single
+  configs against a `git stash` baseline and `cmp -l` the ROMs (byte
+  runs cluster: one contiguous run = one rewritten event block; scattered
+  single bytes = shifted pointers).
+- Room ids/names are display-only in non-ruin spoilers, but -ruin
+  spoiler paths print room ids and `-dv` prints planner diagnostics —
+  registry/naming changes need only -ruin re-records, never ROM changes.

@@ -1,6 +1,6 @@
 from data.event_exit_data import event_exit_info
 from data.event_exit_patches import entrance_event_patch, event_address_patch, \
-    exit_event_patch, multi_events, require_event_bit_view
+    exit_event_patch, require_event_bit_view
 from instruction.event import EVENT_CODE_START
 import data.direction as direction
 from data.rooms import exit_world, shared_oneways
@@ -307,15 +307,6 @@ class Transitions:
                 jump_src = [0xb2] + list((new_event_address - EVENT_CODE_START).to_bytes(3, "little")) + [0xfe, 0xfd]
                 self.rom.set_bytes(t.exit.event_addr + t.exit.event_split - 1, jump_src)
 
-                ### No longer using multi_events.  Just patch the code to all branch to the main transition
-                ### in the appropriate event file.
-                # if t.exit.id in multi_events.keys():
-                #     # Patch sister event transitions
-                #     for me in multi_events[t.exit.id]:
-                #         this_addr = event_exit_info[me][0]
-                #         this_split = event_exit_info[me][2]
-                #         self.rom.set_bytes(this_addr + this_split - 1, jump_src)
-
             elif t.exit.event_addr is not None:
                 if t.exit.location[1] == 'NPC':
                     # This is an NPC event.  (see e.g. Cid/Minecart entrance).  NPC ID is stored in location[2]
@@ -328,14 +319,6 @@ class Transitions:
                     # Update the MapEvent.event_address = Address(Event1a)
                     this_event = maps.get_event(t.exit.location[0], t.exit.location[1], t.exit.location[2])
                     this_event.event_address = new_event_address - EVENT_CODE_START
-
-                    if t.exit.id in multi_events.keys():
-                        # Other tiles must also be updated to point to the event at the appropriate offset
-                        for le in multi_events[t.exit.id]:
-                            le_addr = event_exit_info[le][0]
-                            le_mxy = event_exit_info[le][5]  # [map_id, x, y]
-                            le_event = maps.get_event(le_mxy[0], le_mxy[1], le_mxy[2])  # get event using [map_id, x, y] data
-                            le_event.event_address = new_event_address + (le_addr - t.exit.event_addr) - EVENT_CODE_START
 
             else:
                 # Create a new MapEvent for this event

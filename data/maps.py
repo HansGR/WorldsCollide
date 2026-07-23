@@ -26,7 +26,7 @@ import instruction.field.entity as field_entity
 
 from data.event_exit_data import event_exit_info, event_return_map
 from data.event_exit_patches import exit_event_patch, entrance_event_patch, event_address_patch, \
-    multi_events, entrance_door_patch, exit_door_patch, require_event_bit
+    entrance_door_patch, exit_door_patch, require_event_bit
 
 from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, \
     event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit, \
@@ -586,8 +586,8 @@ class Maps():
                     + str(hex(this_e.event_address)) + '\n')
         f.close()
 
-    # Door realization moved to doors/realize/ (Stage F); these thin
-    # delegates keep the historical call sites (events.py, read(), write()).
+    # Door realization lives in doors/realize/; these thin delegates
+    # bind its entry points to the Maps object.
     def postprocess_door_map(self):
         from doors.realize.door_map import postprocess_door_map
         return postprocess_door_map(self)

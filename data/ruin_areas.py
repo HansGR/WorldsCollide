@@ -1,8 +1,6 @@
-"""Ruination area -> room-set table (ROM-free).
-
-Split out of event/ruination.py (rewrite Stage A milestone 3b) so the
-atlas compiler and other ROM-free tooling can validate pool membership.
-event/ruination.py imports it back; behavior is unchanged.
+"""Ruination area -> room-set table (ROM-free): the rooms each
+plannable area contributes. RuinConfig takes per-plan copies;
+tools/compile_atlas.py --check validates pool membership.
 """
 
 RUIN_ROOM_SETS = {

@@ -631,31 +631,9 @@ event_address_patch = {
 
 }
 
-# We define "multi events" as multiple event tiles that are all logically the same exit and partially share
-# the same code.  The event tile with the earliest address should be the key event, others will be referenced to it.
-### NOTE: multi_events no longer used!  Instead, just patch the relevant event scripts to all branch to the main transition.
-### e.g. events.leteriver.door_rando_mod()
-
-multi_events = {
-    #2022: ['2022a'],  # Magitek factory room 1 conveyor belt  ### Not needed if using JMP method
-    #2025: ['2025a', '2025b'],  # Magitek factory room 1 conveyor belt ### Not needed if using JMP method ###
-
-    #2035: ['2035a', '2035b'],  # Lete River section 1 branching code
-
-    #1502: ['1502a'],  # Figaro Castle WoB entrance tiles
-    #1503: ['1503c'],  # Figaro Castle WoB (kohlingen) entrance tiles
-    #1505: ['1505a'],   # Vector entrance tiles WoB
-
-    #1507: ['1507a'],  # Figaro Castle WoR entrance tiles
-    #1508: ['1508a']   # Figaro Castle WoR (kohlingen) entrance tiles
-}
-
-# NOTES ON JUMP/CALL vs REWRITE:
-# 1. If we use jumping/calling instead of writing, we are probably much efficient...
-# --> UNLESS we can reclaim all the original event space, in which case rewriting would be much more efficient because
-# --> we can reclaim all the NOP space!
-# 2. Using jumping/calling removes the need for event_address_patch and the Magitek use of multi_events (2 in, 1 out)
-# 3. Using jumping/calling adds a need for Lete river use of multi_events (1 in, 3 out).
+# Event tiles that are logically the same exit and share code have no
+# table here: each such event script branches to the main transition in
+# its event file (e.g. lete_river door_rando_mod).
 
 # Some events need to be modified by different parts of the code before being written.  We identify them here by where
 # the event script starts in the code.

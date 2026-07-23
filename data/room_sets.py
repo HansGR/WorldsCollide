@@ -1,8 +1,6 @@
-"""Mode room-set (pool) definitions (ROM-free).
-
-Split out of data/doors.py (rewrite Stage A milestone 3b) so the atlas
-compiler and other ROM-free tooling can validate pool membership.
-data/doors.py imports it back; behavior is unchanged.
+"""Mode room-set (pool) definitions (ROM-free): the room pools each
+door-randomization mode walks (selected in doors/plan/modes.py).
+tools/compile_atlas.py --check validates pool membership.
 """
 
 # Comment convention in the sets below: room ids trailing a `#` comment

@@ -1,13 +1,11 @@
 """Pure ruination planning data (ROM-free).
 
-Split out of event/ruination.py (Stage D) so the v2 planner can import the
-area/reward tables without touching the ROM-coupled event machinery, mirroring
-the data/ruin_areas.py split for RUIN_ROOM_SETS.
-
-The planner never mutates these tables (RuinConfig takes per-plan copies),
-and since the Stage E2 cutover nothing else does either: ROOM_REWARD values
-stay abstract RewardType lists (the live Reward slots are resolved by name
-in event/ruination_bind.py), so the tables can be read at any time.
+The area/reward tables the ruination planner reads, importable without
+the ROM-coupled event machinery (the room-set half lives in
+data/ruin_areas.py). Nothing mutates these tables: RuinConfig takes
+per-plan copies, and ROOM_REWARD values stay abstract RewardType lists
+(the live Reward slots are resolved by name in event/ruination_bind.py),
+so they can be read at any time.
 """
 
 from event.event_reward import RewardType

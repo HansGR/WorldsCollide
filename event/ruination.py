@@ -1,10 +1,8 @@
 """Ruination mode: event-side machinery.
 
-The map/reward *generator* that used to live here (RuinationBranch,
-ruination_map, ~5,700 lines) was replaced by the v2 planner
-(doors/plan/ruination/, planned in the Data phase; Events binds the plan
-via event/ruination_bind.py) and deleted in the Stage E2 cutover. What
-remains is the event-side half: the start-game script, party interaction
+Map/reward *planning* lives in doors/plan/ruination/ (Data phase);
+Events binds the finished plan via event/ruination_bind.py. This module
+is the event-side half: the start-game script, party interaction
 scripts, the y-party-switch subroutines, chocobo stable disabling, and
 the ferry network.
 """
