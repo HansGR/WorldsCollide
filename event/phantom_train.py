@@ -610,9 +610,8 @@ class PhantomTrain(Event):
         FILLING_MEAL_PRICE = 500
         CHEFS_SPECIAL_PRICE = 2000
 
-        # Dialog IDs
+        # Dialog IDs (the shared "not enough money" message lives in data/dialog_id.py)
         MENU_DIALOG_ID = 653
-        NOT_ENOUGH_GP_DIALOG = 2748
         CHEAP_MEAL_DIALOG = 655
         FILLING_MEAL_DIALOG = 656
         CHEFS_SPECIAL_DIALOG = 657
@@ -633,7 +632,7 @@ class PhantomTrain(Event):
             f"<choice> Chef's Special ({CHEFS_SPECIAL_PRICE} GP)<line><choice> No, thanks<end>")
 
         # Set common dialog texts
-        # self.dialogs.set_text(NOT_ENOUGH_GP_DIALOG, "You don't have enough GP!<end>")
+        # self.dialogs.set_text(dialog_id.NOT_ENOUGH_GP, "You don't have enough GP!<end>")
         self.dialogs.set_text(FILLING_MEAL_DIALOG, "HP restored!<end>")
         self.dialogs.set_text(CHEFS_SPECIAL_DIALOG, "HP, MP, and status restored!<end>")
 
@@ -732,7 +731,7 @@ class PhantomTrain(Event):
         waiter_leaves_addr = 0xbb03d
         not_enough_money_src = [
             field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
-            field.Dialog(NOT_ENOUGH_GP_DIALOG),
+            field.Dialog(dialog_id.NOT_ENOUGH_GP),
             field.Call(waiter_leaves_addr),
             field.FreeMovement(),
             field.Return(),

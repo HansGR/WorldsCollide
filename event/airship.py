@@ -593,7 +593,7 @@ class Airship(Event):
             field.Branch(ORIGINAL_YES_CODE),
 
             "INSUFFICIENT_MONEY",
-            field.Dialog(2748),   # not enough money...
+            field.Dialog(dialog_id.NOT_ENOUGH_GP),   # not enough money...
             field.ClearEventBit(event_bit.NOT_ENOUGH_GP),
             field.Return()
         ]
