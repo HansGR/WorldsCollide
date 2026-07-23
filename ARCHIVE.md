@@ -1311,7 +1311,16 @@ When introducing new debug output, prefer `vprint(...)` and let the user's flag 
 
 ## Ruination Mode — Dialog ID Reservations (2026-05)
 
-Ruination mode repurposes a contiguous block of vanilla dialog IDs that belong to the Maduin/Madonna esper-world conversation (dialog 1424-1496, hex `$0590-$05D8`). That conversation is part of the WoB intro and **never plays in ruination mode**, so the IDs are safe to overwrite. Several systems claim slices of this block independently, and `dialogs.set_text(id, ...)` happily clobbers an ID written earlier — there is no allocator. Always cross-reference this table before claiming a new ID in the 1424-1496 range.
+Ruination mode repurposes a contiguous block of vanilla dialog IDs that belong to the Maduin/Madonna esper-world conversation (dialog 1424-1496, hex `$0590-$05D8`). 
+That conversation is part of the WoB intro and **never plays in ruination mode**, so the IDs are safe to overwrite. 
+Several systems claim slices of this block independently, and `dialogs.set_text(id, ...)` happily clobbers an ID written earlier — there was no allocator. 
+
+**UPDATE 7/23/26:** an allocator was added to `data/dialogs/dialogs.py`. The method `allocate_dialog(text_str)` returns the next dialog_id from the range (1424-1496), including throwing an error if the list runs out.  To use it:
+```
+new_id = dialogs.allocate_dialog("This text will display in-game!<end>")
+```
+
+Here's the old reservation table in case you need to check it:
 
 ### Maduin/Madonna Block — Reservation Table
 
