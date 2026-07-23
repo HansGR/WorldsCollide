@@ -19,6 +19,7 @@ from data.rooms import (logical_links, shared_exits, forced_connections,
                         dungeon_crawl_split_exits,
                         map_shuffle_protected_doors)
 from data.map_exit_extra import doors_WOB_WOR
+from doors.ids import VIRTUAL_DOOR_MIN, CROSSWORLD_LINKS, PROTECT_STANDIN
 from doors.plan.pools import load_pool, pool_forcing
 from doors.plan.walk import run
 
@@ -254,7 +255,7 @@ def plan_mode(flags, rng, budget_limit=5000):
         dr_active = True
         seg = add('All', ROOM_SETS['All'], start_rule='first_root',
                   budget=50000, drop=drop)
-        meta, _ = inject_meta_root(seg[1], seg[2], 'root', 10000)
+        meta, _ = inject_meta_root(seg[1], seg[2], 'root', VIRTUAL_DOOR_MIN)
         strip += meta
     elif g('door_randomize_dungeon_crawl'):                  # -drdc
         dr_active = True
@@ -264,7 +265,7 @@ def plan_mode(flags, rng, budget_limit=5000):
         map_shuffle = False                                  # -drdc overrides
     elif g('door_randomize_all'):                            # -dra
         dr_active = True
-        offset = 10000
+        offset = VIRTUAL_DOOR_MIN
         for name in ('WoB', 'WoR'):
             seg = add(name, ROOM_SETS[name], drop=drop)
             meta, offset = inject_meta_root(seg[1], seg[2],
@@ -276,14 +277,14 @@ def plan_mode(flags, rng, budget_limit=5000):
             add(area, ROOM_SETS[area], drop=drop)
             if map_shuffle and area in map_shuffle_protected_doors:
                 d = map_shuffle_protected_doors[area]
-                protect[d] = d + 30000
+                protect[d] = d + PROTECT_STANDIN
     else:                                                    # individual flags
         keys = door_rando_pool_keys(flags)   # shared key authority
         match_wob_wor = bool(g('door_randomize_upper_narshe'))
         for key in keys:
             if key.endswith('_mapsafe') and key in map_shuffle_protected_doors:
                 d = map_shuffle_protected_doors[key]
-                protect[d] = d + 30000
+                protect[d] = d + PROTECT_STANDIN
         if keys:
             dr_active = True
             combined = []
@@ -300,14 +301,15 @@ def plan_mode(flags, rng, budget_limit=5000):
         elif g('map_shuffle_crossworld'):                    # -mapx
             seg = add('MapShuffleXW', ROOM_SETS['MapShuffleXW'])
             seg[1] = deconflict(seg[1], protect)
+            link_wob, link_wor = CROSSWORLD_LINKS
             seg[1]['MAPb-root'] = dict(
                 seg[1]['MAPb-root'],
-                doors=seg[1]['MAPb-root']['doors'] + [20000])
+                doors=seg[1]['MAPb-root']['doors'] + [link_wob])
             seg[1]['MAPr-root'] = dict(
                 seg[1]['MAPr-root'],
-                doors=seg[1]['MAPr-root']['doors'] + [20001])
-            seg[2][20000] = [20001]
-            strip += [20000, 20001]
+                doors=seg[1]['MAPr-root']['doors'] + [link_wor])
+            seg[2][link_wob] = [link_wor]
+            strip += [link_wob, link_wor]
 
     door_pairs, oneways, worlds, gates = [], [], {}, {}
     for name, specs, forcing, start_rule, budget in segments:

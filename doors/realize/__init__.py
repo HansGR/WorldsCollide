@@ -3,6 +3,9 @@
 realize_doors() below is the entry point, called by Maps.write().
 Functions take the live Maps object at call time; nothing here runs at
 import time, so the doors/ package stays importable without a ROM.
+The element id ranges this layer decodes (+1000 trap landings, +4000
+WoR copies, +6000 door-as-trap landings, 1281-1300 safe ids) are
+documented in doors/ids.py.
 
     door_map.py     postprocess_door_map: plan pairs -> the realized
                     door_map/trap_map lookup (+4000 logical WOR ids,

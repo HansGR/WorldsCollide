@@ -7,7 +7,8 @@ or, for rooms with key/lock behavior,
 The trailing field is the room's world (0 = WoB, 1 = WoR).
 
 Room ids are human-readable names built from the 3-letter AREA_CODES
-registry below (numbers are exits; formatted strings are rooms):
+registry below (numbers are always exits -- their ranges are documented
+in doors/ids.py -- and formatted strings are always rooms):
 
   Rooms      CODE + world? + NN + subletter? + (-variant)?
              world  b = WoB, r = WoR, x = no world; only present for

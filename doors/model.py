@@ -494,8 +494,9 @@ class WorldModel:
 
     @staticmethod
     def _element_kind(element):
-        """Kind of a locked element id (numeric id ranges; confined to
-        arithmetic to this one function)."""
+        """Kind of a locked element id (numeric id ranges -- the
+        authoritative range table is doors/ids.py; the arithmetic is
+        confined to this one function)."""
         e = element
         if isinstance(e, str):
             return TRAP                      # '2035a'-style trap variants

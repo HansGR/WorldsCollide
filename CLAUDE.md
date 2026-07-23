@@ -28,6 +28,7 @@ NPC IDs used in `maps.get_npc(map_id, npc_id)` are **offset by 0x10** from the m
 - **< 2000**: Two-way connections (normal doors)
 - **2000-2999**: One-way exits (traps)
 - **3000+**: One-way entrances (pits)
+- Full range table (WoR copies +4000, door-as-trap landings +6000, virtual/protect ids 10000+/30000+): `doors/ids.py`
 
 ### 4. Event Exit Info Runtime Updates
 Event tiles (IDs 1500-2000) acting as doors need runtime connection data. When adding new event tile connections, ensure **BOTH sides' partners** are included in `used_events` if they need runtime updates. Connections are stored as `[exit_id, entrance_id]`, so check both `m[0]` and `m[1]` partners.
@@ -89,7 +90,7 @@ Quick lookup procedures I re-derive every session. Most JSONs are in `claude_ref
 | **Vanilla event script for a ROM address** | `claude_reference/EventScriptTxt.txt` — search by SNES address (e.g. `CC/8022`). Decompile is comprehensive. |
 | **Dialog text by ID** | `claude_reference/dialog_file.txt` — IDs are decimal. Modify with `dialogs.set_text(dialog_id, "...")`. |
 | **Room ID → SNES map ID + name** | `claude_reference/room_map_reference.json` (covers 784/801; Mobliz/switchyard/ruin-logical rooms unresolved). |
-| **Door ID → endpoints** | `data/map_exit_extra.py` `exit_data[door_id]` = `[partner_id, description]`. Door ranges: <2000 two-way, 2000-2999 trap (one-way exit), 3000+ pit (one-way entrance) — Top 10 #3. Full data: `doors/atlas/exits_raw.json` (`dest_map`/`dest_x`/`dest_y`). |
+| **Door ID → endpoints** | `data/map_exit_extra.py` `exit_data[door_id]` = `[partner_id, description]`. Door ranges: <2000 two-way, 2000-2999 trap (one-way exit), 3000+ pit (one-way entrance) — Top 10 #3; full range table `doors/ids.py`. Full data: `doors/atlas/exits_raw.json` (`dest_map`/`dest_x`/`dest_y`). |
 | **Reward room for character X (ruin)** | `ROOM_REWARD` dict in `data/ruin_constants.py`. |
 | **Area name → rooms (ruin)** | `RUIN_ROOM_SETS` dict in `data/ruin_areas.py`. |
 | **Which branch holds area X (ruin)** | `args.ruination_areas_used[area_name]` (populated from `ruin_map.compute_actual_areas_used()`, NOT raw `AreasUsed`). |

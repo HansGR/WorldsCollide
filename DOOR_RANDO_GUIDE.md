@@ -102,7 +102,19 @@ destination and partner.  Utilities for reading these data are included in `atla
   - every applicable forced connection is present,
   - no protected element is consumed by a non-forced connection.
 
-### 2e.  The realizer
+### 2e. The element id space
+
+Every element (door, trap, pit, and their layered copies) is an integer id whose
+range encodes what it is; `doors/ids.py` is the authoritative table.  In brief:
+0-1280 vanilla exits; 1281-1300 dungeon-crawl "safe ids"; 1500-1999 event-tile
+doors; 2000-2999 traps (one-way exits); 3000-3999 pits (one-way entrances,
+trap + 1000); 4000-5999 logical WoR copies (door + 4000); 6000-7999 door-as-trap
+landings (door + 6000); 10000+ planner-only virtual doors (meta-roots, the -mapx
+crossworld pair at 20000/20001, protect stand-ins at door + 30000).  Room ids
+are not in this space: numbers are always exits, formatted strings are always
+rooms.
+
+### 2f.  The realizer
 
 `doors/realize` contains tools to write a finished DoorPlan into the ROM.
 
