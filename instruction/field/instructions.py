@@ -31,44 +31,8 @@ class MultipleCalls(_Instruction):
     def __str__(self):
         return super().__str__(hex(self.address))
 
-
-def diagnose_state(offset, repl_addr):
-    # DIAGNOSTIC ROUTINES: something in the SelectParties script is sometimes writing $00 to address $1880 and
-    # $80 to address $1881, overwriting the default 'empty' value $FF.
-    # Let's occasionally save the value of these bytes to see when this happens.
-    # We will save them to later in the inventory, because why not.
-
-    # DIAGNOSTIC STEP: Save SRAM bytes at this part of the routine
-    import instruction.asm as asm
-    from memory.space import Bank, START_ADDRESS_SNES, Reserve, Write, Read
-    diagnostic_check_addr = 0x1880
-    diagnostic_save_addr = 0x1890
-
-    src = [
-        Read(repl_addr, repl_addr + 2),  # run line first to test if it introduced the change
-        asm.PHA(),
-        asm.LDA(diagnostic_check_addr, asm.ABS),  # load diagnostic byte
-        asm.STA(diagnostic_save_addr + (offset-1)*2, asm.ABS),  # store diagnostic byte
-        asm.LDA(diagnostic_check_addr + 1, asm.ABS),  # load diagnostic byte
-        asm.STA(diagnostic_save_addr + 1 + (offset-1)*2, asm.ABS),  # store diagnostic byte
-        asm.PLA(),
-        asm.RTS(),
-    ]
-    space = Write(Bank.C0, src, f"Diagnostic {offset} for SelectParties")
-
-    src_repl = [
-        asm.JSR(space.start_address, asm.ABS)
-    ]
-    space = Reserve(repl_addr, repl_addr + 2, f"Diagnostic replacement {offset} for SelectParties", asm.NOP())
-    space.write(src_repl)
-
-    return
-
-
 class SelectParties(_Instruction):
-    def __init__(self, count, unmovable_characters = 0x0000, clear_party=False):
-        if clear_party:
-            count |= 0x80
+    def __init__(self, count, unmovable_characters = 0x0000):
         super().__init__(0x99, count, unmovable_characters.to_bytes(2, "little"))
 
     def __str__(self):
@@ -91,16 +55,6 @@ class RemoveCharacterFromParties(_Instruction):
 def RecruitAndSelectParty(character):
     from instruction.field.custom import RecruitCharacter
     from instruction.field.functions import REFRESH_CHARACTERS_AND_SELECT_PARTY
-    import args as _args
-    if _args.ruination_mode is not None:
-        from instruction.field.custom import SetupBranchRecruit, FinalizeBranchRecruit
-        from event.ruination import PARTY_INTERACTION_SCRIPT_ADDRS
-        return (RecruitCharacter(character),
-                ChangeNPCEventAddress(character,
-                                     PARTY_INTERACTION_SCRIPT_ADDRS[character]),
-                SetupBranchRecruit(character),
-                Call(REFRESH_CHARACTERS_AND_SELECT_PARTY),
-                FinalizeBranchRecruit())
     return RecruitCharacter(character), Call(REFRESH_CHARACTERS_AND_SELECT_PARTY)
 
 class SetParty(_Instruction):
@@ -113,14 +67,6 @@ class SetParty(_Instruction):
 class SetPartyMap(_Instruction):
     def __init__(self, party, map_id):
         super().__init__(0x79, party, map_id.to_bytes(2, "little"))
-
-    def __str__(self):
-        return super().__str__(f"{self.args[0]} {hex(self.args[1])}")
-
-class ChangeNPCEventAddress(_Instruction):
-    def __init__(self, npc_id, destination):
-        destination_arg = (destination - EVENT_CODE_START).to_bytes(3, "little")
-        super().__init__(0x7a, npc_id, destination_arg)
 
     def __str__(self):
         return super().__str__(f"{self.args[0]} {hex(self.args[1])}")
@@ -500,38 +446,6 @@ class FlashScreen(_Instruction):
     def __str__(self):
         return super().__str__(self.args[0])
 
-class IncreaseColor(_Instruction):
-    """Increase color components by the specified intensity.
-
-    Used to create lighting effects like torch flicker.
-    color_component: byte specifying which colors to affect (e.g., 0x82 = blue, 0xEB = white)
-    intensity: how much to increase (1-15 typical)
-    """
-    def __init__(self, color_component, intensity):
-        super().__init__(0x56, color_component, intensity)
-
-    def __str__(self):
-        return super().__str__(f"color={hex(self.args[0])}, intensity={self.args[1]}")
-
-class DecreaseColor(_Instruction):
-    """Decrease color components by the specified intensity.
-
-    Used to create lighting effects like torch flicker.
-    color_component: byte specifying which colors to affect (e.g., 0x82 = blue, 0xEB = white)
-    intensity: how much to decrease (1-15 typical)
-    """
-    def __init__(self, color_component, intensity):
-        super().__init__(0x57, color_component, intensity)
-
-    def __str__(self):
-        return super().__str__(f"color={hex(self.args[0])}, intensity={self.args[1]}")
-
-class MosaicScreen(_Instruction):
-    def __init__(self, speed):
-        super().__init__(0x62, speed)
-    def __str__(self):
-        return super().__str__(self.args[0])
-
 class HoldScreen(_Instruction):
     def __init__(self):
         super().__init__(0x38)
@@ -595,8 +509,6 @@ class Pause(_Instruction):
             super().__init__(0x95)
         elif math.isclose(seconds, 4.00):       # 240 units
             super().__init__(0xb5, 16)          # 15 * 16 = 240
-        elif math.isclose(seconds, 8.00):       # 480 units
-            super().__init__(0xb5, 32)          # 15 * 32 = 480
         else:
             print("pause: invalid seconds")
 
@@ -657,20 +569,6 @@ class WaitForSong(_Instruction):
 class FadeSongVolume(_Instruction):
     def __init__(self, fade_time, volume):
         super().__init__(0xf6, 0x81, fade_time, volume)
-
-    def __str__(self):
-        return super().__str__(f"{self.args[1]}, {self.args[2]}")
-
-class FadeSoundEffect(_Instruction):
-    def __init__(self, fade_time, volume):
-        super().__init__(0xf6, 0x82, fade_time, volume)
-
-    def __str__(self):
-        return super().__str__(f"{self.args[1]}, {self.args[2]}")
-
-class StartSongAtVolume(_Instruction):
-    def __init__(self, song_id, volume):
-        super().__init__(0xf6, 0x10, song_id, volume)
 
     def __str__(self):
         return super().__str__(f"{self.args[1]}, {self.args[2]}")
@@ -855,14 +753,6 @@ class SetBattleEventBit(_Instruction):
     def __init__(self, battle_event_bit):
         self.battle_event_bit = battle_event_bit
         super().__init__(0xb8, battle_event_bit)
-
-    def __str__(self):
-        return super().__str__(hex(self.battle_event_bit))
-
-class ClearBattleEventBit(_Instruction):
-    def __init__(self, battle_event_bit):
-        self.battle_event_bit = battle_event_bit
-        super().__init__(0xb9, battle_event_bit)
 
     def __str__(self):
         return super().__str__(hex(self.battle_event_bit))

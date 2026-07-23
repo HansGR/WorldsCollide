@@ -1,4 +1,5 @@
 from enum import Flag, unique, auto
+from typing import Collection
 @unique
 class RewardType(Flag):
     NONE = auto()

@@ -226,4 +226,3 @@ class CollapsingHouse(Event):
 
         # Also change dialog, so it doesn't indicate a free heal
         self.dialogs.set_text(0x08B3, "Please…go back inside and save that child!!<end>")
-

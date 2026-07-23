@@ -190,66 +190,6 @@ class Shops():
                 no_dried_meat_shops.remove(random_shop)
                 dried_meat_shops.append(random_shop)
 
-    def assign_dried_meats_ruination(self, accessible_shop_ids):
-        """Assign dried meat to accessible shops in ruination mode.
-
-        This method ensures dried meat appears in args.shop_dried_meat shops,
-        but only considers shops that are:
-        1. In the accessible_shop_ids list (shops in areas included in the ruination map)
-        2. NOT gated behind the Veldt reward (handled by ruination_map.get_non_veldt_gated_shops)
-
-        Args:
-            accessible_shop_ids: List of shop IDs that are accessible and not Veldt-gated
-        """
-        dried_meat_id = self.items.get_id("Dried Meat")
-
-        # Filter shops to only those in accessible_shop_ids and are item/vendor type
-        accessible_item_shops = [shop for shop in self.all_shops
-                                 if shop.id in accessible_shop_ids
-                                 and (shop.type == Shop.ITEM or shop.type == Shop.VENDOR)]
-
-        if not accessible_item_shops:
-            print("Warning: No accessible item shops for dried meat in ruination mode")
-            return
-
-        # Separate shops that have dried meat from those that don't
-        dried_meat_shops = []
-        no_dried_meat_shops = []
-        for shop in accessible_item_shops:
-            if shop.contains(dried_meat_id):
-                dried_meat_shops.append(shop)
-            else:
-                no_dried_meat_shops.append(shop)
-
-        number_shops_with_dried_meat = len(dried_meat_shops)
-        target_count = min(self.args.shop_dried_meat, len(accessible_item_shops))
-
-        import random
-        if number_shops_with_dried_meat > target_count:
-            # Too many shops have dried meat, randomly remove extras
-            for index in range(target_count, number_shops_with_dried_meat):
-                random_shop = random.choice(dried_meat_shops)
-                random_shop.remove(dried_meat_id)
-                dried_meat_shops.remove(random_shop)
-        elif number_shops_with_dried_meat < target_count:
-            # Too few shops have dried meat, add to random accessible shops
-            for index in range(number_shops_with_dried_meat, target_count):
-                if not no_dried_meat_shops:
-                    break  # No more shops available
-                random_shop = random.choice(no_dried_meat_shops)
-                if not random_shop.full():
-                    random_shop.append(dried_meat_id)
-                else:
-                    # Replace a random item with dried meat
-                    random_index = random.randrange(random_shop.item_count)
-                    random_shop.items[random_index] = dried_meat_id
-                no_dried_meat_shops.remove(random_shop)
-                dried_meat_shops.append(random_shop)
-
-        # Debug output
-        if self.args.debug:
-            print(f"Ruination mode: Assigned dried meat to {min(target_count, len(accessible_item_shops))} shops")
-            print(f"  Dried meat shops: {[shop.name() for shop in dried_meat_shops]}")
 
     def remove_excluded_items(self):
         exclude = self.items.get_excluded()
@@ -294,7 +234,6 @@ class Shops():
         name_id["Dragon Horn"], name_id["Gem Box"], name_id["Merit Award"],
         name_id["Exp. Egg"], name_id["Marvel Shoes"], name_id["Ribbon"],
         name_id["Genji Glove"], name_id["Gauntlet"], name_id["Moogle Charm"],
-        name_id["Atlas Armlet"], name_id["DragoonBoots"],
     }
 
     # Basic healing items: larger packs (3-10)
@@ -337,24 +276,22 @@ class Shops():
             else:
                 return 1
 
-        # Relics: 1-4, except special relics (1) and earrings (1-2)
+        # Relics: 1-4, except special relics which are singles
         if item_id in RELICS:
             if item_id in self.SPECIAL_RELICS:
                 return 1
-            elif item_id == name_id["Earrings"]:
-                return random.randint(1,2)
             return random.randint(1, 4)
 
-        # Basic healing items: 1-5 for Fenix Down, 2-6 for everything else
+        # Basic healing items: 1-5 for Fenix Down, 3-8 for everything else
         if item_id in self.BASIC_HEALING:
             if item_id == name_id["Fenix Down"]:
-                return random.randint(1, 4)
+                return random.randint(1, 5)
             else:
-                return random.randint(2, 6)
+                return random.randint(3, 8)
 
-        # High healing items: 1-2
+        # High healing items: 1-3
         if item_id in self.HIGH_HEALING:
-            return random.randint(1, 2)
+            return random.randint(1, 3)
 
         # Elixir, Megalixir: singles
         if item_id in (name_id["Elixir"], name_id["Megalixir"]):
@@ -706,20 +643,14 @@ class Shops():
         elif self.args.shop_inventory_empty:
             self.clear_inventories()
 
-        # In ruination mode, dried meat assignment is handled in events.py
-        # after map generation to account for Veldt-gated shops
-        if not self.args.ruination_mode:
-            self.assign_dried_meats()
+        self.assign_dried_meats()
         self.remove_excluded_items()
 
         # Compute pack sizes after inventory is finalized
         if self.args.shop_limited_inventory:
-            # In ruination mode, compute_pack_sizes is deferred to events.py
-            # so it runs AFTER assign_dried_meats_ruination modifies shop items.
-            if not self.args.ruination_mode:
-                self.compute_pack_sizes()
-                all_shop_ids = [shop.id for shop in self.shops]
-                self.enable_limited_shops(all_shop_ids)
+            self.compute_pack_sizes()
+            all_shop_ids = [shop.id for shop in self.shops]
+            self.enable_limited_shops(all_shop_ids)
 
     def log(self):
         from log import section_entries, format_option

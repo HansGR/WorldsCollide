@@ -1,15 +1,6 @@
 from event.event import *
 
 class UmaroCave(Event):
-    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
-        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
-        self.DOOR_RANDOMIZE = (args.door_randomize_umaro
-                          or args.door_randomize_all
-                          or args.door_randomize_crossworld
-                          or args.door_randomize_dungeon_crawl
-                          or args.door_randomize_each
-                          or args.ruination_mode)
-
     def name(self):
         return "Umaro's Cave"
 
@@ -20,6 +11,8 @@ class UmaroCave(Event):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def mod(self):
+        space = Reserve(0xcd6f5, 0xcd6f7, "umaro cave what's with this carving", field.NOP())
+
         # umaro in cave who stomps down the stairs
         self.umaro_cave_npc_id = 0x11
         self.umaro_cave_npc = self.maps.get_npc(0x11b, self.umaro_cave_npc_id)
@@ -28,13 +21,8 @@ class UmaroCave(Event):
         self.umaro_wob_npc_id = 0x11
         self.umaro_wob_npc = self.maps.get_npc(0x015, self.umaro_wob_npc_id)
 
-        if self.args.character_gating and self.DOOR_RANDOMIZE:
-            # door rando: use local gating at the bone statue instead of nonlocal cliff gate
-            self.add_local_gating_condition()
-        else:
-            space = Reserve(0xcd6f5, 0xcd6f7, "umaro cave what's with this carving", field.NOP())
-            if self.args.character_gating:
-                self.add_gating_condition()
+        if self.args.character_gating:
+            self.add_gating_condition()
 
         self.umaro_battle_mod()
 
@@ -69,35 +57,6 @@ class UmaroCave(Event):
         space = Reserve(0xc37ed, 0xc37f7, "umaro cave cliff gating condition branch", field.NOP())
         space.write(
             field.Branch(cliff_jump_gate),
-        )
-
-    def add_local_gating_condition(self):
-        # set dialog 1524 text for the "gate not met" message based on reward type
-        if self.reward.type == RewardType.CHARACTER:
-            self.dialogs.set_text(1524, "What's with this carving?<line>Looks like bone…<end>")
-        elif self.reward.type == RewardType.ESPER:
-            self.dialogs.set_text(1524, "What's with this carving?<line>Looks like bone…<page>Something…in that eye…<line>… Magicite?!<end>")
-        elif self.reward.type == RewardType.ITEM:
-            self.dialogs.set_text(1524, "What's with this carving?<line>Looks like bone…<page>Something…in that eye…<line>… An item?!<end>")
-
-        CONTINUE_ADDRESS = 0xcd6f8  # resume normal flow after reserved space
-
-        src = [
-            field.Call(0x0aca8d),  # displaced subroutine call (lock movement for NPC interaction)
-            field.BranchIfEventBitSet(event_bit.character_recruited(self.character_gate()), "GATE_MET"),
-            field.Dialog(1524),
-            field.Return(),
-
-            "GATE_MET",
-            field.Branch(CONTINUE_ADDRESS),
-        ]
-        space = Write(Bank.CC, src, "umaro cave local gating condition")
-        local_gate_address = space.start_address
-
-        # reserve the subroutine call + original dialog 1524 instruction, replace with branch to new code
-        space = Reserve(0xcd6f1, 0xcd6f7, "umaro cave local gating branch", field.NOP())
-        space.write(
-            field.Branch(local_gate_address),
         )
 
     def umaro_battle_mod(self):

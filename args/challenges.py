@@ -24,9 +24,8 @@ def parse(parser):
                             help = "Life spells cannot be learned. Fenix Downs unavailable (except from starting items). Buckets/inns/tents/events do not revive characters. Phoenix casts Life 3 on party instead of Life")
     challenges.add_argument("-rls", "--remove-learnable-spells", type = str,
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
-    challenges.add_argument("-nosaves", "--no-saves", nargs = '?', const = 'full', default = None,
-                            choices = ['full', 'lite'],
-                            help = "Ironmog Mode: 'full' (default if no value given) disables saving entirely. 'lite' auto-saves/loads slot 1 and wipes saves on game over")
+    challenges.add_argument("-nosaves", "--no-saves", action = "store_true",
+                            help = "Ironmog Mode: You cannot save (but save points still work for Tents/Sleeping Bags)")
 
 def process(args):
     from constants.spells import black_magic_ids, white_magic_ids, gray_magic_ids, spell_id
@@ -92,10 +91,8 @@ def flags(args):
         flags += " -pd"
     if args.remove_learnable_spells:
         flags += f" -rls {args.remove_learnable_spells}"
-    if args.no_saves == 'full':
+    if args.no_saves:
         flags += " -nosaves"
-    elif args.no_saves == 'lite':
-        flags += " -nosaves lite"
 
     return flags
 
@@ -116,7 +113,7 @@ def options(args):
         ("Permadeath", args.permadeath, "permadeath"),
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
-        ("No Saves", args.no_saves or False, "no_saves"),
+        ("No Saves", args.no_saves, "no_saves"),
     ]
 
 def _format_spells_log_entries(spell_ids):

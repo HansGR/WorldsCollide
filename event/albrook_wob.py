@@ -9,14 +9,6 @@ class AlbrookWOB(Event):
             field.ClearEventBit(npc_bit.GENERAL_LEO_SOLDIERS_ALBROOK_PORT),
         )
 
-        # When ruination has Albrook on the ferry network, the dock map (0x14C)
-        # NPC at slot 0x22 is promoted into a sailor — needs its visibility bit
-        # on at game start. Sprite swap and dispatch wiring live in
-        # event/ruination.py:fix_ferry_connections.
-        if self.args.ruination_mode and \
-                'Albrook' in getattr(self.args, 'ruination_areas_used', {}):
-            space.write(field.SetEventBit(0x565))
-
     def mod(self):
         space = Reserve(0xc62f2, 0xc62f7, "albrook block port west if banquet dinner finished", field.NOP())
         space = Reserve(0xc632d, 0xc6332, "albrook block port east if banquet dinner finished", field.NOP())

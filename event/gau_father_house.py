@@ -24,9 +24,6 @@ class GauFatherHouse(Event):
         self.merchant_mod()
         self.entrance_event_mod()
 
-        if self.args.ruination_mode:
-            self.ruination_mod()
-
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -119,10 +116,3 @@ class GauFatherHouse(Event):
         space.write(
             field.Call(finish_check),
         )
-
-    def ruination_mod(self):
-        map_id = 0x073
-
-        # Edit the palette to look like the WOR.
-        gau_father_properties = self.maps.properties[map_id]
-        gau_father_properties.paletteindex = 0x16

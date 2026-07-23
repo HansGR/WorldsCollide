@@ -10,14 +10,6 @@ class EmergeFigaroCastle(_Instruction):
     def __init__(self):
         super().__init__(0xfe)
 
-class HideMinimap(_Instruction):
-    def __init__(self):
-        super().__init__(0xdd)
-
-class FadeScreen(_Instruction):
-    def __init__(self):
-        super().__init__(0xd9)
-
 class FadeLoadMap(_LoadMap):
     # same as load map, except fades out screen
     def __init__(self, map_id, direction, default_music, x, y, fade_in = False, entrance_event = False,
@@ -66,7 +58,3 @@ class EndIfEventBitClear(BranchIfEventBitClear):
 class Branch(BranchIfEventBitClear):
     def __init__(self, destination):
         super().__init__(event_bit.ALWAYS_CLEAR, destination)
-
-class BecomeShip(_Instruction):
-    def __init__(self):
-        super().__init__(0xfc)

@@ -16,30 +16,6 @@ class Objectives(scroll_area.ScrollArea):
 
         self.lines = []
         self.line_color_addresses = []
-
-        if args.ruination_mode:
-            import version
-            wc_version = "v" + version.__version__.split(' ')[0]
-            credits_lines = [
-                scroll_area.Line("", f0.set_user_text_color),
-                scroll_area.Line("Credits", f0.set_blue_text_color),
-                #scroll_area.Line("", f0.set_user_text_color),
-                scroll_area.Line("Final Fantasy 6 roguelike", f0.set_user_text_color),
-                scroll_area.Line("made in FFVI WorldsCollide", f0.set_user_text_color),
-                scroll_area.Line(("(" + wc_version + ")").rjust(scroll_area.WIDTH), f0.set_user_text_color),
-                scroll_area.Line("", f0.set_user_text_color),
-                scroll_area.Line(" Original code: AtmaTek", f0.set_user_text_color),
-                scroll_area.Line(" Door rando by: DoctorDT", f0.set_user_text_color),
-                scroll_area.Line("", f0.set_user_text_color),
-                scroll_area.Line(" Special Thanks:", f0.set_user_text_color),
-                scroll_area.Line("  asilverthorn, Franklin,", f0.set_user_text_color),
-                scroll_area.Line("  Jefe01, Jexvrok,", f0.set_user_text_color),
-                scroll_area.Line("  NobodyWar, WRJones", f0.set_user_text_color),
-                scroll_area.Line("  Haloingmoons, and", f0.set_user_text_color),
-                scroll_area.Line("  the WC community", f0.set_user_text_color),
-                #scroll_area.Line("", f0.set_user_text_color),
-            ]
-
         for oi, objective in enumerate(objectives):
             result_line = objective.letter + " " + str(objective.result)
             self.lines.append(scroll_area.Line(result_line, f0.set_blue_text_color))
@@ -73,10 +49,6 @@ class Objectives(scroll_area.ScrollArea):
             self.lines.append(scroll_area.Line("No Objectives", f0.set_blue_text_color))
         else:
             del self.lines[-1] # exclude final empty line
-            
-        if args.ruination_mode:
-            # append credits after objectives (keep trailing blank as separator)
-            self.lines.extend(credits_lines)
 
         super().__init__()
 

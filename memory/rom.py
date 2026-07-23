@@ -4,8 +4,8 @@ class ROM():
 
     def __init__(self, file_name):
         from valid_rom_file import valid_rom_file
-        #if not valid_rom_file(file_name):
-        #    raise ValueError("Invalid ROM File")
+        if not valid_rom_file(file_name):
+            raise ValueError("Invalid ROM File")
 
         with open(file_name, "rb") as rom_file:
             self.data = list(rom_file.read())
@@ -20,14 +20,6 @@ class ROM():
         self.data.extend([0xff] * (expanded_size - len(self.data)))
 
     def write(self, file_name):
-        for i, v in enumerate(self.data):
-            try:
-                if not (0 <= int(v) <= 255):
-                    print(f"Bad byte at ROM 0x{i:06x}: {v!r} (type={type(v).__name__})")
-                    break
-            except Exception as e:
-                print(f"Non-indexable at ROM 0x{i:06x}: {v!r} (type={type(v).__name__}) err={e}")
-                break
         with open(file_name, "wb") as out_file:
             out_file.write(bytearray(self.data))
 
