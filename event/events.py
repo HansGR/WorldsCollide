@@ -131,6 +131,10 @@ class Events():
                     unlocked_slot_iterations.append(slot_iterations[slot])
 
             # pick slot for the next character weighted by number of iterations each slot has been available
+            if not unlocked_slots:
+                raise RuntimeError("character gating deadlock: "
+                                   f"{self.characters.get_available_count()} characters left to assign "
+                                   "but no unfilled character slots are currently unlocked")
             slot_index = weighted_reward_choice(unlocked_slot_iterations, iteration)
             slot = unlocked_slots[slot_index]
             slot.id = self.characters.get_random_available()
@@ -204,4 +208,5 @@ class Events():
         for event in events:
             char_esper_checks += [r for r in event.rewards if r.possible_types == (RewardType.CHARACTER | RewardType.ESPER)]
 
-        assert len(char_esper_checks) == CHARACTER_ESPER_ONLY_REWARDS, f"Number of char/esper only checks changed - Check usages of CHARACTER_ESPER_ONLY_REWARDS and ensure no breaking changes. Expected: {CHARACTER_ESPER_ONLY_REWARDS}, Actual: {len(char_esper_checks)}"
+        if len(char_esper_checks) != CHARACTER_ESPER_ONLY_REWARDS:
+            raise RuntimeError(f"Number of char/esper only checks changed - Check usages of CHARACTER_ESPER_ONLY_REWARDS and ensure no breaking changes. Expected: {CHARACTER_ESPER_ONLY_REWARDS}, Actual: {len(char_esper_checks)}")

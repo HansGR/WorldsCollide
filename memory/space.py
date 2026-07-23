@@ -91,9 +91,10 @@ class Space():
         self._update_label_pointers()
 
     def clear(self, value):
-        # int-like fills (incl. IntEnum/IntFlag, whose len() returns a popcount
-        # on Python 3.11+) occupy one byte each.
-        if isinstance(value, int):
+        try:
+            values = [value] * (len(self) // len(value))
+        except TypeError:
+            # value is a single int (no len()), not a sequence
             values = [value] * len(self)
         else:
             try:
@@ -102,7 +103,8 @@ class Space():
                 values = [value] * len(self)
 
         values = self._invoke_callables(values)
-        assert len(self) == len(values) # do values evenly fill space?
+        if len(self) != len(values): # do values evenly fill space?
+            raise ValueError(f"clear: {len(values)} values do not evenly fill space {str(self)} ({len(self)} bytes)")
 
         Space.rom.set_bytes(self.start_address, values)
         self._next_address = self.start_address
@@ -184,12 +186,10 @@ class Space():
                 index += size
             else:
                 new_values.append(value)
-                # A flattened scalar byte value occupies one byte. int covers
-                # plain ints and IntEnum/IntFlag members (e.g. Flash, Status).
-                # NB: Python 3.11+ added len() to IntFlag (returns the popcount),
-                # so we must NOT use len() to size int-like values or the byte
-                # count desyncs and label pointers land at the wrong address.
-                if isinstance(value, int):
+                try:
+                    index += len(value)
+                except TypeError:
+                    # value is a single byte/int (no len())
                     index += 1
                 else:
                     try:
