@@ -18,6 +18,8 @@ def parse(parser):
     starting_party.add_argument("-sc4", "--start-char4", default = "", type = str.lower, choices = character_options,
                                 help = "Starting party member")
 
+_RANDOM_TOKENS = ("random", "randomngu")
+
 def process(args):
     # convert arguments to list of starting party
     args.start_chars = []

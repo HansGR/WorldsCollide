@@ -108,6 +108,11 @@ class Space():
         except TypeError:
             # value is a single int (no len()), not a sequence
             values = [value] * len(self)
+        else:
+            try:
+                values = [value] * (len(self) // len(value))
+            except:
+                values = [value] * len(self)
 
         values = self._invoke_callables(values)
         if len(self) != len(values): # do values evenly fill space?
@@ -212,6 +217,11 @@ class Space():
                 except TypeError:
                     # value is a single byte/int (no len())
                     index += 1
+                else:
+                    try:
+                        index += len(value)
+                    except TypeError:
+                        index += 1
         return new_values
 
     def _update_label_pointers(self):
@@ -320,10 +330,15 @@ def Write(destination, data, description):
     data = flatten(data)
     for value in data:
         if not isinstance(value, str):
-            try:
-                size += len(value)
-            except TypeError:
+            # int-like values (incl. IntEnum/IntFlag, whose len() returns a
+            # popcount on Python 3.11+) occupy one byte each.
+            if isinstance(value, int):
                 size += 1
+            else:
+                try:
+                    size += len(value)
+                except TypeError:
+                    size += 1
 
     if isinstance(destination, Bank):
         space = Allocate(destination, size, description)
