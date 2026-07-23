@@ -1,0 +1,351 @@
+def name():
+    return "Doors"
+
+def parse(parser):
+    doors = parser.add_argument_group("Doors")
+
+    # Individual zone randomization
+    doors.add_argument("-dru", "--door-randomize-umaro", action = "store_true",
+                         help = "Randomize the doors in Umaro's cave")
+    doors.add_argument("-drun", "--door-randomize-upper-narshe", action="store_true",
+                       help="Randomize the doors in Upper Narshe")
+    doors.add_argument("-drunb", "--door-randomize-upper-narshe-wob", action="store_true",
+                       help="Randomize the doors in Upper Narshe WoB")
+    doors.add_argument("-drunr", "--door-randomize-upper-narshe-wor", action="store_true",
+                       help="Randomize the doors in Upper Narshe WoR")
+    doors.add_argument("-drem", "--door-randomize-esper-mountain", action="store_true",
+                       help="Randomize the doors in Esper Mountain")
+    doors.add_argument("-drob", "--door-randomize-owzer-basement", action="store_true",
+                       help="Randomize the doors in Owzer's Basement")
+    doors.add_argument("-drmf", "--door-randomize-magitek-factory", action="store_true",
+                       help="Randomize the doors in Magitek Factory")
+    doors.add_argument("-drsg", "--door-randomize-sealed-gate", action="store_true",
+                       help="Randomize the doors in Cave to the Sealed Gate")
+    doors.add_argument("-drzb", "--door-randomize-zozo-wob", action="store_true",
+                       help="Randomize the doors in Zozo WoB")
+    doors.add_argument("-drzr", "--door-randomize-zozo-wor", action="store_true",
+                       help="Randomize the doors in Zozo WoR")
+    doors.add_argument("-drmz", "--door-randomize-mt-zozo", action="store_true",
+                       help="Randomize the doors in Mt Zozo")
+    doors.add_argument("-drlr", "--door-randomize-lete-river", action="store_true",
+                       help="Randomize the doors in Lete River")
+    doors.add_argument("-drze", "--door-randomize-zone-eater", action="store_true",
+                       help="Randomize the doors in Zone Eater")
+    doors.add_argument("-drst", "--door-randomize-serpent-trench", action="store_true",
+                       help="Randomize the doors in Serpent Trench")
+    doors.add_argument("-drbh", "--door-randomize-burning-house", action="store_true",
+                       help="Randomize the doors in Burning House")
+    doors.add_argument("-drdt", "--door-randomize-daryls-tomb", action="store_true",
+                       help="Randomize the doors in Darills Tomb")
+    doors.add_argument("-drsfcb", "--door-randomize-south-figaro-cave-wob", action="store_true",
+                       help="Randomize the doors in South Figaro Cave WoB")
+    doors.add_argument("-drpt", "--door-randomize-phantom-train", action="store_true",
+                       help="Randomize the doors in Phantom Train")
+    doors.add_argument("-drcd", "--door-randomize-cyans-dream", action="store_true",
+                       help="Randomize the doors in Cyan's Dream")
+    doors.add_argument("-drmk", "--door-randomize-mt-kolts", action="store_true",
+                       help="Randomize the doors in Mt Kolts")
+    doors.add_argument("-drvc", "--door-randomize-veldt-cave", action="store_true",
+                       help="Randomize the doors in Cave on the Veldt")
+
+    # Full randomization
+    doors.add_argument("-drdc", "--door-randomize-dungeon-crawl", action="store_true",
+                       help="Randomize all doors to create a single giant dungeon")
+    doors.add_argument("-dra", "--door-randomize-all", action = "store_true",
+                         help = "Randomize all currently-implemented doors in each world")
+    doors.add_argument("-drx", "--door-randomize-crossworld", action="store_true",
+                       help="Randomize all currently-implemented doors across worlds")
+    doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
+                         help = "Randomize doors in each currently-implemented area")
+    doors.add_argument("-ruin", "--ruination-mode", nargs="?", const="default", default=None,
+                       help="Rogue-like mode with randomized dungeon and no airship. "
+                            "Automatically sets recommended flags (use '-ruin custom' to skip defaults, "
+                            "'-no <flags>' to disable specific defaults)")
+
+    doors.add_argument("-maze", "--ruin-dream-maze", default=None, choices=["full", "sep", "iso"],
+                       help="Dream Maze handling in ruination mode: "
+                            "'full' includes maze in Doma Dream (default), "
+                            "'sep' separates maze from Doma Dream (gated by ALL instead of CYAN), "
+                            "'iso' isolates maze as a single composite room (internally randomized)")
+
+    doors.add_argument("-rkt", "--ruin-kefka-tower", action="store_true",
+                       help="Randomize the three lanes of Kefka's Tower in ruination mode: "
+                            "rooms are repartitioned into three non-overlapping lanes "
+                            "(each entry to a 4-ton-switch-room ending) with internal "
+                            "connections shuffled, while preserving switch/boss constraints")
+
+    # Map shuffle
+    doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
+                       help="Randomize overworld entrances in each world")
+    doors.add_argument("-mapx", "--map-shuffle-crossworld", action="store_true",
+                       help="Randomize overworld entrances across worlds")
+
+    # Debug options
+    doors.add_argument("-debug_dest", "--debug-route-destination", nargs='+', type=str, default=None,
+                       help="Output the shortest route to specified room(s). Supports multiple rooms. (use with -drdc or -ruin)")
+
+def process(args):
+    #pass
+    if args.door_randomize_all or args.door_randomize_crossworld or args.door_randomize_dungeon_crawl or args.door_randomize_each or \
+            args.door_randomize_umaro or args.door_randomize_upper_narshe or args.door_randomize_upper_narshe_wob or \
+            args.door_randomize_upper_narshe_wor or args.door_randomize_esper_mountain or \
+            args.door_randomize_owzer_basement or args.door_randomize_magitek_factory or \
+            args.door_randomize_sealed_gate or args.door_randomize_zozo_wob or args.door_randomize_zozo_wor \
+            or args.door_randomize_mt_zozo or args.door_randomize_lete_river or args.door_randomize_zone_eater \
+            or args.door_randomize_serpent_trench or args.door_randomize_burning_house \
+            or args.door_randomize_daryls_tomb or args.door_randomize_south_figaro_cave_wob \
+            or args.door_randomize_phantom_train or args.door_randomize_cyans_dream or args.door_randomize_mt_kolts \
+            or args.door_randomize_veldt_cave \
+            or args.ruination_mode is not None:
+        args.door_randomize = True
+    else:
+        args.door_randomize = False
+
+    if args.ruination_mode is not None:
+        # Override:  ruination mode is incompatible with map shuffle and other door rando modes, and takes precedence
+        args.door_randomize_all = False
+        args.door_randomize_each = False
+        args.door_randomize_crossworld = False
+        args.door_randomize_dungeon_crawl = False
+        args.map_shuffle_separate = False
+        args.map_shuffle_crossworld = False
+
+    if args.door_randomize_dungeon_crawl:
+        # Override: dungeon crawl is incompatible with map shuffle and takes precedence
+        args.map_shuffle_separate = False
+        args.map_shuffle_crossworld = False
+
+    # Door randomization (except ruination) is incompatible with character gating
+    # Force open world when door randomization is enabled
+    if args.door_randomize and args.ruination_mode is None:
+        if args.character_gating:
+            print("Note: Door randomization is incompatible with character gating (-cg). Forcing open world mode.")
+        args.character_gating = False
+        args.open_world = True
+
+    if args.map_shuffle_separate or args.map_shuffle_crossworld:
+        args.map_shuffle = True
+    else:
+        args.map_shuffle = False
+
+    #print('-drdc overrides -maps and -mapx: ', args.door_randomize_dungeon_crawl, args.map_shuffle_separate,
+    #      args.map_shuffle_crossworld, args.map_shuffle)
+
+def flags(args):
+    flags = ""
+
+    if args.map_shuffle_separate:
+        # -maps is separate from door randomization for now
+        flags += " -maps"
+    elif args.map_shuffle_crossworld:
+        # -mapx is separate from door randomization for now
+        flags += " -mapx"
+
+
+    if args.ruination_mode is not None:
+        # -ruin supercedes all
+        flags += " -ruin"
+        if args.ruination_mode == "custom":
+            flags += " custom"
+
+        if args.ruin_dream_maze:
+            flags += f" -maze {args.ruin_dream_maze}"
+
+        if getattr(args, "ruin_kefka_tower", False):
+            flags += " -rkt"
+
+        if args.debug_route_destination:
+            flags += " -debug_dest " + " ".join(args.debug_route_destination)
+
+    elif args.door_randomize_all:
+        # -dra supercedes all but -ruin
+        flags += " -dra"
+
+    elif args.door_randomize_crossworld:
+        # -drx supercedes all but -dra
+        flags += " -drx"
+
+    elif args.door_randomize_dungeon_crawl:
+        # -drdc supercedes all but -dra
+        flags += " -drdc"
+
+        if args.debug_route_destination:
+            flags += " -debug_dest " + " ".join(args.debug_route_destination)
+
+    elif args.door_randomize_each:
+        # -dre supercedes all but -dra, -drdc
+        flags += " -dre"
+
+    else:
+        if args.door_randomize_umaro:
+            flags += " -dru"
+
+        if args.door_randomize_upper_narshe:
+            flags += " -drun"
+        else:
+            # -drun supercedes -drunb, drunr
+            if args.door_randomize_upper_narshe_wob:
+                flags += " -drunb"
+            if args.door_randomize_upper_narshe_wor:
+                flags += " -drunr"
+
+        if args.door_randomize_esper_mountain:
+            flags += " -drem"
+
+        if args.door_randomize_owzer_basement:
+            flags += " -drob"
+
+        if args.door_randomize_magitek_factory:
+            flags += " -drmf"
+
+        if args.door_randomize_sealed_gate:
+            flags += " -drsg"
+
+        if args.door_randomize_zozo_wob:
+            flags += " -drzb"
+
+        if args.door_randomize_zozo_wor:
+            flags += " -drzr"
+
+        if args.door_randomize_mt_zozo:
+            flags += " -drmz"
+
+        if args.door_randomize_lete_river:
+            flags += " -drlr"
+
+        if args.door_randomize_zone_eater:
+            flags += " -drze"
+
+        if args.door_randomize_serpent_trench:
+            flags += " -drst"
+
+        if args.door_randomize_burning_house:
+            flags += " -drbh"
+
+        if args.door_randomize_daryls_tomb:
+            flags += " -drdt"
+
+        if args.door_randomize_south_figaro_cave_wob:
+            flags += " -drsfcb"
+
+        if args.door_randomize_phantom_train:
+            flags += " -drpt"
+
+        if args.door_randomize_cyans_dream:
+            flags += " -drcd"
+
+        if args.door_randomize_mt_kolts:
+            flags += " -drmk"
+
+        if args.door_randomize_veldt_cave:
+            flags += " -drvc"
+
+    return flags
+
+def options(args):
+
+    opts = []
+    if args.map_shuffle:
+        if args.map_shuffle_separate:
+            opts += [
+                ("Map Shuffle", args.map_shuffle),
+            ]
+        else:
+            opts += [
+                ("Map Shuffle", 'Crossworld')
+            ]
+        if not args.door_randomize:
+            return opts
+
+    if args.ruination_mode is not None:
+        mode_desc = "Custom" if args.ruination_mode == "custom" else ""
+        opts += [
+            ("Ruination Mode", mode_desc),
+        ]
+
+    elif args.door_randomize_all:
+        opts += [
+            ("Randomize All", args.door_randomize_all),
+        ]
+    elif args.door_randomize_crossworld:
+        opts += [
+            ("Randomize All", 'Crossworld'),
+        ]
+    elif args.door_randomize_dungeon_crawl:
+        opts += [
+            ("Dungeon Crawl", args.door_randomize_dungeon_crawl)
+        ]
+    elif args.door_randomize_each:
+        opts += [
+            ("Umaro's Cave", True),
+            ("Upper Narshe", 'WoB+WoR'),
+            ("Esper Mountain", True),
+            ("Owzer Basement", True),
+            ("Magitek Factory", True),
+            ("Sealed Gate", True),
+            ("Zozo", 'WoB+WoR'),
+            ("Mt. Zozo", True),
+            ("Lete River", True),
+            ("Zone Eater", True),
+            ("Serpent Trench", True),
+            ("Burning House", True),
+            ("Daryl's Tomb", True),
+            ("SF Cave WOB", True),
+            ("Phantom Train", True),
+            ("Cyan's Dream", True),
+            ("Mt. Kolts", True),
+            ("Veldt Cave", True),
+        ]
+    else:
+        un_state = args.door_randomize_upper_narshe
+        if not un_state:
+            if args.door_randomize_upper_narshe_wob and not args.door_randomize_upper_narshe_wor:
+                un_state = 'WoB'
+            elif not args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
+                un_state = 'WoR'
+            elif args.door_randomize_upper_narshe_wob and args.door_randomize_upper_narshe_wor:
+                un_state = 'WoB+WoR'
+
+        zozo_state = False
+        if args.door_randomize_zozo_wob and args.door_randomize_zozo_wor:
+            zozo_state = 'WoB+WoR'
+        elif args.door_randomize_zozo_wob:
+            zozo_state = 'WoB'
+        elif args.door_randomize_zozo_wor:
+            zozo_state = 'WoR'
+
+        opts += [
+            ("Umaro's Cave", args.door_randomize_umaro),
+            ("Upper Narshe", un_state),
+            ("Esper Mountain", args.door_randomize_esper_mountain),
+            ("Owzer Basement", args.door_randomize_owzer_basement),
+            ("Magitek Factory", args.door_randomize_magitek_factory),
+            ("Sealed Gate", args.door_randomize_sealed_gate),
+            ("Zozo", zozo_state),
+            ("Mt. Zozo", args.door_randomize_mt_zozo),
+            ("Lete River", args.door_randomize_lete_river),
+            ("Zone Eater", args.door_randomize_zone_eater),
+            ("Serpent Trench", args.door_randomize_serpent_trench),
+            ("Burning House", args.door_randomize_burning_house),
+            ("Darill's Tomb", args.door_randomize_daryls_tomb),
+            ("SF Cave WOB", args.door_randomize_south_figaro_cave_wob),
+            ("Phantom Train", args.door_randomize_phantom_train),
+            ("Cyan's Dream", args.door_randomize_cyans_dream),
+            ("Mt. Kolts", args.door_randomize_mt_kolts),
+            ("Veldt Cave", args.door_randomize_veldt_cave),
+        ]
+
+    return opts
+
+def menu(args):
+    return (name(), options(args))
+
+def log(args):
+    from log import format_option
+    log = [name()]
+
+    entries = options(args)
+    for entry in entries:
+        log.append(format_option(*entry))
+
+    return log

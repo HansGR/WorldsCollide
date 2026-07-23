@@ -30,6 +30,9 @@ class FanaticsTower(Event):
         self.finish_magimaster_check_mod()
         self.finish_strago_check_mod()
 
+        if self.args.ruination_mode:
+            self.ruination_mod()
+
         self.log_reward(self.reward1)
         self.log_reward(self.reward2)
 
@@ -210,3 +213,23 @@ class FanaticsTower(Event):
         space.write(
             field.Call(finish_check),
         )
+
+    def ruination_mod(self):
+        from data.map_event import MapEvent
+        # Disable y-party switching on the way into the tower and restore it on the way
+        # out, using the shared subroutines written by
+        # event.ruination.create_y_party_switch_subroutines().  Both subroutines end in
+        # Return, so they can serve directly as map-event tile scripts.
+        from event.ruination import DISABLE_Y_PARTY_SWITCH, RESTORE_Y_PARTY_SWITCH
+
+        new_event = MapEvent()
+        new_event.x = 8
+        new_event.y = 1
+        new_event.event_address = DISABLE_Y_PARTY_SWITCH - EVENT_CODE_START
+        self.maps.add_event(0x16a, new_event)
+
+        new_event = MapEvent()
+        new_event.x = 7
+        new_event.y = 29
+        new_event.event_address = RESTORE_Y_PARTY_SWITCH - EVENT_CODE_START
+        self.maps.add_event(0x16b, new_event)

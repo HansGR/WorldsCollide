@@ -1,6 +1,18 @@
 from event.event import *
+from data.map_exit_extra import exit_data
+from data.rooms import exit_world
 
 class ZoneEater(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_zone_eater
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+        self.MAP_SHUFFLE = args.map_shuffle
+
     def name(self):
         return "Zone Eater"
 
@@ -14,8 +26,20 @@ class ZoneEater(Event):
         self.gogo_npc_id = 0x10
         self.gogo_npc = self.maps.get_npc(0x116, self.gogo_npc_id)
 
+        if self.DOOR_RANDOMIZE:
+            # Use events as one-ways.  Takes priority.
+            self.engulf_id = 2040  # ID of engulf event
+            self.exit_id = 2041  # ID of exit zone eater event
+        elif self.MAP_SHUFFLE:
+            # Use events as doors
+            self.engulf_id = 1552  # ID of engulf door
+            self.exit_id = 1553  # ID of exit zone eater door
+
         if self.args.character_gating:
-            self.add_gating_condition()
+            if self.DOOR_RANDOMIZE:
+                self.add_local_gating_condition()
+            else:
+                self.add_gating_condition()
 
         if self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
@@ -23,6 +47,9 @@ class ZoneEater(Event):
             self.esper_mod(self.reward.id)
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
+
+        if self.DOOR_RANDOMIZE or self.MAP_SHUFFLE:
+            self.door_rando_mod()
 
         self.log_reward(self.reward)
 
@@ -58,6 +85,17 @@ class ZoneEater(Event):
         space.write(
             field.Call(enable_npc_touch_events),
         )
+
+    def add_local_gating_condition(self):
+        from instruction.event import EVENT_CODE_START
+
+        src = [
+            field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
+            field.HideEntity(self.gogo_npc_id),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "zone eater gogo room entrance event character gate")
+        self.maps.set_entrance_event(0x116, space.start_address - EVENT_CODE_START)
 
     def character_mod(self, character):
         self.gogo_npc.sprite = character
@@ -113,3 +151,41 @@ class ZoneEater(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Modifications for door rando
+        from event.switchyard import AddSwitchyardEvent, GoToSwitchyard, SummonAirship, switchyard_xy
+
+        # (1a) Change the entry event to load the switchyard location
+        space = Reserve(0xa008f, 0xa0095, 'Zone Eater Entry modification')
+        space.write(GoToSwitchyard(self.engulf_id, map='world'))
+
+        # (1b) Add the switchyard event tile that handles entry to Zone Eater
+        src = [
+            field.LoadMap(0x114, direction=direction.DOWN, default_music=True,
+                          x=10, y=12, fade_in=True, entrance_event=True),
+        ]
+        if self.MAP_SHUFFLE:
+            # Get the connecting exit
+            self.parent_map = [0x001, 237, 50]
+            if self.exit_id in self.maps.door_map.keys():
+                self.parent_map = self.maps.get_connection_location(self.exit_id)
+                # conn_id = self.maps.door_map[self.exit_id]  # connecting exit south
+                # conn_pair = exit_data[conn_id][0]  # original connecting exit
+                # self.parent_map = [exit_world[conn_pair]] + \
+                #                      self.maps.exits.exit_original_data[conn_pair][1:3]  # [dest_map, dest_x, dest_y]
+            # Force update the parent map here
+            src += [field.SetParentMap(self.parent_map[0], direction.DOWN, self.parent_map[1], self.parent_map[2] + 1)]
+            if self.parent_map[0] == 0:
+                # Update world
+                src += [field.SetEventBit(event_bit.IN_WOR)]  # Zone Eater is in WOR.  is this necessary?
+        src += [field.Return()]
+        AddSwitchyardEvent(self.engulf_id, self.maps, src=src)
+        #print(self.exit_id, ': added event at ', switchyard_xy(self.engulf_id), ':', [a.__str__() for a in src])
+
+        # (2a) Change the exit event to load the switchyard location
+        space = Reserve(0xb7db7, 0xb7dbd, 'Zone Eater Exit modification')
+        space.write(GoToSwitchyard(self.exit_id))
+        # (2b) Add the switchyard event tile that handles exit to Triangle Island
+        src = SummonAirship(0x001, 237, 50)
+        AddSwitchyardEvent(self.exit_id, self.maps, src=src)

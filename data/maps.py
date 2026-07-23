@@ -1,21 +1,59 @@
 from data.map_property import MapProperty
+from log.verbose import vprint
 
 import data.npcs as npcs
 from data.npc import NPC
 
 from data.chests import Chests
+import data.direction as direction
+import data.doors as doors
 
 import data.map_events as events
 from data.map_event import MapEvent, LongMapEvent
 
 import data.map_exits as exits
 from data.map_exit import ShortMapExit, LongMapExit
+# from data.connections import Connections
+from data.transitions import Transitions
 
 import data.world_map_event_modifications as world_map_event_modifications
 from data.world_map import WorldMap
 
-import instruction.asm as asm
-from memory.space import Reserve
+from memory.space import Allocate, Bank, Free, Write, Reserve
+
+from instruction import field, world, asm
+from instruction.event import EVENT_CODE_START
+import instruction.field.entity as field_entity
+
+from data.event_exit_info import event_exit_info, exit_event_patch, entrance_event_patch, event_address_patch, \
+    multi_events, entrance_door_patch, exit_door_patch, require_event_bit, event_return_map
+
+from data.map_exit_extra import exit_data, exit_data_patch, exit_make_explicit, has_event_entrance, \
+    event_door_connection_data, map_shuffle_airship_warp, map_shuffle_force_explicit, map_shuffle_partner_explicit, \
+    dungeon_crawl_exit_destination_override
+from data.rooms import room_data, exit_world, shared_exits
+
+from data.parse import delete_nops, branch_parser, get_branch_code
+
+import data.event_bit as event_bit
+
+from event.switchyard import *
+
+
+def find_room_for_door(door_id):
+    """Find the room containing a door, checking both regular doors and character-locked doors."""
+    # First check regular doors (room_data[r][0])
+    for r in room_data.keys():
+        if door_id in room_data[r][0]:
+            return r
+    # Then check character-locked doors (room_data[r][4] when present)
+    for r in room_data.keys():
+        if len(room_data[r]) == 6:
+            for locked_doors in room_data[r][4].values():
+                if door_id in locked_doors:
+                    return r
+    return None
+
 
 class Maps():
     MAP_COUNT = 416
@@ -29,6 +67,9 @@ class Maps():
 
     NPCS_PTR_START = 0x41a10
 
+    GO_WOB_EVENT_ADDR = None
+    GO_WOR_EVENT_ADDR = None
+
     def __init__(self, rom, args, items):
         self.rom = rom
         self.args = args
@@ -37,17 +78,36 @@ class Maps():
         self.chests = Chests(self.rom, self.args, items)
         self.events = events.MapEvents(rom)
         self.long_events = events.LongMapEvents(rom)
-        self.exits = exits.MapExits(rom)
+        self.exits = exits.MapExits(rom, [args.door_randomize, args.map_shuffle])
+        # self.connections = Connections(self.exits)
         self.world_map_event_modifications = world_map_event_modifications.WorldMapEventModifications(rom)
         self.world_map = WorldMap(rom, args)
         self.read()
+
+        self.doors = doors.Doors(args)
+
+        # Create an event code to set the world bit
+        src_WOR = [field.SetEventBit(event_bit.IN_WOR), field.Return()]  # [0xd0, 0xa4, 0xfe]
+        space = Write(Bank.CC, src_WOR, "Go To WoR")
+        self.GO_WOR_EVENT_ADDR = space.start_address
+
+        src_WOB = [field.ClearEventBit(event_bit.IN_WOR), field.Return()]  # [0xd1, 0xa4, 0xfe]
+        space = Write(Bank.CC, src_WOB, "Go To WoB")
+        self.GO_WOB_EVENT_ADDR = space.start_address
+
+        # Record the vanilla world of each door
+        self.exit_world = exit_world
+
+        # Perform cleanup actions if door randomization is happening
+        if args.door_randomize or args.map_shuffle:
+            self.door_rando_cleanup()
 
     def read(self):
         self.maps = []
         self.properties = []
 
         for map_index in range(self.MAP_COUNT):
-            self.maps.append({"id" : map_index})
+            self.maps.append({"id": map_index})
 
             map_property = MapProperty(self.rom, map_index)
             self.properties.append(map_property)
@@ -55,7 +115,8 @@ class Maps():
 
             entrance_event_start = self.ENTRANCE_EVENTS_START_ADDR + map_index * self.rom.LONG_PTR_SIZE
             entrance_event = self.rom.get_bytes(entrance_event_start, self.rom.LONG_PTR_SIZE)
-            self.maps[map_index]["entrance_event_address"] = entrance_event[0] | (entrance_event[1] << 8) | (entrance_event[2] << 16)
+            self.maps[map_index]["entrance_event_address"] = entrance_event[0] | (entrance_event[1] << 8) | (
+                        entrance_event[2] << 16)
 
             events_ptr_address = self.EVENT_PTR_START + map_index * self.rom.SHORT_PTR_SIZE
             events_ptr = self.rom.get_bytes(events_ptr_address, self.rom.SHORT_PTR_SIZE)
@@ -76,6 +137,104 @@ class Maps():
             npcs_ptr_address = self.NPCS_PTR_START + map_index * self.rom.SHORT_PTR_SIZE
             npcs_ptr = self.rom.get_bytes(npcs_ptr_address, self.rom.SHORT_PTR_SIZE)
             self.maps[map_index]["npcs_ptr"] = npcs_ptr[0] | (npcs_ptr[1] << 8)
+
+            #####grab map warp-ability flag
+            self.maps[map_index]["warpable"] = map_property.warpable
+            #####grab map warp-ability flag
+
+        ### Populate the dictionary for map_id given door ID
+        self.exit_maps = {}
+        self.exit_x_y = {}
+        counter = 0
+        for m in range(len(self.maps) - 1):
+            num_short = self.get_short_exit_count(m)
+            for i in range(num_short):
+                self.exit_maps[i + counter] = m
+                se = self.exits.short_exits[i + counter]
+                self.exit_x_y[i + counter] = [se.x, se.y]
+            counter += num_short
+        num_short_exits = counter
+        for m in range(len(self.maps) - 1):
+            num_long = self.get_long_exit_count(m)
+            for i in range(num_long):
+                self.exit_maps[i + counter] = m
+                le = self.exits.long_exits[i + counter - num_short_exits]
+                self.exit_x_y[i + counter] = [le.x, le.y]
+            counter += num_long
+
+        # Add non-standard "exits"
+        for e in exit_data.keys():
+            if e not in self.exit_maps.keys():
+                if (e - 4000) in self.exit_maps.keys():
+                    # Logical exit
+                    self.exit_maps[e] = self.exit_maps[e - 4000]
+                    self.exit_x_y[e] = self.exit_x_y[e - 4000]
+                elif e in event_exit_info.keys():
+                    # Event tile as exit.
+                    self.exit_maps[e] = event_exit_info[e][5][0]
+                    self.exit_x_y[e] = event_exit_info[e][5][1:]
+
+        # Append map_id information to exit_original_data
+        for e in self.exits.exit_original_data.keys():
+            if e in self.exit_maps.keys():
+                self.exits.exit_original_data[e].append(self.exit_maps[e])
+
+        # f = open('exit_original_info.txt', 'w')
+        # f.write(
+        #     '# exit_ID: [x, y, parent_map, dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown]\n')
+        # for li in self.exits.exit_original_data.keys():
+        #     this_exit = self.get_exit(li)
+        #     write_string = str(li)
+        #     write_string += ': ' + str(this_exit.x) + ', ' + str(this_exit.y) + ' [' + str(hex(self.exit_maps[li])) + '], '
+        #     write_string += str(self.exits.exit_original_data[li])
+        #     write_string += '.\n'
+        #     f.write(write_string)
+        # f.close()
+
+        ### Do we also need this for event exits?
+        # self.event_maps = {}
+        # self.event_map_x_y = {}
+        # counter = 0
+        # for m in range(len(self.maps)-1):
+        #    num_events = self.get_event_count(m)
+        #    for i in range(num_events):
+        #        #self.event_maps[i + counter] = m
+        #        this_e = self.events.events[i + counter]
+        #        self.event_map_x_y[i + counter] = [m, this_e.x, this_e.y]
+        #    counter += num_events
+
+        # f = open('event_map&address_info.txt','w')
+        # f.write('# Event_ID: map_ID, (x, y), event_address')
+        # for i in self.event_map_x_y.keys():
+        #     f.write(str(i) + ' : ' + str(hex(self.event_map_x_y[i][0])) + ', (' + str(self.event_map_x_y[i][1]) + ', ' +
+        #             str(self.event_map_x_y[i][2]) + '), ' + str(hex(self.events.events[i].event_address)) + '\n')
+        # f.close()
+
+        self.npc_maps = {}
+        counter = 0
+        for m in range(len(self.maps) - 1):
+            num_npcs = self.get_npc_count(m)
+            for i in range(num_npcs):
+                self.npc_maps[i + counter] = m
+            counter += num_npcs
+
+        # f = open('npc_info.txt', 'w')
+        # f.write('# NPC_id: map_ID, (x,y), event_address')
+        # for n in self.npc_maps.keys():
+        #     npc = self.npcs.get_npc(n)
+        #     f.write(str(n) + ': ' + str(hex(self.npc_maps[n])) + ' (' + str(npc.x) + ', ' + str(npc.y) + '): '
+        #           + str(hex(npc.event_address)) + '\n')
+        # f.close()
+
+        # f = open('original_map_event_tally.txt', 'w')
+        # f.write('# map_ID: # events in map, then event data in map\n')
+        # for m in range(len(self.maps) - 1):
+        #     num_events = self.get_event_count(m)
+        #     this_ptr = self.maps[m]["events_ptr"]
+        #     write_string = str(m) + ':\t' + str(num_events) + '(' + str(hex(this_ptr)) + ')'
+        #     write_string += '.\n'
+        #     f.write(write_string)
+        # f.close()
 
     def set_entrance_event(self, map_id, event_address):
         self.maps[map_id]["entrance_event_address"] = event_address
@@ -98,10 +257,10 @@ class Maps():
             self.maps[map_index]["npcs_ptr"] += NPC.DATA_SIZE
 
         npc_index = (self.maps[map_id]["npcs_ptr"] - self.maps[0]["npcs_ptr"]) // NPC.DATA_SIZE
-        npc_index += prev_npc_count # add new npc to the end of current map's npcs
+        npc_index += prev_npc_count  # add new npc to the end of current map's npcs
         self.npcs.add_npc(npc_index, new_npc)
 
-        return new_npc_id # return id of the new npc
+        return new_npc_id  # return id of the new npc
 
     def remove_npc(self, map_id, npc_id):
         for map_index in range(map_id + 1, self.MAP_COUNT):
@@ -127,8 +286,19 @@ class Maps():
         self.events.print_range(first_event_id, self.get_event_count(map_id))
 
     def get_event(self, map_id, x, y):
+        try:
+            event = self.get_short_event(map_id, x, y)
+        except:
+            event = self.get_long_event(map_id, x, y)
+
+        return event
+
+    def get_short_event(self, map_id, x, y):
         first_event_id = (self.maps[map_id]["events_ptr"] - self.maps[0]["events_ptr"]) // MapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_event_count(map_id)
+        # last_event_id is an inclusive index, and get_event() searches [first_event_id : last_event_id + 1].
+        # Subtract 1 so the search is bounded to this map's own events; otherwise it overreaches by one and
+        # can falsely match the first event of the next populated map (see delete_short_event below).
+        last_event_id = first_event_id + self.get_event_count(map_id) - 1
         return self.events.get_event(first_event_id, last_event_id, x, y)
 
     def add_event(self, map_id, new_event):
@@ -137,8 +307,18 @@ class Maps():
 
         event_id = (self.maps[map_id]["events_ptr"] - self.maps[0]["events_ptr"]) // MapEvent.DATA_SIZE
         self.events.add_event(event_id, new_event)
+        # print('added event: ', map_id, new_event.x, new_event.y, event_id, '. # events in this map: ', self.get_event_count(map_id))
 
     def delete_event(self, map_id, x, y):
+        try:
+            e = self.get_short_event(map_id, x, y)
+            self.delete_short_event(map_id, x, y)
+
+        except:
+            e = self.get_long_event(map_id, x, y)
+            self.delete_long_event(map_id, x, y)
+
+    def delete_short_event(self, map_id, x, y):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["events_ptr"] -= MapEvent.DATA_SIZE
 
@@ -152,47 +332,68 @@ class Maps():
             "long_events_ptr"]) // LongMapEvent.DATA_SIZE
 
     def print_long_events(self, map_id):
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-
-        self.long_events.print_range(first_event_id, self.get_event_count(map_id))
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        self.long_events.print_range(first_event_id, self.get_long_event_count(map_id))
 
     def get_long_event(self, map_id, x, y):
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_event_count(map_id)
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        # last_event_id is an inclusive index, and get_event() searches [first_event_id : last_event_id + 1].
+        # Subtract 1 so the search is bounded to this map's own long events; otherwise it overreaches by one
+        # and can falsely match the first long event of the next populated map. That false match makes
+        # create_exit_event() call delete_event(), which decrements every later map's long-event pointer but
+        # then raises IndexError (swallowed by its 'except IndexError'), desyncing the long-event pointer table
+        # by one entry for all subsequent maps (e.g. exit 1264's world-bit event landing on the wrong map).
+        last_event_id = first_event_id + self.get_long_event_count(map_id) - 1
         return self.long_events.get_event(first_event_id, last_event_id, x, y)
 
     def add_long_event(self, map_id, new_event):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] += LongMapEvent.DATA_SIZE
 
-        event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
         self.long_events.add_event(event_id, new_event)
 
     def delete_long_event(self, map_id, x, y):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["long_events_ptr"] -= LongMapEvent.DATA_SIZE
 
-        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0][
-            "long_events_ptr"]) // LongMapEvent.DATA_SIZE
-        last_event_id = first_event_id + self.get_event_count(map_id)
+        first_event_id = (self.maps[map_id]["long_events_ptr"] - self.maps[0]["long_events_ptr"]) // LongMapEvent.DATA_SIZE
+        last_event_id = first_event_id + self.get_long_event_count(map_id)
         self.long_events.delete_event(first_event_id, last_event_id, x, y)
+
     ### LONG EVENTS ###
 
+    def get_exit(self, exit_id):
+        map_id = self.exit_maps[exit_id]  # Get [map_id, x, y] for exits
+        # xy = self.exit_x_y[exit_id]
+        if self.exits.exit_type[exit_id] == 'short':
+            first_exit_id = (self.maps[map_id]["short_exits_ptr"] - self.maps[0][
+                "short_exits_ptr"]) // ShortMapExit.DATA_SIZE
+            last_exit_id = first_exit_id + self.get_short_exit_count(map_id)
+            return self.exits.get_short_exit_by_id(first_exit_id, last_exit_id, exit_id)
+        elif self.exits.exit_type[exit_id] == 'long':
+            first_exit_id = (self.maps[map_id]["long_exits_ptr"] - self.maps[0][
+                "long_exits_ptr"]) // LongMapExit.DATA_SIZE
+            last_exit_id = first_exit_id + self.get_long_exit_count(map_id)
+            return self.exits.get_long_exit_by_id(first_exit_id, last_exit_id, exit_id)
+        else:
+            raise Exception('Unknown exit type')
+
     def get_short_exit_count(self, map_id):
-        return (self.maps[map_id + 1]["short_exits_ptr"] - self.maps[map_id]["short_exits_ptr"]) // ShortMapExit.DATA_SIZE
+        return (self.maps[map_id + 1]["short_exits_ptr"] - self.maps[map_id][
+            "short_exits_ptr"]) // ShortMapExit.DATA_SIZE
 
     def print_short_exits(self, map_id):
-        first_exit_id = (self.maps[map_id]["short_exits_ptr"] - self.maps[0]["short_exits_ptr"]) // ShortMapExit.DATA_SIZE
+        first_exit_id = (self.maps[map_id]["short_exits_ptr"] - self.maps[0][
+            "short_exits_ptr"]) // ShortMapExit.DATA_SIZE
         self.exits.print_short_exit_range(first_exit_id, self.get_short_exit_count(map_id))
 
     def delete_short_exit(self, map_id, x, y):
         for map_index in range(map_id + 1, self.MAP_COUNT):
             self.maps[map_index]["short_exits_ptr"] -= ShortMapExit.DATA_SIZE
 
-        map_first_short_exit = (self.maps[map_id]["short_exits_ptr"] - self.maps[0]["short_exits_ptr"]) // ShortMapExit.DATA_SIZE
+        map_first_short_exit = (self.maps[map_id]["short_exits_ptr"] - self.maps[0][
+            "short_exits_ptr"]) // ShortMapExit.DATA_SIZE
         self.exits.delete_short_exit(map_first_short_exit, x, y)
 
     def get_long_exit_count(self, map_id):
@@ -212,11 +413,11 @@ class Maps():
         tilemap_ptrs_start = 0x19cd90
         tilemap_ptr_addr = tilemap_ptrs_start + layer1_tilemap * self.rom.LONG_PTR_SIZE
         tilemap_addr_bytes = self.rom.get_bytes(tilemap_ptr_addr, self.rom.LONG_PTR_SIZE)
-        tilemap_addr = int.from_bytes(tilemap_addr_bytes, byteorder = "little")
+        tilemap_addr = int.from_bytes(tilemap_addr_bytes, byteorder="little")
 
         next_tilemap_ptr_addr = tilemap_ptr_addr + self.rom.LONG_PTR_SIZE
         next_tilemap_addr_bytes = self.rom.get_bytes(next_tilemap_ptr_addr, self.rom.LONG_PTR_SIZE)
-        next_tilemap_addr = int.from_bytes(next_tilemap_addr_bytes, byteorder = "little")
+        next_tilemap_addr = int.from_bytes(next_tilemap_addr_bytes, byteorder="little")
 
         tilemaps_start = 0x19d1b0
         tilemap_len = next_tilemap_addr - tilemap_addr
@@ -224,8 +425,8 @@ class Maps():
         decompressed = decompress(tilemap)
 
         map_width = 64
-        impassable_box_tile = 62 # box tile that cannot be entered
-        coordinates = [(19, 13), (15, 14), (18, 14)] # coordinates of boxes to change
+        impassable_box_tile = 62  # box tile that cannot be entered
+        coordinates = [(19, 13), (15, 14), (18, 14)]  # coordinates of boxes to change
         for coordinate in coordinates:
             decompressed[coordinate[0] + coordinate[1] * map_width] = impassable_box_tile
 
@@ -254,7 +455,7 @@ class Maps():
         map_id = 0x18c  # Cid's Island, Outside
 
         new_event_data = [(16, 1, 14, VERT), (15, 1, 14, VERT),  # (x, y, length, direction)
-                          (0, 1, 14, VERT), (1, 1, 14, VERT),    # Include 2 layers to make sure it doesn't get skipped
+                          (0, 1, 14, VERT), (1, 1, 14, VERT),  # Include 2 layers to make sure it doesn't get skipped
                           (0, 1, 3, HORIZ), (0, 2, 3, HORIZ),
                           (7, 0, 2, HORIZ), (7, 1, 2, HORIZ),
                           (12, 1, 3, HORIZ), (12, 2, 3, HORIZ)]
@@ -272,20 +473,349 @@ class Maps():
         space = Reserve(0x32ead, 0x32eae, asm.NOP())
         space.add_label("DISABLE SAVE", 0x32ebf)
         space.write(
-            asm.BRA("DISABLE SAVE") # replace the vanilla BPL $2EBF to always branch)
+            asm.BRA("DISABLE SAVE")  # replace the vanilla BPL $2EBF to always branch)
         )
+
+    def _disable_map_name_popups(self):
+        # Disable "show map name" popup for all exits (short and long)
+        for exit in self.exits.short_exits:
+            exit.displaylocationname = 0
+        for exit in self.exits.long_exits:
+            exit.displaylocationname = 0
 
     def mod(self, characters):
         self.npcs.mod(characters)
         self.chests.mod()
         self.world_map.mod()
+        self.doors.mod()
+        if (self.args.door_randomize or self.args.map_shuffle) and not self.args.ruination_mode:
+            # Skip for ruination mode - door map is constructed later in ruination_mod()
+            self.postprocess_door_map()
+        self.events.mod()  # self.events.mod(self.doors, self)
+        self.long_events.mod()  # LONG EVENTS
 
+        ### FOR TESTING ONLY ###
+        # self.testLongEvents()
+        ### FOR TESTING ONLY ###
+
+        self.exits.mod()  # self.exits.mod(self.doors.map[0], self)
         self._fix_imperial_camp_boxes()
         self._fix_Cid_timer_glitch()
-        if self.args.no_saves:
+        if self.args.no_saves == 'full':
             self._disable_saves()
 
+        # Ruination mode: warp stones/spell send player to Esper World
+        # Make all maps warpable EXCEPT Kefka's Tower and Phoenix Cave
+        if self.args.ruination_mode:
+            no_warp_maps = set([
+                0x11F, 0x123, 0x124, 0x125, 0x126, 0x127, 0x128, 0x12F, 0x130,  # KT interior
+                0x149, 0x14B, 0x14D, 0x14E, 0x14F,                                # KT mid
+                0x150, 0x151, 0x152, 0x153,                                        # KT upper
+                0x160, 0x162, 0x163, 0x164, 0x165,                                 # KT rooms
+                0x199, 0x19A, 0x19B, 0x19C,                                        # KT factory/final
+                #0x139, 0x13A, 0x13B, 0x13C, 0x13E,                                  # Phoenix Cave.  Actually allow warp in Phoenix cave as softlock protection if the player is dumb.
+                0x167, 0x168, 0x169, 0x16A, 0x16B, 0x16C, 0x16D, 0x16E, 0x16F,  # Fanatics Tower
+                0x170, 0x171, 0x172,                                              # Fanatics Tower (cont.)
+                0x033,                                                              # Narshe Moogle Defense
+            ])
+            for map_index in range(len(self.maps)):
+                if map_index in no_warp_maps:
+                    self.properties[map_index].warpable = 0
+                else:
+                    self.properties[map_index].warpable = 1
+            self._disable_map_name_popups()
+
+        # Make all maps warpable for -door-randomize-dungeon-crawl
+        elif self.args.debug or self.args.door_randomize_dungeon_crawl:
+            keep_no_warp = [
+                0x167, 0x168, 0x169, 0x16a, 0x16b, 0x16c, 0x16d, 0x16e, 0x16f, 0x170, 0x171, 0x172,  # Fanatics Tower
+                0x139, 0x13a, 0x13b, 0x13c, 0x13e,  # phoenix cave
+            ]
+            for map_index, cur_map in enumerate(self.maps):
+                if map_index not in keep_no_warp:  # protect Phoenix Cave, Fanatics Tower
+                    self.properties[map_index].warpable = 1
+
+    def postprocess_door_map(self):
+        # Postprocess the door map
+        if self.doors.verbose:
+            vprint("=== postprocess_door_map() CALLED ===")
+            vprint(f"doors.map length: {len(self.doors.map)}, doors.map[0] length: {len(self.doors.map[0]) if len(self.doors.map) > 0 else 'N/A'}")
+
+        self.door_map = {}
+        self.trap_map = {}
+        if len(self.doors.map) > 0:
+            # Add doors to the spoiler log
+            self.doors.print()
+
+            # Create sorted map, so they are connected in order:
+            shared_exits_sets = []
+            for se in shared_exits.keys():
+                shared_exits_sets.append([se] + shared_exits[se])
+
+            for m in self.doors.map[0]:
+                if m[0] not in self.door_map.keys():
+                    self.door_map[m[0]] = m[1]
+                else:
+                    is_shared = len(
+                        [ses for ses in shared_exits_sets if self.door_map[m[0]] in ses and m[1] in ses]) > 0
+                    if self.doors.verbose and not is_shared and not (self.door_map[m[0]] == m[1]):
+                        vprint('CONFLICTING EXITS: ', m[0], '-->', self.door_map[m[0]], ' vs ', m[1])
+                if m[1] not in self.door_map.keys():
+                    self.door_map[m[1]] = m[0]
+                else:
+                    is_shared = len(
+                        [ses for ses in shared_exits_sets if self.door_map[m[1]] in ses and m[0] in ses]) > 0
+                    if self.doors.verbose and not is_shared and not (self.door_map[m[1]] == m[0]):
+                        vprint('CONFLICTING EXITS: ', m[1], '-->', self.door_map[m[1]], ' vs ', m[0])
+
+            # Check reciprocity
+            for m in self.door_map.keys():
+                m2 = self.door_map[m]
+                mr = self.door_map[m2]
+                is_reciprocal = (m == mr)
+                is_shared = [ses for ses in shared_exits_sets if {m, mr}.issubset(ses)]
+                if not is_reciprocal and not is_shared:
+                    exception_text = 'INVALID DOOR MAP: ' + str(m) + " --> " + str(m2) + '; ' + str(m2) + " --> " + str(
+                        mr)
+                    raise Exception(exception_text)
+
+            temp = [m for m in self.door_map.keys() if
+                    m + 4000 in exit_data.keys() and m + 4000 not in self.door_map.keys()]
+            if self.doors.verbose:
+                vprint(f"Adding WoR exits for doors: {temp}")
+            for m in temp:
+                # Add logical WoR exits to the map (with vanilla connections)
+                wor_door = m + 4000
+                wor_pair = exit_data[wor_door][0]
+                if self.doors.verbose:
+                    vprint(f"  WoR door {wor_door}: exit_data[{wor_door}][0] = {wor_pair}")
+                    if wor_pair >= 1281 and wor_pair <= 1300:
+                        vprint(f"  WARNING: WoR pair {wor_pair} is in safe_id range!")
+                self.door_map[wor_door] = wor_pair
+                # Don't overwrite the mapping for wor_pair if it is mapped
+                if wor_pair not in exit_data.keys():
+                    self.door_map[wor_pair] = wor_door
+
+                # Look up the rooms of these exits (including character-locked doors)
+                this_room = find_room_for_door(m + 4000)
+                if this_room is not None:
+                    self.doors.door_rooms[m + 4000] = this_room
+                that_room = find_room_for_door(self.door_map[m + 4000])
+                if that_room is not None:
+                    self.doors.door_rooms[self.door_map[m + 4000]] = that_room
+
+            # Check if any safe_id values ended up in door_map
+            safe_ids_in_map = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
+            if safe_ids_in_map and self.doors.verbose:
+                vprint(f"WARNING: safe_id values in door_map after WoR exits: {safe_ids_in_map}")
+
+            # Patch all used exits
+            # Also patch exits that are logical and have different destinations than their WOB companions ...
+            # But only include logical exits (>= 4000) if they're actually used in door_map
+            used_exits = set(self.door_map.keys())
+            patch_exits = [e for e in exit_data_patch.keys() if e < 4000 or e in used_exits]
+            exits_to_patch = list(set(list(used_exits) + patch_exits)) + \
+                             [e for e in event_door_connection_data.keys()]
+            force_explicit = False
+            if self.args.ruination_mode:
+                if 978 not in exits_to_patch:
+                    exits_to_patch.append(978)  # Cave in the Veldt must be forced in ruination mode.
+                force_explicit = True  # Always force explicit in ruination mode, even if 978 is already in exits_to_patch
+            # print(exits_to_patch)
+            self.exits.patch_exits(exits_to_patch, force_explicit=force_explicit)
+            for e in self.exits.exit_original_data.keys():
+                if len(self.exits.exit_original_data[e]) == 12:
+                    # need to append map_id for event doors
+                    this_map = self.exit_maps[e]
+                    if this_map == SWITCHYARD_MAP and e in event_return_map.keys():
+                        self.exits.exit_original_data[e].append(event_return_map[e])
+                    else:
+                        self.exits.exit_original_data[e].append(this_map)
+
+            # Add required explicit exits, if required
+            for m in map_shuffle_partner_explicit:
+                if m in self.door_map.keys():
+                    map_shuffle_force_explicit.append(self.door_map[m])
+
+            # If dungeon crawl mode, add override exits
+            if self.args.door_randomize_dungeon_crawl or self.args.ruination_mode:
+                safe_id = max([d for d in exit_data.keys() if d < 1500])
+                if self.doors.verbose:
+                    vprint(f"Applying dungeon_crawl override, starting safe_id: {safe_id}")
+                for d in dungeon_crawl_exit_destination_override.keys():
+                    safe_id += 1  # get a new safe door id
+
+                    # Update or add an entry for the new match
+                    if d in exit_data.keys():
+                        exit_data[d][0] = safe_id
+                    else:
+                        exit_data[d] = [safe_id, '(override for dungeon crawl)']
+
+                    this_data = dungeon_crawl_exit_destination_override[d]
+                    self.exits.exit_original_data[safe_id] = this_data
+                    # print('Added exit data: ', d, '-->', safe_id, ': ', this_data)
+
+            # Create a trapdoor map for reference
+            for m in self.doors.map[1]:
+                if m[0] not in self.trap_map.keys():
+                    self.trap_map[m[0]] = m[1]
+
+        # Final debug check
+        safe_ids_final = [d for d in self.door_map.keys() if 1281 <= d <= 1300]
+        safe_ids_as_values = [k for k, v in self.door_map.items() if 1281 <= v <= 1300]
+        if self.doors.verbose:
+            vprint(f"=== postprocess_door_map() FINISHED ===")
+            vprint(f"door_map has {len(self.door_map)} entries")
+        if safe_ids_final and self.doors.verbose:
+            vprint(f"WARNING: safe_id keys in door_map: {safe_ids_final}")
+            for sid in safe_ids_final:
+                vprint(f"  door_map[{sid}] = {self.door_map[sid]}")
+        if safe_ids_as_values and self.doors.verbose:
+            vprint(f"WARNING: safe_id VALUES in door_map: {[(k, self.door_map[k]) for k in safe_ids_as_values]}")
+
+        if self.doors.verbose:
+            vprint('Door connections:')
+            for m in self.doors.map[0]:
+                ma = [a for a in m]
+                ma.sort()
+                # Use door_descr if available, otherwise try exit_data, otherwise show ID
+                desc0 = self.doors.door_descr.get(ma[0], exit_data.get(ma[0], [None, f'ID:{ma[0]}'])[1])
+                desc1 = self.doors.door_descr.get(ma[1], exit_data.get(ma[1], [None, f'ID:{ma[1]}'])[1])
+                vprint('\t' + str(ma[0]) + "<-->" + str(ma[1]) + '\t(' + desc0 + '<-->' + desc1 + ')')
+            vprint('One-way connections:')
+            for m in self.doors.map[1]:
+                vprint('\t', m[0], " -> ", m[1])
+
+    def testLongEvents(self):
+        ### FOR TESTING: MAKE SOME LONG EVENTS TO VERIFY THE CODE WORKS CORRECTLY
+        print('Long event count: ' + str(self.long_events.EVENT_COUNT))
+
+        # LONG EVENT #1: play the lore sound effect on some horizontal tiles on the Blackjack
+        src = [
+            field.BranchIfEventBitSet(0x1b5, "SetBit"),
+            field.PlaySoundEffect(0x0),  # Lore sound effect
+            field.SetEventBit(0x1b5),
+            "SetBit",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, 'Test long event')
+        new_le = LongMapEvent()
+        new_le.x = 14
+        new_le.y = 7
+        new_le.size = 2
+        new_le.direction = 0  # 0 = horizontal; 128 = vertical
+        new_le.event_address = space.start_address - EVENT_CODE_START
+        self.add_long_event(0x006, new_le)  # add to map 0x006 (Blackjack, Deck)
+        print('Added long event #1:')
+        new_le.print()
+
+        # LONG EVENT #2: play the Bolt3 sound effect on some vertical tiles on the Blackjack
+        src = [
+            field.BranchIfEventBitSet(0x1b5, "SetBit"),
+            field.PlaySoundEffect(0x015),  # Bolt3 sound effect
+            field.SetEventBit(0x1b5),
+            "SetBit",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, 'Test long event')
+        new_le = LongMapEvent()
+        new_le.x = 17
+        new_le.y = 6
+        new_le.size = 2
+        new_le.direction = 128  # 0 = horizontal; 128 = vertical
+        new_le.event_address = space.start_address - EVENT_CODE_START
+        self.add_long_event(0x006, new_le)  # add to map 0x006 (Blackjack, Deck)
+        print('Added long event #2:')
+        new_le.print()
+
+        print('Long event count: ' + str(self.long_events.EVENT_COUNT))
+
+    def write_post_diagnostic_info(self):
+        # Write edited event info to a text file in human-readable format
+        f = open('event_map&address_info_post.txt', 'w')
+        f.write('# Event_ID: map_ID, (x, y), event_address')
+        counter = 0
+        for m in range(len(self.maps) - 1):
+            num_events = self.get_event_count(m)
+            for i in range(num_events):
+                this_e = self.events.events[i + counter]
+                f.write(str(counter + i) + ': ' + str(hex(m)) + " (" + str(this_e.x) + ", " + str(this_e.y) + ").  "
+                        + str(hex(this_e.event_address)) + '\n')
+            counter += num_events
+        f.write('\n\n')
+        for i in range(len(self.events.events)):
+            this_e = self.events.events[i]
+            f.write(str(counter + i) + ': ' + "(" + str(this_e.x) + ", " + str(this_e.y) + ").  "
+                    + str(hex(this_e.event_address)) + '\n')
+        f.close()
+
     def write(self):
+        # self.write_post_diagnostic_info()
+        # Patch the door randomizer exits & events before writing:
+        if self.args.door_randomize or self.args.map_shuffle or self.args.ruination_mode:
+            # Patch exits if necessary
+            used_exits = [m for m in self.door_map.keys()]
+
+            # Build used_events list for event_exit_info runtime update.
+            # Event tiles with None addresses in event_exit_info (switchyard tiles) need their
+            # addresses updated at runtime by finding the event at their map location.
+            #
+            # IMPORTANT: When Transitions creates an entrance EventExit for an event tile (1500-2000),
+            # it checks if the vanilla partner is also an event tile. If so, it uses the partner's
+            # event code via use_event_info=partner_id. This means the PARTNER's event_exit_info
+            # must have a valid address, not just the entrance itself.
+            #
+            # Connections are stored as [exit_id, entrance_id]. We must include partners for BOTH:
+            # - m[1] partners: when the entrance is an event tile (e.g., [1515, 1560] -> partner of 1560)
+            # - m[0] partners: when the exit is an event tile (e.g., [1560, 1515] -> partner of 1560)
+            used_events = [m[0] for m in self.doors.map[1]] \
+                          + [m[1] - 1000 for m in self.doors.map[1]] \
+                          + [m[0] for m in self.doors.map[0] if 2000 > m[0] >= 1500] \
+                          + [m[1] for m in self.doors.map[0] if 2000 > m[1] >= 1500]
+
+            # Also include vanilla partners of event tile entrances whose partners are also event tiles
+            # (used by Transitions when creating entrance EventExit with use_event_info=partner)
+            used_events += [exit_data[m[1]][0] for m in self.doors.map[0]
+                            if 2000 > m[1] >= 1500 and 1500 <= exit_data[m[1]][0] < 2000]
+            # Also include vanilla partners of event tile EXITS whose partners are also event tiles
+            # (needed when the exit side is an event tile like 1560 whose partner 1559 needs updating)
+            used_events += [exit_data[m[0]][0] for m in self.doors.map[0]
+                            if 2000 > m[0] >= 1500 and 1500 <= exit_data[m[0]][0] < 2000]
+
+            for e in event_exit_info.keys():
+                if (e in used_events or e in used_exits) and event_exit_info[e][0] is None:
+                    if self.doors.verbose:
+                        vprint('attempting to update event exit info: ', e)
+                    # Update the event addresses
+                    #mapid = event_exit_info[e][5][0]
+                    #ex = event_exit_info[e][5][1]
+                    #ey = event_exit_info[e][5][2]
+                    if event_exit_info[e][5][0] is SWITCHYARD_MAP:
+                        mapid = SWITCHYARD_MAP
+                        [ex, ey] = switchyard_xy(e)
+                    else:
+                        mapid = event_exit_info[e][5][0]
+                        ex = event_exit_info[e][5][1]
+                        ey = event_exit_info[e][5][2]
+                    ev = self.get_event(mapid, ex, ey)
+                    event_exit_info[e][0] = ev.event_address + EVENT_CODE_START
+                    if self.doors.verbose:
+                        vprint('Updated event exit info: ', e, hex(event_exit_info[e][0]))
+
+            # Connect one-way event exits using the Transitions class
+            self.transitions = Transitions(self.doors.map[1], self.rom, self.exits.exit_original_data, event_exit_info, args=self.args)
+            self.transitions.write(maps=self)
+
+            # Connect two-way doors
+            self.connect_exits()
+
+            #if self.doors.verbose:
+            #    print('Switchyard indexes:')
+            #    for s, id in enumerate(id_to_switchyard_xy):
+            #        print(s, id, id_to_switchyard_xy[id])
+
+        # Move Event Trigger pointer & data location in ROM
+        self.move_event_trigger_data()
         self.npcs.write()
         self.chests.write()
         self.events.write()
@@ -333,3 +863,731 @@ class Maps():
             npcs_ptr[0] = cur_map["npcs_ptr"] & 0xff
             npcs_ptr[1] = (cur_map["npcs_ptr"] & 0xff00) >> 8
             self.rom.set_bytes(npcs_ptr_address, npcs_ptr)
+
+    def connect_exits(self):
+        # For every door in door_map, find its exit and change where it leads.
+        # (The map construction itself lives in postprocess_door_map.)
+        door_map = self.door_map
+
+        # Need to add modified world map exits if they weren't randomized (to print exit events)
+        # Skip for ruination mode - exit_data has been modified by dungeon_crawl override
+        if self.args.door_randomize and not self.args.ruination_mode:
+            # Only do this if door_randomize, not map_shuffle
+            for m in exit_make_explicit.keys():
+                if m not in door_map.keys():
+                    door_map[m] = exit_data[m][0]
+                    # Look up the rooms of these exits
+                    # this_room = [r for r in room_data.keys() if m in room_data[r][0]]
+                    # if len(this_room)> 0:
+                    #    self.doors.door_rooms[m] = this_room[0]
+                    # that_room = [r for r in room_data.keys() if door_map[m] in room_data[r][0]]
+                    # if len(that_room)> 0:
+                    #    self.doors.door_rooms[door_map[m]] = that_room[0]
+
+
+        # Build dictionary of maps with entrance events that will need to be called
+        # self.exit_event_addr_to_call = {}
+        self.exit_event_data_to_include = {}
+        # Must be referenced in:
+        # (A) self.create_exit_event(m, door_map[m])     # for normal doors, m < 1500
+        # (B) dt = Transitions(new_map, ...)        # for event tiles acting as doors, 1500 <= m < 4000
+        # (C) self.shared_map_exit_event(m, door_map[m]) # for logical WOR exits
+
+        ### There is only one of these (1204, mt zozo).  Let's replace it with an explicit entrance_door_patch.
+        # for m in has_event_entrance.keys():
+        #     if m in door_map.keys():
+        #         # Record the event script address to call
+        #         info = has_event_entrance[m]
+        #         this_event = self.get_event(info[0], info[1], info[2])
+        #         self.exit_event_addr_to_call[door_map[m]] = this_event.event_address + EVENT_CODE_START
+        #         # Delete the event tile
+        #         self.delete_event(info[0], info[1], info[2])  # delete the original event
+
+        # In ruination mode, disable the entrance_door_patch for door 1558
+        if self.args.ruination_mode:
+            entrance_door_patch.pop(1558, None)
+
+            # Disable require_event_bit for Figaro Castle entrance doors.
+            # Rooms 68 (WoB) and '68R' (WoR) propagate bits to doors 197/1156
+            # and 4197/5156 via room_require_event_bit. These are only needed
+            # for classic door randomization.
+            for door in [197, 1156, 4197, 5156]:
+                require_event_bit.pop(door, None)
+
+        # Bundle exit_door_patch and entrance_door_patch data for transitions
+        for m in exit_door_patch.keys():
+            if m in door_map.keys():
+                # Select event tiles acting as doors
+                if 1500 <= m < 4000:
+                    info = exit_door_patch[m]
+                    # Pass the script data to exit_event_data_to_include
+                    self.exit_event_data_to_include[m] = [info, 1]  # always include before transition
+                    if self.doors.verbose:
+                        vprint('Passed exit door patch for ', str(m), ' --> ', str(door_map[m]))
+                        # print([a.__str__() for a in info[0]])
+
+        for m in entrance_door_patch.keys():
+            if m in door_map.keys():
+                # select connections acting as doors
+                if 1500 <= door_map[m] < 4000:
+                    if isinstance(entrance_door_patch[m][0], list):
+                        info = entrance_door_patch[m]
+                    else:
+                        info = [entrance_door_patch[m][0](self.args), entrance_door_patch[m][1]]
+                    # Pass the script data to exit_event_data_to_include
+                    self.exit_event_data_to_include[door_map[m]] = info
+                    if self.doors.verbose:
+                        vprint('Passed entrance door patch for ', str(door_map[m]), ' --> ', str(m))
+                        # print([a.__str__() for a in info[0]])
+
+        # Generate a final list of all exits that need to be connected
+        all_exits = list(door_map.keys())
+        all_exits.sort()  # apply the doors in order.
+        # if self.doors.verbose:
+        # print(all_exits)
+
+        # Connect real doors:  m < 1500
+        door_exits = [m for m in all_exits if m < 1500]
+        for m in door_exits:
+            if self.doors.verbose:
+                vprint('Connecting: ' + str(m) + ' to ' + str(door_map[m]))
+                #  + ": " + str(exit_data[m][1]) + ' to ' + str(exit_data[door_map[m]][1])
+
+            # Get exits associated with doors m and m_conn
+            exitA = self.get_exit(m)
+
+            # Attach exits:
+            # Copy original properties of exitB_pair to exitA & vice versa.
+            exitB_pairID = exit_data[door_map[m]][0]  # Original connecting exit to B...
+            if exitB_pairID not in self.exits.exit_original_data.keys():
+                if 1500 <= exitB_pairID < 4000:
+                    # Event exit behaving as a door.
+                    pass
+                elif exitB_pairID >= 4000:
+                    # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                    exitB_pairID = exitB_pairID - 4000
+
+            self.exits.copy_exit_info(exitA, exitB_pairID)  # ... copied to exit A
+
+            # For a very few exits, must force explicit
+            if m in map_shuffle_force_explicit:
+                #if self.doors.verbose:
+                #    print('Checking if ', m, 'must be forced explicit...', hex(exitA.dest_map))
+                if exitA.dest_map == 0x1ff:
+                    exitA.dest_map = self.exits.exit_original_data[door_map[m]][-1]  #exit_world[exitB_pairID]
+                    if self.doors.verbose:
+                        vprint('Updated destination door_map for ', m,': 0x1ff --> ', hex(exitA.dest_map) )
+
+            # Write events on the exits to handle required conditions:
+            self.create_exit_event(m, door_map[m])
+
+        # Connect event tiles that are acting as doors: 1500 <= m < 4000.  Treat them as transitions.
+        transition_map = []
+        transition_exits = [m for m in all_exits if 1500 <= m < 4000]
+        for m in transition_exits:
+            # We want to accumulate them first, then write them all together to avoid conflicts.
+            if self.doors.verbose:
+                vprint('Connecting: ' + str(m) + ' to ' + str(door_map[m]))
+            transition_map.append([m, door_map[m]])
+        dt = Transitions(transition_map, self.rom, self.exits.exit_original_data, event_exit_info,
+                         self.exit_event_data_to_include, args=self.args)  # self.exit_event_addr_to_call
+        dt.write(maps=self)
+
+        # Connect logical WOR exits: 4000 <= m,  m_WOB = (m - 4000).
+        wor_exits = [m for m in all_exits if m >= 4000]
+        for m in wor_exits:
+            # The WOB exit & exit event (if necessary) are handled by the previous door code.
+            self.shared_map_exit_event(m, door_map[m])
+
+    def create_exit_event(self, d, d_ref):
+        # Write an event on top of exit d to set the correct properties (world, parent map) for exit d_ref.
+        # Logical WOR exits (id >= 4000) are handled by maps.shared_map_exit_event(d, d_ref).
+        SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
+
+        # Collect information about the properties for the exit
+        this_exit = self.get_exit(d)
+        map_id = self.exit_maps[d]
+        this_world = self.exit_world[d]
+
+        # Collect information about the properties of the connecting exit
+        that_world = self.exit_world[d_ref]
+        that_map = self.exit_maps[d_ref]
+        if that_map == SWITCHYARD_MAP and d_ref in event_return_map.keys():
+            that_map = event_return_map[d_ref]  # verify the switchyard tile leads to the world map
+
+        is_map_already_loaded = False
+
+        # Check to make sure an exit event is required:
+        # (1) the connection is in the other world
+        # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
+        # (3) the door requires special code (in exit_door_patch[d])
+        # (4) the connection has an event script that should be run upon entry (in has_event_entrance)
+        # (5) the connection is a world map.  Move the airship to the player's location on the worldmap.
+        require_event_flags = [
+            (this_world != that_world),
+            d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
+            d in exit_door_patch.keys(),
+            d in self.exit_event_data_to_include.keys(),  # self.exit_event_addr_to_call.keys()
+            that_map in [0x000, 0x001]
+        ]
+        if self.args.map_shuffle and not self.args.door_randomize:
+            # Don't summon the airship by default
+            if d not in map_shuffle_airship_warp:
+                require_event_flags[4] = False
+
+        # In ruination mode, never warp the airship to the player's location
+        if self.args.ruination_mode:
+            require_event_flags[4] = False
+
+        if require_event_flags.count(True) > 0:
+            # Need to use different commands for world maps vs field maps.
+            # Look for an existing event on this exit tile
+            try:
+                if self.doors.verbose:
+                    vprint('looking for event at: ', hex(map_id), this_exit.x, this_exit.y, '(type ', self.exits.exit_type[d], ')')
+                existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
+                # An event already exists.  It will need to be modified.
+
+                # Add Call to existing event code
+                src = [field.Call(existing_event.event_address + EVENT_CODE_START), field.Return()]
+
+                if self.doors.verbose:
+                    vprint('WARNING: found an existing event: ', str(hex(map_id)), ' (', str(this_exit.x), ', ',
+                          str(this_exit.y),
+                          '): ')
+                    vprint('\t(', str(existing_event.x), ', ', str(existing_event.y), '):  ',
+                          str(hex(existing_event.event_address)))
+
+                # delete existing event
+                self.delete_event(map_id, this_exit.x, this_exit.y)
+                # existing_event_length = len(src) - 1
+
+            except IndexError:
+                # event does not exist.  Make a new one.
+                src = [field.Return()]
+                # existing_event_length = False
+
+            this_address = 0x05eb3  # Default address to fail gracefully: event at $CA/5EB3 is just 0xfe (return)
+
+            # If it's a new event that is just forcing the world, just directly call the "force world" event:
+            e_length = len(src)
+            if e_length == 1 and not require_event_flags[1:].count(True) > 0 and map_id > 2:
+                if that_world == 0:
+                    this_address = self.GO_WOB_EVENT_ADDR - EVENT_CODE_START
+                elif that_world == 1:
+                    this_address = self.GO_WOR_EVENT_ADDR - EVENT_CODE_START
+
+                if self.doors.verbose:
+                    vprint('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
+                    vprint('\tReason: ', require_event_flags)
+
+            else:
+                #  (5) <code required when leaving room>
+                #  (4) <code required when entering connection>
+                #  (3) <required world-bit setting when entering WOB connection>
+                #  (2) <call any required entrance script>
+                #  (1) If going to the world map, summon the airship as well.
+                #  (0) Return();  # Connection is handled by the door.
+
+                # (1) If going to world map, also summon the airship
+                if require_event_flags[4]:
+                    # Note, in this case we don't need the terminal field.Return(), but it doesn't hurt and makes this
+                    # more robust to errors.
+                    # Get [x,y] location of the destination for the exit.
+                    d_ref_pairID = exit_data[d_ref][0]  # Original connecting exit to d_ref..
+                    if d_ref_pairID in self.exits.exit_original_data.keys():
+                        conn_data = self.exits.exit_original_data[d_ref_pairID]  # [dest_map, dest_x, dest_y, ...]
+                    elif d_ref_pairID >= 4000:  # Do we actually need this?
+                        # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                        conn_data = self.exits.exit_original_data[d_ref_pairID - 4000]
+                    src = SummonAirship(that_world, conn_data[1], conn_data[2]) + src
+
+                # (2) Add call to entrance script, if any
+                if require_event_flags[3]:
+                    # THIS should NEVER HAPPEN NOW!  We replaced exit_event_addr_to_call for all normal doors with entrance_door_patch!
+                    print("WARNING: THIS SHOULD NOT OCCUR.  Check entrance_door_patch!", d, d_ref)
+                    # # This could be more elegant.
+                    # if map_id > 2:
+                    #     # This is a normal door, just call the expected script
+                    #     src = [field.Call(self.exit_event_addr_to_call[d])] + src
+                    # else:
+                    #     # This is a worldmap door, and will be replaced by an event tile going to the switchyard.
+                    #     # Parse the requested branching condition
+                    #     load_address = self.exit_event_addr_to_call[d]
+                    #     srcdata = self.rom.get_bytes(load_address, 6)
+                    #     [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+                    #
+                    #     if branch_addr == 0x5eb3:
+                    #         # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+                    #         branch_addr = load_address + 6
+                    #         is_set = not is_set
+                    #
+                    #     # Prepend the required branch condition to the switchyard script
+                    #     src = get_branch_code(ebit, is_set, branch_addr, SWITCHYARD_MAP) + src
+
+                # (3) Prepend call to force world bit event, if required
+                if require_event_flags[0]:
+                    if that_world == 0:
+                        src = [field.ClearEventBit(event_bit.IN_WOR)] + src
+                    elif that_world == 1:
+                        src = [field.SetEventBit(event_bit.IN_WOR)] + src
+
+                # (4) Prepend any data required by the connection
+                if require_event_flags[1]:
+                    if d_ref in entrance_door_patch.keys():
+                        # Check whether this is BEFORE (True) or AFTER (False) loading the map.
+                        if entrance_door_patch[d_ref][1]:
+                            load_map_src = []
+                        else:
+                            # Generate map load code for this door; the door itself will not be used.
+                            load_map_src = self._get_load_map_code(d_ref)
+                            is_map_already_loaded = True
+
+                        if isinstance(entrance_door_patch[d_ref][0], list):
+                            edp = entrance_door_patch[d_ref][0]
+                        else:
+                            # patch requires knowledge of arguments
+                            edp = entrance_door_patch[d_ref][0](self.args)
+                        src = src[:-1] + load_map_src + edp + src[-1:]
+
+                    if d_ref in require_event_bit.keys():
+                        entr_bits = require_event_bit[d_ref]
+                        for k in entr_bits:
+                            if entr_bits[k]:
+                                src = [field.SetEventBit(k)] + src
+                            else:
+                                src = [field.ClearEventBit(k)] + src
+
+                # (5) Prepend any data required by the door
+                if require_event_flags[2]:
+                    src = exit_door_patch[d] + src
+
+                if map_id <= 2:
+                    # This event is on the world map, where the event -> exit passthru trick doesn't work
+                    # Solution: send the player to a dummy map, directly onto an event tile that does the necessary
+                    # modifications and then sends them on to the destination.  A switchyard, if you will.
+                    # dummy_map = 0x005   # mog's black map, 128 x 128
+                    # dummy_x = d % 128   # unique ID in [x,y]
+                    # dummy_y = d // 128
+                    # [dummy_x, dummy_y] = switchyard_xy(d)
+
+                    # (a) add a SetParentMap and LoadMap command for the destination; write it to a dummy event
+                    d_pairID = exit_data[d][0]  # Original connecting exit to d
+                    if d_pairID in self.exits.exit_original_data.keys():
+                        conn_data = self.exits.exit_original_data[d_pairID]  # [dest_map, dest_x, dest_y, ...]
+                    elif d_pairID >= 4000:  # Do we actually need this?
+                        # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+                        conn_data = self.exits.exit_original_data[d_pairID - 4000]
+                    pm_dir = conn_data[6]
+                    pm_x = conn_data[1] + direction.xy_shift_parent_map(pm_dir)[0]
+                    pm_y = conn_data[2] + direction.xy_shift_parent_map(pm_dir)[1]
+                    update_parent_map_src = [
+                        field.SetParentMap(map_id=map_id, x=pm_x, y=pm_y, direction=pm_dir),
+                    ]
+                    if is_map_already_loaded:
+                        load_destination_src = []
+                    else:
+                        load_destination_src = [
+                            field.LoadMap(this_exit.dest_map, direction=this_exit.facing, default_music=True,
+                                          x=this_exit.dest_x, y=this_exit.dest_y, fade_in=True, entrance_event=True)
+                        ]
+
+                    src_dummy = update_parent_map_src + src[:-1] + load_destination_src + src[-1:]
+                    if self.doors.verbose:
+                        vprint('source code at switchyard: ', [a.__str__() for a in src_dummy])
+                    AddSwitchyardEvent(d, self, src=src_dummy)
+                    # space = Write(Bank.CC, src_dummy, "Door Dummy Event " + str(d))
+                    # dummy_address = space.start_address - EVENT_CODE_START
+                    # (b) make a new event tile on the dummy map
+                    # dummy_event = MapEvent()
+                    # dummy_event.x = dummy_x
+                    # dummy_event.y = dummy_y
+                    # dummy_event.event_address = dummy_address
+                    # self.add_event(dummy_map, dummy_event)
+
+                    # (c) make a new src that loads the dummy map and places the character on the dummy tile.
+                    if map_id > 0x002:
+                        maptype = 'field'
+                    else:
+                        maptype = 'world'
+                    src = GoToSwitchyard(d, map=maptype)
+                    # src = [world.LoadMap(dummy_map, direction=direction.UP, default_music=False,
+                    #                     x=dummy_x, y=dummy_y,
+                    #                     fade_in=False, entrance_event=False), field.Return()]
+
+                if SOUND_EFFECT is not None:
+                    # Note this kills the direct "force world" event.
+                    src = [field.PlaySoundEffect(SOUND_EFFECT)] + src
+
+                # Write data to a new event & add it
+                space = Write(Bank.CC, src, "Door Event " + str(d))
+                this_address = space.start_address - EVENT_CODE_START
+
+                if self.doors.verbose:
+                    vprint('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(this_address))
+                    vprint('\tReason: ', require_event_flags)
+                    vprint([str(s) for s in src])
+
+            # Write the new event on the exit
+            if self.exits.exit_type[d] == 'short':
+                # Write the event on the short exit tile
+                new_event = MapEvent()
+                new_event.x = this_exit.x
+                new_event.y = this_exit.y
+                new_event.event_address = this_address
+                self.add_event(map_id, new_event)
+            elif self.exits.exit_type[d] == 'long':
+                # Write the long event on the long exit tile
+                new_event = LongMapEvent()
+                new_event.x = this_exit.x
+                new_event.y = this_exit.y
+                new_event.direction = this_exit.direction
+                new_event.size = this_exit.size
+                new_event.event_address = this_address
+                self.add_long_event(map_id, new_event)
+
+            if map_id <= 2:
+                # This event is on the world map, where the event -> exit passthru trick doesn't work.
+                # (a) eventually, just delete the exit. but for now:
+                # (b) move the exit it is replacing to somewhere else ('dummy' it)
+                this_exit.x = d
+                this_exit.y = 0
+                # DO WE NEED to move the exit, though?  Does it matter?
+                # I forget - on the world map, does the exit take effect before the event?  Is that why we did this?
+
+    def shared_map_exit_event(self, d, d_ref):
+        SOUND_EFFECT = None  # [None, 0x00 = Lore, 0x15 = Bolt3]
+        # THIS IS A SHARED ROOM (i.e. the exit d is one of a (WOB, WOR) pair: (d-4000, d).
+        # SINCE THE WOB CONNECTION IS ALWAYS DONE FIRST, WHEN THE WOR CONNECTION IS WRITTEN WE CAN DO:
+        #   if IS_WOR:
+        #       <code required when leaving WOR room>
+        #       <code required when entering WOR connection>
+        #       <required world-bit setting when entering WOR connection>
+        #       <Call (or Branch to?) entrance_script code, if any>
+        #       <Load Map call for WOR connection>
+        #   else:
+        #       BranchTo(existing_event_code)
+        # IN FF6 EVENT CODE, THIS IS:
+        #   src = [field.BranchIfEventBitSet(IN_WOR, <address for WOR stuff>),
+        #          field.Branch(<address for WOB stuff>),
+        #          field.Return()]
+        # So we should:
+        #   (1) Find the address for WOB script
+        #   (2) Write a script for the WOR branch
+        #   (3) Write a script that chooses between them based on IN_WOR
+        #   (4) make an event tile for the final script in (3)
+
+        # Collect information about the properties for the exit
+        this_exit = self.get_exit(d - 4000)
+        map_id = self.exit_maps[d - 4000]
+        this_world = self.exit_world[d]  # note: virtual exits should always be WoR
+
+        # Collect information about the properties of the connecting exit
+        that_world = self.exit_world[d_ref]
+        that_map = self.exit_maps[d_ref]
+        if that_map == SWITCHYARD_MAP and d_ref in event_return_map.keys():
+            that_map = event_return_map[d_ref]  # verify the switchyard tile leads to the world map
+
+        # (1) the connection requires a specific world that is not this world
+        # (2) the connection requires special code (in entrance_door_patch) or event bits (in require_event_bit)
+        # (3) the door requires special code (in exit_door_patch[d])
+        # (4) the door needs to run an entrance event script (in exit_event_addr_to_call[d])
+        # (5) the connection is a world map: also summon the airship.
+        require_event_flags = [
+            ((this_world != that_world)),
+            d_ref in entrance_door_patch.keys() or d_ref in require_event_bit.keys(),
+            d in exit_door_patch.keys(),
+            d in self.exit_event_data_to_include.keys(),  # self.exit_event_addr_to_call.keys().  SHOULD NOT HAPPEN!
+            that_map in [0x0, 0x1]
+        ]
+
+        if self.args.map_shuffle and not self.args.door_randomize:
+            # Don't airship warp if only doing map shuffle
+            if d not in map_shuffle_airship_warp:
+                require_event_flags[4] = False
+
+        # In ruination mode, never warp the airship to the player's location
+        if self.args.ruination_mode:
+            require_event_flags[4] = False
+
+        # if self.doors.verbose:
+        #    print('Writing shared event at ' + str(d) + ' (ref = ' + str(d_ref) + ')')
+        # Look for an existing event on this exit tile
+        try:
+            if self.doors.verbose:
+                vprint('looking for event at: ', hex(map_id), this_exit.x, this_exit.y)
+            existing_event = self.get_event(map_id, this_exit.x, this_exit.y)
+            # An event already exists.
+            if self.doors.verbose:
+                vprint('shared map: found an existing event at ', map_id, this_exit.x, this_exit.y,
+                      hex(existing_event.event_address))
+
+            # Add Call to existing event code
+            src = [field.Call(existing_event.event_address + EVENT_CODE_START), field.Return()]
+
+            # delete existing event
+            self.delete_event(map_id, this_exit.x, this_exit.y)
+
+        except IndexError:
+            # event does not exist.  Make a new one.
+            src = [field.Return()]
+
+        this_address = 0xa5eb3  # Default address to fail gracefully: event at $CA/5EB3 is just 0xfe (return)
+
+        # Send the player to the location that the connection's vanilla partner sends you to
+        # [dest_x, dest_y, dest_map, refreshparentmap, enterlowZlevel, displaylocationname, facing, unknown, ...]
+        d_ref_partner = exit_data[d_ref][0]
+        if d_ref_partner in self.exits.exit_original_data.keys():
+            conn_data = self.exits.exit_original_data[d_ref_partner]
+        else:
+            # This is a logical exit without tweaks.  Can use vanilla connection info.
+            conn_data = self.exits.exit_original_data[d_ref_partner - 4000]
+        if d in map_shuffle_force_explicit:
+            # Update conn_data to not return to parent map
+            if conn_data[0] in [0x1ff, 0x1fe]:
+                conn_data[0] = self.exits.exit_original_data[d_ref][-1]
+
+        if require_event_flags[4]:
+            wor_src = SummonAirship(that_world, conn_data[1], conn_data[2])
+            # print(d, d_ref, d_ref_partner, conn_data)
+        else:
+            wor_src = [field.FadeLoadMap(conn_data[0], conn_data[6], True, conn_data[1], conn_data[2], fade_in=True,
+                                         entrance_event=True)]
+            if conn_data[0] in [0, 1, 2, 511]:
+                # Include End command when loading world maps.  Parent Map (511) should always be a world map
+                wor_src += [world.End()]
+            else:
+                wor_src += [field.Return()]
+
+        if SOUND_EFFECT is not None:
+            wor_src = [field.PlaySoundEffect(SOUND_EFFECT)] + wor_src
+
+        # (0) Prepend a call to entrance event script, if any
+        # NOTES: This is trying to replicate the event-tile passthru to a door.
+        # It's probably not going to work - it will complete the event script, and then ALWAYS load the map.
+        # What we need is to replicate the event script code by doing *here*:
+        #   [field.BranchIfEventBitCONDITION(eventbit, branchaddr)]
+        # for whatever the appropriate branch condition is.
+        # So for example, the entry script to Cyan's Cliff is:
+        #   CC/3FA7: C0    If ($1E80($0D2) [$1E9A, bit 2] is set), branch to $CA5EB3 (simply returns)
+        #   ... <continue script until hitting an 0xfe>
+        # ... And the one for Doma Siege is:
+        #   ['b0', '40', '80', 'c2', '9a', '1',   # world.BranchIfEventBitSet(0x40, 0x19ac2)
+        #    'd3', '78', '0', '21', '2a', '40',   # world.LoadMap(0x78, x=0x21, y = 0x2a, ...)
+        #    'fe']                                # field.Return()
+        # In these cases (also in Transitions version), we want to:
+        #   (1) In the case of Cyan's Cliff:
+        #       wor_src = [field.BranchIfEventBitClear(0x0d2, 0xc3fa7 + 6] + wor_src
+        #   (2) In the case of Doma Siege:
+        #       wor_src = [field.BranchIfEventBitSet(0x40, doma_siege_addr)] + wor_src
+        # Right now, we're just copying the address from the tile.  our options are:
+        #   (A) Parse the data in the event script; make the right choice based on it
+        #   (B) Track what needs to happen for each exit as metadata, in has_entrance_event
+        # Let's try A for now.
+        if require_event_flags[3]:
+            # THIS SHOULD NOT HAPPEN.  Funcionality replaced with entrance_door_patch!
+            print('WARNING: THIS SHOULD NOT OCCUR.  Check entrance_door_patch! ', d, d_ref)
+            # # Parse the requested branching condition
+            # load_address = self.exit_event_addr_to_call[d]
+            # srcdata = self.rom.get_bytes(load_address, 6)
+            # [comm_type, is_set, ebit, branch_addr] = branch_parser(srcdata)
+            #
+            # if branch_addr == 0x5eb3:
+            #     # This is a "Return if event bit CONDITION" call.  Swap the condition and branch to the next line.
+            #     branch_addr = load_address + 6
+            #     is_set = not is_set
+            #
+            # # Prepend the required branch condition
+            # wor_src = get_branch_code(ebit, is_set, branch_addr, map_id) + wor_src
+
+        # (1) Prepend call to force world bit event, if required
+        if require_event_flags[0]:
+            if that_world == 0:
+                wor_src = [field.ClearEventBit(event_bit.IN_WOR)] + wor_src
+            elif that_world == 1:
+                wor_src = [field.SetEventBit(event_bit.IN_WOR)] + wor_src
+
+        # (2) Prepend any data required by the connection
+        if require_event_flags[1]:
+            if d_ref in entrance_door_patch.keys():
+                # Check whether this is BEFORE (True) or AFTER (False) loading the map.
+                if isinstance(entrance_door_patch[d_ref][0], list):
+                    edp = entrance_door_patch[d_ref][0]
+                else:
+                    # patch requires knowledge of arguments
+                    edp = entrance_door_patch[d_ref][0](self.args)
+
+                world_map_override = (conn_data[0] in [0, 1, 2, 511])
+                if entrance_door_patch[d_ref][1] or world_map_override:
+                    # Put code before map load
+                    wor_src = edp + wor_src
+                else:
+                    # Put code after map load
+                    wor_src = wor_src[:-1] + edp + wor_src[-1:]
+
+            if d_ref in require_event_bit.keys():
+                entr_bits = require_event_bit[d_ref]
+                for k in entr_bits:
+                    if entr_bits[k]:
+                        wor_src = [field.SetEventBit(k)] + wor_src
+                    else:
+                        wor_src = [field.ClearEventBit(k)] + wor_src
+
+        # (3) Prepend any data required by the door
+        if require_event_flags[2]:
+            wor_src = exit_door_patch[d] + wor_src
+
+        # Write WOR data to a new event script
+        if len(wor_src) > 0:
+            space = Write(Bank.CC, wor_src, "WOR door Event " + str(d))
+            this_address = space.start_address
+            if self.doors.verbose:
+                vprint('Writing WOR door event:', d, ' @ ', hex(this_address))
+                vprint('\t', [str(s) for s in wor_src])
+
+        src = [field.BranchIfEventBitSet(event_bit.IN_WOR, this_address)] + src
+
+        # Write data to a new event & add it
+        space = Write(Bank.CC, src, "Event tile for shared WOB/WOR door " + str(d))
+        tile_address = space.start_address - EVENT_CODE_START
+
+        if self.doors.verbose:
+            vprint('Writing exit event:', d, '(pair =', d_ref, ') @ ', hex(tile_address))
+            vprint('\tReason: ', require_event_flags)
+            vprint([str(s) for s in src])
+
+        # Write the new event on the exit
+        if self.exits.exit_type[d - 4000] == 'short':
+            # Write the event on the short exit tile
+            new_event = MapEvent()
+            new_event.x = this_exit.x
+            new_event.y = this_exit.y
+            new_event.event_address = tile_address
+            self.add_event(map_id, new_event)
+        elif self.exits.exit_type[d - 4000] == 'long':
+            # Write the event on the long exit tile
+            new_long_event = LongMapEvent()
+            new_long_event.x = this_exit.x
+            new_long_event.y = this_exit.y
+            new_long_event.size = this_exit.size
+            new_long_event.direction = this_exit.direction
+            new_long_event.event_address = tile_address
+            self.add_long_event(map_id, new_long_event)
+
+    def _get_load_map_code(self, entr_id):
+        # Generate load map code for a given door
+        partner_id = exit_data[entr_id][0]  # vanilla partner of door
+        partner_data = self.exits.exit_original_data[partner_id]  # connection data for vanilla partner
+        map_id = partner_data[0]  # destination map
+        x = partner_data[1]  # destination x
+        y = partner_data[2]  # destination y
+        direction = partner_data[6]  # facing after transit
+        src = [field.LoadMap(map_id=map_id, direction=direction, x=x, y=y,
+                             default_music=True, fade_in=True, entrance_event=True)]
+        return src
+
+    def move_event_trigger_data(self):
+        # Rewrite the ROM bits that look for event trigger data
+        new_bank = 0xf1
+
+        # Patch Field Program
+        # C0 / BCAE: BF0200C4       LDA $C40002, X
+        self.rom.set_byte(0x0bcb1, new_bank)
+        # C0 / BCB4: BF0000C4       LDA $C40000, X
+        self.rom.set_byte(0x0bcb7, new_bank)
+        # C0 / BCBD: BF0000C4       LDA $C40000, X
+        self.rom.set_byte(0x0bcc0, new_bank)
+        # C0 / BCD3: BF0200C4       LDA $C40002, X
+        self.rom.set_byte(0x0bcd6, new_bank)
+        # C0 / BCED: BF0400C4       LDA $C40004, X
+        self.rom.set_byte(0x0bcf0, new_bank)
+
+        # Patch World Program
+        # EE / 2176: BF0000C4   LDA $C40000, X
+        self.rom.set_byte(0x2e2179, new_bank)
+        # EE / 217C: BF0200C4   LDA $C40002, X
+        self.rom.set_byte(0x2e217f, new_bank)
+        # EE / 218B: BF0000C4   LDA $C40000, X
+        self.rom.set_byte(0x2e218e, new_bank)
+        # EE / 2193: BF0100C4   LDA $C40001, X
+        self.rom.set_byte(0x2e2196, new_bank)
+        # EE / 219B: BF0200C4   LDA $C40002, X
+        self.rom.set_byte(0x2e219e, new_bank)
+        # EE / 21A4: BF0300C4   LDA $C40003, X
+        self.rom.set_byte(0x2e21a7, new_bank)
+        # EE / 21AC: BF0400C4   LDA $C40004, X
+        self.rom.set_byte(0x2e21af, new_bank)
+
+        # Repoint event pointers & event tile data to the expanded ROM
+        new_ref = (new_bank << 16) - 0xC00000
+        self.events.DATA_START_ADDR = new_ref + (self.events.DATA_START_ADDR - self.EVENT_PTR_START)
+        self.EVENT_PTR_START = new_ref
+
+        space = Reserve(new_ref, new_ref + 0xffff, "Door Rando map event pointers")
+        space = Reserve(0x040000, 0x041A0F, "Original map event pointer data", field.NOP())
+
+        if self.doors.verbose:
+            vprint('Moved Event Trigger data to ' + str(hex(new_bank)) + ': ' + str(
+                hex(self.EVENT_PTR_START)) + ', ' + str(hex(self.events.DATA_START_ADDR)))
+            # for e in range(14):
+            #    print('\t' + str(e) + ' (' + str(self.events.events[e].x) + ', ' + str(self.events.events[e].y) + '): ' + str(hex(self.events.events[e].event_address)))
+
+    def door_rando_cleanup(self):
+        # Perform cleanup actions, if we are doing door rando
+
+        ### THAMASA WOR (0x158): replace manual long-event tiles with a real long_event
+        # We don't need these events: they just check bits 0x196, 0x19E, 0x19F to see if Relm/Shadow story can progress.
+        # Let's just delete them and free space (CB/7D69 - CB/7D82)
+        THA_WR = 0x158
+
+        # South Exit tiles
+        for x in range(20, 26):
+            self.delete_event(THA_WR, x, 48)
+
+        # West Exit tiles
+        for y in range(28, 32):
+            self.delete_event(THA_WR, 0, y)
+
+        # Move unused Nikeah exits (54, 55) out of the way
+        for e_id in [54, 55]:
+            nikeah = self.get_exit(e_id)
+            nikeah.x = e_id
+            nikeah.y = 0
+
+        # Move unused Zozo Tower exits (638, 639, 640, 641) out of the way.
+        # These duplicate the live exits 634-637 on the same tiles (see rooms.py).
+        # They are never referenced by any room, so today they are only safe because
+        # they have higher indices than the live exits (the live exit wins the runtime
+        # first-match). Relocate them to (0, 0) so they can never shadow a randomized
+        # destination if exit ordering ever changes.
+        for e_id in [638, 639, 640, 641]:
+            zozo_tower = self.get_exit(e_id)
+            zozo_tower.x = 0
+            zozo_tower.y = 0
+
+        # Note: This line caused SwdTech to break the game - because I forgot the EVENT_CODE_START offset!
+        Free(0x17d69 + EVENT_CODE_START, 0x17d82 + EVENT_CODE_START)
+
+
+    def get_connection_location(self, exit_id, parent_map_ok=False):
+        # Return the location [map_id, x, y, world] that a given exit_id should go to
+        conn_id = self.door_map[exit_id]
+        conn_pair = exit_data[conn_id][0]  # original connecting exit
+        if conn_pair in self.exits.exit_original_data.keys():
+            conn_data = self.exits.exit_original_data[conn_pair]   # [dest_map, dest_x, dest_y]
+        elif conn_pair >= 4000:
+            # Logical WOR exit hasn't been updated in exit_original_data.  Just use basic door ID.
+            conn_data = self.exits.exit_original_data[conn_pair - 4000]
+
+        if parent_map_ok:
+            # It's OK to return a dest_map = 0x1ff.
+            return conn_data[:3] + [exit_world[conn_id]]
+        else:
+            # Safely handle dest_map = 0x1ff
+            if conn_data[0] in [0x1ff, 0x1fe]:
+                # instead of return to parent map, use world map
+                exit_map = exit_world[conn_pair]
+            else:
+                # wherever this goes is OK
+                exit_map = conn_data[0]
+            return [exit_map] + conn_data[1:3] + [exit_world[conn_id]] # [dest_map, dest_x, dest_y, dest_world]

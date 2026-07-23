@@ -1,0 +1,1763 @@
+from data.rooms import room_data, shared_exits, forced_connections, keys_applied_immediately, doors_as_traps
+import networkx as nx
+import random
+from collections import deque
+from copy import deepcopy
+import numpy as np
+from log.verbose import vprint, is_enabled as _verbose_enabled, detail_enabled as _detail_enabled
+
+
+def _fast_copy_digraph(g):
+    """Order-preserving fast copy of a networkx DiGraph without attributes.
+
+    Equivalent to copy.deepcopy(g) for the graphs used here (no node/edge
+    attributes), but copies the internal dicts directly. Insertion order of
+    _node, _adj[u] and _pred[v] is preserved exactly — nx.DiGraph(g) or
+    g.copy() would rebuild _pred in edge-major order instead, which changes
+    predecessors() iteration order and therefore downstream RNG outcomes.
+    The per-edge attribute dict is shared between _adj[u][v] and _pred[v][u]
+    in the copy, matching networkx's own invariant.
+    """
+    new = g.__class__()
+    new.graph.update(g.graph)
+    new._node = {n: d.copy() for n, d in g._node.items()}
+    new_adj = {u: {v: d.copy() for v, d in nbrs.items()} for u, nbrs in g._adj.items()}
+    new._adj = new_adj
+    new._succ = new_adj
+    new._pred = {v: {u: new_adj[u][v] for u in preds} for v, preds in g._pred.items()}
+    new.__networkx_cache__ = {}
+    return new
+
+
+class NetworkRecursionError(Exception):
+    """Raised when a network traversal hits unexpected infinite recursion.
+
+    The message contains a snapshot of the network state (nodes, edges,
+    residual 2-cycles, map[0]/map[1]) to aid post-mortem diagnosis.
+    """
+    pass
+
+
+class WalkBudgetExceeded(Exception):
+    """Raised when connect_network exhausts its attempted-connection budget.
+
+    Unlike an ordinary attempt failure this is a global stop signal: the
+    backtracking search re-raises it past every frame so the caller can
+    retry the whole walk (e.g. from a different start room). Because the
+    budget counts work done rather than wall-clock time, a given seed always
+    stops at exactly the same point on every machine.
+    """
+    pass
+
+
+class Network:
+    @property
+    def verbose(self):
+        return _verbose_enabled()
+
+    @verbose.setter
+    def verbose(self, value):
+        # Verbose output is controlled centrally by -debug / -debug-verbose.
+        # The setter is kept for backwards compatibility with callers that
+        # still flip self.verbose; assignments are ignored.
+        pass
+
+    def __init__(self, rooms):
+        self.original_room_ids = list(rooms)  # Store original IDs
+        self.rooms = Rooms(rooms)  # Now using improved Rooms class
+        self.net = nx.DiGraph()
+        #self.net.add_nodes_from(self.rooms)  # Rooms class is now iterable
+        self.net.add_nodes_from(room.id for room in self.rooms)
+        self.keychain = set()
+        self.map = [[], []]
+        self.protected = None
+
+        self.active = None  # next(iter(self.rooms)).id  # Set first room's ID as active
+        # Optional attempted-connection budget for connect_network: either None
+        # (unlimited) or a single-element list [remaining] that is SHARED by
+        # every copy of the network, so the whole recursive search draws from
+        # one counter. Set by Doors.mod before each walk attempt.
+        self.walk_budget = None
+        self.version = 'Claude'
+        self.initially_locked_exits = set()  # Exits unlocked by apply_key(); not free at start
+
+    # Attributes copied by the hand-rolled fast paths below. Anything else
+    # (e.g. subclass attributes) falls back to generic deepcopy.
+    _FAST_COPY_ATTRS = frozenset([
+        'walk_budget', 'net', 'rooms', 'original_room_ids', 'keychain',
+        'map', 'protected', 'active', 'version', 'initially_locked_exits',
+    ])
+
+    def __deepcopy__(self, memo):
+        # connect_network deep-copies the whole network once per attempted
+        # connection, which made generic copy.deepcopy ~80% of -drdc's walk
+        # time. All element ids are immutable (ints/strings), so hand-rolled
+        # container copies produce an equivalent independent network far
+        # faster. CRITICAL invariant: every copied dict/set must be rebuilt
+        # by inserting in the original's iteration order (exactly what
+        # generic deepcopy did), because iteration order feeds the candidate
+        # lists that random.shuffle/choice consume — this keeps same-seed
+        # output byte-identical to the generic-deepcopy implementation.
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        result.walk_budget = self.walk_budget  # shared, never copied
+        result.net = _fast_copy_digraph(self.net)
+        result.rooms = self.rooms.fast_copy()
+        result.original_room_ids = list(self.original_room_ids)
+        # Sets are copied as set(list(s)), NOT set(s): set(s) merges into a
+        # presized table while deepcopy rebuilds by inserting the elements
+        # one-by-one (via __reduce_ex__), and the two can produce different
+        # iteration orders for the same contents. set(list(s)) reproduces
+        # deepcopy's insertion sequence exactly.
+        result.keychain = set(list(self.keychain))
+        # Connection pairs are never mutated in place after creation, but
+        # copy them anyway — they're tiny.
+        result.map = [[list(m) for m in self.map[0]],
+                      [list(m) for m in self.map[1]]]
+        result.protected = set(list(self.protected)) if self.protected is not None else None
+        result.active = self.active
+        result.version = self.version
+        result.initially_locked_exits = set(list(self.initially_locked_exits))
+        # Subclass attributes (RuinationBranch etc.): generic deepcopy.
+        for k, v in self.__dict__.items():
+            if k not in self._FAST_COPY_ATTRS:
+                setattr(result, k, deepcopy(v, memo))
+        return result
+
+    def add_room(self, room_id):
+        # Handler for adding a room after initialization
+        self.original_room_ids.append(room_id)
+        room = Room(room_id, self.rooms)
+        self.rooms.add_room(room)
+        self.net.add_node(room_id)
+        # A room can arrive after its lock's key was already applied (e.g. a
+        # character's areas are distributed only when that character is
+        # recruited, but the character key is applied to every branch first).
+        # Its locks load pristine, so assess them against the keychain now;
+        # otherwise they stay locked forever even though the key is held.
+        self._assess_room_locks(room)
+
+    def ForceConnections(self, forcing, state='forced'):
+        these_doors = self.rooms.doors + self.rooms.traps
+        if self.protected is None:
+            self.protected = set()
+        for d in forcing.keys():
+            if d in these_doors:
+                df = forcing[d][0]
+                # Only force the connection when the partner entrance is actually
+                # present in this network. A forced exit can become live after some
+                # of its partner rooms are gone (e.g. a locked trap unlocked by a key
+                # later in finalization, so ForceConnections is re-run); connecting to
+                # an absent partner would crash. Skipping is safe: it is retried
+                # whenever the partner appears.
+                if self.rooms.get_room_from_element(df) is not None:
+                    if self.verbose:
+                        vprint('Forcing: ', d, df)
+                    self.connect(d, df, state=state)
+                    if self.verbose:
+                        vprint('forcing successful.')
+            self.protected.add(d)
+            self.protected.update(forcing[d])
+        if self.verbose:
+            vprint('added doors to protected: ', self.protected)
+
+    def ApplyImmediateKeys(self, args):
+        # Apply keys controlled by args
+        for flag in keys_applied_immediately.keys():
+            if self.verbose:
+                vprint('testing flag: ', flag, '(', getattr(args, flag), ')')
+            [condition, keylist] = keys_applied_immediately[flag]
+            applykeys = (getattr(args, flag) == condition)
+            if applykeys:
+                if self.verbose:
+                    vprint('condition satisfied!')
+                for k in keylist:
+                    self.apply_key(k)
+
+    def connect(self, d1, d2, state=None):
+        connect_verbose = False
+        # Get rooms containing elements
+        R1 = self.rooms.get_room_from_element(d1)
+        R2 = self.rooms.get_room_from_element(d2)
+
+        if connect_verbose:
+            print('\t\t\tSelected rooms:', R1.id, R2.id)
+        if R1 is not R2:
+            self.net.add_edge(R1.id, R2.id)
+            if connect_verbose:
+                print('\t\t\t\tadded edge', R1.id, '--> ', R2.id)
+            if R1.element_type(d1) == 0:
+                self.net.add_edge(R2.id, R1.id)
+                if connect_verbose:
+                    print('\t\t\t\tadded edge', R2.id, '--> ', R1.id)
+
+        # Add to network map
+        if R1.element_type(d1) == 0:
+            self.map[0].append([d1, d2])
+            if connect_verbose:
+                print('\t\t\tadded to map:', self.map[0][-1])
+        else:
+            self.map[1].append([d1, d2])
+            if connect_verbose:
+                print('\t\t\tadded to map:', self.map[1][-1])
+
+
+        # Remove elements from rooms
+        R1.remove(d1)
+        if connect_verbose:
+            print('\t\t\tremoved', d1)
+        R2.remove(d2)
+        if connect_verbose:
+            print('\t\t\tremoved', d2)
+
+        if state != 'static':
+            loop = self.get_loop(R1.id)
+            if connect_verbose:
+                print('\t\t\tlook for loop', loop)
+            if loop:
+                loop_room = self.compress_loop(loop)
+                if connect_verbose:
+                    print('\t\t\tcompressed loop', loop_room.id)
+
+            # Sanity check: after compression, no 2-cycles should remain.
+            # A residual 2-cycle means two rooms that should have been merged
+            # into one; traversal handles it (BFS is cycle-safe) but the
+            # element counts treat them as distinct rooms. Surface the
+            # violation immediately so we can localise the cause.
+            if self.verbose:
+                edge_set = set(self.net.edges)
+                residual = [(u, v) for (u, v) in edge_set
+                            if u != v and (v, u) in edge_set and (str(u) < str(v))]
+                if residual:
+                    vprint(f'\t\t\tWARNING: residual 2-cycle edge(s) after '
+                           f'connect({d1},{d2})/compress_loop: {residual}')
+
+            if state != 'forced':
+                if loop:
+                    # Need to change how we update active room
+                    self.active = loop_room.id
+                    if connect_verbose:
+                        print('\t\t\tactivated', loop_room.id)
+                    for k in loop_room.keys:
+                        self.apply_key(k)
+                        if connect_verbose:
+                            print('\t\t\tapplied key', k)
+                else:
+                    self.active = R2.id
+                    if connect_verbose:
+                        print('\t\t\tactivated', R2.id)
+                    for k in R2.keys:
+                        self.apply_key(k)
+                        if connect_verbose:
+                            print('\t\t\tapplied key', k)
+
+    def apply_key(self, key):
+        # Add the key to the keychain
+        #print('\t\t\t\t\tadding key: ', key)
+        self.keychain.add(key)
+
+        # unlock any doors or traps locked by key
+        room_list = [r for r in self.rooms.rooms]
+        if self.verbose:
+            vprint('\t\tassessing key ', key, 'in rooms')   # : ', room_list)
+        for room_id in room_list:
+            #if self.verbose:
+            #    print('\t\t\t\t\t\tchecking room ', room_id)
+            room = self.rooms.get_room(room_id)
+            self._assess_room_locks(room)
+
+            # Delete the key, we already have it.
+            if key in room.keys:
+                if self.verbose:
+                    vprint('\t\t\tremoving key ', key, 'from', room.id)
+                room.remove(key)
+
+    def _assess_room_locks(self, room):
+        # Open every lock in `room` whose complete key set is already on the
+        # keychain. Released keys go to room.keys (applied when the room is
+        # connected); released doors/traps become live exits, recorded in
+        # initially_locked_exits so they are still excluded as walk targets.
+        room_keys = [k for k in room.locks.keys()]
+        for required_keys in room_keys:
+            # Check if key still exists - recursive apply_key calls may have already popped it
+            if required_keys not in room.locks:
+                continue
+            if set(required_keys).issubset(self.keychain):
+                if self.verbose:
+                    vprint('\t\t\tApplying key:', required_keys, 'in room', room.id)
+                locked = room.locks.pop(required_keys)  # this also removes the item from room.locks
+                for item in locked:
+                    if isinstance(item, str):
+                        # This is a key.  Move it to the room's keys (the room may not have been visited yet)
+                        # If the room is active, it will be caught next time we traverse it.
+                        if self.verbose:
+                            #vprint('\t\t\tApplying a new key:', item)
+                            vprint('\t\t\tadding a key:', item)
+                        #self.apply_key(item)
+                        room.add_keys([item])
+                    elif isinstance(item, dict):
+                        # This is another locked item.  Should not happen with tuple keys
+                        if self.verbose:
+                            vprint('\t\t\tApplying a new lock:', item)
+                        print('\t\t\tWARNING: found a nested lock in ', room.id,' : ', item)
+                        room.add_locks(item)
+                        unlockable = [k for k in item.keys() if set(k).issubset(self.keychain)]
+                        for k in unlockable:
+                            # unlock the nested lock, if we already have the key.
+                            if self.verbose:
+                                vprint('\t\t\talready have key ', k,', applying it')
+                            self.apply_key(k)
+                    elif room.element_type(item) == 0:  # item < 2000
+                        # This is a door.
+                        if self.verbose:
+                            vprint('\t\t\tadding a door...', item)
+                        room.add_doors([item])
+                        self.initially_locked_exits.add(item)
+                    elif room.element_type(item) == 1:
+                        # This is a trap.
+                        if self.verbose:
+                            vprint('\t\t\tadding a trap...', item)
+                        room.add_traps([item])
+                        self.initially_locked_exits.add(item)
+                    else:
+                        # Error
+                        raise RoomError(f"Unknown item unlocked by key {required_keys} in room {room.id}: {item}")
+
+    def get_loop(self, room_id):
+        """Look for a loop containing this room (BFS over predecessors).
+
+        Returns a shortest cycle through room_id as [p1, p2, ..., room_id],
+        ordered walking upstream from room_id (p1 is a predecessor of
+        room_id, each p_{i+1} a predecessor of p_i, and room_id a
+        predecessor of the last p), or [] if room_id is not on a cycle.
+        """
+        preds = self.net.predecessors
+        parent = {}
+        queue = deque()
+        for p in preds(room_id):
+            parent[p] = None
+            queue.append(p)
+        while queue:
+            cur = queue.popleft()
+            for p in preds(cur):
+                if p == room_id:
+                    # Cycle closed: room_id -> cur -> ... -> p1 -> room_id.
+                    chain = [cur]
+                    while parent[chain[-1]] is not None:
+                        chain.append(parent[chain[-1]])
+                    chain.reverse()
+                    return chain + [room_id]
+                if p not in parent:
+                    parent[p] = cur
+                    queue.append(p)
+        return []
+
+    def compress_loop(self, loop_ids):
+        """Compress a loop of room IDs into a single room"""
+        if len(loop_ids) > 1:
+            # Create new room ID
+            r_id = '_'.join(str(id) for id in loop_ids)
+            #print('\t\t\t\t\tcreating a new room:', r_id)
+            new_room = Room(r_id, self.rooms)
+
+            # Combine elements from all rooms in loop
+            #print('\t\t\t\t\tadding elements...')
+            for room_id in loop_ids:
+                room = self.rooms.get_room(room_id)
+                #print('\t\t\t\t\tdoors...', room.doors)
+                new_room.add_doors(room.doors)
+                #print('\t\t\t\t\ttraps...', room.traps)
+                new_room.add_traps(room.traps)
+                #print('\t\t\t\t\tpits...', room.pits)
+                new_room.add_pits(room.pits)
+                #print('\t\t\t\t\tkeys...', room.keys)
+                new_room.add_keys(room.keys)
+                #print('\t\t\t\t\tlocks...', room.locks)
+                new_room.add_locks(room.elements['locks'])
+
+            # Add new_room
+            #print('\t\t\t\t\tadding the room...', new_room.id)
+            self.rooms.add_room(new_room)
+            #print('\t\t\t\t\tadding as node...')
+            self.net.add_node(new_room.id)
+
+            # Inherit edges
+            current_edges = list(self.net.edges)
+            #print('\t\t\t\t\tinheriting edges from:', current_edges)
+            for e in current_edges:
+                if e[0] in loop_ids and e[1] not in loop_ids:
+                    #print('\t\t\t\t\t\tinheriting:', new_room.id, e[1])
+                    self.net.add_edge(new_room.id, e[1])
+                elif e[0] not in loop_ids and e[1] in loop_ids:
+                    #print('\t\t\t\t\t\tinheriting:', e[0], new_room.id)
+                    self.net.add_edge(e[0], new_room.id)
+
+            # Remove loop nodes
+            for room_id in loop_ids:
+                #print('\t\t\t\t\tremoving node:', room_id)
+                self.net.remove_node(room_id)
+                #print('\t\t\t\t\tremoving room:', room_id)
+                self.rooms.remove(room_id)
+
+            return new_room
+        return False
+
+    def flatten_paths(self, paths):
+        temp = []
+        for p in paths:
+            if len(p) == 0:
+                pass
+            elif isinstance(p[0], list):
+                temp.extend(self.flatten_paths(p))
+            else:
+                temp.append(p)
+        return temp
+
+    # Budget for the recursive path enumerators below. Path enumeration is
+    # exponential in the worst case; the budget converts a pathological
+    # graph (e.g. an uncompressed dense cluster) from a hang into a
+    # NetworkRecursionError with diagnostics, exactly like the iteration
+    # cap on the *_nodes traversals. Healthy graphs use a tiny fraction.
+    _PATH_ENUM_BUDGET = 200000
+
+    def get_upstream_paths(self, room_id, visited=None, _budget=None):
+        """Return list of paths heading upstream from room_id"""
+        at_root = visited is None
+        if at_root:
+            visited = []
+            _budget = [self._PATH_ENUM_BUDGET]
+        _budget[0] -= 1
+        if _budget[0] < 0:
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_upstream_paths', room_id,
+                extra=f'path-enumeration budget {self._PATH_ENUM_BUDGET} exceeded'))
+        try:
+            pred = [p for p in self.net.predecessors(room_id) if p not in visited]
+            if len(pred) > 0:
+                if len(pred) == 1:
+                    p = pred[0]
+                    return self.get_upstream_paths(p, visited + [p], _budget)
+                else:
+                    temp = []
+                    for p in pred:
+                        temp.append(self.get_upstream_paths(p, visited + [p], _budget))
+                    return self.flatten_paths(temp)
+            return self.flatten_paths([visited])
+        except RecursionError as e:
+            if not at_root:
+                raise
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_upstream_paths', room_id)) from e
+
+    def get_upstream_nodes(self, room_id):
+        """All rooms with a path to room_id (BFS over predecessors).
+
+        Returns each reachable room exactly once, in BFS discovery order;
+        room_id itself is never included. Linear in the size of the graph.
+        (The pre-9.2 implementation enumerated every path and emitted a
+        room once per path-disjoint chain, which was exponential in the
+        worst case and double-weighted rooms reachable more than one way
+        wherever the caller accumulated over the result.)
+        """
+        visited = {room_id}
+        result = []
+        queue = deque([room_id])
+        preds = self.net.predecessors
+        while queue:
+            for p in preds(queue.popleft()):
+                if p not in visited:
+                    visited.add(p)
+                    result.append(p)
+                    queue.append(p)
+        return result
+
+    def get_downstream_paths(self, room_id, visited=None, _budget=None):
+        """Return list of paths heading downstream from room_id"""
+        at_root = visited is None
+        if at_root:
+            visited = []
+            _budget = [self._PATH_ENUM_BUDGET]
+        _budget[0] -= 1
+        if _budget[0] < 0:
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_downstream_paths', room_id,
+                extra=f'path-enumeration budget {self._PATH_ENUM_BUDGET} exceeded'))
+        try:
+            succ = [s for s in self.net.successors(room_id) if s not in visited]
+            if len(succ) > 0:
+                if len(succ) == 1:
+                    s = succ[0]
+                    return self.get_downstream_paths(s, visited + [s], _budget)
+                else:
+                    temp = []
+                    for s in succ:
+                        temp.append(self.get_downstream_paths(s, visited + [s], _budget))
+                    return self.flatten_paths(temp)
+            return self.flatten_paths([visited])
+        except RecursionError as e:
+            if not at_root:
+                raise
+            raise NetworkRecursionError(self._format_recursion_diagnostics(
+                'get_downstream_paths', room_id)) from e
+
+    def get_downstream_nodes(self, room_id):
+        """All rooms reachable from room_id (BFS over successors).
+
+        Mirror of get_upstream_nodes: each reachable room exactly once, in
+        BFS discovery order, excluding room_id itself.
+        """
+        visited = {room_id}
+        result = []
+        queue = deque([room_id])
+        succs = self.net.successors
+        while queue:
+            for s in succs(queue.popleft()):
+                if s not in visited:
+                    visited.add(s)
+                    result.append(s)
+                    queue.append(s)
+        return result
+
+    def _upstream_trail(self, from_id, to_id):
+        """Shortest chain of rooms walking upstream from from_id to to_id.
+
+        BFS over predecessors. Returns the intermediate rooms only (both
+        endpoints excluded), ordered from from_id's side toward to_id's,
+        or None if to_id is not upstream of from_id.
+        """
+        preds = self.net.predecessors
+        parent = {from_id: None}
+        queue = deque([from_id])
+        while queue:
+            cur = queue.popleft()
+            for p in preds(cur):
+                if p == to_id:
+                    chain = []
+                    node = cur
+                    while node != from_id:
+                        chain.append(node)
+                        node = parent[node]
+                    chain.reverse()
+                    return chain
+                if p not in parent:
+                    parent[p] = cur
+                    queue.append(p)
+        return None
+
+    def get_elements(self, node_list, element_type):
+        elements = []
+        for R_id in node_list:
+            R = self.rooms.get_room(R_id)
+            elements.extend(R.get_elements(element_type))
+        return elements
+
+    def is_attachable(self, room_id):
+        # Return True if the node can accept a dead end.
+        up = self.get_upstream_nodes(room_id)
+        down = self.get_downstream_nodes(room_id)
+        room = self.rooms.get_room(room_id)
+        if up or down:
+            up_count = np.array([0, 0, 0])
+            for u in up:
+                up_count += self.rooms.get_room(u).full_count[:3]
+            down_count = np.array([0, 0, 0])
+            for d in down:
+                down_count += self.rooms.get_room(d).full_count[:3]
+            num_doors = len(room.alldoors)
+            num_traps = len(room.alltraps)
+            num_pits = len(room.pits)
+            #print(str(node.id) + ' Attachability: ', num_doors, num_traps, num_pits, up_count, down_count)
+            return (num_doors > 1) or (num_doors == 1 and (num_traps + down_count[0] + down_count[1]) > 0 and
+                                       (num_pits + up_count[0] + up_count[2]) > 0)
+        else:
+            return room.is_attachable()
+
+    def attach_dead_ends(self):
+        # Attach all dead-end rooms to open connections
+        dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
+        if self.verbose:
+            vprint('Current room ids: ', [r.id for r in self.rooms])
+            vprint("Attaching dead ends: ", len(dead_ends))
+            vprint('\t', [(self.rooms.get_room(e).id, self.rooms.get_room(e).doors) for e in dead_ends])
+
+        loop_flag = len(dead_ends) > 0
+        max_loop_number = 20
+        loop_count = 0
+        while loop_flag:
+            if self.rooms.count[0] == 2:
+                # These are the last two doors. Just connect them.
+                R1_id = dead_ends.pop()
+                R1 = self.rooms.get_room(R1_id)
+                attachable_doors = [R1.doors[0]]
+            else:
+                attachable_doors = []
+                attachable_nodes = []
+                for n in self.net.nodes:
+                    if self.is_attachable(n):
+                        attachable_nodes.append(n)
+                        this_room = self.rooms.get_room(n)
+                        attachable_doors.extend([d for d in this_room.doors + this_room.locked('doors')])
+                random.shuffle(dead_ends)
+                random.shuffle(attachable_doors)
+
+                if self.verbose:
+                    vprint("found attachable nodes: ", len(attachable_nodes), attachable_nodes)
+                    vprint("...with attachable doors: ", len(attachable_doors), attachable_doors)
+
+            for Rd_id in dead_ends:
+                Rd = self.rooms.get_room(Rd_id)
+                #if self.verbose:
+                #    print('selected ', Rd.id, '.')
+
+                if len(attachable_doors) > 0:
+                    # select a door
+                    dd = Rd.doors[0]
+
+                    #if self.verbose:
+                    #    print('\tnow on', dd, '(', Rd_id, '), ', len(attachable_doors), ' options remaining...')
+
+                    is_valid = False
+                    da = None  # Safe initial values
+                    Ra = None
+                    while (not is_valid) and (len(attachable_doors) > 0):
+                        # select an attachable node
+                        da = attachable_doors.pop(0)
+                        Ra = self.rooms.get_room_from_element(da)
+                        #if self.verbose:
+                        #    print('\t\ttesting ', da, '(', Ra.id, '), ', len(attachable_doors), ' remaining...')
+
+                        # Check for bad cases where the dead end has a key:
+                        if len(Rd.keys) > 0 or len(Ra.keys) > 0:
+                            # 1. Verify the dead end doesn't contain the key to unlock this door
+                            flags = [False]
+                            if da in Ra.locked('doors'):
+                                ka = Ra.get_key(da)
+                                flags[0] = (ka in Rd.keys)
+
+                            # 2. Verify there is an exit from this room that isn't locked by keys in these 2 rooms
+                            flags.append(True)
+                            otherdoors = [d for d in Ra.alldoors if d != da]
+                            available_keys = [k for k in Rd.keys] + [k for k in Ra.keys]
+                            for d in otherdoors:
+                                if d in Ra.locked('doors'):
+                                    ka = Ra.get_key(d)
+                                    is_internally_locked = [k in available_keys for k in ka]
+                                    if is_internally_locked.count(True) == 0:
+                                        # It's not locked by a key in the room
+                                        flags[1] = False
+                                else:
+                                    # It's not locked
+                                    flags[1] = False
+
+                            # Look at the results & fail if necessary.
+                            if flags.count(True) > 0:
+                                # ERROR don't connect it!
+                                if self.verbose:
+                                    vprint('\t\tCannot connect ' + str(dd) + ' to ' + str(da) + ': ')
+                                    if flags[0]:
+                                        vprint('\t\t' + str(da) + ' is locked by key ' + str(ka) + ' which is in ' + str(Rd.id) + '!')
+                                    elif flags[1]:
+                                        vprint('\t\tall other exits from ' + str(Ra.id) + ' are locked by a key in ' + str(Rd.id) + '!')
+                                da = None  # Safety in case we run out of exits
+                                Ra = None
+
+                        if da is not None:
+                            # This exit is acceptable, lets move on
+                            is_valid = True
+                            #if self.verbose:
+                            #    print('\t\t', da, '(', Ra.id, ') accepted. ')  # , len(attachable_doors), ' remaining...'
+
+                    if da is not None:
+                        # Attach the doors
+                        if self.verbose:
+                            vprint('\tConnecting: ' + str(dd) + '(' + str(Rd.id) + ') to ' + str(da) + '(' + str(Ra.id) + ')')
+                        self.connect(dd, da, 'static')
+
+                        # If there were any keys in the dead end, add them to the connected room
+                        if da in Ra.locked('doors'):
+                            # If we connected to a locked door, add the key to the locked items
+                            ka = Ra.get_key(da)
+                            for kd in Rd.keys:
+                                if self.verbose:
+                                    vprint('\t\tMoving key' + str(kd) + ' to room ' + str(Ra.id) + ' behind lock ' + str(ka))
+                                Ra.locks[ka].append(kd)
+                        elif len(Rd.keys) > 0:
+                            if self.verbose:
+                                vprint('\t\tMoving keys to room ' + str(Ra.id) + ': ', Rd.keys)
+                            Ra.add_keys([k for k in Rd.keys])
+
+                        # Add the dead room name to the attached room
+                        old_id = Ra.id
+                        new_id = f"{Ra.id}_{Rd.id}"
+                        self.rooms.update_room_id(old_id, new_id)
+                        self._rename_node(old_id, new_id)
+
+                        # Remove the dead room from the network and list of rooms
+                        self.net.remove_node(Rd_id)
+                        self.rooms.remove(Rd)
+
+                        # Check to see if the attached room is still attachable.
+                        if not self.is_attachable(Ra.id):
+                            # If not, remove any remaining doors.
+                            more_doors = [d for d in Ra.alldoors]
+                            if self.verbose:
+                                vprint('\t' + str(Ra.id) + ' is no longer attachable. Removing doors:', more_doors)
+                            for d in more_doors:
+                                if d in attachable_doors:
+                                    attachable_doors.remove(d)
+
+                    else:
+                        if self.verbose:
+                            vprint('\tRan out of doors to connect',dd,'to.')
+
+                else:
+                    # If no attachable doors, just end.  It'll probably get straightened out in the walk.
+                    #return
+                    if self.verbose:
+                        vprint('Ran out of attachable rooms.  Moving on...')
+
+            # having attached all the dead ends, see if we created any & attach them if we did.
+            dead_ends = [n for n in self.net.nodes if self.is_dead_end(n)]
+            if self.verbose:
+                vprint('End of loop', loop_count, '.  Remaining dead ends:', dead_ends)
+
+            if len(dead_ends) > 0:
+                loop_count += 1
+                loop_flag = (loop_count <= max_loop_number)
+            else:
+                loop_flag = False
+                if self.verbose:
+                    vprint('done attaching dead ends.\n')
+
+            if len(dead_ends) > 0 and self.verbose:
+                vprint('Current room ids: ', [r.id for r in self.rooms])
+                vprint("Attaching dead ends: ", len(dead_ends), '(loop', loop_count,')')
+                vprint('\t', [(self.rooms.get_room(e).id, self.rooms.get_room(e).doors[0]) for e in dead_ends])
+
+    def _rename_node(self, old_id, new_id):
+        """Helper to rename a node using networkx relabeling"""
+        mapping = {old_id: new_id}
+        self.net = nx.relabel_nodes(self.net, mapping)
+
+    def check_network_invalidity(self):
+        # Check the network validity based on the following four validity rules:
+        # [A] not [(Door in / trap out) and (Pit in / door out)] and (Door in / door out) and (Pit in / trap out)
+        #     = not "Network Bifurcation"
+        # [B] not (Door in / trap out) and (Pit in / door out)   = not "one-way version 1"
+        # [C] (Door in / trap out) and not (Pit in / door out)   = not "one-way version 2"
+        # [D] (#_doors_in + #_undetermined_doors < #_doors_out) or (#_doors_out + #_undetermined_doors < #_doors_in)
+        #     = door imbalance
+        # If returns True, network is invalid
+        classifications = {}
+        total_doors_in = 0
+        total_doors_out = 0
+        total_doors_either = 0
+
+        dead_end_count = 0
+        doors_in_non_dead_ends = 0
+        total_count = np.array([c for c in self.rooms.count])
+        total_self_count = np.array([0, 0, 0])
+
+        # count_unprotected is pure per room and this loop needs it for every
+        # (room, upstream room) / (room, downstream room) pair — compute each
+        # room's count once instead of O(N^2) times. The cached arrays are
+        # only ever read (+= accumulates into a fresh array).
+        unprot_count = {room_id: self.count_unprotected(room_id)
+                        for room_id in self.net.nodes}
+
+        for room_id in self.net.nodes:
+            room = self.rooms.get_room(room_id)
+            self_count = unprot_count[room_id]
+            total_self_count += np.array(room.count[:3])
+
+            up_count = np.array([0, 0, 0])
+            up_nodes = self.get_upstream_nodes(room_id)
+            for up_id in up_nodes:
+                up_count += unprot_count[up_id]
+
+            down_count = np.array([0, 0, 0])
+            down_nodes = self.get_downstream_nodes(room_id)
+            for down_id in down_nodes:
+                down_count += unprot_count[down_id]
+
+            #if self.verbose:
+            #    print('\t\tbug hunting 0. self:', self_count, '.', up_count,'in', len(up_nodes),': ', up_nodes, '; ',
+            #          down_count, 'in', len(down_nodes), ': ', down_nodes)
+
+            # Assess classifications
+            #if self.verbose:
+            #    print('\t\tbug hunting 1: ', up_count, self_count, down_count)
+            door_in = (up_count[0] + self_count[0]) > 0
+            door_out = (down_count[0] + self_count[0]) > 0
+            is_dead_end = (sum(up_count) == 0) and (sum(down_count) == 0) and (sum(self_count[1:3]) == 0) and (self_count[0] == 1)
+            if is_dead_end:
+                dead_end_count += 1
+            else:
+                doors_in_non_dead_ends += self_count[0]  # (up_count[0] + down_count[0] + self_count[0])
+            exit_is_locked_internally = (len([d for d in room.locked() if room.element_type(d) == 0 and set(room.get_key(d)).issubset(room.keys)]) > 0)
+
+            # Handle special case (avoid double counting self exits)
+            door_in_door_out = (door_in and down_count[0] > 0) or (door_out and up_count[0] > 0) or (self_count[0] > 1)
+            pit_in = (up_count[2] + self_count[2]) > 0
+            trap_out = (down_count[1] + self_count[1]) > 0
+
+            # Count total doors in/out OF THIS NODE
+            #if self.verbose:
+            #    print('\t\tbug hunting 2: ', door_in, door_out, door_in_door_out, pit_in, trap_out)
+            delta_in = 0
+            if sum(up_count) == 0 and self_count[2] == 0:
+                # No guaranteed entrances.  One door must be an entrance.
+                delta_in = min([1, self_count[0]])
+            delta_out = 0
+            if sum(down_count) == 0 and self_count[1] == 0:
+                # No guaranteed exits.  One door must be an exit.
+                delta_out = min([1, self_count[0]])
+            # All remaining doors may be either
+            delta_either = max([0, self_count[0] - delta_in - delta_out])
+
+            #if self.verbose:
+            #    print('\t\tbug hunting 3: ', delta_in, delta_out, delta_either)
+
+            total_doors_in += delta_in
+            total_doors_out += delta_out
+            total_doors_either += delta_either
+
+            #if self.verbose:
+            #    print('\t\tbug hunting 4: ', total_doors_in, total_doors_out, total_doors_either)
+            # For each node: [(door in, door out), (door in, trap out), (pit in, door out), (pit in, trap out)]
+            classifications[room_id] = [door_in_door_out, door_in and trap_out, pit_in and door_out, pit_in and trap_out,
+                                     [up_count.tolist(), self_count.tolist(), down_count.tolist()],
+                                     [delta_in, delta_out, delta_either],
+                                       is_dead_end and exit_is_locked_internally ]
+
+            #if self.verbose:
+            #    print('\t\tbug hunting 5: ', classifications[room_id])
+
+        #if self.verbose:
+        #    print('\t\tbug hunting 6: room analysis complete.')
+
+        # Assess logical parameters
+        DiDo = [cl[0] for cl in classifications.values()].count(True) > 0
+        DiTo = [cl[1] for cl in classifications.values()].count(True) > 0
+        PiDo = [cl[2] for cl in classifications.values()].count(True) > 0
+        PiTo = [cl[3] for cl in classifications.values()].count(True) > 0
+        Rule_A = not (DiTo and PiDo) and DiDo and PiTo
+        Rule_B = DiTo and not PiDo
+        Rule_C = PiDo and not DiTo
+        Rule_D = (total_doors_in + total_doors_either < total_doors_out) or \
+                 (total_doors_out + total_doors_either < total_doors_in)
+        # Note that Rule_E should not be necessary: there should be no way to form new dead ends that aren't the active
+        # room, which would be immediately connected.  Also, Rule E is false if the last connection is a door.
+        Rule_E = (dead_end_count > doors_in_non_dead_ends)
+        # If there are any dead ends with internally locked exits, fail immediately.
+        Rule_F = [cl[6] for cl in classifications.values()].count(True) > 0
+
+        #if self.verbose:
+        #    print('\t\tbug hunting 7: ', DiDo, DiTo, PiDo, PiTo, Rule_A, Rule_B, Rule_C, Rule_D)
+        if self.verbose and (sum(total_self_count == total_count[:3]) < 3):
+            vprint('WARNING: total count', total_count, 'not equal to total self count', total_self_count)
+
+        return [
+            Rule_A or Rule_B or Rule_C or Rule_D or Rule_F,
+            [Rule_A, Rule_B, Rule_C, Rule_D, Rule_E, Rule_F],
+            [DiDo, DiTo, PiDo, PiTo],
+            classifications,
+            [int(total_doors_in), int(total_doors_out), int(total_doors_either)],
+            [int(dead_end_count), int(doors_in_non_dead_ends)]
+        ]
+
+    def connect_network(self):
+        """Recursively connect every element in the network; returns the
+        fully connected network (a new object; self is left untouched, so a
+        failed or budget-exhausted walk can be retried on the same object).
+        """
+        return deepcopy(self)._connect_network_inplace()
+
+    def _connect_network_inplace(self):
+        # Recursive worker for connect_network. `self` here is a private
+        # trial copy owned by this call chain: this frame mutates it freely
+        # (key applications) and each attempted connection deep-copies it
+        # exactly once — the pre-9.1 shape copied twice per attempt (once at
+        # frame entry plus one backup per attempt). On failure the caller
+        # discards the whole trial, so nothing needs restoring.
+        if sum(self.rooms.count[:3]) == 0:
+            return self
+        else:
+            [invalidity, by_rules, classification, cl, td, dec] = self.check_network_invalidity()
+            if self.verbose:
+                vprint('Network classification: ', classification)
+            if invalidity:
+                if self.verbose:
+                    vprint('\tInvalid! By rule: ',
+                          [['A','B','C','D','E','F'][i] for i in range(len(by_rules)) if by_rules[i]],
+                          'in/out/either = ', td, ', deadends/other doors = ', dec)
+                    for k in cl.keys():
+                        vprint('\t',k,': ', cl[k])
+                raise Exception('Invalid network state.')
+            else:
+                if self.verbose:
+                    vprint('\tValid! in/out/either = ', td, ', deadends/other doors = ', dec)
+
+            # Get active room - now using ID instead of index
+            R_active = self.rooms.get_room(self.active)
+            if self.verbose:
+                vprint('Active node: ', R_active.id)
+                #print('classified nodes: ', [r.id for r in cl.keys()])
+                #r_classified = [r for r in cl.keys() if r.id == R_active.id][0]
+
+            # Apply any keys in this node if they haven't been already.
+            # (list(): apply_key removes the key from the room's list.)
+            for k in list(R_active.keys):
+                if self.verbose:
+                    vprint('Found an unused key: ', k)
+                self.apply_key(k)
+
+            # Collect possible exits
+            possible_exits = [[d for d in R_active.doors], [t for t in R_active.traps]]
+            if self.verbose:
+                vprint('Possible exits: ')
+                vprint('\t' + str(R_active.id) + ': ', possible_exits, ' - (', R_active.count[:3], '). K: ',
+                      R_active.keys, ', L: ', R_active.locks, '. [U/s/D]:', cl[R_active.id][4])
+            for node_id in self.get_downstream_nodes(R_active.id):
+                # Collect exits from downstream nodes.
+                ### AS WE DO THIS: do we need to look for keys & apply them?  but only along the present branch???
+                node = self.rooms.get_room(node_id)
+                node_exits = [[d for d in node.doors], [t for t in node.traps]]
+                if self.verbose:
+                    vprint('\t' + str(node_id) + ': ', node_exits, ' - (', node.count[:3], '). K: ', node.keys, ', L: ',
+                          node.locks, '. [U/s/D]:', cl[node_id][4])
+                possible_exits[0] += node_exits[0]
+                possible_exits[1] += node_exits[1]
+
+            possible_exits = possible_exits[0] + possible_exits[1]
+            random.shuffle(possible_exits)  # randomize order
+
+            forced_exits = [f for f in possible_exits if f in forced_connections.keys()]
+            #for f in forced_exits:
+            #    possible_exits.remove(f)
+            #possible_exits = possible_exits + forced_exits
+            # If there are any forced exits, only connect these.  Fail fast!
+            if len(forced_exits) > 0:
+                possible_exits = [forced_exits[0]]
+
+            # Start trying exits
+            while len(possible_exits) > 0:
+                d1 = possible_exits.pop()
+                R1 = self.rooms.get_room_from_element(d1)
+                d1_type = R1.element_type(d1)
+                if self.verbose:
+                    vprint('selected: ', d1, ', type ', d1_type, ' (', R1.id, ')')
+
+                # if d1 was in a downstream node, R1 might have a key that hasn't been used yet.
+                if R1.id != R_active.id:
+                    trail = [R1.id]
+                    if R_active.id not in self.net.predecessors(R1.id):
+                        # R_active is significantly upstream.  Find the traversed
+                        # nodes: a shortest chain from R1 back up to R_active.
+                        between = self._upstream_trail(R1.id, R_active.id)
+                        if between is None:
+                            # d1 came from get_downstream_nodes(R_active), so a
+                            # path must exist; treat its absence as a failed state.
+                            raise Exception(f'no upstream path from {R1.id} '
+                                            f'to active room {R_active.id}')
+                        trail += between
+                        if self.verbose:
+                            vprint('Traversed: ', [r for r in trail])
+                    # Apply any keys found along the way.
+                    for Rt_id in trail:
+                        Rt = self.rooms.get_room(Rt_id)
+                        for k in list(Rt.keys):
+                            if self.verbose:
+                                vprint('Found an unused key: ', k, 'in', Rt_id)
+                            self.apply_key(k)
+
+                # Collect possible entrances for d1
+                possible_entrances = []
+                if self.verbose:
+                    vprint('Possible entrances: (', len(self.net.nodes), ' rooms)')
+                for node_id in self.net.nodes:
+                    node = self.rooms.get_room(node_id)
+                    if d1_type == 0:
+                        node_entr = [d for d in node.doors if d != d1]
+                    else:
+                        node_entr = [p for p in node.pits]
+                    if self.verbose:
+                        vprint('\t' + str(node.id) + ': ', node_entr, ' - (', node.count[:3], '). K: ', node.keys,
+                              ', L: ', node.locks, '. [U/s/D]:', cl[node.id][4])
+                    possible_entrances.extend(node_entr)
+
+                if d1 in forced_connections.keys():
+                    # This should only happen for forced one-way connections.  d2 must be locked, so it's not sampled.
+                    possible_entrances = [d for d in forced_connections[d1]] # fail fast!
+                    if self.verbose:
+                        vprint('\t\tForced connection: ', possible_entrances)
+                else:
+                    possible_entrances = [p for p in possible_entrances if p not in self.protected]
+
+                random.shuffle(possible_entrances)  # randomize order
+
+                while len(possible_entrances) > 0:
+                    d2 = possible_entrances.pop()
+
+                    # Charge one unit of budget per attempted connection (the
+                    # unit of work: one deepcopy + one recursive descent).
+                    if self.walk_budget is not None:
+                        self.walk_budget[0] -= 1
+                        if self.walk_budget[0] < 0:
+                            raise WalkBudgetExceeded(
+                                'connect_network exceeded its attempted-connection budget')
+
+                    # The one copy per attempt: connect and recurse on the
+                    # trial; a failure anywhere in that subtree discards the
+                    # trial and leaves self as it was before the attempt.
+                    trial = deepcopy(self)
+                    try:
+                        if self.verbose:
+                            vprint('\t\tTrying Connection: ', str(d1), str(d2))
+                        trial.connect(d1, d2)
+                        if self.verbose:
+                            vprint('\t\t...')
+                        # up_propagate the successful connection
+                        return trial._connect_network_inplace()
+
+                    except WalkBudgetExceeded:
+                        # Global stop signal, not an attempt failure: unwind
+                        # the whole search so the caller can retry the walk.
+                        raise
+                    except Exception:
+                        # Not a bare except: KeyboardInterrupt/SystemExit must
+                        # abort the walk, not be treated as a failed attempt.
+                        if self.verbose:
+                            vprint('\t\t(' + str(d1) + ',' + str(d2) + ') failed')
+
+                # If you get here, you ran out of possible entrances.
+                if self.verbose:
+                    vprint('\t' + str(d1) + ' ran out of possible entrances.')
+                raise Exception(str(d1) + ' ran out of possible entrances.')
+
+            if self.verbose:
+                vprint('\t' + str(R_active.id) + ' ran out of possible exits.')
+            raise Exception("Ran out of possible exits.")
+
+    def plot_map(self):
+        # Make a plot of the map
+        # Construct a new network and write in the map edges
+        plotnet = nx.DiGraph()
+        plotnet.add_nodes_from(self.original_room_ids)
+        door_rooms = {}
+        room_labels = {}
+        for r in plotnet.nodes():
+            room_labels[r] = str(r)
+            for t in room_data[r][:3]:
+                for d in t:
+                    door_rooms[d] = r
+            if len(room_data[r]) == 6:
+                # Collect locked items data
+                for t in room_data[r][4].values():
+                    for l in t:
+                        door_rooms[l] = r
+        # add edges to the plotnet
+        edge_labels = {}
+        for m in self.map[0]:
+            # Add doors
+            r1 = door_rooms[m[0]]
+            r2 = door_rooms[m[1]]
+            plotnet.add_edge(r1, r2)
+            plotnet.add_edge(r2, r1)
+            edge_labels[(r1, r2)] = str(m[0]) + '<->'+str(m[1])
+        for m in self.map[1]:
+            # Add traps
+            r1 = door_rooms[m[0]]
+            r2 = door_rooms[m[1]]
+            plotnet.add_edge(r1, r2)
+            edge_labels[(r1, r2)] = str(m[0]) + '-->' + str(m[1])
+
+        pos = nx.spring_layout(plotnet)
+        nx.draw_networkx_nodes(plotnet, pos=pos)
+        nx.draw_networkx_labels(plotnet, pos=pos)
+        two_ways = [e for e in plotnet.edges if (e[1],e[0]) in plotnet.edges]
+        one_ways = [e for e in plotnet.edges if (e[1], e[0]) not in plotnet.edges]
+        nx.draw_networkx_edges(plotnet, pos=pos, edgelist=two_ways)
+        nx.draw_networkx_edges(plotnet, pos=pos, edgelist=one_ways, edge_color='r')
+        nx.draw_networkx_edge_labels(plotnet, pos=pos, edge_labels=edge_labels)
+
+    def is_dead_end(self, node):
+        # Return True if node is a dead end (one entrance, no exits)
+        down = self.get_downstream_nodes(node)
+        up = self.get_upstream_nodes(node)
+        if down or up:
+            # Cannot be a dead-end if it has downstream or upstream nodes, by definition
+            return False
+        else:
+            room = self.rooms.get_room(node)
+            nc = room.count
+            return nc[:3] == [1, 0, 0] and nc[4] == 0
+
+    def _format_recursion_diagnostics(self, method_name, room_id, extra=''):
+        """Build a snapshot of network state for post-mortem of a runaway traversal.
+
+        Used by NetworkRecursionError so the wrapper that catches finalize_map
+        failures has something to chew on instead of "maximum recursion depth
+        exceeded".
+        """
+        try:
+            nodes = list(self.net.nodes)
+            edges = list(self.net.edges)
+            edge_set = set(edges)
+            two_cycles = sorted(
+                {tuple(sorted([str(u), str(v)])) for u, v in edges
+                 if u != v and (v, u) in edge_set}
+            )
+            lines = []
+            lines.append(f"{method_name} could not terminate on room {room_id!r}")
+            if extra:
+                lines.append(f"  ({extra})")
+            lines.append(f"  Nodes ({len(nodes)}): {nodes}")
+            lines.append(f"  Edges ({len(edges)}): {edges}")
+            lines.append(f"  Uncompressed 2-cycles ({len(two_cycles)}): {two_cycles}")
+            try:
+                lines.append(f"  Door map ({len(self.map[0])}): {self.map[0]}")
+                lines.append(f"  Trap map ({len(self.map[1])}): {self.map[1]}")
+            except Exception:
+                pass
+            return '\n'.join(lines)
+        except Exception as fmt_err:
+            return (f"{method_name} could not terminate on room {room_id!r}; "
+                    f"diagnostic formatting also failed: {fmt_err!r}")
+
+    def count_unprotected(self, room_id):
+        """Count including locked elements"""
+        r = self.rooms.get_room(room_id)
+        #if self.verbose:
+        #    print('\t\tcount unprotected rooms in', room_id)
+        unprotected = np.array([
+            len([d for d in r.alldoors if d not in self.protected]),
+            len([d for d in r.alltraps if d not in self.protected]),
+            len([d for d in r.allpits if d not in self.protected]),
+        ]
+        )
+        #if self.verbose:
+        #    print('\t\t\t', unprotected)
+        return unprotected
+
+
+## Coprogramming with Claude.ai to rewrite data classes
+# Suggested re-implementation of Rooms by Claude
+class RoomsError(Exception):
+    """Base class for Rooms collection errors"""
+    pass
+
+
+class Rooms:
+    """
+    Collection class managing a set of Room objects with efficient lookups
+    and element tracking.
+    """
+
+    def __init__(self, room_ids):
+        """Initialize Rooms collection from list of room IDs"""
+        # Main room storage
+        self.rooms = {}  # id -> Room mapping
+
+        # Reverse lookup maps for O(1) element location
+        self._element_to_room = {}  # element_id -> room_id mapping
+
+        # Initialize from room IDs
+        for room_id in room_ids:
+            self.add_room(Room(room_id, self))
+
+    def add_room(self, room):
+        """Add a room and index all its elements"""
+        if room.id in self.rooms:
+            raise RoomsError(f"Room {room.id} already exists")
+
+        # Add room to main storage
+        self.rooms[room.id] = room
+
+        # Index all elements
+        self._index_room_elements(room)
+
+    def fast_copy(self):
+        """Order-preserving fast copy of the collection and its rooms.
+
+        Equivalent to copy.deepcopy for the data actually stored here
+        (element ids are ints/strings; lock lists are owned by each Room),
+        preserving dict insertion order exactly. Used by
+        Network.__deepcopy__ — see the invariant note there.
+        """
+        new = Rooms.__new__(Rooms)
+        new.rooms = {}
+        new._element_to_room = dict(self._element_to_room)
+        for rid, room in self.rooms.items():
+            new.rooms[rid] = room.fast_copy(new)
+        return new
+
+    def _index_room_elements(self, room):
+        """Index all elements in a room for reverse lookup"""
+        # Index standard elements
+        for element_type in ['doors', 'traps', 'pits', 'keys']:
+            for element in room.elements[element_type]:
+                self._element_to_room[element] = room.id
+
+        # Recursively index locked elements
+        def index_locked_items(items):
+            for item in items:
+                if isinstance(item, dict):
+                    # Recurse into nested locks
+                    for nested_items in item.values():
+                        index_locked_items(nested_items)
+                else:
+                    self._element_to_room[item] = room.id
+
+        # Index all locked elements including nested ones
+        for locked_items in room.elements['locks'].values():
+            index_locked_items(locked_items)
+
+    def _unindex_room_elements(self, room):
+        """Remove all element indexes for a room"""
+        for element in self._element_to_room.copy():
+            if self._element_to_room[element] == room.id:
+                del self._element_to_room[element]
+
+    def remove(self, room_id):
+        """Remove a room and all its element indexes"""
+        if isinstance(room_id, Room):
+            room_id = room_id.id
+
+        if room_id not in self.rooms:
+            return False
+
+        # Remove element indexes
+        self._unindex_room_elements(self.rooms[room_id])
+
+        # Remove room
+        del self.rooms[room_id]
+        return True
+
+    def reindex_room(self, room_id):
+        """Reindex all elements in a room after lock changes"""
+        if isinstance(room_id, Room):
+            room_id = room_id.id
+
+        if room_id not in self.rooms:
+            raise RoomsError(f"Cannot reindex non-existent room {room_id}")
+
+        # Remove old indexes
+        self._unindex_room_elements(self.rooms[room_id])
+        # Create new indexes
+        self._index_room_elements(self.rooms[room_id])
+
+    def notify_lock_change(self, room_id):
+        """Called by Room when its locks are modified"""
+        if room_id in self.rooms:
+            self.reindex_room(room_id)
+
+    def get_room(self, room_id):
+        """Get room by ID"""
+        return self.rooms.get(room_id)
+
+    def get_room_from_element(self, element_id):
+        """Get room containing an element, O(1) lookup"""
+        room_id = self._element_to_room.get(element_id)
+        return self.rooms.get(room_id)
+
+    def update_room_id(self, old_id, new_id):
+        """Update a room's ID and maintain all mappings"""
+        if old_id not in self.rooms:
+            raise RoomsError(f"Room {old_id} not found")
+        if new_id in self.rooms:
+            raise RoomsError(f"Room {new_id} already exists")
+
+        # Get the room and update its ID
+        room = self.rooms[old_id]
+        room.id = new_id
+
+        # Update the rooms dictionary
+        self.rooms[new_id] = room
+        del self.rooms[old_id]
+
+        # Update element to room mappings
+        for element, room_id in self._element_to_room.items():
+            if room_id == old_id:
+                self._element_to_room[element] = new_id
+
+
+    @property
+    def count(self):
+        """Unlocked element counts across all rooms, as
+        [doors, traps, pits, keys, lock groups] (same layout as Room.count)."""
+        totals = [0, 0, 0, 0, 0]  # [doors, traps, pits, keys, locks]
+        for room in self.rooms.values():
+            for i, count in enumerate(room.count):
+                totals[i] += count
+        return totals
+
+    # Collection-like behavior
+    def __iter__(self):
+        return iter(self.rooms.values())
+
+    def __len__(self):
+        return len(self.rooms)
+
+    def __contains__(self, item):
+        if isinstance(item, str):
+            return item in self.rooms
+        elif isinstance(item, Room):
+            return item.id in self.rooms
+        return False
+
+    # Element collection properties
+    @property
+    def doors(self):
+        """List of all unlocked doors"""
+        doors = []
+        for room in self.rooms.values():
+            doors.extend(room.doors)
+        return doors
+
+    @property
+    def traps(self):
+        """List of all unlocked traps"""
+        traps = []
+        for room in self.rooms.values():
+            traps.extend(room.traps)
+        return traps
+
+    @property
+    def pits(self):
+        """List of all unlocked pits"""
+        pits = []
+        for room in self.rooms.values():
+            pits.extend(room.pits)
+        return pits
+
+    @property
+    def keys(self):
+        """List of all unlocked keys"""
+        keys = []
+        for room in self.rooms.values():
+            keys.extend(room.keys)
+        return keys
+
+    @property
+    def locks(self):
+        """List of all lock keys"""
+        locks = []
+        for room in self.rooms.values():
+            locks.extend(room.elements['locks'].keys())
+        return locks
+
+    @property
+    def locked(self):
+        """List of all locked elements"""
+        locked = []
+        for room in self.rooms.values():
+            locked.extend(room.locked())
+        return locked
+
+    @property
+    def alldoors(self):
+        """List of all doors (unlocked and locked)"""
+        doors = []
+        for room in self.rooms.values():
+            doors.extend(room.alldoors)
+        return doors
+
+    @property
+    def alltraps(self):
+        """List of all traps (unlocked and locked)"""
+        traps = []
+        for room in self.rooms.values():
+            traps.extend(room.alltraps)
+        return traps
+
+
+# Suggested re-implementation of Room by Claude.ai
+class RoomError(Exception):
+    """Base class for Room-related errors"""
+    pass
+
+
+class InvalidElementError(RoomError):
+    """Raised when an element ID is invalid"""
+    pass
+
+
+class LockError(RoomError):
+    """Raised for lock-related errors"""
+    pass
+
+
+class Room:
+    """
+    A room in the map containing doors, traps, pits, keys, and locks.
+    Elements are identified by:
+    - doors: integers < 2000
+    - traps: integers 2000-2999
+    - pits: integers >= 3000
+    - keys: strings
+    - locks: dictionary mapping key strings to lists of locked elements
+    """
+
+    @property
+    def verbose(self):
+        # Element-level diagnostics are a *detail* verbosity level, enabled
+        # only by `-dv all` (Room prints per element removal/lock change are
+        # far too chatty for normal debugging, where network/branch-level
+        # output from -debug / -dv suffices). The `if self.verbose:` guards
+        # around vprint calls in this class also skip building the debug
+        # strings, so keep them.
+        return _detail_enabled()
+
+    def __init__(self, room_id=None, rooms_ref=None):
+        """Initialize a room with optional room_data"""
+        self.id = room_id
+        self.rooms_ref = rooms_ref  # Reference to parent Rooms collection
+        self.elements = {
+            'doors': set(),
+            'traps': set(),
+            'pits': set(),
+            'keys': set(),
+            'locks': {}
+        }
+
+        if room_id in room_data.keys():
+            # Load from room_data if ID provided
+            data = room_data[room_id]
+            if len(data) == 4:  # Old format without keys/locks
+                contents = list(data[:-1]) + [[], {}]
+            else:
+                contents = data[:-1]
+
+            # Initialize elements
+            self.add_doors(contents[0])
+            self.add_traps(contents[1])
+            self.add_pits(contents[2])
+            self.add_keys(contents[3])
+            self.add_locks(contents[4])
+
+            # Handle shared exits
+            self._handle_shared_exits()
+
+    def fast_copy(self, rooms_ref):
+        """Order-preserving fast copy of this room, bound to `rooms_ref`.
+
+        Element ids are immutable (ints/strings) and lock lists are owned by
+        the room (copied in add_locks), so shallow container copies produce
+        an independent room. Sets/dicts are rebuilt in the original's
+        iteration order — same as generic deepcopy — which matters for RNG
+        reproducibility (see Network.__deepcopy__). Nested lock dicts (which
+        add_locks warns about and current data never contains) are shallow-
+        copied defensively.
+        """
+        new = Room.__new__(Room)
+        new.id = self.id
+        new.rooms_ref = rooms_ref
+        elements = self.elements
+        # set(list(s)) rather than set(s): reproduces deepcopy's element-by-
+        # element rebuild so iteration order matches the generic-deepcopy
+        # implementation exactly (see Network.__deepcopy__).
+        new.elements = {
+            'doors': set(list(elements['doors'])),
+            'traps': set(list(elements['traps'])),
+            'pits': set(list(elements['pits'])),
+            'keys': set(list(elements['keys'])),
+            'locks': {k: [dict(i) if isinstance(i, dict) else i for i in v]
+                      for k, v in elements['locks'].items()},
+        }
+        return new
+
+    def _handle_shared_exits(self):
+        """Remove shared exits defined in shared_exits global"""
+        shared_doors = [d for d in self.alldoors if d in shared_exits]
+        for door in shared_doors:
+            for shared in shared_exits[door]:
+                self.remove(shared)
+
+    def _validate_element(self, element_id, expected_type):
+        """
+        Validate element ID matches expected type.
+        Returns element_id if valid, raises InvalidElementError if not.
+        Element ID allocations:
+            0--1999:  doors of various types
+                0--1128: short exits in original game
+                1129--1280:  long exits in original game
+                1500--1999:  reserved for event tiles operating as doors
+            2000--2999:  one-way exits ('traps') in original game
+            3000--3999:  one-way entrances ('pits') in original game.
+                For original connections, trap_id + 1000 = pit_id
+            4000--5999:  logical (WOR) exits on shared maps
+                For original connections,  door_id + 4000 = logical_wor_id
+            6000--7999:  one-way entrances (pits) associated with rare doors that act as one-ways (see below)
+
+        Exceptions: doors in doma dream that act as one-way exits
+            [843, 844, 845, 846, 847, 848, 849, 852, 853, 854, 859, 862]:
+        """
+        if expected_type == 'doors':
+            if not isinstance(element_id, int) or (element_id >= 2000 and element_id < 4000) or (element_id in doors_as_traps):
+                raise InvalidElementError(f"Invalid door ID: {element_id}")
+        elif expected_type == 'traps':
+            if not isinstance(element_id, int) or not ((2000 <= element_id < 3000) or element_id in doors_as_traps):
+                raise InvalidElementError(f"Invalid trap ID: {element_id}")
+        elif expected_type == 'pits':
+            if not isinstance(element_id, int) or not ((3000 <= element_id < 4000) or (6000 <= element_id < 8000)):
+                raise InvalidElementError(f"Invalid pit ID: {element_id}")
+        elif expected_type == 'keys':
+            if not isinstance(element_id, str):
+                raise InvalidElementError(f"Invalid key ID: {element_id}")
+        return element_id
+
+    def _add_elements(self, element_type, elements):
+        """Add multiple elements of the same type"""
+        for element in elements:
+            validated = self._validate_element(element, element_type)
+            self.elements[element_type].add(validated)
+            # Update parent's element-to-room mapping
+            if self.rooms_ref is not None:
+                self.rooms_ref._element_to_room[validated] = self.id
+
+    def add_doors(self, doors):
+        self._add_elements('doors', doors)
+
+    def add_traps(self, traps):
+        self._add_elements('traps', traps)
+
+    def add_pits(self, pits):
+        self._add_elements('pits', pits)
+
+    def add_keys(self, keys):
+        self._add_elements('keys', keys)
+
+    def add_locks(self, lock_dict):
+        """Add locks with validation"""
+        for key, locked_items in lock_dict.items():
+            #if not isinstance(key, str):
+            #    raise LockError(f"Lock key must be string, got: {key}")
+            if not isinstance(key, (list, tuple)):
+                key = (key,)
+            key_tuple = tuple(sorted(key))
+            if key_tuple in self.elements['locks']:
+                if self.verbose:
+                    vprint(f"Warning: Merging lock {key_tuple} in room {self.id}")
+                self.elements['locks'][key_tuple].extend(locked_items)
+            else:
+                # Copy: rooms built from room_data would otherwise alias the
+                # module-level lock lists, and Room.remove()/attach_dead_ends
+                # would then mutate the shared data table in place.
+                self.elements['locks'][key_tuple] = list(locked_items)
+
+        # Notify parent collection of lock changes
+        if self.rooms_ref is not None:
+            self.rooms_ref.notify_lock_change(self.id)
+
+    def remove(self, element_id):
+        """Remove an element from the room"""
+        # Try direct removal from element sets
+        for element_type, elements in self.elements.items():
+            if element_type != 'locks' and element_id in elements:
+                elements.remove(element_id)
+                if self.verbose:
+                    vprint(f"Removed {element_id} from {self.id}")
+                return True
+
+        # Check locks
+        for key, locked_items in list(self.elements['locks'].items()):
+            if element_id in locked_items:
+                locked_items.remove(element_id)
+                if self.verbose:
+                    vprint(f"Removed locked item {element_id} from lock {key} in room {self.id}")
+                # Remove empty locks
+                if not locked_items:
+                    del self.elements['locks'][key]
+                    if self.verbose:
+                        vprint(f"Removed empty lock {key}")
+                return True
+
+        return False
+
+    def extract_locked(self, lock_dict):
+        """Recursively extract all locked elements"""
+        elements = []
+        for locked_items in lock_dict.values():
+            for item in locked_items:
+                if isinstance(item, dict):
+                    elements.extend(self.extract_locked(item))
+                else:
+                    elements.append(item)
+        return elements
+
+    def locked(self, element_type=None):
+        """Get locked elements, optionally filtered by type"""
+        locked_elements = self.extract_locked(self.elements['locks'])
+
+        if element_type is None:
+            return locked_elements
+
+        if element_type in ['doors', 0]:
+            return [d for d in locked_elements if isinstance(d, int) and d < 2000]
+        elif element_type in ['traps', 1]:
+            return [d for d in locked_elements if isinstance(d, int) and 2000 <= d < 3000]
+        elif element_type in ['pits', 2]:
+            return [d for d in locked_elements if isinstance(d, int) and d >= 3000]
+        elif element_type in ['keys', 3]:
+            return [d for d in locked_elements if isinstance(d, str)]
+
+        return []
+
+    def get_key(self, locked_element):
+        """Find all keys needed to access a locked element.
+        Returns a list of keys in order from outermost to innermost lock.
+        Returns empty list if element is not locked."""
+
+        def find_in_locks(element, lock_dict):
+            for key, items in lock_dict.items():
+                # Check direct containment
+                if element in items:
+                    return tuple(key)
+                # Check nested locks
+                for item in items:
+                    if isinstance(item, dict):
+                        nested_keys = find_in_locks(element, item)
+                        if nested_keys:
+                            return tuple(key) + nested_keys
+            return tuple()
+
+        return find_in_locks(locked_element, self.elements['locks'])
+
+    def contains(self, element_id):
+        """Check if room contains an element"""
+        return any(
+            element_id in elements
+            for element_type, elements in self.elements.items()
+            if element_type != 'locks'
+        ) or element_id in self.locked()
+
+    def element_type(self, element_id):
+        """Get the type (0-3) of an element"""
+        """Element ID allocations:
+            0--1999:  doors of various types
+                0--1128: short exits in original game
+                1129--1280:  long exits in original game
+                1500--1999:  reserved for event tiles operating as doors
+            2000--2999:  one-way exits ('traps') in original game
+            3000--3999:  one-way entrances ('pits') in original game.
+                For original connections, trap_id + 1000 = pit_id
+            4000--5999:  logical (WOR) exits on shared maps
+                For original connections,  door_id + 4000 = logical_wor_id
+            6000--7999:  one-way entrances (pits) associated with rare doors that act as one-ways (see below)
+
+        Exceptions: doors in doma dream that act as one-way exits
+        Calculated in data.rooms:
+            doors_as_traps = [843, 844, 845, 846, 847, 848, 849, 852, 853, 854, 859, 862]
+        """
+        if isinstance(element_id, str) or element_id in self.elements['keys']:
+            return 3
+        # >= 10000 covers the synthetic door IDs: virtual root doors (10000+,
+        # -dra/-drx), crossworld links (20000+, -mapx) and map-shuffle protected
+        # doors (30000+). These previously fell through to `return False`, which
+        # compared equal to 0 ("door") by accident; classify them explicitly.
+        if (element_id < 2000 or (4000 <= element_id < 6000) or element_id >= 10000) \
+                and element_id not in doors_as_traps:
+            return 0
+        if (2000 <= element_id < 3000) or element_id in doors_as_traps:
+            return 1
+        if (3000 <= element_id < 4000) or (6000 <= element_id < 8000):
+            return 2
+        # 8000-9999 is unallocated; anything landing here is a data error.
+        raise InvalidElementError(f"Cannot classify element ID: {element_id}")
+
+    def get_elements(self, element_type):
+        """Get all elements of a given type"""
+        if element_type in [0, 'doors']:
+            return list(self.elements['doors'])
+        elif element_type in [1, 'traps']:
+            return list(self.elements['traps'])
+        elif element_type in [2, 'pits']:
+            return list(self.elements['pits'])
+        elif element_type in [3, 'keys']:
+            return list(self.elements['keys'])
+        elif element_type in [4, 'locks']:
+            return list(self.elements['locks'].keys())
+        elif element_type in [5, 'locked']:
+            return list(self.elements['locks'].values())
+        return []
+
+    def get_exit(self):
+        """Get a random exit (door or trap)"""
+        exits = list(self.elements['doors']) + list(self.elements['traps'])
+        return random.choice(exits) if exits else None
+
+    def is_attachable(self):
+        """Check if room can be attached to a dead end"""
+        all_doors = self.alldoors
+        all_traps = self.alltraps
+        all_pits = self.elements['pits']
+        return (len(all_doors) > 1 or
+                (len(all_doors) == 1 and len(all_traps) > 0 and len(all_pits) > 0))
+
+    # Properties
+    @property
+    def doors(self):
+        return list(self.elements['doors'])
+
+    @property
+    def traps(self):
+        return list(self.elements['traps'])
+
+    @property
+    def pits(self):
+        return list(self.elements['pits'])
+
+    @property
+    def keys(self):
+        return list(self.elements['keys'])
+
+    @property
+    def locks(self):
+        return self.elements['locks']
+
+    @property
+    def alldoors(self):
+        return self.doors + self.locked('doors')
+
+    @property
+    def alltraps(self):
+        return self.traps + self.locked('traps')
+
+    @property
+    def allpits(self):
+        return self.pits + self.locked('pits')
+
+    @property
+    def allkeys(self):
+        return self.keys + self.locked('keys')
+
+    @property
+    def count(self):
+        """Unlocked element counts as [doors, traps, pits, keys, locks].
+
+        Index meanings (used all over the mapping code as e.g.
+        `nc[:3] == [1, 0, 0]` for "exactly one door, nothing else"):
+            [0]=doors, [1]=traps, [2]=pits, [3]=keys, [4]=lock groups.
+        Locked elements are NOT included; see full_count.
+        """
+        return [
+            len(self.elements['doors']),
+            len(self.elements['traps']),
+            len(self.elements['pits']),
+            len(self.elements['keys']),
+            len(self.elements['locks'])
+        ]
+
+    @property
+    def full_count(self):
+        """Element counts including locked elements, as an np.array
+        [doors, traps, pits, keys] (no locks slot, unlike `count`)."""
+        return np.array(self.count[:4]) + np.array([
+            len(self.locked('doors')),
+            len(self.locked('traps')),
+            len(self.locked('pits')),
+            len(self.locked('keys'))
+        ])
+

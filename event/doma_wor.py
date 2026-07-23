@@ -1,6 +1,15 @@
 from event.event import *
 
 class DomaWOR(Event):
+    def __init__(self, events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps):
+        super().__init__(events, rom, args, dialogs, characters, items, maps, enemies, espers, shops, warps)
+        self.DOOR_RANDOMIZE = (args.door_randomize_cyans_dream
+                          or args.door_randomize_all
+                          or args.door_randomize_crossworld
+                          or args.door_randomize_dungeon_crawl
+                          or args.door_randomize_each
+                          or args.ruination_mode)
+
     def name(self):
         return "Doma WOR"
 
@@ -40,6 +49,9 @@ class DomaWOR(Event):
         self.mines_mod()
         self.doma_mod()
         self.wrexsoul_battle_mod()
+        
+        if self.DOOR_RANDOMIZE:
+            self.door_rando_mod()
 
         if self.reward1.type == RewardType.CHARACTER:
             self.cyan_character_mod(self.reward1.id)
@@ -57,14 +69,23 @@ class DomaWOR(Event):
         self.log_reward(self.reward2)
 
     def sleep_mod(self):
+        # Revoking ruination mode modification here.  It doesn't work right and also isn't necessary.
+        #if self.args.ruination_mode:
+        #    NORMAL_SLEEP_ADDR = self._create_ruination_bed_routine()
+        #else:
         NORMAL_SLEEP_ADDR = 0xb8294
 
         space = Reserve(0xb82b1, 0xb82c6, "doma wor check if event already done, in wor, have cyan and 4 party members", field.NOP())
         space.write(
             field.BranchIfEventBitClear(event_bit.IN_WOR, NORMAL_SLEEP_ADDR),
-            field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOR, NORMAL_SLEEP_ADDR),
         )
-        if self.args.character_gating:
+        if not self.DOOR_RANDOMIZE:
+            # Make the dream repeatable
+            space.write(
+                field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOR, NORMAL_SLEEP_ADDR),
+            )
+        if self.args.character_gating and not self.args.ruination_mode:
+            # we don't want to gate going to sleep in ruination mode, it's not in the mapping logic.
             space.write(
                 field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), NORMAL_SLEEP_ADDR),
             )
@@ -88,6 +109,65 @@ class DomaWOR(Event):
             field.Call(field.ENABLE_COLLISIONS_FOR_PARTY_MEMBERS),
             field.Call(field.HIDE_PARTY_MEMBERS_EXCEPT_LEADER),
         )
+
+    def _create_ruination_bed_routine(self):
+        """
+        Creates a custom bed heal routine for Doma Castle under -nfh.
+        Includes the Doma-specific bed animations (going to bed, party split,
+        map reload, party reform) combined with the -nfh healing logic
+        (dialog, possible unescapable ambush, per-character state-dependent heal).
+        """
+        from event.free_heals import FREE_BED_AMBUSH_PACK, FREE_BED_DIALOG_ID
+
+        # Subroutine addresses from vanilla event code
+        SLEEP_SUBROUTINE = [0xacf67, 0xacf8e]   # Party split to beds, fade, play nighty night
+        WAKE_SUBROUTINE = 0xCACF96    # Fade in, party reform, free screen
+
+        src = [
+            # Ask if player wants to sleep BEFORE any animation
+            field.DialogBranch(FREE_BED_DIALOG_ID, dest1="CONTINUE", dest2="RETURN"),
+            "CONTINUE",
+
+            # Going to bed animation: move right 4, up 4, turn down
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetSpeed(field_entity.Speed.FAST),
+                field_entity.Move(direction.RIGHT, 4),
+                field_entity.Move(direction.UP, 4),
+                field_entity.Turn(direction.DOWN),
+            ),
+
+            # Call sleep subroutine: party splits to beds, fade out, play nighty night
+            field.Read(SLEEP_SUBROUTINE[0], SLEEP_SUBROUTINE[1]),
+
+            # Screen is now faded out - check for ambush
+            # 3/8 chance of monster attack (branch with 5/8 = 62.5% probability to skip)
+            field.BranchChance(0.625, "HEAL"),
+
+            # Monster attack! (back attack; pack enemies have no_run set)
+            field.Dialog(448),  # "Ambushed!" dialog
+            *field.InvokeBattleType(FREE_BED_AMBUSH_PACK, field.BattleType.BACK),
+
+            "HEAL",
+            # Per-character state-dependent heal for each party slot.
+            field.BedHealCharacter(field_entity.PARTY0),
+            field.BedHealCharacter(field_entity.PARTY1),
+            field.BedHealCharacter(field_entity.PARTY2),
+            field.BedHealCharacter(field_entity.PARTY3),
+
+            # Load map 0x7B (Doma Castle bedroom) at position (8, 8), facing down
+            # This happens while screen is still black
+            #field.LoadMap(0x7B, direction.DOWN, default_music=False,
+            #              x=8, y=8, fade_in=False, entrance_event=False),
+
+            # Call wake subroutine: fade in screen, party reforms, free screen
+            field.Call(WAKE_SUBROUTINE),
+
+            "RETURN",
+            field.Return(),
+        ]
+
+        space = Write(Bank.CB, src, "doma wor ruination bed heal")
+        return space.start_address
 
     def stooges_mod(self):
         space = Reserve(0xb8b9d, 0xb8ba0, "doma wor back off", field.NOP())
@@ -173,7 +253,16 @@ class DomaWOR(Event):
             space = Reserve(0xb99a9, 0xb99aa, "doma wor sword appears flash 3", field.FlashScreen(field.Flash.NONE))
 
         space = Reserve(0xb997d, 0xb9984, "doma wor cyan kneeling", field.NOP())
-        space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
+
+        if not self.DOOR_RANDOMIZE:
+            # In vanilla mode, just NOP out the pause
+            space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
+        else:
+            # SetEventBit and FinishCheck are handled in cyan_character_mod/cyan_esper_mod at 0xb99b4
+            # Just preserve the ClearEventBit(0x523) here
+            space = Reserve(0xb99df, 0xb99e0, "doma wor pause before loading room slept in", field.NOP())
+            space = Reserve(0xb99e7, 0xb99e8, "doma wor moved set event bit for completed", field.NOP())
+
         space = Reserve(0xb99f6, 0xb99fa, "doma wor animate party knocked out", field.NOP())
 
         space = Reserve(0xb99fe, 0xb9a23, "doma wor change party members after elayne and owain scene", field.NOP())
@@ -225,9 +314,17 @@ class DomaWOR(Event):
         )
 
         space = Reserve(0xb99b4, 0xb99d4, "doma wor cyan touches sword", field.NOP())
-        space.write(
-            field.Branch(space.end_address + 1), # skip nops
-        )
+        if self.DOOR_RANDOMIZE:
+            # For door rando, SetEventBit and FinishCheck must happen before the mosaic at 0xb99d5
+            space.write(
+                field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
+                field.FinishCheck(),
+                field.Branch(space.end_address + 1), # skip nops
+            )
+        else:
+            space.write(
+                field.Branch(space.end_address + 1), # skip nops
+            )
 
     def random_cyan_npc_mod(self):
         sprite = self.characters.get_random_esper_item_sprite()
@@ -257,27 +354,44 @@ class DomaWOR(Event):
         )
 
         space = Reserve(0xb99b4, 0xb99d4, "doma wor cyan touches sword", field.NOP())
-        space.write(
-            field.AddEsper(esper),
-            field.Dialog(self.espers.get_receive_esper_dialog(esper)),
-            field.Branch(space.end_address + 1), # skip nops
-        )
+        if self.DOOR_RANDOMIZE:
+            # For door rando, SetEventBit and FinishCheck must happen right after the esper dialog
+            # before the mosaic screen transition
+            space.write(
+                field.AddEsper(esper),
+                field.Dialog(self.espers.get_receive_esper_dialog(esper)),
+                field.SetEventBit(event_bit.FINISHED_DOMA_WOR),
+                field.FinishCheck(),
+                field.Branch(space.end_address + 1), # skip nops
+            )
+        else:
+            space.write(
+                field.AddEsper(esper),
+                field.Dialog(self.espers.get_receive_esper_dialog(esper)),
+                field.Branch(space.end_address + 1), # skip nops
+            )
 
     def finish_dream_awaken_mod(self):
         if(self.args.flashes_remove_most or self.args.flashes_remove_worst):
             space = Reserve(0xb9a47, 0xb9a48, "doma wor peak swordmanship flash", field.FlashScreen(field.Flash.NONE))
 
-        src = [
-            field.FinishCheck(),
-            field.Return(),
-        ]
-        space = Write(Bank.CB, src, "doma wor finish dream")
-        finish_dream_awaken = space.start_address
+        if not self.DOOR_RANDOMIZE:
+            # In vanilla mode, call FinishCheck after waking up
+            # In door randomizer, FinishCheck is called before the warp (see doma_mod)
+            src = [
+                field.FinishCheck(),
+                field.Return(),
+            ]
+            space = Write(Bank.CB, src, "doma wor finish dream")
+            finish_dream_awaken = space.start_address
 
-        space = Reserve(0xb9a49, 0xb9a4c, "doma wor peak swordsmanship dialog", field.NOP())
-        space.write(
-            field.Call(finish_dream_awaken),
-        )
+            space = Reserve(0xb9a49, 0xb9a4c, "doma wor peak swordsmanship dialog", field.NOP())
+            space.write(
+                field.Call(finish_dream_awaken),
+            )
+        else:
+            # In door randomizer mode, just NOP out this section since FinishCheck is already called
+            space = Reserve(0xb9a49, 0xb9a4c, "doma wor peak swordsmanship dialog", field.NOP())
 
         space = Reserve(0xb9a6f, 0xb9a6f, "doma wor learn all swdtechs", field.NOP())
 
@@ -324,3 +438,367 @@ class DomaWOR(Event):
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
+
+    def door_rando_mod(self):
+        # Delete vanilla shared map exit event tile in phantom train car
+        self.maps.delete_event(0x99, 8, 12)
+
+        # (2) Need to add NPCs to block exits while the animation is playing.
+        from data.npc import CreateInvisibleBlockNPCs
+
+        # (2a) TRAIN GHOST CHASE
+        # Block door entry with invisible NPCs while a ghost chases Cyan
+        map_id = 0x08f
+        door_locations = [[65, 8], [75, 8], [82, 8], [91, 8]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb9347, 0xb934a]  # create object 0x10, create object 0x11
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 1")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 1", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb93a6, 0xb93a9]  # clear event bit, set event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 1")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 1", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Randomize Train Chest code?
+        # - Actually randomize code shown/read in Cars 2/3
+        # - Lock exit to Car 3 with a key in Car 2.
+
+
+        # (2b) MAGITEK MINE CHASE
+        # Block door entry with invisible NPCs while soldiers chase Cyan
+        map_id = 0x140
+        door_locations = [[6, 22]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb9433, 0xb9436]  # call subroutine $CB6A4C (colorize)
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 2")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 2", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb949c, 0xb949f]  # disable passthru 0x13, 0x14
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 2")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 2", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Only play the cave chase animation one time:
+        # use custom event_bit.SAW_DREAM_CAVE_CHASE = 0x163  # DR custom
+        src = [
+            field.BranchIfEventBitSet(event_bit.SAW_DREAM_CAVE_CHASE, "SKIP_CHASE_SCENE"),
+            field.SetEventBit(event_bit.SAW_DREAM_CAVE_CHASE),
+            # CB/93F8: F4    Play sound effect 152
+            # CB/93FA: 31    Begin action queue for character $31 (Party Character 0), 4 bytes long (Wait until complete)
+            # CB/93FC: CF        Turn vehicle/entity left
+            # CB/93FD: E0        Pause for 4 * 6 (24) frames
+            # CB/93FF: FF        End queue
+            field.PlaySoundEffect(0x98),  # Magitek walk sound effect
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.Turn(direction.LEFT),
+                            field_entity.Pause(6)),
+            field.Branch(0xb9402),
+            "SKIP_CHASE_SCENE",
+            field.FreeScreen(),
+            field.Return()
+        ]
+        show_dream_chase = Write(Bank.CB, src, "Show dream chase once")
+        space = Reserve(0xb93f8, 0xb93ff, "Cyan Dream play chase scene only once", field.NOP())
+        space.write([field.Branch(show_dream_chase.start_address)])
+
+
+        # (3): BRIDGE ESCAPE
+        # Block door entry with invisible NPC while Cyan walks across bridge
+        map_id = 0x13f
+        door_locations = [[25, 24], [25, 25]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb94bb, 0xb94be]  # call subroutine $CB6A4C (colorize)
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 3")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 3", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb94e2, 0xb94e5]  # set event bit, disable passthru 0x10
+        src = [
+            Read(patch_out[0], patch_out[1]),
+            field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)   # see below
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 3")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 3", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Only play the bridge escape animation one time:
+        # use custom event_bit.SAW_DREAM_BRIDGE_ESCAPE = 0x164  # DR custom
+        src = [
+            field.DeleteEntity(0x10),
+            field.HideEntity(0x10),
+            field.DeleteEntity(0x11),
+            field.HideEntity(0x11),
+            field.RefreshEntities(),
+            field.Return()
+        ]
+        hide_npc_script = Write(Bank.CB, src, "Delete NPCs in bridge room")
+        space = Reserve(0xb94b2, 0xb94b7, "Check for dream bridge escape", field.NOP())
+        space.write([field.BranchIfEventBitSet(event_bit.SAW_DREAM_BRIDGE_ESCAPE, hide_npc_script.start_address)])
+        #space = Reserve(0xb94e2, 0xb94e3, "Set dream bridge escape bit", field.NOP())
+        #space.write([field.SetEventBit(event_bit.SAW_DREAM_BRIDGE_ESCAPE)])
+
+        # (4): SCENES IN DOMA CASTLE
+        # Block door entry with invisible NPC while Cyan walks across bridge
+        map_id = 0x07E
+        door_locations = [[28, 37]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb96ca, 0xb96cd]  # set event bit, create 0x14
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 4")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 4", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb979c, 0xb979f]  # disable passthru 0x10,  set event bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 4")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 4", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Block door entry with invisible NPC while Cyan does stuff outside
+        map_id = 0x07D
+        door_locations = [[28, 31]]
+        npc_id = CreateInvisibleBlockNPCs(self.maps, map_id, door_locations, self.cyan_phantom_train_npc)
+
+        patch_in = [0xb964a, 0xb964d]  # set event bit, create 0x12
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 5")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 5", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb96be, 0xb96c1]  #  clear bit, set bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 5")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 5", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Same NPC for event 6 on the other side
+        patch_in = [0xb95f9, 0xb95fc]  # set event bit, create 0x10
+        src = [
+            Read(patch_in[0], patch_in[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.CreateEntity(npc_id[i]),
+                field.ShowEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_create = Write(Bank.CB, src, "create NPCs dream 6")
+        space = Reserve(patch_in[0], patch_in[1], "patch create NPCs dream 6", field.NOP())
+        space.write(field.Call(space_create.start_address))
+
+        patch_out = [0xb963e, 0xb9641]  # set bit, clear bit
+        src = [
+            Read(patch_out[0], patch_out[1]),
+        ]
+        for i in range(len(npc_id)):
+            src += [
+                field.DeleteEntity(npc_id[i]),
+                field.HideEntity(npc_id[i]),
+            ]
+        src += [field.Return()]
+        space_delete = Write(Bank.CB, src, "delete NPCs dream 6")
+        space = Reserve(patch_out[0], patch_out[1], "patch delete npcs dream 6", field.NOP())
+        space.write(field.Call(space_delete.start_address))
+
+        # Make the 2f exit to balcony (id = 441) accessible in Doma Dream
+        balcony_exit = self.maps.get_exit(441)
+        balcony_exit.x -= 1  # move to [17, 39]
+        balcony_entrance = self.maps.get_exit(437)
+        balcony_entrance.dest_x -= 1  # Move to [17, 38] to match
+
+        # Place an event tile on [0x07e, 25, 17] that deletes Wrexsoul & Cyan NPCs if boss is defeated
+        boss_npc_id = 0x18
+        #cyan_npc_id = 0x17
+        magicite_npc_id = 0x1F  # 0x1E is a blank npc?
+        src = [
+            field.ReturnIfEventBitClear(event_bit.FINISHED_DOMA_WOR),
+            field.ReturnIfEventBitSet(0x1b5),
+            field.DeleteEntity(boss_npc_id),
+            field.HideEntity(boss_npc_id),
+            field.DeleteEntity(self.cyan_throne_room_npc_id),
+            field.HideEntity(self.cyan_throne_room_npc_id),
+            field.DeleteEntity(magicite_npc_id),
+            field.HideEntity(magicite_npc_id),
+            field.SetEventBit(0x1b5),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Cyan Dream Delete NPCs if Boss Cleared")
+        from data.map_event import MapEvent
+        new_event = MapEvent()
+        new_event.x = 25
+        new_event.y = 17
+        new_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(0x07e, new_event)
+
+        # Skip Wrexsoul battle, if already fought; gate on Cyan if character_gating
+        boss_event = self.maps.get_event(0x07E, 25, 11)
+        original_event_addr = boss_event.event_address + EVENT_CODE_START
+        src = []
+        if self.args.character_gating:
+            src += [
+                field.BranchIfAll([event_bit.FINISHED_DOMA_WOR, False,
+                                   event_bit.character_recruited(self.character_gate()), True],
+                                  original_event_addr),  # not finished AND Cyan recruited -> battle
+                field.BranchIfEventBitSet(event_bit.FINISHED_DOMA_WOR, "BOSS_DEFEATED"),
+                # Cyan not recruited: rejection animation
+                field.FlashScreen(field.Flash.WHITE),
+                field.PlaySoundEffect(174),
+                field.EntityAct(field_entity.PARTY0, True,
+                                field_entity.DisableWalkingAnimation(),
+                                field_entity.SetSpeed(field_entity.Speed.FAST),
+                                field_entity.AnimateAttacked(),
+                                field_entity.Move(direction.DOWN, 2),
+                                field_entity.EnableWalkingAnimation(),
+                                field_entity.Turn(direction.UP),
+                ),
+                field.FreeScreen(),
+                field.Return(),
+                "BOSS_DEFEATED",
+            ]
+        else:
+            src += [
+                field.BranchIfEventBitClear(event_bit.FINISHED_DOMA_WOR, original_event_addr),  # branch to Wrexsoul battle
+            ]
+        src += [
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.SLOW),
+                            field_entity.Move(direction.UP, 6),
+                            field_entity.Pause(4),
+                            field_entity.Turn(direction.RIGHT),
+                            field_entity.Pause(2),
+                            field_entity.Turn(direction.DOWN),
+                            field_entity.Pause(6),
+                            field_entity.AnimateCloseEyes(),
+                            field_entity.Pause(6),
+                            field_entity.AnimateStandingHeadDown(),
+                            field_entity.Pause(8),
+            ),
+            field.Branch(0xb99D5),  # branch back to fade screen, load map etc.
+        ]
+        space = Write(Bank.CB, src, "Skip Wrexsoul fight if already done / character gate")
+
+        # Update event tile
+        boss_event.event_address = space.start_address - EVENT_CODE_START
+
+        # (5) TRAIN CHEST PUZZLE ROOM: make it renavigable if puzzle already solved
+        # The following code moves the "couch" in the room 435 (# Doma Dream Train Switch Puzzle Room map_id = 0x141)
+        # so the player can traverse left to right.
+        #   CB/8E3B: 74    Replace current map's Layer 2 at (13, 8) with the following (3 x 3) chunk
+        #   CB/8E40:       $31, $30, $0B
+        #   CB/8E43:       $2B, $2B, $1B
+        #   CB/8E46:       $01, $01, $01
+        #   CB/8E49: 74    Replace current map's Layer 2 at (13, 71) with the following (1 x 3) chunk
+        #   CB/8E4E:       $23
+        #   CB/8E4F:       $24
+        #   CB/8E50:       $13
+        #   CB/8E51: 75    Refresh map after alteration
+        # Also, should set multipurpose bit that tracks couch position:
+        #   CB/8E35: D2    Set event bit $1E80($185) [$1EB0, bit 5]
+        # We should add a routine to the entrance event that calls this code if $17A is set (chest puzzle solved).
+        # We can hook in at a spot that is already gated by $17A:
+        #   CB/8D14: 74    Replace current map's Layer 2 at (4, 71) with the following (2 x 1) chunk
+        #   CB/8D19:       $60, $96
+        hook_in = 0xb8d14
+        hook_out = 0xb8d1a
+        src = [
+            Read(hook_in, hook_out),
+            Read(0xb8e3b, 0xb8e50),
+            field.SetEventBit(0x185),  # Set multipurpose bit that tracks couch position
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, 'Doma Dream Train chest puzzle entrance patch revisit from left code')
+        entrance_patch_address = space.start_address
+
+        space = Reserve(hook_in, hook_out, 'Doma Dream Train entrance patch revisit chest puzzle from left', field.NOP())
+        space.write(field.Call(entrance_patch_address))
+
