@@ -552,17 +552,27 @@ def minecart_event_mod(src, src_end):
     # These two branches are alternate, fixed destinations (Vector, outdoors) taken
     # AFTER the minecart event has progressed (DEFEATED_CRANES / RODE_MINE_CART set).
     # They build their own LoadMap + Return tail, so they BYPASS the common state
-    # patches that Transitions.mod() appends to src_end (the default, randomized
-    # destination) -- in particular the raft add/remove handled by en_patch.
-    # If the minecart's randomized destination is an on-raft location (e.g. the Lete
-    # River / Returner's Hideout raft), the party can still be carrying the raft
-    # graphic when they re-ride the cart and get routed here.  Vector is never an
-    # on-raft map, so unconditionally clear the raft graphic (CB/04AA) to avoid the
-    # party being drawn persistently on a raft.  CB/04AA only sets the party's
-    # vehicle to "none" and leaves visibility untouched, so it is safe to call even
-    # when the party is not on a raft.
+    # patches that Transitions.mod() splices around the default, randomized
+    # destination (the branches are inserted into src before ex_patch, so ex_patch
+    # lands between the branches and the map load -- the skip paths jump over it).
+    # Every exit-side state the common patches compensate must therefore be handled
+    # unconditionally here:
+    #   - raft: if the randomized destination is an on-raft location (e.g. the Lete
+    #     River / Returner's Hideout raft), the party can still be carrying the raft
+    #     graphic when they re-ride the cart and get routed here.  Vector is never an
+    #     on-raft map, so clear the raft graphic (CB/04AA).  CB/04AA only sets the
+    #     party's vehicle to "none" and leaves visibility untouched, so it is safe to
+    #     call even when the party is not on a raft.
+    #   - visibility: ShowEntity, in case the exit event hid the party (0x42).
+    #   - screen hold: the exit event may have held the screen (0x38) -- e.g. the
+    #     Esper Mtn trapdoors -- expecting the landing code to free it.  The hold
+    #     persists across map loads, so free it (0x39) before loading Vector.
+    #   - world bit: Vector is a WoB location; a WoR-side exit would normally get
+    #     the world bit compensated in ex_patch, so force WoB here.
     go_to_vector = (
         #field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        field.FreeScreen(),  # Release any screen hold from the exit event (see note above)
+        field.ClearEventBit(event_bit.IN_WOR),  # Vector is WoB (see note above)
         field.LoadMap(0xf2, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
         field.Call(0xb04aa),  # Remove raft (see note above)
         field.ShowEntity(field_entity.PARTY0),
@@ -572,6 +582,8 @@ def minecart_event_mod(src, src_end):
     )
     go_to_mtek3_vector = (
         #field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+        field.FreeScreen(),  # Release any screen hold from the exit event (see note above)
+        field.ClearEventBit(event_bit.IN_WOR),  # Vector is WoB (see note above)
         field.LoadMap(0xf0, direction.LEFT, default_music=True, x=62, y=13, entrance_event=True),
         field.Call(0xb04aa),  # Remove raft (see note above)
         field.ShowEntity(field_entity.PARTY0),

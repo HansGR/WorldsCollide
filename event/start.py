@@ -112,13 +112,16 @@ class Start(Event):
         # Warp modifications
         if (self.args.door_randomize_dungeon_crawl or self.args.door_randomize_all
                 or self.args.door_randomize_crossworld or self.args.ruination_mode):
-            # Safety: make warp remove magitek armor (and clear any vehicle, e.g. raft).
+            # Safety: make warp remove magitek armor (and clear any vehicle, e.g. raft),
+            # and release any lingering screen hold (0x38 persists across map loads,
+            # so a missed FreeScreen would otherwise pin the camera forever).
             # Bugs can let the player carry MTek armor out of Dream, we want a way to clear that.
             # This runs as additional_code, which executes before any warp_override, so it
             # applies to the ruination Esper-World warp override as well.
             src_safety = [
                 field.Call(field.REMOVE_PARTY_MAGITEK),
                 field.SetVehicle(field_entity.PARTY0, field.Vehicle.NONE),
+                field.FreeScreen(),
             ]
             self.warps.add_code(src_safety)
 
