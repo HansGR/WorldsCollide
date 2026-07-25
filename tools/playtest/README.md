@@ -90,12 +90,38 @@ Validated by `nav_test.py`: boots a `-ruin` seed, teleports to the hub
 door, steps through, and confirms the map changed (0xDA -> 0xD9) with the
 camera not held on the far side.
 
+## Regressions (`regressions.py`)
+
+Behavioral tests for recent fixes. Each scenario builds the seed(s) it
+needs from a vanilla ROM, boots headless, and asserts on live state.
+Runner exits nonzero on any failure.
+
+```sh
+python3 tools/playtest/regressions.py <vanilla.smc>
+```
+
+Current scenarios:
+- `maxhp_objective` — the +100 Max HP start objective raises slot-0 max HP
+  by exactly 100 (before/after in one build, via the max-HP change; a
+  cross-build differential would change RNG and thus the character).
+- `full_heal_objective` — every party member is at full HP after start.
+- `camera_after_transition` — a normal door transition leaves the camera
+  free (the invariant behind the reported camera-hold bugs).
+- `minecart_camera`, `phoenix_collision` — scaffolded, **skipped** until
+  Phase 4 plan-driven routing can reach those dungeon locations.
+
+Lesson baked into the scenarios: cross-build "same seed" comparisons do
+**not** hold a variable fixed -- any flag change (even `-no od`) perturbs
+the shared RNG stream and changes the party. Isolate an effect within a
+single build (before/after) instead.
+
 ## Status
 
 - Phase 0 (spike) complete: `spike.py`.
 - Phase 1 (harness API) complete: `harness.py` + `selftest.py`.
 - Phase 2 (navigation) complete: `navigate.py` + `nav_test.py`.
+- Phase 3 (regressions) complete: `regressions.py` (3 passing, 2 scaffolded).
 
-Next (see session plan): Phase 3 regression scenarios (minecart camera,
-phoenix cave collision, -oss, warp safety) built on the boot +
-event-bit setup + door-step primitives.
+Next (see session plan): Phase 4 plan-driven route chaining, which
+unlocks the minecart-camera and phoenix-cave regression scenarios (reach
+a specific dungeon location by walking the seed's realized connectivity).
