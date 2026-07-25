@@ -59,13 +59,13 @@ def parse(parser):
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
     doors.add_argument("-ruin", "--ruination-mode", nargs="?", const="default", default=None,
-                       choices=["default", "easy", "custom"],
+                       choices=["default", "hard", "custom"],
                        help="Rogue-like mode with randomized dungeon and no airship. "
-                            "Automatically sets recommended flags: standard difficulty adds "
-                            "permadeath, 3 starting Fenix Downs, and removes Life 3/Warp/Remedy "
-                            "(use '-ruin easy' for the gentler flagset without these, "
-                            "'-ruin custom' to skip defaults entirely, "
-                            "'-no <flags>' to disable specific defaults)")
+                            "Automatically sets recommended flags. '-ruin hard' additionally adds "
+                            "permadeath, 3 starting Fenix Downs, lite ironmog saves, and removes "
+                            "Life 3/Warp/Antdot/Remedy from learnable sources "
+                            "('-ruin custom' skips defaults entirely, "
+                            "'-no <flags>' disables specific defaults)")
 
     doors.add_argument("-maze", "--ruin-dream-maze", default=None, choices=["full", "sep", "iso"],
                        help="Dream Maze handling in ruination mode: "
@@ -143,9 +143,9 @@ def flags(args):
     if args.ruination_mode is not None:
         # -ruin supercedes all.  The mode value must round-trip so that
         # re-running a logged flag string re-expands the same defaults
-        # ('easy' must not re-expand as standard).
+        # (a bare '-ruin' must not re-expand as hard).
         flags += " -ruin"
-        if args.ruination_mode in ("custom", "easy"):
+        if args.ruination_mode in ("custom", "hard"):
             flags += " " + args.ruination_mode
 
         if args.ruin_dream_maze:

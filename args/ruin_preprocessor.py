@@ -86,9 +86,9 @@ for group in MUTUALLY_EXCLUSIVE_GROUPS:
         _FLAG_TO_GROUP[flag] = group
 
 # Default flags for -ruin mode, organized by category.
-# This is the shared base: '-ruin easy' expands to exactly this set, while a
-# bare '-ruin' (standard, the roguelike difficulty) additionally injects
-# RUIN_STANDARD_EXTRAS below.
+# This is the shared base: a bare '-ruin' expands to exactly this set, while
+# '-ruin hard' (the roguelike difficulty) additionally injects
+# RUIN_HARD_EXTRAS below.
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
     'objectives': ['-oa', '2.2.2.2.6.6.4.9.9',
@@ -143,19 +143,20 @@ RUIN_DEFAULT_FLAGS = {
     ]
 }
 
-# Extra defaults for standard -ruin (the roguelike difficulty): permadeath
-# with a small Fenix Down reserve, and the strongest recovery spells removed
-# from learnable sources.  '-ruin easy' skips these, keeping the original
-# default flagset.  Both variants honor '-no <flag>' removal.
-# The -rls value uses numeric spell ids (53 = Life 3, 42 = Warp, 51 = Remedy)
-# because spell names contain spaces, which would break flag-string round-trips.
-RUIN_STANDARD_EXTRAS = {
-    'standard': ['-pd', '-sfd', '3', '-rls', '53,42,51'],
+# Extra defaults for '-ruin hard' (the roguelike difficulty): permadeath with
+# a small Fenix Down reserve, ironmog-lite saves, and the strongest recovery
+# spells removed from learnable sources.  A bare '-ruin' skips these, keeping
+# the base flagset.  Both variants honor '-no <flag>' removal.
+# The -rls value uses numeric spell ids (53 = Life 3, 42 = Warp, 50 = Antdot,
+# 51 = Remedy) because spell names contain spaces, which would break
+# flag-string round-trips.
+RUIN_HARD_EXTRAS = {
+    'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'lite'],
 }
 
 # Flags that have arguments (used for proper flag removal)
 FLAGS_WITH_ARGS = {
-    '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1,
+    '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-gpm': 1, '-oa': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
@@ -245,8 +246,8 @@ def preprocess_ruin_flag(argv=None):
 
     If -ruin is present:
     - If followed by 'custom', don't inject defaults
-    - If followed by 'easy', inject the base default flags only
-    - Otherwise (standard), inject the base defaults plus RUIN_STANDARD_EXTRAS
+    - If followed by 'hard', inject the base defaults plus RUIN_HARD_EXTRAS
+    - Otherwise (default), inject the base default flags only
     - Process -no flags to remove specific defaults
     - If user specifies starting character flags, remove default starting chars
 
@@ -270,16 +271,16 @@ def preprocess_ruin_flag(argv=None):
     # Mark that we've preprocessed
     _preprocessing_done = True
 
-    # Check for a mode value ('custom'/'easy') following -ruin
+    # Check for a mode value ('custom'/'hard') following -ruin
     next_arg = argv[ruin_index + 1] if ruin_index + 1 < len(argv) else None
 
     if next_arg == 'custom':
         # Don't inject defaults, but keep 'custom' for the argument parser
         return argv
 
-    easy_mode = (next_arg == 'easy')
-    # Keep the 'easy' token adjacent to -ruin: inject after it
-    insert_index = ruin_index + 2 if easy_mode else ruin_index + 1
+    hard_mode = (next_arg == 'hard')
+    # Keep the 'hard' token adjacent to -ruin: inject after it
+    insert_index = ruin_index + 2 if hard_mode else ruin_index + 1
 
     # Collect flags to disable via -no and remove -no from argv FIRST
     # Handle multiple -no groups: e.g. "-no flag1 -no flag2" or "-no flag1 flag2"
@@ -300,8 +301,8 @@ def preprocess_ruin_flag(argv=None):
 
     # Build list of default flags to inject (excluding disabled and conflicting ones)
     categories = list(RUIN_DEFAULT_FLAGS.items())
-    if not easy_mode:
-        categories += list(RUIN_STANDARD_EXTRAS.items())
+    if hard_mode:
+        categories += list(RUIN_HARD_EXTRAS.items())
 
     defaults_to_inject = []
     for category, flags in categories:
@@ -327,7 +328,7 @@ def preprocess_ruin_flag(argv=None):
                 num_args = FLAGS_WITH_ARGS.get(flag, 0)
                 i += num_args + 1
 
-    # Insert defaults right after -ruin (and its 'easy' value, if present)
+    # Insert defaults right after -ruin (and its 'hard' value, if present)
     for i, flag in enumerate(defaults_to_inject):
         argv.insert(insert_index + i, flag)
 
