@@ -67,13 +67,35 @@ objective (result 2, Unlock Final Kefka) is filtered out of
 down a slot. The `-od`/`-oe` start bonuses land in `OBJECTIVE` bit
 slots **2 and 3**, not 3 and 4.
 
+## Navigation (`navigate.py`)
+
+Cross-map travel = teleport beside a door, then let the engine run its
+own transition:
+
+- `wait_for_control(h)` — advance past the start cinematic until the
+  player has control (party idle + camera free), by state not timing.
+- `doors_on_map(map_id)` — atlas doors physically on a map, as
+  `(door_id, (x, y))`.
+- `step_through(h, x, y, facing)` — teleport beside door tile `(x, y)`,
+  walk into it, return the new map id once it changes.
+
+`Harness.set_party_xy` teleports by setting the **authoritative pixel
+position** (tile*16 at object block +0x03/+0x06) plus the derived tile
+coords; setting the tile alone is overwritten from the pixel store
+within a frame (found the hard way -- see the block-offset notes in
+`harness.py`). Poking coordinates moves the party only within the loaded
+map; a real door-step is what loads a new map and resyncs the camera.
+
+Validated by `nav_test.py`: boots a `-ruin` seed, teleports to the hub
+door, steps through, and confirms the map changed (0xDA -> 0xD9) with the
+camera not held on the far side.
+
 ## Status
 
 - Phase 0 (spike) complete: `spike.py`.
 - Phase 1 (harness API) complete: `harness.py` + `selftest.py`.
+- Phase 2 (navigation) complete: `navigate.py` + `nav_test.py`.
 
-Next (see session plan): Phase 2 door-step navigation from
-`doors/atlas` coordinates (poke `set_party_xy` next to a door, step
-through, let the engine run its own transition), then Phase 3
-regression scenarios (minecart camera, phoenix cave collision, -oss,
-warp safety).
+Next (see session plan): Phase 3 regression scenarios (minecart camera,
+phoenix cave collision, -oss, warp safety) built on the boot +
+event-bit setup + door-step primitives.

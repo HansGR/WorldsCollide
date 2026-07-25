@@ -57,6 +57,9 @@ LEADER_PTR = 0x0803           # u16 offset into object data
 OBJECT_BASE = 0x0867
 ENTITY_X = 0x13               # tile X within object block
 ENTITY_Y = 0x14               # tile Y within object block
+ENTITY_PIXEL_X = 0x03         # pixel X (u16 LE = tileX*16), authoritative
+ENTITY_PIXEL_Y = 0x06         # pixel Y (u16 LE = tileY*16), authoritative
+MAP_ID_MASK = 0x01ff          # low 9 bits; upper bits are transition control
 
 
 class Harness:
@@ -150,7 +153,9 @@ class Harness:
 
     @property
     def map_id(self):
-        return self.core.read_u16(CURRENT_MAP)
+        # Mask off the upper transition-control bits ($2000 etc. appear
+        # mid-transition); the map id proper is the low 9 bits.
+        return self.core.read_u16(CURRENT_MAP) & MAP_ID_MASK
 
     @property
     def screen_held(self):
@@ -168,8 +173,17 @@ class Harness:
         return (self.core.wram[blk + ENTITY_X], self.core.wram[blk + ENTITY_Y])
 
     def set_party_xy(self, x, y):
-        """Poke the party leader tile position (for door-step teleport)."""
+        """Teleport the party leader to tile (x, y) on the current map.
+
+        Sets both the authoritative pixel position (tile*16) and the
+        derived tile coords; setting the tile alone gets overwritten from
+        the pixel store within a frame. Only valid within the loaded map
+        (poking coordinates does not load a new map -- step into a door
+        for that).
+        """
         blk = self._leader_block
+        self.core.write_u16(blk + ENTITY_PIXEL_X, (x & 0xff) * 16)
+        self.core.write_u16(blk + ENTITY_PIXEL_Y, (y & 0xff) * 16)
         self.core.wram[blk + ENTITY_X] = x & 0xff
         self.core.wram[blk + ENTITY_Y] = y & 0xff
 
