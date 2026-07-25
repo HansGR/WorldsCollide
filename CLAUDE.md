@@ -129,6 +129,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 - **Event lifecycle hooks** — the Events loop framework-dispatches `door_rando_mod`/`dungeon_crawl_mod`/`ruination_mod` for any event that defines but doesn't inline-call them (`event/events.py`); `tools/mode_manifest.py` derives the mode × event table.
 - **`event/ruination_bind.py`** — the ONLY Events-side planner consumer: binds the plan's abstract rewards to live `Reward` slots; `RuinMap` adapts the plan for downstream consumers (area clues, dried meat, ferry, spoiler).
 - Tests: `tests/doors/*` (run directly, no pytest needed; CI runs them via `tests/test_doors.py`). Harness: `tools/ruin_stress.py` (offline failure/usage studies).
+- **`tools/playtest/`** — headless emulation harness (snes9x libretro via ctypes; core from `pip install stable-retro`): boot built seeds, scripted input, live WRAM read/write, savestates, screenshots. See its README; Phase 0 spike proven (~900fps, deterministic).
 
 ### Ruination Mode
 *(Planner: `doors/plan/ruination/` — growth/extend/finalize/kefka_tower/dream_maze, planned in the Data phase. Pure data tables live in `data/ruin_constants.py` (`ROOM_REWARD`, `REWARD_OWNERS`, …) + `data/ruin_areas.py` (`RUIN_ROOM_SETS`). Event-side machinery lives in `event/ruination.py`; reward binding in `event/ruination_bind.py`.)*
