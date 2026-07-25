@@ -121,10 +121,22 @@ def scenario_minecart_camera(vanilla, workdir):
 
 
 def scenario_phoenix_collision(vanilla, workdir):
-    """REQUIRES PHASE 4: enter Phoenix Cave with a second party after the
-    first declined to split, and assert the falling party completes its
-    animation (no collision soft-lock)."""
-    raise NotImplementedError("needs plan-driven route to Phoenix Cave with two parties")
+    """Enter Phoenix Cave with a second party after the first declined to
+    split, and assert the falling party completes its animation (no
+    collision soft-lock).
+
+    Route-chaining (tools/playtest/route.py) can BFS to Phoenix's approach
+    map and chain door hops, but two blockers remain before this runs:
+      1. Branch entry is gated by the ruination away-party deployment flow
+         at the Narshe School (interactive party formation, not a door
+         step), so the world-map branch entrances (overworld doors
+         1219-1222) do not trigger from a fresh start.
+      2. The bug needs two parties deployed, one left on the Phoenix
+         landing tile -- a second deployment on top of (1).
+    Both are the Narshe School hub mechanic; automating it is the next
+    step. See route_test.py for the validated routing that is in place."""
+    raise NotImplementedError(
+        "needs the Narshe School branch-deployment flow (see docstring)")
 
 
 SCENARIOS = [

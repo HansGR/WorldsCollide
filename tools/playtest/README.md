@@ -115,13 +115,40 @@ Lesson baked into the scenarios: cross-build "same seed" comparisons do
 the shared RNG stream and changes the party. Isolate an effect within a
 single build (before/after) instead.
 
+## Route chaining (`route.py`)
+
+Reach an arbitrary map by walking a seed's realized connectivity:
+
+- `parse_spoiler_map(spoiler)` — `{exit: entrance}` from the spoiler's
+  `Map:` section.
+- `build_graph(edges)` — map-level adjacency (two-way doors add reverse
+  edges; traps/pits stay one-way).
+- `bfs` / `reachable_from` — shortest hop list, and reverse closure (used
+  to pick which branch a target sits in).
+- `step_door(h, door_id)` — teleport to a door by id and step through it.
+- `execute_route(h, hops)` — drive a whole hop list.
+
+Validated by `route_test.py`: offline BFS routes to Phoenix Cave's
+approach map (a few hops inside its branch), and the live executor chains
+real overworld maps (218 -> 217 -> 219) with the camera free.
+
+**Known limit (deep-dungeon reproduction):** branch entry is gated by the
+ruination away-party deployment flow at the Narshe School -- an
+interactive party-formation mechanic, not a door step -- so the world-map
+branch entrances don't trigger from a fresh start. Automating that hub
+flow is the prerequisite for the minecart-camera and phoenix-collision
+scenarios; the routing to walk the branch *after* deployment is in place.
+
 ## Status
 
 - Phase 0 (spike) complete: `spike.py`.
 - Phase 1 (harness API) complete: `harness.py` + `selftest.py`.
 - Phase 2 (navigation) complete: `navigate.py` + `nav_test.py`.
 - Phase 3 (regressions) complete: `regressions.py` (3 passing, 2 scaffolded).
+- Phase 4 (route chaining) complete: `route.py` + `route_test.py`
+  (offline graph/BFS + live executor; deep-dungeon reproduction gated on
+  the Narshe School deployment flow).
 
-Next (see session plan): Phase 4 plan-driven route chaining, which
-unlocks the minecart-camera and phoenix-cave regression scenarios (reach
-a specific dungeon location by walking the seed's realized connectivity).
+Next: automate the Narshe School away-party deployment so a party can be
+sent into a branch (and a second left on a landing tile), which unlocks
+the minecart-camera and phoenix-collision behavioral tests.
