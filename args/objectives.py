@@ -10,6 +10,9 @@ def parse(parser):
     for oi in range(MAX_OBJECTIVES):
         objectives.add_argument("-o" + chr(ord('a') + oi), "--objective_" + chr(ord('a') + oi),
                                 type = str, help = "Objective " + chr(ord('A') + oi))
+    objectives.add_argument("-oss", "--objectives-silent-at-start", action = "store_true",
+                            help = "Objectives completed immediately at the start of the game "
+                                   "apply their results without displaying a message box")
 
 def process(args):
     from constants.objectives.results import types as result_types
@@ -144,6 +147,9 @@ def flags(args):
         if values is not None:
             flags += " -o" + lower_letter + " " + values
 
+    if args.objectives_silent_at_start:
+        flags += " -oss"
+
     return flags
 
 def log(args):
@@ -180,6 +186,9 @@ def log(args):
             rentries.append(entry)
         else:
             lentries.append(entry)
+
+    if args.objectives_silent_at_start:
+        lentries.append([format_option("Silent At Start", True, "objectives_silent_at_start")])
 
     from log import section_entries
     section_entries("Objectives", lentries, rentries)
