@@ -14,6 +14,7 @@ class Field(_CachedFunction, field.Call):
         field.Call.__init__(self, self.address(*args, **kwargs))
 
     def write(self, objective):
+        import args
         objective_event_bit = getattr(event_bit, "OBJECTIVE" + str(objective.id))
         src = [
             field.ReturnIfEventBitSet(objective_event_bit),
@@ -23,7 +24,20 @@ class Field(_CachedFunction, field.Call):
             objective.result.field(),
 
             field.SetEventBit(objective_event_bit),
-            field.Dialog(dialogs.OBJECTIVES[objective.id]),
+        ]
+        if args.objectives_silent_at_start:
+            # -oss: skip the message box while OBJECTIVES_SILENT is set
+            # (set transiently around the start-of-game check in event/start.py)
+            src += [
+                field.BranchIfEventBitSet(event_bit.OBJECTIVES_SILENT, "SKIP_DIALOG"),
+                field.Dialog(dialogs.OBJECTIVES[objective.id]),
+                "SKIP_DIALOG",
+            ]
+        else:
+            src += [
+                field.Dialog(dialogs.OBJECTIVES[objective.id]),
+            ]
+        src += [
             field.Return(),
         ]
         return Write(Bank.CA, src, f"field check complete objective {objective.id}")

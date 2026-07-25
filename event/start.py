@@ -158,6 +158,19 @@ class Start(Event):
             ]
             self.warps.add_warp_override(src)
 
+        # -oss: objectives already satisfied at frame zero complete during this
+        # first check.  Silence their message boxes by setting OBJECTIVES_SILENT
+        # around the check.
+        if self.args.objectives_silent_at_start:
+            check_objectives = [
+                field.SetEventBit(event_bit.OBJECTIVES_SILENT),
+                field.CheckObjectives(),
+                field.ClearEventBit(event_bit.OBJECTIVES_SILENT),
+            ]
+        else:
+            check_objectives = [
+                field.CheckObjectives(),
+            ]
 
         # where the game begins after intro/pregame
         space = Reserve(0xc9a4f, 0xc9ad4, "setup and start game", field.NOP())
@@ -170,7 +183,7 @@ class Start(Event):
             field.Call(self.start_items),
             field.Call(self.start_game),
 
-            field.CheckObjectives(),
+            check_objectives,
             field.Return(),
         )
 

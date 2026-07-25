@@ -255,6 +255,7 @@ KT_WARP_OPTION = 0x2be
 PHOENIX_CAVE_WARP_OPTION = 0x2bf
 FLOATING_CONTINENT_WARP_OPTION = 0x2c1
 ANCIENT_CASTLE_WARP_OPTION = 0x2c2
+OBJECTIVES_SILENT = 0x2c3 # custom, -oss: while set, completed objectives skip their message box (set/cleared transiently, never saved)
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
 SAVED_Y_PARTY_SWITCHING = 0x0bb
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
