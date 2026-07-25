@@ -243,6 +243,13 @@ class PhoenixCave(Event):
             field.ShowEntity(field_entity.PARTY0),
             field.FadeInScreen(),
             field.WaitForFade(),
+        ]
+        if self.args.ruination_mode:
+            # In ruination a second party may be standing in the fall column.
+            # The falling party must pass through them or the blocking Move below never
+            # completes and the game soft-locks. Sprites may stack briefly.
+            src_entry_common += [field.DisableEntityCollision(field_entity.PARTY0)]
+        src_entry_common += [
             field.PlaySoundEffect(186),  # falling
             field.EntityAct(field_entity.PARTY0, True,
                             field_entity.SetSpeed(field_entity.Speed.FASTEST),
@@ -255,6 +262,10 @@ class PhoenixCave(Event):
                             ),
             field.PlaySoundEffect(181),  # landing
             field.Pause(0.5),  # 30 units (0.5 sec)
+        ]
+        if self.args.ruination_mode:
+            src_entry_common += [field.EnableEntityCollision(field_entity.PARTY0)]
+        src_entry_common += [
             field.FreeScreen(),
         ]
 
