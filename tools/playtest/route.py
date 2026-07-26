@@ -21,10 +21,25 @@ from collections import deque, defaultdict
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import doors.atlas as atlas
+from data.event_exit_data import event_exit_info
 from tools.playtest import navigate
 
 # Facings to try when stepping into a door (down, up, right, left)
 _FACINGS = [2, 0, 1, 3]
+
+
+def door_position(door_id):
+    """(map, x, y) of a door/tile by id, from the atlas for normal exits or
+    event_exit_info for event tiles acting as doors (1500-1999). Ruination
+    routes use both; the atlas alone misses the event tiles."""
+    rec = atlas.exit_record(door_id)
+    if rec and rec.get('map') is not None:
+        return rec['map'], rec['x'], rec['y']
+    info = event_exit_info.get(door_id)
+    if info and info[5] and info[5][1] is not None:
+        map_id, x, y = info[5]
+        return map_id, x, y
+    return None
 
 
 def parse_spoiler_map(spoiler_path):
@@ -99,13 +114,63 @@ def reachable_from(adj, target_map):
     return seen
 
 
-def step_door(h, door_id, timeout=160):
-    """Teleport to a door by id and step through it, trying each facing.
-    Returns the new map id, or None if no facing produced a transition."""
-    pos = atlas.exit_position(door_id)
+START_MAP = 218          # Esper Gate (ruination game start)
+ESPER_GATE_TILE = 1562   # event tile: Esper Gate -> Narshe School
+SCHOOL_MAP = 104         # Narshe School (ruination hub)
+
+
+def parse_spoiler_descriptions(spoiler_path):
+    """Return {exit_id: 'exit desc --> entrance desc'} from the Map:
+    section, for locating a target door by name."""
+    lines = open(spoiler_path).read().splitlines()
+    try:
+        i = lines.index('Map:')
+    except ValueError:
+        return {}
+    out = {}
+    for ln in lines[i + 1:]:
+        m = re.match(r'^\s*(\d+)\s*-->\s*\d+\((.*)\)\s*$', ln)
+        if not m:
+            if ln.strip() and not ln[0].isspace():
+                break
+            continue
+        out[int(m.group(1))] = m.group(2)
+    return out
+
+
+def route_from_start(spoiler_path, target_substring):
+    """Full door-id hop list from the ruination game start to the door
+    whose spoiler description contains target_substring.
+
+    Chains: start -> ESPER_GATE_TILE -> Narshe School -> (BFS across the
+    branch) -> target door. Returns a list of door ids to step through in
+    order, or None if the target isn't reachable."""
+    edges = parse_spoiler_map(spoiler_path)
+    descs = parse_spoiler_descriptions(spoiler_path)
+    target_door = next((d for d, desc in descs.items()
+                        if target_substring.lower() in desc.lower()), None)
+    if target_door is None:
+        return None
+    pos = door_position(target_door)
     if pos is None:
         return None
-    x, y = pos
+    approach_map = pos[0]
+
+    adj = build_graph(edges)
+    hops = bfs(adj, SCHOOL_MAP, approach_map)
+    if hops is None:
+        return None
+    return [ESPER_GATE_TILE] + [door for _, door, _ in hops] + [target_door]
+
+
+def step_door(h, door_id, timeout=160):
+    """Teleport to a door/tile by id and step onto it, trying each facing.
+    Handles both atlas exits and event tiles acting as doors. Returns the
+    new map id, or None if no facing produced a transition."""
+    pos = door_position(door_id)
+    if pos is None:
+        return None
+    _, x, y = pos
     start_map = h.map_id
     for facing in _FACINGS:
         snap = h.save_state()

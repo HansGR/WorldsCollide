@@ -19,7 +19,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from tools.playtest.harness import Harness
-from tools.playtest import navigate
+from tools.playtest import navigate, route
 import data.event_bit as event_bit
 import data.direction as direction
 
@@ -120,31 +120,51 @@ def scenario_minecart_camera(vanilla, workdir):
     raise NotImplementedError("needs plan-driven route to the minecart pitfall")
 
 
-def scenario_phoenix_collision(vanilla, workdir):
-    """Enter Phoenix Cave with a second party after the first declined to
-    split, and assert the falling party completes its animation (no
-    collision soft-lock).
+def scenario_phoenix_entry(vanilla, workdir):
+    """Route-chain from game start to Phoenix Cave and confirm the entry
+    falling animation completes without a soft-lock (single party).
 
-    Route-chaining (tools/playtest/route.py) can BFS to Phoenix's approach
-    map and chain door hops, but two blockers remain before this runs:
-      1. Branch entry is gated by the ruination away-party deployment flow
-         at the Narshe School (interactive party formation, not a door
-         step), so the world-map branch entrances (overworld doors
-         1219-1222) do not trigger from a fresh start.
-      2. The bug needs two parties deployed, one left on the Phoenix
-         landing tile -- a second deployment on top of (1).
-    Both are the Narshe School hub mechanic; automating it is the next
-    step. See route_test.py for the validated routing that is in place."""
-    raise NotImplementedError(
-        "needs the Narshe School branch-deployment flow (see docstring)")
+    The route is computed from the seed's own spoiler: start -> Esper Gate
+    event tile 1562 -> Narshe School -> branch door -> ... -> the Phoenix
+    door. This exercises the ruination Phoenix entry event (where the
+    collision fix lives) end to end for one party."""
+    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin")
+    spoiler = rom[:-4] + ".txt"
+    hops = route.route_from_start(spoiler, "Phoenix cave")
+    assert hops, "could not compute a route to Phoenix Cave from the spoiler"
+
+    h = Harness(rom)
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    for door in hops:
+        got = route.step_door(h, door)
+        h.run(20)
+        assert got is not None, f"stuck stepping door {door} (route {hops})"
+
+    # Arrived at the Phoenix entry: the falling animation holds the screen.
+    assert h.screen_held, "expected the entry falling animation (screen held)"
+    # It must resolve (party lands, screen released) -- no soft-lock.
+    h.run_until(lambda h: not h.screen_held, timeout=1200, step=30)
+    return f"routed to Phoenix (map {h.map_id:#x}), falling animation resolved"
+
+
+def scenario_phoenix_two_party_collision(vanilla, workdir):
+    """REMAINING: reproduce the actual soft-lock -- first party declines to
+    split and stays on the landing tile, a second party enters and must
+    complete its fall through the first (the collision fix). Needs the
+    Narshe School party reform (ghost NPC) to field a second party, then a
+    second route to Phoenix. Routing + single-party entry are in place
+    (see scenario_phoenix_entry); the party-reform interaction is next."""
+    raise NotImplementedError("needs the Narshe School party-reform interaction")
 
 
 SCENARIOS = [
     scenario_maxhp_objective,
     scenario_full_heal_objective,
     scenario_camera_after_transition,
+    scenario_phoenix_entry,
     scenario_minecart_camera,
-    scenario_phoenix_collision,
+    scenario_phoenix_two_party_collision,
 ]
 
 

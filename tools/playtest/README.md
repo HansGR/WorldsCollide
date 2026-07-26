@@ -132,23 +132,53 @@ Validated by `route_test.py`: offline BFS routes to Phoenix Cave's
 approach map (a few hops inside its branch), and the live executor chains
 real overworld maps (218 -> 217 -> 219) with the camera free.
 
-**Known limit (deep-dungeon reproduction):** branch entry is gated by the
-ruination away-party deployment flow at the Narshe School -- an
-interactive party-formation mechanic, not a door step -- so the world-map
-branch entrances don't trigger from a fresh start. Automating that hub
-flow is the prerequisite for the minecart-camera and phoenix-collision
-scenarios; the routing to walk the branch *after* deployment is in place.
+### Event tiles acting as doors (the missing navigation piece)
+
+`navigate.doors_on_map` / atlas lookups only know **atlas short/long
+exits** (ids < ~1281). Ruination routes also traverse **event tiles
+acting as doors** (ids 1500-1999), whose positions live in
+`data.event_exit_data.event_exit_info[id]` as `[addr, len, split, state,
+desc, [map, x, y], method]` -- NOT in the atlas. Step onto the tile
+(teleport adjacent, walk onto it) to trigger the transition, exactly like
+a door.
+
+**Corrected ruination hub topology** (verified in-emulator):
+- Start: the Esper Gate, map 0xDA (218), cinematic, control at (55,33).
+- Event tile **1562** ("Esper World gate") at 0xDA (55,29) -> steps to
+  the **Narshe School, map 104 (0x68)** -- the real hub. (The map 217/219
+  "Esper World overworld" doors 1218-1223 are warp-point *returns*, NOT
+  door-rando routes -- ignore them for routing.)
+- In the school, the party is reformed into 1/2/3 parties by talking to
+  the ghost NPC; `PARTY_n_AWAY` is just bookkeeping for who's available.
+- School exits are normal atlas doors: **393** (93,45) -> branch 0,
+  **394** (99,45) -> branch 1, **395** (108,45) -> branch 2.
+- Phoenix Cave is on branch 1: door 394 -> 451 (Doma Dream) -> ... ->
+  map 377, then event-tile/door **1263** -> Phoenix. The offline BFS in
+  `route.py` already finds the in-branch hops (104 -> 126 -> 377).
+
+`route.route_from_start(spoiler, substring)` builds the whole door-id hop
+list from game start to a target door (found by spoiler description):
+start -> event tile 1562 -> Narshe School -> BFS across the branch ->
+target. `step_door` handles both atlas exits and event tiles. This
+chains start -> Phoenix Cave end to end (validated in
+`regressions.scenario_phoenix_entry`).
+
+**Remaining:** the two-party Phoenix soft-lock (and the minecart-camera
+scenario) need the Narshe School **party reform** (talk to the ghost NPC
+to split into 1/2/3 parties) to field a second party. Single-party route
++ entry are done; the reform interaction is the next piece.
 
 ## Status
 
 - Phase 0 (spike) complete: `spike.py`.
 - Phase 1 (harness API) complete: `harness.py` + `selftest.py`.
 - Phase 2 (navigation) complete: `navigate.py` + `nav_test.py`.
-- Phase 3 (regressions) complete: `regressions.py` (3 passing, 2 scaffolded).
-- Phase 4 (route chaining) complete: `route.py` + `route_test.py`
-  (offline graph/BFS + live executor; deep-dungeon reproduction gated on
-  the Narshe School deployment flow).
+- Phase 3 (regressions) complete: `regressions.py` (4 passing, 2 scaffolded).
+- Phase 4 (route chaining) complete: `route.py` + `route_test.py`.
+  Event-tile-aware door stepping + spoiler-driven `route_from_start`
+  chain game start all the way to Phoenix Cave; `scenario_phoenix_entry`
+  passes.
 
-Next: automate the Narshe School away-party deployment so a party can be
-sent into a branch (and a second left on a landing tile), which unlocks
-the minecart-camera and phoenix-collision behavioral tests.
+Next: automate the Narshe School **party reform** (ghost NPC) to field a
+second party, unlocking the two-party Phoenix soft-lock reproduction and
+the minecart-camera scenario.
