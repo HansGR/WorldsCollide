@@ -163,10 +163,39 @@ target. `step_door` handles both atlas exits and event tiles. This
 chains start -> Phoenix Cave end to end (validated in
 `regressions.scenario_phoenix_entry`).
 
-**Remaining:** the two-party Phoenix soft-lock (and the minecart-camera
-scenario) need the Narshe School **party reform** (talk to the ghost NPC
-to split into 1/2/3 parties) to field a second party. Single-party route
-+ entry are done; the reform interaction is the next piece.
+## Party reform (`reform.py`)
+
+Fielding a *second* party (for the two-party Phoenix collision) means driving
+the Narshe School ghost-NPC reform, three interactive UIs deep. All three were
+reverse-engineered against live WRAM:
+
+- **Dialog choices** ("Reform parties" -> "How many parties?"). The live choice
+  cursor is `0x056E`; `reform.choose(h, i)` navigates it to index `i` and
+  confirms, trying both axes so it handles vertical *and* 2x2-grid boxes.
+- **The SelectParties "form groups" menu.** Cursor located by pixel coords
+  `0x55` (X/column) and `0x57` (Y/row: roster=100, group-box top=164,
+  bottom=192). Character->party assignment is one byte per character id at
+  `0x1850+`: bit6=available, bits0-2=party, bits3-4=slot, bit7=leader. Group
+  boxes sit at fixed pixel coords, so `reform.place(h, col, group, slot)`
+  drives the held cursor straight to the next empty slot -- each party's slots
+  must fill **contiguously** (0x41,0x49,... for P1) or the menu rejects the
+  formation.
+- **Finalizing.** The menu does not auto-close and `A` opens a character's
+  status screen; the confirm is **B pressed repeatedly** -- `reform.finalize`
+  taps B until `ENABLE_Y_PARTY_SWITCHING` flips (the reform event resuming and
+  positioning the parties).
+
+`reform.reform_two_parties(h, plan=(1,1,2))` is the full macro: from field
+control in the school it talks to the ghost, picks "reform / 2 parties",
+assigns the roster per `plan` (party per available-character index, slots
+contiguous), and finalizes. Validated by `reform_test.py` on `-ruin -s 1002`:
+party 1 = {Terra, Locke}, party 2 = {Cyan}, both placed, Y-switch swaps the
+active party.
+
+**Remaining:** wire `scenario_phoenix_two_party_collision` -- reform, route
+party 1 to Phoenix and decline the split (it stands in the fall column), then
+Y-switch and route party 2 to Phoenix and assert its fall completes (the
+collision fix). The reform primitive and single-party Phoenix entry are done.
 
 ## Status
 
@@ -178,7 +207,9 @@ to split into 1/2/3 parties) to field a second party. Single-party route
   Event-tile-aware door stepping + spoiler-driven `route_from_start`
   chain game start all the way to Phoenix Cave; `scenario_phoenix_entry`
   passes.
+- Party reform complete: `reform.py` + `reform_test.py`. Drives the Narshe
+  School ghost-NPC reform into two field parties (dialog choices +
+  SelectParties menu + B-to-finalize), unlocking two-party scenarios.
 
-Next: automate the Narshe School **party reform** (ghost NPC) to field a
-second party, unlocking the two-party Phoenix soft-lock reproduction and
+Next: wire `scenario_phoenix_two_party_collision` on top of `reform.py`, and
 the minecart-camera scenario.
