@@ -107,8 +107,16 @@ Current scenarios:
 - `full_heal_objective` — every party member is at full HP after start.
 - `camera_after_transition` — a normal door transition leaves the camera
   free (the invariant behind the reported camera-hold bugs).
-- `minecart_camera`, `phoenix_collision` — scaffolded, **skipped** until
-  Phase 4 plan-driven routing can reach those dungeon locations.
+- `phoenix_entry` — route-chain start -> Phoenix Cave and confirm the
+  single-party landing animation resolves (no soft-lock).
+- `phoenix_two_party_collision` — reform two parties, party 1 declines the
+  Phoenix split and stands in the fall column, party 2 falls through it and
+  lands (the `DisableEntityCollision` collision fix).
+- `minecart_camera` — scaffolded, **skipped**: needs a plan-driven route to
+  the Esper-Mountain minecart pitfall (with `DEFEATED_CRANES` set), not the
+  party reform.
+
+Current: **5 passing, 1 skipped**.
 
 Lesson baked into the scenarios: cross-build "same seed" comparisons do
 **not** hold a variable fixed -- any flag change (even `-no od`) perturbs
@@ -192,10 +200,11 @@ contiguous), and finalizes. Validated by `reform_test.py` on `-ruin -s 1002`:
 party 1 = {Terra, Locke}, party 2 = {Cyan}, both placed, Y-switch swaps the
 active party.
 
-**Remaining:** wire `scenario_phoenix_two_party_collision` -- reform, route
-party 1 to Phoenix and decline the split (it stands in the fall column), then
-Y-switch and route party 2 to Phoenix and assert its fall completes (the
-collision fix). The reform primitive and single-party Phoenix entry are done.
+`scenario_phoenix_two_party_collision` (in `regressions.py`) is built on this:
+reform into two parties, route party 1 to Phoenix and decline the split (it
+lands in the fall column x=8/y0-7), Y-switch to party 2, and route it to the
+same Phoenix entrance -- party 2's blocking fall must pass *through* party 1
+(the `DisableEntityCollision` fix) and complete rather than deadlock.
 
 ## Status
 
@@ -209,7 +218,10 @@ collision fix). The reform primitive and single-party Phoenix entry are done.
   passes.
 - Party reform complete: `reform.py` + `reform_test.py`. Drives the Narshe
   School ghost-NPC reform into two field parties (dialog choices +
-  SelectParties menu + B-to-finalize), unlocking two-party scenarios.
+  SelectParties menu + B-to-finalize).
+- Two-party Phoenix collision complete: `scenario_phoenix_two_party_collision`
+  reforms, declines party 1's split, and drives party 2's fall through it.
+  Suite: **5 passing, 1 skipped**.
 
-Next: wire `scenario_phoenix_two_party_collision` on top of `reform.py`, and
-the minecart-camera scenario.
+Next: the minecart-camera scenario (a separate Esper-Mountain pitfall route
+with `DEFEATED_CRANES` set; does not use the party reform).

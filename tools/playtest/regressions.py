@@ -7,9 +7,9 @@ into "I verified the behavior."
 Usage:
     python3 tools/playtest/regressions.py <vanilla.smc> [--keep] [shot_dir]
 
-Exit code is nonzero if any scenario fails. Scenarios that require
-route-chaining through a seed's dungeon (minecart camera, phoenix cave
-collision) are scaffolded and skipped until Phase 4 navigation lands.
+Exit code is nonzero if any scenario fails. The minecart-camera scenario is
+scaffolded and skipped until a plan-driven route to the Esper-Mountain
+minecart pitfall exists.
 """
 
 import os
@@ -19,7 +19,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from tools.playtest.harness import Harness
-from tools.playtest import navigate, route
+from tools.playtest import navigate, route, reform
 import data.event_bit as event_bit
 import data.direction as direction
 
@@ -149,13 +149,68 @@ def scenario_phoenix_entry(vanilla, workdir):
 
 
 def scenario_phoenix_two_party_collision(vanilla, workdir):
-    """REMAINING: reproduce the actual soft-lock -- first party declines to
-    split and stays on the landing tile, a second party enters and must
-    complete its fall through the first (the collision fix). Needs the
-    Narshe School party reform (ghost NPC) to field a second party, then a
-    second route to Phoenix. Routing + single-party entry are in place
-    (see scenario_phoenix_entry); the party-reform interaction is next."""
-    raise NotImplementedError("needs the Narshe School party-reform interaction")
+    """Reproduce the exact soft-lock the collision fix addresses: a first party
+    declines the Phoenix split and stays in the fall column, then a second
+    party enters and must complete its fall *through* the first.
+
+    Flow: reform the ruination hub into two parties at the Narshe School,
+    route party 1 to Phoenix and decline the split (it lands at (8,7), in the
+    fall column x=8/y0-7), Y-switch to party 2, and route it to the same
+    Phoenix entrance. Party 2 falls from (8,0) with a blocking Move down 7 --
+    which the fix lets pass through party 1 (DisableEntityCollision around the
+    fall). The assertion is that party 2's fall resolves (screen released)
+    rather than deadlocking."""
+    PHX = 0x13e
+    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin")
+    spoiler = rom[:-4] + ".txt"
+    hops = route.route_from_start(spoiler, "Phoenix cave")
+    assert hops, "could not compute a route to Phoenix Cave from the spoiler"
+    school_hops = hops[1:]   # already in the school after the reform
+
+    h = Harness(rom)
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    route.step_door(h, route.ESPER_GATE_TILE)
+    navigate.wait_for_control(h)
+    assert h.map_id == reform.SCHOOL_MAP, f"not in school: {h.map_id:#x}"
+
+    # Two parties: {c0,c1} -> party 1 (size 2, so it is offered the split),
+    # {c2} -> party 2.
+    reform.reform_two_parties(h, plan=(1, 1, 2))
+
+    def route_to_phoenix():
+        for door in school_hops:
+            got = route.step_door(h, door)
+            h.run(20)
+            assert got is not None, f"stuck at door {door} (map {h.map_id:#x})"
+
+    # Party 1 falls in, declines the split, and stays in the fall column.
+    route_to_phoenix()
+    assert h.map_id == PHX, f"party1 not at phoenix: {h.map_id:#x}"
+    h.run_until(lambda hh: not hh.screen_held, timeout=1200, step=20)
+    h.run(40)
+    reform.choose(h, 1)          # "Split the party to proceed?" -> No
+    h.run(60)
+    px, py = h.party_xy
+    assert h.map_id == PHX and px == 8 and 0 <= py <= 7, \
+        f"party1 not standing in the fall column: {(px, py)} map {h.map_id:#x}"
+
+    # Y-switch to party 2 (loads its map, the school).
+    active = h.core.wram[0x1a6d]
+    h.press('Y', hold=4, wait=30)
+    h.run(60)
+    navigate.wait_for_control(h)
+    assert h.core.wram[0x1a6d] != active, "Y-switch did not change active party"
+    assert h.map_id == reform.SCHOOL_MAP, f"party2 not in school: {h.map_id:#x}"
+
+    # Party 2 enters the same Phoenix entrance; its fall must pass through
+    # party 1 and complete (no deadlock).
+    route_to_phoenix()
+    assert h.map_id == PHX, f"party2 not at phoenix: {h.map_id:#x}"
+    assert h.screen_held, "expected party2 falling animation (screen held)"
+    h.run_until(lambda hh: not hh.screen_held, timeout=1500, step=30)
+    return (f"party1 declined at ({px},{py}); party2 fell through and landed "
+            f"at {h.party_xy} (no soft-lock)")
 
 
 SCENARIOS = [
