@@ -28,9 +28,15 @@ def realize_doors(maps):
     from data.event_exit_data import event_exit_info
     from doors.realize.event_tiles import update_event_exit_addresses
     from doors.realize.transitions import Transitions
-    from doors.realize.exits import connect_exits
+    from doors.realize.exits import connect_exits, magitek_boss_door_shift
 
     update_event_exit_addresses(maps)
+
+    # Ruination-only: shift the two Magitek boss doors (and their arrival
+    # tiles) up one row so the player never lands on the blocking boss NPC.
+    # Must run before connect_exits, which reads the arrival coordinates.
+    if maps.args.ruination_mode:
+        magitek_boss_door_shift(maps)
 
     # Connect one-way event exits using the Transitions class
     transitions = Transitions(maps.doors.map[1], maps.rom,

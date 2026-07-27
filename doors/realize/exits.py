@@ -614,6 +614,39 @@ def move_event_trigger_data(maps):
         # for e in range(14):
         #    print('\t' + str(e) + ' (' + str(maps.events.events[e].x) + ', ' + str(maps.events.events[e].y) + '): ' + str(hex(maps.events.events[e].event_address)))
 
+# Magitek Research Facility boss-door landing shift (ruination only).
+#
+# In two MTF boss rooms a boss NPC stands on the exact tile where the player
+# lands when *entering* through the room's (normally boss-locked) door. When
+# the realized ruination map lets the player reach that door from the far side
+# first, the player sprite is drawn on top of the boss NPC -- aesthetically
+# unappealing. Shift both the door's own exit tile and the arrival tile up one
+# row (y -> y-1; "up" is -y) so the player lands just above the NPC instead of
+# on it. The tile above each door is already walkable.
+#
+# Each entry is (door_id, landing_source_id): landing_source_id is the door's
+# vanilla partner, whose archived destination connect_exits copies (via
+# copy_exit_info) into whatever door reaches this room -- i.e. the arrival
+# coordinates for entering through door_id.
+MTF_BOSS_DOOR_SHIFTS = [
+    (715, 716),   # Esper Tube room (map 273): mtboss2 at (25,51), door 715 at (25,50)
+    (706, 709),   # Ifrit/Shiva room (map 264): mtboss1 at (9,6),  door 706 at (9,5)
+]
+
+
+def magitek_boss_door_shift(maps):
+    """Ruination-only: nudge the two Magitek boss doors and their arrival tiles
+    up one row so the player never lands on top of the blocking boss NPC.
+
+    Runs during realization, before connect_exits reads exit_original_data.
+    See MTF_BOSS_DOOR_SHIFTS."""
+    for door_id, landing_source in MTF_BOSS_DOOR_SHIFTS:
+        maps.get_exit(door_id).y -= 1                          # move the door tile up
+        maps.exits.exit_original_data[landing_source][2] -= 1  # move the arrival up
+        vprint('MTF boss-door shift: door', door_id, 'and arrival via',
+               landing_source, 'moved up one row')
+
+
 def door_rando_cleanup(maps):
     # Perform cleanup actions, if we are doing door rando
 
