@@ -90,6 +90,25 @@ Validated by `nav_test.py`: boots a `-ruin` seed, teleports to the hub
 door, steps through, and confirms the map changed (0xDA -> 0xD9) with the
 camera not held on the far side.
 
+## Forced-connection test ROMs (`override.py`)
+
+Playtesting a specific door mechanic usually shouldn't wait on the planner
+happening to place that door. `override.py` builds a normal seed but rewires
+chosen door pairs AFTER the planner (and its verifier) run -- the map wouldn't
+validate as a real seed, but realization, exit events, and gating are all
+exercised exactly as in a real build:
+
+```sh
+python3 tools/playtest/override.py vanilla.smc out.smc 393:715 394:706
+```
+
+connects Narshe School doors 393/394 straight to the two Magitek boss doors,
+so their rooms can be entered "backwards" from the hub on frame one. Used to
+verify the ruination MTF boss-door shift in-game: enter through the randomized
+connection, land one tile above the blocking boss NPC (sprites adjacent, not
+stacked), boss collision intact, walk back out through the shifted door,
+repeatably, camera free. One build per process (wc machinery is import-once).
+
 ## Regressions (`regressions.py`)
 
 Behavioral tests for recent fixes. Each scenario builds the seed(s) it
