@@ -90,6 +90,27 @@ class MagitekFactory(Event):
         if self.MAP_SHUFFLE:
             self.map_shuffle_mod()
 
+    def ruination_mod(self):
+        # Shift the two boss-blocked doors off the boss-NPC tile.
+        # In both boss rooms the blocking boss NPC stands on the exact tile the
+        # player lands on when entering through the room's (normally
+        # boss-locked) door. When the realized ruination map lets the player
+        # reach that door from the far side first, the player sprite draws on
+        # top of the NPC. Move the door's own exit tile and the arrival tile up
+        # one row (y -> y-1) so the player lands just above the NPC; the tile
+        # above each door is walkable. (Same pattern as the Daryl's Tomb
+        # door-795 shift in daryl_tomb.door_rando_mod, except the arrival is
+        # moved via the vanilla partner's exit_original_data: 715/706 get
+        # randomized connections, and connect_exits copies the arrival
+        # coordinates for whatever door leads here from that archive.)
+
+        # Number 024 / Esper Tube room (map 273): mtboss2 at (25,51).
+        self.maps.get_exit(715).y -= 1                    # door (25,50) -> (25,49)
+        self.maps.exits.exit_original_data[716][2] -= 1   # arrival (25,51) -> (25,50)
+
+        # Ifrit/Shiva room (map 264): mtboss1 at (9,6).
+        self.maps.get_exit(706).y -= 1                    # door (9,5) -> (9,4)
+        self.maps.exits.exit_original_data[709][2] -= 1   # arrival (9,6) -> (9,5)
 
     def vector_mod(self):
         # npcs used to block/enter magitek factory
