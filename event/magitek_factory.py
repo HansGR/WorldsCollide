@@ -112,6 +112,28 @@ class MagitekFactory(Event):
         self.maps.get_exit(706).y -= 1                    # door (9,5) -> (9,4)
         self.maps.exits.exit_original_data[709][2] -= 1   # arrival (9,6) -> (9,5)
 
+        # The wall behind each doorway is Layer 1 only, so the extra step up
+        # would draw the player on top of it. Draw one Layer 2 wall tile above
+        # the shifted door tile on map entry (as Daryl's Tomb does for its
+        # door-795 shift) so the player passes 'behind' the wall instead.
+        #
+        # Number 024 room: tile 0xff is the map's own BG2 wall tile (the whole
+        # row above the doorway is 0xff) and has sprite priority -- verified
+        # in-emulator to hide the player's head during the step.
+        # Ifrit/Shiva room: 0xac renders transparent at runtime, and on this
+        # map a priority BG2 tile alone does not occlude the party (the party
+        # walks at upper Z there; the Daryl precedent also rewrites the Layer 1
+        # door tiles, which carry the door/Z properties). Kept as a harmless
+        # placeholder until the right tile pair is confirmed.
+        for map_id, x, y, tile in [(0x111, 25, 48, 0xff),   # Number 024 room
+                                   (0x108, 9, 3, 0xac)]:    # Ifrit/Shiva room
+            src = [
+                field.SetMapTiles(2, x, y, 1, 1, [tile]),
+                field.Branch(self.maps.get_entrance_event(map_id) + EVENT_CODE_START),
+            ]
+            space = Write(Bank.CC, src, f"mtf boss door layer 2 wall tile {hex(map_id)}")
+            self.maps.set_entrance_event(map_id, space.start_address - EVENT_CODE_START)
+
     def vector_mod(self):
         # npcs used to block/enter magitek factory
         sympathizer_npc_id = 0x10
