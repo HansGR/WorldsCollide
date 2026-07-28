@@ -116,25 +116,91 @@ class MagitekFactory(Event):
         # would draw the player on top of it. Draw one Layer 2 wall tile above
         # the shifted door tile on map entry (as Daryl's Tomb does for its
         # door-795 shift) so the player passes 'behind' the wall instead.
-        #
-        # Number 024 room: tile 0xff is the map's own BG2 wall tile (the whole
-        # row above the doorway is 0xff) and has sprite priority -- verified
-        # in-emulator to hide the player's head during the step.
-        # Ifrit/Shiva room: 0xca (the intended doorway-top graphic) renders at
-        # the right cell and carries the priority bit, but the party renders at
-        # upper Z on this map, so a Layer 2 tile alone does not occlude it yet.
-        # The likely completion (per the Daryl precedent) is to also move the
-        # Layer 1 door graphic up one tile -- SetMapTiles(1, 9, 3, 1, 2,
-        # [0x05, 0x15]), the map's own arch-top/door pair -- so the shifted
-        # exit tile carries the door's Z properties; pending confirmation.
-        for map_id, x, y, tile in [(0x111, 25, 48, 0xff),   # Number 024 room
-                                   (0x108, 9, 3, 0xca)]:    # Ifrit/Shiva room
+        # Tiles 0xad/0xac are the doorway-top graphics, but in L2 tileset $43
+        # they ship with Priority 1 clear (drawn behind Layer 1/sprites, purely
+        # decorative), so the mod below sets their priority bits first.
+        self.boss_door_tileset_priority_mod()
+        for map_id, x, y, tile in [(0x111, 25, 48, 0xad),   # Number 024 room
+                                   (0x108, 9, 3, 0xac)]:    # Ifrit/Shiva room
             src = [
                 field.SetMapTiles(2, x, y, 1, 1, [tile]),
                 field.Branch(self.maps.get_entrance_event(map_id) + EVENT_CODE_START),
             ]
             space = Write(Bank.CC, src, f"mtf boss door layer 2 wall tile {hex(map_id)}")
             self.maps.set_entrance_event(map_id, space.start_address - EVENT_CODE_START)
+
+    def boss_door_tileset_priority_mod(self):
+        # Set Priority 1 on tiles 0xac and 0xad of L2 tile set $43 (used by
+        # both boss rooms), so they draw in front of the sprite layer and the
+        # player passes behind them in the shifted doorways.
+        #
+        # Tile set format (ff6hacking wiki, ff3us map_tile_sets): compressed
+        # chunks at $DE0000, 3-byte pointers at $DFBA00 (relative to $DE0000),
+        # $800 bytes decompressed. Bytes $400-$7FF hold one attribute byte per
+        # 8x8 subtile ($400+tile = top-left, $500+tile = top-right, $600+tile =
+        # bottom-left, $700+tile = bottom-right); bit 5 = Priority 1.
+        #
+        # The edit is applied with splice_edit, NOT decompress/compress: a
+        # from-scratch recompression of this chunk hard-crashes the game's
+        # decompressor (see splice_edit's docstring), and splicing also pins
+        # the downstream window copies (tiles 0xcc/0xcd/0xfc/0xfd attributes
+        # are LZ-copied from 0xac/0xad's) to their original values so no other
+        # tile gains priority.
+        from utils.compression import splice_edit, decompress
+
+        TILESET = 0x43
+        PTR_TABLE = 0x1fba00      # $DFBA00
+        DATA_BASE = 0x1e0000      # $DE0000
+        CHUNK_COUNT = 0x4b
+
+        ptr_addr = PTR_TABLE + TILESET * 3
+        ptr = int.from_bytes(self.rom.get_bytes(ptr_addr, 3), "little")
+        next_ptr = int.from_bytes(self.rom.get_bytes(ptr_addr + 3, 3), "little")
+        slot_size = next_ptr - ptr
+
+        raw = self.rom.get_bytes(DATA_BASE + ptr, slot_size)
+        compressed_len = raw[0] | (raw[1] << 8)
+        assert compressed_len <= slot_size, "tile set chunk overruns its slot"
+        stream = raw[:compressed_len]
+        original = decompress(stream)
+        assert len(original) == 0x800, f"tile set ${TILESET:02x} decompressed to {len(original)}"
+
+        edits = {}
+        for tile in (0xac, 0xad):
+            for quadrant in range(4):
+                offset = 0x400 + quadrant * 0x100 + tile
+                edits[offset] = original[offset] | 0x20
+        spliced = splice_edit(stream, edits)
+
+        if len(spliced) > slot_size:
+            # Grew past its slot: shift every later chunk up by the overflow.
+            # All data must stay below $DFB400 (another data table lives
+            # there), and the tail bytes are WC free space, so claim them via
+            # the allocator (throws if something already has -- better loud
+            # than clobbered). The chunks cannot be repointed out of the
+            # $DE/$DF banks: the game's loader does not follow such pointers.
+            shift = len(spliced) - slot_size
+            chunk_ptrs = []
+            for i in range(CHUNK_COUNT):
+                chunk_ptrs.append(int.from_bytes(
+                    self.rom.get_bytes(PTR_TABLE + i * 3, 3), "little"))
+            last_start = DATA_BASE + chunk_ptrs[-1]
+            last_len = self.rom.get_bytes(last_start, 2)
+            last_end = last_start + (last_len[0] | (last_len[1] << 8))
+            region_end = 0x1fb400
+            assert last_end + shift <= region_end, \
+                "not enough slack after the last tile set chunk"
+            Reserve(last_end, last_end + shift - 1,
+                    "mtf tile set region tail for priority doors")
+
+            for i in range(CHUNK_COUNT - 1, TILESET, -1):
+                start = DATA_BASE + chunk_ptrs[i]
+                header = self.rom.get_bytes(start, 2)
+                clen = header[0] | (header[1] << 8)
+                self.rom.set_bytes(start + shift, self.rom.get_bytes(start, clen))
+                self.rom.set_bytes(PTR_TABLE + i * 3,
+                                   list((chunk_ptrs[i] + shift).to_bytes(3, "little")))
+        self.rom.set_bytes(DATA_BASE + ptr, spliced)
 
     def vector_mod(self):
         # npcs used to block/enter magitek factory
