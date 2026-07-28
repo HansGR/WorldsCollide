@@ -120,13 +120,15 @@ class MagitekFactory(Event):
         # Number 024 room: tile 0xff is the map's own BG2 wall tile (the whole
         # row above the doorway is 0xff) and has sprite priority -- verified
         # in-emulator to hide the player's head during the step.
-        # Ifrit/Shiva room: 0xac renders transparent at runtime, and on this
-        # map a priority BG2 tile alone does not occlude the party (the party
-        # walks at upper Z there; the Daryl precedent also rewrites the Layer 1
-        # door tiles, which carry the door/Z properties). Kept as a harmless
-        # placeholder until the right tile pair is confirmed.
+        # Ifrit/Shiva room: 0xca (the intended doorway-top graphic) renders at
+        # the right cell and carries the priority bit, but the party renders at
+        # upper Z on this map, so a Layer 2 tile alone does not occlude it yet.
+        # The likely completion (per the Daryl precedent) is to also move the
+        # Layer 1 door graphic up one tile -- SetMapTiles(1, 9, 3, 1, 2,
+        # [0x05, 0x15]), the map's own arch-top/door pair -- so the shifted
+        # exit tile carries the door's Z properties; pending confirmation.
         for map_id, x, y, tile in [(0x111, 25, 48, 0xff),   # Number 024 room
-                                   (0x108, 9, 3, 0xac)]:    # Ifrit/Shiva room
+                                   (0x108, 9, 3, 0xca)]:    # Ifrit/Shiva room
             src = [
                 field.SetMapTiles(2, x, y, 1, 1, [tile]),
                 field.Branch(self.maps.get_entrance_event(map_id) + EVENT_CODE_START),
