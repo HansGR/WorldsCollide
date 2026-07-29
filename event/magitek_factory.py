@@ -119,14 +119,24 @@ class MagitekFactory(Event):
         # Tiles 0xad/0xac are the doorway-top graphics, but in L2 tileset $43
         # they ship with Priority 1 clear (drawn behind Layer 1/sprites, purely
         # decorative), so the mod below sets their priority bits first.
+        #
+        # The Ifrit/Shiva room also has a pre-existing decorative 0xad on
+        # Layer 2 at (12,4); with the priority edit it would occlude the party
+        # walking beneath it, so overwrite it with 0x9d (same graphic family,
+        # no priority).
         self.boss_door_tileset_priority_mod()
-        for map_id, x, y, tile in [(0x111, 25, 48, 0xad),   # Number 024 room
-                                   (0x108, 9, 3, 0xac)]:    # Ifrit/Shiva room
-            src = [
-                field.SetMapTiles(2, x, y, 1, 1, [tile]),
+        layer2_writes = {
+            0x111: [(25, 48, 0xad)],                  # Number 024 room doorway
+            0x108: [(9, 3, 0xac), (12, 4, 0x9d)],     # Ifrit/Shiva doorway + decor fix
+        }
+        for map_id, writes in layer2_writes.items():
+            src = []
+            for x, y, tile in writes:
+                src += [field.SetMapTiles(2, x, y, 1, 1, [tile])]
+            src += [
                 field.Branch(self.maps.get_entrance_event(map_id) + EVENT_CODE_START),
             ]
-            space = Write(Bank.CC, src, f"mtf boss door layer 2 wall tile {hex(map_id)}")
+            space = Write(Bank.CC, src, f"mtf boss door layer 2 wall tiles {hex(map_id)}")
             self.maps.set_entrance_event(map_id, space.start_address - EVENT_CODE_START)
 
     def boss_door_tileset_priority_mod(self):
