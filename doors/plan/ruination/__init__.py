@@ -34,7 +34,6 @@ def credits_text(wc_version):
     return [
         ("", "text"),
         ("Credits", "heading"),
-        (f"Ruination {RUINATION_VERSION}", "text"),
         ("Final Fantasy 6 roguelike", "text"),
         ("made in FFVI WorldsCollide", "text"),
         ("(v" + wc_version + ")", "right"),
