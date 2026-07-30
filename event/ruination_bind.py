@@ -362,8 +362,10 @@ class RuinMap:
         log_lines.append("")
 
         log_lines.append("Branch Terminus Routes:")
+        from data.ruin_constants import TERMINUS_NAMES
         for branch_id, branch in enumerate(planner.branches):
-            log_lines.append(f"  Branch {branch_id} terminus: {branch.terminus}")
+            terminus_name = TERMINUS_NAMES.get(branch.terminus, branch.terminus)
+            log_lines.append(f"  Branch {branch_id} terminus: {terminus_name}")
             if branch.terminus is None:
                 log_lines.append("    (no terminus)")
                 continue

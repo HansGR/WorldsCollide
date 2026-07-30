@@ -298,3 +298,10 @@ AREA_SHOPS = {
 }
 
 RUIN_TERMINI = ['HUB52-ruin', 'HUB53-ruin', 'HUB54-ruin']  # list of terminal rooms for branches
+
+# Player-facing names for the terminus rooms (used by the spoiler log).
+TERMINUS_NAMES = {
+    'HUB52-ruin': 'Sealed Gate',
+    'HUB53-ruin': 'Esper Sanctuary',
+    'HUB54-ruin': 'The Falcon',
+}
