@@ -95,12 +95,13 @@ RUIN_DEFAULT_FLAGS = {
                    '-ob', '59.3.3.11.29.11.30.11.31.10.12.12',
                    '-oc', '30.8.8.3.3.11.6.11.7.11.8.10.12.12',
                    # silent start bonuses: +100 max HP for all, full heal
-                   '-od', '74.100.100.0.0',
-                   '-oe', '55.0.0'],
+                   #'-od', '74.100.100.0.0',
+                   #'-oe', '55.0.0',
+                   ],
 
     # Party flags
     'starting_chars': ['-sc1', 'random', '-sc2', 'random', '-sc3', 'random'],
-    'party': ['-sal', '-eu', '-csrp', '80', '125'],
+    'party': ['-sal', '-eu', '-csrp', '80', '125', '-stl', '6'],
 
     # Command flags
     'commands': [
