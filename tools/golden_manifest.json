@@ -36,15 +36,15 @@
   "spoiler": "e08ef18c06f0c97003edc9562c67f0d5e01626e0c70abe64ab417b2f2f56f23a"
  },
  "ruin1": {
-  "rom": "dcbe2287e67cccba9f050849d51e9303a1eaecb8ed191f92b8829c52a26a7b13",
+  "rom": "554c6fe97d85cf8adfe801178ffa492ac9cede0a1f8553e216b376c17f6ae896",
   "spoiler": "08b91d6b6d8a8fdf837a9d5dc5a8ebbfb18298dae02c59a9af31e424cb7039c3"
  },
  "ruin2": {
-  "rom": "b0df2f335eacd8c95285710953867207d7241ff06e914dfbfb7df82b0466c084",
+  "rom": "72c2cce22b402cef029bdb8df5d19dd0ae10ce0070c423cd57e88be7234090d3",
   "spoiler": "eb3aaaa226542606eedf683e595fa1efeec107e1fa56710587d581c41eec4c05"
  },
  "ruin3": {
-  "rom": "0e6e09d53092b825c59d6d0d99cbe581388f1342e2ebda8263293a65ea0306d4",
+  "rom": "97914e9ccb19513a688c1c943c8720226639a974544a04f3303ab54dc52cec31",
   "spoiler": "244e069833405a4505f2a78595be6178016bc03c7664c7bff415258bb391fe67"
  },
  "ruineasy": {
@@ -52,15 +52,15 @@
   "spoiler": "c64829d5adcc7a915227e7d2f796ff42b25bdde0d06fa313c87dc55bdfdf3208"
  },
  "ruinhard": {
-  "rom": "ba099cf53d4355a96ef9aef86af4f141875fd4f78bc82fa7d7b4f50d539251de",
+  "rom": "2ed33fcac55c2273b0cae8a0ba2c1a32f376fce8d5bb15dc2587222d7875566b",
   "spoiler": "999a6559ba17e8974b361a2b88e58da157ce67db3e11b3fa4be81ee4d9b6aafd"
  },
  "ruinopen": {
-  "rom": "2106f091267b239e44873b5d6aa0f76f9f0aa8d358eacb0e74e845388dc2ee7f",
+  "rom": "a5b0b74532a5f0f5d81b4fc2072405fceed4f9c447b87982a72a79a180282b0d",
   "spoiler": "88b23fe09b5570308928921e62aab0e65b1553b0f21dafbeeef39ecfbcbc90f2"
  },
  "ruinsep": {
-  "rom": "0a1df2ea8f5b3692f8c2607a7b277e4e1afc8377b0cd5b3cbc4e1c32399fc133",
+  "rom": "b47d3b4cdcf35d6de5ee6c35be9c054382d78f6cd2c14c433e1e914ff3affb2f",
   "spoiler": "89153679dc983919924deac92180354174572257815bfe3d7006bc2afe12b117"
  },
  "vanilla1": {

@@ -21,3 +21,31 @@ character recruited on one branch opens locks on every branch). Modules:
 
 The plan is bound to ROM Reward objects in event/ruination_bind.py.
 """
+
+# Ruination release version, shown in-game in the objectives menu's credits
+# section (menus/objectives.py renders these; this module stays ROM-free, so
+# the credits are plain text -- the menu applies colors and layout).
+RUINATION_VERSION = "1.0"
+
+
+def credits_text(wc_version):
+    """The credits section as (text, style) lines, where style is 'heading'
+    (blue), 'text', or 'right' (right-justified)."""
+    return [
+        ("", "text"),
+        ("Credits", "heading"),
+        (f"Ruination {RUINATION_VERSION}", "text"),
+        ("Final Fantasy 6 roguelike", "text"),
+        ("made in FFVI WorldsCollide", "text"),
+        ("(v" + wc_version + ")", "right"),
+        ("", "text"),
+        (" Original code: AtmaTek", "text"),
+        (" Door rando by: DoctorDT", "text"),
+        ("", "text"),
+        (" Special Thanks:", "text"),
+        ("  asilverthorn, Franklin,", "text"),
+        ("  Jefe01, Jexvrok,", "text"),
+        ("  NobodyWar, WRJones", "text"),
+        ("  Haloingmoons, and", "text"),
+        ("  the WC community", "text"),
+    ]
