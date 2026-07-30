@@ -124,6 +124,15 @@ class MagitekFactory(Event):
         # Layer 2 at (12,4); with the priority edit it would occlude the party
         # walking beneath it, so overwrite it with 0x9d (same graphic family,
         # no priority).
+        #
+        # Side-effect audit (2026-07, playtested): 13 maps use L2 tile set $43
+        # across three shared tilemap canvases -- the MTF suite + minecart
+        # (chunk 116), minecart ride + two Kefka's Tower rooms (chunk 316),
+        # and the Esper Tube Room (chunk 211, clean). Every decorative
+        # 0xac/0xad placement on those canvases was checked in-game: only the
+        # (12,4) one sits over player-accessible floor (and only on map
+        # 0x108); the rest are unreachable, cinematic-only, or off-region, so
+        # no other overwrite is needed.
         self.boss_door_tileset_priority_mod()
         layer2_writes = {
             0x111: [(25, 48, 0xad)],                  # Number 024 room doorway
