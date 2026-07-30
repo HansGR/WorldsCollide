@@ -143,8 +143,9 @@ class PreGameTrack:
         import data.text as text
 
         if args.ruination_mode:
+            from doors.plan.ruination import RUINATION_VERSION
             title = "FFVI Ruination"
-            version_string = "v0.3"
+            version_string = "v" + RUINATION_VERSION
         else:
             title = "FFVI Worlds Collide"
             version_string = "v" + version.__version__.split(' ')[0] # remove substrings such as ' (dev)'
