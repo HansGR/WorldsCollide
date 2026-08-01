@@ -47,12 +47,7 @@ class Objective:
             possible_types = [_type for _type in category_types[category] if _type.format_string != "Random"]
 
         if args.ruination_mode is not None:
-            # Kefka's Tower results do nothing in ruination and can softlock, so
-            # args/objectives.py drops objectives that name one directly.  A
-            # Random result resolves here instead, long after that filter, so
-            # exclude the same ids from the pool.  (The pool cannot empty out:
-            # the only all-KT category is reached via result id 1, which the
-            # args-level filter already removed in ruination.)
+            # Kefka's Tower results do nothing in ruination and can softlock: exclude those ids
             from args.objectives import KT_RESULT_IDS
             possible_types = [_type for _type in possible_types
                               if _type.id not in KT_RESULT_IDS]

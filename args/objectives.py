@@ -1,8 +1,7 @@
 from constants.objectives import MAX_OBJECTIVES, MAX_CONDITIONS
 import sys
 
-# Result ids in the "Kefka's Tower" category: the category-random roll plus
-# the two unlocks.  Dropped from ruination seeds (see process()).
+# Result ids in the "Kefka's Tower" category: dropped from ruination seeds
 KT_RESULT_IDS = {1, 2, 3}
 
 def parse(parser):
@@ -43,9 +42,6 @@ def process(args):
             self.conditions_required_min = conditions_required_min
             self.conditions_required_max = conditions_required_max
 
-    # Objectives are parsed identically in every mode; the one exception is
-    # the Kefka's Tower results, dropped below in ruination.  (Ruination's KT
-    # unlock counts come from the -rce flag, processed in args/doors.py.)
     args.objectives = []
     for oi in range(MAX_OBJECTIVES):
         lower_letter = chr(ord('a') + oi)
@@ -79,13 +75,9 @@ def process(args):
 
             result = Result(*result_type, result_args)
 
-            # In ruination mode, filter out KT objectives: they do not affect
-            # gameplay and can introduce softlocks.  args.ruination_mode is set
-            # by parse_args (which runs before every group's process()), so it
-            # is readable here even though args/doors.py processes later -- and
-            # unlike sniffing sys.argv it also catches --ruination-mode=<mode>.
-            # Note the surviving objectives close the gap left behind, so a
-            # filtered objective shifts later letters down a slot.
+            # In ruination mode, filter out KT objectives:
+            # they do not affect gameplay and can cause softlocks.
+            # Note surviving objectives are shifted down a slot compared to the flagstring.
             if args.ruination_mode is not None and result.id in KT_RESULT_IDS:
                 continue
 
