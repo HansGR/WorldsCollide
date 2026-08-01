@@ -75,6 +75,11 @@ def process(args):
 
             result = Result(*result_type, result_args)
 
+            # In ruination mode, filter out KT objectives: they do not affect gameplay and can introduce softlocks
+            is_ruination_mode = '-ruin' in sys.argv or '--ruination-mode' in sys.argv
+            if is_ruination_mode and result.id in {1, 2, 3}:
+                continue
+
             conditions_required_min = values[value_index]
             value_index += 1
             conditions_required_max = values[value_index]

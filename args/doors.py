@@ -80,7 +80,7 @@ def parse(parser):
                             "connections shuffled, while preserving switch/boss constraints")
 
     doors.add_argument("-rce", "--required-characters-espers", type=str, default=None,
-                       help="Ruination mode: characters and espers required to unlock Kefka's Tower, "
+                       help="Ruination mode: number of characters and espers required to be obtainable, "
                             "as 'CC.EE' exact counts or 'cc.cc.ee.ee' min/max ranges "
                             "(default 6.9, minimum 3.0)")
 
@@ -302,7 +302,7 @@ def options(args):
             return str(lo) if lo == hi else f"{lo}-{hi}"
         opts += [
             ("Ruination Mode", mode_desc),
-            ("KT Unlock", f"{_range_desc(*cr)}/{_range_desc(*er)}"),
+            (" available c/e", f"{_range_desc(*cr)}/{_range_desc(*er)}"),
         ]
 
     elif args.door_randomize_all:
