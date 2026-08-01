@@ -60,11 +60,12 @@ as game actions. Imports ROM-free (no Memory/allocation side effects).
 Validated by `selftest.py` on a `-ruin` seed: map id 0xDA (Esper Gate),
 GP 6000 (matches `-gp 6000` default), party at hub.
 
-**Objective slots in ruination:** objectives behave identically in every
-mode (KT unlock counts come from the `-rce` flag, not an objective), and
-`OBJECTIVE` bit slots follow the flag letters directly. The default
-`-ruin` flagset provides objectives A and B, so start bonuses passed
-explicitly as `-oc`/`-od` land in slots **2 and 3**.
+**Objective slots in ruination:** KT unlock counts come from the `-rce`
+flag rather than an objective, and the default `-ruin` flagset provides
+objectives A and B — so start bonuses passed explicitly as `-oc`/`-od`
+land in `OBJECTIVE` bit slots **2 and 3**. Caveat: ruination still drops
+Kefka's Tower results (ids 1-3) from `args.objectives`, so if you pass one
+of those yourself, every later objective shifts down a slot.
 
 ## Navigation (`navigate.py`)
 

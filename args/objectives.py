@@ -1,6 +1,10 @@
 from constants.objectives import MAX_OBJECTIVES, MAX_CONDITIONS
 import sys
 
+# Result ids in the "Kefka's Tower" category: the category-random roll plus
+# the two unlocks.  Dropped from ruination seeds (see process()).
+KT_RESULT_IDS = {1, 2, 3}
+
 def parse(parser):
     objectives = parser.add_argument_group("Objectives")
     for oi in range(MAX_OBJECTIVES):
@@ -39,9 +43,9 @@ def process(args):
             self.conditions_required_min = conditions_required_min
             self.conditions_required_max = conditions_required_max
 
-    # Objectives behave identically in every mode. (Ruination's Kefka's Tower
-    # unlock counts come from the -rce flag, processed in args/doors.py --
-    # KT-unlock objectives are simply unused in ruination mode.)
+    # Objectives are parsed identically in every mode; the one exception is
+    # the Kefka's Tower results, dropped below in ruination.  (Ruination's KT
+    # unlock counts come from the -rce flag, processed in args/doors.py.)
     args.objectives = []
     for oi in range(MAX_OBJECTIVES):
         lower_letter = chr(ord('a') + oi)
@@ -75,9 +79,14 @@ def process(args):
 
             result = Result(*result_type, result_args)
 
-            # In ruination mode, filter out KT objectives: they do not affect gameplay and can introduce softlocks
-            is_ruination_mode = '-ruin' in sys.argv or '--ruination-mode' in sys.argv
-            if is_ruination_mode and result.id in {1, 2, 3}:
+            # In ruination mode, filter out KT objectives: they do not affect
+            # gameplay and can introduce softlocks.  args.ruination_mode is set
+            # by parse_args (which runs before every group's process()), so it
+            # is readable here even though args/doors.py processes later -- and
+            # unlike sniffing sys.argv it also catches --ruination-mode=<mode>.
+            # Note the surviving objectives close the gap left behind, so a
+            # filtered objective shifts later letters down a slot.
+            if args.ruination_mode is not None and result.id in KT_RESULT_IDS:
                 continue
 
             conditions_required_min = values[value_index]
