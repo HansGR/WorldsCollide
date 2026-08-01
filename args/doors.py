@@ -79,6 +79,11 @@ def parse(parser):
                             "(each entry to a 4-ton-switch-room ending) with internal "
                             "connections shuffled, while preserving switch/boss constraints")
 
+    doors.add_argument("-rce", "--required-characters-espers", type=str, default=None,
+                       help="Ruination mode: characters and espers required to unlock Kefka's Tower, "
+                            "as 'CC.EE' exact counts or 'cc.cc.ee.ee' min/max ranges "
+                            "(default 6.9, minimum 3.0)")
+
     # Map shuffle
     doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",
                        help="Randomize overworld entrances in each world")
@@ -107,6 +112,36 @@ def process(args):
         args.door_randomize_dungeon_crawl = False
         args.map_shuffle_separate = False
         args.map_shuffle_crossworld = False
+
+    # -rce: characters/espers required to unlock Kefka's Tower (ruination map
+    # generation). 'CC.EE' exact or 'cc.cc.ee.ee' min/max ranges; the planner
+    # consumes these as [min, max] and rolls within its own RNG window.
+    _rce = args.required_characters_espers
+    if _rce is None:
+        _rce = "6.9"
+    def _rce_error(message):
+        import sys
+        args.parser.print_usage()
+        print(f"{sys.argv[0]}: error: -rce: {message}")
+        sys.exit(1)
+    fields = _rce.split('.')
+    if len(fields) not in (2, 4) or not all(f.lstrip('-').isdigit() for f in fields):
+        _rce_error(f"expected 'CC.EE' or 'cc.cc.ee.ee' integer counts, got '{_rce}'")
+    fields = [int(f) for f in fields]
+    if len(fields) == 2:
+        char_range = [fields[0], fields[0]]
+        esper_range = [fields[1], fields[1]]
+    else:
+        char_range = [fields[0], fields[1]]
+        esper_range = [fields[2], fields[3]]
+    if char_range[0] > char_range[1] or esper_range[0] > esper_range[1]:
+        _rce_error(f"min above max in '{_rce}'")
+    if char_range[0] < 3 or esper_range[0] < 0:
+        _rce_error(f"minimum allowable is 3.0 (characters.espers), got '{_rce}'")
+    if char_range[1] > 14 or esper_range[1] > 27:
+        _rce_error(f"maximum allowable is 14.27 (characters.espers), got '{_rce}'")
+    args.ruin_characters_required = char_range
+    args.ruin_espers_required = esper_range
 
     if args.door_randomize_dungeon_crawl:
         # Override: dungeon crawl is incompatible with map shuffle and takes precedence
@@ -153,6 +188,9 @@ def flags(args):
 
         if getattr(args, "ruin_kefka_tower", False):
             flags += " -rkt"
+
+        if args.required_characters_espers is not None:
+            flags += f" -rce {args.required_characters_espers}"
 
         if args.debug_route_destination:
             flags += " -debug_dest " + " ".join(args.debug_route_destination)
@@ -259,8 +297,12 @@ def options(args):
 
     if args.ruination_mode is not None:
         mode_desc = "Custom" if args.ruination_mode == "custom" else ""
+        cr, er = args.ruin_characters_required, args.ruin_espers_required
+        def _range_desc(lo, hi):
+            return str(lo) if lo == hi else f"{lo}-{hi}"
         opts += [
             ("Ruination Mode", mode_desc),
+            ("KT Unlock", f"{_range_desc(*cr)}/{_range_desc(*er)}"),
         ]
 
     elif args.door_randomize_all:

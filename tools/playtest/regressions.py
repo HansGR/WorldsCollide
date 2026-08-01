@@ -25,16 +25,16 @@ import data.direction as direction
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# In ruination the -oa objective (Unlock Final Kefka) is filtered before
-# .id assignment, so the -od/-oe start bonuses reindex down to slots 2/3.
+# The default -ruin flagset provides objectives A and B, so the explicit
+# start bonuses passed by the scenarios below (-oc/-od) land in slots 2/3.
 OBJ_MAXHP = event_bit.OBJECTIVE2
 OBJ_HEAL = event_bit.OBJECTIVE3
 
 
-def build(vanilla, out, flags):
+def build(vanilla, out, flags, seed=1002):
     """Build a seed with wc.py; return the .smc path."""
     cmd = [sys.executable, os.path.join(ROOT, "wc.py"),
-           "-i", vanilla, "-o", out, "-sl", "-s", "1002"] + flags.split()
+           "-i", vanilla, "-o", out, "-sl", "-s", str(seed)] + flags.split()
     subprocess.run(cmd, cwd=ROOT, check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return out
@@ -51,7 +51,7 @@ def at_objective_start(rom):
 # --- scenarios ------------------------------------------------------------
 
 def scenario_maxhp_objective(vanilla, workdir):
-    """The +100 Max HP start objective (-od 74.100.100) raises max HP by
+    """The +100 Max HP start objective (-oc 74.100.100) raises max HP by
     exactly 100.
 
     Before/after within one build: the start party (and its max HP) is set
@@ -59,7 +59,8 @@ def scenario_maxhp_objective(vanilla, workdir):
     objective. Reading slot-0 max HP just before the objective bit sets vs
     just after isolates the boost with the same character -- no RNG
     divergence from a flag change."""
-    rom = build(vanilla, os.path.join(workdir, "mhp.smc"), "-ruin")
+    rom = build(vanilla, os.path.join(workdir, "mhp.smc"),
+                "-ruin -oc 74.100.100.0.0")
     h = Harness(rom)
     h.boot_to_game_start()
 
@@ -77,17 +78,24 @@ def scenario_maxhp_objective(vanilla, workdir):
 
 
 def scenario_full_heal_objective(vanilla, workdir):
-    """The Full Heal start objective (-oe 55) leaves the party at full HP."""
-    rom = build(vanilla, os.path.join(workdir, "heal.smc"), "-ruin")
+    """The Full Heal start objective (-od 55) leaves the party at full HP.
+
+    Full Heal applies only to current-party members (ApplyToParty), and the
+    harness's HP accessors index character data blocks -- so read the party
+    membership bits and check exactly those characters."""
+    rom = build(vanilla, os.path.join(workdir, "heal.smc"),
+                "-ruin -oc 74.100.100.0.0 -od 55.0.0")
     h = at_objective_start(rom)
     h.run_until(lambda h: h.event_bit(OBJ_HEAL), timeout=10000, step=10)
     h.run(120)
-    for slot in range(3):
-        cur, mx = h.cur_hp(slot), h.max_hp(slot)
-        if mx == 0:
-            continue  # empty slot
-        assert cur == mx, f"slot {slot} not full: {cur}/{mx}"
-    return "all party members at full HP after start"
+    current_party = h.core.read_u8(0x1a6d)
+    members = [c for c in range(14)
+               if h.core.read_u8(0x1850 + c) & current_party]
+    assert members, "no characters in the current party"
+    for c in members:
+        cur, mx = h.cur_hp(c), h.max_hp(c)
+        assert cur == mx, f"character {c} not full: {cur}/{mx}"
+    return f"party characters {members} at full HP after start"
 
 
 def scenario_camera_after_transition(vanilla, workdir):
@@ -128,7 +136,9 @@ def scenario_phoenix_entry(vanilla, workdir):
     event tile 1562 -> Narshe School -> branch door -> ... -> the Phoenix
     door. This exercises the ruination Phoenix entry event (where the
     collision fix lives) end to end for one party."""
-    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin")
+    # Seed choice: the ruination map must place Phoenix Cave on a routable
+    # branch; not every seed does (1002 doesn't with the current defaults).
+    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", seed=1003)
     spoiler = rom[:-4] + ".txt"
     hops = route.route_from_start(spoiler, "Phoenix cave")
     assert hops, "could not compute a route to Phoenix Cave from the spoiler"
@@ -161,7 +171,8 @@ def scenario_phoenix_two_party_collision(vanilla, workdir):
     fall). The assertion is that party 2's fall resolves (screen released)
     rather than deadlocking."""
     PHX = 0x13e
-    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin")
+    # Same seed constraint as scenario_phoenix_entry.
+    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", seed=1003)
     spoiler = rom[:-4] + ".txt"
     hops = route.route_from_start(spoiler, "Phoenix cave")
     assert hops, "could not compute a route to Phoenix Cave from the spoiler"

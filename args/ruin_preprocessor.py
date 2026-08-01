@@ -91,12 +91,15 @@ for group in MUTUALLY_EXCLUSIVE_GROUPS:
 # RUIN_HARD_EXTRAS below.
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
-    'objectives': ['-oa', '2.2.2.2.6.6.4.9.9',
-                   '-ob', '59.3.3.11.29.11.30.11.31.10.12.12',
-                   '-oc', '30.8.8.3.3.11.6.11.7.11.8.10.12.12',
+    'objectives': [
+                   # KT unlock requirements come from -rce (not an objective;
+                   # KT-unlock objectives are unused in ruination mode)
+                   '-rce', '6.9',
+                   '-oa', '59.3.3.11.29.11.30.11.31.10.12.12',
+                   '-ob', '30.8.8.3.3.11.6.11.7.11.8.10.12.12',
                    # silent start bonuses: +100 max HP for all, full heal
-                   #'-od', '74.100.100.0.0',
-                   #'-oe', '55.0.0',
+                   #'-oc', '74.100.100.0.0',
+                   #'-od', '55.0.0',
                    ],
 
     # Party flags
@@ -158,7 +161,7 @@ RUIN_HARD_EXTRAS = {
 # Flags that have arguments (used for proper flag removal)
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
-    '-gpm': 1, '-oa': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
+    '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
     '-msl': 1, '-drloc': 1, '-stloc': 1, '-fer': 1, '-escr': 1,

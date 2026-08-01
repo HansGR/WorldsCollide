@@ -58,14 +58,13 @@ as game actions. Imports ROM-free (no Memory/allocation side effects).
   `set_party_xy(x, y)` (for door-step teleport in Phase 2).
 
 Validated by `selftest.py` on a `-ruin` seed: map id 0xDA (Esper Gate),
-GP 6000 (matches `-gp 6000` default), party at hub, and the -oss bonuses
-(max HP +100, full heal) firing silently.
+GP 6000 (matches `-gp 6000` default), party at hub.
 
-**Ruination objective reindex gotcha:** in ruination mode the `-oa`
-objective (result 2, Unlock Final Kefka) is filtered out of
-`args.objectives` before `.id` assignment, so later objectives shift
-down a slot. The `-od`/`-oe` start bonuses land in `OBJECTIVE` bit
-slots **2 and 3**, not 3 and 4.
+**Objective slots in ruination:** objectives behave identically in every
+mode (KT unlock counts come from the `-rce` flag, not an objective), and
+`OBJECTIVE` bit slots follow the flag letters directly. The default
+`-ruin` flagset provides objectives A and B, so start bonuses passed
+explicitly as `-oc`/`-od` land in slots **2 and 3**.
 
 ## Navigation (`navigate.py`)
 

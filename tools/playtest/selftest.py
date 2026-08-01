@@ -3,6 +3,11 @@
 Boots to game start, then checks every accessor against expected
 ruination-start state, including the -oss silent objective effects.
 
+The seed must be built with the explicit start-bonus objectives (they are
+no longer part of the default -ruin flagset):
+
+    wc.py -i vanilla.smc -o seed.smc -ruin -oc 74.100.100.0.0 -od 55.0.0
+
 Usage: python3 tools/playtest/selftest.py <ruin_seed.smc> [shot_dir]
 """
 
@@ -29,12 +34,9 @@ def main():
     print(f"map_id = {h.map_id:#x} (Esper Gate) OK")
 
     # Let the start script's objective check run (it fires a few hundred
-    # frames into the cinematic).  NOTE the ruination reindex: the -oa
-    # objective (result 2, Unlock Final Kefka) is filtered out of
-    # args.objectives in ruination mode before .id assignment, so the
-    # remaining objectives shift down one slot -- the -od/-oe bonuses
-    # (MaxHP All +100, Full Heal) land in OBJECTIVE bit slots 2 and 3,
-    # not 3 and 4.
+    # frames into the cinematic).  The default -ruin flagset provides
+    # objectives A and B, so the explicit -oc/-od bonuses (MaxHP All +100,
+    # Full Heal) land in OBJECTIVE bit slots 2 and 3.
     OBJ_MAXHP = getattr(event_bit, "OBJECTIVE2")
     OBJ_HEAL = getattr(event_bit, "OBJECTIVE3")
     h.run_until(lambda h: h.event_bit(OBJ_MAXHP), timeout=30000, step=10)
@@ -42,12 +44,20 @@ def main():
     assert h.event_bit(OBJ_HEAL), "objective (Full Heal) should fire together"
     print("objective (Full Heal) fired OK")
 
-    # -oss effect: +100 max HP and current == max (full heal), no dialog box.
+    # -oss effect: +100 max HP everyone; current == max (full heal) for the
+    # party members (Full Heal is ApplyToParty; harness slots are character
+    # data blocks, so check the actual party membership bits).
     mhp = h.max_hp(0)
-    chp = h.cur_hp(0)
-    print(f"slot 0: max HP = {mhp}, cur HP = {chp}")
+    print(f"character 0: max HP = {mhp}")
     assert mhp >= 100, f"max HP {mhp} did not receive +100 bonus"
-    assert chp == mhp, f"cur HP {chp} != max HP {mhp} (full heal not applied)"
+    current_party = h.core.read_u8(0x1a6d)
+    members = [c for c in range(14)
+               if h.core.read_u8(0x1850 + c) & current_party]
+    assert members, "no characters in the current party"
+    for c in members:
+        chp, cmhp = h.cur_hp(c), h.max_hp(c)
+        assert chp == cmhp, f"char {c}: cur {chp} != max {cmhp} (no full heal)"
+    print(f"party characters {members} at full HP OK")
 
     # Party position accessor + poke round-trip
     x, y = h.party_xy
