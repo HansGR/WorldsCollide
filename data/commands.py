@@ -7,6 +7,27 @@ class Commands:
     def __init__(self, characters):
         self.characters = characters
 
+    def mod_moogle_commands(self, command_list):
+        from data.characters import Characters
+
+        # Give the Moogles for Moogle Defense randomized commands
+        # Copy the list minus any exclusions
+        possible_moogle_commands = command_list.copy()
+        # randomize commands for Moogles during Moogle Defense from the non-excluded set
+        # Remove Morph to ensure only 1 character gets Morph
+        # Remove Rage to avoid any issues with Randomized Atma weapon
+        # Remove X-Magic as they won't have any Magic
+        # Remove Blitz, SwdTech, Dance, and Lore because they won't have abilities within unless a party member does
+        moogle_exclusions = [name_id["Morph"], name_id["Rage"], name_id["X Magic"], name_id["Blitz"], name_id["SwdTech"], name_id["Lore"], name_id["Dance"]]
+        for exclude in moogle_exclusions:
+            try:
+                possible_moogle_commands.remove(exclude)
+            except ValueError:
+                pass
+        if len(possible_moogle_commands) > 0:
+            for index in range(Characters.FIRST_MOOGLE, Characters.LAST_MOOGLE + 1):
+                self.characters[index].commands[1] = random.choice(possible_moogle_commands)
+
     def mod_commands(self):
         command_set = set(name_id[name] for name in RANDOM_POSSIBLE_COMMANDS)
         command_list = list(command_set)
@@ -27,23 +48,7 @@ class Commands:
                 pass
 
         from data.characters import Characters
-        # Give the Moogles for Moogle Defense randomized commands
-        # Copy the list minus any exclusions
-        possible_moogle_commands = command_list.copy()
-        # randomize commands for Moogles during Moogle Defense from the non-excluded set
-        # Remove Morph to ensure only 1 character gets Morph
-        # Remove Rage to avoid any issues with Randomized Atma weapon
-        # Remove X-Magic as they won't have any Magic
-        # Remove Blitz, SwdTech, Dance, and Lore because they won't have abilities within unless a party member does
-        moogle_exclusions = [morph_id, name_id["Rage"], name_id["X Magic"], name_id["Blitz"], name_id["SwdTech"], name_id["Lore"], name_id["Dance"]]
-        for exclude in moogle_exclusions:
-            try:
-                possible_moogle_commands.remove(exclude)
-            except ValueError:
-                pass
-        if len(possible_moogle_commands) > 0:
-            for index in range(Characters.FIRST_MOOGLE, Characters.LAST_MOOGLE + 1):
-                self.characters[index].commands[1] = random.choice(possible_moogle_commands)
+        self.mod_moogle_commands(command_list)
 
         # if suplex a train condition exists, guarantee blitz
         import objectives
@@ -87,6 +92,146 @@ class Commands:
         self.characters[Characters.GAU].commands[0] = args.character_commands[-2] # rage
         self.characters[Characters.GAU].commands[1] = args.character_commands[-1] # leap
 
+    def full_random_characters(self):
+        # the characters the -com flag controls: terra through mog, plus gau
+        from data.characters import Characters
+        return list(range(Characters.GAU + 1))
+
+    def random_command_list(self):
+        # commands available to random selection, minus the -rec exclusions
+        command_list = [name_id[name] for name in RANDOM_POSSIBLE_COMMANDS]
+        for exclude_command in args.random_exclude_commands:
+            try:
+                command_list.remove(exclude_command)
+            except ValueError:
+                pass
+        return command_list
+
+    def random_skills(self, characters, skill_counts, available):
+        # fill each character's skill slots independently, commands may repeat between characters
+        morph_id = name_id["Morph"]
+
+        skills = {character : [] for character in characters}
+        for character in characters:
+            for _ in range(skill_counts[character]):
+                # never give a character the same command twice
+                candidates = [command for command in available if command not in skills[character]]
+                if not candidates:
+                    break
+
+                command = random.choice(candidates)
+                skills[character].append(command)
+                if command == morph_id:
+                    available.remove(morph_id) # only one character gets morph
+
+        return skills
+
+    def draft_skills(self, characters, skill_counts, available):
+        # snake draft the skill slots so commands are unique for as long as they last,
+        # refilling the available commands whenever they run out
+        morph_id = name_id["Morph"]
+
+        draft_order = list(characters)
+        random.shuffle(draft_order)
+
+        skills = {character : [] for character in characters}
+        pool = list(available)
+        for round_index in range(max(skill_counts.values(), default = 0)):
+            round_order = [character for character in draft_order if skill_counts[character] > round_index]
+            if round_index % 2:
+                round_order.reverse() # snake back the other way every other round
+
+            for character in round_order:
+                # never give a character the same command twice
+                candidates = [command for command in pool if command not in skills[character]]
+                if not candidates:
+                    pool = list(available)
+                    candidates = [command for command in pool if command not in skills[character]]
+                    if not candidates:
+                        continue
+
+                command = random.choice(candidates)
+                pool.remove(command)
+                skills[character].append(command)
+                if command == morph_id:
+                    # only one character gets morph, so keep it out of every refill
+                    available.remove(morph_id)
+
+        return skills
+
+    def guarantee_blitz(self, characters, skills):
+        # if suplex a train condition exists, guarantee blitz
+        import objectives
+        blitz_id = name_id["Blitz"]
+
+        if not objectives.suplex_train_condition_exists:
+            return
+        if any(blitz_id in skills[character] for character in characters):
+            return
+
+        # replace a random skill slot with blitz (even if blitz is in the excluded commands)
+        possible_characters = [character for character in characters if skills[character]]
+        if not possible_characters:
+            return
+
+        character = random.choice(possible_characters)
+        skills[character][random.randrange(len(skills[character]))] = blitz_id
+
+    def mod_full_random_commands(self):
+        fight_id = name_id["Fight"]
+        magic_id = name_id["Magic"]
+        item_id = name_id["Item"]
+        none_id = name_id["None"]
+
+        available = self.random_command_list()
+        self.mod_moogle_commands(available)
+
+        characters = self.full_random_characters()
+
+        # roll each character for the commands with a fixed menu position
+        common_percents = [
+            (fight_id, args.command_fight_percent),
+            (magic_id, args.command_magic_percent),
+            (item_id, args.command_item_percent),
+        ]
+        common = {character : [command for command, percent in common_percents if random.randrange(100) < percent]
+                  for character in characters}
+
+        # every slot not taken by fight/magic/item is backfilled with a random skill
+        skill_counts = {character : COMMAND_SLOT_COUNT - len(common[character]) for character in characters}
+
+        if args.commands_random_mode == FULL_RANDOM_UNIQUE_MODE:
+            skills = self.draft_skills(characters, skill_counts, available)
+        else:
+            skills = self.random_skills(characters, skill_counts, available)
+
+        self.guarantee_blitz(characters, skills)
+
+        # apply the commands to the characters in menu order: fight -> skills -> magic -> item
+        for character in characters:
+            commands = []
+            if fight_id in common[character]:
+                commands.append(fight_id)
+            commands.extend(skills[character])
+            if magic_id in common[character]:
+                commands.append(magic_id)
+            if item_id in common[character]:
+                commands.append(item_id)
+            commands.extend([none_id] * (COMMAND_SLOT_COUNT - len(commands)))
+
+            self.characters[character].commands = commands
+
+    def shuffle_full_random_commands(self):
+        # commands are already random, so shuffle whole command sets between characters
+        # instead of single slots to keep each character's menu order intact
+        characters = self.full_random_characters()
+
+        command_sets = [self.characters[character].commands for character in characters]
+        random.shuffle(command_sets)
+
+        for index, character in enumerate(characters):
+            self.characters[character].commands = command_sets[index]
+
     def shuffle_commands(self):
         from data.characters import Characters
 
@@ -106,9 +251,15 @@ class Commands:
         from data.characters import Characters
 
         if args.commands:
-            self.mod_commands()
+            if args.commands_random_mode:
+                self.mod_full_random_commands()
+            else:
+                self.mod_commands()
         if args.shuffle_commands:
-            self.shuffle_commands()
+            if args.commands_random_mode:
+                self.shuffle_full_random_commands()
+            else:
+                self.shuffle_commands()
 
         if args.commands or args.shuffle_commands:
             characters_asm.update_morph_character(self.characters[ : Characters.CHARACTER_COUNT])
@@ -116,6 +267,17 @@ class Commands:
     def log(self):
         from log import section, format_option
         from data.characters import Characters
+
+        if args.commands_random_mode:
+            # every slot is randomized, so log each character's full command menu
+            lcolumn = []
+            for character in self.full_random_characters():
+                commands = [id_name[command] for command in self.characters[character].commands
+                            if command != name_id["None"]]
+                lcolumn.append(format_option(Characters.DEFAULT_NAME[character].capitalize(), ", ".join(commands)))
+
+            section("Commands", lcolumn, [])
+            return
 
         lcolumn = []
         for index, option in enumerate(COMMAND_OPTIONS[ : -2]):
