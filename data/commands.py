@@ -177,6 +177,23 @@ class Commands:
         character = random.choice(possible_characters)
         skills[character][random.randrange(len(skills[character]))] = blitz_id
 
+    def roll_common_commands(self, character):
+        # roll the commands with a fixed menu position, in menu order
+        from data.characters import Characters
+
+        # gau has no fight command in vanilla, so halve his chance of getting one
+        # to keep "gau doesn't always fight" true even at a 100% fight chance
+        fight_range = 100 * (2 if character == Characters.GAU else 1)
+
+        common = []
+        if random.randrange(fight_range) < args.command_fight_percent:
+            common.append(name_id["Fight"])
+        if random.randrange(100) < args.command_magic_percent:
+            common.append(name_id["Magic"])
+        if random.randrange(100) < args.command_item_percent:
+            common.append(name_id["Item"])
+        return common
+
     def mod_full_random_commands(self):
         fight_id = name_id["Fight"]
         magic_id = name_id["Magic"]
@@ -188,14 +205,7 @@ class Commands:
 
         characters = self.full_random_characters()
 
-        # roll each character for the commands with a fixed menu position
-        common_percents = [
-            (fight_id, args.command_fight_percent),
-            (magic_id, args.command_magic_percent),
-            (item_id, args.command_item_percent),
-        ]
-        common = {character : [command for command, percent in common_percents if random.randrange(100) < percent]
-                  for character in characters}
+        common = {character : self.roll_common_commands(character) for character in characters}
 
         # every slot not taken by fight/magic/item is backfilled with a random skill
         skill_counts = {character : COMMAND_SLOT_COUNT - len(common[character]) for character in characters}
