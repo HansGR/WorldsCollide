@@ -145,7 +145,10 @@ class Commands:
                 # never give a character the same command twice
                 candidates = [command for command in pool if command not in skills[character]]
                 if not candidates:
-                    pool = list(available)
+                    # the pool ran out, or all that is left of it is already on this character.
+                    # refill around whatever is left instead of replacing it, so a command which
+                    # could not be handed out this turn is still waiting to be drafted later
+                    pool.extend(available)
                     candidates = [command for command in pool if command not in skills[character]]
                     if not candidates:
                         continue
@@ -154,7 +157,10 @@ class Commands:
                 pool.remove(command)
                 skills[character].append(command)
                 if command == morph_id:
-                    # only one character gets morph, so keep it out of every refill
+                    # only one character gets morph. dropping it from the available commands is
+                    # enough to keep it out of the pool for good: a refill only happens once every
+                    # pooled command is already on the drafting character, so morph can never be
+                    # waiting in the pool at the moment a refill would add a second copy of it
                     available.remove(morph_id)
 
         return skills
