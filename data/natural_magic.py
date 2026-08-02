@@ -112,13 +112,28 @@ class NaturalMagic:
                 asm.JSR(natural_magic_check, asm.ABS),
             )
 
-    def mod_learners(self):
+    def get_magic_users(self, possible_learners):
+        # characters who can cast their spells in battle. x magic opens the magic menu too,
+        # so it counts even without the magic command itself
+        magic_users = set(self.characters.get_characters_with_command("Magic"))
+        magic_users |= set(self.characters.get_characters_with_command("X Magic"))
+
+        return [learner for learner in possible_learners if learner in magic_users]
+
+    def random_learner(self, possible_learners):
         import random
+
+        # prefer a character who can cast in battle, but fall back to any of them if the
+        # commands flag left nobody with a magic command. a character without one can still
+        # cast their natural magic outside of battle, so they are not a wasted pick
+        return random.choice(self.get_magic_users(possible_learners) or possible_learners)
+
+    def mod_learners(self):
         from data.characters import Characters
         possible_learners = list(range(Characters.CHARACTER_COUNT - 2)) # exclude gogo/umaro
 
         if self.args.natural_magic1 == "random":
-            self.learner1 = random.choice(possible_learners)
+            self.learner1 = self.random_learner(possible_learners)
             self.learner1_name = self.characters.get_name(self.learner1)
         elif self.args.natural_magic1:
             self.learner1 = self.characters.get_by_name(self.args.natural_magic1).id
@@ -133,7 +148,7 @@ class NaturalMagic:
             pass
 
         if self.args.natural_magic2 == "random":
-            self.learner2 = random.choice(possible_learners)
+            self.learner2 = self.random_learner(possible_learners)
             self.learner2_name = self.characters.get_name(self.learner2)
         elif self.args.natural_magic2:
             self.learner2 = self.characters.get_by_name(self.args.natural_magic2).id
