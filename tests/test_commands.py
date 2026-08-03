@@ -90,5 +90,29 @@ class TestCommandsFlag(unittest.TestCase):
         self.assert_rejected("-com", "fr", "10.50.101", expected = "must be between 0 and 100")
         self.assert_rejected("-com", "fru", "10.50.abc", expected = "not a valid Item percent chance")
 
+    def test_random_exclude_dot_list(self):
+        # arbitrary-length dot-separated exclusions, re-emitted canonically
+        self.assert_accepted("-rec", "28.27", expected = "-rec 28.27")
+        self.assert_accepted("-rec", "05.07.10.16.13", expected = "-rec 05.07.10.16.13")
+        # single-digit input normalizes to two-digit canonical form
+        self.assert_accepted("-rec", "5.7", expected = "-rec 05.07")
+        # the none id (97) is dropped from the canonical string
+        self.assertNotIn("-rec", self.assert_accepted("-rec", "97"))
+
+    def test_random_exclude_legacy_wrappers(self):
+        # legacy -recN flags still parse and fold into the canonical -rec form
+        self.assert_accepted("-rec1", "28", "-rec2", "27", expected = "-rec 28.27")
+        self.assert_accepted("-rec3", "10", expected = "-rec 10")
+        # mixed usage: -rec values first, then the legacy flags in order
+        self.assert_accepted("-rec", "05", "-rec1", "28", expected = "-rec 05.28")
+
+    def test_random_exclude_invalid_rejected(self):
+        self.assert_rejected("-rec", "28.abc", expected = "not a valid command id")
+        self.assert_rejected("-rec", "01", expected = "not an excludable command id")  # Item
+        # excluding the whole random pool is rejected (would empty every draw)
+        from constants.commands import RANDOM_POSSIBLE_COMMANDS, name_id
+        everything = ".".join(f"{name_id[name]:02}" for name in RANDOM_POSSIBLE_COMMANDS)
+        self.assert_rejected("-rec", everything, expected = "cannot exclude every")
+
 if __name__ == "__main__":
     unittest.main()
