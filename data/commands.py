@@ -107,15 +107,20 @@ class Commands:
                 pass
         return command_list
 
-    def random_skills(self, characters, skill_counts, available):
-        # fill each character's skill slots independently, commands may repeat between characters
+    def random_skills(self, characters, skill_counts, available, taken = None):
+        # fill each character's skill slots independently, commands may repeat between
+        # characters. `taken` maps a character to commands it already holds outside
+        # this fill (the -com pr rolled commands), which must not be dealt again
         morph_id = name_id["Morph"]
+        taken = taken or {}
 
         skills = {character : [] for character in characters}
         for character in characters:
             for _ in range(skill_counts[character]):
                 # never give a character the same command twice
-                candidates = [command for command in available if command not in skills[character]]
+                candidates = [command for command in available
+                              if command not in skills[character]
+                              and command not in taken.get(character, ())]
                 if not candidates:
                     break
 
@@ -126,10 +131,12 @@ class Commands:
 
         return skills
 
-    def draft_skills(self, characters, skill_counts, available):
+    def draft_skills(self, characters, skill_counts, available, taken = None):
         # snake draft the skill slots so commands are unique for as long as they last,
-        # refilling the available commands whenever they run out
+        # refilling the available commands whenever they run out. `taken` as in
+        # random_skills: commands a character already holds and must not draft again
         morph_id = name_id["Morph"]
+        taken = taken or {}
 
         draft_order = list(characters)
         random.shuffle(draft_order)
@@ -143,13 +150,14 @@ class Commands:
 
             for character in round_order:
                 # never give a character the same command twice
-                candidates = [command for command in pool if command not in skills[character]]
+                held = set(skills[character]) | set(taken.get(character, ()))
+                candidates = [command for command in pool if command not in held]
                 if not candidates:
                     # the pool ran out, or all that is left of it is already on this character.
                     # refill around whatever is left instead of replacing it, so a command which
                     # could not be handed out this turn is still waiting to be drafted later
                     pool.extend(available)
-                    candidates = [command for command in pool if command not in skills[character]]
+                    candidates = [command for command in pool if command not in held]
                     if not candidates:
                         continue
 
@@ -200,6 +208,27 @@ class Commands:
             common.append(name_id["Item"])
         return common
 
+    def roll_probability_commands(self):
+        # roll one character's slots from the -com pr/pru declared (command, percent)
+        # list. more commands can be declared than a character has slots, so: group
+        # the declarations by likelihood, and starting with the most likely group
+        # roll each command in a random order, stopping as soon as four are assigned.
+        # a rolled 97 (None) claims a slot and leaves it empty.
+        by_percent = {}
+        for command, percent in args.command_probabilities:
+            by_percent.setdefault(percent, []).append(command)
+
+        rolled = []
+        for percent in sorted(by_percent, reverse = True):
+            group = list(by_percent[percent])
+            random.shuffle(group)
+            for command in group:
+                if len(rolled) == COMMAND_SLOT_COUNT:
+                    return rolled
+                if random.randrange(100) < percent:
+                    rolled.append(command)
+        return rolled
+
     def mod_full_random_commands(self):
         fight_id = name_id["Fight"]
         magic_id = name_id["Magic"]
@@ -237,6 +266,62 @@ class Commands:
 
             self.characters[character].commands = commands
 
+    def mod_probability_random_commands(self):
+        fight_id = name_id["Fight"]
+        magic_id = name_id["Magic"]
+        item_id = name_id["Item"]
+        none_id = name_id["None"]
+
+        available = self.random_command_list()
+        self.mod_moogle_commands(available)
+
+        # a declared morph is handed out by its probability roll; keep it out of the
+        # backfill pool entirely so the "only one character gets morph" pool rule
+        # (and the draft refill's morph invariant) cannot deal a second copy
+        morph_id = name_id["Morph"]
+        if any(command == morph_id for command, _ in args.command_probabilities):
+            try:
+                available.remove(morph_id)
+            except ValueError:
+                pass
+
+        characters = self.full_random_characters()
+
+        rolled = {character : self.roll_probability_commands() for character in characters}
+
+        # every slot not claimed by a rolled command (including rolled Nones, which
+        # stay empty) is backfilled with a random skill
+        skill_counts = {character : COMMAND_SLOT_COUNT - len(rolled[character]) for character in characters}
+        taken = {character : [command for command in rolled[character] if command != NONE_COMMAND]
+                 for character in characters}
+
+        if args.commands_random_mode == PROBABILITY_RANDOM_UNIQUE_MODE:
+            skills = self.draft_skills(characters, skill_counts, available, taken)
+        else:
+            skills = self.random_skills(characters, skill_counts, available, taken)
+
+        self.guarantee_blitz(characters, skills)
+
+        # apply the commands in menu order: fight -> skills -> magic -> item, with
+        # rolled skills ahead of backfilled ones and empty slots at the end
+        for character in characters:
+            common = [command for command in rolled[character]
+                      if command in (fight_id, magic_id, item_id)]
+            rolled_skills = [command for command in rolled[character]
+                             if command not in (fight_id, magic_id, item_id, NONE_COMMAND)]
+            commands = []
+            if fight_id in common:
+                commands.append(fight_id)
+            commands.extend(rolled_skills)
+            commands.extend(skills[character])
+            if magic_id in common:
+                commands.append(magic_id)
+            if item_id in common:
+                commands.append(item_id)
+            commands.extend([none_id] * (COMMAND_SLOT_COUNT - len(commands)))
+
+            self.characters[character].commands = commands
+
     def shuffle_full_random_commands(self):
         # commands are already random, so shuffle whole command sets between characters
         # instead of single slots to keep each character's menu order intact
@@ -267,7 +352,9 @@ class Commands:
         from data.characters import Characters
 
         if args.commands:
-            if args.commands_random_mode:
+            if args.commands_random_mode in PROBABILITY_RANDOM_MODES:
+                self.mod_probability_random_commands()
+            elif args.commands_random_mode:
                 self.mod_full_random_commands()
             else:
                 self.mod_commands()

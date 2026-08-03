@@ -45,6 +45,19 @@ FULL_RANDOM_MODE = "fr"
 FULL_RANDOM_UNIQUE_MODE = "fru"
 FULL_RANDOM_MODES = [FULL_RANDOM_MODE, FULL_RANDOM_UNIQUE_MODE]
 
+# -com meta modes: per-command probability lists ('pr 0.1.2.28 50.50.50.100'),
+# with unfilled slots backfilled randomly ("pru": backfill drafts unique)
+PROBABILITY_RANDOM_MODE = "pr"
+PROBABILITY_RANDOM_UNIQUE_MODE = "pru"
+PROBABILITY_RANDOM_MODES = [PROBABILITY_RANDOM_MODE, PROBABILITY_RANDOM_UNIQUE_MODE]
+
+# command ids a probability can be declared for: every real menu command the
+# randomizer hands out (not Revert/Leap/Mimic/Row/Def/Summon or the broken
+# Empty slots), plus None (declared as 97, the same id -com strings use)
+PROBABILITY_EXCLUDED_NAMES = ["Revert", "Leap", "Mimic", "Row", "Def", "Summon", "Empty", "Empty?", "None"]
+PROBABILITY_COMMAND_IDS = [command_id for command_id, command_name in id_name.items()
+                           if command_name not in PROBABILITY_EXCLUDED_NAMES]
+
 # every character has four command slots in their initialization data ($ed7ca2 - $ed7ca5)
 COMMAND_SLOT_COUNT = 4
 

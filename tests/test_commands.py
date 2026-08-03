@@ -43,6 +43,131 @@ for trial in range(2000):
 print("ok")
 """
 
+# behavioral invariants for the -com pr/pru probability modes, run against fake
+# characters (no rom needed). declared: fight/item/magic/possess at 100%, blitz
+# at 0%; rage excluded via -rec. every character must therefore hold exactly
+# fight/possess/magic/item in menu order, with nothing backfilled.
+PR_INVARIANTS = """
+import sys, types
+sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pr", "0.1.2.28.10", "100.100.100.100.0", "-rec", "16"]
+import args
+sys.modules["objectives"] = types.ModuleType("objectives")
+sys.modules["objectives"].suplex_train_condition_exists = False
+
+from constants.commands import name_id
+from data.commands import Commands
+
+class FakeChar:
+    def __init__(self):
+        self.commands = [0, 0, 0, 0]
+
+for trial in range(300):
+    chars = [FakeChar() for _ in range(0x20)]
+    c = Commands(chars)
+    c.mod_probability_random_commands()
+    for i in c.full_random_characters():
+        cmds = chars[i].commands
+        assert cmds == [0, 28, 2, 1], f"menu order broken: {cmds}"
+print("ok")
+"""
+
+# six declarations at equal likelihood: each character rolls exactly four of the
+# six (the group cap), never a -rec excluded command, and never a duplicate.
+PR_CAP_INVARIANTS = """
+import sys, types
+sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pru", "0.1.2.27.28.29", "50.50.50.50.50.50", "-rec", "16"]
+import args
+sys.modules["objectives"] = types.ModuleType("objectives")
+sys.modules["objectives"].suplex_train_condition_exists = False
+
+from constants.commands import name_id
+from data.commands import Commands
+
+DECLARED = {0, 1, 2, 27, 28, 29}
+NONE = name_id["None"]
+RAGE = name_id["Rage"]
+
+class FakeChar:
+    def __init__(self):
+        self.commands = [0, 0, 0, 0]
+
+seen_over_four = False
+for trial in range(300):
+    chars = [FakeChar() for _ in range(0x20)]
+    c = Commands(chars)
+    c.mod_probability_random_commands()
+    for i in c.full_random_characters():
+        cmds = chars[i].commands
+        real = [x for x in cmds if x != NONE]
+        assert len(cmds) == 4, cmds
+        assert len(set(real)) == len(real), f"duplicate command: {cmds}"
+        assert RAGE not in real, f"excluded command dealt: {cmds}"
+        declared_held = [x for x in real if x in DECLARED]
+        assert len(declared_held) <= 4, f"cap exceeded: {cmds}"
+print("ok")
+"""
+
+# a declared None (97) claims a slot and stays empty: with none at 100% and
+# three 100% commands, every character has exactly one empty slot, no backfill.
+PR_NONE_INVARIANTS = """
+import sys, types
+sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pr", "5.7.13.97", "100.100.100.100"]
+import args
+sys.modules["objectives"] = types.ModuleType("objectives")
+sys.modules["objectives"].suplex_train_condition_exists = False
+
+from constants.commands import name_id
+from data.commands import Commands
+
+NONE = name_id["None"]
+
+class FakeChar:
+    def __init__(self):
+        self.commands = [0, 0, 0, 0]
+
+for trial in range(300):
+    chars = [FakeChar() for _ in range(0x20)]
+    c = Commands(chars)
+    c.mod_probability_random_commands()
+    for i in c.full_random_characters():
+        cmds = chars[i].commands
+        real = [x for x in cmds if x != NONE]
+        assert sorted(real) == [5, 7, 13], f"expected steal/swdtech/sketch + empty: {cmds}"
+print("ok")
+"""
+
+# a declared morph is dealt only by its roll: at 50% morph plus unique backfill,
+# no character may ever hold two morphs and backfill must never add one.
+PR_MORPH_INVARIANTS = """
+import sys, types
+sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pru", "3", "50"]
+import args
+sys.modules["objectives"] = types.ModuleType("objectives")
+sys.modules["objectives"].suplex_train_condition_exists = False
+
+from constants.commands import name_id
+from data.commands import Commands
+
+MORPH = name_id["Morph"]
+NONE = name_id["None"]
+
+class FakeChar:
+    def __init__(self):
+        self.commands = [0, 0, 0, 0]
+
+for trial in range(300):
+    chars = [FakeChar() for _ in range(0x20)]
+    c = Commands(chars)
+    c.mod_probability_random_commands()
+    for i in c.full_random_characters():
+        cmds = chars[i].commands
+        real = [x for x in cmds if x != NONE]
+        assert len(real) == 4, f"pru backfill left a hole: {cmds}"
+        assert cmds.count(MORPH) <= 1, f"double morph: {cmds}"
+print("ok")
+"""
+
+
 class TestCommandsFlag(unittest.TestCase):
     def assert_accepted(self, *flags, expected = None):
         result = parse_flags(*flags)
@@ -89,6 +214,42 @@ class TestCommandsFlag(unittest.TestCase):
         self.assert_rejected("-com", "fr", "10.50", expected = "3 percent chances")
         self.assert_rejected("-com", "fr", "10.50.101", expected = "must be between 0 and 100")
         self.assert_rejected("-com", "fru", "10.50.abc", expected = "not a valid Item percent chance")
+
+    def test_probability_modes(self):
+        # ids are canonicalized to two digits; percents kept as given
+        self.assert_accepted("-com", "pr", "0.1.2.28", "50.50.50.100",
+                             expected = "-com pr 00.01.02.28 50.50.50.100")
+        self.assert_accepted("-com", "pru", "0.1.2.27.28.29", "50.50.50.50.50.50",
+                             expected = "-com pru 00.01.02.27.28.29 50.50.50.50.50.50")
+        # 97 declares a chance at an empty slot
+        self.assert_accepted("-com", "pr", "97.10", "50.100", expected = "-com pr 97.10 50.100")
+        # a single quoted value is equivalent to separate ones
+        self.assert_accepted("-com", "pr 3 100", expected = "-com pr 03 100")
+
+    def test_probability_invalid_rejected(self):
+        self.assert_rejected("-com", "pr", "0.1.2", expected = "requires dot-separated command ids")
+        self.assert_rejected("-com", "pr", "0.1.2", "50.50", expected = "3 command ids but 2 percent chances")
+        self.assert_rejected("-com", "pr", "0.25", "50.50", expected = "not a valid probability command id")  # Summon
+        self.assert_rejected("-com", "pr", "0.0", "50.50", expected = "duplicate probability command id")
+        self.assert_rejected("-com", "pr", "0.abc", "50.50", expected = "not a valid command id")
+        self.assert_rejected("-com", "pr", "0.1", "50.101", expected = "must be between 0 and 100")
+        # a command cannot both have a probability and be excluded by -rec
+        self.assert_rejected("-com", "pr", "0.16", "50.50", "-rec", "16",
+                             expected = "both given a probability and excluded by -rec")
+
+    def test_probability_invariants(self):
+        for name, script in (("pr", PR_INVARIANTS), ("cap", PR_CAP_INVARIANTS),
+                             ("none", PR_NONE_INVARIANTS), ("morph", PR_MORPH_INVARIANTS)):
+            with self.subTest(name):
+                result = subprocess.run(
+                    [sys.executable, "-c", script],
+                    cwd = REPO_ROOT,
+                    capture_output = True,
+                    text = True,
+                    timeout = 120,
+                )
+                self.assertEqual(result.returncode, 0, msg = result.stderr)
+                self.assertIn("ok", result.stdout)
 
     def test_random_exclude_dot_list(self):
         # arbitrary-length dot-separated exclusions, re-emitted canonically
