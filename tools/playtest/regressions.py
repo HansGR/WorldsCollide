@@ -123,13 +123,13 @@ def scenario_rc_school_reform(vanilla, workdir):
     """-rc required characters at the ruination hub: party formation must
     complete with a locked, pre-placed required character.
 
-    Seed 1002 with '-ruin -rc terra' starts LOCKE/GOGO/TERRA. Two-party
+    '-ruin -rc terra' starts terra plus two rolled characters. Two-party
     reform: terra is pre-placed into party 1 and locked (unmovable), so the
-    roster shows only LOCKE and GOGO; place them and finalize. Then a fresh
-    boot with all four characters required ('-rc terra locke celes sabin')
-    forms THREE parties with no player placement at all -- the round-robin
-    pre-placement fills every group (this path was guarded/impossible
-    before the ruination -rc wiring)."""
+    roster shows only the two rolled characters; place them and finalize.
+    Then a fresh boot with all four characters required
+    ('-rc terra locke celes sabin') forms THREE parties with no player
+    placement at all -- the round-robin pre-placement fills every group
+    (this path was guarded/impossible before the ruination -rc wiring)."""
     from reform import GHOST_TALK_XY, choose, place, finalize
 
     def to_school(rom):
@@ -160,7 +160,9 @@ def scenario_rc_school_reform(vanilla, workdir):
     h.run(90)
     assert ok, "2-party reform with -rc did not finalize"
     assert party_of(h, 0) == 1, "terra left party 1"
-    two = f"2p: terra locked P1, parties {[party_of(h, c) for c in (0, 1, 12)]}"
+    assigned = {c: party_of(h, c) for c in range(14) if party_of(h, c)}
+    assert sorted(set(assigned.values())) == [1, 2], f"two parties not formed: {assigned}"
+    two = f"2p: terra locked P1, assignments {assigned}"
 
     # Three parties, every character required: pre-placement alone fills all
     # three groups (round-robin), finalize with zero player moves.
@@ -196,7 +198,7 @@ def scenario_phoenix_entry(vanilla, workdir):
     collision fix lives) end to end for one party."""
     # Seed choice: the ruination map must place Phoenix Cave on a routable
     # branch; not every seed does (1002 doesn't with the current defaults).
-    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", seed=1003)
+    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", seed=1005)
     spoiler = rom[:-4] + ".txt"
     hops = route.route_from_start(spoiler, "Phoenix cave")
     assert hops, "could not compute a route to Phoenix Cave from the spoiler"
@@ -230,7 +232,7 @@ def scenario_phoenix_two_party_collision(vanilla, workdir):
     rather than deadlocking."""
     PHX = 0x13e
     # Same seed constraint as scenario_phoenix_entry.
-    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", seed=1003)
+    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", seed=1005)
     spoiler = rom[:-4] + ".txt"
     hops = route.route_from_start(spoiler, "Phoenix cave")
     assert hops, "could not compute a route to Phoenix Cave from the spoiler"

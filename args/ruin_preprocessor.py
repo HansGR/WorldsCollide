@@ -77,6 +77,9 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     # misc.py - y npc
     {'-ymascot', '-ycreature', '-yimperial', '-ymain', '-yreflect',
      '-ystone', '-yvxz', '-ysketch', '-yrandom', '-yremove'},
+    # commands.py - random-excluded commands: any user exclusion (new -rec or a
+    # legacy -recN wrapper) replaces the default exclusion list
+    {'-rec', '-rec1', '-rec2', '-rec3', '-rec4', '-rec5', '-rec6'},
 ]
 
 # Build a lookup: flag -> set of all flags in its exclusive group
@@ -111,7 +114,7 @@ RUIN_DEFAULT_FLAGS = {
         '-fst', '-brl', '-slr', '3', '5', '-lmprp', '75', '125', '-lel',
         '-srr', '25', '35', '-rnl', '-rnc', '-sdr', '1', '2', '-das', '-dda',
         '-dns', '-sch', '-scis', '-com', '98989898989898989898989898',
-        '-rec1', '28', '-rec2', '27'
+        '-rec', '28.27'
     ],
 
     # Battle flags
@@ -170,7 +173,7 @@ RUIN_HARD_EXTRAS = {
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
-    '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-rec1': 1, '-rec2': 1,
+    '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-rec': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
     '-msl': 1, '-drloc': 1, '-stloc': 1, '-fer': 1, '-escr': 1,
     '-esr': 2, '-ebr': 1, '-emprp': 2, '-nm1': 1, '-nm2': 1, '-mmprp': 2,

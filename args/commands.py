@@ -13,12 +13,17 @@ def parse(parser):
     commands = parser.add_argument_group("Commands")
     commands.add_argument("-com", "--commands", type = str, nargs = "*", help = COMMANDS_HELP)
     commands.add_argument("-scc", "--shuffle-commands", action = "store_true", help = "Shuffle selected/randomized commands")
-    commands.add_argument("-rec1", "--random-exclude-command1", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities")
-    commands.add_argument("-rec2", "--random-exclude-command2", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities")
-    commands.add_argument("-rec3", "--random-exclude-command3", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities")
-    commands.add_argument("-rec4", "--random-exclude-command4", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities")
-    commands.add_argument("-rec5", "--random-exclude-command5", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities")
-    commands.add_argument("-rec6", "--random-exclude-command6", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities")
+    commands.add_argument("-rec", "--random-exclude-command-ids", type = str, default = None, metavar = "VALUE",
+                          help = "Exclude commands from random possibilities, as dot-separated command ids "
+                                 "with an arbitrary number of entries (e.g. '-rec 05.07.10')")
+    # legacy single-command forms, kept for backward compatibility: each value is folded into the
+    # same exclusion list as -rec (and the canonical flag string re-emits them as -rec)
+    commands.add_argument("-rec1", "--random-exclude-command1", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
+    commands.add_argument("-rec2", "--random-exclude-command2", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
+    commands.add_argument("-rec3", "--random-exclude-command3", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
+    commands.add_argument("-rec4", "--random-exclude-command4", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
+    commands.add_argument("-rec5", "--random-exclude-command5", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
+    commands.add_argument("-rec6", "--random-exclude-command6", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
 
 def _process_character_commands(args, tokens):
     # one explicitly selected (or random) command id per character
@@ -71,7 +76,40 @@ def _process_full_random(args, tokens):
     args.commands_random_mode = mode
     args.command_fight_percent, args.command_magic_percent, args.command_item_percent = values
 
+def _process_excluded_commands(args):
+    # merge -rec (dot-separated, arbitrary length) with the legacy -recN single
+    # values into one exclusion list. -rec entries come first, then the legacy
+    # flags in order; duplicates are preserved (they were legal before and are
+    # harmless to the consumers).
+    from constants.commands import RANDOM_POSSIBLE_COMMANDS
+    excluded = []
+    if args.random_exclude_command_ids is not None:
+        for part in args.random_exclude_command_ids.split("."):
+            try:
+                command = int(part)
+            except ValueError:
+                args.parser.error(f"random-exclude-command-ids: '{part}' is not a valid command id")
+            if command not in RANDOM_EXCLUDE_COMMANDS:
+                args.parser.error(f"random-exclude-command-ids: '{command:02}' is not an excludable command id")
+            if command != NONE_COMMAND:
+                excluded.append(command)
+
+    for legacy in (args.random_exclude_command1, args.random_exclude_command2,
+                   args.random_exclude_command3, args.random_exclude_command4,
+                   args.random_exclude_command5, args.random_exclude_command6):
+        if legacy != NONE_COMMAND:
+            excluded.append(legacy)
+
+    possible = [name_id[name] for name in RANDOM_POSSIBLE_COMMANDS]
+    if excluded and not [command for command in possible if command not in excluded]:
+        args.parser.error("random-exclude-command-ids: cannot exclude every "
+                          "randomly-selectable command")
+
+    args.random_exclude_commands = excluded
+
 def process(args):
+    _process_excluded_commands(args)
+
     tokens = []
     for value in args.commands or []:
         tokens.extend(value.split())
@@ -96,20 +134,6 @@ def process(args):
     else:
         _process_character_commands(args, tokens)
 
-    args.random_exclude_commands = []
-    if args.random_exclude_command1 != NONE_COMMAND:
-        args.random_exclude_commands.append(args.random_exclude_command1)
-    if args.random_exclude_command2 != NONE_COMMAND:
-        args.random_exclude_commands.append(args.random_exclude_command2)
-    if args.random_exclude_command3 != NONE_COMMAND:
-        args.random_exclude_commands.append(args.random_exclude_command3)
-    if args.random_exclude_command4 != NONE_COMMAND:
-        args.random_exclude_commands.append(args.random_exclude_command4)
-    if args.random_exclude_command5 != NONE_COMMAND:
-        args.random_exclude_commands.append(args.random_exclude_command5)
-    if args.random_exclude_command6 != NONE_COMMAND:
-        args.random_exclude_commands.append(args.random_exclude_command6)
-
     blitz_excluded = name_id["Blitz"] in args.random_exclude_commands
     if args.commands_random_mode:
         # every character always has at least one randomly filled skill slot
@@ -127,18 +151,10 @@ def flags(args):
     if args.shuffle_commands:
         flags += " -scc"
 
-    if args.random_exclude_command1 != NONE_COMMAND:
-        flags += f" -rec1 {args.random_exclude_command1}"
-    if args.random_exclude_command2 != NONE_COMMAND:
-        flags += f" -rec2 {args.random_exclude_command2}"
-    if args.random_exclude_command3 != NONE_COMMAND:
-        flags += f" -rec3 {args.random_exclude_command3}"
-    if args.random_exclude_command4 != NONE_COMMAND:
-        flags += f" -rec4 {args.random_exclude_command4}"
-    if args.random_exclude_command5 != NONE_COMMAND:
-        flags += f" -rec5 {args.random_exclude_command5}"
-    if args.random_exclude_command6 != NONE_COMMAND:
-        flags += f" -rec6 {args.random_exclude_command6}"
+    # canonical form: every exclusion (from -rec or the legacy -recN wrappers)
+    # is re-emitted as one dot-separated -rec value
+    if args.random_exclude_commands:
+        flags += " -rec " + ".".join(f"{command:02}" for command in args.random_exclude_commands)
 
     return flags
 
@@ -160,14 +176,14 @@ def options(args):
     result.append(("", "", ""))
     result.append(("Shuffle Commands", args.shuffle_commands, "shuffle_commands"))
 
-    add_exclude_command = lambda command, i : result.append(("Random Exclude", "None" if command == NONE_COMMAND else id_name[command], f"random_exclude_command{i}"))
-
-    add_exclude_command(args.random_exclude_command1, 1)
-    add_exclude_command(args.random_exclude_command2, 2)
-    add_exclude_command(args.random_exclude_command3, 3)
-    add_exclude_command(args.random_exclude_command4, 4)
-    add_exclude_command(args.random_exclude_command5, 5)
-    add_exclude_command(args.random_exclude_command6, 6)
+    # one row per exclusion, padded with "None" rows to the fixed six the menu
+    # has always shown (extra exclusions beyond six simply add rows)
+    exclude_rows = list(args.random_exclude_commands)
+    while len(exclude_rows) < 6:
+        exclude_rows.append(NONE_COMMAND)
+    for i, command in enumerate(exclude_rows, start = 1):
+        result.append(("Random Exclude", "None" if command == NONE_COMMAND else id_name[command],
+                       f"random_exclude_command{i}"))
 
     return result
 
