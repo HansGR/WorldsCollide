@@ -119,6 +119,64 @@ def scenario_camera_after_transition(vanilla, workdir):
     return f"door {door_id}: {start_map:#x}->{new_map:#x}, camera free"
 
 
+def scenario_rc_school_reform(vanilla, workdir):
+    """-rc required characters at the ruination hub: party formation must
+    complete with a locked, pre-placed required character.
+
+    Seed 1002 with '-ruin -rc terra' starts LOCKE/GOGO/TERRA. Two-party
+    reform: terra is pre-placed into party 1 and locked (unmovable), so the
+    roster shows only LOCKE and GOGO; place them and finalize. Then a fresh
+    boot with all four characters required ('-rc terra locke celes sabin')
+    forms THREE parties with no player placement at all -- the round-robin
+    pre-placement fills every group (this path was guarded/impossible
+    before the ruination -rc wiring)."""
+    from reform import GHOST_TALK_XY, choose, place, finalize
+
+    def to_school(rom):
+        h = Harness(rom)
+        h.boot_to_game_start()
+        navigate.wait_for_control(h)
+        route.step_door(h, route.ESPER_GATE_TILE)
+        navigate.wait_for_control(h)
+        assert h.map_id == reform.SCHOOL_MAP, f"not in school: {h.map_id:#x}"
+        h.set_party_xy(*GHOST_TALK_XY); h.run(6)
+        h.hold('RIGHT', frames=2)
+        h.press('A', hold=6, wait=90)
+        return h
+
+    def party_of(h, c):
+        return h.core.read_u8(0x1850 + c) & 0x07
+
+    # Two parties, one required character.
+    rom = build(vanilla, os.path.join(workdir, "rc2p.smc"), "-ruin -rc terra")
+    h = to_school(rom)
+    choose(h, 0); h.run(40)      # "Reform parties."
+    choose(h, 1); h.run(120)     # "2 parties"
+    assert party_of(h, 0) == 1, "terra not pre-placed into party 1"
+    # terra is locked out of the roster: LOCKE and GOGO are columns 0 and 1
+    place(h, 0, 1, 1)            # LOCKE -> party 1 (slot 0 is terra)
+    place(h, 1, 2, 0)            # GOGO  -> party 2
+    ok = finalize(h)
+    h.run(90)
+    assert ok, "2-party reform with -rc did not finalize"
+    assert party_of(h, 0) == 1, "terra left party 1"
+    two = f"2p: terra locked P1, parties {[party_of(h, c) for c in (0, 1, 12)]}"
+
+    # Three parties, every character required: pre-placement alone fills all
+    # three groups (round-robin), finalize with zero player moves.
+    rom = build(vanilla, os.path.join(workdir, "rc3p.smc"),
+                "-ruin -rc terra locke celes sabin")
+    h = to_school(rom)
+    choose(h, 0); h.run(40)
+    choose(h, 2); h.run(120)     # "3 parties"
+    ok = finalize(h)
+    h.run(90)
+    assert ok, "3-party reform with all-required -rc did not finalize"
+    groups = [party_of(h, c) for c in (0, 1, 6, 5)]
+    assert sorted(set(groups)) == [1, 2, 3], f"three parties not formed: {groups}"
+    return f"{two}; 3p all-required groups {groups}"
+
+
 # Route-dependent scenarios: need Phase 4 plan-driven navigation to reach
 # the specific dungeon locations. Scaffolded so they run once that lands.
 def scenario_minecart_camera(vanilla, workdir):
@@ -231,6 +289,7 @@ SCENARIOS = [
     scenario_phoenix_entry,
     scenario_minecart_camera,
     scenario_phoenix_two_party_collision,
+    scenario_rc_school_reform,
 ]
 
 

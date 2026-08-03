@@ -66,12 +66,12 @@ def _refresh_characters_and_select_parties_mod(count):
     ]
     # required characters (-rc) are unmovable, so they must be pre-placed into a party before the
     # select screen or the player cannot complete it (softlock).  this is done here, in the shared
-    # subroutine, so that every caller (including RecruitAndSelectParty) is handled.
+    # subroutine, so that every caller (including RecruitAndSelectParty) is handled.  the
+    # availability-aware placement skips characters that are not currently available -- in
+    # ruination mode a required character can be away with another party, and pulling it into
+    # this select would corrupt that party.
     if args.required_character_ids:
-        if count == 1:
-            src += required_characters.one_party_placement()
-        elif count == 2:
-            src += [field.Call(required_characters.two_party_placement())]
+        src += [field.Call(required_characters.available_party_placement(count))]
     src += [
         field.SelectParties(count),
     ]
@@ -111,10 +111,12 @@ def _select_two_parties_mod():
 REFRESH_CHARACTERS_AND_SELECT_TWO_PARTIES = _select_two_parties_mod()
 
 def _select_three_parties_mod():
-    if args.required_character_ids:
-        # the only three-party select (Kefka Tower) does its own normal/skip distribution via raw
-        # SelectParties; there is no canonical distribution for a generic helper, so guard it
-        # against silently reintroducing the unmovable-outside-party softlock.
+    if args.required_character_ids and args.ruination_mode is None:
+        # outside ruination the only three-party select (Kefka Tower) does its own normal/skip
+        # distribution via raw SelectParties; there is no canonical distribution for a generic
+        # helper, so guard it against silently reintroducing the unmovable-outside-party
+        # softlock.  (in ruination the Narshe school hub uses this helper, and the shared
+        # builder above pre-places required characters round-robin.)
         return _RequiredCharactersGuard("REFRESH_CHARACTERS_AND_SELECT_THREE_PARTIES")
     src = _refresh_characters_and_select_parties_mod(3)
     space = Write(Bank.CA, src, "field function refresh characters and select three parties")

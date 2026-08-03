@@ -73,3 +73,72 @@ def two_party_placement():
     space = Write(Bank.CA, src, "require characters: pre-place for two-party select")
     _two_party_placement_address = space.start_address
     return _two_party_placement_address
+
+
+# --- availability-aware placement (ruination / away-party safe) -------------
+#
+# In ruination mode a party can be "away" on another map while the player
+# reforms parties at the Narshe school hub (or splits at Phoenix Cave). A
+# required character that is away must stay with its away party: adding it to
+# the party being formed here would silently pull it across maps and corrupt
+# the away party. These helpers therefore guard every placement with the
+# character's availability bit, and distribute the available required
+# characters round-robin across the parties being formed (the same idea as
+# the fixed _KT_*_PARTIES distributions above). Round-robin never forces a
+# party to be empty as long as the flow only offers `count` parties when at
+# least `count` characters are available -- and two required characters can
+# still trade places afterwards via the like-lock swap (see
+# menus/required_character_swap.py).
+
+_available_placement_addresses = {}
+
+def available_party_placement(count):
+    """Address of a subroutine placing each *available* required character
+    into a party, round-robin across the `count` parties being formed."""
+    if count in _available_placement_addresses:
+        return _available_placement_addresses[count]
+
+    src = []
+    for index, character in enumerate(args.required_character_ids):
+        src += [
+            field.BranchIfEventBitClear(event_bit.character_available(character),
+                                        f"SKIP_{index}"),
+            field.AddCharacterToParty(character, (index % count) + 1),
+            f"SKIP_{index}",
+        ]
+    src += [field.Return()]
+
+    space = Write(Bank.CA, src,
+                  f"require characters: available pre-place for {count}-party select")
+    _available_placement_addresses[count] = space.start_address
+    return _available_placement_addresses[count]
+
+
+_remove_available_address = None
+
+def remove_available_characters():
+    """Address of a subroutine removing every *available* character from all
+    parties, preserving the assignments of away characters.
+
+    The away-party-safe replacement for vanilla's clear bit (opcode 99 with
+    bit 7 of the count byte set) at party selects that must pre-place
+    required characters. (event/narshe_wob.py builds its own copy of this
+    routine for the school reform; kept separate so that non--rc seeds stay
+    byte-identical.)"""
+    global _remove_available_address
+    if _remove_available_address is not None:
+        return _remove_available_address
+
+    src = []
+    for character in range(CHARACTER_COUNT):
+        src += [
+            field.BranchIfEventBitClear(event_bit.character_available(character),
+                                        f"SKIP_{character}"),
+            field.RemoveCharacterFromParties(character),
+            f"SKIP_{character}",
+        ]
+    src += [field.Return()]
+
+    space = Write(Bank.CA, src, "require characters: remove available characters from parties")
+    _remove_available_address = space.start_address
+    return _remove_available_address

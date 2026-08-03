@@ -224,6 +224,22 @@ def check_user_specified_starting_chars(argv, ruin_index):
                 return True
     return False
 
+def count_required_characters(argv, ruin_index):
+    """
+    Count the character values given to -rc/--require-characters after -ruin.
+    Required characters join the starting party (see args/starting_party.py), so
+    each one consumes a default '-scN random' slot: '-ruin -rc terra' keeps the
+    default party size of 3 (random, random, terra) instead of growing to 4.
+    """
+    count = 0
+    for i in range(ruin_index + 1, len(argv)):
+        if argv[i] in ('-rc', '--require-characters'):
+            j = i + 1
+            while j < len(argv) and not argv[j].startswith('-'):
+                count += 1
+                j += 1
+    return count
+
 def get_user_exclusive_flags(argv, ruin_index):
     """
     Scan user-specified args (after -ruin) for flags belonging to mutually
@@ -299,6 +315,13 @@ def preprocess_ruin_flag(argv=None):
 
     # Check if user specified any starting character flags
     user_specified_chars = check_user_specified_starting_chars(argv, ruin_index)
+
+    # -rc required characters consume default starting-party slots (drop the
+    # trailing '-scN random' defaults, one per required character)
+    required_char_count = count_required_characters(argv, ruin_index)
+    if required_char_count and not user_specified_chars:
+        for flag in STARTING_CHAR_FLAGS[len(STARTING_CHAR_FLAGS) - min(required_char_count, len(STARTING_CHAR_FLAGS)):]:
+            flags_to_disable.add(flag)
 
     # Find default flags that conflict with user-specified mutually exclusive flags
     exclusive_suppressed = get_user_exclusive_flags(argv, ruin_index)

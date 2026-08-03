@@ -296,7 +296,15 @@ class PhoenixCave(Event):
                 field.Return(),
                 "SPLIT_PARTY",
                 field.Call(0xacbaf),  # Recover party in advance of party switch
-                field.SelectParties(2, clear_party=True),
+                # -rc: required characters are unmovable, so the select's clear bit would
+                # strand them outside both parties (softlock). Clear only the available
+                # characters explicitly (away parties keep their members), pre-place the
+                # available required characters, then select without the clear bit.
+                *([field.Call(required_characters.remove_available_characters()),
+                   field.Call(required_characters.available_party_placement(2)),
+                   field.SelectParties(2)]
+                  if self.args.required_character_ids else
+                  [field.SelectParties(2, clear_party=True)]),
                 field.HoldScreen(),
                 field.SetPartyMap(1, pc_map_id),
                 field.SetPartyMap(2, pc_map_id),
