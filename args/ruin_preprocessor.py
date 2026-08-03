@@ -158,7 +158,15 @@ RUIN_HARD_EXTRAS = {
     'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'lite'],
 }
 
-# Flags that have arguments (used for proper flag removal)
+# Flags that have arguments (used for proper flag removal).
+#
+# Multi-token default values are fine -- list each token as its own entry
+# (e.g. '-csrp', '80', '125') and set this count to the number of value
+# tokens the DEFAULT uses. Variable-arity flags like -com take whatever
+# count matches the injected form (1 for an id string, 2 for 'fr X.Y.Z').
+# The only hard rule is that a single value token must not contain a space
+# (spell names like "Life 3" -- use ids instead): the logged flag string
+# has no quoting, so a spaced value would re-parse as two tokens.
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
