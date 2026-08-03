@@ -80,7 +80,7 @@ class Config:
         space.write(
             asm.JSR(config4_loc, asm.ABS),
         )
-        
+
         # Fix: When "New Game" is selected from the load menu, the load menu init
         # (C3/160E) has already cleared the wallpaper bits in $1D4E to 0 (blue).
         # Patch the load menu's "New Game" handler (C3/2A12) to restore Config 3

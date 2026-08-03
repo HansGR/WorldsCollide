@@ -4,6 +4,9 @@ import sys
 # Result ids in the "Kefka's Tower" category: dropped from ruination seeds
 KT_RESULT_IDS = {1, 2, 3}
 
+def name():
+    return "Objectives"
+
 def parse(parser):
     objectives = parser.add_argument_group("Objectives")
     for oi in range(MAX_OBJECTIVES):
@@ -170,4 +173,4 @@ def log(args):
         lentries.append([format_option("Silent At Start", True, "objectives_silent_at_start")])
 
     from log import section_entries
-    section_entries("Objectives", lentries, rentries)
+    section_entries(name(), lentries, rentries)

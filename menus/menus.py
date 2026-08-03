@@ -10,6 +10,7 @@ import menus.sell as sell
 import menus.buy as buy
 import menus.magic as magic
 import menus.save as save
+import menus.required_character_swap as required_character_swap
 
 class Menus:
     def __init__(self, characters, dances, rages, enemies):
@@ -30,6 +31,7 @@ class Menus:
         self.buy_menu = buy.BuyMenu()
         self.magic_menu = magic.MagicMenu()
         self.save_menu = save.SaveMenu()
+        self.required_character_swap = required_character_swap.RequiredCharacterSwap()
 
         self.scrollbar_bugfix()
 

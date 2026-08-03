@@ -76,14 +76,26 @@ class Shops():
 
             random.shuffle(item_counts)
 
+            # if every shop with open slots already stocks the next item, the loop
+            # below can no longer make progress; fail loudly instead of hanging.
+            # the guards consume no rng so seed output is unchanged
+            stalled_picks = 0
+            MAX_STALLED_PICKS = 10000
+
             while len(items) > 0:
+                if not shop_indices or stalled_picks > MAX_STALLED_PICKS:
+                    raise RuntimeError(f"shops shuffle: cannot place {len(items)} remaining items, "
+                                       f"{len(shop_indices)} shops have open slots")
                 shop_index = random.choice(shop_indices)
                 shop = type_shops[shop_type][shop_index]
                 if not shop.contains(items[-1]):
+                    stalled_picks = 0
                     item = items.pop()
                     shop.append(item)
                     if shop.item_count == item_counts[shop_index]:
                         shop_indices.remove(shop_index)
+                else:
+                    stalled_picks += 1
 
     def random_tiered(self):
         def get_item(item_type, exclude = None):
@@ -342,10 +354,10 @@ class Shops():
             if item_id in self.SPECIAL_RELICS:
                 return 1
             elif item_id == name_id["Earrings"]:
-                return random.randint(1,2)
+                return random.randint(1, 2)
             return random.randint(1, 4)
 
-        # Basic healing items: 1-5 for Fenix Down, 2-6 for everything else
+        # Basic healing items: 1-4 for Fenix Down, 2-6 for everything else
         if item_id in self.BASIC_HEALING:
             if item_id == name_id["Fenix Down"]:
                 return random.randint(1, 4)

@@ -33,13 +33,9 @@ class ImperialBase(Event):
         self.entrance_event_mod()
 
     def entrance_event_mod(self):
-        SOLDIERS_BATTLE_ON_TOUCH = 0xb25b9
-        SOLDIER_BATTLE_EVENT = 0xb2583
-
         space = Reserve(0xb25d6, 0xb25f8, "imperial base entrance event conditions", field.NOP())
         if self.args.character_gating and not self.args.ruination_mode:
             space.write(
-                #field.BranchIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate()), SOLDIERS_BATTLE_ON_TOUCH),
                 field.ReturnIfEventBitSet(event_bit.character_recruited(self.events["Sealed Gate"].character_gate())),
             )
             if self.args.ruination_mode:
@@ -88,7 +84,6 @@ class ImperialBase(Event):
 
         else:
             space.write(
-                #field.Branch(SOLDIERS_BATTLE_ON_TOUCH),
                 field.Return(),
             )
 
