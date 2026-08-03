@@ -427,8 +427,10 @@ class Airship(Event):
 
         # Re-emit the reform-party select so required characters (-rc) are kept unmovable.
         # The required characters are already in the party here, so no pre-placement is needed.
+        # clear_party keeps vanilla's 0x80 bit (opcode 99 81 00 00): the reform select must
+        # clear the current party assignments, and without -rc this stays byte-identical.
         space = Reserve(0xacba3, 0xacba6, "airship reform party", field.NOP())
-        space.write(field.SelectParties(1))
+        space.write(field.SelectParties(1, clear_party=True))
 
         space = Reserve(0xc3510, 0xc351d, "airship unequip some party members dialog choice", field.NOP())
         space.write(

@@ -166,7 +166,12 @@ def menu(args):
         elif key == "Remove Learnable Spells":
             entries[index] = ("Remove Spells", FlagsRemoveLearnableSpells(value), unique_name) # flags sub-menu
         elif key == "Require Characters":
-            entries[index] = ("Require Chars", FlagsRequireCharacters(value), unique_name) # flags sub-menu
+            # only build the sub-menu (a Bank C3 scroll area) when -rc is in
+            # use: bank C3 is nearly full and an empty list renders fine as F
+            if value:
+                entries[index] = ("Require Chars", FlagsRequireCharacters(value), unique_name) # flags sub-menu
+            else:
+                entries[index] = ("Require Chars", False, unique_name)
 
     return (name(), entries)
 
