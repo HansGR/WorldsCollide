@@ -40,6 +40,18 @@ RANDOM_COMMAND = 99
 RANDOM_UNIQUE_COMMAND = 98
 NONE_COMMAND = 97   # none command id is 3 digits in base 10 (255), use a custom 2 digit value for args
 
+# -com meta modes: "fully random" and "fully random unique" command sets
+FULL_RANDOM_MODE = "fr"
+FULL_RANDOM_UNIQUE_MODE = "fru"
+FULL_RANDOM_MODES = [FULL_RANDOM_MODE, FULL_RANDOM_UNIQUE_MODE]
+
+# every character has four command slots in their initialization data ($ed7ca2 - $ed7ca5)
+COMMAND_SLOT_COUNT = 4
+
+# commands with a fixed position in the battle menu (fight -> skills -> magic -> item),
+# in the order their percent chances are given to the full random modes
+COMMON_COMMANDS = ["Fight", "Magic", "Item"]
+
 COMMAND_OPTIONS = ["Morph", "Steal", "SwdTech", "Throw", "Tools", "Blitz", "Runic", "Lore", "Sketch", "Slot", "Dance", "Rage", "Leap"]
 EXCLUDE_COMMANDS = ["Item", "Magic", "Revert", "Leap", "Mimic", "Row", "Def", "Summon", "Empty", "Empty?", "None"]
 
