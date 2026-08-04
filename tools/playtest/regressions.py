@@ -179,6 +179,96 @@ def scenario_rc_school_reform(vanilla, workdir):
     return f"{two}; 3p all-required groups {groups}"
 
 
+def scenario_lite_save_markers(vanilla, workdir):
+    """-nosaves lite: every battle must be won, not merely survived.
+
+    The SRAM validity markers ($30:7FF8/FFA/FFC/FFE, magic $E41B) are zeroed
+    the moment a battle starts and rewritten only on victory, so resetting
+    mid-battle (or after fleeing, until the next save) leaves no loadable
+    file. Routes into a cave on a '-ruin -nosaves lite' seed, seeds the
+    markers as if the player had saved, then checks: battle start corrupts
+    them; winning restores them; fleeing a second battle leaves them
+    corrupted."""
+    import ctypes as C
+    from core import RETRO_MEMORY_SAVE_RAM
+
+    rom = build(vanilla, os.path.join(workdir, "lite.smc"), "-ruin -nosaves lite")
+    spoiler = rom[:-4] + ".txt"
+    hops = route.route_from_start(spoiler, "cave")
+    assert hops, "no routable cave in this seed"
+
+    h = Harness(rom)
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    for door in hops:
+        got = route.step_door(h, door)
+        h.run(20)
+        assert got is not None, f"stuck at door {door}"
+    navigate.wait_for_control(h)
+
+    sram = (C.c_ubyte * h.core.lib.retro_get_memory_size(RETRO_MEMORY_SAVE_RAM)).from_address(
+        h.core.lib.retro_get_memory_data(RETRO_MEMORY_SAVE_RAM))
+    def markers():
+        return [sram[0x1ff8 + i] | (sram[0x1ff9 + i] << 8) for i in (0, 2, 4, 6)]
+    def seed_markers():
+        for i in (0, 2, 4, 6):
+            sram[0x1ff8 + i] = 0x1b
+            sram[0x1ff9 + i] = 0xe4
+
+    import random as _random
+    rng = _random.Random(9)
+    def find_battle():
+        for _ in range(800):
+            h.hold(rng.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), frames=14)
+            if markers()[0] != 0xe41b:
+                return True
+        return False
+
+    def win_battle():
+        # mash attack; keep the party topped up and pin every monster at 1 HP
+        # so any hit kills (battle actor HP words at $3BF4: chars 0-3, monsters 4-9)
+        for _ in range(6000):
+            h.press('A', hold=4, wait=8)
+            for s in range(4):
+                mx = h.core.read_u16(0x3c1c + 2*s)
+                if mx:
+                    h.core.write_u8(0x3bf4 + 2*s, mx & 0xff)
+                    h.core.write_u8(0x3bf5 + 2*s, (mx >> 8) & 0xff)
+            for s in range(4, 10):
+                if h.core.read_u16(0x3c1c + 2*s) and h.core.read_u16(0x3bf4 + 2*s) > 1:
+                    h.core.write_u8(0x3bf4 + 2*s, 1)
+                    h.core.write_u8(0x3bf5 + 2*s, 0)
+            if markers()[0] == 0xe41b:
+                return True
+        return False
+
+    # 1. battle start corrupts; victory restores (retry once in case a battle
+    #    resolves strangely, e.g. the mash flees a pincer)
+    won = False
+    for _ in range(2):
+        seed_markers()
+        assert find_battle(), "no encounter found"
+        assert markers() == [0, 0, 0, 0], f"start corruption partial: {markers()}"
+        if win_battle():
+            won = True
+            break
+    assert won, f"victory did not restore markers: {markers()}"
+
+    # 2. fleeing leaves the markers corrupted
+    assert find_battle(), "no second encounter found"
+    fled = False
+    for _ in range(200):
+        h.hold('L', 'R', frames=30)
+        before = h.party_xy
+        h.hold('DOWN', frames=10)
+        if h.party_xy != before:
+            fled = True
+            break
+    assert fled, "could not flee"
+    assert markers() == [0, 0, 0, 0], f"flee must not restore markers: {markers()}"
+    return "battle start corrupts, victory restores, flee leaves corrupted"
+
+
 # Route-dependent scenarios: need Phase 4 plan-driven navigation to reach
 # the specific dungeon locations. Scaffolded so they run once that lands.
 def scenario_minecart_camera(vanilla, workdir):
@@ -292,6 +382,7 @@ SCENARIOS = [
     scenario_minecart_camera,
     scenario_phoenix_two_party_collision,
     scenario_rc_school_reform,
+    scenario_lite_save_markers,
 ]
 
 

@@ -43,7 +43,61 @@ class SaveMenu:
         space = Reserve(0x25fcd, 0x25fcf, "Annihilation toss save data", asm.NOP())
         space.write(asm.JSR(clear_data_addr, asm.ABS))
 
+    # Every battle must be won, not merely survived. The game validates SRAM by
+    # comparing the four marker words at $30:7FF8/FFA/FFC/FFE against the magic
+    # value $E41B (checker C3/7023, writer C3/7083 -- saving rewrites them). We
+    # corrupt the markers the moment a battle begins and rewrite them only when
+    # the battle ends in victory, so resetting mid-battle (or after fleeing,
+    # until the next save) leaves no loadable file.
+    SRAM_MARKER_MAGIC = 0xe41b
+    SRAM_MARKERS = [0x307ff8, 0x307ffa, 0x307ffc, 0x307ffe]
+
+    def corrupt_save_on_battle_start(self):
+        # battle program entry C2/000C sets up and calls JSR $261E at C2/0013;
+        # corrupt the markers first, then tail-call the displaced init
+        src = [
+            asm.PHP(),
+            asm.A16(),
+            asm.LDA(0x0000, asm.IMM16),
+        ]
+        for marker in self.SRAM_MARKERS:
+            src.append(asm.STA(marker, asm.LNG))
+        src += [
+            asm.PLP(),
+            asm.JMP(0x261e, asm.ABS),
+        ]
+        space = Write(Bank.C2, src, "ironmog lite corrupt save markers on battle start")
+        corrupt_addr = space.start_address
+
+        space = Reserve(0x20013, 0x20015, "ironmog lite battle start hook", asm.NOP())
+        space.write(asm.JSR(corrupt_addr, asm.ABS))
+
+    def restore_save_on_battle_victory(self):
+        # C2/488C calls the end-of-battle victory rewards routine (JSR $5D57);
+        # the battle-end dispatcher only takes this path for a won battle, so
+        # rewriting the markers here is exactly "proved you beat the battle".
+        # a fled battle leaves the markers corrupted until the next save (the
+        # save routine rewrites them)
+        src = [
+            asm.JSR(0x5d57, asm.ABS),   # displaced: victory rewards
+            asm.PHP(),
+            asm.A16(),
+            asm.LDA(self.SRAM_MARKER_MAGIC, asm.IMM16),
+        ]
+        for marker in self.SRAM_MARKERS:
+            src.append(asm.STA(marker, asm.LNG))
+        src += [
+            asm.PLP(),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "ironmog lite restore save markers on battle victory")
+        restore_addr = space.start_address
+
+        space = Reserve(0x2488c, 0x2488e, "ironmog lite battle victory hook", asm.NOP())
+        space.write(asm.JSR(restore_addr, asm.ABS))
 
     def mod(self):
         if args.no_saves == 'lite':
             self.save_and_quit()
+            self.corrupt_save_on_battle_start()
+            self.restore_save_on_battle_victory()
