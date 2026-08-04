@@ -70,9 +70,9 @@ for trial in range(300):
     for i in c.full_random_characters():
         cmds = chars[i].commands
         if i == GAU:
-            # gau's fight chance is halved, so his 100% fight can miss; the
+            # gau never gets fight from a probability roll, even at 100%; the
             # freed slot backfills and the rest keep their menu order
-            assert cmds == [0, 28, 2, 1] or (cmds[0] == 28 and cmds[2:] == [2, 1]), \
+            assert 0 not in cmds and cmds[0] == 28 and cmds[2:] == [2, 1], \
                 f"gau menu order broken: {cmds}"
         else:
             assert cmds == [0, 28, 2, 1], f"menu order broken: {cmds}"
