@@ -180,15 +180,16 @@ def scenario_rc_school_reform(vanilla, workdir):
 
 
 def scenario_lite_save_markers(vanilla, workdir):
-    """-nosaves lite: every battle must be won, not merely survived.
+    """-nosaves lite: resetting mid-battle must not be an escape hatch.
 
-    The SRAM validity markers ($30:7FF8/FFA/FFC/FFE, magic $E41B) are zeroed
-    the moment a battle starts and rewritten only on victory, so resetting
-    mid-battle (or after fleeing, until the next save) leaves no loadable
-    file. Routes into a cave on a '-ruin -nosaves lite' seed, seeds the
-    markers as if the player had saved, then checks: battle start corrupts
-    them; winning restores them; fleeing a second battle leaves them
-    corrupted."""
+    The SRAM validity markers ($30:7FF8/FFA/FFC/FFE, magic $E41B) are stashed
+    and zeroed the moment a battle starts, and the stash is restored at battle
+    end for any outcome except annihilation -- so a mid-battle reset leaves no
+    loadable file, while winning AND fleeing both restore it. Restoring the
+    stash (not the magic) means an unsaved game's markers stay invalid.
+    Routes into a cave on a '-ruin -nosaves lite' seed and checks all three:
+    empty-save battle leaves markers invalid; a seeded save is corrupted at
+    battle start and restored on victory; fleeing also restores it."""
     import ctypes as C
     from core import RETRO_MEMORY_SAVE_RAM
 
@@ -217,14 +218,16 @@ def scenario_lite_save_markers(vanilla, workdir):
 
     import random as _random
     rng = _random.Random(9)
-    def find_battle():
+    def find_battle(corrupt_signal=0xe41b):
+        # walk until the battle-start hook changes the first marker away from
+        # the value we expect outside battle
         for _ in range(800):
             h.hold(rng.choice(['UP', 'DOWN', 'LEFT', 'RIGHT']), frames=14)
-            if markers()[0] != 0xe41b:
+            if markers()[0] != corrupt_signal:
                 return True
         return False
 
-    def win_battle():
+    def win_battle(expected):
         # mash attack; keep the party topped up and pin every monster at 1 HP
         # so any hit kills (battle actor HP words at $3BF4: chars 0-3, monsters 4-9)
         for _ in range(6000):
@@ -238,35 +241,53 @@ def scenario_lite_save_markers(vanilla, workdir):
                 if h.core.read_u16(0x3c1c + 2*s) and h.core.read_u16(0x3bf4 + 2*s) > 1:
                     h.core.write_u8(0x3bf4 + 2*s, 1)
                     h.core.write_u8(0x3bf5 + 2*s, 0)
-            if markers()[0] == 0xe41b:
+            if markers()[0] == expected:
                 return True
         return False
 
-    # 1. battle start corrupts; victory restores (retry once in case a battle
-    #    resolves strangely, e.g. the mash flees a pincer)
-    won = False
-    for _ in range(2):
-        seed_markers()
-        assert find_battle(), "no encounter found"
-        assert markers() == [0, 0, 0, 0], f"start corruption partial: {markers()}"
-        if win_battle():
-            won = True
-            break
-    assert won, f"victory did not restore markers: {markers()}"
+    def battle_and_win(seed_value):
+        # returns True if a battle was found, corrupted the markers, and was
+        # won with the markers coming back as seed_value (retry once in case
+        # a battle resolves strangely, e.g. the mash flees a pincer)
+        for _ in range(2):
+            for i in (0, 2, 4, 6):
+                sram[0x1ff8 + i] = seed_value & 0xff
+                sram[0x1ff9 + i] = (seed_value >> 8) & 0xff
+            assert find_battle(seed_value), "no encounter found"
+            assert markers() == [0, 0, 0, 0], f"start corruption partial: {markers()}"
+            if win_battle(seed_value):
+                return True
+        return False
 
-    # 2. fleeing leaves the markers corrupted
-    assert find_battle(), "no second encounter found"
+    # 1. an invalid (never-saved) file must stay invalid through a win: the
+    #    stash restores what was there, never the magic value
+    assert battle_and_win(0x1234), f"sentinel not restored: {markers()}"
+    assert markers() == [0x1234] * 4, f"invalid file was promoted: {markers()}"
+
+    # 2. a valid save is corrupted at battle start and restored on victory
+    assert battle_and_win(0xe41b), f"magic not restored: {markers()}"
+
+    # 3. fleeing also restores the save (running is a legal outcome). the
+    #    restore itself signals the flee succeeded: we never press A, so the
+    #    markers can only come back via a non-victory battle end. some
+    #    formations cannot be run from, so retry across battles.
     fled = False
-    for _ in range(200):
-        h.hold('L', 'R', frames=30)
-        before = h.party_xy
-        h.hold('DOWN', frames=10)
-        if h.party_xy != before:
-            fled = True
+    for _ in range(3):
+        seed_markers()
+        assert find_battle(), "no flee-test encounter found"
+        assert markers() == [0, 0, 0, 0], f"start corruption partial: {markers()}"
+        for _ in range(400):
+            h.hold('L', 'R', frames=20)
+            if markers()[0] == 0xe41b:
+                fled = True
+                break
+        if fled:
             break
-    assert fled, "could not flee"
-    assert markers() == [0, 0, 0, 0], f"flee must not restore markers: {markers()}"
-    return "battle start corrupts, victory restores, flee leaves corrupted"
+        win_battle(0xe41b)   # unrunnable formation: win it and try another
+    assert fled, f"could not flee any battle: {markers()}"
+    assert markers() == [0xe41b] * 4, f"flee must restore markers: {markers()}"
+    return ("invalid file stays invalid through a win; valid save corrupted "
+            "at battle start, restored on win and on flee")
 
 
 # Route-dependent scenarios: need Phase 4 plan-driven navigation to reach

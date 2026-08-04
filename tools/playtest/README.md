@@ -67,6 +67,14 @@ land in `OBJECTIVE` bit slots **2 and 3**. Caveat: ruination still drops
 Kefka's Tower results (ids 1-3) from `args.objectives`, so if you pass one
 of those yourself, every later objective shifts down a slot.
 
+**Open-world start (airship deck, map 0x006):** to reach the world map,
+take two steps LEFT from the starting position, press A to interact with
+the console, and select the first option; after a brief animation you are
+flying. Pressing B immediately lands right outside Narshe, and after the
+landing animation the party can walk the world map (with random
+encounters). Interacting from the wrong tile does nothing, which looks
+like an unresponsive console.
+
 ## Navigation (`navigate.py`)
 
 Cross-map travel = teleport beside a door, then let the engine run its
