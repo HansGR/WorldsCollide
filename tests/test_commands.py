@@ -20,7 +20,7 @@ def parse_flags(*flags):
 # often, a refill triggered by a leftover the drafting character already has
 DRAFT_INVARIANTS = """
 import sys, types, collections
-sys.argv = ["wc.py", "-i", "rom.smc", "-com", "fru", "0.0.0"]
+sys.argv = ["wc.py", "-i", "rom.smc", "-comfru", "0.0.0"]
 import args
 sys.modules["objectives"] = types.ModuleType("objectives")
 sys.modules["objectives"].suplex_train_condition_exists = False
@@ -49,7 +49,7 @@ print("ok")
 # fight/possess/magic/item in menu order, with nothing backfilled.
 PR_INVARIANTS = """
 import sys, types
-sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pr", "0.1.2.28.10", "100.100.100.100.0", "-rec", "16"]
+sys.argv = ["wc.py", "-i", "rom.smc", "-compr", "0.1.2.28.10", "100.100.100.100.0", "-rec", "16"]
 import args
 sys.modules["objectives"] = types.ModuleType("objectives")
 sys.modules["objectives"].suplex_train_condition_exists = False
@@ -61,13 +61,21 @@ class FakeChar:
     def __init__(self):
         self.commands = [0, 0, 0, 0]
 
+GAU = 11
+
 for trial in range(300):
     chars = [FakeChar() for _ in range(0x20)]
     c = Commands(chars)
     c.mod_probability_random_commands()
     for i in c.full_random_characters():
         cmds = chars[i].commands
-        assert cmds == [0, 28, 2, 1], f"menu order broken: {cmds}"
+        if i == GAU:
+            # gau's fight chance is halved, so his 100% fight can miss; the
+            # freed slot backfills and the rest keep their menu order
+            assert cmds == [0, 28, 2, 1] or (cmds[0] == 28 and cmds[2:] == [2, 1]), \
+                f"gau menu order broken: {cmds}"
+        else:
+            assert cmds == [0, 28, 2, 1], f"menu order broken: {cmds}"
 print("ok")
 """
 
@@ -75,7 +83,7 @@ print("ok")
 # six (the group cap), never a -rec excluded command, and never a duplicate.
 PR_CAP_INVARIANTS = """
 import sys, types
-sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pru", "0.1.2.27.28.29", "50.50.50.50.50.50", "-rec", "16"]
+sys.argv = ["wc.py", "-i", "rom.smc", "-compru", "0.1.2.27.28.29", "50.50.50.50.50.50", "-rec", "16"]
 import args
 sys.modules["objectives"] = types.ModuleType("objectives")
 sys.modules["objectives"].suplex_train_condition_exists = False
@@ -111,7 +119,7 @@ print("ok")
 # three 100% commands, every character has exactly one empty slot, no backfill.
 PR_NONE_INVARIANTS = """
 import sys, types
-sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pr", "5.7.13.97", "100.100.100.100"]
+sys.argv = ["wc.py", "-i", "rom.smc", "-compr", "5.7.13.97", "100.100.100.100"]
 import args
 sys.modules["objectives"] = types.ModuleType("objectives")
 sys.modules["objectives"].suplex_train_condition_exists = False
@@ -140,7 +148,7 @@ print("ok")
 # no character may ever hold two morphs and backfill must never add one.
 PR_MORPH_INVARIANTS = """
 import sys, types
-sys.argv = ["wc.py", "-i", "rom.smc", "-com", "pru", "3", "50"]
+sys.argv = ["wc.py", "-i", "rom.smc", "-compru", "3", "50"]
 import args
 sys.modules["objectives"] = types.ModuleType("objectives")
 sys.modules["objectives"].suplex_train_condition_exists = False
@@ -168,6 +176,46 @@ print("ok")
 """
 
 
+# composed mode: -com explicit picks + -compr rolls + backfill. terra gets an
+# explicit steal, locke holds a slot empty (97), cyan marks a unique-backfill
+# slot (98), everyone else is 99; possess is declared at 100%.
+COMPOSED_INVARIANTS = """
+import sys, types
+sys.argv = ["wc.py", "-i", "rom.smc",
+            "-com", "05979899999999999999999999", "-compr", "28", "100"]
+import args
+sys.modules["objectives"] = types.ModuleType("objectives")
+sys.modules["objectives"].suplex_train_condition_exists = False
+
+from constants.commands import name_id
+from data.commands import Commands
+
+STEAL = name_id["Steal"]
+POSSESS = name_id["Possess"]
+NONE = name_id["None"]
+
+class FakeChar:
+    def __init__(self):
+        self.commands = [0, 0, 0, 0]
+
+for trial in range(300):
+    chars = [FakeChar() for _ in range(0x20)]
+    c = Commands(chars)
+    c.mod_probability_random_commands()
+    for i in c.full_random_characters():
+        cmds = chars[i].commands
+        real = [x for x in cmds if x != NONE]
+        assert len(set(real)) == len(real), f"duplicate: {cmds}"
+        assert POSSESS in real, f"100% possess missing: {cmds}"
+    terra, locke, cyan = chars[0].commands, chars[1].commands, chars[2].commands
+    assert STEAL in terra, f"explicit steal missing: {terra}"
+    assert len([x for x in terra if x != NONE]) == 4, f"terra not full: {terra}"
+    assert len([x for x in locke if x != NONE]) == 3, f"locke 97 slot not empty: {locke}"
+    assert len([x for x in cyan if x != NONE]) == 4, f"cyan not full: {cyan}"
+print("ok")
+"""
+
+
 class TestCommandsFlag(unittest.TestCase):
     def assert_accepted(self, *flags, expected = None):
         result = parse_flags(*flags)
@@ -187,14 +235,40 @@ class TestCommandsFlag(unittest.TestCase):
         self.assert_accepted("-com", "99999999999999999999999999", expected = "-com 99999999999999999999999999")
 
     def test_full_random_modes(self):
-        self.assert_accepted("-com", "fr", "10.50.90", expected = "-com fr 10.50.90")
-        self.assert_accepted("-com", "fru", "0.0.0", expected = "-com fru 0.0.0")
-        # a single quoted value is equivalent to two separate ones
-        self.assert_accepted("-com", "fru 100.100.100", expected = "-com fru 100.100.100")
+        self.assert_accepted("-comfr", "10.50.90", expected = "-comfr 10.50.90")
+        self.assert_accepted("-comfru", "0.0.0", expected = "-comfru 0.0.0")
+
+    def test_retired_com_modes_rejected(self):
+        # the old '-com fr/pr ...' meta-mode syntax points at the new flags
+        self.assert_rejected("-com", "fr", "10.50.90", expected = "use -comfr")
+        self.assert_rejected("-com", "pru", "3", "50", expected = "use -compru")
 
     def test_no_commands_flag(self):
         self.assertNotIn("-com", self.assert_accepted())
         self.assertNotIn("-com", self.assert_accepted("-com"))
+
+    def test_family_composition(self):
+        # -com composes with the probability flags; each emits its own flag
+        out = self.assert_accepted("-com", "05999999999999999999999999", "-comfr", "50.50.50")
+        self.assertIn("-com 05999999999999999999999999", out)
+        self.assertIn("-comfr 50.50.50", out)
+        # -comfr folds into -compr as extra declarations; both still emitted
+        out = self.assert_accepted("-compr", "28", "100", "-comfr", "50.50.50")
+        self.assertIn("-compr 28 100", out)
+        self.assertIn("-comfr 50.50.50", out)
+        # unique variants pair up
+        self.assert_accepted("-compru", "28", "100", "-comfru", "50.50.50")
+
+    def test_family_conflicts_rejected(self):
+        self.assert_rejected("-comfr", "10.50.90", "-comfru", "10.50.90",
+                             expected = "-comfr and -comfru are incompatible")
+        self.assert_rejected("-compr", "28", "100", "-compru", "28", "100",
+                             expected = "-compr and -compru are incompatible")
+        self.assert_rejected("-comfr", "10.50.90", "-compru", "28", "100",
+                             expected = "cannot mix unique and non-unique")
+        # an id declared by both -comfr and -compr is a conflict
+        self.assert_rejected("-comfr", "10.50.90", "-compr", "0.28", "100.100",
+                             expected = "declared by both")
 
     def test_unique_draft_refills(self):
         result = subprocess.run(
@@ -210,36 +284,35 @@ class TestCommandsFlag(unittest.TestCase):
     def test_invalid_values_rejected(self):
         self.assert_rejected("-com", "0305070809", expected = "must be 26 digits")
         self.assert_rejected("-com", "03050708091011121315191650", expected = "not a valid command id")
-        self.assert_rejected("-com", "fr", expected = "percent chance value")
-        self.assert_rejected("-com", "fr", "10.50", expected = "3 percent chances")
-        self.assert_rejected("-com", "fr", "10.50.101", expected = "must be between 0 and 100")
-        self.assert_rejected("-com", "fru", "10.50.abc", expected = "not a valid Item percent chance")
+        self.assert_rejected("-comfr", "10.50", expected = "3 percent chances")
+        self.assert_rejected("-comfr", "10.50.101", expected = "must be between 0 and 100")
+        self.assert_rejected("-comfru", "10.50.abc", expected = "not a valid percent chance")
 
     def test_probability_modes(self):
         # ids are canonicalized to two digits; percents kept as given
-        self.assert_accepted("-com", "pr", "0.1.2.28", "50.50.50.100",
-                             expected = "-com pr 00.01.02.28 50.50.50.100")
-        self.assert_accepted("-com", "pru", "0.1.2.27.28.29", "50.50.50.50.50.50",
-                             expected = "-com pru 00.01.02.27.28.29 50.50.50.50.50.50")
+        self.assert_accepted("-compr", "0.1.2.28", "50.50.50.100",
+                             expected = "-compr 00.01.02.28 50.50.50.100")
+        self.assert_accepted("-compru", "0.1.2.27.28.29", "50.50.50.50.50.50",
+                             expected = "-compru 00.01.02.27.28.29 50.50.50.50.50.50")
         # 97 declares a chance at an empty slot
-        self.assert_accepted("-com", "pr", "97.10", "50.100", expected = "-com pr 97.10 50.100")
-        # a single quoted value is equivalent to separate ones
-        self.assert_accepted("-com", "pr 3 100", expected = "-com pr 03 100")
+        self.assert_accepted("-compr", "97.10", "50.100", expected = "-compr 97.10 50.100")
 
     def test_probability_invalid_rejected(self):
-        self.assert_rejected("-com", "pr", "0.1.2", expected = "requires dot-separated command ids")
-        self.assert_rejected("-com", "pr", "0.1.2", "50.50", expected = "3 command ids but 2 percent chances")
-        self.assert_rejected("-com", "pr", "0.25", "50.50", expected = "not a valid probability command id")  # Summon
-        self.assert_rejected("-com", "pr", "0.0", "50.50", expected = "duplicate probability command id")
-        self.assert_rejected("-com", "pr", "0.abc", "50.50", expected = "not a valid command id")
-        self.assert_rejected("-com", "pr", "0.1", "50.101", expected = "must be between 0 and 100")
+        self.assert_rejected("-compr", "0.1.2", expected = "expected 2 arguments")
+        self.assert_rejected("-compr", "0.1.2", "50.50", expected = "3 command ids but 2 percent chances")
+        self.assert_rejected("-compr", "0.25", "50.50", expected = "not a valid probability command id")  # Summon
+        self.assert_rejected("-compr", "0.0", "50.50", expected = "duplicate probability command id")
+        self.assert_rejected("-compr", "0.abc", "50.50", expected = "not a valid command id")
+        self.assert_rejected("-compr", "0.1", "50.101", expected = "must be between 0 and 100")
+        self.assert_rejected("-comfr", "50.50", expected = "3 percent chances")
         # a command cannot both have a probability and be excluded by -rec
-        self.assert_rejected("-com", "pr", "0.16", "50.50", "-rec", "16",
+        self.assert_rejected("-compr", "0.16", "50.50", "-rec", "16",
                              expected = "both given a probability and excluded by -rec")
 
     def test_probability_invariants(self):
         for name, script in (("pr", PR_INVARIANTS), ("cap", PR_CAP_INVARIANTS),
-                             ("none", PR_NONE_INVARIANTS), ("morph", PR_MORPH_INVARIANTS)):
+                             ("none", PR_NONE_INVARIANTS), ("morph", PR_MORPH_INVARIANTS),
+                             ("composed", COMPOSED_INVARIANTS)):
             with self.subTest(name):
                 result = subprocess.run(
                     [sys.executable, "-c", script],

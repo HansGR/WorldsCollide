@@ -40,20 +40,13 @@ RANDOM_COMMAND = 99
 RANDOM_UNIQUE_COMMAND = 98
 NONE_COMMAND = 97   # none command id is 3 digits in base 10 (255), use a custom 2 digit value for args
 
-# -com meta modes: "fully random" and "fully random unique" command sets
-FULL_RANDOM_MODE = "fr"
-FULL_RANDOM_UNIQUE_MODE = "fru"
-FULL_RANDOM_MODES = [FULL_RANDOM_MODE, FULL_RANDOM_UNIQUE_MODE]
+# retired -com meta-mode prefixes ('-com fr 10.50.90'), recognized only to
+# print a migration error pointing at the -comfr/-comfru/-compr/-compru flags
+RETIRED_COM_MODES = ["fr", "fru", "pr", "pru"]
 
-# -com meta modes: per-command probability lists ('pr 0.1.2.28 50.50.50.100'),
-# with unfilled slots backfilled randomly ("pru": backfill drafts unique)
-PROBABILITY_RANDOM_MODE = "pr"
-PROBABILITY_RANDOM_UNIQUE_MODE = "pru"
-PROBABILITY_RANDOM_MODES = [PROBABILITY_RANDOM_MODE, PROBABILITY_RANDOM_UNIQUE_MODE]
-
-# command ids a probability can be declared for: every real menu command the
-# randomizer hands out (not Revert/Leap/Mimic/Row/Def/Summon or the broken
-# Empty slots), plus None (declared as 97, the same id -com strings use)
+# command ids a probability can be declared for (-compr/-compru): every real
+# menu command the randomizer hands out (not Revert/Leap/Mimic/Row/Def/Summon
+# or the broken Empty slots), plus None (declared as 97, same as -com strings)
 PROBABILITY_EXCLUDED_NAMES = ["Revert", "Leap", "Mimic", "Row", "Def", "Summon", "Empty", "Empty?", "None"]
 PROBABILITY_COMMAND_IDS = [command_id for command_id, command_name in id_name.items()
                            if command_name not in PROBABILITY_EXCLUDED_NAMES]

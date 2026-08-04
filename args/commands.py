@@ -1,21 +1,45 @@
-from constants.commands import (COMMAND_OPTIONS, COMMON_COMMANDS, FULL_RANDOM_MODES, FULL_RANDOM_UNIQUE_MODE,
-                                PROBABILITY_RANDOM_MODES, PROBABILITY_COMMAND_IDS,
+from constants.commands import (COMMAND_OPTIONS, COMMON_COMMANDS, RETIRED_COM_MODES, PROBABILITY_COMMAND_IDS,
                                 RANDOM_COMMAND, RANDOM_UNIQUE_COMMAND, NONE_COMMAND, RANDOM_EXCLUDE_COMMANDS,
                                 id_name, name_id)
 
 def name():
     return "Commands"
 
-COMMANDS_HELP = ("Character commands: either one id per character ('%s' 2 digit command ids), a full random mode "
-                 "('fr' / 'fru' followed by 'FIGHT.MAGIC.ITEM' percent chances, e.g. 'fr 10.50.90'), or a "
-                 "probability list ('pr' / 'pru' followed by dot-separated command ids and matching percent "
-                 "chances, e.g. 'pr 0.1.2.28 50.50.50.100'; 97 = a chance at an empty slot; unfilled slots "
-                 "are backfilled randomly, respecting -rec)"
-                 % len(COMMAND_OPTIONS))
+# The three command flag families compose:
+# -com     traditional: one 2-digit id per character slot (99 random, 98 random
+#          unique, 97 none). Alone it behaves exactly as it always has; combined
+#          with the probability flags its explicit picks claim slots first, its
+#          99/98 values mark slots for random/unique backfill, and its 97 values
+#          hold slots empty.
+# -comfr   F.M.I percent chances for Fight/Magic/Item (-comfru: unique backfill
+#          default). A special case of -compr limited to the common commands.
+# -compr   dot-separated command ids and matching percent chances
+#          (-compru: unique backfill default). Rolled slots are grouped by
+#          likelihood and capped by the character's free slots; anything left
+#          unfilled is backfilled from the non--rec-excluded pool.
 
 def parse(parser):
     commands = parser.add_argument_group("Commands")
-    commands.add_argument("-com", "--commands", type = str, nargs = "*", help = COMMANDS_HELP)
+    commands.add_argument("-com", "--commands", type = str, nargs = "*",
+                          help = "Character commands: one 2 digit command id per slot "
+                                 f"({len(COMMAND_OPTIONS)} ids; 99 random, 98 random unique, 97 none). "
+                                 "Composable with -comfr/-compr: explicit picks claim slots first, "
+                                 "99/98 mark random/unique backfill slots, 97 holds a slot empty")
+    commands.add_argument("-comfr", "--commands-fr", type = str, default = None, metavar = "F.M.I",
+                          help = "Give every character the common commands by chance: "
+                                 "'FIGHT.MAGIC.ITEM' percent chances (e.g. -comfr 10.50.90); "
+                                 "unfilled slots are backfilled randomly, respecting -rec")
+    commands.add_argument("-comfru", "--commands-fru", type = str, default = None, metavar = "F.M.I",
+                          help = "Like -comfr, but unfilled slots draft unique commands")
+    commands.add_argument("-compr", "--commands-pr", type = str, nargs = 2, default = None,
+                          metavar = ("IDS", "PERCENTS"),
+                          help = "Give commands by chance: dot-separated command ids and matching "
+                                 "percent chances (e.g. -compr 0.1.2.28 50.50.50.100; 97 = a chance "
+                                 "at an empty slot); unfilled slots are backfilled randomly, "
+                                 "respecting -rec")
+    commands.add_argument("-compru", "--commands-pru", type = str, nargs = 2, default = None,
+                          metavar = ("IDS", "PERCENTS"),
+                          help = "Like -compr, but unfilled slots draft unique commands")
     commands.add_argument("-scc", "--shuffle-commands", action = "store_true", help = "Shuffle selected/randomized commands")
     commands.add_argument("-rec", "--random-exclude-command-ids", type = str, default = None, metavar = "VALUE",
                           help = "Exclude commands from random possibilities, as dot-separated command ids "
@@ -30,7 +54,7 @@ def parse(parser):
     commands.add_argument("-rec6", "--random-exclude-command6", type = int, choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND, help = "Exclude selected command from random possibilities (legacy form of -rec)")
 
 def _process_character_commands(args, tokens):
-    # one explicitly selected (or random) command id per character
+    # one explicitly selected (or random/none) command id per character slot
     if len(tokens) != 1:
         args.parser.error(f"commands: expected a single value of command ids, got '{' '.join(tokens)}'")
 
@@ -55,73 +79,50 @@ def _process_character_commands(args, tokens):
         else:
             args.parser.error(f"commands: '{command:02}' is not a valid command id for {COMMAND_OPTIONS[index]}")
 
-def _process_full_random(args, tokens):
-    # "fr"/"fru" followed by the percent chance each character keeps fight, magic and item
-    mode = tokens[0].lower()
-    if len(tokens) != 2:
-        args.parser.error(f"commands: '{mode}' requires one '{'.'.join(name.upper() for name in COMMON_COMMANDS)}' "
-                          f"percent chance value, e.g. -com {mode} 10.50.90")
+    args.commands = value
 
-    percents = tokens[1].split(".")
-    if len(percents) != len(COMMON_COMMANDS):
-        args.parser.error(f"commands: '{tokens[1]}' must be {len(COMMON_COMMANDS)} percent chances separated by "
-                          f"'.', one each for {', '.join(COMMON_COMMANDS)}")
+def _parse_percent(args, flag, value):
+    try:
+        percent = int(value)
+    except ValueError:
+        args.parser.error(f"{flag}: '{value}' is not a valid percent chance")
+    if percent < 0 or percent > 100:
+        args.parser.error(f"{flag}: percent chance '{percent}' must be between 0 and 100")
+    return percent
 
-    values = []
-    for command_name, percent in zip(COMMON_COMMANDS, percents):
-        try:
-            value = int(percent)
-        except ValueError:
-            args.parser.error(f"commands: '{percent}' is not a valid {command_name} percent chance")
-        if value < 0 or value > 100:
-            args.parser.error(f"commands: {command_name} percent chance '{value}' must be between 0 and 100")
-        values.append(value)
-
-    args.commands_random_mode = mode
-    args.command_fight_percent, args.command_magic_percent, args.command_item_percent = values
-
-def _process_probability_random(args, tokens):
-    # "pr"/"pru" followed by dot-separated command ids and matching percent chances,
-    # e.g. 'pr 0.1.2.28 50.50.50.100'. Rolled slots come from the declared list
-    # (grouped by likelihood, capped at four); unfilled slots are backfilled
-    # randomly from the non-excluded pool. 97 declares a chance at an empty slot.
-    mode = tokens[0].lower()
-    if len(tokens) != 3:
-        args.parser.error(f"commands: '{mode}' requires dot-separated command ids and matching percent "
-                          f"chances, e.g. -com {mode} 0.1.2.28 50.50.50.100")
-
+def _process_probability_random(args, flag, values):
+    # dot-separated command ids and matching percent chances,
+    # e.g. -compr 0.1.2.28 50.50.50.100. 97 declares a chance at an empty slot.
     ids = []
-    for part in tokens[1].split("."):
+    for part in values[0].split("."):
         try:
             command = int(part)
         except ValueError:
-            args.parser.error(f"commands: '{part}' is not a valid command id")
+            args.parser.error(f"{flag}: '{part}' is not a valid command id")
         if command != NONE_COMMAND and command not in PROBABILITY_COMMAND_IDS:
-            args.parser.error(f"commands: '{command:02}' is not a valid probability command id "
+            args.parser.error(f"{flag}: '{command:02}' is not a valid probability command id "
                               f"(one of the {len(PROBABILITY_COMMAND_IDS)} real commands, or 97 for None)")
         if command in ids:
-            args.parser.error(f"commands: duplicate probability command id '{command:02}'")
+            args.parser.error(f"{flag}: duplicate probability command id '{command:02}'")
         if command in args.random_exclude_commands:
-            args.parser.error(f"commands: '{id_name[command]}' ({command:02}) is both given a probability "
+            args.parser.error(f"{flag}: '{id_name[command]}' ({command:02}) is both given a probability "
                               "and excluded by -rec")
         ids.append(command)
 
-    percents = tokens[2].split(".")
+    percents = values[1].split(".")
     if len(percents) != len(ids):
-        args.parser.error(f"commands: {len(ids)} command ids but {len(percents)} percent chances")
+        args.parser.error(f"{flag}: {len(ids)} command ids but {len(percents)} percent chances")
 
-    probabilities = []
-    for command, percent in zip(ids, percents):
-        try:
-            value = int(percent)
-        except ValueError:
-            args.parser.error(f"commands: '{percent}' is not a valid percent chance")
-        if value < 0 or value > 100:
-            args.parser.error(f"commands: percent chance '{value}' must be between 0 and 100")
-        probabilities.append((command, value))
+    return [(command, _parse_percent(args, flag, percent)) for command, percent in zip(ids, percents)]
 
-    args.commands_random_mode = mode
-    args.command_probabilities = probabilities
+def _process_fight_magic_item(args, flag, value):
+    # 'FIGHT.MAGIC.ITEM' percent chances for the three common commands
+    percents = value.split(".")
+    if len(percents) != len(COMMON_COMMANDS):
+        args.parser.error(f"{flag}: '{value}' must be {len(COMMON_COMMANDS)} percent chances separated by "
+                          f"'.', one each for {', '.join(COMMON_COMMANDS)}")
+    return [(name_id[command_name], _parse_percent(args, flag, percent))
+            for command_name, percent in zip(COMMON_COMMANDS, percents)]
 
 def _process_excluded_commands(args):
     # merge -rec (dot-separated, arbitrary length) with the legacy -recN single
@@ -157,56 +158,90 @@ def _process_excluded_commands(args):
 def process(args):
     _process_excluded_commands(args)
 
+    args.character_commands = []
+    args.command_strings = []
+    args.command_probabilities = []
+
+    # mutually exclusive variants
+    if args.commands_fr is not None and args.commands_fru is not None:
+        args.parser.error("commands: -comfr and -comfru are incompatible; pick one")
+    if args.commands_pr is not None and args.commands_pru is not None:
+        args.parser.error("commands: -compr and -compru are incompatible; pick one")
+
+    fr_value = args.commands_fr if args.commands_fr is not None else args.commands_fru
+    pr_value = args.commands_pr if args.commands_pr is not None else args.commands_pru
+
+    # the unique/non-unique variants set the leftover-backfill style, so mixing
+    # them across the two families would be ambiguous
+    fr_unique = args.commands_fru is not None
+    pr_unique = args.commands_pru is not None
+    if fr_value is not None and pr_value is not None and fr_unique != pr_unique:
+        args.parser.error("commands: cannot mix unique and non-unique variants "
+                          "(-comfru pairs with -compru, -comfr with -compr)")
+    args.commands_unique_backfill = fr_unique or pr_unique
+
+    # traditional -com (composable with the probability flags)
     tokens = []
     for value in args.commands or []:
         tokens.extend(value.split())
-
-    args.commands_random_mode = None
-    args.character_commands = []
-    args.command_strings = []
-    args.command_fight_percent = 0
-    args.command_magic_percent = 0
-    args.command_item_percent = 0
-    args.command_probabilities = []
-
-    if not tokens:
-        args.commands = None
-        args.blitz_command_possible = True
-        return
-
-    if tokens[0].lower() in FULL_RANDOM_MODES:
-        _process_full_random(args, tokens)
-    elif tokens[0].lower() in PROBABILITY_RANDOM_MODES:
-        _process_probability_random(args, tokens)
-        # canonical value: mode, two-digit-padded ids, percents
-        tokens = [args.commands_random_mode,
-                  ".".join(f"{command:02}" for command, _ in args.command_probabilities),
-                  ".".join(str(percent) for _, percent in args.command_probabilities)]
-    else:
+    if tokens and tokens[0].lower() in RETIRED_COM_MODES:
+        mode = tokens[0].lower()
+        args.parser.error(f"commands: '-com {mode}' has been split into its own flag; "
+                          f"use -com{mode} instead (e.g. -com{mode} {' '.join(tokens[1:])})".rstrip())
+    if tokens:
         _process_character_commands(args, tokens)
+    else:
+        args.commands = None
 
-    # store the normalized value back so flags()/options() have a single canonical string
-    args.commands = " ".join(tokens)
+    # probability declarations: -compr first, then -comfr folded in as the
+    # special case for the common commands (an id in both is a conflict)
+    if pr_value is not None:
+        pr_flag = "-compru" if pr_unique else "-compr"
+        args.command_probabilities = _process_probability_random(args, pr_flag, pr_value)
+        args.commands_pr_value = (".".join(f"{command:02}" for command, _ in args.command_probabilities)
+                                  + " " + ".".join(str(percent) for _, percent in args.command_probabilities))
+    else:
+        args.commands_pr_value = None
 
+    if fr_value is not None:
+        fr_flag = "-comfru" if fr_unique else "-comfr"
+        fr_probabilities = _process_fight_magic_item(args, fr_flag, fr_value)
+        declared = [command for command, _ in args.command_probabilities]
+        for command, percent in fr_probabilities:
+            if command in declared:
+                args.parser.error(f"commands: '{id_name[command]}' is declared by both {fr_flag} and "
+                                  f"{'-compru' if pr_unique else '-compr'}")
+            args.command_probabilities.append((command, percent))
+        args.commands_fr_value = ".".join(str(percent) for _, percent in fr_probabilities)
+    else:
+        args.commands_fr_value = None
+
+    args.commands_probability_mode = fr_value is not None or pr_value is not None
+
+    # can a blitz command exist in this configuration? (needed before objectives
+    # roll a possible Suplex A Train condition)
     blitz_id = name_id["Blitz"]
     blitz_excluded = blitz_id in args.random_exclude_commands
-    if args.commands_random_mode in PROBABILITY_RANDOM_MODES:
-        # blitz can come from its declared probability or from the random backfill
+    blitz_explicit = "Blitz" in args.command_strings
+    if args.commands_probability_mode:
         blitz_declared = any(command == blitz_id and percent > 0
                              for command, percent in args.command_probabilities)
-        args.blitz_command_possible = blitz_declared or not blitz_excluded
-    elif args.commands_random_mode:
-        # every character always has at least one randomly filled skill slot
-        args.blitz_command_possible = not blitz_excluded
-    else:
+        args.blitz_command_possible = blitz_explicit or blitz_declared or not blitz_excluded
+    elif args.commands:
         random_exists = "Random" in args.command_strings or "Random Unique" in args.command_strings
-        args.blitz_command_possible = ("Blitz" in args.command_strings) or (random_exists and not blitz_excluded)
+        args.blitz_command_possible = blitz_explicit or (random_exists and not blitz_excluded)
+    else:
+        args.blitz_command_possible = True
 
 def flags(args):
     flags = ""
 
     if args.commands:
         flags += " -com " + args.commands
+    if args.commands_fr_value is not None:
+        flags += (" -comfru " if args.commands_fru is not None else " -comfr ") + args.commands_fr_value
+    if args.commands_pr_value is not None:
+        flags += (" -compru " if args.commands_pru is not None else " -compr ") + args.commands_pr_value
 
     if args.shuffle_commands:
         flags += " -scc"
@@ -220,24 +255,19 @@ def flags(args):
 
 def options(args):
     result = []
-    if args.commands is None:
+    if args.commands is None and not args.commands_probability_mode:
         for option in COMMAND_OPTIONS:
             result.append((option, option, option))
-    elif args.commands_random_mode in PROBABILITY_RANDOM_MODES:
-        mode_name = "Custom Unique" if args.commands_random_mode == PROBABILITY_RANDOM_MODES[1] else "Custom"
-        result.append(("Random Mode", mode_name, "commands"))
-        for command, percent in args.command_probabilities:
-            command_name = "None" if command == NONE_COMMAND else id_name[command]
-            result.append((f"{command_name} Chance", f"{percent}%", f"command_probability_{command}"))
-    elif args.commands_random_mode:
-        mode_name = "Full Unique" if args.commands_random_mode == FULL_RANDOM_UNIQUE_MODE else "Full"
-        result.append(("Random Mode", mode_name, "commands"))
-        result.append(("Fight Chance", f"{args.command_fight_percent}%", "command_fight_percent"))
-        result.append(("Magic Chance", f"{args.command_magic_percent}%", "command_magic_percent"))
-        result.append(("Item Chance", f"{args.command_item_percent}%", "command_item_percent"))
     else:
-        for index, command_string in enumerate(args.command_strings):
-            result.append((COMMAND_OPTIONS[index], command_string, COMMAND_OPTIONS[index]))
+        if args.commands is not None:
+            for index, command_string in enumerate(args.command_strings):
+                result.append((COMMAND_OPTIONS[index], command_string, COMMAND_OPTIONS[index]))
+        if args.commands_probability_mode:
+            mode_name = "Custom Unique" if args.commands_unique_backfill else "Custom"
+            result.append(("Random Mode", mode_name, "commands_probability_mode"))
+            for command, percent in args.command_probabilities:
+                command_name = "None" if command == NONE_COMMAND else id_name[command]
+                result.append((f"{command_name} Chance", f"{percent}%", f"command_probability_{command}"))
 
     result.append(("", "", ""))
     result.append(("Shuffle Commands", args.shuffle_commands, "shuffle_commands"))
