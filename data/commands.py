@@ -213,11 +213,12 @@ class Commands:
             for command in group:
                 if len(rolled) == capacity:
                     return rolled
-                # gau has no fight command in vanilla, so halve his chance of
-                # getting one to keep "gau doesn't always fight" true even at a
-                # 100% fight chance (carried over from the -comfr predecessor)
-                chance_range = 200 if (command == fight_id and character == Characters.GAU) else 100
-                if random.randrange(chance_range) < percent:
+                # gau has no fight command in vanilla, and that is part of what
+                # makes him unique -- a declared fight probability never applies
+                # to him (his slot backfills instead)
+                if command == fight_id and character == Characters.GAU:
+                    continue
+                if random.randrange(100) < percent:
                     if command not in held:
                         rolled.append(command)
         return rolled
