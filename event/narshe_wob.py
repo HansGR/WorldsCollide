@@ -222,6 +222,37 @@ class NarsheWOB(Event):
         space = Write(Bank.CA, remove_available_src, "Remove available characters from parties (preserve away)")
         remove_available_addr = space.start_address
 
+        # "Unequip all members" must strip every RECRUITED character, not just
+        # the available ones: the vanilla script it pointed at (CC/351E) gates
+        # each character on opcode 0xE1 (caseword = $1EDE = characters
+        # available), which ruination clears for away parties -- so remote
+        # parties kept their gear. The equipment pool is shared between all
+        # three parties, and RemoveAllEquipment (0x8D) already returns the
+        # esper and all six equipment slots to inventory per character; only
+        # the gating was wrong. Key off recruited instead, and cover all 14
+        # characters (the vanilla script also skipped Umaro and gated Gogo on
+        # availability).
+        unequip_all_src = [
+            field.PlaySoundEffect(79),
+            field.Pause(0.50),
+            field.PlaySoundEffect(79),
+            field.Pause(0.50),
+        ]
+        for char in range(CHARACTER_COUNT):
+            unequip_all_src += [
+                field.LoadRecruitedCharacters(),
+                field.BranchIfEventBitClear(event_bit.multipurpose(char), f"SKIP_UNEQUIP_{char}"),
+                field.RemoveAllEquipment(char),
+                f"SKIP_UNEQUIP_{char}",
+            ]
+        unequip_all_src += [
+            field.Pause(0.50),
+            field.FreeMovement(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, unequip_all_src, "Unequip all recruited members (reform school)")
+        unequip_all_addr = space.start_address
+
         # Position subroutines: position PARTY0 at each location.
         # These do NOT include SetParty/SetPartyMap - the caller handles those
         # dynamically based on which party slots are free.
@@ -300,7 +331,7 @@ class NarsheWOB(Event):
 
         reform_src = [
             "START_OVER",
-            field.DialogBranch(reform_id, dest1="REFORM", dest2=0xc359d, dest3=0xc351e, dest4=field.RETURN),
+            field.DialogBranch(reform_id, dest1="REFORM", dest2=0xc359d, dest3=unequip_all_addr, dest4=field.RETURN),
 
             # === Determine max new parties (3 - away_count) capped by CHARACTERS_AVAILABLE ===
             "REFORM",

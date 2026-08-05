@@ -290,6 +290,72 @@ def scenario_lite_save_markers(vanilla, workdir):
             "at battle start, restored on win and on flee")
 
 
+def scenario_unequip_all_away(vanilla, workdir):
+    """The school ghost's "Unequip all members" must strip RECRUITED
+    characters, including members of away parties -- the equipment pool is
+    shared, and for dead or remote characters this menu is the only way to
+    reclaim their gear. (The vanilla script it used to point at keys off
+    characters *available*, which ruination clears for away parties.)
+
+    Reform two parties, walk party 1 out of the hub, Y-switch to party 2,
+    plant an esper + weapon + relic on one character of each party, use the
+    ghost's third option, and assert both records are cleared to $FF."""
+    rom = build(vanilla, os.path.join(workdir, "unq.smc"), "-ruin")
+    spoiler = rom[:-4] + ".txt"
+
+    h = Harness(rom)
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    route.step_door(h, route.ESPER_GATE_TILE)
+    navigate.wait_for_control(h)
+    assert h.map_id == reform.SCHOOL_MAP, f"not in school: {h.map_id:#x}"
+
+    def party_of(c):
+        return h.core.read_u8(0x1850 + c) & 0x07
+
+    reform.reform_two_parties(h, plan=(1, 1, 2))
+    parties = {c: party_of(c) for c in range(14) if party_of(c)}
+    p1 = [c for c, p in parties.items() if p == 1]
+    p2 = [c for c, p in parties.items() if p == 2]
+    assert p1 and p2, f"two parties not formed: {parties}"
+
+    # party 1 leaves the hub through the school's branch door
+    hops = route.route_from_start(spoiler, "cave")
+    assert hops, "no routable branch in this seed"
+    route.step_door(h, hops[1])
+    navigate.wait_for_control(h)
+    assert h.map_id != reform.SCHOOL_MAP, "party1 did not leave the school"
+
+    active = h.core.wram[0x1a6d]
+    h.press('Y', hold=4, wait=30)
+    h.run(60)
+    navigate.wait_for_control(h)
+    assert h.core.wram[0x1a6d] != active, "Y-switch did not change active party"
+    assert h.map_id == reform.SCHOOL_MAP, f"party2 not in school: {h.map_id:#x}"
+
+    # plant gear on one character from each party (record: esper +0x1E,
+    # weapon +0x1F, relic1 +0x23), then use ghost option 3
+    targets = [p1[0], p2[0]]
+    for c in targets:
+        base = 0x1600 + 37 * c
+        h.core.wram[base + 0x1e] = 0x02
+        h.core.wram[base + 0x1f] = 0x10
+        h.core.wram[base + 0x23] = 0x70
+    h.set_party_xy(*reform.GHOST_TALK_XY)
+    h.run(6)
+    h.hold('RIGHT', frames=2)
+    h.press('A', hold=6, wait=90)
+    reform.choose(h, 2)          # "Unequip all members."
+    h.run(300)
+
+    for c in targets:
+        got = [h.core.wram[0x1600 + 37*c + off] for off in (0x1e, 0x1f, 0x23)]
+        where = "away party 1" if c in p1 else "home party 2"
+        assert got == [0xff, 0xff, 0xff], \
+            f"char {c} ({where}) not unequipped: {[hex(v) for v in got]}"
+    return f"chars {targets} (away P1 + home P2) stripped of esper/weapon/relic"
+
+
 def scenario_mid_save_quit(vanilla, workdir):
     """-nosaves mid: saving quits to the title screen, and loading a save
     consumes it -- but only when the load is actually committed.
@@ -468,6 +534,7 @@ SCENARIOS = [
     scenario_rc_school_reform,
     scenario_lite_save_markers,
     scenario_mid_save_quit,
+    scenario_unequip_all_away,
 ]
 
 
