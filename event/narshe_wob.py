@@ -229,16 +229,20 @@ class NarsheWOB(Event):
         # parties kept their gear. The equipment pool is shared between all
         # three parties, and RemoveAllEquipment (0x8D) already returns the
         # esper and all six equipment slots to inventory per character; only
-        # the gating was wrong. Key off recruited instead, and cover all 14
-        # characters (the vanilla script also skipped Umaro and gated Gogo on
-        # availability).
+        # the gating was wrong. Key off recruited instead, and cover every
+        # character (the vanilla script also gated Gogo on availability).
+        # Umaro cannot be equipped or unequipped without -eu, so he is only
+        # included when that flag allows it (matching the airship's unequip
+        # options).
+        unequip_chars = [char for char in range(CHARACTER_COUNT)
+                         if char != self.characters.UMARO or self.args.equipable_umaro]
         unequip_all_src = [
             field.PlaySoundEffect(79),
             field.Pause(0.50),
             field.PlaySoundEffect(79),
             field.Pause(0.50),
         ]
-        for char in range(CHARACTER_COUNT):
+        for char in unequip_chars:
             unequip_all_src += [
                 field.LoadRecruitedCharacters(),
                 field.BranchIfEventBitClear(event_bit.multipurpose(char), f"SKIP_UNEQUIP_{char}"),
