@@ -162,7 +162,7 @@ RUIN_DEFAULT_FLAGS = {
 # 51 = Remedy) because spell names contain spaces, which would break
 # flag-string round-trips.
 RUIN_HARD_EXTRAS = {
-    'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'lite'],
+    'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'mid'],
 }
 
 # Flags that have arguments (used for proper flag removal).
