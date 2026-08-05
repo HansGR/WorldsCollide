@@ -25,8 +25,12 @@ def parse(parser):
     challenges.add_argument("-rls", "--remove-learnable-spells", type = str,
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
     challenges.add_argument("-nosaves", "--no-saves", nargs = '?', const = 'full', default = None,
-                            choices = ['full', 'lite'],
-                            help = "Ironmog Mode: 'full' (default if no value given) disables saving entirely. 'lite' auto-saves/loads slot 1 and wipes saves on game over")
+                            choices = ['full', 'lite', 'mid'],
+                            help = "Ironmog Mode: 'full' (default if no value given) disables saving entirely. "
+                                   "'lite' auto-saves/loads slot 1, corrupts the save while a battle is "
+                                   "unresolved, and wipes saves on game over. 'mid' is strict save-and-quit: "
+                                   "saving records slot 1 and returns to the title screen, and loading a "
+                                   "save consumes it")
 
     from data.characters import Characters
     require_character_options = [name.lower() for name in Characters.DEFAULT_NAME]
@@ -111,6 +115,8 @@ def flags(args):
         flags += " -nosaves"
     elif args.no_saves == 'lite':
         flags += " -nosaves lite"
+    elif args.no_saves == 'mid':
+        flags += " -nosaves mid"
 
     if args.require_characters:
         flags += " -rc " + " ".join(args.require_characters)

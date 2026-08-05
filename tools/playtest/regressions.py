@@ -290,6 +290,69 @@ def scenario_lite_save_markers(vanilla, workdir):
             "at battle start, restored on win and on flee")
 
 
+def scenario_mid_save_quit(vanilla, workdir):
+    """-nosaves mid: saving quits to the title screen, and loading a save
+    consumes it -- but only when the load is actually committed.
+
+    Uses the save point in the ruination starting room (map 0xda, tile
+    (55,44), south of the party start). Saving from the menu must write a
+    valid slot-1 file and soft-reset to the boot path. On the load screen,
+    selecting the file and answering No must leave the save intact; answering
+    Yes must zero the validity markers ($30:7FF8..FFE) and resume gameplay."""
+    import ctypes as C
+    from core import RETRO_MEMORY_SAVE_RAM
+
+    rom = build(vanilla, os.path.join(workdir, "mid.smc"), "-ruin -nosaves mid")
+    h = Harness(rom)
+
+    sram = (C.c_ubyte * h.core.lib.retro_get_memory_size(RETRO_MEMORY_SAVE_RAM)).from_address(
+        h.core.lib.retro_get_memory_data(RETRO_MEMORY_SAVE_RAM))
+    def markers():
+        return [sram[0x1ff8 + i] | (sram[0x1ff9 + i] << 8) for i in (0, 2, 4, 6)]
+
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    for _ in range(3):
+        h.press('A', hold=6, wait=30)   # dismiss the intro dialog
+    h.run(60)
+    assert markers() == [0, 0, 0, 0], f"markers valid before any save: {markers()}"
+
+    # Save at the starting room's save point: quits to the title screen.
+    h.set_party_xy(55, 44)
+    h.run(30)
+    h.press('X', hold=6, wait=90)
+    for _ in range(7):
+        h.press('DOWN', hold=6, wait=12)   # menu rows: Item..Config, Save
+    h.press('A', hold=8, wait=60)
+    h.run(600)
+    assert all(m == 0xe41b for m in markers()), f"save not written: {markers()}"
+    assert h.core.read_u16(0x1600 + 0x0b) == 0, "no soft reset after saving"
+
+    # Ride the boot path to file select; previews must not consume the save.
+    for _ in range(30):
+        h.press('START', hold=6, wait=60)
+    h.press('A', hold=8, wait=180)         # into file select (cursor: New Game)
+    h.press('DOWN', hold=6, wait=30)       # onto saved file 1
+    h.press('A', hold=8, wait=180)         # "This data?" prompt
+    assert all(m == 0xe41b for m in markers()), f"selection consumed save: {markers()}"
+
+    # Answering No backs out with the save intact.
+    h.press('DOWN', hold=6, wait=30)       # Yes -> No
+    h.press('A', hold=8, wait=120)
+    assert all(m == 0xe41b for m in markers()), f"No consumed save: {markers()}"
+
+    # Answering Yes consumes the save and resumes gameplay.
+    h.press('DOWN', hold=6, wait=30)       # cursor reset to New Game; back to file 1
+    h.press('A', hold=8, wait=180)
+    h.press('A', hold=8, wait=180)         # Yes
+    h.run(600)
+    assert markers() == [0, 0, 0, 0], f"Yes did not consume save: {markers()}"
+    navigate.wait_for_control(h, timeout=4000)
+    assert h.map_id == 0xda, f"did not resume at the save point: {h.map_id:#x}"
+    return ("save quits to title with a valid file; previews and No leave it "
+            "intact; Yes consumes it and play resumes")
+
+
 # Route-dependent scenarios: need Phase 4 plan-driven navigation to reach
 # the specific dungeon locations. Scaffolded so they run once that lands.
 def scenario_minecart_camera(vanilla, workdir):
@@ -404,6 +467,7 @@ SCENARIOS = [
     scenario_phoenix_two_party_collision,
     scenario_rc_school_reform,
     scenario_lite_save_markers,
+    scenario_mid_save_quit,
 ]
 
 

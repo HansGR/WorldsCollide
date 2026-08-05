@@ -81,7 +81,59 @@ class SaveMenu:
         space = Reserve(0x20013, 0x20015, "ironmog lite battle start hook", asm.NOP())
         space.write(asm.JSR(corrupt_addr, asm.ABS))
 
+    # -nosaves mid: strict roguelike save-and-quit. Saving records slot 1 and
+    # immediately soft-resets to the title screen; loading a file scrambles its
+    # validity markers the moment the loaded data is applied for play. You can
+    # always save and walk away, but once you load, everything until the next
+    # save (which quits) has full consequences -- there is nothing to reset to.
+    def save_and_quit_to_title(self):
+        src = [
+            asm.LDA(0x01, asm.IMM8),    # save slot 1
+            asm.STA(0x021f, asm.ABS),   # set game's file number
+            asm.JSR(0x0eb9, asm.ABS),   # play save sound effect
+            asm.JSR(0x25e8, asm.ABS),   # save game data (ends by writing the markers)
+            0x78,                        # SEI: quit via soft reset into the boot path
+            asm.JMP(0x00ff00, asm.LNG), # reset entry $00:FF00 (starts SEI/CLC/XCE)
+        ]
+        space = Write(Bank.C3, src, "ironmog mid save and quit to title")
+        save_quit_addr = space.start_address
+
+        space = Reserve(0x32eaf, 0x32ebe, "Edit save behavior", asm.NOP())
+        space.write(
+            asm.JMP(save_quit_addr, asm.ABS)
+        )
+
+    def scramble_save_on_load(self):
+        # The load screen's "This data?" prompt (menu state $23, C3/2A2A)
+        # commits a load only on Yes: it copies the chosen file number from
+        # $66 into the game's live file number $021F and exits the menu into
+        # gameplay. Answering No (or B) returns to file select without ever
+        # reaching this code, and file previews/selection only stage data, so
+        # hooking the commit consumes the save exactly when play begins --
+        # backing out of the prompt costs nothing.
+        src = [
+            asm.LDA(0x66, asm.DIR),     # displaced: chosen file number
+            asm.STA(0x021f, asm.ABS),   # displaced: commit as live file number
+            asm.PHP(),
+            asm.A16(),
+            asm.LDA(0x0000, asm.IMM16),
+        ]
+        for marker in self.SRAM_MARKERS:
+            src.append(asm.STA(marker, asm.LNG))
+        src += [
+            asm.PLP(),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C3, src, "ironmog mid scramble save markers on load")
+        scramble_addr = space.start_address
+
+        space = Reserve(0x32a4c, 0x32a50, "ironmog mid load commit hook", asm.NOP())
+        space.write(asm.JSR(scramble_addr, asm.ABS))
+
     def mod(self):
         if args.no_saves == 'lite':
             self.save_and_quit()
             self.corrupt_save_on_battle_start()
+        elif args.no_saves == 'mid':
+            self.save_and_quit_to_title()
+            self.scramble_save_on_load()
