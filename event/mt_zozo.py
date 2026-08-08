@@ -73,6 +73,14 @@ class MtZozo(Event):
                     "HAVE_CYAN",
                     field.Return()
                 ]
+            else:
+                # Without character gating the subroutine is only the animate
+                # queue -- it still MUST end with a Return: this block is
+                # invoked via Call from the Zozo entrance event, and without
+                # one execution falls through into whatever free-space
+                # neighbor follows (hardlock observed on arrival at Zozo
+                # exterior through a randomized door in a '-ruin -no cg' seed)
+                src += [field.Return()]
 
         else:
             src += [
