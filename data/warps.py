@@ -148,6 +148,12 @@ SAVE_POINT_DATA = {
 
 
 AVAILABLE_NPC_BITS = [     # list of available NPC bits for warp points
+    # 0x358 gates only the vanilla South Figaro Lone Wolf (map 0x04c, npc 0x14)
+    # and is never set by vanilla or WC; WarpPoints.claim_lone_wolf_npc_bit()
+    # hides that NPC and no-ops the two scenario-script clears so the bit is
+    # fully ours. Listed FIRST because points pop() from the END: existing
+    # warp points keep their bits and the newest point takes this one.
+    0x358,
     0x337, 0x338, 0x339, 0x33a, 0x33b, 0x33c, 0x33d, 0x33e, 0x33f, 0x357, 0x35a, 0x35b, 0x35c, 0x35d,  # Esper World npcs
     0x62d, 0x62e, 0x630  # Imperial castle NPCs
 ]
@@ -173,6 +179,7 @@ WARP_POINTS = {
     'KT_Doom':          [0x0d9, 26, 48, "Kefka's Tower left", 1],
     'KT_Poltrgeist':    [0x0d9, 28, 46, "Kefka's Tower center", 1],
     'KT_Goddess':       [0x0d9, 30, 48, "Kefka's Tower right", 1],
+    'Mt_Zozo':          [0x0db, 20, 7, "Mount Zozo", 1],
 }
 WARP_WORLD_MAPS = set([wp[0] for wp in WARP_POINTS.values()])
 
@@ -201,7 +208,24 @@ class WarpPoints:
                 "Warp to " + location_name + "?<line><choice> Yes<line><choice> No<end>"]
 
 
+    def claim_lone_wolf_npc_bit(self, maps):
+        # Make npc_bit 0x358 safe for warp-point use. Vanilla uses it only for
+        # the South Figaro Lone Wolf (map 0x04c, npc 0x14, never shown in WC)
+        # and clears it in two Locke-scenario scripts (CA/790C, CA/84C3) that
+        # are unreachable in WC. Hide the NPC behind the always-off bit and
+        # retarget both clears at that same bit so nothing can ever show a
+        # stray Lone Wolf or deactivate the warp point that owns 0x358.
+        lone_wolf = maps.get_npc(0x04c, 0x14)
+        lone_wolf.event_byte = (NPC_OFF_BIT - 0x300) // 8
+        lone_wolf.event_bit = (NPC_OFF_BIT - 0x300) % 8
+
+        for addr in (0xa790c, 0xa84c3):   # D7 58: clear npc bit 0x358
+            space = Reserve(addr + 1, addr + 1, "retarget vanilla clear of npc bit 0x358")
+            space.write(NPC_OFF_BIT - 0x300)
+
     def mod(self, dialogs, maps):
+        self.claim_lone_wolf_npc_bit(maps)
+
         # Set dialogs for warp points.  Use the allocator:  dialogs.allocate_dialog("Text<end>")
         self.warp_to_esper_world_dialog = dialogs.allocate_dialog(
                          "Warp to the Esper world?<line><choice> Yes<line><choice> No<end>")
