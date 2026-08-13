@@ -148,12 +148,7 @@ SAVE_POINT_DATA = {
 
 
 AVAILABLE_NPC_BITS = [     # list of available NPC bits for warp points
-    # 0x376 (Gerad in Nikeah) and 0x37e (Gerad in the SF inn) start CLEAR and
-    # only the Gerad storyline (cut from WC) ever touches them -- verified
-    # against claude_reference/npc_event_bits_w_init.txt and the WC code.
-    # Listed FIRST because points pop() from the END: existing warp points
-    # keep their bits and the newest points take these.
-    0x376, 0x37e,
+    0x376, 0x37e,        # Gerad in Nikeah, Gerad in the SF inn
     0x337, 0x338, 0x339, 0x33a, 0x33b, 0x33c, 0x33d, 0x33e, 0x33f, 0x357, 0x35a, 0x35b, 0x35c, 0x35d,  # Esper World npcs
     0x62d, 0x62e, 0x630  # Imperial castle NPCs
 ]
@@ -247,25 +242,6 @@ class WarpPoints:
 
             if self.verbose:
                 vprint('Modified warp point:', wp.name)
-
-        # Deconflict used npc_bits
-        ### APPARENTLY maps.get_npc_count gets out of whack at some point?  I'm not sure how.
-        ### But this code was deactivating the new warp points in the esper world.
-        ### Will just have to be careful with which NPC bits we use.
-        # other_maps = [i for i in range(0x19f) if i not in WARP_WORLD_MAPS]
-        # for map_id in other_maps:
-        #     count = maps.get_npc_count(map_id)
-        #     #if self.verbose:
-        #     #    print('Getting NPCs on map', hex(map_id),': ', count)
-        #     for npc_id in [i for i in range(count)]:
-        #         npc = maps.get_npc(map_id, npc_id)
-        #         this_npc_bit = npc.event_byte * 8 + npc.event_bit + 0x300
-        #         if this_npc_bit in self.npc_bits_used:
-        #             npc.event_byte = (NPC_OFF_BIT - 0x300) // 8
-        #             npc.event_bit = (NPC_OFF_BIT - 0x300) % 8
-        #             if self.verbose:
-        #                 print('Deconflicted NPC', npc_id, 'on map', hex(map_id))
-
 
 
     def _warp_point_code(self, warp_point, destination):
