@@ -175,8 +175,7 @@ WARP_POINTS = {
     'KT_Poltrgeist':    [0x0d9, 28, 46, "Kefka's Tower center", 1],
     'KT_Goddess':       [0x0d9, 30, 48, "Kefka's Tower right", 1],
     'Mt_Zozo':          [0x0d9, 36, 33, "Mount Zozo", 1],
-    # "Cave to the Sealed Gate" wraps the "Warp to ...?" query box; use the short name
-    'SealedGate':       [0x0db, 7, 47, "Sealed Gate Cave", 0],
+    'SealedGate':       [0x0db, 7, 47, "Sealed Gate Cave", 0],  # "Cave to the Sealed Gate" wraps the "Warp to ...?" query box; use the short name
 }
 WARP_WORLD_MAPS = set([wp[0] for wp in WARP_POINTS.values()])
 
