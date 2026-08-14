@@ -44,7 +44,7 @@ HUB = 'FAKE-HUB'
 # room; ZOZr04 [4606, 4607 | lock zr1: 618] holds the lock; CDA03
 # [482 | pit 3070] is the landing. UMA02 [732, 733 | pits 3001..] serves
 # as a free landing for the control case.
-ROOMS = [HUB, 'ZOZr04', 'PHT01-ruin', 'CDA03', 'UMA02']
+ROOMS = [HUB, 'ZOZr04', 'PHT01-ruin', 'CDA03', 'UMA02', 'ZOZr01', 'DAR14']
 
 
 def expect_raise(pairs, oneways, label):
@@ -85,10 +85,24 @@ def main():
                 'vanilla-matched pair')
 
     # 4. A trap the keyless player can only reach through the lock is
-    #    exempt: whoever falls necessarily holds the key.
+    #    exempt when the lock's key also gets you home: whoever falls
+    #    necessarily holds it.
     expect_pass([[4606, HUB_DOOR], [469, 618], [4607, 482]],
                 [[2065, 3070]],
                 'trap room behind the lock')
+
+    # 5. Mixed keys (the lattice case): the player collects zr1 in
+    #    ZOZr01, passes the zr1 lock to PHT01-ruin, and falls into
+    #    CDA03 -- whose only door needs dt2, whose key (DAR12) is not
+    #    on the map. Reach-key and return-key differ; the empty-keychain
+    #    check alone cannot see this.
+    expect_raise([[4600, HUB_DOOR],      # hub <-> ZOZr01 (zr1 key here)
+                  [4601, 4606],          # ZOZr01 <-> ZOZr04
+                  [469, 618],            # PHT01-ruin behind the zr1 lock
+                  [482, 795]],           # CDA03 <-> DAR14's dt2-locked door
+                 [[2065, 3070],          # PHT01 trap -> CDA03 pit
+                  [2060, 3068]],         # DAR14's dt3 trap -> PHT01 pit
+                 'mixed-key fall (zr1 in, dt2 out)')
 
     print('all keyless-verifier tests passed')
 

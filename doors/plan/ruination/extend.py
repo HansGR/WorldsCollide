@@ -203,11 +203,15 @@ def valid_door_targets(branch, door_exit, exit_class, topo):
     hub_entrance_count = None                      # lazy, for A2 downstream case
 
     # A key-released exit is a lock the player may not have opened yet. It
-    # must never become the membrane between a one-way-reachable region and
-    # the hub: restrict its targets to clusters with no pits and no upstream
-    # one-ways, so nothing can fall in keylessly behind it. (This is the
-    # exit-side mirror of the "Key-released doors are never targeted" rule
-    # below -- the CDA03/zr1 softlock came through this gap.)
+    # must never become the SOLE membrane between a one-way-reachable region
+    # and the hub: the target region must retain at least one originally-free
+    # exit besides the target door, so whoever falls in keylessly still has a
+    # lock-free way home. (This is the exit-side mirror of the "Key-released
+    # doors are never targeted" rule below -- the CDA03/zr1 softlock came
+    # through this gap. Requiring only a spare free exit, not a pit-free
+    # target, keeps common pit-bearing multi-door targets valid; a map where
+    # the spare exit later ends up locked too is caught by the finalize-time
+    # keyless verifier.)
     exit_released = door_exit in w.initially_locked_exits
 
     def get_hub_entrance_count():
@@ -228,8 +232,23 @@ def valid_door_targets(branch, door_exit, exit_class, topo):
         room_doors = _elements(w, c, DOOR, free_only=True)
         if not room_doors:
             continue
-        if exit_released and (_count(w, c, PIT) > 0 or w.upstream(c)):
-            continue
+        if exit_released and c not in topo['hub_and_upstream']:
+            # The spare-exit demand only applies when the region can be
+            # ENTERED keylessly (a pit in it, or one-ways flowing into it):
+            # then consuming the target door must leave a lock-free escape
+            # (all of room_doors are free, so the count is target-door
+            # independent: >= 2 means one remains). Without such an entry
+            # vector the lock is the only way in -- whoever is inside holds
+            # the key -- so a single-door region (e.g. the Opera House) may
+            # sit wholly behind it. Hub-side targets are always exempt:
+            # falling behind the lock lands you home.
+            if _count(w, c, PIT) > 0 or w.upstream(c):
+                region = [c] + w.downstream(c)
+                free_exits = sum(_count(w, x, DOOR, free_only=True)
+                                 + _count(w, x, TRAP, free_only=True)
+                                 for x in region)
+                if free_exits < 2:
+                    continue
 
         if c not in topo['placed']:
             # === A2: unplaced target ===

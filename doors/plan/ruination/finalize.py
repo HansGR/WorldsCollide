@@ -905,52 +905,78 @@ def verify_no_character_gated_softlock(planner, pairs, oneways):
                 f'starting party but not leavable without a recruit')
 
 
-def verify_no_keyless_oneway_softlock(planner, pairs, oneways):
-    """Order-aware one-way check: keys the walk knows are obtainable may not
-    be obtained yet when the player falls. For every randomized one-way whose
-    trap a keyless player (starting party only, nothing collected) can reach,
-    the landing must be able to return to the hub without crossing any lock
-    the starting party cannot open. Vanilla-matched trap/pit pairs
-    (pit == trap + 1000) are exempt: their escapes are vanilla dungeon design
-    (e.g. the Daryl's Tomb switch rooms). Landings that cannot return even
-    with every key are terminal by design and exempt as well."""
-    party = set(planner.config.party)
+
+def verify_no_keyless_oneway_softlock(planner, pairs, oneways,
+                                      state_cap=4096):
+    """Keychain-lattice one-way check: for every keychain a player could
+    actually hold (the starting party plus any ACHIEVABLE subset of
+    collectable keys, in any collection order), and every randomized
+    one-way whose trap is reachable while holding exactly that keychain,
+    the landing must be able to return to the hub with it -- collecting
+    whatever is reachable from the landing along the way.
+
+    This is order-aware: keys the walk knows are obtainable may not be
+    obtained yet when the player falls, and the key that let the player
+    REACH a trap need not be the key its landing requires to get home.
+    Exemptions: vanilla-matched trap/pit pairs (pit == trap + 1000; their
+    escapes are vanilla dungeon design, e.g. the Daryl's Tomb switch
+    rooms) and landings that cannot return even with every key (terminal
+    by design).
+
+    Keychain states are explored by single-key additions with memoized
+    reachability; per one-way, only minimal reaching keychains are tested
+    (escape is monotone in held keys). `state_cap` bounds the exploration;
+    if it is ever exceeded the states explored so far (always including
+    the empty keychain) have still been checked.
+    """
+    party = frozenset(planner.config.party)
     for branch_id, branch in enumerate(planner.branches):
         hub_id = branch.hub_room
         overrides = planner.config.spec_overrides
 
         owner = {}
-        locked_keys = {}                  # element id -> its lock's key tuple
+        lock_of = {}                  # element id -> its lock's key tuple
+        free_keys = {}                # room -> keys granted by visiting
+        parked_keys = []              # (key, room, need) -- key inside a lock
         for rid in sorted(branch.rooms, key=str):
             if rid in overrides:
                 spec = overrides[rid]
                 groups = [spec.get('doors', ()), spec.get('traps', ()),
                           spec.get('pits', ())]
                 lock_groups = {}
+                start_keys = []
             else:
                 data = room_data.get(rid)
                 if not data:
                     continue
                 groups = [data[0], data[1], data[2]]
                 lock_groups = _room_data_locks(rid)
+                start_keys = _room_data_start_keys(rid)
             for group in groups:
                 for e in group:
                     if isinstance(e, int):
                         owner.setdefault(e, rid)
+            if start_keys:
+                free_keys[rid] = list(start_keys)
             for kt, items in lock_groups.items():
+                need = frozenset(kt)
                 for item in items:
                     if isinstance(item, int):
                         owner.setdefault(item, rid)
-                        locked_keys[item] = set(kt)
+                        lock_of[item] = need
+                    elif isinstance(item, str):
+                        parked_keys.append((item, rid, need))
         for i, b2 in enumerate(planner.branches):
             hub_door = room_data['HUB50-ruin'][0][i]
             owner.setdefault(hub_door, b2.hub_room)
 
-        def held(e):
-            kt = locked_keys.get(e)
-            return kt is None or kt <= party
+        def need_of(e):
+            return lock_of.get(e, frozenset())
 
-        fwd, rev, full_rev = {}, {}, {}
+        # (a, b, need, bidirectional) edges; also the full reversed graph
+        # for the terminal-landing exemption.
+        edges = []
+        full_rev = {}
 
         def add(adj, a, b):
             adj.setdefault(a, []).append(b)
@@ -959,33 +985,110 @@ def verify_no_keyless_oneway_softlock(planner, pairs, oneways):
             a, b = owner.get(d1), owner.get(d2)
             if a is None or b is None:
                 continue
+            edges.append((a, b, need_of(d1) | need_of(d2), True))
             add(full_rev, a, b); add(full_rev, b, a)
-            if held(d1) and held(d2):
-                add(fwd, a, b); add(fwd, b, a)
-                add(rev, a, b); add(rev, b, a)
         for d1, d2 in oneways:
             a, b = owner.get(d1), owner.get(d2)
             if a is None or b is None:
                 continue
+            edges.append((a, b, need_of(d1) | need_of(d2), False))
             add(full_rev, b, a)
-            if held(d1) and held(d2):
-                add(fwd, a, b)
-                add(rev, b, a)
-
-        keyless_reach = _bfs_set(fwd, hub_id)
-        keyless_return = _bfs_set(rev, hub_id)
         full_return = _bfs_set(full_rev, hub_id)
 
-        for d1, d2 in oneways:
-            if d2 == d1 + 1000:
-                continue                              # vanilla-matched pair
-            a, b = owner.get(d1), owner.get(d2)
-            if a is None or b is None:
-                continue
-            if (a in keyless_reach and held(d1) and held(d2)
-                    and b in full_return and b not in keyless_return):
-                raise RuinPlanError(
-                    f'keyless one-way softlock on branch {branch_id}: '
-                    f'{d1}->{d2} lands in {b!r}, reachable without any '
-                    f'collectable key but unable to return to the hub '
-                    f'without one')
+        reach_memo = {}
+
+        def reach(keychain):
+            """Rooms reachable from the hub holding exactly `keychain`
+            (no collection en route -- the adversarial fall state)."""
+            got = reach_memo.get(keychain)
+            if got is not None:
+                return got
+            seen = {hub_id}
+            changed = True
+            while changed:
+                changed = False
+                for a, b, need, bidir in edges:
+                    if need and not need <= keychain:
+                        continue
+                    if a in seen and b not in seen:
+                        seen.add(b); changed = True
+                    elif bidir and b in seen and a not in seen:
+                        seen.add(a); changed = True
+            reach_memo[keychain] = seen
+            return seen
+
+        def escape_reaches_hub(start, keychain):
+            """Best-effort escape from `start`: expand and collect keys
+            (free and openable parked ones) to fixpoint."""
+            held = set(keychain)
+            seen = {start}
+            changed = True
+            while changed:
+                changed = False
+                for rid in list(seen):
+                    for k in free_keys.get(rid, ()):
+                        if k not in held:
+                            held.add(k); changed = True
+                for k, rid, need in parked_keys:
+                    if k not in held and rid in seen and need <= held:
+                        held.add(k); changed = True
+                for a, b, need, bidir in edges:
+                    if need and not need <= held:
+                        continue
+                    if a in seen and b not in seen:
+                        seen.add(b); changed = True
+                    elif bidir and b in seen and a not in seen:
+                        seen.add(a); changed = True
+            return hub_id in seen
+
+        checked = [
+            (d1, d2, owner.get(d1), owner.get(d2))
+            for d1, d2 in oneways
+            if d2 != d1 + 1000                       # vanilla-matched exempt
+            and owner.get(d1) is not None and owner.get(d2) is not None
+            and owner[d2] in full_return             # terminal exempt
+        ]
+        if not checked:
+            continue
+
+        # Explore achievable keychains breadth-first (smallest first, so
+        # per-one-way the first reaching keychains are minimal).
+        passed = {i: [] for i in range(len(checked))}
+        frontier = [party]
+        explored = {party}
+        while frontier:
+            if len(explored) > state_cap:
+                # cap exceeded: everything explored so far (always at
+                # least the empty keychain) has been checked; stay silent
+                # (the doors/ package must not import log -- argv-free)
+                break
+            next_frontier = []
+            for S in frontier:
+                rooms = reach(S)
+                for i, (d1, d2, a, b) in enumerate(checked):
+                    if a not in rooms or not need_of(d1) <= S:
+                        continue
+                    if any(p <= S for p in passed[i]):
+                        continue                     # monotone: covered
+                    if not escape_reaches_hub(b, S):
+                        raise RuinPlanError(
+                            f'keyless one-way softlock on branch '
+                            f'{branch_id}: {d1}->{d2} lands in {b!r}, '
+                            f'reachable holding {sorted(S - party) or "no keys"} '
+                            f'but unable to return to the hub')
+                    passed[i].append(S)
+                # expand: collect any single reachable key
+                for rid in rooms:
+                    for k in free_keys.get(rid, ()):
+                        if k not in S:
+                            S2 = S | {k}
+                            if S2 not in explored:
+                                explored.add(S2)
+                                next_frontier.append(S2)
+                for k, rid, need in parked_keys:
+                    if k not in S and rid in rooms and need <= S:
+                        S2 = S | {k}
+                        if S2 not in explored:
+                            explored.add(S2)
+                            next_frontier.append(S2)
+            frontier = next_frontier
