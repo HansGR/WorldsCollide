@@ -45,6 +45,7 @@ def classify(err):
     msg = str(err)
     for tag, label in (
             ('character-gated softlock', 'softlock-verifier'),
+            ('keyless one-way softlock', 'softlock-keyless-oneway'),
             ('No reserve areas', 'stuck-no-reserve'),
             ('No branches have remaining checks', 'no-checks-left'),
             ('finalize step 1', 'finalize-1-pit-feed'),

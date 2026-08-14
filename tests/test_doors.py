@@ -26,6 +26,7 @@ SCRIPTS = [
     ('test_ruin_submaps.py', []),
     ('test_ruin_growth.py', ['10']),
     ('test_ruin_finalize.py', ['10']),
+    ('test_keyless_verifier.py', []),
 ]
 
 

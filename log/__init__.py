@@ -37,6 +37,9 @@ hash = ', '.join([entry.name for entry in args.sprite_hash])
 import time
 import version
 log_msg =  f"Version   {version.__version__}\n"
+_commit = version.git_commit()
+if _commit:
+    log_msg += f"Commit    {_commit}\n"
 log_msg += f"Generated {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
 log_msg += f"Input     {os.path.basename(args.input_file)}\n"
 log_msg += f"Output    {os.path.basename(args.output_file)}\n"

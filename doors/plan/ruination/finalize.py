@@ -6,9 +6,9 @@ closer turns it into a finished branch (terminus merged, warps wired,
 every trap fed, no unmatched exits), pulling rescue rooms from the
 reserve when a step cannot be satisfied; finalize_plan then assembles
 the full map (all branches + the -maze iso and -rkt sub-map splices) and
-runs the character-gated softlock verifier (a BFS over the assembled
-map: everything enterable with the starting party must be leavable with
-it).
+runs the softlock verifiers (BFS over the assembled map: everything
+enterable with the starting party must be leavable with it, and no
+randomized one-way may strand a player who has not collected keys yet).
 
 "Hub + upstream + downstream" is the branch trichotomy; regions are
 cluster sets. Dead-end bookkeeping is trimmed to singleton clusters
@@ -774,6 +774,7 @@ def finalize_plan(planner):
         oneways.append([traps_to_kt[i], pits_into_kt[i]])
 
     verify_no_character_gated_softlock(planner, pairs, oneways)
+    verify_no_keyless_oneway_softlock(planner, pairs, oneways)
     return [pairs, oneways]
 
 
@@ -902,3 +903,89 @@ def verify_no_character_gated_softlock(planner, pairs, oneways):
                 f'character-gated softlock on branch {branch_id}: '
                 f'{sorted(str(s) for s in stranded)} enterable with the '
                 f'starting party but not leavable without a recruit')
+
+
+def verify_no_keyless_oneway_softlock(planner, pairs, oneways):
+    """Order-aware one-way check: keys the walk knows are obtainable may not
+    be obtained yet when the player falls. For every randomized one-way whose
+    trap a keyless player (starting party only, nothing collected) can reach,
+    the landing must be able to return to the hub without crossing any lock
+    the starting party cannot open. Vanilla-matched trap/pit pairs
+    (pit == trap + 1000) are exempt: their escapes are vanilla dungeon design
+    (e.g. the Daryl's Tomb switch rooms). Landings that cannot return even
+    with every key are terminal by design and exempt as well."""
+    party = set(planner.config.party)
+    for branch_id, branch in enumerate(planner.branches):
+        hub_id = branch.hub_room
+        overrides = planner.config.spec_overrides
+
+        owner = {}
+        locked_keys = {}                  # element id -> its lock's key tuple
+        for rid in sorted(branch.rooms, key=str):
+            if rid in overrides:
+                spec = overrides[rid]
+                groups = [spec.get('doors', ()), spec.get('traps', ()),
+                          spec.get('pits', ())]
+                lock_groups = {}
+            else:
+                data = room_data.get(rid)
+                if not data:
+                    continue
+                groups = [data[0], data[1], data[2]]
+                lock_groups = _room_data_locks(rid)
+            for group in groups:
+                for e in group:
+                    if isinstance(e, int):
+                        owner.setdefault(e, rid)
+            for kt, items in lock_groups.items():
+                for item in items:
+                    if isinstance(item, int):
+                        owner.setdefault(item, rid)
+                        locked_keys[item] = set(kt)
+        for i, b2 in enumerate(planner.branches):
+            hub_door = room_data['HUB50-ruin'][0][i]
+            owner.setdefault(hub_door, b2.hub_room)
+
+        def held(e):
+            kt = locked_keys.get(e)
+            return kt is None or kt <= party
+
+        fwd, rev, full_rev = {}, {}, {}
+
+        def add(adj, a, b):
+            adj.setdefault(a, []).append(b)
+
+        for d1, d2 in pairs:
+            a, b = owner.get(d1), owner.get(d2)
+            if a is None or b is None:
+                continue
+            add(full_rev, a, b); add(full_rev, b, a)
+            if held(d1) and held(d2):
+                add(fwd, a, b); add(fwd, b, a)
+                add(rev, a, b); add(rev, b, a)
+        for d1, d2 in oneways:
+            a, b = owner.get(d1), owner.get(d2)
+            if a is None or b is None:
+                continue
+            add(full_rev, b, a)
+            if held(d1) and held(d2):
+                add(fwd, a, b)
+                add(rev, b, a)
+
+        keyless_reach = _bfs_set(fwd, hub_id)
+        keyless_return = _bfs_set(rev, hub_id)
+        full_return = _bfs_set(full_rev, hub_id)
+
+        for d1, d2 in oneways:
+            if d2 == d1 + 1000:
+                continue                              # vanilla-matched pair
+            a, b = owner.get(d1), owner.get(d2)
+            if a is None or b is None:
+                continue
+            if (a in keyless_reach and held(d1) and held(d2)
+                    and b in full_return and b not in keyless_return):
+                raise RuinPlanError(
+                    f'keyless one-way softlock on branch {branch_id}: '
+                    f'{d1}->{d2} lands in {b!r}, reachable without any '
+                    f'collectable key but unable to return to the hub '
+                    f'without one')

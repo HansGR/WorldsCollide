@@ -202,6 +202,14 @@ def valid_door_targets(branch, door_exit, exit_class, topo):
     exit_upstream = None                           # lazy, for rule C
     hub_entrance_count = None                      # lazy, for A2 downstream case
 
+    # A key-released exit is a lock the player may not have opened yet. It
+    # must never become the membrane between a one-way-reachable region and
+    # the hub: restrict its targets to clusters with no pits and no upstream
+    # one-ways, so nothing can fall in keylessly behind it. (This is the
+    # exit-side mirror of the "Key-released doors are never targeted" rule
+    # below -- the CDA03/zr1 softlock came through this gap.)
+    exit_released = door_exit in w.initially_locked_exits
+
     def get_hub_entrance_count():
         nonlocal hub_entrance_count
         if hub_entrance_count is None:
@@ -219,6 +227,8 @@ def valid_door_targets(branch, door_exit, exit_class, topo):
         # before the key.
         room_doors = _elements(w, c, DOOR, free_only=True)
         if not room_doors:
+            continue
+        if exit_released and (_count(w, c, PIT) > 0 or w.upstream(c)):
             continue
 
         if c not in topo['placed']:

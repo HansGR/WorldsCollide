@@ -2,7 +2,7 @@
 
 Builds a pinned matrix of mode x seed configurations and compares the
 SHA256 of each output ROM and spoiler log (normalized: the Generated
-timestamp line dropped) against tools/golden_manifest.json. Builds are
+timestamp and Commit id lines dropped) against tools/golden_manifest.json. Builds are
 deterministic and machine-independent by design, so the manifest is
 committed; any refactor of planning or realization must leave it
 unchanged unless the change is deliberate (then re-record with --update
@@ -57,7 +57,8 @@ def build_and_hash(rom, name, flags, workdir):
         return None, (proc.stdout + proc.stderr)[-800:]
     rom_hash = hashlib.sha256(open(out, 'rb').read()).hexdigest()
     spoiler = b''.join(l for l in open(log, 'rb').read().splitlines(True)
-                       if not l.startswith(b'Generated'))
+                       if not l.startswith(b'Generated')
+                       and not l.startswith(b'Commit'))
     log_hash = hashlib.sha256(spoiler).hexdigest()
     return {'rom': rom_hash, 'spoiler': log_hash}, None
 
