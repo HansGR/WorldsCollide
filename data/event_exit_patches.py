@@ -180,12 +180,13 @@ exit_event_patch = {
     #2015: lambda src, src_end: [src[6:], src_end],
     #2016: lambda src, src_end: [src[6:], src_end],
 
-    # Switching door events in Owzer's Mansion: turn off the door timer before transitioning
+    # Switching door events in Owzer's Mansion: turn off the door timer before transitioning,
+    # and lift OWZr04's b-dash suppression (0xd1, DISABLE_B_DASH) on the way out.
     # Call subroutine $CB/2CAA (resets all timers).
     # # May also be necessary to clear event bits $1FC, $1FD, $1FE: [0xd3, 0xfc, 0xd3, 0xfd, 0xd3, 0xfe], but
     # # supposedly these are cleared on map load.
-    2017: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01] + src, src_end],
-    2018: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01] + src, src_end],
+    2017: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01, 0xd1, event_bit.DISABLE_B_DASH] + src, src_end],
+    2018: lambda src, src_end: [[0xb2, 0xaa, 0x2c, 0x01, 0xd1, event_bit.DISABLE_B_DASH] + src, src_end],
 
     # Zone eater: fade back in music after exit animation
     2041: lambda src, src_end: [src[:-1] + [0xf3, 0x20] + src[-1:], src_end],
@@ -207,9 +208,10 @@ from event.sealed_gate import SET_PARTY_LAYER0, SET_PARTY_LAYER2
 exit_door_patch = {
     # For use with maps.create_exit_event() and maps.shared_map_exit_event()
 
-    # Owzer's Mansion doors
-    586: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # South door.
-    587: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
+    # Owzer's Mansion doors (leaving the switching door room OWZr04):
+    # reset the door timers and lift the room's b-dash suppression
+    586: [field.Call(0xb2caa), field.ClearEventBit(event_bit.DISABLE_B_DASH)],  # South door.
+    587: [field.Call(0xb2caa), field.ClearEventBit(event_bit.DISABLE_B_DASH)],  # North door.
 
     # Cave to the sealed gate: force reset timers when leaving lava room
     1075: [field.Call(0xb2caa)],  # [0xb2, 0xaa, 0x2c, 0x01],  # North door.
@@ -508,6 +510,12 @@ room_require_event_bit = {
     # n, y0x507, n, y0x506, n0x542 (global in albrook.py), n, n, n
     'ALBb01': {0x507: False, 0x506: False},  # World of Balance   # bits shared with phantom train.
     'ALBr01': {0x507: False, 0x506: False},  # World of Ruin
+
+    # Owzer's Basement Switching Door Room: suppress b-dash inside (door
+    # timer glitch). The exits lift it: exit_door_patch on 586/587 and the
+    # exit_event_patch on trap 2017/2018. Setting the bit is a no-op unless
+    # -move bd/ssbd built the speed hook that reads it.
+    'OWZr04': {event_bit.DISABLE_B_DASH: True},
 
 }
 

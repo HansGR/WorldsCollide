@@ -38,16 +38,26 @@ class Movement:
         FIELD_RAM_SPEED = 0x0875
 
         # moving at dash speed in Owzer's door room, or carrying it out via the door glitch will cause graphical artifacting randomly.
-        # Simply disabling B button in Owzers to keep it consistent in WC. Will not worry about the door glitch
-        owzers_src = [
-            "CHECK_OWZERS",
-            asm.A16(),                                  # set register A bit size to 16
-            asm.LDA(CURRENT_MAP_BYTE, asm.ABS),         # if current map owzers mansion, disable the b-button
-            asm.CMP(OWZERS_MANSION_ID, asm.IMM16),
-            asm.BEQ("STORE_DEFAULT"),
-            asm.LDA(0x0000, asm.IMM16),                 # clear A, otherwise will cause issues in albrook/imperial base
-            asm.A8(),
-        ]
+        # When Owzer's Basement doors are randomized, the room-scoped
+        # DISABLE_B_DASH machinery takes over (room 'OWZr04' sets the bit on
+        # entry via require_event_bit; its exits clear it), so only the
+        # switching door room loses dash instead of the whole basement map.
+        # Otherwise keep the legacy whole-map disable.
+        from doors.plan.modes import doors_touch
+        owzer_room_scoped = (doors_touch(args, 'OwzerBasement')
+                             or bool(getattr(args, 'ruination_mode', None)))
+        if owzer_room_scoped:
+            owzers_src = []
+        else:
+            owzers_src = [
+                "CHECK_OWZERS",
+                asm.A16(),                              # set register A bit size to 16
+                asm.LDA(CURRENT_MAP_BYTE, asm.ABS),     # if current map owzers mansion, disable the b-button
+                asm.CMP(OWZERS_MANSION_ID, asm.IMM16),
+                asm.BEQ("STORE_DEFAULT"),
+                asm.LDA(0x0000, asm.IMM16),             # clear A, otherwise will cause issues in albrook/imperial base
+                asm.A8(),
+            ]
 
         # events that break at dash speed (e.g. the Imperial Camp Kefka
         # chase) set DISABLE_B_DASH for their duration; while it is set,
