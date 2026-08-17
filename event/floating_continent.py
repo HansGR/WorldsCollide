@@ -499,6 +499,19 @@ class FloatingContinent(Event):
             field.ShowEntity(0x1f),
             field.ShowEntity(0x20),
             field.ShowEntity(0x21),
+            # Recreated entities lose the pass-through the vanilla entrance
+            # event granted (CA/F30D: opcode 78 for $1D-$21). Without it, the
+            # scene's thrown-light moves collide with the assembled cast and
+            # stall forever, wedging the WaitForEntityAct($21)/($1F) after
+            # Kefka throws the sparkles. Hit in practice when the map was
+            # re-entered fresh post-Atma (save-room tube round trip): a
+            # battle return respawns the lights with pass-through intact,
+            # but this path deletes and recreates them.
+            field.DisableEntityCollision(0x1d),
+            field.DisableEntityCollision(0x1e),
+            field.DisableEntityCollision(0x1f),
+            field.DisableEntityCollision(0x20),
+            field.DisableEntityCollision(0x21),
             field.RefreshEntities(),
 
             field.HoldScreen(),
