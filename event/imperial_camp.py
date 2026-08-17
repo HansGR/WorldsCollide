@@ -17,6 +17,12 @@ class ImperialCamp(Event):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def init_event_bits(self, space):
+        from data.movement import B_DASH, SPRINT_SHOES_B_DASH
+        if self.args.movement in (B_DASH, SPRINT_SHOES_B_DASH):
+            # defensive: never let a stale dash-disable outlive a run
+            space.write(
+                field.ClearEventBit(event_bit.DISABLE_B_DASH),
+            )
         space.write(
             field.SetEventBit(event_bit.GENERAL_LEO_IMPERIAL_CAMP),
             field.SetEventBit(npc_bit.CHEST_IMPERIAL_CAMP),
@@ -195,6 +201,7 @@ class ImperialCamp(Event):
                 # NOTE: add this check so can explore imperial camp after finished event
                 field.ReturnIfEventBitSet(event_bit.CHASING_KEFKA1_IMPERIAL_CAMP),
             ]
+        src += self.disable_b_dash_src()
         src += [
             field.SetEventBit(npc_bit.KEFKA_IMPERIAL_CAMP),
             field.CreateEntity(self.kefka_npc_id),
@@ -285,6 +292,27 @@ class ImperialCamp(Event):
         space = Reserve(0xb15df, 0xb15e1, "imperial camp sabin dialog to cyan before third battle", field.NOP())
         space = Reserve(0xb15f0, 0xb15f2, "imperial camp cyan dialog to sabin before third battle", field.NOP())
 
+    def disable_b_dash_src(self):
+        # The Kefka chase relies on the party moving at normal event speeds;
+        # dashing outpaces the chase triggers and can softlock. Cap movement
+        # at sprint for the duration of the camp event (the speed hook in
+        # settings/movement.py honors DISABLE_B_DASH); restored when the
+        # reward is given (restore_b_dash_src).
+        from data.movement import B_DASH, SPRINT_SHOES_B_DASH
+        if self.args.movement not in (B_DASH, SPRINT_SHOES_B_DASH):
+            return []
+        return [
+            field.SetEventBit(event_bit.DISABLE_B_DASH),
+        ]
+
+    def restore_b_dash_src(self):
+        from data.movement import B_DASH, SPRINT_SHOES_B_DASH
+        if self.args.movement not in (B_DASH, SPRINT_SHOES_B_DASH):
+            return []
+        return [
+            field.ClearEventBit(event_bit.DISABLE_B_DASH),
+        ]
+
     def restore_y_party_switch_src(self):
         # Re-enable y-party switching (if it was on before the camp event) once
         # the event is complete and the reward is given.  It was disabled when
@@ -308,6 +336,7 @@ class ImperialCamp(Event):
             field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
         ]
+        src += self.restore_b_dash_src()
         src += self.restore_y_party_switch_src()
         src += [
             field.RecruitAndSelectParty(character),
@@ -328,6 +357,7 @@ class ImperialCamp(Event):
             field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
         ]
+        src += self.restore_b_dash_src()
         src += self.restore_y_party_switch_src()
         src += [
             field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
@@ -349,6 +379,7 @@ class ImperialCamp(Event):
             field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
             field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
         ]
+        src += self.restore_b_dash_src()
         src += self.restore_y_party_switch_src()
         src += [
             field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),

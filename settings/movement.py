@@ -49,6 +49,18 @@ class Movement:
             asm.A8(),
         ]
 
+        # events that break at dash speed (e.g. the Imperial Camp Kefka
+        # chase) set DISABLE_B_DASH for their duration; while it is set,
+        # dash falls back to the default sprint speed
+        import data.event_bit as event_bit
+        dash_bit = event_bit.DISABLE_B_DASH
+        dash_disable_src = [
+            "CHECK_DASH_DISABLED",
+            asm.LDA(0x1e80 + event_bit.byte(dash_bit), asm.ABS),
+            asm.AND(1 << event_bit.bit(dash_bit), asm.IMM8),
+            asm.BNE("STORE_DEFAULT"),
+        ]
+
         src = [
             "B_BUTTON_CHECK",
             asm.LDA(CONTROLLER1_BYTE2, asm.ABS),
@@ -64,6 +76,7 @@ class Movement:
             ]
         elif self.movement == B_DASH:
             src += owzers_src
+            src += dash_disable_src
             src += [
                 "ON_B_BUTTON",
                 asm.LDA(MovementSpeed.DASH, asm.IMM8),
@@ -72,6 +85,7 @@ class Movement:
 
         elif self.movement == SPRINT_SHOES_B_DASH:
             src += owzers_src
+            src += dash_disable_src
             src += [
                 "ON_B_BUTTON",
                 asm.LDA(SPRINT_SHOES_BYTE, asm.ABS),    # If sprint shoes equipped, store secondary movement speed

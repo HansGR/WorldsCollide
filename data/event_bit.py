@@ -258,6 +258,7 @@ ANCIENT_CASTLE_WARP_OPTION = 0x2c2
 OBJECTIVES_SILENT = 0x2c3 # custom, -oss: while set, completed objectives skip their message box (set/cleared transiently, never saved)
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
 SAVED_Y_PARTY_SWITCHING = 0x0bb
+DISABLE_B_DASH = 0x0c1 # custom, vanilla-unused: while set, the -move bd/ssbd speed hook caps at sprint (events that break at dash speed set it for their duration)
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
 
 CAN_ENTER_GALLERY = 0x243   # Able to climb stairs to enter Owzer's gallery.
