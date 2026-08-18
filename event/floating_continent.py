@@ -961,7 +961,11 @@ class FloatingContinent(Event):
 
         # Save Room (Tube12) -> X: the vanilla save-exit, but the FC-side LoadMap,
         # landing position and tube graphics are X's instead of Tube11's.  The
-        # LoadMap/position bytes match vanilla flags exactly (6A .. / 31 04 D5 ..).
+        # LoadMap/position bytes match vanilla (6A .. C0 / 31 04 D5 ..): flags
+        # $C0 = run the entrance event + no auto fade-in.  The entrance event
+        # (CA/F30A) must run on this reload - it loads sprite palette 7 with the
+        # statues' palette and re-applies the opened maze walls from the lock
+        # bits; skipping it leaves the statues discolored and the walls shut.
         # delete_lights_function mirrors the vanilla save-point-hole return (see
         # save_point_hole_mod) so the statue lights don't reappear on this reload.
         def save_to_x(x):
@@ -971,7 +975,7 @@ class FloatingContinent(Event):
             end_y = (xy - 1) if x == 11 else (xy + 2)
             return (
                 [save_exit_head]
-                + [0x6A, 0x8A, 0x25, xx, end_y & 0xff, 0x00]             # LoadMap 0x18A, camera @ (x, end_y)
+                + [0x6A, 0x8A, 0x25, xx, end_y & 0xff, 0xC0]             # LoadMap 0x18A, camera @ (x, end_y)
                 + [0x31, 0x04, 0xD5, xx, (xy + 2) & 0xff, 0xFF]          # set party pos (x, y+2)
                 + [field.Call(self.delete_lights_function)]              # delete statue lights
                 + [save_exit_restore]
