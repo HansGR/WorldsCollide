@@ -499,19 +499,12 @@ class FloatingContinent(Event):
             field.ShowEntity(0x1f),
             field.ShowEntity(0x20),
             field.ShowEntity(0x21),
-            # Recreated entities lose the pass-through the vanilla entrance
-            # event granted (CA/F30D: opcode 78 for $1D-$21). Without it, the
-            # scene's thrown-light moves collide with the assembled cast and
-            # stall forever, wedging the WaitForEntityAct($21)/($1F) after
-            # Kefka throws the sparkles. Hit in practice when the map was
-            # re-entered fresh post-Atma (save-room tube round trip): a
-            # battle return respawns the lights with pass-through intact,
-            # but this path deletes and recreates them.
-            field.DisableEntityCollision(0x1d),
-            field.DisableEntityCollision(0x1e),
-            field.DisableEntityCollision(0x1f),
-            field.DisableEntityCollision(0x20),
-            field.DisableEntityCollision(0x21),
+            # The lights' pass-through comes from the entrance event (CA/F30D:
+            # opcode 78 for $1D-$21), which every arrival path runs - including
+            # the save-room tube return, whose LoadMap flags must stay $C0 (see
+            # save_to_x).  Without that grant the scene's thrown-light moves
+            # collide with the assembled cast and wedge the
+            # WaitForEntityAct($21)/($1F) after Kefka throws the sparkles.
             field.RefreshEntities(),
 
             field.HoldScreen(),
@@ -963,9 +956,11 @@ class FloatingContinent(Event):
         # landing position and tube graphics are X's instead of Tube11's.  The
         # LoadMap/position bytes match vanilla (6A .. C0 / 31 04 D5 ..): flags
         # $C0 = run the entrance event + no auto fade-in.  The entrance event
-        # (CA/F30A) must run on this reload - it loads sprite palette 7 with the
-        # statues' palette and re-applies the opened maze walls from the lock
-        # bits; skipping it leaves the statues discolored and the walls shut.
+        # (CA/F30A) must run on this reload - it loads sprite palette 7 with
+        # the statues' palette, grants the statue lights the pass-through the
+        # statue scene relies on, and re-applies the opened maze walls from
+        # the lock bits.  Skipping it (flags $00) left the statues discolored
+        # and froze the statue scene after Kefka throws the sparkles.
         # delete_lights_function mirrors the vanilla save-point-hole return (see
         # save_point_hole_mod) so the statue lights don't reappear on this reload.
         def save_to_x(x):
