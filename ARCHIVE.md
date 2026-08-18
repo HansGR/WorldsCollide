@@ -11,6 +11,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 ### FF6 Internals (vanilla reference)
 - [Field Object Data Structure (41 bytes per object)](#field-object-data-structure-41-bytes-per-object-0867-1068)
 - [FF6 Text Encoding Types](#ff6-text-encoding-types)
+- [Battle MP Zeroing & MP-Drain Criticals (2026-08)](#battle-mp-zeroing--mp-drain-criticals-2026-08)
 
 ### Ruination Mode — Architecture
 - [Ruination Mode (`-ruin`) — Detailed Architecture](#ruination-mode--ruin-detailed-architecture)
@@ -19,6 +20,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Mapping Algorithm Analysis](#ruination-mode---mapping-algorithm-analysis)
 - [Key/Lock Softlock Analysis & Fix (2026-02-10)](#keylock-softlock-analysis--fix-2026-02-10)
 - [finalize_map Debug Patterns (2026-02-09)](#ruination-mode---finalize_map-debug-patterns-2026-02-09)
+- [Keyless One-Way Softlock — Walk Rule + Keychain-Lattice Verifier (2026-08)](#keyless-one-way-softlock--walk-rule--keychain-lattice-verifier-2026-08)
 - [Branch Area Detection for Narshe Clues (2026-04)](#branch-area-detection-for-narshe-clues-2026-04)
 
 ### Ruination Mode — Party Formation
@@ -42,6 +44,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 ### Feature Flags (deep dives)
 - [Limited Inventory Shops (`-sli` flag)](#limited-inventory-shops--sli-flag)
 - [No Free Heals (`-nfh` / `--no-free-heals`)](#no-free-heals--nfh----no-free-heals)
+- [DISABLE_B_DASH Event Bit (2026-08)](#disable_b_dash-event-bit-2026-08)
 
 ### Custom Opcodes
 - [Custom Opcodes Reference](#custom-opcodes-reference) (consolidated table)
@@ -50,9 +53,14 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 ### Bug Post-Mortems
 - [SelectParties Inventory Corruption Bug & Fix (2026-04)](#selectparties-inventory-corruption-bug--fix-2026-04)
 - [Persistent Raft Graphic After Re-riding the Magitek Minecart (2026-06)](#persistent-raft-graphic-after-re-riding-the-magitek-minecart-2026-06)
+- [Floating Continent Save-Room Return — LoadMap Entrance-Event Flag (2026-08)](#floating-continent-save-room-return--loadmap-entrance-event-flag-2026-08)
+- [Mt Zozo Arrival Hardlock (2026-08)](#mt-zozo-arrival-hardlock-2026-08-quick-post-mortem)
 
 ### Conventions
 - [Debug Output Routing (`-debug` vs `-debug-verbose`) (2026-04)](#debug-output-routing--debug-vs--debug-verbose-2026-04)
+
+### Testing & Harness
+- [Headless Playtest Harness Patterns (2026-08)](#headless-playtest-harness-patterns-2026-08) (incl. the s9xsnp savestate format — inside the FC post-mortem above)
 
 ### Lookups (see CLAUDE.md "How to Find X" cheat sheet first)
 - [Finding NPCs in Reference Data — Detailed Procedure](#finding-npcs-in-reference-data---detailed-procedure)
@@ -1591,3 +1599,224 @@ detail I'll want when touching this code again.
 - Room ids/names are display-only in non-ruin spoilers, but -ruin
   spoiler paths print room ids and `-dv` prints planner diagnostics —
   registry/naming changes need only -ruin re-records, never ROM changes.
+
+---
+
+## Keyless One-Way Softlock — Walk Rule + Keychain-Lattice Verifier (2026-08)
+
+First mapping softlock in months (preset `Ruin_C13`): a trap chain `pit 3068
+(PHT01-ruin) -> exit 469<->1079 (HUB52-ruin) -> trap 2065 -> pit 3070 (CDA03)`
+landed the player in CDA03, whose only door (482<->618, ZOZr04) sat behind the
+`zr1` lock — no key, no way out. The old "initially locked exits can't serve as
+entrances" rule (2026-02, above) missed it because the *landing region's* free
+egress had been consumed by the mapping order.
+
+Two complementary fixes (both in `doors/plan/ruination/`):
+
+1. **Walk-side rule** (`extend.py` `valid_door_targets`): when mapping a
+   key-released exit (`door_exit in w.initially_locked_exits`) into a cluster
+   outside hub-and-upstream, if the region (cluster + downstream) contains a
+   pit or has upstream, require **>= 2 free (keyless) door/trap exits** in the
+   region. Deliberately narrow after two refinement rounds with Hans: a
+   single-door, pit-free room (e.g. the Opera House) may still sit behind a
+   lock — there's no other way in, so no softlock.
+2. **Endgame verifier** (`finalize.py` `verify_no_keyless_oneway_softlock`):
+   explores the lattice of achievable keychains by single-key expansion with a
+   memoized reach BFS; for every randomized one-way (vanilla-matched
+   `d2 == d1+1000` pairs and terminal landings exempt) requires the landing to
+   escape to the hub — collecting keys en route — under every achievable
+   keychain. 4096-state cap. Measured: 1.7ms mean / 14.7ms max (default),
+   17.8ms mean / 285.7ms max (14char/27esper) — Hans: worth "a few wall-clock
+   seconds ... for the player". Runs after `verify_no_character_gated_softlock`
+   in assemble. NOTE: `doors/` is argv-free — no `log.verbose` import there
+   (importing `log` parses argv); the cap falls back silently.
+
+Tests: `tests/doors/test_keyless_verifier.py` — 5 cases built from the real
+incident rooms (PHT01-ruin trap 2065 -> CDA03 pit 3070; ZOZr04 `zr1:[618]`;
+ZOZr01 grants zr1; DAR14; UMA02 free-landing control). Per Hans: do NOT use
+DAR13's 2059/3060 in tests — forced exits that can never be remapped.
+
+Related: the spoiler header now logs `Commit <shorthash>[+]` ("+" = dirty
+checkout) via `version.git_commit()` — hub deployments drift from branch tip,
+and seed+flags only reproduce a map on the same code version. The golden
+hasher strips the `Commit` and `Generated` lines.
+
+---
+
+## Floating Continent Save-Room Return — LoadMap Entrance-Event Flag (2026-08)
+
+**Symptoms** (ruination, fresh post-Atma re-entry to map `0x18A` via the
+save-room tube): statue scene froze after Kefka throws the sparkles, and the
+Three Statues showed a wrong palette. Battle returns to the same spot were
+fine.
+
+**Root cause — one byte.** `save_to_x` (tube-maze Save Room -> FC return)
+rebuilt the vanilla save-exit LoadMap from raw bytes with flags `$00`; vanilla
+uses **`$C0`** = run entrance event (bit `$80`) + no auto fade-in (bit `$40`).
+Its comment claimed the bytes "match vanilla flags exactly" — they didn't.
+Skipping the entrance event (CA/F30A) on that reload lost everything it does:
+
+- `60 0F 10` — load ROM palette $10 into CGRAM slot $0F = **sprite palette 7**,
+  the statues' palette (the palette swap);
+- `78` pass-through for the light NPCs $1D–$21 (the scene freeze: the
+  thrown-light moves collide with the cast and wedge
+  `WaitForEntityAct($21)/($1F)`);
+- the arrangement subroutines that re-apply opened maze walls from the lock
+  bits.
+
+Battle returns never showed it because **entrance events replay on battle
+return** — that's what the `$1B6` check inside them is for (skip only the
+ambient/animation setup, keep palette + pass-through + tiles).
+
+**Workaround falsified and reverted.** An earlier fix added five
+`DisableEntityCollision($1D..$21)` in `statues_scene_mod` after the scene's
+CreateEntity block. Once the flags fix landed, a neutralization A/B (swap the
+`78 xx` ops for inert `41 xx` in the built ROM) showed the scene completes on
+both paths without it — the entrance-event grant survives the
+delete-lights/recreate cycle. Full 2x2: flags $00 without workaround = FROZEN;
+either fix alone = OK. The workaround was compensation, not an independent
+defect, so it was removed and the real dependency documented at both sites.
+*Lesson: when a workaround and a suspected root-cause fix coexist, falsify the
+workaround before keeping it "as belt-and-braces."*
+
+**Diagnostic method — offline savestate diffing** (standalone-Snes9x `.00N`
+files, s9xsnp format): gzip wrapper; header line `#!s9xsnp:VVVV\n`; then
+`TAG:NNNNNN:payload` sections — `RAM` = 128KB WRAM, `VRA` = 64KB VRAM, `PPU` =
+2652 bytes with **CGDATA (512B CGRAM) at payload offset 0x40** (sum of the
+SnapPPU fields before it), `SRA` = SRAM. Our libretro core (snes9x 1.54.1)
+serializes v0009; standalone Snes9x 1.60+ writes v0011 — can't live-load those,
+so diff the sections offline. WRAM/event-bit diffs found `$1B6`; the frozen
+event PC (WRAM `$E5-$E7`) pinpointed the wedge; the CGRAM diff isolated sprite
+palette 7 (words 241–255) and killed two wrong theories (ambient queues,
+arrangement subs — all decoded arrangement subs are maze-region tile edits,
+none near the statues). FF6 keeps a CGRAM shadow in WRAM: sprite palette 7 =
+**$7E73E0** (32 bytes) — a clean harness assertion point.
+
+Commits: `e41603d` (workaround, superseded), `7ab34a5` (flags fix),
+`bc8abe2` (workaround revert). The Top 10 "LoadMap Must Opt Into Entrance
+Events" entry in CLAUDE.md is this bug's distilled rule.
+
+---
+
+## Battle MP Zeroing & MP-Drain Criticals (2026-08)
+
+Why Illumina/Ragnarok auto-crits "require the Magic command" in vanilla — and
+how WC now decouples that (`battle/keep_battle_mp.py`, unconditional).
+
+**The vanilla mechanism is indirect — three cooperating pieces:**
+
+1. **MP-crit** (C2/3F22, weapon special effect $07: Illumina, Ragnarok, Rune
+   Edge, Punisher; dispatched per strike via the C2/42E1 table): cost =
+   12 + rand(0..7); if attacker battle MP (`$3C08,Y`) covers it, deduct and
+   force the critical. **No command check anywhere in it.** Only other gates:
+   targets exist, and the no-critical bit (`$B2` bit 1 — set by Offering).
+2. **Battle-menu setup** (C2/532C, per character at battle start): after
+   building the 4 command slots, `LSR $F8` — bit 0 was set by C2/5445 iff the
+   character has **Lore**, or **Magic/X-Magic with >= 1 spell known or an esper
+   equipped** (the Magic/X-Magic menu function C2/5429 tests `$F6` = spell
+   count, `$F7` = equipped esper, $FF = none; both set by C2/568D immediately
+   before, which also stores the count to `$3CF8,X`; Gogo's party-mirrored
+   menu counts into $F6 too; Umaro/guests always $F6=0/$F7=$FF). If the flag
+   is clear: **STZ `$3C08,X` and `$3C30,X`** — current AND max battle MP
+   zeroed. That zero is the entire "requires Magic" behavior.
+3. **Battle-end writeback** (C2/496E region): MP copies back to the field stat
+   (`$160D`) **only if battle max MP is nonzero** — so zeroed characters don't
+   get their field MP wiped. Any change here must preserve this pairing.
+
+**The WC change** (motivated by `-comfr`/`-compr`: characters can lack Magic
+yet have MP, equip espers, learn spells): `battle/keep_battle_mp.py` replaces
+the 15-byte zeroing epilogue (ROM 0x253f9–0x25407) with a JSR to a C2-bank
+helper: keep MP if vanilla carry set (Lore loophole preserved as the first
+check, verbatim `LSR $F8`), **or $F6 != 0, or $F7 != $FF** — i.e. exactly "the
+battle menu would show a Magic command", per-character. Falls through to the
+vanilla `PLP/PLX/RTS` at C2/5408. Stack note: the character offset vanilla
+read as `LDA $02,S` becomes `$04,S` inside the JSR. Umaro/guests stay zeroed;
+qualifying characters get working crits, meaningful Rasp/Osmose/Elixir, and
+persistent MP drain.
+
+Deliberately NOT the main-menu MP-display rule: C3/0D2B shows menu MP if the
+**party owns any esper at all** ($1A69–$1A6C bitfield) OR Gogo OR the character
+knows a spell (WC's `Lores.show_mp_mod` adds Lore-command holders). That
+party-wide esper test would make crits near-universal; Hans chose the
+per-character rule.
+
+Verified in the harness (field char blocks force-edited, Ragnarok equipped,
+commands Fight/Item only): spell-known character keeps 50/50 battle MP, drains
+12–19 per strike, field MP persists the drain; no-spells/no-esper character
+stays zeroed, no drain, field MP untouched.
+
+Commits: `3983c6c` on `door_rando_ruin_rewrite`; cherry-picked as `a0e7123`
+onto `feature/command-fully-randomize` (that branch predates `-ruin` and has
+no golden manifest — code files only travel in cherry-picks to it).
+
+---
+
+## DISABLE_B_DASH Event Bit (2026-08)
+
+`event_bit.DISABLE_B_DASH = 0x0c1` (verified vanilla-unused). The `-move bd` /
+`-move ssbd` speed subroutine (`settings/movement.py`, Bank F0, hooked at
+0x04e21) checks `$1E98` bit 1 (= `$1E80 + byte(0x0c1)`); while set, dash falls
+back to SPRINT. Use it whenever an event breaks at dash speed.
+
+Users:
+- **Imperial Camp Kefka chase** (`event/imperial_camp.py`): set at camp event
+  activation, cleared at all three reward finishes; `init_event_bits` clears
+  it (all gated on movement being a b-dash variant).
+- **Owzer's Mansion switching-door room `OWZr04`** (door-timer glitch):
+  `data/event_exit_patches.py` `room_require_event_bit['OWZr04'] =
+  {DISABLE_B_DASH: True}` (auto-propagates to `require_event_bit` on its doors
+  586/587); its exits clear the bit via `exit_door_patch`/`exit_event_patch`.
+  The legacy whole-map-0xCF dash disable in `settings/movement.py` survives
+  only when OwzerBasement doors aren't randomized and not ruination.
+
+`room_require_event_bit` is the general tool here: per-ROOM event-bit
+requirements on entry, with the exits responsible for clearing.
+
+---
+
+## Headless Playtest Harness Patterns (2026-08)
+
+Recipes that took real debugging to establish (see also `tools/playtest/README`):
+
+- **`tools/playtest/regressions.py` takes the vanilla ROM positionally**
+  (`python3 tools/playtest/regressions.py $SP/vanilla.smc`), not `-i`.
+- **`route.route_from_start(spoiler, target)` needs the spoiler's `Map:`
+  section** — written only when `-sl` AND a door mode (`door_randomize` /
+  `map_shuffle` / ruination) are on. A build without `-sl` still writes a
+  short settings-only `.txt`; routing then silently finds nothing.
+- **Battle detection**: the battle actor table `$3ED8+{0,2,4,6}` is $FF-filled
+  on the field and holds actor ids in battle — poll it; don't trust leftover
+  monster stats in battle RAM as an "in battle" signal. At battle end battle
+  RAM refills with $FFFF — filter those when sampling (an MP read of 0xffff is
+  the end-of-battle fill, not a value).
+- **Winning battles from a script**: mash A; pin monster HP to 1 and party HP
+  to max each iteration (HP words `$3BF4+2*slot`, chars 0-3 / monsters 4-9,
+  max at `$3C1C`). `-debug` makes enemies one-strike, but boss-rando bosses
+  with reviving parts (Number 128) can still be unwinnable by mashing — pin HP
+  or pick another route. Battle MP/max-MP: `$3C08` / `$3C30` (+2*slot);
+  right-hand item in battle menu data: `$2B86 + 5*(slot/2)` (left hand +20).
+- **Field character blocks** (`$1600 + 37*n`, n = actor for 0-13): +0x00
+  actor, +0x09/+0x0B cur/max HP, +0x0D/+0x0F cur/max MP, +0x16..0x19 the four
+  commands, +0x1E esper ($FF = none), +0x1F..0x24 weapon/shield/helmet/armor/
+  relic1/relic2. Known-spell lists: `$1A6E + 54*actor`, $FF = learned.
+  Editing these pre-battle is a clean way to force loadouts for battle tests.
+- **A one-byte A/B beats a rebuild** when the tree has drifted: patching the
+  byte(s) under test directly into a known-good ROM keeps the arrival
+  recipe/RNG identical (rebuilding from a changed tree shifts encounter RNG
+  and can strand the script in an unwinnable boss). Same trick works in
+  reverse to *neutralize* a suspected-redundant fix (replace ops with inert
+  same-length ops) and re-test.
+- FC-specific: arrival at the statues map needs paced single A presses
+  (hold=6, wait=60); the save-room hole exit is guarded by `$1B5`, which only
+  cycles via real steps — teleporting to it does nothing.
+
+---
+
+## Mt Zozo Arrival Hardlock (2026-08, quick post-mortem)
+
+Uploaded-seed hardlock on arrival at Mt Zozo: `mt_zozo.entrance_event_mod`
+lacked a terminal `field.Return()` on the ruination-without-character-gating
+path, so execution ran off the end into whatever followed. Sibling gotcha to
+"entrance_door_patch must fall through" (2026-04, above) — but in the
+*opposite* direction: entrance **event mods** must terminate with `Return()`;
+entrance **door patches** must NOT. Check which of the two you are writing.

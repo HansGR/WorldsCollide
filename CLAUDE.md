@@ -30,13 +30,16 @@ NPC IDs used in `maps.get_npc(map_id, npc_id)` are **offset by 0x10** from the m
 - **3000+**: One-way entrances (pits)
 - Full range table (WoR copies +4000, door-as-trap landings +6000, virtual/protect ids 10000+/30000+): `doors/ids.py`
 
-### 4. Event Exit Info Runtime Updates
+### 4. LoadMap Must Opt Into Entrance Events
+The LoadMap flags byte's bit `$80` runs the destination map's entrance event — and **WC's `field.LoadMap(...)` defaults `entrance_event=False`**. Entrance events (re)load palettes, grant NPC pass-through, and re-apply tile arrangements, and they **replay on every battle return** (their `$1B6` check exists to skip only the fresh-entry animation setup). A scripted reload that skips the entrance event silently loses that state: the FC save-room tube return (flags `$00` vs vanilla `$C0`) caused both a statue-scene softlock and a statue palette swap. When rebuilding a vanilla LoadMap from raw bytes, byte-compare against the vanilla ROM — don't trust the decompile's prose for the flags byte. Post-mortem: ARCHIVE.md "Floating Continent Save-Room Return".
+
+### 5. Event Exit Info Runtime Updates
 Event tiles (IDs 1500-2000) acting as doors need runtime connection data. When adding new event tile connections, ensure **BOTH sides' partners** are included in `used_events` if they need runtime updates. Connections are stored as `[exit_id, entrance_id]`, so check both `m[0]` and `m[1]` partners.
 
-### 5. Code Organization Principle
+### 6. Code Organization Principle
 Event-specific modifications go in their respective event files (e.g., `event/burning_house.py`), not in top-level files like `event/events.py` or generic modules. For mode-specific changes, add a method like `ruination_mod()` or `no_free_heals_mod()` to the event class and call it conditionally from `mod()` (gated on `args.ruination_mode` / `args.no_free_heals` etc.). Cross-event "sweepers" that run once per build belong in their own module (e.g., `event/free_heals.py` for `-nfh`), invoked from a top-level `Events` method (e.g., `events.no_free_heals_mod()`).
 
-### 6. Execution Flow (wc.py)
+### 7. Execution Flow (wc.py)
 1. **Memory** - Loads ROM, initializes free space tracking
 2. **Data** - Reads/modifies game data (including door randomization)
 3. **Events** - Modifies event scripts, distributes rewards
@@ -49,7 +52,7 @@ window inside `Doors.mod` (Data phase) via the `doors/` package, producing a
 `event/ruination_bind.py` binds Reward slots. The door map is applied and postprocessed in the Data phase for every mode (Doors.mod / Maps.mod).
 Realization lives in `doors/realize/`.
 
-### 7. Persistent Event State Across Reloads
+### 8. Persistent Event State Across Reloads
 Field RAM (NPC pointers, party state, etc.) is **not** preserved in saves. Events that need post-defeat state to persist across reloads must use event bits, with two halves:
 1. **`init_event_bits`** (called once on every game start, in each event's `init_event_bits(space)`) sets/clears the bit so the world starts in a known state.
 2. **In-event update** when the trigger fires, set/clear the bit to record progress.
@@ -57,11 +60,6 @@ Field RAM (NPC pointers, party state, etc.) is **not** preserved in saves. Event
 Companion gotchas:
 - The shared `init_event_bits` buffer is **450 bytes in ruination mode, 400 otherwise** (`event/events.py`). Overflow throws an allocator error — bump the size or reduce writes.
 - NPC talk-event pointers (`ChangeNPCEventAddress`) are field RAM. In ruination mode, re-bind them on map entry via `field.Call(SET_PARTY_INTERACTION_POINTERS)`. See ARCHIVE.md "Persistent Event State Across Reloads" for examples (burning house fireballs, KT switches, minecart revisit).
-
-### 8. Finding Map IDs by Name
-1. Search `data/map_exit_extra.py` for location name in `exit_data`
-2. Identify the entrance door ("Door Outside" goes INTO building)
-3. Look up entrance door in `doors/atlas/exits_raw.json` - the `dest_map` field is the interior map ID
 
 ### 9. NPC_BIT Calculation
 Each NPC has a visibility bit determining if it appears when the map loads. Formula: `npc_bit = (event_byte + 0x60) * 8 + event_bit`. Special values: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` (in `data/npc_bit.py`).
@@ -80,7 +78,7 @@ Quick lookup procedures I re-derive every session. Most JSONs are in `claude_ref
 
 | Looking for | Where / how |
 |-------------|-------------|
-| **Map ID by name** | `grep "<name>" data/map_exit_extra.py` → identify the entrance door (e.g. "Door Outside" goes INTO the building) → `grep '"index": <door_id>' doors/atlas/exits_raw.json` → `dest_map` is the interior map ID. (Top 10 #8.) |
+| **Map ID by name** | `grep "<name>" data/map_exit_extra.py` → identify the entrance door (e.g. "Door Outside" goes INTO the building) → `grep '"index": <door_id>' doors/atlas/exits_raw.json` → `dest_map` is the interior map ID. (Worked example: ARCHIVE.md "Finding Map IDs by Name".) |
 | **NPC by sprite/position** | `claude_reference/maps_data.json` `maps[map_id].npcs` array (position, sprite). Index in array = map-local index; **`npc_id = map_local_index + 0x10`** for `maps.get_npc(map_id, npc_id)` (Top 10 #2). Cross-reference `claude_reference/npcs_raw.json` for full properties (event_byte, event_bit). |
 | **Event bit by name** | `grep -i "<name>" data/event_bit.py`. `npc_bit = (event_byte + 0x60) * 8 + event_bit` (Top 10 #9). Special: `ALWAYS_OFF = 0x6ff`, `ALWAYS_ON = 0x301` in `data/npc_bit.py`. |
 | **NPC bit: initial state, owning NPCs, vanilla set/clear sites** | `claude_reference/npc_event_bits_w_init.txt` (by Fast Moon) — one entry per bit $300-$6FF: initial value, every NPC displayed on it, every vanilla script address touching it. To claim a bit (e.g. for warp points), find one marked Unused (or initial-CLEAR with only cut-content references) AND grep the WC code to confirm it stays untouched. Do NOT infer a bit's owner from `npcs_raw.json` alone — that went wrong once (relic shopper vs Lone Wolf). |
@@ -97,6 +95,7 @@ Quick lookup procedures I re-derive every session. Most JSONs are in `claude_ref
 | **Which branch holds area X (ruin)** | `args.ruination_areas_used[area_name]` (populated from `ruin_map.compute_actual_areas_used()`, NOT raw `AreasUsed`). |
 | **ROM address ↔ SNES** | `ROM = SNES - 0xC00000`. SNES `$CEF100` → ROM `$0EF100`. Constant: `START_ADDRESS_SNES = 0xc00000`. (Top 10 #10.) |
 | **ROM data structure offset** | `claude_reference/ff3infov2.txt` — comprehensive FF6 ROM map (large; grep). |
+| **Battle engine routine (bank C2) / menu code (bank C3)** | `claude_reference/ff6_bank_c2.txt`, `ff6_bank_c3.txt` — full commented disassemblies (also `bankC0/C1/C5.txt`, `ff6_bank_d4/ee.txt`). Grep by SNES address (`C23F22`, `C3/0D2B`) or comment text. These made the MP-crit work possible — check them before theorizing about engine behavior. |
 | **Chest contents at coords** | `claude_reference/chests_raw.json`. |
 | **Map event tile at coords** | `claude_reference/events_raw.json` (one record per event tile). |
 
@@ -119,18 +118,19 @@ For the door-randomization modes (`-drdc`, `-ruin`): **DOOR_RANDO_GUIDE.md** is 
 - **data/rooms.py** — Room definitions and `forced_connections`. Room ids ARE the human-readable room names (3-letter area codes, grammar + `AREA_CODES` registry at the top of the file; `# was:` comments give the old numeric ids used by `claude_reference/` data). Mode variants carry a `-ruin`/`-dc`/... suffix.
 - **data/map_exit_extra.py** — `exit_data` (door ID → `[partner_id, description]`), `eventname_to_door`, `doors_WOB_WOR`.
 - **data/event_exit_data.py** — Event tile (1500-2000) connection metadata (`event_exit_info` table, ROM-free). **data/event_exit_patches.py** — the ROM-side patch machinery; `entrance_door_patch` callables live here.
+- **data/warps.py** — `WARP_POINTS` registry (incl. save points converted to warp points, e.g. Mt Zozo storm-dragon room, Sealed Gate cave) + `AVAILABLE_NPC_BITS` (verified-unused NPC bits, e.g. $376/$37E; claim new ones via the cheat-sheet "NPC bit" procedure). Also `data/event_exit_patches.py` `room_require_event_bit` — per-ROOM event-bit requirements on entry (auto-propagates to the room's doors; exits are responsible for clearing).
 
 ### Door planner (`doors/`)
 See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md the milestones. Key facts:
 - **ROM-free + argv-free**: the whole package imports without a ROM (tests/harnesses run offline). Never add an `args`/ROM import to it.
 - **`doors/atlas/`** — generated exit truth (partners, coordinates, one-ways, room names). Never hand-edit `compiled.py`; curation lives in `curation.py`, regenerate + verify with `python3 tools/compile_atlas.py --check`.
 - **`doors/model.py`** — `WorldModel`: journaled union-find of room clusters + one-way DAG + keys/locks. Backtracking = `checkpoint()`/`rollback()`, never deepcopy. `live_kind()` (list membership) is authoritative where id ranges lie (door-as-trap exits).
-- **`doors/plan/`** — `walk.py` (backtracking walk + `prune.py` Rules A–F), `modes.py` (`plan_for_args` = the one dispatch for every mode; `door_rando_pool_keys`/`doors_touch` = the derived DOOR_RANDOMIZE predicate events use via `Event.doors_touched()`), `artifact.py` (`DoorPlan`: `ruination: RuinPlan | None`, `gates` = unified exit→keys table, query API `destination_of`/`description_of`/`location_name`), `ruination/` (planner: growth/extend/finalize/kefka_tower/dream_maze; `plan.py` is the Data-phase entry, resolves the starting party in-window).
+- **`doors/plan/`** — `walk.py` (backtracking walk + `prune.py` Rules A–F), `modes.py` (`plan_for_args` = the one dispatch for every mode; `door_rando_pool_keys`/`doors_touch` = the derived DOOR_RANDOMIZE predicate events use via `Event.doors_touched()`), `artifact.py` (`DoorPlan`: `ruination: RuinPlan | None`, `gates` = unified exit→keys table, query API `destination_of`/`description_of`/`location_name`), `ruination/` (planner: growth/extend/finalize/kefka_tower/dream_maze; `plan.py` is the Data-phase entry, resolves the starting party in-window; finalize runs the softlock verifiers — character-gated + keychain-lattice, see ARCHIVE.md "Keyless One-Way Softlock").
 - **`doors/realize/`** — realization: `door_map.py` (`postprocess_door_map`: plan pairs → realized `door_map`/`trap_map`, +4000 logical WOR ids), `exits.py` (`connect_exits` + exit-event writers + `door_rando_cleanup`; entrance/exit door patches applied here as unified transition logic), `event_tiles.py` (runtime event-exit address updates), `transitions.py` (one-way writer); the entry point `realize_doors` lives in `realize/__init__.py` (called by Maps.write). Functions take the live `Maps` object; import-time ROM-free. Regression gate: `tools/golden_sweep.py` vs the committed 15-config manifest.
 - **Event lifecycle hooks** — the Events loop framework-dispatches `door_rando_mod`/`dungeon_crawl_mod`/`ruination_mod` for any event that defines but doesn't inline-call them (`event/events.py`); `tools/mode_manifest.py` derives the mode × event table.
 - **`event/ruination_bind.py`** — the ONLY Events-side planner consumer: binds the plan's abstract rewards to live `Reward` slots; `RuinMap` adapts the plan for downstream consumers (area clues, dried meat, ferry, spoiler).
 - Tests: `tests/doors/*` (run directly, no pytest needed; CI runs them via `tests/test_doors.py`). Harness: `tools/ruin_stress.py` (offline failure/usage studies).
-- **`tools/playtest/`** — headless emulation harness (snes9x libretro via ctypes; core from `pip install stable-retro`): boot built seeds, scripted input, live WRAM read/write, savestates, screenshots. See its README; Phase 0 spike proven (~900fps, deterministic).
+- **`tools/playtest/`** — headless emulation harness (snes9x libretro via ctypes; core from `pip install stable-retro`): boot built seeds, scripted input, live WRAM read/write, savestates, screenshots. See its README; ~900fps, deterministic. `regressions.py` (the scenario suite; takes the vanilla ROM **positionally**) is a required gate alongside `tools/golden_sweep.py` and the unit tests. Battle-scripting and routing recipes: ARCHIVE.md "Headless Playtest Harness Patterns".
 
 ### Ruination Mode
 *(Planner: `doors/plan/ruination/` — growth/extend/finalize/kefka_tower/dream_maze, planned in the Data phase. Pure data tables live in `data/ruin_constants.py` (`ROOM_REWARD`, `REWARD_OWNERS`, …) + `data/ruin_areas.py` (`RUIN_ROOM_SETS`). Event-side machinery lives in `event/ruination.py`; reward binding in `event/ruination_bind.py`.)*
@@ -142,10 +142,16 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 - **event/ruination_bind.py** — `bind_ruin_plan` + `RuinMap` (see Door planner section). `compute_actual_areas_used()` — area_name → branch_id from rooms actually placed AND reachable; use this (not raw `AreasUsed`) for Narshe school clue scripts. The KT lane randomizer (`-rkt`) lives in `doors/plan/ruination/kefka_tower.py`: per-lane walks + a joint `(roomA,roomB,roomC,keychain)` state-space `verify()`. See ARCHIVE.md "Kefka's Tower Lane Randomizer".
 - **args/ruin_preprocessor.py** — `-ruin` flagset expansion: `RUIN_DEFAULT_FLAGS` (the base set, expanded by a bare `-ruin`; incl. `-nfh`/`-oss`/`-rce 6.9`) + `RUIN_HARD_EXTRAS` (`-ruin hard` roguelike difficulty: `-pd`, `-sfd 3`, `-rls 53,42,50,51`, `-nosaves lite`). `-ruin custom` = no injection; `-no <flag>` removes any default. Multi-token default values are fine (one list entry per token + matching `FLAGS_WITH_ARGS` count — e.g. `-compr 28.10 100.75` would be `'-compr','28.10','100.75'` with `'-compr': 2`); the only hard rule is no space *inside* a single value token (spell ids, not names) or the logged flag string won't round-trip. KT unlock character/esper counts come from `-rce CC.EE` (or `cc.cc.ee.ee` ranges; default 6.9, min 3.0), processed in `args/doors.py` → `args.ruin_characters_required`/`ruin_espers_required`. `-rc` required characters join the starting party (each consumes a default `-scN random` slot; the planner then excludes them from reward distribution automatically) and are pre-placed availability-aware + locked at every ruination party select (`required_characters.available_party_placement`; away characters stay with their away party). Objectives are otherwise mode-independent, with one exception: `args/objectives.py` drops Kefka's Tower results (`KT_RESULT_IDS = {1, 2, 3}`) in ruination — they do nothing there and can softlock — which shifts any later objectives' letters/`OBJECTIVE` bits down a slot.
 - **event/narshe_wob.py** — `ruination_mod()` (hub party formation, see ARCHIVE.md "Party Formation & Away-Party System") and `limited_heals()` (gated by `-nfh`, uses `SCHOOL_LIMITED_HEALS_1/2` event bits — does NOT use the `NARSHE_CHECKPOINT` event word any more).
+- **`-maptest ROOM [ROOM...]`** (requires `-ruin`; `args/doors.py` + `_apply_maptest` in `doors/plan/ruination/plan.py`) — testing override that wires the listed rooms onto branch 1 directly from the hub door, post-finalize (no verifier re-run). Seeds are NOT completable — event-mechanics testing only. Chained rooms need >= 2 doors.
 
 ### Feature flags
 - **event/free_heals.py** — `-nfh` cross-event sweepers, orchestrated by `Events.no_free_heals_mod()`: `modify_inn_costs` (×3 paid + convert free Returners/Figaro), `modify_free_bed_heals` (50% pincer ambush + per-character `BedHealCharacter`), `modify_recovery_springs` (9 randomised outcomes). Per-event `-nfh` patches stay in their own files. See ARCHIVE.md "No Free Heals" for the full table.
 - **menus/buy.py** + **data/shops.py** — `-sli` limited-inventory shops (pack-based purchasing). See ARCHIVE.md "Limited Inventory Shops".
+
+### Battle
+- **battle/** — battle-engine mods, one module per concern, executed at import from `battle/__init__.py`; C2-bank free space via `Write(Bank.C2, ...)`.
+- **battle/keep_battle_mp.py** — battle MP stays live for characters who know a spell or have an esper equipped, even without the Magic command (enables Illumina/Ragnarok MP crits under `-comfr`/`-compr`; vanilla Lore loophole preserved). Mechanism deep-dive: ARCHIVE.md "Battle MP Zeroing & MP-Drain Criticals".
+- **settings/movement.py** — auto-sprint/b-dash speed subroutine; honors `event_bit.DISABLE_B_DASH` (0x0c1): while set, dash falls back to sprint. Set it around events that break at dash speed (Imperial Camp chase; Owzer door room OWZr04). See ARCHIVE.md "DISABLE_B_DASH Event Bit".
 
 ### Custom opcodes
 - **instruction/field/custom.py** — Field opcodes (65816 ASM). Pattern: write ASM to Bank.C0, register via `_set_opcode_address`, create `_Instruction` subclass.
@@ -161,6 +167,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 
 ### Conventions
 - **log/verbose.py** `vprint()` — debug output helper. `-debug` → stdout, `-debug-verbose`/`-dv` → spoiler-log temp file, neither → no-op. **Don't** wrap `vprint(...)` in `if self.verbose:`.
+- **Branches** — `door_rando_ruin_rewrite` is the live development branch (deployed to the community hub; hub deployments drift from tip — the spoiler's `Commit <hash>` line identifies the build). `feature/command-fully-randomize` captures the command-randomization feature (`-com`/`-comfr`/`-compr` + consequences like the MP-crit fix); it predates `-ruin` and has no golden manifest, so cherry-picks onto it carry code files only.
 
 ---
 
