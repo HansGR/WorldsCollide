@@ -1,4 +1,4 @@
-from memory.space import Bank, Reserve, Write
+from memory.space import Reserve
 import instruction.asm as asm
 
 # The Skills submenu (main menu -> Skills -> character) enables its seven rows
@@ -14,70 +14,22 @@ import instruction.asm as asm
 # command, which wrongly locks them out of equipping espers (level-up stat
 # bonuses, spell learning, out-of-battle casting).
 #
-# This rewrite keeps every row keyed to its command, then adds two overrides
-# in a helper (the in-place region stays the vanilla 59 bytes; the command
-# scan indexes the table from its second entry and stores to $7A,X so the
-# Espers row is never command-enabled):
-# - ESPERS row: enabled by character id alone -- ids below Gogo (0x0C);
-#   greyed for Gogo/Umaro and any special record above them.
-# - MAGIC row: also enabled when the character KNOWS at least one spell
-#   (a $FF in their 54-byte spell-mastery list at $1A6E + 54*id), so a
-#   character without the Magic battle command can still cast known magic
-#   out of battle (same union rule the battle engine uses for keeping MP
-#   live -- see battle/keep_battle_mp.py). Command-based enabling is kept,
-#   so a Magic-command character with no spells yet keeps the (empty)
-#   submenu, and Gogo's vanilla command-configured Magic still works.
-#   Gogo/Umaro take neither override: they have no spell-mastery table.
+# This rewrite keeps every other row keyed to its command, but enables the
+# Espers row by character id alone: enabled for ids below Gogo (0x0C), greyed
+# for Gogo/Umaro and any special record above them. Byte-for-byte the same 59
+# bytes, rewritten in place: the command scan indexes the table from its second
+# entry and stores to $7A,X (rows 1-6), freeing the tail for the id check.
 
 
 class SkillsMenu:
     def __init__(self):
-        self.row_enable_mod()
+        self.espers_row_mod()
 
-    def row_enable_mod(self):
+    def espers_row_mod(self):
         ROW_TABLE_MAGIC_ONWARD = 0xc34d79   # vanilla row table at C3/4D78, minus the espers entry
         GOGO = 0x0c                         # gogo 0x0c, umaro 0x0d, moogles/specials above
-        SPELL_MASTERY = 0x1a6e              # 54 bytes per character (ids 0-11), $ff = learned
-        SPELL_COUNT = 0x36
 
-        # espers-by-id + magic-by-knowledge overrides, applied after the
-        # command scan. On entry y = character record base; clobbers a/x/y
-        # (nothing after the JSR needs them).
-        src = [
-            asm.LDA(0x0000, asm.ABS_Y),     # a = character id
-            asm.CMP(GOGO, asm.IMM8),
-            asm.BCS("RETURN"),              # gogo/umaro/specials: command scan only
-            asm.PHA(),
-            asm.LDA(0x20, asm.IMM8),
-            asm.STA(0x79, asm.DIR),         # real characters: espers always enabled
-            asm.PLA(),
-
-            asm.STA(0x4202, asm.ABS),       # spell list offset = id * 54,
-            asm.LDA(SPELL_COUNT, asm.IMM8), # via the hardware multiplier
-            asm.STA(0x4203, asm.ABS),       # (same recipe as vanilla C3/0D45)
-            asm.NOP(),
-            asm.NOP(),
-            asm.NOP(),                      # wait out the multiply
-            asm.LDY(0x0036, asm.IMM16),     # 54 spells to check
-            asm.LDX(0x4216, asm.ABS),       # x = id * 54
-            "SPELL_LOOP",
-            asm.LDA(SPELL_MASTERY, asm.ABS_X),
-            asm.CMP(0xff, asm.IMM8),        # spell fully learned?
-            asm.BEQ("KNOWS_MAGIC"),
-            asm.INX(),
-            asm.DEY(),
-            asm.BNE("SPELL_LOOP"),
-            asm.RTS(),                      # no spells known: magic row as the command scan left it
-
-            "KNOWS_MAGIC",
-            asm.LDA(0x20, asm.IMM8),
-            asm.STA(0x7a, asm.DIR),         # knows a spell: enable magic row
-            "RETURN",
-            asm.RTS(),
-        ]
-        overrides = Write(Bank.C3, src, "skills menu row enable: espers by id, magic by known spells")
-
-        space = Reserve(0x34d3d, 0x34d77, "skills menu row enable: command scan + overrides")
+        space = Reserve(0x34d3d, 0x34d77, "skills menu row enable: espers row by character id")
         space.write(
             asm.LDA(0x24, asm.IMM8),        # a = greyed
             asm.LDX(0x00, asm.DIR),         # x = 0 ($00 holds zero here, as vanilla relies on)
@@ -108,7 +60,12 @@ class SkillsMenu:
             asm.DEX(),
             asm.BNE("COMMAND_LOOP"),
 
-            asm.PLY(),                      # y = character record base again
-            asm.JSR(overrides.start_address, asm.ABS),
+            asm.PLY(),
+            asm.LDA(0x0000, asm.ABS_Y),     # a = character id
+            asm.CMP(GOGO, asm.IMM8),
+            asm.BCS("RETURN"),              # gogo/umaro/specials: espers stays greyed
+            asm.LDA(0x20, asm.IMM8),
+            asm.STA(0x79, asm.DIR),         # everyone else: espers always enabled
+            "RETURN",
             asm.RTS(),
         )

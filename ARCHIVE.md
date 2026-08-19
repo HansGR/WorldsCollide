@@ -45,6 +45,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Limited Inventory Shops (`-sli` flag)](#limited-inventory-shops--sli-flag)
 - [No Free Heals (`-nfh` / `--no-free-heals`)](#no-free-heals--nfh----no-free-heals)
 - [DISABLE_B_DASH Event Bit (2026-08)](#disable_b_dash-event-bit-2026-08)
+- [Out-of-Battle Magic Submenu by Spell Knowledge (2026-08, SHELVED)](#out-of-battle-magic-submenu-by-spell-knowledge-2026-08-shelved)
 
 ### Custom Opcodes
 - [Custom Opcodes Reference](#custom-opcodes-reference) (consolidated table)
@@ -1820,3 +1821,50 @@ path, so execution ran off the end into whatever followed. Sibling gotcha to
 "entrance_door_patch must fall through" (2026-04, above) — but in the
 *opposite* direction: entrance **event mods** must terminate with `Return()`;
 entrance **door patches** must NOT. Check which of the two you are writing.
+
+---
+
+## Out-of-Battle Magic Submenu by Spell Knowledge (2026-08, SHELVED)
+
+Implemented, verified, shipped as `5d3b541` (main) / `1a616b0` (feature
+branch), then **reverted by design decision**: Hans polled playtesters and
+they prefer the vanilla rule — a character without the Magic battle command
+should NOT cast magic from the menu outside battle, even when they know
+spells (e.g. natural magic under `-comfr`/`-compr`). The MP-crit change
+(battle/keep_battle_mp.py) is unaffected and stands: such characters still
+auto-crit in battle; they just can't menu-cast.
+
+Kept here in case it's revisited — the implementation worked and its
+verification passed; the full code is in the reverted commits.
+
+**Mechanism** (what gates the menu): the Skills submenu rows are enabled at
+C3/4D3D — all seven row bytes ($79-$7F) start greyed ($24), then each of the
+character's four command bytes is matched against the row table at C3/4D78
+(`02 02 07 0A 0C 10 13`); a match writes $20. The row byte is both draw
+color and the selection gate (C3/208B: `LDA $79,X / CMP #$20 / BNE deny`) —
+one gate, nothing else consulted. Spell knowledge never enters into it.
+X-Magic (0x17) is not in the table, so an X-Magic-only character is also
+locked out. WC already rewrote this region once (`menus/skills.py`
+`espers_row_mod`): Espers row by character id (< 0x0C), other rows vanilla.
+
+**The shelved change**: shave the espers-id tail of the in-place rewrite to
+a `JSR` into C3 free space; helper applies espers-by-id, then enables the
+Magic row ($7A) additionally when the character knows >= 1 spell — a $FF in
+the spell-mastery list at `$1A6E + 54*id`, computed via the hardware
+multiplier exactly like the menu MP-display check (C3/0D45). Union rule:
+command-based enabling kept (Magic-command char with 0 spells keeps the
+empty submenu; Gogo's command-configured Magic untouched); Gogo/Umaro
+excluded from the overrides (id >= 0x0C — they have no spell-mastery table
+to scan). Verified in the harness: row bytes $79/$7A per character +
+opening/casting from the submenu.
+
+**Why reverted**: the buff surface is global — ANY character who ever
+learns one spell gains permanent out-of-battle utility casting (cure/heal
+economy), not just natural-magic characters; playtesters preferred keeping
+menu casting a Magic-command privilege.
+
+**If revisited**: cherry-pick `5d3b541` back (plus its feature-branch twin),
+or gate the helper behind a flag if it should be opt-in. The knows-spells
+notion ($FF = fully learned) matches both the battle engine's count
+($3CF8 via C2/568D) and the menu MP display (C3/0D2B), so the union rule
+stays consistent with battle/keep_battle_mp.py.
