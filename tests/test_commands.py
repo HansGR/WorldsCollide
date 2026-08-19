@@ -167,11 +167,52 @@ for trial in range(300):
     chars = [FakeChar() for _ in range(0x20)]
     c = Commands(chars)
     c.mod_probability_random_commands()
+    morph_total = 0
     for i in c.full_random_characters():
         cmds = chars[i].commands
         real = [x for x in cmds if x != NONE]
         assert len(real) == 4, f"pru backfill left a hole: {cmds}"
         assert cmds.count(MORPH) <= 1, f"double morph: {cmds}"
+        morph_total += cmds.count(MORPH)
+    assert morph_total <= 1, f"morph on {morph_total} characters"
+print("ok")
+"""
+
+
+# at 100% every character WINS the morph roll; exactly one may keep it and
+# the rest must backfill to a full menu.
+PR_MORPH_PARTYWIDE = """
+import sys, types
+sys.argv = ["wc.py", "-i", "rom.smc", "-compru", "3", "100"]
+import args
+sys.modules["objectives"] = types.ModuleType("objectives")
+sys.modules["objectives"].suplex_train_condition_exists = False
+
+from constants.commands import name_id
+from data.commands import Commands
+
+MORPH = name_id["Morph"]
+NONE = name_id["None"]
+
+class FakeChar:
+    def __init__(self):
+        self.commands = [0, 0, 0, 0]
+
+keepers = set()
+for trial in range(300):
+    chars = [FakeChar() for _ in range(0x20)]
+    c = Commands(chars)
+    c.mod_probability_random_commands()
+    morph_total = 0
+    for i in c.full_random_characters():
+        cmds = chars[i].commands
+        real = [x for x in cmds if x != NONE]
+        assert len(real) == 4, f"backfill left a hole after morph strip: {cmds}"
+        if MORPH in cmds:
+            morph_total += cmds.count(MORPH)
+            keepers.add(i)
+    assert morph_total == 1, f"expected exactly one morph, got {morph_total}"
+assert len(keepers) > 1, f"morph keeper should vary by roll, always {keepers}"
 print("ok")
 """
 
@@ -233,6 +274,15 @@ class TestCommandsFlag(unittest.TestCase):
     def test_character_command_ids(self):
         self.assert_accepted("-com", "03050708091011121315191617", expected = "-com 03050708091011121315191617")
         self.assert_accepted("-com", "99999999999999999999999999", expected = "-com 99999999999999999999999999")
+
+    def test_character_command_ids_rejected_at_parse(self):
+        # ids generation can't honor must fail at parse time, not as a raw
+        # ValueError mid-build: Magic (02) and Item (01) aren't explicit picks,
+        # and Leap (17) is only legal in Gau's second slot (index 12)
+        self.assert_rejected("-com", "02" + "99" * 12, expected = "not a valid command id")
+        self.assert_rejected("-com", "01" + "99" * 12, expected = "not a valid command id")
+        self.assert_rejected("-com", "17" + "99" * 12, expected = "not a valid command id")
+        self.assert_accepted("-com", "99" * 12 + "17", expected = "-com " + "99" * 12 + "17")
 
     def test_full_random_modes(self):
         self.assert_accepted("-comfr", "10.50.90", expected = "-comfr 10.50.90")
@@ -312,6 +362,7 @@ class TestCommandsFlag(unittest.TestCase):
     def test_probability_invariants(self):
         for name, script in (("pr", PR_INVARIANTS), ("cap", PR_CAP_INVARIANTS),
                              ("none", PR_NONE_INVARIANTS), ("morph", PR_MORPH_INVARIANTS),
+                             ("morph_partywide", PR_MORPH_PARTYWIDE),
                              ("composed", COMPOSED_INVARIANTS)):
             with self.subTest(name):
                 result = subprocess.run(
