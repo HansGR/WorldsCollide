@@ -292,6 +292,27 @@ class Commands:
             rolled[character] = self.roll_probability_commands(
                 character, capacity[character], set(explicit[character]))
 
+        # step 2.5: at most one character may hold morph.  the rolls are
+        # independent per character, so several can win the same declared
+        # morph probability, but the morph-gauge ASM only supports a single
+        # holder (data/characters_asm.update_morph_character: "this assumes
+        # only 1 character has morph") -- extra copies would be broken
+        # commands.  every character's chance to ROLL morph is untouched:
+        # one winner is chosen at random and the losers' slots return to
+        # capacity for ordinary backfill.  an explicit -com morph outranks
+        # every rolled one.
+        morph_winners = [character for character in characters
+                         if morph_id in rolled[character]]
+        if any(morph_id in commands for commands in explicit.values()):
+            keep = None
+        elif morph_winners:
+            keep = random.choice(morph_winners)
+        else:
+            keep = None
+        for character in morph_winners:
+            if character != keep:
+                rolled[character].remove(morph_id)
+
         # step 3: backfill -- leftover capacity joins the family-default style
         for character in characters:
             leftover = capacity[character] - len(rolled[character])

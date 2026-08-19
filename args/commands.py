@@ -67,6 +67,16 @@ def _process_character_commands(args, tokens):
 
     args.character_commands = [int(value[index : index + digits]) for index in range(0, len(value), digits)]
 
+    # the ids generation accepts (data/commands.py mod_commands and the
+    # composed mod_probability_random_commands use the same rule): the random
+    # pool plus Fight anywhere, Leap only in Gau's second slot (index 12).
+    # anything else -- Magic, Item, Mimic, Revert, the broken Empty ids --
+    # previously slipped through here and crashed generation with a raw
+    # ValueError; reject it with a proper message instead.
+    from constants.commands import RANDOM_POSSIBLE_COMMANDS
+    allowed = set(name_id[name] for name in RANDOM_POSSIBLE_COMMANDS) | {name_id["Fight"]}
+    LEAP_INDEX = 12
+
     for index, command in enumerate(args.character_commands):
         if command == RANDOM_COMMAND:
             args.command_strings.append("Random")
@@ -74,7 +84,7 @@ def _process_character_commands(args, tokens):
             args.command_strings.append("Random Unique")
         elif command == NONE_COMMAND:
             args.command_strings.append("None")
-        elif command in id_name:
+        elif command in allowed or (command == name_id["Leap"] and index == LEAP_INDEX):
             args.command_strings.append(id_name[command])
         else:
             args.parser.error(f"commands: '{command:02}' is not a valid command id for {COMMAND_OPTIONS[index]}")
