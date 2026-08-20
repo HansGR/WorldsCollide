@@ -47,6 +47,13 @@ def set_comment(lines, idx, addr, text, force=False):
     line = lines[i]
     parts = line.split('\t')
     # fields: 'C1/xxxx:', bytes, mnemonic, [comment...]
+    if len(parts) == 2:
+        # bare data line: append the comment as a third field
+        if not force and '(' in parts[1]:
+            print(f'  skip {addr}: already commented')
+            return
+        lines[i] = f"{parts[0]}\t{parts[1].rstrip()}\t({text.strip('()')})"
+        return
     if len(parts) < 3:
         raise SystemExit(f'{addr}: unexpected format: {line!r}')
     text = text.strip()
@@ -56,7 +63,8 @@ def set_comment(lines, idx, addr, text, force=False):
     if field.lstrip().startswith('('):
         # data line whose third field is itself a comment: C! replaces it
         if not force:
-            raise SystemExit(f'{addr}: already commented: {line!r}')
+            print(f'  skip {addr}: already commented')
+            return
         lines[i] = f'{parts[0]}\t{parts[1]}\t({text})'
         return
     mnem = _re.match(r'^([^(]*)', field).group(1).rstrip()
@@ -72,7 +80,8 @@ def set_comment(lines, idx, addr, text, force=False):
     else:
         rest = existing
     if rest and not force:
-        raise SystemExit(f'{addr}: already commented: {line!r}')
+        print(f'  skip {addr}: already commented')
+        return
     pieces = [p for p in (f'({text})', from_note) if p]
     body = '\t'.join(parts[:2] + [mnem]).rstrip()
     lines[i] = f'{body}\t\t' + ' '.join(pieces)
@@ -136,16 +145,26 @@ def apply(directive_path, path=REF):
 
 
 def verify_instructions_unchanged(before, after):
-    pat = re.compile(r'^(C1/[0-9A-F]{4}:\t[^\t]*\t[^\t(]*)')
+    # compare the address / bytes / mnemonic fields of every C1/xxxx line,
+    # in order.  comment fields (anything from the first '(') are ignored,
+    # so bare data lines that gained a comment still verify.
+    pat = re.compile(r'^C1/[0-9A-F]{4}:')
     def core(ls):
         out = []
         for l in ls:
-            m = pat.match(l)
-            if m:
-                out.append(m.group(1).rstrip())
+            if not pat.match(l):
+                continue
+            parts = l.split('\t')
+            addr = parts[0]
+            data = parts[1].rstrip() if len(parts) > 1 else ''
+            mnem = ''
+            if len(parts) > 2:
+                mnem = re.match(r'^([^(]*)', parts[2]).group(1).rstrip()
+            out.append((addr, data, mnem))
         return out
     a, b = core(before), core(after)
-    assert a == b, 'instruction fields changed!'
+    assert a == b, 'instruction fields changed!\n' + '\n'.join(
+        f'  {x} -> {y}' for x, y in zip(a, b) if x != y)[:2000]
     print(f'verified: {len(a)} instruction lines unchanged')
 
 

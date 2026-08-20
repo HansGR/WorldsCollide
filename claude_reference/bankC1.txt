@@ -4901,6 +4901,11 @@ C1/2368:	7B      	TDC
 C1/2369:	E220    	SEP #$20
 C1/236B:	60      	RTS
  
+Build the monster tile-number map from the stencil: for each cell the
+stencil accepts (C1/2209), assign the next sequential tile number and
+copy its pixels (C1/2233); rejected cells get blank tile $3F. Output
+tile map at $7F:C500+, per-row counts from the $8251-$8253 stencil
+header.
 C1/236C:	A000C5  	LDY #$C500		(from only C1/2403)
 C1/236F:	8414    	STY $14
 C1/2371:	A97F    	LDA #$7F
@@ -4961,11 +4966,17 @@ C1/23D2:	CE5382  	DEC $8253
 C1/23D5:	D0A4    	BNE $237B
 C1/23D7:	60      	RTS
  
+Prepare a monster pixel rebuild: clear the work buffers, decode the
+stencil ($24F5) and the base pixels ($24E5) for the monster record
+at X.
 C1/23D8:	8610    	STX $10		(from C1/2400, C1/240A)
 C1/23DA:	202020  	JSR $2020
 C1/23DD:	20F524  	JSR $24F5
 C1/23E0:	4CE524  	JMP $24E5
 
+Finish a monster pixel rebuild: expand the $AE3F work buffer through
+the C2/C027 converter into the $7F:C400 buffer (blank = tile $3F),
+then queue $2000 bytes to VRAM $0000.
 C1/23E3:	A93F    	LDA #$3F		(from C1/2406, C1/244E)
 C1/23E5:	8514    	STA $14
 C1/23E7:	A97E    	LDA #$7E
@@ -4983,6 +4994,9 @@ C1/2403:	206C23  	JSR $236C
 C1/2406:	20E323  	JSR $23E3
 C1/2409:	6B      	RTL
  
+Variant used for large monsters ?: after the stencil pass, relocate
+the tile columns at $7F:CA10-CD10 into the $CE00-$D100 rows before
+the finish pass.
 C1/240A:	20D823  	JSR $23D8		
 C1/240D:	A000CA  	LDY #$CA00
 C1/2410:	206F23  	JSR $236F
@@ -5019,6 +5033,8 @@ C1/2451:	6B      	RTL
 
 long access into below
 
+(from C2 animation code) rebuild a monster and upload $1800 bytes of
+its pixels to VRAM $0000.
 C1/2452:	205624  	JSR $2456		(from C2/EAB6, C2/F10C, C2/F198, C2/F206, C2/F234)
 C1/2455:	6B      	RTL
  
@@ -5030,6 +5046,8 @@ C1/2461:	A00000  	LDY #$0000
 C1/2464:	A97E    	LDA #$7E
 C1/2466:	4C8D19  	JMP $198D
 
+(from C2/BBB8) rebuild monster record $018F (Kefka final ?) and
+upload $0800 bytes to VRAM $2000.
 C1/2469:	A28F01  	LDX #$018F     (from C2/BBB8)
 C1/246C:	209724  	JSR $2497
 C1/246F:	A20008  	LDX #$0800
@@ -5043,6 +5061,8 @@ C1/247F:	6B      	RTL
 
 long access into below
 
+(from C2 animation code) rebuild a monster and upload $1400 bytes to
+VRAM $2400.
 C1/2480:	208424  	JSR $2484		(from C2/EB62, C2/EC11, C2/F083, C2/F11C, C2/F12C, C2/F150, C2/F214, C2/F224, C2/F250, C2/F26E, C2/F27E, C2/F28C)
 C1/2483:	6B      	RTL
  
@@ -5054,6 +5074,8 @@ C1/248F:	A00024  	LDY #$2400
 C1/2492:	A97E    	LDA #$7E
 C1/2494:	4C8D19  	JMP $198D
 
+Core monster pixel rebuild for record X: clear buffers, decode
+stencil + pixels, then post-process ($22A5).
 C1/2497:	8610    	STX $10		(from C1/2456, C1/246C, C1/2484, C1/24A9, C1/24D1)
 C1/2499:	202020  	JSR $2020
 C1/249C:	20F524  	JSR $24F5
@@ -5217,6 +5239,8 @@ C1/25C9:	A00030  	LDY #$3000
 C1/25CC:	A97E    	LDA #$7E
 C1/25CE:	4C8D19  	JMP $198D
 
+Upload the assembled monster pixel buffer ($7E:AE3F, $2000 bytes) to
+VRAM $3000.
 C1/25D1:	A20020  	LDX #$2000
 C1/25D4:	8636    	STX $36
 C1/25D6:	A23FAE  	LDX #$AE3F
@@ -5224,6 +5248,9 @@ C1/25D9:	A00030  	LDY #$3000
 C1/25DC:	A97E    	LDA #$7E
 C1/25DE:	4C2B1A  	JMP $1A2B
 
+Draw a specific entity's sprite record set (entity id in $7B, matched
+against the $6142 slot list; slot base offsets from C2/CE8B) -
+variant that draws even records currently held ?
 C1/25E1:	ADD162  	LDA $62D1
 C1/25E4:	F022    	BEQ $2608
 C1/25E6:	7B      	TDC 
@@ -5275,6 +5302,9 @@ C1/263C:	CEFC7A  	DEC $7AFC
 C1/263F:	D0E0    	BNE $2621
 C1/2641:	60      	RTS
  
+Draw a specific entity's sprite record set - normal variant: skips
+records that are held/suppressed ($6F86 low bits) or marked busy
+($64E7).
 C1/2642:	ADD162  	LDA $62D1		(from C1/27D5, C1/2944)
 C1/2645:	F022    	BEQ $2669
 C1/2647:	7B      	TDC 
@@ -5298,6 +5328,10 @@ C1/2663:	C00A00  	CPY #$000A
 C1/2666:	D0E1    	BNE $2649
 C1/2668:	60      	RTS
  
+Draw the sprite records of the slot starting at X: record count from
+$7B0D low nibble (bit 7 = draw nothing; every other frame only two
+records while $60AA blink is active); each 16-byte record at $64DE+
+is emitted by C1/26AA.
 C1/2669:	ADAA60  	LDA $60AA		(C1/2645, C1/265E, C1/28DA, C1/28E5, C1/28F0, C1/2972)
 C1/266C:	F00A    	BEQ $2678
 C1/266E:	A50E    	LDA $0E
@@ -5329,6 +5363,12 @@ C1/26A4:	CEFC7A  	DEC $7AFC
 C1/26A7:	D0D9    	BNE $2682
 C1/26A9:	60      	RTS
  
+Emit one sprite record into the OAM staging: record fields - $64DF/
+$64E1 = X/Y position, $64E3 = frame layout index (tables C2/C3E4,
+or C2/C424 when flag $40 of $64E5 is set), $64E4-$64E5 = attribute
+byte/flags. Walks the layout's (dx, dy, tile, attr) entries, placing
+OAM entries at $0300,Y (Y = next OAM slot from $71 * 4) and setting
+the per-sprite size/high-X bits in the $0500 table.
 C1/26AA:	8EFA7A  	STX $7AFA		(from C1/262B, C1/2693)
 C1/26AD:	BDE464  	LDA $64E4,X
 C1/26B0:	853C    	STA $3C
@@ -5762,6 +5802,14 @@ This function is useless
 C1/2A25:	68      	PLA 			(from C1/2995, C1/29A9)
 C1/2A26:	60      	RTS
  
+--------------------------------------------------------------------
+CHARACTER BATTLE SPRITES (to ~C1/39xx): pose selection, status
+variants, OAM emission and palette handling for the four party
+sprites. Entry points below are called from the master per-frame
+entity loop at C1/28F3 (draw order list $7A49: values 0-3 + $80 =
+characters, 4-9 = monster slots, others = effect slots; $7B68
+rotates which slot gets OAM priority each frame).
+--------------------------------------------------------------------
 C1/2A27:	48      	PHA 			(from C1/2A0F, C1/2A1D)
 C1/2A28:	2903    	AND #$03
 C1/2A2A:	0A      	ASL A
@@ -6220,6 +6268,9 @@ C1/2DCE:	9C697B  	STZ $7B69
 C1/2DD1:	68      	PLA 
 C1/2DD2:	60      	RTS
  
+Per-frame character animation ticker (from the NMI chain): advances
+the frame counter $0098-driven blink/idle phases for each character
+sprite ?
 C1/2DD3:	AD9800  	LDA $0098		(from C1/0CDA, C1/3D33)
 C1/2DD6:	1A      	INC A
 C1/2DD7:	2903    	AND #$03
@@ -6697,6 +6748,8 @@ C1/3154:	FA      	PLX
 C1/3155:	7A      	PLY 
 C1/3156:	60      	RTS
  
+Queue a character's sprite sheets for VRAM reload (after the sprite
+id changed - imp, morph, or sprite swap).
 C1/3157:	5A      	PHY 			(from C1/2FAC, C1/2FC8, C1/2FDF, C1/3026)
 C1/3158:	DA      	PHX 
 C1/3159:	48      	PHA 
@@ -6994,6 +7047,8 @@ C1/339E:	68      	PLA
 C1/339F:	20EF31  	JSR $31EF
 C1/33A2:	60      	RTS
  
+Select a character's pose record from battle state (ready stance,
+weak/kneeling, dead, row, etc.) ?
 C1/33A3:	48      	PHA 			(from only C1/29BF)
 C1/33A4:	2903    	AND #$03
 C1/33A6:	AA      	TAX 
@@ -7151,6 +7206,8 @@ C1/34D7:	8538    	STA $38
 C1/34D9:	FA      	PLX 
 C1/34DA:	60      	RTS
  
+Emit the pose: build the character's sprite records ($64DE blocks)
+for the chosen pose/frame ?
 C1/34DB:	48      	PHA 			(from C1/29C2, C1/29FD, C1/2A1A, C1/2DCB)
 C1/34DC:	2903    	AND #$03
 C1/34DE:	A8      	TAY 
@@ -7714,6 +7771,8 @@ C1/3930:	694000    	ADC #$0040
 C1/3933:	AA    	TAX
 C1/3934:	60      	RTS
  
+Draw one monster slot's sprite records ($88D2 = monster slot being
+drawn; called from the entity loop for slots 4-9).
 C1/3935:	ADD288  	LDA $88D2		(from C1/27FA, C1/2849)
 C1/3938:	A8      	TAY 
 C1/3939:	0A      	ASL A
@@ -7832,6 +7891,7 @@ C1/3A20:	F003    	BEQ $3A25
 C1/3A22:	4C8939  	JMP $3989		(BRL would be better)
 C1/3A25:	60      	RTS
  
+Ambient screen-shake/quake offset update ($61C9 phase) ?
 C1/3A26:	AEC961  	LDX $61C9		(from C1/3D2A, C1/28CA)
 C1/3A29:	ECCB61  	CPX $61CB
 C1/3A2C:	F010    	BEQ $3A3E
@@ -8184,6 +8244,8 @@ C1/3D3F:	3A      	DEC A
 C1/3D40:	D0F0    	BNE $3D32
 C1/3D42:	60      	RTS
  
+Schedule a character battle sprite sheet load (sprite id in A, $FF =
+leave empty); $10 selects the party slot's VRAM region.
 C1/3D43:	C9FF    	CMP #$FF		(from C1/316F, C1/3B1A, C1/3B2A, C1/3B3A, C1/3B4A)
 C1/3D45:	D001    	BNE $3D48
 C1/3D47:	60      	RTS
@@ -8342,6 +8404,8 @@ C1/3E48:	FA      	PLX
 C1/3E49:	FEC461  	INC $61C4,X
 C1/3E4C:	60      	RTS
  
+Build the initial battle window layout ?: character name/HP window
+positions and static frame tiles.
 C1/3E4D:	7B      	TDC 			(from C1/0091, C1/1145)
 C1/3E4E:	AA      	TAX 
 C1/3E4F:	BF89C6C2	LDA $C2C689,X
@@ -8357,6 +8421,7 @@ C1/3E6C:	E00800  	CPX #$0008
 C1/3E6F:	D0DE    	BNE $3E4F
 C1/3E71:	60      	RTS
  
+Build the enemy-name window content ?
 C1/3E72:	A9FF    	LDA #$FF		(from C1/111B, C1/936F)
 C1/3E74:	7B      	TDC 
 C1/3E75:	AA      	TAX 
@@ -8599,6 +8664,8 @@ C1/4037:	A0000A  	LDY #$0A00
 C1/403A:	A512    	LDA $12
 C1/403C:	4C8D19  	JMP $198D
 
+Build the window wallpaper tiles from the config selection ($2F34)
+into the window background buffer.
 C1/403F:	201040  	JSR $4010      (from only C1/1124)
 C1/4042:	A410    	LDY $10
 C1/4044:	8436    	STY $36
@@ -9141,6 +9208,25 @@ C1/449B:	EEDB64  	INC $64DB
 C1/449E:	4C4544  	JMP $4445		(BRA would be better)
 C1/44A1:	60      	RTS
  
+--------------------------------------------------------------------
+BATTLE MENU ENGINE (to ~C1/8500). Key state:
+  $7BC2-$7BC5  menu program queue (interactive mode ids, dispatched
+               by C1/5529 each frame; 4-byte programs loaded from
+               the C2/E348 table via C1/5A2C)
+  $7BF0-$7BF2  stacked window-content draw states (dispatched by
+               C1/4504 through the C1/4517 pointer table)
+  $7BCA        a menu is active   $7BCB  command chosen/abort
+  $7BBB        menu tilemap dirty counter (flushed by C1/04CA)
+  $62CA        character slot whose menu is open
+  $56D8+       9-byte command row records for the open menu
+               (command id +2, gray bit 2 of +0; from C1/47AC)
+  $890F,X      per-character cursor memory
+--------------------------------------------------------------------
+Bring up the command menu for the character in $62CA (called by the
+per-frame scheduler C1/02CA): start the window-open animation
+($7B98 phase driver), rebuild window frames and row records, queue
+menu program 1 (main command window, C1/5A41) with parameter 4,
+and mark the menu active.
 C1/44A2:	A901    	LDA #$01
 C1/44A4:	8D987B  	STA $7B98
 C1/44A7:	204544  	JSR $4445
@@ -9153,6 +9239,10 @@ C1/44B7:	EEBB7B  	INC $7BBB
 C1/44BA:	EECA7B  	INC $7BCA
 C1/44BD:	60      	RTS
  
+Menu window-open animation driver (per frame): while $7B98 is set,
+run the 8-step then 4-step phase sequences through the C1/44ED and
+C1/44E5 pointer tables (window grow/slide-in), ending by lighting
+$7B9C.
 C1/44BE:	AD987B  	LDA $7B98		(from C1/020C)
 C1/44C1:	0D9C7B  	ORA $7B9C
 C1/4B45:	D011    	BNE $44D7
@@ -9192,6 +9282,10 @@ C1/44FD:	203E4B  	JSR $4B3E		(from C1/44E2, X = B)
 C1/4500:	EE9C7B  	INC $7B9C		(from C1/44E2, X = 5, 7, or 9)
 C1/4503:	60  		RTS
 
+Per-frame window-content draw dispatcher: while the tilemap is not
+dirty, run the draw state in $7BF0 via the C1/4517 pointer table
+(states are assigned by the per-command menu programs, e.g. magic
+list = states 5/6, item list, lore list, enemy-select text, etc).
 C1/4504:	ADBB7B  	LDA $7BBB		(from C1/022F)
 C1/4507:	D00C    	BNE $4515
 C1/4509:	A600    	LDX $00
@@ -9264,6 +9358,9 @@ C1/4581:	208C4F  	JSR $4F8C
 C1/4584:	4CF248  	JMP $48F2
 
 Start from status byte 1, and find first status to output to text
+
+Find the first set status bit in a character's displayed status
+words ($2EBD/$2EBF) - returns 0-31 for the status-name crawl.
 C1/4587:	C220    	REP #$20       (from C1/45CE, C1/45DB, C1/45E8, C1/45F5)
 C1/4589:	BDBD2E  	LDA $2EBD,X    (status bytes 1 & 2)
 C1/458C:	F011    	BEQ $459F      (branch if no status inflicted)
@@ -9393,6 +9490,7 @@ C1/4688:	EEDD7B  	INC $7BDD
 C1/468B:	EED17B  	INC $7BD1
 C1/468E:	60      	RTS
  
+Clear the menu tilemap buffer ($5855, $280 bytes) to blank $01EE.
 C1/468F:	A0EE01  	LDY #$01EE		(from C1/0094, C1/1136)
 C1/4692:	C220    	REP #$20
 C1/4694:	A600    	LDX $00
@@ -9406,6 +9504,8 @@ C1/46A1:	7B      	TDC
 C1/46A2:	E220    	SEP #$20
 C1/46A4:	60      	RTS
  
+Snapshot the channel-1 window DMA table ($4307+) into $51F7 and the
+$0100 direct-page mirror.
 C1/46A5:	A904    	LDA #$04
 C1/46A7:	8DFD7A  	STA $7AFD
 C1/46AA:	E210    	SEP #$10
@@ -9438,6 +9538,8 @@ C1/46D5:	E220    	SEP #$20
 C1/46D7:	C210    	REP #$10
 C1/46D9:	60      	RTS
  
+Blit a rectangular tile block: ($10) source -> ($12) dest, $14 bytes
+per row, $16 rows, dest stride $40 (one tilemap row).
 C1/46DA:	E210    	SEP #$10
 C1/46DC:	C220    	REP #$20
 C1/46DE:	A616    	LDX $16
@@ -9463,6 +9565,8 @@ C1/46FF:	C210    	REP #$10
 C1/4701:	E220    	SEP #$20
 C1/4703:	60      	RTS
  
+Draw window frame piece A: 8-byte descriptor (src, dest, width,
+height) from the C2/DF9E table, blitted via C1/46DA.
 C1/4704:	48      	PHA 
 C1/4705:	0A      	ASL A
 C1/4706:	0A      	ASL A
@@ -9479,6 +9583,9 @@ C1/4719:	20DA46  	JSR $46DA
 C1/471C:	68      	PLA 
 C1/471D:	60      	RTS
  
+Queue the menu tilemap for VRAM upload: entry A selects (VRAM base
+-> $7BBC/$7BBE) from the C1/4749 table, Y = source ($7BC0, default
+$5855); the NMI-side flusher C1/04CA sends it while $7BBB is set.
 C1/471E:	A05558  	LDY #$5855
 C1/4721:	5A      	PHY 
 C1/4722:	48      	PHA 
@@ -9508,6 +9615,8 @@ C1/474D:	0002 0079
 C1/4751:	0002 007A    
 C1/4755:	8002 007C 
 
+Draw the four standard window frames (pieces 0-3) and queue the
+upload.
 C1/4759:	7B      	TDC 
 C1/475A:	200447  	JSR $4704
 C1/475D:	1A      	INC A
@@ -9530,6 +9639,8 @@ C1/477A:	E07000  	CPX #$0070
 C1/477D:	D0F6    	BNE $4775
 C1/477F:	60      	RTS
  
+Clear the ATB-gauge tile strips ($5B96 rows) for all four characters
+(single-character entry at C1/4791).
 C1/4780:	48      	PHA 
 C1/4781:	DA      	PHX 
 C1/4782:	7B      	TDC 
@@ -9559,6 +9670,11 @@ C1/47A8:	D0F7    	BNE $47A1
 C1/47AA:	FA      	PLX 
 C1/47AB:	60      	RTS
  
+Build the open character's command row records: layout 1 (with
+gauges, $2F2E set) copies command ids + gray bits from the $202E
+menu block into the $56D8 records (stride 9); layout 2 (list style)
+uses the $205E block with stride 8. The gray bit is repositioned to
+bit 2 by C1/4B6B.
 C1/47AC:	AECA62  	LDX $62CA
 C1/47AF:	BDCC62  	LDA $62CC,X
 C1/47B2:	D03A    	BNE $47EE
@@ -9621,6 +9737,8 @@ C1/4828:	20B166  	JSR $66B1
 C1/482B:	A901    	LDA #$01
 C1/482D:	4C1E47  	JMP $471E
 
+Draw the layout-1 command window frame + rows (variant of C1/47AC's
+second path with stride 8 records) ?
 C1/4830:	202B4B  	JSR $4B2B
 C1/4833:	A929    	LDA #$29
 C1/4835:	208047  	JSR $4780
@@ -9652,6 +9770,8 @@ C1/486A:	20B166  	JSR $66B1
 C1/486D:	A901    	LDA #$01
 C1/486F:	4C1E47  	JMP $471E
 
+Draw the SwdTech window: bar name glyphs from C2/A860 indexed by
+(7 - swdtechs known), then frame pieces $0C-$0E.
 C1/4872:	AECA62  	LDX $62CA
 C1/4875:	A907    	LDA #$07
 C1/4877:	38      	SEC 
@@ -9676,6 +9796,8 @@ C1/489C:	A902    	LDA #$02
 C1/489E:	A0538D  	LDY #$8D53
 C1/48A1:	4C2147  	JMP $4721
 
+Draw the Row/Def flash frame: piece $10 (layout 1) or piece
+(cursor row + 8) - the "Def" text over the selected row ?
 C1/48A4:	A90C    	LDA #$0C
 C1/48A6:	200447  	JSR $4704
 C1/48A9:	A90D    	LDA #$0D
@@ -9693,6 +9815,8 @@ C1/48C3:	A902    	LDA #$02
 C1/48C5:	A0538D  	LDY #$8D53
 C1/48C8:	4C2147  	JMP $4721
 
+Same for the other direction: piece $0F or (cursor row + 4) -
+the "Row" text ?
 C1/48CB:	A90C    	LDA #$0C
 C1/48CD:	200447  	JSR $4704
 C1/48D0:	A90D    	LDA #$0D
@@ -9710,6 +9834,8 @@ C1/48EA:	A902    	LDA #$02
 C1/48EC:	A0538D  	LDY #$8D53
 C1/48EF:	4C2147  	JMP $4721
 
+Copy the whole menu tilemap buffer ($5855) over the $8D53 shadow
+(MVN, $200 bytes).
 C1/48F2:	8B      	PHB 			(atomic, from C1/4584, C1/4F04, C1/4F74, C1/50C8)
 C1/48F3:	C220    	REP #$20
 C1/48F5:	A25558  	LDX #$5855
@@ -9721,6 +9847,9 @@ C1/4902:	E220    	SEP #$20
 C1/4904:	AB      	PLB 
 C1/4905:	60      	RTS
  
+Write one Slot drum's 16 4-tile columns to VRAM ($10 = VRAM base
+from Y; symbol order from C2/A800,X; tile numbers from the C1/495B
+table).
 C1/4906:	8410    	STY $10
 C1/4908:	C220    	REP #$20
 C1/490A:	A91000  	LDA #$0010
@@ -9772,6 +9901,9 @@ C1/4966:	0668
 C1/4968:	066C
 C1/496A:	06
 
+Build the three Slot drums in VRAM ($6C09/$6C0E/$6C13 columns),
+clear the tilemap, draw the slot window art from the C1/4A37 tile
+tables, upload, and initialize the drum text rows.
 C1/496B:	A0096C  	LDY #$6C09
 C1/496E:	A20000  	LDX #$0000
 C1/4971:	200649  	JSR $4906      (set slots, drum 1)
@@ -9830,6 +9962,8 @@ C1/49FA:	A0007E  	LDY #$7E00
 C1/49FD:	202B1A  	JSR $1A2B
 C1/4A00:	60      	RTS
  
+Draw the complete command-window content set for the open character
+(frames, rows, gauges, SwdTech names when applicable).
 C1/4A01:	20614A  	JSR $4A61
 C1/4A04:	208F4A  	JSR $4A8F
 C1/4A07:	20234B  	JSR $4B23
@@ -9907,6 +10041,9 @@ C1/4A8F:	A901    	LDA #$01
 C1/4A91:	205A4E  	JSR $4E5A
 C1/4A94:	4CB166  	JMP $66B1
 
+Window-open helper: copy the screen slot's ATB display bytes
+($2022/$2026/$202A) into the $619E/$61A2/$61A6 display slots;
+returns 4 if the slot has a pending value, else 0.
 C1/4A97:	AA      	TAX 
 C1/4A98:	BDD664  	LDA $64D6,X
 C1/4A9B:	301D    	BMI $4ABA
@@ -9926,6 +10063,8 @@ C1/4AB9:	60      	RTS
 C1/4ABA:	7B      	TDC 
 C1/4ABB:	60      	RTS
  
+Window-open animation steps 0-3 (one per character slot): draw text
+block (slot + $12) and set the $7B9B phase marker.
 C1/4ABC:	7B      	TDC 			(from C1/44E2, X = 0)
 C1/4ABD:	20974A  	JSR $4A97
 C1/4AC0:	18      	CLC 
@@ -9961,6 +10100,8 @@ C1/4AF7:	A903    	LDA #$03
 C1/4AF9:	8D9B7B  	STA $7B9B
 C1/4AFC:	60      	RTS
  
+Window-open animation steps 4/6/8/A: draw text blocks $0E-$11 with
+$7B9D = sub-phase.
 C1/4AFD:	9C9D7B  	STZ $7B9D		(from C1/44E2, X = 4)
 C1/4B00:	A90E    	LDA #$0E
 C1/4B02:	8019    	BRA $4B1D
@@ -9985,6 +10126,8 @@ C1/4B23:	A902    	LDA #$02
 C1/4B25:	205A4E  	JSR $4E5A
 C1/4B28:	4CB166  	JMP $66B1
 
+Find the screen slot (0-3) of the open-menu character ($62CA) in the
+visible-slot list $64D6.
 C1/4B2B:	7B      	TDC 
 C1/4B2C:	AA      	TAX 
 C1/4B2D:	ADCA62  	LDA $62CA
@@ -10012,7 +10155,7 @@ C1/4B53:	A903    	LDA #$03
 C1/4B55:	205A4E  	JSR $4E5A
 C1/4B58:	4CB166  	JMP $66B1
 
-C1/4B5B:	00 0C 18 24 
+C1/4B5B:	00 0C 18 24	(per-screen-slot menu block offsets: $00/$0C/$18/$24 (into $202E)
 
 C1/4B5F:	0000
 C1/4B61:	3C01
@@ -11233,6 +11376,11 @@ C1/551E:	3634    	ROL $34,X
 C1/5520:	3735    	AND [$35],Y
 C1/5522:	3735    	AND [$35],Y
 
+MENU PROGRAM DISPATCHER (per frame, from the dynamics menu tick at
+C1/5D95): runs the interactive menu mode in $7BC2 through the pointer
+table below. Programs are 4-byte sequences ($7BC2-$7BC5) loaded from
+the C2/E348 table by C1/5A2C; a program advances the queue by
+shifting $7BC3+ down (C1/5A4A) or replacing $7BC2 directly.
 C1/5524:	ADC27B  	LDA $7BC2		(from C1/5D95)
 C1/5527:	0A      	ASL A
 C1/5528:	AA      	TAX 
@@ -11240,21 +11388,21 @@ C1/5529:	7C2C55  	JMP ($552C,X)
 
 Pointers
 		(function)		(value of $7BC2) 
-C1/552C:	405A		(exits)	(0)
-C1/552E:	415A			(1)
-C1/5530:	4A5A       		(2)
+C1/552C:	405A		(0: exit/no-op)
+C1/552E:	415A		(1: open the main command window (C1/5A41))
+C1/5530:	4A5A		(2: advance the program queue (C1/5A4A))
 C1/5532:	405A		(exits)	(3)
-C1/5534:	D659    		(4)
-C1/5536:	927A		(????)	(5)
+C1/5534:	D659		(4: init cursor memory unless config keeps it (C1/59D6))
+C1/5536:	927A		(5: main command window input loop (cursor + Row/Def/run/Y, C1/7A92))
 C1/5538:	AE59		(Slot)	(6)
-C1/553A:	A056			(7)
+C1/553A:	A056		(7: begin command-select for the open character ?)
 C1/553C:	087F		(Slot?)	(8)
 C1/553E:	6957		(Item)	(9)
 C1/5540:	7D88			(A)
-C1/5542:	4556    		(B)
+C1/5542:	4556		(B: aiming/targeting startup ? (C1/5645))
 C1/5544:	988D			(C)
 C1/5546:	A057		(Magic)	(D)
-C1/5548:	4581    	(Esper menu)(E)
+C1/5548:	4581    	(E: Esper list menu (C1/8145))
 C1/554A:	8556    		(F)
 C1/554C:	5B56 			(10)
 C1/554E:	405A		(exits)	(11)
@@ -11290,15 +11438,15 @@ C1/5588:	B158		(Tools) (2D)
 C1/558A:	9756			(2F)
 C1/558C:	9D87			(30)
 C1/558E:	3E8D			(31)
-C1/5590:	C955			(32)
+C1/5590:	C955		(32: begin victory dance window teardown ? (C1/55C9))
 C1/5592:	D756    		(33)
 C1/5594:	B556    		(34)
 C1/5596:	1B56		(SwdTech)(35)
 C1/5598:	2856    		(36)
 C1/559A:	257D    		(37)
 C1/559C:	906D			(38)
-C1/559E:	6842    		(39)
-C1/55A0:	C842    		(3A)
+C1/559E:	6842		(39: ATB gauge refill animation A (C1/4268))
+C1/55A0:	C842		(3A: ATB gauge refill animation B (C1/42C8))
 C1/55A2:	5557    		(3B)
 C1/55A4:	5F57    		(3C)
 C1/55A6:	F86F    	(Blitz timer and interpretter)(3D)
@@ -11320,6 +11468,10 @@ C1/55C3:	18      	CLC
 C1/55C4:	6902    	ADC #$02
 C1/55C6:	4C2C5A  	JMP $5A2C
 
+Program 32: prepare the end-of-battle window state: reset gauge
+glyph rows, request DMA reconfigs ($7B95/$7B97), set the text-crawl
+scroll state ($7B83 = $80, BG3 row code released, $7B8A = $0C) and
+clear the $7B8C-$7B94 crawl counters.
 C1/55C9:	7B      	TDC 			(from C1/5529, X = 32)
 C1/55CA:	AA      	TAX 
 C1/55CB:	A94C    	LDA #$4C
@@ -11355,10 +11507,15 @@ C1/5618:	4C4A5A  	JMP $5A4A
 
 SwdTech Command
 
+SwdTech Command
+(Most of the openers below share one idiom: request a window draw state
+in $7BF0 - dispatched via the C1/4517 pointer table - then JMP $5A2C to
+load a 4-byte menu program string from the C2/E348 table into the
+program queue at $7BC2.)
 C1/561B:	9C827B  	STZ $7B82		(from C1/5529, X = 35)
 C1/561E:	A925    	LDA #$25
-C1/5620:	8DF07B  	STA $7BF0
-C1/5623:	A910    	LDA #$10
+C1/5620:	8DF07B  	STA $7BF0		(request window draw state $25)
+C1/5623:	A910    	LDA #$10		(menu program string $10)
 C1/5625:	4C2C5A  	JMP $5A2C
 
 C1/5628:	A926    	LDA #$26		(from C1/5529, X = 36)
@@ -11380,17 +11537,18 @@ C1/563D:	8DF07B  	STA $7BF0
 C1/5640:	A90C    	LDA #$0C
 C1/5642:	4C2C5A  	JMP $5A2C
 
+Target-selection startup (menu program X = B)
 C1/5645:	20BA4B  	JSR $4BBA		(from C1/5529, X = B)
-C1/5648:	A2407E  	LDX #$7E40
-C1/564B:	8EAA7B  	STX $7BAA
-C1/564E:	EEA97B  	INC $7BA9
-C1/5651:	A909    	LDA #$09
+C1/5648:	A2407E  	LDX #$7E40		(parameter block at $7E40 for the draw state)
+C1/564B:	8EAA7B  	STX $7BAA		($7BAA = parameter-block pointer)
+C1/564E:	EEA97B  	INC $7BA9		($7BA9 = parameter-pointer ready count)
+C1/5651:	A909    	LDA #$09		(request window draw state $09)
 C1/5653:	8DF07B  	STA $7BF0
-C1/5656:	A903    	LDA #$03
+C1/5656:	A903    	LDA #$03		(menu program string $03)
 C1/5658:	4C2C5A  	JMP $5A2C
 
-C1/565B:	9CCB7B  	STZ $7BCB		(from C1/5529, X = 10)
-C1/565E:	A922    	LDA #$22
+C1/565B:	9CCB7B  	STZ $7BCB		(clear the command-chosen flag) (from C1/5529, X = 10)
+C1/565E:	A922    	LDA #$22		(request window draw state $22)
 C1/5660:	8DF07B  	STA $7BF0
 C1/5663:	A901    	LDA #$01
 C1/5665:	8DC27B  	STA $7BC2      (queue up to execute at C1/5A41)
@@ -11413,9 +11571,9 @@ C1/5682:	4C2C5A  	JMP $5A2C
 
 C1/5685:	9C2F63  	STZ $632F		(from C1/5529, X = F)
 C1/5688:	A905    	LDA #$05
-C1/568A:	8DF07B  	STA $7BF0
+C1/568A:	8DF07B  	STA $7BF0		(request window draw state $05)
 C1/568D:	A92A    	LDA #$2A
-C1/568F:	8DF17B  	STA $7BF1
+C1/568F:	8DF17B  	STA $7BF1		(and a second draw state $2A in $7BF1)
 C1/5692:	A905    	LDA #$05
 C1/5694:	4C2C5A  	JMP $5A2C
 
@@ -11426,16 +11584,16 @@ C1/569D:	4C2C5A  	JMP $5A2C
 
 C1/56A0:	A980    	LDA #$80		(from C1/5529, X = 7)
 C1/56A2:	8D837B  	STA $7B83
-C1/56A5:	A93A    	LDA #$3A
+C1/56A5:	A93A    	LDA #$3A		(chain programs $3A, $01 (wait), $34 directly - not a table string)
 C1/56A7:	8DC27B  	STA $7BC2      (queue up to execute at C1/42C8)
 C1/56AA:	A901    	LDA #$01
-C1/56AC:	8DC37B  	STA $7BC3
+C1/56AC:	8DC37B  	STA $7BC3		(then program $01: wait for draws)
 C1/56AF:	A934    	LDA #$34
-C1/56B1:	8DC47B  	STA $7BC4
+C1/56B1:	8DC47B  	STA $7BC4		(then program $34)
 C1/56B4:	60      	RTS
  
-C1/56B5:	20FE40  	JSR $40FE		(from C1/5529, X = 34)
-C1/56B8:	201E41  	JSR $411E
+C1/56B5:	20FE40  	JSR $40FE		(reload the battle gauge palette) (from C1/5529, X = 34)
+C1/56B8:	201E41  	JSR $411E		(and clear the $7E50 block)
 C1/56BB:	A933    	LDA #$33
 C1/56BD:	8DC27B  	STA $7BC2      (queue up to execute at C1/56D7)
 C1/56C0:	A902    	LDA #$02
@@ -11443,7 +11601,7 @@ C1/56C2:	8D957B  	STA $7B95
 C1/56C5:	8D977B  	STA $7B97
 C1/56C8:	9C8B7B  	STZ $7B8B
 C1/56CB:	AD0E80  	LDA $800E
-C1/56CE:	297F    	AND #$7F
+C1/56CE:	297F    	AND #$7F		(clear bit 7 of $800E)
 C1/56D0:	8D0E80  	STA $800E
 C1/56D3:	9C8A7B  	STZ $7B8A
 C1/56D6:	60      	RTS
@@ -11493,21 +11651,26 @@ C1/5721:	8DF07B  	STA $7BF0
 C1/5724:	A904    	LDA #$04
 C1/5726:	4C2C5A  	JMP $5A2C
 
+List-window build stepper.  $7BA5 holds $80 + phase (0-3); each call
+looks up that phase's parameter-block pointer from the C1/8291 table
+into $7BAA, then bumps the parameter-ready count $7BA9, the next list
+row $7BA6, and the phase.  Returns carry set (and resets the phase
+counter) once all four visible rows have been dispatched.
 C1/5729:	ADA57B  	LDA $7BA5
 C1/572C:	2903    	AND #$03
 C1/572E:	0A      	ASL A
 C1/572F:	AA      	TAX 
-C1/5730:	BF9182C1	LDA $C18291,X
+C1/5730:	BF9182C1	LDA $C18291,X		(phase's parameter-block pointer, low byte)
 C1/5734:	8DAA7B  	STA $7BAA
 C1/5737:	BF9282C1	LDA $C18292,X
 C1/573B:	8DAB7B  	STA $7BAB
-C1/573E:	EEA97B  	INC $7BA9
-C1/5741:	EEA67B  	INC $7BA6
+C1/573E:	EEA97B  	INC $7BA9		(parameter pointer ready)
+C1/5741:	EEA67B  	INC $7BA6		(next list row to draw)
 C1/5744:	EEA57B  	INC $7BA5
 C1/5747:	ADA57B  	LDA $7BA5
-C1/574A:	C984    	CMP #$84
+C1/574A:	C984    	CMP #$84		(all four rows dispatched?)
 C1/574C:	D005    	BNE $5753
-C1/574E:	9CA57B  	STZ $7BA5
+C1/574E:	9CA57B  	STZ $7BA5		(yes: reset the phase counter and return carry set)
 C1/5751:	38      	SEC 
 C1/5752:	60      	RTS
  
@@ -11531,21 +11694,21 @@ C1/5769:	9C027B  	STZ $7B02		(from C1/5529, X = 9)
 C1/576C:	9C0C89  	STZ $890C
 C1/576F:	A909    	LDA #$09
 C1/5771:	8DC27B  	STA $7BC2      (queue up to execute at C1/5769)
-C1/5774:	ADA57B  	LDA $7BA5
+C1/5774:	ADA57B  	LDA $7BA5		(bit 7 set once the list build is under way)
 C1/5777:	3011    	BMI $578A
-C1/5779:	20175A  	JSR $5A17
-C1/577C:	AECA62  	LDX $62CA
-C1/577F:	BD4789  	LDA $8947,X
+C1/5779:	20175A  	JSR $5A17		(first pass: reset the list work table)
+C1/577C:	AECA62  	LDX $62CA		(X = open character's party slot)
+C1/577F:	BD4789  	LDA $8947,X		(restore this character's remembered Item scroll position)
 C1/5782:	8DA67B  	STA $7BA6
 C1/5785:	A980    	LDA #$80
-C1/5787:	8DA57B  	STA $7BA5
-C1/578A:	ADA67B  	LDA $7BA6
-C1/578D:	206B4C  	JSR $4C6B
-C1/5790:	202957  	JSR $5729
+C1/5787:	8DA57B  	STA $7BA5		(begin the build: phase = $80)
+C1/578A:	ADA67B  	LDA $7BA6		(row to draw)
+C1/578D:	206B4C  	JSR $4C6B		(draw one Item list row - row index in A)
+C1/5790:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/5793:	900A    	BCC $579F
-C1/5795:	A907    	LDA #$07
+C1/5795:	A907    	LDA #$07		(list done: request window draw state $07)
 C1/5797:	8DF07B  	STA $7BF0
-C1/579A:	A902    	LDA #$02
+C1/579A:	A902    	LDA #$02		(menu program string $02)
 C1/579C:	4C2C5A  	JMP $5A2C
 C1/579F:	60      	RTS
 
@@ -11555,22 +11718,22 @@ C1/57A0:	A90D    	LDA #$0D		(from C1/5529, X = D)
 C1/57A2:	8DC27B  	STA $7BC2      (queue up to execute at C1/57A0)
 C1/57A5:	ADA57B  	LDA $7BA5
 C1/57A8:	301A    	BMI $57C4
-C1/57AA:	201484  	JSR $8414
-C1/57AD:	BD9520  	LDA $2095,X
-C1/57B0:	8D7861  	STA $6178
-C1/57B3:	20175A  	JSR $5A17
-C1/57B6:	AECA62  	LDX $62CA
-C1/57B9:	BD1389  	LDA $8913,X
+C1/57AA:	201484  	JSR $8414		(X = offset of the highlighted spell's entry in the battle spell-list data)
+C1/57AD:	BD9520  	LDA $2095,X		(MP cost of the highlighted spell)
+C1/57B0:	8D7861  	STA $6178		($6178 = number for the MP-needed display (digitized at C1/053B))
+C1/57B3:	20175A  	JSR $5A17		(first pass: reset the list work table)
+C1/57B6:	AECA62  	LDX $62CA		(X = open character's party slot)
+C1/57B9:	BD1389  	LDA $8913,X		(restore this character's remembered Magic scroll position)
 C1/57BC:	8DA67B  	STA $7BA6
 C1/57BF:	A980    	LDA #$80
 C1/57C1:	8DA57B  	STA $7BA5
-C1/57C4:	ADA67B  	LDA $7BA6
-C1/57C7:	20B54D  	JSR $4DB5
-C1/57CA:	202957  	JSR $5729
+C1/57C4:	ADA67B  	LDA $7BA6		(row to draw)
+C1/57C7:	20B54D  	JSR $4DB5		(draw one Magic list row - row index in A)
+C1/57CA:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/57CD:	900A    	BCC $57D9
-C1/57CF:	A90B    	LDA #$0B
+C1/57CF:	A90B    	LDA #$0B		(list done: request window draw state $0B)
 C1/57D1:	8DF07B  	STA $7BF0
-C1/57D4:	A904    	LDA #$04
+C1/57D4:	A904    	LDA #$04		(menu program string $04)
 C1/57D6:	4C2C5A  	JMP $5A2C
 C1/57D9:	60      	RTS
  
@@ -11590,21 +11753,30 @@ C1/57E8:	5658				(2)
 C1/57EA:	5C58				(3)
 C1/57EC:  	BE58				(4)
 
-C1/57EE:	8636    	STX $36
-C1/57F0:	ADA47B  	LDA $7BA4
+Usable-item scanner (Throw/Tools).  Scans the 5-byte battle item
+records at $2686 (id, usability flags, targeting, quantity,
+equippability - built by C2/546E) for entries whose usability byte
+matches the mask in $7BA4 ($20 = can be thrown, $40 = usable tool),
+appending 3-byte entries (id, quantity, targeting) to the list at
+$4005,X.  The X argument is the inventory end offset for this chunk;
+progress persists across calls in $7B9F (output offset), $7BA1
+(inventory offset) and $7BA3 (slot counter), and $7B9E counts
+completed chunks so the 256-slot scan spans several frames.
+C1/57EE:	8636    	STX $36		(end-of-chunk inventory offset)
+C1/57F0:	ADA47B  	LDA $7BA4		(usability mask)
 C1/57F3:	8538    	STA $38
 C1/57F5:	ADA37B  	LDA $7BA3
 C1/57F8:	8539    	STA $39
 C1/57FA:	AE9F7B  	LDX $7B9F
 C1/57FD:	ACA17B  	LDY $7BA1
-C1/5800:	B98726  	LDA $2687,Y
+C1/5800:	B98726  	LDA $2687,Y		(item's usability flags)
 C1/5803:	2538    	AND $38
-C1/5805:	F015    	BEQ $581C
-C1/5807:	B98626  	LDA $2686,Y
+C1/5805:	F015    	BEQ $581C		(skip entries that don't match the mask)
+C1/5807:	B98626  	LDA $2686,Y		(item id)
 C1/580A:	9D0540  	STA $4005,X
-C1/580D:	B98926  	LDA $2689,Y
+C1/580D:	B98926  	LDA $2689,Y		(quantity)
 C1/5810:	9D0640  	STA $4006,X
-C1/5813:	B98826  	LDA $2688,Y
+C1/5813:	B98826  	LDA $2688,Y		(targeting byte)
 C1/5816:	9D0740  	STA $4007,X
 C1/5819:	E8      	INX 
 C1/581A:	E8      	INX 
@@ -11619,36 +11791,38 @@ C1/5823:	C436    	CPY $36
 C1/5825:	D0D9    	BNE $5800
 C1/5827:	8E9F7B  	STX $7B9F
 C1/582A:	8CA17B  	STY $7BA1
-C1/582D:	EE9E7B  	INC $7B9E
+C1/582D:	EE9E7B  	INC $7B9E		(chunk complete)
 C1/5830:	A539    	LDA $39
 C1/5832:	8DA37B  	STA $7BA3
 C1/5835:	60      	RTS
  
-C1/5836:	A940    	LDA #$40		(from C1/58BB, X = 0)
+Scanner mask setters: $40 = Tools, $20 = Throw.  Both reset the scan
+state and process the first chunk of 64 inventory slots (5 bytes each).
+C1/5836:	A940    	LDA #$40		(Tools: match usability bit $40) (from C1/58BB, X = 0)
 C1/5838:	8002    	BRA $583C
 
-C1/583A:	A920    	LDA #$20		(from C1/587F, X = 0)
+C1/583A:	A920    	LDA #$20		(Throw: match usability bit $20) (from C1/587F, X = 0)
 C1/583C:	8DA47B  	STA $7BA4
 C1/583F:	7B      	TDC 
 C1/5840:	AA      	TAX 
 C1/5841:	8E9F7B  	STX $7B9F
 C1/5844:	8EA17B  	STX $7BA1
 C1/5847:	9CA37B  	STZ $7BA3
-C1/584A:	A24001  	LDX #$0140
+C1/584A:	A24001  	LDX #$0140		(first chunk: inventory slots 0-63)
 C1/584D:	4CEE57  	JMP $57EE
 
-C1/5850:	A28002  	LDX #$0280		(from C1/587F, X = 1; C1/58BB, X = 6)
+C1/5850:	A28002  	LDX #$0280		(second chunk: slots 64-127) (from C1/587F, X = 1; C1/58BB, X = 6)
 C1/5853:	4CEE57  	JMP $57EE
 
-C1/5856:	A2C003  	LDX #$03C0		(from C1/587F, X = 2; C1/58BB, X = 7)
+C1/5856:	A2C003  	LDX #$03C0		(third chunk: slots 128-191) (from C1/587F, X = 2; C1/58BB, X = 7)
 C1/5859:	4CEE57  	JMP $57EE
 
-C1/585C:	A20005  	LDX #$0500		(from C1/587F, X = 3; C1/58BB, X = 8)
+C1/585C:	A20005  	LDX #$0500		(final chunk: slots 192-255) (from C1/587F, X = 3; C1/58BB, X = 8)
 C1/585F:	20EE57  	JSR $57EE
 C1/5862:	A9FF    	LDA #$FF
-C1/5864:	E00003  	CPX #$0300
+C1/5864:	E00003  	CPX #$0300		(stop at 256 3-byte list entries)
 C1/5867:	F00B    	BEQ $5874
-C1/5869:	9D0540  	STA $4005,X
+C1/5869:	9D0540  	STA $4005,X		(pad the list out with empty entries (id $FF))
 C1/586C:	9E0640  	STZ $4006,X
 C1/586F:	E8      	INX 
 C1/5870:	E8      	INX 
@@ -11661,7 +11835,7 @@ Throw Command
 
 C1/5875:	A92B    	LDA #$2B		(from C1/5529, X = 2B)
 C1/5877:	8DC27B  	STA $7BC2      (queue up to execute at C1/5875)
-C1/587A:	AD9E7B  	LDA $7B9E
+C1/587A:	AD9E7B  	LDA $7B9E		(build phase)
 C1/587D:	0A      	ASL A
 C1/587E:	AA      	TAX 
 C1/587F:	7CDA57  	JMP ($57DA,X)
@@ -11670,18 +11844,18 @@ C1/5882:	ADA57B  	LDA $7BA5		(from C1/587F, X = 4)
 C1/5885:	3011    	BMI $5898
 C1/5887:	20175A  	JSR $5A17
 C1/588A:	AECA62  	LDX $62CA
-C1/588D:	BD5389  	LDA $8953,X
+C1/588D:	BD5389  	LDA $8953,X		(restore this character's remembered Throw scroll position)
 C1/5890:	8DA67B  	STA $7BA6
 C1/5893:	A980    	LDA #$80
 C1/5895:	8DA57B  	STA $7BA5
 C1/5898:	ADA67B  	LDA $7BA6
-C1/589B:	20274C  	JSR $4C27
-C1/589E:	202957  	JSR $5729
+C1/589B:	20274C  	JSR $4C27		(draw one Throw list row - row index in A)
+C1/589E:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/58A1:	900D    	BCC $58B0
-C1/58A3:	9C9E7B  	STZ $7B9E
-C1/58A6:	A91D    	LDA #$1D
+C1/58A3:	9C9E7B  	STZ $7B9E		(reset the phase counter)
+C1/58A6:	A91D    	LDA #$1D		(list done: request window draw state $1D)
 C1/58A8:	8DF07B  	STA $7BF0
-C1/58AB:	A90E    	LDA #$0E
+C1/58AB:	A90E    	LDA #$0E		(menu program string $0E)
 C1/58AD:	4C2C5A  	JMP $5A2C
 C1/58B0:	60      	RTS
  
@@ -11690,7 +11864,7 @@ Tools Command
 
 C1/58B1:	A92E    	LDA #$2E		(from C1/5529, X = 2D)
 C1/58B3:	8DC27B  	STA $7BC2      (queue up to execute at C1/86B5)
-C1/58B6:	AD9E7B  	LDA $7B9E
+C1/58B6:	AD9E7B  	LDA $7B9E		(build phase)
 C1/58B9:	0A      	ASL A
 C1/58BA:	AA      	TAX 
 C1/58BB:	7CE457  	JMP ($57E4,X)
@@ -11699,18 +11873,18 @@ C1/58BE:	ADA57B  	LDA $7BA5		(from C1/58BB, X = 4)
 C1/58C1:	3011    	BMI $58D4
 C1/58C3:	20175A  	JSR $5A17
 C1/58C6:	AECA62  	LDX $62CA
-C1/58C9:	BD5F89  	LDA $895F,X
+C1/58C9:	BD5F89  	LDA $895F,X		(restore this character's remembered Tools scroll position)
 C1/58CC:	8DA67B  	STA $7BA6
 C1/58CF:	A980    	LDA #$80
 C1/58D1:	8DA57B  	STA $7BA5
 C1/58D4:	ADA67B  	LDA $7BA6
-C1/58D7:	20F74B  	JSR $4BF7
-C1/58DA:	202957  	JSR $5729
+C1/58D7:	20F74B  	JSR $4BF7		(draw one Tools list row - row index in A)
+C1/58DA:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/58DD:	900D    	BCC $58EC
-C1/58DF:	9C9E7B  	STZ $7B9E
-C1/58E2:	A920    	LDA #$20
+C1/58DF:	9C9E7B  	STZ $7B9E		(reset the phase counter)
+C1/58E2:	A920    	LDA #$20		(list done: request window draw state $20)
 C1/58E4:	8DF07B  	STA $7BF0
-C1/58E7:	A90F    	LDA #$0F
+C1/58E7:	A90F    	LDA #$0F		(menu program string $0F)
 C1/58E9:	4C2C5A  	JMP $5A2C
 C1/58EC:	60      	RTS
  
@@ -11721,22 +11895,22 @@ C1/58ED:	A919    	LDA #$19		(from C1/5529, X = 19)
 C1/58EF:	8DC27B  	STA $7BC2      (queue up to execute at C1/58ED)
 C1/58F2:	ADA57B  	LDA $7BA5
 C1/58F5:	301A    	BMI $5911
-C1/58F7:	20F783  	JSR $83F7
-C1/58FA:	BD6D21  	LDA $216D,X
-C1/58FD:	8D7861  	STA $6178
+C1/58F7:	20F783  	JSR $83F7		(X = offset of the highlighted lore's entry in the lore-list data)
+C1/58FA:	BD6D21  	LDA $216D,X		(MP cost of the highlighted lore)
+C1/58FD:	8D7861  	STA $6178		($6178 = number for the MP-needed display)
 C1/5900:	20175A  	JSR $5A17
 C1/5903:	AECA62  	LDX $62CA
-C1/5906:	BD1F89  	LDA $891F,X
+C1/5906:	BD1F89  	LDA $891F,X		(restore this character's remembered Lore scroll position)
 C1/5909:	8DA67B  	STA $7BA6
 C1/590C:	A980    	LDA #$80
 C1/590E:	8DA57B  	STA $7BA5
 C1/5911:	ADA67B  	LDA $7BA6
-C1/5914:	20764D  	JSR $4D76		(build the lore menu)
-C1/5917:	202957  	JSR $5729
+C1/5914:	20764D  	JSR $4D76		(draw one Lore list row - row index in A)
+C1/5917:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/591A:	900A    	BCC $5926
-C1/591C:	A911    	LDA #$11
+C1/591C:	A911    	LDA #$11		(list done: request window draw state $11)
 C1/591E:	8DF07B  	STA $7BF0
-C1/5921:	A907    	LDA #$07
+C1/5921:	A907    	LDA #$07		(menu program string $07)
 C1/5923:	4C2C5A  	JMP $5A2C
 C1/5926:	60      	RTS
  
@@ -11749,17 +11923,17 @@ C1/592C:	ADA57B  	LDA $7BA5
 C1/592F:	3011    	BMI $5942
 C1/5931:	20175A  	JSR $5A17
 C1/5934:	AECA62  	LDX $62CA
-C1/5937:	BD2B89  	LDA $892B,X
+C1/5937:	BD2B89  	LDA $892B,X		(restore this character's remembered Rage scroll position)
 C1/593A:	8DA67B  	STA $7BA6
 C1/593D:	A980    	LDA #$80
 C1/593F:	8DA57B  	STA $7BA5
 C1/5942:	ADA67B  	LDA $7BA6
-C1/5945:	20E24C  	JSR $4CE2		(Build the Rage menu?)
-C1/5948:	202957  	JSR $5729
+C1/5945:	20E24C  	JSR $4CE2		(draw one Rage list row - row index in A)
+C1/5948:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/594B:	900A    	BCC $5957
-C1/594D:	A913    	LDA #$13
+C1/594D:	A913    	LDA #$13		(list done: request window draw state $13)
 C1/594F:	8DF07B  	STA $7BF0
-C1/5952:	A909    	LDA #$09
+C1/5952:	A909    	LDA #$09		(menu program string $09)
 C1/5954:	4C2C5A  	JMP $5A2C
 C1/5957:	60      	RTS
 
@@ -11771,16 +11945,16 @@ C1/595A:	8DC27B  	STA $7BC2      (queue up to execute at C1/5958)
 C1/595D:	ADA57B  	LDA $7BA5
 C1/5960:	300B    	BMI $596D
 C1/5962:	20175A  	JSR $5A17
-C1/5965:	9CA67B  	STZ $7BA6
+C1/5965:	9CA67B  	STZ $7BA6		(no scroll memory - the Dance list always starts at the top)
 C1/5968:	A980    	LDA #$80
 C1/596A:	8DA57B  	STA $7BA5
 C1/596D:	ADA67B  	LDA $7BA6
-C1/5970:	20084D  	JSR $4D08		(Build the Dance menu?)
-C1/5973:	202957  	JSR $5729
+C1/5970:	20084D  	JSR $4D08		(draw one Dance list row - row index in A)
+C1/5973:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/5976:	900A    	BCC $5982
-C1/5978:	A915    	LDA #$15
+C1/5978:	A915    	LDA #$15		(list done: request window draw state $15)
 C1/597A:	8DF07B  	STA $7BF0
-C1/597D:	A90A    	LDA #$0A
+C1/597D:	A90A    	LDA #$0A		(menu program string $0A)
 C1/597F:	4C2C5A  	JMP $5A2C
 C1/5982:	60      	RTS
 
@@ -11792,51 +11966,56 @@ C1/5985:	8DC27B  	STA $7BC2      (queue up to execute at C1/5983)
 C1/5988:	ADA57B  	LDA $7BA5
 C1/598B:	300B    	BMI $5998
 C1/598D:	20175A  	JSR $5A17
-C1/5990:	9CA67B  	STZ $7BA6
+C1/5990:	9CA67B  	STZ $7BA6		(no scroll memory - the Magitek list always starts at the top)
 C1/5993:	A980    	LDA #$80
 C1/5995:	8DA57B  	STA $7BA5
 C1/5998:	ADA67B  	LDA $7BA6
-C1/599B:	202E4D  	JSR $4D2E		(Build the Magitek menu?)
-C1/599E:	202957  	JSR $5729
+C1/599B:	202E4D  	JSR $4D2E		(draw one Magitek list row - row index in A)
+C1/599E:	202957  	JSR $5729		(step the 4-row build; carry set when all rows dispatched)
 C1/59A1:	900A    	BCC $59AD
-C1/59A3:	A91B    	LDA #$1B
+C1/59A3:	A91B    	LDA #$1B		(list done: request window draw state $1B)
 C1/59A5:	8DF07B  	STA $7BF0
-C1/59A8:	A90D    	LDA #$0D
+C1/59A8:	A90D    	LDA #$0D		(menu program string $0D)
 C1/59AA:	4C2C5A  	JMP $5A2C
 C1/59AD:	60      	RTS
  
 
 Slot Command
 
-C1/59AE:	201E41  	JSR $411E		(from C1/5529, X = 6)
+C1/59AE:	201E41  	JSR $411E		(clear the $7E50 gauge-palette block) (from C1/5529, X = 6)
 C1/59B1:	A906    	LDA #$06
 C1/59B3:	8DC27B  	STA $7BC2      (queue up to execute at C1/59AE)
 C1/59B6:	ADA57B  	LDA $7BA5
 C1/59B9:	300B    	BMI $59C6
 C1/59BB:	20175A  	JSR $5A17
-C1/59BE:	9CA67B  	STZ $7BA6
+C1/59BE:	9CA67B  	STZ $7BA6		(no list rows - Slot has its own window)
 C1/59C1:	A980    	LDA #$80
 C1/59C3:	8DA57B  	STA $7BA5
-C1/59C6:	202957  	JSR $5729
+C1/59C6:	202957  	JSR $5729		(step the 4 phases: parameter pointers only, no row draws)
 C1/59C9:	900A    	BCC $59D5
-C1/59CB:	A904    	LDA #$04
+C1/59CB:	A904    	LDA #$04		(done: request window draw state $04)
 C1/59CD:	8DF07B  	STA $7BF0
-C1/59D0:	A901    	LDA #$01
+C1/59D0:	A901    	LDA #$01		(menu program string $01)
 C1/59D2:	4C2C5A  	JMP $5A2C
 C1/59D5:	60      	RTS
  
+Battle-start cursor-memory init (menu program X = 4).  If the config's
+cursor-memory option is off, clear the whole $5C-byte remembered-cursor
+block at $890F (command row plus list scroll positions for
+Magic/Lore/Rage/Item/Throw/Tools, per party slot).  Then request the
+battle menu's initial window draw states.
 C1/59D6:	AF4E1D00	LDA $001D4E		(from C1/5529, X = 4)
 C1/59DA:	2940    	AND #$40		(Isolate the cursor memory bit)
 C1/59DC:	D00B    	BNE $59E9		(Branch if cursor memory on)
 C1/59DE:	7B      	TDC 
 C1/59DF:	AA      	TAX 
-C1/59E0:	9E0F89  	STZ $890F,X      (Cursor memory)		(from C1/59E7)
+C1/59E0:	9E0F89  	STZ $890F,X		(clear all $5C bytes of remembered cursor positions)
 C1/59E3:	E8      	INX 
 C1/59E4:	E05C00  	CPX #$005C
 C1/59E7:	D0F7    	BNE $59E0
-C1/59E9:	A901    	LDA #$01		(from C1/59DC)
+C1/59E9:	A901    	LDA #$01		(cursor memory enabled: keep the saved positions) (from C1/59DC)
 C1/59EB:	8D2F63  	STA $632F
-C1/59EE:	A929    	LDA #$29
+C1/59EE:	A929    	LDA #$29		(queue draw states $29, $03 and $1F - the initial battle windows)
 C1/59F0:	8DF07B  	STA $7BF0
 C1/59F3:	A903    	LDA #$03
 C1/59F5:	8DF17B  	STA $7BF1
@@ -11845,15 +12024,19 @@ C1/59FA:	8DF27B  	STA $7BF2
 C1/59FD:	7B      	TDC 
 C1/59FE:	4C2C5A  	JMP $5A2C
 
-C1/5A01:	201E4E  	JSR $4E1E		(from C1/8198)
-C1/5A04:	A2807B  	LDX #$7B80
+Esper Command (list build, called from the Magic-menu handler at
+C1/8198).
+C1/5A01:	201E4E  	JSR $4E1E		(build the Esper menu) (from C1/8198)
+C1/5A04:	A2807B  	LDX #$7B80		(parameter block at $7B80 for the draw state)
 C1/5A07:	8EAA7B  	STX $7BAA
 C1/5A0A:	EEA97B  	INC $7BA9
-C1/5A0D:	A90D    	LDA #$0D
+C1/5A0D:	A90D    	LDA #$0D		(request window draw state $0D)
 C1/5A0F:	8DF07B  	STA $7BF0
-C1/5A12:	A906    	LDA #$06
+C1/5A12:	A906    	LDA #$06		(menu program string $06)
 C1/5A14:	4C2C5A  	JMP $5A2C
 
+Reset the list-window work table: fill the 64 words at $5E4D with
+$01FF.
 C1/5A17:	C220    	REP #$20  		(from C1/5931, C1/59BB)
 C1/5A19:	A600    	LDX $00
 C1/5A1B:	A9FF01  	LDA #$01FF
@@ -11867,6 +12050,9 @@ C1/5A29:	E220    	SEP #$20
 C1/5A2B:	60      	RTS
  
 
+Menu program string loader: copies 4-byte program string A from the
+C2/E348 table into the program queue at $7BC2-$7BC5 (dispatched each
+frame at C1/5529).
 C1/5A2C:	0A      	ASL A			(from C1/58E9, C1/5923, C1/5954, C1/59AA, C1/59D2, C1/59FE, C1/5A14)
 C1/5A2D:	0A      	ASL A
 C1/5A2E:	AA      	TAX 
@@ -11880,16 +12066,16 @@ C1/5A3D:	D0F2    	BNE $5A31
 C1/5A3F:	60      	RTS
 
  
-C1/5A40:	60      	RTS			(from C1/5529, X = 0, 3, or 11)
+C1/5A40:	60      	RTS		(null menu program) (from C1/5529, X = 0, 3, or 11)
 
  
-C1/5A41:	ADF07B  	LDA $7BF0		(from C1/5529, X = 1)
-C1/5A44:	D003    	BNE $5A49
-C1/5A46:	4C4A5A  	JMP $5A4A
+C1/5A41:	ADF07B  	LDA $7BF0		(menu program 1: wait until all queued window draws have finished) (from C1/5529, X = 1)
+C1/5A44:	D003    	BNE $5A49		(still drawing: stay on this program)
+C1/5A46:	4C4A5A  	JMP $5A4A		(done: advance the queue)
 C1/5A49:	60      	RTS
 
  
-C1/5A4A:	7B      	TDC 			(from C1/5A46; C1/5529, X = 2)
+C1/5A4A:	7B      	TDC		(menu program 2: advance the queue - shift $7BC3-$7BC8 down one entry and clear $7BC9) (from C1/5A46; C1/5529, X = 2)
 C1/5A4B:	AA      	TAX 
 C1/5A4C:	8DC97B  	STA $7BC9
 C1/5A4F:	BDC37B  	LDA $7BC3,X
@@ -11900,16 +12086,23 @@ C1/5A59:	D0F4    	BNE $5A4F
 C1/5A5B:	60      	RTS
 
  
-C1/5A5C:	ADDD7B  	LDA $7BDD
+List-window row scroll effect.  While $7BDD is set (and the tilemap
+isn't busy), MVN-copies two 16-byte tilemap chunks per step - the
+pointer pair $7BDE/$7BE0 walks downward and $7BE2/$7BE4 walks upward
+by $10 each step - shifting the window's rows by one text row over
+$7BE6 steps.  On the first step the row at [$7BE9] (length $7BEC) is
+saved to the buffer at $55D5, and on the last step it is restored to
+[$7BE7].  $7BEE gates the effect to alternate frames.
+C1/5A5C:	ADDD7B  	LDA $7BDD		(effect active?)
 C1/5A5F:	F06F    	BEQ $5AD0
-C1/5A61:	ADBB7B  	LDA $7BBB
+C1/5A61:	ADBB7B  	LDA $7BBB		(tilemap busy: wait)
 C1/5A64:	D06A    	BNE $5AD0
 C1/5A66:	ADEE7B  	LDA $7BEE
 C1/5A69:	D062    	BNE $5ACD
-C1/5A6B:	ADEB7B  	LDA $7BEB
+C1/5A6B:	ADEB7B  	LDA $7BEB		(first step already taken?)
 C1/5A6E:	D011    	BNE $5A81
 C1/5A70:	EEEB7B  	INC $7BEB
-C1/5A73:	C220    	REP #$20
+C1/5A73:	C220    	REP #$20		(save the row at [$7BE9] to the $55D5 buffer)
 C1/5A75:	AEE97B  	LDX $7BE9
 C1/5A78:	A0D555  	LDY #$55D5
 C1/5A7B:	ADEC7B  	LDA $7BEC
@@ -11935,11 +12128,11 @@ C1/5AAB:	8EE27B  	STX $7BE2
 C1/5AAE:	8CE47B  	STY $7BE4
 C1/5AB1:	7B      	TDC 
 C1/5AB2:	E220    	SEP #$20
-C1/5AB4:	CEE67B  	DEC $7BE6
+C1/5AB4:	CEE67B  	DEC $7BE6		(last step?)
 C1/5AB7:	D014    	BNE $5ACD
-C1/5AB9:	9CDD7B  	STZ $7BDD
+C1/5AB9:	9CDD7B  	STZ $7BDD		(done: stop the effect)
 C1/5ABC:	C220    	REP #$20
-C1/5ABE:	A2D555  	LDX #$55D5
+C1/5ABE:	A2D555  	LDX #$55D5		(restore the saved row from $55D5 to [$7BE7])
 C1/5AC1:	ACE77B  	LDY $7BE7
 C1/5AC4:	ADEC7B  	LDA $7BEC
 C1/5AC7:	547E7E  	MVN $7E,$7E
@@ -11949,6 +12142,9 @@ C1/5ACD:	9CEE7B  	STZ $7BEE
 C1/5AD0:	60      	RTS
  
 
+Helper for C1/5B14: write the word pair $7BD2/$7BD4 alternately
+across one 16-byte tilemap row - at $4775,X while $7BDB is clear,
+at $43F5,X once it is set.
 C1/5AD1:	ADDB7B  	LDA $7BDB
 C1/5AD4:	D01F    	BNE $5AF5
 C1/5AD6:	ADD27B  	LDA $7BD2
@@ -11977,6 +12173,10 @@ C1/5B10:	9D0344  	STA $4403,X
 C1/5B13:	60      	RTS
 
  
+Expanding-row effect (called from the frame driver): while $7BD1 is
+set and the tilemap isn't busy, stamps the $7BD2/$7BD4 tile pair on
+two rows per frame - offset $7BD7 walking up and $7BD9 walking down
+by $10 each frame - for $7BD6 frames.
 C1/5B14:	ADD17B  	LDA $7BD1		(from C1/0CDD, C1/0CE8, C1/0CEE)
 C1/5B17:	F032    	BEQ $5B4B
 C1/5B19:	ADBB7B  	LDA $7BBB
@@ -12002,12 +12202,21 @@ C1/5B48:	9CD17B  	STZ $7BD1
 C1/5B4B:	60      	RTS
 
  
-C1/5B4C:	ADAF7B  	LDA $7BAF		(from C1/5529, X = 3E)
+Window slide animations (menu programs X = 3E, 17, 18 and the entries
+below).  The direct page is temporarily moved to $0100, the mirror of
+the battle windows' per-row DMA source table (snapshotted from the
+$4307 WRAM table by C1/46A5; 16 bytes = four word entries per row
+group).  Each frame the row sources are rotated/offset so the window
+contents slide, the result is copied to the $4D83 table, and the
+frames-remaining count $7BA8 (set by the caller - e.g. 4 at C1/60C0)
+runs down; when it reaches zero the program queue advances.  While
+$7BAF is set, the cursor offset $7BB1 shifts along with the window.
+C1/5B4C:	ADAF7B  	LDA $7BAF		(menu program X = 3E: slide the window contents by one row group per frame) (from C1/5529, X = 3E)
 C1/5B4F:	F011    	BEQ $5B62
 C1/5B51:	ADA87B  	LDA $7BA8
 C1/5B54:	C901    	CMP #$01
 C1/5B56:	F00A    	BEQ $5B62
-C1/5B58:	AEB17B  	LDX $7BB1
+C1/5B58:	AEB17B  	LDX $7BB1		(shift the cursor offset with the window)
 C1/5B5B:	CA      	DEX 
 C1/5B5C:	CA      	DEX 
 C1/5B5D:	CA      	DEX 
@@ -12020,9 +12229,9 @@ C1/5B66:	C220    	REP #$20
 C1/5B68:	A90001  	LDA #$0100
 C1/5B6B:	48      	PHA 
 C1/5B6C:	2B      	PLD 
-C1/5B6D:	B502    	LDA $02,X
+C1/5B6D:	B502    	LDA $02,X		(save the first row source)
 C1/5B6F:	8DFE7A  	STA $7AFE
-C1/5B72:	B512    	LDA $12,X
+C1/5B72:	B512    	LDA $12,X		(each group takes the next group's source + 4)
 C1/5B74:	18      	CLC 
 C1/5B75:	690400  	ADC #$0004
 C1/5B78:	9502    	STA $02,X
@@ -12035,12 +12244,12 @@ C1/5B82:	691000  	ADC #$0010
 C1/5B85:	AA      	TAX 
 C1/5B86:	E0F0    	CPX #$F0
 C1/5B88:	D0E8    	BNE $5B72
-C1/5B8A:	ADFE7A  	LDA $7AFE
+C1/5B8A:	ADFE7A  	LDA $7AFE		(wrap the saved source around to the tail group)
 C1/5B8D:	38      	SEC 
 C1/5B8E:	E93C00  	SBC #$003C
 C1/5B91:	4C5C5D  	JMP $5D5C
 
-C1/5B94:	CEA87B  	DEC $7BA8
+C1/5B94:	CEA87B  	DEC $7BA8		(band variant: slide a 12-word band of row sources upward by $0C per frame)
 C1/5B97:	CEA87B  	DEC $7BA8
 C1/5B9A:	CEA87B  	DEC $7BA8
 C1/5B9D:	ADAF7B  	LDA $7BAF
@@ -12056,7 +12265,7 @@ C1/5BB2:	C220    	REP #$20
 C1/5BB4:	A90001  	LDA #$0100
 C1/5BB7:	48      	PHA 
 C1/5BB8:	2B      	PLD 
-C1/5BB9:	B532    	LDA $32,X
+C1/5BB9:	B532    	LDA $32,X		(save the wrap-around source)
 C1/5BBB:	8DFE7A  	STA $7AFE
 C1/5BBE:	B502    	LDA $02,X
 C1/5BC0:	38      	SEC 
@@ -12080,11 +12289,11 @@ C1/5BE1:	AA      	TAX
 C1/5BE2:	E0D0    	CPX #$D0
 C1/5BE4:	D0D8    	BNE $5BBE
 C1/5BE6:	A200    	LDX #$00
-C1/5BE8:	ADFE7A  	LDA $7AFE
+C1/5BE8:	ADFE7A  	LDA $7AFE		(store the wrapped source into the vacated group)
 C1/5BEB:	18      	CLC 
 C1/5BEC:	693000  	ADC #$0030
 C1/5BEF:	8059    	BRA $5C4A
-C1/5BF1:	CEA87B  	DEC $7BA8
+C1/5BF1:	CEA87B  	DEC $7BA8		(opposite direction: slide the band downward by $0C per frame)
 C1/5BF4:	CEA87B  	DEC $7BA8
 C1/5BF7:	CEA87B  	DEC $7BA8
 C1/5BFA:	ADAF7B  	LDA $7BAF
@@ -12101,7 +12310,7 @@ C1/5C0F:	C220    	REP #$20
 C1/5C11:	A90001  	LDA #$0100
 C1/5C14:	48      	PHA 
 C1/5C15:	2B      	PLD 
-C1/5C16:	B502    	LDA $02,X
+C1/5C16:	B502    	LDA $02,X		(save the first row source)
 C1/5C18:	8DFE7A  	STA $7AFE
 C1/5C1B:	B532    	LDA $32,X
 C1/5C1D:	18      	CLC 
@@ -12124,7 +12333,7 @@ C1/5C3B:	693000  	ADC #$0030
 C1/5C3E:	AA      	TAX 
 C1/5C3F:	E0C0    	CPX #$C0
 C1/5C41:	D0D8    	BNE $5C1B
-C1/5C43:	ADFE7A  	LDA $7AFE
+C1/5C43:	ADFE7A  	LDA $7AFE		(wrap the saved source around)
 C1/5C46:	38      	SEC 
 C1/5C47:	E93000  	SBC #$0030
 C1/5C4A:	9502    	STA $02,X
@@ -12139,7 +12348,7 @@ C1/5C5A:	9522    	STA $22,X
 C1/5C5C:	9526    	STA $26,X
 C1/5C5E:	952A    	STA $2A,X
 C1/5C60:	952E    	STA $2E,X
-C1/5C62:	A200    	LDX #$00
+C1/5C62:	A200    	LDX #$00		(copy the row-source table to $4D83)
 C1/5C64:	B502    	LDA $02,X
 C1/5C66:	9D834D  	STA $4D83,X
 C1/5C69:	B506    	LDA $06,X
@@ -12159,10 +12368,10 @@ C1/5C85:	48      	PHA
 C1/5C86:	2B      	PLD 
 C1/5C87:	E220    	SEP #$20
 C1/5C89:	C210    	REP #$10
-C1/5C8B:	204A5A  	JSR $5A4A
+C1/5C8B:	204A5A  	JSR $5A4A		(slide finished: advance the program queue and run the next program)
 C1/5C8E:	4C2455  	JMP $5524
 
-C1/5C91:	A506    	LDA $06		(from C1/5529, X = 17)
+C1/5C91:	A506    	LDA $06		(menu program X = 17: directional slide with a button-dependent tweak) (from C1/5529, X = 17)
 C1/5C93:	2910    	AND #$10
 C1/5C95:	F018    	BEQ $5CAF
 C1/5C97:	ADA87B  	LDA $7BA8
@@ -12182,7 +12391,7 @@ C1/5CB2:	F011    	BEQ $5CC5
 C1/5CB4:	ADA87B  	LDA $7BA8
 C1/5CB7:	C901    	CMP #$01
 C1/5CB9:	F00A    	BEQ $5CC5
-C1/5CBB:	AEB17B  	LDX $7BB1
+C1/5CBB:	AEB17B  	LDX $7BB1		(shift the cursor offset with the window)
 C1/5CBE:	CA      	DEX 
 C1/5CBF:	CA      	DEX 
 C1/5CC0:	CA      	DEX 
@@ -12215,6 +12424,16 @@ C1/5CF0:	38      	SEC
 C1/5CF1:	E93800  	SBC #$0038
 C1/5CF4:	4C5C5D  	JMP $5D5C
 
+Menu program X = 18.  NOTE: the disassembly of this block is
+misaligned (the original tool merged operand bytes); the actual
+instructions mirror C1/5C91 exactly:
+LDA $06 / AND #$10 / BEQ $5D15 / LDA $7BA8 / CMP #$03 / BNE $5D15 /
+LDA $0B / AND #$0F / STA $36 / LDA $05 / AND #$F0 / ORA $36 /
+STA $05 / JMP $5B94
+followed at C1/5D15 by the standard cursor-shift prologue
+(LDA $7BAF / BEQ $5D2B / LDA $7BA8 / CMP #$01 / BEQ $5D2B) with the
+cursor offset $7BB1 stepped by +4; the shown disassembly is aligned
+again from C1/5D21 on.
 C1/5CF7:	A506    	LDA $06		(from C1/5529, X = 18)
 C1/5CF9:	2910F0  	AND #$F010
 C1/5CFC:	18      	CLC 
@@ -12241,12 +12460,12 @@ C1/5D26:	E8      	INX
 C1/5D27:	E8      	INX 
 C1/5D28:	8EB17B  	STX $7BB1
 C1/5D2B:	E210    	SEP #$10
-C1/5D2D:	A2DC    	LDX #$DC
+C1/5D2D:	A2DC    	LDX #$DC		(slide the row sources down one group per frame, from the bottom up)
 C1/5D2F:	C220    	REP #$20
 C1/5D31:	A90001  	LDA #$0100
 C1/5D34:	48      	PHA 
 C1/5D35:	2B      	PLD 
-C1/5D36:	B506    	LDA $06,X
+C1/5D36:	B506    	LDA $06,X		(save the tail row source)
 C1/5D38:	8DFE7A  	STA $7AFE
 C1/5D3B:	B502    	LDA $02,X		(from C1/5D51)
 C1/5D3D:	38      	SEC 
@@ -12262,15 +12481,15 @@ C1/5D4E:	AA      	TAX
 C1/5D4F:	E0FC    	CPX #$FC
 C1/5D51:	D0E8    	BNE $5D3B
 C1/5D53:	A200    	LDX #$00
-C1/5D55:	ADFE7A  	LDA $7AFE
+C1/5D55:	ADFE7A  	LDA $7AFE		(wrap the saved source around to the top group)
 C1/5D58:	18      	CLC 
 C1/5D59:	693800  	ADC #$0038
-C1/5D5C:	950E    	STA $0E,X		(from C1/5B91, C1/5CF4)
+C1/5D5C:	950E    	STA $0E,X		(shared tail for the slides: store the wrapped row source) (from C1/5B91, C1/5CF4)
 C1/5D5E:	950A    	STA $0A,X
 C1/5D60:	9506    	STA $06,X
 C1/5D62:	9502    	STA $02,X
 C1/5D64:	A200    	LDX #$00
-C1/5D66:	B502    	LDA $02,X		(from C1/5D82)
+C1/5D66:	B502    	LDA $02,X		(copy the row-source table to $4D83) (from C1/5D82)
 C1/5D68:	9D834D  	STA $4D83,X
 C1/5D6B:	B506    	LDA $06,X
 C1/5D6D:	9D874D  	STA $4D87,X
@@ -12289,26 +12508,33 @@ C1/5D87:	48      	PHA
 C1/5D88:	2B      	PLD 
 C1/5D89:	E220    	SEP #$20
 C1/5D8B:	C210    	REP #$10
-C1/5D8D:	CEA87B  	DEC $7BA8
+C1/5D8D:	CEA87B  	DEC $7BA8		(count down the slide frames)
 C1/5D90:	D006    	BNE $5D98
-C1/5D92:	204A5A  	JSR $5A4A
+C1/5D92:	204A5A  	JSR $5A4A		(slide finished: advance the program queue and run the next program)
 C1/5D95:	4C2455  	JMP $5524
 C1/5D98:	60      	RTS
  
-C1/5D99:	ADA97B  	LDA $7BA9		(from only C1/0BD1)
+Per-frame parameter transfer (called from the frame driver at
+C1/0BD1): when $7BA9 is set, copy $80 bytes from the registered
+parameter block [$7BAA] (bank $7E) into the list work table at $5E4D
+and clear the ready flag.  Then, while $6285 is non-negative, call
+C2/AB8A every frame.
+C1/5D99:	ADA97B  	LDA $7BA9		(a parameter block waiting?) (from only C1/0BD1)
 C1/5D9C:	F013    	BEQ $5DB1
 C1/5D9E:	A28000  	LDX #$0080
 C1/5DA1:	8636    	STX $36
 C1/5DA3:	ACAA7B  	LDY $7BAA
-C1/5DA6:	A24D5E  	LDX #$5E4D
+C1/5DA6:	A24D5E  	LDX #$5E4D		(destination: the $5E4D list work table)
 C1/5DA9:	A97E    	LDA #$7E
 C1/5DAB:	202B1A  	JSR $1A2B
-C1/5DAE:	9CA97B  	STZ $7BA9
+C1/5DAE:	9CA97B  	STZ $7BA9		(parameter block consumed)
 C1/5DB1:	AD8562  	LDA $6285
 C1/5DB4:	3004    	BMI $5DBA
 C1/5DB6:	228AABC2	JSR $C2AB8A
 C1/5DBA:	60      	RTS
  
+Clear the four 256-byte battle dialog line buffers at $E33F, $E43F,
+$E53F and $E63F.
 C1/5DBB:	C220    	REP #$20
 C1/5DBD:	7B      	TDC 
 C1/5DBE:	AA      	TAX 
@@ -12323,6 +12549,10 @@ C1/5DD0:	D0ED    	BNE $5DBF
 C1/5DD2:	E220    	SEP #$20
 C1/5DD4:	60      	RTS
  
+Battle dialog renderer: walks the text at [$88D7] (24-bit pointer,
+set by the message routines around C1/97xx-99xx), drawing glyphs for
+characters >= $20 via C1/6111 and dispatching control codes < $20
+through the C1/5E54 jump table.  A zero byte ends the text.
 C1/5DD5:	9CF5E9  	STZ $E9F5
 C1/5DD8:	647A    	STZ $7A
 C1/5DDA:	AED788  	LDX $88D7
@@ -12330,22 +12560,22 @@ C1/5DDD:	8648    	STX $48
 C1/5DDF:	ADD988  	LDA $88D9
 C1/5DE2:	854A    	STA $4A
 C1/5DE4:	644B    	STZ $4B
-C1/5DE6:	A748    	LDA [$48]
-C1/5DE8:	F014    	BEQ $5DFE
-C1/5DEA:	C920    	CMP #$20
+C1/5DE6:	A748    	LDA [$48]		(next text byte)
+C1/5DE8:	F014    	BEQ $5DFE		(zero: end of the text)
+C1/5DEA:	C920    	CMP #$20		(control code?)
 C1/5DEC:	9008    	BCC $5DF6
-C1/5DEE:	201161  	JSR $6111
-C1/5DF1:	20EC66  	JSR $66EC
+C1/5DEE:	201161  	JSR $6111		(draw the glyph)
+C1/5DF1:	20EC66  	JSR $66EC		(advance the text pointer)
 C1/5DF4:	80F0    	BRA $5DE6
 
-C1/5DF6:	204F5E  	JSR $5E4F
+C1/5DF6:	204F5E  	JSR $5E4F		(dispatch the control code)
 C1/5DF9:	20EC66  	JSR $66EC
 C1/5DFC:	80E8    	BRA $5DE6
 
-C1/5DFE:	20025E  	JSR $5E02
+C1/5DFE:	20025E  	JSR $5E02		(end: flush the rendered text)
 C1/5E01:	60      	RTS
  
-C1/5E02:	A648    	LDX $48
+C1/5E02:	A648    	LDX $48		(upload the dialog line buffers (C1/639B; the C1/9BB6 wait is skipped with A = 0), preserving the text pointer and pen position)
 C1/5E04:	DA      	PHX 
 C1/5E05:	A64A    	LDX $4A
 C1/5E07:	DA      	PHX 
@@ -12362,7 +12592,7 @@ C1/5E18:	FA      	PLX
 C1/5E19:	8648    	STX $48
 C1/5E1B:	60      	RTS
  
-C1/5E1C:	A648    	LDX $48
+C1/5E1C:	A648    	LDX $48		(run one frame (C1/022A) with the text pointer and pen position preserved)
 C1/5E1E:	DA      	PHX 
 C1/5E1F:	A64A    	LDX $4A
 C1/5E21:	DA      	PHX 
@@ -12377,7 +12607,7 @@ C1/5E2E:	FA      	PLX
 C1/5E2F:	8648    	STX $48
 C1/5E31:	60      	RTS
  
-C1/5E32:	8522    	STA $22
+C1/5E32:	8522    	STA $22		(wait A frames (C1/9BB6) then upload the buffers (C1/639B), preserving the text state)
 C1/5E34:	A648    	LDX $48
 C1/5E36:	DA      	PHX 
 C1/5E37:	A64A    	LDX $4A
@@ -12395,6 +12625,8 @@ C1/5E4B:	FA      	PLX
 C1/5E4C:	8648    	STX $48
 C1/5E4E:	60      	RTS
  
+Battle dialog control-code dispatch (codes $00-$1E) via the pointer
+table below.
 C1/5E4F:	0A      	ASL A			(from C1/5DF6)
 C1/5E50:	AA      	TAX 
 C1/5E51:	7C545E  	JMP ($5E54,X)
@@ -12402,27 +12634,27 @@ C1/5E51:	7C545E  	JMP ($5E54,X)
 
 Pointers to Code
 
-C1/5E54:	4767    	(00)		(exits)
-C1/5E56:	8C60		(01)
-C1/5E58:	AC5E		(02)
+C1/5E54:	4767    	(00: unused - end of text is handled at C1/5DE8 (exits))
+C1/5E56:	8C60		(01: newline)
+C1/5E58:	AC5E		(02: character name)
 C1/5E5A:	4767  	(03)		(exits)
-C1/5E5C:	7B60 		(04)
-C1/5E5E:	A75E 		(05)
-C1/5E60:	9F5E		(06)
-C1/5E62:	945E		(07)
+C1/5E5C:	7B60		(04: toggle highlight mode)
+C1/5E5E:	A75E		(05: pause 60 frames)
+C1/5E60:	9F5E		(06: pause N frames)
+C1/5E62:	945E		(07: wait for keypress)
 C1/5E64:	4767    	(08)		(exits)
 C1/5E66:	4767    	(09)		(exits)
 C1/5E68:	4767    	(0A)		(exits)
 C1/5E6A:	4767    	(0B)		(exits)
-C1/5E6C:	0C5F  	(0C)
+C1/5E6C:	0C5F  	(0C: command name)
 C1/5E6E:	4767    	(0D)		(exits)
-C1/5E70:	4360      	(0E)
-C1/5E72:	B35F    	(0F)
-C1/5E74:	755F    	(10)
-C1/5E76:	7D5F		(11)
-C1/5E78:	E65E		(12)
-C1/5E7A:	6D5F  	(13)
-C1/5E7C:	655F    	(14)
+C1/5E70:	4360      	(0E: item name)
+C1/5E72:	B35F    	(0F: attack name)
+C1/5E74:	755F    	(10: number at $2F35)
+C1/5E76:	7D5F		(11: number at $2F38)
+C1/5E78:	E65E		(12: indirect print)
+C1/5E7A:	6D5F  	(13: number at $2F3B)
+C1/5E7C:	655F    	(14: number at $2F3E)
 C1/5E7E:	4767    	(15)		(exits)
 C1/5E80:	4767    	(16)		(exits)
 C1/5E82:	4767    	(16)		(exits)
@@ -12430,30 +12662,30 @@ C1/5E84:	4767    	(17)		(exits)
 C1/5E86:	4767    	(18)		(exits)
 C1/5E88:	4767    	(19)		(exits)
 C1/5E8A:	4767    	(1A)		(exits)
-C1/5E8C:	1161    	(1B)
-C1/5E8E:	1161    	(1C)
-C1/5E90:	1161    	(1D)
-C1/5E92:	1161    	(1E)
+C1/5E8C:	1161    	(1B: literal glyph)
+C1/5E8E:	1161    	(1C: literal glyph)
+C1/5E90:	1161    	(1D: literal glyph)
+C1/5E92:	1161    	(1E: literal glyph)
 
-C1/5E94:	EEF5E9  	INC $E9F5		(from C1/5E51, X = 7)
+C1/5E94:	EEF5E9  	INC $E9F5		(code 07: flag the input wait for the message system) (from C1/5E51, X = 7)
 C1/5E97:	20025E  	JSR $5E02
-C1/5E9A:	A504    	LDA $04
+C1/5E9A:	A504    	LDA $04		(run frames until a button press ($04 goes negative))
 C1/5E9C:	10F6    	BPL $5E94
 C1/5E9E:	60      	RTS
  
-C1/5E9F:	20EC66  	JSR $66EC		(from C1/5E51, X = 6)
+C1/5E9F:	20EC66  	JSR $66EC		(code 06: pause - argument byte = frame count) (from C1/5E51, X = 6)
 C1/5EA2:	A748    	LDA [$48]
 C1/5EA4:	4C325E  	JMP $5E32
 
-C1/5EA7:	A93C    	LDA #$3C		(from C1/5E51, X = 5)
+C1/5EA7:	A93C    	LDA #$3C		(code 05: pause 60 frames) (from C1/5E51, X = 5)
 C1/5EA9:	4C325E  	JMP $5E32
 
-C1/5EAC:	20EC66  	JSR $66EC		(from C1/5E51, X = 2)
+C1/5EAC:	20EC66  	JSR $66EC		(code 02: print a character's name - argument byte = actor id) (from C1/5E51, X = 2)
 C1/5EAF:	A748    	LDA [$48]
 C1/5EB1:	8522    	STA $22
 C1/5EB3:	7B      	TDC 			(from C1/5E51, X = F)
 C1/5EB4:	AA      	TAX 
-C1/5EB5:	BF001600	LDA $001600,X
+C1/5EB5:	BF001600	LDA $001600,X		(search the $25-byte character blocks at $1600 for the actor)
 C1/5EB9:	C522    	CMP $22
 C1/5EBB:	F012    	BEQ $5ECF
 C1/5EBD:	C220    	REP #$20
@@ -12466,7 +12698,7 @@ C1/5EC6:	E220    	SEP #$20
 C1/5EC8:	E05002  	CPX #$0250
 C1/5ECB:	F018    	BEQ $5EE5
 C1/5ECD:	80E6    	BRA $5EB5
-C1/5ECF:	A906    	LDA #$06
+C1/5ECF:	A906    	LDA #$06		(found: print up to 6 name characters (from $1602 in the block))
 C1/5ED1:	8D6D61  	STA $616D
 C1/5ED4:	BF021600	LDA $001602,X
 C1/5ED8:	C9FF    	CMP #$FF
@@ -12477,7 +12709,7 @@ C1/5EE0:	CE6D61  	DEC $616D
 C1/5EE3:	D0EF    	BNE $5ED4
 C1/5EE5:	60      	RTS
  
-C1/5EE6:	20EC66  	JSR $66EC		(from C1/5E51, X = 12)
+C1/5EE6:	20EC66  	JSR $66EC		(code 12: indirect print - argument byte selects the source) (from C1/5E51, X = 12)
 C1/5EE9:	A748    	LDA [$48]
 C1/5EEB:	0A      	ASL A
 C1/5EEC:	AA      	TAX 
@@ -12488,21 +12720,23 @@ C1/5EF2:	065F		(1)
 C1/5EF4:	005F		(2)
 C1/5EF6:	135F		(3)
 
+Data (shown misdisassembled): four pointers for C1/5F40 to the WRAM
+name buffers - $2EAE, $2ECE, $2EEE, $2F0E.
 C1/5EF8:	AE2ECE2E  	ROL $2ECE		
 C1/5EFC:	EE2E0E  	INC $0E2E
 C1/5EFF:	2F
 
-C1/5F00:	AD352F  	LDA $2F35		(from C1/5EED, X = 2)
+C1/5F00:	AD352F  	LDA $2F35		(sub-code 2: attack name from the parameter at $2F35) (from C1/5EED, X = 2)
 C1/5F03:	4CB85F  	JMP $5FB8
 
-C1/5F06:	AD352F  	LDA $2F35		(from C1/5EED, X = 1)
+C1/5F06:	AD352F  	LDA $2F35		(sub-code 1: item name from the parameter at $2F35) (from C1/5EED, X = 1)
 C1/5F09:	4C4860  	JMP $6048
 
-C1/5F0C:	20EC66  	JSR $66EC		(from C1/5E51, X = C)
+C1/5F0C:	20EC66  	JSR $66EC		(code 0C: print a command name - argument byte = command id) (from C1/5E51, X = C)
 C1/5F0F:	A748    	LDA [$48]
 C1/5F11:	8003    	BRA $5F16
 
-C1/5F13:	AD352F  	LDA $2F35		(from C1/5EED, X = 3)
+C1/5F13:	AD352F  	LDA $2F35		(sub-code 3: command name from the parameter at $2F35) (from C1/5EED, X = 3)
 C1/5F16:	C9FF    	CMP #$FF		(from C1/5F11)
 C1/5F18:	D001    	BNE $5F1B
 C1/5F1A:	60      	RTS
@@ -12525,7 +12759,7 @@ C1/5F3A:	CE6D61  	DEC $616D
 C1/5F3D:	D0EF    	BNE $5F2E
 C1/5F3F:	60      	RTS
  
-C1/5F40:	AD382F  	LDA $2F38		(from 5EED, X = 0)
+C1/5F40:	AD382F  	LDA $2F38		(sub-code 0: print 6 characters from the WRAM name buffer selected by $2F38) (from 5EED, X = 0)
 C1/5F43:	0A      	ASL A
 C1/5F44:	AA      	TAX 
 C1/5F45:	C220    	REP #$20
@@ -12544,28 +12778,28 @@ C1/5F5F:	CE6D61  	DEC $616D
 C1/5F62:	D0F0    	BNE $5F54
 C1/5F64:	60      	RTS
  
-C1/5F65:	AE3E2F  	LDX $2F3E		(from C1/5E51, X = 14)
+C1/5F65:	AE3E2F  	LDX $2F3E		(code 14: print the number at $2F3E-$2F40) (from C1/5E51, X = 14)
 C1/5F68:	AD402F  	LDA $2F40
 C1/5F6B:	8016    	BRA $5F83
 
-C1/5F6D:	AE3B2F  	LDX $2F3B		(from C1/5E51, X = 13)
+C1/5F6D:	AE3B2F  	LDX $2F3B		(code 13: print the number at $2F3B-$2F3D) (from C1/5E51, X = 13)
 C1/5F70:	AD3D2F  	LDA $2F3D
 C1/5F73:	800E    	BRA $5F83
 
-C1/5F75:	AE352F  	LDX $2F35		(from C1/5E51, X = 10)
+C1/5F75:	AE352F  	LDX $2F35		(code 10: print the number at $2F35-$2F37) (from C1/5E51, X = 10)
 C1/5F78:	AD372F  	LDA $2F37
 C1/5F7B:	8006    	BRA $5F83
 
-C1/5F7D:	AE382F  	LDX $2F38		(from C1/5E51, X = 11)
+C1/5F7D:	AE382F  	LDX $2F38		(code 11: print the number at $2F38-$2F3A) (from C1/5E51, X = 11)
 C1/5F80:	AD3A2F  	LDA $2F3A
-C1/5F83:	8610    	STX $10
+C1/5F83:	8610    	STX $10		(shared: convert the 24-bit value in $10-$12 to 8 decimal digits at $69 (pad char $B4, via C1/1ABF), then print without the leading pads)
 C1/5F85:	8512    	STA $12
 C1/5F87:	A9B4    	LDA #$B4
 C1/5F89:	8568    	STA $68
-C1/5F8B:	20BF1A  	JSR $1ABF
+C1/5F8B:	20BF1A  	JSR $1ABF		(convert to decimal)
 C1/5F8E:	7B      	TDC 
 C1/5F8F:	AA      	TAX 
-C1/5F90:	B569    	LDA $69,X
+C1/5F90:	B569    	LDA $69,X		(skip the leading pad characters)
 C1/5F92:	C9B4    	CMP #$B4
 C1/5F94:	D006    	BNE $5F9C
 C1/5F96:	E8      	INX 
@@ -12578,7 +12812,7 @@ C1/5FA2:	E00800  	CPX #$0008
 C1/5FA5:	D0F5    	BNE $5F9C
 C1/5FA7:	60      	RTS
  
-C1/5FA8:	48      	PHA 			(from C1/604E)
+C1/5FA8:	48      	PHA		(print A copies of the blank glyph $FF) (from C1/604E)
 C1/5FA9:	A9FF    	LDA #$FF
 C1/5FAB:	201161  	JSR $6111
 C1/5FAE:	68      	PLA 
@@ -12586,7 +12820,7 @@ C1/5FAF:	3A      	DEC A
 C1/5FB0:	D0F6    	BNE $5FA8
 C1/5FB2:	60      	RTS
  
-C1/5FB3:	20EC66  	JSR $66EC		(from C1/5E54, X = F)
+C1/5FB3:	20EC66  	JSR $66EC		(code 0F: print an attack name - argument byte = attack id) (from C1/5E54, X = F)
 C1/5FB6:	A748    	LDA [$48]
 C1/5FB8:	C9FF    	CMP #$FF
 C1/5FBA:	D001    	BNE $5FBD
@@ -12595,7 +12829,7 @@ C1/5FBC:	60      	RTS
 
 Display attack name, does all attacks from the skeans on down to the end, except for sword techniques
 
-C1/5FBD:	C936    	CMP #$36		(from C1/5FBA)
+C1/5FBD:	C936    	CMP #$36		(id >= $51: skean/misc attack names (10 chars, E6/F7B9)) (from C1/5FBA)
 C1/5FBF:	9058    	BCC $6019
 C1/5FC1:	C951    	CMP #$51
 C1/5FC3:	902A    	BCC $5FEF
@@ -12624,7 +12858,7 @@ C1/5FEE:	60      	RTS
 
 Display Esper name
 
-C1/5FEF:	38      	SEC 			(from only C1/5FC3)
+C1/5FEF:	38      	SEC		(id $36-$50: Esper names (8 chars, E6/F6E1)) (from only C1/5FC3)
 C1/5FF0:	E936    	SBC #$36
 C1/5FF2:	EB      	XBA 
 C1/5FF3:	A908    	LDA #$08		(8 = Esper name length)
@@ -12648,7 +12882,7 @@ C1/6018:	60      	RTS
 
 Display spell name
 
-C1/6019:	EB      	XBA 			(from only C1/5FBF)
+C1/6019:	EB      	XBA		(id < $36: spell names (7 chars, E6/F568)) (from only C1/5FBF)
 C1/601A:	A907    	LDA #$07		(7 = spell name length)
 C1/601C:	8510    	STA $10
 C1/601E:	8D6D61  	STA $616D
@@ -12668,11 +12902,11 @@ C1/603D:	CE6D61  	DEC $616D
 C1/6040:	D0EF    	BNE $6031
 C1/6042:	60      	RTS
  
-C1/6043:	20EC66  	JSR $66EC		(from C1/5E51, X = E)
+C1/6043:	20EC66  	JSR $66EC		(code 0E: print an item name - argument byte = item id) (from C1/5E51, X = E)
 C1/6046:	A748    	LDA [$48]
 C1/6048:	C9FF    	CMP #$FF
 C1/604A:	D005    	BNE $6051
-C1/604C:	A90D    	LDA #$0D
+C1/604C:	A90D    	LDA #$0D		(id $FF: print 13 blanks instead)
 C1/604E:	4CA85F  	JMP $5FA8
 
 
@@ -12698,13 +12932,15 @@ C1/6075:	CE6D61  	DEC $616D
 C1/6078:	D0EF    	BNE $6069
 C1/607A:	60      	RTS
  
-C1/607B:	A54B    	LDA $4B		(from C1/5E51, X = 4)
+C1/607B:	A54B    	LDA $4B		(code 04: toggle highlight text mode ($4B - glyphs then render via C1/6256)) (from C1/5E51, X = 4)
 C1/607D:	4901    	EOR #$01
 C1/607F:	854B    	STA $4B
 C1/6081:	60      	RTS
  
 Data
 
+Data: VRAM word addresses of the dialog text lines, loaded into $E9BF
+by control code 01 - $5A00, $5C00, $5E00, $5800.
 C1/6082:	00
 C1/6083:	5A    	
 C1/6084:	00
@@ -12716,12 +12952,12 @@ C1/6089:	58
 C1/608A:	00
 C1/608B:	58    	
 
-C1/608C:	647A    	STZ $7A		(from C1/5E51, X = 1)
+C1/608C:	647A    	STZ $7A		(code 01 (newline): reset the pen position) (from C1/5E51, X = 1)
 C1/608E:	ADC3E9  	LDA $E9C3
-C1/6091:	1045    	BPL $60D8
-C1/6093:	20BB5D  	JSR $5DBB
+C1/6091:	1045    	BPL $60D8		($E9C3 positive: smooth-scroll the visible line upward instead)
+C1/6093:	20BB5D  	JSR $5DBB		(clear the four line buffers)
 C1/6096:	ADC1E9  	LDA $E9C1
-C1/6099:	C904    	CMP #$04
+C1/6099:	C904    	CMP #$04		(cycle the line counter 0-3)
 C1/609B:	D003    	BNE $60A0
 C1/609D:	9CC1E9  	STZ $E9C1
 C1/60A0:	ADC1E9  	LDA $E9C1
@@ -12729,20 +12965,20 @@ C1/60A3:	2903    	AND #$03
 C1/60A5:	0A      	ASL A
 C1/60A6:	AA      	TAX 
 C1/60A7:	C220    	REP #$20
-C1/60A9:	BF8260C1	LDA $C16082,X
+C1/60A9:	BF8260C1	LDA $C16082,X		($E9BF = the next line's VRAM address (table C1/6082))
 C1/60AD:	8DBFE9  	STA $E9BF
 C1/60B0:	7B      	TDC 
 C1/60B1:	E220    	SEP #$20
 C1/60B3:	EEC1E9  	INC $E9C1
 C1/60B6:	20025E  	JSR $5E02
-C1/60B9:	ADC2E9  	LDA $E9C2
+C1/60B9:	ADC2E9  	LDA $E9C2		(on reaching the third line, slide the dialog window)
 C1/60BC:	C902    	CMP #$02
 C1/60BE:	D014    	BNE $60D4
-C1/60C0:	A904    	LDA #$04
+C1/60C0:	A904    	LDA #$04		(4-frame slide via menu program $3E)
 C1/60C2:	8DA87B  	STA $7BA8
 C1/60C5:	A93E    	LDA #$3E
 C1/60C7:	8DC27B  	STA $7BC2      (queue up to execute at C1/5B4C)
-C1/60CA:	ADC27B  	LDA $7BC2
+C1/60CA:	ADC27B  	LDA $7BC2		(run frames until the program queue drains)
 C1/60CD:	F008    	BEQ $60D7
 C1/60CF:	201C5E  	JSR $5E1C
 C1/60D2:	80F6    	BRA $60CA
@@ -12750,7 +12986,7 @@ C1/60D4:	EEC2E9  	INC $E9C2
 C1/60D7:	60      	RTS
 
  
-C1/60D8:	A910    	LDA #$10		(from C1/6091)
+C1/60D8:	A910    	LDA #$10		(smooth scroll: 16 one-pixel steps) (from C1/6091)
 C1/60DA:	48      	PHA 
 C1/60DB:	7B      	TDC 
 C1/60DC:	AA      	TAX 
@@ -12759,20 +12995,20 @@ C1/60DF:	A92000  	LDA #$0020
 C1/60E2:	8524    	STA $24
 C1/60E4:	A90F00  	LDA #$000F
 C1/60E7:	8522    	STA $22
-C1/60E9:	BD41E3  	LDA $E341,X
+C1/60E9:	BD41E3  	LDA $E341,X		(shift each tile column's pixel rows up by one)
 C1/60EC:	9D3FE3  	STA $E33F,X
 C1/60EF:	E8      	INX 
 C1/60F0:	E8      	INX 
 C1/60F1:	C622    	DEC $22
 C1/60F3:	D0F4    	BNE $60E9
-C1/60F5:	9E3FE3  	STZ $E33F,X
+C1/60F5:	9E3FE3  	STZ $E33F,X		(blank the vacated bottom row)
 C1/60F8:	E8      	INX 
 C1/60F9:	E8      	INX 
 C1/60FA:	C624    	DEC $24
 C1/60FC:	D0E6    	BNE $60E4
 C1/60FE:	7B      	TDC 
 C1/60FF:	E220    	SEP #$20
-C1/6101:	20025E  	JSR $5E02
+C1/6101:	20025E  	JSR $5E02		(re-upload and run a frame per step)
 C1/6104:	68      	PLA 
 C1/6105:	3A      	DEC A
 C1/6106:	D0D2    	BNE $60DA
@@ -12781,6 +13017,8 @@ C1/6108:	60      	RTS
 
 Data
 
+Data: left-shift counts (4,3,2,1) for glyph sub-byte alignment at
+C1/61C4.
 C1/6109:	04                              (from C1/61CB)
 C1/610A:	00    	
 C1/610B:	03
@@ -12791,35 +13029,44 @@ C1/610F:	01
 C1/6110:	00    	
 
 
-C1/6111:	8DF0EC  	STA $ECF0		(from C1/5DEE; C1/5E51, X = 1B, 1C, 1D, or 1E; C1/5EDC; C1/5F36; C1/5F5E; C1/5F9E; C1/5FAE; C1/5FE5; C1/600F; C1/6039; C1/6079)
+Variable-width glyph renderer (battle dialog).  A = character code;
+the glyph's 11 1bpp rows (from C4/90C0, at index (char - $80) * $16)
+are shifted to the pen position $7A and OR'd into the dialog line
+buffer planes at $E347/$E367/$E387 (+Y = tile column * $20).  The pen
+then advances by the character's width from the C4/8FC0 width table,
+and unless $62AC suppresses it the buffer is re-uploaded after every
+glyph (typewriter effect).  While the highlight flag $4B is set
+(control code 04), the C1/6256 variant draws with the background
+erased instead.
+C1/6111:	8DF0EC  	STA $ECF0		(remember the character code for the width lookup) (from C1/5DEE; C1/5E51, X = 1B, 1C, 1D, or 1E; C1/5EDC; C1/5F36; C1/5F5E; C1/5F9E; C1/5FAE; C1/5FE5; C1/600F; C1/6039; C1/6079)
 C1/6114:	38      	SEC 
-C1/6115:	E980    	SBC #$80
+C1/6115:	E980    	SBC #$80		(font graphic index = character - $80)
 C1/6117:	5A      	PHY 
 C1/6118:	DA      	PHX 
 C1/6119:	8522    	STA $22
 C1/611B:	A916    	LDA #$16
 C1/611D:	8524    	STA $24
-C1/611F:	20D918  	JSR $18D9
-C1/6122:	A54B    	LDA $4B
+C1/611F:	20D918  	JSR $18D9		(glyph graphic offset = index * $16 (11 rows of 2 bytes))
+C1/6122:	A54B    	LDA $4B		(highlight mode?)
 C1/6124:	F003    	BEQ $6129
 C1/6126:	4C5662  	JMP $6256
 
 
-C1/6129:	A57A    	LDA $7A		(from C1/6124)
+C1/6129:	A57A    	LDA $7A		(Y = byte offset of the pen's tile column (($7A & $F8) * 4)) (from C1/6124)
 C1/612B:	29F8    	AND #$F8
 C1/612D:	C220    	REP #$20
 C1/612F:	0A      	ASL A
 C1/6130:	0A      	ASL A
 C1/6131:	A8      	TAY 
-C1/6132:	A90B00  	LDA #$000B
+C1/6132:	A90B00  	LDA #$000B		(11 pixel rows)
 C1/6135:	851C    	STA $1C
-C1/6137:	A57A    	LDA $7A
+C1/6137:	A57A    	LDA $7A		(sub-byte pen offset: bit 2 selects the shift direction)
 C1/6139:	290400  	AND #$0004
 C1/613C:	D003    	BNE $6141
 C1/613E:	4CC461  	JMP $61C4
 
 
-C1/6141:	A57A    	LDA $7A		(from C1/613C)
+C1/6141:	A57A    	LDA $7A		(shift the glyph right by ($7A & 3) into this and the next byte column) (from C1/613C)
 C1/6143:	290300  	AND #$0003
 C1/6146:	851A    	STA $1A
 C1/6148:	A626    	LDX $26
@@ -12879,7 +13126,7 @@ C1/61BE:	4C4A61  	JMP $614A
 
 C1/61C1:	4C2E62  	JMP $622E
 
-C1/61C4:	A57A    	LDA $7A
+C1/61C4:	A57A    	LDA $7A		(shift the glyph left by 4 - ($7A & 3) (table C1/6109))
 C1/61C6:	290300  	AND #$0003
 C1/61C9:	0A      	ASL A
 C1/61CA:	AA      	TAX 
@@ -12927,7 +13174,7 @@ C1/6228:	E8      	INX
 C1/6229:	E8      	INX 
 C1/622A:	C61C    	DEC $1C
 C1/622C:	D0A5    	BNE $61D3
-C1/622E:	7B      	TDC 
+C1/622E:	7B      	TDC		(advance the pen by the character's width)
 C1/622F:	E220    	SEP #$20
 C1/6231:	DA      	PHX 
 C1/6232:	ADF0EC  	LDA $ECF0
@@ -12939,7 +13186,7 @@ C1/623D:	FA      	PLX
 C1/623E:	18      	CLC 
 C1/623F:	657A    	ADC $7A
 C1/6241:	857A    	STA $7A
-C1/6243:	ADAC62  	LDA $62AC
+C1/6243:	ADAC62  	LDA $62AC		(typewriter effect unless $62AC is set: re-upload after each glyph)
 C1/6246:	D003    	BNE $624B
 C1/6248:	20025E  	JSR $5E02
 C1/624B:	FA      	PLX 
@@ -12948,6 +13195,7 @@ C1/624D:	60      	RTS
  
 Data
 
+Data: left-edge pixel masks for the highlight renderer below.
 C1/624E:	00
 C1/624F:	80
 C1/6250:	C0
@@ -12957,7 +13205,7 @@ C1/6253:	F8
 C1/6254:	FC
 C1/6255:	FE
 
-C1/6256:	A57A    	LDA $7A
+C1/6256:	A57A    	LDA $7A		(highlight-mode glyph renderer: as C1/6129, but the background plane is erased so the text reads inverted)
 C1/6258:	2907    	AND #$07
 C1/625A:	AA      	TAX 
 C1/625B:	BF4E62C1	LDA $C1624E,X
@@ -13115,6 +13363,8 @@ C1/6399:	7A      	PLY
 C1/639A:	60      	RTS
 
  
+Upload the dialog line buffers: queue the $400 bytes at 7E/E33F for
+VRAM address $E9BF via the transfer helper C1/198D.
 C1/639B:	A20004  	LDX #$0400
 C1/639E:	8610    	STX $10
 C1/63A0:	A23FE3  	LDX #$E33F
@@ -13123,18 +13373,26 @@ C1/63A5:	ACBFE9  	LDY $E9BF
 C1/63A8:	4C8D19  	JMP $198D
 
 
-C1/63AB:	ADE288  	LDA $88E2		(from C1/4C22, C1/4C66, C1/4CDD, C1/4D03, C1/4D29, C1/4D71, C1/4DB0, C1/4E02, C1/4E57)
+List-row text interpreter (fixed-width tile font).  The list-row
+builders (C1/4C22 ... C1/4E57) point $88DD at a small text script and
+set the destination base ($88DF), the second-buffer offset ($88E1, in
+words - doubled here) and the attribute byte ($88E2), then call this.
+Script bytes >= $20 are emitted as tiles; codes < $20 dispatch through
+the C1/6414 pointer table.  Every emitted position writes the
+character (+ attribute) to the offset buffer and a blank pair to the
+base buffer, via C1/63FE.
+C1/63AB:	ADE288  	LDA $88E2		(attribute byte for the row text) (from C1/4C22, C1/4C66, C1/4CDD, C1/4D03, C1/4D29, C1/4D71, C1/4DB0, C1/4E02, C1/4E57)
 C1/63AE:	8556    	STA $56
 C1/63B0:	8558    	STA $58
 C1/63B2:	855A    	STA $5A
 C1/63B4:	EB      	XBA 
-C1/63B5:	0EE188  	ASL $88E1
+C1/63B5:	0EE188  	ASL $88E1		(offset argument: words to bytes)
 C1/63B8:	642D    	STZ $2D
-C1/63BA:	AEDD88  	LDX $88DD
+C1/63BA:	AEDD88  	LDX $88DD		(the row's text script)
 C1/63BD:	864F    	STX $4F
-C1/63BF:	AEDF88  	LDX $88DF
+C1/63BF:	AEDF88  	LDX $88DF		(destination base)
 C1/63C2:	8651    	STX $51
-C1/63C4:	A551    	LDA $51
+C1/63C4:	A551    	LDA $51		(second buffer = base + offset)
 C1/63C6:	18      	CLC 
 C1/63C7:	6DE188  	ADC $88E1
 C1/63CA:	8553    	STA $53
@@ -13143,9 +13401,9 @@ C1/63CE:	6900    	ADC #$00
 C1/63D0:	8554    	STA $54
 C1/63D2:	A400    	LDY $00
 C1/63D4:	B24F    	LDA ($4F)
-C1/63D6:	F01C    	BEQ $63F4		
+C1/63D6:	F01C    	BEQ $63F4		(zero: end of the row script)
 C1/63D8:	C920    	CMP #$20
-C1/63DA:	900C    	BCC $63E8
+C1/63DA:	900C    	BCC $63E8		(control code: dispatch via C1/640B)
 C1/63DC:	20FE63  	JSR $63FE
 C1/63DF:	E64F    	INC $4F
 C1/63E1:	D0F1    	BNE $63D4
@@ -13165,7 +13423,7 @@ C1/63F5:	EB      	XBA
 C1/63F6:	60      	RTS
 
  
-C1/63F7:	E64F    	INC $4F
+C1/63F7:	E64F    	INC $4F		(advance the row-script pointer $4F)
 C1/63F9:	D002    	BNE $63FD
 C1/63FB:	E650    	INC $50
 C1/63FD:	60      	RTS
@@ -13181,7 +13439,7 @@ C1/6409:	C8      	INY
 C1/640A:	60      	RTS
  
 
-C1/640B:	852C    	STA $2C		(from only C1/63E8)
+C1/640B:	852C    	STA $2C		(row-script control-code dispatch via the C1/6414 table) (from only C1/63E8)
 C1/640D:	062C    	ASL $2C
 C1/640F:	A62C    	LDX $2C
 C1/6411:	7C1464  	JMP ($6414,X)
@@ -13192,11 +13450,11 @@ Function Pointers (called from C1/6411) Various text loadings
 		(function)	(value of $2C)
 C1/6414:	4767    	(00)			(exits)	(00 is used to end a set of commands...)
 C1/6416:	4867      	(01)			
-C1/6418:	9464    	(02)			(Displays 2-digit number X?)
-C1/641A:	C964    	(03)			
-C1/641C:	D164    	(04)			(Change tile palette to X?)
-C1/641E:	DE64    	(05)			(Insert X blank tiles)
-C1/6420:	EF64    	(06)			(Display Magitek attack name X?)
+C1/6418:	9464    	(02: two-digit number)
+C1/641A:	C964    	(03: literal tile)
+C1/641C:	D164    	(04: set the text attribute)
+C1/641E:	DE64    	(05: N blank tiles)
+C1/6420:	EF64    	(06: Magitek attack name)
 C1/6422:	4767    	(07)			(exits)
 C1/6424:	4767    	(08)			(exits)
 C1/6426:	4767    	(09)			(exits)
@@ -13204,22 +13462,22 @@ C1/6428:	4767    	(0A)			(exits)
 C1/642A:	4767    	(0B)			(exits)
 C1/642C:	4767    	(0C)			(exits)
 C1/642E:	4767    	(0D)			(exits)
-C1/6430:	5865    	(0E)			(Display Item (no Type) name X?)
-C1/6432:	9865    	(0F)			(Display Spell name X)
+C1/6430:	5865    	(0E: item name, 13 tiles)
+C1/6432:	9865    	(0F: spell/Esper/skean attack name by id)
 C1/6434:	4767    	(10)			(exits)
-C1/6436:	8565    	(11)			
-C1/6438:	1765    	(12)			(Display Item and Type names X?)
+C1/6436:	8565    	(11: spell name padded to 10 tiles)
+C1/6438:	1765    	(12: gear-type name from the item's icon character)
 C1/643A:	4767    	(13)			(exits)
 C1/643C:	4767    	(14)			(exits)
 C1/643E:	4767    	(15)			(exits)
-C1/6440:	4A64    	(16)			(Display 3-digit number X?)
-C1/6442:	0066    	(17)			(Display Dance name X?)
-C1/6444:	2866    	(18)			(Display Enemy name X?)
-C1/6446:	5566    	(19)			(Display Lore name X?)
-C1/6448:	7D66    	(1A)			(Display Esper name X?)
+C1/6440:	4A64    	(16: three-digit number)
+C1/6442:	0066    	(17: Dance name)
+C1/6444:	2866    	(18: enemy name + trailing blank)
+C1/6446:	5566    	(19: Lore name)
+C1/6448:	7D66    	(1A: Esper name)
 
 
-C1/644A:	20F763   	JSR $63F7		(from C1/6411, X = 16)
+C1/644A:	20F763   	JSR $63F7		(code 16: three-digit number (argument byte)) (from C1/6411, X = 16)
 C1/644D:	6440    	STZ $40
 C1/644F:	6441    	STZ $41
 C1/6451:	B24F    	LDA ($4F)
@@ -13240,7 +13498,7 @@ C1/6469:	690A    	ADC #$0A
 C1/646B:	48      	PHA 
 C1/646C:	A540    	LDA $40
 C1/646E:	D002    	BNE $6472
-C1/6470:	A94B    	LDA #$4B
+C1/6470:	A94B    	LDA #$4B		(no hundreds digit: $4B + $B4 = $FF (blank))
 C1/6472:	18      	CLC 
 C1/6473:	69B4    	ADC #$B4
 C1/6475:	20FE63  	JSR $63FE
@@ -13260,7 +13518,7 @@ C1/648F:	69B4    	ADC #$B4
 C1/6491:	4CFE63  	JMP $63FE
 
 
-C1/6494:	20F763  	JSR $63F7		(from C1/6411, X = 2)
+C1/6494:	20F763  	JSR $63F7		(code 02: two-digit number (argument byte)) (from C1/6411, X = 2)
 C1/6497:	6440    	STZ $40
 C1/6499:	B24F    	LDA ($4F)
 C1/649B:	38      	SEC 
@@ -13275,7 +13533,7 @@ C1/64A6:	690A    	ADC #$0A
 C1/64A8:	8541    	STA $41
 C1/64AA:	A540    	LDA $40
 C1/64AC:	D002    	BNE $64B0
-C1/64AE:	A94B    	LDA #$4B
+C1/64AE:	A94B    	LDA #$4B		(no tens digit: blank)
 C1/64B0:	18      	CLC 
 C1/64B1:	69B4    	ADC #$B4
 C1/64B3:	20FE63  	JSR $63FE
@@ -13292,12 +13550,12 @@ C1/64C4:	69B4    	ADC #$B4
 C1/64C6:	4CFE63  	JMP $63FE
 
 
-C1/64C9:	20F763  	JSR $63F7		(from C1/6411, X = 3)
+C1/64C9:	20F763  	JSR $63F7		(code 03: emit the next script byte as a literal tile) (from C1/6411, X = 3)
 C1/64CC:	B24F    	LDA ($4F)
 C1/64CE:	4CFE63  	JMP $63FE
 
 
-C1/64D1:	20F763  	JSR $63F7		(from C1/6411, X = 4)
+C1/64D1:	20F763  	JSR $63F7		(code 04: set the text attribute (argument byte)) (from C1/6411, X = 4)
 C1/64D4:	B24F    	LDA ($4F)
 C1/64D6:	8556    	STA $56
 C1/64D8:	8558    	STA $58
@@ -13306,7 +13564,7 @@ C1/64DC:	EB      	XBA
 C1/64DD:	60      	RTS
  
 
-C1/64DE:	20F763  	JSR $63F7		(from C1/6411, X = 5)
+C1/64DE:	20F763  	JSR $63F7		(code 05: emit N blank tiles (argument byte)) (from C1/6411, X = 5)
 C1/64E1:	B24F    	LDA ($4F)
 C1/64E3:	8540    	STA $40
 C1/64E5:	A9FF    	LDA #$FF
@@ -13316,7 +13574,7 @@ C1/64EC:	D0F7    	BNE $64E5
 C1/64EE:	60      	RTS
  
 
-C1/64EF:	20F763  	JSR $63F7		(from C1/6411, X = 6)
+C1/64EF:	20F763  	JSR $63F7		(code 06: Magitek attack name (argument = id; $FF = 10 blanks)) (from C1/6411, X = 6)
 C1/64F2:	B24F    	LDA ($4F)
 C1/64F4:	C9FF    	CMP #$FF
 C1/64F6:	D005    	BNE $64FD
@@ -13340,7 +13598,7 @@ C1/6516:	60      	RTS
 I guess the point of this function is to draw the item "types" after each item
 Note: changing the item name length or location does not seem to have any effect for the item list in battle
  
-C1/6517:	20F763  	JSR $63F7		(from C1/6411, X = 12)
+C1/6517:	20F763  	JSR $63F7		(code 12: gear-type name, 7 tiles, derived from the item's icon character ($FF = 7 blanks)) (from C1/6411, X = 12)
 C1/651A:	B24F    	LDA ($4F)
 C1/651C:	C9FF    	CMP #$FF
 C1/651E:	D005    	BNE $6525
@@ -13355,7 +13613,7 @@ C1/652E:	A630    	LDX $30
 C1/6530:	BF00B3D2	LDA $D2B300,X	(Loads Item name X)
 C1/6534:	C9FF    	CMP #$FF
 C1/6536:	F0E8    	BEQ $6520
-C1/6538:	38      	SEC 
+C1/6538:	38      	SEC		(icon character - $D8 = gear type index)
 C1/6539:	E9D8    	SBC #$D8
 C1/653B:	852C    	STA $2C
 C1/653D:	A907    	LDA #$07
@@ -13374,7 +13632,7 @@ C1/6557:	60      	RTS
 
 This function populates the item list, the Tools list
  
-C1/6558:	20F763  	JSR $63F7		(from C1/6411, X = E)
+C1/6558:	20F763  	JSR $63F7		(code 0E: item name, 13 tiles (argument = id; $FF = 13 blanks)) (from C1/6411, X = E)
 C1/655B:	B24F    	LDA ($4F)
 C1/655D:	C9FF    	CMP #$FF		
 C1/655F:	D005    	BNE $6566		
@@ -13398,7 +13656,7 @@ C1/6582:	D0F4    	BNE $6578
 C1/6584:	60      	RTS
  
 
-C1/6585:	209865  	JSR $6598		(from C1/6411, X = 11)
+C1/6585:	209865  	JSR $6598		(code 11: spell name plus 3 trailing blanks (pads spell ids and $FF to 10 tiles)) (from C1/6411, X = 11)
 C1/6588:	B24F    	LDA ($4F)
 C1/658A:	C9FF    	CMP #$FF
 C1/658C:	F005    	BEQ $6593
@@ -13410,7 +13668,7 @@ C1/6592:	60      	RTS
 C1/6593:	A903    	LDA #$03		(from C1/658C)
 C1/6595:	4CA566  	JMP $66A5
 
-C1/6598:	20F763  	JSR $63F7		(from C1/6411, X = F)
+C1/6598:	20F763  	JSR $63F7		(code 0F: spell/Esper/skean attack name by id range (argument byte)) (from C1/6411, X = F)
 C1/659B:	B24F    	LDA ($4F)
 C1/659D:	852C    	STA $2C
 C1/659F:	C9FF    	CMP #$FF
@@ -13418,7 +13676,7 @@ C1/65A1:	D005    	BNE $65A8
 C1/65A3:	A907    	LDA #$07
 C1/65A5:	4CA566  	JMP $66A5
 
-C1/65A8:	C936    	CMP #$36		(from C1/65A1)
+C1/65A8:	C936    	CMP #$36		(same id ranges as the dialog renderer: < $36 spell, $36-$50 Esper, >= $51 skean/misc) (from C1/65A1)
 C1/65AA:	903C    	BCC $65E8      (Go to spell names)
 C1/65AC:	C951    	CMP #$51
 C1/65AE:	901C    	BCC $65CC      (Go to esper names)
@@ -13467,7 +13725,7 @@ C1/65FD:	D0F4    	BNE $65F3
 C1/65FF:	60      	RTS
 
  
-C1/6600:	20F763  	JSR $63F7		(from C1/6411, X = 17)
+C1/6600:	20F763  	JSR $63F7		(code 17: Dance name, 12 tiles (argument = id; $FF = 12 blanks)) (from C1/6411, X = 17)
 C1/6603:	B24F    	LDA ($4F)
 C1/6605:	852C    	STA $2C
 C1/6607:	C9FF    	CMP #$FF
@@ -13488,7 +13746,7 @@ C1/6625:	D0F4    	BNE $661B
 C1/6627:	60      	RTS
 
  
-C1/6628:	20F763  	JSR $63F7		(from C1/6411, X = 18)
+C1/6628:	20F763  	JSR $63F7		(code 18: enemy name, 10 tiles + 1 trailing blank (argument = id)) (from C1/6411, X = 18)
 C1/662B:	B24F    	LDA ($4F)
 C1/662D:	852C    	STA $2C
 C1/662F:	C9FF    	CMP #$FF
@@ -13511,7 +13769,7 @@ C1/6651:	20FE63  	JSR $63FE
 C1/6654:	60      	RTS
 
  
-C1/6655:	20F763  	JSR $63F7		(from C1/6411, X = 19)
+C1/6655:	20F763  	JSR $63F7		(code 19: Lore name, 10 tiles (argument = lore id; $FF = 10 blanks)) (from C1/6411, X = 19)
 C1/6658:	B24F    	LDA ($4F)
 C1/665A:	852C    	STA $2C
 C1/665C:	C9FF    	CMP #$FF
@@ -13532,7 +13790,7 @@ C1/667A:	D0F4    	BNE $6670
 C1/667C:	60      	RTS
 
  
-C1/667D:	20F763  	JSR $63F7		(from C1/6411, X = 1A)
+C1/667D:	20F763  	JSR $63F7		(code 1A: Esper name, 8 tiles (argument = esper id; $FF = 8 blanks)) (from C1/6411, X = 1A)
 C1/6680:	B24F    	LDA ($4F)
 C1/6682:	852C    	STA $2C
 C1/6684:	C9FF    	CMP #$FF
@@ -13553,7 +13811,7 @@ C1/66A2:	D0F4    	BNE $6698
 C1/66A4:	60      	RTS
 
  
-C1/66A5:	8540    	STA $40		(from C1/64FA, C1/6522, C1/6563, C1/6595, C1/65A5, C1/660D, C1/6635, C1/6662, C1/668A)
+C1/66A5:	8540    	STA $40		(emit A blank tiles) (from C1/64FA, C1/6522, C1/6563, C1/6595, C1/65A5, C1/660D, C1/6635, C1/6662, C1/668A)
 C1/66A7:	A9FF    	LDA #$FF
 C1/66A9:	20FE63  	JSR $63FE
 C1/66AC:	C640    	DEC $40
@@ -13561,14 +13819,19 @@ C1/66AE:	D0F7    	BNE $66A7
 C1/66B0:	60      	RTS
  
 
-C1/66B1:	ADDC88  	LDA $88DC		(from C1/45FB, C1/4603, C1/47E6, C1/4828, C1/486A, C1/49ED, C1/49ED, C1/4A65, C1/4A84, C1/4A8C, C1/4A94, C1/4B20, C1/4B28, C1/4B48, C1/4B50, C1/4B58)
+Simple window text writer, called by the window draw states
+(C1/45FB ... C1/4B58): renders the text script at [$88D7] with
+attribute $88DC into the tilemap at base [$88D9], character to the
+offset buffer (+ 2 * $88DB) and a blank to the base buffer - the same
+two-buffer convention as C1/63AB.  Codes < $20 dispatch via C1/6702.
+C1/66B1:	ADDC88  	LDA $88DC		(attribute byte) (from C1/45FB, C1/4603, C1/47E6, C1/4828, C1/486A, C1/49ED, C1/49ED, C1/4A65, C1/4A84, C1/4A8C, C1/4A94, C1/4B20, C1/4B28, C1/4B48, C1/4B50, C1/4B58)
 C1/66B4:	854E    	STA $4E
-C1/66B6:	0EDB88  	ASL $88DB
+C1/66B6:	0EDB88  	ASL $88DB		(offset argument: words to bytes)
 C1/66B9:	AED788  	LDX $88D7
 C1/66BC:	8648    	STX $48
 C1/66BE:	AED988  	LDX $88D9
 C1/66C1:	864A    	STX $4A
-C1/66C3:	A54A    	LDA $4A
+C1/66C3:	A54A    	LDA $4A		(second buffer = base + offset)
 C1/66C5:	18      	CLC 
 C1/66C6:	6DDB88  	ADC $88DB
 C1/66C9:	854C    	STA $4C
@@ -13577,19 +13840,19 @@ C1/66CD:	6900    	ADC #$00
 C1/66CF:	854D    	STA $4D
 C1/66D1:	A400    	LDY $00
 C1/66D3:	B248    	LDA ($48)
-C1/66D5:	F014    	BEQ $66EB
+C1/66D5:	F014    	BEQ $66EB		(zero: end of the text)
 C1/66D7:	C920    	CMP #$20
-C1/66D9:	9008    	BCC $66E3
-C1/66DB:	20F366  	JSR $66F3
+C1/66D9:	9008    	BCC $66E3		(control code?)
+C1/66DB:	20F366  	JSR $66F3		(emit the tile)
 C1/66DE:	20EC66  	JSR $66EC
 C1/66E1:	80F0    	BRA $66D3
-C1/66E3:	200267  	JSR $6702		(from only C1/66D9)
+C1/66E3:	200267  	JSR $6702		(dispatch the control code (C1/6702)) (from only C1/66D9)
 C1/66E6:	20EC66  	JSR $66EC
 C1/66E9:	80E8    	BRA $66D3
 C1/66EB:	60      	RTS
 
  
-C1/66EC:	E648    	INC $48        (from C1/66DE, C1/66E6)
+C1/66EC:	E648    	INC $48		(advance the text pointer $48) (from C1/66DE, C1/66E6)
 C1/66EE:	D002    	BNE $66F2
 C1/66F0:	E649    	INC $49
 C1/66F2:	60      	RTS
@@ -13605,7 +13868,7 @@ C1/6700:	C8      	INY
 C1/6701:	60      	RTS
  
 
-C1/6702:	0A      	ASL A			(from C1/66E3)
+C1/6702:	0A      	ASL A		(window-text control-code dispatch via the C1/6707 table) (from C1/66E3)
 C1/6703:	AA      	TAX 
 C1/6704:	7C0767  	JMP ($6707,X)
 
@@ -13614,24 +13877,24 @@ Code pointers (called from C1/6704)
 
 		(function)	(value)
 C1/6707:	4767    	(00)			(exits)
-C1/6709:	4867    	(01)
-C1/670B:	5F67    	(02)			(Display 2 digit number X)
-C1/670D:	9467    	(03)
-C1/670F:	9C67    	(04)
-C1/6711:	A467    	(05)
+C1/6709:	4867    	(01: next row - advance the destination pointers)
+C1/670B:	5F67    	(02: two-digit number)
+C1/670D:	9467    	(03: literal tile)
+C1/670F:	9C67    	(04: set the text attribute)
+C1/6711:	A467    	(05: N blank tiles)
 C1/6713:	4767    	(06)			(exits)
 C1/6715:	B567    	(07)			(Display party member 1's info)
 C1/6717:	B867    	(08)			(Display party member 2's info)
 C1/6719:	BC67    	(09)			(Display party member 3's info)
 C1/671B:	C067    	(0A)			(Display party member 4's info)
-C1/671D:	9369    	(0B)
-C1/671F:	DA69    	(0C)
-C1/6721:	DE69    	(0D)			(Display the battle command names)
-C1/6723:	826A    	(0E)	
-C1/6725:	C26A    	(0F)
-C1/6727:	0B6A		(10)			(Display the status texts)
-C1/6729:	AF6A		(11)
-C1/672B:	386A		(12)			(Display the item names)
+C1/671D:	9369    	(0B: enemy name by enemy slot)
+C1/671F:	DA69    	(0C: skip an argument byte (no-op))
+C1/6721:	DE69    	(0D: battle command name)
+C1/6723:	826A    	(0E: item name)
+C1/6725:	C26A    	(0F: spell/Esper/skean attack name)
+C1/6727:	0B6A		(10: status text)
+C1/6729:	AF6A		(11: spell name padded to 10 tiles)
+C1/672B:	386A		(12: gear-type name from the item's icon character)
 C1/672D:	4767    	(13)			(exits)
 C1/672F:	4767    	(14)			(exits)
 C1/6731:	4767    	(15)			(exits)
@@ -13648,7 +13911,7 @@ C1/6745:	4767    	(1F)			(exits)
 
 C1/6747:	60      	RTS			(from various, just exits)
  
-C1/6748:	ADDB88  	LDA $88DB		(from C1/6411, X = 1; from C1/6704, X = 1)
+C1/6748:	ADDB88  	LDA $88DB		(code 01: advance the two destination pointers by the (doubled) row offset $88DB and reset Y) (from C1/6411, X = 1; from C1/6704, X = 1)
 C1/674B:	C220    	REP #$20
 C1/674D:	48      	PHA 
 C1/674E:	0A      	ASL A
@@ -13664,7 +13927,7 @@ C1/675B:	A8      	TAY
 C1/675C:	E220    	SEP #$20
 C1/675E:	60      	RTS
  
-C1/675F:	20EC66  	JSR $66EC		(from C1/6704, X = 2)
+C1/675F:	20EC66  	JSR $66EC		(code 02: two-digit number (argument byte; leading zero blanked)) (from C1/6704, X = 2)
 C1/6762:	6410    	STZ $10
 C1/6764:	B248    	LDA ($48)
 C1/6766:	38      	SEC 
@@ -13678,7 +13941,7 @@ C1/6771:	690A    	ADC #$0A
 C1/6773:	8511    	STA $11
 C1/6775:	A510    	LDA $10
 C1/6777:	D002    	BNE $677B
-C1/6779:	A94B    	LDA #$4B
+C1/6779:	A94B    	LDA #$4B		(no tens digit: $4B + $B4 = $FF (blank))
 C1/677B:	18      	CLC 
 C1/677C:	69B4    	ADC #$B4
 C1/677E:	20F366  	JSR $66F3
@@ -13693,16 +13956,16 @@ C1/678E:	18      	CLC
 C1/678F:	69B4    	ADC #$B4
 C1/6791:	4CF366  	JMP $66F3
 
-C1/6794:	20EC66  	JSR $66EC		(from C1/6704, X = 3)
+C1/6794:	20EC66  	JSR $66EC		(code 03: emit the next script byte as a literal tile) (from C1/6704, X = 3)
 C1/6797:	B248    	LDA ($48)
 C1/6799:	4CF366  	JMP $66F3
 
-C1/679C:	20EC66  	JSR $66EC		(from C1/6704, X = 4)
+C1/679C:	20EC66  	JSR $66EC		(code 04: set the text attribute (argument byte)) (from C1/6704, X = 4)
 C1/679F:	B248    	LDA ($48)
 C1/67A1:	854E    	STA $4E
 C1/67A3:	60      	RTS
  
-C1/67A4:	20EC66  	JSR $66EC		(from C1/6704, X = 5)
+C1/67A4:	20EC66  	JSR $66EC		(code 05: emit N blank tiles (argument byte)) (from C1/6704, X = 5)
 C1/67A7:	B248    	LDA ($48)
 C1/67A9:	8510    	STA $10
 C1/67AB:	A9FF    	LDA #$FF
@@ -13711,6 +13974,14 @@ C1/67B0:	C610    	DEC $10
 C1/67B2:	D0F7    	BNE $67AB
 C1/67B4:	60      	RTS
  
+Codes 07-0A: party member info for slots 1-4.  $64D6,X maps the party
+slot to its display record 0-3 ($FF = empty slot: the next script
+byte instead picks a blank width from the C1/67DC table).  The record
+selects the per-slot info block ($2EAE/$2ECE/$2EEE/$2F0E - name at +1,
+current HP at +7, max HP at +9, current MP at +$B, max MP at +$D,
+filled in by C2), and the next script byte picks the field via the
+C1/6817 table: 0 name, 1 current HP, 2 ATB gauge or max HP, 3 current
+MP, 4 max MP, 5/6 gauge variants.
 C1/67B5:	7B      	TDC 			(from C1/6704, X = 7)
 C1/67B6:	800A    	BRA $67C2
 
@@ -13722,14 +13993,14 @@ C1/67BE:	8002    	BRA $67C2
 
 C1/67C0:	A903    	LDA #$03		(from C1/6704, X = A)
 C1/67C2:	AA      	TAX 
-C1/67C3:	BDD664  	LDA $64D6,X
+C1/67C3:	BDD664  	LDA $64D6,X		(display record for this party slot ($FF = empty))
 C1/67C6:	C9FF    	CMP #$FF
 C1/67C8:	F005    	BEQ $67CF
 C1/67CA:	0A      	ASL A
 C1/67CB:	AA      	TAX 
 C1/67CC:	7CE367  	JMP ($67E3,X)
 
-C1/67CF:	20EC66  	JSR $66EC      (from C1/67C8)
+C1/67CF:	20EC66  	JSR $66EC		(empty slot: next byte picks the blank width from C1/67DC) (from C1/67C8)
 C1/67D2:	B248    	LDA ($48)
 C1/67D4:	AA      	TAX 
 C1/67D5:	BFDC67C1	LDA $C167DC,X
@@ -13786,7 +14057,7 @@ C1/681F:	2C69    	(4)  (max MP)
 C1/6821:	4E68      	(5)
 C1/6823:	4668    	(6)
 
-C1/6825:	AA      	TAX
+C1/6825:	AA      	TAX		(draw A blanks (widths 6, 4 or 3 from the C1/67DC table))
 C1/6826:	A9FF    	LDA #$FF
 C1/6828:	20F366  	JSR $66F3
 C1/682B:	CA      	DEX          (coming in, X holds how many spaces to draw. it'll be 6, 4, or 3)
@@ -13803,18 +14074,18 @@ C1/683C:	C614    	DEC $14        (decrement letters to do)
 C1/683E:	D0F5    	BNE $6835      (branch if haven't done all 6)
 C1/6840:	60      	RTS
  
-C1/6841:	A907    	LDA #$07       (from C1/6814, X = 1)
+C1/6841:	A907    	LDA #$07		(current HP: 4 digits from offset 7) (from C1/6814, X = 1)
 C1/6843:	4C7569  	JMP $6975
 
-C1/6846:	A518    	LDA $18        (from C1/6814, X = 6)
+C1/6846:	A518    	LDA $18		(field 6: gauge from $61A6) (from C1/6814, X = 6)
 C1/6848:	AA      	TAX 
 C1/6849:	BDA661  	LDA $61A6,X
 C1/684C:	8006    	BRA $6854
 
-C1/684E:	A518    	LDA $18        (from C1/6814, X = 5)
+C1/684E:	A518    	LDA $18		(field 5: gauge from $61A2) (from C1/6814, X = 5)
 C1/6850:	AA      	TAX 
 C1/6851:	BDA261  	LDA $61A2,X
-C1/6854:	4A      	LSR A
+C1/6854:	4A      	LSR A		(draw the 5-tile gauge: cap $F9, 4 fill tiles from the C1/68AC table, cap $FA)
 C1/6855:	29FC    	AND #$FC
 C1/6857:	AA      	TAX 
 C1/6858:	A9F9    	LDA #$F9
@@ -13830,7 +14101,7 @@ C1/686D:	A9FA    	LDA #$FA       (draw tail end of ATB gauge)
 C1/686F:	4CF366  	JMP $66F3      (draw tile A)
 
 Character subcommand 02, draw Max HP or Gauge
-C1/6872:	AD2120  	LDA $2021      (from C1/6814, X = 2)
+C1/6872:	AD2120  	LDA $2021		(field 2: the config's Gauge bit ($2021 bit 0) picks ATB gauge vs max HP) (from C1/6814, X = 2)
 C1/6875:	2901    	AND #$01       (check Gauge on bit?)
 C1/6877:	F01F    	BEQ $6898      (branch if it's off)
 C1/6879:	A54E    	LDA $4E        (load text color)
@@ -13897,7 +14168,7 @@ C1/6928:	F8F8F8F8
 C1/692C:	A90D    	LDA #$0D       (max MP starts at 13th byte) (from C1/6814, X = 4)
 C1/692E:	4C8469  	JMP $6984      (BRA would work here)
 
-C1/6931:	5A      	PHY            (from only C1/6975)	
+C1/6931:	5A      	PHY		(read the 16-bit stat at [$10] + A and convert it to 4 digits at $69 (C1/1B2B)) (from only C1/6975)
 C1/6932:	A8      	TAY 
 C1/6933:	C220    	REP #$20
 C1/6935:	B710    	LDA [$10],Y
@@ -13912,7 +14183,7 @@ C1/6945:	A600    	LDX $00
 C1/6947:	7A      	PLY 
 C1/6948:	60      	RTS
  
-C1/6949:	5A      	PHY            (from only C1/6984)
+C1/6949:	5A      	PHY		(as C1/6931, then blank the leading zeros (C1/6961)) (from only C1/6984)
 C1/694A:	A8      	TAY 
 C1/694B:	C220    	REP #$20
 C1/694D:	B710    	LDA [$10],Y
@@ -13927,7 +14198,7 @@ C1/695D:	A600    	LDX $00
 C1/695F:	7A      	PLY 
 C1/6960:	60      	RTS
  
-C1/6961:	A600    	LDX $00		(from only C1/695A)
+C1/6961:	A600    	LDX $00		(replace leading zero digits with tile $C8) (from only C1/695A)
 C1/6963:	B569    	LDA $69,X
 C1/6965:	38      	SEC 
 C1/6966:	E568    	SBC $68
@@ -13939,7 +14210,7 @@ C1/696F:	E00300  	CPX #$0003
 C1/6972:	D0EF    	BNE $6963
 C1/6974:	60      	RTS
  
-C1/6975:	203169  	JSR $6931      (from C1/6843, C1/689F)
+C1/6975:	203169  	JSR $6931		(draw a 4-digit stat - A = offset in the info block) (from C1/6843, C1/689F)
 C1/6978:	B569    	LDA $69,X
 C1/697A:	20F366  	JSR $66F3      (draw tile A)
 C1/697D:	E8      	INX 
@@ -13947,7 +14218,7 @@ C1/697E:	E00400  	CPX #$0004
 C1/6981:	D0F5    	BNE $6978
 C1/6983:	60      	RTS
  
-C1/6984:	204969  	JSR $6949      (from C1/68A9, C1/692E)
+C1/6984:	204969  	JSR $6949		(draw a 3-digit stat (offset A) with leading zeros blanked) (from C1/68A9, C1/692E)
 C1/6987:	B56A    	LDA $6A,X
 C1/6989:	20F366  	JSR $66F3      (draw tile A)
 C1/698C:	E8      	INX 
@@ -13955,7 +14226,7 @@ C1/698D:	E00300  	CPX #$0003
 C1/6990:	D0F5    	BNE $6987
 C1/6992:	60      	RTS
  
-C1/6993:	20EC66  	JSR $66EC      (from C1/6704, X = B)
+C1/6993:	20EC66  	JSR $66EC		(code 0B: enemy name for enemy slot (argument); empty slot ($200D,X = $FFFF) = 11 blanks) (from C1/6704, X = B)
 C1/6996:	A90A    	LDA #$0A
 C1/6998:	8510    	STA $10
 C1/699A:	B248    	LDA ($48)
@@ -13991,10 +14262,10 @@ C1/69D3:	D0F4    	BNE $69C9      (branch if we haven't done 10 tiles)
 C1/69D5:	A9FF    	LDA #$FF       (a space)
 C1/69D7:	4CF366  	JMP $66F3      (draw tile A)
 
-C1/69DA:	20EC66  	JSR $66EC		(from C1/6704, X = C)
+C1/69DA:	20EC66  	JSR $66EC		(code 0C: skip the argument byte) (from C1/6704, X = C)
 C1/69DD:	60      	RTS
  
-C1/69DE:	20EC66  	JSR $66EC		(from C1/6704, X = D)
+C1/69DE:	20EC66  	JSR $66EC		(code 0D: battle command name, 7 tiles (argument = id; $FF = 7 blanks)) (from C1/6704, X = D)
 C1/69E1:	B248    	LDA ($48)
 C1/69E3:	C9FF    	CMP #$FF
 C1/69E5:	D005    	BNE $69EC
@@ -14017,7 +14288,7 @@ C1/6A06:	C610    	DEC $10
 C1/6A08:	D0F4    	BNE $69FE
 C1/6A0A:	60      	RTS
  
-C1/6A0B:	20EC66  	JSR $66EC		(from C1/6704, X = 10)
+C1/6A0B:	20EC66  	JSR $66EC		(code 10: status text, 10 tiles from C2/ADE1 (argument = index; $FF = 10 blanks)) (from C1/6704, X = 10)
 C1/6A0E:	B248    	LDA ($48)
 C1/6A10:	C9FF    	CMP #$FF
 C1/6A12:	D005    	BNE $6A19
@@ -14040,7 +14311,7 @@ C1/6A33:	C610    	DEC $10
 C1/6A35:	D0F4    	BNE $6A2B
 C1/6A37:	60      	RTS
  
-C1/6A38:	20EC66  	JSR $66EC		(from C1/6704, X = 12)
+C1/6A38:	20EC66  	JSR $66EC		(code 12: gear-type name, 7 tiles, from the item's icon character ($FF = 7 blanks)) (from C1/6704, X = 12)
 C1/6A3B:	B248    	LDA ($48)
 C1/6A3D:	C9FF    	CMP #$FF
 C1/6A3F:	D005    	BNE $6A46
@@ -14077,7 +14348,7 @@ C1/6A7D:	C610    	DEC $10
 C1/6A7F:	D0F4    	BNE $6A75
 C1/6A81:	60      	RTS
  
-C1/6A82:	20EC66  	JSR $66EC		(from C1/6704, X = E)
+C1/6A82:	20EC66  	JSR $66EC		(code 0E: item name, 13 tiles (argument = id; $FF = 13 blanks)) (from C1/6704, X = E)
 C1/6A85:	B248    	LDA ($48)
 C1/6A87:	C9FF    	CMP #$FF
 C1/6A89:	D005    	BNE $6A90
@@ -14100,7 +14371,7 @@ C1/6AAA:	C610    	DEC $10
 C1/6AAC:	D0F4    	BNE $6AA2
 C1/6AAE:	60      	RTS
  
-C1/6AAF:	20C26A  	JSR $6AC2		(from C1/6704, X = 11)
+C1/6AAF:	20C26A  	JSR $6AC2		(code 11: spell name plus 3 trailing blanks (pads spell ids and $FF to 10 tiles)) (from C1/6704, X = 11)
 C1/6AB2:	B248    	LDA ($48)
 C1/6AB4:	C9FF    	CMP #$FF
 C1/6AB6:	F005    	BEQ $6ABD
@@ -14111,14 +14382,14 @@ C1/6ABC:	60      	RTS
 C1/6ABD:	A903    	LDA #$03		(from C1/6AB6, C1/6ABA)
 C1/6ABF:	4C3B6B  	JMP $6B3B
 
-C1/6AC2:	20EC66  	JSR $66EC		(from C1/6704, X = F)
+C1/6AC2:	20EC66  	JSR $66EC		(code 0F: spell/Esper/skean attack name by id range (argument byte)) (from C1/6704, X = F)
 C1/6AC5:	B248    	LDA ($48)
 C1/6AC7:	C9FF    	CMP #$FF
 C1/6AC9:	D005    	BNE $6AD0
 C1/6ACB:	A907    	LDA #$07
 C1/6ACD:	4C3B6B  	JMP $6B3B
 
-C1/6AD0:	C936    	CMP #$36		(from C1/6AC9)
+C1/6AD0:	C936    	CMP #$36		(id ranges: < $36 spell, $36-$50 Esper, >= $51 skean/misc) (from C1/6AC9)
 C1/6AD2:	9048    	BCC $6B1C
 C1/6AD4:	C951    	CMP #$51
 C1/6AD6:	9022    	BCC $6AFA
@@ -14151,7 +14422,7 @@ C1/6B07:	AF164200	LDA $004216		(load product)
 C1/6B0B:	AA      	TAX 
 C1/6B0C:	7B      	TDC 
 C1/6B0D:	E220    	SEP #$20
-C1/6B0F:	BF75F6E6	LDA $E6F675,X	(Loads ??? -- is this a bug?)
+C1/6B0F:	BF75F6E6	LDA $E6F675,X		(vanilla bug: reads E6/F675, a misaligned address inside the spell-name table (the C1/65CC list path uses the correct Esper table E6/F6E1))
 C1/6B13:	20F366  	JSR $66F3
 C1/6B16:	E8      	INX 
 C1/6B17:	C610    	DEC $10
@@ -14174,14 +14445,21 @@ C1/6B36:	C610    	DEC $10
 C1/6B38:	D0F4    	BNE $6B2E
 C1/6B3A:	60      	RTS
  
-C1/6B3B:	851A    	STA $1A		(from various, above)
+C1/6B3B:	851A    	STA $1A		(draw A blank tiles) (from various, above)
 C1/6B3D:	A9FF    	LDA #$FF
 C1/6B3F:	20F366  	JSR $66F3
 C1/6B42:	C61A    	DEC $1A
 C1/6B44:	D0F7    	BNE $6B3D
 C1/6B46:	60      	RTS
  
-C1/6B47:	A400    	LDY $00
+Sine oscillators: 16 slots of two angle/amplitude pairs - angles at
+$5F6D and $5F7D (initialized $40 = a quarter turn apart), amplitudes
+at $5F8D and $5F9D.  C1/6B5F steps both angles of a slot by A,
+C1/6B70 both amplitudes; C1/6B81 / C1/6B8D return amplitude *
+sin(angle) as a signed byte via the sine table at C2/FE6D.
+Initialized from the battle-start chain (C1/1130); used by UI and
+animation effects (e.g. C1/AF97).
+C1/6B47:	A400    	LDY $00		(init the 16 slots: angles and amplitudes 0, second angle $40)
 C1/6B49:	7B      	TDC 
 C1/6B4A:	996D5F  	STA $5F6D,Y
 C1/6B4D:	998D5F  	STA $5F8D,Y
@@ -14193,7 +14471,7 @@ C1/6B59:	C01000  	CPY #$0010
 C1/6B5C:	D0EB    	BNE $6B49
 C1/6B5E:	60      	RTS
  
-C1/6B5F:	48      	PHA 
+C1/6B5F:	48      	PHA		(step both angles of slot Y by A)
 C1/6B60:	18      	CLC 
 C1/6B61:	796D5F  	ADC $5F6D,Y
 C1/6B64:	996D5F  	STA $5F6D,Y
@@ -14203,7 +14481,7 @@ C1/6B69:	797D5F  	ADC $5F7D,Y
 C1/6B6C:	997D5F  	STA $5F7D,Y
 C1/6B6F:	60      	RTS
  
-C1/6B70:	48      	PHA 
+C1/6B70:	48      	PHA		(step both amplitudes of slot Y by A)
 C1/6B71:	18      	CLC 
 C1/6B72:	798D5F  	ADC $5F8D,Y
 C1/6B75:	998D5F  	STA $5F8D,Y
@@ -14213,19 +14491,19 @@ C1/6B7A:	799D5F  	ADC $5F9D,Y
 C1/6B7D:	999D5F  	STA $5F9D,Y
 C1/6B80:	60      	RTS
  
-C1/6B81:	B98D5F  	LDA $5F8D,Y
+C1/6B81:	B98D5F  	LDA $5F8D,Y		(evaluate pair 1: sin($5F6D) * 2 * $5F8D)
 C1/6B84:	0A      	ASL A
 C1/6B85:	8524    	STA $24
 C1/6B87:	B96D5F  	LDA $5F6D,Y
 C1/6B8A:	4C996B  	JMP $6B99		(BRA is better)
 
-C1/6B8D:	B99D5F  	LDA $5F9D,Y
+C1/6B8D:	B99D5F  	LDA $5F9D,Y		(evaluate pair 2: sin($5F7D) * 2 * $5F9D)
 C1/6B90:	0A      	ASL A
 C1/6B91:	8524    	STA $24
 C1/6B93:	B97D5F  	LDA $5F7D,Y
 C1/6B96:	4C996B  	JMP $6B99		(pointless)
 
-C1/6B99:	AA      	TAX 
+C1/6B99:	AA      	TAX		(signed multiply: sine-table value (C2/FE6D) times $24, returning the signed high byte)
 C1/6B9A:	BF6DFEC2	LDA $C2FE6D,X	(Translation?  This loads from blank space) (Load value from sine table)
 C1/6B9E:	101A    	BPL $6BBA
 C1/6BA0:	49FF    	EOR #$FF
@@ -14240,7 +14518,7 @@ C1/6BB6:	49FF    	EOR #$FF
 C1/6BB8:	1A      	INC A
 C1/6BB9:	60      	RTS
  
-C1/6BBA:	8F024200	STA $004202
+C1/6BBA:	8F024200	STA $004202		(positive-sine branch of the multiply)
 C1/6BBE:	A524    	LDA $24
 C1/6BC0:	8F034200	STA $004203
 C1/6BC4:	A900    	LDA #$00
@@ -14249,7 +14527,7 @@ C1/6BC8:	8567    	STA $67
 C1/6BCA:	AF174200	LDA $004217
 C1/6BCE:	60      	RTS
  
-C1/6BCF:	E230    	SEP #$30
+C1/6BCF:	E230    	SEP #$30		(wide multiply: byte $24 * word $22 -> 24-bit product in $26-$28, doubled)
 C1/6BD1:	8B      	PHB 
 C1/6BD2:	A900    	LDA #$00
 C1/6BD4:	48      	PHA 
@@ -14276,7 +14554,7 @@ C1/6BFE:	2628    	ROL $28
 C1/6C00:	AB      	PLB 
 C1/6C01:	60      	RTS
  
-C1/6C02:	C210    	REP #$10
+C1/6C02:	C210    	REP #$10		(word amplitude $24 * sin($16 & $1FF) via the sine table at C2/FC6D; signed high word in $28)
 C1/6C04:	A516    	LDA $16
 C1/6C06:	29FF01  	AND #$01FF
 C1/6C09:	AA      	TAX 
@@ -14327,7 +14605,7 @@ C1/6C62:	2628    	ROL $28
 C1/6C64:	A528    	LDA $28
 C1/6C66:	60      	RTS
  
-C1/6C67:	C220    	REP #$20
+C1/6C67:	C220    	REP #$20		(byte-angle variant: amplitude * sin(A) via C2/FC6D and C1/6BCF; signed result in $28)
 C1/6C69:	29FF00  	AND #$00FF
 C1/6C6C:	0A      	ASL A
 C1/6C6D:	AA      	TAX 
@@ -14350,6 +14628,12 @@ C1/6C8D:	7B      	TDC
 C1/6C8E:	E220    	SEP #$20
 C1/6C90:	60      	RTS
  
+Direction math for target-cursor movement: computes the angle from
+the current point ($7F,$80) to a candidate point ($7D,$7E).  The
+signed deltas are folded to absolute values, packed into the index
+$8C = (|dy| & ~7) * 4 + |dx| / 8 for the 7E/F800 table (built by
+C1/6D0C) and the C2/C945 octant-angle table, and the quadrant tests
+at C1/6CE8 unfold $85 into a full 0-255 angle.
 C1/6C91:	A57D    	LDA $7D
 C1/6C93:	38      	SEC 
 C1/6C94:	E57F    	SBC $7F
@@ -14422,6 +14706,8 @@ C1/6D07:	E585    	SBC $85
 C1/6D09:	8585    	STA $85
 C1/6D0B:	60      	RTS
  
+Build the targeting math tables: LZ-decompress C2/CD45 to 7F/A400,
+then prefix-sum each 32-entry row into the word table at 7E/F800.
 C1/6D0C:	A245CD    	LDX #$CD45
 C1/6D0F:	86F3    	STX $F3
 C1/6D11:	A9C2    	LDA #$C2
@@ -14460,7 +14746,7 @@ C1/6D52:	7B      	TDC
 C1/6D53:	E220    	SEP #$20
 C1/6D55:	60      	RTS
 
-C1/6D56:	AD807B  	LDA $7B80
+C1/6D56:	AD807B  	LDA $7B80		(Y = 8 * ($7B80 & 3): offset of the current menu-result record)
 C1/6D59:	2903    	AND #$03
 C1/6D5B:	0A      	ASL A
 C1/6D5C:	0A      	ASL A
@@ -14477,6 +14763,8 @@ C1/6D68:	0100
 C1/6D6A:	01FF    	
 C1/6D6C:	FF000100	
 
+Check whether target side A & 1 (1 = characters, 0 = enemies) has
+any valid targets; carry set = yes, A preserved.
 C1/6D70:	2903		AND #$03
 C1/6D72:	48  		PHA
 C1/6D73:	AA      	TAX 
@@ -14497,7 +14785,17 @@ C1/6D8D:	68      	PLA
 C1/6D8E:	18      	CLC 
 C1/6D8F:	60      	RTS
  
-C1/6D90:	ADCB7B  	LDA $7BCB		(from C1/5529, X = 38)
+Target-selection input loop (menu program X = 38, queued by the
+targeting startup).  $7A84 holds the command's targeting flags
+(bit 7 random "roulette" selection, bit 5 manual party select, bit 4
+auto-confirm, bit 3 auto-select one group, bit 0 cursor movable).
+Valid targets come from $201D (characters, masked by
+$61AC/$61AD/$6193) and $92 (enemies); the selection builds in $7B7D
+(characters) / $7B7E (enemies) / $7B7F (multi flag).  D-pad movement
+routes to C1/7384 (up), C1/73D6 (down), C1/7733 (left), C1/774A
+(right); A confirms via C1/6F25 -> C1/7096; B cancels back to the
+menu program in $7A83.
+C1/6D90:	ADCB7B  	LDA $7BCB		(command already chosen: cancel out) (from C1/5529, X = 38)
 C1/6D93:	F003    	BEQ $6D98
 C1/6D95:	4C576F  	JMP $6F57
 
@@ -14522,13 +14820,13 @@ C1/6DC0:	8536    	STA $36        (save it for now)
 C1/6DC2:	100D    	BPL $6DD1      (branch if "random selection" isn't set)
 C1/6DC4:	ADB462  	LDA $62B4
 C1/6DC7:	F00B    	BEQ $6DD4
-C1/6DC9:	CEB262  	DEC $62B2
+C1/6DC9:	CEB262  	DEC $62B2		(roulette locked: count down to auto-confirm)
 C1/6DCC:	D06F    	BNE $6E3D
 C1/6DCE:	4C256F  	JMP $6F25
 
 C1/6DD1:	4C406E  	JMP $6E40
 
-C1/6DD4:	ADB162  	LDA $62B1
+C1/6DD4:	ADB162  	LDA $62B1		(stop requested: slow to every 8th frame, then lock the selection)
 C1/6DD7:	F01D    	BEQ $6DF6
 C1/6DD9:	A50E    	LDA $0E
 C1/6DDB:	2907    	AND #$07
@@ -14543,10 +14841,10 @@ C1/6DEE:	A901    	LDA #$01
 C1/6DF0:	8D7F7B  	STA $7B7F
 C1/6DF3:	4C696F  	JMP $6F69
 
-C1/6DF6:	A50E    	LDA $0E
+C1/6DF6:	A50E    	LDA $0E		(spinning: advance every 4th frame)
 C1/6DF8:	2903    	AND #$03
 C1/6DFA:	D041    	BNE $6E3D
-C1/6DFC:	E694    	INC $94
+C1/6DFC:	E694    	INC $94		($94 = cursor-moved tick; step the roulette to the next valid character target)
 C1/6DFE:	EEB362  	INC $62B3
 C1/6E01:	ADB362  	LDA $62B3
 C1/6E04:	2908    	AND #$08
@@ -14564,7 +14862,7 @@ C1/6E20:	8D7D7B  	STA $7B7D
 C1/6E23:	9C7E7B  	STZ $7B7E
 C1/6E26:	4C056F  	JMP $6F05
 
-C1/6E29:	ADB362  	LDA $62B3
+C1/6E29:	ADB362  	LDA $62B3		(enemy side: next valid enemy target)
 C1/6E2C:	2907    	AND #$07
 C1/6E2E:	AA      	TAX
 C1/6E2F:	BF011AC1	LDA $C11A01,X
@@ -14617,7 +14915,7 @@ C1/6E92:	E694    	INC $94
 C1/6E94:	A536    	LDA $36        (load saved character targeting)
 C1/6E96:	2920    	AND #$20       (is "manual party select" set?)
 C1/6E98:	F039    	BEQ $6ED3      (branch if not)
-C1/6E9A:	ADCE7A  	LDA $7ACE
+C1/6E9A:	ADCE7A  	LDA $7ACE		(select the whole current side - bit 0 of $7ACE picks characters vs enemies)
 C1/6E9D:	2901    	AND #$01
 C1/6E9F:	F01E    	BEQ $6EBF
 C1/6EA1:	ADCE7A  	LDA $7ACE
@@ -14680,20 +14978,20 @@ C1/6F1D:	18      	CLC
 C1/6F1E:	6908    	ADC #$08       (finally, random number 8-15)
 C1/6F20:	8DB262  	STA $62B2
 C1/6F23:	8027    	BRA $6F4C
-C1/6F25:	209670  	JSR $7096
+C1/6F25:	209670  	JSR $7096		(confirm: submit via C1/7096, clear the working masks, return to the menu program in $7A83)
 C1/6F28:	9C7D7B  	STZ $7B7D
 C1/6F2B:	9C7E7B  	STZ $7B7E
 C1/6F2E:	9C7F7B  	STZ $7B7F
 C1/6F31:	AD837A  	LDA $7A83
 C1/6F34:	8DC27B  	STA $7BC2
-C1/6F37:	ADE87A  	LDA $7AE8
+C1/6F37:	ADE87A  	LDA $7AE8		(X-Magic second pick pending: stay in the menus for the second spell)
 C1/6F3A:	F009    	BEQ $6F45
 C1/6F3C:	ADE97A  	LDA $7AE9
 C1/6F3F:	D004    	BNE $6F45
 C1/6F41:	EEE97A  	INC $7AE9
 C1/6F44:	60      	RTS
  
-C1/6F45:	EECB7B  	INC $7BCB
+C1/6F45:	EECB7B  	INC $7BCB		(done: flag the command chosen ($7BCB) and bump the action counter ($7B80))
 C1/6F48:	EE807B  	INC $7B80
 C1/6F4B:	60      	RTS
  
@@ -14702,7 +15000,7 @@ C1/6F4E:	1019    	BPL $6F69      (branch if not pressing B)
 C1/6F50:	ADB162  	LDA $62B1
 C1/6F53:	D014    	BNE $6F69
 C1/6F55:	E696    	INC $96
-C1/6F57:	9C7D7B  	STZ $7B7D
+C1/6F57:	9C7D7B  	STZ $7B7D		(cancel: clear the selection and return to the menu program in $7A83)
 C1/6F5A:	9C7E7B  	STZ $7B7E
 C1/6F5D:	9C7F7B  	STZ $7B7F
 C1/6F60:	AD837A  	LDA $7A83
@@ -14800,6 +15098,13 @@ C1/6FF3:	D09D    	BNE $6F92		(Branch if not equal--more blitzes to check)
 C1/6FF5:	A9FF    	LDA #$FF		(Return FF, for failure)
 C1/6FF7:	60      	RTS
  
+Blitz input handler (menu program X = 3D).  Button combinations
+accumulate into the word list at $E9FE (a new entry whenever the
+held-button set changes, index $E9E1), with a 64-frame timeout
+($E9E4) that voids the input.  On A the sequence is matched against
+the blitz specs (C1/6F90) and the blitz + targets are submitted to
+the menu-result record; on B it cancels back to the menu program in
+$7A83.
 C1/6FF8:	ADCB7B  	LDA $7BCB		(from C1/5529, X = 3D)
 C1/6FFB:	F003    	BEQ $7000
 C1/6FFD:	4C8370  	JMP $7083
@@ -14834,7 +15139,7 @@ C1/703A:	AA      	TAX
 C1/703B:	8EFEE9  	STX $E9FE      (set first element of blitz input to 0, guaranteeing failure)
 C1/703E:	AD6862  	LDA $6268      (load buttons pressed)
 C1/7041:	1039    	BPL $707C      (branch if you didn't press A)
-C1/7043:	E696    	INC $96
+C1/7043:	E696    	INC $96		(A pressed: match the input and submit the blitz)
 C1/7045:	20906F  	JSR $6F90	   	(Compare entered blitz to specifications)
 C1/7048:	8D6861  	STA $6168
 C1/704B:	20566D  	JSR $6D56
@@ -14851,13 +15156,13 @@ C1/7069:	9C7E7B  	STZ $7B7E
 C1/706C:	9C7F7B  	STZ $7B7F
 C1/706F:	AD837A  	LDA $7A83
 C1/7072:	8DC27B  	STA $7BC2
-C1/7075:	EECB7B  	INC $7BCB
+C1/7075:	EECB7B  	INC $7BCB		(flag the command chosen and bump the action counter)
 C1/7078:	EE807B  	INC $7B80
 C1/707B:	60      	RTS
  
 C1/707C:	AD6962  	LDA $6269      (from only C1/7041, load buttons pressed)
 C1/707F:	1014    	BPL $7095      (branch if you didn't press B)
-C1/7081:	E696    	INC $96
+C1/7081:	E696    	INC $96		(B pressed: cancel back to the menu program)
 C1/7083:	9C7D7B  	STZ $7B7D
 C1/7086:	9C7E7B  	STZ $7B7E
 C1/7089:	9C7F7B  	STZ $7B7F
@@ -14866,6 +15171,11 @@ C1/708F:	8DC27B  	STA $7BC2
 C1/7092:	9CE97A  	STZ $7AE9
 C1/7095:	60      	RTS
  
+Submit the chosen action into the menu-result record at $2BAE + 8 *
+($7B80 & 3): +0 character slot ($62CA), +2 action id ($7A85), +3/+4
+its character/enemy target masks.  A second X-Magic pick ($7AE9 set)
+writes its id and targets to the +5/+6/+7 fields instead.  $2F47,
+when set, carries extra character-target bits forced by the command.
 C1/7096:	20566D  	JSR $6D56		
 C1/7099:	ADE97A  	LDA $7AE9
 C1/709C:	F035    	BEQ $70D3
@@ -20270,14 +20580,14 @@ C1/9BA3:	BDDB80  	LDA $80DB,X
 C1/9BA6:	29F1    	AND #$F1
 C1/9BA8:	0510    	ORA $10
 C1/9BAA:	9DDB80  	STA $80DB,X
-C1/9BAD:	A904    	LDA #$04
+C1/9BAD:	A904    	LDA #$04		(wait 4 frames)
 C1/9BAF:	4CB69B  	JMP $9BB6
 
-C1/9BB2:	20B69B  	JSR $9BB6
+C1/9BB2:	20B69B  	JSR $9BB6		(RTL wrapper for the frame wait)
 C1/9BB5:	6B      	RTL
 
  
-C1/9BB6:	C900    	CMP #$00
+C1/9BB6:	C900    	CMP #$00		(wait: run A frames via C1/022A)
 C1/9BB8:	F00A    	BEQ $9BC4
 C1/9BBA:	48      	PHA 
 C1/9BBB:	DA      	PHX 
