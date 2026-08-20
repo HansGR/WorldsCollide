@@ -1,50 +1,68 @@
 This function seems to control a lot of stuff
 Graphics and sound, for example
 
+================================================================================
+BANK C1: BATTLE GRAPHICS, MENUS, INPUT AND ANIMATION
+
+Annotated revision (Worlds Collide, 2026). Base disassembly: community
+bankC1 decompile. New comments follow the conventions of the C2/C3 bank
+files; uncertain inferences are marked with a question mark. The command
+indices below are the values C2 passes in A through the C2/6411 wrapper
+(PHA/TDC/PLA at C1/0000 recovers them).
+================================================================================
+
+Bank C1 entry dispatcher. C2 calls JSL $C10000 (via the C2/6411 wrapper)
+with a command index in A; the index selects a handler from the pointer
+table at C1/0008. Most of the battle module's per-frame work funnels
+through command 4, the battle dynamics script processor.
 C1/0000:	48      	PHA 			(from C2/6425)
-C1/0001:	7B      	TDC 
-C1/0002:	68      	PLA 
+C1/0001:	7B      	TDC		(clear 16-bit A)
+C1/0002:	68      	PLA		(recover command index pushed by caller)
 C1/0003:	0A      	ASL A
-C1/0004:	AA      	TAX 
+C1/0004:	AA      	TAX		(index = command * 2)
 C1/0005:	7C0800  	JMP ($0008,X)
 
 
 Pointers (from C1/0005, index X)
 
-C1/0008:	EC01  		(0)
-C1/000A:	FB01    	(1)   (beginning of battle???)
-C1/000C:	5702    	(2)
-C1/000E:	4C02    	(3)
-C1/0010:	1295  	 	(4)	(battle dynamics script)
-C1/0012:	CC01    	(5)	(in-battle inventory update)
-C1/0014:	9701    	(6)
-C1/0016:	7001    	(7)
-C1/0018:	1701    	(8)	(at end of victorious battle)
-C1/001A:	AF00    	(9)   (at very end of battle)
-C1/001C:	AB00    	(A)	(???)
-C1/001E:	7101    	(B)
-C1/0020:	2D00    	(C)
-C1/0022:	2400    	(D)
+C1/0008:	EC01		(0: battle scene setup, screen off)
+C1/000A:	FB01    	(1: refresh character equipment/menus after a change)
+C1/000C:	5702    	(2: entity entrance/update pass ?)
+C1/000E:	4C02    	(3: entity update pass ?)
+C1/0010:	1295		(4: battle dynamics script processor - the per-frame workhorse)
+C1/0012:	CC01    	(5: in-battle inventory update, $2E72 buffer -> $602D buffer)
+C1/0014:	9701    	(6: post-battle-end update ?)
+C1/0016:	7001    	(7: ???)
+C1/0018:	1701    	(8: end of victorious battle)
+C1/001A:	AF00    	(9: very end of battle: fade in victory music, final cleanup)
+C1/001C:	AB00    	(A: calls C1/4445 ???)
+C1/001E:	7101    	(B: redraw one character's main battle menu, char slot in $10)
+C1/0020:	2D00    	(C: final battle tier transition ?)
+C1/0022:	2400    	(D: read $4001,X ???)
 
+Command D: return a byte from $4001-$4004 indexed by $10 & 3 ???
 C1/0024:	A510    	LDA $10		(from C1/0005, X = D)
 C1/0026:	2903	 	AND #$03
 C1/0028:	AA		TAX
 C1/0029:	BD0140  	LDA $4001,X
 C1/002C:	6B      	RTL
  
+Command C: battle background special-casing - on final battle tier 3
+(background $35) silence the song via the C5 sound API, then flag a
+number of state counters and clear the $6178 block.
 C1/002D:	ADB8EC  	LDA $ECB8      (from C1/0005, X = C, load battle background ID)
 C1/0030:	C935    	CMP #$35       (are we on tier 3?)
 C1/0032:	D017    	BNE $004B      (branch if not)
 C1/0034:	EEEDE9  	INC $E9ED
 C1/0037:	A981    	LDA #$81
-C1/0039:	8D0013  	STA $1300
+C1/0039:	8D0013  	STA $1300		(sound command $81 = ?)
 C1/003C:	A980    	LDA #$80		(128 = song index?? (silence maybe?))
 C1/003E:	8D0113  	STA $1301
 C1/0041:	9C0213  	STZ $1302
-C1/0044:	220400C5	JSL $C50004
+C1/0044:	220400C5	JSL $C50004		(call sound API (bank C5))
 C1/0048:	9CEDE9  	STZ $E9ED
 C1/004B:	A980    	LDA #$80
-C1/004D:	8D8562  	STA $6285
+C1/004D:	8D8562  	STA $6285		(($6285) flag, checked by the dynamics loop at C1/9553)
 C1/0050:	EEEFE9  	INC $E9EF
 C1/0053:	EE0FEC  	INC $EC0F
 C1/0056:	EE9A62  	INC $629A
@@ -56,12 +74,15 @@ C1/0064:	205E92  	JSR $925E
 C1/0067:	20DC91  	JSR $91DC
 C1/006A:	7B      	TDC 
 C1/006B:	AA      	TAX 
-C1/006C:	9E7861  	STZ $6178,X
+C1/006C:	9E7861  	STZ $6178,X		(clear $6178-$6235: per-entity animation state block ?)
 C1/006F:	E8      	INX 
 C1/0070:	E0BE00  	CPX #$00BE
 C1/0073:	D0F7    	BNE $006C
 C1/0075:	6B      	RTL 
 
+Battle scene (re)build: full redraw pipeline - palettes, windows, menus,
+character sprites and status. Called from the dynamics command at
+C1/92F5.
 C1/0076:	20E00F  	JSR $0FE0		(from C1/92F5)
 C1/0079:	20B60F  	JSR $0FB6
 C1/007C:	9CEFE9  	STZ $E9EF
@@ -81,12 +102,17 @@ C1/00A3:	207C95  	JSR $957C
 C1/00A6:	2252B6C2	JSL $C2B652
 C1/00AA:	60      	RTS
  
+Command A: wrapper for C1/4445 ???
 C1/00AB:	204544  	JSR $4445		(from C1/0005, X = A)
 C1/00AE:	6B      	RTL 
 
+Command 9: very end of battle. Kicks the victory music (song $10)
+through the C5 sound API unless the formation says to continue the
+current music, then finishes any queued fades and shuts the screen
+down for the return to the field.
 C1/00AF:	AD4B2F  	LDA $2F4B		(Monst. Form. Aux. Byte 4) 	(from C1/0005, X = 9)
 C1/00B2:	3007    	BMI $00BB		(Branch if continue current music)
-C1/00B4:	ADE411  	LDA $11E4
+C1/00B4:	ADE411  	LDA $11E4		(event flags: check "continue music after battle" ?)
 C1/00B7:	2908    	AND #$08
 C1/00B9:	F005    	BEQ $00C0
 C1/00BB:	AD8462  	LDA $6284
@@ -94,10 +120,10 @@ C1/00BE:	F017    	BEQ $00D7
 C1/00C0:	EEEDE9  	INC $E9ED
 C1/00C3:	A981    	LDA #$81
 C1/00C5:	8D0013  	STA $1300
-C1/00C8:	A910    	LDA #$10		(16 = song index)
+C1/00C8:	A910    	LDA #$10		(song $10 = victory fanfare)
 C1/00CA:	8D0113  	STA $1301
 C1/00CD:	9C0213  	STZ $1302
-C1/00D0:	220400C5	JSL $C50004
+C1/00D0:	220400C5	JSL $C50004		(call sound API (bank C5))
 C1/00D4:	9CEDE9  	STZ $E9ED
 C1/00D7:	ADF9E9  	LDA $E9F9
 C1/00DA:	F00A    	BEQ $00E6
@@ -109,25 +135,32 @@ C1/00E6:	220DB6C2	JSL $C2B60D
 C1/00EA:	7B      	TDC 
 C1/00EB:	48      	PHA 
 C1/00EC:	AB      	PLB 
-C1/00ED:	9C0042  	STZ $4200
+C1/00ED:	9C0042  	STZ $4200		(disable NMI/IRQ and DMA before teardown)
 C1/00F0:	9C0B42  	STZ $420B
 C1/00F3:	9C0C42  	STZ $420C
 C1/00F6:	A980    	LDA #$80
-C1/00F8:	8D0021  	STA $2100
+C1/00F8:	8D0021  	STA $2100		(force blank)
 C1/00FB:	A96B    	LDA #$6B
 C1/00FD:	8D0015  	STA $1500
 C1/0100:	8D0415  	STA $1504
 C1/0103:	78      	SEI 
 C1/0104:	6B      	RTL 
  
+Clear all four menu-request slots ($7E4001-4004, $FF = no request) and
+run frames until no character's battle menu remains active ($7BCA = 0).
 C1/0105:	A2FFFF  	LDX #$FFFF		(from C1/0059)
 C1/0108:	8E0140  	STX $4001
 C1/010B:	8E0340  	STX $4003
-C1/010E:	202A02  	JSR $022A
-C1/0111:	ADCA7B  	LDA $7BCA
+C1/010E:	202A02  	JSR $022A		(advance one frame)
+C1/0111:	ADCA7B  	LDA $7BCA		(menu-active flag/count: nonzero while a command menu is up ?)
 C1/0114:	D0EF    	BNE $0105
 C1/0116:	60      	RTS
 
+Command 8: end of victorious battle. Waits out the menus, runs the
+post-battle sync (C1/0197), then unless the formation disables the
+fanfare: injects the 5-byte dynamics script below (battle event $01 =
+victory dance) into the $2D6E queue, starts the fanfare through the C5
+sound API, and runs the dynamics processor to play it out.
 C1/0117:	EE0FEC  	INC $EC0F		(from C1/0005, X = 8) 
 C1/011A:	EE9A62  	INC $629A		
 C1/011D:	200501  	JSR $0105	
@@ -142,7 +175,7 @@ C1/0131:	9D6E2D  	STA $2D6E,X       (and write to Battle Dynamics Command)
 C1/0134:	E8      	INX 			(X = X + 1)
 C1/0135:	E00500  	CPX #$0005		(Check if X = 5 yet)
 C1/0138:	D0F3    	BNE $012D		(If not, branch)
-C1/013A:	202A02  	JSR $022A		
+C1/013A:	202A02  	JSR $022A		(advance one frame)
 C1/013D:	202A02  	JSR $022A
 C1/0140:	ADE411  	LDA $11E4	
 C1/0143:	2908    	AND #$08
@@ -158,7 +191,7 @@ C1/0159:	8D0213  	STA $1302
 C1/015C:	220400C5	JSL $C50004		(Changes the music to fanfare)
 C1/0160:	9CEDE9  	STZ $E9ED		
 C1/0163:	EE8D62  	INC $628D		
-C1/0166:	221295C1	JSL $C19512		(Changes to victory dance)
+C1/0166:	221295C1	JSL $C19512		(run the battle dynamics script processor)
 C1/016A:	6B      	RTL 
  
 Data 
@@ -171,14 +204,17 @@ C1/016F:	FF
 
 C1/0170:	6B		RTL			(from C1/0005, X = 7)
 
-C1/0171:	ADCA7B  	LDA $7BCA 		(from C1/0005, X = B)
+Command B: redraw one character's main battle menu (char slot in $10),
+but only while a menu is active and it belongs to that same character
+($62CA = character slot whose menu is open).
+C1/0171:	ADCA7B  	LDA $7BCA		(menu still active ?) (from C1/0005, X = B)
 C1/0174:	F010    	BEQ $0186
 C1/0176:	A510    	LDA $10
-C1/0178:	CDCA62  	CMP $62CA
+C1/0178:	CDCA62  	CMP $62CA		($62CA = char slot whose menu is currently open)
 C1/017B:	D009    	BNE $0186
-C1/017D:	205947  	JSR $4759
+C1/017D:	205947  	JSR $4759		(rebuild menu window contents ?)
 C1/0180:	20AC47  	JSR $47AC
-C1/0183:	EEBB7B  	INC $7BBB
+C1/0183:	EEBB7B  	INC $7BBB		($7BBB = menu tilemap dirty counter ?)
 C1/0186:	6B      	RTL
  
 C1/0187:	20614A  	JSR $4A61		(LONG--from C1/FDF4)
@@ -188,10 +224,13 @@ C1/0190:	202A02  	JSR $022A
 C1/0193:	20BD01  	JSR $01BD
 C1/0196:	6B      	RTL
  
+Command 6: post-change sync of the $200D block (16 bytes, party
+display values ?) against its shadow at $EBFF; on any difference and
+no menu active, rebuild the party windows and update the shadow.
 C1/0197:	7B      	TDC 			(from C1/0005, X = 6)
 C1/0198:	AA      	TAX 
-C1/0199:	BD0D20  	LDA $200D,X
-C1/019C:	DDFFEB  	CMP $EBFF,X
+C1/0199:	BD0D20  	LDA $200D,X		(party display block, 16 bytes ?)
+C1/019C:	DDFFEB  	CMP $EBFF,X		(shadow copy of $200D block)
 C1/019F:	D007    	BNE $01A8
 C1/01A1:	E8      	INX 
 C1/01A2:	E01000  	CPX #$0010
@@ -201,12 +240,13 @@ C1/01A7:	6B      	RTL
 C1/01A8:	ADCA7B  	LDA $7BCA		(from C1/019F)
 C1/01AB:	D00F    	BNE $01BC
 C1/01AD:	20614A  	JSR $4A61
-C1/01B0:	205947  	JSR $4759
-C1/01B3:	EEBB7B  	INC $7BBB
-C1/01B6:	202A02  	JSR $022A
+C1/01B0:	205947  	JSR $4759		(rebuild menu window contents ?)
+C1/01B3:	EEBB7B  	INC $7BBB		($7BBB = menu tilemap dirty counter ?)
+C1/01B6:	202A02  	JSR $022A		(advance one frame)
 C1/01B9:	20BD01  	JSR $01BD
 C1/01BC:	6B      	RTL
  
+Update the $EBFF shadow copy of the $200D block.
 C1/01BD:	7B      	TDC 			(from C1/01B9)
 C1/01BE:	AA      	TAX 
 C1/01BF:	BD0D20  	LDA $200D,X
@@ -217,31 +257,43 @@ C1/01C9:	D0F4    	BNE $01BF
 C1/01CB:	60      	RTS		
 
 (Add an item to inventory. 2e72-2e77 to 602d-6032)
-C1/01CC:	ADDA64  	LDA $64DA      (Loads something??, from C1/0005, X = 5)
+
+Command 5: in-battle inventory update. Dequeue one pending 5-byte item
+entry: $64DA low nibble indexes the $602D buffer (5 bytes per entry);
+the C2 side fills $2E72-$2E76 and later copies the $602D buffer back
+into the Item menu (see C2/62C7 area).
+C1/01CC:	ADDA64  	LDA $64DA		(queue write index (low nibble), from C1/0005, X = 5)
 C1/01CF:	290F    	AND #$0F       (Zeroes out the upper 4 bits)
 C1/01D1:	8510    	STA $10		
 C1/01D3:	0A      	ASL A
 C1/01D4:	0A      	ASL A
 C1/01D5:	18      	CLC 
-C1/01D6:	6510    	ADC $10        (Multiplies that by 5)
+C1/01D6:	6510    	ADC $10		(entry offset = index * 5)
 C1/01D8:	AA      	TAX            (Uses it as an index)
 C1/01D9:	7B      	TDC            (A starts at zero)
 C1/01DA:	A8      	TAY            (Y starts at 0)
-C1/01DB:	B9722E  	LDA $2E72,Y    (???)
-C1/01DE:	9D2D60  	STA $602D,X    (???)
+C1/01DB:	B9722E  	LDA $2E72,Y		(item id/qty entry staged by C2)
+C1/01DE:	9D2D60  	STA $602D,X		(pending-items buffer, 16 entries x 5 bytes)
 C1/01E1:	E8      	INX 
 C1/01E2:	C8      	INY 
 C1/01E3:	C00500  	CPY #$0005     (Is it 5 yet? (loops back 5 times, so there's 6 total))
 C1/01E6:	D0F3    	BNE $01DB
-C1/01E8:	EEDA64  	INC $64DA
+C1/01E8:	EEDA64  	INC $64DA		(bump queue write index)
 C1/01EB:	6B      	RTL 
 
+Command 0: battle scene setup - C2-side init hook, palette/screen
+init (C1/102A), then the full character display build (C1/01FB) and
+battle dynamics state init (C1/957C).
 C1/01EC:	22D5D3C2	JSL $C2D3D5		(from C1/0005, X = 0)
 C1/01F0:	202A10  	JSR $102A
 C1/01F3:	22FB01C1	JSL $C101FB
 C1/01F7:	207C95  	JSR $957C
 C1/01FA:	6B      	RTL
  
+Command 1: (re)build the character battle displays after a change -
+equipment/menus refresh: waits a frame, then character sprite setup
+($0DF3), name/HP windows ($4504), sprite id sync ($2F79), OAM build
+($02CA), window tilemaps ($44BE), and the C2-side hooks.
 C1/01FB:	DA      	PHX 			(from C1/0005, X = 1; C1/01F3)
 C1/01FC:	5A      	PHY 
 C1/01FD:	20241A  	JSR $1A24
@@ -260,9 +312,15 @@ C1/0223:	7A      	PLY
 C1/0224:	FA      	PLX 
 C1/0225:	6B      	RTL
  
+Long entry for the frame advance below (used directly by C2 battle
+animation code).
 C1/0226:	202A02  	JSR $022A      (from C2/A962, C2/AA3E, C2/AA48, C2/AA4F, C2/AA59, C2/EAD2, C2/ED75, C2/F30C, C2/F336, C2/F865, C2/F889, C2/F8B9, C2/F8D1, C2/F906, C2/F91F)(Long access into below)
 C1/0229:	6B      	RTL
  
+Advance one frame: wait for NMI (C1/1A24), then run the per-frame
+graphics pipeline - name/HP windows ($4504), OAM build ($02CA),
+window tilemaps ($44BE), C2 graphics hooks (C2/BF53, C2/B41A) and,
+unless suppressed by $E9EF, the C2 frame hook (C2/0003).
 C1/022A:	DA      	PHX            (from many, many places)
 C1/022B:	5A      	PHY 
 C1/022C:	20241A  	JSR $1A24
@@ -279,6 +337,8 @@ C1/024A:	FA      	PLX
 C1/024B:	60      	RTS
  
 
+Command 3: cancel the menu request for character slot $10 & 3
+($7E4001,X = $FF means "no request").
 C1/024C:	A510    	LDA $10		(from C1/0005, X = 3)
 C1/024E:	2903    	AND #$03
 C1/0250:	AA      	TAX 
@@ -286,7 +346,11 @@ C1/0251:	A9FF    	LDA #$FF
 C1/0253:	9D0140  	STA $4001,X
 C1/0256:	6B      	RTL 
 
-C1/0257:	AD8B62  	LDA $628B		(from C1/0005, X = 2)
+Command 2: request/acknowledge a character's battle menu. $10 low
+bits = character slot; bit 7 -> $12/$62CC,X flag (menu variant ?).
+Only proceeds when no menu transition is pending ($628B) and the
+slot's request byte is free ($FF).
+C1/0257:	AD8B62  	LDA $628B		(menu transition pending flag ?, from C1/0005, X = 2) (from C1/0005, X = 2)
 C1/025A:	D029    	BNE $0285
 C1/025C:	A510    	LDA $10
 C1/025E:	0A      	ASL A
@@ -297,8 +361,8 @@ C1/0264:	A510    	LDA $10
 C1/0266:	2903    	AND #$03
 C1/0268:	AA      	TAX 
 C1/0269:	A512    	LDA $12
-C1/026B:	9DCC62  	STA $62CC,X
-C1/026E:	BD0140  	LDA $4001,X
+C1/026B:	9DCC62  	STA $62CC,X		(per-slot menu variant flag ?)
+C1/026E:	BD0140  	LDA $4001,X		(menu request slot: $FF = free)
 C1/0271:	C9FF    	CMP #$FF
 C1/0273:	D010    	BNE $0285
 C1/0275:	8A      	TXA 
@@ -310,6 +374,9 @@ C1/0280:	A903    	LDA #$03
 C1/0282:	9D0140  	STA $4001,X
 C1/0285:	6B      	RTL 
   
+Compact the menu-request queue: $4001-$4004 hold each character's queue
+position (FF = none). Pass 1 renumbers the present positions 0..n-1 in
+order; pass 2 marks the vacated tail positions free.
 C1/0286:	7B      	TDC 			(from C1/0279, C1/02CA)
 C1/0287:	AA      	TAX 
 C1/0288:	6410    	STZ $10
@@ -333,6 +400,8 @@ C1/02AC:	E610    	INC $10
 C1/02AE:	4C9F02  	JMP $029F		(why no BRA?)
 C1/02B1:	60      	RTS 
 
+Find the slot whose queue position equals $10; if found, replace it
+with $12 and return carry set.
 C1/02B2:	7B      	TDC 			(from C1/028C, C1/02A9)
 C1/02B3:	AA      	TAX 
 C1/02B4:	BD0140  	LDA $4001,X
@@ -349,10 +418,15 @@ C1/02C5:	9D0140  	STA $4001,X
 C1/02C8:	38      	SEC 
 C1/02C9:	60      	RTS 
 
+Per-frame menu scheduler (from the C1/01FB pipeline): compact the
+queue, then if some character sits at queue position 0 and nothing
+blocks ($E9F1 / $7BF0 menu task / $628B / $7BCA active menu / $7BBB
+dirty / $7BCC), clear the chosen-command flag, make him the open-menu
+character ($62CA) and bring up his command menu (C1/44A2).
 C1/02CA:	208602  	JSR $0286		(from C1/0209)
 C1/02CD:	7B      	TDC 
 C1/02CE:	AA      	TAX 
-C1/02CF:	BD0140  	LDA $4001,X
+C1/02CF:	BD0140  	LDA $4001,X		(queue position 0 = front)
 C1/02D2:	F008    	BEQ $02DC
 C1/02D4:	E8      	INX 
 C1/02D5:	E00400  	CPX #$0004
@@ -365,11 +439,13 @@ C1/02E5:	0DCA7B  	ORA $7BCA
 C1/02E8:	0DBB7B  	ORA $7BBB
 C1/02EB:	0DCC7B  	ORA $7BCC
 C1/02EE:	D009    	BNE $02F9
-C1/02F0:	9CCB7B  	STZ $7BCB
-C1/02F3:	8ECA62  	STX $62CA
-C1/02F6:	20A244  	JSR $44A2
+C1/02F0:	9CCB7B  	STZ $7BCB		($7BCB = command chosen on the open menu)
+C1/02F3:	8ECA62  	STX $62CA		($62CA = character slot whose menu opens)
+C1/02F6:	20A244  	JSR $44A2		(bring up the command menu for slot $62CA)
 C1/02F9:	60      	RTS 
 
+Reconfigure DMA channels 3 and 5 when requested ($7B95/$7B96, config
+bytes from the C2/D368 table; channel 3 has two alternative configs).
 C1/02FA:	AD957B  	LDA $7B95		(from C1/0C17)
 C1/02FD:	F029    	BEQ $0328
 C1/02FF:	C901    	CMP #$01
@@ -423,6 +499,7 @@ C1/036D:	0980    	ORA #$80
 C1/036F:	8DEF7B  	STA $7BEF
 C1/0372:	60      	RTS 
  
+Reconfigure DMA channel 6 when requested ($7B97, two configs).
 C1/0373:	AD977B  	LDA $7B97		(from C1/0C1A)
 C1/0376:	F029    	BEQ $03A1
 C1/0378:	C901    	CMP #$01
@@ -448,6 +525,10 @@ C1/039D:	8D6743  	STA $4367
 C1/03A0:	AB      	PLB 
 C1/03A1:	60      	RTS
  
+Battle background DMA/HDMA initial setup: program channels 0-6 from
+the C2/D368 table (5 bytes each), set the $800C-$800E scroll-code
+selectors, then pick an alternate row-scroll code for backgrounds $0F,
+$2C (mine cart) and $2E.
 C1/03A2:	8B      	PHB 			(from C1/112D)
 C1/03A3:	A900    	LDA #$00
 C1/03A5:	48      	PHA 
@@ -480,7 +561,7 @@ C1/03D5:	A905    	LDA #$05
 C1/03D7:	8D0E80  	STA $800E
 C1/03DA:	20FB03  	JSR $03FB
 C1/03DD:	A97F    	LDA #$7F
-C1/03DF:	8DEF7B  	STA $7BEF
+C1/03DF:	8DEF7B  	STA $7BEF		(HDMA enable mask shadow ?)
 C1/03E2:	ADB8EC  	LDA $ECB8      (load battle background ID)
 C1/03E5:	C90F    	CMP #$0F
 C1/03E7:	F00C    	BEQ $03F5
@@ -494,6 +575,10 @@ C1/03F5:	A90A    	LDA #$0A
 C1/03F7:	8D0D80  	STA $800D
 C1/03FA:	60      	RTS
  
+Program the row-scroll HDMA code selectors: $800C-$800E hold indirect
+code indices for BG1/BG2/BG3 row effects (bit 7 = already programmed);
+table at C2/D150 supplies the handler addresses for channels 0-2.
+Finishes by writing the HDMA enable shadow ($7BEF) to $420C.
 C1/03FB:	AD0C80  	LDA $800C		(from C1/03DA, C1/0C20)
 C1/03FE:	3019    	BMI $0419
 C1/0400:	0980    	ORA #$80
@@ -538,6 +623,9 @@ C1/0463:	1390
 C1/0465:	1392    	
 C1/0467:	1394    	
 
+Kick a queued 8-line VRAM transfer for the enemy-name window ?
+($64B8 = request, $64B9 = lines left; VRAM row addresses from
+C2/D2A4, source offsets from C2/D2B4 plus the C1/0461 table).
 C1/0469:	ADB864  	LDA $64B8		(from only C1/0BCB)
 C1/046C:	F05B    	BEQ $04C9
 C1/046E:	ADB964  	LDA $64B9
@@ -578,6 +666,10 @@ C1/04C4:	D003    	BNE $04C9
 C1/04C6:	9CB864  	STZ $64B8
 C1/04C9:	60      	RTS
  
+Flush the dirty battle-menu tilemap rows to VRAM over 8 frames:
+while $7BBB is set, DMA one row per frame ($7BBE = VRAM base,
+$7BC0 = source base, row offsets from the C2/D294 and C2/D2B4
+tables), counting down $62AA.
 C1/04CA:	ADBB7B  	LDA $7BBB		(from only C1/0BCE)
 C1/04CD:	F03C    	BEQ $050B
 C1/04CF:	EE9B62  	INC $629B
@@ -603,12 +695,15 @@ C1/04F9:	8536    	STA $36
 C1/04FB:	7B      	TDC 
 C1/04FC:	E220    	SEP #$20
 C1/04FE:	A97E    	LDA #$7E
-C1/0500:	202B1A  	JSR $1A2B
+C1/0500:	202B1A  	JSR $1A2B		(DMA $36 bytes from 7E:X to VRAM Y)
 C1/0503:	CEAA62  	DEC $62AA
 C1/0506:	D003    	BNE $050B
 C1/0508:	9CBB7B  	STZ $7BBB
 C1/050B:	60      	RTS
  
+Build the ATB-gauge/name-row tile string for the character whose
+menu is open ($62CA matched against $64D6-$64D9), copying 7 glyphs
+from $5CA5+ into the $5D15 text buffer.
 C1/050C:	7B      	TDC 			(from only C1/0CD2)
 C1/050D:	AA      	TAX 
 C1/050E:	ADCA62  	LDA $62CA
@@ -700,6 +795,9 @@ C1/059B:	0020
 C1/059D:	0054    	
 C1/059F:	1054    	
 
+Kick a queued VRAM transfer for one menu window region: $7B15 =
+request flag, $62C8 = region index into the C1/0591 VRAM address
+table, source pointer in $7B1A-$7B1C.
 C1/05A1:	AD157B  	LDA $7B15		(from only C1/0BD4)
 C1/05A4:	F03D    	BEQ $05E3
 C1/05A6:	9C157B  	STZ $7B15
@@ -716,7 +814,7 @@ C1/05BC:	E220    	SEP #$20
 C1/05BE:	9CC862  	STZ $62C8
 C1/05C1:	AD1C7B  	LDA $7B1C
 C1/05C4:	AE1A7B  	LDX $7B1A
-C1/05C7:	20511A  	JSR $1A51
+C1/05C7:	20511A  	JSR $1A51		(DMA to VRAM at $36)
 C1/05CA:	C220    	REP #$20
 C1/05CC:	AD167B  	LDA $7B16
 C1/05CF:	38      	SEC 
@@ -728,6 +826,11 @@ C1/05DA:	ED1F7B  	SBC $7B1F
 C1/05DD:	8DB664  	STA $64B6
 C1/05E0:	7B      	TDC 
 C1/05E1:	E220    	SEP #$20
+
+Kick the queued VRAM transfer for a second window region ($7B21 =
+request, $62C9 selects the $5400/$5410/$5600/$5610 VRAM base, source
+in $7B26-$7B28); afterwards refresh the BG3 row-effect deltas at
+$4AF5/$4AF7 when scroll code 5 is active.
 C1/05E3:	AD217B  	LDA $7B21
 C1/05E6:	F057    	BEQ $063F
 C1/05E8:	9C217B  	STZ $7B21
@@ -768,6 +871,8 @@ C1/063C:	7B      	TDC
 C1/063D:	E220    	SEP #$20
 C1/063F:	60      	RTS
  
+Kick a queued $80-byte VRAM transfer from $7E60B3 to the address in
+$6317 ($6316 = request flag).
 C1/0640:	AD1663  	LDA $6316		(from only C1/0BD7)
 C1/0643:	F013    	BEQ $0658
 C1/0645:	9C1663  	STZ $6316
@@ -779,8 +884,20 @@ C1/0652:	AC1763  	LDY $6317
 C1/0655:	4C2B1A  	JMP $1A2B
 C1/0658:	60      	RTS
  
+Recompute every combatant's anchor coordinates for the targeting
+cursor and damage-number placement, then rebuild the valid-target
+masks. Monster loop: from X-coords ($80C3), Y-coords ($80CF) and
+tile sizes ($812F/$8130) derive centre-X ($800F), centre/bottom
+Y variants ($801B/$8027/$804B), left-X ($8063) and mid-Y ($806F).
+Character loop: from the $61B7 position block derive the character
+anchor tables ($8033/$8087/$8093/$803B/$8043). Finally combine the
+engine's valid-target bytes ($201D characters / $201E monsters)
+with the display masks ($61AB/$61AC) and formation bytes
+($2F46/$2F47) into $0092, adding bit 5 ($6195) when a hidden
+extra target (Gau on the Veldt ?) is available at the coordinates
+staged from the $8087 tables.
 C1/0659:	E210    	SEP #$10		(from C1/0CC9, C1/132C)
-C1/065B:	9C6B7B  	STZ $7B6B
+C1/065B:	9C6B7B  	STZ $7B6B		(clear cursor-target scratch ?)
 C1/065E:	7B      	TDC 
 C1/065F:	AA      	TAX 
 C1/0660:	C220    	REP #$20
@@ -922,13 +1039,16 @@ C1/0789:	8D797B  	STA $7B79
 C1/078C:	8003    	BRA $0791
 C1/078E:	9C9561  	STZ $6195
 C1/0791:	A9FF    	LDA #$FF
-C1/0793:	2D1E20  	AND $201E		(Remove any invalid monster targets)
+C1/0793:	2D1E20  	AND $201E		(valid monster targets from the battle engine)
 C1/0796:	2DAB61  	AND $61AB
 C1/0799:	2D462F  	AND $2F46
 C1/079C:	0D9561  	ORA $6195
-C1/079F:	8D9200  	STA $0092
+C1/079F:	8D9200  	STA $0092		($0092 = combined valid-target bitmask for the cursor)
 C1/07A2:	60      	RTS
  
+Clear the OAM staging area: zero $0501-$051B, set the end-of-table
+marker, and park every sprite in the $0320-$04C8 high-table at
+Y = $E0 (offscreen).
 C1/07A3:	E210    	SEP #$10		(from only C1/0CBC)
 C1/07A5:	7B      	TDC 
 C1/07A6:	AA      	TAX 
@@ -964,6 +1084,9 @@ C1/07E5:	E220    	SEP #$20
 C1/07E7:	C210    	REP #$10
 C1/07E9:	60      	RTS
  
+Sync the four battle-gauge tile rows: when $6197 is set, copy the
+gauge glyph rows from their $9A21 build buffers to the $9F21 display
+buffers (and three more row pairs below).
 C1/07EA:	AD8362  	LDA $6283		(from only C1/0CA0)
 C1/07ED:	AA      	TAX 
 C1/07EE:	8644    	STX $44
@@ -989,10 +1112,18 @@ C1/0819:	E8      	INX
 C1/081A:	E098    	CPX #$98
 C1/081C:	D0E0    	BNE $07FE
 C1/081E:	6434    	STZ $34
+
+Rebuild the row-scroll HDMA data tables each frame: combine the base
+scroll ($64B0/$64B2, or the menu-derived deltas $64B4/$64B6 while a
+menu transition holds $62A9), add the per-row wave offsets from the
+$63B0/$63F0/$6430/$6470 blocks into the channel tables at $43F5+,
+$4435+, $4475+, $44B5+ (BG1/BG2 variants selected by scroll code in
+$800C), and the $6330/$6370 blocks into $4775+/$47B5+ (BG3), unless
+suppressed by $44/$62C1.
 C1/0820:	7B      	TDC 
 C1/0821:	E220    	SEP #$20
 C1/0823:	AA      	TAX 
-C1/0824:	AD0C80  	LDA $800C
+C1/0824:	AD0C80  	LDA $800C		(row-scroll code for BG1)
 C1/0827:	297F    	AND #$7F
 C1/0829:	C906    	CMP #$06
 C1/082B:	D004    	BNE $0831
@@ -1110,6 +1241,9 @@ C1/0924:	E040    	CPX #$40
 C1/0926:	F003    	BEQ $092B
 C1/0928:	4C8408  	JMP $0884
 
+Water/ripple backgrounds: overwrite the BG3 row tables with the
+precomputed sine offsets at $E7FF/$E83F, phase-stepped by the frame
+counter $0E (backgrounds $2E and $37 use single-table variants).
 C1/092B:	7B      	TDC 
 C1/092C:	E220    	SEP #$20
 C1/092E:	A8      	TAY 
@@ -1174,6 +1308,10 @@ C1/0991:	E220    	SEP #$20
 C1/0993:	C210    	REP #$10
 C1/0995:	60      	RTS
  
+Pause handling: on START ($09 = $10) toggle the pause state $62AB,
+sending SPC command $F5 (pause/unpause sound) with $2141 = 1/0.
+Returns carry set while paused (callers then skip battle updates);
+blocked during flashback mode ($628A) and sound-busy ($E9ED).
 C1/0996:	ADAB62  	LDA $62AB		(Is the game paused? 1 = yes) (from only C1/0CA3)
 C1/0999:	F01B    	BEQ $09B6
 C1/099B:	ADEDE9  	LDA $E9ED
@@ -1207,6 +1345,8 @@ C1/09DB:	60      	RTS
 C1/09DC:	18      	CLC 			(from C1/09B9, C1/09BE, C1/09C3, C1/09C9)
 C1/09DD:	60      	RTS
  
+DMA one character's two ATB-gauge tile rows to VRAM (row pair index
+in A; source addresses from C2/D2C4-D2CC, VRAM rows from C2/D2D4-DC).
 C1/09DE:	0A      	ASL A			(from C1/0AD0, C1/0AE3)
 C1/09DF:	AA      	TAX 
 C1/09E0:	C220    	REP #$20
@@ -1229,6 +1369,10 @@ C1/0A12:	8D0B42  	STA $420B
 C1/0A15:	60      	RTS
  
 Something to do with palettes during NMI?
+
+Force-blank screen build during battle load: bulk-DMA the OAM table
+($0400 area), the $7E00 tile buffer, the $EC11 block and the $7F00
+buffer to VRAM/OAM, with CGRAM address resets.
 C1/0A16:	7B      	TDC 			(from only C1/0BC4)
 C1/0A17:	48      	PHA 
 C1/0A18:	AB      	PLB 
@@ -1280,9 +1424,9 @@ C1/0A91:	A901    	LDA #$01
 C1/0A93:	8D7043  	STA $4370
 C1/0A96:	A918    	LDA #$18
 C1/0A98:	8D7143  	STA $4371
-C1/0A9B:	AFBD627E	LDA $7E62BD
+C1/0A9B:	AFBD627E	LDA $7E62BD		(skip streaming refreshes during morph-flash ? ($62BD))
 C1/0A9F:	D04B    	BNE $0AEC
-C1/0AA1:	A598    	LDA $98
+C1/0AA1:	A598    	LDA $98		(frame counter: stream one 32nd of the enemy graphics per frame ?)
 C1/0AA3:	291F    	AND #$1F
 C1/0AA5:	0A      	ASL A
 C1/0AA6:	AA      	TAX 
@@ -1302,17 +1446,17 @@ C1/0AC7:	8D0B42  	STA $420B
 C1/0ACA:	A598    	LDA $98
 C1/0ACC:	2903    	AND #$03
 C1/0ACE:	8536    	STA $36
-C1/0AD0:	20DE09  	JSR $09DE
+C1/0AD0:	20DE09  	JSR $09DE		(refresh one character's ATB gauge rows per frame (rotating))
 C1/0AD3:	AFBB647E	LDA $7E64BB
 C1/0AD7:	D013    	BNE $0AEC
-C1/0AD9:	AFAD7B7E	LDA $7E7BAD
+C1/0AD9:	AFAD7B7E	LDA $7E7BAD		($7BAD = gauge row needing immediate refresh (bit 7 = none))
 C1/0ADD:	300D    	BMI $0AEC
 C1/0ADF:	C536    	CMP $36
 C1/0AE1:	F003    	BEQ $0AE6
 C1/0AE3:	20DE09  	JSR $09DE
 C1/0AE6:	A9FF    	LDA #$FF
 C1/0AE8:	8FAD7B7E	STA $7E7BAD
-C1/0AEC:	A24000  	LDX #$0040
+C1/0AEC:	A24000  	LDX #$0040		(copy the 64-byte OAM high table $5FED to VRAM.. no, to $4020 ?)
 C1/0AEF:	8E7543  	STX $4375
 C1/0AF2:	A2ED5F  	LDX #$5FED
 C1/0AF5:	8E7243  	STX $4372
@@ -1322,6 +1466,10 @@ C1/0AFE:	A97E    	LDA #$7E
 C1/0B00:	8D7443  	STA $4374
 C1/0B03:	A980    	LDA #$80
 C1/0B05:	8D0B42  	STA $420B
+
+Monster death "melt" effect ?: while $64BB is set, DMA the four
+$64BC-$64C2 source rows to the four $64C4-$64CA VRAM rows with
+fixed-transfer mode ($4374 = $D8), then clear the request.
 C1/0B08:	AFBB647E	LDA $7E64BB
 C1/0B0C:	F064    	BEQ $0B72
 C1/0B0E:	A9D8    	LDA #$D8
@@ -1358,6 +1506,11 @@ C1/0B6C:	E220    	SEP #$20
 C1/0B6E:	8FBB647E	STA $7E64BB
 C1/0B72:	60      	RTS
  
+Per-frame battle logic tick (called from the NMI tail): clear and
+re-derive the "party is running" flag $2F45 - L+R held (unless the
+formation forbids running or updates are suppressed), then advance
+the frame counter $0E, run the C2 per-frame hooks, and poll the
+controller (C0/0015) while unpaused.
 C1/0B73:	9C452F  	STZ $2F45      (from only C1/0CFA, zero = nobody's trying to run)
 C1/0B76:	22A4B8C2	JSL $C2B8A4
 C1/0B7A:	AD4B2F  	LDA $2F4B		(Monst. Form. Aux. Byte 4)
@@ -1381,6 +1534,16 @@ C1/0BA2:	221500C0	JSL $C00015
 C1/0BA6:	60      	RTS
  
 NMI interrupt
+
+NMI handler for battle. Re-entrancy guarded by $46. In order: the
+force-blank bulk loads ($0A16, only during setup), then the queued
+VRAM transfer kickers ($0469 enemy name window, $04CA dirty menu
+rows, $5D99, $05A1/$0640 window regions, $196F), the C2 NMI hook
+(C2/A88F), an optional 5-word $6290 tilemap write ($ECEF bit 6),
+DMA channel reconfigs ($02FA/$0373/$0347/$03FB), mode-7 matrix and
+window registers from $E9C4-$E9CF, screen brightness/pause, gauge
+row sync ($07EA), pause toggle ($0996), menu-abort check, OAM
+staging clear ($07A3), and the per-frame logic tick ($0B73).
 C1/0BA7:	08      	PHP            (from 00/1500, set at C2/D424)
 C1/0BA8:	C230    	REP #$30
 C1/0BAA:	48      	PHA 
@@ -1475,13 +1638,17 @@ C1/0C9C:	8F002100	STA $002100
 C1/0CA0:	20EA07  	JSR $07EA
 C1/0CA3:	209609  	JSR $0996
 C1/0CA6:	B05B    	BCS $0D03
+
+Menu abort: if a menu is open but C2 has cancelled its character's
+request (slot byte back to $FF, e.g. the character died or lost
+control), force the chosen-command flag so the menu tears down.
 C1/0CA8:	ADCA7B  	LDA $7BCA
 C1/0CAB:	F00F    	BEQ $0CBC
 C1/0CAD:	AECA62  	LDX $62CA
 C1/0CB0:	BD0140  	LDA $4001,X
 C1/0CB3:	C9FF    	CMP #$FF
 C1/0CB5:	D005    	BNE $0CBC
-C1/0CB7:	A901    	LDA #$01
+C1/0CB7:	A901    	LDA #$01		(fake "command chosen" to close the abandoned menu)
 C1/0CB9:	8DCB7B  	STA $7BCB
 C1/0CBC:	20A307  	JSR $07A3
 C1/0CBF:	A908    	LDA #$08
@@ -1585,6 +1752,10 @@ C1/0D96:	A97E    	LDA #$7E
 C1/0D98:	8512    	STA $12
 C1/0D9A:	641B    	STZ $1B
 C1/0D9C:	8B      	PHB 
+
+Write a column of decremented tile indices through [$10] with stride
+$1A (two unrolled variants: every 4th byte / every 2nd byte, selected
+by bit 0 of $22) - window frame tile fill helper ?
 C1/0D9D:	A900    	LDA #$00
 C1/0D9F:	48      	PHA 
 C1/0DA0:	AB      	PLB 
@@ -1641,6 +1812,12 @@ C1/0DF0:	AB      	PLB
 C1/0DF1:	FA      	PLX 
 C1/0DF2:	60      	RTS
  
+Build the per-character C1 display blocks: copy each character's
+battle sprite id, name-window and gauge values from the C2-side
+$2E78/$2E80/$2E88/$2E90 arrays into the $2EB5+ blocks (stride $20),
+masking the $2E98/$2EA0 status-display words by $10/$12 (all bits
+unless suppressed while $E9EF set), then derive $61AD = bitmask of
+characters WITHOUT the "hide sprite" flag ($2EA1 bit 5).
 C1/0DF3:	7B      	TDC 			(from C1/007F, C1/0200, C1/1090, C1/FD7C)
 C1/0DF4:	AA      	TAX 
 C1/0DF5:	CA      	DEX 
@@ -1700,6 +1877,8 @@ C1/0E61:	A510    	LDA $10
 C1/0E63:	8DAD61  	STA $61AD
 C1/0E66:	60      	RTS
  
+Latch the displayed status words: copy $2EBD/$2EBF (built above) to
+$2EC1/$2EC3 for all four character blocks.
 C1/0E67:	C220    	REP #$20		(from C1/0085, C1/1093)
 C1/0E69:	7B      	TDC 
 C1/0E6A:	AA      	TAX 
@@ -1717,6 +1896,10 @@ C1/0E82:	7B      	TDC
 C1/0E83:	E220    	SEP #$20
 C1/0E85:	60      	RTS
  
+Load the enemy formation for display: formation id in $11E0, data at
+CF/6200 (12 bytes per formation). Extracts the enemies-present mask
+(-> $61AA), boss flags, per-enemy map positions (X*8 -> $80C3,
+Y*8 -> $80CF) and the two per-enemy flag bits (-> $80F4, $2A).
 C1/0E86:	A20F00  	LDX #$000F		(C1/1011, C1/91D1, C1/9366)
 C1/0E89:	8622    	STX $22		(Animation Script pointer)
 C1/0E8B:	AEE011  	LDX $11E0
@@ -1780,6 +1963,8 @@ C1/0EFA:	C00C00  	CPY #$000C
 C1/0EFD:	D0CB    	BNE $0ECA
 C1/0EFF:	60      	RTS
  
+Reset the row-scroll HDMA tables: fill $43F7-$4652 with $FFFF
+terminators.
 C1/0F00:	C220    	REP #$20		(from C1/1E64, C1/1E79)
 C1/0F02:	7B      	TDC 
 C1/0F03:	AA      	TAX 
@@ -1799,6 +1984,10 @@ C1/0F17:	22F7B6C2	JSR $C2B6F7		(from only C1/112A)
 C1/0F1B:	20A546  	JSR $46A5
 C1/0F1E:	60      	RTS
  
+Rebuild character target/visibility masks after a party change:
+$64D6/$64D8 = up to four visible character slots (screen order) for
+the gauge-row scheduler; $201D = valid character targets (present,
+not formation-hidden, visible per $6192); clears $61AC/$61AD.
 C1/0F1F:	A2FFFF  	LDX #$FFFF		(from C1/0088, C1/1096)
 C1/0F22:	8ED664  	STX $64D6
 C1/0F25:	8ED864  	STX $64D8
