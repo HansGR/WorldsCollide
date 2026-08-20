@@ -12,6 +12,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Field Object Data Structure (41 bytes per object)](#field-object-data-structure-41-bytes-per-object-0867-1068)
 - [FF6 Text Encoding Types](#ff6-text-encoding-types)
 - [Battle MP Zeroing & MP-Drain Criticals (2026-08)](#battle-mp-zeroing--mp-drain-criticals-2026-08)
+- [Battle Command-Menu Cursor Engine & the All-Invalid Hardlock (2026-08)](#battle-command-menu-cursor-engine--the-all-invalid-hardlock-2026-08)
 
 ### Ruination Mode — Architecture
 - [Ruination Mode (`-ruin`) — Detailed Architecture](#ruination-mode--ruin-detailed-architecture)
@@ -1868,3 +1869,49 @@ or gate the helper behind a flag if it should be opt-in. The knows-spells
 notion ($FF = fully learned) matches both the battle engine's count
 ($3CF8 via C2/568D) and the menu MP display (C3/0D2B), so the union rule
 stays consistent with battle/keep_battle_mp.py.
+
+---
+
+## Battle Command-Menu Cursor Engine & the All-Invalid Hardlock (2026-08)
+
+Probability commands (-comfr/-compr) can produce a character whose four
+commands are all illegal while Imped (imp-legal = the CF/FE00 info-table
+bit: Fight, Item, Magic, Revert, Mimic, Row, Def, Jump, X-Magic, Health,
+Shock).  C2/527D then grays all four menu slots and the C1 command window
+hard-locks: menu drawn, hand never placed, ATB stalled.  Fix:
+`battle/command_menu_guard.py` (gated on `commands_probability_mode`).
+
+**C1 facts worth keeping** (all found via `claude_reference/bankC1.txt`):
+- Row validity: C1/7A4E — cursor memory ($890F,X, masked `AND #$03`) times
+  3 into the character's menu block ($202E/$203A/$2046/$2052), tests bit 7
+  of the slot's SECOND byte; carry clear = selectable.  Menu slot layout:
+  byte0 command id ($FF/bit7 = empty), byte1 bit7 = grayed, byte2 aiming.
+- THREE unbounded skip-invalid cursor loops consume it: initial settle
+  C1/7AEF (`INC $890F,X / JSR $7A4E / BCS back`), and the second window
+  layout's up/down navigation C1/7BE9 (DEC) and C1/7BF3 (INC).  With zero
+  valid rows they spin forever (music continues — SPC700 is independent).
+  The d-pad handlers of the first layout (C1/7AFD-7B89) are try-and-REVERT
+  instead — bounded, safe.
+- **No confirm-time validity check exists**: both A-press sites (C1/7BAA,
+  C1/7BFF: `INC $96 / INC $2F41 / JMP $7CC8`) dispatch whatever the cursor
+  rests on (C1/7CC8 → per-command jump table at C1/7CE9).  Vanilla's
+  invariant "cursor only ever rests on a valid row" is what makes that
+  safe — anything that relaxes the cursor rules must add the check.
+- The guard: bounded scans (one lap; nothing valid → park hand on row 0)
+  + guarded confirms (re-check C1/7A4E, swallow invalid presses; $96/$2F41
+  advance only on real confirms).  An earlier version un-grayed a slot
+  instead — REJECTED by design: Imp must actually forbid imp-illegal
+  commands.  The parked hand keeps the real options live: Row/Def, L+R
+  run, Y next-character.
+- Menu rebuild trigger: setting Imp via WRAM ($3EE4,X bit 5) alone does
+  NOT rebuild the menu — the engine rebuilds when **$3204,X bit 3**
+  ("imp/mute toggled") is set (consumed by the C2/088C ASL-walk loop).
+  Harness tests must set both.
+
+**Diagnosis technique (reusable)**: reproduce the hang in the headless
+harness, then build a PC histogram — `h.save_state()`, parse the s9xsnp
+`REG` section (PB byte 0, S bytes 8-9, PC bytes 14-15, big-endian), sample
+every few frames, and diff healthy-vs-stuck histograms.  The stuck-unique
+hot PCs (here C1/18B0 multiplier + C1/7A52/7A6E) named the spinning
+routine directly after static reading had stalled.  Stack unwinding from
+S works for the first JSR/JSL frames but degrades past data pushes.
