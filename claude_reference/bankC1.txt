@@ -11455,12 +11455,12 @@ C1/55AA:	B055    		(3F)
 C1/55AC:	BA55    		(40)
 C1/55AE:	1C91    		(41)
 
-C1/55B0:	A92B    	LDA #$2B 		(from C1/5529, X = 3F)
+C1/55B0:	A92B    	LDA #$2B		(program 3F: request window draw state $2B, then program string $12 (magic confirm path for spells with targeting bit 6 clear)) (from C1/5529, X = 3F)
 C1/55B2:	8DF07B  	STA $7BF0
 C1/55B5:	A912    	LDA #$12
 C1/55B7:	4C2C5A  	JMP $5A2C
 
-C1/55BA:	A92C    	LDA #$2C		(from C1/5529, X = 40)
+C1/55BA:	A92C    	LDA #$2C		(program 40: request draw state $2C; string $02, or $04 after a Magic cast ($ECBA)) (from C1/5529, X = 40)
 C1/55BC:	8DF07B  	STA $7BF0
 C1/55BF:	ADBAEC  	LDA $ECBA
 C1/55C2:	0A      	ASL A
@@ -15221,16 +15221,24 @@ C1/7101:	ADE87A  	LDA $7AE8
 C1/7104:	D006    	BNE $710C
 C1/7106:	ADCA62  	LDA $62CA
 C1/7109:	99AE2B  	STA $2BAE,Y
-C1/710C:	B9AF2B  	LDA $2BAF,Y
+
+Item/Throw bookkeeping on submit: when the record's command field
+($2BAF) is Item (1) or Throw (8), decrement the chosen item's menu
+quantity.  With $7A1E set the equipment-hand slots are used - $894B
+bit 0 picks the left hand ($2B9A block) vs the right hand ($2B86
+block); otherwise the item is found in the 5-byte inventory records
+at $2686 and its quantity ($2689) decremented.  A slot reaching zero
+is emptied (id $FF, flags $80).
+C1/710C:	B9AF2B  	LDA $2BAF,Y		(the queued command: Throw (8) or Item (1)?)
 C1/710F:	C908    	CMP #$08
 C1/7111:	F004    	BEQ $7117
 C1/7113:	C901    	CMP #$01
 C1/7115:	D01C    	BNE $7133
-C1/7117:	AD1E7A  	LDA $7A1E
+C1/7117:	AD1E7A  	LDA $7A1E		(using an equipment-hand item?)
 C1/711A:	F04B    	BEQ $7167
 C1/711C:	20488E  	JSR $8E48
 C1/711F:	ACCA62  	LDY $62CA
-C1/7122:	B94B89  	LDA $894B,Y
+C1/7122:	B94B89  	LDA $894B,Y		(which hand is selected?)
 C1/7125:	2901    	AND #$01
 C1/7127:	F01F    	BEQ $7148
 C1/7129:	BD9D2B  	LDA $2B9D,X
@@ -15239,7 +15247,7 @@ C1/712E:	9004    	BCC $7134
 C1/7130:	DE9D2B  	DEC $2B9D,X
 C1/7133:	60      	RTS
  
-C1/7134:	A9FF    	LDA #$FF
+C1/7134:	A9FF    	LDA #$FF		(left hand emptied: clear the slot)
 C1/7136:	9D9A2B  	STA $2B9A,X		(Left hand item index)
 C1/7139:	A980    	LDA #$80
 C1/713B:	9D9B2B  	STA $2B9B,X
@@ -15248,13 +15256,13 @@ C1/7141:	9E9D2B  	STZ $2B9D,X
 C1/7144:	9E9E2B  	STZ $2B9E,X
 C1/7147:	60      	RTS
  
-C1/7148:	BD892B  	LDA $2B89,X
+C1/7148:	BD892B  	LDA $2B89,X		(decrement the right-hand count)
 C1/714B:	C902    	CMP #$02
 C1/714D:	9004    	BCC $7153
 C1/714F:	DE892B  	DEC $2B89,X
 C1/7152:	60      	RTS
  
-C1/7153:	A9FF    	LDA #$FF
+C1/7153:	A9FF    	LDA #$FF		(right hand emptied: clear the slot)
 C1/7155:	9D862B  	STA $2B86,X		(Right hand item index)
 C1/7158:	A980    	LDA #$80
 C1/715A:	9D872B  	STA $2B87,X
@@ -15263,7 +15271,7 @@ C1/7160:	9E892B  	STZ $2B89,X
 C1/7163:	9E8A2B  	STZ $2B8A,X
 C1/7166:	60      	RTS
  
-C1/7167:	7B      	TDC 
+C1/7167:	7B      	TDC		(find the item in the $2686 inventory records)
 C1/7168:	AA      	TAX 
 C1/7169:	B9B02B  	LDA $2BB0,Y
 C1/716C:	DD8626  	CMP $2686,X
@@ -15277,13 +15285,13 @@ C1/7176:	E00005    	CPX #$0500
 C1/7179:	D0F1    	BNE $7168
 C1/717B:	60      	RTS
 
-C1/717C:	BD8926  	LDA $2689,X
+C1/717C:	BD8926  	LDA $2689,X		(decrement its quantity)
 C1/717F:	C902    	CMP #$02
 C1/7181:	9004    	BCC $7187
 C1/7183:	DE8926  	DEC $2689,X
 C1/7186:	60      	RTS
  
-C1/7187:	A9FF    	LDA #$FF
+C1/7187:	A9FF    	LDA #$FF		(quantity zero: empty the slot)
 C1/7189:	9D8626  	STA $2686,X
 C1/718C:	A980    	LDA #$80
 C1/718E:	9D8726  	STA $2687,X
@@ -15292,6 +15300,9 @@ C1/7194:	9E8926  	STZ $2689,X
 C1/7197:	9E8A26  	STZ $268A,X
 C1/719A:	60      	RTS
  
+Start a nearest-target search: best score $73/$74 = $FFFF, best slot
+$75 = $FF; the current target's center (8-pixel units, from the
+entity coordinate tables at $800F/$801B) -> $36/$38.
 C1/719B:	A9FF    	LDA #$FF
 C1/719D:	8573    	STA $73
 C1/719F:	8574    	STA $74
@@ -15314,6 +15325,10 @@ C1/71BA:	7B      	TDC
 C1/71BB:	E220    	SEP #$20
 C1/71BD:	60      	RTS
  
+Probe slot Y of the current group: the group mask ($7B79,X), the
+slot->entity table $7A86 and the slot-bit table C1/7761 decide
+whether a valid enemy target sits there.  Carry set = yes, with its
+center -> $3A/$3C and the deltas dx -> $3E, dy -> $40.
 C1/71BE:	ADCE7A  	LDA $7ACE
 C1/71C1:	AA      	TAX 
 C1/71C2:	BD797B  	LDA $7B79,X
@@ -15365,6 +15380,8 @@ C1/720F:	E220    	SEP #$20
 C1/7211:	38      	SEC 
 C1/7212:	60      	RTS
  
+Score the probed candidate: dx^2 + dy^2; if closer than the best so
+far, remember the score in $73 and the slot in $75.
 C1/7213:	C220    	REP #$20
 C1/7215:	A53E    	LDA $3E
 C1/7217:	1006    	BPL $721F
@@ -15405,7 +15422,7 @@ C1/7254:	7B      	TDC
 C1/7255:	E220    	SEP #$20
 C1/7257:	60      	RTS
  
-C1/7258:	209B71  	JSR $719B
+C1/7258:	209B71  	JSR $719B		(directional search: up (keeps candidates with dy < 0, |dy| >= |dx|))
 C1/725B:	7B      	TDC 
 C1/725C:	A8      	TAY 
 C1/725D:	20BE71  	JSR $71BE
@@ -15438,7 +15455,7 @@ C1/728A:	E220    	SEP #$20
 C1/728C:	201372  	JSR $7213
 C1/728F:	4C6272  	JMP $7262		(BRA would be cleaner)
 
-C1/7292:	209B71  	JSR $719B
+C1/7292:	209B71  	JSR $719B		(directional search: down (dy > 0, dy >= |dx|))
 C1/7295:	7B      	TDC 
 C1/7296:	A8      	TAY 
 C1/7297:	20BE71  	JSR $71BE
@@ -15472,7 +15489,7 @@ C1/72C6:	E220    	SEP #$20
 C1/72C8:	201372  	JSR $7213
 C1/72CB:	4C9C72  	JMP $729C
 
-C1/72CE:	209B71  	JSR $719B
+C1/72CE:	209B71  	JSR $719B		(directional search: left (dx < 0, |dx| >= |dy|))
 C1/72D1:	7B      	TDC 
 C1/72D2:	A8      	TAY 
 C1/72D3:	20BE71  	JSR $71BE
@@ -15504,7 +15521,7 @@ C1/7300:	E220    	SEP #$20
 C1/7302:	201372  	JSR $7213
 C1/7305:	4CD872  	JMP $72D8		(BRA would be cleaner)
 
-C1/7308:	209B71  	JSR $719B
+C1/7308:	209B71  	JSR $719B		(directional search: right (dx > 0, dx >= |dy|))
 C1/730B:	7B      	TDC 
 C1/730C:	A8      	TAY 
 C1/730D:	20BE71  	JSR $71BE
@@ -15538,7 +15555,7 @@ C1/733C:	E220    	SEP #$20
 C1/733E:	201372  	JSR $7213
 C1/7341:	4C1273  	JMP $7312		(BRA is better)
 
-C1/7344:	ADCF7A  	LDA $7ACF
+C1/7344:	ADCF7A  	LDA $7ACF		(step to the next slot in the group; wrapping advances to the other group of the same side)
 C1/7347:	1A      	INC A
 C1/7348:	2903    	AND #$03
 C1/734A:	8DCF7A  	STA $7ACF
@@ -15550,7 +15567,7 @@ C1/7354:	2903    	AND #$03
 C1/7356:	8DCE7A  	STA $7ACE
 C1/7359:	60      	RTS
  
-C1/735A:	ADCF7A  	LDA $7ACF
+C1/735A:	ADCF7A  	LDA $7ACF		(step to the previous slot; wrapping backs into the other group of the same side)
 C1/735D:	3A      	DEC A
 C1/735E:	2903    	AND #$03
 C1/7360:	8DCF7A  	STA $7ACF
@@ -15563,7 +15580,7 @@ C1/736C:	2903    	AND #$03
 C1/736E:	8DCE7A  	STA $7ACE
 C1/7371:	60      	RTS
  
-C1/7372:	ADCE7A  	LDA $7ACE
+C1/7372:	ADCE7A  	LDA $7ACE		(A = entity in the current cursor position (group $7ACE, slot $7ACF))
 C1/7375:	A8      	TAY 
 C1/7376:	AA      	TAX 
 C1/7377:	BF6777C1	LDA $C17767,X
@@ -15573,6 +15590,9 @@ C1/737F:	AA      	TAX
 C1/7380:	BD867A  	LDA $7A86,X
 C1/7383:	60      	RTS
  
+Cursor up: on the character side ($7ACE odd) walk back to the
+previous occupied slot; on the enemy side run the upward
+nearest-target search and select the found enemy.
 C1/7384:	ADCE7A  	LDA $7ACE
 C1/7387:	2901    	AND #$01
 C1/7389:	F028    	BEQ $73B3
@@ -15607,6 +15627,8 @@ C1/73CF:	9C7D7B  	STZ $7B7D
 C1/73D2:	9C7F7B  	STZ $7B7F
 C1/73D5:	60      	RTS
  
+Cursor down: the character side walks to the next occupied slot; the
+enemy side runs the downward search.
 C1/73D6:	ADCE7A  	LDA $7ACE
 C1/73D9:	2901    	AND #$01
 C1/73DB:	F028    	BEQ $7405
@@ -15645,6 +15667,11 @@ C1/7427:	60      	RTS
 Function Pointers
 		(function)	(value for)	(value for)
 				(C1/773F)	(C1/7756)
+
+Pointer tables for left/right movement on the character side,
+indexed by encounter type $201F (0 front, 1 back, 2 pincer, 3 side):
+C1/773F (left press) uses the first table, C1/7756 (right press) the
+second.
 C1/7428:	BF74		(0)
 C1/7430:	E974		(1)
 C1/742C:	BF74		(2)
@@ -15657,7 +15684,7 @@ C1/7436:	6374    			(3)
 
 C1/7438:	60   		RTS			(from C1/7756, X = 0)
 
-C1/7439:	AD847A  	LDA $7A84      (from C1/7756, X = 1 or 2, load character targeting)
+C1/7439:	AD847A  	LDA $7A84		(party side, moving right (back/pincer): hop into the enemy group) (from C1/7756, X = 1 or 2, load character targeting)
 C1/743C:	2902    	AND #$02       (is "one side only" set?)
 C1/743E:	D01D    	BNE $745D      (branch if so)
 C1/7440:	AD7B7B  	LDA $7B7B
@@ -15677,7 +15704,7 @@ C1/745D:	A901    	LDA #$01
 C1/745F:	8DCE7A  	STA $7ACE
 C1/7462:	60      	RTS
  
-C1/7463:	ADCE7A  	LDA $7ACE		(from C1/7756, X = 3)
+C1/7463:	ADCE7A  	LDA $7ACE		(party side, moving right (side attack): cycle across the flank groups) (from C1/7756, X = 3)
 C1/7466:	C903    	CMP #$03
 C1/7468:	F054    	BEQ $74BE
 C1/746A:	AD847A  	LDA $7A84      (load character targeting)
@@ -15718,7 +15745,7 @@ C1/74B9:	A901    	LDA #$01
 C1/74BB:	8DCE7A  	STA $7ACE
 C1/74BE:	60      	RTS
  
-C1/74BF:	AD847A  	LDA $7A84      (from C1/773F, X = 0 or 2, load character targeting)
+C1/74BF:	AD847A  	LDA $7A84		(party side, moving left (front/pincer): hop into the enemy group) (from C1/773F, X = 0 or 2, load character targeting)
 C1/74C2:	2902    	AND #$02       (is "one side only" set?)
 C1/74C4:	D01D    	BNE $74E3      (branch if so)
 C1/74C6:	AD797B  	LDA $7B79
@@ -15738,9 +15765,9 @@ C1/74E3:	A901    	LDA #$01
 C1/74E5:	8DCE7A  	STA $7ACE
 C1/74E8:	60      	RTS
  
-C1/74E9:	60      	RTS			(from C1/773F, X = 1)
+C1/74E9:	60      	RTS		(party side, moving left (back attack): nowhere to go) (from C1/773F, X = 1)
  
-C1/74EA:	ADCE7A  	LDA $7ACE		(from C1/773F, X = 3)
+C1/74EA:	ADCE7A  	LDA $7ACE		(party side, moving left (side attack): cycle across the flank groups) (from C1/773F, X = 3)
 C1/74ED:	C901    	CMP #$01
 C1/74EF:	F052    	BEQ $7543
 C1/74F1:	AD847A  	LDA $7A84      (load character targeting)
@@ -15780,6 +15807,9 @@ C1/753E:	A903    	LDA #$03
 C1/7540:	8DCE7A  	STA $7ACE
 C1/7543:	60      	RTS
  
+Pointer tables for left/right movement on the enemy side, indexed by
+encounter type: C1/7747 (left press) uses the first, C1/775E (right
+press) the second.
 C1/7544:	6676    	
 C1/7546:	6976    	
 C1/7548:	A776    	
@@ -15790,7 +15820,7 @@ C1/754E:	A075
 C1/7550:	D875    	
 C1/7552:	3176    	
 
-C1/7554:	200873   	JSR $7308
+C1/7554:	200873   	JSR $7308		(enemy side: rightward nearest-target search; carry set = moved)
 C1/7557:	A575    	LDA $75
 C1/7559:	C9FF    	CMP #$FF
 C1/755B:	F01B		BEQ $7577
@@ -15809,7 +15839,7 @@ C1/7577:	60      	RTS
 C1/7578:	18      	CLC 
 C1/7579:	60      	RTS
  
-C1/757A:	20CE72  	JSR $72CE
+C1/757A:	20CE72  	JSR $72CE		(enemy side: leftward nearest-target search; carry set = moved)
 C1/757D:	A575    	LDA $75
 C1/757F:	C9FF    	CMP #$FF
 C1/7581:	F01B    	BEQ $759E
@@ -15828,9 +15858,9 @@ C1/759D:	60      	RTS
 C1/759E:	18      	CLC 
 C1/759F:	60      	RTS
  
-C1/75A0:	4C5475  	JMP $7554
+C1/75A0:	4C5475  	JMP $7554		(back attack, right: plain search)
 
-C1/75A3:	205475  	JSR $7554
+C1/75A3:	205475  	JSR $7554		(front attack, right: search, else hop to the party)
 C1/75A6:	B02F    	BCS $75D7
 C1/75A8:	AD847A  	LDA $7A84      (load character targeting)
 C1/75AB:	2902    	AND #$02       (is "one side only" set?)
@@ -15852,7 +15882,7 @@ C1/75D3:	8A      	TXA
 C1/75D4:	8DCF7A  	STA $7ACF
 C1/75D7:	60      	RTS
  
-C1/75D8:	205475  	JSR $7554
+C1/75D8:	205475  	JSR $7554		(pincer, right: search, else the party, else the other enemy group)
 C1/75DB:	B053    	BCS $7630
 C1/75DD:	ADCE7A  	LDA $7ACE
 C1/75E0:	D04E    	BNE $7630
@@ -15890,7 +15920,7 @@ C1/762B:	A902    	LDA #$02
 C1/762D:	8DCE7A  	STA $7ACE
 C1/7630:	60      	RTS
  
-C1/7631:	205475  	JSR $7554
+C1/7631:	205475  	JSR $7554		(side attack, right: search, else hop to the party)
 C1/7634:	B02F    	BCS $7665
 C1/7636:	AD847A  	LDA $7A84      (character targetting byte)
 C1/7639:	2902    	AND #$02       (is "one side only?" set?)
@@ -15912,9 +15942,9 @@ C1/7661:	8A      	TXA
 C1/7662:	8DCF7A  	STA $7ACF
 C1/7665:	60      	RTS
  
-C1/7666:	4C7A75  	JMP $757A
+C1/7666:	4C7A75  	JMP $757A		(front attack, left: plain search (the party is on the other side))
 
-C1/7669:	207A75  	JSR $757A
+C1/7669:	207A75  	JSR $757A		(back attack, left: search, else hop to the party)
 C1/766C:	B033    	BCS $76A1
 C1/766E:	AD847A  	LDA $7A84      (character targetting byte)
 C1/7671:	2902    	AND #$02       (is "one side only?" set?)
@@ -15941,7 +15971,7 @@ C1/76A1:	A902    	LDA #$02
 C1/76A3:	8DCE7A  	STA $7ACE
 C1/76A6:	60      	RTS
  
-C1/76A7:	207A75  	JSR $757A
+C1/76A7:	207A75  	JSR $757A		(pincer, left: search, else the party, else the other enemy group)
 C1/76AA:	B051    	BCS $76FD
 C1/76AC:	ADCE7A  	LDA $7ACE
 C1/76AF:	F04C    	BEQ $76FD
@@ -15978,7 +16008,7 @@ C1/76F9:	8A      	TXA
 C1/76FA:	8DCF7A  	STA $7ACF
 C1/76FD:	60      	RTS
  
-C1/76FE:	207A75  	JSR $757A
+C1/76FE:	207A75  	JSR $757A		(side attack, left: search, else hop to the party)
 C1/7701:	B02F    	BCS $7732
 C1/7703:	AD847A  	LDA $7A84      (character targetting byte)
 C1/7706:	2902    	AND #$02       (is "one side only?" set?)
@@ -16000,6 +16030,8 @@ C1/772E:	8A      	TXA
 C1/772F:	8DCF7A  	STA $7ACF
 C1/7732:	60      	RTS
  
+Left-press movement: character side dispatches via the C1/7428
+table, enemy side via C1/7544 - both indexed by encounter type.
 C1/7733:	ADCE7A  	LDA $7ACE
 C1/7736:	2901    	AND #$01
 C1/7738:	F008    	BEQ $7742
@@ -16013,6 +16045,8 @@ C1/7745:	0A      	ASL A
 C1/7746:	AA      	TAX 
 C1/7747:	7C4475  	JMP ($7544,X)
 
+Right-press movement: character side via the C1/7430 table, enemy
+side via C1/754C.
 C1/774A:	ADCE7A  	LDA $7ACE
 C1/774D:	2901    	AND #$01
 C1/774F:	F008    	BEQ $7759
@@ -16038,7 +16072,7 @@ C1/7767:	00
 C1/7768:	06
 C1/7769:	0C12
 
-C1/776B:	A60A    	LDX $0A
+C1/776B:	A60A    	LDX $0A		(blitz startup (Blitz command): reset the input buffers and timer, then queue the blitz input program $3D)
 C1/776D:	8EE2E9  	STX $E9E2
 C1/7770:	A9FF    	LDA #$FF
 C1/7772:	8DE4E9  	STA $E9E4      (reset Blitz timer)
@@ -16058,11 +16092,21 @@ C1/7791:	8005    	BRA $7797
 
 Several Commands
 
+Targeting startup ("Fight jumps here"; every targeted command runs
+through it).  Saves the current menu program as the return program
+($7A83), clears the roulette and selection state, then builds the
+initial selection from the targeting flags $7A84: one-side-only or
+roulette -> the actor's own slot bit; $0C = a whole side
+multi-selected (bit 6 picks enemies); $04 = all characters and all
+enemies; $08 = auto-select one group (the actor's own group, tracked
+through the $7A8C group table in pincer/side formations); plain $00 =
+single-target cursor start.  Finally queues the target-selection
+program $38.
 C1/7792:	9C412F    	STZ $2F41		(Fight jumps here)
 C1/7795:	A938    	LDA #$38
 C1/7797:	48		PHA
 C1/7798:	EE6B7B  	INC $7B6B
-C1/779B:	ADC27B  	LDA $7BC2
+C1/779B:	ADC27B  	LDA $7BC2		(remember the current menu program as the return program)
 C1/779E:	8D837A  	STA $7A83
 C1/77A1:	9C7D7B  	STZ $7B7D
 C1/77A4:	9C7E7B  	STZ $7B7E
@@ -16077,7 +16121,7 @@ C1/77BC:	3006    	BMI $77C4      (branch if random target is set)
 C1/77BE:	8536    	STA $36        (otherwise save for now)
 C1/77C0:	C902    	CMP #$02       (is only "one side only" set?)
 C1/77C2:	D00D		BNE $77D1      (branch if not)
-C1/77C4:	AECA62  	LDX $62CA
+C1/77C4:	AECA62  	LDX $62CA		(one-side-only or roulette: preselect the actor's own slot bit)
 C1/77C7:	BF6177C1	LDA $C17761,X
 C1/77CB:	8D7D7B  	STA $7B7D
 C1/77CE:	4C0179  	JMP $7901
@@ -16102,7 +16146,7 @@ C1/77F6:	8D7D7B  	STA $7B7D
 C1/77F9:	EE7F7B  	INC $7B7F
 C1/77FC:	4C0179  	JMP $7901
 
-C1/77FF:	C904    	CMP #$04
+C1/77FF:	C904    	CMP #$04		($04: preselect all characters and all enemies)
 C1/7801:	D01A      	BNE $781D
 C1/7803:	AD1D20  	LDA $201D		(Load valid character targets)
 C1/7806:	2DAC61  	AND $61AC
@@ -16114,14 +16158,14 @@ C1/7814:	8D7E7B  	STA $7B7E
 C1/7817:	EE7F7B  	INC $7B7F
 C1/781A:	4C0179  	JMP $7901
 
-C1/781D:	A536    	LDA $36
+C1/781D:	A536    	LDA $36		($08: auto-select one group)
 C1/781F:	290C  	AND #$0C
 C1/7821:	C908      	CMP #$08 
 C1/7823:	D076    	BNE $789B
 C1/7825:	A536    	LDA $36
 C1/7827:	2940  	AND #$40
 C1/7829:	D04A      	BNE $7875
-C1/782B:	7B      	TDC 
+C1/782B:	7B      	TDC		(ally side: pick the group the actor belongs to)
 C1/782C:	AA      	TAX 
 C1/782D:	ADCA62  	LDA $62CA
 C1/7830:	DD8C7A  	CMP $7A8C,X
@@ -16151,7 +16195,7 @@ C1/786D:	A901  	LDA #$01
 C1/786F:	8DCE7A  	STA $7ACE
 C1/7872:	4C0179    	JMP $7901
 
-C1/7875:	A592    	LDA $92
+C1/7875:	A592    	LDA $92		(enemy side: pick the first enemy group with valid targets)
 C1/7877:	2D797B  	AND $7B79
 C1/787A:	F00C    	BEQ $7888
 C1/787C:	8D7E7B  	STA $7B7E
@@ -16167,10 +16211,10 @@ C1/7893:	A902  	LDA #$02
 C1/7895:	8DCE7A  	STA $7ACE
 C1/7898:	4C0179    	JMP $7901
 
-C1/789B:	A536    	LDA $36
+C1/789B:	A536    	LDA $36		(plain single-target start)
 C1/789D:	2940  	AND #$40
 C1/789F:	D03C		BNE $78DD
-C1/78A1:	7BAA  	BIT $AA7B,X
+C1/78A1:	7BAA  	BIT $AA7B,X		(misdisassembled line: the two bytes are TDC / TAX; the loop mirrors C1/782B)
 C1/78A3:	ADCA62  	LDA $62CA
 C1/78A6:	DD8C7A  	CMP $7A8C,X
 C1/78A9:	F01C    	BEQ $78C7
@@ -16195,7 +16239,7 @@ C1/78D6:	8A		TXA
 C1/78D7:	8DCF7A  	STA $7ACF
 C1/78DA:	4C0179  	JMP $7901
 
-C1/78DD:	202279  	JSR $7922
+C1/78DD:	202279  	JSR $7922		(start on an enemy: first valid enemy from the preference lists)
 C1/78E0:	B012    	BCS $78F4
 C1/78E2:	203479  	JSR $7934
 C1/78E5:	8D7E7B  	STA $7B7E
@@ -16220,6 +16264,13 @@ C1/790C:	8DC27B  	STA $7BC2
 C1/790F:	60      	RTS
 
 
+First-valid-target searches.  Each entry points $3A at a
+preference-order list (enemy lists $7A9E/$7AA4/$7AAA/$7AB0,
+character lists $7AB6/$7AC2/$7AC8) and scans it against one group's
+6-entry slot->entity table ($7A86 group 0, $7A8C group 1, $7A92
+group 2, $7A98 group 3 - the same tables the cursor walk uses, base
+offsets C1/7767, slot bits C1/7761), returning carry set with A =
+the found slot's bit and X = the slot.
 C1/7910:	A2AA7A  	LDX #$7AAA
 C1/7913:	4C7079  	JMP $7970
 
@@ -16268,7 +16319,7 @@ C1/7967:	4C007A  	JMP $7A00
 C1/796A:	A2B67A  	LDX #$7AB6
 C1/796D:	4C007A  	JMP $7A00
 
-C1/7970:	863A    	STX $3A
+C1/7970:	863A    	STX $3A		(scan the list at X against group 0 ($7A86), enemy validity $92)
 C1/7972:	7B      	TDC 
 C1/7973:	A8      	TAY 
 C1/7974:	7B      	TDC 
@@ -16295,7 +16346,7 @@ C1/7998:	A636    	LDX $36
 C1/799A:	38      	SEC 
 C1/799B:	60      	RTS
  
-C1/799C:	863A    	STX $3A
+C1/799C:	863A    	STX $3A		(scan against group 2 ($7A92), enemy validity)
 C1/799E:	7B      	TDC 
 C1/799F:	A8      	TAY 
 C1/79A0:	7B      	TDC 
@@ -16321,7 +16372,7 @@ C1/79C4:	A636    	LDX $36
 C1/79C6:	38      	SEC 
 C1/79C7:	60      	RTS
  
-C1/79C8:	863A    	STX $3A
+C1/79C8:	863A    	STX $3A		(scan against group 1 ($7A8C), character validity)
 C1/79CA:	7B      	TDC 
 C1/79CB:	A8      	TAY 
 C1/79CC:	7B      	TDC 
@@ -16352,7 +16403,7 @@ C1/79FC:	A636    	LDX $36
 C1/79FE:	38      	SEC 
 C1/79FF:	60      	RTS
  
-C1/7A00:	863A    	STX $3A
+C1/7A00:	863A    	STX $3A		(scan against group 3 ($7A98), character validity)
 C1/7A02:	7B      	TDC 
 C1/7A03:	A8      	TAY 
 C1/7A04:	7B      	TDC 
@@ -16382,6 +16433,7 @@ C1/7A32:	A636    	LDX $36
 C1/7A34:	38      	SEC 
 C1/7A35:	60      	RTS
  
+Data: (x, y) anchor pairs used by the cursor placement code.
 C1/7A36:	08 A0     	
 C1/7A38:	08 AC  
 C1/7A3A:	08 B8  
@@ -16396,6 +16448,11 @@ C1/7A48:	10 AC
 C1/7A4A:	58 AC
 C1/7A4C:	30 B8 
 
+Command-row validity check: X = character slot, Y = menu-block base;
+row = cursor memory $890F,X & 3; carry set = the row is grayed
+(bit 7 of the row's second byte, $202F + 3 * row).  X and Y are
+preserved.  (WC's -comfr/-compr cursor-park patch bounds the
+skip-invalid loops that call this - battle/command_menu_guard.py.)
 C1/7A4E:	DA      	PHX 
 C1/7A4F:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7A52:	2903    	AND #$03
@@ -16418,7 +16475,7 @@ C1/7A6D:	FA      	PLX 			(from C1/7A68)
 C1/7A6E:	38      	SEC 
 C1/7A6F:	60      	RTS
  
-C1/7A70:	DA      	PHX 
+C1/7A70:	DA      	PHX		(second-layout variant: validity from the $205F menu block)
 C1/7A71:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7A74:	2903    	AND #$03
 C1/7A76:	9D0F89  	STA $890F,X      (Cursor memory)
@@ -16440,17 +16497,25 @@ C1/7A8F:	FA      	PLX			(from C1/7A8A)
 C1/7A90:	38      	SEC 
 C1/7A91:	60      	RTS
  
-C1/7A92:	9C412F  	STZ $2F41		(from C1/5529, X = 5)
+Command-window input program (menu program X = 5).  Dispatches by
+layout: $62CC,X set (Magitek armor) -> C1/7C3F; config short-menu
+flag $2F2E set -> C1/7AE2 (diamond layout); else -> C1/7BCE (normal
+list).  All three settle the remembered row onto a selectable one
+first (the skip-invalid loops the WC -comfr/-compr patch bounds),
+move the cursor, and on A dispatch the chosen command via C1/7CC8.
+Joypad bytes: $04 = A/X/L/R held ($80/$40/$20/$10), $05 = B/Y +
+d-pad, $09 = controller 1 B.
+C1/7A92:	9C412F  	STZ $2F41		(clear the confirm counter and the cursor-position-valid flag) (from C1/5529, X = 5)
 C1/7A95:	9CE388  	STZ $88E3
-C1/7A98:	ADCB7B  	LDA $7BCB
+C1/7A98:	ADCB7B  	LDA $7BCB		(command already chosen: switch to program $0F)
 C1/7A9B:	F006    	BEQ $7AA3
 C1/7A9D:	A90F    	LDA #$0F
 C1/7A9F:	8DC27B  	STA $7BC2
 C1/7AA2:	60      	RTS
  
-C1/7AA3:	9CE87A  	STZ $7AE8		(from C1/7A9B)
+C1/7AA3:	9CE87A  	STZ $7AE8		(clear the X-Magic double-cast state) (from C1/7A9B)
 C1/7AA6:	9CE97A  	STZ $7AE9
-C1/7AA9:	A504    	LDA $04
+C1/7AA9:	A504    	LDA $04		(X button alone: request the menu closed, kind 1 in $7BCC)
 C1/7AAB:	C940    	CMP #$40
 C1/7AAD:	D00B    	BNE $7ABA
 C1/7AAF:	E694    	INC $94
@@ -16459,7 +16524,7 @@ C1/7AB4:	A901    	LDA #$01
 C1/7AB6:	8DCC7B  	STA $7BCC
 C1/7AB9:	60      	RTS
  
-C1/7ABA:	A505    	LDA $05		(from C1/7AAD)
+C1/7ABA:	A505    	LDA $05		(Y button alone: request the menu closed, kind 2 in $7BCC) (from C1/7AAD)
 C1/7ABC:	C940    	CMP #$40
 C1/7ABE:	D00B    	BNE $7ACB
 C1/7AC0:	E694    	INC $94
@@ -16468,11 +16533,11 @@ C1/7AC5:	A902    	LDA #$02
 C1/7AC7:	8DCC7B  	STA $7BCC
 C1/7ACA:	60      	RTS
  
-C1/7ACB:	ADCA62  	LDA $62CA		(from C1/7ABE)
+C1/7ACB:	ADCA62  	LDA $62CA		(in Magitek armor: the Magitek command layout) (from C1/7ABE)
 C1/7ACE:	AA      	TAX 
 C1/7ACF:	BDCC62  	LDA $62CC,X
 C1/7AD2:	D00B    	BNE $7ADF
-C1/7AD4:	AD2E2F  	LDA $2F2E
+C1/7AD4:	AD2E2F  	LDA $2F2E		(config short menu?)
 C1/7AD7:	F003    	BEQ $7ADC
 C1/7AD9:	4CE27A  	JMP $7AE2
 
@@ -16480,7 +16545,7 @@ C1/7ADC:	4CCE7B  	JMP $7BCE		(from C1/7AD7)
 
 C1/7ADF:	4C3F7C  	JMP $7C3F		(from C1/7AD2)
 
-C1/7AE2:	AECA62  	LDX $62CA		(from C1/7AD9)
+C1/7AE2:	AECA62  	LDX $62CA		(short (diamond) layout: Y = this slot's menu-block base) (from C1/7AD9)
 C1/7AE5:	BF5B4BC1	LDA $C14B5B,X
 C1/7AE9:	A8      	TAY 
 C1/7AEA:	204E7A  	JSR $7A4E
@@ -16488,7 +16553,7 @@ C1/7AED:	9008    	BCC $7AF7
 C1/7AEF:	FE0F89  	INC $890F,X      (Cursor memory)
 C1/7AF2:	204E7A  	JSR $7A4E
 C1/7AF5:	B0F8    	BCS $7AEF
-C1/7AF7:	A505    	LDA $05
+C1/7AF7:	A505    	LDA $05		(up: jump to row 0 (keep the old row if 0 is grayed))
 C1/7AF9:	2908    	AND #$08
 C1/7AFB:	F01E    	BEQ $7B1B
 C1/7AFD:	BD0F89  	LDA $890F,X      (Cursor memory)
@@ -16505,7 +16570,7 @@ C1/7B12:	BD0F89  	LDA $890F,X      (Cursor memory)		(from C1/7B09)
 C1/7B15:	C536    	CMP $36
 C1/7B17:	F002    	BEQ $7B1B
 C1/7B19:	E694    	INC $94
-C1/7B1B:	A505    	LDA $05		(from C1/7AFB, C1/7B10)
+C1/7B1B:	A505    	LDA $05		(down: jump to row 3) (from C1/7AFB, C1/7B10)
 C1/7B1D:	2904    	AND #$04
 C1/7B1F:	F01F    	BEQ $7B40
 C1/7B21:	BD0F89  	LDA $890F,X      (Cursor memory)
@@ -16522,7 +16587,7 @@ C1/7B37:	BD0F89  	LDA $890F,X      (Cursor memory)		(from C1/7B2E)
 C1/7B3A:	C536    	CMP $36
 C1/7B3C:	F002    	BEQ $7B40
 C1/7B3E:	E694    	INC $94
-C1/7B40:	A505    	LDA $05		(from C1/7B1F, C1/7B35)
+C1/7B40:	A505    	LDA $05		(left: jump to row 1) (from C1/7B1F, C1/7B35)
 C1/7B42:	2902    	AND #$02
 C1/7B44:	F01F    	BEQ $7B65
 C1/7B46:	BD0F89  	LDA $890F,X      (Cursor memory)
@@ -16539,7 +16604,7 @@ C1/7B5C:	BD0F89  	LDA $890F,X      (Cursor memory)		(from C1/7B53)
 C1/7B5F:	C536    	CMP $36
 C1/7B61:	F002    	BEQ $7B65
 C1/7B63:	E694    	INC $94
-C1/7B65:	A505    	LDA $05		(from C1/7B44, C1/7B5A)
+C1/7B65:	A505    	LDA $05		(right: jump to row 2) (from C1/7B44, C1/7B5A)
 C1/7B67:	2901    	AND #$01
 C1/7B69:	F01F    	BEQ $7B8A
 C1/7B6B:	BD0F89  	LDA $890F,X      (Cursor memory)
@@ -16556,7 +16621,7 @@ C1/7B81:	BD0F89  	LDA $890F,X      (Cursor memory)		(from C1/7B78)
 C1/7B84:	C536    	CMP $36
 C1/7B86:	F002    	BEQ $7B8A
 C1/7B88:	E694    	INC $94
-C1/7B8A:	A504    	LDA $04		(from C1/7B69, C1/7B7F)
+C1/7B8A:	A504    	LDA $04		(L button: submit an empty record and open the Row program) (from C1/7B69, C1/7B7F)
 C1/7B8C:	2930    	AND #$30
 C1/7B8E:	C920    	CMP #$20
 C1/7B90:	D008    	BNE $7B9A
@@ -16564,19 +16629,19 @@ C1/7B92:	E694    	INC $94
 C1/7B94:	20A97C  	JSR $7CA9
 C1/7B97:	4C3156  	JMP $5631
 
-C1/7B9A:	C910    	CMP #$10    	(from C1/7B90)
+C1/7B9A:	C910    	CMP #$10		(R button: submit an empty record and open the Def program) (from C1/7B90)
 C1/7B9C:	D008    	BNE $7BA6
 C1/7B9E:	E694    	INC $94
 C1/7BA0:	20A97C  	JSR $7CA9
 C1/7BA3:	4C3B56  	JMP $563B
 
-C1/7BA6:	A504    	LDA $04  		(from C1/7B9C)
+C1/7BA6:	A504    	LDA $04		(A pressed: count the confirm and dispatch the command (no validity re-check in vanilla)) (from C1/7B9C)
 C1/7BA8:	1008    	BPL $7BB2
 C1/7BAA:	E696    	INC $96
 C1/7BAC:	EE412F  	INC $2F41
 C1/7BAF:	4CC87C  	JMP $7CC8
 
-C1/7BB2:	AECA62  	LDX $62CA		(from C1/7BA8)
+C1/7BB2:	AECA62  	LDX $62CA		(place the hand cursor: row -> (x,y) from the C1/7A46 table -> $88E4/$88E5, $88E3 = position valid) (from C1/7BA8)
 C1/7BB5:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7BB8:	0A      	ASL A
 C1/7BB9:	AA      	TAX 
@@ -16588,10 +16653,10 @@ C1/7BC8:	A901    	LDA #$01
 C1/7BCA:	8DE388  	STA $88E3
 C1/7BCD:	60      	RTS
  
-C1/7BCE:	AECA62  	LDX $62CA
+C1/7BCE:	AECA62  	LDX $62CA		(normal list layout: Y = this slot's menu-block base)
 C1/7BD1:	BF5B4BC1	LDA $C14B5B,X
 C1/7BD5:	A8      	TAY 
-C1/7BD6:	204E7A  	JSR $7A4E
+C1/7BD6:	204E7A  	JSR $7A4E		(cursor on a grayed row?)
 C1/7BD9:	B018    	BCS $7BF3
 C1/7BDB:	A505    	LDA $05
 C1/7BDD:	290C    	AND #$0C
@@ -16607,13 +16672,13 @@ C1/7BF1:	8008    	BRA $7BFB
 C1/7BF3:	FE0F89  	INC $890F,X      (Cursor memory)
 C1/7BF6:	204E7A  	JSR $7A4E
 C1/7BF9:	B0F8    	BCS $7BF3
-C1/7BFB:	A504    	LDA $04
+C1/7BFB:	A504    	LDA $04		(A pressed: count the confirm and dispatch the command (no validity re-check in vanilla))
 C1/7BFD:	1008    	BPL $7C07
 C1/7BFF:	E696    	INC $96
 C1/7C01:	EE412F  	INC $2F41
 C1/7C04:	4CC87C  	JMP $7CC8
 
-C1/7C07:	A505    	LDA $05
+C1/7C07:	A505    	LDA $05		(left: submit an empty record and open the Row program)
 C1/7C09:	290F    	AND #$0F
 C1/7C0B:	C902    	CMP #$02
 C1/7C0D:	D008    	BNE $7C17
@@ -16621,13 +16686,13 @@ C1/7C0F:	E694    	INC $94
 C1/7C11:	20A97C  	JSR $7CA9
 C1/7C14:	4C3156  	JMP $5631
 
-C1/7C17:	C901    	CMP #$01
+C1/7C17:	C901    	CMP #$01		(right: submit an empty record and open the Def program)
 C1/7C19:	D008    	BNE $7C23
 C1/7C1B:	E694    	INC $94
 C1/7C1D:	20A97C  	JSR $7CA9
 C1/7C20:	4C3B56  	JMP $563B
 
-C1/7C23:	AECA62  	LDX $62CA
+C1/7C23:	AECA62  	LDX $62CA		(place the hand cursor from the C1/7A3E table)
 C1/7C26:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7C29:	0A      	ASL A
 C1/7C2A:	AA      	TAX 
@@ -16639,7 +16704,7 @@ C1/7C39:	A901    	LDA #$01
 C1/7C3B:	8DE388  	STA $88E3
 C1/7C3E:	60      	RTS
  
-C1/7C3F:	AECA62  	LDX $62CA
+C1/7C3F:	AECA62  	LDX $62CA		(Magitek layout: validity from the $205F block via C1/7A70)
 C1/7C42:	BF5B4BC1	LDA $C14B5B,X
 C1/7C46:	A8      	TAY 
 C1/7C47:	20707A  	JSR $7A70
@@ -16658,20 +16723,20 @@ C1/7C62:	8008    	BRA $7C6C
 C1/7C64:	FE0F89  	INC $890F,X      (Cursor memory)
 C1/7C67:	20707A  	JSR $7A70
 C1/7C6A:	B0F8    	BCS $7C64
-C1/7C6C:	A504    	LDA $04
+C1/7C6C:	A504    	LDA $04		(A pressed: submit the Magitek attack)
 C1/7C6E:	101C    	BPL $7C8C
 C1/7C70:	E696    	INC $96
 C1/7C72:	20AB84  	JSR $84AB
 C1/7C75:	20A97C  	JSR $7CA9
-C1/7C78:	BD6020  	LDA $2060,X
+C1/7C78:	BD6020  	LDA $2060,X		(the row's targeting byte ($2060 block))
 C1/7C7B:	8D847A  	STA $7A84      (save as character targeting byte)
-C1/7C7E:	A90E    	LDA #$0E
+C1/7C7E:	A90E    	LDA #$0E		(command id $0E = Magitek, attack id from the $205E block)
 C1/7C80:	99AF2B  	STA $2BAF,Y
 C1/7C83:	BD5E20  	LDA $205E,X
 C1/7C86:	8D857A  	STA $7A85
 C1/7C89:	4C9577  	JMP $7795
 
-C1/7C8C:	AECA62  	LDX $62CA
+C1/7C8C:	AECA62  	LDX $62CA		(place the hand cursor from the C1/7A36 table)
 C1/7C8F:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7C92:	0A      	ASL A
 C1/7C93:	AA      	TAX 
@@ -16685,6 +16750,8 @@ C1/7CA7:	60      	RTS
  
 C1/7CA8:	60      	RTS
  
+Initialize this turn's menu-result record: ids ($2BAF/$2BB0/$2BB3
+and $7A85) to $FF, target masks to 0.
 C1/7CA9:	20566D  	JSR $6D56
 C1/7CAC:	A9FF    	LDA #$FF
 C1/7CAE:	8D857A  	STA $7A85
@@ -16698,6 +16765,12 @@ C1/7CC1:	99B42B  	STA $2BB4,Y
 C1/7CC4:	99B52B  	STA $2BB5,Y
 C1/7CC7:	60      	RTS
  
+Command confirm: read the chosen row's targeting byte ($2030 block)
+into $7A84 and its command id ($202E block) into the record, then
+dispatch through the per-command pointer table at C1/7CE9.  Vanilla
+performs NO validity check here - the cursor can only rest on valid
+rows; WC's cursor-park patch adds the check (see
+battle/command_menu_guard.py).
 C1/7CC8:	20AB84  	JSR $84AB	  	(from C1/7BAF)
 C1/7CCB:	20A97C  	JSR $7CA9
 C1/7CCE:	BD3020  	LDA $2030,X
@@ -16711,7 +16784,7 @@ C1/7CDE:	7CE97C  	JMP ($7CE9,X)	(Jump to function for player Command)
 
 X-Magic Command
 
-C1/7CE1:	A901    	LDA #$01
+C1/7CE1:	A901    	LDA #$01		(X-Magic: flag the double cast and run the Magic program)
 C1/7CE3:	8DE87A  	STA $7AE8
 C1/7CE6:	4CA057  	JMP $57A0
 
@@ -16748,13 +16821,19 @@ C1/7D1F:	9577    (Shock)
 C1/7D21:	9577    (Possess)	
 C1/7D23:	8359    (MagiTek)	
 
-C1/7D25:	9C412F    	STZ $2F41		(from C1/5529, X = 37)
+SwdTech gauge program (menu program X = 37).  The gauge $7B82 grows
+by 1 every 4th frame; level = $7B82 >> 5 (capped at the number of
+SwdTechs known + 1, $2020).  A submits the level as the attack id in
+the menu-result record; B cancels via C1/5628.  The digit row colors
+live at $5DDA, the gauge tiles are rebuilt at $7A73 each frame from
+the ATB fill-tile table C1/68AC, and $7B81 flags the redraw.
+C1/7D25:	9C412F    	STZ $2F41		(clear the confirm counter and cursor-position flag) (from C1/5529, X = 37)
 C1/7D28:	9CE388  	STZ $88E3
-C1/7D2B:	ADCB7B  	LDA $7BCB
+C1/7D2B:	ADCB7B  	LDA $7BCB		(command chosen: switch to program $36)
 C1/7D2E:	F005    	BEQ $7D35
 C1/7D30:	A936    	LDA #$36
 C1/7D32:	8DC27B  	STA $7BC2
-C1/7D35:	A504    	LDA $04
+C1/7D35:	A504    	LDA $04		(A pressed: submit level = gauge >> 5 and finish)
 C1/7D37:	101D    	BPL $7D56
 C1/7D39:	E696    	INC $96
 C1/7D3B:	20566D  	JSR $6D56
@@ -16771,12 +16850,12 @@ C1/7D4F:	EE807B  	INC $7B80
 C1/7D52:	EECB7B  	INC $7BCB
 C1/7D55:	60      	RTS
  
-C1/7D56:	A509    	LDA $09		(from C1/7D37)
+C1/7D56:	A509    	LDA $09		(B pressed: cancel) (from C1/7D37)
 C1/7D58:	1005    	BPL $7D5F
 C1/7D5A:	E696    	INC $96
 C1/7D5C:	4C2856  	JMP $5628
 
-C1/7D5F:	AECA62  	LDX $62CA		(from C1/7D58)
+C1/7D5F:	AECA62  	LDX $62CA		(color the digits of known SwdTechs) (from C1/7D58)
 C1/7D62:	DA      	PHX 
 C1/7D63:	A907    	LDA #$07
 C1/7D65:	38      	SEC 
@@ -16797,7 +16876,7 @@ C1/7D7D:	A8      	TAY
 C1/7D7E:	AD2020  	LDA $2020		(number of swdtechs known)
 C1/7D81:	1A      	INC A
 C1/7D82:	8536    	STA $36
-C1/7D84:	A50E    	LDA $0E
+C1/7D84:	A50E    	LDA $0E		(grow the gauge every 4th frame)
 C1/7D86:	2903    	AND #$03
 C1/7D88:	D003    	BNE $7D8D
 C1/7D8A:	EE827B  	INC $7B82		(Cyan's Swdtech bar)
@@ -16813,7 +16892,7 @@ C1/7D99:	7B      	TDC
 C1/7D9A:	8D827B  	STA $7B82		(Cyan's Swdtech bar)
 C1/7D9D:	1A      	INC A
 C1/7D9E:	8536    	STA $36
-C1/7DA0:	7B      	TDC 
+C1/7DA0:	7B      	TDC		(highlight the reachable digits)
 C1/7DA1:	AA      	TAX 
 C1/7DA2:	A929    	LDA #$29
 C1/7DA4:	9DDA5D  	STA $5DDA,X
@@ -16836,7 +16915,7 @@ C1/7DCA:	EE817B  	INC $7B81
 C1/7DCD:	60      	RTS
  
 
-C1/7DCE:	297F    	AND #$7F		(from C1/7DBA, C1/7DC2)
+C1/7DCE:	297F    	AND #$7F		(draw the filled part of the gauge (ATB fill tiles)) (from C1/7DBA, C1/7DC2)
 C1/7DD0:	4A      	LSR A
 C1/7DD1:	4A      	LSR A
 C1/7DD2:	0A      	ASL A
@@ -16871,15 +16950,19 @@ C1/7E02:	D0EF    	BNE $7DF3
 C1/7E04:	60      	RTS
  
 
-C1/7E05:	9CE388  	STZ $88E3		(from C1/5529, X = 27)
-C1/7E08:	ADCB7B  	LDA $7BCB
+Def window program (menu program X = 27): A submits command $15
+(Def) in the menu-result record; B (or releasing R in the short
+menu, where R opened it - $06 holds the held buttons) cancels via
+C1/5673.  The hand cursor is parked on the window.
+C1/7E05:	9CE388  	STZ $88E3		(clear the cursor-position flag) (from C1/5529, X = 27)
+C1/7E08:	ADCB7B  	LDA $7BCB		(command chosen: switch to program $26)
 C1/7E0B:	F006    	BEQ $7E13
 C1/7E0D:	A926    	LDA #$26
 C1/7E0F:	8DC27B  	STA $7BC2
 C1/7E12:	60      	RTS
  
 
-C1/7E13:	A504    	LDA $04		(from only C1/7E0B)
+C1/7E13:	A504    	LDA $04		(A pressed: submit command $15 (Def)) (from only C1/7E0B)
 C1/7E15:	1017    	BPL $7E2E
 C1/7E17:	E694    	INC $94
 C1/7E19:	20566D  	JSR $6D56
@@ -16892,7 +16975,7 @@ C1/7E2A:	EECB7B  	INC $7BCB
 C1/7E2D:	60      	RTS
  
 
-C1/7E2E:	AD2E2F  	LDA $2F2E		(from only C1/7E15)
+C1/7E2E:	AD2E2F  	LDA $2F2E		(short menu: cancel when R is no longer held) (from only C1/7E15)
 C1/7E31:	F00A    	BEQ $7E3D
 C1/7E33:	A506    	LDA $06
 C1/7E35:	2930    	AND #$30
@@ -16906,7 +16989,7 @@ C1/7E43:	4C7356  	JMP $5673
 
 C1/7E46:	C902    	CMP #$02		(from only C1/7E3F)
 C1/7E48:	F0F7    	BEQ $7E41
-C1/7E4A:	AECA62  	LDX $62CA
+C1/7E4A:	AECA62  	LDX $62CA		(place the hand cursor on the Def window)
 C1/7E4D:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7E50:	0A      	ASL A
 C1/7E51:	AA      	TAX 
@@ -16925,15 +17008,17 @@ C1/7E6F:	EEE388  	INC $88E3
 C1/7E72:	60      	RTS
  
 
-C1/7E73:	9CE388  	STZ $88E3		(from C1/5529, X = 24)
-C1/7E76:	ADCB7B  	LDA $7BCB
+Row window program (menu program X = 24): A submits command $14
+(Row); B (or releasing L in the short menu) cancels via C1/567C.
+C1/7E73:	9CE388  	STZ $88E3		(clear the cursor-position flag) (from C1/5529, X = 24)
+C1/7E76:	ADCB7B  	LDA $7BCB		(command chosen: switch to program $23)
 C1/7E79:	F006    	BEQ $7E81
 C1/7E7B:	A923    	LDA #$23
 C1/7E7D:	8DC27B  	STA $7BC2
 C1/7E80:	60      	RTS
  
 
-C1/7E81:	A504    	LDA $04		(from only C1/7E79)
+C1/7E81:	A504    	LDA $04		(A pressed: submit command $14 (Row)) (from only C1/7E79)
 C1/7E83:	1017    	BPL $7E9C
 C1/7E85:	E694    	INC $94
 C1/7E87:	20566D  	JSR $6D56
@@ -16946,7 +17031,7 @@ C1/7E98:	EECB7B  	INC $7BCB
 C1/7E9B:	60      	RTS
  
 
-C1/7E9C:	AD2E2F  	LDA $2F2E		(from only C1/7E83)
+C1/7E9C:	AD2E2F  	LDA $2F2E		(short menu: cancel when L is no longer held) (from only C1/7E83)
 C1/7E9F:	F00A    	BEQ $7EAB
 C1/7EA1:	A506    	LDA $06
 C1/7EA3:	2930    	AND #$30
@@ -16959,7 +17044,7 @@ C1/7EAF:	E694    	INC $94
 C1/7EB1:	4C7C56  	JMP $567C
 C1/7EB4:	C901    	CMP #$01
 C1/7EB6:	F0F7    	BEQ $7EAF
-C1/7EB8:	AECA62  	LDX $62CA
+C1/7EB8:	AECA62  	LDX $62CA		(place the hand cursor on the Row window)
 C1/7EBB:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/7EBE:	0A      	ASL A
 C1/7EBF:	AA      	TAX 
@@ -17014,6 +17099,17 @@ C1/7F02:	AA      	TAX
 C1/7F03:	BF40A8C2	LDA $C2A840,X	(Slot 3 Conversion data?)
 C1/7F07:	60      	RTS
  
+Slot input program (menu program X = 8).  Each A press stops one
+drum: the first roll seeds the rig bitfield $6179 (forced toward
+non-7s when the formation disables Joker Doom), the second and third
+presses rig the next drum via $617B-$617D so matching symbols line
+up only when the RNG allows it.  Drum positions spin in
+$7B8C/$7B8D/$7B8E ($7B8F/$7B90/$7B91 = stopped flags, $7B92-$7B94 =
+press count per drum); once all three stop, C2/B4A3 converts the
+lined-up symbols to the resulting attack, which is submitted in the
+menu-result record.  B before any press cancels via C1/56A0.  The
+symbol tiles are written to the $5FFD/$6007/$6011 OAM tile fields
+below.
 C1/7F08:	9CE388  	STZ $88E3		(from C1/5529, X = 8)
 C1/7F0B:	ADCB7B  	LDA $7BCB
 C1/7F0E:	F006    	BEQ $7F16
@@ -17125,7 +17221,7 @@ C1/7FF9:	D005    	BNE $8000      (branch if any drums have been stopped?)
 C1/7FFB:	E696    	INC $96
 C1/7FFD:	4CA056  	JMP $56A0
 
-C1/8000:	AD8C7B  	LDA $7B8C
+C1/8000:	AD8C7B  	LDA $7B8C		(write the three drums' current symbol tiles (base $4C + position))
 C1/8003:	18      	CLC 
 C1/8004:	694C    	ADC #$4C
 C1/8006:	8DFD5F  	STA $5FFD
@@ -17146,7 +17242,7 @@ C1/802A:	8D1160  	STA $6011
 C1/802D:	8D1360  	STA $6013
 C1/8030:	8D1560  	STA $6015
 C1/8033:	8D1760  	STA $6017
-C1/8036:	AD8F7B  	LDA $7B8F
+C1/8036:	AD8F7B  	LDA $7B8F		(spin drum 1 (4 pixels per frame) until stopped)
 C1/8039:	D018    	BNE $8053
 C1/803B:	AD8C7B  	LDA $7B8C
 C1/803E:	38      	SEC 
@@ -17215,6 +17311,13 @@ C1/80D5:	F003    	BEQ $80DA
 C1/80D7:	EE917B  	INC $7B91      (stop drum 3)
 C1/80DA:	60      	RTS
  
+Shared list-cursor movement helper.  In: $36 = column, $37 = row
+(0-3), $39 = last column (1 for the two-column Magic list, 0 for
+one-column lists); reads the d-pad from $05.  Out: updated $36/$37
+and a scroll request in $3C - positive = scroll down (pressed down on
+the bottom row), negative = scroll up (up on the top row; also $BF
+when wrapping left off the top-left).  $94 counts cursor-move ticks
+(the cursor click).
 C1/80DB:	A636    	LDX $36
 C1/80DD:	863A    	STX $3A
 C1/80DF:	643C    	STZ $3C
@@ -17283,15 +17386,26 @@ C1/8143:	60      	RTS
  
 C1/8144:	60      	RTS
 -------------------------------------------------
-C1/8145:	9CEF88  	STZ $88EF      (from C1/5529, X = E)
+
+Magic list input program (menu program X = E).  Cursor state per
+character: scroll $8913 (0-$17), column $8917, row $891B.  Scrolling
+rebuilds the exposed row (C1/4DB5) and runs the window slide
+programs $17/$18 (C1/5C91 / C1/5CF7) with the $7AFD row-group
+rotation; scrolling up from the very top opens the Esper menu
+(C1/5A01) when the character has one (C1/829B) and this isn't the
+second X-Magic pick.  A submits command $02 (or $17 for the X-Magic
+second cast) with the highlighted entry from the $2092 spell-entry
+block (id/flags/targeting/MP, 4 bytes - flags bit 7 = unusable:
+error buzz $95); B cancels.
+C1/8145:	9CEF88  	STZ $88EF		(clear the MP-needed and cursor-position flags) (from C1/5529, X = E)
 C1/8148:	9CE388  	STZ $88E3
-C1/814B:	ADCB7B  	LDA $7BCB
+C1/814B:	ADCB7B  	LDA $7BCB		(command chosen: switch to program $14)
 C1/814E:	F006    	BEQ $8156
 C1/8150:	A914    	LDA #$14
 C1/8152:	8DC27B  	STA $7BC2      (queue up to execute at C1/56E9)
 C1/8155:	60      	RTS
  
-C1/8156:	ACCA62  	LDY $62CA
+C1/8156:	ACCA62  	LDY $62CA		(load this character's list cursor state)
 C1/8159:	B91789  	LDA $8917,Y
 C1/815C:	8536    	STA $36
 C1/815E:	B91B89  	LDA $891B,Y
@@ -17301,10 +17415,10 @@ C1/8166:	8538    	STA $38
 C1/8168:	A901    	LDA #$01
 C1/816A:	8539    	STA $39
 C1/816C:	20DB80  	JSR $80DB
-C1/816F:	A53C    	LDA $3C
+C1/816F:	A53C    	LDA $3C		(scroll requested?)
 C1/8171:	F031    	BEQ $81A4
 C1/8173:	3012    	BMI $8187
-C1/8175:	B91389  	LDA $8913,Y
+C1/8175:	B91389  	LDA $8913,Y		(scroll down (scroll cap $17))
 C1/8178:	C917    	CMP #$17
 C1/817A:	F032    	BEQ $81AE
 C1/817C:	1A      	INC A
@@ -17312,12 +17426,12 @@ C1/817D:	991389  	STA $8913,Y
 C1/8180:	E694    	INC $94
 C1/8182:	202882  	JSR $8228
 C1/8185:	801D    	BRA $81A4
-C1/8187:	B91389  	LDA $8913,Y
+C1/8187:	B91389  	LDA $8913,Y		(scroll up; at the very top, open the Esper menu instead)
 C1/818A:	D00F    	BNE $819B
 C1/818C:	E694    	INC $94
 C1/818E:	ADE87A  	LDA $7AE8
 C1/8191:	D011    	BNE $81A4
-C1/8193:	209B82  	JSR $829B
+C1/8193:	209B82  	JSR $829B		(has an equipped Esper? then open the Esper menu)
 C1/8196:	B00C    	BCS $81A4
 C1/8198:	4C015A  	JMP $5A01
 
@@ -17329,12 +17443,12 @@ C1/81A4:	A536    	LDA $36
 C1/81A6:	991789  	STA $8917,Y
 C1/81A9:	A537    	LDA $37
 C1/81AB:	991B89  	STA $891B,Y
-C1/81AE:	A504    	LDA $04
+C1/81AE:	A504    	LDA $04		(A pressed: entry flags bit 7 = unusable)
 C1/81B0:	103B    	BPL $81ED
 C1/81B2:	201484  	JSR $8414
 C1/81B5:	BD9320  	LDA $2093,X
 C1/81B8:	3031    	BMI $81EB
-C1/81BA:	E696    	INC $96
+C1/81BA:	E696    	INC $96		(submit: command $17 (X-Magic second cast) or $02 (Magic))
 C1/81BC:	20566D  	JSR $6D56
 C1/81BF:	ADE87A  	LDA $7AE8
 C1/81C2:	F004    	BEQ $81C8
@@ -17343,36 +17457,36 @@ C1/81C6:	8002    	BRA $81CA
 C1/81C8:	A902    	LDA #$02
 C1/81CA:	99AF2B  	STA $2BAF,Y
 C1/81CD:	201484  	JSR $8414
-C1/81D0:	BD9220  	LDA $2092,X
+C1/81D0:	BD9220  	LDA $2092,X		(spell id from the entry)
 C1/81D3:	8D857A  	STA $7A85
 C1/81D6:	A901    	LDA #$01
 C1/81D8:	8DBAEC  	STA $ECBA
 C1/81DB:	BD9420  	LDA $2094,X    (magic targeting???)
 C1/81DE:	8D847A  	STA $7A84      (save as character targeting byte)
-C1/81E1:	2940    	AND #$40
+C1/81E1:	2940    	AND #$40		(targeting bit 6 set: straight to the targeting startup; clear: via program 3F (C1/55B0) first)
 C1/81E3:	D003    	BNE $81E8
 C1/81E5:	4CB055  	JMP $55B0
 
 C1/81E8:	4C9577  	JMP $7795
 
-C1/81EB:	E695    	INC $95
+C1/81EB:	E695    	INC $95		(unusable spell: error buzz)
 C1/81ED:	A509    	LDA $09        (load controller 1)
 C1/81EF:	1005    	BPL $81F6      (branch if not pressing B)
-C1/81F1:	E696    	INC $96
+C1/81F1:	E696    	INC $96		(B pressed: cancel)
 C1/81F3:	4CE956  	JMP $56E9
 
-C1/81F6:	201484  	JSR $8414
+C1/81F6:	201484  	JSR $8414		(refresh the MP-needed number and place the finger)
 C1/81F9:	BD9520  	LDA $2095,X
 C1/81FC:	8D7861  	STA $6178
 C1/81FF:	A917    	LDA #$17
 C1/8201:	8536    	STA $36
 C1/8203:	A29001  	LDX #$0190
 C1/8206:	862E    	STX $2E
-C1/8208:	B91389  	LDA $8913,Y
+C1/8208:	B91389  	LDA $8913,Y		(redraw the scrollbar slider)
 C1/820B:	208F89  	JSR $898F
 C1/820E:	B91789  	LDA $8917,Y
 C1/8211:	AA      	TAX 
-C1/8212:	BF8082C1	LDA $C18280,X
+C1/8212:	BF8082C1	LDA $C18280,X		(finger X from the column (C1/8280), Y from the row (C1/828D))
 C1/8216:	8DE488  	STA $88E4
 C1/8219:	B91B89  	LDA $891B,Y
 C1/821C:	AA      	TAX 
@@ -17381,13 +17495,13 @@ C1/8221:	8DE588  	STA $88E5
 C1/8224:	EEE388  	INC $88E3
 C1/8227:	60      	RTS
  
-C1/8228:	18      	CLC 
+C1/8228:	18      	CLC		(scroll down: build the newly exposed row and run slide program $17)
 C1/8229:	6903    	ADC #$03
 C1/822B:	20B54D  	JSR $4DB5      (build the Magic menu)
 C1/822E:	A917    	LDA #$17
 C1/8230:	8DC27B  	STA $7BC2      (queue up to execute at C1/5C91)
 C1/8233:	206982  	JSR $8269
-C1/8236:	ADFD7A  	LDA $7AFD
+C1/8236:	ADFD7A  	LDA $7AFD		(rotate $7AFD through the five row-parameter groups)
 C1/8239:	C904    	CMP #$04
 C1/823B:	F003    	BEQ $8240
 C1/823D:	1A      	INC A
@@ -17405,13 +17519,13 @@ C1/8256:	3A      	DEC A
 C1/8257:	8002    	BRA $825B
 C1/8259:	A904    	LDA #$04
 C1/825B:	8DFD7A  	STA $7AFD
-C1/825E:	A903    	LDA #$03
+C1/825E:	A903    	LDA #$03		(3 slide frames, then chain program $0E)
 C1/8260:	8DA87B  	STA $7BA8
 C1/8263:	A90E    	LDA #$0E
 C1/8265:	8DC37B  	STA $7BC3
 C1/8268:	60      	RTS
  
-C1/8269:	ADFD7A  	LDA $7AFD
+C1/8269:	ADFD7A  	LDA $7AFD		(register the row-parameter block (C1/8291 table) for the pending draw)
 C1/826C:	0A      	ASL A
 C1/826D:	AA      	TAX 
 C1/826E:	BF9182C1	LDA $C18291,X
@@ -17421,6 +17535,8 @@ C1/8279:	8DAB7B  	STA $7BAB
 C1/827C:	EEA97B  	INC $7BA9
 C1/827F:	60      	RTS
  
+Data (shown misdisassembled): finger X positions per list column at
+C1/8280, finger Y positions per row at C1/828D.
 C1/8280:	08      	PHP 
 C1/8281:	5070    	BVC $82F3
 C1/8283:	0078    	BRK #$78
@@ -17439,12 +17555,16 @@ C1/828F:	BCC8
 
 Data
 
+Data: the five row-parameter block pointers ($7C00/$7C40/$7C80/
+$7CC0/$7D00) used by the list builds and the C1/5729 stepper.
 C1/8291:	007C
 C1/8293:	407C  	
 C1/8295:	807C    	
 C1/8297:	C07C
 C1/8299:	007D
 
+Carry set = the open character has an equipped Esper (bit 7 of $208F
+in the per-character esper entry, base table C1/4B5F).
 C1/829B:	ADCA62  	LDA $62CA
 C1/829E:	0A  		ASL A
 C1/829F:	AA		TAX
@@ -17461,6 +17581,11 @@ C1/82B0:	60      	RTS
 C1/82B1:	38      	SEC 
 C1/82B2:	60      	RTS
  
+Esper menu input program (menu program X = 16): a single-row menu
+for the equipped Esper.  Down or right returns to the Magic list
+(C1/571F; right also resets the Magic column); A submits command
+$19 (Summon) with the esper entry at $208E (id/flags/targeting);
+B is handled by the confirm path's cancel.
 C1/82B3:	9CE388  	STZ $88E3		(from C1/5529, X = 16)
 C1/82B6:	ADCB7B  	LDA $7BCB
 C1/82B9:	F006    	BEQ $82C1
@@ -17474,7 +17599,7 @@ C1/82C5:	F00F    	BEQ $82D6      (branch if not)
 C1/82C7:	E694    	INC $94
 C1/82C9:	2901    	AND #$01
 C1/82CB:	F006    	BEQ $82D3
-C1/82CD:	AECA62  	LDX $62CA
+C1/82CD:	AECA62  	LDX $62CA		(right: also reset the Magic list column)
 C1/82D0:	9E1789  	STZ $8917,X
 C1/82D3:	4C1F57  	JMP $571F
 
@@ -17484,7 +17609,7 @@ C1/82DA:	209B82  	JSR $829B
 C1/82DD:	B019    	BCS $82F8
 C1/82DF:	E696    	INC $96
 C1/82E1:	20566D  	JSR $6D56
-C1/82E4:	A919    	LDA #$19
+C1/82E4:	A919    	LDA #$19		(command $19 = Summon)
 C1/82E6:	99AF2B  	STA $2BAF,Y
 C1/82E9:	BD8E20  	LDA $208E,X
 C1/82EC:	8D857A  	STA $7A85
@@ -17492,23 +17617,28 @@ C1/82EF:	BD9020  	LDA $2090,X
 C1/82F2:	8D847A  	STA $7A84      (save as character targeting byte)
 C1/82F5:	4C9577  	JMP $7795
 
-C1/82F8:	E695    	INC $95
-C1/82FA:	A938    	LDA #$38
+C1/82F8:	E695    	INC $95		(error buzz)
+C1/82FA:	A938    	LDA #$38		(park the finger on the Esper row)
 C1/82FC:	8DE488  	STA $88E4
 C1/82FF:	A9A8    	LDA #$A8
 C1/8301:	8DE588  	STA $88E5
 C1/8304:	EEE388  	INC $88E3
 C1/8307:	60      	RTS
  
-C1/8308:	9CE388  	STZ $88E3		(from C1/5529, X = 1B)
+Lore list input program (menu program X = 1B).  Cursor state:
+scroll $891F (0-$14), row $8927 (one column).  A submits the
+highlighted entry from the $216A lore-entry block
+(id/flags/targeting/MP; flags bit 7 = unknown lore: error buzz);
+B cancels via C1/56FB.
+C1/8308:	9CE388  	STZ $88E3		(clear the cursor-position and MP-needed flags) (from C1/5529, X = 1B)
 C1/830B:	9CEF88  	STZ $88EF
-C1/830E:	ADCB7B  	LDA $7BCB
+C1/830E:	ADCB7B  	LDA $7BCB		(command chosen: switch to program $1A)
 C1/8311:	F006    	BEQ $8319
 C1/8313:	A91A    	LDA #$1A
 C1/8315:	8DC27B  	STA $7BC2      (queue up to execute at C1/56FB)
 C1/8318:	60      	RTS
  
-C1/8319:	ACCA62  	LDY $62CA
+C1/8319:	ACCA62  	LDY $62CA		(load this character's Lore cursor state)
 C1/831C:	6436    	STZ $36
 C1/831E:	B92789  	LDA $8927,Y
 C1/8321:	8537    	STA $37
@@ -17517,9 +17647,9 @@ C1/8326:	8538    	STA $38
 C1/8328:	6439    	STZ $39
 C1/832A:	20DB80  	JSR $80DB
 C1/832D:	A53C    	LDA $3C
-C1/832F:	F022    	BEQ $8353
+C1/832F:	F022    	BEQ $8353		(scroll requested?)
 C1/8331:	3012    	BMI $8345
-C1/8333:	B91F89  	LDA $891F,Y
+C1/8333:	B91F89  	LDA $891F,Y		(scroll down (cap $14))
 C1/8336:	C914    	CMP #$14
 C1/8338:	F023    	BEQ $835D
 C1/833A:	1A      	INC A
@@ -17527,7 +17657,7 @@ C1/833B:	991F89  	STA $891F,Y
 C1/833E:	E694    	INC $94
 C1/8340:	20B683  	JSR $83B6
 C1/8343:	800E    	BRA $8353
-C1/8345:	B91F89  	LDA $891F,Y
+C1/8345:	B91F89  	LDA $891F,Y		(scroll up)
 C1/8348:	F013    	BEQ $835D
 C1/834A:	3A      	DEC A
 C1/834B:	991F89  	STA $891F,Y
@@ -17543,13 +17673,13 @@ C1/8361:	20F783  	JSR $83F7
 C1/8364:	BD6B21  	LDA $216B,X
 C1/8367:	3011    	BMI $837A
 C1/8369:	E694    	INC $94
-C1/836B:	BD6A21  	LDA $216A,X
+C1/836B:	BD6A21  	LDA $216A,X		(submit the lore id and targeting (command byte stays Lore from the confirm))
 C1/836E:	8D857A  	STA $7A85
 C1/8371:	BD6C21  	LDA $216C,X
 C1/8374:	8D847A  	STA $7A84      (save as character targeting byte)
 C1/8377:	4C9577  	JMP $7795
 
-C1/837A:	E695    	INC $95
+C1/837A:	E695    	INC $95		(unknown lore: error buzz)
 C1/837C:	A509    	LDA $09        (load controller 1)
 C1/837E:	1006    	BPL $8386      (branch if not pressing B)
 C1/8380:	E696    	INC $96
@@ -17576,7 +17706,7 @@ C1/83AF:	8DE588  	STA $88E5
 C1/83B2:	EEE388  	INC $88E3
 C1/83B5:	60      	RTS
  
-C1/83B6:	18      	CLC 
+C1/83B6:	18      	CLC		(Lore scroll down: build the exposed row and run slide program $17)
 C1/83B7:	6903    	ADC #$03
 C1/83B9:	20764D  	JSR $4D76
 C1/83BC:	A917    	LDA #$17
@@ -17590,7 +17720,7 @@ C1/83CC:	8001    	BRA $83CF
 C1/83CE:	7B      	TDC 
 C1/83CF:	8DFD7A  	STA $7AFD
 C1/83D2:	8018    	BRA $83EC
-C1/83D4:	20764D  	JSR $4D76
+C1/83D4:	20764D  	JSR $4D76		(Lore scroll up: build the exposed row and run slide program $18)
 C1/83D7:	A918    	LDA #$18
 C1/83D9:	8DC27B  	STA $7BC2      (queue up to execute at C1/5CF7)
 C1/83DC:	206982  	JSR $8269
@@ -17600,12 +17730,14 @@ C1/83E4:	3A      	DEC A
 C1/83E5:	8002    	BRA $83E9
 C1/83E7:	A904    	LDA #$04
 C1/83E9:	8DFD7A  	STA $7AFD
-C1/83EC:	A903    	LDA #$03
+C1/83EC:	A903    	LDA #$03		(3 slide frames, then chain program $1B)
 C1/83EE:	8DA87B  	STA $7BA8
 C1/83F1:	A91B    	LDA #$1B
 C1/83F3:	8DC37B  	STA $7BC3
 C1/83F6:	60      	RTS
  
+X = offset of the highlighted Lore entry: (scroll $891F + row $8927)
+* 4 + the per-character list base (C1/4B5F table).
 C1/83F7:	5A      	PHY 
 C1/83F8:	ADCA62  	LDA $62CA
 C1/83FB:	A8      	TAY 
@@ -17625,6 +17757,9 @@ C1/8410:	E220    	SEP #$20
 C1/8412:	7A      	PLY 
 C1/8413:	60      	RTS
  
+X = offset of the highlighted Magic entry: ((scroll $8913 + row
+$891B) * 2 + column $8917) * 4 + the per-character base (C1/4B5F);
+$40 = the visual row.
 C1/8414:	5A      	PHY 
 C1/8415:	ADCA62  	LDA $62CA
 C1/8418:	A8      	TAY 
@@ -17648,6 +17783,8 @@ C1/8434:	E220    	SEP #$20
 C1/8436:	7A      	PLY 
 C1/8437:	60      	RTS
  
+X = offset of the highlighted Rage entry: (scroll $892B + row $8933)
+* 2 + column $892F, as a word index into the Rage list at $257E.
 C1/8438:	AECA62  	LDX $62CA
 C1/843B:	BD2F89  	LDA $892F,X
 C1/843E:	8540    	STA $40
@@ -17664,6 +17801,8 @@ C1/8450:	7B      	TDC
 C1/8451:	E220    	SEP #$20
 C1/8453:	60      	RTS
  
+X = offset of the highlighted Throw entry: (scroll $8953 + row
+$895B) * 3 - the 3-byte entries of the usable-item list at $4005.
 C1/8454:	5A      	PHY 
 C1/8455:	ADCA62  	LDA $62CA
 C1/8458:	A8      	TAY 
@@ -17683,6 +17822,8 @@ C1/846C:	E220    	SEP #$20
 C1/846E:	7A      	PLY 
 C1/846F:	60      	RTS
  
+X = offset of the highlighted Tools entry: ((scroll $895F + row
+$8967) * 2 + column $8963) * 3, into the same $4005 list.
 C1/8470:	5A      	PHY 
 C1/8471:	ADCA62  	LDA $62CA
 C1/8474:	A8      	TAY 
@@ -17705,6 +17846,8 @@ C1/848D:	E220    	SEP #$20
 C1/848F:	7A      	PLY 
 C1/8490:	60      	RTS
  
+X = index of the highlighted entry in a no-scroll two-column list:
+row $8943 * 2 + column $893F (Magitek).
 C1/8491:	AECA62  	LDX $62CA
 C1/8494:	BD4389  	LDA $8943,X
 C1/8497:	0A      	ASL A
@@ -17713,6 +17856,7 @@ C1/8499:	7D3F89  	ADC $893F,X
 C1/849C:	AA      	TAX 
 C1/849D:	60      	RTS
  
+As above for the Dance list: row $893B * 2 + column $8937.
 C1/849E:	AECA62  	LDX $62CA
 C1/84A1:	BD3B89  	LDA $893B,X
 C1/84A4:	0A      	ASL A
@@ -17721,6 +17865,8 @@ C1/84A6:	7D3789  	ADC $8937,X
 C1/84A9:	AA      	TAX 
 C1/84AA:	60      	RTS
  
+X = offset of the chosen command row in the menu block: per-slot
+base (C1/4B5B) + cursor row * 3.
 C1/84AB:	AECA62  	LDX $62CA
 C1/84AE:	BD0F89  	LDA $890F,X      (Cursor memory)
 C1/84B1:	852C    	STA $2C
@@ -17734,6 +17880,10 @@ C1/84C2:	6530    	ADC $30
 C1/84C4:	AA      	TAX 
 C1/84C5:	60      	RTS
  
+Rage list input program (menu program X = 1E).  Two columns; cursor
+state: scroll $892B (cap $7C), column $892F, row $8933.  A submits
+the rage id from the $257E list ($FF = empty: error buzz) with
+targeting $02 (one side only); B cancels via C1/5704.
 C1/84C6:	9CE388  	STZ $88E3		(from C1/5529, X = 1E)
 C1/84C9:	9CEF88  	STZ $88EF
 C1/84CC:	ADCB7B  	LDA $7BCB
@@ -17742,7 +17892,7 @@ C1/84D1:	A91D    	LDA #$1D
 C1/84D3:	8DC27B  	STA $7BC2      (queue up to execute at C1/5704)
 C1/84D6:	60      	RTS
  
-C1/84D7:	ACCA62  	LDY $62CA
+C1/84D7:	ACCA62  	LDY $62CA		(load this character's Rage cursor state)
 C1/84DA:	B92F89  	LDA $892F,Y
 C1/84DD:	8536    	STA $36
 C1/84DF:	B93389  	LDA $8933,Y
@@ -17752,10 +17902,10 @@ C1/84E7:	8538    	STA $38
 C1/84E9:	A901    	LDA #$01
 C1/84EB:	8539    	STA $39
 C1/84ED:	20DB80  	JSR $80DB
-C1/84F0:	A53C    	LDA $3C
+C1/84F0:	A53C    	LDA $3C		(scroll requested?)
 C1/84F2:	F022    	BEQ $8516
 C1/84F4:	3012    	BMI $8508
-C1/84F6:	B92B89  	LDA $892B,Y
+C1/84F6:	B92B89  	LDA $892B,Y		(scroll down (cap $7C))
 C1/84F9:	C97C    	CMP #$7C
 C1/84FB:	F023    	BEQ $8520
 C1/84FD:	1A      	INC A
@@ -17763,7 +17913,7 @@ C1/84FE:	992B89  	STA $892B,Y
 C1/8501:	E694    	INC $94
 C1/8503:	207385  	JSR $8573
 C1/8506:	800E    	BRA $8516
-C1/8508:	B92B89  	LDA $892B,Y
+C1/8508:	B92B89  	LDA $892B,Y		(scroll up)
 C1/850B:	F013    	BEQ $8520
 C1/850D:	3A      	DEC A
 C1/850E:	992B89  	STA $892B,Y
@@ -17786,14 +17936,14 @@ C1/8531:	BD7E25  	LDA $257E,X
 C1/8534:	C9FF    	CMP #$FF
 C1/8536:	F010    	BEQ $8548
 C1/8538:	E696    	INC $96
-C1/853A:	BD7E25  	LDA $257E,X
+C1/853A:	BD7E25  	LDA $257E,X		(submit the rage id (command byte stays Rage from the confirm))
 C1/853D:	8D857A  	STA $7A85
 C1/8540:	A902    	LDA #$02       ("one side only")
 C1/8542:	8D847A  	STA $7A84      (save as character targeting byte)
 C1/8545:	4C9577  	JMP $7795
 
-C1/8548:	E695    	INC $95
-C1/854A:	A97C    	LDA #$7C
+C1/8548:	E695    	INC $95		(error buzz)
+C1/854A:	A97C    	LDA #$7C		(redraw the scrollbar slider and place the finger)
 C1/854C:	8536    	STA $36
 C1/854E:	A24B00  	LDX #$004B
 C1/8551:	862E    	STX $2E
@@ -17810,7 +17960,7 @@ C1/856C:	8DE588  	STA $88E5
 C1/856F:	EEE388  	INC $88E3
 C1/8572:	60      	RTS
  
-C1/8573:	18      	CLC 
+C1/8573:	18      	CLC		(Rage scroll down: build the exposed row and run slide program $17)
 C1/8574:	6903    	ADC #$03
 C1/8576:	20E24C  	JSR $4CE2
 C1/8579:	A917    	LDA #$17
@@ -17824,7 +17974,7 @@ C1/8589:	8001    	BRA $858C
 C1/858B:	7B      	TDC 
 C1/858C:	8DFD7A  	STA $7AFD
 C1/858F:	8018    	BRA $85A9
-C1/8591:	20E24C  	JSR $4CE2
+C1/8591:	20E24C  	JSR $4CE2		(Rage scroll up: build the exposed row and run slide program $18)
 C1/8594:	A918    	LDA #$18
 C1/8596:	8DC27B  	STA $7BC2      (queue up to execute at C1/5CF7)
 C1/8599:	206982  	JSR $8269
@@ -17834,12 +17984,16 @@ C1/85A1:	3A      	DEC A
 C1/85A2:	8002    	BRA $85A6
 C1/85A4:	A904    	LDA #$04
 C1/85A6:	8DFD7A  	STA $7AFD
-C1/85A9:	A903    	LDA #$03
+C1/85A9:	A903    	LDA #$03		(3 slide frames, then chain program $1E)
 C1/85AB:	8DA87B  	STA $7BA8
 C1/85AE:	A91E    	LDA #$1E
 C1/85B0:	8DC37B  	STA $7BC3
 C1/85B3:	60      	RTS
  
+Dance list input program (menu program X = 21).  Two columns, four
+rows, no scrolling; cursor: column $8937, row $893B.  A submits the
+dance id from the $267E list (bit 7 = unknown dance: error buzz)
+with targeting $02; B cancels via C1/570D.
 C1/85B4:	9CE388  	STZ $88E3		(from C1/5529, X = 21)
 C1/85B7:	ADCB7B  	LDA $7BCB
 C1/85BA:	F006    	BEQ $85C2
@@ -17847,7 +18001,7 @@ C1/85BC:	A920    	LDA #$20
 C1/85BE:	8DC27B  	STA $7BC2      (queue up to execute at C1/570D)
 C1/85C1:	60      	RTS
  
-C1/85C2:	ACCA62  	LDY $62CA
+C1/85C2:	ACCA62  	LDY $62CA		(load this character's Dance cursor state)
 C1/85C5:	B93789  	LDA $8937,Y
 C1/85C8:	8536    	STA $36
 C1/85CA:	B93B89  	LDA $893B,Y
@@ -17874,13 +18028,13 @@ C1/85F4:	209E84  	JSR $849E
 C1/85F7:	BD7E26  	LDA $267E,X
 C1/85FA:	300D    	BMI $8609
 C1/85FC:	E696    	INC $96
-C1/85FE:	8D857A  	STA $7A85
+C1/85FE:	8D857A  	STA $7A85		(submit the dance id)
 C1/8601:	A902    	LDA #$02       ("one side only")
 C1/8603:	8D847A  	STA $7A84      (save as character targeting byte)
 C1/8606:	4C9577  	JMP $7795
 
-C1/8609:	E695    	INC $95
-C1/860B:	B93789  	LDA $8937,Y
+C1/8609:	E695    	INC $95		(error buzz)
+C1/860B:	B93789  	LDA $8937,Y		(place the finger (column X from C1/8287, row Y from C1/828D))
 C1/860E:	AA      	TAX 
 C1/860F:	BF8782C1	LDA $C18287,X
 C1/8613:	8DE488  	STA $88E4
@@ -17891,6 +18045,11 @@ C1/861E:	8DE588  	STA $88E5
 C1/8621:	EEE388  	INC $88E3
 C1/8624:	60      	RTS
  
+Magitek attack list input program (menu program X = 2A).  Two
+columns, four rows, no scrolling; cursor: column $893F, row $8943.
+A submits the attack from the C1/9114 table (C1/910C for Terra, who
+gets all eight; the info block's first byte at $2EAE identifies her)
+with its targeting byte from C1/9104; B cancels via C1/5716.
 C1/8625:	9CE388  	STZ $88E3		(from C1/5529, X = 2A)
 C1/8628:	ADCB7B  	LDA $7BCB
 C1/862B:	F006    	BEQ $8633
@@ -17898,7 +18057,7 @@ C1/862D:	A929    	LDA #$29
 C1/862F:	8DC27B  	STA $7BC2      (queue up to execute at C1/5716)
 C1/8632:	60      	RTS
  
-C1/8633:	ACCA62  	LDY $62CA
+C1/8633:	ACCA62  	LDY $62CA		(load this character's Magitek cursor state)
 C1/8636:	B93F89  	LDA $893F,Y
 C1/8639:	8536    	STA $36
 C1/863B:	B94389  	LDA $8943,Y
@@ -17922,7 +18081,7 @@ C1/8660:	60      	RTS
 C1/8661:	8436    	STY $36
 C1/8663:	A504    	LDA $04        (load shared controller byte)
 C1/8665:	1032    	BPL $8699      (branch if nobody is pressing A)
-C1/8667:	209184  	JSR $8491
+C1/8667:	209184  	JSR $8491		(index = row * 2 + column)
 C1/866A:	ADCA62  	LDA $62CA
 C1/866D:	0A      	ASL A
 C1/866E:	0A      	ASL A
@@ -17930,22 +18089,22 @@ C1/866F:	0A      	ASL A
 C1/8670:	0A      	ASL A
 C1/8671:	0A      	ASL A
 C1/8672:	A8      	TAY 
-C1/8673:	B9AE2E  	LDA $2EAE,Y
+C1/8673:	B9AE2E  	LDA $2EAE,Y		(first info-block byte 0 = Terra)
 C1/8676:	D008    	BNE $8680      (branch if not Terra)
 C1/8678:	BF0C91C1	LDA $C1910C,X  (M-tek commands for Terra)
 C1/867C:	3019    	BMI $8697      (branch if slot is empty, note that this will never be taken)
 C1/867E:	8006    	BRA $8686
 C1/8680:	BF1491C1	LDA $C19114,X  (M-tek commands for everyone but Terra)
 C1/8684:	3011    	BMI $8697      (branch if slot is empty)
-C1/8686:	E696    	INC $96
+C1/8686:	E696    	INC $96		(submit the Magitek attack id)
 C1/8688:	8D857A  	STA $7A85
 C1/868B:	A436    	LDY $36
 C1/868D:	BF0491C1	LDA $C19104,X  (Targeting byte for M-tek commands)
 C1/8691:	8D847A  	STA $7A84      (save as character targeting byte)
 C1/8694:	4C9577  	JMP $7795
 
-C1/8697:	E695    	INC $95
-C1/8699:	A436    	LDY $36
+C1/8697:	E695    	INC $95		(empty slot: error buzz)
+C1/8699:	A436    	LDY $36		(place the finger)
 C1/869B:	B93F89  	LDA $893F,Y
 C1/869E:	AA      	TAX 
 C1/869F:	BF8982C1	LDA $C18289,X
@@ -17957,6 +18116,10 @@ C1/86AE:	8DE588  	STA $88E5
 C1/86B1:	EEE388  	INC $88E3
 C1/86B4:	60      	RTS
  
+Throw list input program (menu program X = 2E).  One column; cursor:
+scroll $8953 (cap $FB), row $895B.  A submits the highlighted entry
+of the throwable list at $4005 (id $FF = empty: error buzz) with its
+targeting byte; B cancels via C1/56E0.
 C1/86B5:	9CE388  	STZ $88E3		(from C1/5529, X = 2E)
 C1/86B8:	9CEF88  	STZ $88EF
 C1/86BB:	ADCB7B  	LDA $7BCB
@@ -17965,7 +18128,7 @@ C1/86C0:	A92C    	LDA #$2C
 C1/86C2:	8DC27B  	STA $7BC2      (queue up to execute at C1/56E0)
 C1/86C5:	60      	RTS
  
-C1/86C6:	ACCA62  	LDY $62CA		(from only C1/86BE)
+C1/86C6:	ACCA62  	LDY $62CA		(load this character's Throw cursor state) (from only C1/86BE)
 C1/86C9:	6436    	STZ $36
 C1/86CB:	B95B89  	LDA $895B,Y
 C1/86CE:	8537    	STA $37
@@ -17974,10 +18137,10 @@ C1/86D3:	8538    	STA $38
 C1/86D5:	7B      	TDC 
 C1/86D6:	8539    	STA $39
 C1/86D8:	20DB80  	JSR $80DB
-C1/86DB:	A53C    	LDA $3C
+C1/86DB:	A53C    	LDA $3C		(scroll requested?)
 C1/86DD:	F022    	BEQ $8701
 C1/86DF:	3012    	BMI $86F3
-C1/86E1:	B95389  	LDA $8953,Y
+C1/86E1:	B95389  	LDA $8953,Y		(scroll down (cap $FB))
 C1/86E4:	C9FB    	CMP #$FB
 C1/86E6:	F023    	BEQ $870B
 C1/86E8:	1A      	INC A
@@ -17985,7 +18148,7 @@ C1/86E9:	995389  	STA $8953,Y
 C1/86EC:	E694    	INC $94
 C1/86EE:	205C87  	JSR $875C
 C1/86F1:	800E    	BRA $8701
-C1/86F3:	B95389  	LDA $8953,Y
+C1/86F3:	B95389  	LDA $8953,Y		(scroll up)
 C1/86F6:	F013    	BEQ $870B
 C1/86F8:	3A      	DEC A
 C1/86F9:	995389  	STA $8953,Y
@@ -18002,7 +18165,7 @@ C1/8711:	205484  	JSR $8454
 C1/8714:	BD0540  	LDA $4005,X
 C1/8717:	C9FF    	CMP #$FF
 C1/8719:	D004    	BNE $871F
-C1/871B:	E695    	INC $95
+C1/871B:	E695    	INC $95		(empty entry: error buzz)
 C1/871D:	800C    	BRA $872B
 C1/871F:	8D857A  	STA $7A85
 C1/8722:	BD0740  	LDA $4007,X
@@ -18015,7 +18178,7 @@ C1/872F:	E696    	INC $96
 C1/8731:	20E056  	JSR $56E0
 C1/8734:	60      	RTS
  
-C1/8735:	A9FB    	LDA #$FB		(from only C1/872D)
+C1/8735:	A9FB    	LDA #$FB		(redraw the scrollbar slider and place the finger) (from only C1/872D)
 C1/8737:	8536    	STA $36
 C1/8739:	A22500  	LDX #$0025
 C1/873C:	862E    	STX $2E
@@ -18032,7 +18195,7 @@ C1/8755:	8DE588  	STA $88E5
 C1/8758:	EEE388  	INC $88E3
 C1/875B:	60      	RTS
  
-C1/875C:	18      	CLC 			(from only C1/86EE)
+C1/875C:	18      	CLC		(Throw scroll down: build the exposed row, slide program $17) (from only C1/86EE)
 C1/875D:	6903    	ADC #$03
 C1/875F:	20274C  	JSR $4C27
 C1/8762:	A917    	LDA #$17
@@ -18046,7 +18209,7 @@ C1/8772:	8001    	BRA $8775
 C1/8774:	7B      	TDC 
 C1/8775:	8DFD7A  	STA $7AFD
 C1/8778:	8018    	BRA $8792
-C1/877A:	20274C  	JSR $4C27
+C1/877A:	20274C  	JSR $4C27		(Throw scroll up: build the exposed row, slide program $18)
 C1/877D:	A918    	LDA #$18
 C1/877F:	8DC27B  	STA $7BC2      (queue up to execute at C1/5CF7)
 C1/8782:	206982  	JSR $8269
@@ -18056,12 +18219,16 @@ C1/878A:	3A      	DEC A
 C1/878B:	8002    	BRA $878F
 C1/878D:	A904    	LDA #$04
 C1/878F:	8DFD7A  	STA $7AFD
-C1/8792:	A903    	LDA #$03
+C1/8792:	A903    	LDA #$03		(3 slide frames, then chain program $2D)
 C1/8794:	8DA87B  	STA $7BA8
 C1/8797:	A92D    	LDA #$2D
 C1/8799:	8DC37B  	STA $7BC3
 C1/879C:	60      	RTS
  
+Tools list input program (menu program X = 30).  Two columns;
+cursor: scroll $895F, column $8963, row $8967.  A submits the
+highlighted entry of the usable-tools list at $4005; B cancels via
+C1/5697.
 C1/879D:	9CE388  	STZ $88E3		(from C1/5529, X = 30)
 C1/87A0:	9CEF88  	STZ $88EF
 C1/87A3:	ADCB7B  	LDA $7BCB
@@ -18070,7 +18237,7 @@ C1/87A8:	A92F    	LDA #$2F
 C1/87AA:	8DC27B  	STA $7BC2
 C1/87AD:	60      	RTS
  
-C1/87AE:	ACCA62  	LDY $62CA		(from only C1/87A6)
+C1/87AE:	ACCA62  	LDY $62CA		(load this character's Tools cursor state) (from only C1/87A6)
 C1/87B1:	B96389  	LDA $8963,Y
 C1/87B4:	8536    	STA $36
 C1/87B6:	B96789  	LDA $8967,Y
@@ -18080,17 +18247,17 @@ C1/87BE:	8538    	STA $38
 C1/87C0:	A901    	LDA #$01
 C1/87C2:	8539    	STA $39
 C1/87C4:	20DB80  	JSR $80DB
-C1/87C7:	A53C    	LDA $3C
+C1/87C7:	A53C    	LDA $3C		(scroll requested?)
 C1/87C9:	F020    	BEQ $87EB
 C1/87CB:	3010    	BMI $87DD
-C1/87CD:	B95F89  	LDA $895F,Y
+C1/87CD:	B95F89  	LDA $895F,Y		(scroll down)
 C1/87D0:	F023    	BEQ $87F5
 C1/87D2:	1A      	INC A
 C1/87D3:	995F89  	STA $895F,Y
 C1/87D6:	E694    	INC $94
 C1/87D8:	203C88  	JSR $883C
 C1/87DB:	800E    	BRA $87EB
-C1/87DD:	B95F89  	LDA $895F,Y
+C1/87DD:	B95F89  	LDA $895F,Y		(scroll up)
 C1/87E0:	F013    	BEQ $87F5
 C1/87E2:	3A      	DEC A
 C1/87E3:	995F89  	STA $895F,Y
@@ -18107,7 +18274,7 @@ C1/87FB:	207084  	JSR $8470
 C1/87FE:	BD0540  	LDA $4005,X
 C1/8801:	C9FF    	CMP #$FF
 C1/8803:	D004    	BNE $8809
-C1/8805:	E695    	INC $95
+C1/8805:	E695    	INC $95		(empty entry: error buzz)
 C1/8807:	800F    	BRA $8818
 C1/8809:	BD0540  	LDA $4005,X
 C1/880C:	8D857A  	STA $7A85
@@ -18121,7 +18288,7 @@ C1/881C:	E696    	INC $96
 C1/881E:	209756  	JSR $5697
 C1/8821:	60      	RTS
  
-C1/8822:	B96389  	LDA $8963,Y		(from only C1/881A)
+C1/8822:	B96389  	LDA $8963,Y		(place the finger) (from only C1/881A)
 C1/8825:	AA      	TAX 
 C1/8826:	BF8582C1	LDA $C18285,X
 C1/882A:	8DE488  	STA $88E4
@@ -18132,7 +18299,7 @@ C1/8835:	8DE588  	STA $88E5
 C1/8838:	EEE388  	INC $88E3
 C1/883B:	60      	RTS
  
-C1/883C:	18      	CLC			(from only C1/87D8)			
+C1/883C:	18      	CLC		(Tools scroll down: build the exposed row, slide program $17) (from only C1/87D8)
 C1/883D:	6903    	ADC #$03
 C1/883F:	20F74B  	JSR $4BF7
 C1/8842:	A917    	LDA #$17
@@ -18146,7 +18313,7 @@ C1/8852:	8001    	BRA $8855
 C1/8854:	7B      	TDC 
 C1/8855:	8DFD7A  	STA $7AFD
 C1/8858:	8018    	BRA $8872
-C1/885A:	20F74B  	JSR $4BF7
+C1/885A:	20F74B  	JSR $4BF7		(Tools scroll up: build the exposed row, slide program $18)
 C1/885D:	A918    	LDA #$18
 C1/885F:	8DC27B  	STA $7BC2      (queue up to execute at C1/5CF7)
 C1/8862:	206982  	JSR $8269
@@ -18156,12 +18323,20 @@ C1/886A:	3A      	DEC A
 C1/886B:	8002    	BRA $886F
 C1/886D:	A904    	LDA #$04
 C1/886F:	8DFD7A  	STA $7AFD
-C1/8872:	A903    	LDA #$03
+C1/8872:	A903    	LDA #$03		(3 slide frames, then chain program $30)
 C1/8874:	8DA87B  	STA $7BA8
 C1/8877:	A930    	LDA #$30
 C1/8879:	8DC37B  	STA $7BC3
 C1/887C:	60      	RTS
  
+Item list input program (menu program X = A).  One column; cursor:
+scroll $8947 (cap $FB), row $894F; $894B doubles as the
+hand-selection flag for the equipment window.  A (when the item is
+usable, C1/8A24) submits the item id and targeting from the $2686
+records; B cancels - or, when the equipment window is open ($7B02),
+backs out to the item list.  Moving left off the top opens the
+equipment (hands) window via the parameter setup at C1/5645, with
+the finger X base in $7BB3.
 C1/887D:	9CE388  	STZ $88E3		(from C1/5529, X = A)
 C1/8880:	9CEF88  	STZ $88EF
 C1/8883:	ADCB7B  	LDA $7BCB
@@ -18173,10 +18348,10 @@ C1/8891:	A912    	LDA #$12
 C1/8893:	8DC27B  	STA $7BC2      (queue up to execute at C1/56F2)
 C1/8896:	60      	RTS
  
-C1/8897:	A2A400  	LDX #$00A4		(from only C1/8886)
+C1/8897:	A2A400  	LDX #$00A4		(finger X base for the item list) (from only C1/8886)
 C1/889A:	8EB37B  	STX $7BB3
 C1/889D:	ACCA62  	LDY $62CA
-C1/88A0:	7B      	TDC 
+C1/88A0:	7B      	TDC		(load this character's Item cursor state)
 C1/88A1:	994B89  	STA $894B,Y
 C1/88A4:	8536    	STA $36
 C1/88A6:	B94F89  	LDA $894F,Y
@@ -18185,10 +18360,10 @@ C1/88AB:	B94789  	LDA $8947,Y
 C1/88AE:	8538    	STA $38
 C1/88B0:	6439    	STZ $39
 C1/88B2:	20DB80  	JSR $80DB
-C1/88B5:	A53C    	LDA $3C
+C1/88B5:	A53C    	LDA $3C		(scroll requested?)
 C1/88B7:	F042    	BEQ $88FB
 C1/88B9:	3012    	BMI $88CD
-C1/88BB:	B94789  	LDA $8947,Y
+C1/88BB:	B94789  	LDA $8947,Y		(scroll down (cap $FB))
 C1/88BE:	C9FB    	CMP #$FB
 C1/88C0:	F043    	BEQ $8905
 C1/88C2:	1A      	INC A
@@ -18196,7 +18371,7 @@ C1/88C3:	994789  	STA $8947,Y
 C1/88C6:	E694    	INC $94
 C1/88C8:	20E98C  	JSR $8CE9
 C1/88CB:	802E    	BRA $88FB
-C1/88CD:	B94789  	LDA $8947,Y
+C1/88CD:	B94789  	LDA $8947,Y		(at the top: left/up handling for the equipment window)
 C1/88D0:	D020    	BNE $88F2
 C1/88D2:	A53C    	LDA $3C
 C1/88D4:	2940    	AND #$40
@@ -18207,13 +18382,13 @@ C1/88DC:	AD027B  	LDA $7B02
 C1/88DF:	F005    	BEQ $88E6
 C1/88E1:	AD007B  	LDA $7B00
 C1/88E4:	F01F    	BEQ $8905
-C1/88E6:	A2C800  	LDX #$00C8
+C1/88E6:	A2C800  	LDX #$00C8		(open the equipment window (finger base $C8))
 C1/88E9:	8EB37B  	STX $7BB3
 C1/88EC:	E694    	INC $94
 C1/88EE:	204556  	JSR $5645
 C1/88F1:	60      	RTS
  
-C1/88F2:	3A      	DEC A
+C1/88F2:	3A      	DEC A		(scroll up)
 C1/88F3:	994789  	STA $8947,Y
 C1/88F6:	E694    	INC $94
 C1/88F8:	20118D  	JSR $8D11
@@ -18221,7 +18396,7 @@ C1/88FB:	A536    	LDA $36
 C1/88FD:	994B89  	STA $894B,Y
 C1/8900:	A537    	LDA $37
 C1/8902:	994F89  	STA $894F,Y
-C1/8905:	ADA87B  	LDA $7BA8
+C1/8905:	ADA87B  	LDA $7BA8		(window still sliding: ignore input)
 C1/8908:	D059    	BNE $8963
 C1/890A:	A504    	LDA $04        (load shared controller byte)
 C1/890C:	102D    	BPL $893B      (branch if nobody is pressing A)
@@ -18230,13 +18405,13 @@ C1/8911:	9050    	BCC $8963
 C1/8913:	9CAF7B  	STZ $7BAF
 C1/8916:	9CB57B  	STZ $7BB5
 C1/8919:	9C027B  	STZ $7B02
-C1/891C:	20BE89  	JSR $89BE
+C1/891C:	20BE89  	JSR $89BE		(submit the item id and its targeting)
 C1/891F:	BD8626  	LDA $2686,X
 C1/8922:	8D857A  	STA $7A85
 C1/8925:	BD8826  	LDA $2688,X    (item targeting???)
 C1/8928:	8D847A  	STA $7A84      (save as character targeting)
 C1/892B:	9C1E7A  	STZ $7A1E
-C1/892E:	9CBAEC  	STZ $ECBA
+C1/892E:	9CBAEC  	STZ $ECBA		(item targeting bit 6 clear: via program 3F (C1/55B0), as with spells)
 C1/8931:	2940    	AND #$40       (is "cursor starts on enemy" set?)
 C1/8933:	D003    	BNE $8938      (branch if so)
 C1/8935:	4CB055  	JMP $55B0
@@ -18254,12 +18429,12 @@ C1/894C:	9CAF7B  	STZ $7BAF
 C1/894F:	9CB57B  	STZ $7BB5
 C1/8952:	4CF256  	JMP $56F2
 
-C1/8955:	9C027B  	STZ $7B02
+C1/8955:	9C027B  	STZ $7B02		(equipment window open: back out to the item list)
 C1/8958:	9C0C89  	STZ $890C
 C1/895B:	A90A    	LDA #$0A
 C1/895D:	8DC37B  	STA $7BC3
 C1/8960:	20768D  	JSR $8D76
-C1/8963:	ACCA62  	LDY $62CA
+C1/8963:	ACCA62  	LDY $62CA		(redraw the scrollbar slider and place the finger)
 C1/8966:	A9FB    	LDA #$FB
 C1/8968:	8536    	STA $36
 C1/896A:	A22500  	LDX #$0025
@@ -18277,6 +18452,9 @@ C1/8988:	8DE588  	STA $88E5
 C1/898B:	EEE388  	INC $88E3
 C1/898E:	60      	RTS
  
+Scrollbar slider update: A = scroll position, $36 = maximum, $2E =
+pixel range; writes the slider position for the list's scrollbar
+(clamped to the ends at 0 and max).
 C1/898F:	852C    	STA $2C
 C1/8991:	D004    	BNE $8997
 C1/8993:	A901    	LDA #$01
@@ -18301,6 +18479,8 @@ C1/89B7:	8DF088  	STA $88F0
 C1/89BA:	EEEF88  	INC $88EF
 C1/89BD:	60      	RTS
  
+X = offset of the highlighted Item entry: (scroll $8947 + row $894F)
+* 5, into the $2686 inventory records.
 C1/89BE:	5A      	PHY 
 C1/89BF:	B94789  	LDA $8947,Y
 C1/89C2:	18      	CLC 
@@ -18317,6 +18497,11 @@ C1/89D1:	E220    	SEP #$20
 C1/89D3:	7A      	PLY 
 C1/89D4:	60      	RTS
  
+Check whether the two prospective hand items may be combined -
+$7B39/$7B3A and $7B3B/$7B3C hold the two id/usability pairs, $2E6E,X
+the character's dual-wield state.  Carry set = illegal pair; an empty
+hand or legal pair also flags $2F30,X so C2 re-evaluates the
+character's equipment.
 C1/89D5:	AD397B  	LDA $7B39
 C1/89D8:	C9FF    	CMP #$FF
 C1/89DA:	F030    	BEQ $8A0C
@@ -18352,22 +18537,32 @@ C1/8A15:	FA      	PLX
 C1/8A16:	18      	CLC 
 C1/8A17:	60      	RTS
  
-C1/8A18:	DA      	PHX 
+C1/8A18:	DA      	PHX		($2C = the open character's slot bit (C1/1A01 table))
 C1/8A19:	AECA62  	LDX $62CA
 C1/8A1C:	BF011AC1	LDA $C11A01,X
 C1/8A20:	852C    	STA $2C
 C1/8A22:	FA      	PLX 
 C1/8A23:	60      	RTS
  
+Item pick handler (A press in the Item list).  The first press
+remembers the slot ($7B03), opens pick mode ($7B02) and lets the
+cursor ride the window ($7BAF/$7BB0/$7BB1).  The second press either
+swaps the two 5-byte inventory records (C1/8ACE), or - when a hand
+slot was picked ($7B00 selects the hand - right block $2B86, left
+block $2B9A) - swaps the hand item with the inventory item, checking
+equip legality first (usability bits $18, the character bit in
+$268A, pair legality via C1/89D5; failures buzz and cancel).
+Quantities merge with a cap of $63; emptied records get id $FF /
+flags $80.  Afterwards the four visible rows are rebuilt (C1/8D76).
 C1/8A24:	E696    	INC $96
 C1/8A26:	20BE89  	JSR $89BE
-C1/8A29:	AD027B  	LDA $7B02
+C1/8A29:	AD027B  	LDA $7B02		(no pick pending: remember this slot and enter pick mode)
 C1/8A2C:	D003    	BNE $8A31
 C1/8A2E:	4C238B  	JMP $8B23
 C1/8A31:	8E057B  	STX $7B05
 C1/8A34:	AD007B  	LDA $7B00
 C1/8A37:	F064    	BEQ $8A9D
-C1/8A39:	BD8626  	LDA $2686,X
+C1/8A39:	BD8626  	LDA $2686,X		(equip legality of the inventory item for this character)
 C1/8A3C:	C9FF    	CMP #$FF
 C1/8A3E:	F011    	BEQ $8A51
 C1/8A40:	20188A  	JSR $8A18
@@ -18377,7 +18572,7 @@ C1/8A48:	F03F    	BEQ $8A89
 C1/8A4A:	BD8A26  	LDA $268A,X
 C1/8A4D:	252C    	AND $2C
 C1/8A4F:	D038    	BNE $8A89
-C1/8A51:	AD007B  	LDA $7B00
+C1/8A51:	AD007B  	LDA $7B00		(fetch the current hand item as the pair partner)
 C1/8A54:	C901    	CMP #$01
 C1/8A56:	F011    	BEQ $8A69
 C1/8A58:	AC037B  	LDY $7B03
@@ -18397,7 +18592,7 @@ C1/8A7E:	BD8726  	LDA $2687,X
 C1/8A81:	8D3A7B  	STA $7B3A
 C1/8A84:	20D589  	JSR $89D5
 C1/8A87:	9007    	BCC $8A90
-C1/8A89:	E695    	INC $95
+C1/8A89:	E695    	INC $95		(illegal: buzz and drop the pick)
 C1/8A8B:	6496    	STZ $96
 C1/8A8D:	4C0A8B  	JMP $8B0A
 
@@ -18408,7 +18603,7 @@ C1/8A97:	4C028C  	JMP $8C02
 
 C1/8A9A:	4C4D8B  	JMP $8B4D
 
-C1/8A9D:	EC037B  	CPX $7B03
+C1/8A9D:	EC037B  	CPX $7B03		(second pick on the same slot: just cancel pick mode)
 C1/8AA0:	D02C    	BNE $8ACE
 C1/8AA2:	9CAF7B  	STZ $7BAF
 C1/8AA5:	9CB57B  	STZ $7BB5
@@ -18426,12 +18621,12 @@ C1/8AC1:	9CB57B  	STZ $7BB5
 C1/8AC4:	18      	CLC 
 C1/8AC5:	60      	RTS
  
-C1/8AC6:	BD8726  	LDA $2687,X
+C1/8AC6:	BD8726  	LDA $2687,X		(same slot, usable item: fall through to use it)
 C1/8AC9:	9C0C89  	STZ $890C
 C1/8ACC:	38      	SEC 
 C1/8ACD:	60      	RTS
  
-C1/8ACE:	5A      	PHY 
+C1/8ACE:	5A      	PHY		(swap the two 5-byte inventory records)
 C1/8ACF:	7B      	TDC 
 C1/8AD0:	A8      	TAY 
 C1/8AD1:	BD8626  	LDA $2686,X
@@ -18472,7 +18667,7 @@ C1/8B1E:	9CB57B  	STZ $7BB5
 C1/8B21:	18      	CLC 
 C1/8B22:	60      	RTS
  
-C1/8B23:	9C007B  	STZ $7B00
+C1/8B23:	9C007B  	STZ $7B00		(first pick: remember the slot; the finger rides the window)
 C1/8B26:	8E037B  	STX $7B03
 C1/8B29:	EE027B  	INC $7B02
 C1/8B2C:	B94B89  	LDA $894B,Y
@@ -18491,7 +18686,7 @@ C1/8B48:	8DAF7B  	STA $7BAF
 C1/8B4B:	18      	CLC 
 C1/8B4C:	60      	RTS
  
-C1/8B4D:	5A      	PHY 
+C1/8B4D:	5A      	PHY		(swap the picked hand item (right block) with the inventory slot)
 C1/8B4E:	7B      	TDC 
 C1/8B4F:	AA      	TAX 
 C1/8B50:	AC037B  	LDY $7B03
@@ -18539,7 +18734,7 @@ C1/8BB5:	9D8726  	STA $2687,X
 C1/8BB8:	9E8826  	STZ $2688,X
 C1/8BBB:	9E8926  	STZ $2689,X
 C1/8BBE:	9E8A26  	STZ $268A,X
-C1/8BC1:	AD077B  	LDA $7B07
+C1/8BC1:	AD077B  	LDA $7B07		(merge the removed hand item back into the inventory)
 C1/8BC4:	8540    	STA $40
 C1/8BC6:	20B78C  	JSR $8CB7
 C1/8BC9:	9016    	BCC $8BE1
@@ -18570,7 +18765,7 @@ C1/8BFF:	7A      	PLY
 C1/8C00:	18      	CLC 
 C1/8C01:	60      	RTS
  
-C1/8C02:	5A      	PHY 
+C1/8C02:	5A      	PHY		(swap the picked hand item (left block) with the inventory slot)
 C1/8C03:	7B      	TDC 
 C1/8C04:	AA      	TAX 
 C1/8C05:	AC037B  	LDY $7B03
@@ -18618,7 +18813,7 @@ C1/8C6A:	9D8726  	STA $2687,X
 C1/8C6D:	9E8826  	STZ $2688,X
 C1/8C70:	9E8926  	STZ $2689,X
 C1/8C73:	9E8A26  	STZ $268A,X
-C1/8C76:	AD077B  	LDA $7B07
+C1/8C76:	AD077B  	LDA $7B07		(merge the removed hand item back into the inventory)
 C1/8C79:	8540    	STA $40
 C1/8C7B:	20B78C  	JSR $8CB7
 C1/8C7E:	9016    	BCC $8C96
@@ -18649,6 +18844,7 @@ C1/8CB4:	7A      	PLY
 C1/8CB5:	18      	CLC 
 C1/8CB6:	60      	RTS
  
+Find item $40 in the inventory records; carry clear = found at X.
 C1/8CB7:	7B      	TDC 
 C1/8CB8:	AA      	TAX 
 C1/8CB9:	A540    	LDA $40
@@ -18669,6 +18865,7 @@ C1/8CCF:	60      	RTS
 C1/8CD0:	18      	CLC 
 C1/8CD1:	60      	RTS
  
+Find the first empty inventory record; carry clear = found at X.
 C1/8CD2:	7B      	TDC 
 C1/8CD3:	AA      	TAX 
 C1/8CD4:	A9FF    	LDA #$FF
@@ -18687,7 +18884,7 @@ C1/8CE6:	60      	RTS
 C1/8CE7:	18      	CLC 
 C1/8CE8:	60      	RTS
  
-C1/8CE9:	18      	CLC 
+C1/8CE9:	18      	CLC		(Item list scroll down: build the exposed row, shift the riding cursor, slide program $17)
 C1/8CEA:	6903    	ADC #$03
 C1/8CEC:	206B4C  	JSR $4C6B
 C1/8CEF:	AEB17B  	LDX $7BB1
@@ -18708,7 +18905,7 @@ C1/8D0B:	7B      	TDC
 C1/8D0C:	8DFD7A  	STA $7AFD
 C1/8D0F:	8022    	BRA $8D33
 
-C1/8D11:	206B4C  	JSR $4C6B
+C1/8D11:	206B4C  	JSR $4C6B		(Item list scroll up: build the exposed row, shift the riding cursor, slide program $18)
 C1/8D14:	AEB17B  	LDX $7BB1
 C1/8D17:	E8      	INX 
 C1/8D18:	E8      	INX 
@@ -18725,12 +18922,15 @@ C1/8D2C:	8002    	BRA $8D30
 
 C1/8D2E:	A904    	LDA #$04
 C1/8D30:	8DFD7A  	STA $7AFD
-C1/8D33:	A903    	LDA #$03
+C1/8D33:	A903    	LDA #$03		(3 slide frames, then chain program $0A)
 C1/8D35:	8DA87B  	STA $7BA8
 C1/8D38:	A90A    	LDA #$0A
 C1/8D3A:	8DC37B  	STA $7BC3
 C1/8D3D:	60      	RTS
  
+Rebuild the four visible Item rows, one per frame (menu program X =
+31): $7BA7 = list row, $7BA6 rotates the row-parameter groups,
+$7BA5 counts the four rows; then advance the program queue.
 C1/8D3E:	ADA77B  	LDA $7BA7		(from C1/5529, X = 31)
 C1/8D41:	206B4C  	JSR $4C6B
 C1/8D44:	ADA67B  	LDA $7BA6
@@ -18756,7 +18956,7 @@ C1/8D70:	A902    	LDA #$02
 C1/8D72:	8DC27B  	STA $7BC2
 C1/8D75:	60      	RTS
  
-C1/8D76:	ACCA62  	LDY $62CA
+C1/8D76:	ACCA62  	LDY $62CA		(request the four-row Item rebuild (sets up program $31))
 C1/8D79:	ADFD7A  	LDA $7AFD
 C1/8D7C:	C904    	CMP #$04
 C1/8D7E:	D003    	BNE $8D83
@@ -18774,6 +18974,12 @@ C1/8D94:	8DC27B  	STA $7BC2
 C1/8D97:	60      	RTS
  
 Equipping a character mid-battle (or something to do with it)
+
+Equipment (hands) window program (menu program X = C).  Left/right
+move between the two hand slots ($894B); down closes back to the
+Item list (C1/5669); A picks up or swaps the hand item ($6286,X set
+= equipment locked: error buzz; $2F30,X tells C2 to re-evaluate);
+B closes the window and pick mode.
 C1/8D98:	AD027B  	LDA $7B02		(from C1/5529, X = C)
 C1/8D9B:	F006    	BEQ $8DA3
 C1/8D9D:	AD007B  	LDA $7B00
@@ -18785,7 +18991,7 @@ C1/8DAB:	A913    	LDA #$13
 C1/8DAD:	8DC27B  	STA $7BC2
 C1/8DB0:	60      	RTS
  
-C1/8DB1:	AECA62  	LDX $62CA
+C1/8DB1:	AECA62  	LDX $62CA		(right: to the second hand slot (wraps back))
 C1/8DB4:	A505    	LDA $05
 C1/8DB6:	C901    	CMP #$01
 C1/8DB8:	D013    	BNE $8DCD
@@ -18798,7 +19004,7 @@ C1/8DC6:	8019    	BRA $8DE1
 
 C1/8DC8:	FE4B89  	INC $894B,X
 C1/8DCB:	801F    	BRA $8DEC
-C1/8DCD:	C902    	CMP #$02
+C1/8DCD:	C902    	CMP #$02		(left: to the first hand slot)
 C1/8DCF:	D00C    	BNE $8DDD
 C1/8DD1:	BD4B89  	LDA $894B,X
 C1/8DD4:	F016    	BEQ $8DEC
@@ -18806,7 +19012,7 @@ C1/8DD6:	E694    	INC $94
 C1/8DD8:	DE4B89  	DEC $894B,X
 C1/8DDB:	800F    	BRA $8DEC
 
-C1/8DDD:	C904    	CMP #$04
+C1/8DDD:	C904    	CMP #$04		(down: close back to the Item list)
 C1/8DDF:	D00B    	BNE $8DEC
 C1/8DE1:	9E4B89  	STZ $894B,X
 C1/8DE4:	9CB57B  	STZ $7BB5
@@ -18816,25 +19022,25 @@ C1/8DE9:	4C6956  	JMP $5669
 C1/8DEC:	A504    	LDA $04
 C1/8DEE:	1018    	BPL $8E08
 C1/8DF0:	AECA62  	LDX $62CA
-C1/8DF3:	BD8662  	LDA $6286,X
+C1/8DF3:	BD8662  	LDA $6286,X		(equipment locked: error buzz)
 C1/8DF6:	F004    	BEQ $8DFC
 C1/8DF8:	E695    	INC $95
 C1/8DFA:	800C    	BRA $8E08
 
-C1/8DFC:	A901    	LDA #$01
+C1/8DFC:	A901    	LDA #$01		(pick up / swap via C1/8E51; C2 re-evaluates the equipment)
 C1/8DFE:	9D302F  	STA $2F30,X
 C1/8E01:	E696    	INC $96
 C1/8E03:	20518E  	JSR $8E51
 C1/8E06:	9000    	BCC $8E08
 C1/8E08:	A509    	LDA $09
 C1/8E0A:	1011    	BPL $8E1D
-C1/8E0C:	E696    	INC $96
+C1/8E0C:	E696    	INC $96		(B: close the window and clear pick mode)
 C1/8E0E:	9C0C89  	STZ $890C
 C1/8E11:	20348E  	JSR $8E34
 C1/8E14:	9CAF7B  	STZ $7BAF
 C1/8E17:	9CB57B  	STZ $7BB5
 C1/8E1A:	9C027B  	STZ $7B02
-C1/8E1D:	AECA62  	LDX $62CA
+C1/8E1D:	AECA62  	LDX $62CA		(place the finger on the hand slot (X from C1/8283))
 C1/8E20:	BD4B89  	LDA $894B,X
 C1/8E23:	AA      	TAX 
 C1/8E24:	BF8382C1	LDA $C18283,X
@@ -18844,7 +19050,7 @@ C1/8E2D:	8DE588  	STA $88E5
 C1/8E30:	EEE388  	INC $88E3
 C1/8E33:	60      	RTS
  
-C1/8E34:	20BA4B  	JSR $4BBA
+C1/8E34:	20BA4B  	JSR $4BBA		(close the hands window: rebuild its data (C1/4BBA -> $7E40), chain program $0C, then the row rebuild)
 C1/8E37:	A2407E  	LDX #$7E40
 C1/8E3A:	8EAA7B  	STX $7BAA
 C1/8E3D:	EEA97B  	INC $7BA9
@@ -18852,11 +19058,17 @@ C1/8E40:	A90C    	LDA #$0C
 C1/8E42:	8DC37B  	STA $7BC3
 C1/8E45:	4C768D  	JMP $8D76
 
+X = the character's equipment-menu block offset (C1/4B67 table).
 C1/8E48:	AECA62  	LDX $62CA
 C1/8E4B:	BF674BC1	LDA $C14B67,X
 C1/8E4F:	AA      	TAX 
 C1/8E50:	60      	RTS
  
+Perform the hands-window pick: with no prior pick, remember the hand
+($7B00 = hand + 1); with a prior hand pick, swap the two hand
+blocks' items; with a prior inventory pick ($7B02 from the Item
+list), move the inventory item into the hand.  All paths keep the
+5-byte records consistent and end by rebuilding the windows.
 C1/8E51:	20488E  	JSR $8E48
 C1/8E54:	ACCA62  	LDY $62CA
 C1/8E57:	AD027B  	LDA $7B02
