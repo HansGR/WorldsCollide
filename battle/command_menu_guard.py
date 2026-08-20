@@ -3,92 +3,94 @@ import instruction.asm as asm
 
 # With probability-randomized commands (-comfr/-compr) a character's whole
 # menu can be commands that are illegal while Imped (only Fight, Item,
-# Magic, Revert, Mimic, Row, Def, Jump, X-Magic, Health and Shock carry the
-# imp-usable bit in the CF/FE00 command info table).  The per-turn menu
-# routine C2/527D then grays all four slots (bit 7 of each slot's second
-# byte at the character's menu block, $202E/$203A/$2046/$2052), and the C1
-# battle menu - which assumes at least one selectable slot, an invariant
-# vanilla always meets because Fight and Item are ever-present and
-# imp-legal - never places the hand cursor: the menu draws, the ATB stalls
-# and the battle hard-locks on that character's turn.  The same all-grayed
-# state is reachable without Imp (e.g. a menu of only Runic/SwdTech with a
-# weapon supporting neither, plus Morph with an empty gauge).
+# Magic, Revert, Mimic, Row, Def, Jump, X-Magic, Health and Shock carry
+# the imp-usable bit in the CF/FE00 command info table).  The per-turn
+# menu routine C2/527D then grays all four slots, and the C1 command
+# window's cursor engine hangs: its row-validity check (C1/7A4E: bit 7 of
+# the slot's second byte at the menu block) is consumed by three UNBOUNDED
+# skip-invalid loops - the initial settle (C1/7AEF) and the second
+# layout's up/down navigation (C1/7BE9 dec, C1/7BF3 inc) - which spin
+# forever when zero rows are valid.  Vanilla can never produce that state
+# because Fight and Item are ever-present and imp-legal.  Symptoms: menu
+# drawn, hand cursor never placed, ATB stalled, battle hard-locked.
 #
-# Restore the invariant at the source instead of patching the C1 cursor:
-# after C2/527D's gray-out loop, if no non-empty slot is selectable,
-# un-gray the FIRST non-empty slot.  The hand then lands on it normally
-# and the player can act (using a nominally imp-illegal command while
-# Imped - the alternative is the hard-lock).  Empty ($FF) slots are left
-# alone: vanilla menus with empties (e.g. MagiTek) rely on them staying
-# unselectable.
+# Fix, preserving the gameplay rule that an Imped character may NOT use
+# imp-illegal commands (per Hans: no un-graying):
+# 1. bound each loop: try the remaining rows once around; if none is
+#    valid, park the cursor on row 0 and continue.  The hand is drawn on
+#    the parked row and the per-frame input handling runs again, so the
+#    player keeps their real options: Row/Def, L+R to run, and Y to
+#    switch to another ready character.
+# 2. vanilla has NO confirm-time validity check - the confirm path
+#    (C1/7CC8) dispatches whatever the cursor rests on, because vanilla's
+#    cursor can only ever rest on valid rows.  With a parked cursor that
+#    invariant is gone, so both A-press sites (C1/7BAA, C1/7BFF) now
+#    re-check the row via C1/7A4E and swallow the press when it is
+#    invalid (the confirm click/state counters $96/$2F41 only advance on
+#    a real confirm).
+
+ROW_VALID = 0x7a4e      # C1: carry clear = cursor-memory row selectable
+CURSOR_MEMORY = 0x890f  # C1: per-character remembered row, ,X = char index
+CONFIRM = 0x7cc8        # C1: A-press command dispatch
+
+def _settle(step):
+    # try the other three rows once; nothing valid -> park on row 0.
+    # a is scratch (callers reload from $04/$05); x = character index and
+    # y = menu base are preserved by C1/7A4E.
+    src = []
+    for _ in range(3):
+        src += [
+            step(CURSOR_MEMORY, asm.ABS_X),
+            asm.JSR(ROW_VALID, asm.ABS),
+            asm.BCC("DONE"),
+        ]
+    src += [
+        asm.TDC(),
+        asm.STA(CURSOR_MEMORY, asm.ABS_X),  # park the hand on the first row
+        "DONE",
+        asm.RTS(),
+    ]
+    return src
 
 def mod():
     import args
     if not args.commands_probability_mode:
         return
 
-    MENU_TABLE = 0xc2544a   # per-screen-slot menu block addresses (16-bit)
+    inc_settle = Write(Bank.C1, _settle(asm.INC),
+                       "command menu: bounded skip-invalid scan (inc)")
+    dec_settle = Write(Bank.C1, _settle(asm.DEC),
+                       "command menu: bounded skip-invalid scan (dec)")
 
-    # x <- this character's menu block.  C2/527D's entry pushes are still on
-    # the stack under our JSR return address ($03,S = P, $04-$05,S = the
-    # party screen slot 0/2/4/6).  DB is $7E in battle, so absolute
-    # addressing reaches the menu blocks; the ROM table needs long indexing.
     src = [
-        asm.TDC(),
-        asm.LDA(0x04, asm.S),           # party screen slot (0/2/4/6)
-        asm.TAX(),
-        asm.REP(0x20),
-        asm.LDA(MENU_TABLE, asm.LNG_X), # this character's menu block
-        asm.TAX(),
-        asm.SEP(0x20),
+        asm.JSR(ROW_VALID, asm.ABS),    # carry set = row invalid: deny
+        asm.BCS("DENY"),
+        asm.INC(0x96, asm.DIR),         # displaced confirm click/state
+        asm.INC(0x2f41, asm.ABS),       # increments (valid confirms only)
+        "DENY",
         asm.RTS(),
     ]
-    menu_base = Write(Bank.C2, src, "battle menu guard: menu block lookup")
+    confirm_guard = Write(Bank.C1, src, "command menu: deny confirm on invalid row")
 
-    # jumped to (not called) from C2/527D's epilogue: a is 8-bit, x/y are
-    # 16-bit, and the epilogue's PLP/PLX/RTS is displaced to the end here.
-    src = [
-        asm.JSR(menu_base.start_address, asm.ABS),
-        asm.LDY(0x0004, asm.IMM16),     # four menu slots
-        "SCAN",
-        asm.LDA(0x0000, asm.ABS_X),     # slot command id (bit 7 = empty)
-        asm.BMI("SCAN_NEXT"),
-        asm.LDA(0x0001, asm.ABS_X),     # bit 7 set = grayed out
-        asm.BPL("DONE"),                # something is selectable: leave it be
-        "SCAN_NEXT",
-        asm.INX(),
-        asm.INX(),
-        asm.INX(),
-        asm.DEY(),
-        asm.BNE("SCAN"),
+    # the three unbounded loops: INC/DEC $890F,X / JSR $7A4E / BCS back
+    for addr, helper, name in ((0x17aef, inc_settle, "settle"),
+                               (0x17be9, dec_settle, "nav up"),
+                               (0x17bf3, inc_settle, "nav down/settle")):
+        space = Reserve(addr, addr + 7, f"command menu {name}: bounded scan", asm.NOP())
+        space.write(
+            asm.JSR(helper.start_address, asm.ABS),
+        )
 
-        # nothing selectable: un-gray the first non-empty slot
-        asm.JSR(menu_base.start_address, asm.ABS),
-        asm.LDY(0x0004, asm.IMM16),
-        "FIX",
-        asm.LDA(0x0000, asm.ABS_X),
-        asm.BMI("FIX_NEXT"),
-        asm.LDA(0x0001, asm.ABS_X),
-        asm.AND(0x7f, asm.IMM8),
-        asm.STA(0x0001, asm.ABS_X),     # clear the disabled bit
-        asm.BRA("DONE"),
-        "FIX_NEXT",
-        asm.INX(),
-        asm.INX(),
-        asm.INX(),
-        asm.DEY(),
-        asm.BNE("FIX"),                 # all four empty: nothing we can do
-
-        "DONE",
-        asm.PLP(),                      # displaced C2/527D epilogue
-        asm.PLX(),
-        asm.RTS(),
-    ]
-    guard = Write(Bank.C2, src, "battle menu guard: keep one selectable command slot")
-
-    space = Reserve(0x252e6, 0x252e8, "battle menu gray-out epilogue -> guard")
-    space.write(
-        asm.JMP(guard.start_address, asm.ABS),
-    )
+    # both A-press sites: INC $96 / INC $2F41 / JMP $7CC8 becomes a guarded
+    # confirm - carry set skips the dispatch, falling through to the
+    # "A not pressed" handling exactly as if the press had not happened
+    for addr in (0x17baa, 0x17bff):
+        space = Reserve(addr, addr + 7, "command menu: guarded confirm")
+        space.write(
+            asm.JSR(confirm_guard.start_address, asm.ABS),
+            asm.BCS("SKIP"),
+            asm.JMP(CONFIRM, asm.ABS),
+            "SKIP",
+        )
 
 mod()
