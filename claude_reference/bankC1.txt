@@ -2063,6 +2063,9 @@ C1/0FB0:	C00400  	CPY #$0004
 C1/0FB3:	D0DC    	BNE $0F91
 C1/0FB5:	60      	RTS
  
+Zero the four characters' displayed HP/MP fields ($2EAE+ blocks,
+offsets 7-$15), then set $64BA = 1 if any character shows the
+condemned-style numeral status ($2E98 bit 3) ?
 C1/0FB6:	A20700  	LDX #$0007     (from C1/0079, C1/108D)
 C1/0FB9:	9EAE2E  	STZ $2EAE,X    (zero current HP, max HP, current MP, and max MP for character 1)
 C1/0FBC:	9ECE2E  	STZ $2ECE,X    (zero current HP, max HP, current MP, and max MP for character 2)
@@ -2082,6 +2085,12 @@ C1/0FDB:	4A      	LSR A          (A becomes 1)
 C1/0FDC:	8DBA64  	STA $64BA      (store either 0 or 1)
 C1/0FDF:	60      	RTS
  
+Reset display state for battle start: clear the $61B6 block, sound
+flags, load the config wallpaper ($1D4E) and window-flags byte
+($1DD1 -> $ECEF), mark all monster targets valid ($2F46/$6191),
+run the C2-side prep (C2/BD43) and the formation load (C1/0E86),
+then publish the enemies-present mask as valid monster targets
+($201E/$2F2F/$61AB).
 C1/0FE0:	7B      	TDC 			(from C1/0076, C1/1082)
 C1/0FE1:	AA      	TAX 
 C1/0FE2:	9EB661  	STZ $61B6,X
@@ -2113,6 +2122,16 @@ C1/1023:	8EB261  	STX $61B2
 C1/1026:	8EB461  	STX $61B4
 C1/1029:	60      	RTS
  
+Battle module cold start (dispatcher command 0 path): read the
+controller once, park all OAM sprites offscreen, clear VRAM regions,
+clear the $7FA0xx scratch, latch the battle background id from the
+formation ($11E2 -> $ECB8), then run the full display init chain -
+state reset ($0FE0), HP zero ($0FB6), character blocks ($0DF3/$0E67),
+target masks ($0F1F) - decompress/load the background, font, window
+and sprite graphics into VRAM (the $10D3-$1100 transfer batch), copy
+the C2/BF43 defaults to $E9D2, build all the battle windows and
+menus ($1DAF-$529C chain), and prime the cursor-memory defaults at
+$896F-$897C.
 C1/102A:	221500C0	JSL $C00015		(from only C1/01F0)
 C1/102E:	7B      	TDC 
 C1/102F:	AA      	TAX 
@@ -2147,7 +2166,7 @@ C1/1071:	D0E9    	BNE $105C
 C1/1073:	E220    	SEP #$20
 C1/1075:	AEE211  	LDX $11E2      (load background saved in the formation loading)
 C1/1078:	8EB8EC  	STX $ECB8      (save as battle background ID)
-C1/107B:	A9FF    	LDA #$FF
+C1/107B:	A9FF    	LDA #$FF		(suppress NMI body until first real frame)
 C1/107D:	8546    	STA $46
 C1/107F:	9CEFE9  	STZ $E9EF
 C1/1082:	20E00F  	JSR $0FE0
@@ -2251,7 +2270,7 @@ C1/117B:	A00040  	LDY #$4000
 C1/117E:	202B1A  	JSR $1A2B
 C1/1181:	7B      	TDC 
 C1/1182:	AA      	TAX 
-C1/1183:	BD1F7A  	LDA $7A1F,X
+C1/1183:	BD1F7A  	LDA $7A1F,X		(copy default finger positions $7A1F -> active table $7A47 ?)
 C1/1186:	9D477A  	STA $7A47,X
 C1/1189:	E8      	INX 
 C1/118A:	E02800  	CPX #$0028
@@ -2306,7 +2325,7 @@ C1/1209:	8D8689  	STA $8986
 C1/120C:	7B      	TDC 
 C1/120D:	AA      	TAX 
 C1/120E:	C220    	REP #$20
-C1/1210:	A997FF  	LDA #$FF97
+C1/1210:	A997FF  	LDA #$FF97		(fill the $EA32 tilemap block with blank tile $97, priority set)
 C1/1213:	9D32EA  	STA $EA32,X
 C1/1216:	E8      	INX 
 C1/1217:	E8      	INX 
@@ -2315,10 +2334,10 @@ C1/121B:	D0F6    	BNE $1213
 C1/121D:	7B      	TDC 
 C1/121E:	E220    	SEP #$20
 C1/1220:	A980    	LDA #$80
-C1/1222:	8DF9E9  	STA $E9F9
+C1/1222:	8DF9E9  	STA $E9F9		(start faded out: brightness target $80)
 C1/1225:	7B      	TDC 
 C1/1226:	AA      	TAX 
-C1/1227:	A908    	LDA #$08
+C1/1227:	A908    	LDA #$08		(init the four ATB gauge tile rows ($9A1F block): border/fill glyphs)
 C1/1229:	9D1F9A  	STA $9A1F,X
 C1/122C:	9E219A  	STZ $9A21,X
 C1/122F:	A9F7    	LDA #$F7
@@ -2346,14 +2365,14 @@ C1/1259:	8B      	PHB
 C1/125A:	A95F02  	LDA #$025F
 C1/125D:	A21F9A  	LDX #$9A1F
 C1/1260:	A01F9F  	LDY #$9F1F
-C1/1263:	547E7E  	MVN $7E,$7E
+C1/1263:	547E7E  	MVN $7E,$7E		(copy gauge build rows $9A1F to display rows $9F1F)
 C1/1266:	AB      	PLB 
 C1/1267:	7B      	TDC 
 C1/1268:	E220    	SEP #$20
 C1/126A:	7B      	TDC 
 C1/126B:	AA      	TAX 
 C1/126C:	A9E0    	LDA #$E0
-C1/126E:	9D9689  	STA $8996,X
+C1/126E:	9D9689  	STA $8996,X		(park the $8996 sprite Y table offscreen ($E0))
 C1/1271:	E8      	INX 
 C1/1272:	E8      	INX 
 C1/1273:	E8      	INX 
@@ -2365,7 +2384,7 @@ C1/127B:	AA      	TAX
 C1/127C:	A9E0    	LDA #$E0
 C1/127E:	8510    	STA $10
 C1/1280:	641A    	STZ $1A
-C1/1282:	A902    	LDA #$02
+C1/1282:	A902    	LDA #$02		(build the $8BF0 OAM template: tile $02, attr $82, Y stepped every 3)
 C1/1284:	9DF08B  	STA $8BF0,X
 C1/1287:	A982    	LDA #$82
 C1/1289:	9DF18B  	STA $8BF1,X
@@ -2401,21 +2420,21 @@ C1/12BE:	C8      	INY
 C1/12BF:	C8      	INY 
 C1/12C0:	C09000  	CPY #$0090
 C1/12C3:	D0EA    	BNE $12AF
-C1/12C5:	A2FFFF  	LDX #$FFFF     (LDX $02!)
+C1/12C5:	A2FFFF  	LDX #$FFFF		(clear all four menu request slots (LDX $02!))
 C1/12C8:	8E0140  	STX $4001
 C1/12CB:	8E0340  	STX $4003
 C1/12CE:	7B      	TDC 
 C1/12CF:	AA      	TAX 
 C1/12D0:	3A      	DEC A
-C1/12D1:	9D2D60  	STA $602D,X
+C1/12D1:	9D2D60  	STA $602D,X		(clear the pending item-restore buffer)
 C1/12D4:	E8      	INX 
 C1/12D5:	E04000  	CPX #$0040
 C1/12D8:	D0F7    	BNE $12D1
 C1/12DA:	7B      	TDC 
 C1/12DB:	AA      	TAX 
 C1/12DC:	3A      	DEC A
-C1/12DD:	8DAD7B  	STA $7BAD
-C1/12E0:	9DAE2B  	STA $2BAE,X
+C1/12DD:	8DAD7B  	STA $7BAD		(no gauge row needs immediate refresh)
+C1/12E0:	9DAE2B  	STA $2BAE,X		(clear the $2BAE chosen-command records (4 x 8 bytes))
 C1/12E3:	E8      	INX 
 C1/12E4:	E02000  	CPX #$0020
 C1/12E7:	D0F7    	BNE $12E0
@@ -2431,12 +2450,12 @@ C1/12FC:	A27FA9  	LDX #$A97F
 C1/12FF:	A97E    	LDA #$7E
 C1/1301:	A0000C  	LDY #$0C00
 C1/1304:	202B1A  	JSR $1A2B
-C1/1307:	A94C    	LDA #$4C
+C1/1307:	A94C    	LDA #$4C		(fade-in: target brightness $4C ?, step $01)
 C1/1309:	8DF7E9  	STA $E9F7
 C1/130C:	9CF8E9  	STZ $E9F8
 C1/130F:	A901    	LDA #$01
 C1/1311:	8DF6E9  	STA $E9F6
-C1/1314:	A2FF21  	LDX #$21FF
+C1/1314:	A2FF21  	LDX #$21FF		(blank the five $6290 tilemap words)
 C1/1317:	8E9062  	STX $6290
 C1/131A:	8E9262  	STX $6292
 C1/131D:	8E9462  	STX $6294
@@ -2471,7 +2490,7 @@ C1/1361:	9DAD81  	STA $81AD,X
 C1/1364:	E8      	INX 
 C1/1365:	E08000  	CPX #$0080
 C1/1368:	D0F4    	BNE $135E
-C1/136A:	A901    	LDA #$01
+C1/136A:	A901    	LDA #$01		(window masks: enable BG1/BG2/sprites in window regs)
 C1/136C:	8D0D7B  	STA $7B0D
 C1/136F:	8D0E7B  	STA $7B0E
 C1/1372:	8D0F7B  	STA $7B0F
@@ -2481,8 +2500,8 @@ C1/137B:	A917    	LDA #$17
 C1/137D:	8F2C2100	STA $00212C
 C1/1381:	8F2E2100	STA $00212E
 C1/1385:	6446    	STZ $46
-C1/1387:	EE9761  	INC $6197
-C1/138A:	222491C1	JSL $C19124
+C1/1387:	EE9761  	INC $6197		(request gauge row sync)
+C1/138A:	222491C1	JSL $C19124		(init the battle dynamics script engine)
 C1/138E:	C220    	REP #$20
 C1/1390:	2258B2C2	JSL $C2B258
 C1/1394:	7B      	TDC 
@@ -2497,17 +2516,21 @@ C1/13A8:	10FA    	BPL $13A4
 C1/13AA:	A981    	LDA #$81
 C1/13AC:	8F004200	STA $004200
 C1/13B0:	58      	CLI 
-C1/13B1:	EE8C62  	INC $628C
+C1/13B1:	EE8C62  	INC $628C		(menu transition pending + suppress per-frame hook during intro)
 C1/13B4:	EEEFE9  	INC $E9EF
 C1/13B7:	7B      	TDC 
 C1/13B8:	AA      	TAX 
-C1/13B9:	BF3114C1	LDA $C11431,X
+C1/13B9:	BF3114C1	LDA $C11431,X		(stage the 9-byte battle-intro dynamics script (table at C1/1431))
 C1/13BD:	9D6E2D  	STA $2D6E,X      (Battle dyamics command?)
 C1/13C0:	E8      	INX 
 C1/13C1:	E00900  	CPX #$0009
 C1/13C4:	D0F3    	BNE $13B9
 C1/13C6:	68      	PLA 
 C1/13C7:	8D712D  	STA $2D71        (Battle Dynamics param. 3)
+
+Battle appearance effect: formation aux byte 1 low nibble selects the
+intro animation; parameter table at C1/1420 gates which effects
+temporarily hide the monsters ($61AB) during the entrance.
 C1/13CA:	ADAB61  	LDA $61AB
 C1/13CD:	48      	PHA 
 C1/13CE:	9CAB61  	STZ $61AB
@@ -3237,6 +3260,11 @@ C1/17FF:	60      	RTS
 C1/1800:	ADEDE9  	LDA $E9ED		(from only C1/0CF7)
 C1/1803:	D055    	BNE $185A
 C1/1805:	ADECE9  	LDA $E9EC
+
+Sound-command pump: send the queued 3-byte SPC command $E9E8-$E9EA
+to $2140-$2142 when $E9EC requests it; else service the one-shot
+sound-effect flags: $6281 (sound $2C), then the click/buzz flags
+$93-$97 (handlers at C1/17BD-17D8; $97 sends sound $89 directly).
 C1/1808:	F019    	BEQ $1823
 C1/180A:	ADEAE9  	LDA $E9EA
 C1/180D:	8F422100	STA $002142
@@ -3277,6 +3305,7 @@ C1/1854:	8F402100	STA $002140
 C1/1858:	6497    	STZ $97
 C1/185A:	60      	RTS
  
+Random number: next byte from the C0/FD00 table, index $72.
 C1/185B:	DA      	PHX 			(from C1/6F18, C1/7F28, C1/7F2F, C1/B3BC, C1/B444, C1/CF7F, C1/D3BA, C1/D727, C1/D784, C1/D912, C1/D96E, C1/D977, C1/DC9B, C1/DCA0, C1/F8ED, C1/F910)	
 C1/185C:	A572    	LDA $72		
 C1/185E:	AA      	TAX 
@@ -3285,6 +3314,7 @@ C1/1861:	BF00FDC0	LDA $C0FD00,X	(Random number table)
 C1/1865:	FA      	PLX 
 C1/1866:	60      	RTS
  
+8-bit x 16-bit multiply: $2C * $2E:34 -> $30:32 (shift-add).
 C1/1867:	6430    	STZ $30		(from C1/3AA6, C1/3AB0, C1/89A7)
 C1/1869:	6432    	STZ $32
 C1/186B:	6434    	STZ $34
@@ -3304,6 +3334,7 @@ C1/1885:	CA      	DEX
 C1/1886:	D0E8    	BNE $1870
 C1/1888:	60      	RTS
  
+16-bit x 16-bit multiply: $2C * $2E -> $30:32 (shift-add).
 C1/1889:	C220    	REP #$20
 C1/188B:	6430    	STZ $30
 C1/188D:	6432    	STZ $32
@@ -3327,6 +3358,8 @@ C1/18AD:	E220    	SEP #$20
 C1/18AF:	60      	RTS
  
 
+8-bit x 8-bit -> 16-bit multiply via shift-add: $2E * $2C -> $30
+(16-bit). Used heavily by the menus for row offsets.
 C1/18B0:	A600    	LDX $00		(from C1/6505, C1/652B, C1/6543, C1/656C, C1/65BA, C1/65D6, C1/65EE, C1/6616, C1/663E, C1/666B, C1/6693, C1/7232, C1/723E, C1/7A5D, C1/7A7F, C1/84B7)
 C1/18B2:	8630    	STX $30
 C1/18B4:	A20800  	LDX #$0008
@@ -3372,6 +3405,7 @@ C1/18F0:	7B      	TDC
 C1/18F1:	E220    	SEP #$20
 C1/18F3:	60      	RTS
  
+8-bit x 16-bit multiply: $22 * $24:2A -> $26:28 (shift-add).
 C1/18F4:	6426    	STZ $26
 C1/18F6:	6428    	STZ $28
 C1/18F8:	642A    	STZ $2A
@@ -3391,6 +3425,8 @@ C1/1912:	CA      	DEX
 C1/1913:	D0E8    	BNE $18FD
 C1/1915:	60      	RTS
  
+Fill VRAM words: three entries preload the fill word ($10 = $00EE /
+$02EE / $01EE tile), then write it Y times at VRAM address X.
 C1/1916:	DA      	PHX 
 C1/1917:	A2EE00  	LDX #$00EE
 C1/191A:	8610    	STX $10
@@ -3420,6 +3456,8 @@ C1/1942:	E220    	SEP #$20
 C1/1944:	AB      	PLB 
 C1/1945:	60      	RTS
  
+DMA a fixed word (at C1/196D = $0000) into VRAM Y for X bytes
+(fixed-source clear).
 C1/1946:	8B      	PHB 			(from C1/104C, C1/1055)
 C1/1947:	A900    	LDA #$00
 C1/1949:	48      	PHA 
@@ -3440,6 +3478,10 @@ C1/196B:	AB      	PLB
 C1/196C:	60      	RTS
  
 C1/196D:	0000    	BRK #$00
+
+NMI-side kicker for the generic VRAM upload mailbox at $8000-$800A:
+when $8000 is set, DMA $8006 bytes from $8003:$8001 to VRAM $8004,
+then clear the request.
 C1/196F:	AD0080  	LDA $8000
 C1/1972:	F014    	BEQ $1988
 C1/1974:	AE0680  	LDX $8006
@@ -3457,6 +3499,9 @@ long access into below
 C1/1989:	208D19  	JSR $198D      (from C2/A9F8)
 C1/198C:	6B      	RTL
  
+Queue a (possibly large) VRAM upload through the $8000 mailbox: A:X =
+source, Y = VRAM word address, $10 = byte count; splits into $0400-
+byte chunks, waiting a frame for the NMI to send each.
 C1/198D:	DA      	PHX 			(from C1/1989, C1/1F33, C1/24C5, C1/BEF4)
 C1/198E:	5A      	PHY 
 C1/198F:	48      	PHA 
@@ -3552,6 +3597,7 @@ C1/1A26:	A547    	LDA $47
 C1/1A28:	D0FC    	BNE $1A26
 C1/1A2A:	60      	RTS
  
+General VRAM DMA: A:X = source, Y = VRAM word address, $36 = bytes.
 C1/1A2B:	8B      	PHB 			(from C1/0500, C1/1982, C1/1CE0)
 C1/1A2C:	48      	PHA 
 C1/1A2D:	A900    	LDA #$00
@@ -3573,6 +3619,8 @@ C1/1A4F:	AB      	PLB
 C1/1A50:	60      	RTS
  
 
+Column VRAM DMA: 16 rows of $20 bytes, stepping VRAM by $20 words
+per row; A:X = source, $36 = starting VRAM address.
 C1/1A51:	8B      	PHB 
 C1/1A52:	48      	PHA 
 C1/1A53:	A900    	LDA #$00
@@ -3606,6 +3654,8 @@ C1/1A8D:	AB      	PLB
 C1/1A8E:	60      	RTS
  
 
+Replace any digit equal to the blank-tile base $68 with $FF (null)
+in the 3-digit buffer $69-$6B ?
 C1/1A8F:	A600    	LDX $00
 C1/1A91:	B569    	LDA $69,X
 C1/1A93:	38      	SEC 
@@ -3627,6 +3677,9 @@ C1/1AA3:	80 96 98 00	(10,000,000)
 		0A 00 00 00	(10)
 
 
+32-bit number -> 8 digit tiles: value in $10-$12, repeated-subtract
+by the C1/1AA3 power-of-ten table; digits + tile base $68 into
+$69-$70.
 C1/1ABF:	7B    	TDC
 C1/1AC0:	AA      	TAX 
 C1/1AC1:	9569    	STA $69,X
@@ -3687,6 +3740,8 @@ C1/1B28:	8512    	STA $12
 C1/1B2A:	60      	RTS
  
 
+16-bit number in X -> 4 digit tiles in $69-$6C (repeated subtract;
+tile base $68).
 C1/1B2B:	C220    	REP #$20		(from C1/693F, C1/6957, C1/A53F, C1/A663)
 C1/1B2D:	6422    	STZ $22	
 C1/1B2F:	6424    	STZ $24
@@ -3739,11 +3794,15 @@ C1/1B82:	856C    	STA $6C
 C1/1B84:	60      	RTS
  
 
+Battle joypad read (called from the NMI tail): stashes the open-menu
+character for the C3-side controller/config reader (C3/0003), then
+computes $6268 = newly-pressed buttons (edge detect vs $6266 held;
+d-pad nibbles auto-repeat, face/shoulder nibbles are edge-only).
 C1/1B85:	8B      	PHB 			(from only C1/0D3B)
 C1/1B86:	7B      	TDC 
 C1/1B87:	48      	PHA 
 C1/1B88:	AB      	PLB 
-C1/1B89:	AFCA627E	LDA $7E62CA
+C1/1B89:	AFCA627E	LDA $7E62CA		(slot of the open menu -> $0201 for the C3 routine)
 C1/1B8D:	2903    	AND #$03
 C1/1B8F:	8F010200	STA $000201
 C1/1B93:	220300C3	JSL $C30003
@@ -3754,7 +3813,7 @@ C1/1B9B:	A60A    	LDX $0A
 C1/1B9D:	8604    	STX $04
 C1/1B9F:	FA      	PLX 
 C1/1BA0:	860A    	STX $0A
-C1/1BA2:	8E6862  	STX $6268
+C1/1BA2:	8E6862  	STX $6268		($6268 = pressed-this-frame mask (word: BYSTudlr AXLR....))
 C1/1BA5:	C220    	REP #$20
 C1/1BA7:	AD6662  	LDA $6266
 C1/1BAA:	49FFFF  	EOR #$FFFF
@@ -3765,7 +3824,7 @@ C1/1BB6:	8A      	TXA
 C1/1BB7:	290F0F  	AND #$0F0F
 C1/1BBA:	0D6862  	ORA $6268
 C1/1BBD:	8D6862  	STA $6268
-C1/1BC0:	8E6662  	STX $6266
+C1/1BC0:	8E6662  	STX $6266		($6266 = held mask from last frame)
 C1/1BC3:	7B      	TDC 
 C1/1BC4:	E220    	SEP #$20
 C1/1BC6:	60      	RTS
@@ -3776,6 +3835,12 @@ C1/1BCB:	60      	RTS
 C1/1BCC:	226DDAC2	JSL $C2DA6D		(from C1/E496, C1/E4FD)
 C1/1BD0:	60      	RTS
  
+Load one character's battle sprite sheets into VRAM (character
+sprite id in A, $FF = empty slot): sheet base = id * 6, tiles
+decompressed/copied via C1/1CF5 / C1/1C7B to the four VRAM regions
+$1000/$1800/$4800/$6000 for this party slot; entry at C1/1BD1 for
+the "reload after morph/sprite change" case ($E9DE flag) and
+C1/1BDC for plain loads.
 C1/1BD1:	9CDFE9  	STZ $E9DF		(from C1/928A)
 C1/1BD4:	9CDEE9  	STZ $E9DE
 C1/1BD7:	EEDEE9  	INC $E9DE
@@ -3812,6 +3877,12 @@ C1/1C21:	ADDEE9  	LDA $E9DE
 C1/1C24:	D006    	BNE $1C2C
 C1/1C26:	A00064  	LDY #$6400
 C1/1C29:	207B1C  	JSR $1C7B
+
+Load one enemy's graphics set: E7-bank record gives size flag
+($6283 = 16x16-tile "large" flag ?) and index * 48 into the palette/
+sheet tables; palettes copied to the $7E60/$7EA0 (and $7C60/$7CA0
+backup) CGRAM staging rows, then the background palette DMA request
+(C1/03E2).
 C1/1C2C:	E8      	INX 
 C1/1C2D:	BF0000E7	LDA $E70000,X	(Loads Unknown )
 C1/1C31:	2980    	AND #$80
@@ -3852,6 +3923,10 @@ C1/1C75:	D0EF    	BNE $1C66
 C1/1C77:	20E203  	JSR $03E2
 C1/1C7A:	60      	RTS
  
+Load an enemy sprite sheet variant via the E7/1848 pointer table:
+decompress (C2/FF6D) to $7F:C400; in the morph-reload case ($E9DE)
+rebase each tile's palette byte and stream via the mailbox, else
+DMA/queue $0800 bytes to VRAM $65A0.
 C1/1C7B:	DA      	PHX 			(from C1/1C18, C1/1C29, C1/1DDE)
 C1/1C7C:	5A      	PHY 
 C1/1C7D:	BF0000E7	LDA $E70000,X	(Loads Unknown)
@@ -3912,6 +3987,11 @@ C1/1CF2:	7A      	PLY
 C1/1CF3:	FA      	PLX 
 C1/1CF4:	60      	RTS
  
+Load an enemy sprite sheet: E7/1650 3-byte pointer table; already-
+uncompressed sheets (bank >= $E7) copy straight from ROM, compressed
+ones decompress via C2/FF6D to $7F:C400; then DMA or mailbox-queue
+$1000/$2000 bytes to the VRAM address in Y (small/large per record
+bit 7).
 C1/1CF5:	DA      	PHX 			(from C1/1C00, C1/1C07, C1/1C11, C1/1DC9, C1/1DD0, C1/1DD7)
 C1/1CF6:	5A      	PHY 
 C1/1CF7:	BF0000E7	LDA $E70000,X	(Loads Unknown)
@@ -4004,6 +4084,11 @@ C1/1DAC:	7A      	PLY
 C1/1DAD:	FA      	PLX 
 C1/1DAE:	60      	RTS
  
+Load the battle background graphics: background id * 6 indexes the
+same E7-bank record set used for monsters; loads its four sheet
+slots to VRAM $1000/$1800/$4800 and $6000/$6400, then its palettes
+to the $7EA0 CGRAM staging row and clears the tile row at VRAM
+$57F0.
 C1/1DAF:	9CDCE9  	STZ $E9DC		(from only C1/1112)
 C1/1DB2:	9CDDE9  	STZ $E9DD
 C1/1DB5:	9CDEE9  	STZ $E9DE
@@ -4064,6 +4149,7 @@ C1/1E2A:	D0F9    	BNE $1E25
 C1/1E2C:	E220    	SEP #$20
 C1/1E2E:	60      	RTS
  
+Point $F6-$F8 at the $7F:C400 decompression buffer.
 C1/1E2F:	A900    	LDA #$00		(from C1/1C97)
 C1/1E31:	85F6    	STA $F6
 C1/1E33:	A9C4    	LDA #$C4
@@ -4072,6 +4158,8 @@ C1/1E37:	A97F    	LDA #$7F
 C1/1E39:	85F8    	STA $F8
 C1/1E3B:	60      	RTS
  
+Collect the six enemies' bit-0 flags ($80F4 = special palette flag ?)
+into a bitmask in $24.
 C1/1E3C:	7B      	TDC 			(from C1/1E7F)
 C1/1E3D:	AA      	TAX 
 C1/1E3E:	6424    	STZ $24
@@ -4095,6 +4183,8 @@ long access into below
 C1/1E55:	20591E  	JSR $1E59		(from C2/F93C)
 C1/1E58:	6B      	RTL
  
+Full monster display rebuild (from C2/F93C): gauge/tilemap reset
+($1FF6) then upload the monster tilemap ($1F26).
 C1/1E59:	20F61F  	JSR $1FF6		(from C1/1E55)
 C1/1E5C:	4C261F  	JMP $1F26
 
@@ -4104,6 +4194,14 @@ long access into below
 C1/1E5F:	20631E  	JSR $1E63		(from C2/F32B, C2/F881, C2/F8FA)
 C1/1E62:	6B      	RTL
  
+Rebuild the monster palettes + tilemap for the monster set in A
+(from C2 battle animation code): for each set bit, copy the
+monster's 32-byte palette from the $7F00 staging (index $80DB/2)
+into the $7E60 CGRAM row and assign palette slot numbers ($80FF);
+then build each monster's BG tilemap entries - map position
+$14/$16, size $10/$12, palette+priority byte $19 (pal slot + 3
+base, flip bits from $8100), tile layout from the C2/C474 pointer
+table - via the stamper at C1/1F83.
 C1/1E63:	48      	PHA 			(from C1/1E5F, C1/AF85)
 C1/1E64:	20000F  	JSR $0F00
 C1/1E67:	20F61F  	JSR $1FF6
@@ -4211,6 +4309,8 @@ long access into below
 C1/1F22:	20261F  	JSR $1F26		(from C2/F332, C2/F885, C2/F8FE)
 C1/1F25:	6B      	RTL
  
+Queue the monster BG tilemap ($7E:A97F, $04C0 bytes) to VRAM $0C00
+through the upload mailbox.
 C1/1F26:	A2C004  	LDX #$04C0		(from C1/1E5C, C1/1F22, C1/977F, C1/97EE, C1/9814, C1/AF8B, C1/B17F)
 C1/1F29:	8610    	STX $10
 C1/1F2B:	A27FA9  	LDX #$A97F
@@ -4218,6 +4318,9 @@ C1/1F2E:	A97E    	LDA #$7E
 C1/1F30:	A0000C  	LDY #$0C00
 C1/1F33:	4C8D19  	JMP $198D
 
+Clip a monster tilemap stamp to the 32x19 battle map: $14/$16 =
+map position, $10/$12 = width/height (clipped width -> $1E), and
+compute the destination pointer $1A into the $A97F tilemap buffer.
 C1/1F36:	DA      	PHX 			(from only C1/1F84)
 C1/1F37:	A510    	LDA $10
 C1/1F39:	851E    	STA $1E
@@ -4264,6 +4367,10 @@ C1/1F7F:	E220    	SEP #$20
 C1/1F81:	FA      	PLX 
 C1/1F82:	60      	RTS
  
+Stamp one monster's tiles into the BG tilemap buffer: sequential
+tile numbers from $18 rising by $10 per row; the mirrored variant
+(facing flipped via $80F3 vs formation default $617E) writes the
+row right-to-left with the H-flip bit ($4000) set.
 C1/1F83:	DA      	PHX 			(from only C1/1F17)
 C1/1F84:	20361F  	JSR $1F36
 C1/1F87:	BDF380  	LDA $80F3,X
@@ -4327,6 +4434,8 @@ C1/1FE9:	E220    	SEP #$20
 C1/1FEB:	FA      	PLX 
 C1/1FEC:	60      	RTS
  
+Clear the monster BG tilemap buffer rows ($A97F.. $ADA7 blocks) to
+blank tile $01EE (entry 1) or $02EE (entry 2).
 C1/1FED:	C220    	REP #$20		(from C1/940D, C1/B07E, C1/B096, C1/B19B)
 C1/1FEF:	7B      	TDC 
 C1/1FF0:	AA      	TAX 
@@ -4353,6 +4462,7 @@ C1/201C:	7B      	TDC
 C1/201D:	E220    	SEP #$20
 C1/201F:	60      	RTS
  
+Clear the two $1000-byte monster pixel work buffers at $AE3F/$BE3F.
 C1/2020:	7B      	TDC 			(from C1/23DA, C1/2499, C1/257C)
 C1/2021:	AA      	TAX 
 C1/2022:	9D3FAE  	STA $AE3F,X
