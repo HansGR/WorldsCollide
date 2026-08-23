@@ -95,7 +95,7 @@ Quick lookup procedures I re-derive every session. Most JSONs are in `claude_ref
 | **Which branch holds area X (ruin)** | `args.ruination_areas_used[area_name]` (populated from `ruin_map.compute_actual_areas_used()`, NOT raw `AreasUsed`). |
 | **ROM address ↔ SNES** | `ROM = SNES - 0xC00000`. SNES `$CEF100` → ROM `$0EF100`. Constant: `START_ADDRESS_SNES = 0xc00000`. (Top 10 #10.) |
 | **ROM data structure offset** | `claude_reference/ff3infov2.txt` — comprehensive FF6 ROM map (large; grep). |
-| **Battle engine routine (bank C2) / menu code (bank C3)** | `claude_reference/ff6_bank_c2.txt`, `ff6_bank_c3.txt` — full commented disassemblies (also `bankC0/C1/C5.txt`, `ff6_bank_d4/ee.txt`). Grep by SNES address (`C23F22`, `C3/0D2B`) or comment text. These made the MP-crit work possible — check them before theorizing about engine behavior. |
+| **Battle engine routine (bank C2) / menu code (bank C3)** | `claude_reference/ff6_bank_c2.txt`, `ff6_bank_c3.txt` — full commented disassemblies (also `bankC0/C1/C5.txt`, `ff6_bank_d4/ee.txt`). Grep by SNES address (`C23F22`, `C3/0D2B`) or comment text. These made the MP-crit work possible — check them before theorizing about engine behavior. `bankC1.txt` (battle UI/menus/animation) is being annotated by us in the same style — status, workflow and resume point in ARCHIVE.md "Bank C1 Annotation Project". |
 | **Chest contents at coords** | `claude_reference/chests_raw.json`. |
 | **Map event tile at coords** | `claude_reference/events_raw.json` (one record per event tile). |
 

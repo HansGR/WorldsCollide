@@ -67,6 +67,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 ### Lookups (see CLAUDE.md "How to Find X" cheat sheet first)
 - [Finding NPCs in Reference Data — Detailed Procedure](#finding-npcs-in-reference-data---detailed-procedure)
 - [Finding Map IDs by Name — Detailed Example](#finding-map-ids-by-name---detailed-example)
+- [Bank C1 Annotation Project — Status & Resume Notes (2026-08)](#bank-c1-annotation-project--status--resume-notes-2026-08)
 
 ---
 
@@ -1915,3 +1916,96 @@ every few frames, and diff healthy-vs-stuck histograms.  The stuck-unique
 hot PCs (here C1/18B0 multiplier + C1/7A52/7A6E) named the spinning
 routine directly after static reading had stalled.  Stack unwinding from
 S works for the first JSR/JSL frames but degrades past data pushes.
+
+---
+
+## Bank C1 Annotation Project — Status & Resume Notes (2026-08)
+
+`claude_reference/bankC1.txt` is being annotated in the style of the other
+bank decompiles (`ff6_bank_c2.txt`, `ff6_bank_c3.txt`).  **Paused, not
+finished** — the file is fully usable at every checkpoint, since each pass
+only adds prose.
+
+### Ground rules
+
+The applier **never** touches an instruction's address, byte or mnemonic
+fields; it only appends `(comment)` after the mnemonic column and inserts
+routine-header prose blocks between routines.  That invariant is
+machine-checked:
+
+```sh
+git show f2827ab:claude_reference/bankC1.txt > /tmp/bankC1_orig.txt
+python3 tools/annotate_c1.py check /tmp/bankC1_orig.txt   # 30568 lines unchanged
+```
+
+`f2827ab` is the commit that added the pristine (upstream) copy — that is
+the only place the un-annotated original survives, so always diff against
+it rather than trusting a local backup.
+
+### Workflow
+
+Per region: read a few hundred lines → write a directive file → apply →
+periodically `check` and commit.
+
+```sh
+python3 tools/annotate_c1.py apply <directives.txt>
+```
+
+Directive format (documented in the tool's docstring): `C <ADDR> <text>`
+adds a comment but skips a line that already has one, `C! <ADDR> <text>`
+overwrites (and merges any existing `(from ...)` caller note), and
+`H <ADDR>` followed by tab-indented lines inserts a header block before
+that address.  Headers are applied bottom-up so earlier insertions don't
+shift later ones.  The directive files themselves are scratch — once
+applied, `bankC1.txt` is the artifact, so they are not kept.
+
+### Coverage so far
+
+~1,640 lines of new prose across 30,568 instruction lines.  Depth by
+region (the menu/UI half got the deep pass; the animation half has only
+structural banners so far):
+
+| Region | Subsystem | Depth |
+|---|---|---|
+| C1/0000-1808 | boot, NMI, frame driver, math/DMA helpers | medium |
+| C1/1808-4504 | sprite/OAM builders, VRAM plumbing | light |
+| C1/4504-5529 | window draw states, list-row builders | light |
+| C1/5529-5D99 | menu program dispatcher, per-command programs | deep |
+| C1/5D99-66B1 | battle dialog engine, glyph renderer | deep |
+| C1/66B1-6B47 | window/list text interpreters | deep |
+| C1/6B47-7A4E | targeting engine | deep |
+| C1/7A4E-8D98 | command window, all list menus | deep |
+| C1/8D98-9196 | equipment window, dynamics entry | medium |
+| C1/9196-A000 | dynamics script engine, battle messages | medium |
+| C1/A000-FFFF | animation interpreter | light (banners only) |
+
+### Resume here
+
+Next region is **C1/A1EF onward** — the animation tile loader and its
+bit-depth expansion/transfer plumbing (through ~C1/A4B2), then the
+animation interpreter proper.  Planned depth for C1/A000-FFFF is
+structural banners plus entry-point headers, not line-by-line.
+
+Two useful things fell out of the passes already done and are recorded in
+their own sections: the command-menu cursor engine (see "Battle
+Command-Menu Cursor Engine & the All-Invalid Hardlock"), and the
+observation that the Magitek command layout at C1/7C5A/7C64 carries the
+same unbounded skip-invalid loops that `battle/command_menu_guard.py`
+bounds in the main window.
+
+### Known disassembly defects found (annotated in place)
+
+The upstream disassembler lost byte alignment in a few spots; each is
+flagged with a header explaining the real instruction sequence rather
+than being silently trusted:
+
+- **C1/5CF7** — menu program X = 18; the real code mirrors C1/5C91.
+- **C1/78A1** — two bytes shown as `BIT $AA7B,X` are `TDC / TAX`.
+- **C1/957C**, **C1/9609** — split CPX/BNE pairs shown as `BRK #$D0`.
+- **C1/5EF8**, **C1/8280**, **C1/A013** — data tables shown as code.
+- **C1/969A** — `LDX #$5800` shown byte-swapped.
+
+One genuine **vanilla bug** was also found and annotated: **C1/6B0F**
+reads `E6/F675`, a misaligned address inside the spell-name table, where
+the parallel list path at C1/65CC correctly uses the Esper name table
+`E6/F6E1`.

@@ -13,6 +13,15 @@ Directive file format (one directive per stanza, blank-line separated):
 The applier never alters the address / byte / mnemonic fields; it appends
 comments after the mnemonic column in the file's own style.  Every ADDR must
 match exactly one 'C1/ADDR:' line or the run aborts.
+
+That invariant is machine-checked against the pristine upstream copy, which
+survives only in git history:
+
+  git show f2827ab:claude_reference/bankC1.txt > /tmp/bankC1_orig.txt
+  python3 tools/annotate_c1.py check /tmp/bankC1_orig.txt
+
+Project status, coverage by region and the resume point live in ARCHIVE.md
+under "Bank C1 Annotation Project".
 """
 import re
 import sys
