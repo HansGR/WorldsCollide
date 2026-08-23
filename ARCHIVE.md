@@ -1898,11 +1898,19 @@ hard-locks: menu drawn, hand never placed, ATB stalled.  Fix:
   rests on (C1/7CC8 → per-command jump table at C1/7CE9).  Vanilla's
   invariant "cursor only ever rests on a valid row" is what makes that
   safe — anything that relaxes the cursor rules must add the check.
-- The guard: bounded scans (one lap; nothing valid → park hand on row 0)
-  + guarded confirms (re-check C1/7A4E, swallow invalid presses; $96/$2F41
-  advance only on real confirms).  An earlier version un-grayed a slot
-  instead — REJECTED by design: Imp must actually forbid imp-illegal
-  commands.  The parked hand keeps the real options live: Row/Def, L+R
+- The guard: bounded scans (one full lap of all four rows, exactly what
+  vanilla's loop walks; nothing valid → restore the entry row so the hand
+  rests motionless on the remembered row) + guarded confirms (re-check
+  C1/7A4E, swallow invalid presses; $96/$2F41 advance only on real
+  confirms).  Two earlier versions were rejected/revised: un-graying a
+  slot (REJECTED by design — Imp must actually forbid imp-illegal
+  commands), and a 3-try scan that parked on row 0 on failure (revised
+  2026-08: when the cursor's own row was the only valid one, a press
+  parked the hand on the wrong row for a frame and the next frame's
+  settle walked it back — visible per-frame hopping, since the hand is
+  drawn once per frame from the FINAL cursor memory at C1/7BB2/7C23; the
+  full-lap scan restores vanilla-identical behavior whenever any row is
+  valid).  The resting hand keeps the real options live: Row/Def, L+R
   run, Y next-character.
 - Menu rebuild trigger: setting Imp via WRAM ($3EE4,X bit 5) alone does
   NOT rebuild the menu — the engine rebuilds when **$3204,X bit 3**
