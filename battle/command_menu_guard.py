@@ -7,15 +7,15 @@ import instruction.asm as asm
 # the imp-usable bit in the CF/FE00 command info table).  The per-turn
 # menu routine C2/527D then grays all four slots, and the C1 command
 # window's cursor engine hangs: its row-validity check (C1/7A4E: bit 7 of
-# the slot's second byte at the menu block) is consumed by three UNBOUNDED
+# the slot's second byte at the menu block) is consumed by three unbounded
 # skip-invalid loops - the initial settle (C1/7AEF) and the second
 # layout's up/down navigation (C1/7BE9 dec, C1/7BF3 inc) - which spin
 # forever when zero rows are valid.  Vanilla can never produce that state
-# because Fight and Item are ever-present and imp-legal.  Symptoms: menu
+# because Fight and Item are always available.  Symptoms: menu
 # drawn, hand cursor never placed, ATB stalled, battle hard-locked.
 #
-# Fix, preserving the gameplay rule that an Imped character may NOT use
-# imp-illegal commands (per Hans: no un-graying):
+# Fix, preserving the gameplay rule that an Imped character may not use
+# imp-illegal commands:
 # 1. bound each loop: try the remaining rows once around; if none is
 #    valid, park the cursor on row 0 and continue.  The hand is drawn on
 #    the parked row and the per-frame input handling runs again, so the
