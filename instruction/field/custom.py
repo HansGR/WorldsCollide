@@ -534,3 +534,49 @@ class LongCall(_Instruction):
         LongCall.__init__ = (lambda self, function_address, arg = 0 :
                              super().__init__(opcode, function_address.to_bytes(3, "little"), arg))
         self.__init__(function_address, arg)
+
+ADD_CHECK_ITEM_OPCODE = 0x66   # unused vanilla field opcode
+_add_check_item_handler = None
+
+def add_check_item_opcode():
+    """Write the race item-decode handler once and return its opcode.
+
+    The handler reads a one-byte index (the command operand at $eb) into
+    the relocated + masked item-reward table (obfuscation/rewards.py),
+    decodes it, hands the id to the vanilla add-item routine at C0/ACFC,
+    and leaves the id at direct-page $1A so a single shared "Received the
+    <item>!" dialog (field message code $1A) renders the real name at
+    runtime.  Nothing in the script or a fixed rom address names the
+    reward at its check.
+    """
+    global _add_check_item_handler
+    if _add_check_item_handler is None:
+        from obfuscation import claim
+        from obfuscation.claim import snes
+
+        layout = claim.layout(args)
+        table = snes(layout["item_rewards"])
+        pad = snes(layout["item_rewards_pad"])
+
+        src = [
+            asm.SEP(0x10),                 # 8-bit X for the byte index
+            asm.LDX(0xeb, asm.DIR),        # X = reward index (command operand)
+            asm.LDA(table, asm.LNG_X),     # masked item id
+            asm.EOR(pad, asm.LNG_X),       # decoded item id (8-bit A)
+            asm.STA(0x1a, asm.DIR),        # DP $1A: add routine + <item> dialog
+            asm.JSR(0xacfc, asm.ABS),      # vanilla add-to-inventory (uses $1A)
+            asm.LDA(0x02, asm.IMM8),       # command size (opcode + index)
+            asm.JMP(0x9b5c, asm.ABS),      # next command
+        ]
+        space = Write(Bank.C0, src, "race: add check item (decode + grant)")
+        _set_opcode_address(ADD_CHECK_ITEM_OPCODE, space.start_address)
+        _add_check_item_handler = space.start_address
+    return ADD_CHECK_ITEM_OPCODE
+
+class AddCheckItem(_Instruction):
+    """Drop-in for AddItem in race builds (see add_check_item_opcode)."""
+    def __init__(self, index):
+        super().__init__(add_check_item_opcode(), index)
+
+    def __str__(self):
+        return super().__str__(self.args[0])

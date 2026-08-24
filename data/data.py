@@ -25,6 +25,12 @@ class Data:
         self.args = args
         self.dialogs = dialogs
 
+        if args.race:
+            # start this build's item-reward collection (events register
+            # into it before Data.write lays down the table)
+            from obfuscation import rewards
+            rewards.reset()
+
         self.spells = spells.Spells(rom, args)
         self.spells.mod()
 
@@ -115,7 +121,9 @@ class Data:
         self.title_graphics.write()
 
         if self.args.race:
-            # L2: every relocated table above has written its plaintext
-            # into the obfuscation claim; mask them all in one pass
-            from obfuscation import mask
+            # L3: lay the collected item-reward table into the claim, then
+            # L2: mask every relocated table (incl. the reward table) in one
+            # pass.  the reward table must be written before masking.
+            from obfuscation import rewards, mask
+            rewards.write_table(self.rom, self.args)
             mask.apply_all(self.args, self.rom)

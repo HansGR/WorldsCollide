@@ -320,6 +320,16 @@ class Items():
         for item_id in self.GOOD:
             self.add_receive_dialog(item_id)
 
+        # race builds: one shared dialog that names the item at runtime via
+        # the <item> code, so no per-item "Received X!" text sits in the rom
+        # next to a check (see obfuscation/rewards.py).  the AddCheckItem
+        # opcode leaves the granted id at direct-page $1A, which <item> reads.
+        self.race_receive_dialog = None
+        if self.args.race:
+            self.race_receive_dialog = self.available_dialogs.pop()
+            self.dialogs.set_text(self.race_receive_dialog,
+                                  '<line><     >Received the <item>!<end>')
+
         self.moogle_starting_equipment()
 
     def write(self):
@@ -402,6 +412,8 @@ class Items():
         return random.choice(self.GOOD)
 
     def get_receive_dialog(self, item):
+        if self.race_receive_dialog is not None:
+            return self.race_receive_dialog
         return self.receive_dialogs[item]
 
     def add_receive_dialog(self, item_id):

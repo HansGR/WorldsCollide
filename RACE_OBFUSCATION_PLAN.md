@@ -233,14 +233,52 @@ Implementation notes (`obfuscation/mask.py`, `obfuscation/relocate.py`):
   `tools/verify_race_build.py` implements exactly this attack as its
   verification path.
 
-### L3 — Check-reward indirection
+### L3 — Check-reward indirection — **items done (Phase 3a)**
 
 The biggest prize for a cheater is "which check gives what."  Today the
 information is operand bytes inside event scripts — greppable by opcode
-pattern.  Plan: route reward grants through a **single custom opcode**
-carrying only an opaque index; the actual reward lives in one encoded
-table (masked as in L2) and is decoded at grant time by one shared
-routine.  Phase it: items-at-checks first, then characters/espers.
+pattern.  Route reward grants through a **single custom opcode** carrying
+only an opaque index; the actual reward lives in one encoded table
+(masked as in L2) and is decoded at grant time by one shared routine.
+Phase it: items-at-checks first, then characters/espers.
+
+Item-at-check grants, implemented (`obfuscation/rewards.py`,
+`instruction/field/custom.py` AddCheckItem):
+
+- **Two leak channels, both closed together** — closing only one is
+  pointless, since the receive dialog sits in the script right next to
+  the grant and names the item just as directly:
+  1. *The grant opcode.*  Vanilla event command `$80 AddItem <id>` puts
+     the item id in the script at every check.  In race builds the
+     `AddItem`/`AddItems` factories instead emit a custom field opcode
+     (`0x66`) carrying a one-byte **index** into a per-seed reward table
+     in the claim, masked exactly like the L1/L2 tables.  The handler
+     (bank C0) reads the index, `LDA table,X : EOR pad,X` to decode the
+     id, stores it at direct-page `$1A`, and falls through to the
+     vanilla add-inventory routine at `C0/ACFC` — a faithful clone of
+     `$80` with a decode prepended.
+  2. *The receive dialog.*  `items.get_receive_dialog()` returns, in
+     race builds, a single shared "Received the `<item>`!" dialog.  The
+     `<item>` field message code renders the name of the item at DP
+     `$1A` — the byte the grant just set — so the player sees the right
+     name with no visible change, and no per-item "Received X!" text
+     sits in the rom next to a check.
+- **No decoy needed**: there is no vanilla reward-table address to leave
+  a decoy at; the index reveals nothing without decoding the masked
+  table, and the index→check order is source-derivable but the
+  index→item mapping is per-seed and masked (the L2/T3 bar again).
+- **Non-race output stays byte-identical**; `verify_race_build.py` gained
+  an L3 check (handler shape, table in claim, masked, decodes to valid
+  ids).  A race build boots to player control.
+- **Residual, tracked for Phase 3a follow-up**: a few bespoke event
+  dialogs bake the item name into their own text rather than going
+  through `get_receive_dialog` — the Mobliz injured-lad and Lone Wolf
+  "Got X!" receive messages (genuine leaks, to be routed through the
+  `<item>` mechanism next), and the Narshe-WOR reward *choice* menus
+  ("Make it X"), which show the reward to every legit player anyway and
+  so leak nothing a cheater couldn't see in normal play.
+- **Next**: characters/espers at checks (esper receive dialogs already
+  name the magicite; same `<item>`-style treatment applies).
 
 ### L4 — Per-seed allocation shuffle
 
@@ -376,5 +414,5 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
-| 3 | L3 reward indirection (items first, then characters/espers) | next |
+| 3 | L3 reward indirection (items first, then characters/espers) | items **done** (Phase 3a); bespoke receive-dialog residuals + characters/espers next |
 | 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |

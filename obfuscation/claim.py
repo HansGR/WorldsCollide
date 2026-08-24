@@ -40,6 +40,10 @@ TABLE_SIZES = {
     "esper_data":  0x200,  # 0x186e00-0x186fff (spells/rates/bonus)
     "enemy_items": 0x600,  # 0xf3000-0xf35ff (steals/drops)
     "coliseum":    0x400,  # 0x1fb600-0x1fb9ff (matches)
+    # L3 item-reward table: new (no vanilla address), one byte per check
+    # item grant.  ~90 grants today; 0x100 leaves headroom.  Written and
+    # masked like the others; the AddCheckItem opcode reads it by index.
+    "item_rewards": 0x100,
 }
 
 _layout = None

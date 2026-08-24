@@ -264,7 +264,36 @@ def main():
         check(sli[shim] == 0xbf and sli[shim + 4] == 0x5f and sli[shim + 8] == 0x6b,
               f"sli race: shim at 0x{shim:06x} is not LDA/EOR/RTL")
 
+    # 7. L3 item-reward indirection: the control build still emits the
+    #    plaintext AddItem opcode ($80); the race build routes grants
+    #    through the AddCheckItem opcode ($66) whose handler decodes a
+    #    masked reward table into valid item ids
+    FIELD_OPCODE_TABLE = 0x098c4
+    def field_handler(rom, opcode):
+        off = FIELD_OPCODE_TABLE + (opcode - 0x35) * 2
+        return int.from_bytes(rom[off:off + 2], "little")
+    # opcode 0x66 is unused in vanilla -> shares the stub; in a race build
+    # it points at the decode handler (LDA long,X / EOR long,X)
+    stub = field_handler(control, 0x66)
+    check(field_handler(control, 0x66) == stub, "control: 0x66 not the unused stub")
+    handler = field_handler(race, 0x66)
+    hb = race[handler:handler + 0x18]
+    i = hb.index(0xbf)
+    check(hb[i] == 0xbf and hb[i + 4] == 0x5f,
+          "race: AddCheckItem handler is not LDA long,X / EOR long,X")
+    tbase = rom_offset(int.from_bytes(hb[i + 1:i + 4], "little"))
+    pbase = rom_offset(int.from_bytes(hb[i + 5:i + 8], "little"))
+    for what, at in (("table", tbase), ("pad", pbase)):
+        check(CLAIM_START <= at <= CLAIM_END,
+              f"race: reward {what} outside the claim: 0x{at:06x}")
+    rewards = bytes(race[tbase + k] ^ race[pbase + k] for k in range(0x100))
+    used = [b for b in rewards if b != 0xff]
+    check(len(used) > 0, "race: reward table is empty")
+    check(all(b < 256 for b in used), "race: reward table holds an invalid item id")
+    check(bytes(race[tbase:tbase + 0x100]) != rewards, "race: reward table is not masked")
+
     print(f"all {checks} checks passed")
+    print(f"item-reward table: {len(used)} check grants, masked+relocated in the claim")
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})
     print("pad bases:", {t: hex(p) for t, p in pads.items()})
     print(f"chest records: {len(real_flat)}, chest contents differing from decoy: "

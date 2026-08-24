@@ -128,12 +128,30 @@ class _AddItem(_Instruction):
     def __str__(self):
         return super().__str__(f"'{self.item_name}'")
 
+def _resolve_item_id(item):
+    if isinstance(item, str):
+        from data.item_names import name_id
+        return name_id[item]
+    return item
+
+def _add_check_item(item):
+    # race builds: hide the item id behind an opaque reward-table index
+    # (see obfuscation/rewards.py) - the script carries no item id
+    from obfuscation import rewards
+    import instruction.field.custom as custom
+    index = rewards.register(_resolve_item_id(item))
+    return custom.AddCheckItem(index)
+
 def AddItem(item, sound_effect = True):
-    AddItem = type("AddItem", (_AddItem,), {})
-    if sound_effect:
-        return AddItem(item), PlaySoundEffect(141)
+    import args
+    if args.race:
+        instruction = _add_check_item(item)
     else:
-        return AddItem(item)
+        AddItem = type("AddItem", (_AddItem,), {})
+        instruction = AddItem(item)
+    if sound_effect:
+        return instruction, PlaySoundEffect(141)
+    return instruction
 
 class _AddItems(_Instruction):
     def __init__(self, item, count):
@@ -145,7 +163,19 @@ class _AddItems(_Instruction):
             from data.item_names import id_name
             self.item = item
             self.item_name = id_name[item]
-        if count == 1:
+        import args
+        if args.race:
+            # hide the item behind a reward-table index, inside the same
+            # 0xB0/0xB1 repeat wrapper (see obfuscation/rewards.py)
+            from obfuscation import rewards
+            import instruction.field.custom as custom
+            index = rewards.register(self.item)
+            opcode = custom.add_check_item_opcode()
+            if count == 1:
+                super().__init__(opcode, index)
+            else:
+                super().__init__(0xB0, count, opcode, index, 0xB1)
+        elif count == 1:
             super().__init__(0x80, self.item)
         else:
             super().__init__(0xB0, count, 0x80, self.item, 0xB1)
