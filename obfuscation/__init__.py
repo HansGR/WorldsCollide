@@ -1,0 +1,70 @@
+"""Race ROM obfuscation - keying and RNG plumbing (Phase 0).
+
+Everything the obfuscation layers do is keyed by a nonce derived from the
+seed and the canonical flag string.  Race flags are public knowledge; the
+seed is the only secret, so the nonce is secret exactly as long as the
+seed is (the hub reveals it after the race, at which point anyone can
+regenerate the byte-identical ROM and audit it).
+
+Two rules this module exists to enforce:
+
+1. Obfuscation randomness NEVER touches the global `random` stream.  The
+   same seed+flags must produce the same gameplay whether or not `-race`
+   is set; every consumer takes a dedicated `random.Random` from here.
+2. Every consumer names a `purpose` (e.g. "relocate/chests", "mask/shops",
+   "decoy/chests").  Purposes are domain-separated hashes, so adding or
+   reordering consumers never shifts another consumer's stream - the same
+   stability discipline the main generator gets from seeding once.
+
+The generator version is part of the key material, so the concrete layout
+and keystreams rotate on every release for free.
+"""
+
+import hashlib
+import random
+
+_DOMAIN = "wc-race-obfuscation-v1"
+
+
+def nonce_bytes(seed, seed_rng_flags, version, purpose=""):
+    """32-byte nonce for one obfuscation purpose.
+
+    seed: the (secret) seed string.
+    seed_rng_flags: args.seed_rng_flags - the canonical flag string used
+        to seed the gameplay rng (public).
+    version: generator version string.
+    purpose: consumer name for domain separation.
+    """
+    digest = hashlib.sha256()
+    for field in (_DOMAIN, version, purpose, seed, seed_rng_flags):
+        raw = field.encode()
+        # length-prefix each field so no (seed, flags, ...) tuple can ever
+        # collide with a different tuple under concatenation
+        digest.update(len(raw).to_bytes(4, "big"))
+        digest.update(raw)
+    return digest.digest()
+
+
+def rng(seed, seed_rng_flags, version, purpose=""):
+    """Dedicated random.Random for one obfuscation purpose."""
+    value = int.from_bytes(nonce_bytes(seed, seed_rng_flags, version, purpose), "big")
+    return random.Random(value)
+
+
+def rng_for_args(args, purpose=""):
+    """Dedicated rng keyed from a parsed Arguments/args module.
+
+    Callable any time after Arguments resolves the seed (i.e. anywhere in
+    the normal Data/Event/Menu flow).
+    """
+    import version
+    return rng(args.seed, args.seed_rng_flags, version.__version__, purpose)
+
+
+def decoy_rng_for_args(args, purpose=""):
+    """Dedicated rng for generating decoy data.
+
+    Domain-separated from the real streams so decoy contents can never
+    correlate with, or leak, the real layout.
+    """
+    return rng_for_args(args, "decoy/" + purpose)
