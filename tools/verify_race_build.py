@@ -46,10 +46,12 @@ def check(condition, message):
     checks += 1
 
 
-def build(rom_in, rom_out, race):
+def build(rom_in, rom_out, race, extra=None):
     args = [sys.executable, "wc.py", "-i", rom_in, "-o", rom_out] + FLAGS
     if race:
         args.append("-race")
+    if extra:
+        args.extend(extra)
     result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode != 0 or not os.path.exists(rom_out):
         raise SystemExit(f"build failed:\n{result.stdout}\n{result.stderr}")
@@ -154,6 +156,19 @@ def main():
     differing = sum(1 for a, b in zip(real_shops, decoy_shops) if a[1:] != b[1:])
     check(differing > len(real_shops) // 4,
           f"race: shop decoy too similar to real data ({differing} differ)")
+
+    # 6. limited inventory (-sli) rewrites the C3/B9AF item load itself
+    #    (menus/buy.py hook_load_item), so the race build must patch the
+    #    remaining vanilla shop readers and leave that site to the hook
+    sli = build(args.rom, f"{tmp}/sli.smc", race=True, extra=["-sli"])
+    check(sli[0x3b9af] == 0x22,
+          "sli race: C3/B9AF is not the limited-inventory JSL hook")
+    for offset, vanilla, table in SHOP_SITES:
+        if offset == 0x3b9b0:
+            continue
+        base = rom_offset(operand(sli, offset) - (vanilla - VANILLA_BASES[table]))
+        check(CLAIM_START <= base <= CLAIM_END,
+              f"sli race: shop operand at 0x{offset:06x} not relocated")
 
     print(f"all {checks} checks passed")
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})

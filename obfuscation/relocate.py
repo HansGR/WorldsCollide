@@ -55,11 +55,29 @@ VANILLA_BASES = {
 }
 
 
-def _patch_sites(sites, layout):
+def shop_data_address(args):
+    """Effective 24-bit SNES address of the shop data table.
+
+    WC's own shop-menu code (the empty-shop guard and the limited
+    inventory compaction routines) is written fresh each build with the
+    table's address compiled in.  Those readers must follow the real
+    table when a race build relocates it; everywhere else they read the
+    vanilla address.  The static vanilla readers (SHOP_SITES) are
+    patched separately by patch_shop_readers().
+    """
+    if args.race:
+        from obfuscation import claim
+        return claim.snes(claim.layout(args)["shop_data"])
+    return VANILLA_SHOP_DATA
+
+
+def _patch_sites(sites, layout, skip=()):
     from memory.space import Reserve, Read
     from obfuscation.claim import snes
 
     for operand_offset, vanilla_operand, table in sites:
+        if operand_offset in skip:
+            continue
         current = int.from_bytes(bytes(Read(operand_offset, operand_offset + 2)), "little")
         assert current == vanilla_operand, (
             f"race reader patch at 0x{operand_offset:06x}: expected vanilla "
@@ -76,5 +94,11 @@ def patch_chest_readers(layout):
     _patch_sites(CHEST_SITES, layout)
 
 
-def patch_shop_readers(layout):
-    _patch_sites(SHOP_SITES, layout)
+def patch_shop_readers(layout, skip=()):
+    """Patch the vanilla shop readers to the relocated table.
+
+    skip: operand offsets to leave alone because another feature already
+    replaced the instruction with code that reads the effective address
+    (e.g. the limited-inventory item-load hook at C3/B9AF).
+    """
+    _patch_sites(SHOP_SITES, layout, skip)

@@ -90,7 +90,7 @@ address parameterized (L1) and its value path shimmed (L2).
 | Data | ROM location today | Vanilla readers (SNES) | WC-side readers/writers | Spoiler value |
 |---|---|---|---|---|
 | Chest contents | in place: ptrs `0x2D82F4`, records `0x2D8634` | C0/15D7 (map-load pass over the map's records, from C0/BF6A); C0/4BD4 (chest interaction: position match + contents/type read) | `data/chests.py`, `data/chests_asm.py` | High |
-| Shop stock | in place: `0x47AC0` | C3/B9AF (item), C3/BA32 (flags), C3/BFF3 (flags) | `data/shops.py` | High |
+| Shop stock | in place: `0x47AC0` | C3/B9AF (item), C3/BA32 (flags), C3/BFF3 (flags) | `data/shops.py`; WC also writes fresh code each build that reads the table (empty-shop guard, `-sli` compaction in `data/shops.py` + `menus/buy.py`) — these take `obfuscation.relocate.shop_data_address()` so they follow the real table, and `-sli`'s hook replaces the C3/B9AF site outright (skipped by the reader patch) | High |
 | Esper spell teachings | in place: `0x186E00` | C3/59F6, C3/59FD, C3/5A2B, C3/5B7C, C3/5B8A (menu + level-up screens); one C2 site (learn-rate at battle end) | `data/espers.py` | Medium |
 | Enemy steals/drops | in place: `0xF3000` | C2 battle-init steal-slot load (→ `$3308`); C2 battle-end drop roll (`$CF3002/3`) | `data/enemies.py` | Medium |
 | Coliseum matches | in place: `0x1FB600` | C3/B237 (opponent/prize display); battle-setup reader to confirm in Phase 1 | `data/coliseum.py` | Medium-High |
