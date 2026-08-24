@@ -113,3 +113,9 @@ class Data:
         self.shops.write()
         self.coliseum.write()
         self.title_graphics.write()
+
+        if self.args.race:
+            # L2: every relocated table above has written its plaintext
+            # into the obfuscation claim; mask them all in one pass
+            from obfuscation import mask
+            mask.apply_all(self.args, self.rom)

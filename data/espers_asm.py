@@ -8,10 +8,11 @@ def mastered_mod(espers):
     #   2. Using F0 freespace
     #   3. Displaced code is different to deconflict with equipable_mod
     from data.text.text2 import text_value
-    from obfuscation.relocate import table_address
+    from obfuscation import relocate
 
-    # race builds relocate the esper table; read wherever it really is
-    esper_data = table_address(espers.args, "esper_data")
+    # race builds relocate and mask the esper table; this fragment
+    # reads (and decodes) wherever it really is
+    read_esper_spell = relocate.read_asm(espers.args, "esper_data", 1)
     space = Reserve(0x487b0, 0x487be, "add star icon for text2 to unused space")
     space.write(
         0x18,0x00,0x3C,0x18,0xFF,0x18,0xFF,0x7E,0x7E,0x3C,0xFF,0x7E,0xFF,0x66 # raw hex for star icon
@@ -70,7 +71,7 @@ def mastered_mod(espers):
         asm.A8(),
         "LOOP",
         asm.TDC(), # clear A
-        asm.LDA(esper_data + 1, asm.LNG_X), # esper spell
+        *read_esper_spell, # esper spell
         asm.CMP(0xff, asm.IMM8), # no spell?
         asm.BEQ("NO_ESPER"), # exit if no esper
         asm.STA(0xfc, asm.DIR), # save spell ID

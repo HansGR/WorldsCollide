@@ -192,7 +192,7 @@ the fake data has exactly the right format and plausible distribution.
   disabled.  Full operand-following yields real data until L2 masking
   lands.
 
-### L2 — Mask the relocated tables
+### L2 — Mask the relocated tables — **done (Phase 2b)**
 
 Store relocated tables XORed with a position-dependent keystream
 (from the per-purpose stream); each reader shim decodes on access —
@@ -201,6 +201,37 @@ where the game is already doing menu/dialog work.
 
 - Kills: T2 scripts that find the moved tables by pointer-following but
   assume plaintext; forces a faithful decoder reimplementation.
+
+Implementation notes (`obfuscation/mask.py`, `obfuscation/relocate.py`):
+
+- Every relocated table gets an equal-size **pad** (`mask.pad_bytes`,
+  domain-separated per table), placed independently inside the claim by
+  the layout shuffle; the table is stored XORed with it.  One masking
+  pass at the end of `Data.write()` transforms all six tables.
+- All 28 vanilla reader sites are the 4-byte `LDA long,X`, so each is
+  replaced by a same-size `JSL` to a shared per-(table, delta) shim:
+  `LDA table+d,X : EOR pad+d,X : RTL` — X preserved, either accumulator
+  width works, and the final EOR leaves exactly the N/Z flags a
+  plaintext load would have set.  Shims live in bank F0.
+- WC's own dynamically written readers decode inline via
+  `relocate.read_asm()` (LDA+EOR), or `read_call_asm()` (space-neutral
+  4-byte JSL) where the code sits in a fixed-size region (the `-crm`
+  coliseum menu).
+- **Chest pointer sentinel**: the map-load reader fetches one entry
+  past the pointer table for the final map's end bound (contiguous
+  data in vanilla, arbitrary claim neighbors after relocation).  The
+  relocated table carries two extra bytes that decode to the final
+  map's start bound, i.e. "no chests" — closing a latent Phase 1 edge
+  case at the same time.
+- Decoys at the vanilla addresses **stay plaintext by design** — their
+  job is to be read.
+- The pad is not cryptography and is not meant to be: an attacker who
+  follows the JSL to the shim, extracts both operands, and XORs the
+  two regions has decoded the table — but that attacker has written a
+  faithful reimplementation of the game's reader, which is the L2
+  bar.  Layout and keystream rotate per seed and per release.
+  `tools/verify_race_build.py` implements exactly this attack as its
+  verification path.
 
 ### L3 — Check-reward indirection
 
@@ -291,6 +322,6 @@ for free.
 |---|---|---|
 | 0 | Reader inventory, tool census, nonce/RNG plumbing, `-race` skeleton, seed-in-menu fix, space budget | **done** (this branch) |
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
-| 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | L1 extension **done**; L2 masking next |
+| 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 3 | L3 reward indirection (items first, then characters/espers) | |
 | 4 | L4 allocation shuffle; red-team exercise; community messaging | |

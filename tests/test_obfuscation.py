@@ -68,5 +68,26 @@ class TestDecoy(unittest.TestCase):
                             [decoy.randrange(256) for _ in range(16)])
 
 
+class TestMask(unittest.TestCase):
+    class FakeArgs:
+        seed = "seed123"
+        seed_rng_flags = "-cg"
+
+    def test_pad_deterministic(self):
+        from obfuscation import mask
+        self.assertEqual(mask.pad_bytes(self.FakeArgs, "shop_data", 64),
+                         mask.pad_bytes(self.FakeArgs, "shop_data", 64))
+
+    def test_pads_separated_by_table(self):
+        from obfuscation import mask
+        self.assertNotEqual(mask.pad_bytes(self.FakeArgs, "shop_data", 64),
+                            mask.pad_bytes(self.FakeArgs, "chest_data", 64))
+
+    def test_pad_not_degenerate(self):
+        from obfuscation import mask
+        pad = mask.pad_bytes(self.FakeArgs, "shop_data", 64)
+        self.assertTrue(any(pad))  # the zero pad would leave plaintext
+
+
 if __name__ == "__main__":
     unittest.main()

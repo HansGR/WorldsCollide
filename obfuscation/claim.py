@@ -23,11 +23,18 @@ not fixed across race ROMs.
 import obfuscation
 
 CLAIM_START = 0x340000   # ROM offset (SNES $F4:0000)
-CLAIM_END   = 0x343fff   # 16 KB claimed; Phase 1 uses ~4 KB
+CLAIM_END   = 0x347fff   # 32 KB claimed; L1 tables + L2 pads use ~17 KB
 
-# name -> table size in bytes (vanilla sizes; these do not change)
+# name -> table size in bytes (vanilla sizes; these do not change).
+# every table also gets an equal-size "<name>_pad" region holding the
+# L2 xor keystream, placed independently inside the claim (see mask.py)
 TABLE_SIZES = {
-    "chest_ptrs":  0x340,  # 0x2d82f4-0x2d8633
+    "chest_ptrs":  0x342,  # 0x2d82f4-0x2d8633, plus a 2-byte sentinel:
+                           # the map-load reader fetches one entry past
+                           # the pointer table for the final map's end
+                           # bound (contiguous data in vanilla, arbitrary
+                           # neighbors in the claim), so the relocated
+                           # table carries an explicit empty bound
     "chest_data":  0x827,  # 0x2d8634-0x2d8e5a
     "shop_data":   0x480,  # 0x47ac0-0x47f3f
     "esper_data":  0x200,  # 0x186e00-0x186fff (spells/rates/bonus)
@@ -53,10 +60,10 @@ def layout(args):
 
     rng = obfuscation.rng_for_args(args, "claim/layout")
 
-    names = sorted(TABLE_SIZES)   # sort first: dict order is not contract
-    rng.shuffle(names)
+    names = sorted(TABLE_SIZES) + sorted(name + "_pad" for name in TABLE_SIZES)
+    rng.shuffle(names)   # sorted first: dict order is not contract
 
-    total = sum(TABLE_SIZES[name] for name in names)
+    total = sum(sizeof(name) for name in names)
     slack = (CLAIM_END - CLAIM_START + 1) - total
     assert slack >= 0, "race obfuscation claim too small for its tables"
 
@@ -69,8 +76,15 @@ def layout(args):
         address += cut - previous
         previous = cut
         _layout[name] = address
-        address += TABLE_SIZES[name]
+        address += sizeof(name)
     return _layout
+
+
+def sizeof(name):
+    """Size in bytes of a claim entry (table or its equal-size pad)."""
+    if name.endswith("_pad"):
+        name = name[:-len("_pad")]
+    return TABLE_SIZES[name]
 
 
 def snes(rom_offset):

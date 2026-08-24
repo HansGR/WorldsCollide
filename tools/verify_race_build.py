@@ -6,11 +6,14 @@ checks, reading the ROMs the way an attacker's tool would:
   1. determinism: the two race builds are byte-identical
   2. control: all reader operands still hold vanilla addresses; the
      obfuscation claim region is untouched
-  3. race: every reader operand points into the claim, and all operands
-     of a table agree on one relocated base
-  4. race: walking the relocated chest/shop tables via the patched
-     operands yields structurally correct data whose fixed fields
-     (chest x/y/bit layout, shop types) match the control build
+  3. race: every reader site is a JSL to a LDA/EOR/RTL decode shim,
+     all shims of a table agree on one table base and one pad base in
+     the claim, and the tables are actually masked (the chest pointer
+     sentinel decodes to an empty bound)
+  4. race: decoding the masked tables with the pads - following the
+     code the way an attacker's meta-tool would have to - yields
+     structurally correct data whose fixed fields (chest x/y/bit
+     layout, shop types) match the control build
   5. race: the decoy tables at the vanilla addresses parse identically
      in structure but differ from the real data in contents (chests,
      shops, espers, enemy steals/drops, coliseum matches)
@@ -128,29 +131,64 @@ def main():
     check(all(b == 0xff for b in control[CLAIM_START:CLAIM_END + 1]),
           "control: obfuscation claim region is not empty")
 
-    # 3. race operands agree on relocated bases inside the claim
+    # 3. race: every reader site is a JSL to a LDA/EOR/RTL decode shim;
+    #    all shims of a table agree on one table base and one pad base,
+    #    both inside the claim.  this follows the code exactly the way
+    #    an attacker's meta-tool would have to
     bases = {}
+    pads = {}
     for offset, vanilla, table in ALL_SITES:
         delta = vanilla - VANILLA_BASES[table]
-        base = operand(race, offset) - delta
-        bases.setdefault(table, set()).add(base)
-    for table, found in bases.items():
-        check(len(found) == 1, f"race: {table} operands disagree: {found}")
-        base = rom_offset(found.pop())
-        check(CLAIM_START <= base <= CLAIM_END,
-              f"race: {table} relocated outside the claim: 0x{base:06x}")
-        bases[table] = base
+        instr = offset - 1
+        check(race[instr] == 0x22, f"race: reader at 0x{instr:06x} is not a JSL")
+        shim = rom_offset(operand(race, offset))
+        check(race[shim] == 0xbf and race[shim + 4] == 0x5f and race[shim + 8] == 0x6b,
+              f"race: shim at 0x{shim:06x} is not LDA/EOR/RTL")
+        bases.setdefault(table, set()).add(operand(race, shim + 1) - delta)
+        pads.setdefault(table, set()).add(operand(race, shim + 5) - delta)
+    for table in sorted(bases):
+        check(len(bases[table]) == 1, f"race: {table} shim table bases disagree")
+        check(len(pads[table]) == 1, f"race: {table} shim pad bases disagree")
+        table_base = rom_offset(bases[table].pop())
+        pad_base = rom_offset(pads[table].pop())
+        for what, at in (("table", table_base), ("pad", pad_base)):
+            check(CLAIM_START <= at <= CLAIM_END,
+                  f"race: {table} {what} outside the claim: 0x{at:06x}")
+        bases[table] = table_base
+        pads[table] = pad_base
 
-    # 4. real data via the patched operands, fixed fields vs control
+    # decode the masked tables the way the shims do, and splice the
+    # plaintext over the vanilla offsets so the walkers below can run
+    # unchanged.  (the decoys stay where they are, in `race` itself.)
+    from obfuscation.claim import sizeof
+    SPLICE = {"chest_ptrs": CHEST_PTRS[0], "chest_data": CHEST_DATA[0],
+              "shop_data": SHOP_DATA[0], "esper_data": ESPER_DATA[0],
+              "enemy_items": ENEMY_ITEMS[0], "coliseum": COLISEUM[0]}
+    real_view = bytearray(race)
+    for table, start in SPLICE.items():
+        size = sizeof(table)
+        b, p = bases[table], pads[table]
+        plain = bytes(x ^ y for x, y in zip(race[b:b + size], race[p:p + size]))
+        check(bytes(race[b:b + size]) != plain,
+              f"race: {table} is stored unmasked")
+        if table == "chest_ptrs":
+            # the 2-byte sentinel entry past the vanilla-size table must
+            # decode to the final map's start bound (= no chests)
+            check(plain[0x340:0x342] == plain[0x33e:0x340],
+                  "race: chest pointer sentinel is not an empty bound")
+            plain = plain[:0x340]
+        real_view[start:start + len(plain)] = plain
+
+    # 4. decoded real data, fixed fields vs control
     control_chests = read_chest_tables(control, CHEST_PTRS[0], CHEST_DATA[0])
-    real_chests = read_chest_tables(race, bases["chest_ptrs"], bases["chest_data"])
+    real_chests = read_chest_tables(real_view, CHEST_PTRS[0], CHEST_DATA[0])
     check(len(control_chests) == len(real_chests), "map count differs")
     fixed = lambda maps: [[record[:3] for record in records] for records in maps]
     check(fixed(control_chests) == fixed(real_chests),
           "race: relocated chest x/y/bit layout differs from control")
 
     control_shops = read_shop_table(control, SHOP_DATA[0])
-    real_shops = read_shop_table(race, bases["shop_data"])
+    real_shops = read_shop_table(real_view, SHOP_DATA[0])
     check([shop[0] for shop in control_shops] == [shop[0] for shop in real_shops],
           "race: relocated shop types differ from control")
 
@@ -177,7 +215,7 @@ def main():
         return [rom[base + i * ESPER_SIZE:base + (i + 1) * ESPER_SIZE]
                 for i in range(ESPER_COUNT)]
 
-    real_espers = esper_records(race, bases["esper_data"])
+    real_espers = esper_records(real_view, ESPER_DATA[0])
     decoy_espers = esper_records(race, ESPER_DATA[0])
     for name, records in (("real", real_espers), ("decoy", decoy_espers)):
         for record in records:
@@ -193,7 +231,7 @@ def main():
         return [rom[base + i * ENEMY_ITEM_SIZE:base + (i + 1) * ENEMY_ITEM_SIZE]
                 for i in range(count)]
 
-    real_loot = loot_records(race, bases["enemy_items"])
+    real_loot = loot_records(real_view, ENEMY_ITEMS[0])
     decoy_loot = loot_records(race, ENEMY_ITEMS[0])
     differing = sum(1 for a, b in zip(real_loot, decoy_loot) if a != b)
     check(differing > len(real_loot) // 4,
@@ -205,7 +243,7 @@ def main():
         return [rom[base + i * MATCH_SIZE:base + (i + 1) * MATCH_SIZE]
                 for i in range(count)]
 
-    real_matches = match_records(race, bases["coliseum"])
+    real_matches = match_records(real_view, COLISEUM[0])
     decoy_matches = match_records(race, COLISEUM[0])
     differing = sum(1 for a, b in zip(real_matches, decoy_matches) if a != b)
     check(differing > len(real_matches) // 4,
@@ -220,12 +258,15 @@ def main():
     for offset, vanilla, table in SHOP_SITES:
         if offset == 0x3b9b0:
             continue
-        base = rom_offset(operand(sli, offset) - (vanilla - VANILLA_BASES[table]))
-        check(CLAIM_START <= base <= CLAIM_END,
-              f"sli race: shop operand at 0x{offset:06x} not relocated")
+        check(sli[offset - 1] == 0x22,
+              f"sli race: reader at 0x{offset - 1:06x} is not a JSL")
+        shim = rom_offset(operand(sli, offset))
+        check(sli[shim] == 0xbf and sli[shim + 4] == 0x5f and sli[shim + 8] == 0x6b,
+              f"sli race: shim at 0x{shim:06x} is not LDA/EOR/RTL")
 
     print(f"all {checks} checks passed")
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})
+    print("pad bases:", {t: hex(p) for t, p in pads.items()})
     print(f"chest records: {len(real_flat)}, chest contents differing from decoy: "
           f"{sum(1 for a, b in zip(real_flat, decoy_flat) if a[3:] != b[3:])}")
     if args.keep:

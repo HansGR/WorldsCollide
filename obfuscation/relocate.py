@@ -98,43 +98,101 @@ VANILLA_BASES = {
 }
 
 
-def table_address(args, table):
-    """Effective 24-bit SNES address of a relocatable table.
+def read_asm(args, table, delta=0):
+    """asm fragment reading one relocatable table at index X.
 
-    WC writes fresh code each build with table addresses compiled in
-    (shop empty guard, limited-inventory compaction, esper mastered
-    icon, coliseum rewards menu).  Those readers must follow the real
-    table when a race build relocates it; everywhere else they read the
-    vanilla address.  The static vanilla readers (the *_SITES lists)
-    are patched separately by the patch_*_readers functions.
+    Drop-in replacement for a single `LDA vanilla+delta, LNG_X` in
+    WC-written code (shop empty guard, limited-inventory compaction,
+    esper mastered icon, coliseum rewards menu).  In race builds the
+    fragment reads the relocated table and decodes the L2 mask with an
+    EOR against the pad; the final flags match a plaintext load either
+    way.  In non-race builds it is exactly the vanilla instruction, so
+    output stays byte-identical.
     """
-    if args.race:
-        from obfuscation import claim
-        return claim.snes(claim.layout(args)[table])
-    return VANILLA_BASES[table]
+    import instruction.asm as asm
+
+    if not args.race:
+        return [asm.LDA(VANILLA_BASES[table] + delta, asm.LNG_X)]
+
+    from obfuscation import claim
+    layout = claim.layout(args)
+    return [
+        asm.LDA(claim.snes(layout[table]) + delta, asm.LNG_X),
+        asm.EOR(claim.snes(layout[table + "_pad"]) + delta, asm.LNG_X),
+    ]
 
 
-def shop_data_address(args):
-    return table_address(args, "shop_data")
+def read_call_asm(args, table, delta=0):
+    """Space-neutral variant of read_asm: exactly 4 bytes either way
+    (the vanilla `LDA long,X`, or a JSL to the shared decode shim), for
+    WC code written into regions with a fixed byte budget.
+    """
+    import instruction.asm as asm
+
+    if not args.race:
+        return [asm.LDA(VANILLA_BASES[table] + delta, asm.LNG_X)]
+
+    from obfuscation import claim
+    return [asm.JSL(_shim(claim.layout(args), table, delta))]
+
+
+# shims already written this build: (table, delta) -> snes address
+_shims = {}
+
+
+def _shim(layout, table, delta):
+    """Write (once) and return the decode shim for one table+delta:
+
+        LDA table+delta,X : EOR pad+delta,X : RTL
+
+    X is preserved; either accumulator width works (the pad is
+    byte-aligned with the table, so a 16-bit load decodes both bytes);
+    the EOR leaves the N/Z flags of the decoded value - the same flags
+    a plaintext load would have set.
+    """
+    from memory.space import Bank, Write
+    import instruction.asm as asm
+    from obfuscation.claim import snes
+
+    key = (table, delta)
+    if key not in _shims:
+        src = [
+            asm.LDA(snes(layout[table]) + delta, asm.LNG_X),
+            asm.EOR(snes(layout[table + "_pad"]) + delta, asm.LNG_X),
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, src, f"race decode shim: {table}+{delta}")
+        _shims[key] = space.start_address_snes
+    return _shims[key]
 
 
 def _patch_sites(sites, layout, skip=()):
+    """Replace each vanilla reader with a JSL to a decode shim.
+
+    Every site is the 4-byte `LDA long,X` (0xBF) - asserted below - so
+    the same-size `JSL shim` fits exactly (see _shim for the shim's
+    transparency argument).
+    """
     from memory.space import Reserve, Read
-    from obfuscation.claim import snes
+    import instruction.asm as asm
 
     for operand_offset, vanilla_operand, table in sites:
         if operand_offset in skip:
             continue
+        instruction_offset = operand_offset - 1
+        opcode = Read(instruction_offset, instruction_offset)[0]
+        assert opcode == 0xbf, (
+            f"race reader patch at 0x{instruction_offset:06x}: expected "
+            f"LDA long,X (0xbf), found opcode 0x{opcode:02x}")
         current = int.from_bytes(bytes(Read(operand_offset, operand_offset + 2)), "little")
         assert current == vanilla_operand, (
             f"race reader patch at 0x{operand_offset:06x}: expected vanilla "
             f"operand 0x{vanilla_operand:06x}, found 0x{current:06x}")
 
         delta = vanilla_operand - VANILLA_BASES[table]
-        new_operand = snes(layout[table]) + delta
-        space = Reserve(operand_offset, operand_offset + 2,
-                        f"race reader: {table}+{delta} operand")
-        space.write(new_operand.to_bytes(3, "little"))
+        space = Reserve(instruction_offset, instruction_offset + 3,
+                        f"race reader: {table}+{delta} decode shim call")
+        space.write(asm.JSL(_shim(layout, table, delta)))
 
 
 def patch_chest_readers(layout):

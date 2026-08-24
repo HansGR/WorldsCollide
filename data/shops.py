@@ -456,10 +456,11 @@ class Shops():
         # this function will not allow the buy menu to be selected if the shop type is empty
         from memory.space import Bank, Reserve, Write
         import instruction.asm as asm
-        from obfuscation.relocate import shop_data_address
+        from obfuscation import relocate
 
-        # race builds relocate the shop table; read wherever it really is
-        shop_data = shop_data_address(self.args)
+        # race builds relocate and mask the shop table; this fragment
+        # reads (and decodes) wherever it really is
+        read_shop_item = relocate.read_asm(self.args, "shop_data")
 
         if self.args.shop_limited_inventory:
             # Write the compact_init subroutine first (builds compacted item list
@@ -472,7 +473,7 @@ class Shops():
                 # Check if first ROM item is empty (catches genuinely empty shops)
                 asm.LDX(0x67, asm.DIR),         # x = shop index
                 asm.INX(),                      # skip shop flags byte
-                asm.LDA(shop_data, asm.LNG_X),  # load first item byte
+                *read_shop_item,                # load first item byte
                 asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
                 asm.BNE("OPEN_BUY_MENU"),       # branch if not
                 asm.JSR(0xb66f, asm.ABS),       # buzzer
@@ -496,7 +497,7 @@ class Shops():
             src = [
                 asm.LDX(0x67, asm.DIR),         # x = shop index
                 asm.INX(),                      # skip shop flags byte
-                asm.LDA(shop_data, asm.LNG_X),  # load first item byte
+                *read_shop_item,                # load first item byte
                 asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
                 asm.BNE("OPEN_BUY_MENU"),       # branch if not
                 asm.JSR(0xb66f, asm.ABS),       # buzzer
@@ -557,10 +558,11 @@ class Shops():
         Entry: 8-bit A, 16-bit X/Y (standard menu state).
         """
         import instruction.asm as asm
-        from obfuscation.relocate import shop_data_address
+        from obfuscation import relocate
 
-        # race builds relocate the shop table; read wherever it really is
-        shop_data = shop_data_address(self.args)
+        # race builds relocate and mask the shop table; this fragment
+        # reads (and decodes) wherever it really is
+        read_shop_item = relocate.read_asm(self.args, "shop_data")
 
         return [
             # Save caller's registers
@@ -618,7 +620,7 @@ class Shops():
             asm.INC(),                                   # A += 1 (skip flags byte)
             asm.TAX(),                                   # X = ROM data offset
             asm.SEP(0x20),                               # 8-bit A
-            asm.LDA(shop_data, asm.LNG_X),              # load item from ROM
+            *read_shop_item,                            # load item from ROM
             asm.PLX(),                                   # restore write_pos
 
             # Check if empty in ROM
