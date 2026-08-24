@@ -174,13 +174,23 @@ the fake data has exactly the right format and plausible distribution.
   tables structurally match the control's fixed fields, and decoys parse
   identically but diverge in contents (268/296 chest records, most
   shops).  A build without `-race` is byte-identical to the branch base.
-- **Remaining Phase 1 deliverable**: an in-game harness sweep that flies
-  to dungeons/towns, opens chests, and reads shop menus on a `-race`
-  build, confirming decoded *contents* in play.  Static verification and
-  a dynamic boot smoke (the patched map-load chest reader C0/15D7 runs
-  on emulated hardware across map loads) are done; the full contents
-  sweep needs airship-flight-menu + navigation automation and is the
-  next task.
+- **In-game verification (done, 2026-08-24)**: manual play verification
+  on a `-race` build (seed NARSHEPROOF): all four Narshe shops and ~12
+  opened chests matched the real (relocated) tables, cross-checked
+  against the spoiler log and a ROM-side extraction via the patched
+  operands.  Static verification and a dynamic boot smoke (the patched
+  C0/15D7 reader on emulated hardware) also pass.
+- **Tool census data point**: FF6LE on a race ROM shows the right chest
+  *counts* per map but garbage records (random x/y/contents, many
+  `0xFF`).  Signature analysis: it follows the game's pointer-table
+  operand (so it finds the relocated pointer table) but assumes the
+  records sit contiguously after it at +0x340, which vanilla satisfies
+  and the shuffled claim layout doesn't.  The decoy at the vanilla
+  addresses is provably well-formed (byte-identical to a control build
+  in every fixed field), so fixed-address readers see the decoy, while
+  half-smart operand-followers see obvious garbage — either way T1 is
+  disabled.  Full operand-following yields real data until L2 masking
+  lands.
 
 ### L2 — Mask the relocated tables
 
@@ -280,7 +290,7 @@ for free.
 | Phase | Contents | Status |
 |---|---|---|
 | 0 | Reader inventory, tool census, nonce/RNG plumbing, `-race` skeleton, seed-in-menu fix, space budget | **done** (this branch) |
-| 1 | L1 chests + shops (relocate + decoy) + harness sweeps | next |
-| 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | |
+| 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
+| 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | next |
 | 3 | L3 reward indirection (items first, then characters/espers) | |
 | 4 | L4 allocation shuffle; red-team exercise; community messaging | |
