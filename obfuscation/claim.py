@@ -27,9 +27,12 @@ CLAIM_END   = 0x343fff   # 16 KB claimed; Phase 1 uses ~4 KB
 
 # name -> table size in bytes (vanilla sizes; these do not change)
 TABLE_SIZES = {
-    "chest_ptrs": 0x340,   # 0x2d82f4-0x2d8633
-    "chest_data": 0x827,   # 0x2d8634-0x2d8e5a
-    "shop_data":  0x480,   # 0x47ac0-0x47f3f
+    "chest_ptrs":  0x340,  # 0x2d82f4-0x2d8633
+    "chest_data":  0x827,  # 0x2d8634-0x2d8e5a
+    "shop_data":   0x480,  # 0x47ac0-0x47f3f
+    "esper_data":  0x200,  # 0x186e00-0x186fff (spells/rates/bonus)
+    "enemy_items": 0x600,  # 0xf3000-0xf35ff (steals/drops)
+    "coliseum":    0x400,  # 0x1fb600-0x1fb9ff (matches)
 }
 
 _layout = None

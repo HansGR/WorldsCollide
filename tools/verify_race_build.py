@@ -12,7 +12,10 @@ checks, reading the ROMs the way an attacker's tool would:
      operands yields structurally correct data whose fixed fields
      (chest x/y/bit layout, shop types) match the control build
   5. race: the decoy tables at the vanilla addresses parse identically
-     in structure but differ from the real data in contents
+     in structure but differ from the real data in contents (chests,
+     shops, espers, enemy steals/drops, coliseum matches)
+  6. race with -sli: the limited-inventory hook replaces the C3/B9AF
+     reader and the remaining shop operands still relocate
 
 Usage: python3 tools/verify_race_build.py -i <vanilla rom> [-keep]
 """
@@ -26,17 +29,28 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from obfuscation.claim import CLAIM_START, CLAIM_END
-from obfuscation.relocate import CHEST_SITES, SHOP_SITES, VANILLA_BASES
+from obfuscation.relocate import (CHEST_SITES, SHOP_SITES, ESPER_SITES,
+                                  ENEMY_ITEM_SITES, COLISEUM_SITES, VANILLA_BASES)
 
 FLAGS = ("-s racecheckseed -cg -oa 59.3.3.11.29.11.30.11.31.10.12.12"
-         " -sc1 random -stl 6 -ccsr 20 -sisr 20 -comfr 100.50.100").split()
+         " -sc1 random -stl 6 -ccsr 20 -sisr 20 -comfr 100.50.100"
+         " -esrt -elrt -ebs -emi -ssd 100 -cosr 50 -crsr 50 -crvr 64 192 -crm").split()
 
 CHEST_PTRS = (0x2d82f4, 0x2d8633)
 CHEST_DATA = (0x2d8634, 0x2d8e5a)
 SHOP_DATA = (0x47ac0, 0x47f3f)
+ESPER_DATA = (0x186e00, 0x186fff)
+ENEMY_ITEMS = (0xf3000, 0xf35ff)
+COLISEUM = (0x1fb600, 0x1fb9ff)
 SHOP_SIZE = 9
 CHEST_SIZE = 5
+ESPER_SIZE = 11
+ESPER_COUNT = 27
+ENEMY_ITEM_SIZE = 4
+MATCH_SIZE = 4
 MAPS = (CHEST_PTRS[1] - CHEST_PTRS[0] + 1) // 2
+
+ALL_SITES = CHEST_SITES + SHOP_SITES + ESPER_SITES + ENEMY_ITEM_SITES + COLISEUM_SITES
 
 checks = 0
 
@@ -108,7 +122,7 @@ def main():
     race = race1
 
     # 2. control build untouched
-    for offset, vanilla, _ in CHEST_SITES + SHOP_SITES:
+    for offset, vanilla, _ in ALL_SITES:
         check(operand(control, offset) == vanilla,
               f"control: operand at 0x{offset:06x} is not vanilla")
     check(all(b == 0xff for b in control[CLAIM_START:CLAIM_END + 1]),
@@ -116,7 +130,7 @@ def main():
 
     # 3. race operands agree on relocated bases inside the claim
     bases = {}
-    for offset, vanilla, table in CHEST_SITES + SHOP_SITES:
+    for offset, vanilla, table in ALL_SITES:
         delta = vanilla - VANILLA_BASES[table]
         base = operand(race, offset) - delta
         bases.setdefault(table, set()).add(base)
@@ -156,6 +170,46 @@ def main():
     differing = sum(1 for a, b in zip(real_shops, decoy_shops) if a[1:] != b[1:])
     check(differing > len(real_shops) // 4,
           f"race: shop decoy too similar to real data ({differing} differ)")
+
+    # 5b. espers: real via operands and decoy at vanilla both hold valid
+    #     spell ids; contents differ
+    def esper_records(rom, base):
+        return [rom[base + i * ESPER_SIZE:base + (i + 1) * ESPER_SIZE]
+                for i in range(ESPER_COUNT)]
+
+    real_espers = esper_records(race, bases["esper_data"])
+    decoy_espers = esper_records(race, ESPER_DATA[0])
+    for name, records in (("real", real_espers), ("decoy", decoy_espers)):
+        for record in records:
+            check(all(record[i] == 0xff or record[i] < 54 for i in (1, 3, 5, 7, 9)),
+                  f"race: {name} esper record holds an invalid spell id: {record.hex()}")
+    differing = sum(1 for a, b in zip(real_espers, decoy_espers) if a != b)
+    check(differing > ESPER_COUNT // 4,
+          f"race: esper decoy too similar to real data ({differing} differ)")
+
+    # 5c. enemy steal/drop table: decoy differs from real
+    def loot_records(rom, base):
+        count = (ENEMY_ITEMS[1] - ENEMY_ITEMS[0] + 1) // ENEMY_ITEM_SIZE
+        return [rom[base + i * ENEMY_ITEM_SIZE:base + (i + 1) * ENEMY_ITEM_SIZE]
+                for i in range(count)]
+
+    real_loot = loot_records(race, bases["enemy_items"])
+    decoy_loot = loot_records(race, ENEMY_ITEMS[0])
+    differing = sum(1 for a, b in zip(real_loot, decoy_loot) if a != b)
+    check(differing > len(real_loot) // 4,
+          f"race: enemy loot decoy too similar to real data ({differing} differ)")
+
+    # 5d. coliseum: decoy differs from real
+    def match_records(rom, base):
+        count = (COLISEUM[1] - COLISEUM[0] + 1) // MATCH_SIZE
+        return [rom[base + i * MATCH_SIZE:base + (i + 1) * MATCH_SIZE]
+                for i in range(count)]
+
+    real_matches = match_records(race, bases["coliseum"])
+    decoy_matches = match_records(race, COLISEUM[0])
+    differing = sum(1 for a, b in zip(real_matches, decoy_matches) if a != b)
+    check(differing > len(real_matches) // 4,
+          f"race: coliseum decoy too similar to real data ({differing} differ)")
 
     # 6. limited inventory (-sli) rewrites the C3/B9AF item load itself
     #    (menus/buy.py hook_load_item), so the race build must patch the

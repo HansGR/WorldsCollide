@@ -56,6 +56,11 @@ class ColiseumMenu:
         space = Reserve(0x3acad, 0x3acb2, "coliseum item menu remove add empty item to inventory?", asm.NOP())
 
     def display_rewards_mod(self):
+        from obfuscation.relocate import table_address
+
+        # race builds relocate the match table; read wherever it really is
+        coliseum_data = table_address(args, "coliseum")
+
         # draw reward icon/name in right column
         draw_reward_item = self.free_space.next_address
         self.free_space.write(
@@ -88,10 +93,10 @@ class ColiseumMenu:
             asm.TAX(),                      # x = item id * 4
             asm.TDC(),
             asm.A8(),
-            asm.LDA(0xdfb603, asm.LNG_X),   # a = hide reward flag
+            asm.LDA(coliseum_data + 3, asm.LNG_X),  # a = hide reward flag
             asm.BNE("LOAD_UNKNOWN_REWARD"), # branch if reward hidden
 
-            asm.LDA(0xdfb602, asm.LNG_X),   # a = reward id
+            asm.LDA(coliseum_data + 2, asm.LNG_X),  # a = reward id
             asm.JSR(0x80ce, asm.ABS),       # load <icon><name>:
 
             # above call added a ':' character at the end, remove it

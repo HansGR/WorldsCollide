@@ -39,6 +39,10 @@ class Espers():
         self.name_data = DataArray(self.rom, self.NAMES_START, self.NAMES_END, self.NAME_SIZE)
         self.ability_data = DataArray(self.rom, self.ABILITY_DATA_START, self.ABILITY_DATA_END, AbilityData.DATA_SIZE)
 
+        # a decoy instance only generates plausible data for race builds:
+        # it must not write code patches or touch dialogs
+        self.decoy = False
+
         self.espers = []
         for esper_index in range(len(self.name_data)):
             esper = Esper(esper_index, self.spells_bonus_data[esper_index], self.name_data[esper_index], self.ability_data[esper_index])
@@ -290,7 +294,8 @@ class Espers():
             for esper in self.espers:
                 esper.name = self.args.steveify
 
-        self.receive_dialogs_mod(dialogs)
+        if not self.decoy:
+            self.receive_dialogs_mod(dialogs)
 
         if self.args.esper_spells_shuffle or self.args.esper_spells_shuffle_random_rates:
             self.shuffle_spells()
@@ -328,21 +333,52 @@ class Espers():
             self.equipable_random()
         elif self.args.esper_equipable_balanced_random:
             self.equipable_balanced_random()
-        espers_asm.equipable_mod(self)
+        if not self.decoy:
+            espers_asm.equipable_mod(self)
 
-        if self.args.esper_mastered_icon:
+        if self.args.esper_mastered_icon and not self.decoy:
             espers_asm.mastered_mod(self)
 
         if self.args.permadeath:
             self.phoenix_life3()
 
-        if self.args.esper_multi_summon:
+        if self.args.esper_multi_summon and not self.decoy:
             self.multi_summon()
 
+
+    def _race_relocate(self):
+        # race builds: move the real spell/rate/bonus table into the
+        # obfuscation claim, point the C2/C3 readers at it, and leave a
+        # decoy with the same format and distribution at the vanilla
+        # address.  names/abilities stay in place (not spoilers).
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        # the decoy re-runs the real randomization on a scratch instance.
+        # construction is inside the decoy stream too: __init__ can draw
+        # starting espers from the global rng
+        def make_decoy():
+            scratch = Espers(self.rom, self.args, self.spells, self.characters)
+            scratch.decoy = True
+            scratch.mod(None)
+            return scratch
+        scratch = obfuscation.run_with_decoy_rng(self.args, "espers", make_decoy)
+        for esper_index in range(len(scratch.espers)):
+            scratch.spells_bonus_data[esper_index] = scratch.espers[esper_index].spells_bonus_data()
+        scratch.spells_bonus_data.write()   # decoy lands at the vanilla address
+
+        self.spells_bonus_data.relocate(layout["esper_data"])
+        relocate.patch_esper_readers(layout)
 
     def write(self):
         if self.args.spoiler_log:
             self.log()
+
+        if self.args.race:
+            self._race_relocate()
 
         for esper_index in range(len(self.espers)):
             self.spells_bonus_data[esper_index] = self.espers[esper_index].spells_bonus_data()
