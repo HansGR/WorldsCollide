@@ -297,6 +297,50 @@ for free.
 4. **Tool census**: demonstrate the actual community tools failing (or
    being deceived) on a race ROM, before/after.
 
+### 6a. Red-team results (2026-08, `tools/verify_race_build.py`
+attack path + scratch red-team script)
+
+Against an L1+L2 race ROM, 296 real chests, how much each attack tier
+recovers:
+
+| Attack | What it does | Recovered |
+|---|---|---|
+| T1a fixed-offset scan | reads the vanilla addresses | **8%** — and that 8% is *noise, not signal*: 11 monster-in-a-box chests (these flags never randomize those, so real==decoy) plus ~12 accidental same-item collisions from the equal-distribution decoy. A naive tool sees a complete, plausible, mostly-wrong list. |
+| T1b contiguity-follow (the FF6LE model) | follows the pointer operand, assumes records contiguous at +0x340 | **0%** — lands on masked neighbours/padding, obvious garbage |
+| T2 operand-follow, no decode | follows to the true relocated table but reads it as plaintext | **0%** — the bytes are masked |
+| T3 shim-follow + XOR decode | follows the reader JSL to its shim, extracts table+pad operands, XORs | **100%** — but this attacker has written a faithful reimplementation of the game's reader |
+
+Structural properties confirmed:
+- **Per-seed**: two seeds put the chest table and its pad at different
+  claim offsets and produce non-identical masked bytes.  Nothing about
+  the layout or keystream is fixed across ROMs.
+- **No keystream reuse**: a leaked 5-byte plaintext record recovers 5
+  pad bytes that appear nowhere else in the pad region — so a
+  known-plaintext leak decodes only the record it came from, not its
+  neighbours.  (The pad is a per-table PRNG stream, not a repeating
+  key.)
+
+**Interpretation.** The scheme does exactly what the threat model
+claims and no more.  Everything below a full reader-reimplementation
+(T1–T2) recovers nothing usable; the decoy actively feeds wrong data to
+the laziest tools.  T3 succeeds by construction — any obfuscation the
+CPU itself decodes can be decoded by an attacker who reimplements the
+CPU's steps, and we deliberately chose not to fight that (no
+anti-emulator tricks, no real crypto).  The security is the *cost* of
+getting to T3 (find the JSL, follow it, model the shim, track table and
+pad separately, per seed and per release) plus the process measures
+(secret seed, post-race audit).
+
+**Recommendation on L3/L4.** L3 (reward-script indirection) still buys
+something L1/L2 do not: check rewards currently live in event-script
+operands, a *different* data path this layer never touched, so they are
+still greppable by opcode pattern and are the single highest-value
+target.  L3 is worth doing.  L4 (per-seed allocation shuffle) is a
+uniform multiplier on T3 effort — modest marginal value now that T3
+already requires per-seed reverse engineering; recommend deferring it
+until/unless a real T3 tool appears.  This matches ground rule "start
+simple": ship L1+L2+L3, hold L4+ pending evidence.
+
 ---
 
 ## 7. Process measures that complete the picture
@@ -313,6 +357,14 @@ for free.
   race ROMs contain per-seed obfuscation *and decoy data*.  A cheater
   who cannot trust the tool's output has lost most of the value of
   cheating.
+- **In-play verification recipe** (for building test seeds): use
+  `-ccrt`/`-sirt` (records are runtime truth, unlike the runtime-scaled
+  `-ccsr`); add `-stesp 21 21` to check every esper's spells in the
+  menu; grant coliseum wager items with `-si <id.1.1...>` so matches can
+  actually be bet (rewards need `-crm`; hidden ones still show `?`);
+  there is no drop-rate flag, so use `-sca` (steal-always) to make the
+  steal half of the loot table checkable and `-ss`/`-sd 100` to
+  randomize; always add `-debug` so validation battles stay manageable.
 
 ---
 
@@ -323,5 +375,6 @@ for free.
 | 0 | Reader inventory, tool census, nonce/RNG plumbing, `-race` skeleton, seed-in-menu fix, space budget | **done** (this branch) |
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
-| 3 | L3 reward indirection (items first, then characters/espers) | |
-| 4 | L4 allocation shuffle; red-team exercise; community messaging | |
+| 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
+| 3 | L3 reward indirection (items first, then characters/espers) | next |
+| 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |
