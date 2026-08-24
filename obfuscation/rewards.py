@@ -50,9 +50,11 @@ def write_table(rom, args):
     from obfuscation import claim
     layout = claim.layout(args)
     size = claim.TABLE_SIZES[TABLE]
-    assert len(_items) <= size, (
-        f"race: {len(_items)} item-reward checks exceed the {size}-byte "
-        f"reward table; grow claim.TABLE_SIZES['{TABLE}']")
+    # the opcode operand is one byte, so the index range (256) is the hard
+    # cap regardless of table size; assert against it, not just the bytes
+    assert len(_items) <= min(size, 256), (
+        f"race: {len(_items)} item-reward checks exceed the 256 the "
+        f"one-byte AddCheckItem index can address; widen the index/operand")
     # unused slots are 0xff (an invalid item id) so a stray decode is
     # visibly wrong rather than a plausible fake
     padded = _items + [0xff] * (size - len(_items))

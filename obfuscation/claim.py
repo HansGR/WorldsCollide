@@ -41,8 +41,11 @@ TABLE_SIZES = {
     "enemy_items": 0x600,  # 0xf3000-0xf35ff (steals/drops)
     "coliseum":    0x400,  # 0x1fb600-0x1fb9ff (matches)
     # L3 item-reward table: new (no vanilla address), one byte per check
-    # item grant.  ~90 grants today; 0x100 leaves headroom.  Written and
-    # masked like the others; the AddCheckItem opcode reads it by index.
+    # item grant, indexed by the AddCheckItem opcode's 1-byte operand -
+    # so 0x100 (256) is both the size and the hard cap.  Observed ~100-110
+    # grants per seed, comfortably under it; if a seed ever exceeds 256
+    # grants the index would need a second byte (rewards.write_table
+    # asserts the count fits).  Written and masked like the other tables.
     "item_rewards": 0x100,
 }
 
