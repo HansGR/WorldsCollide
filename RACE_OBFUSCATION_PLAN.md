@@ -145,6 +145,43 @@ the fake data has exactly the right format and plausible distribution.
 - Relocation targets come from the dedicated obfuscation RNG; the space
   is reserved up front so `-race` never shifts non-race allocations.
 
+**Phase 1 status (chests + shops, implemented on this branch):**
+
+- **Explicit space claim** (`obfuscation/claim.py`): a single reserved
+  expanded-ROM range (`0x340000`–`0x343fff`, 16 KB; ~4 KB used) that all
+  relocated tables live inside, every placement computed relative to
+  `CLAIM_START`.  Per Hans's guidance re. collisions with the door
+  randomizer's event pointers and external music randomizers, moving the
+  claim is a one-line change and `Reserve()` makes any overlap with
+  another feature fail loudly at build time.  Table order and offsets
+  inside the claim are nonce-shuffled per seed.
+- **Relocation** (`data/structures.py` `relocate()`; wired in
+  `data/chests.py`, `data/shops.py`): the real chest pointer+data tables
+  and the shop table move into the claim; the twelve chest reader
+  operands (C0/15D7, C0/4BD4) and three shop reader operands (C3) are
+  repatched via `obfuscation/relocate.py`, which asserts the exact
+  vanilla operand bytes before overwriting.
+- **Decoys**: a scratch data instance re-runs the *real* randomization
+  under the decoy RNG (`run_with_decoy_rng`, which saves/restores the
+  gameplay RNG state so not one gameplay draw is perturbed) and writes
+  plausible fake tables at the vanilla addresses.  Decoys reuse the
+  vacated bytes — zero net space.
+- **Verification** (`tools/verify_race_build.py`): builds a control ROM
+  and two race ROMs and runs 1278 assertions reading the ROM exactly as
+  the C0/C3 hardware readers do — determinism (race builds byte-
+  identical), control untouched (vanilla operands, empty claim), race
+  operands agree on one relocated base inside the claim, relocated
+  tables structurally match the control's fixed fields, and decoys parse
+  identically but diverge in contents (268/296 chest records, most
+  shops).  A build without `-race` is byte-identical to the branch base.
+- **Remaining Phase 1 deliverable**: an in-game harness sweep that flies
+  to dungeons/towns, opens chests, and reads shop menus on a `-race`
+  build, confirming decoded *contents* in play.  Static verification and
+  a dynamic boot smoke (the patched map-load chest reader C0/15D7 runs
+  on emulated hardware across map loads) are done; the full contents
+  sweep needs airship-flight-menu + navigation automation and is the
+  next task.
+
 ### L2 — Mask the relocated tables
 
 Store relocated tables XORed with a position-dependent keystream

@@ -57,6 +57,15 @@ class DataPointers:
     def __setitem__(self, index, data_address):
         self.pointers[index].data_address = data_address
 
+    def relocate(self, start_address):
+        # move where the pointer bytes are written; pointer values are
+        # data addresses/offsets and are not affected
+        offset = start_address - self.start_address
+        self.start_address += offset
+        self.end_address += offset
+        for pointer in self.pointers:
+            pointer.address += offset
+
     def write(self):
         if self.pointer_size == 4:
             # write out four byte pointers as pairs of 2 bytes (e.g. 0x12345678 as 0x34127856)
@@ -164,6 +173,14 @@ class DataArray:
         self.elements.append(DataElement(data, self.end_address))
         self.end_address += self.element_size
 
+    def relocate(self, start_address):
+        # move where the elements are written
+        offset = start_address - self.start_address
+        self.start_address += offset
+        self.end_address += offset
+        for element in self.elements:
+            element.address += offset
+
     def write(self):
         if len(self) > self.element_capacity:
             raise MemoryError(f"{self.__class__.__name__} write(): Not enough space ({len(self)}/{self.element_capacity} elements)")
@@ -203,6 +220,15 @@ class DataArrays:
 
     def __getitem__(self, index):
         return self.data_arrays[index]
+
+    def relocate(self, pointers_start_address, data_start_address):
+        # move where the pointer table and the data blocks are written.
+        # write() lays the blocks out sequentially from start_address and
+        # stores pointers relative to it, so only the bases move
+        self.pointers.relocate(pointers_start_address)
+        offset = data_start_address - self.start_address
+        self.start_address += offset
+        self.end_address += offset
 
     def write(self):
         data_address = self.start_address

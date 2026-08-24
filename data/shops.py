@@ -20,6 +20,10 @@ class Shops():
 
         self.shop_data = DataArray(self.rom, self.DATA_START, self.DATA_END, self.DATA_SIZE)
 
+        # a decoy instance only generates plausible data for race builds:
+        # it must not write code patches or claim sram tracking bytes
+        self.decoy = False
+
         self.shops = []
         self.all_shops = [] # includes inaccesible shops (used for writing out data)
         self.type_shops = {Shop.WEAPON : [], Shop.ARMOR : [], Shop.ITEM : [], Shop.RELIC : [], Shop.VENDOR : []}
@@ -649,7 +653,8 @@ class Shops():
         ]
 
     def mod(self):
-        self.disable_buy_if_empty()
+        if not self.decoy:
+            self.disable_buy_if_empty()
 
         if self.args.shop_inventory_shuffle_random:
             self.shuffle_random()
@@ -662,7 +667,7 @@ class Shops():
         self.remove_excluded_items()
 
         # Compute pack sizes after inventory is finalized
-        if self.args.shop_limited_inventory:
+        if self.args.shop_limited_inventory and not self.decoy:
             self.compute_pack_sizes()
             all_shop_ids = [shop.id for shop in self.shops]
             self.enable_limited_shops(all_shop_ids)
@@ -695,9 +700,32 @@ class Shops():
 
         section_entries("Shops", lentries, rentries)
 
+    def _race_relocate(self):
+        # race builds: move the real shop table into the obfuscation
+        # claim, point the menu's readers at it, and leave a decoy with
+        # the same format and distribution at the vanilla address.
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        scratch = Shops(self.rom, self.args, self.items)
+        scratch.decoy = True
+        obfuscation.run_with_decoy_rng(self.args, "shops", scratch.mod)
+        for shop_index in range(len(scratch.all_shops)):
+            scratch.shop_data[shop_index] = scratch.all_shops[shop_index].data()
+        scratch.shop_data.write()   # decoy lands at the vanilla address
+
+        self.shop_data.relocate(layout["shop_data"])
+        relocate.patch_shop_readers(layout)
+
     def write(self):
         if self.args.spoiler_log:
             self.log()
+
+        if self.args.race:
+            self._race_relocate()
 
         for shop_index in range(len(self.all_shops)):
             self.shop_data[shop_index] = self.all_shops[shop_index].data()
