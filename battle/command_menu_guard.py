@@ -16,14 +16,19 @@ import instruction.asm as asm
 #
 # Fix, preserving the gameplay rule that an Imped character may not use
 # imp-illegal commands:
-# 1. bound each loop: try the remaining rows once around; if none is
-#    valid, park the cursor on row 0 and continue.  The hand is drawn on
-#    the parked row and the per-frame input handling runs again, so the
-#    player keeps their real options: Row/Def, L+R to run, and Y to
-#    switch to another ready character.
+# 1. bound each loop: walk all four rows once around, exactly as vanilla
+#    would; if none is valid, restore the row the cursor started on and
+#    continue.  The hand position is only computed once per frame from
+#    the final cursor memory (C1/7BB2/7C23), so the in-frame walk is
+#    invisible: with any selectable row the result is bit-identical to
+#    vanilla (including "wrap around and stay put" when the current row
+#    is the only one), and with none the hand simply rests motionless on
+#    the remembered row while the per-frame input handling keeps running,
+#    so the player keeps their real options: Row/Def, L+R to run, and Y
+#    to switch to another ready character.
 # 2. vanilla has NO confirm-time validity check - the confirm path
 #    (C1/7CC8) dispatches whatever the cursor rests on, because vanilla's
-#    cursor can only ever rest on valid rows.  With a parked cursor that
+#    cursor can only ever rest on valid rows.  With a resting cursor that
 #    invariant is gone, so both A-press sites (C1/7BAA, C1/7BFF) now
 #    re-check the row via C1/7A4E and swallow the press when it is
 #    invalid (the confirm click/state counters $96/$2F41 only advance on
@@ -33,21 +38,33 @@ ROW_VALID = 0x7a4e      # C1: carry clear = cursor-memory row selectable
 CURSOR_MEMORY = 0x890f  # C1: per-character remembered row, ,X = char index
 CONFIRM = 0x7cc8        # C1: A-press command dispatch
 
-def _settle(step):
-    # try the other three rows once; nothing valid -> park on row 0.
-    # a is scratch (callers reload from $04/$05); x = character index and
-    # y = menu base are preserved by C1/7A4E.
-    src = []
-    for _ in range(3):
+def _scan(step):
+    # step through all four rows looking for a selectable one; nothing
+    # valid -> put the entry row back so the cursor never comes to rest
+    # anywhere it did not start.  (An earlier version parked on row 0
+    # after three tries, which briefly rested the cursor on the wrong
+    # row whenever the only selectable row was the one the cursor
+    # already occupied - the next frame's settle then walked it back,
+    # so the hand visibly hopped.)  a is scratch (callers reload from
+    # $04/$05); x = character index and y = menu base are preserved by
+    # C1/7A4E.  C1/7A4E masks cursor memory to 0-3 on every call, so
+    # the fourth step always re-tests the entry row itself.
+    src = [
+        asm.LDA(CURSOR_MEMORY, asm.ABS_X),
+        asm.PHA(),                          # remember the entry row
+    ]
+    for _ in range(4):
         src += [
             step(CURSOR_MEMORY, asm.ABS_X),
             asm.JSR(ROW_VALID, asm.ABS),
-            asm.BCC("DONE"),
+            asm.BCC("FOUND"),
         ]
     src += [
-        asm.TDC(),
-        asm.STA(CURSOR_MEMORY, asm.ABS_X),  # park the hand on the first row
-        "DONE",
+        asm.PLA(),                          # no row selectable anywhere:
+        asm.STA(CURSOR_MEMORY, asm.ABS_X),  # rest on the entry row
+        asm.RTS(),
+        "FOUND",
+        asm.PLA(),                          # discard the saved row
         asm.RTS(),
     ]
     return src
@@ -57,10 +74,10 @@ def mod():
     if not args.commands_probability_mode:
         return
 
-    inc_settle = Write(Bank.C1, _settle(asm.INC),
-                       "command menu: bounded skip-invalid scan (inc)")
-    dec_settle = Write(Bank.C1, _settle(asm.DEC),
-                       "command menu: bounded skip-invalid scan (dec)")
+    inc_scan = Write(Bank.C1, _scan(asm.INC),
+                     "command menu: bounded skip-invalid scan (inc)")
+    dec_scan = Write(Bank.C1, _scan(asm.DEC),
+                     "command menu: bounded skip-invalid scan (dec)")
 
     src = [
         asm.JSR(ROW_VALID, asm.ABS),    # carry set = row invalid: deny
@@ -73,9 +90,9 @@ def mod():
     confirm_guard = Write(Bank.C1, src, "command menu: deny confirm on invalid row")
 
     # the three unbounded loops: INC/DEC $890F,X / JSR $7A4E / BCS back
-    for addr, helper, name in ((0x17aef, inc_settle, "settle"),
-                               (0x17be9, dec_settle, "nav up"),
-                               (0x17bf3, inc_settle, "nav down/settle")):
+    for addr, helper, name in ((0x17aef, inc_scan, "settle"),
+                               (0x17be9, dec_scan, "nav up"),
+                               (0x17bf3, inc_scan, "nav down/settle")):
         space = Reserve(addr, addr + 7, f"command menu {name}: bounded scan", asm.NOP())
         space.write(
             asm.JSR(helper.start_address, asm.ABS),
