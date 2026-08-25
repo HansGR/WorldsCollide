@@ -318,21 +318,43 @@ def main():
     check(all(b < 27 for b in eused), "race: esper table holds an invalid esper id")
     check(bytes(race[etbase:etbase + 0x40]) != espers, "race: esper table is not masked")
 
-    # 8. the <esper> message control code: the race build hooks the end of
-    #    the control-code chain (C0/844B) additively - a byte that is not
-    #    our code must still take the displaced literal-character path
+    # 8. the <esper>/<item2> message control codes: the race build hooks
+    #    the end of the control-code chain (C0/844B) additively - each new
+    #    code is tested in turn and a byte matching none of them must still
+    #    take the displaced literal-character path
     check(control[0x844b:0x844e] == b"\x38\xe9\x1b",
           "control: C0/844B is not the vanilla SEC / SBC #$1b")
     check(race[0x844b] == 0x4c, "race: C0/844B is not a JMP to the hook")
-    hook = rom_offset(0xc00000 + int.from_bytes(race[0x844c:0x844e], "little"))
-    head = race[hook:hook + 10]
-    check(head[0] == 0xc9 and head[1] == 0x1c,
-          "race: <esper> hook does not test the control code")
-    check(head[2] == 0xf0, "race: <esper> hook does not branch to the renderer")
-    check(head[4:7] == b"\x38\xe9\x1b",
-          "race: <esper> hook lost the displaced SEC / SBC #$1b")
-    check(head[7] == 0x4c and int.from_bytes(head[8:10], "little") == 0x844e,
-          "race: <esper> hook does not return to the literal path at C0/844E")
+    at = rom_offset(0xc00000 + int.from_bytes(race[0x844c:0x844e], "little"))
+    for code in (0x1c, 0x1d):               # <esper>, <item2>
+        check(race[at] == 0xc9 and race[at + 1] == code,
+              f"race: name-code chain does not test ${code:02X} where expected")
+        check(race[at + 2] == 0xf0, f"race: ${code:02X} does not branch to its renderer")
+        at += 4                             # CMP #imm (2) + BEQ rel (2)
+    # after the last test comes the displaced literal-character path
+    check(race[at:at + 3] == b"\x38\xe9\x1b",
+          "race: name-code chain lost the displaced SEC / SBC #$1b")
+    check(race[at + 3] == 0x4c and int.from_bytes(race[at + 4:at + 6], "little") == 0x844e,
+          "race: name-code chain does not return to the literal path at C0/844E")
+
+    # 9. RewardDialog: the bespoke reward-naming dialogs are replaced in
+    #    place (same 3 bytes) by the decode-and-show command
+    reward_dialog_opcode = 0xee
+    check(field_handler(control, reward_dialog_opcode) == stub,
+          "control: the reward dialog opcode is not the unused stub")
+    check(field_handler(race, reward_dialog_opcode) != stub,
+          "race: the reward dialog opcode was not installed")
+    for offset, label in ((0xcd582, "lone wolf taunt"),
+                          (0xc0b37, "narshe wor reward choice")):
+        check(control[offset] == 0x4b,
+              f"control: {label} is not a vanilla Dialog command")
+        check(race[offset] == reward_dialog_opcode,
+              f"race: {label} was not replaced by the reward dialog command")
+    # lone wolf's second reward is granted by a vanilla $80 AddItem whose
+    # operand WC patches; race builds replace the whole command
+    check(control[0xcd59e] == 0x80, "control: lone wolf grant is not $80 AddItem")
+    check(race[0xcd59e] == ADD_CHECK_ITEM_OPCODE,
+          "race: lone wolf grant still uses the plaintext AddItem")
 
     print(f"all {checks} checks passed")
     print(f"item-reward table: {len(used)} check grants, masked+relocated in the claim")

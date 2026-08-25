@@ -411,6 +411,22 @@ class Items():
     def get_good_random(self):
         return random.choice(self.GOOD)
 
+    def dialog_name(self, item, second = False):
+        """The item's name for use inside dialog text.
+
+        Race builds return a control code instead, so the rom text names
+        nothing and the real name is rendered at display time: <item>
+        from $0583, or <item2> from $0584 for the second reward named by
+        the same dialog.  The caller is responsible for those bytes
+        holding this item - either the grant ran first, or the dialog is
+        shown by field.reward_dialog(), which decodes them itself.
+        """
+        if self.args.race:
+            return "<item2>" if second else "<item>"
+        import data.text
+        # item names are stored as TEXT2, dialogs are TEXT1
+        return data.text.convert(self.get_name(item), data.text.TEXT1)
+
     def get_receive_dialog(self, item):
         if self.race_receive_dialog is not None:
             return self.race_receive_dialog

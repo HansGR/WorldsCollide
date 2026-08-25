@@ -413,6 +413,18 @@ class Espers():
         self.available_espers.remove(rand_esper)
         return rand_esper
 
+    def dialog_name(self, esper):
+        """The esper's name for use inside dialog text.
+
+        Race builds return the <esper> control code instead, so the rom
+        text names nothing and the real name is rendered at display time
+        from $0583.  The caller must make sure $0583 holds this esper -
+        either the grant ran first, or it emits field.name_esper(esper).
+        """
+        if self.args.race:
+            return "<esper>"
+        return self.get_name(esper)
+
     def get_receive_esper_dialog(self, esper):
         # race builds: every esper check shares one dialog whose text names
         # no esper; the id it grants travels as an opaque index into the

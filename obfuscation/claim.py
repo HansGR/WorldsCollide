@@ -49,6 +49,10 @@ TABLE_SIZES = {
     # espers register twice per check (once for the grant command, once for
     # the receive dialog, so the two are independent of script order)
     "esper_rewards": 0x80,
+    # RewardDialog side table: 4 bytes per bespoke dialog that names a
+    # reward (reward index, kind, dialog id) - see obfuscation/rewards.py.
+    # not masked; it holds only opaque indices and dialog ids
+    "reward_dialogs": 0x40,
 }
 
 _layout = None

@@ -667,75 +667,129 @@ class AddCheckEsper(_Instruction):
 # and anything else takes the displaced original path unchanged.
 # ---------------------------------------------------------------------------
 
-ESPER_NAME_CODE = 0x1c          # matches '<esper>' in data/text/text1.py
-ESPER_NAME_INDEX = 0x0583       # ram byte holding the esper id to render
-ESPER_NAMES_SNES = 0xe6f6e1     # esper name table (8 bytes/entry, $ff padded)
+# --- runtime name rendering -------------------------------------------
+# Codes installed by chaining onto the end of the control-code dispatch
+# chain: each one is tested in turn, and a byte matching none of them
+# takes the displaced original literal-character path.
+#
+#   $1C <esper>  esper name from $0583   (the byte vanilla's <item> uses)
+#   $1D <item2>  item name from $0584    (the byte vanilla's <skill> uses)
+#
+# <item2> exists because one dialog can name two rewards - the Narshe WOR
+# choice offers "Leave it X" against "Make it Y" - and a single ram byte
+# can only carry one of them.
+CHAIN_END = 0x0844b             # C0/844B: SEC : SBC #$1b, the literal path
+CHAIN_RESUME = 0x844e
+
+ESPER_NAME_CODE = 0x1c
+ESPER_NAME_INDEX = 0x0583
+ESPER_NAMES_SNES = 0xe6f6e1     # 8 bytes/entry, $ff padded
 ESPER_NAME_LENGTH = 8
-_esper_name_code = None
 
-def esper_name_code():
-    """Install the <esper> message control code (once).  Race builds only."""
-    global _esper_name_code
-    if _esper_name_code is not None:
-        return _esper_name_code
+ITEM2_NAME_CODE = 0x1d
+ITEM2_NAME_INDEX = 0x0584
+ITEM_NAMES_SNES = 0xd2b301      # 13 bytes/entry: icon byte then 12 chars
+ITEM_NAME_LENGTH = 12
+ITEM_NAME_STRIDE = 13
 
-    TEXT_BUFFER = 0x9183        # $7E9183, the message engine's text buffer
-    TEXT2_TO_TEXT1 = 0x60       # name charset -> dialog charset
-    PAD = 0xff - TEXT2_TO_TEXT1 # converted value of an $ff name pad byte
+_name_codes = None
+
+def _render_name_src(code, index_address, names_snes, stride, length, next_test):
+    """asm for one name-substitution control code.
+
+    Mirrors vanilla's <item>/<skill> handlers: multiply the id in
+    `index_address` by the table stride, copy the name into the message
+    engine's text buffer converting from the name charset to the dialog
+    charset, and stop at the name's $ff padding.
+
+    Entry state (as at every control code): A 8-bit, X/Y 16-bit, direct
+    page $00 = the current offset into the text buffer.
+    """
+    TEXT_BUFFER = 0x9183        # $7E9183
+    TEXT2_TO_TEXT1 = 0x60
+    PAD = 0xff - TEXT2_TO_TEXT1
+
+    label = f"RENDER_{code:02X}"
+    copy = f"COPY_{code:02X}"
+    done = f"DONE_{code:02X}"
 
     src = [
-        # --- dispatch: is this byte our code? ---
-        asm.CMP(ESPER_NAME_CODE, asm.IMM8),
-        asm.BEQ("RENDER_ESPER"),
-        asm.SEC(),                                  # displaced from C0/844B:
-        asm.SBC(0x1b, asm.IMM8),                    # the literal character path
-        asm.JMP(0x844e, asm.ABS),
+        asm.CMP(code, asm.IMM8),
+        asm.BEQ(label),
+        *next_test,
 
-        # --- render the esper name at $0583 into the text buffer ---
-        # entry state (as at every control code): A 8-bit, X/Y 16-bit,
-        # direct page $00 = current offset into the text buffer
-        "RENDER_ESPER",
-        asm.LDA(ESPER_NAME_INDEX, asm.ABS),         # esper id
-        asm.REP(0x20),                              # 16-bit A for the shift
-        asm.AND(0x00ff, asm.IMM16),
-        asm.ASL(),
-        asm.ASL(),
-        asm.ASL(),                                  # id * 8 = name offset
-        asm.TAX(),                                  # X = source offset
-        asm.SEP(0x20),                              # 8-bit A
-        asm.LDY(0x00, asm.DIR),                     # Y = text buffer offset
+        label,
+        # id * stride via the hardware multiplier, exactly as vanilla's
+        # own <item>/<skill> handlers do (no direct-page scratch needed)
+        asm.LDA(index_address, asm.ABS),
+        asm.STA(0x4202, asm.ABS),
+        asm.LDA(stride, asm.IMM8),
+        asm.STA(0x4203, asm.ABS),
+        asm.NOP(),
+        asm.NOP(),
+        asm.NOP(),
+        asm.NOP(),                          # multiplier settle time
+        asm.LDX(0x4216, asm.ABS),           # X = id * stride (16-bit X)
+        asm.LDY(0x00, asm.DIR),             # Y = text buffer offset
         asm.LDA(0x7e, asm.IMM8),
         asm.PHA(),
-        asm.PLB(),                                  # data bank = $7E for the stores
+        asm.PLB(),                          # data bank = $7E for the stores
 
-        "COPY",
-        asm.LDA(ESPER_NAMES_SNES, asm.LNG_X),       # name character
+        copy,
+        asm.LDA(names_snes, asm.LNG_X),
         asm.SEC(),
-        asm.SBC(TEXT2_TO_TEXT1, asm.IMM8),          # to the dialog charset
+        asm.SBC(TEXT2_TO_TEXT1, asm.IMM8),
         asm.STA(TEXT_BUFFER, asm.ABS_Y),
-        asm.CMP(PAD, asm.IMM8),                     # name padding: stop here
-        asm.BEQ("DONE"),
+        asm.CMP(PAD, asm.IMM8),             # name padding: stop here
+        asm.BEQ(done),
         asm.INX(),
         asm.INY(),
-        asm.CPY(ESPER_NAME_LENGTH, asm.IMM16),
-        asm.BNE("COPY"),
+        asm.CPY(length, asm.IMM16),
+        asm.BNE(copy),
 
-        "DONE",
+        done,
         asm.TDC(),
-        asm.STA(TEXT_BUFFER, asm.ABS_Y),            # terminate the substitution
+        asm.STA(TEXT_BUFFER, asm.ABS_Y),    # terminate the substitution
         asm.TDC(),
         asm.PHA(),
-        asm.PLB(),                                  # data bank back to $00
+        asm.PLB(),                          # data bank back to $00
         asm.STZ(0xcf, asm.DIR),
-        asm.JMP(0x8263, asm.ABS),                   # back to the message engine
+        asm.JMP(0x8263, asm.ABS),           # back to the message engine
     ]
-    space = Write(Bank.C0, src, "race: <esper> message control code")
-    _esper_name_code = space.start_address
+    return src
 
-    # hook the end of the control-code chain (displaced above)
-    space = Reserve(0x0844b, 0x0844d, "race: <esper> control code hook")
-    space.write(asm.JMP(_esper_name_code, asm.ABS))
-    return _esper_name_code
+def name_codes():
+    """Install the <esper> and <item2> control codes (once).
+
+    Hooks the end of the control-code chain, where a byte that matched no
+    vanilla code falls through to the literal-character path - so the new
+    codes are tested last and everything else is unaffected.
+    """
+    global _name_codes
+    if _name_codes is not None:
+        return _name_codes
+
+    literal_path = [
+        asm.SEC(),                          # displaced from C0/844B
+        asm.SBC(0x1b, asm.IMM8),
+        asm.JMP(CHAIN_RESUME, asm.ABS),
+    ]
+    src = _render_name_src(
+        ESPER_NAME_CODE, ESPER_NAME_INDEX, ESPER_NAMES_SNES, 8,
+        ESPER_NAME_LENGTH,
+        next_test=_render_name_src(
+            ITEM2_NAME_CODE, ITEM2_NAME_INDEX, ITEM_NAMES_SNES,
+            ITEM_NAME_STRIDE, ITEM_NAME_LENGTH, next_test=literal_path))
+
+    space = Write(Bank.C0, src, "race: <esper>/<item2> message control codes")
+    _name_codes = space.start_address
+
+    space = Reserve(CHAIN_END, CHAIN_END + 2, "race: name control code hook")
+    space.write(asm.JMP(_name_codes, asm.ABS))
+    return _name_codes
+
+def esper_name_code():
+    return name_codes()
 
 
 ESPER_DIALOG_OPCODE = 0xe6      # ditto
@@ -785,3 +839,136 @@ def esper_dialog_opcode(dialog_id):
         _set_opcode_address(ESPER_DIALOG_OPCODE, space.start_address)
         _esper_dialog_handler = space.start_address
     return ESPER_DIALOG_OPCODE
+
+
+REWARD_DIALOG_OPCODE = 0xee     # unused by vanilla, WC dev and the fork
+_reward_dialog_handler = None
+
+def reward_dialog_opcode():
+    """Write the reward-dialog handler once and return its opcode.
+
+    Several events write their own dialog text naming a check reward
+    ("Make it “X”", "X SLEEPS HERE", ...).  In race builds that text uses
+    the <item>/<esper> control code instead, and the Dialog command that
+    shows it is replaced by this one - same three bytes, so it drops
+    straight onto a vanilla Dialog with no script shifting.
+
+    The operand is a slot in the masked side table (obfuscation/rewards.py
+    register_dialog), holding the opaque reward index, its kind, and the
+    dialog to show.  The handler decodes the reward into $0583 for the
+    control code, puts the dialog id where the vanilla dialog command
+    expects it, and hands off to $4B at C0/A4BC - which advances the
+    script by 3, exactly this command's length.
+
+    This works whether the event grants the reward before or after the
+    dialog, because the dialog decodes the name itself.
+    """
+    global _reward_dialog_handler
+    if _reward_dialog_handler is None:
+        from obfuscation import claim
+        from obfuscation.claim import snes
+
+        esper_name_code()       # <esper> may be used by these dialogs
+
+        layout = claim.layout(args)
+        item_table, item_pad = snes(layout["item_rewards"]), snes(layout["item_rewards_pad"])
+        esper_table, esper_pad = snes(layout["esper_rewards"]), snes(layout["esper_rewards_pad"])
+        slots, slots_pad = snes(layout["reward_dialogs"]), snes(layout["reward_dialogs_pad"])
+
+        def slot_field(offset):
+            # one masked byte of the current slot (X = slot * slot size)
+            return [asm.LDA(slots + offset, asm.LNG_X),
+                    asm.EOR(slots_pad + offset, asm.LNG_X)]
+
+        def reward_index_to_x():
+            # A holds the opaque reward index; make it a 16-bit X
+            return [asm.REP(0x20), asm.AND(0x00ff, asm.IMM16),
+                    asm.TAX(), asm.SEP(0x20)]
+
+        from obfuscation.rewards import DIALOG_SLOT_SIZE
+
+        def slot_to_x():
+            # X = slot * slot size, from the command operand still in $eb
+            return [
+                asm.LDA(0xeb, asm.DIR),
+                asm.STA(0x4202, asm.ABS),
+                asm.LDA(DIALOG_SLOT_SIZE, asm.IMM8),
+                asm.STA(0x4203, asm.ABS),
+                asm.NOP(),
+                asm.NOP(),
+                asm.NOP(),
+                asm.NOP(),                      # multiplier settle time
+                asm.LDX(0x4216, asm.ABS),
+            ]
+
+        src = [
+            # the optional second name first, because decoding a reward
+            # index clobbers X; $eb still holds the slot, so X can simply
+            # be recomputed for the primary name afterwards
+            *slot_to_x(),
+            *slot_field(5),                 # second name present?
+            asm.BEQ("PRIMARY"),
+            *slot_field(4),                 # opaque item index
+            *reward_index_to_x(),
+            asm.LDA(item_table, asm.LNG_X),
+            asm.EOR(item_pad, asm.LNG_X),
+            asm.STA(0x0584, asm.ABS),       # what <item2> renders
+
+            "PRIMARY",
+            *slot_to_x(),
+
+            # the dialog id next: $eb/$ec are where $4B reads it from, and
+            # they are free once the slot has been read out of them
+            *slot_field(2), asm.STA(0xeb, asm.DIR),
+            *slot_field(3), asm.STA(0xec, asm.DIR),
+
+            *slot_field(1),                 # kind
+            asm.BNE("ESPER"),
+
+            *slot_field(0),                 # item: opaque reward index
+            *reward_index_to_x(),
+            asm.LDA(item_table, asm.LNG_X),
+            asm.EOR(item_pad, asm.LNG_X),
+            asm.BRA("SHOW"),
+
+            "ESPER",
+            *slot_field(0),                 # esper: opaque reward index
+            *reward_index_to_x(),
+            asm.LDA(esper_table, asm.LNG_X),
+            asm.EOR(esper_pad, asm.LNG_X),
+
+            "SHOW",
+            asm.STA(0x0583, asm.ABS),       # what <item>/<esper> renders
+            asm.JMP(0xa4bc, asm.ABS),       # $4B dialog handler (advances 3)
+        ]
+        space = Write(Bank.C0, src, "race: reward dialog (decode name + show)")
+        _set_opcode_address(REWARD_DIALOG_OPCODE, space.start_address)
+        _reward_dialog_handler = space.start_address
+    return REWARD_DIALOG_OPCODE
+
+class RewardDialog(_Instruction):
+    """Race builds: show a dialog that names a reward, decoded at runtime.
+
+    Three bytes, like the vanilla Dialog command it replaces.
+    """
+    def __init__(self, kind, value, dialog_id, second_item=None):
+        from obfuscation import rewards
+        slot = rewards.register_dialog(kind, value, dialog_id, second_item)
+        # third byte pads to the 3 bytes the vanilla dialog handler
+        # advances by
+        super().__init__(reward_dialog_opcode(), slot, 0x00)
+
+    def __str__(self):
+        return super().__str__(self.args[0])
+
+
+def reward_dialog(kind, value, dialog_id, second_item=None, **dialog_args):
+    """Dialog naming a check reward: opaque in race builds, plain otherwise.
+
+    `second_item` is for a dialog naming two rewards at once; it renders
+    through <item2>.
+    """
+    if args.race:
+        return RewardDialog(kind, value, dialog_id, second_item)
+    import instruction.field as field
+    return field.Dialog(dialog_id, **dialog_args)

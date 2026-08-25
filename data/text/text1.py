@@ -28,6 +28,9 @@ text_value = {
               # instruction/field/custom.py esper_name_code().  Non-race
               # builds never emit it, so nothing changes for them.
               '<esper>'             : 0x1c,
+              # 0x1d likewise: a second item-name slot, for the one dialog
+              # that has to name two rewards at once (the Narshe WOR choice)
+              '<item2>'             : 0x1d,
               '!'                   : 0x5e,
               '?'                   : 0x5f,
               '/'                   : 0x60,

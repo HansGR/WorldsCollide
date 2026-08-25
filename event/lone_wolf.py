@@ -157,16 +157,36 @@ class LoneWolf(Event):
 
     def alternative_item_mod(self):
         # item lone wolf will give as a reward for not picking self.reward1
-        import data.text
-        item_name = data.text.convert(self.items.get_name(self.reward2.id), data.text.TEXT1) # item names are stored as TEXT2, dialogs are TEXT1
+        item_name = self.items.dialog_name(self.reward2.id)
 
+        # the taunt runs before any grant, so the dialog itself has to
+        # decode the name; "Got X!" follows the grant, which already
+        # leaves the id in $0583 (race builds; plain text otherwise)
+        space = Reserve(0xcd582, 0xcd584, "lone wolf taunt dialog")
+        space.write(
+            field.reward_dialog("item", self.reward2.id, 1765,
+                                inside_text_box = False, top_of_screen = False),
+        )
         self.dialogs.set_text(1765, "<line><     >Grrrr…<line><     >You'll never get this<line><     >“" + item_name + "”!<end>")
         self.dialogs.set_text(dialog_id.LONE_WOLF_GOT_ITEM, "<line><      >Got “" + item_name + "”!<end>")
 
-        space = Reserve(0xcd59f, 0xcd59f, "lone wolf item received", field.NOP())
-        space.write(
-            self.reward2.id,
-        )
+        if self.args.race:
+            # the vanilla script grants this reward with $80 <item id>;
+            # replace the whole 2-byte command with the opaque one so the
+            # id is not sitting in the script (and so the grant leaves the
+            # decoded id in $0583 for the "Got X!" dialog)
+            from obfuscation import rewards
+            import instruction.field.custom as custom
+            space = Reserve(0xcd59e, 0xcd59f, "lone wolf item received (opaque)")
+            space.write(
+                custom.add_check_item_opcode(),
+                rewards.register("item", self.reward2.id),
+            )
+        else:
+            space = Reserve(0xcd59f, 0xcd59f, "lone wolf item received", field.NOP())
+            space.write(
+                self.reward2.id,
+            )
 
         space = Reserve(0xcd5be, 0xcd5c0, "item chosen dialog before lone wolf falls", field.NOP())
         space.write(

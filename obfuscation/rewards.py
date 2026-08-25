@@ -30,14 +30,42 @@ TABLES = {
     "esper": "esper_rewards",
 }
 
+# side table for RewardDialog: one slot per bespoke dialog that names a
+# reward - (reward index, kind, dialog id low, dialog id high, second
+# item index, second-slot flag).  The second entry serves the one dialog
+# that names two rewards at once (the Narshe WOR choice); it is always an
+# item and renders through <item2>.
+DIALOG_TABLE = "reward_dialogs"
+DIALOG_SLOT_SIZE = 6
+KINDS = {"item": 0x00, "esper": 0x01}
+
 _collected = {kind: [] for kind in TABLES}
+_dialogs = []
 
 
 def reset():
     """Start a fresh build's collection (safe to call between in-process
     builds; a normal wc.py run is one process and starts empty)."""
-    global _collected
+    global _collected, _dialogs
     _collected = {kind: [] for kind in TABLES}
+    _dialogs = []
+
+
+def register_dialog(kind, value, dialog_id, second_item=None):
+    """Record a dialog that names a reward, returning its slot.
+
+    The slot is what the RewardDialog command carries; the handler reads
+    this table to find which reward to decode and which dialog to show.
+    `second_item` adds a second name, rendered by <item2>.
+    """
+    index = register(kind, value)
+    if second_item is None:
+        second, has_second = 0xff, 0x00
+    else:
+        second, has_second = register("item", second_item), 0x01
+    _dialogs.append((index, KINDS[kind], dialog_id & 0xff, (dialog_id >> 8) & 0xff,
+                     second, has_second))
+    return len(_dialogs) - 1
 
 
 def register(kind, value):
@@ -66,3 +94,14 @@ def write_tables(rom, args):
         # unused slots are 0xff (an invalid id) so a stray decode is
         # visibly wrong rather than a plausible fake
         rom.set_bytes(layout[table], ids + [0xff] * (size - len(ids)))
+
+    # the RewardDialog side table.  it is not masked: it holds only the
+    # opaque reward index plus the dialog id being shown, so it reveals
+    # which dialogs name a reward but never which reward
+    size = claim.TABLE_SIZES[DIALOG_TABLE]
+    slots = [b for slot in _dialogs for b in slot]
+    assert len(slots) <= size, (
+        f"race: {len(_dialogs)} reward dialogs exceed the "
+        f"{size // DIALOG_SLOT_SIZE}-slot table; grow "
+        f"claim.TABLE_SIZES['{DIALOG_TABLE}']")
+    rom.set_bytes(layout[DIALOG_TABLE], slots + [0xff] * (size - len(slots)))
