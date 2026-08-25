@@ -316,6 +316,22 @@ def main():
     check(items > 0 and espers > 0,
           "race: the reward table should hold both items and espers")
 
+    # 10. the auction house presents every reward in a chest in race
+    #     builds.  WC otherwise makes that swap only for item rewards, so
+    #     its presence or absence - a plain diff against vanilla - would
+    #     say whether the auction holds an esper or an item
+    AUCTION_CHEST_SITES = (0xb532c, 0xb5a51, 0xb51b1, 0xb5914)
+    for offset in AUCTION_CHEST_SITES:
+        check(race[offset] == 0xb2,
+              f"race: auction chest swap missing at 0x{offset:05x} - the "
+              f"reward kind would be visible by diffing against vanilla")
+    # and the announcements go through the reward dialog command
+    for offset in (0xb5339, 0xb5a5e, 0xb51be, 0xb5921):
+        check(control[offset] == 0x4b,
+              f"control: auction announce at 0x{offset:05x} is not a Dialog")
+        check(race[offset] == REWARD_DIALOG_OPCODE,
+              f"race: auction announce at 0x{offset:05x} still names its reward")
+
     print(f"all {checks} checks passed")
     print(f"reward table: {items} item + {espers} esper slots in one masked table")
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})

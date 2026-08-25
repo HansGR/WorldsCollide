@@ -120,38 +120,58 @@ class AuctionHouse(Event):
         self.log_reward(self.reward1, suffix = " (10,000)") # zoneseek
         self.log_reward(self.reward2, suffix = " (20,000)") # golem
 
-    def get_reward_announce_dialog(self, name, start_price, item):
+    def get_reward_announce_dialog(self, name, start_price, item, reward = None):
+        """The auctioneer's announcement.
+
+        Race builds use one wording whichever kind is on offer, and render
+        the name at display time, so neither the text nor its shape says
+        what this auction holds.  Centring still uses the real name's width.
+        """
         if item:
             reward_dialog = '“' + name + '”!' #https://discord.com/channels/666661907628949504/666811452350398493/1085018091844554832
         else:
             reward_dialog = 'The Magicite, “' + name + '”!'
+
+        shown = reward_dialog
+        if reward is not None and self.args.race:
+            kind, value = reward
+            display_name = (self.espers.dialog_name(value) if kind == "esper"
+                            else self.items.dialog_name(value))
+            reward_dialog = '“' + name + '”!'          # width of the real name
+            shown = '“' + display_name + '”!'
 
         # keep auctioneer dialog somewhat centered with new esper/item names
         # looks like about 32 characters on a line (32 is just an estimate, it is not monospace)
         line_length = 32
         space_count = (line_length - len(reward_dialog)) // 2
 
-        return '<line>' + (' ' * space_count) + reward_dialog + '<page><line>Who\'ll give me ' + str(start_price) + ' GP?<end>'
+        return '<line>' + (' ' * space_count) + shown + '<page><line>Who\'ll give me ' + str(start_price) + ' GP?<end>'
 
-    def announce_dialog_mod(self, start_addr, end_addr, space_description, dialog_id):
+    def announce_dialog_mod(self, start_addr, end_addr, space_description, dialog_id, reward = None):
         space = Reserve(start_addr, end_addr, space_description, field.NOP())
-        space.write(
-            field.Dialog(dialog_id),
-        )
+        if reward is None:
+            space.write(
+                field.Dialog(dialog_id),
+            )
+        else:
+            kind, value = reward
+            space.write(
+                field.reward_dialog(kind, value, dialog_id),
+            )
 
-    def reward1_announce_dialog_mod(self, reward_name, item):
-        announce_dialog = self.get_reward_announce_dialog(reward_name, self.reward1_start_price, item)
+    def reward1_announce_dialog_mod(self, reward_name, item, reward = None):
+        announce_dialog = self.get_reward_announce_dialog(reward_name, self.reward1_start_price, item, reward)
         self.dialogs.set_text(self.reward1_announce_dialog_id, announce_dialog)
 
-        self.announce_dialog_mod(0xb5339, 0xb533b, "update announce reward1 dialog in auction", self.reward1_announce_dialog_id)
-        self.announce_dialog_mod(0xb5a5e, 0xb5a60, "update announce reward1 dialog in auction in wor", self.reward1_announce_dialog_id)
+        self.announce_dialog_mod(0xb5339, 0xb533b, "update announce reward1 dialog in auction", self.reward1_announce_dialog_id, reward)
+        self.announce_dialog_mod(0xb5a5e, 0xb5a60, "update announce reward1 dialog in auction in wor", self.reward1_announce_dialog_id, reward)
 
-    def reward2_announce_dialog_mod(self, reward_name, item):
-        announce_dialog = self.get_reward_announce_dialog(reward_name, self.reward2_start_price, item)
+    def reward2_announce_dialog_mod(self, reward_name, item, reward = None):
+        announce_dialog = self.get_reward_announce_dialog(reward_name, self.reward2_start_price, item, reward)
         self.dialogs.set_text(self.reward2_announce_dialog_id, announce_dialog)
 
-        self.announce_dialog_mod(0xb51be, 0xb51c0, "update announce reward2 dialog in auction", self.reward2_announce_dialog_id)
-        self.announce_dialog_mod(0xb5921, 0xb5923, "update announce reward2 dialog in auction in wor", self.reward2_announce_dialog_id)
+        self.announce_dialog_mod(0xb51be, 0xb51c0, "update announce reward2 dialog in auction", self.reward2_announce_dialog_id, reward)
+        self.announce_dialog_mod(0xb5921, 0xb5923, "update announce reward2 dialog in auction in wor", self.reward2_announce_dialog_id, reward)
 
     def show_chest_mod(self, start_addr, end_addr, space_description):
         space = Reserve(start_addr, end_addr, space_description, field.NOP())
@@ -239,8 +259,15 @@ class AuctionHouse(Event):
     def esper1_mod(self, esper):
         esper_name = self.espers.get_name(esper)
 
+        # race builds present every auction reward in a chest.  the swap is
+        # otherwise made only for items, which would say plainly - by simply
+        # diffing this event against vanilla - that this auction holds an
+        # item rather than an esper
+        if self.args.race:
+            self.chest1_mod()
+
         # update esper announced dialog
-        self.reward1_announce_dialog_mod(esper_name, False)
+        self.reward1_announce_dialog_mod(esper_name, False, ("esper", esper))
 
         # update esper received and dialog
         self.receive_esper_mod(0xb5452, 0xb5456, "update esper1 received in auction", esper, event_bit.AUCTION_BOUGHT_ESPER1)
@@ -253,7 +280,7 @@ class AuctionHouse(Event):
         self.chest1_mod()
 
         # update item announced dialog
-        self.reward1_announce_dialog_mod(item_name, True)
+        self.reward1_announce_dialog_mod(item_name, True, ("item", item))
 
         # update item received and dialog
         self.receive_check_item_mod(0xb5452, 0xb5456, "update item1 received in auction", item, event_bit.AUCTION_BOUGHT_ESPER1)
@@ -262,8 +289,11 @@ class AuctionHouse(Event):
     def esper2_mod(self, esper):
         esper_name = self.espers.get_name(esper)
 
+        if self.args.race:
+            self.chest2_mod()       # see esper1_mod
+
         # update esper announced dialog
-        self.reward2_announce_dialog_mod(esper_name, False)
+        self.reward2_announce_dialog_mod(esper_name, False, ("esper", esper))
 
         # update esper received and dialog
         self.receive_esper_mod(0xb52c9, 0xb52cd, "update esper2 received in auction", esper, event_bit.AUCTION_BOUGHT_ESPER2)
@@ -276,7 +306,7 @@ class AuctionHouse(Event):
         self.chest2_mod()
 
         # update item announced dialog
-        self.reward2_announce_dialog_mod(item_name, True)
+        self.reward2_announce_dialog_mod(item_name, True, ("item", item))
 
         # update item received and dialog
         self.receive_check_item_mod(0xb52c9, 0xb52cd, "update item2 received in auction", item, event_bit.AUCTION_BOUGHT_ESPER2)
@@ -286,27 +316,34 @@ class AuctionHouse(Event):
         item_name = self.items.get_name(new_item_id)
         self.items.add_receive_dialog(new_item_id)
 
-        announce_dialog = self.get_reward_announce_dialog(item_name, start_price, True)
+        # these are not check rewards, but they are randomized, so race
+        # builds render the name at display time here too
+        reward = ("item", new_item_id) if self.args.race else None
+        announce_dialog = self.get_reward_announce_dialog(item_name, start_price, True, reward)
         self.dialogs.set_text(announce_dialog_id, announce_dialog)
 
     def cherub_down_mod(self, item):
         self.normal_item_set_announce_dialog(item, self.cherub_down_start_price, self.cherub_down_announce_dialog_id)
-        self.announce_dialog_mod(0xb4ef1, 0xb4ef3, "update announce cherub down dialog in auction", self.cherub_down_announce_dialog_id)
+        self.announce_dialog_mod(0xb4ef1, 0xb4ef3, "update announce cherub down dialog in auction", self.cherub_down_announce_dialog_id,
+                                 ("item", item) if self.args.race else None)
         self.receive_item_mod(0xb5012, 0xb5016, "update cherub down received in auction", item)
 
     def cure_ring_mod(self, item):
         self.normal_item_set_announce_dialog(item, self.cure_ring_start_price, self.cure_ring_announce_dialog_id)
-        self.announce_dialog_mod(0xb547b, 0xb547d, "update announce cure ring dialog in auction", self.cure_ring_announce_dialog_id)
+        self.announce_dialog_mod(0xb547b, 0xb547d, "update announce cure ring dialog in auction", self.cure_ring_announce_dialog_id,
+                                 ("item", item) if self.args.race else None)
         self.receive_item_mod(0xb55a4, 0xb55a8, "update cure ring received in auction", item)
 
     def hero_ring_mod(self, item):
         self.normal_item_set_announce_dialog(item, self.hero_ring_start_price, self.hero_ring_announce_dialog_id)
-        self.announce_dialog_mod(0xb55d5, 0xb55d7, "update announce hero ring dialog in auction", self.hero_ring_announce_dialog_id)
+        self.announce_dialog_mod(0xb55d5, 0xb55d7, "update announce hero ring dialog in auction", self.hero_ring_announce_dialog_id,
+                                 ("item", item) if self.args.race else None)
         self.receive_item_mod(0xb56ff, 0xb5703, "update hero ring received in auction", item)
 
     def zephyr_cape_mod(self, item):
         self.normal_item_set_announce_dialog(item, self.zephyr_cape_start_price, self.zephyr_cape_announce_dialog_id)
-        self.announce_dialog_mod(0xb5bad, 0xb5baf, "update announce zephyr cape dialog in auction", self.zephyr_cape_announce_dialog_id)
+        self.announce_dialog_mod(0xb5bad, 0xb5baf, "update announce zephyr cape dialog in auction", self.zephyr_cape_announce_dialog_id,
+                                 ("item", item) if self.args.race else None)
         self.receive_item_mod(0xb5c9f, 0xb5ca3, "update zephyr cape received in auction", item)
 
     def door_npc_mod(self):
