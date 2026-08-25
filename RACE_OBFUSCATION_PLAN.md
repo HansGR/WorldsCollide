@@ -403,6 +403,12 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
   there is no drop-rate flag, so use `-sca` (steal-always) to make the
   steal half of the loot table checkable and `-ss`/`-sd 100` to
   randomize; always add `-debug` so validation battles stay manageable.
+  `-debug` also routes six item grants through the AddCheckItem opcode
+  in the start event, so a harness boot smoke on a `-debug` race build
+  dynamically exercises the L3 decode path at new game — run the boot
+  smoke on a `-debug` build, not a plain one (a plain build booted fine
+  while a register-width bug in the opcode handler crashed every
+  `-debug`/start-item build at new game).
 
 ---
 

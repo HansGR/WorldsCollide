@@ -559,8 +559,12 @@ def add_check_item_opcode():
         pad = snes(layout["item_rewards_pad"])
 
         src = [
-            asm.SEP(0x10),                 # 8-bit X for the byte index
-            asm.LDX(0xeb, asm.DIR),        # X = reward index (command operand)
+            # X/Y must STAY 16-bit: the event engine and the C0/ACFC
+            # inventory scan (CPX #$0100) both depend on it.  standard
+            # idiom to index with a byte: clear 16-bit A, load, transfer
+            asm.TDC(),                     # clear the full accumulator
+            asm.LDA(0xeb, asm.DIR),        # reward index (command operand)
+            asm.TAX(),                     # X = index, high byte zero
             asm.LDA(table, asm.LNG_X),     # masked item id
             asm.EOR(pad, asm.LNG_X),       # decoded item id (8-bit A)
             asm.STA(0x1a, asm.DIR),        # DP $1A: add routine + <item> dialog
