@@ -72,16 +72,33 @@ class DarylTomb(Event):
             field.InvokeBattle(boss_pack_id),
         )
 
-    def daryl_sleeps_here_mod(self, new_name):
+    def daryl_sleeps_here_mod(self, new_name, reward = None):
+        # the inscription names the reward, so race builds render it at
+        # display time instead of storing it: `new_name` is then a control
+        # code, but the centring still uses the real name's width.  the
+        # dialog runs long before the grant, so it decodes the name itself
+        # (`reward` is (kind, value); characters are not obfuscated)
+        display_name = new_name
+        if reward is not None and self.args.race:
+            kind, value = reward
+            display_name = (self.espers.dialog_name(value) if kind == "esper"
+                            else self.items.dialog_name(value))
         num_spaces = 15 - len(new_name) # try to center dialog
 
         daryl_sleeps_here_dialog_id = 2461 # previously 2464
-        self.dialogs.set_text(daryl_sleeps_here_dialog_id, f"<line><{' ' * num_spaces}>{new_name} SLEEPS HERE<end>")
+        self.dialogs.set_text(daryl_sleeps_here_dialog_id, f"<line><{' ' * num_spaces}>{display_name} SLEEPS HERE<end>")
 
         space = Reserve(0xa42f9, 0xa42fb, "daryl tomb daryl sleeps here dialog", field.NOP())
-        space.write(
-            field.Dialog(daryl_sleeps_here_dialog_id, inside_text_box = False),
-        )
+        if reward is None:
+            space.write(
+                field.Dialog(daryl_sleeps_here_dialog_id, inside_text_box = False),
+            )
+        else:
+            kind, value = reward
+            space.write(
+                field.reward_dialog(kind, value, daryl_sleeps_here_dialog_id,
+                                    inside_text_box = False),
+            )
 
     def character_mod(self, character):
         self.daryl_sleeps_here_mod(self.characters.get_name(character))
@@ -102,7 +119,8 @@ class DarylTomb(Event):
         return space
 
     def esper_mod(self, esper):
-        self.daryl_sleeps_here_mod(self.espers.get_name(esper).upper())
+        self.daryl_sleeps_here_mod(self.espers.get_name(esper).upper(),
+                                   reward = ("esper", esper))
 
         space = self.esper_item_mod()
         space.write(
@@ -111,7 +129,8 @@ class DarylTomb(Event):
         )
 
     def item_mod(self, item):
-        self.daryl_sleeps_here_mod(self.items.get_name(item).upper())
+        self.daryl_sleeps_here_mod(self.items.get_name(item).upper(),
+                                   reward = ("item", item))
 
         space = self.esper_item_mod()
         space.write(

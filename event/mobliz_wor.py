@@ -154,18 +154,30 @@ class MoblizWOR(Event):
             field.Return(),
         )
 
-    def esper_item_mod(self, esper_item_name, esper_item_instructions):
+    def esper_item_mod(self, esper_item_name, esper_item_instructions, reward = None):
         random_sprite = self.characters.get_random_esper_item_sprite()
         self.terra_npc_mod(random_sprite, self.characters.get_palette(random_sprite))
 
         # change children's dialog to replace terra's name with the esper/item name for fun
         # espers/items do not have a single byte dedicated to their name so need to use other, longer dialogs
+        # these name the reward, so race builds render it at display time
+        # (both run before the grant, so each dialog decodes it itself)
+        kind, value = reward if reward is not None else (None, None)
+        if reward is not None and self.args.race:
+            esper_item_name = (self.espers.dialog_name(value) if kind == "esper"
+                               else self.items.dialog_name(value))
         self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_TAKE_AWAY, "You're not gonna take " + esper_item_name + " away, are you?<end>")
         self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_CRY, "I'm not gonna cry.<line>If I do, " + esper_item_name + "'ll feel sad…<end>")
+
+        def child_dialog(dialog):
+            if reward is None:
+                return field.Dialog(dialog)
+            return field.reward_dialog(kind, value, dialog)
+
         space = Reserve(0xc4549, 0xc454b, "mobliz wor you're not gonna take terra away")
-        space.write(field.Dialog(dialog_id.MOBLIZ_CHILD_TAKE_AWAY))
+        space.write(child_dialog(dialog_id.MOBLIZ_CHILD_TAKE_AWAY))
         space = Reserve(0xc506a, 0xc506c, "mobliz I'm not gonna cry")
-        space.write(field.Dialog(dialog_id.MOBLIZ_CHILD_CRY))
+        space.write(child_dialog(dialog_id.MOBLIZ_CHILD_CRY))
 
         boss_pack_id = self.get_boss("Phunbaba 4")
 
@@ -197,10 +209,10 @@ class MoblizWOR(Event):
         self.esper_item_mod(self.espers.get_name(esper), [
             field.AddEsper(esper),
             field.Dialog(self.espers.get_receive_esper_dialog(esper)),
-        ])
+        ], reward = ("esper", esper))
 
     def item_mod(self, item):
         self.esper_item_mod(self.items.get_name(item), [
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
-        ])
+        ], reward = ("item", item))

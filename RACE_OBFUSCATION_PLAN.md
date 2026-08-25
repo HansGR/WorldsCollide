@@ -338,35 +338,51 @@ Esper-at-check grants, implemented (Phase 3b):
   `sim_esper.py`), confirming it writes the correct name into the text
   buffer for all 27 espers.
 
-- **Residual — bespoke dialogs that bake a reward name into rom text.**
-  The systematic paths (`items.get_receive_dialog`,
-  `espers.get_receive_esper_dialog`) are covered, but several events
-  write their own text naming the reward.  Each is readable straight
-  from the rom at a fixed dialog id, so each is a genuine leak even
-  when the same text is shown to every legit player who arrives:
+- **Bespoke dialogs that name a reward — closed (Phase 3c).**  Several
+  events write their own text naming a check reward, sitting in the rom
+  at a fixed dialog id: readable without playing there, so a leak even
+  though the same text is shown to any player who arrives.  All of the
+  field-engine ones are now closed:
 
-  | Site | Dialog | Kind | Order vs grant |
+  | Site | Dialog | Kind | How |
   |---|---|---|---|
-  | `narshe_wor.py:111` "Make it “X”" | 1519 | item | choice, before |
-  | `narshe_wor.py:192` "Leave it the stone “X”" | 1519 | esper | choice, before |
-  | `narshe_wor.py:213` "Leave it “X”" | 1519 | item | choice, before |
-  | `mobliz_wob.py:38` "Received “X.”" | 782 | item | check trigger order |
-  | `mobliz_wor.py:163-164` child flavour lines | MOBLIZ_CHILD_* | esper/item | before |
-  | `lone_wolf.py:163` taunt "You'll never get this “X”!" | 1765 | item | before |
-  | `lone_wolf.py:164` "Got “X”!" | LONE_WOLF_GOT_ITEM | item | **after** grant |
-  | `daryl_tomb.py:79` "X SLEEPS HERE" | 2461 | item/esper/char | before |
-  | `veldt.py:379` "Received the Magicite “X”" | battle text | esper | battle engine |
-  | `auction_house.py:243-289` announce dialogs | several | esper/item | before |
+  | `narshe_wor` "Leave it “X”" / "Make it “Y”" | 1519 | esper+item | RewardDialog with a second name |
+  | `mobliz_wob` "Received “X.”" | 782 | item | RewardDialog |
+  | `mobliz_wor` child flavour lines | MOBLIZ_CHILD_* | esper/item | RewardDialog ×2 |
+  | `lone_wolf` taunt "You'll never get this “X”!" | 1765 | item | RewardDialog |
+  | `lone_wolf` "Got “X”!" | LONE_WOLF_GOT_ITEM | item | text only — the grant runs first |
+  | `lone_wolf` second reward grant | — | item | vanilla `$80` replaced by AddCheckItem |
+  | `daryl_tomb` "X SLEEPS HERE" | 2461 | item/esper | RewardDialog |
 
-  Closing these needs the reward id in `$0583` when the dialog renders.
-  Where WC emits the grant first (Lone Wolf "Got X!") the text can
-  simply switch to `<item>`/`<esper>`.  Everywhere else the dialog runs
-  first, so it needs a small custom command that decodes an index from
-  the masked table into `$0583` ahead of the dialog — the same trick
-  the esper receive dialog already uses, generalised.  Two are harder:
-  `veldt.py` uses the **battle** message engine (a different renderer
-  with its own control codes), and the auction house announces rewards
-  across several dialogs.
+  **`RewardDialog`** is the general tool: three bytes, so it drops
+  straight onto a vanilla `Dialog` with no script shifting.  Its operand
+  is a slot in a masked side table (opaque reward index, kind, dialog
+  id); the handler decodes the reward into `$0583` and hands off to the
+  `$4B` handler, which advances by 3.  Because the dialog decodes the
+  name itself it works whether the event grants the reward before or
+  after showing it — both orders occur.
+
+  **`<item2>` (`$1D`)** exists because the Narshe WOR choice names *two*
+  rewards at once and one ram byte can only carry one; it renders an
+  item from `$0584` and is a faithful clone of vanilla's `<item>`
+  handler (same name table, stride and length, verified against it).
+  `$1D` was cleared the same way `$1C` was: it appears once in vanilla
+  dialog text, as the operand of a `$11` wait, so it is never dispatched.
+
+  Character rewards are left plain throughout (see below), so a check
+  awarding a character keeps its vanilla text.
+
+  *Cosmetic note*: Daryl's tomb inscription is uppercased in vanilla
+  (`PEARL LANCE SLEEPS HERE`); the runtime-rendered name uses the item's
+  own casing, so race builds read `Pearl Lance SLEEPS HERE`.  Centring
+  still uses the real name's width.
+
+  **Still open**: `veldt.py:379` names the esper through
+  `set_multi_line_battle_text` — the **battle** message engine, a
+  different renderer whose control codes are not the field set, so
+  `<esper>` does not apply there; and the auction house announces
+  rewards across several dialogs.  Both deferred pending a decision.
+
 - **Character-at-check grants** (the recruit operand) remain a separate,
   more entangled case (sprite and name are shown as the character
   joins) — assess separately.

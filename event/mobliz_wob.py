@@ -35,8 +35,19 @@ class MoblizWOB(Event):
             )
 
     def finish_injured_lad(self):
-        received_text = self.dialogs.get_centered(f"Received “{self.item_reward_name}.”")
+        # centre on the real name but write the runtime one, so race builds
+        # keep vanilla's layout without storing the name (the dialog is
+        # shown before the grant, so it decodes the name itself below)
+        name = self.items.dialog_name(self.item_reward)
+        padding = self.dialogs.get_centered(f"Received “{self.item_reward_name}.”")
+        received_text = padding.replace(self.item_reward_name, name) \
+            if self.args.race else padding
         self.dialogs.set_text(782, f"I heard…<line>In my name you send Lola many things…<page>I wish to thank you.<line>Please accept this as a token of my appreciation.<page><line>{received_text}<end>")
+
+        space = Reserve(0xc6880, 0xc6882, "mobliz wob injured lad reward dialog")
+        space.write(
+            field.reward_dialog("item", self.item_reward, 782),
+        )
 
         src = [
             field.AddItem(self.item_reward, sound_effect = False),
