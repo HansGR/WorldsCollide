@@ -40,13 +40,13 @@ TABLE_SIZES = {
     "esper_data":  0x200,  # 0x186e00-0x186fff (spells/rates/bonus)
     "enemy_items": 0x600,  # 0xf3000-0xf35ff (steals/drops)
     "coliseum":    0x400,  # 0x1fb600-0x1fb9ff (matches)
-    # L3 item-reward table: new (no vanilla address), one byte per check
-    # item grant, indexed by the AddCheckItem opcode's 1-byte operand -
-    # so 0x100 (256) is both the size and the hard cap.  Observed ~100-110
-    # grants per seed, comfortably under it; if a seed ever exceeds 256
-    # grants the index would need a second byte (rewards.write_table
-    # asserts the count fits).  Written and masked like the other tables.
-    "item_rewards": 0x100,
+    # L3 reward tables: new (no vanilla address), one byte per check
+    # grant, indexed by the custom opcode's 1-byte operand - so each is
+    # capped at 256.  item ~100-110 grants/seed; esper ~20-27.  If a seed
+    # ever exceeds 256 grants the index would need a second byte
+    # (rewards.write_tables asserts the count fits).  Masked like the rest.
+    "item_rewards":  0x100,
+    "esper_rewards": 0x40,
 }
 
 _layout = None

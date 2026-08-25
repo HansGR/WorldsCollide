@@ -277,8 +277,31 @@ Item-at-check grants, implemented (`obfuscation/rewards.py`,
   `<item>` mechanism next), and the Narshe-WOR reward *choice* menus
   ("Make it X"), which show the reward to every legit player anyway and
   so leak nothing a cheater couldn't see in normal play.
-- **Next**: characters/espers at checks (esper receive dialogs already
-  name the magicite; same `<item>`-style treatment applies).
+Esper-at-check grants, implemented (Phase 3b):
+
+- **Opcode**: `AddEsper` in race builds emits a custom field opcode
+  (`0x67`) carrying a one-byte index into a per-seed masked
+  esper-reward table in the claim.  The handler decodes the esper id
+  and **reuses the vanilla `$86` AddEsper handler** (`JMP $ADB8`) for
+  the grant, so the owned-esper bit and the ESPERS_FOUND counter are
+  set exactly as normal.
+- **Dialog**: unlike items there is no `<esper>`/magicite runtime
+  renderer, so `get_receive_esper_dialog()` returns one shared
+  "Received the Magicite!" dialog (naming no esper); the per-esper
+  strings remain but are unreferenced by any check and are
+  seed-invariant flavor.  The esper still appears immediately in the
+  Esper menu.  *(A true `<esper>` renderer — message-engine surgery —
+  could restore the name in the popup if wanted; deferred.)*
+- Verified: non-race byte-identical; `verify_race_build.py` checks the
+  esper table (masked, valid ids); a `-stesp` race build boots and the
+  starting espers land in the owned-esper bitfield — dynamic proof of
+  the decode+grant path, the esper analog of the `-debug` item check.
+
+- **Residual, tracked**: a few bespoke item receive dialogs still bake
+  the item name (Mobliz injured-lad, Lone Wolf "Got X!"); to be routed
+  through the `<item>` mechanism.  Character-at-check grants (the
+  recruit operand) are a separate, more entangled case (sprite/name are
+  shown when the character joins) — assess separately.
 
 ### L4 — Per-seed allocation shuffle
 
@@ -420,5 +443,5 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
-| 3 | L3 reward indirection (items first, then characters/espers) | items **done** (Phase 3a); bespoke receive-dialog residuals + characters/espers next |
+| 3 | L3 reward indirection (items first, then characters/espers) | items **done** (3a), espers **done** (3b); bespoke item receive-dialogs + characters next |
 | 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |

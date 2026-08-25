@@ -125,5 +125,5 @@ class Data:
             # L2: mask every relocated table (incl. the reward table) in one
             # pass.  the reward table must be written before masking.
             from obfuscation import rewards, mask
-            rewards.write_table(self.rom, self.args)
+            rewards.write_tables(self.rom, self.args)
             mask.apply_all(self.args, self.rom)

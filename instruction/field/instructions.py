@@ -139,7 +139,7 @@ def _add_check_item(item):
     # (see obfuscation/rewards.py) - the script carries no item id
     from obfuscation import rewards
     import instruction.field.custom as custom
-    index = rewards.register(_resolve_item_id(item))
+    index = rewards.register("item", _resolve_item_id(item))
     return custom.AddCheckItem(index)
 
 def AddItem(item, sound_effect = True):
@@ -169,7 +169,7 @@ class _AddItems(_Instruction):
             # 0xB0/0xB1 repeat wrapper (see obfuscation/rewards.py)
             from obfuscation import rewards
             import instruction.field.custom as custom
-            index = rewards.register(self.item)
+            index = rewards.register("item", self.item)
             opcode = custom.add_check_item_opcode()
             if count == 1:
                 super().__init__(opcode, index)
@@ -218,11 +218,19 @@ class _AddEsper(_Instruction):
         return super().__str__(self.esper_id)
 
 def AddEsper(esper_id, sound_effect = True):
-    AddEsper = type("AddEsper", (_AddEsper,), {})
-    if sound_effect:
-        return AddEsper(esper_id), PlaySoundEffect(141)
+    import args
+    if args.race:
+        # hide the esper id behind an opaque reward-table index
+        # (see obfuscation/rewards.py) - the script carries no esper id
+        from obfuscation import rewards
+        import instruction.field.custom as custom
+        instruction = custom.AddCheckEsper(rewards.register("esper", esper_id))
     else:
-        return AddEsper(esper_id)
+        AddEsper = type("AddEsper", (_AddEsper,), {})
+        instruction = AddEsper(esper_id)
+    if sound_effect:
+        return instruction, PlaySoundEffect(141)
+    return instruction
 
 class RemoveEsper(_Instruction):
     def __init__(self, esper_id):

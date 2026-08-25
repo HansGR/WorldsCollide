@@ -292,8 +292,26 @@ def main():
     check(all(b < 256 for b in used), "race: reward table holds an invalid item id")
     check(bytes(race[tbase:tbase + 0x100]) != rewards, "race: reward table is not masked")
 
+    # esper grants route through AddCheckEsper ($67); its handler decodes
+    # a masked esper table (0x40 bytes) into valid esper ids (< 27)
+    ehandler = field_handler(race, 0x67)
+    ehb = race[ehandler:ehandler + 0x18]
+    j = ehb.index(0xbf)
+    check(ehb[j] == 0xbf and ehb[j + 4] == 0x5f,
+          "race: AddCheckEsper handler is not LDA long,X / EOR long,X")
+    etbase = rom_offset(int.from_bytes(ehb[j + 1:j + 4], "little"))
+    epbase = rom_offset(int.from_bytes(ehb[j + 5:j + 8], "little"))
+    for what, at in (("esper table", etbase), ("esper pad", epbase)):
+        check(CLAIM_START <= at <= CLAIM_END, f"race: {what} outside the claim")
+    espers = bytes(race[etbase + k] ^ race[epbase + k] for k in range(0x40))
+    eused = [b for b in espers if b != 0xff]
+    check(len(eused) > 0, "race: esper reward table is empty")
+    check(all(b < 27 for b in eused), "race: esper table holds an invalid esper id")
+    check(bytes(race[etbase:etbase + 0x40]) != espers, "race: esper table is not masked")
+
     print(f"all {checks} checks passed")
     print(f"item-reward table: {len(used)} check grants, masked+relocated in the claim")
+    print(f"esper-reward table: {len(eused)} check grants, masked+relocated in the claim")
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})
     print("pad bases:", {t: hex(p) for t, p in pads.items()})
     print(f"chest records: {len(real_flat)}, chest contents differing from decoy: "

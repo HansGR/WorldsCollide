@@ -587,3 +587,51 @@ class AddCheckItem(_Instruction):
 
     def __str__(self):
         return super().__str__(self.args[0])
+
+ADD_CHECK_ESPER_OPCODE = 0x67   # unused vanilla field opcode
+_add_check_esper_handler = None
+
+def add_check_esper_opcode():
+    """Write the race esper-decode handler once and return its opcode.
+
+    Mirror of add_check_item_opcode for espers: reads a one-byte index
+    (the command operand at $eb) into the relocated + masked esper-reward
+    table, decodes the esper id, then reuses the vanilla AddEsper handler
+    ($86 at C0/ADB8) for the actual grant - which already sets the
+    owned-esper bit and (via the ESPERS_FOUND patch) bumps the found
+    counter.  The receive dialog is a generic "Received the Magicite!"
+    (there is no <esper> renderer), so no esper name sits in the rom next
+    to a check.
+    """
+    global _add_check_esper_handler
+    if _add_check_esper_handler is None:
+        from obfuscation import claim
+        from obfuscation.claim import snes
+
+        layout = claim.layout(args)
+        table = snes(layout["esper_rewards"])
+        pad = snes(layout["esper_rewards_pad"])
+
+        src = [
+            asm.TDC(),                     # clear the full accumulator
+            asm.LDA(0xeb, asm.DIR),        # reward index (command operand)
+            asm.TAX(),                     # X = index, high byte zero (16-bit X)
+            asm.LDA(table, asm.LNG_X),     # masked esper id
+            asm.EOR(pad, asm.LNG_X),       # decoded esper id (0..26)
+            asm.CLC(),
+            asm.ADC(0x36, asm.IMM8),       # + 0x36: the form the $86 handler reads
+            asm.STA(0xeb, asm.DIR),        # hand it to the vanilla esper grant
+            asm.JMP(0xadb8, asm.ABS),      # $86 AddEsper handler (grant + found + next)
+        ]
+        space = Write(Bank.C0, src, "race: add check esper (decode + grant)")
+        _set_opcode_address(ADD_CHECK_ESPER_OPCODE, space.start_address)
+        _add_check_esper_handler = space.start_address
+    return ADD_CHECK_ESPER_OPCODE
+
+class AddCheckEsper(_Instruction):
+    """Drop-in for AddEsper in race builds (see add_check_esper_opcode)."""
+    def __init__(self, esper_index):
+        super().__init__(add_check_esper_opcode(), esper_index)
+
+    def __str__(self):
+        return super().__str__(self.args[0])

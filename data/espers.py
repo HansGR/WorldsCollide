@@ -42,6 +42,8 @@ class Espers():
         # a decoy instance only generates plausible data for race builds:
         # it must not write code patches or touch dialogs
         self.decoy = False
+        # set by receive_dialogs_mod on the real instance in race builds
+        self.race_receive_dialog = None
 
         self.espers = []
         for esper_index in range(len(self.name_data)):
@@ -74,6 +76,14 @@ class Espers():
 
         # remove phunbaba part of received fenrir dialog
         dialogs.set_text(self.receive_dialogs[self.FENRIR],     '<line>     Received the Magicite<line>              “Fenrir.”<end>')
+
+        # race builds: a single shared magicite dialog that names no esper,
+        # returned by get_receive_esper_dialog for every esper check
+        self.race_receive_dialog = None
+        if self.args.race:
+            self.race_receive_dialog = self.receive_dialogs[self.SHOAT]
+            dialogs.set_text(self.race_receive_dialog,
+                             '<line>     Received the Magicite!<end>')
 
     def shuffle_spells(self):
         # to prevent duplicates, get list of spells and sort it by their frequency
@@ -401,6 +411,14 @@ class Espers():
         return rand_esper
 
     def get_receive_esper_dialog(self, esper):
+        # race builds: one shared dialog that does not name the magicite,
+        # so the dialog referenced at a check reveals nothing about which
+        # esper it grants (the esper still shows in the Esper menu).  there
+        # is no <esper> runtime renderer, so this is generic text.  the
+        # per-esper "Received the Magicite X" strings still exist but are
+        # unreferenced by any check and are seed-invariant flavor.
+        if self.args.race:
+            return self.race_receive_dialog
         return self.receive_dialogs[esper]
 
     def get_name(self, esper):
