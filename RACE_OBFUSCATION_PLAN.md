@@ -289,6 +289,69 @@ runtime.
   that no per-kind opcode is installed at all (1623 checks).  Non-race
   output byte-identical; race builds boot and grant correctly.
 
+- **Bespoke reward-naming dialogs — closed.**  Several events wrote
+  their own text naming a reward (Narshe WOR choice, Mobliz WOB injured
+  lad, Mobliz WOR child lines, Lone Wolf taunt and "Got X!", Daryl's
+  tomb inscription).  All render at display time now, via `RewardDialog`
+  where the dialog runs before the grant.  Lone Wolf's second reward was
+  additionally granted by a *vanilla* `$80 AddItem` whose operand WC
+  merely patched — a bare item id at a fixed address — now the opaque
+  command.  Narshe WOR's wording is neutral in race builds so the text
+  does not betray the kind either.  *Cosmetic*: Daryl's inscription is
+  uppercase in vanilla; the runtime name uses the item's own casing.
+
+- **Auction house — closed.**  Its tree held three leaks, two of them
+  kind tells:
+  1. the announcement named the reward *and* used a different wording per
+     kind ("The Magicite, “X”!" against "“X”!").  Race builds use one
+     wording and render the name at display time, at all four announce
+     sites (reward1/reward2 × WOB/WOR).
+  2. the receive subroutines were already closed by the unified grant and
+     dialog commands — both kinds emit the same six commands.
+  3. **the chest swap**: WC replaces the auction's magicite with a
+     treasure chest *only for item rewards*, so simply diffing the event
+     against vanilla said which kind an auction held.  Confirmed
+     empirically (an esper seed left `C0/B532C` vanilla while an item
+     seed patched in `Call(show_chest)`).  Race builds present every
+     auction reward in a chest — the chest dialog is generic and the
+     grant is a separate patch, so an esper reward works unchanged.
+     *Visible change*: an esper won at auction arrives in a chest.
+
+  Both kinds register the same number of reward slots, so slot numbering
+  cannot shift by kind either.  The non-check auction items (Cherub Down,
+  Cure Ring, Hero Ring, Zephyr Cape) render their names at display time
+  too — no kind leak there, but they are randomized.
+
+- **Veldt — surveyed, not yet built.**  It names its esper through
+  `set_multi_line_battle_text`, i.e. the **battle** message engine.  A
+  `<reward>` there is feasible and would closely mirror the field one:
+
+  - Battle text has its own substitution mechanism: byte `$12` followed
+    by a sub-code, dispatched at `C1/5EED` by `JMP ($5EF0,X)` over a
+    four-entry table (actor / item / attack / command), each entry
+    reading its parameter from ram `$2F35`.
+  - Bank C1 already contains **both** printers such a code would need:
+    item names at `C1/6048` and **esper names at `C1/5FEF`** (8 chars
+    from `$E6F6E1`, entered with the esper id + `$36`, the same
+    convention the field AddEsper handler uses).  The new sub-code is
+    little more than "decode the slot, jump to the printer for its kind".
+  - **Space constraint**: bank C1 has exactly **27 free bytes**
+    (measured), and the `-fc` multisteal fix already writes there, so
+    relocating the dispatch table into C1 would likely break `-fc`
+    builds.  Zero-cost alternative: overwrite the existing 3-byte
+    `JMP ($5EF0,X)` with a 4-byte `JML` into bank F0 (the fourth byte
+    lands on the then-dead table), dispatch and decode in F0, and `JML`
+    back to the vanilla printers — no C1 free space consumed.
+
+  **What it would and would not buy.**  Veldt's reward is CHARACTER or
+  ESPER — never an item.  Rendering the name hides *which* esper but not
+  *that* it is one: the battle event picks dialog 182 for an esper
+  against 254 for a character, and the two grant paths differ wholesale.
+  The esper grant also bakes the id into ASM operands (`LDA #bit` /
+  `TSB byte`, which together identify it) — a separate leak with its own
+  fix.  Veldt therefore only closes fully alongside the character
+  question, and is best done with it.
+
 - **Character-at-check grants** (the recruit operand) remain a separate,
   more entangled case (sprite and name are shown as the character
   joins) — assess separately.
@@ -437,5 +500,5 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
-| 3 | L3 reward indirection (items first, then characters/espers) | items **done** (3a), espers **done** (3b); bespoke item receive-dialogs + characters next |
+| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); Veldt (battle engine) surveyed; characters next |
 | 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |
