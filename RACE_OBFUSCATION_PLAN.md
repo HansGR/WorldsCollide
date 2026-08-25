@@ -338,11 +338,38 @@ Esper-at-check grants, implemented (Phase 3b):
   `sim_esper.py`), confirming it writes the correct name into the text
   buffer for all 27 espers.
 
-- **Residual, tracked**: a few bespoke item receive dialogs still bake
-  the item name (Mobliz injured-lad, Lone Wolf "Got X!"); to be routed
-  through the `<item>` mechanism.  Character-at-check grants (the
-  recruit operand) are a separate, more entangled case (sprite/name are
-  shown when the character joins) — assess separately.
+- **Residual — bespoke dialogs that bake a reward name into rom text.**
+  The systematic paths (`items.get_receive_dialog`,
+  `espers.get_receive_esper_dialog`) are covered, but several events
+  write their own text naming the reward.  Each is readable straight
+  from the rom at a fixed dialog id, so each is a genuine leak even
+  when the same text is shown to every legit player who arrives:
+
+  | Site | Dialog | Kind | Order vs grant |
+  |---|---|---|---|
+  | `narshe_wor.py:111` "Make it “X”" | 1519 | item | choice, before |
+  | `narshe_wor.py:192` "Leave it the stone “X”" | 1519 | esper | choice, before |
+  | `narshe_wor.py:213` "Leave it “X”" | 1519 | item | choice, before |
+  | `mobliz_wob.py:38` "Received “X.”" | 782 | item | check trigger order |
+  | `mobliz_wor.py:163-164` child flavour lines | MOBLIZ_CHILD_* | esper/item | before |
+  | `lone_wolf.py:163` taunt "You'll never get this “X”!" | 1765 | item | before |
+  | `lone_wolf.py:164` "Got “X”!" | LONE_WOLF_GOT_ITEM | item | **after** grant |
+  | `daryl_tomb.py:79` "X SLEEPS HERE" | 2461 | item/esper/char | before |
+  | `veldt.py:379` "Received the Magicite “X”" | battle text | esper | battle engine |
+  | `auction_house.py:243-289` announce dialogs | several | esper/item | before |
+
+  Closing these needs the reward id in `$0583` when the dialog renders.
+  Where WC emits the grant first (Lone Wolf "Got X!") the text can
+  simply switch to `<item>`/`<esper>`.  Everywhere else the dialog runs
+  first, so it needs a small custom command that decodes an index from
+  the masked table into `$0583` ahead of the dialog — the same trick
+  the esper receive dialog already uses, generalised.  Two are harder:
+  `veldt.py` uses the **battle** message engine (a different renderer
+  with its own control codes), and the auction house announces rewards
+  across several dialogs.
+- **Character-at-check grants** (the recruit operand) remain a separate,
+  more entangled case (sprite and name are shown as the character
+  joins) — assess separately.
 
 ### L4 — Per-seed allocation shuffle
 
@@ -459,7 +486,11 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
   race ROMs contain per-seed obfuscation *and decoy data*.  A cheater
   who cannot trust the tool's output has lost most of the value of
   cheating.
-- **In-play verification recipe** (for building test seeds): use
+- **In-play verification recipe** (for building test seeds): always add
+  `-open` (open world) and `-smc 1` (a starting Moogle Charm) — open
+  world lets any check be reached with whatever characters the seed
+  started, instead of being blocked by character gating, and the charm
+  skips encounters on the way there.  Then: use
   `-ccrt`/`-sirt` (records are runtime truth, unlike the runtime-scaled
   `-ccsr`); add `-stesp 21 21` to check every esper's spells in the
   menu; grant coliseum wager items with `-si <id.1.1...>` so matches can
