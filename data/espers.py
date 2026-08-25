@@ -77,13 +77,16 @@ class Espers():
         # remove phunbaba part of received fenrir dialog
         dialogs.set_text(self.receive_dialogs[self.FENRIR],     '<line>     Received the Magicite<line>              “Fenrir.”<end>')
 
-        # race builds: a single shared magicite dialog that names no esper,
-        # returned by get_receive_esper_dialog for every esper check
+        # race builds: a single shared magicite dialog used by every esper
+        # check.  it names no esper in the rom - the <esper> control code
+        # renders the granted esper's name at runtime (see
+        # instruction/field/custom.py esper_name_code), so the text box looks
+        # exactly like vanilla's.
         self.race_receive_dialog = None
         if self.args.race:
             self.race_receive_dialog = self.receive_dialogs[self.SHOAT]
             dialogs.set_text(self.race_receive_dialog,
-                             '<line>     Received the Magicite!<end>')
+                             '<line>     Received the Magicite<line>              “<esper>.”<end>')
 
     def shuffle_spells(self):
         # to prevent duplicates, get list of spells and sort it by their frequency
@@ -411,14 +414,17 @@ class Espers():
         return rand_esper
 
     def get_receive_esper_dialog(self, esper):
-        # race builds: one shared dialog that does not name the magicite,
-        # so the dialog referenced at a check reveals nothing about which
-        # esper it grants (the esper still shows in the Esper menu).  there
-        # is no <esper> runtime renderer, so this is generic text.  the
-        # per-esper "Received the Magicite X" strings still exist but are
-        # unreferenced by any check and are seed-invariant flavor.
+        # race builds: every esper check shares one dialog whose text names
+        # no esper; the id it grants travels as an opaque index into the
+        # masked esper-reward table, and <esper> renders the real name at
+        # runtime.  the index is registered here (not reused from the grant)
+        # so the dialog works whether the event shows it before or after
+        # granting - both orders occur in the event scripts.
         if self.args.race:
-            return self.race_receive_dialog
+            from obfuscation import rewards
+            from instruction.field.instructions import EsperDialogId
+            return EsperDialogId(self.race_receive_dialog,
+                                 rewards.register("esper", esper))
         return self.receive_dialogs[esper]
 
     def get_name(self, esper):

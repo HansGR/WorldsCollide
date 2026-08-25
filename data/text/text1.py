@@ -22,6 +22,12 @@ text_value = {
               '<GP>'                : 0x19,
               '<item>'              : 0x1a,
               '<skill>'             : 0x1b,
+              # 0x1c is unused by vanilla (control codes run 0x00-0x1f, text
+              # starts at 0x20).  race builds install a handler for it that
+              # renders the name of the esper whose id is in $0583 - see
+              # instruction/field/custom.py esper_name_code().  Non-race
+              # builds never emit it, so nothing changes for them.
+              '<esper>'             : 0x1c,
               '!'                   : 0x5e,
               '?'                   : 0x5f,
               '/'                   : 0x60,

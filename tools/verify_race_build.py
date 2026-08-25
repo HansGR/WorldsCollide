@@ -309,6 +309,22 @@ def main():
     check(all(b < 27 for b in eused), "race: esper table holds an invalid esper id")
     check(bytes(race[etbase:etbase + 0x40]) != espers, "race: esper table is not masked")
 
+    # 8. the <esper> message control code: the race build hooks the end of
+    #    the control-code chain (C0/844B) additively - a byte that is not
+    #    our code must still take the displaced literal-character path
+    check(control[0x844b:0x844e] == b"\x38\xe9\x1b",
+          "control: C0/844B is not the vanilla SEC / SBC #$1b")
+    check(race[0x844b] == 0x4c, "race: C0/844B is not a JMP to the hook")
+    hook = rom_offset(0xc00000 + int.from_bytes(race[0x844c:0x844e], "little"))
+    head = race[hook:hook + 10]
+    check(head[0] == 0xc9 and head[1] == 0x1c,
+          "race: <esper> hook does not test the control code")
+    check(head[2] == 0xf0, "race: <esper> hook does not branch to the renderer")
+    check(head[4:7] == b"\x38\xe9\x1b",
+          "race: <esper> hook lost the displaced SEC / SBC #$1b")
+    check(head[7] == 0x4c and int.from_bytes(head[8:10], "little") == 0x844e,
+          "race: <esper> hook does not return to the literal path at C0/844E")
+
     print(f"all {checks} checks passed")
     print(f"item-reward table: {len(used)} check grants, masked+relocated in the claim")
     print(f"esper-reward table: {len(eused)} check grants, masked+relocated in the claim")

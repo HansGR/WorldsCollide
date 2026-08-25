@@ -285,17 +285,33 @@ Esper-at-check grants, implemented (Phase 3b):
   and **reuses the vanilla `$86` AddEsper handler** (`JMP $ADB8`) for
   the grant, so the owned-esper bit and the ESPERS_FOUND counter are
   set exactly as normal.
-- **Dialog**: unlike items there is no `<esper>`/magicite runtime
-  renderer, so `get_receive_esper_dialog()` returns one shared
-  "Received the Magicite!" dialog (naming no esper); the per-esper
-  strings remain but are unreferenced by any check and are
-  seed-invariant flavor.  The esper still appears immediately in the
-  Esper menu.  *(A true `<esper>` renderer — message-engine surgery —
-  could restore the name in the popup if wanted; deferred.)*
+- **Dialog**: vanilla has no esper equivalent of `<item>`, so L3 **adds
+  one**: a new message control code `$1C <esper>` that renders the esper
+  whose id is in `$0583` (the same byte `<item>` uses for its index — the
+  two never appear in one dialog).  It is installed by hooking the end of
+  the control-code dispatch chain at `C0/844B`, where an unmatched byte
+  falls through to the literal-character path (`SEC : SBC #$1b`): the new
+  code is tested last and everything else takes the displaced original
+  path unchanged.  All esper checks then share **one** dialog whose rom
+  text names no esper — "Received the Magicite `<esper>`." — and the
+  player sees the correct name, formatted exactly like vanilla.
+- **Order independence**: some events show the receive dialog *before*
+  granting (e.g. Ancient Castle), others after.  So the dialog command
+  carries **its own** index into the masked esper table and decodes the
+  id itself, rather than relying on a value the grant left behind.
+  `get_receive_esper_dialog()` returns an `EsperDialogId` (an `int`
+  subclass carrying that index) and `field.Dialog` emits the custom
+  3-byte command — the length the vanilla dialog handler advances by, so
+  it hands off to `C0/A4BC` unchanged.  Zero event-file edits.
 - Verified: non-race byte-identical; `verify_race_build.py` checks the
-  esper table (masked, valid ids); a `-stesp` race build boots and the
+  esper table (masked, valid ids) and that the `<esper>` hook keeps the
+  displaced literal-character path; a `-stesp` race build boots and the
   starting espers land in the owned-esper bitfield — dynamic proof of
   the decode+grant path, the esper analog of the `-debug` item check.
+  The assembled `<esper>` renderer was additionally **executed** on a
+  small 65816 interpreter over the built rom (scratch
+  `sim_esper.py`), confirming it writes the correct name into the text
+  buffer for all 27 espers.
 
 - **Residual, tracked**: a few bespoke item receive dialogs still bake
   the item name (Mobliz injured-lad, Lone Wolf "Got X!"); to be routed

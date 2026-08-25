@@ -285,8 +285,37 @@ class RemoveAllEquipment(_Instruction):
     def __str__(self):
         return super().__str__(self.character)
 
+class EsperDialogId(int):
+    """A receive-esper dialog id that also carries the (opaque) reward-table
+    index of the esper it should name.
+
+    Race builds hand this back from Espers.get_receive_esper_dialog so that
+    Dialog() below can emit the custom esper-dialog command instead - the
+    script then names no esper, and the name is filled in at runtime.  It is
+    an int so every non-race path (and any code that just wants the id) keeps
+    working unchanged.
+    """
+    def __new__(cls, dialog_id, reward_index):
+        instance = super().__new__(cls, dialog_id)
+        instance.reward_index = reward_index
+        return instance
+
 class Dialog(_Instruction):
     def __init__(self, dialog_id, wait_for_input = True, inside_text_box = True, top_of_screen = True):
+        if isinstance(dialog_id, EsperDialogId) and wait_for_input \
+                and inside_text_box and top_of_screen:
+            # race builds: emit the custom esper-dialog command, which decodes
+            # the esper from the masked reward table and lets <esper> render
+            # its name at runtime, so the script names no esper.  (only the
+            # plain flags are handled; every esper receive dialog uses them.)
+            # the trailing byte pads the command to the 3 bytes the vanilla
+            # dialog handler advances by.
+            import instruction.field.custom as custom
+            self.dialog_id = int(dialog_id)
+            super().__init__(custom.esper_dialog_opcode(self.dialog_id),
+                             dialog_id.reward_index, 0x00)
+            return
+
         self.dialog_id = dialog_id
 
         if wait_for_input:

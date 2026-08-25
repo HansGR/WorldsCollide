@@ -635,3 +635,139 @@ class AddCheckEsper(_Instruction):
 
     def __str__(self):
         return super().__str__(self.args[0])
+
+# ---------------------------------------------------------------------------
+# race builds: render an esper name inside a dialog at runtime
+#
+# Vanilla has message control codes that substitute a name into dialog text:
+# $1A <item> (item names, 13-byte entries at $D2B300) and $1B <skill>.  Each
+# reads an index from a fixed ram byte, converts the name from the item/esper
+# TEXT2 charset to the dialog TEXT1 charset (SBC #$60) and copies it into the
+# text buffer at $7E9183.  There is no such code for espers, so L3 adds one:
+# $1C <esper>, which renders the esper whose id is in $0583 (the same byte the
+# item code uses for its index - the two never appear in one dialog).
+#
+# The control-code dispatch chain in bank C0 ends at C0/844B, where a byte
+# that matched no code falls through to `SEC : SBC #$1b` (the literal
+# character path).  Hooking there is additive: the new code is tested last,
+# and anything else takes the displaced original path unchanged.
+# ---------------------------------------------------------------------------
+
+ESPER_NAME_CODE = 0x1c          # matches '<esper>' in data/text/text1.py
+ESPER_NAME_INDEX = 0x0583       # ram byte holding the esper id to render
+ESPER_NAMES_SNES = 0xe6f6e1     # esper name table (8 bytes/entry, $ff padded)
+ESPER_NAME_LENGTH = 8
+_esper_name_code = None
+
+def esper_name_code():
+    """Install the <esper> message control code (once).  Race builds only."""
+    global _esper_name_code
+    if _esper_name_code is not None:
+        return _esper_name_code
+
+    TEXT_BUFFER = 0x9183        # $7E9183, the message engine's text buffer
+    TEXT2_TO_TEXT1 = 0x60       # name charset -> dialog charset
+    PAD = 0xff - TEXT2_TO_TEXT1 # converted value of an $ff name pad byte
+
+    src = [
+        # --- dispatch: is this byte our code? ---
+        asm.CMP(ESPER_NAME_CODE, asm.IMM8),
+        asm.BEQ("RENDER_ESPER"),
+        asm.SEC(),                                  # displaced from C0/844B:
+        asm.SBC(0x1b, asm.IMM8),                    # the literal character path
+        asm.JMP(0x844e, asm.ABS),
+
+        # --- render the esper name at $0583 into the text buffer ---
+        # entry state (as at every control code): A 8-bit, X/Y 16-bit,
+        # direct page $00 = current offset into the text buffer
+        "RENDER_ESPER",
+        asm.LDA(ESPER_NAME_INDEX, asm.ABS),         # esper id
+        asm.REP(0x20),                              # 16-bit A for the shift
+        asm.AND(0x00ff, asm.IMM16),
+        asm.ASL(),
+        asm.ASL(),
+        asm.ASL(),                                  # id * 8 = name offset
+        asm.TAX(),                                  # X = source offset
+        asm.SEP(0x20),                              # 8-bit A
+        asm.LDY(0x00, asm.DIR),                     # Y = text buffer offset
+        asm.LDA(0x7e, asm.IMM8),
+        asm.PHA(),
+        asm.PLB(),                                  # data bank = $7E for the stores
+
+        "COPY",
+        asm.LDA(ESPER_NAMES_SNES, asm.LNG_X),       # name character
+        asm.SEC(),
+        asm.SBC(TEXT2_TO_TEXT1, asm.IMM8),          # to the dialog charset
+        asm.STA(TEXT_BUFFER, asm.ABS_Y),
+        asm.CMP(PAD, asm.IMM8),                     # name padding: stop here
+        asm.BEQ("DONE"),
+        asm.INX(),
+        asm.INY(),
+        asm.CPY(ESPER_NAME_LENGTH, asm.IMM16),
+        asm.BNE("COPY"),
+
+        "DONE",
+        asm.TDC(),
+        asm.STA(TEXT_BUFFER, asm.ABS_Y),            # terminate the substitution
+        asm.TDC(),
+        asm.PHA(),
+        asm.PLB(),                                  # data bank back to $00
+        asm.STZ(0xcf, asm.DIR),
+        asm.JMP(0x8263, asm.ABS),                   # back to the message engine
+    ]
+    space = Write(Bank.C0, src, "race: <esper> message control code")
+    _esper_name_code = space.start_address
+
+    # hook the end of the control-code chain (displaced above)
+    space = Reserve(0x0844b, 0x0844d, "race: <esper> control code hook")
+    space.write(asm.JMP(_esper_name_code, asm.ABS))
+    return _esper_name_code
+
+
+ESPER_DIALOG_OPCODE = 0x68      # unused vanilla field opcode
+_esper_dialog_handler = None
+
+def esper_dialog_opcode(dialog_id):
+    """Write the race esper-dialog handler once and return its opcode.
+
+    Displays the shared "Received the Magicite <esper>" dialog with the
+    esper name filled in at runtime.  The command carries a one-byte index
+    into the masked esper-reward table (never the esper id), decodes it into
+    $0583 for the <esper> code, then hands off to the vanilla dialog handler
+    ($4B at C0/A4BC) - which reads the dialog id from $eb/$ec and advances
+    the script by 3, exactly this command's length (opcode + index + pad).
+
+    Carrying its own index makes the command independent of whether the
+    event grants the esper before or after showing the dialog (both orders
+    occur in the event scripts).
+    """
+    global _esper_dialog_handler
+    if _esper_dialog_handler is None:
+        from obfuscation import claim
+        from obfuscation.claim import snes
+
+        esper_name_code()       # the dialog is useless without the renderer
+
+        layout = claim.layout(args)
+        table = snes(layout["esper_rewards"])
+        pad = snes(layout["esper_rewards_pad"])
+
+        src = [
+            asm.TDC(),                          # clear the full accumulator
+            asm.LDA(0xeb, asm.DIR),             # reward index (command operand)
+            asm.TAX(),                          # X = index, high byte zero
+            asm.LDA(table, asm.LNG_X),          # masked esper id
+            asm.EOR(pad, asm.LNG_X),            # decoded esper id
+            asm.STA(ESPER_NAME_INDEX, asm.ABS), # what <esper> will render
+
+            # hand the shared dialog id to the vanilla dialog command
+            asm.LDA(dialog_id & 0xff, asm.IMM8),
+            asm.STA(0xeb, asm.DIR),
+            asm.LDA((dialog_id >> 8) & 0xff, asm.IMM8),
+            asm.STA(0xec, asm.DIR),
+            asm.JMP(0xa4bc, asm.ABS),           # $4B dialog handler (advances 3)
+        ]
+        space = Write(Bank.C0, src, "race: esper receive dialog (decode + show)")
+        _set_opcode_address(ESPER_DIALOG_OPCODE, space.start_address)
+        _esper_dialog_handler = space.start_address
+    return ESPER_DIALOG_OPCODE

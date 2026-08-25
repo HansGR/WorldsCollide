@@ -328,7 +328,7 @@ class Items():
         if self.args.race:
             self.race_receive_dialog = self.available_dialogs.pop()
             self.dialogs.set_text(self.race_receive_dialog,
-                                  '<line><     >Received <item>!<end>')
+                                  '<line><     >Received “<item>”!<end>')
 
         self.moogle_starting_equipment()
 

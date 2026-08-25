@@ -46,7 +46,9 @@ TABLE_SIZES = {
     # ever exceeds 256 grants the index would need a second byte
     # (rewards.write_tables asserts the count fits).  Masked like the rest.
     "item_rewards":  0x100,
-    "esper_rewards": 0x40,
+    # espers register twice per check (once for the grant command, once for
+    # the receive dialog, so the two are independent of script order)
+    "esper_rewards": 0x80,
 }
 
 _layout = None
