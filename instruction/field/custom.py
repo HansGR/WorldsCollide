@@ -567,7 +567,10 @@ def add_check_item_opcode():
             asm.TAX(),                     # X = index, high byte zero
             asm.LDA(table, asm.LNG_X),     # masked item id
             asm.EOR(pad, asm.LNG_X),       # decoded item id (8-bit A)
-            asm.STA(0x1a, asm.DIR),        # DP $1A: add routine + <item> dialog
+            asm.STA(0x1a, asm.DIR),        # DP $1A: the add-inventory routine
+            asm.STA(0x0583, asm.ABS),      # $0583: the <item> dialog's name index
+                                           # (both set, exactly as the vanilla
+                                           # found-item flow at C0/4C86 does)
             asm.JSR(0xacfc, asm.ABS),      # vanilla add-to-inventory (uses $1A)
             asm.LDA(0x02, asm.IMM8),       # command size (opcode + index)
             asm.JMP(0x9b5c, asm.ABS),      # next command
