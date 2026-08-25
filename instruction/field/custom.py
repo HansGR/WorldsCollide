@@ -6,9 +6,15 @@ import args
 from enum import IntEnum
 
 def _set_opcode_address(opcode, address):
+    # Claiming a field opcode reserves its slot in the event command
+    # pointer table, so two features claiming the same opcode fail the
+    # build with a space conflict rather than silently overwriting one
+    # another.  (The description is interpolated so that error names the
+    # opcode - it used to be a plain string printing "{opcode}".)
     FIRST_OPCODE = 0x35
     opcode_table_address = 0x098c4 + (opcode - FIRST_OPCODE) * 2
-    space = Reserve(opcode_table_address, opcode_table_address + 1, "field opcode table, {opcode} {hex(address)}")
+    space = Reserve(opcode_table_address, opcode_table_address + 1,
+                    f"field opcode table, {hex(opcode)} -> {hex(address)}")
     space.write(
         (address & 0xffff).to_bytes(2, "little"),
     )
@@ -535,7 +541,15 @@ class LongCall(_Instruction):
                              super().__init__(opcode, function_address.to_bytes(3, "little"), arg))
         self.__init__(function_address, arg)
 
-ADD_CHECK_ITEM_OPCODE = 0x66   # unused vanilla field opcode
+# Field opcodes for the race commands.  Vanilla leaves $64-$69, $9E-$9F,
+# $E6, $EE and a few others unused (they share the unused-opcode stub in
+# the pointer table, and the Event Command List doc shows the vanilla set
+# jumping $63 -> $6A).  These three are additionally unclaimed by both WC
+# dev and the door randomizer fork, which already uses $66-$69 - so a
+# future merge of the two feature sets does not collide.  Claiming an
+# opcode reserves its pointer-table slot, so any collision that did arise
+# would fail the build (see _set_opcode_address).
+ADD_CHECK_ITEM_OPCODE = 0x9e
 _add_check_item_handler = None
 
 def add_check_item_opcode():
@@ -588,7 +602,7 @@ class AddCheckItem(_Instruction):
     def __str__(self):
         return super().__str__(self.args[0])
 
-ADD_CHECK_ESPER_OPCODE = 0x67   # unused vanilla field opcode
+ADD_CHECK_ESPER_OPCODE = 0x9f   # (unused by vanilla, WC dev and the door rando fork)
 _add_check_esper_handler = None
 
 def add_check_esper_opcode():
@@ -724,7 +738,7 @@ def esper_name_code():
     return _esper_name_code
 
 
-ESPER_DIALOG_OPCODE = 0x68      # unused vanilla field opcode
+ESPER_DIALOG_OPCODE = 0xe6      # ditto
 _esper_dialog_handler = None
 
 def esper_dialog_opcode(dialog_id):

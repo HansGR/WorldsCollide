@@ -272,11 +272,20 @@ def main():
     def field_handler(rom, opcode):
         off = FIELD_OPCODE_TABLE + (opcode - 0x35) * 2
         return int.from_bytes(rom[off:off + 2], "little")
-    # opcode 0x66 is unused in vanilla -> shares the stub; in a race build
-    # it points at the decode handler (LDA long,X / EOR long,X)
-    stub = field_handler(control, 0x66)
-    check(field_handler(control, 0x66) == stub, "control: 0x66 not the unused stub")
-    handler = field_handler(race, 0x66)
+    # the race opcodes are unused in vanilla -> they share the unused-opcode
+    # stub; in a race build they point at the decode handlers
+    # (kept in sync with instruction/field/custom.py by the checks below;
+    # that module cannot be imported here - importing instruction.field runs
+    # build-time rom writes that need an initialised Memory)
+    ADD_CHECK_ITEM_OPCODE, ADD_CHECK_ESPER_OPCODE, ESPER_DIALOG_OPCODE = 0x9e, 0x9f, 0xe6
+    stub = field_handler(control, 0xee)          # an opcode nothing claims
+    for opcode in (ADD_CHECK_ITEM_OPCODE, ADD_CHECK_ESPER_OPCODE, ESPER_DIALOG_OPCODE):
+        check(field_handler(control, opcode) == stub,
+              f"control: opcode {hex(opcode)} is not the unused stub "
+              f"(is another feature already using it?)")
+        check(field_handler(race, opcode) != stub,
+              f"race: opcode {hex(opcode)} was not installed")
+    handler = field_handler(race, ADD_CHECK_ITEM_OPCODE)
     hb = race[handler:handler + 0x18]
     i = hb.index(0xbf)
     check(hb[i] == 0xbf and hb[i + 4] == 0x5f,
@@ -294,7 +303,7 @@ def main():
 
     # esper grants route through AddCheckEsper ($67); its handler decodes
     # a masked esper table (0x40 bytes) into valid esper ids (< 27)
-    ehandler = field_handler(race, 0x67)
+    ehandler = field_handler(race, ADD_CHECK_ESPER_OPCODE)
     ehb = race[ehandler:ehandler + 0x18]
     j = ehb.index(0xbf)
     check(ehb[j] == 0xbf and ehb[j + 4] == 0x5f,

@@ -295,6 +295,31 @@ Esper-at-check grants, implemented (Phase 3b):
   path unchanged.  All esper checks then share **one** dialog whose rom
   text names no esper — "Received the Magicite `<esper>`." — and the
   player sees the correct name, formatted exactly like vanilla.
+- **Namespaces and why these codes are free** (two *different* byte
+  namespaces are involved, which is easy to conflate):
+  - *Field event commands* — the opcodes in event scripts, dispatched
+    through the pointer table at ROM `0x098C4` (`$35`+).  This is what
+    `claude_reference/Event Command List.txt` documents; vanilla's set
+    jumps `$63` → `$6A`, and unused opcodes share a stub pointer.  The
+    race commands use **`$9E`, `$9F`, `$E6`** — unused by vanilla, by
+    WC dev, *and* by the door randomizer fork (which already claims
+    `$66`-`$69`), so the two feature sets can merge without collision.
+    Claiming an opcode `Reserve()`s its pointer-table slot, so any
+    double claim fails the build instead of silently squashing a
+    command.
+  - *Dialog text codes* — bytes **inside** dialog strings, interpreted
+    by the message engine, not the event interpreter.  Bytes `$00-$1F`
+    are control codes, `$20`+ is text.  `$1A <item>` and `$1B <skill>`
+    live here (vanilla uses each exactly once: dialogs 2949 "Received
+    “`<item>`”!" and 2950 "Learned “`<skill>`”!"), and `$1C <esper>` is
+    the code L3 adds.  Note `data/text/text1.py` only maps what WC needs
+    to *write*, so absence from it does **not** prove a code is free;
+    the checks that do are: the message engine dispatches only bytes
+    `< $20`, no vanilla handler tests `$1C`, and a scan of all 3327
+    vanilla dialog strings finds byte `$1C` exactly once — as the
+    *operand* of `$11` (a wait command, which advances the text pointer
+    by 2 and so never dispatches its operand).  Nothing else in the game
+    can reach the new code.
 - **Order independence**: some events show the receive dialog *before*
   granting (e.g. Ancient Castle), others after.  So the dialog command
   carries **its own** index into the masked esper table and decodes the
