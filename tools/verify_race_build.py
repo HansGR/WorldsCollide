@@ -264,101 +264,60 @@ def main():
         check(sli[shim] == 0xbf and sli[shim + 4] == 0x5f and sli[shim + 8] == 0x6b,
               f"sli race: shim at 0x{shim:06x} is not LDA/EOR/RTL")
 
-    # 7. L3 item-reward indirection: the control build still emits the
-    #    plaintext AddItem opcode ($80); the race build routes grants
-    #    through the AddCheckItem opcode ($66) whose handler decodes a
-    #    masked reward table into valid item ids
+    # 7. L3 check-reward indirection.  Items and espers deliberately share
+    #    one command, one masked table and one control code, so nothing
+    #    static distinguishes an esper check from an item check.
     FIELD_OPCODE_TABLE = 0x098c4
     def field_handler(rom, opcode):
         off = FIELD_OPCODE_TABLE + (opcode - 0x35) * 2
         return int.from_bytes(rom[off:off + 2], "little")
-    # the race opcodes are unused in vanilla -> they share the unused-opcode
-    # stub; in a race build they point at the decode handlers
+
     # (kept in sync with instruction/field/custom.py by the checks below;
     # that module cannot be imported here - importing instruction.field runs
     # build-time rom writes that need an initialised Memory)
-    ADD_CHECK_ITEM_OPCODE, ADD_CHECK_ESPER_OPCODE, ESPER_DIALOG_OPCODE = 0x9e, 0x9f, 0xe6
-    stub = field_handler(control, 0xee)          # an opcode nothing claims
-    for opcode in (ADD_CHECK_ITEM_OPCODE, ADD_CHECK_ESPER_OPCODE, ESPER_DIALOG_OPCODE):
+    ADD_CHECK_REWARD_OPCODE, REWARD_DIALOG_OPCODE = 0x9e, 0xee
+    stub = field_handler(control, 0xed)          # an opcode nothing claims
+    for opcode in (ADD_CHECK_REWARD_OPCODE, REWARD_DIALOG_OPCODE):
         check(field_handler(control, opcode) == stub,
               f"control: opcode {hex(opcode)} is not the unused stub "
               f"(is another feature already using it?)")
         check(field_handler(race, opcode) != stub,
               f"race: opcode {hex(opcode)} was not installed")
-    handler = field_handler(race, ADD_CHECK_ITEM_OPCODE)
-    hb = race[handler:handler + 0x18]
+    # exactly one grant command: a second one would separate the kinds
+    for opcode in (0x9f, 0xe6, 0x66, 0x67, 0x68):
+        check(field_handler(race, opcode) == stub,
+              f"race: opcode {hex(opcode)} is installed - a per-kind command "
+              f"would reveal which checks hold espers")
+
+    handler = field_handler(race, ADD_CHECK_REWARD_OPCODE)
+    hb = race[handler:handler + 0x40]
     i = hb.index(0xbf)
     check(hb[i] == 0xbf and hb[i + 4] == 0x5f,
-          "race: AddCheckItem handler is not LDA long,X / EOR long,X")
+          "race: the reward handler is not LDA long,X / EOR long,X")
     tbase = rom_offset(int.from_bytes(hb[i + 1:i + 4], "little"))
     pbase = rom_offset(int.from_bytes(hb[i + 5:i + 8], "little"))
     for what, at in (("table", tbase), ("pad", pbase)):
         check(CLAIM_START <= at <= CLAIM_END,
               f"race: reward {what} outside the claim: 0x{at:06x}")
-    rewards = bytes(race[tbase + k] ^ race[pbase + k] for k in range(0x100))
-    used = [b for b in rewards if b != 0xff]
-    check(len(used) > 0, "race: reward table is empty")
-    check(all(b < 256 for b in used), "race: reward table holds an invalid item id")
-    check(bytes(race[tbase:tbase + 0x100]) != rewards, "race: reward table is not masked")
+    rewards = bytes(race[tbase + k] ^ race[pbase + k] for k in range(0x200))
+    check(bytes(race[tbase:tbase + 0x200]) != rewards, "race: reward table is not masked")
 
-    # esper grants route through AddCheckEsper ($67); its handler decodes
-    # a masked esper table (0x40 bytes) into valid esper ids (< 27)
-    ehandler = field_handler(race, ADD_CHECK_ESPER_OPCODE)
-    ehb = race[ehandler:ehandler + 0x18]
-    j = ehb.index(0xbf)
-    check(ehb[j] == 0xbf and ehb[j + 4] == 0x5f,
-          "race: AddCheckEsper handler is not LDA long,X / EOR long,X")
-    etbase = rom_offset(int.from_bytes(ehb[j + 1:j + 4], "little"))
-    epbase = rom_offset(int.from_bytes(ehb[j + 5:j + 8], "little"))
-    for what, at in (("esper table", etbase), ("esper pad", epbase)):
-        check(CLAIM_START <= at <= CLAIM_END, f"race: {what} outside the claim")
-    espers = bytes(race[etbase + k] ^ race[epbase + k] for k in range(0x40))
-    eused = [b for b in espers if b != 0xff]
-    check(len(eused) > 0, "race: esper reward table is empty")
-    check(all(b < 27 for b in eused), "race: esper table holds an invalid esper id")
-    check(bytes(race[etbase:etbase + 0x40]) != espers, "race: esper table is not masked")
-
-    # 8. the <esper>/<item2> message control codes: the race build hooks
-    #    the end of the control-code chain (C0/844B) additively - each new
-    #    code is tested in turn and a byte matching none of them must still
-    #    take the displaced literal-character path
-    check(control[0x844b:0x844e] == b"\x38\xe9\x1b",
-          "control: C0/844B is not the vanilla SEC / SBC #$1b")
-    check(race[0x844b] == 0x4c, "race: C0/844B is not a JMP to the hook")
-    at = rom_offset(0xc00000 + int.from_bytes(race[0x844c:0x844e], "little"))
-    for code in (0x1c, 0x1d):               # <esper>, <item2>
-        check(race[at] == 0xc9 and race[at + 1] == code,
-              f"race: name-code chain does not test ${code:02X} where expected")
-        check(race[at + 2] == 0xf0, f"race: ${code:02X} does not branch to its renderer")
-        at += 4                             # CMP #imm (2) + BEQ rel (2)
-    # after the last test comes the displaced literal-character path
-    check(race[at:at + 3] == b"\x38\xe9\x1b",
-          "race: name-code chain lost the displaced SEC / SBC #$1b")
-    check(race[at + 3] == 0x4c and int.from_bytes(race[at + 4:at + 6], "little") == 0x844e,
-          "race: name-code chain does not return to the literal path at C0/844E")
-
-    # 9. RewardDialog: the bespoke reward-naming dialogs are replaced in
-    #    place (same 3 bytes) by the decode-and-show command
-    reward_dialog_opcode = 0xee
-    check(field_handler(control, reward_dialog_opcode) == stub,
-          "control: the reward dialog opcode is not the unused stub")
-    check(field_handler(race, reward_dialog_opcode) != stub,
-          "race: the reward dialog opcode was not installed")
-    for offset, label in ((0xcd582, "lone wolf taunt"),
-                          (0xc0b37, "narshe wor reward choice")):
-        check(control[offset] == 0x4b,
-              f"control: {label} is not a vanilla Dialog command")
-        check(race[offset] == reward_dialog_opcode,
-              f"race: {label} was not replaced by the reward dialog command")
-    # lone wolf's second reward is granted by a vanilla $80 AddItem whose
-    # operand WC patches; race builds replace the whole command
-    check(control[0xcd59e] == 0x80, "control: lone wolf grant is not $80 AddItem")
-    check(race[0xcd59e] == ADD_CHECK_ITEM_OPCODE,
-          "race: lone wolf grant still uses the plaintext AddItem")
+    items = espers = 0
+    for slot in range(0x100):
+        kind, value = rewards[slot * 2], rewards[slot * 2 + 1]
+        if kind == 0xff:
+            continue
+        check(kind in (0x00, 0x01), f"race: reward slot {slot} has an invalid kind")
+        if kind == 0x01:
+            check(value < 27, f"race: reward slot {slot} has an invalid esper id")
+            espers += 1
+        else:
+            items += 1
+    check(items > 0 and espers > 0,
+          "race: the reward table should hold both items and espers")
 
     print(f"all {checks} checks passed")
-    print(f"item-reward table: {len(used)} check grants, masked+relocated in the claim")
-    print(f"esper-reward table: {len(eused)} check grants, masked+relocated in the claim")
+    print(f"reward table: {items} item + {espers} esper slots in one masked table")
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})
     print("pad bases:", {t: hex(p) for t, p in pads.items()})
     print(f"chest records: {len(real_flat)}, chest contents differing from decoy: "

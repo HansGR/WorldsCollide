@@ -328,7 +328,9 @@ class Items():
         if self.args.race:
             self.race_receive_dialog = self.available_dialogs.pop()
             self.dialogs.set_text(self.race_receive_dialog,
-                                  '<line><     >Received “<item>”!<end>')
+                                  '<line><     >Received “<reward>”!<end>')
+            from obfuscation import rewards
+            rewards.set_wording("item", self.race_receive_dialog)
 
         self.moogle_starting_equipment()
 
@@ -422,14 +424,22 @@ class Items():
         shown by field.reward_dialog(), which decodes them itself.
         """
         if self.args.race:
-            return "<item2>" if second else "<item>"
+            return "<reward2>" if second else "<reward>"
         import data.text
         # item names are stored as TEXT2, dialogs are TEXT1
         return data.text.convert(self.get_name(item), data.text.TEXT1)
 
     def get_receive_dialog(self, item):
+        # race builds: every item check shares one dialog whose text names
+        # nothing, and the id travels with the reward's opaque slot so the
+        # command is indistinguishable from an esper's (see
+        # instruction/field/instructions.py RewardDialogId)
         if self.race_receive_dialog is not None:
-            return self.race_receive_dialog
+            from obfuscation import rewards
+            from instruction.field.instructions import RewardDialogId
+            item_wording, esper_wording = rewards.wordings()
+            return RewardDialogId(item_wording, rewards.register("item", item),
+                                  item_wording, esper_wording)
         return self.receive_dialogs[item]
 
     def add_receive_dialog(self, item_id):

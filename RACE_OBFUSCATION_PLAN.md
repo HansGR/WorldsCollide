@@ -242,146 +242,52 @@ only an opaque index; the actual reward lives in one encoded table
 (masked as in L2) and is decoded at grant time by one shared routine.
 Phase it: items-at-checks first, then characters/espers.
 
-Item-at-check grants, implemented (`obfuscation/rewards.py`,
-`instruction/field/custom.py` AddCheckItem):
+Implemented (Phases 3a-3d).  The design point that matters most is that
+**items and espers are deliberately indistinguishable**: knowing *which
+checks hold espers* is most of the routing value even without knowing
+which esper, so they share one table, one grant command and one
+name-rendering control code, each dispatching on a kind byte decoded at
+runtime.
 
-- **Two leak channels, both closed together** — closing only one is
-  pointless, since the receive dialog sits in the script right next to
-  the grant and names the item just as directly:
-  1. *The grant opcode.*  Vanilla event command `$80 AddItem <id>` puts
-     the item id in the script at every check.  In race builds the
-     `AddItem`/`AddItems` factories instead emit a custom field opcode
-     (`0x66`) carrying a one-byte **index** into a per-seed reward table
-     in the claim, masked exactly like the L1/L2 tables.  The handler
-     (bank C0) reads the index, `LDA table,X : EOR pad,X` to decode the
-     id, stores it at direct-page `$1A`, and falls through to the
-     vanilla add-inventory routine at `C0/ACFC` — a faithful clone of
-     `$80` with a decode prepended.
-  2. *The receive dialog.*  `items.get_receive_dialog()` returns, in
-     race builds, a single shared "Received the `<item>`!" dialog.  The
-     `<item>` field message code renders the name of the item at DP
-     `$1A` — the byte the grant just set — so the player sees the right
-     name with no visible change, and no per-item "Received X!" text
-     sits in the rom next to a check.
-- **No decoy needed**: there is no vanilla reward-table address to leave
-  a decoy at; the index reveals nothing without decoding the masked
-  table, and the index→check order is source-derivable but the
-  index→item mapping is per-seed and masked (the L2/T3 bar again).
-- **Non-race output stays byte-identical**; `verify_race_build.py` gained
-  an L3 check (handler shape, table in claim, masked, decodes to valid
-  ids).  A race build boots to player control.
-- **Residual, tracked for Phase 3a follow-up**: a few bespoke event
-  dialogs bake the item name into their own text rather than going
-  through `get_receive_dialog` — the Mobliz injured-lad and Lone Wolf
-  "Got X!" receive messages (genuine leaks, to be routed through the
-  `<item>` mechanism next), and the Narshe-WOR reward *choice* menus
-  ("Make it X"), which show the reward to every legit player anyway and
-  so leak nothing a cheater couldn't see in normal play.
-Esper-at-check grants, implemented (Phase 3b):
-
-- **Opcode**: `AddEsper` in race builds emits a custom field opcode
-  (`0x67`) carrying a one-byte index into a per-seed masked
-  esper-reward table in the claim.  The handler decodes the esper id
-  and **reuses the vanilla `$86` AddEsper handler** (`JMP $ADB8`) for
-  the grant, so the owned-esper bit and the ESPERS_FOUND counter are
-  set exactly as normal.
-- **Dialog**: vanilla has no esper equivalent of `<item>`, so L3 **adds
-  one**: a new message control code `$1C <esper>` that renders the esper
-  whose id is in `$0583` (the same byte `<item>` uses for its index — the
-  two never appear in one dialog).  It is installed by hooking the end of
-  the control-code dispatch chain at `C0/844B`, where an unmatched byte
-  falls through to the literal-character path (`SEC : SBC #$1b`): the new
-  code is tested last and everything else takes the displaced original
-  path unchanged.  All esper checks then share **one** dialog whose rom
-  text names no esper — "Received the Magicite `<esper>`." — and the
-  player sees the correct name, formatted exactly like vanilla.
-- **Namespaces and why these codes are free** (two *different* byte
-  namespaces are involved, which is easy to conflate):
-  - *Field event commands* — the opcodes in event scripts, dispatched
-    through the pointer table at ROM `0x098C4` (`$35`+).  This is what
-    `claude_reference/Event Command List.txt` documents; vanilla's set
-    jumps `$63` → `$6A`, and unused opcodes share a stub pointer.  The
-    race commands use **`$9E`, `$9F`, `$E6`** — unused by vanilla, by
-    WC dev, *and* by the door randomizer fork (which already claims
-    `$66`-`$69`), so the two feature sets can merge without collision.
-    Claiming an opcode `Reserve()`s its pointer-table slot, so any
-    double claim fails the build instead of silently squashing a
-    command.
-  - *Dialog text codes* — bytes **inside** dialog strings, interpreted
-    by the message engine, not the event interpreter.  Bytes `$00-$1F`
-    are control codes, `$20`+ is text.  `$1A <item>` and `$1B <skill>`
-    live here (vanilla uses each exactly once: dialogs 2949 "Received
-    “`<item>`”!" and 2950 "Learned “`<skill>`”!"), and `$1C <esper>` is
-    the code L3 adds.  Note `data/text/text1.py` only maps what WC needs
-    to *write*, so absence from it does **not** prove a code is free;
-    the checks that do are: the message engine dispatches only bytes
-    `< $20`, no vanilla handler tests `$1C`, and a scan of all 3327
-    vanilla dialog strings finds byte `$1C` exactly once — as the
-    *operand* of `$11` (a wait command, which advances the text pointer
-    by 2 and so never dispatches its operand).  Nothing else in the game
-    can reach the new code.
-- **Order independence**: some events show the receive dialog *before*
-  granting (e.g. Ancient Castle), others after.  So the dialog command
-  carries **its own** index into the masked esper table and decodes the
-  id itself, rather than relying on a value the grant left behind.
-  `get_receive_esper_dialog()` returns an `EsperDialogId` (an `int`
-  subclass carrying that index) and `field.Dialog` emits the custom
-  3-byte command — the length the vanilla dialog handler advances by, so
-  it hands off to `C0/A4BC` unchanged.  Zero event-file edits.
-- Verified: non-race byte-identical; `verify_race_build.py` checks the
-  esper table (masked, valid ids) and that the `<esper>` hook keeps the
-  displaced literal-character path; a `-stesp` race build boots and the
-  starting espers land in the owned-esper bitfield — dynamic proof of
-  the decode+grant path, the esper analog of the `-debug` item check.
-  The assembled `<esper>` renderer was additionally **executed** on a
-  small 65816 interpreter over the built rom (scratch
-  `sim_esper.py`), confirming it writes the correct name into the text
-  buffer for all 27 espers.
-
-- **Bespoke dialogs that name a reward — closed (Phase 3c).**  Several
-  events write their own text naming a check reward, sitting in the rom
-  at a fixed dialog id: readable without playing there, so a leak even
-  though the same text is shown to any player who arrives.  All of the
-  field-engine ones are now closed:
-
-  | Site | Dialog | Kind | How |
-  |---|---|---|---|
-  | `narshe_wor` "Leave it “X”" / "Make it “Y”" | 1519 | esper+item | RewardDialog with a second name |
-  | `mobliz_wob` "Received “X.”" | 782 | item | RewardDialog |
-  | `mobliz_wor` child flavour lines | MOBLIZ_CHILD_* | esper/item | RewardDialog ×2 |
-  | `lone_wolf` taunt "You'll never get this “X”!" | 1765 | item | RewardDialog |
-  | `lone_wolf` "Got “X”!" | LONE_WOLF_GOT_ITEM | item | text only — the grant runs first |
-  | `lone_wolf` second reward grant | — | item | vanilla `$80` replaced by AddCheckItem |
-  | `daryl_tomb` "X SLEEPS HERE" | 2461 | item/esper | RewardDialog |
-
-  **`RewardDialog`** is the general tool: three bytes, so it drops
-  straight onto a vanilla `Dialog` with no script shifting.  Its operand
-  is a slot in a masked side table (opaque reward index, kind, dialog
-  id); the handler decodes the reward into `$0583` and hands off to the
-  `$4B` handler, which advances by 3.  Because the dialog decodes the
-  name itself it works whether the event grants the reward before or
-  after showing it — both orders occur.
-
-  **`<item2>` (`$1D`)** exists because the Narshe WOR choice names *two*
-  rewards at once and one ram byte can only carry one; it renders an
-  item from `$0584` and is a faithful clone of vanilla's `<item>`
-  handler (same name table, stride and length, verified against it).
-  `$1D` was cleared the same way `$1C` was: it appears once in vanilla
-  dialog text, as the operand of a `$11` wait, so it is never dispatched.
-
-  Character rewards are left plain throughout (see below), so a check
-  awarding a character keeps its vanilla text.
-
-  *Cosmetic note*: Daryl's tomb inscription is uppercased in vanilla
-  (`PEARL LANCE SLEEPS HERE`); the runtime-rendered name uses the item's
-  own casing, so race builds read `Pearl Lance SLEEPS HERE`.  Centring
-  still uses the real name's width.
-
-  **Still open**: `veldt.py:379` names the esper through
-  `set_multi_line_battle_text` — the **battle** message engine, a
-  different renderer whose control codes are not the field set, so
-  `<esper>` does not apply there; and the auction house announces
-  rewards across several dialogs.  Both deferred pending a decision.
+- **One masked reward table** (`obfuscation/rewards.py`, claim entry
+  `rewards`): 2 bytes per slot, `(kind, id)`.  Scripts carry only the
+  opaque slot.
+- **One grant command** `AddCheckReward` (`$9E`): decodes `(kind, id)`
+  and runs either the vanilla add-inventory routine (`C0/ACFC`) or the
+  vanilla AddEsper handler (`C0/ADB8`), so the owned-esper bit and the
+  ESPERS_FOUND counter behave exactly as normal.  It also leaves the
+  slot in `$0584` for a dialog that follows the grant.
+- **One dialog command** `RewardDialog` (`$EE`): three bytes, so it drops
+  onto a vanilla `Dialog` with no script shifting.  Its side-table entry
+  holds the reward slot **and both wordings** — the "Received “X”!" and
+  the "Received the Magicite “X.”" dialog ids — and the handler shows
+  whichever matches the kind.  That keeps vanilla's two receive texts
+  while making the *command* identical for either kind.  It decodes the
+  reward itself, so it works whether the event grants before or after
+  showing the text (both orders occur).
+- **One control code pair**: `$1C <reward>` renders the reward whose slot
+  is in `$0584`; `$1D <reward2>` renders the *next* slot, for the one
+  dialog naming two rewards (the Narshe WOR choice, whose pair is
+  registered consecutively — so no second ram byte is needed).  Both
+  dispatch on kind to the esper name table (8-byte entries) or the item
+  name table (13-byte, skipping the icon byte), the latter a faithful
+  clone of vanilla's own `<item>` handler.
+  `$0584` is "Spell Index for Dialog Window Display", documented unused
+  in the US release; `$0583` is deliberately untouched because vanilla's
+  `<item>` code and the chest-opening path use it.
+- **Bespoke dialogs** that named a reward (Narshe WOR choice, Mobliz WOB
+  injured lad, Mobliz WOR child lines, Lone Wolf taunt and "Got X!",
+  Daryl's tomb inscription) all render at display time now.  Narshe WOR's
+  wording is neutral in race builds ("Leave it “X”" for either kind) so
+  the text does not betray the kind either; other builds keep the
+  original line.
+- **Start items are not obfuscated** (`AddItem(..., spoiler=False)`):
+  the player has them before the first check, so hiding them buys
+  nothing and they would crowd the one-byte slot space.
+- Verified: an esper reward and an item reward at the *same* check
+  produce byte-identical command bytes; the verifier additionally asserts
+  that no per-kind opcode is installed at all (1623 checks).  Non-race
+  output byte-identical; race builds boot and grant correctly.
 
 - **Character-at-check grants** (the recruit operand) remain a separate,
   more entangled case (sprite and name are shown as the character

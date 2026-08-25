@@ -179,7 +179,7 @@ class LoneWolf(Event):
             import instruction.field.custom as custom
             space = Reserve(0xcd59e, 0xcd59f, "lone wolf item received (opaque)")
             space.write(
-                custom.add_check_item_opcode(),
+                custom.add_check_reward_opcode(),
                 rewards.register("item", self.reward2.id),
             )
         else:

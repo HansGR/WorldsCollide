@@ -1,103 +1,122 @@
 """L3 - check-reward indirection (race builds).
 
 A check that grants an item or an esper does it with an event command
-whose operand is the item/esper id in plaintext, sitting in the event
-script - the single most valuable thing for a cheater to grep, at every
-check.
+whose operand names the reward in plaintext, sitting in the event script
+- the single most valuable thing for a cheater to grep, at every check.
 
-In race builds each grant instead carries an opaque one-byte *index*
-into a per-seed relocated + masked reward table (one table per reward
-kind, in the obfuscation claim, masked exactly like the L1/L2 tables).
-A custom field opcode decodes the id at grant time and hands it to the
-vanilla grant routine; the receive dialog is neutralised so the reward
-name is not spelled out in the rom next to the check (items render the
-real name at runtime via the <item> code; espers use one generic
-"Received the Magicite!" dialog, since there is no <esper> renderer).
+Race builds put every reward in one masked table and refer to it only by
+an opaque *slot*.  One table for both kinds matters: with separate item
+and esper tables (or separate grant opcodes, or separate receive
+dialogs) an attacker could still tell which checks hold espers without
+knowing which esper, and that alone is most of the routing value.  So a
+single `AddCheckReward` command grants either kind, and a single
+`<reward>` control code renders either name, both dispatching on the
+kind byte they read out of the masked table at runtime.
+
+Slots are handed out in registration order and carry no meaning.  Where
+one dialog names two rewards (the Narshe WOR choice), the pair is
+registered consecutively and the second is rendered by `<reward2>`,
+which simply reads the slot after the one it is given - so no second ram
+byte is needed.
 
 Flow across a build:
-  1. event generation calls AddItem/AddEsper; in race mode `register()`
-     records the id under its kind and returns its index, which is what
-     lands in the script.
-  2. Data.write() calls `write_tables()` to lay the collected ids into
-     the claim as plaintext.
-  3. the end-of-write masking pass (obfuscation/mask.py) XORs each table
-     with its pad like every other relocated table.
+  1. event generation registers rewards and gets slots, which are what
+     land in the script.
+  2. Data.write() calls `write_tables()` to lay the tables into the claim.
+  3. the end-of-write masking pass XORs them like every other table.
 """
 
-# reward kind -> claim table name
-TABLES = {
-    "item": "item_rewards",
-    "esper": "esper_rewards",
-}
+TABLE = "rewards"
+SLOT_SIZE = 2                   # (kind, id)
 
-# side table for RewardDialog: one slot per bespoke dialog that names a
-# reward - (reward index, kind, dialog id low, dialog id high, second
-# item index, second-slot flag).  The second entry serves the one dialog
-# that names two rewards at once (the Narshe WOR choice); it is always an
-# item and renders through <item2>.
 DIALOG_TABLE = "reward_dialogs"
-DIALOG_SLOT_SIZE = 6
-KINDS = {"item": 0x00, "esper": 0x01}
+DIALOG_SLOT_SIZE = 6            # (reward slot, item dialog, esper dialog)
 
-_collected = {kind: [] for kind in TABLES}
+KIND_ITEM, KIND_ESPER = 0x00, 0x01
+KINDS = {"item": KIND_ITEM, "esper": KIND_ESPER}
+
+_rewards = []
 _dialogs = []
+
+# the two shared receive-dialog wordings ("Received X!" and the magicite
+# one).  Both kinds' receive dialogs carry both ids so the command that
+# shows them is identical either way; the handler picks at runtime.
+_wordings = {"item": None, "esper": None}
+
+
+def set_wording(kind, dialog_id):
+    _wordings[kind] = dialog_id
+
+
+def wordings():
+    """(item wording, esper wording); either may be unset in odd flag
+    combinations, in which case the other stands in."""
+    item, esper = _wordings["item"], _wordings["esper"]
+    return (item if item is not None else esper,
+            esper if esper is not None else item)
 
 
 def reset():
     """Start a fresh build's collection (safe to call between in-process
     builds; a normal wc.py run is one process and starts empty)."""
-    global _collected, _dialogs
-    _collected = {kind: [] for kind in TABLES}
+    global _rewards, _dialogs, _wordings
+    _rewards = []
     _dialogs = []
-
-
-def register_dialog(kind, value, dialog_id, second_item=None):
-    """Record a dialog that names a reward, returning its slot.
-
-    The slot is what the RewardDialog command carries; the handler reads
-    this table to find which reward to decode and which dialog to show.
-    `second_item` adds a second name, rendered by <item2>.
-    """
-    index = register(kind, value)
-    if second_item is None:
-        second, has_second = 0xff, 0x00
-    else:
-        second, has_second = register("item", second_item), 0x01
-    _dialogs.append((index, KINDS[kind], dialog_id & 0xff, (dialog_id >> 8) & 0xff,
-                     second, has_second))
-    return len(_dialogs) - 1
+    _wordings = {"item": None, "esper": None}
 
 
 def register(kind, value):
-    """Record one granted id of the given kind, returning its index."""
-    _collected[kind].append(value & 0xff)
-    return len(_collected[kind]) - 1
+    """Record one reward, returning its opaque slot."""
+    _rewards.append((KINDS[kind], value & 0xff))
+    return len(_rewards) - 1
 
 
-def count(kind):
-    return len(_collected[kind])
+def register_pair(kind, value, second_item):
+    """Record a reward plus a second (item) reward named by the same
+    dialog.  They are adjacent so <reward2> can find the second one by
+    reading the slot after the first."""
+    slot = register(kind, value)
+    register("item", second_item)
+    return slot
+
+
+def register_dialog(slot, item_dialog, esper_dialog):
+    """Record a dialog that names the reward in `slot`, returning the
+    dialog's own slot.
+
+    Two dialog ids are stored: the handler shows whichever matches the
+    reward's kind, so that a receive dialog can keep vanilla's separate
+    item and magicite wordings without the script revealing which kind it
+    is.  Bespoke dialogs pass the same id for both.
+    """
+    _dialogs.append((slot,
+                     item_dialog & 0xff, (item_dialog >> 8) & 0xff,
+                     esper_dialog & 0xff, (esper_dialog >> 8) & 0xff,
+                     0x00))
+    return len(_dialogs) - 1
+
+
+def count():
+    return len(_rewards)
 
 
 def write_tables(rom, args):
-    """Lay every kind's collected ids into the claim as plaintext
+    """Lay the reward and dialog tables into the claim as plaintext
     (masked later by obfuscation.mask.apply_all)."""
     from obfuscation import claim
     layout = claim.layout(args)
-    for kind, table in TABLES.items():
-        ids = _collected[kind]
-        size = claim.TABLE_SIZES[table]
-        # the opcode operand is one byte, so 256 is the hard index cap
-        # regardless of table size
-        assert len(ids) <= min(size, 256), (
-            f"race: {len(ids)} {kind} reward checks exceed the 256 a "
-            f"one-byte index can address; widen the index/operand")
-        # unused slots are 0xff (an invalid id) so a stray decode is
-        # visibly wrong rather than a plausible fake
-        rom.set_bytes(layout[table], ids + [0xff] * (size - len(ids)))
 
-    # the RewardDialog side table.  it is not masked: it holds only the
-    # opaque reward index plus the dialog id being shown, so it reveals
-    # which dialogs name a reward but never which reward
+    size = claim.TABLE_SIZES[TABLE]
+    # slots are addressed by a one-byte operand, so 256 is the hard cap
+    # whatever the table size
+    assert len(_rewards) <= min(size // SLOT_SIZE, 256), (
+        f"race: {len(_rewards)} rewards exceed the {min(size // SLOT_SIZE, 256)} "
+        f"a one-byte slot can address")
+    entries = [b for reward in _rewards for b in reward]
+    # unused slots decode to an invalid id so a stray decode is visibly
+    # wrong rather than a plausible fake
+    rom.set_bytes(layout[TABLE], entries + [0xff] * (size - len(entries)))
+
     size = claim.TABLE_SIZES[DIALOG_TABLE]
     slots = [b for slot in _dialogs for b in slot]
     assert len(slots) <= size, (

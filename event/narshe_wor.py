@@ -108,8 +108,9 @@ class NarsheWOR(Event):
 
         # this choice names two rewards at once: the one on offer here
         # (first_reward, esper or item) and the weapon.  race builds render
-        # both at display time - the first through <esper>/<item> and the
-        # weapon through <item2> - so neither name is stored in the rom
+        # both at display time, through <reward> and <reward2>, so neither
+        # name is stored in the rom - and the wording is the same for an
+        # esper or an item reward, so the text does not reveal the kind
         item_name = self.items.dialog_name(self.item, second = True)
         self.dialogs.set_text(1519, dialog_first_choice_text + "<line><choice> Make it “" + item_name + "”<end>")
 
@@ -199,8 +200,15 @@ class NarsheWOR(Event):
         guard_npc.set_event_address(guard_event)
 
     def weapon_shop_esper_mod(self, esper):
-        dialog_text = ("This stone gives off an eerie aura!<line><choice> Leave it the stone “"
-                       + self.espers.dialog_name(esper) + "”")
+        # race builds use the same wording as the item variant below, so the
+        # text itself does not say whether this check holds an esper or an
+        # item; other builds keep the original line
+        if self.args.race:
+            dialog_text = ("This gives off an eerie aura!<line><choice> Leave it “"
+                           + self.espers.dialog_name(esper) + "”")
+        else:
+            dialog_text = ("This stone gives off an eerie aura!<line><choice> Leave it the stone “"
+                           + self.espers.get_name(esper) + "”")
 
         self.weapon_shop_mod(dialog_text, [
             field.AddEsper(esper, sound_effect = False),

@@ -134,18 +134,21 @@ def _resolve_item_id(item):
         return name_id[item]
     return item
 
-def _add_check_item(item):
-    # race builds: hide the item id behind an opaque reward-table index
-    # (see obfuscation/rewards.py) - the script carries no item id
+def _add_check_reward(kind, value):
+    # race builds: the script carries only an opaque slot in the masked
+    # reward table, which says both which kind and which one
+    # (see obfuscation/rewards.py)
     from obfuscation import rewards
     import instruction.field.custom as custom
-    index = rewards.register("item", _resolve_item_id(item))
-    return custom.AddCheckItem(index)
+    return custom.AddCheckReward(rewards.register(kind, value))
 
-def AddItem(item, sound_effect = True):
+def AddItem(item, sound_effect = True, spoiler = True):
+    """spoiler=False for items the player is simply given at game start:
+    they are in the inventory before the first check, so hiding them buys
+    nothing and they would crowd the one-byte reward slot space."""
     import args
-    if args.race:
-        instruction = _add_check_item(item)
+    if args.race and spoiler:
+        instruction = _add_check_reward("item", _resolve_item_id(item))
     else:
         AddItem = type("AddItem", (_AddItem,), {})
         instruction = AddItem(item)
@@ -154,7 +157,7 @@ def AddItem(item, sound_effect = True):
     return instruction
 
 class _AddItems(_Instruction):
-    def __init__(self, item, count):
+    def __init__(self, item, count, spoiler = True):
         if isinstance(item, str):
             from data.item_names import name_id
             self.item = name_id[item]
@@ -164,13 +167,13 @@ class _AddItems(_Instruction):
             self.item = item
             self.item_name = id_name[item]
         import args
-        if args.race:
-            # hide the item behind a reward-table index, inside the same
+        if args.race and spoiler:
+            # hide the item behind a reward slot, inside the same
             # 0xB0/0xB1 repeat wrapper (see obfuscation/rewards.py)
             from obfuscation import rewards
             import instruction.field.custom as custom
             index = rewards.register("item", self.item)
-            opcode = custom.add_check_item_opcode()
+            opcode = custom.add_check_reward_opcode()
             if count == 1:
                 super().__init__(opcode, index)
             else:
@@ -183,12 +186,12 @@ class _AddItems(_Instruction):
     def __str__(self):
         return super().__str__(f"'{self.item_name}'")
 
-def AddItems(item, count, sound_effect = True):
+def AddItems(item, count, sound_effect = True, spoiler = True):
     AddItems = type("AddItems", (_AddItems,), {})
     if sound_effect:
-        return AddItems(item, count), PlaySoundEffect(141)
+        return AddItems(item, count, spoiler), PlaySoundEffect(141)
     else:
-        return AddItems(item, count)
+        return AddItems(item, count, spoiler)
 
 class AddGP(_Instruction):
     MAX = 2 ** 16 - 1 # 2 bytes max value
@@ -220,11 +223,8 @@ class _AddEsper(_Instruction):
 def AddEsper(esper_id, sound_effect = True):
     import args
     if args.race:
-        # hide the esper id behind an opaque reward-table index
-        # (see obfuscation/rewards.py) - the script carries no esper id
-        from obfuscation import rewards
-        import instruction.field.custom as custom
-        instruction = custom.AddCheckEsper(rewards.register("esper", esper_id))
+        # the same command items use, so nothing static says "esper here"
+        instruction = _add_check_reward("esper", esper_id)
     else:
         AddEsper = type("AddEsper", (_AddEsper,), {})
         instruction = AddEsper(esper_id)
@@ -285,35 +285,38 @@ class RemoveAllEquipment(_Instruction):
     def __str__(self):
         return super().__str__(self.character)
 
-class EsperDialogId(int):
-    """A receive-esper dialog id that also carries the (opaque) reward-table
-    index of the esper it should name.
+class RewardDialogId(int):
+    """A receive dialog id that also carries the opaque slot of the reward
+    it names, and the id of the wording used for the other kind.
 
-    Race builds hand this back from Espers.get_receive_esper_dialog so that
-    Dialog() below can emit the custom esper-dialog command instead - the
-    script then names no esper, and the name is filled in at runtime.  It is
-    an int so every non-race path (and any code that just wants the id) keeps
-    working unchanged.
+    Race builds hand this back from Items.get_receive_dialog and
+    Espers.get_receive_esper_dialog so Dialog() below can emit the reward
+    dialog command instead: the script then names nothing and does not
+    even reveal whether the reward is an item or an esper, because the
+    same command and operand shape serve both.  It is an int so every
+    non-race path (and any code that just wants the id) is unaffected.
     """
-    def __new__(cls, dialog_id, reward_index):
+    def __new__(cls, dialog_id, slot, item_dialog, esper_dialog):
         instance = super().__new__(cls, dialog_id)
-        instance.reward_index = reward_index
+        instance.slot = slot
+        instance.item_dialog = item_dialog
+        instance.esper_dialog = esper_dialog
         return instance
 
 class Dialog(_Instruction):
     def __init__(self, dialog_id, wait_for_input = True, inside_text_box = True, top_of_screen = True):
-        if isinstance(dialog_id, EsperDialogId) and wait_for_input \
+        if isinstance(dialog_id, RewardDialogId) and wait_for_input \
                 and inside_text_box and top_of_screen:
-            # race builds: emit the custom esper-dialog command, which decodes
-            # the esper from the masked reward table and lets <esper> render
-            # its name at runtime, so the script names no esper.  (only the
-            # plain flags are handled; every esper receive dialog uses them.)
-            # the trailing byte pads the command to the 3 bytes the vanilla
-            # dialog handler advances by.
+            # race builds: emit the reward dialog command, which decodes the
+            # reward from the masked table, picks the wording matching its
+            # kind and lets <reward> render the name at runtime - so the
+            # script names nothing and hides the kind too.  (only the plain
+            # flags are handled; every receive dialog uses them.)
             import instruction.field.custom as custom
             self.dialog_id = int(dialog_id)
-            super().__init__(custom.esper_dialog_opcode(self.dialog_id),
-                             dialog_id.reward_index, 0x00)
+            reward = custom.RewardDialog(dialog_id.slot, dialog_id.item_dialog,
+                                         dialog_id.esper_dialog)
+            super().__init__(reward.opcode, *reward.args)
             return
 
         self.dialog_id = dialog_id

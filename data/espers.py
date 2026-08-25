@@ -86,7 +86,9 @@ class Espers():
         if self.args.race:
             self.race_receive_dialog = self.receive_dialogs[self.SHOAT]
             dialogs.set_text(self.race_receive_dialog,
-                             '<line>     Received the Magicite<line>              “<esper>.”<end>')
+                             '<line>     Received the Magicite<line>              “<reward>.”<end>')
+            from obfuscation import rewards
+            rewards.set_wording("esper", self.race_receive_dialog)
 
     def shuffle_spells(self):
         # to prevent duplicates, get list of spells and sort it by their frequency
@@ -422,7 +424,7 @@ class Espers():
         either the grant ran first, or it emits field.name_esper(esper).
         """
         if self.args.race:
-            return "<esper>"
+            return "<reward>"
         return self.get_name(esper)
 
     def get_receive_esper_dialog(self, esper):
@@ -434,9 +436,10 @@ class Espers():
         # granting - both orders occur in the event scripts.
         if self.args.race:
             from obfuscation import rewards
-            from instruction.field.instructions import EsperDialogId
-            return EsperDialogId(self.race_receive_dialog,
-                                 rewards.register("esper", esper))
+            from instruction.field.instructions import RewardDialogId
+            item_wording, esper_wording = rewards.wordings()
+            return RewardDialogId(esper_wording, rewards.register("esper", esper),
+                                  item_wording, esper_wording)
         return self.receive_dialogs[esper]
 
     def get_name(self, esper):
