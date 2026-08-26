@@ -24,7 +24,9 @@ class VeldtCaveWOR(Event):
 
         self.srbehemoth_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -32,6 +34,40 @@ class VeldtCaveWOR(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc look for every kind: both cave npcs get
+        # the item path's random decoy sprite (a character reward
+        # repaints them at map load; an esper loses its magicite look,
+        # which would say "esper here")
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        random_sprite = self.characters.get_random_esper_item_sprite()
+        for npc in (self.shadow_npc, self.relm_npc):
+            npc.sprite = random_sprite
+            npc.palette = self.characters.get_palette(random_sprite)
+        self.race_repaint_npc_entrance(0x161, self.shadow_npc_id, slot)
+        self.race_repaint_npc_entrance(0x161, self.relm_npc_id, slot)
+
+        self.move_to_thamasa([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.Branch("REWARD_DONE"),
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+
+            "REWARD_DONE",
+        ])
 
     def dialog_mod(self):
         space = Reserve(0xb79cd, 0xb79d5, "veldt cave wor you're coming with us", field.NOP())

@@ -53,6 +53,29 @@ class Event():
     def init_event_bits(self, space):
         pass
 
+    def race_repaint_npc_entrance(self, map_id, npc_id, slot, palette = True):
+        """Race builds: chain an entrance event onto the map's existing
+        one that repaints a check npc as the reward character at load
+        time when (and only when) the reward's kind is character.  The
+        npc record itself stays kind- and id-blind in the rom.
+        `palette=False` repaints only the sprite (for npcs whose palette
+        is scene state, like the ancient castle's gray statue)."""
+        old_entrance = self.maps.get_entrance_event(map_id)
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NPC_DONE"),
+            field.SetRewardSprite(npc_id, slot),
+        ]
+        if palette:
+            src += [
+                field.SetRewardPalette(npc_id, slot),
+            ]
+        src += [
+            "NPC_DONE",
+            field.Branch(EVENT_CODE_START + old_entrance),
+        ]
+        space = Write(Bank.CA, src, f"{self.name()} race npc repaint entrance")
+        self.maps.set_entrance_event(map_id, space.start_address - EVENT_CODE_START)
+
     def get_boss(self, original_boss_name, log_change = True):
         pack_id = self.enemies.get_event_boss(original_boss_name)
 

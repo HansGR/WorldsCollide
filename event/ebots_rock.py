@@ -27,7 +27,9 @@ class EbotsRock(Event):
 
         self.warp_to_chest_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -35,6 +37,119 @@ class EbotsRock(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind: a runtime branch right after the
+        # hidon battle.  the character route keeps the character_mod
+        # patches (they are all npc-id or party-slot based once the
+        # recruit and the dinner-guest npc go through the slot); the
+        # esper/item route is fully relocated, so the two never fight
+        # over the same vanilla bytes
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        # dinner guest npc: decoy in the record, repainted in-scene
+        # before the bedroom scene creates it (and at map load, for
+        # entrances that run events)
+        gungho_table_npc_id = 0x22
+        gungho_table_npc = self.maps.get_npc(0x15d, gungho_table_npc_id)
+        gungho_table_npc.sprite = self.characters.get_random_esper_item_sprite()
+        gungho_table_npc.palette = self.characters.get_palette(gungho_table_npc.sprite)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            Read(0xb71f1, 0xb71f4),
+            field.Branch(0xb71f5),          # the character scene
+
+            # the esper/item route (esper_item_mod's script, slot-driven,
+            # relocated): receive, then straight back to thamasa
+            "ESPER_ITEM",
+            field.Call(0xb7410),            # unfade screen, wait
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.SetEventBit(event_bit.DEFEATED_HIDON),
+            field.FinishCheck(),
+            Read(0xb73e1, 0xb73f0),         # event bits after hidon
+            field.FreeScreen(),
+            field.LoadMap(0x01, direction.DOWN, default_music = True, x = 249, y = 224),
+            world.End(),
+        ]
+        space = Write(Bank.CB, src, "ebots rock race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xb71ec, 0xb71f4, "ebots rock show strago after hidon defeated", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
+
+        # the character route: character_mod's patches, slot-driven
+        space = Reserve(0xb71f5, 0xb7216, "ebots rock strago celebrating after hidon defeated", field.NOP())
+        space.write(
+            field.Branch(space.end_address + 1), # skip nops
+        )
+
+        space = Reserve(0xb721a, 0xb721b, "ebots rock disable collisions for strago", field.NOP())
+        space = Reserve(0xb7221, 0xb7225, "ebots rock strago runs down", field.NOP())
+        space = Reserve(0xb7233, 0xb7234, "ebots rock wait for strago character commands", field.NOP())
+        space = Reserve(0xb7238, 0xb7239, "ebots rock enable collisions for strago", field.NOP())
+
+        space = Reserve(0xb7244, 0xb7249, "ebots rock after hidon load strago's room map", field.NOP())
+        space.write(
+            vehicle.LoadMap(0x15d, direction.UP, default_music = False, x = 45, y = 21, fade_in = False, update_parent_map = True),
+        )
+
+        space = Reserve(0xb724e, 0xb7315, "ebots rock after hidon bedroom scene and that evening", field.NOP())
+        space.write(
+            field.SetRewardSprite(gungho_table_npc_id, slot),
+            field.SetRewardPalette(gungho_table_npc_id, slot),
+            field.HideEntity(0x23), # hide strago npc to be replaced with party
+
+            # disable collisions and draw party on top of the chairs
+            field.DisableEntityCollision(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetSpriteLayer(2)
+            ),
+            field.Branch(space.end_address + 1), # skip nops
+        )
+
+        # change strago npc to party
+        for address in (0xb7316, 0xb7328, 0xb7333, 0xb733e, 0xb734a):
+            space = Reserve(address, address, "ebots rock dinner table strago")
+            space.write(field_entity.PARTY0)
+
+        # remove dialogs
+        space = Reserve(0xb7325, 0xb7327, "ebots rock there i was, in a cave that seemed endless", field.NOP())
+        space.write(field.Pause(0.5)),
+        space = Reserve(0xb733b, 0xb733d, "ebots rock G'pow!! Thwack!! Crash!!", field.NOP())
+        space.write(field.Pause(2.0)),
+        space = Reserve(0xb7347, 0xb7349, "ebots rock true meaning of the word, hero", field.NOP())
+        space.write(field.Pause(2.0)),
+        space = Reserve(0xb734e, 0xb7351, "ebots rock and then...", field.NOP())
+
+        space = Reserve(0xb7356, 0xb73e0, "ebots rock relm gungho night scene", field.NOP())
+        space.write(
+            field.EnableEntityCollision(field_entity.PARTY0),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetSpriteLayer(0)
+            ),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(space.end_address + 1), # skip nops
+        )
+
+        src = [
+            Read(0xb73f2, 0xb73f7), # load strago's house map
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "ebots rock finish check")
+        finish_check = space.start_address
+
+        space = Reserve(0xb73f2, 0xb73f7, "ebots rock load strago's house after character reward", field.NOP())
+        space.write(
+            field.Call(finish_check),
+        )
 
     def find_gungho_hurt_mod(self):
         space = Reserve(0xb75d5, 0xb75d5, "ebots rock relm and strago find gungho hurt in thamasa", field.NOP())

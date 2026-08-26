@@ -21,7 +21,9 @@ class Whelk(Event):
         self.cleanup_mod()
         self.whelk_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -29,6 +31,57 @@ class Whelk(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  every kind gets the guard sprite the esper/item path
+        # uses; a character reward repaints it from the entrance event
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        guard_npc_id = self.add_guard_npc()
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NPC_DONE"),
+            field.UpdateRewardNpc(guard_npc_id, slot),
+            "NPC_DONE",
+            # continue with whatever entrance_event_mod configured
+            field.Branch(0xc9ef2),
+        ]
+        space = Write(Bank.CA, src, "whelk race entrance")
+        self.maps.set_entrance_event(0x02b, space.start_address - EVENT_CODE_START)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "whelk race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xc9f64, 0xc9f80, "narshe mines terra/vicks/wedge at esper scene", field.NOP())
+        space.write(
+            field.SetEventBit(event_bit.DEFEATED_WHELK),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.EnableWalkingAnimation(),
+            ),
+            field.Branch(reward_script),
+        )
 
     def dialog_mod(self):
         space = Reserve(0xc9f4d, 0xc9f4f, "narshe mines we won't hand over the esper", field.NOP())
@@ -102,6 +155,8 @@ class Whelk(Event):
             new_event.event_address = 0xc9f37 - EVENT_CODE_START # guard calls whelk event
 
             self.maps.add_event(0x2b, new_event)
+
+        return guard_npc_id
 
     def whelk_battle_mod(self):
         boss_pack_id = self.get_boss("Whelk")

@@ -26,7 +26,9 @@ class UmaroCave(Event):
 
         self.umaro_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -34,6 +36,90 @@ class UmaroCave(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script, one carving wording and one npc record for every
+        # kind.  the carving is neutral ("Touch the eye?"), its magicite
+        # animation is gone for every kind (it would say "esper here"),
+        # and the reward is granted after the battle either way.  the
+        # scene animates the umaro npcs by npc id, so after the entrance
+        # repaint the whole vanilla scene works for any character
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        for npc in (self.umaro_cave_npc, self.umaro_wob_npc):
+            npc.sprite = self.characters.get_random_esper_item_sprite()
+            npc.palette = self.characters.get_palette(npc.sprite)
+        self.race_repaint_npc_entrance(0x11b, self.umaro_cave_npc_id, slot)
+        self.race_repaint_npc_entrance(0x015, self.umaro_wob_npc_id, slot)
+
+        # neutral carving: no magicite in the eye, no animation
+        self.dialogs.set_text(dialog_id.UMARO_CAVE_CARVING, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+        space = Reserve(0xcd6f8, 0xcd6fd, "narshe wor umaro carving magicite flash", field.NOP())
+        space = Reserve(0xcd709, 0xcd736, "narshe wor get esper from bone carving", field.NOP())
+
+        # umaro's wob appearance plays only for a character reward
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "HIDE_WOB"),
+            Read(0xc3871, 0xc388d),
+            field.Branch(0xc388e),
+            "HIDE_WOB",
+            field.HideEntity(self.umaro_wob_npc_id),
+            field.Branch(0xc388e),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race wob appearance")
+        wob_appearance = space.start_address
+        space = Reserve(0xc3871, 0xc388d, "narshe wob umaro appearance", field.NOP())
+        space.write(
+            field.Branch(wob_appearance),
+        )
+
+        # after the battle: esper/item receive and finish here; a
+        # character continues into the vanilla umaro scene
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            Read(0xcd77e, 0xcd78e),         # umaro gets back up
+            field.Branch(0xcd791),          # the vanilla umaro scene
+
+            "ESPER_ITEM",
+            field.HideEntity(self.umaro_cave_npc_id),
+            field.SetEventBit(event_bit.RECRUITED_UMARO_WOR),
+            field.ClearEventBit(npc_bit.UMARO_NARSHE_WOR),
+            field.AddCheckReward(slot),
+            field.receive_reward_dialog(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race post battle")
+        post_battle = space.start_address
+        space = Reserve(0xcd77e, 0xcd790, "narshe wor umaro post battle", field.NOP())
+        space.write(
+            field.Branch(post_battle),
+        )
+
+        # the character path through the vanilla scene (only reached for
+        # a character reward): drop the mog requirements and naming, then
+        # recruit from the slot
+        space = Reserve(0xcd794, 0xcd799, "narshe wor recruit umaro do not require mog", field.NOP())
+        space = Reserve(0xcd79a, 0xcd7a8, "narshe wor add umaro to party", field.NOP())
+        space = Reserve(0xcd7b2, 0xcd7b6, "narshe wor umaro do not change party for mog", field.NOP())
+        space = Reserve(0xcd7d8, 0xcd7db, "narshe wor i'm your boss, kupo!", field.NOP())
+        space = Reserve(0xcd7f5, 0xcd843, "narshe wor name umaro", field.NOP())
+        space.write(
+            field.Branch(space.end_address + 1), # skip nops
+        )
+        space = Reserve(0xcd870, 0xcd884, "narshe wor add umaro", field.NOP())
+        space.write(
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(space.end_address + 1), # skip nops
+        )
+        space = Reserve(0xcd88d, 0xcd894, "narshe wor umaro finish check", field.NOP())
+        space.write(
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+        )
 
     def add_gating_condition(self):
         CLIFF_MOVE_BACK = 0xc37f8

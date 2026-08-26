@@ -17,7 +17,9 @@ class ZoneEater(Event):
         if self.args.character_gating:
             self.add_gating_condition()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -25,6 +27,55 @@ class ZoneEater(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  every kind gets the random decoy sprite the item path
+        # uses; a character reward repaints it at map load.  *Visible
+        # change*: an esper reward loses its magicite-drop animation (the
+        # animation itself would say "esper here") - the reward arrives
+        # through the dialog, like an item
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.gogo_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.gogo_npc.palette = self.characters.get_palette(self.gogo_npc.sprite)
+
+        self.race_repaint_npc_entrance(0x116, self.gogo_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+
+            field.DeleteEntity(self.gogo_npc_id),
+            field.ClearEventBit(npc_bit.GOGO_ZONE_EATER),
+            field.SetEventBit(event_bit.RECRUITED_GOGO_WOR),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+
+            field.DeleteEntity(self.gogo_npc_id),
+            field.ClearEventBit(npc_bit.GOGO_ZONE_EATER),
+            field.SetEventBit(event_bit.RECRUITED_GOGO_WOR),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "zone eater race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xb81ce, 0xb81ff, "zone eater recruit gogo", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def add_gating_condition(self):
         chest_bridge_npc_id = 0x11

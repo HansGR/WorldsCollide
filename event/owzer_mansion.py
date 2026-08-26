@@ -31,7 +31,9 @@ class OwzerMansion(Event):
         space = Reserve(0xb4dea, 0xb4ded, "owzer mansion turn party left at bookshelf", field.NOP())
         space = Reserve(0xb4dee, 0xb4df4, "owzer mansion turn relm npc right", field.NOP())
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -40,6 +42,55 @@ class OwzerMansion(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  *Race-only cosmetic*: the post-battle song stays
+        # vanilla's for every kind - the two StartSong sites are two
+        # bytes each, too tight for the slot-driven theme command, and a
+        # fixed song leaks nothing
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.relm_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.relm_npc.palette = self.characters.get_palette(self.relm_npc.sprite)
+        self.race_repaint_npc_entrance(0x0d0, self.relm_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            # characters receive at the recruit site below
+            field.Branch(0xb4de8),
+
+            # the esper/item grant (esper/item_mod's script, slot-driven;
+            # no sound effect, as the originals)
+            "ESPER_ITEM",
+            Read(0xb4de1, 0xb4de2),
+            field.AddCheckReward(slot),
+            field.receive_reward_dialog(slot),
+            field.Branch(0xb4de8),
+        ]
+        space = Write(Bank.CA, src, "owzer mansion race grant")
+        grant_script = space.start_address
+
+        space = Reserve(0xb4de1, 0xb4de7, "owzer mansion get esper/item", field.NOP())
+        space.write(
+            field.Branch(grant_script),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NO_RECRUIT"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            "NO_RECRUIT",
+            field.Branch(0xb4e1d),
+        ]
+        space = Write(Bank.CA, src, "owzer mansion race recruit")
+        recruit_script = space.start_address
+
+        space = Reserve(0xb4dfd, 0xb4e1c, "owzer mansion add relm", field.NOP())
+        space.write(
+            field.Branch(recruit_script),
+        )
 
     def flash_mod(self):
         space = Reserve(0xb4d10, 0xb4d11, "owzer mansion flash", field.FlashScreen(field.Flash.NONE))

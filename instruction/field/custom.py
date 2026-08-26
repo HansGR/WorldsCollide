@@ -953,7 +953,7 @@ REWARD_ENTITY_OPCODE = 0xec     # unused by vanilla, WC dev and the fork
 
 (SUB_CREATE, SUB_DELETE, SUB_SHOW, SUB_HIDE, SUB_WAIT, SUB_SPRITE,
  SUB_PALETTE, SUB_PARTY, SUB_PROPERTIES, SUB_NAME, SUB_THEME, SUB_ACT,
- SUB_LOAD_KIND) = range(13)
+ SUB_LOAD_KIND, SUB_VEHICLE) = range(14)
 
 _reward_entity_handler = None
 _character_palette_table = None
@@ -1045,6 +1045,7 @@ def reward_entity_opcode():
         "name": 0xa03a,         # $7F, advance 3
         "theme": 0xb780,        # $F0, advance 2
         "act": 0x9ba5,          # action queue, entered with A = entity
+        "vehicle": 0x9cca,      # $44, advance 3
     }
 
     # the sixteen-entry character id -> palette and -> theme song tables.
@@ -1161,6 +1162,16 @@ def reward_entity_opcode():
         asm.JMP(VANILLA["act"], asm.ABS),
     ]
 
+    # $EC sub slot vehicle (4 bytes); vanilla $44: character vehicle
+    subs[SUB_VEHICLE] = [
+        *_decode_id_src(0xec),
+        asm.STA(0xeb, asm.DIR),
+        asm.LDA(0xed, asm.DIR),
+        asm.STA(0xec, asm.DIR),
+        *_bump_src("VEHICLE"),
+        asm.JMP(VANILLA["vehicle"], asm.ABS),
+    ]
+
     # $EC sub slot kind (4 bytes): multipurpose event bit 0 = (the
     # reward's kind == kind).  With the vanilla event-bit branches this
     # gives runtime branching on kind, so one script can carry every
@@ -1261,6 +1272,10 @@ class SetRewardName(_RewardEntityInstruction):
 class PlayRewardTheme(_RewardEntityInstruction):
     def __init__(self, slot):
         super().__init__(SUB_THEME, slot)
+
+class SetRewardVehicle(_RewardEntityInstruction):
+    def __init__(self, slot, vehicle):
+        super().__init__(SUB_VEHICLE, slot, vehicle)
 
 
 class _RewardEntityAct(_Instruction):

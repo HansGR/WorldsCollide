@@ -28,7 +28,9 @@ class BarenFalls(Event):
         if self.args.flashes_remove_most:
             self.background_scrolling_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -36,6 +38,93 @@ class BarenFalls(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind.  the vanilla scene animates only the
+        # gau NPC (entity 0x10) and the party leader, so it carries no
+        # character id at all - the leaks were the npc record (left
+        # vanilla now, repainted in-scene), the theme song operand (now
+        # PlayRewardTheme) and the differing per-kind patch shapes (now
+        # one runtime branch)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        gau_npc_id = 0x10
+
+        # scene entry: fade song, pause, create npc / show / refresh,
+        # start song (vanilla 0xbc0f7-0xbc100).  the character branch
+        # replays it with the npc repainted between create and show and
+        # the theme decoded from the slot; other kinds skip the scene as
+        # the esper/item path always did
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "SKIP_SCENE"),
+            Read(0xbc0f7, 0xbc0fb),         # fade song, pause, create npc
+            field.SetRewardSprite(gau_npc_id, slot),
+            field.SetRewardPalette(gau_npc_id, slot),
+            Read(0xbc0fc, 0xbc0fe),         # show npc, refresh
+            field.PlayRewardTheme(slot),
+            field.Branch(0xbc101),          # the arrival scene
+            "SKIP_SCENE",
+            field.Branch(0xbc1b8),          # straight to the landing
+        ]
+        space = Write(Bank.CB, src, "baren falls race scene entry")
+        scene_entry = space.start_address
+
+        # the turn toward the npc runs only when the npc exists
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NO_TURN"),
+            Read(0xbc1c2, 0xbc1c5),         # npc turns
+            "NO_TURN",
+            Read(0xbc1c6, 0xbc1db),         # party leader looks around
+            field.Branch(0xbc1dc),
+        ]
+        space = Write(Bank.CB, src, "baren falls race npc turn")
+        npc_turn = space.start_address
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            Read(0xbc1dc, 0xbc1e1),         # pause, party leader nods
+            field.Pause(0.5),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            Read(0xbc1ef, 0xbc1f1),         # hide npc, refresh
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.SetEventBit(event_bit.NAMED_GAU),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Branch(0xbc1f6),          # rest of the vanilla wrap-up
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.SetEventBit(event_bit.NAMED_GAU),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FinishCheck(),
+            field.Branch(0xbc1f6),
+        ]
+        space = Write(Bank.CB, src, "baren falls race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xbc0f7, 0xbc100, "baren falls scene entry", field.NOP())
+        space.write(
+            field.Branch(scene_entry),
+        )
+        space = Reserve(0xbc15d, 0xbc1b1, "baren falls gau naming", field.NOP())
+        space.write(
+            field.Branch(space.end_address + 1), # skip nops
+        )
+        space = Reserve(0xbc1c2, 0xbc1db, "baren falls npc turn", field.NOP())
+        space.write(
+            field.Branch(npc_turn),
+        )
+        space = Reserve(0xbc1dc, 0xbc1f5, "baren falls reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def add_gating_condition(self):
         src = [

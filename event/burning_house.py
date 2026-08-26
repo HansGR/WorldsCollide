@@ -40,7 +40,9 @@ class BurningHouse(Event):
         if not self.args.fixed_encounters_original:
             self.fixed_battles_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -48,6 +50,81 @@ class BurningHouse(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  the rescuer npc only appears during the scene, so its
+        # record stays a decoy sprite and the scene repaints it before
+        # creating it
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        shadow_npc_id = 0x1d
+        shadow_npc = self.maps.get_npc(0x15f, shadow_npc_id)
+        shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
+        shadow_npc.palette = self.characters.get_palette(shadow_npc.sprite)
+
+        src = [
+            field.SetEventBit(event_bit.DEFEATED_FLAME_EATER),
+            field.SetEventBit(npc_bit.SHADOW_AFTER_FLAME_EATER),
+            field.HoldScreen(),
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven);
+            # the vanilla rescue scene at 0xbe8db then plays the repainted
+            # rescuer npc
+            field.CreateRewardEntity(slot),
+            field.SetRewardSprite(shadow_npc_id, slot),
+            field.SetRewardPalette(shadow_npc_id, slot),
+            field.CreateEntity(shadow_npc_id),
+            field.DeleteEntity(0x1b),
+            field.RefreshEntities(),
+            field.ShowEntity(shadow_npc_id),
+            field.HideEntity(0x1b),
+
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetPosition(49, 43),
+                field_entity.AnimateKnockedOut(),
+            ),
+            field.EntityAct(field_entity.CAMERA, True,
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.Move(direction.UP, 7),
+            ),
+            field.Branch(0xbe8db),      # vanilla rescue scene
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FadeOutScreen(4),
+            field.Branch(0xbea3f),      # scene tail before waking up
+        ]
+        space = Write(Bank.CB, src, "burning house race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xbe79e, 0xbe8da, "flame eater defeated", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
+
+        # "I'll use a smoke bomb"
+        space = Reserve(0xbea2c, 0xbea2e, "burning house smoke bomb dialog", field.NOP())
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "TO_BED"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            "TO_BED",
+            field.Branch(self.wake_up),
+        ]
+        space = Write(Bank.CB, src, "burning house race wake up")
+        wake_up_script = space.start_address
+
+        space = Reserve(0xbea44, 0xbea64, "burning house wake up", field.NOP())
+        space.write(
+            field.Branch(wake_up_script),
+        )
 
     def add_gating_condition(self):
         # increase the price from 1500
