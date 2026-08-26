@@ -23,7 +23,9 @@ class MtKolts(Event):
         self.entrance_exit_mod()
         self.vargas_trigger_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -31,6 +33,136 @@ class MtKolts(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind, chosen at runtime from the masked
+        # reward table.  the vanilla vargas scene animates the joining
+        # character through eight action queues whose OPCODE byte is the
+        # character id (plus create/show commands), so the whole scene
+        # tail is relocated here with those commands replaced by their
+        # slot-driven twins; the vanilla action bytes themselves are
+        # spliced in unchanged (they carry no id).  the esper/item scene
+        # is the same script's other branch, so the event bytes match
+        # whatever the check holds.
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        boss_pack_id = self.get_boss("Vargas")
+
+        # the character id never appears, so the vanilla action queues
+        # can be reused verbatim.  read them before the reserve wipes
+        # the region.  (ll is the vanilla length byte: count | wait bit.)
+        def reward_queue(vanilla_start, ll):
+            return [
+                field.RewardEntityActRaw(slot, ll),
+                Read(vanilla_start + 2, vanilla_start + 2 + (ll & 0x7f) - 1),
+            ]
+
+        def party_queue(party, vanilla_start, ll):
+            return [
+                party,
+                Read(vanilla_start + 1, vanilla_start + 1 + (ll & 0x7f)),
+            ]
+
+        src = [
+            field.Pause(1),
+            field.InvokeBattle(boss_pack_id, 0x0b),
+            field.HideEntity(self.vargas_npc_id),
+            field.ClearEventBit(npc_bit.VARGAS_MT_KOLTS_EXIT),
+            field.SetEventBit(event_bit.DEFEATED_VARGAS),
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+
+            field.CreateEntity(field_entity.PARTY1),
+            field.CreateEntity(field_entity.PARTY2),
+            field.CreateEntity(field_entity.PARTY3),
+
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetPosition(20, 33),
+                field_entity.Turn(direction.RIGHT),
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+            ),
+            field.EntityAct(field_entity.PARTY1, True,
+                field_entity.SetPosition(21, 34),
+                field_entity.Turn(direction.UP),
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+            ),
+            field.EntityAct(field_entity.PARTY2, True,
+                field_entity.SetPosition(22, 35),
+                field_entity.Turn(direction.UP),
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+            ),
+            field.EntityAct(field_entity.PARTY3, True,
+                field_entity.SetPosition(19, 33),
+                field_entity.Turn(direction.RIGHT),
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+            ),
+
+            field.ShowEntity(field_entity.PARTY1),
+            field.ShowEntity(field_entity.PARTY2),
+            field.ShowEntity(field_entity.PARTY3),
+
+            field.CreateRewardEntity(slot),
+
+            # the vanilla scene tail (0xa8320-0xa83b2), with WC's usual
+            # edits (dialogs and long pauses removed, vanilla actors
+            # remapped to party slots) and the joining character's
+            # commands slot-driven
+            *reward_queue(0xa8320, 0x86),   # jumps down to the party
+            field.ShowRewardEntity(slot),
+            field.FadeInScreen(),
+            *party_queue(field_entity.PARTY0, 0xa832d, 0x83),
+            *reward_queue(0xa8335, 0x8b),   # bows
+            0x92,                           # pause 30
+            0xb0, 0x02,                     # repeat 2 {
+            *reward_queue(0xa8345, 0x82),   #   head down
+            *reward_queue(0xa8349, 0x82),   #   head up
+            0xb1,                           # }
+            0x94,                           # pause 60
+            *reward_queue(0xa834f, 0x82),
+            *party_queue(field_entity.PARTY1, 0xa8357, 0x1d),
+            field.WaitForEntityAct(field_entity.PARTY1),
+            0x92,
+            *party_queue(field_entity.PARTY2, 0xa837c, 0x90),
+            0x94,
+            *party_queue(field_entity.PARTY1, 0xa8392, 0x82),
+            *party_queue(field_entity.PARTY2, 0xa8396, 0x82),
+            *reward_queue(0xa839a, 0x83),   # laughs
+            0x92,
+            0x92,
+            0xb0, 0x06,                     # repeat 6 {
+            *reward_queue(0xa83a6, 0x82),   #   flex
+            0xb4, 0x02,                     #   short pause
+            *reward_queue(0xa83ac, 0x82),   #   flex other way
+            0xb4, 0x02,                     #   short pause
+            0xb1,                           # }
+
+            field.HideEntity(field_entity.PARTY1),
+            field.HideEntity(field_entity.PARTY2),
+            field.HideEntity(field_entity.PARTY3),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "mt kolts race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xa82a3, 0xa83bf, "mt kolts invoke vargas battle", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def dialog_mod(self):
         # "sabin sent you, right?" dialog

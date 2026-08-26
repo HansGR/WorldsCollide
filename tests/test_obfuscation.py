@@ -89,5 +89,47 @@ class TestMask(unittest.TestCase):
         self.assertTrue(any(pad))  # the zero pad would leave plaintext
 
 
+class TestRewards(unittest.TestCase):
+    def setUp(self):
+        from obfuscation import rewards
+        rewards.reset()
+        self.rewards = rewards
+
+    def test_kind_values(self):
+        r = self.rewards
+        self.assertEqual((r.KIND_ITEM, r.KIND_ESPER, r.KIND_CHARACTER),
+                         (0x00, 0x01, 0x02))
+        self.assertEqual(r.KINDS,
+                         {"item": 0x00, "esper": 0x01, "character": 0x02})
+
+    def test_register_slots_sequential(self):
+        r = self.rewards
+        self.assertEqual(r.register("item", 26), 0)
+        self.assertEqual(r.register("esper", 6), 1)
+        self.assertEqual(r.register("character", 5), 2)
+        self.assertEqual(r.count(), 3)
+
+    def test_register_check_maps_reward_types(self):
+        from event.event_reward import RewardType
+        r = self.rewards
+
+        class FakeReward:
+            def __init__(self, type, id):
+                self.type = type
+                self.id = id
+
+        r.register_check(FakeReward(RewardType.CHARACTER, 5))
+        r.register_check(FakeReward(RewardType.ESPER, 6))
+        r.register_check(FakeReward(RewardType.ITEM, 26))
+        self.assertEqual(r._rewards,
+                         [(0x02, 5), (0x01, 6), (0x00, 26)])
+
+    def test_reset_clears(self):
+        r = self.rewards
+        r.register("character", 3)
+        r.reset()
+        self.assertEqual(r.count(), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

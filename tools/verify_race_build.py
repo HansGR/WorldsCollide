@@ -302,15 +302,21 @@ def main():
     rewards = bytes(race[tbase + k] ^ race[pbase + k] for k in range(0x200))
     check(bytes(race[tbase:tbase + 0x200]) != rewards, "race: reward table is not masked")
 
-    items = espers = 0
+    items = espers = characters = 0
+    slot_kind = {}
     for slot in range(0x100):
         kind, value = rewards[slot * 2], rewards[slot * 2 + 1]
         if kind == 0xff:
             continue
-        check(kind in (0x00, 0x01), f"race: reward slot {slot} has an invalid kind")
+        check(kind in (0x00, 0x01, 0x02),
+              f"race: reward slot {slot} has an invalid kind")
+        slot_kind[slot] = kind
         if kind == 0x01:
             check(value < 27, f"race: reward slot {slot} has an invalid esper id")
             espers += 1
+        elif kind == 0x02:
+            check(value < 14, f"race: reward slot {slot} has an invalid character id")
+            characters += 1
         else:
             items += 1
     check(items > 0 and espers > 0,
@@ -332,8 +338,152 @@ def main():
         check(race[offset] == REWARD_DIALOG_OPCODE,
               f"race: auction announce at 0x{offset:05x} still names its reward")
 
+    # 11. L3-C: character-at-check obfuscation (the three converted
+    #     archetypes: Figaro Castle WOB, Mt. Kolts, Daryl's Tomb).
+    #     One umbrella opcode ($EC) carries every id-valued scene command;
+    #     each converted event is ONE script for every kind, so its bytes
+    #     cannot say what the check holds - not even the kind.
+    REWARD_ENTITY_OPCODE = 0xec          # sync: instruction/field/custom.py
+    SUB_COUNT = 13
+    SUB_ACT, SUB_LOAD_KIND = 11, 12
+    check(field_handler(control, REWARD_ENTITY_OPCODE) == stub,
+          "control: opcode 0xec is not the unused stub")
+    dispatch = field_handler(race, REWARD_ENTITY_OPCODE)
+    check(dispatch != stub, "race: reward entity opcode 0xec not installed")
+    db = race[dispatch:dispatch + 8]
+    check(db[0] == 0x7b and db[1:3] == b"\xa5\xeb" and db[3] == 0x0a
+          and db[4] == 0xaa and db[5] == 0x7c,
+          "race: reward entity dispatch is not TDC/LDA $eb/ASL/TAX/JMP (t,X)")
+    sub_table = int.from_bytes(db[6:8], "little")
+    subs = [int.from_bytes(race[sub_table + 2 * i:sub_table + 2 * i + 2], "little")
+            for i in range(SUB_COUNT)]
+    for i, at in enumerate(subs):
+        check(race[at] == 0xa5 and race[at + 1] in (0xec, 0xed),
+              f"race: reward entity sub {i} does not read its slot operand")
+
+    # each converted event: the vanilla reward region branches to one
+    # unified block containing a runtime kind branch (EC 0C) and the
+    # kind-blind grant (9E)
+    CONVERTED_SITES = {"figaro castle wob": 0xa6623,
+                       "mt kolts": 0xa82a3,
+                       "daryl tomb": 0xa4328}
+    # daryl's two branches rejoin the vanilla script at 0xa4334 instead of
+    # returning; that destination operand bounds its block
+    SITE_TERMINATOR = {"daryl tomb": b"\x34\x43\x00"}
+    def follow_c0_branch(rom, site):
+        check(rom[site] == 0xc0,
+              f"race: converted site 0x{site:06x} is not a branch")
+        return int.from_bytes(rom[site + 3:site + 6], "little") + 0xa0000
+
+    def block_bytes(rom, site, terminator=b"\xfe"):
+        """the unified reward script: each scene branch ends in the
+        terminator (a Return, or for daryl's tomb the branch back to the
+        vanilla finish-check code), so the block runs to its second one."""
+        start = follow_c0_branch(rom, site)
+        end, seen = start, 0
+        while seen < 2:
+            if bytes(rom[end:end + len(terminator)]) == terminator:
+                seen += 1
+                end += len(terminator) - 1
+            end += 1
+        return start, bytes(rom[start:end])
+
+    def normalized(block):
+        """the block with its seed-dependent slot numbers blanked: what is
+        left is exactly what an attacker can read"""
+        out = bytearray(block)
+        slots = set()
+        i = 0
+        while i < len(out):
+            if out[i] == REWARD_ENTITY_OPCODE:
+                slots.add(out[i + 2]); out[i + 2] = 0xaa
+                i += 3
+            elif out[i] == ADD_CHECK_REWARD_OPCODE:
+                slots.add(out[i + 1]); out[i + 1] = 0xaa
+                i += 2
+            elif out[i] == REWARD_DIALOG_OPCODE:
+                out[i + 1] = 0xaa
+                i += 3
+            else:
+                i += 1
+        return bytes(out), slots
+
+    site_slots = {}
+    for name, site in CONVERTED_SITES.items():
+        start, block = block_bytes(race, site,
+                                   SITE_TERMINATOR.get(name, b"\xfe"))
+        check(bytes((REWARD_ENTITY_OPCODE, SUB_LOAD_KIND)) in block,
+              f"race: {name} block has no runtime kind branch")
+        check(bytes([ADD_CHECK_REWARD_OPCODE]) in block,
+              f"race: {name} block has no kind-blind grant")
+        _, slots = normalized(block)
+        site_slots[name] = slots
+
+    # daryl's inscription names the reward through the reward dialog
+    check(control[0xa42f9] == 0x4b, "control: daryl inscription is not a dialog")
+    check(race[0xa42f9] == REWARD_DIALOG_OPCODE,
+          "race: daryl inscription still names its reward")
+
+    # mt kolts: the relocated scene's eight reward queues carry vanilla's
+    # own action bytes verbatim - only the entity id went opaque
+    vanilla_rom = open(args.rom, "rb").read()
+    if len(vanilla_rom) % 0x10000 == 0x200:
+        vanilla_rom = vanilla_rom[0x200:]        # headered rom
+    KOLTS_QUEUES = ((0xa8320, 0x86), (0xa8335, 0x8b), (0xa8345, 0x82),
+                    (0xa8349, 0x82), (0xa834f, 0x82), (0xa839a, 0x83),
+                    (0xa83a6, 0x82), (0xa83ac, 0x82))
+    start, block = block_bytes(race, CONVERTED_SITES["mt kolts"])
+
+    queues = []
+    i = 0
+    while i < len(block):
+        if block[i] == REWARD_ENTITY_OPCODE and block[i + 1] == SUB_ACT:
+            ll = block[i + 3]
+            queues.append((block[i + 3], block[i + 4:i + 4 + (ll & 0x7f)]))
+            i += 4 + (ll & 0x7f)
+        else:
+            i += 1
+    check(len(queues) == len(KOLTS_QUEUES),
+          f"race: mt kolts block has {len(queues)} reward queues, "
+          f"expected {len(KOLTS_QUEUES)}")
+    for (ll, actions), (vstart, vll) in zip(queues, KOLTS_QUEUES):
+        check(ll == vll, f"race: mt kolts queue at vanilla 0x{vstart:06x} "
+                         f"changed its length byte")
+        check(actions == vanilla_rom[vstart + 2:vstart + 2 + (vll & 0x7f)],
+              f"race: mt kolts queue at vanilla 0x{vstart:06x} does not "
+              f"splice vanilla's action bytes")
+
+    # figaro's throne npc record: the same random decoy sprite every kind
+    # gets, never a character sprite (SOLDIER/IMP/MERCHANT/GHOST pool)
+    NPC_PTR = 0x41a10
+    p0 = int.from_bytes(race[NPC_PTR + 0x3a * 2:NPC_PTR + 0x3a * 2 + 2], "little")
+    throne_sprite = race[NPC_PTR + p0 + 6]
+    check(throne_sprite in (14, 15, 19, 20),
+          f"race: figaro throne npc sprite {throne_sprite} is not from the "
+          f"esper/item decoy pool - it would reveal the check's kind or id")
+
+    # the kind-hiding property itself: a second seed's converted blocks are
+    # byte-identical after blanking the slot numbers, whatever each seed
+    # put at the checks
+    raceb = build(args.rom, f"{tmp}/raceb.smc", race=True,
+                  extra=["-s", "racecheckseedb"])
+    for name, site in CONVERTED_SITES.items():
+        term = SITE_TERMINATOR.get(name, b"\xfe")
+        _, block_a = block_bytes(race, site, term)
+        _, block_b = block_bytes(raceb, site, term)
+        na, _ = normalized(block_a)
+        nb, _ = normalized(block_b)
+        check(na == nb,
+              f"race: {name} reward script differs between seeds beyond the "
+              f"slot number - something kind- or id-dependent leaked in")
+
+    site_kinds = {name: sorted(slot_kind.get(s) for s in slots)
+                  for name, slots in site_slots.items()}
+
     print(f"all {checks} checks passed")
-    print(f"reward table: {items} item + {espers} esper slots in one masked table")
+    print(f"reward table: {items} item + {espers} esper + {characters} "
+          f"character slots in one masked table")
+    print("converted checks hold kinds (0=item 1=esper 2=char):", site_kinds)
     print("relocated bases:", {t: hex(b) for t, b in bases.items()})
     print("pad bases:", {t: hex(p) for t, p in pads.items()})
     print(f"chest records: {len(real_flat)}, chest contents differing from decoy: "

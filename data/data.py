@@ -121,9 +121,13 @@ class Data:
         self.title_graphics.write()
 
         if self.args.race:
-            # L3: lay the collected item-reward table into the claim, then
+            # L3: lay the collected reward table into the claim, fill the
+            # character palette table (palettes can be flag-customized, so
+            # it waits for the final Characters state), then
             # L2: mask every relocated table (incl. the reward table) in one
             # pass.  the reward table must be written before masking.
             from obfuscation import rewards, mask
+            from instruction.field import custom
             rewards.write_tables(self.rom, self.args)
+            custom.fill_character_palettes(self.characters.get_palette)
             mask.apply_all(self.args, self.rom)

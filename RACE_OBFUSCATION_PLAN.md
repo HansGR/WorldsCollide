@@ -354,7 +354,7 @@ runtime.
 
 - **Character-at-check grants** — planned in detail below (§L3-C).
 
-### L3-C — Characters at checks — **plan (Phase 3f, awaiting approval)**
+### L3-C — Characters at checks — **machinery + three archetypes done (Phase 3f-a)**
 
 Goal: hide *which character* each check grants from ROM inspection,
 using the same unified reward machinery.  Player-visible behaviour is
@@ -469,6 +469,63 @@ vanilla scene), one `RecruitAndSelectParty` event — measuring the
 space and effort of full unification on each, then decide with that
 data whether the remaining ~35 events get Tier 2 or Tier 1.  Single
 pass per event either way; no planned rework.
+
+**Status (implemented, 2026-08).**  The machinery and three archetypes
+are in, all at **Tier 2** — full unification turned out cheap enough
+that Tier 1 never needed to exist:
+
+- One umbrella opcode **`$EC sub slot [extra...]`** carries the whole
+  command family (vanilla leaves only four free opcodes -
+  `$EC/$ED/$FC/$FF` - so one opcode with a sub-command byte instead of
+  a dozen).  Each sub-command decodes the character id from the masked
+  reward table and jumps INTO the corresponding vanilla handler with
+  the id placed where that handler's own operand lives ($eb/$ec/$ea),
+  after advancing the script pointer by our extra bytes so the vanilla
+  handler's own "advance by n" lands past our whole command.  Subs:
+  create/delete/show/hide entity, wait-for-act, sprite, palette (via a
+  plaintext char→palette table filled at write time, since palettes
+  are flag-derived), add-to-party, properties, name, theme (plaintext
+  char→song table), **action queue** (vanilla's opcode byte IS the
+  entity id; ours re-enters the vanilla routine at C0/9BA5 with the
+  decoded id in A and $ea, the length byte moved to $eb, and the
+  pointer shifted two), and **LoadRewardKind**, which drives runtime
+  kind branches through the vanilla event-bit branch commands.
+- `AddCheckReward` grew its third branch (decode → `$eb` →
+  `recruit_character`, which already takes its argument there);
+  `<reward>` renders kind-2 names from WRAM `$1602 + 37×id` with the
+  same copy loop as items/espers (so renames render right); the
+  reward-dialog handler shows the esper wording only for kind 1.
+- Converted events emit **one script for every kind** with both scene
+  branches and a runtime kind branch; character checks get the same
+  random esper/item decoy sprite in their NPC records plus a runtime
+  repaint from the entrance event, so the player still scouts the
+  check by walking up exactly as before.
+- **Fixed in passing**: `reward_dialog()` had been dropping
+  `inside_text_box`/`top_of_screen` flags in race builds (the Lone
+  Wolf taunt and Daryl inscription rendered in a normal box); the
+  flags now ride in the stored 16-bit dialog id, as `field.Dialog`
+  encodes them.
+- **Verified**: same check, character vs esper vs item seeds → the
+  reward script is byte-identical except the opaque slot number, and
+  the NPC record always draws from the decoy pool (proved on three
+  seeds at Figaro).  Verifier grew to 1698 checks including: the `$EC`
+  dispatch and all 13 sub-handlers, per-site conversion checks, Mt.
+  Kolts' eight relocated action queues splicing vanilla's action bytes
+  verbatim, and a second-seed build whose converted blocks must be
+  byte-identical after slot blanking.  All 13 sub-handlers were also
+  executed against the built ROM on a 65816 interpreter (operand
+  placement, pointer bumps, palette/theme lookups, kind matching).
+  In-emulator: at the same Figaro check across three seeds, recruiting
+  SABIN (NPC repainted at runtime, party select works), receiving
+  Maduin (magicite wording + esper bit), and receiving Illumina
+  (item wording + inventory).  Non-race builds stay byte-identical;
+  106 unit tests.
+- **Debug room stays plain** (`-debug` is a test flag): its recruit
+  NPCs use the raw command and character sprites.
+- Remaining: the ~35 other character-capable events (same recipe, most
+  far simpler than Mt. Kolts), the bespoke dialog namings (Mobliz WOR
+  character lines), character themes at converted events that play
+  them, and the Veldt battle side.
 
 **Veldt closes with this phase**: the battle `<reward>` sub-code
 (`JML` to F0 over the dead dispatch table, per the survey above), one
@@ -628,5 +685,5 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
-| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); characters + Veldt planned in §L3-C (Phase 3f, awaiting approval) |
+| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); characters: machinery + 3 archetype events **done** at Tier 2 (3f-a, §L3-C), remaining ~35 events + Veldt next |
 | 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |

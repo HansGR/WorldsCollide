@@ -1,17 +1,22 @@
 """L3 - check-reward indirection (race builds).
 
-A check that grants an item or an esper does it with an event command
-whose operand names the reward in plaintext, sitting in the event script
-- the single most valuable thing for a cheater to grep, at every check.
+A check that grants an item, an esper or a character does it with an
+event command whose operand names the reward in plaintext, sitting in
+the event script - the single most valuable thing for a cheater to
+grep, at every check.
 
 Race builds put every reward in one masked table and refer to it only by
-an opaque *slot*.  One table for both kinds matters: with separate item
+an opaque *slot*.  One table for all kinds matters: with separate item
 and esper tables (or separate grant opcodes, or separate receive
 dialogs) an attacker could still tell which checks hold espers without
 knowing which esper, and that alone is most of the routing value.  So a
-single `AddCheckReward` command grants either kind, and a single
-`<reward>` control code renders either name, both dispatching on the
-kind byte they read out of the masked table at runtime.
+single `AddCheckReward` command grants any kind, and a single
+`<reward>` control code renders any name, both dispatching on the
+kind byte they read out of the masked table at runtime.  Character
+rewards additionally need their scene machinery - showing the joining
+character's sprite, naming them, playing their theme - driven off the
+same slot; that is the RewardEntity command family in
+instruction/field/custom.py.
 
 Slots are handed out in registration order and carry no meaning.  Where
 one dialog names two rewards (the Narshe WOR choice), the pair is
@@ -32,8 +37,8 @@ SLOT_SIZE = 2                   # (kind, id)
 DIALOG_TABLE = "reward_dialogs"
 DIALOG_SLOT_SIZE = 6            # (reward slot, item dialog, esper dialog)
 
-KIND_ITEM, KIND_ESPER = 0x00, 0x01
-KINDS = {"item": KIND_ITEM, "esper": KIND_ESPER}
+KIND_ITEM, KIND_ESPER, KIND_CHARACTER = 0x00, 0x01, 0x02
+KINDS = {"item": KIND_ITEM, "esper": KIND_ESPER, "character": KIND_CHARACTER}
 
 _rewards = []
 _dialogs = []
@@ -69,6 +74,17 @@ def register(kind, value):
     """Record one reward, returning its opaque slot."""
     _rewards.append((KINDS[kind], value & 0xff))
     return len(_rewards) - 1
+
+
+def register_check(reward):
+    """Record an event check's reward (an EventReward with .type and
+    .id), returning its opaque slot - the one number a converted event
+    script carries for its grant, dialogs and scene commands alike."""
+    from event.event_reward import RewardType
+    names = {RewardType.CHARACTER: "character",
+             RewardType.ESPER: "esper",
+             RewardType.ITEM: "item"}
+    return register(names[reward.type], reward.id)
 
 
 def register_pair(kind, value, second_item):
