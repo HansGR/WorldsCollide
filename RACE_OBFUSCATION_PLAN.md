@@ -354,7 +354,7 @@ runtime.
 
 - **Character-at-check grants** — planned in detail below (§L3-C).
 
-### L3-C — Characters at checks — **machinery + three archetypes done (Phase 3f-a)**
+### L3-C — Characters at checks — **done (Phase 3f: machinery, all events, Veldt battle side)**
 
 Goal: hide *which character* each check grants from ROM inspection,
 using the same unified reward machinery.  Player-visible behaviour is
@@ -522,15 +522,46 @@ that Tier 1 never needed to exist:
   106 unit tests.
 - **Debug room stays plain** (`-debug` is a test flag): its recruit
   NPCs use the raw command and character sprites.
-- Remaining: the ~35 other character-capable events (same recipe, most
-  far simpler than Mt. Kolts), the bespoke dialog namings (Mobliz WOR
-  character lines), character themes at converted events that play
-  them, and the Veldt battle side.
+- **Rollout complete (3f-b..e)**: every character-capable event is
+  converted to the same one-script-per-check shape — Whelk, Serpent
+  Trench, Zone Eater, South Figaro Cave, Baren Falls, Gau's father's
+  house, Lete River, Burning House, Owzer's Mansion, Ancient Castle,
+  Umaro's Cave, Veldt Cave WOR, Ebot's Rock, Collapsing House, Esper
+  Mountain, Kohlingen, Mt. Zozo, Figaro Castle WOR, Zozo, Sealed
+  Gate, Phoenix Cave, Doma WOB/WOR (dream), Imperial Camp, Narshe
+  battle, South Figaro, Fanatic's Tower, Phantom Train, Mobliz WOR,
+  Lone Wolf, Magitek Factory (reward 3), Floating Continent (ground +
+  escape), Opera House, Narshe Moogle Defense, and the Veldt.  Bespoke
+  dialog namings (Daryl inscription, Mobliz child lines) render
+  through `<reward>`; themes play through `PlayRewardTheme` where the
+  vanilla site had room, and keep a kind-neutral vanilla song at the
+  four 2-byte `StartSong` sites (Owzer, Fanatic's Tower, Lone Wolf,
+  Opera=Setzer's theme).
 
-**Veldt closes with this phase**: the battle `<reward>` sub-code
-(`JML` to F0 over the dead dispatch table, per the survey above), one
-shared battle dialog for both kinds, and the esper grant's baked
-`LDA #bit / TSB` operands replaced by table-decoded code.
+**Veldt battle side (implemented)**: battle event scripts have no
+conditionals, so race builds bake ONE battle dialog (182) whose text
+is only two new battle-text sub-codes, rendered per kind at runtime:
+`<battle reward>` prints "      Received the Magicite" (esper) or
+"Uwaoo~!!" (character); `<battle reward2>` prints the quoted esper
+name via the vanilla esper-name renderer, or nothing.  Vanilla's `$12`
+substitution dispatch (C1/5EED) indexes a 4-entry pointer table whose
+following eight bytes are data (the actor handler's name-buffer
+pointers); those bytes are relocated into F0 and C1/5EF8-5EFB become
+table entries for sub-codes 4/5.  The handlers live in F0 behind
+four 2-instruction C1 stubs (two `JML`s in, `JSR $6111`/`JSR $5FEF`
+wrappers for the renderer), returning through `JML $C15EE5` (an RTS)
+so the program bank is right when the engine resumes
+(`obfuscation/battle_reward.py`).  Field side: the guest character
+slot (15) appears for **every** kind with a baked decoy sprite — the
+16-bit sprite loader decodes the kind at runtime and swaps in the
+real character sprite after the reveal — all per-kind conditions
+collapse onto `VELDT_REWARD_OBTAINED`, and one recruit function
+decodes kind and id: characters run `recruit_character` (roster, not
+the ongoing battle), espers compute their found bit at runtime
+(`power_of_two[id&7] ORA $1A69+id/8,Y`) instead of baked
+`LDA #bit / TSB byte` operands.  Verifier section 12 checks the
+table entries, stubs, relocated data, the kind-neutral dialog bytes,
+and battle-event equality across two seeds.
 
 **Verification additions**: (a) same-check different-reward proof —
 two seeds, same flags, character A vs character B (and, Tier 2,
@@ -685,5 +716,5 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
-| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); characters: machinery + 3 archetype events **done** at Tier 2 (3f-a, §L3-C), remaining ~35 events + Veldt next |
+| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); characters **done** at Tier 2 across all ~40 events incl. the Veldt battle side (3f, §L3-C) |
 | 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |

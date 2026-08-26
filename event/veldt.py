@@ -18,8 +18,9 @@ class Veldt(Event):
 
     def init_event_bits(self, space):
         # abusing init event bits space here...
-        if self.reward.type != RewardType.CHARACTER:
+        if self.args.race or self.reward.type != RewardType.CHARACTER:
             # use guest character slot to show up after battle for esper reward
+            # (and for every race reward: the guest is the kind-neutral shape)
             # NOTE: do not use CHARACTER_COUNT for the character id here
             #       CHARACTER_COUNT is banon and causes a game over if you hit him too hard to make him run
             self.char = self.characters.CHARACTER_COUNT + 1
@@ -34,7 +35,17 @@ class Veldt(Event):
         else:
             self.leap_char = self.leap_char[0]
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            # one shape for every kind: the guest character slot appears with
+            # a decoy sprite baked in, and each grant site decodes the kind
+            # and id from the masked reward table at runtime.  a character
+            # reward swaps its real sprite in at runtime too
+            from obfuscation import rewards
+            self.race_slot = rewards.register_check(self.reward)
+            self.char = self.characters.CHARACTER_COUNT + 1
+            import random
+            self.sprite = random.choice([14, 15, 19, 20])
+        elif self.reward.type == RewardType.CHARACTER:
             self.char = self.reward.id
             self.sprite = self.reward.id
         else:
@@ -96,7 +107,7 @@ class Veldt(Event):
             branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
             "CHECK_CHAR_RECRUITED",
         )
-        if self.reward.type == RewardType.CHARACTER:
+        if not self.args.race and self.reward.type == RewardType.CHARACTER:
             space.write(
                 branch_if_char_available(self.char, "LOAD_CHAR"),
             )
@@ -119,35 +130,38 @@ class Veldt(Event):
         )
 
         # for 16 bit lda $d0fd04
-        space = Allocate(Bank.C2, 39, "veldt load hide/flip/char/sprite function", asm.NOP())
-        self.load_sprite_function16 = space.next_address
-        space.write(
-            asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
-            asm.BNE("LOAD_CHAR"),
-
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
-            "CHECK_CHAR_RECRUITED",
-        )
-        if self.reward.type == RewardType.CHARACTER:
-            space.write(
-                branch_if_char_available(self.char, "LOAD_CHAR"),
-            )
+        if self.args.race:
+            self.load_sprite_function16 = self.race_load_sprite_function16()
         else:
+            space = Allocate(Bank.C2, 39, "veldt load hide/flip/char/sprite function", asm.NOP())
+            self.load_sprite_function16 = space.next_address
             space.write(
-                branch_if_event_bit_set(event_bit.VELDT_REWARD_OBTAINED, "LOAD_CHAR"),
-            )
-        space.write(
-            "LOAD_HIDE_FLIP_CHAR",
-            asm.A16(),
-            asm.LDA((0x80 | 0x40 | self.char) | (self.sprite << 8), asm.IMM16),
-            asm.RTS(),
+                asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
+                asm.BNE("LOAD_CHAR"),
 
-            "LOAD_CHAR",
-            asm.A16(),
-            asm.LDA(0xd0fd04, asm.LNG_X),
-            asm.RTS(),
-        )
+                branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
+                branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
+                "CHECK_CHAR_RECRUITED",
+            )
+            if self.reward.type == RewardType.CHARACTER:
+                space.write(
+                    branch_if_char_available(self.char, "LOAD_CHAR"),
+                )
+            else:
+                space.write(
+                    branch_if_event_bit_set(event_bit.VELDT_REWARD_OBTAINED, "LOAD_CHAR"),
+                )
+            space.write(
+                "LOAD_HIDE_FLIP_CHAR",
+                asm.A16(),
+                asm.LDA((0x80 | 0x40 | self.char) | (self.sprite << 8), asm.IMM16),
+                asm.RTS(),
+
+                "LOAD_CHAR",
+                asm.A16(),
+                asm.LDA(0xd0fd04, asm.LNG_X),
+                asm.RTS(),
+            )
         space = Reserve(0x23028, 0x2302d, "call veldt load hide/flip/actor/char function", asm.NOP())
         space.write(
             asm.JSR(self.load_sprite_function16, asm.ABS),
@@ -168,6 +182,47 @@ class Veldt(Event):
             asm.JSR(self.load_sprite_function, asm.ABS),
         )
 
+    def _race_decode_src(self, field):
+        # asm loading one unmasked byte of the reward slot (0 id, 1 kind)
+        from obfuscation.battle_reward import decode_src
+        return decode_src(self.args, self.race_slot, field)
+
+    def race_load_sprite_function16(self):
+        # the race variant decodes the reward kind at runtime: a character
+        # reward appears wearing its real sprite (the reveal has happened by
+        # the time the sprite loads), anything else wears the baked decoy
+        src = [
+            asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
+            asm.BNE("LOAD_CHAR"),
+
+            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
+            branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
+            "CHECK_CHAR_RECRUITED",
+            branch_if_event_bit_set(event_bit.VELDT_REWARD_OBTAINED, "LOAD_CHAR"),
+
+            "LOAD_HIDE_FLIP_CHAR",
+            *self._race_decode_src(1),                  # a = reward kind
+            asm.CMP(0x02, asm.IMM8),
+            asm.BNE("LOAD_DECOY"),
+            *self._race_decode_src(0),                  # a = character id = its sprite
+            asm.XBA(),                                  # b = sprite
+            asm.LDA(0x80 | 0x40 | self.char, asm.IMM8), # a = (hide_bit | flip_bit | self.char)
+            asm.A16(),                                  # 16 bit a = (sprite << 8) | flags
+            asm.RTS(),
+
+            "LOAD_DECOY",
+            asm.A16(),
+            asm.LDA((0x80 | 0x40 | self.char) | (self.sprite << 8), asm.IMM16),
+            asm.RTS(),
+
+            "LOAD_CHAR",
+            asm.A16(),
+            asm.LDA(0xd0fd04, asm.LNG_X),
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "veldt race load hide/flip/char/sprite function")
+        return space.start_address
+
     def check_gau_appear_conditions(self):
         space = Allocate(Bank.C2, 42, "veldt check if gau can return function", asm.NOP())
         return_check_function = space.next_address
@@ -176,7 +231,7 @@ class Veldt(Event):
             branch_if_char_not_available(self.leap_char, "CHECK_ENEMY/CHAR_SLOTS"),
             "CHECK_CHAR_RECRUITED",
         )
-        if self.reward.type == RewardType.CHARACTER:
+        if not self.args.race and self.reward.type == RewardType.CHARACTER:
             space.write(
                 branch_if_char_available(self.char, "CLEAR_GAU/CHAR_CAN_RETURN"),
             )
@@ -238,7 +293,7 @@ class Veldt(Event):
 
             "CHAR_RECRUITED_CHECK",
         )
-        if self.reward.type == RewardType.CHARACTER:
+        if not self.args.race and self.reward.type == RewardType.CHARACTER:
             space.write(
                 branch_if_char_available(self.char, "SKIP_GAU_EVENT"),
             )
@@ -265,7 +320,104 @@ class Veldt(Event):
 
         space = Reserve(0x248dc, 0x248dd, "veldt gau appears after battle load battle event id", asm.NOP())
 
+    def race_recruit_function(self):
+        # one recruit function for every kind: mark the reward obtained, then
+        # decode the kind and id from the masked table at runtime.  a
+        # character joins the roster, not the ongoing battle (only the
+        # leaper's return path supports a mid-battle join); an esper's found
+        # bit is computed from the decoded id
+        import data.event_word as event_word
+        import instruction.c0 as c0
+        from memory.space import START_ADDRESS_SNES
+
+        recruit_character_address = START_ADDRESS_SNES + c0.recruit_character
+        espers_found_address = event_word.address(event_word.ESPERS_FOUND)
+        characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
+
+        src = [
+            branch_if_char_not_recruited(self.leap_char, "RECRUIT_REWARD"),
+            branch_if_char_not_available(self.leap_char, "RECRUIT_GAU"),
+
+            "RECRUIT_REWARD",
+            asm.LDA(ram_event_bit(event_bit.VELDT_REWARD_OBTAINED), asm.IMM8),
+            asm.TSB(ram_event_byte(event_bit.VELDT_REWARD_OBTAINED), asm.ABS),
+            *self._race_decode_src(1),      # a = reward kind
+            asm.CMP(0x02, asm.IMM8),
+            asm.BNE("GRANT_ESPER"),
+
+            *self._race_decode_src(0),      # a = character id
+            asm.STA(0xeb, asm.DIR),         # character id is recruit_character's argument
+            asm.PHB(),                      # push data bank register
+            asm.LDA(0x00, asm.IMM8),        # a = desired data bank register for recruit_character
+            asm.PHA(),                      # push desired dbr onto stack
+            asm.PLB(),                      # pull from stack into data bank register
+            asm.PHP(),
+            asm.XY16(),
+            asm.PHY(),                      # push enemy script command target
+            asm.JSL(recruit_character_address),
+            asm.PLY(),                      # restore enemy script command target
+            asm.PLP(),
+            asm.PLB(),                      # restore data bank register
+
+            # load 0xff into a to tell the caller not to add anyone to the battle
+            asm.LDA(0xff, asm.IMM8),
+            asm.RTS(),
+
+            "GRANT_ESPER",
+            asm.PHX(),
+            asm.PHY(),
+            asm.TDC(),                      # clear b so the index transfers are exact
+            *self._race_decode_src(0),      # a = esper id
+            asm.PHA(),
+            asm.AND(0x07, asm.IMM8),
+            asm.TAX(),                      # x = esper bit index
+            asm.PLA(),
+            asm.LSR(),
+            asm.LSR(),
+            asm.LSR(),
+            asm.TAY(),                      # y = esper byte index
+            asm.LDA(c0.power_of_two_table, asm.LNG_X),
+            asm.ORA(esper_available_byte(0), asm.ABS_Y),    # set esper found bit
+            asm.STA(esper_available_byte(0), asm.ABS_Y),
+            asm.INC(espers_found_address, asm.ABS),
+            asm.PLY(),
+            asm.PLX(),
+
+            # load 0xff into a to let calling function know esper was obtained
+            asm.LDA(0xff, asm.IMM8),
+            asm.RTS(),
+
+            "RECRUIT_GAU",
+            asm.LDA(char_available_event_bit(self.leap_char), asm.IMM8),
+            asm.TSB(char_available_event_byte(self.leap_char), asm.ABS),
+            asm.TSB(char_recruited_event_byte(self.leap_char), asm.ABS),
+            asm.INC(characters_available_address, asm.ABS),
+
+            asm.LDA(0x3ed9, asm.ABS_Y),     # a = character id
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "veldt race recruit function")
+        return space.start_address
+
     def add_gau_party(self):
+        if self.args.race:
+            recruit_function = self.race_recruit_function()
+        else:
+            recruit_function = self.vanilla_recruit_function()
+
+        space = Reserve(0x21ea9, 0x21eb0, "veldt call recruit gau/char function", asm.NOP())
+        space.add_label("RETURN", 0x21ec6)
+        space.write(
+            asm.JSR(recruit_function, asm.ABS),
+        )
+        if self.args.race or self.reward.type != RewardType.CHARACTER:
+            # skip adding character to party if the reward was just obtained
+            space.write(
+                asm.CMP(0xff, asm.IMM8),
+                asm.BEQ("RETURN"),
+            )
+
+    def vanilla_recruit_function(self):
         import data.event_word as event_word
 
         space = Allocate(Bank.C2, 56, "veldt recruit gau/char function", asm.NOP())
@@ -325,17 +477,7 @@ class Veldt(Event):
             asm.RTS(),
         )
 
-        space = Reserve(0x21ea9, 0x21eb0, "veldt call recruit gau/char function", asm.NOP())
-        space.add_label("RETURN", 0x21ec6)
-        space.write(
-            asm.JSR(recruit_function, asm.ABS),
-        )
-        if self.reward.type != RewardType.CHARACTER:
-            # skip adding character to party if esper was just obtained
-            space.write(
-                asm.CMP(0xff, asm.IMM8),
-                asm.BEQ("RETURN"),
-            )
+        return recruit_function
 
     def veldt_initialize_mod(self):
         # make at least 1 formation available on veldt so the game doesn't
@@ -372,7 +514,17 @@ class Veldt(Event):
         leap_char_name = self.characters.get_default_name(self.leap_char)
         self.dialogs.set_single_line_battle_text(im_gau_dialog_id, "Uwao, aooh!<wait 60 frames> I'm <" + leap_char_name + ">!<wait 60 frames><line>I'm your friend!<wait 60 frames><line>Let's travel together!<wait 60 frames><end>")
 
-        if self.reward.type == RewardType.ESPER:
+        if self.args.race:
+            # one dialog for every kind, its lines rendered from the masked
+            # reward table at runtime (see obfuscation/battle_reward.py):
+            # an esper shows the magicite wording, a character "Uwaoo~!!"
+            from obfuscation import battle_reward
+            battle_reward.install(self.args, self.race_slot)
+
+            reward_dialog_id = 182
+            gau_char_arrives_dialog_id = reward_dialog_id
+            self.dialogs.set_multi_line_battle_text(reward_dialog_id, '<battle reward><line><battle reward2><wait for key><end>')
+        elif self.reward.type == RewardType.ESPER:
             # overwrite step 4. of rage tutorial after sabin/cyan/gau event
             esper_dialog_id = 182
             gau_char_arrives_dialog_id = esper_dialog_id

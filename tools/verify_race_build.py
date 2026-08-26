@@ -477,6 +477,41 @@ def main():
               f"race: {name} reward script differs between seeds beyond the "
               f"slot number - something kind- or id-dependent leaked in")
 
+    # 12. the veldt's battle-side hook: battle text sub-codes 4/5 render the
+    # in-battle reward dialog from the masked table at runtime, so the baked
+    # dialog and battle events carry no kind at all
+    SUB_TABLE = 0x15ef8         # vanilla data, now table entries 4/5 + old data
+    ACTOR_OPERAND = 0x15f48     # long operand of the actor handler's data read
+    for entry in (0, 1):
+        ptr = int.from_bytes(race[SUB_TABLE + entry * 2:SUB_TABLE + entry * 2 + 2],
+                             "little")
+        stub = race[0x10000 + ptr:0x10000 + ptr + 4]
+        check(stub[0] == 0x5c and stub[3] == 0xf0,
+              f"race: battle text sub-code {4 + entry} entry does not reach a "
+              f"jml-to-f0 stub")
+        handler = race[rom_offset(int.from_bytes(stub[1:4], "little")):]
+        check(handler[0] == 0xaf and bytes([0x5c, 0xe5, 0x5e, 0xc1]) in handler[:64],
+              f"race: battle text sub-code {4 + entry} handler does not decode "
+              f"the reward table and return through c1")
+    check(race[SUB_TABLE + 4:SUB_TABLE + 8] == vanilla_rom[SUB_TABLE + 4:SUB_TABLE + 8],
+          "race: battle text table entries 6/7 no longer hold vanilla's data")
+    check(race[ACTOR_OPERAND + 2] == 0xf0,
+          "race: actor name pointers were not repointed into bank f0")
+    relocated = rom_offset(int.from_bytes(race[ACTOR_OPERAND:ACTOR_OPERAND + 3],
+                                          "little"))
+    check(race[relocated:relocated + 8] == vanilla_rom[SUB_TABLE:SUB_TABLE + 8],
+          "race: relocated actor name pointers do not match vanilla's")
+    dlg = 0x100000 + int.from_bytes(race[0x10d000 + 182 * 2:0x10d000 + 182 * 2 + 2],
+                                    "little")
+    check(race[dlg:dlg + 7] == bytes([0x12, 0x04, 0x01, 0x12, 0x05, 0x07, 0x00]),
+          "race: battle dialog 182 is not the kind-neutral sub-code text")
+    for start, end, what in ((0x10aa21, 0x10ac5f, "fed dried meat"),
+                             (0x10c51d, 0x10c603, "reward appears")):
+        check(race[start:end] == raceb[start:end],
+              f"race: veldt '{what}' battle event differs between seeds")
+    check(race[SUB_TABLE:SUB_TABLE + 8] == raceb[SUB_TABLE:SUB_TABLE + 8],
+          "race: battle text sub-code table differs between seeds")
+
     site_kinds = {name: sorted(slot_kind.get(s) for s in slots)
                   for name, slots in site_slots.items()}
 
