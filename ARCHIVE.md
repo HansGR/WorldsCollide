@@ -63,6 +63,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 
 ### Testing & Harness
 - [Headless Playtest Harness Patterns (2026-08)](#headless-playtest-harness-patterns-2026-08) (incl. the s9xsnp savestate format — inside the FC post-mortem above)
+- [World-Map Navigation in the Harness (2026-08)](#world-map-navigation-in-the-harness-2026-08) (airship, on-foot teleporting, routing tables, Figaro Castle route, Lineup screen)
 
 ### Lookups (see CLAUDE.md "How to Find X" cheat sheet first)
 - [Finding NPCs in Reference Data — Detailed Procedure](#finding-npcs-in-reference-data---detailed-procedure)
@@ -2017,3 +2018,148 @@ One genuine **vanilla bug** was also found and annotated: **C1/6B0F**
 reads `E6/F675`, a misaligned address inside the spell-name table, where
 the parallel list path at C1/65CC correctly uses the Esper name table
 `E6/F6E1`.
+
+
+---
+
+## World-Map Navigation in the Harness (2026-08)
+
+Everything learned driving a real WC ROM from the airship deck to a
+check on the far side of the world (Figaro Castle WOB throne room),
+end to end, with `tools/playtest` (`Harness`, `navigate`).  Verified in
+play on `-open` builds; none of it is mode- or branch-specific.  All
+ROM offsets are headerless file offsets.
+
+### Open-world start and the airship (map 0x006)
+
+- `-open` seeds start on the **Blackjack deck, map 0x006, at (16, 6)**.
+- The flight console is the tile event at **(14, 6)** (event code
+  CA/F532).  It is an **A-press interaction, not a step trigger**: take
+  two steps LEFT from the start, face LEFT, press A.  Stepping on or
+  across the tile does nothing, and interacting from any other tile
+  does nothing — which looks exactly like an unresponsive console.
+- The console menu's **first option is (Lift-off)**; selecting it plays
+  a short animation and puts you in mode-7 flight (map id reads 0x000).
+- The deck holds WC utility NPCs, and `-debug` builds add more: a
+  **teleport NPC at (15, 4)** to the debug room (map 0x009, one recruit
+  NPC per character at (1..14, 8)), and at least one NPC that starts a
+  battle when spoken to.  Careless A-presses near the top of the deck
+  can drop you into a fight.
+
+### Flight, and why not to bother with it
+
+- While flying, the party/field object is **stale** — `party_xy` keeps
+  reporting the deck coordinates and `set_party_xy` does nothing.  The
+  flight position lives elsewhere (not `$1F61-$1F64`; the bytes that
+  move during flight, `$009B-$009E`, oscillate like rotation state, not
+  coordinates — never conclusively found).
+- Screenshots mid-flight are not trustworthy anyway (see the
+  stale-scroll note below).
+- **The productive pattern: press B immediately after lift-off.**  B
+  lands on the spot (in the tested seeds, right outside Narshe); after
+  the landing animation (`run(600)` + `wait_for_control`) the party is
+  **on foot on the world map**, where everything below works.
+
+### On-foot world map: the position words
+
+- On a world map `set_party_xy` **does not work** (it writes the field
+  object block, which the world map does not use).
+- The party's world coordinates are plain WRAM words: **X at `$00E0`
+  (u16 LE), Y at `$00E2` (u16 LE)** — poke these and the party is
+  there.  (`$1FA1` and `$005F` track Y in parallel — save/warp copies;
+  writing `$00E0/$00E2` alone is sufficient.)  Walking works normally
+  after a poke.
+- **The screen does not re-render on a poke.**  Terrain and minimap
+  catch up only as the party walks, so a screenshot right after a
+  teleport shows the OLD location — trust decoded map data, not the
+  screen.  (This cost a whole detour: probe screenshots "showed" ocean
+  where the decoded map correctly said desert.)
+- Coordinates are top-left-origin tiles on a 256×256 map and match the
+  exit/event tables exactly: verified by teleporting to (84, 34) and
+  walking UP into Narshe's world entrance at **(84, 33) → map 0x014**.
+
+### Reading the world map from the ROM
+
+- The WoB tilemap is compressed at **0x2ED434** (WoR: 0x2F6A56), FF6's
+  standard LZ: `u16 compressed-size` header, then flag bytes (LSB
+  first; 1 = literal, 0 = two-byte back-reference
+  `offset = b1 | (b2 & 0x07) << 8`, `length = (b2 >> 3) + 3`) over a
+  0x800-byte ring buffer whose write pointer starts at **0x07DE**.
+  Decompresses to exactly 65536 bytes = 256×256 tile ids, row-major.
+- Town/dungeon entrances sit on distinctive rare tiles (a whole-map
+  tile-frequency scan surfaces every structure; tile 0x43 marks several
+  entrances, Narshe's among them).  An ASCII render of a region with
+  the dozen most common tile ids as characters is enough to locate
+  deserts, bridges, coastlines by eye.
+- **Figaro Castle is NOT in the tilemap** — like the airship it is a
+  sprite overlay (graphics under "Misc. World Graphics", EE/579A sprite
+  pointers), so no rare-tile scan or exit-table entry reveals it.  Its
+  entrance is code in the world program.  Found empirically: **walk
+  DOWN at (64, 74) on WoB → map 0x037 (castle exterior), arriving at
+  (28, 42)**.  The sweep that found it: teleport across a grid, take
+  one step, check `map_id != 0`.
+
+### Routing tables (verified against built ROMs)
+
+| table | pointer table | record | fields |
+|---|---|---|---|
+| tile events | 0x40000 (u16/map) | 5 B | x, y, event addr (3 B; + 0xA0000 for the file offset) |
+| short exits | 0x1FBB00 (u16/map) | 6 B | x, y, dest (2 B; `& 0x1FF` = map id), dest x, dest y |
+| long exits | 0x2DF480 (u16/map) | 7 B | x, y, size\|vert flag, dest (2 B), dest x, dest y |
+| NPCs | 0x41A10 (u16/map) | 9 B | x = d[4] & 0x7F, y = d[5] & 0x3F, sprite = d[6], palette = (d[2] & 0x1C) >> 2; NPC ids start at 0x10 |
+
+Records live at `pointer_table_base + ptr[map]`.  These four tables
+answer "where can I go from here and what will I find" for any map
+without booting the emulator.
+
+### Figaro Castle WOB: the full route
+
+From the world map: DOWN at (64, 74) → **0x037** exterior (28, 42).
+Then walk **UP the whole way**, taking each transition as it comes:
+
+    0x037 (28,42) --UP--> 0x03B hall (12,49)
+    0x03B          --UP--> 0x037 upper courtyard (28,31)
+    0x037          --UP--> 0x03B (27,28)
+    0x03B          --UP--> 0x03A throne room (102,55)
+
+Throne room: the check NPC (id 0x10) sits at **(101, 42)**; talk to it
+from (101, 41) facing DOWN.  A `walk_until_transition(button)` helper —
+hold a direction 16 frames at a time until `map_id` changes, then
+`run(60)` — chains the whole route without knowing tile-exact door
+positions.
+
+### Harness gotchas that cost real time
+
+- **Teleport-then-walk can leave the party stuck.**  Several probes
+  placed next to a door via `set_party_xy` could not move at all in any
+  direction, while the identical approach on foot (arriving through a
+  real transition, then holding a direction) sailed through the same
+  door.  Prefer natural walking from a real arrival; teleport only
+  across open ground, and verify the party actually moves afterwards.
+- `navigate.step_through` raises unless the **map id changes** — it
+  cannot operate tiles that open dialogs or menus (the airship
+  console).  Drive those with explicit hold/press.
+- When a tile seems dead, dump the map's tile-event table, then try
+  both stepping on it and pressing A at it from each adjacent side.
+
+### The party-select (Lineup) screen
+
+Reached from recruit scenes (`REFRESH_CHARACTERS_AND_SELECT_PARTY`):
+
+- A on a roster character adds them / picks them up; **A on a character
+  already in the group opens their Status screen** (B backs out — easy
+  to mistake for a softlock).
+- **START confirms** once at least one member is placed, then the scene
+  continues on the field.
+- Blind A-mashing does form a group eventually, but the robust script
+  is: A once or twice, B (in case Status opened), then START.
+
+### Verifying outcomes in WRAM
+
+- Recruited characters: bitfield at **$1EDC/$1EDD** (bit = character
+  id); available bits at $1EDE.
+- Espers owned: bitfield at **$1A69+** (bit = esper id).
+- Inventory: item ids at **$1869-$1968**, counts at **$1969-$1A68**
+  (0xFF = empty slot).
+- These plus a screenshot of the receive dialog make a complete
+  end-to-end check proof without trusting any menu.
