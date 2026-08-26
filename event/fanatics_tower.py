@@ -20,7 +20,9 @@ class FanaticsTower(Event):
         self.tower_top_mod()
         self.magimaster_battle_mod()
 
-        if self.reward1.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward1.type == RewardType.CHARACTER:
             self.character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
             self.esper_mod(self.reward1.id)
@@ -149,6 +151,44 @@ class FanaticsTower(Event):
         space.write([
             field.StartSong(get_character_theme(character)),
         ])
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  *Race-only cosmetic*: the scene keeps vanilla's song
+        # (the StartSong site is two bytes, too tight for the slot-driven
+        # theme command)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward1)
+
+        self.strago_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.strago_npc.palette = self.characters.get_palette(self.strago_npc.sprite)
+        self.race_repaint_npc_entrance(0x16a, self.strago_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            Read(0xc5409, 0xc540c),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(0xc542b),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FadeOutScreen(4),
+            field.WaitForFade(),
+            field.Branch(0xc542b),
+        ]
+        space = Write(Bank.CC, src, "fanatics tower race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xc5409, 0xc542a, "fanatics tower reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def character_mod(self, character):
         self.character_music_mod(character)

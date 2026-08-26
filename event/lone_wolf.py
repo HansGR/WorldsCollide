@@ -37,7 +37,9 @@ class LoneWolf(Event):
         self.dialog_mod()
         self.chase_mod()
 
-        if self.reward1.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward1.type == RewardType.CHARACTER:
             self.character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
             self.esper_mod(self.reward1.id)
@@ -113,6 +115,81 @@ class LoneWolf(Event):
             field.RefreshEntities(),
             field.FadeInScreen(),
             field.Branch(space.end_address + 1), # skip nops
+        )
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind of reward1.  the
+        # cliff npc gets the decoy sprite, repainted at map load for a
+        # character.  both kinds play the vanilla lone-wolf-falls scene:
+        # a character branch replays it from a relocated copy and then
+        # recruits; the esper/item branch takes it in place and shows the
+        # receive dialog at the vanilla dialog site.  *Race-only
+        # cosmetic*: the scene keeps vanilla's song (the StartSong site
+        # is two bytes, too tight for the slot-driven theme command)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward1)
+
+        self.mog_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.mog_npc.palette = self.characters.get_palette(self.mog_npc.sprite)
+        self.race_repaint_npc_entrance(0x017, self.mog_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            Read(0xcd5df, 0xcd5e4),
+            field.CreateRewardEntity(slot),
+            field.AddCheckReward(slot),
+            field.Branch(0xcd5f4),
+            "ESPER_ITEM",
+            field.Branch(0xcd5f4),
+        ]
+        space = Write(Bank.CC, src, "lone wolf race create/recruit")
+        create_script = space.start_address
+
+        space = Reserve(0xcd5df, 0xcd5f3, "lone wolf assign character properties", field.NOP())
+        space.write(
+            field.Branch(create_script),
+        )
+
+        src = [
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.HideEntity(self.mog_npc_id),
+            field.HideEntity(self.invisible_bridge_block_npc_id),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.SetEventBit(npc_bit.MOG_MOOGLE_ROOM_WOR),
+            field.SetEventBit(event_bit.RECRUITED_MOG_WOB),
+            field.RefreshEntities(),
+            field.FadeInScreen(),
+            field.Branch(0xcd6dd),
+        ]
+        space = Write(Bank.CC, src, "lone wolf race character finish")
+        character_finish = space.start_address
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            # replay the falls scene (skipping the "take this" dialog),
+            # then finish the recruit
+            Read(0xcd67c, 0xcd692),
+            Read(0xcd696, 0xcd6bf),
+            field.Branch(character_finish),
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.SetEventBit(npc_bit.MOG_MOOGLE_ROOM_WOR),
+            field.Branch(0xcd67c),      # the falls scene, in place
+        ]
+        space = Write(Bank.CC, src, "lone wolf race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xcd61b, 0xcd67b, "lone wolf reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
+
+        space = Reserve(0xcd693, 0xcd695, "char chosen dialog before lone wolf falls", field.NOP())
+
+        space = Reserve(0xcd6bf, 0xcd6c3, "lone wolf add esper/item dialog", field.NOP())
+        space.write(
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
         )
 
     def esper_item_mod(self, add_esper_item, sound_dialog_esper_item):
