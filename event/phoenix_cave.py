@@ -21,7 +21,9 @@ class PhoenixCave(Event):
         self.landing_mod()
         self.end_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -29,6 +31,29 @@ class PhoenixCave(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind; the magicite-in-
+        # hand visuals are gone for every kind (they said "esper here")
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.locke_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.locke_npc.palette = self.characters.get_palette(self.locke_npc.sprite)
+        self.race_repaint_npc_entrance(0x139, self.locke_npc_id, slot)
+
+        self.locke_holding_esper_mod()
+
+        self.reward_mod([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.AddCheckReward(slot),
+            field.Branch("REWARD_DONE"),
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            "REWARD_DONE",
+        ])
 
     def landing_mod(self):
         self.need_more_characters_dialog = 2978

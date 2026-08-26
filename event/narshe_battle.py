@@ -31,7 +31,9 @@ class NarsheBattle(Event):
         self.start_battle_mod()
         self.kefka_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -39,6 +41,31 @@ class NarsheBattle(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob); the end scene already reselects the party, so a character
+        # reward just recruits
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        random_sprite = self.characters.get_random_esper_item_sprite()
+        for npc in (self.banon_before_battle_npc, self.banon_during_battle_npc):
+            npc.sprite = random_sprite
+            npc.palette = self.characters.get_palette(random_sprite)
+        self.race_repaint_npc_entrance(0x016, self.banon_before_battle_npc_id, slot)
+        self.race_repaint_npc_entrance(0x016, self.banon_during_battle_npc_id, slot)
+
+        self.end_event_mod([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.AddCheckReward(slot),
+            field.Branch("REWARD_DONE"),
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            "REWARD_DONE",
+        ])
 
     def snowfield_save_point_mod(self):
         space = Reserve(0xcc591, 0xcc5fe, "narshe wob kefka battlefield save point character reset", field.NOP())

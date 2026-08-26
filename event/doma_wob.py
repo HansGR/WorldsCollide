@@ -33,7 +33,9 @@ class DomaWOB(Event):
         self.dialog_mod()
         self.leader_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -44,6 +46,30 @@ class DomaWOB(Event):
         self.end_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind: the party leader plays the attack
+        # scene (the esper/item staging), and the reward - recruit
+        # included - is granted at the exit.  *Race-only cosmetic*: a
+        # character reward no longer walks out ahead of the battle; they
+        # join at the end of the check
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.cyan_npc_mod(field_entity.PARTY0)
+        self.enter_exit_functions_mod([
+        ],
+        [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch("REWARD_DONE"),
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            "REWARD_DONE",
+        ])
 
     def dialog_mod(self):
         space = Reserve(0xb9eb5, 0xb9eb7, "doma i am your worst nightmare dialog", field.NOP())

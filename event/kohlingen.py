@@ -30,7 +30,9 @@ class Kohlingen(Event):
         self.inn_entrance_event_mod()
         self.inn_sleep_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -39,6 +41,58 @@ class Kohlingen(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.shadow_npc.palette = self.characters.get_palette(self.shadow_npc.sprite)
+        self.race_repaint_npc_entrance(0x0bf, self.shadow_npc_id, slot)
+
+        RECEIVE_REWARD = 0xc704f
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.Branch(RECEIVE_REWARD),
+            "ESPER_ITEM",
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.Branch(RECEIVE_REWARD),
+        ]
+        space = Write(Bank.CC, src, "kohlingen race talk")
+        talk_script = space.start_address
+
+        space = Reserve(0xc6f84, 0xc6f8b, "kohlingen talk to shadow", field.NOP())
+        space.write(
+            field.Branch(talk_script),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.Branch(0xc7073),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.Branch(0xc7073),
+        ]
+        space = Write(Bank.CC, src, "kohlingen race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xc7058, 0xc7072, "kohlingen recruit shadow", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def rachel_house_mod(self):
         self.maps.delete_event(0x0c5, 39, 17) # locke/rachel flashback 0xc6a2e

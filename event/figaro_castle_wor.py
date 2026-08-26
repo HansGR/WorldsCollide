@@ -40,7 +40,9 @@ class FigaroCastleWOR(Event):
         self.engine_room_mod()
         self.tentacles_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -49,6 +51,51 @@ class FigaroCastleWOR(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one look for every kind: both gerad npcs get the
+        # decoy sprite, repainted at map load for a character reward
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.gerad_npc_mod()
+        self.race_repaint_npc_entrance(0x05a, self.gerad_figaro_cave_npc_id, slot)
+        self.race_repaint_npc_entrance(0x040, self.gerad_engine_room_npc_id, slot)
+
+        src = [
+            field.HideEntity(self.gerad_engine_room_npc_id),
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.StartSong(0x0a),
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.FreeScreen(),
+            field.Branch(0xa6bdc),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.EntityAct(field_entity.CAMERA, True,
+                field_entity.Move(direction.DOWN, 4),
+            ),
+            field.StartSong(0x0a),
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FreeScreen(),
+            field.Branch(0xa6bdc),
+        ]
+        space = Write(Bank.CA, src, "figaro castle wor race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xa6aed, 0xa6bdb, "figaro castle wor scenes after tentacles", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def add_gating_condition(self):
         if self.args.npc_dialog_tips:

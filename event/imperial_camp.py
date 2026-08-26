@@ -29,7 +29,9 @@ class ImperialCamp(Event):
         self.entrance_events_mod()
         self.leo_and_chasing_kefka_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -37,6 +39,47 @@ class ImperialCamp(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        random_sprite = self.characters.get_random_esper_item_sprite()
+        self.cyan_battles_mod(random_sprite, self.characters.get_palette(random_sprite))
+        self.race_repaint_npc_entrance(0x077, 0x12, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "imperial camp race reward")
+        reward_script = space.start_address
+
+        # after all battles complete
+        space = Reserve(0xb1616, 0xb16a1, "imperial camp race finish", field.NOP())
+        space.write(
+            field.ClearEventBit(npc_bit.WESTMOST_SOLDIER_IMPERIAL_CAMP),
+            field.ClearEventBit(event_bit.BRIDGE_BLOCKED_IMPERIAL_CAMP),
+            field.SetEventBit(event_bit.FINISHED_IMPERIAL_CAMP),
+            field.Branch(reward_script),
+        )
 
     def entrance_events_mod(self):
         # delete tile events near entrance that lead to doma attack

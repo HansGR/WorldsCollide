@@ -28,7 +28,9 @@ class CollapsingHouse(Event):
         if self.args.no_free_heals:
             self.no_free_heals_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -37,6 +39,43 @@ class CollapsingHouse(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        sabin_npc_id = 0x11
+        sabin_npc = self.maps.get_npc(0x131, sabin_npc_id)
+        sabin_npc.sprite = self.characters.get_random_esper_item_sprite()
+        sabin_npc.palette = self.characters.get_palette(sabin_npc.sprite)
+        self.race_repaint_npc_entrance(0x131, sabin_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene: fade/bits, then recruit
+            Read(0xc5a8d, 0xc5a9c),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(0xc5abb),
+
+            # the esper/item scene: receive, then the same fade/bits
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            Read(0xc5a8d, 0xc5a9c),
+            field.Branch(0xc5abb),
+        ]
+        space = Write(Bank.CC, src, "collapsing house race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xc5a8d, 0xc5aba, "collapsing house reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def timer_mod(self):
         if self.args.event_timers_random:

@@ -16,12 +16,14 @@ class Zozo(Event):
             field.SetEventBit(event_bit.SAW_MADUIN_DIE),
             field.ClearEventBit(npc_bit.ESPER_TERRA_ZOZO),
         )
-        if self.reward.type == RewardType.CHARACTER or self.reward.type == RewardType.ITEM:
+        if self.args.race or self.reward.type != RewardType.ESPER:
+            # race builds use the npc wiring for every kind, so these
+            # start bits cannot say what the check holds
             space.write(
                 field.SetEventBit(npc_bit.RAMUH_ZOZO),
                 field.ClearEventBit(npc_bit.RAMUH_MAGICITE_ZOZO),
             )
-        if self.reward.type == RewardType.ESPER:
+        else:
             space.write(
                 field.ClearEventBit(npc_bit.RAMUH_ZOZO),
                 field.SetEventBit(npc_bit.RAMUH_MAGICITE_ZOZO),
@@ -37,7 +39,9 @@ class Zozo(Event):
 
         self.dadaluma_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -75,6 +79,48 @@ class Zozo(Event):
         space.write(
             field.InvokeBattle(boss_pack_id),
         )
+
+    def race_reward_mod(self):
+        # one wiring for every kind: the npc on the tower top holds the
+        # reward (never the magicite object, never the chest sprite -
+        # both said which kind lived here).  decoy record, repainted at
+        # map load for a character reward
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.ramuh_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.ramuh_npc.palette = self.characters.get_palette(self.ramuh_npc.sprite)
+        self.race_repaint_npc_entrance(0x0e2, self.ramuh_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.SetEventBit(event_bit.GOT_ZOZO_REWARD),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.ClearEventBit(npc_bit.RAMUH_ZOZO),
+            field.HideEntity(self.ramuh_npc_id),
+            field.RefreshEntities(),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.SetEventBit(event_bit.GOT_ZOZO_REWARD),
+            field.FinishCheck(),
+
+            field.ClearEventBit(npc_bit.RAMUH_ZOZO),
+            field.HideEntity(self.ramuh_npc_id),
+            field.RefreshEntities(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "zozo race reward")
+        self.ramuh_npc.set_event_address(space.start_address)
 
     def character_mod(self, character):
         self.ramuh_npc.sprite = character

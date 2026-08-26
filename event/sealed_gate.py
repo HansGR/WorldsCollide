@@ -32,7 +32,9 @@ class SealedGate(Event):
         self.ninja_mod()
 
         self.lightning_strike = 0xb3890
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -40,6 +42,37 @@ class SealedGate(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob); the scene npc is repainted as it is created
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.kefka_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.kefka_npc.palette = self.characters.get_palette(self.kefka_npc.sprite)
+
+        self.gate_scene_mod([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch("AFTER_REWARD"),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FadeOutScreen(4),
+            field.Call(self.lightning_strike),
+            field.WaitForFade(),
+
+            "AFTER_REWARD",
+        ], repaint_slot = slot)
 
     def world_map_mod(self):
         import instruction.asm as asm
@@ -59,7 +92,7 @@ class SealedGate(Event):
         self.maps.world_map_event_modifications.set_sealed_gate_event_bit(event_bit.ALWAYS_CLEAR)
         # because these modified map chunks are never used that more ee bank free space available
 
-    def gate_scene_mod(self, char_esper_item_instructions):
+    def gate_scene_mod(self, char_esper_item_instructions, repaint_slot = None):
         SET_PARTY_LAYER2 = 0xb3980
         SET_PARTY_LAYER0 = 0xb3995
 
@@ -116,7 +149,15 @@ class SealedGate(Event):
 
         src = [
             Read(0xb39be, 0xb39c8), # copy original entrance event code
-
+        ]
+        if repaint_slot is not None:
+            src += [
+                field.BranchIfRewardKindNot(repaint_slot, "character", "NO_REPAINT"),
+                field.SetRewardSprite(self.kefka_npc_id, repaint_slot),
+                field.SetRewardPalette(self.kefka_npc_id, repaint_slot),
+                "NO_REPAINT",
+            ]
+        src += [
             field.CreateEntity(self.kefka_npc_id),
             field.ShowEntity(self.kefka_npc_id),
             field.RefreshEntities(),

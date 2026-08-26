@@ -34,7 +34,9 @@ class SouthFigaro(Event):
 
         self.entrance_event_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -44,6 +46,51 @@ class SouthFigaro(Event):
         self.airship_follow_boat_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.celes_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.celes_npc.palette = self.characters.get_palette(self.celes_npc.sprite)
+        self.race_repaint_npc_entrance(0x053, self.celes_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch("FINISH"),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+
+            "FINISH",
+            field.HideEntity(self.celes_npc_id),
+            field.ClearEventBit(npc_bit.CHAINED_CELES_SOUTH_FIGARO),
+            field.SetEventBit(event_bit.FREED_CELES),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "south figaro basement race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xa8837, 0xa8841, "south figaro basement reward branch", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
+        celes_npc_event = space.start_address
+
+        self.celes_npc.set_event_address(celes_npc_event)
 
     def entrance_event_mod(self):
         space = Reserve(0xaecdc, 0xaecf1, "south figaro celes basement (0x53) entrance event", field.NOP())
