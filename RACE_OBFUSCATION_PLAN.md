@@ -537,6 +537,27 @@ that Tier 1 never needed to exist:
   vanilla site had room, and keep a kind-neutral vanilla song at the
   four 2-byte `StartSong` sites (Owzer, Fanatic's Tower, Lone Wolf,
   Opera=Setzer's theme).
+- **Object looks selected at runtime (3f-f)**: the magicite-shard and
+  item-object looks are part of scouting (peeking a check's kind is
+  race-relevant), so they are NOT flattened away: a new `$EC` sub
+  (`field.SetSplitSprite`) ORs the special-animation state the npc
+  loader derives from a record's `split_sprite`/direction bits into
+  the live object, and `race_repaint_npc_entrance` grew esper
+  (`magicite=True`) and item (`chest=True`) arms next to the character
+  one.  Verified in-emulator: the runtime look is pixel-identical to a
+  record-baked one for both objects.  Restored at Zone Eater (incl.
+  the magicite-drop animation), Veldt Cave WOR, Mt. Zozo (magicite and
+  item object), Zozo, Floating Continent ground, Phoenix Cave (chest
+  scene, chime and the static magicite npc branch per kind at
+  runtime), and Umaro's carving (per-kind wording via two spare
+  dialog ids, the glint and the rising-magicite animation).  The same
+  pass closed a **pre-L3C record leak** at the esper-or-item checks
+  (Doom Gaze, Tritoch, Doma throne, Narshe WOR weapon shop): their
+  item builds baked the item-object record while esper builds kept
+  the vanilla magicite record — a kind oracle.  Those records now stay
+  vanilla in race builds for every kind, an item repaints them at map
+  load, and the small per-kind receive patches (chimes, flashes,
+  pauses) became runtime kind branches.
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text

@@ -176,15 +176,16 @@ class FloatingContinent(Event):
 
     def race_ground_reward_mod(self):
         # one script and one npc record for every kind of reward1
-        # (character or esper): the ground npc gets the decoy sprite -
-        # never the magicite, which said "esper here" - repainted at map
-        # load for a character
+        # (character or esper): the ground npc record gets the decoy
+        # sprite (a baked magicite said "esper here"), then the map-load
+        # repaint restores the kind's vanilla-wc look at runtime - the
+        # reward character, or the magicite shard for an esper
         from obfuscation import rewards
         slot = rewards.register_check(self.reward1)
 
         self.ground_shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.ground_shadow_npc.palette = self.characters.get_palette(self.ground_shadow_npc.sprite)
-        self.race_repaint_npc_entrance(0x18a, self.ground_shadow_npc_id, slot)
+        self.race_repaint_npc_entrance(0x18a, self.ground_shadow_npc_id, slot, magicite = True)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),

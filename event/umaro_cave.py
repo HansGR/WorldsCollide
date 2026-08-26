@@ -38,25 +38,75 @@ class UmaroCave(Event):
         self.log_reward(self.reward)
 
     def race_reward_mod(self):
-        # one script, one carving wording and one npc record for every
-        # kind.  the carving is neutral ("Touch the eye?"), its magicite
-        # animation is gone for every kind (it would say "esper here"),
-        # and the reward is granted after the battle either way.  the
-        # scene animates the umaro npcs by npc id, so after the entrance
+        # one script and one npc record for every kind, with the carving
+        # wording, glint and magicite animation selected at runtime so
+        # each kind shows exactly what its non-race build bakes; the
+        # reward is granted after the battle either way.  the scene
+        # animates the umaro npcs by npc id, so after the entrance
         # repaint the whole vanilla scene works for any character
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
-        for npc in (self.umaro_cave_npc, self.umaro_wob_npc):
-            npc.sprite = self.characters.get_random_esper_item_sprite()
-            npc.palette = self.characters.get_palette(npc.sprite)
+        # both npc records keep vanilla umaro's sprite - constant
+        # whatever the check holds, so nothing to read out of the rom,
+        # and exactly what non-race esper/item builds show (the yeti
+        # attacks you regardless of the reward).  a character reward
+        # repaints them at map load
         self.race_repaint_npc_entrance(0x11b, self.umaro_cave_npc_id, slot)
         self.race_repaint_npc_entrance(0x015, self.umaro_wob_npc_id, slot)
 
-        # neutral carving: no magicite in the eye, no animation
-        self.dialogs.set_text(dialog_id.UMARO_CAVE_CARVING, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+        # each kind keeps its non-race carving: the vanilla magicite
+        # wording, glint and rising-magicite animation for an esper, the
+        # item wording for an item, the neutral wording for a character.
+        # the spare wordings ride in dialogs whose own commands every
+        # build removes (1524, "what's with this carving") or leaves
+        # unused in race (1526, the baked receive text)
+        item_carving_dialog = 1524
+        character_carving_dialog = 1526
+        self.dialogs.set_text(item_carving_dialog, "Remove the item from the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(character_carving_dialog, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "esper", "NOT_ESPER"),
+            Read(0xcd6f8, 0xcd6fd),         # chime, the magicite glints
+            field.Branch(0xcd6fe),          # the vanilla magicite wording + choice
+            "NOT_ESPER",
+            field.BranchIfRewardKindNot(slot, "item", "NOT_ITEM"),
+            field.Dialog(item_carving_dialog),
+            field.Branch(0xcd701),          # the yes/no branch
+            "NOT_ITEM",
+            field.Dialog(character_carving_dialog),
+            field.Branch(0xcd701),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race carving")
+        carving = space.start_address
         space = Reserve(0xcd6f8, 0xcd6fd, "narshe wor umaro carving magicite flash", field.NOP())
+        space.write(
+            field.Branch(carving),
+        )
+
+        # the yes path: an esper replays the rising-magicite animation
+        # (entity 0x12, a static record identical in every build), and
+        # esper/item show the receive dialog before the battle exactly
+        # as their non-race builds do - the grant itself stays after the
+        # battle, as it always was
+        src = [
+            field.BranchIfRewardKind(slot, "character", "YES_DONE"),
+            field.BranchIfRewardKindNot(slot, "esper", "SKIP_ANIMATION"),
+            Read(0xcd709, 0xcd72e),         # the magicite rises from the eye
+            "SKIP_ANIMATION",
+            Read(0xcd72f, 0xcd730),         # got-it sound
+            field.receive_reward_dialog(slot),
+            Read(0xcd734, 0xcd736),         # pause, rumble
+            "YES_DONE",
+            field.Branch(0xcd737),          # the cave shakes, umaro attacks
+        ]
+        space = Write(Bank.CC, src, "umaro cave race carving yes path")
+        yes_path = space.start_address
         space = Reserve(0xcd709, 0xcd736, "narshe wor get esper from bone carving", field.NOP())
+        space.write(
+            field.Branch(yes_path),
+        )
 
         # umaro's wob appearance plays only for a character reward
         src = [
@@ -85,8 +135,9 @@ class UmaroCave(Event):
             field.HideEntity(self.umaro_cave_npc_id),
             field.SetEventBit(event_bit.RECRUITED_UMARO_WOR),
             field.ClearEventBit(npc_bit.UMARO_NARSHE_WOR),
+            # granted silently: the receive dialog already showed at the
+            # carving, as in non-race esper/item builds
             field.AddCheckReward(slot),
-            field.receive_reward_dialog(slot),
             field.FinishCheck(),
             field.Return(),
         ]

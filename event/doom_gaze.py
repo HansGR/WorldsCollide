@@ -18,6 +18,9 @@ class DoomGaze(Event):
         if self.args.doom_gaze_no_escape:
             self.doom_gaze_battle_mod()
 
+        if self.args.race:
+            self.race_look_mod()
+
         if self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
         elif self.reward.type == RewardType.ITEM:
@@ -61,6 +64,32 @@ class DoomGaze(Event):
             asm.TSB(0x1dd2, asm.ABS),   # set doom gaze defeated event bit
         )
 
+    def race_look_mod(self):
+        # the magicite npc record stays vanilla for every kind (a baked
+        # chest said "item here" in the rom); an item repaints it to the
+        # chest at map load, and the receive flash picks its kind at
+        # runtime.  the grant and dialog are already kind-blind (AddEsper/
+        # AddItem and the receive dialogs compile to the same slot-driven
+        # commands in race builds)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.race_repaint_npc_entrance(0x11, self.magicite_npc_id, slot, chest = True)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "esper", "NO_FLASH"),
+            Read(0xa00d6, 0xa00d7),     # flash the screen white
+            "NO_FLASH",
+            Read(0xa00d8, 0xa00dd),     # leader animation, collision back on
+            field.Branch(0xa00de),      # the receive call
+        ]
+        space = Write(Bank.CA, src, "doom gaze race receive flash")
+        receive_flash = space.start_address
+        space = Reserve(0xa00d6, 0xa00dd, "doom gaze receive flash branch", field.NOP())
+        space.write(
+            field.Branch(receive_flash),
+        )
+
     def receive_reward_mod(self, reward_instructions):
         src = [
             reward_instructions,
@@ -82,12 +111,15 @@ class DoomGaze(Event):
         ])
 
     def item_mod(self, item):
-        self.magicite_npc.sprite = 106
-        self.magicite_npc.palette = 6
-        self.magicite_npc.split_sprite = 1
-        self.magicite_npc.direction = direction.DOWN
+        if not self.args.race:
+            # race builds keep the vanilla record and select the look at
+            # runtime instead (race_look_mod)
+            self.magicite_npc.sprite = 106
+            self.magicite_npc.palette = 6
+            self.magicite_npc.split_sprite = 1
+            self.magicite_npc.direction = direction.DOWN
 
-        space = Reserve(0xa00d6, 0xa00d7, "doom gaze flash screen white when receiving esper", field.NOP())
+            space = Reserve(0xa00d6, 0xa00d7, "doom gaze flash screen white when receiving esper", field.NOP())
 
         self.receive_reward_mod([
             field.Dialog(self.items.get_receive_dialog(item)),

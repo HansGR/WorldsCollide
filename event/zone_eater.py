@@ -30,21 +30,21 @@ class ZoneEater(Event):
 
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
-        # wob).  every kind gets the random decoy sprite the item path
-        # uses; a character reward repaints it at map load.  *Visible
-        # change*: an esper reward loses its magicite-drop animation (the
-        # animation itself would say "esper here") - the reward arrives
-        # through the dialog, like an item
+        # wob).  the npc record gets the random decoy sprite the item
+        # path uses; the map-load repaint then restores the kind's
+        # vanilla-wc look at runtime (the reward character, or the
+        # magicite shard for an esper), and the esper arm replays
+        # esper_mod's magicite-drop animation
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
         self.gogo_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.gogo_npc.palette = self.characters.get_palette(self.gogo_npc.sprite)
 
-        self.race_repaint_npc_entrance(0x116, self.gogo_npc_id, slot)
+        self.race_repaint_npc_entrance(0x116, self.gogo_npc_id, slot, magicite = True)
 
         src = [
-            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
 
             # the character scene (character_mod's script, slot-driven)
             field.AddCheckReward(slot),
@@ -56,6 +56,16 @@ class ZoneEater(Event):
             field.FadeInScreen(),
             field.FinishCheck(),
             field.Return(),
+
+            # the magicite drops off the ledge, as esper_mod animates it
+            "NOT_CHARACTER",
+            field.BranchIfRewardKindNot(slot, "esper", "ESPER_ITEM"),
+            field.DisableEntityCollision(self.gogo_npc_id),
+            field.EntityAct(self.gogo_npc_id, True,
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.Move(direction.DOWN, 1),
+                field_entity.Hide(),
+            ),
 
             # the esper/item scene (esper/item_mod's script, slot-driven)
             "ESPER_ITEM",

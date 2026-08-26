@@ -49,6 +49,8 @@ class DomaWOR(Event):
             self.cyan_esper_mod(self.reward1.id)
         self.finish_dream_awaken_mod()
 
+        if self.args.race:
+            self.race_throne_look_mod()
         if self.reward2.type == RewardType.ESPER:
             self.throne_esper_mod(self.reward2.id)
         elif self.reward2.type == RewardType.ITEM:
@@ -335,6 +337,16 @@ class DomaWOR(Event):
 
         space = Reserve(0xb9a6f, 0xb9a6f, "doma wor learn all swdtechs", field.NOP())
 
+    def race_throne_look_mod(self):
+        # the two throne-room magicite npc records stay vanilla for
+        # every kind (a baked chest said "item here" in the rom); an
+        # item repaints them to the chest at map load.  the grant and
+        # dialog are already kind-blind in race builds
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward2)
+        for npc_id in (0x17, 0x18):
+            self.race_repaint_npc_entrance(0x07b, npc_id, slot, chest = True)
+
     def throne_esper_item_mod(self, reward_instructions):
         src = [
             reward_instructions,
@@ -359,20 +371,16 @@ class DomaWOR(Event):
         ])
 
     def throne_item_mod(self, item):
-        # the magicite is represented by 2 npcs for some reason
-        magicite_throne_room_npc_id = 0x17
-        magicite_throne_room_npc = self.maps.get_npc(0x7b, magicite_throne_room_npc_id)
-        magicite_throne_room_npc.sprite = 106
-        magicite_throne_room_npc.palette = 6
-        magicite_throne_room_npc.split_sprite = 1
-        magicite_throne_room_npc.direction = direction.DOWN
-
-        magicite_throne_room_npc_id = 0x18
-        magicite_throne_room_npc = self.maps.get_npc(0x7b, magicite_throne_room_npc_id)
-        magicite_throne_room_npc.sprite = 106
-        magicite_throne_room_npc.palette = 6
-        magicite_throne_room_npc.split_sprite = 1
-        magicite_throne_room_npc.direction = direction.DOWN
+        if not self.args.race:
+            # race builds keep the vanilla records and select the look at
+            # runtime instead (race_throne_look_mod)
+            # the magicite is represented by 2 npcs for some reason
+            for magicite_throne_room_npc_id in (0x17, 0x18):
+                magicite_throne_room_npc = self.maps.get_npc(0x7b, magicite_throne_room_npc_id)
+                magicite_throne_room_npc.sprite = 106
+                magicite_throne_room_npc.palette = 6
+                magicite_throne_room_npc.split_sprite = 1
+                magicite_throne_room_npc.direction = direction.DOWN
 
         self.throne_esper_item_mod([
             field.AddItem(item),

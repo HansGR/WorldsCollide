@@ -48,10 +48,10 @@ class MtZozo(Event):
         # one wiring for every kind: the esper/item structure (the cliff
         # npc IS the check; interact to receive), with the recruit
         # happening right there for a character reward.  the cliff npc
-        # record is a decoy repainted at map load; the room npc, the
-        # room scene and the letter signature - all character tells -
-        # are gone for every kind, and the npc is never the magicite or
-        # chest sprite (those said which kind the check held)
+        # record is a decoy repainted at map load to its kind's
+        # vanilla-wc look (reward character / magicite / chest); the
+        # room npc, the room scene and the letter signature - all
+        # character tells - are gone for every kind
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
@@ -108,13 +108,22 @@ class MtZozo(Event):
         )
         self.cliff_cyan_npc.set_event_address(add_reward_function)
 
-        # when we enter cliff: repaint the npc for a character reward,
-        # and if already saw bird scene, hide the bird
+        # when we enter cliff: repaint the npc to its kind's vanilla-wc
+        # look (reward character / magicite shard / item chest), and if
+        # already saw bird scene, hide the bird
         cliff_entrance_event = space.next_address
         space.write(
-            field.BranchIfRewardKindNot(slot, "character", "NO_REPAINT"),
+            field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
             field.SetRewardSprite(self.cliff_cyan_npc_id, slot),
             field.SetRewardPalette(self.cliff_cyan_npc_id, slot),
+            field.Branch("NO_REPAINT"),
+            "NOT_CHARACTER",
+            field.BranchIfRewardKindNot(slot, "esper", "NOT_ESPER"),
+            *self.race_magicite_look_src(self.cliff_cyan_npc_id),
+            field.Branch("NO_REPAINT"),
+            "NOT_ESPER",
+            field.BranchIfRewardKindNot(slot, "item", "NO_REPAINT"),
+            *self.race_chest_look_src(self.cliff_cyan_npc_id),
             "NO_REPAINT",
             field.ReturnIfEventBitClear(event_bit.FOUND_CYAN_MT_ZOZO),
             field.HideEntity(self.cliff_bird_npc_id),

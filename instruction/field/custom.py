@@ -953,7 +953,7 @@ REWARD_ENTITY_OPCODE = 0xec     # unused by vanilla, WC dev and the fork
 
 (SUB_CREATE, SUB_DELETE, SUB_SHOW, SUB_HIDE, SUB_WAIT, SUB_SPRITE,
  SUB_PALETTE, SUB_PARTY, SUB_PROPERTIES, SUB_NAME, SUB_THEME, SUB_ACT,
- SUB_LOAD_KIND, SUB_VEHICLE) = range(14)
+ SUB_LOAD_KIND, SUB_VEHICLE, SUB_SPLIT) = range(15)
 
 _reward_entity_handler = None
 _character_palette_table = None
@@ -1172,6 +1172,24 @@ def reward_entity_opcode():
         asm.JMP(VANILLA["vehicle"], asm.ABS),
     ]
 
+    # $EC sub entity bits (4 bytes, both operands literal).  The npc
+    # loader (C0/53D0) derives an object's special-animation state -
+    # $088C = ..a nn ggg (a enable, nn frame type, ggg graphic offset) -
+    # from the record's split_sprite/direction bits at map load; this
+    # ORs the same state into the live object so an entrance event can
+    # turn a decoy record into vanilla's magicite/chest look at runtime.
+    ENTITY_OFFSET = 0x9df0          # Y = object number in $eb * 0x29
+    subs[SUB_SPLIT] = [
+        asm.LDA(0xec, asm.DIR),     # entity operand (not secret)
+        asm.STA(0xeb, asm.DIR),
+        asm.JSR(ENTITY_OFFSET, asm.ABS),
+        asm.LDA(0xed, asm.DIR),     # special animation bits (not secret)
+        asm.ORA(0x088c, asm.ABS_Y),
+        asm.STA(0x088c, asm.ABS_Y),
+        asm.LDA(0x04, asm.IMM8),    # command size
+        asm.JMP(NEXT_COMMAND, asm.ABS),
+    ]
+
     # $EC sub slot kind (4 bytes): multipurpose event bit 0 = (the
     # reward's kind == kind).  With the vanilla event-bit branches this
     # gives runtime branching on kind, so one script can carry every
@@ -1276,6 +1294,20 @@ class PlayRewardTheme(_RewardEntityInstruction):
 class SetRewardVehicle(_RewardEntityInstruction):
     def __init__(self, slot, vehicle):
         super().__init__(SUB_VEHICLE, slot, vehicle)
+
+
+class SetSplitSprite(_RewardEntityInstruction):
+    """Give an entity the special-animation state the npc loader derives
+    from a record's split_sprite flag, so a decoy record can take on
+    vanilla's magicite/chest object look at runtime.  `direction` picks
+    the animation frame type exactly as the record's direction bits
+    would (magicite faces UP, the item chest DOWN)."""
+    def __init__(self, entity, direction):
+        super().__init__(SUB_SPLIT, entity,
+                         0x20 | 0x02 | ((direction & 0x03) << 3))
+
+    def __str__(self):
+        return _Instruction.__str__(self, f"{self.args[1]} {self.args[2]:#04x}")
 
 
 class _RewardEntityAct(_Instruction):

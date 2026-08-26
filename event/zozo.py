@@ -82,15 +82,18 @@ class Zozo(Event):
 
     def race_reward_mod(self):
         # one wiring for every kind: the npc on the tower top holds the
-        # reward (never the magicite object, never the chest sprite -
-        # both said which kind lived here).  decoy record, repainted at
-        # map load for a character reward
+        # reward.  its record is a decoy, and the map-load repaint gives
+        # it the kind's vanilla-wc look at runtime - the reward
+        # character, the magicite object for an esper, the chest for an
+        # item - so scouting the tower top reads exactly as non-race
+        # builds do while the rom bytes stay kind-blind
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
         self.ramuh_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.ramuh_npc.palette = self.characters.get_palette(self.ramuh_npc.sprite)
-        self.race_repaint_npc_entrance(0x0e2, self.ramuh_npc_id, slot)
+        self.race_repaint_npc_entrance(0x0e2, self.ramuh_npc_id, slot,
+                                       magicite = True, chest = True)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),

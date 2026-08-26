@@ -36,10 +36,10 @@ class VeldtCaveWOR(Event):
         self.log_reward(self.reward)
 
     def race_reward_mod(self):
-        # one script and one npc look for every kind: both cave npcs get
-        # the item path's random decoy sprite (a character reward
-        # repaints them at map load; an esper loses its magicite look,
-        # which would say "esper here")
+        # one script and one npc record for every kind: both cave npcs
+        # get the item path's random decoy sprite, then the map-load
+        # repaint restores the kind's vanilla-wc look at runtime - the
+        # reward character, or the magicite shards for an esper
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
@@ -47,8 +47,8 @@ class VeldtCaveWOR(Event):
         for npc in (self.shadow_npc, self.relm_npc):
             npc.sprite = random_sprite
             npc.palette = self.characters.get_palette(random_sprite)
-        self.race_repaint_npc_entrance(0x161, self.shadow_npc_id, slot)
-        self.race_repaint_npc_entrance(0x161, self.relm_npc_id, slot)
+        self.race_repaint_npc_entrance(0x161, self.shadow_npc_id, slot, magicite = True)
+        self.race_repaint_npc_entrance(0x161, self.relm_npc_id, slot, magicite = True)
 
         self.move_to_thamasa([
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),

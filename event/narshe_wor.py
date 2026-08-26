@@ -121,6 +121,14 @@ class NarsheWOR(Event):
                 field.reward_dialog(kind, value, 1519, second_item = self.item),
             )
 
+            if self.args.race:
+                # the display npc record stays vanilla for every kind (a
+                # baked chest said "item here" in the rom); an item
+                # repaints it to the chest at map load
+                from obfuscation import rewards
+                slot = rewards.register(kind, value)
+                self.race_repaint_npc_entrance(0x18, 0x11, slot, chest = True)
+
         # if esper or first item chosen, set event bit to know second item should be given by guard
         space = Reserve(0xc0b42, 0xc0b44, "narshe wor ragnarok esper right", field.NOP())
         space.write(
@@ -220,12 +228,15 @@ class NarsheWOR(Event):
         ])
 
     def weapon_shop_item_mod(self, item):
-        magicite_npc_id = 0x11
-        magicite_npc = self.maps.get_npc(0x18, magicite_npc_id)
-        magicite_npc.sprite = 106
-        magicite_npc.palette = 6
-        magicite_npc.split_sprite = 1
-        magicite_npc.direction = direction.DOWN
+        if not self.args.race:
+            # race builds keep the vanilla record and select the look at
+            # runtime instead (weapon_shop_mod's repaint)
+            magicite_npc_id = 0x11
+            magicite_npc = self.maps.get_npc(0x18, magicite_npc_id)
+            magicite_npc.sprite = 106
+            magicite_npc.palette = 6
+            magicite_npc.split_sprite = 1
+            magicite_npc.direction = direction.DOWN
 
         dialog_text = ("This gives off an eerie aura!<line><choice> Leave it “"
                        + self.items.dialog_name(item) + "”")
