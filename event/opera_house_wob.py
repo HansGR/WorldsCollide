@@ -57,7 +57,9 @@ class OperaHouseWOB(Event):
         if not self.args.fixed_encounters_original:
             self.fixed_battles_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
             self.character_music_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -68,6 +70,46 @@ class OperaHouseWOB(Event):
             self.character_music_mod(SETZER)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  *Race-only cosmetic*: the scene plays setzer's theme for
+        # every kind, as the non-character builds do (the StartSong site
+        # is two bytes, too tight for the slot-driven theme command)
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        self.setzer_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.setzer_npc.palette = self.characters.get_palette(self.setzer_npc.sprite)
+        self.race_repaint_npc_entrance(0x0e9, self.setzer_npc_id, slot)
+
+        self.character_music_mod(SETZER)
+
+        self.reward_mod([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.StartSong(53),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+            field.Branch("REWARD_DONE"),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.StartSong(53),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+
+            "REWARD_DONE",
+        ])
 
     def begin_performance_mod(self):
         space = Reserve(0xaf18b, 0xaf1a1, "opera house changing room entrance event", field.NOP())

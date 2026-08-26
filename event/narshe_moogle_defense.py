@@ -423,7 +423,9 @@ class NarsheMoogleDefense(Event):
         # and so that 003 doesn't cause issues at WoB Narshe entrance
         space = Reserve(0xcaaab, 0xcaaae, "set terra falls event bit & initiated moogle defense bit", field.NOP())
 
-    def after_battle_mod(self, reward_instructions):
+    def after_battle_mod(self, reward_instructions,
+                         pre_select_instructions = (),
+                         post_fade_instructions = ()):
         # Loss - remove Locke's name from dialog
         self.dialogs.set_text(1744, "Couldn't hold out…!?<line>Uh oh…<end>")
 
@@ -464,7 +466,8 @@ class NarsheMoogleDefense(Event):
         src += [
             # give Shadow Interceptor again
             field.AddStatusEffects(self.characters.SHADOW, field.Status.DOG_BLOCK),
-            
+
+            *pre_select_instructions,
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.UpdatePartyLeader(),
             field.ShowEntity(field_entity.PARTY0),
@@ -474,6 +477,7 @@ class NarsheMoogleDefense(Event):
 
             field.FadeInScreen(),
             field.WaitForFade(),
+            *post_fade_instructions,
 
             field.SetEventBit(event_bit.FINISHED_MOOGLE_DEFENSE),
             field.FreeMovement(),
@@ -544,7 +548,9 @@ class NarsheMoogleDefense(Event):
         self.event_start_mod()
         self.marshal_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -552,6 +558,39 @@ class NarsheMoogleDefense(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc look for every kind.  the character
+        # branch recruits AFTER the un-moogle restore loop (which then
+        # restores them like any other un-recruited character), so none
+        # of the per-character restore commands - all id-carrying - are
+        # needed; the esper/item receive happens after the fade-in, as a
+        # normal check receive
+        from obfuscation import rewards
+        slot = rewards.register_check(self.reward)
+
+        sprite = self.characters.get_random_esper_item_sprite()
+        for npc in (self.terra_npc, self.terra_collapsed_npc):
+            npc.sprite = sprite
+            npc.palette = self.characters.get_palette(sprite)
+        self.race_repaint_npc_entrance(50, self.terra_npc_id, slot)
+        self.race_repaint_npc_entrance(self.WOB_MAP_ID, self.COLLAPSED_TERRA_NPC_ID, slot)
+
+        self.after_battle_mod(
+            [],
+            pre_select_instructions = [
+                field.BranchIfRewardKindNot(slot, "character", "NO_RECRUIT"),
+                field.AddCheckReward(slot),
+                "NO_RECRUIT",
+            ],
+            post_fade_instructions = [
+                field.BranchIfRewardKind(slot, "character", "NO_RECEIVE"),
+                field.AddCheckReward(slot),
+                field.PlaySoundEffect(141),
+                field.receive_reward_dialog(slot),
+                "NO_RECEIVE",
+            ],
+        )
 
 
 
