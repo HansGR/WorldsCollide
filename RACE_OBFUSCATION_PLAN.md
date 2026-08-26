@@ -352,9 +352,137 @@ runtime.
   fix.  Veldt therefore only closes fully alongside the character
   question, and is best done with it.
 
-- **Character-at-check grants** (the recruit operand) remain a separate,
-  more entangled case (sprite and name are shown as the character
-  joins) — assess separately.
+- **Character-at-check grants** — planned in detail below (§L3-C).
+
+### L3-C — Characters at checks — **plan (Phase 3f, awaiting approval)**
+
+Goal: hide *which character* each check grants from ROM inspection,
+using the same unified reward machinery.  Player-visible behaviour is
+unchanged — the check NPC still looks like the character you will get,
+because the update happens at map load instead of at build time.
+Scouting a check by walking up to it stays exactly as it is today;
+what disappears is reading the placement out of the ROM bytes.
+
+**The tells (survey, 2026-08).**  About 40 events can hold a
+character.  Every one of them leaks identity through several channels
+at once:
+
+1. **Map NPC records** (`data/npc.py`): character checks bake
+   `npc.sprite = character` and `npc.palette = get_palette(character)`
+   into the map's NPC data block.  This is also a **kind tell** in the
+   other direction: esper/item rewards at the same checks bake a
+   *random* sprite from {Soldier, Imp, Merchant, Ghost}, so
+   `sprite < 16` at a check NPC says "character here" with exact id.
+2. **Script operands**: `RecruitCharacter` (`$76 xx`),
+   `AddCharacterToParty`/`RemoveCharacterFromParties` (`$3F xx pp`),
+   `SetName` (`$7F xx nn`), `SetProperties` (`$40 xx dd`),
+   `CreateEntity` (`$3D xx`), `ShowEntity`/`HideEntity` (`$41/$42 xx`),
+   `SetSprite`/`SetPalette` (`$37/$43`), and the entity **action
+   queues**, whose opcode *is* the entity id (`$00-$34`) — for party
+   characters the entity id equals the character id.  Several events
+   additionally patch **raw id bytes into vanilla script addresses**
+   (e.g. Mt. Kolts pokes eight single bytes so the vanilla Vargas
+   scene animates the reward character).
+3. **Dialog text**: a few events bake `get_name(character)` into
+   dialog strings (Daryl's tomb inscription, Mobliz WOR lines).
+   (Vanilla's own `<TERRA>`-style codes `$02-$0F` are *not* a leak —
+   they render at runtime from WRAM `$1602` — but the code choice is,
+   where WC picks it per reward.)
+4. **Character theme**: `StartSong(get_character_theme(character))`
+   bakes the song id; the char→song map is public knowledge, so the
+   operand identifies the character.
+5. **Veldt (battle side)**: picks battle dialog 182 (esper) vs 254
+   (character), names the reward through battle text, and its esper
+   grant bakes `LDA #bit / TSB byte` operands.  Surveyed above; closes
+   together with this phase.
+6. **Adjacent, decided separately**: character *gating* operands
+   (`BranchIfEventBit(character_recruited(gate))`) reveal the gate
+   assignment — different information (where a character is *required*,
+   not obtained), cheap to note, separate decision.  **Starting
+   characters stay plain** (mirror of the start-items rule: shown to
+   the player in the first seconds, hiding them buys nothing).
+
+**Design** (Hans's NPC-updater proposal, folded into the unified
+reward table):
+
+- **Kind `0x02` = character** in the one masked reward table
+  (`obfuscation/rewards.py`); value = character id 0-15.  Same slot
+  space, same registration discipline (equal slot counts per kind at
+  multi-kind checks).
+- **Grant**: a third branch in `AddCheckReward` (`$9E`): decode id →
+  `STA $eb` → `JSL c0.recruit_character` — which already takes its
+  argument in `$eb`, the same convention the esper branch uses.  The
+  existing recruit path (recruited/available bits, `-sal` average
+  level, magic/skill update) runs unchanged.
+  `RecruitAndSelectParty` is already `RecruitCharacter` + a `Call` to
+  a *shared, character-independent* party-select function, so only the
+  `$76` operand needs replacing there.
+- **Decoded-entity scratch + reward-entity command family.**  One new
+  opcode `SetRewardEntity(slot)` decodes the slot's character id into
+  a scratch RAM byte (candidate `$0585`, next to our `$0584`; confirm
+  documented-unused first).  A small family of commands then reads the
+  scratch byte where today's commands carry an id operand:
+  - `UpdateRewardNpc(npc_id)` — **the NPC updater**: sets the map
+    NPC's sprite and palette at runtime from the decoded id, palette
+    via a char→palette table in ROM (public vanilla knowledge, fine in
+    plaintext).  Runs in the map entrance event before fade-in, so the
+    NPC looks exactly as it does today.
+  - `CreateRewardEntity` / `ShowRewardEntity` / `HideRewardEntity` /
+    `DeleteRewardEntity` — substitute the scratch id and jump into the
+    vanilla `$3D/$41/$42/$3E` handlers.
+  - `RewardEntityAct(queue...)` — vanilla dispatches action queues on
+    the opcode itself; the new command loads the scratch id and enters
+    that dispatch, replacing both WC-written queues and the raw-byte
+    patches into vanilla scenes.
+  - `AddRewardToParty(party)`, `SetRewardProperties`, `SetRewardName`
+    — for `$3F/$40/$7F`, whose id-valued operands (character and, for
+    these, the data/name index equal to it) both come from the scratch
+    byte.
+  - `PlayRewardTheme` — char→song table in ROM (public), decode →
+    vanilla play-song path.
+- **Names in text**: a kind-`0x02` branch in `<reward>`/`<reward2>`
+  renders 6 chars from WRAM `$1602 + 37×id` — a clone of vanilla's own
+  `$02-$0F` name-code handler (`C0/82CC`), so renamed characters
+  render correctly for free.  Events that bake `get_name(character)`
+  switch to `dialog_name()` like the item/esper events did.
+- **NPC records**: character checks get the *same* build-time
+  treatment as esper/item checks — a random sprite from the same pool
+  — plus the runtime update.  That closes the identity tell and the
+  `sprite < 16` kind tell in one move.
+
+**Kind visibility — the honest limit and the decision to make.**
+The per-kind scene *shapes* differ wholesale (recruit + party select
+vs fade-out/grant/dialog), so a script diff still says *which checks
+hold characters* even with every id hidden.  Two tiers:
+
+- **Tier 1 (identity)**: everything above.  A cheater learns "this
+  check is a character" but not which.
+- **Tier 2 (kind)**: emit *both* scene fragments in every seed and
+  select at runtime with a new `BranchIfRewardKind(slot, kind, dest)`
+  command (decode-driven branch, same masked table).  Costs script
+  space in banks CA-CC per event and real per-event surgery.
+
+Recommendation: build the machinery Tier-2-capable from the start
+(the branch command is small), convert **three archetypes first** —
+Figaro Castle WOB (simple NPC + recruit), Mt. Kolts (raw-id-heavy
+vanilla scene), one `RecruitAndSelectParty` event — measuring the
+space and effort of full unification on each, then decide with that
+data whether the remaining ~35 events get Tier 2 or Tier 1.  Single
+pass per event either way; no planned rework.
+
+**Veldt closes with this phase**: the battle `<reward>` sub-code
+(`JML` to F0 over the dead dispatch table, per the survey above), one
+shared battle dialog for both kinds, and the esper grant's baked
+`LDA #bit / TSB` operands replaced by table-decoded code.
+
+**Verification additions**: (a) same-check different-reward proof —
+two seeds, same flags, character A vs character B (and, Tier 2,
+character vs esper) at the same check produce byte-identical event
+bytes and NPC records for that check; (b) verifier: no check NPC
+record with `sprite < 16`, no `$76/$3F/$7F/$40` with id operands
+inside converted events, scratch-byte commands installed; (c) the
+usual non-race byte-identity A/B; (d) playtest kit for Hans: open
+world, `-debug`, moogle charm, a recruit at each converted archetype.
 
 ### L4 — Per-seed allocation shuffle
 
@@ -500,5 +628,5 @@ simple": ship L1+L2+L3, hold L4+ pending evidence.
 | 1 | L1 chests + shops (relocate + decoy) + in-game verification | **done** (verified in play 2026-08-24) |
 | 2 | L2 masking; L1 extended to espers, enemy loot, coliseum | **done** (claim grown to 32 KB for the pads) |
 | 2 (red-team) | attack L1+L2, document effort per tier (§6a) | **done** — T1/T2 recover nothing usable, T3 = reader reimpl; recommend ship L3, defer L4 |
-| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); Veldt (battle engine) surveyed; characters next |
+| 3 | L3 reward indirection (items first, then characters/espers) | items, espers, kind-hiding, bespoke dialogs and the auction house **done** (3a-3e); characters + Veldt planned in §L3-C (Phase 3f, awaiting approval) |
 | 4 | L4 allocation shuffle; community messaging | deferred pending a real T3 tool |
