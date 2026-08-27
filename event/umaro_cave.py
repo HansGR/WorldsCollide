@@ -135,6 +135,11 @@ class UmaroCave(Event):
             field.HideEntity(self.umaro_cave_npc_id),
             field.SetEventBit(event_bit.RECRUITED_UMARO_WOR),
             field.ClearEventBit(npc_bit.UMARO_NARSHE_WOR),
+            # the battle ends with the screen faded out; vanilla restores
+            # it right after (CC/D789), which the character arm splices in
+            # via its Read - restore it here too
+            field.FadeInScreen(),
+            field.WaitForFade(),
             # granted silently: the receive dialog already showed at the
             # carving, as in non-race esper/item builds
             field.AddCheckReward(slot),
