@@ -555,9 +555,13 @@ that Tier 1 never needed to exist:
   (Doom Gaze, Tritoch, Doma throne, Narshe WOR weapon shop): their
   item builds baked the item-object record while esper builds kept
   the vanilla magicite record — a kind oracle.  Those records now stay
-  vanilla in race builds for every kind, an item repaints them at map
-  load, and the small per-kind receive patches (chimes, flashes,
-  pauses) became runtime kind branches.
+  vanilla in race builds for every kind, an item repaints them to the
+  item object at runtime, and the small per-kind receive patches
+  (chimes, flashes, pauses) became runtime kind branches.  Doom Gaze
+  and Tritoch CREATE their magicite npc mid-scene, which re-derives
+  the look from the record and wipes an entrance repaint - their item
+  repaint rides between the scene's create and show instead (caught in
+  playtest).
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text
@@ -577,8 +581,10 @@ slot (15) appears for **every** kind with a baked decoy sprite — the
 16-bit sprite loader decodes the kind at runtime and swaps in the
 real character sprite after the reveal — all per-kind conditions
 collapse onto `VELDT_REWARD_OBTAINED`, and one recruit function
-decodes kind and id: characters run `recruit_character` (roster, not
-the ongoing battle), espers compute their found bit at runtime
+decodes kind and id: characters run `recruit_character` and return
+their decoded id so vanilla's add-to-party code assigns them to the
+current party, exactly as a character build's recruit does; espers
+compute their found bit at runtime
 (`power_of_two[id&7] ORA $1A69+id/8,Y`) instead of baked
 `LDA #bit / TSB byte` operands.  Verifier section 12 checks the
 table entries, stubs, relocated data, the kind-neutral dialog bytes,

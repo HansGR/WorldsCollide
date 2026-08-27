@@ -35,15 +35,30 @@ class Tritoch(Event):
         )
 
     def race_look_mod(self):
-        # the frozen-esper magicite npc record stays vanilla for every
-        # kind (a baked chest said "item here" in the rom); an item
-        # repaints it to the chest at map load, and the receive chime/
-        # flash picks its kind at runtime.  the grant and dialog are
-        # already kind-blind in race builds
+        # the magicite npc record stays vanilla for every kind (a baked
+        # chest said "item here" in the rom).  the scene CREATES the npc
+        # after the battle (CC/3752), which re-derives its look from the
+        # record - so the item repaint rides between the create and the
+        # show, and the receive chime/flash picks its kind at runtime.
+        # the grant and dialog are already kind-blind in race builds
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
-        self.race_repaint_npc_entrance(0x23, self.magicite_npc_id, slot, chest = True)
+        src = [
+            Read(0xc3752, 0xc3753),         # create the magicite npc
+            field.BranchIfRewardKindNot(slot, "item", "SHOW"),
+            *self.race_chest_look_src(self.magicite_npc_id),
+            "SHOW",
+            Read(0xc3754, 0xc3754),         # refresh objects
+            Read(0xc3755, 0xc3759),         # the screen-tint repeat block
+            field.Branch(0xc375a),
+        ]
+        space = Write(Bank.CC, src, "tritoch race npc look")
+        npc_look = space.start_address
+        space = Reserve(0xc3752, 0xc3759, "tritoch create magicite npc", field.NOP())
+        space.write(
+            field.Branch(npc_look),
+        )
 
         src = [
             field.BranchIfRewardKindNot(slot, "esper", "ITEM_SOUND"),

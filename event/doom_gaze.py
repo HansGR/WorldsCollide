@@ -66,15 +66,30 @@ class DoomGaze(Event):
 
     def race_look_mod(self):
         # the magicite npc record stays vanilla for every kind (a baked
-        # chest said "item here" in the rom); an item repaints it to the
-        # chest at map load, and the receive flash picks its kind at
-        # runtime.  the grant and dialog are already kind-blind (AddEsper/
+        # chest said "item here" in the rom).  the scene CREATES the npc
+        # (CA/009D), which re-derives its look from the record - so the
+        # item repaint must ride between the create and the show, not on
+        # a map entrance.  the receive flash picks its kind at runtime
+        # too.  the grant and dialog are already kind-blind (AddEsper/
         # AddItem and the receive dialogs compile to the same slot-driven
         # commands in race builds)
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
-        self.race_repaint_npc_entrance(0x11, self.magicite_npc_id, slot, chest = True)
+        src = [
+            Read(0xa009d, 0xa009e),         # create the magicite npc
+            field.BranchIfRewardKindNot(slot, "item", "SHOW"),
+            *self.race_chest_look_src(self.magicite_npc_id),
+            "SHOW",
+            Read(0xa009f, 0xa00a1),         # show it, refresh objects
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "doom gaze race npc look")
+        npc_look = space.start_address
+        space = Reserve(0xa009d, 0xa00a1, "doom gaze create/show magicite npc", field.NOP())
+        space.write(
+            field.Call(npc_look),
+        )
 
         src = [
             field.BranchIfRewardKindNot(slot, "esper", "NO_FLASH"),

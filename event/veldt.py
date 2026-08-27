@@ -323,9 +323,10 @@ class Veldt(Event):
     def race_recruit_function(self):
         # one recruit function for every kind: mark the reward obtained, then
         # decode the kind and id from the masked table at runtime.  a
-        # character joins the roster, not the ongoing battle (only the
-        # leaper's return path supports a mid-battle join); an esper's found
-        # bit is computed from the decoded id
+        # character returns its decoded id so the caller falls into the
+        # vanilla add-to-party path, exactly as a character build's recruit
+        # does; an esper's found bit is computed from the decoded id and
+        # 0xff tells the caller to add no one
         import data.event_word as event_word
         import instruction.c0 as c0
         from memory.space import START_ADDRESS_SNES
@@ -359,8 +360,10 @@ class Veldt(Event):
             asm.PLP(),
             asm.PLB(),                      # restore data bank register
 
-            # load 0xff into a to tell the caller not to add anyone to the battle
-            asm.LDA(0xff, asm.IMM8),
+            # return the character id: the caller's 0xff check falls through
+            # and the vanilla code adds the character to the party, the same
+            # mid-battle join a character build performs
+            *self._race_decode_src(1),      # a = character id
             asm.RTS(),
 
             "GRANT_ESPER",
