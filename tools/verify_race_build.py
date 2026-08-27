@@ -477,6 +477,17 @@ def main():
               f"race: {name} reward script differs between seeds beyond the "
               f"slot number - something kind- or id-dependent leaked in")
 
+    # 11b. the slot -> X computation must clear b after its 16-bit ASL
+    # (slots >= 0x80 set b = 1, and the vanilla handlers the reward code
+    # jumps into transfer b in their TAX/TAY, spraying indexed writes) -
+    # check the $9E grant handler carries the TAX/SEP/TDC sequence
+    grant_handler = int.from_bytes(
+        race[0x098c4 + (0x9e - 0x35) * 2:0x098c4 + (0x9e - 0x35) * 2 + 2],
+        "little")
+    check(bytes([0xaa, 0xe2, 0x20, 0x7b]) in race[grant_handler:grant_handler + 24],
+          "race: the $9E grant handler does not clear b after computing "
+          "the slot index - slots >= 0x80 would corrupt the grant")
+
     # 12. the veldt's battle-side hook: battle text sub-codes 4/5 render the
     # in-battle reward dialog from the masked table at runtime, so the baked
     # dialog and battle events carry no kind at all

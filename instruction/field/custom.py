@@ -680,6 +680,10 @@ def name_codes():
         asm.ASL(),
         asm.TAX(),
         asm.SEP(0x20),
+        asm.TDC(),                          # slots >= 0x80 leave b = 1 after
+                                            # the 16-bit ASL; clear it before
+                                            # any vanilla code (whose TAX/TAY
+                                            # with 8-bit a transfer b too)
 
         *_decode_slot_src(0),               # kind
         asm.BNE("NOT_ITEM_NAME"),
@@ -734,6 +738,11 @@ def add_check_reward_opcode():
             asm.ASL(),
             asm.TAX(),
             asm.SEP(0x20),
+            asm.TDC(),                      # slots >= 0x80 leave b = 1 after
+                                            # the 16-bit ASL; the vanilla
+                                            # handlers this jumps into
+                                            # (AddEsper's TAX/TAY especially)
+                                            # require b = 0
 
             *_decode_slot_src(0),           # kind
             asm.BNE("NOT_ITEM"),
@@ -838,6 +847,7 @@ def reward_dialog_opcode():
             asm.ASL(),
             asm.TAX(),
             asm.SEP(0x20),
+            asm.TDC(),                      # clear b (dirtied for slots >= 0x80)
             *_decode_slot_src(0),
             asm.CMP(0x01, asm.IMM8),
             asm.BNE("SHOW"),                # not an esper: first wording.
@@ -960,7 +970,14 @@ _character_palette_table = None
 
 
 def _slot_to_x_src(operand_dp):
-    """asm: X = (slot at the given operand byte) * reward entry size."""
+    """asm: X = (slot at the given operand byte) * reward entry size.
+
+    Ends with TDC: for slots >= 0x80 the 16-bit ASL leaves b (the
+    accumulator high byte) set, and the vanilla handlers the sub-commands
+    jump into transfer b along with a in their TAX/TAY, spraying indexed
+    writes 0x100 bytes off.  Every caller reloads a right after, so
+    clearing the whole 16-bit accumulator is free.
+    """
     return [
         asm.LDA(operand_dp, asm.DIR),
         asm.REP(0x20),
@@ -968,6 +985,7 @@ def _slot_to_x_src(operand_dp):
         asm.ASL(),
         asm.TAX(),
         asm.SEP(0x20),
+        asm.TDC(),
     ]
 
 

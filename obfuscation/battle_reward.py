@@ -58,7 +58,8 @@ def _text3(string):
     return [value for value in get_bytes(string, TEXT3) if value is not None]
 
 def decode_src(args, slot, field):
-    """asm loading one unmasked byte of the reward slot (0 id, 1 kind)."""
+    """asm loading one unmasked byte of the reward slot (0 kind, 1 id,
+    matching the (kind, value) entry order in obfuscation/rewards.py)."""
     from obfuscation import claim
     layout = claim.layout(args)
     table = claim.snes(layout["rewards"]) + slot * 2
@@ -117,7 +118,7 @@ def install(args, slot):
 
     # sub-code 4, <battle reward>: the dialog's first line
     sub4_space = Write(Bank.F0, [
-        *decode_src(args, slot, 1),                # a = reward kind
+        *decode_src(args, slot, 0),                # a = reward kind
         asm.CMP(0x01, asm.IMM8),
         asm.BEQ("LINE1_ESPER"),
         asm.CMP(0x02, asm.IMM8),
@@ -136,13 +137,13 @@ def install(args, slot):
 
     # sub-code 5, <battle reward2>: the dialog's second line
     sub5_space = Write(Bank.F0, [
-        *decode_src(args, slot, 1),                # a = reward kind
+        *decode_src(args, slot, 0),                # a = reward kind
         asm.CMP(0x01, asm.IMM8),
         asm.BNE("LINE2_DONE"),                      # only espers print here
         asm.LDX(offset_line2_esper, asm.IMM16),
         asm.LDA(len(line2_esper), asm.IMM8),
         asm.JSR(print_address, asm.ABS),
-        *decode_src(args, slot, 0),                # a = esper id
+        *decode_src(args, slot, 1),                # a = esper id
         asm.CLC(),
         asm.ADC(0x36, asm.IMM8),
         asm.JSL(START_ADDRESS_SNES + esper_name_stub),

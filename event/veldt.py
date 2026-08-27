@@ -183,7 +183,7 @@ class Veldt(Event):
         )
 
     def _race_decode_src(self, field):
-        # asm loading one unmasked byte of the reward slot (0 id, 1 kind)
+        # asm loading one unmasked byte of the reward slot (0 kind, 1 id)
         from obfuscation.battle_reward import decode_src
         return decode_src(self.args, self.race_slot, field)
 
@@ -201,10 +201,10 @@ class Veldt(Event):
             branch_if_event_bit_set(event_bit.VELDT_REWARD_OBTAINED, "LOAD_CHAR"),
 
             "LOAD_HIDE_FLIP_CHAR",
-            *self._race_decode_src(1),                  # a = reward kind
+            *self._race_decode_src(0),                  # a = reward kind
             asm.CMP(0x02, asm.IMM8),
             asm.BNE("LOAD_DECOY"),
-            *self._race_decode_src(0),                  # a = character id = its sprite
+            *self._race_decode_src(1),                  # a = character id = its sprite
             asm.XBA(),                                  # b = sprite
             asm.LDA(0x80 | 0x40 | self.char, asm.IMM8), # a = (hide_bit | flip_bit | self.char)
             asm.A16(),                                  # 16 bit a = (sprite << 8) | flags
@@ -341,11 +341,11 @@ class Veldt(Event):
             "RECRUIT_REWARD",
             asm.LDA(ram_event_bit(event_bit.VELDT_REWARD_OBTAINED), asm.IMM8),
             asm.TSB(ram_event_byte(event_bit.VELDT_REWARD_OBTAINED), asm.ABS),
-            *self._race_decode_src(1),      # a = reward kind
+            *self._race_decode_src(0),      # a = reward kind
             asm.CMP(0x02, asm.IMM8),
             asm.BNE("GRANT_ESPER"),
 
-            *self._race_decode_src(0),      # a = character id
+            *self._race_decode_src(1),      # a = character id
             asm.STA(0xeb, asm.DIR),         # character id is recruit_character's argument
             asm.PHB(),                      # push data bank register
             asm.LDA(0x00, asm.IMM8),        # a = desired data bank register for recruit_character
@@ -367,7 +367,7 @@ class Veldt(Event):
             asm.PHX(),
             asm.PHY(),
             asm.TDC(),                      # clear b so the index transfers are exact
-            *self._race_decode_src(0),      # a = esper id
+            *self._race_decode_src(1),      # a = esper id
             asm.PHA(),
             asm.AND(0x07, asm.IMM8),
             asm.TAX(),                      # x = esper bit index
