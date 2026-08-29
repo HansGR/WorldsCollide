@@ -48,23 +48,91 @@ class DomaWOB(Event):
         self.log_reward(self.reward)
 
     def race_reward_mod(self):
-        # one script for every kind: the party leader plays the attack
-        # scene (the esper/item staging), and the reward - recruit
-        # included - is granted at the exit.  *Race-only cosmetic*: a
-        # character reward no longer walks out ahead of the battle; they
-        # join at the end of the check
+        # one script for every kind, kind-branched at runtime: a
+        # character walks out of the doors with the sentries, offers
+        # party select, and then the leader battle completes the check
+        # (character_mod's sequence, slot-driven); an esper/item reward
+        # has the party leader play the scene and receives at the exit.
+        # the walk-out scene's only id-carrying bytes are two
+        # action-queue headers, so those two queues call kind-selected
+        # twins and everything between stays vanilla in place
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
-        self.cyan_npc_mod(field_entity.PARTY0)
+        self.controllable_npc_mod()
+
+        # initial position queue (0xb9d31: xx 84 d5 21 2c ff).  the
+        # walking entity is created here for a character reward - the
+        # screen stays dark until the unfade at CB/9E3D
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "PARTY"),
+            field.CreateRewardEntity(slot),
+            field.ShowRewardEntity(slot),
+            field.RewardEntityActRaw(slot, 0x84),
+            Read(0xb9d33, 0xb9d36),         # set position (33, 44)
+            field.Return(),
+            "PARTY",
+            field_entity.PARTY0,
+            Read(0xb9d32, 0xb9d36),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "doma wob race initial position queue")
+        initial_position = space.start_address
+        space = Reserve(0xb9d31, 0xb9d36, "doma initial character position", field.NOP())
+        space.write(
+            field.Call(initial_position),
+        )
+
+        # walk out of the opened doors (0xb9e4f: xx 03 c2 92 ff)
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "PARTY"),
+            field.RewardEntityActRaw(slot, 0x03),
+            Read(0xb9e51, 0xb9e53),         # speed normal, move down 5
+            field.Return(),
+            "PARTY",
+            field_entity.PARTY0,
+            Read(0xb9e50, 0xb9e53),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "doma wob race walk out queue")
+        walk_out = space.start_address
+        space = Reserve(0xb9e4f, 0xb9e53, "doma character appears", field.NOP())
+        space.write(
+            field.Call(walk_out),
+        )
+
+        # recruit point (0xb9e89, character_mod's recruit_character
+        # slot-driven): a character joins and party select runs before
+        # the leader battle, as in every other build
+        src = [
+            Read(0xb9e89, 0xb9e8c),         # copy call set party members' layering priority to 0
+            field.BranchIfRewardKindNot(slot, "character", "SCENE_DONE"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+
+            # put party where the character was
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.SetPosition(self.enter_event_x, self.enter_event_y + 7),
+            ),
+            field.EntityAct(field_entity.CAMERA, True,
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.Move(direction.DOWN, 7)
+            ),
+            field.FadeInScreen(),
+            "SCENE_DONE",
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "doma wob race recruit and select party")
+        recruit_reward = space.start_address
+        space = Reserve(0xb9e89, 0xb9e8c, "doma call set party members' layering priority to 0", field.NOP())
+        space.write(
+            field.Call(recruit_reward),
+        )
+
         self.enter_exit_functions_mod([
         ],
         [
-            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
-            field.AddCheckReward(slot),
-            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
-            field.Branch("REWARD_DONE"),
-            "ESPER_ITEM",
+            field.BranchIfRewardKind(slot, "character", "REWARD_DONE"),
             field.AddCheckReward(slot),
             field.PlaySoundEffect(141),
             field.receive_reward_dialog(slot),
@@ -190,6 +258,9 @@ class DomaWOB(Event):
         space = Reserve(0xb9e4f, 0xb9e4f, "doma character appears")
         space.write(initial_character)
 
+        self.controllable_npc_mod()
+
+    def controllable_npc_mod(self):
         # controllable character (pushed back if try to leave, nods at end)
         space = Reserve(0xb9e9c, 0xb9e9c, "doma character cannot leave")
         space.write(field_entity.PARTY0)

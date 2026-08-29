@@ -536,7 +536,17 @@ that Tier 1 never needed to exist:
   through `<reward>`; themes play through `PlayRewardTheme` where the
   vanilla site had room, and keep a kind-neutral vanilla song at the
   four 2-byte `StartSong` sites (Owzer, Fanatic's Tower, Lone Wolf,
-  Opera=Setzer's theme).
+  Opera=Setzer's theme).  Doma WOB originally shipped flattened (party
+  leader plays the attack scene, recruit at the exit) but was restored
+  to the vanilla sequence on playtest feedback: the scene's only
+  id-carrying bytes are two action-queue headers (initial position
+  0xb9d31, walk-out 0xb9e4f) plus the recruit call site (0xb9e89), and
+  each now `Call`s a runtime kind branch - a character is created,
+  walks out of the doors with the sentries (`RewardEntityActRaw` over
+  the vanilla action bytes), and joins with party select before the
+  Leader battle; esper/item rewards keep the party-leader staging and
+  receive at the exit.  Both arms verified in-emulator (Terra walk-out
+  + lineup + battle + exit; esper staging + grant + exit).
 - **Object looks selected at runtime (3f-f)**: the magicite-shard and
   item-object looks are part of scouting (peeking a check's kind is
   race-relevant), so they are NOT flattened away: a new `$EC` sub
