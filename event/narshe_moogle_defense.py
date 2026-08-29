@@ -154,6 +154,18 @@ class NarsheMoogleDefense(Event):
             field.InvokeBattle(boss_pack_id, check_game_over = False)
         )
 
+    def _race_chase_repaint_src(self, npc_id, label):
+        # character rewards wear the real character's sprite during the
+        # chase/collapsed scenes; esper/item rewards keep the baked decoy
+        # sprite (mirroring the non-race esper_item_mod, which also uses
+        # a random esper/item sprite for these npcs)
+        return [
+            field.BranchIfRewardKindNot(self.race_slot, "character", f"NO_REPAINT_{label}"),
+            field.SetRewardSprite(npc_id, self.race_slot),
+            field.SetRewardPalette(npc_id, self.race_slot),
+            f"NO_REPAINT_{label}",
+        ]
+
     def terra_npc_mod(self):
         # Add an NPC to replace Terra during the chase scene in Narshe South Caves (map 50). 
         # By doing so, it allows us to change her sprite without affecting a party Terra
@@ -296,6 +308,14 @@ class NarsheMoogleDefense(Event):
             field.SetEventBit(npc_bit.MARSHAL_NARSHE_WOB), # Show "Terra" in south caves and Marshal in battle
             field.SetEventBit(npc_bit.TERRA_COLLAPSED_NARSHE_WOB), # Show collapsed "Terra"
             field.LoadMap(0x32, direction.UP, True, 55, 11),
+        ]
+        if self.args.race:
+            # this load skips the map's entrance event, so the entrance
+            # repaint never runs for the chase scene - repaint the chased
+            # npc here, before the fade-in (caught in playtest: the decoy
+            # sprite played the whole chase)
+            src += self._race_chase_repaint_src(self.terra_npc_id, "CHASE")
+        src += [
             field.FadeInScreen(),
             field.WaitForFade(),
             field.Branch(0xCCA2EB) # 'Got her!' scene
@@ -324,8 +344,17 @@ class NarsheMoogleDefense(Event):
         space = Reserve(0xca2f0, 0xca2f2, "dialog: Got her", field.NOP()) # 'Got her' dialog
 
         # clear out Terra's fall & flashback, but show "Locke" (party leader) to allow for drop-down
+        race_repaint = []
+        if self.args.race:
+            # the vanilla load into map 0x33 just before this block
+            # (CC/A3F3, flags $40) also skips the entrance event, so the
+            # collapsed npc needs its repaint here, while the screen is
+            # still dark
+            race_repaint = self._race_chase_repaint_src(
+                self.COLLAPSED_TERRA_NPC_ID, "COLLAPSED")
         space = Reserve(0xca3f9, 0xca769, "Terra fall and flashback", field.NOP())
         space.write(
+            *race_repaint,
             field.ShowEntity(self.COLLAPSED_TERRA_NPC_ID),
             field.HideEntity(self.MARSHAL_NPC_ID),
             field.ShowEntity(field_entity.PARTY0),
@@ -537,7 +566,14 @@ class NarsheMoogleDefense(Event):
         ])
 
     def mod(self):
-        self.terra_npc_mod() 
+        if self.args.race:
+            # registered up front: the chase-scene repaints written by
+            # arvis_start_mod/event_start_mod need the slot before
+            # race_reward_mod runs
+            from obfuscation import rewards
+            self.race_slot = rewards.register_check(self.reward)
+
+        self.terra_npc_mod()
 
         if self.args.debug:
             self.marshal_test_mod()
@@ -566,8 +602,7 @@ class NarsheMoogleDefense(Event):
         # of the per-character restore commands - all id-carrying - are
         # needed; the esper/item receive happens after the fade-in, as a
         # normal check receive
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot
 
         sprite = self.characters.get_random_esper_item_sprite()
         for npc in (self.terra_npc, self.terra_collapsed_npc):

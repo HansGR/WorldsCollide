@@ -243,6 +243,9 @@ instead of silently overwriting.
   now guards the pattern).
 - The reward table entry order is `(kind, id)` — kind first.
 - If a scene *creates* its reward NPC (`$3D`), any runtime repaint
-  must happen after that create, not at map entrance.
+  must happen after that create, not at map entrance.  Likewise, a
+  scripted map load with the entrance-event flag off skips entrance
+  events entirely — a scene entered that way needs its repaint inline
+  after the load.
 - Scripts that reserve over vanilla bytes must re-emit the fades those
   bytes performed (battles end faded out).

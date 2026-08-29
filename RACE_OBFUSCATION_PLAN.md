@@ -561,7 +561,15 @@ that Tier 1 never needed to exist:
   and Tritoch CREATE their magicite npc mid-scene, which re-derives
   the look from the record and wipes an entrance repaint - their item
   repaint rides between the scene's create and show instead (caught in
-  playtest).
+  playtest).  The dual hazard: a scripted `LoadMap` whose
+  entrance-event flag (bit `$80` of the flags byte) is clear SKIPS the
+  entrance event, so an entrance repaint never runs for a scene entered
+  that way — Narshe Moogle Defense's chase scene loads map 50 (WC's
+  own `field.LoadMap`, flag defaulted off) and the collapsed scene's
+  vanilla load into map 0x33 (CC/A3F3, flags `$40`) both do; the
+  chased and collapsed npcs are now repainted inline right after each
+  load, while the screen is dark (caught in playtest: the decoy sprite
+  played the whole chase).
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text
