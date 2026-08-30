@@ -546,7 +546,22 @@ that Tier 1 never needed to exist:
   the vanilla action bytes), and joins with party select before the
   Leader battle; esper/item rewards keep the party-leader staging and
   receive at the exit.  Both arms verified in-emulator (Terra walk-out
-  + lineup + battle + exit; esper staging + grant + exit).
+  + lineup + battle + exit; esper staging + grant + exit).  Lone
+  Wolf's moogle-room follow-up (the npc that hands over whichever
+  reward was not taken on the cliff) was found unconverted in playtest:
+  its per-kind build-time arms leaked kind by script shape (and a raw
+  `RecruitCharacter <id>` for characters), and the extra slots its
+  esper/item arms registered made slot numbering seed-dependent - two
+  seeds could assign the same check different slots.  Now one
+  kind-branched script reusing the cliff check's slot, with the
+  moogle-room npc repainted at map entrance for a character (chained
+  under the lone-wolf swap handler so the swap still wins).  The
+  verifier gained a tripwire: the decoded reward-slot count must be
+  equal across its two seeds (confirmed to fail on the pre-fix code).
+  **Sharp edge**: never register a reward slot inside a kind- or
+  seed-conditional build path - every later check's slot shifts
+  between seeds, and any tooling that maps slots to checks must be
+  derived per seed, never assumed stable across seeds.
 - **Object looks selected at runtime (3f-f)**: the magicite-shard and
   item-object looks are part of scouting (peeking a check's kind is
   race-relevant), so they are NOT flattened away: a new `$EC` sub

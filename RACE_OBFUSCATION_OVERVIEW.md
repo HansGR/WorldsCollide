@@ -246,5 +246,10 @@ instead of silently overwriting.
   scripted map load with the entrance-event flag off skips entrance
   events entirely — a scene entered that way needs its repaint inline
   after the load.
+- Never register a reward slot inside a kind- or seed-conditional
+  build path: every later check's slot number shifts between seeds
+  (and the conditional script shape itself leaks the kind).  The
+  verifier checks that the two seeds it builds hold the same number
+  of reward slots.
 - Scripts that reserve over vanilla bytes must re-emit the fades those
   bytes performed (battles end faded out).

@@ -128,6 +128,7 @@ class LoneWolf(Event):
         # is two bytes, too tight for the slot-driven theme command)
         from obfuscation import rewards
         slot = rewards.register_check(self.reward1)
+        self.race_slot = slot
 
         self.mog_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.mog_npc.palette = self.characters.get_palette(self.mog_npc.sprite)
@@ -350,9 +351,52 @@ class LoneWolf(Event):
             field.Dialog(self.items.get_receive_dialog(item)),
         ])
 
+    def race_moogle_room_reward_mod(self):
+        # one script and one npc look for every kind of reward1 in the
+        # moogle room too - the follow-up npc that hands over whichever
+        # reward was not taken on the cliff.  the per-kind build-time
+        # arms below were the one script that still differed by kind,
+        # and the extra slots their esper/item grants registered made
+        # slot numbering seed-dependent (caught in playtest).  the
+        # entrance repaint chains onto the swap handler installed by
+        # moogle_room_entrance_event_mod, so the repaint runs first and
+        # the lone-wolf swap can still override it
+        slot = self.race_slot
+        self.race_repaint_npc_entrance(0x02c, self.mog_moogle_room_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.HideEntity(self.mog_moogle_room_npc_id),
+            field.ClearEventBit(npc_bit.MOG_MOOGLE_ROOM_WOR),
+            field.SetEventBit(event_bit.GOT_BOTH_REWARDS_LONE_WOLF),
+            field.RefreshEntities(),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            "ESPER_ITEM",
+            field.AddCheckReward(slot),
+            field.PlaySoundEffect(141),
+            field.receive_reward_dialog(slot),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.HideEntity(self.mog_moogle_room_npc_id),
+            field.ClearEventBit(npc_bit.MOG_MOOGLE_ROOM_WOR),
+            field.SetEventBit(event_bit.GOT_BOTH_REWARDS_LONE_WOLF),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "lone wolf moogle room race reward")
+        return space.start_address
+
     def moogle_room_reward_mod(self):
         receive_reward = field.RETURN
-        if self.reward1.type == RewardType.CHARACTER:
+        if self.args.race:
+            receive_reward = self.race_moogle_room_reward_mod()
+        elif self.reward1.type == RewardType.CHARACTER:
             receive_reward = self.moogle_room_character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
             receive_reward = self.moogle_room_esper_mod(self.reward1.id)

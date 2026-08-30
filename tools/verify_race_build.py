@@ -477,6 +477,29 @@ def main():
               f"race: {name} reward script differs between seeds beyond the "
               f"slot number - something kind- or id-dependent leaked in")
 
+    # slot numbering must not depend on the seed: a kind-conditional
+    # registration anywhere (a per-kind build-time arm that emits an
+    # extra grant or receive dialog for one kind) shifts every later
+    # check's slot between seeds.  unused table entries decode to 0xff,
+    # so the count of leading valid-kind entries is exact (caught in
+    # playtest: the lone wolf moogle room registered two extra slots
+    # when its reward was an esper or item)
+    def reward_slot_count(rom):
+        h = int.from_bytes(
+            rom[0x098c4 + (0x9e - 0x35) * 2:0x098c4 + (0x9e - 0x35) * 2 + 2],
+            "little")
+        hx = rom[h:h + 0x40]
+        i = hx.index(0xbf)
+        tb = rom_offset(int.from_bytes(hx[i + 1:i + 4], "little"))
+        pb = rom_offset(int.from_bytes(hx[i + 5:i + 8], "little"))
+        n = 0
+        while n < 0x100 and (rom[tb + n * 2] ^ rom[pb + n * 2]) in (0, 1, 2):
+            n += 1
+        return n
+    check(reward_slot_count(race) == reward_slot_count(raceb),
+          "race: reward slot count differs between seeds - a kind- or "
+          "seed-conditional registration is making slot numbering drift")
+
     # 11b. the slot -> X computation must clear b after its 16-bit ASL
     # (slots >= 0x80 set b = 1, and the vanilla handlers the reward code
     # jumps into transfer b in their TAX/TAY, spraying indexed writes) -
