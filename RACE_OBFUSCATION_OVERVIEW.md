@@ -113,10 +113,8 @@ cosmetic, all approved during development:
    vanilla/neutral song instead of the reward character's theme:
    Owzer's Mansion, Fanatic's Tower, Lone Wolf; the Opera House plays
    Setzer's theme for every reward.
-2. Mobliz (WOR) does not have the reward character fight Phunbaba
-   solo.
-3. Mt. Zozo's letter to Lola is unsigned for every reward.
-4. Trivia-level wording/pacing differences at a few checks (e.g. the
+2. Mt. Zozo's letter to Lola is unsigned for every reward.
+3. Trivia-level wording/pacing differences at a few checks (e.g. the
    Umaro carving uses one wording per reward kind selected at
    runtime).
 

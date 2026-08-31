@@ -62,10 +62,11 @@ class MoblizWOR(Event):
         # kind: the four terra npcs get the decoy sprite (repainted at
         # map load for a character), and the children's lines render the
         # reward's name - character, esper or item - through <reward> at
-        # display time.  *Race-only cosmetic*: a character reward no
-        # longer pre-joins the party for the phunbaba battle (the
-        # pre-join carried its id in level-averaging commands); they
-        # join right after it
+        # display time.  a character pre-joins the party for the
+        # phunbaba battle exactly as character_mod does, slot-driven:
+        # the grant recruits first (which also runs -sal level
+        # averaging, as every recruit does), then the party-size-guarded
+        # join and restores use the reward-entity commands
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
@@ -87,11 +88,33 @@ class MoblizWOR(Event):
         boss_pack_id = self.get_boss("Phunbaba 4")
 
         src = [
+            field.BranchIfRewardKindNot(slot, "character", "BATTLE"),
+
+            # a character joins before the battle (character_mod's
+            # pre-join, slot-driven).  recruiting first costs nothing
+            # visible and lets the shared recruit routine handle -sal
+            # level averaging; the join itself still only happens if
+            # bababreath left room, as in every other build
+            field.AddCheckReward(slot),
+            field.BranchIfPartySize(4, "BATTLE"),
+            field.CreateRewardEntity(slot),
+            field.AddRewardToParty(slot, 1),
+            field.RefreshEntities(),
+        ]
+        if self.args.start_average_level:
+            # the recruit above already averaged their level; refill like
+            # character_mod so they do not enter the fight hurt by it
+            src += [
+                field.RestoreRewardHp(slot, 0x7f),
+                field.RestoreRewardMp(slot, 0x7f),
+            ]
+        src += [
+            "BATTLE",
             field.InvokeBattle(boss_pack_id),
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
 
-            # the character scene (character_mod's script, slot-driven)
-            field.AddCheckReward(slot),
+            # the character scene (character_mod's script, slot-driven;
+            # already granted above)
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
             field.Branch(0xc502a),      # finish event, skip scene
 

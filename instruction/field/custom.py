@@ -963,7 +963,8 @@ REWARD_ENTITY_OPCODE = 0xec     # unused by vanilla, WC dev and the fork
 
 (SUB_CREATE, SUB_DELETE, SUB_SHOW, SUB_HIDE, SUB_WAIT, SUB_SPRITE,
  SUB_PALETTE, SUB_PARTY, SUB_PROPERTIES, SUB_NAME, SUB_THEME, SUB_ACT,
- SUB_LOAD_KIND, SUB_VEHICLE, SUB_SPLIT) = range(15)
+ SUB_LOAD_KIND, SUB_VEHICLE, SUB_SPLIT, SUB_RESTORE_HP,
+ SUB_RESTORE_MP) = range(17)
 
 _reward_entity_handler = None
 _character_palette_table = None
@@ -1064,6 +1065,8 @@ def reward_entity_opcode():
         "theme": 0xb780,        # $F0, advance 2
         "act": 0x9ba5,          # action queue, entered with A = entity
         "vehicle": 0x9cca,      # $44, advance 3
+        "hp": 0xae7b,           # $8B, advance 3
+        "mp": 0xaf3e,           # $8C, advance 3
     }
 
     # the sixteen-entry character id -> palette and -> theme song tables.
@@ -1155,6 +1158,20 @@ def reward_entity_opcode():
     # equals the character id at every reward site
     subs[SUB_PROPERTIES] = pair_sub("PROPERTIES", VANILLA["properties"])
     subs[SUB_NAME] = pair_sub("NAME", VANILLA["name"])
+
+    # $EC sub slot amount (4 bytes); vanilla $8B/$8C: character hp/mp
+    # (the pre-battle joins restore the joining character before they
+    # fight, matching the non-race scripts)
+    for sub, target in ((SUB_RESTORE_HP, VANILLA["hp"]),
+                        (SUB_RESTORE_MP, VANILLA["mp"])):
+        subs[sub] = [
+            *_decode_id_src(0xec),
+            asm.STA(0xeb, asm.DIR),
+            asm.LDA(0xed, asm.DIR),
+            asm.STA(0xec, asm.DIR),
+            *_bump_src(f"RESTORE_{sub}"),
+            asm.JMP(target, asm.ABS),
+        ]
 
     # $EC sub slot (3 bytes); vanilla $F0: song
     subs[SUB_THEME] = [
@@ -1312,6 +1329,15 @@ class PlayRewardTheme(_RewardEntityInstruction):
 class SetRewardVehicle(_RewardEntityInstruction):
     def __init__(self, slot, vehicle):
         super().__init__(SUB_VEHICLE, slot, vehicle)
+
+
+class RestoreRewardHp(_RewardEntityInstruction):
+    def __init__(self, slot, amount):
+        super().__init__(SUB_RESTORE_HP, slot, amount)
+
+class RestoreRewardMp(_RewardEntityInstruction):
+    def __init__(self, slot, amount):
+        super().__init__(SUB_RESTORE_MP, slot, amount)
 
 
 class SetSplitSprite(_RewardEntityInstruction):

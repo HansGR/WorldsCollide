@@ -344,7 +344,7 @@ def main():
     #     each converted event is ONE script for every kind, so its bytes
     #     cannot say what the check holds - not even the kind.
     REWARD_ENTITY_OPCODE = 0xec          # sync: instruction/field/custom.py
-    SUB_COUNT = 14
+    SUB_COUNT = 17
     SUB_ACT, SUB_LOAD_KIND = 11, 12
     check(field_handler(control, REWARD_ENTITY_OPCODE) == stub,
           "control: opcode 0xec is not the unused stub")

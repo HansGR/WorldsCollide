@@ -561,7 +561,20 @@ that Tier 1 never needed to exist:
   **Sharp edge**: never register a reward slot inside a kind- or
   seed-conditional build path - every later check's slot shifts
   between seeds, and any tooling that maps slots to checks must be
-  derived per seed, never assumed stable across seeds.
+  derived per seed, never assumed stable across seeds.  Mobliz WOR's
+  pre-join was also restored on playtest feedback: a character reward
+  again joins the party before the second phunbaba battle when
+  bababreath left room, exactly as character_mod stages it.  The
+  grant (which recruits, and under `-sal` runs the same level
+  averaging every recruit gets) moves before the battle, then
+  `CreateRewardEntity`/`AddRewardToParty` and two new `$EC` subs -
+  `RestoreRewardHp`/`RestoreRewardMp` (vanilla `$8B/$8C` behind the
+  usual decode) - stage the join with no id in the script.  Verified
+  in-emulator: bababreath removed a party member in the first battle
+  and the reward character (Gau) fought the second, then the
+  post-battle lineup and finish ran clean.  The one remaining Mobliz
+  cosmetic (no solo Phunbaba morph scene) matches non-race WC, so the
+  overview's race-only list no longer mentions Mobliz.
 - **Object looks selected at runtime (3f-f)**: the magicite-shard and
   item-object looks are part of scouting (peeking a check's kind is
   race-relevant), so they are NOT flattened away: a new `$EC` sub
