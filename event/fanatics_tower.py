@@ -15,6 +15,12 @@ class FanaticsTower(Event):
         self.strago_npc_id = 0x13
         self.strago_npc = self.maps.get_npc(0x16a, self.strago_npc_id)
 
+        if self.args.race:
+            # registered up front: relm_event_mod's race theme call needs
+            # the slot before race_reward_mod runs
+            from obfuscation import rewards
+            self.race_slot = rewards.register_check(self.reward1)
+
         self.gau_magic_mod()
         self.relm_event_mod()
         self.tower_top_mod()
@@ -117,7 +123,26 @@ class FanaticsTower(Event):
         space = Reserve(0xc528b, 0xc528f, "fanatics tower don't change party for relm", field.NOP())
         space = Reserve(0xc52aa, 0xc52cc, "fanatics tower relm runs up stairs you old fool", field.NOP())
         space = Reserve(0xc5303, 0xc5307, "fanatics tower relm looks up after strago jumps", field.NOP())
-        space = Reserve(0xc5316, 0xc5326, "fanatics tower relm and strago face each other", field.NOP())
+        if self.args.race:
+            # the two-byte StartSong site (0xc5327) rides into this nop
+            # sea so a call fits: a character reward starts their theme
+            # at runtime (as character_music_mod bakes it), esper/item
+            # keep vanilla's song
+            src = [
+                field.BranchIfRewardKindNot(self.race_slot, "character", "VANILLA_SONG"),
+                field.PlayRewardTheme(self.race_slot),
+                field.Return(),
+                "VANILLA_SONG",
+                Read(0xc5327, 0xc5328),     # vanilla song
+                field.Return(),
+            ]
+            theme_space = Write(Bank.CC, src, "fanatics tower race theme")
+            space = Reserve(0xc5316, 0xc5328, "fanatics tower relm and strago face each other", field.NOP())
+            space.write(
+                field.Call(theme_space.start_address),
+            )
+        else:
+            space = Reserve(0xc5316, 0xc5326, "fanatics tower relm and strago face each other", field.NOP())
         space = Reserve(0xc5329, 0xc5350, "fanatics tower various relm animations", field.NOP())
         space = Reserve(0xc5356, 0xc5389, "fanatics tower more relm animations and foul mouthed", field.NOP())
         space = Reserve(0xc5392, 0xc5395, "fanatics tower turn relm left", field.NOP())
@@ -154,11 +179,9 @@ class FanaticsTower(Event):
 
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
-        # wob).  *Race-only cosmetic*: the scene keeps vanilla's song
-        # (the StartSong site is two bytes, too tight for the slot-driven
-        # theme command)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward1)
+        # wob).  the scene song is handled by relm_event_mod's race
+        # theme call
+        slot = self.race_slot
 
         self.strago_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.strago_npc.palette = self.characters.get_palette(self.strago_npc.sprite)

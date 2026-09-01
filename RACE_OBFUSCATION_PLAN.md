@@ -533,10 +533,13 @@ that Tier 1 never needed to exist:
   Lone Wolf, Magitek Factory (reward 3), Floating Continent (ground +
   escape), Opera House, Narshe Moogle Defense, and the Veldt.  Bespoke
   dialog namings (Daryl inscription, Mobliz child lines) render
-  through `<reward>`; themes play through `PlayRewardTheme` where the
-  vanilla site had room, and keep a kind-neutral vanilla song at the
-  four 2-byte `StartSong` sites (Owzer, Fanatic's Tower, Lone Wolf,
-  Opera=Setzer's theme).  Doma WOB originally shipped flattened (party
+  through `<reward>`; themes play through `PlayRewardTheme`
+  everywhere.  The four 2-byte `StartSong` sites (Owzer, Fanatic's
+  Tower, Lone Wolf, Opera) originally kept a fixed song for want of
+  room; on playtest feedback each now rides its neighbouring bytes
+  into a 4-byte `Call` to a block that replays the displaced commands
+  and kind-branches the song at runtime - a character reward's theme,
+  or the vanilla/Setzer song the non-character builds bake.  Doma WOB originally shipped flattened (party
   leader plays the attack scene, recruit at the exit) but was restored
   to the vanilla sequence on playtest feedback: the scene's only
   id-carrying bytes are two action-queue headers (initial position

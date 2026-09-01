@@ -109,12 +109,8 @@ Almost nothing different — that was the bar.  Specifically:
 The complete list of *actual* gameplay-visible differences, all
 cosmetic, all approved during development:
 
-1. Four checks whose scenes only had room for a fixed song keep a
-   vanilla/neutral song instead of the reward character's theme:
-   Owzer's Mansion, Fanatic's Tower, Lone Wolf; the Opera House plays
-   Setzer's theme for every reward.
-2. Mt. Zozo's letter to Lola is unsigned for every reward.
-3. Trivia-level wording/pacing differences at a few checks (e.g. the
+1. Mt. Zozo's letter to Lola is unsigned for every reward.
+2. Trivia-level wording/pacing differences at a few checks (e.g. the
    Umaro carving uses one wording per reward kind selected at
    runtime).
 

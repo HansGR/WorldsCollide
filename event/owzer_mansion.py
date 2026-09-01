@@ -45,16 +45,35 @@ class OwzerMansion(Event):
 
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
-        # wob).  *Race-only cosmetic*: the post-battle song stays
-        # vanilla's for every kind - the two StartSong sites are two
-        # bytes each, too tight for the slot-driven theme command, and a
-        # fixed song leaks nothing
+        # wob)
         from obfuscation import rewards
         slot = rewards.register_check(self.reward)
 
         self.relm_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.relm_npc.palette = self.characters.get_palette(self.relm_npc.sprite)
         self.race_repaint_npc_entrance(0x0d0, self.relm_npc_id, slot)
+
+        # both two-byte StartSong sites ride with the volume-fade command
+        # after them, so a call fits: a character reward starts their
+        # theme at runtime (as character_music_mod bakes it), esper/item
+        # keep vanilla's song
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "VANILLA_SONG"),
+            field.PlayRewardTheme(slot),
+            field.Branch("SONG_DONE"),
+            "VANILLA_SONG",
+            Read(0xb4d1f, 0xb4d20),     # vanilla song
+            "SONG_DONE",
+            Read(0xb4d21, 0xb4d22),     # song volume fade
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "owzer mansion race theme")
+        theme_script = space.start_address
+        for site in (0xb4d1f, 0xb4cc6):
+            space = Reserve(site, site + 3, "owzer mansion play song", field.NOP())
+            space.write(
+                field.Call(theme_script),
+            )
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),

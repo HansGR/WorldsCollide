@@ -123,12 +123,30 @@ class LoneWolf(Event):
         # character.  both kinds play the vanilla lone-wolf-falls scene:
         # a character branch replays it from a relocated copy and then
         # recruits; the esper/item branch takes it in place and shows the
-        # receive dialog at the vanilla dialog site.  *Race-only
-        # cosmetic*: the scene keeps vanilla's song (the StartSong site
-        # is two bytes, too tight for the slot-driven theme command)
+        # receive dialog at the vanilla dialog site
         from obfuscation import rewards
         slot = rewards.register_check(self.reward1)
         self.race_slot = slot
+
+        # the scene song: a character reward's theme at runtime (as
+        # character_music_mod bakes it), vanilla's song otherwise.  the
+        # two-byte StartSong site rides with the SetEventBit before it
+        # so a call fits
+        src = [
+            Read(0xcd604, 0xcd605),     # displaced set event bit
+            field.BranchIfRewardKindNot(slot, "character", "VANILLA_SONG"),
+            field.PlayRewardTheme(slot),
+            field.Return(),
+            "VANILLA_SONG",
+            Read(0xcd606, 0xcd607),     # vanilla song
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "lone wolf race theme")
+        theme_script = space.start_address
+        space = Reserve(0xcd604, 0xcd607, "lone wolf play song", field.NOP())
+        space.write(
+            field.Call(theme_script),
+        )
 
         self.mog_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.mog_npc.palette = self.characters.get_palette(self.mog_npc.sprite)
