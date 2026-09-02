@@ -2205,9 +2205,9 @@ entrance.  Non-race builds are byte-identical to before the feature.
 
 | Resource | Race branch | Collision with this branch |
 |---|---|---|
-| Field opcodes | `$9E` grant, `$EC` umbrella, `$EE` reward dialog | **`$9E` = `SetYNPCGraphics` (also on the race branch — `-race` + `-y*` collide today); `$EC`/`$ED` = `SetupBranchRecruit`/`FinalizeBranchRecruit` (ruination).**  Vanilla-unused bytes free on *both* branches: `$E6 $EE $FC $FF`.  The review plans to fold `$EE` into a `$4B` operand bit (bit 13 is never set by any WC dialog id) and move the other two onto that free set before merge. |
-| Bank C0 | ~700 bytes of handlers + two 16-byte tables | C0 is the scarce bank; the review plans F0 handlers behind 4-byte C0 trampolines. |
-| Expanded ROM | `0x340000-0x347FFF` (tables + pads use ~16.5 KB) | Music randomizers / door rando use expanded space — the claim is `Reserve`d so overlaps fail loudly.  Planned shrink to ~20 KB. |
+| Field opcodes | `$E6` grant, `$FC` umbrella (the reward dialog is vanilla `$4B` with operand bit 13 set — a bit `$4B` masks away and no WC dialog id reaches) | **None.**  Chosen as the two vanilla-unused bytes free on both branches (the feature originally used `$9E`/`$EC`/`$EE`; `$9E` is `SetYNPCGraphics`, `$EC`/`$ED` the ruination recruit hooks).  `$EE`/`$FF` remain free everywhere. |
+| Bank C0 | 20 bytes: five 4-byte stubs (two opcode trampolines, the message-code entry, two `JSR/RTL` wrappers) | none — every handler runs in bank F0; the opcode table needs only C0 entry points. |
+| Expanded ROM | claim at `0x340000`, sized from its tables (~20 KB) | Music randomizers / door rando use expanded space — the claim is `Reserve`d so overlaps fail loudly. |
 | Dialog control codes | `$1C` `<reward>`, `$1D` `<reward2>` | none (vanilla-unused). |
 | Battle text `$12` sub-codes | 4 and 5 | none; relocates the 8 data bytes at C1/5EF8 into F0. |
 | Bank C1 | 16 bytes of JML/JSR stubs | none. |
