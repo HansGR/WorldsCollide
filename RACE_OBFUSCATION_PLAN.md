@@ -617,7 +617,14 @@ that Tier 1 never needed to exist:
   vanilla load into map 0x33 (CC/A3F3, flags `$40`) both do; the
   chased and collapsed npcs are now repainted inline right after each
   load, while the screen is dark (caught in playtest: the decoy sprite
-  played the whole chase).
+  played the whole chase).  Narshe Battle has the same shape: after the
+  party lineup, vanilla reloads the battlefield at CC/C673 with flags
+  `$40` and plays Kefka's arrival on that load, so the during-battle
+  reward npc (0x25) wore the decoy through the arrival scene and only
+  became the character at the second reload (CC/C850, flags `$C0`,
+  entrance event on).  The reserve right after the C673 load now calls
+  a block that repaints npc 0x25 before the refresh (caught in
+  playtest).
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text

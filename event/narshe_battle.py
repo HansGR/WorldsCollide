@@ -126,14 +126,33 @@ class NarsheBattle(Event):
             field.ClearEventBit(npc_bit.BANON_BEFORE_BATTLE_NARSHE_WOB),
         )
 
-        space = Reserve(0xcc679, 0xcc687, "narshe wob create characters for battle", field.NOP())
-        for npc_id in range(self.terra_npc_id, self.gau_npc_id + 1):
-            space.write(
-                field.DeleteEntity(npc_id),
-            )
-        space.write(
+        # CC/C673 reloads map 0x016 with the entrance event skipped (flags
+        # $40), then plays kefka's arrival on it; in race builds the
+        # entrance repaint therefore never runs for this load, so repaint
+        # the during-battle npc here before the refresh (the later reload at
+        # CC/C850 runs the entrance event and repaints on its own)
+        create_src = [field.DeleteEntity(npc_id)
+                      for npc_id in range(self.terra_npc_id, self.gau_npc_id + 1)]
+        create_src += [
             field.RefreshEntities(),
-        )
+        ]
+        space = Reserve(0xcc679, 0xcc687, "narshe wob create characters for battle", field.NOP())
+        if self.args.race:
+            slot = self.race_slot(self.reward)
+            repaint_space = Write(Bank.CC, [
+                field.BranchIfRewardKindNot(slot, "character", "NO_REPAINT"),
+                field.SetRewardSprite(self.banon_during_battle_npc_id, slot),
+                field.SetRewardPalette(self.banon_during_battle_npc_id, slot),
+                "NO_REPAINT",
+                *create_src,
+                field.Return(),
+            ], "narshe wob race repaint banon during battle npc after kefka arrival load")
+            space.write(
+                field.Call(repaint_space.start_address),
+                field.Branch(space.end_address + 1),
+            )
+        else:
+            space.write(*create_src)
 
         space = Reserve(0xcc690, 0xcc693, "narshe wob place party 3 on map", field.NOP())
 

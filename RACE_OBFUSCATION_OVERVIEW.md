@@ -251,7 +251,10 @@ future features fail the build loudly instead of silently overwriting.
   must happen after that create, not at map entrance.  Likewise, a
   scripted map load with the entrance-event flag off skips entrance
   events entirely — a scene entered that way needs its repaint inline
-  after the load.
+  after the load.  Two sites bit in playtest: Narshe Moogle Defense's
+  chase/collapsed scenes and Narshe Battle's Kefka-arrival reload
+  (CC/C673, flags `$40`; the later reload at CC/C850 runs the
+  entrance event, so only the arrival scene showed the decoy).
 - Never register a reward slot inside a kind- or seed-conditional
   build path: every later check's slot number shifts between seeds
   (and the conditional script shape itself leaks the kind).  The
