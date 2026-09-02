@@ -2226,11 +2226,20 @@ entrance.  Non-race builds are byte-identical to before the feature.
 - *Entrance-event flag*: a scripted `LoadMap` with flags bit `$80` clear
   skips the entrance event, so entrance repaints never run (same root
   cause as this branch's "Floating Continent Save-Room Return").  Repaint
-  inline after such loads.  Bit twice in playtest: Narshe Moogle
-  Defense (chase/collapsed loads) and Narshe Battle (CC/C673, flags
+  inline after such loads.  Bit three times in playtest: Narshe Moogle
+  Defense (chase/collapsed loads), Narshe Battle (CC/C673, flags
   `$40`, the reload that Kefka's arrival plays on; the second reload at
   CC/C850 has `$C0` and repaints, which is why the sprite "became"
-  the character when the battle event started).
+  the character when the battle event started), and Umaro's Cave
+  (the carving room 0x11B has no exits into it - only the fall from
+  0x119 at CC/D989, flags `$40`).  Finding them: scan the event banks
+  (file 0x0A0000-0x0EFFFF) for `6A/6B <map lo> <byte2 & 3 == map hi>`
+  and read the flags byte; a map with no exits in the short/long exit
+  tables is script-entered only.  Diagnosis trap: a debug-room warp
+  with `entrance_event=True` hides this bug class - warp with the flag
+  the real load uses.  Battle return does run the entrance event
+  (observed: the post-battle npc showed the repaint without any
+  scripted repaint).
 - *Re-emit fades*: reserving over vanilla bytes that fade the screen back
   in (post-battle `96 5C`) leaves the screen black.
 - *No kind-conditional slot registration*: `AddItem`/`AddEsper`/receive
