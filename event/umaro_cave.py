@@ -50,7 +50,8 @@ class UmaroCave(Event):
         # whatever the check holds, so nothing to read out of the rom,
         # and exactly what non-race esper/item builds show (the yeti
         # attacks you regardless of the reward).  a character reward
-        # repaints them at map load
+        # repaints them at map load (for the cave npc that covers the
+        # battle return; the attack scene itself is repainted below)
         self.race_repaint_npc_entrance(0x11b, self.umaro_cave_npc_id, slot)
         self.race_repaint_npc_entrance(0x015, self.umaro_wob_npc_id, slot)
 
@@ -105,6 +106,29 @@ class UmaroCave(Event):
         space = Reserve(0xcd709, 0xcd736, "narshe wor get esper from bone carving", field.NOP())
         space.write(
             field.Branch(yes_path),
+        )
+
+        # the carving room is only ever entered by the fall from map 0x119
+        # (CC/D989, a scripted load with the entrance-event flag off), so
+        # the entrance repaint above never runs before the attack scene
+        # and the cave npc stomped down as vanilla umaro.  repaint it
+        # between the scene's create (CC/D75B) and show instead.  the
+        # battle return does run the entrance event, which is why the
+        # post-battle scene already showed the character
+        src = [
+            Read(0xcd75b, 0xcd75c),         # create the cave npc
+            field.BranchIfRewardKindNot(slot, "character", "SHOW"),
+            field.SetRewardSprite(self.umaro_cave_npc_id, slot),
+            field.SetRewardPalette(self.umaro_cave_npc_id, slot),
+            "SHOW",
+            Read(0xcd75d, 0xcd765),         # position it, show it, refresh
+            field.Branch(0xcd766),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race attack scene npc look")
+        attack_look = space.start_address
+        space = Reserve(0xcd75b, 0xcd765, "narshe wor umaro attack create/show npc", field.NOP())
+        space.write(
+            field.Branch(attack_look),
         )
 
         # umaro's wob appearance plays only for a character reward

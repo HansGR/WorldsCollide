@@ -251,10 +251,17 @@ future features fail the build loudly instead of silently overwriting.
   must happen after that create, not at map entrance.  Likewise, a
   scripted map load with the entrance-event flag off skips entrance
   events entirely — a scene entered that way needs its repaint inline
-  after the load.  Two sites bit in playtest: Narshe Moogle Defense's
-  chase/collapsed scenes and Narshe Battle's Kefka-arrival reload
+  after the load.  Three sites bit in playtest: Narshe Moogle Defense's
+  chase/collapsed scenes, Narshe Battle's Kefka-arrival reload
   (CC/C673, flags `$40`; the later reload at CC/C850 runs the
-  entrance event, so only the arrival scene showed the decoy).
+  entrance event, so only the arrival scene showed the decoy), and
+  Umaro's Cave, whose carving room is only ever entered by the fall
+  from the room above (CC/D989, flags `$40`), so its entrance repaint
+  never ran before the attack scene — the cave npc is repainted
+  between the scene's create and show.  To find such loads, scan the
+  event banks for `6A/6B` with the target map id and check bit `$80`
+  of the flags byte, and check the map's exit tables: a room with no
+  exits into it is entered by script only.
 - Never register a reward slot inside a kind- or seed-conditional
   build path: every later check's slot number shifts between seeds
   (and the conditional script shape itself leaks the kind).  The

@@ -624,7 +624,16 @@ that Tier 1 never needed to exist:
   became the character at the second reload (CC/C850, flags `$C0`,
   entrance event on).  The reserve right after the C673 load now calls
   a block that repaints npc 0x25 before the refresh (caught in
-  playtest).
+  playtest).  Umaro's Cave once more: the carving room (map 0x11B) has
+  no exits into it at all - it is only entered by the fall from map
+  0x119 (CC/D989, flags `$40`) - so the entrance repaint of the cave
+  npc never ran before the attack scene and vanilla umaro stomped down
+  the stairs; the npc is now repainted between the scene's create
+  (CC/D75B) and show.  The entrance repaint stays because the battle
+  return does run the entrance event (the post-battle npc already
+  showed the character).  Note the diagnosis trap: a debug-room warp
+  with `entrance_event=True` cannot reproduce this class of bug -
+  warp the way the game enters the room (caught in playtest).
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text
