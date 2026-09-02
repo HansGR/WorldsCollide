@@ -275,21 +275,47 @@ def main():
     # (kept in sync with instruction/field/race.py by the checks below;
     # that module cannot be imported here - importing instruction.field runs
     # build-time rom writes that need an initialised Memory)
-    ADD_CHECK_REWARD_OPCODE, REWARD_DIALOG_OPCODE = 0x9e, 0xee
-    stub = field_handler(control, 0xed)          # an opcode nothing claims
-    for opcode in (ADD_CHECK_REWARD_OPCODE, REWARD_DIALOG_OPCODE):
+    ADD_CHECK_REWARD_OPCODE = 0xe6
+    REWARD_ENTITY_OPCODE = 0xfc
+    stub = field_handler(control, 0xff)          # an opcode nothing claims
+    F0_FILE = 0x300000                           # bank F0 as a rom offset
+
+    def f0_handler(rom, c0_entry):
+        """the opcode table points at a 4-byte bank-C0 trampoline (JML
+        long); return the rom offset of the bank-F0 handler it jumps to"""
+        check(rom[c0_entry] == 0x5c,
+              f"race: opcode entry 0x{c0_entry:04x} is not a JML trampoline")
+        target = rom_offset(int.from_bytes(rom[c0_entry + 1:c0_entry + 4], "little"))
+        check(F0_FILE <= target < F0_FILE + 0x10000,
+              f"race: handler behind 0x{c0_entry:04x} is not in bank F0")
+        return target
+
+    for opcode in (ADD_CHECK_REWARD_OPCODE, REWARD_ENTITY_OPCODE):
         check(field_handler(control, opcode) == stub,
               f"control: opcode {hex(opcode)} is not the unused stub "
               f"(is another feature already using it?)")
         check(field_handler(race, opcode) != stub,
               f"race: opcode {hex(opcode)} was not installed")
-    # exactly one grant command: a second one would separate the kinds
-    for opcode in (0x9f, 0xe6, 0x66, 0x67, 0x68):
+    # exactly the two: a second grant would separate the kinds, and the
+    # other two-branch-free bytes ($EE, $FF) stay free for others
+    for opcode in (0xee, 0xff, 0xed):
         check(field_handler(race, opcode) == stub,
-              f"race: opcode {hex(opcode)} is installed - a per-kind command "
-              f"would reveal which checks hold espers")
+              f"race: opcode {hex(opcode)} is installed - the feature claims "
+              f"only $E6 and $FC")
 
-    handler = field_handler(race, ADD_CHECK_REWARD_OPCODE)
+    # the reward dialog is vanilla's $4B with operand bit 13 set: the
+    # handler's first four bytes become a JML to a bank-F0 hook that
+    # tests the bit and otherwise replays them
+    DIALOG_HOOK = 0x0a4bc
+    check(control[DIALOG_HOOK:DIALOG_HOOK + 4] == b"\xc2\x20\xa5\xeb",
+          "control: $4B dialog handler does not start REP #$20 / LDA $EB")
+    hook = f0_handler(race, DIALOG_HOOK)
+    check(race[hook:hook + 7] == b"\xc2\x20\xa5\xeb\x29\x00\x20",
+          "race: $4B hook does not replay vanilla's prologue and test bit 13")
+    check(b"\x5c\xc0\xa4\xc0" in race[hook:hook + 16],
+          "race: $4B hook does not resume vanilla at C0/A4C0")
+
+    handler = f0_handler(race, field_handler(race, ADD_CHECK_REWARD_OPCODE))
     hb = race[handler:handler + 0x40]
     i = hb.index(0xbf)
     check(hb[i] == 0xbf and hb[i + 4] == 0x5f,
@@ -331,11 +357,12 @@ def main():
         check(race[offset] == 0xb2,
               f"race: auction chest swap missing at 0x{offset:05x} - the "
               f"reward kind would be visible by diffing against vanilla")
-    # and the announcements go through the reward dialog command
+    # and the announcements go through the reward dialog (a $4B whose
+    # operand has bit 13 set)
     for offset in (0xb5339, 0xb5a5e, 0xb51be, 0xb5921):
         check(control[offset] == 0x4b,
               f"control: auction announce at 0x{offset:05x} is not a Dialog")
-        check(race[offset] == REWARD_DIALOG_OPCODE,
+        check(race[offset] == 0x4b and race[offset + 2] & 0x20,
               f"race: auction announce at 0x{offset:05x} still names its reward")
 
     # 11. L3-C: character-at-check obfuscation (the three converted
@@ -343,19 +370,17 @@ def main():
     #     One umbrella opcode ($EC) carries every id-valued scene command;
     #     each converted event is ONE script for every kind, so its bytes
     #     cannot say what the check holds - not even the kind.
-    REWARD_ENTITY_OPCODE = 0xec          # sync: instruction/field/race.py
     SUB_COUNT = 17
     SUB_ACT, SUB_LOAD_KIND = 11, 12
-    check(field_handler(control, REWARD_ENTITY_OPCODE) == stub,
-          "control: opcode 0xec is not the unused stub")
-    dispatch = field_handler(race, REWARD_ENTITY_OPCODE)
-    check(dispatch != stub, "race: reward entity opcode 0xec not installed")
+    dispatch = f0_handler(race, field_handler(race, REWARD_ENTITY_OPCODE))
     db = race[dispatch:dispatch + 8]
     check(db[0] == 0x7b and db[1:3] == b"\xa5\xeb" and db[3] == 0x0a
           and db[4] == 0xaa and db[5] == 0x7c,
           "race: reward entity dispatch is not TDC/LDA $eb/ASL/TAX/JMP (t,X)")
-    sub_table = int.from_bytes(db[6:8], "little")
-    subs = [int.from_bytes(race[sub_table + 2 * i:sub_table + 2 * i + 2], "little")
+    # JMP (table,X) reads the pointer from the program bank: the table and
+    # the sub-handlers it points at are bank-F0 addresses
+    sub_table = F0_FILE + int.from_bytes(db[6:8], "little")
+    subs = [F0_FILE + int.from_bytes(race[sub_table + 2 * i:sub_table + 2 * i + 2], "little")
             for i in range(SUB_COUNT)]
     for i, at in enumerate(subs):
         check(race[at] == 0xa5 and race[at + 1] in (0xec, 0xed),
@@ -401,7 +426,7 @@ def main():
             elif out[i] == ADD_CHECK_REWARD_OPCODE:
                 slots.add(out[i + 1]); out[i + 1] = 0xaa
                 i += 2
-            elif out[i] == REWARD_DIALOG_OPCODE:
+            elif out[i] == 0x4b and out[i + 2] & 0x20:   # reward dialog
                 out[i + 1] = 0xaa
                 i += 3
             else:
@@ -421,7 +446,7 @@ def main():
 
     # daryl's inscription names the reward through the reward dialog
     check(control[0xa42f9] == 0x4b, "control: daryl inscription is not a dialog")
-    check(race[0xa42f9] == REWARD_DIALOG_OPCODE,
+    check(race[0xa42f9] == 0x4b and race[0xa42f9 + 2] & 0x20,
           "race: daryl inscription still names its reward")
 
     # mt kolts: the relocated scene's eight reward queues carry vanilla's
@@ -485,9 +510,7 @@ def main():
     # playtest: the lone wolf moogle room registered two extra slots
     # when its reward was an esper or item)
     def reward_slot_count(rom):
-        h = int.from_bytes(
-            rom[0x098c4 + (0x9e - 0x35) * 2:0x098c4 + (0x9e - 0x35) * 2 + 2],
-            "little")
+        h = f0_handler(rom, field_handler(rom, ADD_CHECK_REWARD_OPCODE))
         hx = rom[h:h + 0x40]
         i = hx.index(0xbf)
         tb = rom_offset(int.from_bytes(hx[i + 1:i + 4], "little"))
@@ -503,13 +526,19 @@ def main():
     # 11b. the slot -> X computation must clear b after its 16-bit ASL
     # (slots >= 0x80 set b = 1, and the vanilla handlers the reward code
     # jumps into transfer b in their TAX/TAY, spraying indexed writes) -
-    # check the $9E grant handler carries the TAX/SEP/TDC sequence
-    grant_handler = int.from_bytes(
-        race[0x098c4 + (0x9e - 0x35) * 2:0x098c4 + (0x9e - 0x35) * 2 + 2],
-        "little")
+    # check the $E6 grant handler carries the TAX/SEP/TDC sequence
+    grant_handler = f0_handler(race, field_handler(race, ADD_CHECK_REWARD_OPCODE))
     check(bytes([0xaa, 0xe2, 0x20, 0x7b]) in race[grant_handler:grant_handler + 24],
-          "race: the $9E grant handler does not clear b after computing "
+          "race: the $E6 grant handler does not clear b after computing "
           "the slot index - slots >= 0x80 would corrupt the grant")
+
+    # the bank-C0 footprint is the five 4-byte stubs: two opcode
+    # trampolines, the name-code entry, two JSR/RTL wrappers.  the
+    # name-code chain end at C0/844B must JMP to a trampoline
+    NAME_HOOK = 0x0844b
+    check(race[NAME_HOOK] == 0x4c, "race: name code hook at C0/844B is not a JMP")
+    name_entry = int.from_bytes(race[NAME_HOOK + 1:NAME_HOOK + 3], "little")
+    f0_handler(race, name_entry)
 
     # 12. the veldt's battle-side hook: battle text sub-codes 4/5 render the
     # in-battle reward dialog from the masked table at runtime, so the baked

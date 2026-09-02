@@ -23,7 +23,12 @@ not fixed across race ROMs.
 import obfuscation
 
 CLAIM_START = 0x340000   # ROM offset (SNES $F4:0000)
-CLAIM_END   = 0x347fff   # 32 KB claimed; L1 tables + L2 pads use ~17 KB
+# the claim is sized from its contents: every table plus an equal-size
+# pad, plus 4 KB of slack that only serves to randomise each table's
+# offset per seed (enough that no two seeds share a layout - the defeat
+# of fixed-offset tools does not get stronger with more).  CLAIM_END is
+# derived below TABLE_SIZES.
+CLAIM_SLACK = 0x1000
 
 # name -> table size in bytes (vanilla sizes; these do not change).
 # every table also gets an equal-size "<name>_pad" region holding the
@@ -51,6 +56,8 @@ TABLE_SIZES = {
     # not just for the bespoke ones
     "reward_dialogs": 0x300,
 }
+
+CLAIM_END = CLAIM_START + 2 * sum(TABLE_SIZES.values()) + CLAIM_SLACK - 1
 
 _layout = None
 

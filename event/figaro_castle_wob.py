@@ -56,24 +56,12 @@ class FigaroCastleWOB(Event):
         # exactly as in a normal build.
         slot = self.race_slot(self.reward)
 
-        self.edgar_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.edgar_npc.palette = self.characters.get_palette(self.edgar_npc.sprite)
-
-        src = [
-            field.BranchIfRewardKindNot(slot, "character", "NPC_DONE"),
-            field.UpdateRewardNpc(self.edgar_npc_id, slot),
-            "NPC_DONE",
-        ]
+        # the gate (if any) goes on first so the repaint chains ahead of
+        # it: repaint, then hide edgar if the gate character is missing -
+        # the same order the other builds see
         if self.args.character_gating:
-            src += [
-                field.ReturnIfEventBitSet(event_bit.character_recruited(self.character_gate())),
-                field.HideEntity(self.edgar_npc_id),
-            ]
-        src += [
-            field.Return(),
-        ]
-        space = Write(Bank.CA, src, "figaro castle wob race entrance")
-        self.maps.set_entrance_event(0x03a, space.start_address - EVENT_CODE_START)
+            self.add_gating_condition()
+        self.race_decoy_npc(0x03a, self.edgar_npc_id, slot)
 
         src = [
             field.SetEventBit(event_bit.NAMED_EDGAR),

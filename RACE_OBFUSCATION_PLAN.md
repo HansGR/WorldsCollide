@@ -1,7 +1,14 @@
 # Race ROM Obfuscation — Design Plan
 
-*Status: Phase 0 implemented on `feature/race-obfuscation` (2026-08).
-Later phases are proposals.*
+*Status: L1-L3 implemented and playtested on `feature/race-obfuscation`
+(2026-08/09); this file is the design history.  The current state of
+the feature - what it claims, what players see, how to convert a check
+- is `RACE_OBFUSCATION_OVERVIEW.md`; the post-playtest consolidation
+(opcodes `$E6`/`$FC`, the `$4B` bit-13 reward dialog, handlers in bank
+F0 behind 20 bytes of C0, the self-sized claim) is
+`RACE_OBFUSCATION_REVIEW.md`.  Opcode numbers quoted below (`$9E`,
+`$EC`, `$EE`) are the ones the phases were built with; see the review
+for why they moved.*
 
 Goal: make race seeds resistant to spoiler extraction — tools or scripts
 that read the ROM file and reveal chest contents, check rewards, shop

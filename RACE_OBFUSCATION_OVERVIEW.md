@@ -119,23 +119,31 @@ cosmetic, all approved during development:
 For anyone planning future WC features — these are now taken (race
 builds only, except where noted):
 
-- **Field event opcodes `$9E`, `$EC`, `$EE`** (previously unused by
-  vanilla, WC, and the fork).  `$9E` grants a reward from a slot,
-  `$EE` shows a reward-naming dialog, and `$EC` is an umbrella command
-  with 15 sub-commands covering everything a check scene does to a
-  reward character (create/show/hide, sprite, palette, name, theme,
-  party, action queues, a runtime kind-branch, and the special
-  magicite/item-object look).  `$ED`, `$FC`, `$FF` remain free.
+- **Field event opcodes `$E6` and `$FC`** — the two of vanilla's 21
+  unused opcodes that are free on both this branch and
+  `door_rando_ruin_rewrite` (`$9E` is the Y-NPC command, `$EC`/`$ED`
+  the ruination recruit hooks there).  `$E6` grants a reward from a
+  slot; `$FC` is an umbrella command with 17 sub-commands covering
+  everything a check scene does to a reward character (create/show/
+  hide, sprite, palette, name, theme, party, action queues, HP/MP
+  refills, a runtime kind-branch, and the special magicite/item-object
+  look).  The reward-naming dialog needs no opcode: it is vanilla's
+  `$4B` dialog with bit 13 of its operand set — a bit vanilla masks
+  away and no WC dialog id reaches — claimed by a 4-byte hook at the
+  head of the `$4B` handler.  `$EE` and `$FF` remain free.
 - **Dialog control codes `$1C`/`$1D`** repurposed as runtime
   reward-name substitutions in dialog text.
 - **Battle-text substitution sub-codes 4 and 5** (of the `$12`
   substitution opcode), freed by relocating a small data block the
   battle text engine kept next to its dispatch table.
-- **ROM space**: a 32 KB claim at file `0x340000–0x347FFF` (expanded
-  area) for the relocated tables and their masks; handler code in the
-  usual WC free space in banks C0/C2/F0; 16 bytes of bank C1's small
-  free pool; event-script space in CA–CC for the rewritten check
-  scenes.
+- **ROM space**: a claim at file `0x340000` in the expanded area,
+  sized from its contents (the relocated tables plus their masks,
+  16.5 KB, plus 4 KB of slack that randomises placement — about 20 KB
+  in all); handler code in expanded bank F0; **20 bytes of bank C0**
+  (five 4-byte entry stubs — bank C0 is WC's scarcest space, so the
+  handlers themselves do not live there); the Veldt's battle-side
+  logic in bank C2; 16 bytes of bank C1's small free pool;
+  event-script space in CA–CC for the rewritten check scenes.
 - **RAM/flags**: one scratch byte (`$0584`, next to vanilla's dialog
   scratch) holding "the reward slot being processed"; WC's
   multipurpose event bit 0 as the runtime kind-branch flag; existing
@@ -181,12 +189,13 @@ there is no performance or hardware-compatibility impact.
 
 **Layer 3 — check-reward indirection.**  All ~60 check rewards live as
 `(kind, id)` pairs in one masked reward table; scripts reference them
-by slot number only.  The `$9E` opcode decodes a slot and dispatches:
+by slot number only.  The `$E6` opcode decodes a slot and dispatches:
 item → vanilla add-item, esper → vanilla add-esper, character → WC's
-recruit routine.  The `$EE` opcode shows the right receive wording for
+recruit routine.  The reward dialog (a `$4B` with operand bit 13 set)
+shows the right receive wording for
 the decoded kind, and dialog codes `$1C`/`$1D` copy the decoded
 reward's name (item name from ROM, esper name from ROM, character name
-from save RAM so renames render) into the text as it draws.  The `$EC`
+from save RAM so renames render) into the text as it draws.  The `$FC`
 umbrella lets one script perform every character-scene action against
 "the reward of slot N" without naming a character: its sub-commands
 decode the id and jump into the corresponding vanilla handler with the
@@ -202,7 +211,7 @@ entrance event repaints it: character rewards get the real character
 sprite and palette decoded from the table; esper rewards get the
 magicite shard; item rewards get the item object.  The shard/object
 looks need one state byte the map loader normally derives from a
-record flag, so an `$EC` sub-command pokes the equivalent state into
+record flag, so an `$FC` sub-command pokes the equivalent state into
 the live object.  Two checks (Doom Gaze, Tritoch) create their object
 mid-scene rather than at map load, which resets it to the record's
 look; their repaint runs between the scene's create and show commands
@@ -218,14 +227,17 @@ engine's own renderer.  The wild creature's sprite loader and the
 recruit routine similarly decode kind and id at runtime; a character
 joins the party through the same vanilla code a character build uses.
 
-**Where code lives.**  Field-side handlers and the two plaintext
-lookup tables sit in WC's normal bank C0 free space; the Veldt's
-battle-side logic in bank C2; larger relocated handlers and the battle
-dialog renderers in expanded bank F0, entered and exited through tiny
-stubs in bank C1 (the battle program's bank, whose free space is
-scarce).  All allocation goes through WC's existing managed free-space
-system, so conflicts with future features fail the build loudly
-instead of silently overwriting.
+**Where code lives.**  Every field-side handler, the two plaintext
+lookup tables and the umbrella's dispatch table live in expanded bank
+F0; bank C0 holds only five 4-byte entry stubs (two opcode trampolines,
+the message-code entry, and JSR/RTL wrappers for the two vanilla
+subroutines the handlers call), because field opcodes dispatch through
+16-bit bank-C0 pointers and C0 is the bank every WC feature competes
+for.  The Veldt's battle-side logic is in bank C2, with the battle
+dialog renderers in F0 behind tiny stubs in bank C1 (the battle
+program's bank, whose free space is scarce).  All allocation goes
+through WC's existing managed free-space system, so conflicts with
+future features fail the build loudly instead of silently overwriting.
 
 **Known sharp edges (for future developers).**
 

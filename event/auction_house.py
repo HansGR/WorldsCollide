@@ -147,9 +147,13 @@ class AuctionHouse(Event):
 
         return '<line>' + (' ' * space_count) + shown + '<page><line>Who\'ll give me ' + str(start_price) + ' GP?<end>'
 
-    def announce_dialog_mod(self, start_addr, end_addr, space_description, dialog_id, reward = None):
+    def announce_dialog_mod(self, start_addr, end_addr, space_description, dialog_id, reward = None, slot = None):
         space = Reserve(start_addr, end_addr, space_description, field.NOP())
-        if reward is None:
+        if slot is not None:
+            space.write(
+                field.reward_slot_dialog(slot, dialog_id),
+            )
+        elif reward is None:
             space.write(
                 field.Dialog(dialog_id),
             )
@@ -159,19 +163,52 @@ class AuctionHouse(Event):
                 field.reward_dialog(kind, value, dialog_id),
             )
 
-    def reward1_announce_dialog_mod(self, reward_name, item, reward = None):
+    def reward1_announce_dialog_mod(self, reward_name, item, reward = None, slot = None):
         announce_dialog = self.get_reward_announce_dialog(reward_name, self.reward1_start_price, item, reward)
         self.dialogs.set_text(self.reward1_announce_dialog_id, announce_dialog)
 
-        self.announce_dialog_mod(0xb5339, 0xb533b, "update announce reward1 dialog in auction", self.reward1_announce_dialog_id, reward)
-        self.announce_dialog_mod(0xb5a5e, 0xb5a60, "update announce reward1 dialog in auction in wor", self.reward1_announce_dialog_id, reward)
+        self.announce_dialog_mod(0xb5339, 0xb533b, "update announce reward1 dialog in auction", self.reward1_announce_dialog_id, reward, slot)
+        self.announce_dialog_mod(0xb5a5e, 0xb5a60, "update announce reward1 dialog in auction in wor", self.reward1_announce_dialog_id, reward, slot)
 
-    def reward2_announce_dialog_mod(self, reward_name, item, reward = None):
+    def reward2_announce_dialog_mod(self, reward_name, item, reward = None, slot = None):
         announce_dialog = self.get_reward_announce_dialog(reward_name, self.reward2_start_price, item, reward)
         self.dialogs.set_text(self.reward2_announce_dialog_id, announce_dialog)
 
-        self.announce_dialog_mod(0xb51be, 0xb51c0, "update announce reward2 dialog in auction", self.reward2_announce_dialog_id, reward)
-        self.announce_dialog_mod(0xb5921, 0xb5923, "update announce reward2 dialog in auction in wor", self.reward2_announce_dialog_id, reward)
+        self.announce_dialog_mod(0xb51be, 0xb51c0, "update announce reward2 dialog in auction", self.reward2_announce_dialog_id, reward, slot)
+        self.announce_dialog_mod(0xb5921, 0xb5923, "update announce reward2 dialog in auction in wor", self.reward2_announce_dialog_id, reward, slot)
+
+    def receive_slot_mod(self, start_addr, end_addr, space_description, slot, event_bit_to_set):
+        # race builds: the receive for a pre-registered slot (grant +
+        # receive dialog, no chime - as receive_esper_mod/receive_check_item_mod)
+        src = [
+            field.AddCheckReward(slot),
+            field.receive_reward_dialog(slot),
+            field.SetEventBit(event_bit.WON_AN_AUCTION),
+            field.SetEventBit(event_bit_to_set),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, space_description)
+        receive = space.start_address
+
+        space = Reserve(start_addr, end_addr, "call " + space_description, field.NOP())
+        space.write(
+            field.Call(receive),
+        )
+
+    def race_reward_mod(self, reward, name, item, chest_mod, announce_mod, receive_sites, event_bit_to_set):
+        # race builds: ONE slot per auction reward, shared by both
+        # announcements and both receive sites (wob/wor) - the per-site
+        # AddEsper/AddItem/receive-dialog forms would each register their
+        # own slot, six per reward - and every reward presented in a
+        # chest, so an esper auction and an item auction compile alike
+        from obfuscation import rewards
+        kind, value = reward
+        slot = rewards.register(kind, value)
+        chest_mod()
+        announce_mod(name, item, reward, slot)
+        for start_addr, end_addr, description in receive_sites:
+            self.receive_slot_mod(start_addr, end_addr, description, slot, event_bit_to_set)
 
     def show_chest_mod(self, start_addr, end_addr, space_description):
         space = Reserve(start_addr, end_addr, space_description, field.NOP())
@@ -256,15 +293,18 @@ class AuctionHouse(Event):
             field.Call(receive_item),
         )
 
+    REWARD1_RECEIVE_SITES = ((0xb5452, 0xb5456, "update reward1 received in auction"),
+                             (0xb5b77, 0xb5b7b, "update reward1 received in auction in wor"))
+    REWARD2_RECEIVE_SITES = ((0xb52c9, 0xb52cd, "update reward2 received in auction"),
+                             (0xb5a2c, 0xb5a30, "update reward2 received in auction in wor"))
+
     def esper1_mod(self, esper):
         esper_name = self.espers.get_name(esper)
 
-        # race builds present every auction reward in a chest.  the swap is
-        # otherwise made only for items, which would say plainly - by simply
-        # diffing this event against vanilla - that this auction holds an
-        # item rather than an esper
         if self.args.race:
-            self.chest1_mod()
+            return self.race_reward_mod(("esper", esper), esper_name, False,
+                                        self.chest1_mod, self.reward1_announce_dialog_mod,
+                                        self.REWARD1_RECEIVE_SITES, event_bit.AUCTION_BOUGHT_ESPER1)
 
         # update esper announced dialog
         self.reward1_announce_dialog_mod(esper_name, False, ("esper", esper))
@@ -275,6 +315,11 @@ class AuctionHouse(Event):
 
     def item1_mod(self, item):
         item_name = self.items.get_name(item)
+
+        if self.args.race:
+            return self.race_reward_mod(("item", item), item_name, True,
+                                        self.chest1_mod, self.reward1_announce_dialog_mod,
+                                        self.REWARD1_RECEIVE_SITES, event_bit.AUCTION_BOUGHT_ESPER1)
 
         # change magicite to a chest
         self.chest1_mod()
@@ -290,7 +335,9 @@ class AuctionHouse(Event):
         esper_name = self.espers.get_name(esper)
 
         if self.args.race:
-            self.chest2_mod()       # see esper1_mod
+            return self.race_reward_mod(("esper", esper), esper_name, False,
+                                        self.chest2_mod, self.reward2_announce_dialog_mod,
+                                        self.REWARD2_RECEIVE_SITES, event_bit.AUCTION_BOUGHT_ESPER2)
 
         # update esper announced dialog
         self.reward2_announce_dialog_mod(esper_name, False, ("esper", esper))
@@ -301,6 +348,11 @@ class AuctionHouse(Event):
 
     def item2_mod(self, item):
         item_name = self.items.get_name(item)
+
+        if self.args.race:
+            return self.race_reward_mod(("item", item), item_name, True,
+                                        self.chest2_mod, self.reward2_announce_dialog_mod,
+                                        self.REWARD2_RECEIVE_SITES, event_bit.AUCTION_BOUGHT_ESPER2)
 
         # change magicite to a chest
         self.chest2_mod()

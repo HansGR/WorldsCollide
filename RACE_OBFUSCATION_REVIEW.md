@@ -6,7 +6,18 @@ more transparent, and reduce what the feature claims from WC's shared
 resources — without making anything simpler than it can be.  Each item
 states its effort, its risk, and what re-verification it needs.*
 
-**Status.**  The byte-neutral items are applied (§2.1 one slot-index
+**Status.**  Everything in this review is now applied.  Batch 2 (the
+resource reductions, landed after the first playtest pass): the reward
+dialog is vanilla's `$4B` with operand bit 13 (`$EE` freed); the grant
+and umbrella moved to `$E6`/`$FC`, the two-branch-free bytes; every
+handler runs in bank F0 behind five 4-byte C0 stubs (~660 bytes of C0
+returned); the claim is sized from its tables (~20 KB); Figaro WOB
+uses the shared entrance repaint; the auction house registers one slot
+per reward instead of six; `_bump_src` is one shared F0 routine.
+Verified by the verifier and in-emulator (character and esper/item
+paths through the new handlers), then re-playtested.
+
+The byte-neutral items were applied first (§2.1 one slot-index
 routine, §2.3 `obfuscation.reset_build()`, §2.4 event-layer helpers and
 the Whelk entrance, §2.5 `instruction/field/race.py` +
 `obfuscation/veldt_battle.py`, the slot-map tool and the developer

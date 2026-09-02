@@ -1,11 +1,21 @@
 """Race builds: the check-reward command family (L3 / L3-C).
 
 Everything a converted check's script needs to grant, name, and stage a
-reward without the reward appearing in the rom: the $9E grant, the $EE
-reward dialog, the <reward>/<reward2> message codes, and the $EC
-reward-entity umbrella.  See RACE_OBFUSCATION_PLAN.md for the design and
-obfuscation/rewards.py for the table the slots index.  Non-race builds
-never emit any of it.
+reward without the reward appearing in the rom: the $E6 grant, the
+reward dialog (vanilla's $4B with operand bit 13 set), the
+<reward>/<reward2> message codes, and the $FC reward-entity umbrella.
+See RACE_OBFUSCATION_PLAN.md for the design and obfuscation/rewards.py
+for the table the slots index.  Non-race builds never emit any of it.
+
+Placement: field opcodes dispatch through 16-bit bank-C0 pointers, and
+the message engine's control-code chain is bank-C0 code, so each entry
+point must be in C0 - but only the entry point.  Every handler lives in
+bank F0 behind a 4-byte JML trampoline and re-enters vanilla's C0 code
+with JML; the two RTS-returning vanilla subroutines the handlers call
+get 4-byte JSR/RTL wrappers in C0 so F0 code can JSL them.  The whole
+bank-C0 footprint is those five 4-byte stubs.  The handlers' addressing
+(direct page $EB-$ED, bank-0 absolute) is unchanged by the move: JML
+does not touch the data bank.
 """
 from memory.space import Bank, START_ADDRESS_SNES, Reserve, Write, Read
 from instruction.event import _Instruction
@@ -14,6 +24,27 @@ import instruction.c0 as c0
 import args
 
 from instruction.field.custom import _set_opcode_address
+
+C0_SNES = 0xc00000
+
+
+def _c0(address16):
+    """SNES address of a bank-C0 routine, for JML from bank F0."""
+    return C0_SNES + address16
+
+
+def _trampoline(handler_snes, description):
+    """4-byte bank-C0 entry point JMLing to a bank-F0 handler; returns
+    its bank-C0 address (what the opcode table and hooks point at)."""
+    space = Write(Bank.C0, [asm.JMP(handler_snes, asm.LNG)], description)
+    return space.start_address
+
+
+def _c0_wrapper(routine16, description):
+    """`JSR routine : RTL` in bank C0, so bank-F0 code can JSL a vanilla
+    subroutine that returns with RTS.  Returns the SNES address to JSL."""
+    space = Write(Bank.C0, [asm.JSR(routine16, asm.ABS), asm.RTL()], description)
+    return START_ADDRESS_SNES + space.start_address
 
 # --- L3: check rewards -------------------------------------------------
 #
@@ -137,7 +168,7 @@ def _copy_name_src(tag, names_snes, stride, length, wram = False):
         asm.PHA(),
         asm.PLB(),                          # data bank back to $00
         asm.STZ(0xcf, asm.DIR),
-        asm.JMP(0x8263, asm.ABS),           # back to the message engine
+        asm.JMP(_c0(0x8263), asm.LNG),      # back to the message engine
     ]
 
 def name_codes():
@@ -154,7 +185,7 @@ def name_codes():
         asm.BEQ("REWARD2"),
         asm.SEC(),                          # displaced from C0/844B
         asm.SBC(0x1b, asm.IMM8),
-        asm.JMP(CHAIN_RESUME, asm.ABS),
+        asm.JMP(_c0(CHAIN_RESUME), asm.LNG),
 
         # entry state at every control code: A 8-bit, X/Y 16-bit,
         # direct page $00 = current offset into the text buffer
@@ -190,15 +221,22 @@ def name_codes():
                         CHARACTER_NAME_STRIDE, CHARACTER_NAME_LENGTH,
                         wram = True),
     ]
-    space = Write(Bank.C0, src, "race: <reward>/<reward2> message control codes")
-    _name_codes = space.start_address
+    space = Write(Bank.F0, src, "race: <reward>/<reward2> message control codes")
+    _name_codes = space.start_address_snes
 
+    # the chain end is a 3-byte site, so it JMPs to a C0 trampoline
+    entry = _trampoline(_name_codes, "race: name codes entry")
     space = Reserve(CHAIN_END, CHAIN_END + 2, "race: reward name control code hook")
-    space.write(asm.JMP(_name_codes, asm.ABS))
+    space.write(asm.JMP(entry, asm.ABS))
     return _name_codes
 
 
-ADD_CHECK_REWARD_OPCODE = 0x9e  # unused by vanilla, WC dev and the fork
+# vanilla leaves 21 field opcodes unused; of those, only $E6, $EE, $FC and
+# $FF are free on both this branch and door_rando_ruin_rewrite ($9E is the
+# Y-NPC graphics command, $EC/$ED the ruination recruit hooks, $66-$68 and
+# $69/$6D-$6F/$76/$83/$9F/$A3-$A5/$E5 other WC commands).  The feature
+# claims two: $E6 (grant) and $FC (reward-entity umbrella).
+ADD_CHECK_REWARD_OPCODE = 0xe6
 _add_check_reward_handler = None
 
 def add_check_reward_opcode():
@@ -213,6 +251,7 @@ def add_check_reward_opcode():
     global _add_check_reward_handler
     if _add_check_reward_handler is None:
         name_codes()
+        add_to_inventory = _c0_wrapper(0xacfc, "race: add-to-inventory wrapper")
 
         src = [
             asm.LDA(0xeb, asm.DIR),         # slot (command operand)
@@ -226,9 +265,9 @@ def add_check_reward_opcode():
             asm.STA(0x1a, asm.DIR),         # the add-inventory routine
             asm.STA(0x0583, asm.ABS),       # vanilla's <item> index, as the
                                             # chest path at C0/4C86 sets it
-            asm.JSR(0xacfc, asm.ABS),       # vanilla add-to-inventory
+            asm.JSL(add_to_inventory),      # vanilla add-to-inventory (C0/ACFC)
             asm.LDA(0x02, asm.IMM8),        # command size (opcode + slot)
-            asm.JMP(0x9b5c, asm.ABS),       # next command
+            asm.JMP(_c0(0x9b5c), asm.LNG),  # next command
 
             "NOT_ITEM",
             asm.CMP(0x01, asm.IMM8),
@@ -238,17 +277,18 @@ def add_check_reward_opcode():
             asm.CLC(),
             asm.ADC(0x36, asm.IMM8),        # the form the $86 handler reads
             asm.STA(0xeb, asm.DIR),
-            asm.JMP(0xadb8, asm.ABS),       # vanilla AddEsper (grant + next)
+            asm.JMP(_c0(0xadb8), asm.LNG),  # vanilla AddEsper (grant + next)
 
             "GRANT_CHARACTER",
             *_decode_slot_src(1),           # character id
             asm.STA(0xeb, asm.DIR),         # recruit_character's argument
             asm.JSL(START_ADDRESS_SNES + c0.recruit_character),
             asm.LDA(0x02, asm.IMM8),        # command size (opcode + slot)
-            asm.JMP(0x9b5c, asm.ABS),       # next command
+            asm.JMP(_c0(0x9b5c), asm.LNG),  # next command
         ]
-        space = Write(Bank.C0, src, "race: add check reward (decode + grant)")
-        _set_opcode_address(ADD_CHECK_REWARD_OPCODE, space.start_address)
+        space = Write(Bank.F0, src, "race: add check reward (decode + grant)")
+        _set_opcode_address(ADD_CHECK_REWARD_OPCODE,
+                            _trampoline(space.start_address_snes, "race: grant entry"))
         _add_check_reward_handler = space.start_address
     return ADD_CHECK_REWARD_OPCODE
 
@@ -261,18 +301,28 @@ class AddCheckReward(_Instruction):
         return super().__str__(self.args[0])
 
 
-REWARD_DIALOG_OPCODE = 0xee     # unused by vanilla, WC dev and the fork
+# the reward dialog is vanilla's $4B dialog command with bit 13 of its
+# 16-bit operand set.  vanilla masks the operand with AND #$1FFF (bits
+# 14-15 are the display flags), so bit 13 is dead to it, and no WC dialog
+# id reaches 0x2000 - so a hook at the handler's first instruction can
+# claim it without a new opcode and without changing the command's size
+DIALOG_OPCODE = 0x4b
+DIALOG_HOOK = 0x0a4bc           # C0/A4BC: REP #$20 : LDA $EB (4 bytes)
+DIALOG_HOOK_RESUME = 0xa4c0     # C0/A4C0: AND #$1FFF ...
+REWARD_DIALOG_FLAG = 0x2000
 _reward_dialog_handler = None
 
-def reward_dialog_opcode():
-    """Write the reward-dialog handler once and return its opcode.
+def reward_dialog_hook():
+    """Install (once) the $4B hook that turns a dialog whose operand has
+    bit 13 set into a reward dialog, and return the $4B opcode.
 
-    Three bytes, so it drops straight onto a vanilla Dialog command with
-    no script shifting.  Its operand is a slot in the masked dialog side
-    table, holding the reward slot and two dialog ids; the handler puts
-    the reward slot where <reward> will find it, picks the dialog whose
-    wording matches the reward's kind, and hands off to $4B at C0/A4BC -
-    which advances the script by 3, exactly this command's length.
+    The low operand byte is a slot in the masked dialog side table,
+    holding the reward slot and two dialog ids; the handler puts the
+    reward slot where <reward> will find it, picks the dialog whose
+    wording matches the reward's kind, writes that dialog's real operand
+    over $EB/$EC and re-enters $4B - which advances the script by 3,
+    exactly the command's length.  Same size as a plain dialog, so it
+    drops onto any vanilla Dialog site with no script shifting.
 
     Because the dialog decodes the reward itself, it works whether the
     event grants before or after showing the text; and because the kind
@@ -294,6 +344,16 @@ def reward_dialog_opcode():
                     asm.EOR(slots_pad + offset, asm.LNG_X)]
 
         src = [
+            # the hook: vanilla's first two instructions, then our flag test
+            asm.REP(0x20),                  # displaced from C0/A4BC
+            asm.LDA(0xeb, asm.DIR),         # the 16-bit operand
+            asm.AND(REWARD_DIALOG_FLAG, asm.IMM16),
+            asm.BNE("REWARD"),
+            asm.LDA(0xeb, asm.DIR),         # a plain dialog: as vanilla left it
+            asm.JMP(_c0(DIALOG_HOOK_RESUME), asm.LNG),
+
+            "REWARD",
+            asm.SEP(0x20),
             # X = dialog slot * entry size, via the hardware multiplier
             asm.LDA(0xeb, asm.DIR),
             asm.STA(0x4202, asm.ABS),
@@ -331,26 +391,30 @@ def reward_dialog_opcode():
             asm.STA(0xec, asm.DIR),
             asm.PLA(),
             asm.STA(0xeb, asm.DIR),
-            asm.JMP(0xa4bc, asm.ABS),       # $4B dialog handler (advances 3)
+            asm.JMP(_c0(DIALOG_HOOK), asm.LNG),  # $4B again, now with a
+                                                 # plain operand: the hook
+                                                 # falls through to vanilla
 
             "SHOW",
             asm.PLA(),                      # discard the esper wording
             asm.PLA(),
-            asm.JMP(0xa4bc, asm.ABS),
+            asm.JMP(_c0(DIALOG_HOOK), asm.LNG),
         ]
-        space = Write(Bank.C0, src, "race: reward dialog (decode name + show)")
-        _set_opcode_address(REWARD_DIALOG_OPCODE, space.start_address)
+        space = Write(Bank.F0, src, "race: reward dialog ($4B bit-13 hook)")
+        hook = Reserve(DIALOG_HOOK, DIALOG_HOOK + 3, "race: $4B reward dialog hook")
+        hook.write(asm.JMP(space.start_address_snes, asm.LNG))
         _reward_dialog_handler = space.start_address
-    return REWARD_DIALOG_OPCODE
+    return DIALOG_OPCODE
 
 class RewardDialog(_Instruction):
-    """Race builds: a dialog naming a reward, decoded at display time."""
+    """Race builds: a dialog naming a reward, decoded at display time -
+    a $4B whose operand is the dialog side-table entry with bit 13 set."""
     def __init__(self, slot, item_dialog, esper_dialog):
         from obfuscation import rewards
         entry = rewards.register_dialog(slot, item_dialog, esper_dialog)
-        # third byte pads to the 3 bytes the vanilla dialog handler
-        # advances by
-        super().__init__(reward_dialog_opcode(), entry, 0x00)
+        assert entry < 0x100, "race: the dialog side table index must fit its byte"
+        operand = entry | REWARD_DIALOG_FLAG
+        super().__init__(reward_dialog_hook(), operand & 0xff, operand >> 8)
 
     def __str__(self):
         return super().__str__(self.args[0])
@@ -424,7 +488,7 @@ def ReceiveCheckReward(slot):
 # party add, the naming screen, the character theme.  Every one of those
 # id-valued operands is a placement leak.
 #
-# One umbrella opcode replaces them all: `$EC sub slot [extra...]`.  Each
+# One umbrella opcode replaces them all: `$FC sub slot [extra...]`.  Each
 # sub-command decodes the character id out of the masked reward table and
 # then jumps INTO the corresponding vanilla handler with the id placed
 # where that handler's own operand would be ($eb/$ec/$ea), so the runtime
@@ -434,10 +498,9 @@ def ReceiveCheckReward(slot):
 # vanilla handler's own "advance by n" lands past our whole command.
 #
 # An umbrella rather than a dozen opcodes because vanilla only leaves 21
-# unused slots in the command table and most are already claimed (WC dev,
-# this branch, and the door-rando fork); $EC is one of the last four
-# genuinely free bytes ($EC/$ED/$FC/$FF).
-REWARD_ENTITY_OPCODE = 0xec     # unused by vanilla, WC dev and the fork
+# unused slots in the command table and most are already claimed (see
+# ADD_CHECK_REWARD_OPCODE for the two-branch free set).
+REWARD_ENTITY_OPCODE = 0xfc
 
 (SUB_CREATE, SUB_DELETE, SUB_SHOW, SUB_HIDE, SUB_WAIT, SUB_SPRITE,
  SUB_PALETTE, SUB_PARTY, SUB_PROPERTIES, SUB_NAME, SUB_THEME, SUB_ACT,
@@ -446,18 +509,20 @@ REWARD_ENTITY_OPCODE = 0xec     # unused by vanilla, WC dev and the fork
 
 _reward_entity_handler = None
 _character_palette_table = None
+_bump_routine = None
 
 
 def reset_build():
     """Forget the once-per-build handlers so the next in-process build
     writes them afresh (see obfuscation.reset_build)."""
     global _name_codes, _add_check_reward_handler, _reward_dialog_handler
-    global _reward_entity_handler, _character_palette_table
+    global _reward_entity_handler, _character_palette_table, _bump_routine
     _name_codes = None
     _add_check_reward_handler = None
     _reward_dialog_handler = None
     _reward_entity_handler = None
     _character_palette_table = None
+    _bump_routine = None
 
 
 def _slot_to_x_src(operand_dp):
@@ -476,20 +541,22 @@ def _bump_src(tag, count = 1):
 
     Used before jumping into a vanilla handler whose command is `count`
     bytes shorter than ours, so its own final "advance by n" ends up
-    exactly past our command.
+    exactly past our command.  One shared bank-F0 routine, JSRed from
+    every sub-command (they all run in F0).
     """
-    src = []
-    for i in range(count):
-        done = f"BUMPED_{tag}_{i}"
-        src += [
+    global _bump_routine
+    if _bump_routine is None:
+        space = Write(Bank.F0, [
             asm.INC(0xe5, asm.DIR),
-            asm.BNE(done),
+            asm.BNE("BUMPED"),
             asm.INC(0xe6, asm.DIR),
-            asm.BNE(done),
+            asm.BNE("BUMPED"),
             asm.INC(0xe7, asm.DIR),
-            done,
-        ]
-    return src
+            "BUMPED",
+            asm.RTS(),
+        ], "race: script pointer bump")
+        _bump_routine = space.start_address_snes & 0xffff
+    return [asm.JSR(_bump_routine, asm.ABS)] * count
 
 
 def character_palette_table():
@@ -548,31 +615,35 @@ def reward_entity_opcode():
     # the sixteen-entry character id -> palette and -> theme song tables.
     # both mappings are public (palettes follow from flags, themes are
     # fixed knowledge), so plaintext is fine.
-    space = Write(Bank.C0, [bytes(16)], "race: character palette table")
+    space = Write(Bank.F0, [bytes(16)], "race: character palette table")
     _character_palette_table = space.start_address
-    palette_table_snes = START_ADDRESS_SNES + _character_palette_table
+    palette_table_snes = space.start_address_snes
 
     themes = bytes(character_to_song.get(c, 0) for c in range(16))
-    space = Write(Bank.C0, [themes], "race: character theme table")
-    theme_table_snes = START_ADDRESS_SNES + space.start_address
+    space = Write(Bank.F0, [themes], "race: character theme table")
+    theme_table_snes = space.start_address_snes
+
+    # every sub-command ends by jumping into a vanilla bank-C0 handler
+    def vanilla(target):
+        return asm.JMP(_c0(target), asm.LNG)
 
     def entity_sub(tag, target):
-        # $EC sub slot (3 bytes); vanilla: $op id (2 bytes, reads $eb)
+        # $FC sub slot (3 bytes); vanilla: $op id (2 bytes, reads $eb)
         return [
             *_decode_id_src(0xec),
             asm.STA(0xeb, asm.DIR),
             *_bump_src(tag),
-            asm.JMP(target, asm.ABS),
+            vanilla(target),
         ]
 
     def pair_sub(tag, target):
-        # $EC sub slot (3 bytes); vanilla: $op id id (3 bytes, and for
+        # $FC sub slot (3 bytes); vanilla: $op id id (3 bytes, and for
         # these commands both operands are the character id)
         return [
             *_decode_id_src(0xec),
             asm.STA(0xeb, asm.DIR),
             asm.STA(0xec, asm.DIR),
-            asm.JMP(target, asm.ABS),
+            vanilla(target),
         ]
 
     def table_lookup_src(operand_dp, table_snes):
@@ -605,7 +676,7 @@ def reward_entity_opcode():
         asm.PLA(),
         asm.STA(0xec, asm.DIR),         # decoded id as the sprite
         *_bump_src("SPRITE"),
-        asm.JMP(VANILLA["sprite"], asm.ABS),
+        vanilla(VANILLA["sprite"]),
     ]
 
     # $EC sub entity slot (4 bytes); vanilla $43: entity palette
@@ -617,7 +688,7 @@ def reward_entity_opcode():
         asm.PLA(),
         asm.STA(0xec, asm.DIR),
         *_bump_src("PALETTE"),
-        asm.JMP(VANILLA["palette"], asm.ABS),
+        vanilla(VANILLA["palette"]),
     ]
 
     # $EC sub slot party (4 bytes); vanilla $3F: character party
@@ -627,7 +698,7 @@ def reward_entity_opcode():
         asm.LDA(0xed, asm.DIR),
         asm.STA(0xec, asm.DIR),
         *_bump_src("PARTY"),
-        asm.JMP(VANILLA["party"], asm.ABS),
+        vanilla(VANILLA["party"]),
     ]
 
     # vanilla $40/$7F take (character, data index) where the data index
@@ -646,15 +717,15 @@ def reward_entity_opcode():
             asm.LDA(0xed, asm.DIR),
             asm.STA(0xec, asm.DIR),
             *_bump_src(f"RESTORE_{sub}"),
-            asm.JMP(target, asm.ABS),
+            vanilla(target),
         ]
 
-    # $EC sub slot (3 bytes); vanilla $F0: song
+    # $FC sub slot (3 bytes); vanilla $F0: song
     subs[SUB_THEME] = [
         *table_lookup_src(0xec, theme_table_snes),
         asm.STA(0xeb, asm.DIR),
         *_bump_src("THEME"),
-        asm.JMP(VANILLA["theme"], asm.ABS),
+        vanilla(VANILLA["theme"]),
     ]
 
     # $EC sub slot len actions... ; vanilla: id len actions...  The
@@ -670,38 +741,39 @@ def reward_entity_opcode():
         asm.STA(0xeb, asm.DIR),
         *_bump_src("ACT", 2),
         asm.LDA(0xea, asm.DIR),
-        asm.JMP(VANILLA["act"], asm.ABS),
+        vanilla(VANILLA["act"]),
     ]
 
-    # $EC sub slot vehicle (4 bytes); vanilla $44: character vehicle
+    # $FC sub slot vehicle (4 bytes); vanilla $44: character vehicle
     subs[SUB_VEHICLE] = [
         *_decode_id_src(0xec),
         asm.STA(0xeb, asm.DIR),
         asm.LDA(0xed, asm.DIR),
         asm.STA(0xec, asm.DIR),
         *_bump_src("VEHICLE"),
-        asm.JMP(VANILLA["vehicle"], asm.ABS),
+        vanilla(VANILLA["vehicle"]),
     ]
 
-    # $EC sub entity bits (4 bytes, both operands literal).  The npc
+    # $FC sub entity bits (4 bytes, both operands literal).  The npc
     # loader (C0/53D0) derives an object's special-animation state -
     # $088C = ..a nn ggg (a enable, nn frame type, ggg graphic offset) -
     # from the record's split_sprite/direction bits at map load; this
     # ORs the same state into the live object so an entrance event can
     # turn a decoy record into vanilla's magicite/chest look at runtime.
     ENTITY_OFFSET = 0x9df0          # Y = object number in $eb * 0x29
+    entity_offset = _c0_wrapper(ENTITY_OFFSET, "race: entity offset wrapper")
     subs[SUB_SPLIT] = [
         asm.LDA(0xec, asm.DIR),     # entity operand (not secret)
         asm.STA(0xeb, asm.DIR),
-        asm.JSR(ENTITY_OFFSET, asm.ABS),
+        asm.JSL(entity_offset),
         asm.LDA(0xed, asm.DIR),     # special animation bits (not secret)
         asm.ORA(0x088c, asm.ABS_Y),
         asm.STA(0x088c, asm.ABS_Y),
         asm.LDA(0x04, asm.IMM8),    # command size
-        asm.JMP(NEXT_COMMAND, asm.ABS),
+        vanilla(NEXT_COMMAND),
     ]
 
-    # $EC sub slot kind (4 bytes): multipurpose event bit 0 = (the
+    # $FC sub slot kind (4 bytes): multipurpose event bit 0 = (the
     # reward's kind == kind).  With the vanilla event-bit branches this
     # gives runtime branching on kind, so one script can carry every
     # kind's scene and a diff cannot tell which one runs.
@@ -719,27 +791,31 @@ def reward_entity_opcode():
         "KIND_STORE",
         asm.STA(result_byte, asm.ABS),
         asm.LDA(0x04, asm.IMM8),        # command size
-        asm.JMP(NEXT_COMMAND, asm.ABS),
+        vanilla(NEXT_COMMAND),
     ]
 
+    # the sub-handlers, their dispatch table and the dispatch itself all
+    # live in bank F0: JMP (table,X) reads the pointer from the program
+    # bank, so the table holds bank-F0 addresses
     addresses = {}
     for sub, src in subs.items():
-        space = Write(Bank.C0, src, f"race: reward entity sub-command {sub}")
-        addresses[sub] = space.start_address
+        space = Write(Bank.F0, src, f"race: reward entity sub-command {sub}")
+        addresses[sub] = space.start_address_snes & 0xffff
 
-    table = b"".join((addresses[sub] & 0xffff).to_bytes(2, "little")
+    table = b"".join(addresses[sub].to_bytes(2, "little")
                      for sub in range(len(subs)))
-    space = Write(Bank.C0, [table], "race: reward entity dispatch table")
-    table_address = space.start_address & 0xffff
+    space = Write(Bank.F0, [table], "race: reward entity dispatch table")
+    table_address = space.start_address_snes & 0xffff
 
-    space = Write(Bank.C0, [
+    space = Write(Bank.F0, [
         asm.TDC(),
         asm.LDA(0xeb, asm.DIR),         # sub-command
         asm.ASL(),
         asm.TAX(),
         asm.JMP(table_address, asm.ABS_X_16),
     ], "race: reward entity dispatch")
-    _set_opcode_address(REWARD_ENTITY_OPCODE, space.start_address)
+    _set_opcode_address(REWARD_ENTITY_OPCODE,
+                        _trampoline(space.start_address_snes, "race: reward entity entry"))
     _reward_entity_handler = space.start_address
     return REWARD_ENTITY_OPCODE
 
