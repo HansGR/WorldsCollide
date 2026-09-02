@@ -183,7 +183,7 @@ class Veldt(Event):
 
     def _race_decode_src(self, field):
         # asm loading one unmasked byte of the reward slot (0 kind, 1 id)
-        from obfuscation.battle_reward import decode_src
+        from obfuscation.veldt_battle import decode_src
         return decode_src(self.args, self.race_slot(self.reward), field)
 
     def race_load_sprite_function16(self):
@@ -518,10 +518,10 @@ class Veldt(Event):
 
         if self.args.race:
             # one dialog for every kind, its lines rendered from the masked
-            # reward table at runtime (see obfuscation/battle_reward.py):
+            # reward table at runtime (see obfuscation/veldt_battle.py):
             # an esper shows the magicite wording, a character "Uwaoo~!!"
-            from obfuscation import battle_reward
-            battle_reward.install(self.args, self.race_slot(self.reward))
+            from obfuscation import veldt_battle
+            veldt_battle.install(self.args, self.race_slot(self.reward))
 
             reward_dialog_id = 182
             gau_char_arrives_dialog_id = reward_dialog_id

@@ -139,8 +139,8 @@ def _add_check_reward(kind, value):
     # reward table, which says both which kind and which one
     # (see obfuscation/rewards.py)
     from obfuscation import rewards
-    import instruction.field.custom as custom
-    return custom.AddCheckReward(rewards.register(kind, value))
+    import instruction.field.race as race
+    return race.AddCheckReward(rewards.register(kind, value))
 
 def AddItem(item, sound_effect = True, spoiler = True):
     """spoiler=False for items the player is simply given at game start:
@@ -171,9 +171,9 @@ class _AddItems(_Instruction):
             # hide the item behind a reward slot, inside the same
             # 0xB0/0xB1 repeat wrapper (see obfuscation/rewards.py)
             from obfuscation import rewards
-            import instruction.field.custom as custom
+            import instruction.field.race as race
             index = rewards.register("item", self.item)
-            opcode = custom.add_check_reward_opcode()
+            opcode = race.add_check_reward_opcode()
             if count == 1:
                 super().__init__(opcode, index)
             else:
@@ -312,10 +312,10 @@ class Dialog(_Instruction):
             # kind and lets <reward> render the name at runtime - so the
             # script names nothing and hides the kind too.  (only the plain
             # flags are handled; every receive dialog uses them.)
-            import instruction.field.custom as custom
+            import instruction.field.race as race
             self.dialog_id = int(dialog_id)
-            reward = custom.RewardDialog(dialog_id.slot, dialog_id.item_dialog,
-                                         dialog_id.esper_dialog)
+            reward = race.RewardDialog(dialog_id.slot, dialog_id.item_dialog,
+                                       dialog_id.esper_dialog)
             super().__init__(reward.opcode, *reward.args)
             return
 

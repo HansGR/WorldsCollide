@@ -268,10 +268,10 @@ class LoneWolf(Event):
             # id is not sitting in the script (and so the grant leaves the
             # decoded id in $0583 for the "Got X!" dialog)
             from obfuscation import rewards
-            import instruction.field.custom as custom
+            import instruction.field.race as race
             space = Reserve(0xcd59e, 0xcd59f, "lone wolf item received (opaque)")
             space.write(
-                custom.add_check_reward_opcode(),
+                race.add_check_reward_opcode(),
                 rewards.register("item", self.reward2.id),
             )
         else:

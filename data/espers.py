@@ -80,7 +80,7 @@ class Espers():
         # race builds: a single shared magicite dialog used by every esper
         # check.  it names no esper in the rom - the <esper> control code
         # renders the granted esper's name at runtime (see
-        # instruction/field/custom.py esper_name_code), so the text box looks
+        # instruction/field/race.py esper_name_code), so the text box looks
         # exactly like vanilla's.
         self.race_receive_dialog = None
         if self.args.race:

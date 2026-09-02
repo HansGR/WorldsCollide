@@ -25,7 +25,7 @@ text_value = {
               # 0x1c/0x1d are unused by vanilla (control codes run 0x00-0x1f,
               # text starts at 0x20).  race builds install handlers that render
               # the name of a check reward - item or esper alike - from the
-              # masked reward table; see instruction/field/custom.py
+              # masked reward table; see instruction/field/race.py
               # name_codes().  Non-race builds never emit them.
               '<reward>'            : 0x1c,
               '<reward2>'           : 0x1d,

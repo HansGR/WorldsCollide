@@ -128,7 +128,7 @@ class Data:
             # L2: mask every relocated table (incl. the reward table) in one
             # pass.  the reward table must be written before masking.
             from obfuscation import rewards, mask
-            from instruction.field import custom
+            from instruction.field import race
             rewards.write_tables(self.rom, self.args)
-            custom.fill_character_palettes(self.characters.get_palette)
+            race.fill_character_palettes(self.characters.get_palette)
             mask.apply_all(self.args, self.rom)

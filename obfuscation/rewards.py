@@ -16,7 +16,7 @@ kind byte they read out of the masked table at runtime.  Character
 rewards additionally need their scene machinery - showing the joining
 character's sprite, naming them, playing their theme - driven off the
 same slot; that is the RewardEntity command family in
-instruction/field/custom.py.
+instruction/field/race.py.
 
 Slots are handed out in registration order and carry no meaning.  Where
 one dialog names two rewards (the Narshe WOR choice), the pair is

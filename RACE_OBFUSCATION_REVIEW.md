@@ -8,7 +8,7 @@ here is applied yet; each item states its effort, its risk, and what
 re-verification it needs.*
 
 The branch is 45 commits, ~12 KB of source in `obfuscation/` plus
-~900 lines in `instruction/field/custom.py`, a 568-line verifier, and
+~900 lines in `instruction/field/race.py`, a 568-line verifier, and
 race paths in 40 event files.  Structure is sound: keying → claim →
 relocate → mask → reward table → three field opcodes → per-event
 conversions → verifier.  The recommendations below are mostly
@@ -169,7 +169,7 @@ would make the conversions harder to audit, not easier.
 
 ### 2.5 Naming and placement
 
-- `obfuscation/battle_reward.py` is Veldt-specific; `veldt_battle.py`
+- `obfuscation/veldt_battle.py` is Veldt-specific; `veldt_battle.py`
   says so.
 - `custom.py` is 1,427 lines, of which the race part is ~870.  Moving
   the three opcodes and the name codes into `instruction/field/race.py`

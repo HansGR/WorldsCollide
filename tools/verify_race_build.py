@@ -272,7 +272,7 @@ def main():
         off = FIELD_OPCODE_TABLE + (opcode - 0x35) * 2
         return int.from_bytes(rom[off:off + 2], "little")
 
-    # (kept in sync with instruction/field/custom.py by the checks below;
+    # (kept in sync with instruction/field/race.py by the checks below;
     # that module cannot be imported here - importing instruction.field runs
     # build-time rom writes that need an initialised Memory)
     ADD_CHECK_REWARD_OPCODE, REWARD_DIALOG_OPCODE = 0x9e, 0xee
@@ -343,7 +343,7 @@ def main():
     #     One umbrella opcode ($EC) carries every id-valued scene command;
     #     each converted event is ONE script for every kind, so its bytes
     #     cannot say what the check holds - not even the kind.
-    REWARD_ENTITY_OPCODE = 0xec          # sync: instruction/field/custom.py
+    REWARD_ENTITY_OPCODE = 0xec          # sync: instruction/field/race.py
     SUB_COUNT = 17
     SUB_ACT, SUB_LOAD_KIND = 11, 12
     check(field_handler(control, REWARD_ENTITY_OPCODE) == stub,

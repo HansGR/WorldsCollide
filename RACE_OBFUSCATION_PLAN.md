@@ -625,7 +625,7 @@ table entries for sub-codes 4/5.  The handlers live in F0 behind
 four 2-instruction C1 stubs (two `JML`s in, `JSR $6111`/`JSR $5FEF`
 wrappers for the renderer), returning through `JML $C15EE5` (an RTS)
 so the program bank is right when the engine resumes
-(`obfuscation/battle_reward.py`).  Field side: the guest character
+(`obfuscation/veldt_battle.py`).  Field side: the guest character
 slot (15) appears for **every** kind with a baked decoy sprite — the
 16-bit sprite loader decodes the kind at runtime and swaps in the
 real character sprite after the reveal — all per-kind conditions

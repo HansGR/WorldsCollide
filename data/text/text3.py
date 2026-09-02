@@ -638,7 +638,7 @@ text_value = {
               '<command>'           : 0x1203,
 
               # race builds only: substitutions rendered from the masked
-              # reward table at runtime (see obfuscation/battle_reward.py)
+              # reward table at runtime (see obfuscation/veldt_battle.py)
               '<battle reward>'     : 0x1204,
               '<battle reward2>'    : 0x1205,
              }

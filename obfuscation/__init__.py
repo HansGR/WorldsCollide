@@ -102,5 +102,5 @@ def reset_build():
     rewards.reset()
     claim._layout = None
     relocate._shims.clear()
-    import instruction.field.custom as custom
-    custom.reset_build()
+    import instruction.field.race as race
+    race.reset_build()
