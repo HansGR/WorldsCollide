@@ -24,6 +24,18 @@ registered consecutively and the second is rendered by `<reward2>`,
 which simply reads the slot after the one it is given - so no second ram
 byte is needed.
 
+Registration happens as a side effect of BUILDING instructions: a check
+registers through Event.race_slot(), but field.AddItem/AddEsper/AddItems,
+reward_dialog() and the receive-dialog getters each register a slot the
+moment they are constructed in a race build.  That is what makes ~60
+item/esper sites opaque with no per-site code, and it has one hard rule:
+never construct any of them inside a kind- or seed-conditional build
+path.  Registration order is Python evaluation order, so a conditional
+registration shifts every later slot between seeds (the verifier's
+equal-count check catches it).  Read a build's slot map with
+tools/race_slot_map.py; never assume slot numbers across seeds or
+versions.
+
 Flow across a build:
   1. event generation registers rewards and gets slots, which are what
      land in the script.

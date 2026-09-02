@@ -247,3 +247,37 @@ instead of silently overwriting.
   of reward slots.
 - Scripts that reserve over vanilla bytes must re-emit the fades those
   bytes performed (battles end faded out).
+
+**Developer recipe: converting a check.**  Every converted event has
+the same shape; follow it and the verifier's cross-seed checks do the
+rest.
+
+1. *Slot.*  `slot = self.race_slot(self.reward)` — memoised, so any
+   earlier mod that needs it (an entrance hook, a song call) may ask
+   first.  Never register anything inside a kind- or seed-conditional
+   path (`obfuscation/rewards.py` explains why).
+2. *NPC record.*  `self.race_decoy_npc(map_id, npc_id, slot,
+   magicite=..., chest=...)` gives the record the kind-neutral decoy
+   sprite and chains an entrance repaint that restores the real look at
+   map load.  Two traps: a scene that *creates* its NPC (`$3D`) wipes
+   the repaint — repaint after the create; and a scripted `LoadMap`
+   with the entrance-event flag off skips entrance events — repaint
+   inline after the load.
+3. *One script, two arms.*  `BranchIfRewardKindNot(slot, "character",
+   "ESPER_ITEM")`, then the character arm (`AddCheckReward(slot)` +
+   `REFRESH_CHARACTERS_AND_SELECT_PARTY`, or the reward-entity commands
+   for a staged scene: `CreateRewardEntity`, `RewardEntityActRaw` over
+   the vanilla action bytes, `PlayRewardTheme`, …) and the esper/item
+   arm (`ReceiveCheckReward(slot)` plus the fades the vanilla site
+   performed).  Both arms exist in every seed; the only per-seed byte
+   is the slot number.
+4. *Dialogs.*  Names render at display time: `<reward>` in the text,
+   `receive_reward_dialog(slot)` / `reward_slot_dialog(slot, id)` for
+   the command.  Music: `PlayRewardTheme(slot)`; if the vanilla song
+   site is two bytes, ride a neighbouring command into a 4-byte `Call`.
+5. *Verify.*  Non-race build byte-identical (`cmp` against a build from
+   before the change); `python3 -m unittest discover -s tests`;
+   `python3 tools/verify_race_build.py -i vanilla.smc`;
+   `python3 tools/race_slot_map.py -i vanilla.smc -s SEED <flags>` to
+   read the slot map; and for anything touching a scene, an emulator
+   pass (a temporary debug-room warp NPC gets you to any map).
