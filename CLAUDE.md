@@ -167,6 +167,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 
 ### Conventions
 - **log/verbose.py** `vprint()` — debug output helper. `-debug` → stdout, `-debug-verbose`/`-dv` → spoiler-log temp file, neither → no-op. **Don't** wrap `vprint(...)` in `if self.verbose:`.
+- **Race builds** — `feature/race-obfuscation` (not merged) adds `-race`: spoiler tables relocated + masked + decoyed, check rewards slot-indirected. Its docs live on that branch (`RACE_OBFUSCATION_OVERVIEW.md` first). **Opcode collision to resolve before merging**: it uses `$9E` (Y-NPC here) and `$EC` (ruination here); `$E6 $EE $FC $FF` are free on both. See ARCHIVE.md "Race ROM Obfuscation".
 - **Branches** — `door_rando_ruin_rewrite` is the live development branch (deployed to the community hub; hub deployments drift from tip — the spoiler's `Commit <hash>` line identifies the build). `feature/command-fully-randomize` captures the command-randomization feature (`-com`/`-comfr`/`-compr` + consequences like the MP-crit fix); it predates `-ruin` and has no golden manifest, so cherry-picks onto it carry code files only.
 
 ---
