@@ -50,12 +50,9 @@ class SouthFigaro(Event):
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
         # wob)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
-        self.celes_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.celes_npc.palette = self.characters.get_palette(self.celes_npc.sprite)
-        self.race_repaint_npc_entrance(0x053, self.celes_npc_id, slot)
+        self.race_decoy_npc(0x053, self.celes_npc_id, slot)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -67,9 +64,7 @@ class SouthFigaro(Event):
 
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(),
             field.WaitForFade(),
 

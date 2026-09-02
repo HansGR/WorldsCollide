@@ -67,8 +67,7 @@ class MoblizWOR(Event):
         # the grant recruits first (which also runs -sal level
         # averaging, as every recruit does), then the party-size-guarded
         # join and restores use the reward-entity commands
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         random_sprite = self.characters.get_random_esper_item_sprite()
         self.terra_npc_mod(random_sprite, self.characters.get_palette(random_sprite))
@@ -147,9 +146,7 @@ class MoblizWOR(Event):
             "ESPER_ITEM",
             field.FadeInScreen(),
             field.FreeScreen(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Return(),
         ]

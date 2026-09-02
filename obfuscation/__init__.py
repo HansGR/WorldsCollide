@@ -90,3 +90,17 @@ def run_with_decoy_rng(args, purpose, fn):
 def _version():
     import version
     return version.__version__
+
+
+def reset_build():
+    """Clear every once-per-build singleton the race layers keep (the
+    reward registry, the claim layout, the decode shims, the field
+    handlers) so an in-process tool can build more than one rom.  A
+    normal wc.py run is one process and starts clean; Data.__init__
+    calls this for race builds so tools need no other knowledge."""
+    from obfuscation import rewards, claim, relocate
+    rewards.reset()
+    claim._layout = None
+    relocate._shims.clear()
+    import instruction.field.custom as custom
+    custom.reset_build()

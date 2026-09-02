@@ -38,12 +38,9 @@ class PhoenixCave(Event):
         # the chest-open plays for esper/item (character_mod removes it),
         # and the magicite chime + the magicite npc (entity 0x11, a
         # static record identical in every build) show only for an esper
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
-        self.locke_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.locke_npc.palette = self.characters.get_palette(self.locke_npc.sprite)
-        self.race_repaint_npc_entrance(0x139, self.locke_npc_id, slot)
+        self.race_decoy_npc(0x139, self.locke_npc_id, slot)
 
         src = [
             field.BranchIfRewardKind(slot, "character", "SKIP_CHEST"),
@@ -92,9 +89,7 @@ class PhoenixCave(Event):
             field.AddCheckReward(slot),
             field.Branch("REWARD_DONE"),
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             "REWARD_DONE",
         ])
 

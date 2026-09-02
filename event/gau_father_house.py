@@ -43,8 +43,7 @@ class GauFatherHouse(Event):
         # entrance event repaints it and plays the character's theme when
         # the reward is a character, and shadow's theme otherwise (what
         # every non-character build plays there)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.shadow_npc.palette = self.characters.get_palette(self.shadow_npc.sprite)
@@ -97,9 +96,7 @@ class GauFatherHouse(Event):
 
             # the esper/item scene (esper/item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(),
             field.WaitForFade(),
             field.Branch(0xb0afa),

@@ -26,10 +26,11 @@ class Data:
         self.dialogs = dialogs
 
         if args.race:
-            # start this build's item-reward collection (events register
-            # into it before Data.write lays down the table)
-            from obfuscation import rewards
-            rewards.reset()
+            # start this build's race state clean (the reward collection
+            # events register into before Data.write lays down the table,
+            # and the other once-per-build singletons)
+            import obfuscation
+            obfuscation.reset_build()
 
         self.spells = spells.Spells(rom, args)
         self.spells.mod()

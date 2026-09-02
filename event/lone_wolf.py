@@ -124,9 +124,7 @@ class LoneWolf(Event):
         # a character branch replays it from a relocated copy and then
         # recruits; the esper/item branch takes it in place and shows the
         # receive dialog at the vanilla dialog site
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward1)
-        self.race_slot = slot
+        slot = self.race_slot(self.reward1)
 
         # the scene song: a character reward's theme at runtime (as
         # character_music_mod bakes it), vanilla's song otherwise.  the
@@ -148,9 +146,7 @@ class LoneWolf(Event):
             field.Call(theme_script),
         )
 
-        self.mog_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.mog_npc.palette = self.characters.get_palette(self.mog_npc.sprite)
-        self.race_repaint_npc_entrance(0x017, self.mog_npc_id, slot)
+        self.race_decoy_npc(0x017, self.mog_npc_id, slot)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -379,7 +375,7 @@ class LoneWolf(Event):
         # entrance repaint chains onto the swap handler installed by
         # moogle_room_entrance_event_mod, so the repaint runs first and
         # the lone-wolf swap can still override it
-        slot = self.race_slot
+        slot = self.race_slot(self.reward1)
         self.race_repaint_npc_entrance(0x02c, self.mog_moogle_room_npc_id, slot)
 
         src = [
@@ -395,9 +391,7 @@ class LoneWolf(Event):
             field.Return(),
 
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(),
             field.WaitForFade(),
             field.HideEntity(self.mog_moogle_room_npc_id),

@@ -43,14 +43,11 @@ class CollapsingHouse(Event):
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
         # wob)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         sabin_npc_id = 0x11
         sabin_npc = self.maps.get_npc(0x131, sabin_npc_id)
-        sabin_npc.sprite = self.characters.get_random_esper_item_sprite()
-        sabin_npc.palette = self.characters.get_palette(sabin_npc.sprite)
-        self.race_repaint_npc_entrance(0x131, sabin_npc_id, slot)
+        self.race_decoy_npc(0x131, sabin_npc_id, slot)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -63,9 +60,7 @@ class CollapsingHouse(Event):
 
             # the esper/item scene: receive, then the same fade/bits
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             Read(0xc5a8d, 0xc5a9c),
             field.Branch(0xc5abb),
         ]

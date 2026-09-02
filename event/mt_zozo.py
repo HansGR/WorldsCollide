@@ -52,8 +52,7 @@ class MtZozo(Event):
         # vanilla-wc look (reward character / magicite / chest); the
         # room npc, the room scene and the letter signature - all
         # character tells - are gone for every kind
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.cliff_cyan_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.cliff_cyan_npc.palette = self.characters.get_palette(self.cliff_cyan_npc.sprite)
@@ -95,9 +94,7 @@ class MtZozo(Event):
             field.Branch("FINISH"),
 
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.HideEntity(self.cliff_cyan_npc_id),
 
             "FINISH",

@@ -56,8 +56,7 @@ class DomaWOB(Event):
         # the walk-out scene's only id-carrying bytes are two
         # action-queue headers, so those two queues call kind-selected
         # twins and everything between stays vanilla in place
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.controllable_npc_mod()
 
@@ -133,9 +132,7 @@ class DomaWOB(Event):
         ],
         [
             field.BranchIfRewardKind(slot, "character", "REWARD_DONE"),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             "REWARD_DONE",
         ])
 

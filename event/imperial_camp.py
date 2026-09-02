@@ -43,8 +43,7 @@ class ImperialCamp(Event):
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
         # wob)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         random_sprite = self.characters.get_random_esper_item_sprite()
         self.cyan_battles_mod(random_sprite, self.characters.get_palette(random_sprite))
@@ -63,9 +62,7 @@ class ImperialCamp(Event):
             # the esper/item scene (esper/item_mod's script, slot-driven)
             "ESPER_ITEM",
             field.LoadMap(0x75, direction.DOWN, default_music = True, x = 8, y = 21, fade_in = True, entrance_event = True),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Return(),
         ]

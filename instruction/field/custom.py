@@ -591,6 +591,24 @@ def _reward_table():
     layout = claim.layout(args)
     return snes(layout["rewards"]), snes(layout["rewards_pad"])
 
+def _index_slot_src():
+    """asm: X = (slot in A) * reward entry size.
+
+    Ends with TDC: for slots >= 0x80 the 16-bit ASL leaves b (the
+    accumulator high byte) set, and the vanilla handlers the reward code
+    jumps into transfer b along with a in their TAX/TAY, spraying indexed
+    writes 0x100 bytes off.  Every consumer of a slot index goes through
+    here so that rule has one home (and one verifier check).
+    """
+    return [
+        asm.REP(0x20),
+        asm.AND(0x00ff, asm.IMM16),
+        asm.ASL(),
+        asm.TAX(),
+        asm.SEP(0x20),
+        asm.TDC(),
+    ]
+
 def _decode_slot_src(field):
     """asm reading one masked byte of the reward slot in X (X = slot * 2)."""
     table, pad = _reward_table()
@@ -675,15 +693,7 @@ def name_codes():
         asm.LDA(REWARD_SLOT, asm.ABS),
 
         "LOOKUP",
-        asm.REP(0x20),                      # X = slot * 2 (entry size)
-        asm.AND(0x00ff, asm.IMM16),
-        asm.ASL(),
-        asm.TAX(),
-        asm.SEP(0x20),
-        asm.TDC(),                          # slots >= 0x80 leave b = 1 after
-                                            # the 16-bit ASL; clear it before
-                                            # any vanilla code (whose TAX/TAY
-                                            # with 8-bit a transfer b too)
+        *_index_slot_src(),                 # X = slot * 2 (entry size)
 
         *_decode_slot_src(0),               # kind
         asm.BNE("NOT_ITEM_NAME"),
@@ -733,16 +743,7 @@ def add_check_reward_opcode():
         src = [
             asm.LDA(0xeb, asm.DIR),         # slot (command operand)
             asm.STA(REWARD_SLOT, asm.ABS),  # for a dialog after the grant
-            asm.REP(0x20),                  # X = slot * 2
-            asm.AND(0x00ff, asm.IMM16),
-            asm.ASL(),
-            asm.TAX(),
-            asm.SEP(0x20),
-            asm.TDC(),                      # slots >= 0x80 leave b = 1 after
-                                            # the 16-bit ASL; the vanilla
-                                            # handlers this jumps into
-                                            # (AddEsper's TAX/TAY especially)
-                                            # require b = 0
+            *_index_slot_src(),             # X = slot * 2
 
             *_decode_slot_src(0),           # kind
             asm.BNE("NOT_ITEM"),
@@ -842,12 +843,7 @@ def reward_dialog_opcode():
 
             # kind of the reward this dialog names
             asm.LDA(REWARD_SLOT, asm.ABS),
-            asm.REP(0x20),
-            asm.AND(0x00ff, asm.IMM16),
-            asm.ASL(),
-            asm.TAX(),
-            asm.SEP(0x20),
-            asm.TDC(),                      # clear b (dirtied for slots >= 0x80)
+            *_index_slot_src(),
             *_decode_slot_src(0),
             asm.CMP(0x01, asm.IMM8),
             asm.BNE("SHOW"),                # not an esper: first wording.
@@ -937,6 +933,14 @@ def receive_reward_dialog(slot):
     return RewardDialog(slot, item_wording, esper_wording)
 
 
+def ReceiveCheckReward(slot):
+    """Race builds: the standard esper/item receive - grant, chime,
+    receive dialog - as one instruction group (the shape every converted
+    check's esper/item arm uses)."""
+    from instruction.field.instructions import PlaySoundEffect
+    return (AddCheckReward(slot), PlaySoundEffect(141), receive_reward_dialog(slot))
+
+
 # --- L3-C: character rewards - the RewardEntity command family ---------
 #
 # A character check's scene needs the character's id in many more places
@@ -970,24 +974,22 @@ _reward_entity_handler = None
 _character_palette_table = None
 
 
-def _slot_to_x_src(operand_dp):
-    """asm: X = (slot at the given operand byte) * reward entry size.
+def reset_build():
+    """Forget the once-per-build handlers so the next in-process build
+    writes them afresh (see obfuscation.reset_build)."""
+    global _name_codes, _add_check_reward_handler, _reward_dialog_handler
+    global _reward_entity_handler, _character_palette_table
+    _name_codes = None
+    _add_check_reward_handler = None
+    _reward_dialog_handler = None
+    _reward_entity_handler = None
+    _character_palette_table = None
 
-    Ends with TDC: for slots >= 0x80 the 16-bit ASL leaves b (the
-    accumulator high byte) set, and the vanilla handlers the sub-commands
-    jump into transfer b along with a in their TAX/TAY, spraying indexed
-    writes 0x100 bytes off.  Every caller reloads a right after, so
-    clearing the whole 16-bit accumulator is free.
-    """
-    return [
-        asm.LDA(operand_dp, asm.DIR),
-        asm.REP(0x20),
-        asm.AND(0x00ff, asm.IMM16),
-        asm.ASL(),
-        asm.TAX(),
-        asm.SEP(0x20),
-        asm.TDC(),
-    ]
+
+def _slot_to_x_src(operand_dp):
+    """asm: X = (slot at the given operand byte) * reward entry size
+    (see _index_slot_src for the trailing TDC)."""
+    return [asm.LDA(operand_dp, asm.DIR), *_index_slot_src()]
 
 
 def _decode_id_src(operand_dp):

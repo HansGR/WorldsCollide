@@ -46,8 +46,7 @@ class SealedGate(Event):
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
         # wob); the scene npc is repainted as it is created
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.kefka_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.kefka_npc.palette = self.characters.get_palette(self.kefka_npc.sprite)
@@ -64,9 +63,7 @@ class SealedGate(Event):
 
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(4),
             field.Call(self.lightning_strike),
             field.WaitForFade(),

@@ -18,8 +18,7 @@ class FanaticsTower(Event):
         if self.args.race:
             # registered up front: relm_event_mod's race theme call needs
             # the slot before race_reward_mod runs
-            from obfuscation import rewards
-            self.race_slot = rewards.register_check(self.reward1)
+            self.race_slot(self.reward1)
 
         self.gau_magic_mod()
         self.relm_event_mod()
@@ -129,8 +128,8 @@ class FanaticsTower(Event):
             # at runtime (as character_music_mod bakes it), esper/item
             # keep vanilla's song
             src = [
-                field.BranchIfRewardKindNot(self.race_slot, "character", "VANILLA_SONG"),
-                field.PlayRewardTheme(self.race_slot),
+                field.BranchIfRewardKindNot(self.race_slot(self.reward1), "character", "VANILLA_SONG"),
+                field.PlayRewardTheme(self.race_slot(self.reward1)),
                 field.Return(),
                 "VANILLA_SONG",
                 Read(0xc5327, 0xc5328),     # vanilla song
@@ -181,11 +180,9 @@ class FanaticsTower(Event):
         # one script and one npc record for every kind (see figaro castle
         # wob).  the scene song is handled by relm_event_mod's race
         # theme call
-        slot = self.race_slot
+        slot = self.race_slot(self.reward1)
 
-        self.strago_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.strago_npc.palette = self.characters.get_palette(self.strago_npc.sprite)
-        self.race_repaint_npc_entrance(0x16a, self.strago_npc_id, slot)
+        self.race_decoy_npc(0x16a, self.strago_npc_id, slot)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -198,9 +195,7 @@ class FanaticsTower(Event):
 
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(4),
             field.WaitForFade(),
             field.Branch(0xc542b),

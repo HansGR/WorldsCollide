@@ -160,9 +160,9 @@ class NarsheMoogleDefense(Event):
         # sprite (mirroring the non-race esper_item_mod, which also uses
         # a random esper/item sprite for these npcs)
         return [
-            field.BranchIfRewardKindNot(self.race_slot, "character", f"NO_REPAINT_{label}"),
-            field.SetRewardSprite(npc_id, self.race_slot),
-            field.SetRewardPalette(npc_id, self.race_slot),
+            field.BranchIfRewardKindNot(self.race_slot(self.reward), "character", f"NO_REPAINT_{label}"),
+            field.SetRewardSprite(npc_id, self.race_slot(self.reward)),
+            field.SetRewardPalette(npc_id, self.race_slot(self.reward)),
             f"NO_REPAINT_{label}",
         ]
 
@@ -570,8 +570,7 @@ class NarsheMoogleDefense(Event):
             # registered up front: the chase-scene repaints written by
             # arvis_start_mod/event_start_mod need the slot before
             # race_reward_mod runs
-            from obfuscation import rewards
-            self.race_slot = rewards.register_check(self.reward)
+            self.race_slot(self.reward)
 
         self.terra_npc_mod()
 
@@ -602,7 +601,7 @@ class NarsheMoogleDefense(Event):
         # of the per-character restore commands - all id-carrying - are
         # needed; the esper/item receive happens after the fade-in, as a
         # normal check receive
-        slot = self.race_slot
+        slot = self.race_slot(self.reward)
 
         sprite = self.characters.get_random_esper_item_sprite()
         for npc in (self.terra_npc, self.terra_collapsed_npc):
@@ -620,9 +619,7 @@ class NarsheMoogleDefense(Event):
             ],
             post_fade_instructions = [
                 field.BranchIfRewardKind(slot, "character", "NO_RECEIVE"),
-                field.AddCheckReward(slot),
-                field.PlaySoundEffect(141),
-                field.receive_reward_dialog(slot),
+                field.ReceiveCheckReward(slot),
                 "NO_RECEIVE",
             ],
         )

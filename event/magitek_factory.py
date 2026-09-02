@@ -306,12 +306,9 @@ class MagitekFactory(Event):
         # (character or esper); rewards 1 and 2 are esper/item and
         # already compile identically per kind through the unified
         # commands
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward3)
+        slot = self.race_slot(self.reward3)
 
-        self.setzer_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.setzer_npc.palette = self.characters.get_palette(self.setzer_npc.sprite)
-        self.race_repaint_npc_entrance(0x0f0, self.setzer_npc_id, slot)
+        self.race_decoy_npc(0x0f0, self.setzer_npc_id, slot)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -326,9 +323,7 @@ class MagitekFactory(Event):
 
             # the esper scene (esper_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(),
             field.WaitForFade(),
             field.Branch(0xc8303),

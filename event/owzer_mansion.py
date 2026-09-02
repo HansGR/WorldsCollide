@@ -46,12 +46,9 @@ class OwzerMansion(Event):
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
         # wob)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
-        self.relm_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.relm_npc.palette = self.characters.get_palette(self.relm_npc.sprite)
-        self.race_repaint_npc_entrance(0x0d0, self.relm_npc_id, slot)
+        self.race_decoy_npc(0x0d0, self.relm_npc_id, slot)
 
         # both two-byte StartSong sites ride with the volume-fade command
         # after them, so a call fits: a character reward starts their

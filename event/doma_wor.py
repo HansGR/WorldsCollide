@@ -239,8 +239,7 @@ class DomaWOR(Event):
         # map load for a character reward.  (rewards 2 and 3 are
         # esper/item and already compile identically per kind through the
         # unified grant and dialog commands.)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward1)
+        slot = self.race_slot(self.reward1)
 
         self.random_cyan_npc_mod()
         self.race_repaint_npc_entrance(0x08f, self.cyan_phantom_train_npc_id, slot)
@@ -272,9 +271,7 @@ class DomaWOR(Event):
             field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
             field.Branch(0xb99d5),
             "NOT_CHARACTER",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.Branch(0xb99d5),
         ]
         space = Write(Bank.CB, src, "doma wor race sword reward")
@@ -342,8 +339,7 @@ class DomaWOR(Event):
         # every kind (a baked chest said "item here" in the rom); an
         # item repaints them to the chest at map load.  the grant and
         # dialog are already kind-blind in race builds
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward2)
+        slot = self.race_slot(self.reward2)
         for npc_id in (0x17, 0x18):
             self.race_repaint_npc_entrance(0x07b, npc_id, slot, chest = True)
 

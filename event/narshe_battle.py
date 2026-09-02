@@ -46,8 +46,7 @@ class NarsheBattle(Event):
         # one script and one npc record for every kind (see figaro castle
         # wob); the end scene already reselects the party, so a character
         # reward just recruits
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         random_sprite = self.characters.get_random_esper_item_sprite()
         for npc in (self.banon_before_battle_npc, self.banon_during_battle_npc):
@@ -61,9 +60,7 @@ class NarsheBattle(Event):
             field.AddCheckReward(slot),
             field.Branch("REWARD_DONE"),
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             "REWARD_DONE",
         ])
 

@@ -41,8 +41,7 @@ class Tritoch(Event):
         # record - so the item repaint rides between the create and the
         # show, and the receive chime/flash picks its kind at runtime.
         # the grant and dialog are already kind-blind in race builds
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         src = [
             Read(0xc3752, 0xc3753),         # create the magicite npc

@@ -46,8 +46,7 @@ class OperaHouseWOB(Event):
         if self.args.race:
             # registered up front: after_battle_mod's race theme call
             # needs the slot before race_reward_mod runs
-            from obfuscation import rewards
-            self.race_slot = rewards.register_check(self.reward)
+            self.race_slot(self.reward)
 
         self.begin_performance_mod()
         self.performance_mod()
@@ -81,11 +80,9 @@ class OperaHouseWOB(Event):
         # one script and one npc record for every kind (see figaro castle
         # wob).  the scene song is handled by after_battle_mod's race
         # theme call
-        slot = self.race_slot
+        slot = self.race_slot(self.reward)
 
-        self.setzer_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.setzer_npc.palette = self.characters.get_palette(self.setzer_npc.sprite)
-        self.race_repaint_npc_entrance(0x0e9, self.setzer_npc_id, slot)
+        self.race_decoy_npc(0x0e9, self.setzer_npc_id, slot)
 
         self.reward_mod([
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -106,9 +103,7 @@ class OperaHouseWOB(Event):
             field.StartSong(53),
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
 
             "REWARD_DONE",
         ])
@@ -361,8 +356,8 @@ class OperaHouseWOB(Event):
             from music.song_utils import get_character_theme
             src = [
                 field.HideEntity(field_entity.PARTY0),
-                field.BranchIfRewardKindNot(self.race_slot, "character", "VANILLA_SONG"),
-                field.PlayRewardTheme(self.race_slot),
+                field.BranchIfRewardKindNot(self.race_slot(self.reward), "character", "VANILLA_SONG"),
+                field.PlayRewardTheme(self.race_slot(self.reward)),
                 field.Return(),
                 "VANILLA_SONG",
                 field.StartSong(get_character_theme(SETZER)),

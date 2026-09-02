@@ -46,8 +46,7 @@ class BarenFalls(Event):
         # vanilla now, repainted in-scene), the theme song operand (now
         # PlayRewardTheme) and the differing per-kind patch shapes (now
         # one runtime branch)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         gau_npc_id = 0x10
 
@@ -100,9 +99,7 @@ class BarenFalls(Event):
             "ESPER_ITEM",
             field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.SetEventBit(event_bit.NAMED_GAU),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Branch(0xbc1f6),
         ]

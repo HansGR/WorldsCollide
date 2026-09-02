@@ -35,8 +35,7 @@ class ZoneEater(Event):
         # vanilla-wc look at runtime (the reward character, or the
         # magicite shard for an esper), and the esper arm replays
         # esper_mod's magicite-drop animation
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.gogo_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.gogo_npc.palette = self.characters.get_palette(self.gogo_npc.sprite)
@@ -69,9 +68,7 @@ class ZoneEater(Event):
 
             # the esper/item scene (esper/item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
 
             field.DeleteEntity(self.gogo_npc_id),
             field.ClearEventBit(npc_bit.GOGO_ZONE_EATER),

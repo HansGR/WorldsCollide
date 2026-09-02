@@ -45,12 +45,9 @@ class Kohlingen(Event):
     def race_reward_mod(self):
         # one script and one npc record for every kind (see figaro castle
         # wob)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
-        self.shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.shadow_npc.palette = self.characters.get_palette(self.shadow_npc.sprite)
-        self.race_repaint_npc_entrance(0x0bf, self.shadow_npc_id, slot)
+        self.race_decoy_npc(0x0bf, self.shadow_npc_id, slot)
 
         RECEIVE_REWARD = 0xc704f
         src = [
@@ -81,9 +78,7 @@ class Kohlingen(Event):
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
             field.FadeInScreen(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.Branch(0xc7073),
         ]
         space = Write(Bank.CC, src, "kohlingen race reward")

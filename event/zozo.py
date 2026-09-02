@@ -87,8 +87,7 @@ class Zozo(Event):
         # character, the magicite object for an esper, the chest for an
         # item - so scouting the tower top reads exactly as non-race
         # builds do while the rom bytes stay kind-blind
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.ramuh_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.ramuh_npc.palette = self.characters.get_palette(self.ramuh_npc.sprite)
@@ -111,9 +110,7 @@ class Zozo(Event):
 
             # the esper/item scene (item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.SetEventBit(event_bit.GOT_ZOZO_REWARD),
             field.FinishCheck(),
 

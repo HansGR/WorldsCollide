@@ -40,8 +40,7 @@ class VeldtCaveWOR(Event):
         # get the item path's random decoy sprite, then the map-load
         # repaint restores the kind's vanilla-wc look at runtime - the
         # reward character, or the magicite shards for an esper
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         random_sprite = self.characters.get_random_esper_item_sprite()
         for npc in (self.shadow_npc, self.relm_npc):
@@ -62,9 +61,7 @@ class VeldtCaveWOR(Event):
             # the esper/item scene (esper/item_mod's script, slot-driven)
             "ESPER_ITEM",
             field.FadeInScreen(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
 
             "REWARD_DONE",
         ])

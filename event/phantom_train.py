@@ -46,20 +46,12 @@ class PhantomTrain(Event):
 
         self.log_reward(self.reward)
 
-    def race_slot(self):
-        # phantom_train_mod runs before the reward dispatch and also
-        # needs the slot, so register it on first use
-        if not hasattr(self, "_race_slot"):
-            from obfuscation import rewards
-            self._race_slot = rewards.register_check(self.reward)
-        return self._race_slot
-
     def race_reward_mod(self):
         # one wiring for every kind: the esper/item structure (receive at
         # the caboose ghost), with the recruit happening right there for
         # a character reward.  the ghost npc record stays the vanilla
         # ghost; the last-car entrance repaints it for a character
-        slot = self.race_slot()
+        slot = self.race_slot(self.reward)
 
         ghost_npc_id = 0x10
 
@@ -78,9 +70,7 @@ class PhantomTrain(Event):
 
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.HideEntity(ghost_npc_id),
             field.RefreshEntities(),
             field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
@@ -474,7 +464,7 @@ class PhantomTrain(Event):
         src = []
         if self.args.race:
             # both scenes carried, picked at runtime
-            slot = self.race_slot()
+            slot = self.race_slot(self.reward)
             src += [
                 field.BranchIfRewardKindNot(slot, "character", "RACE_ESPER_ITEM"),
                 field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
@@ -488,9 +478,7 @@ class PhantomTrain(Event):
                 "RACE_ESPER_ITEM",
                 field.FadeInScreen(),
                 field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.AddCheckReward(slot),
-                field.PlaySoundEffect(141),
-                field.receive_reward_dialog(slot),
+                field.ReceiveCheckReward(slot),
                 field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
                 field.FinishCheck(),
             ]

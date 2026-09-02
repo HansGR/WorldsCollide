@@ -57,8 +57,7 @@ class EsperMountain(Event):
     def race_reward_mod(self):
         # one script and one look for every kind: all four relm npcs get
         # the decoy sprite, repainted at map load for a character reward
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.relm_npc_mod()
         self.race_repaint_npc_entrance(0x177, self.entrance_relm_npc_id, slot)
@@ -81,9 +80,7 @@ class EsperMountain(Event):
             "ESPER_ITEM",
             field.SetEventBit(event_bit.DEFEATED_ULTROS_ESPER_MOUNTAIN),
             field.FadeInScreen(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Return(),
         ]

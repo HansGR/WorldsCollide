@@ -53,6 +53,27 @@ class Event():
     def init_event_bits(self, space):
         pass
 
+    def race_slot(self, reward):
+        """Race builds: the reward's slot in the masked reward table -
+        registered the first time any mod asks for it, the same value
+        after, so mods may ask in any order (an entrance or song hook
+        written before the reward mod runs gets the same slot)."""
+        from obfuscation import rewards
+        slots = self.__dict__.setdefault("_race_slots", {})
+        if reward not in slots:
+            slots[reward] = rewards.register_check(reward)
+        return slots[reward]
+
+    def race_decoy_npc(self, map_id, npc_id, slot, **repaint_arms):
+        """Race builds: give a check npc record the kind-neutral decoy
+        sprite (the one every esper/item build bakes) and chain the
+        entrance repaint that restores the real look at map load - see
+        race_repaint_npc_entrance for the arms."""
+        npc = self.maps.get_npc(map_id, npc_id)
+        npc.sprite = self.characters.get_random_esper_item_sprite()
+        npc.palette = self.characters.get_palette(npc.sprite)
+        self.race_repaint_npc_entrance(map_id, npc_id, slot, **repaint_arms)
+
     # vanilla-wc's object looks for non-character rewards: the magicite
     # shard (esper checks) and the treasure chest (item checks at sites
     # that show one).  sprite/palette/direction as every non-race

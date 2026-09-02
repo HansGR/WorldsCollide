@@ -32,8 +32,7 @@ class DarylTomb(Event):
         # off the masked reward slot at runtime - the event bytes and the
         # dialog data are the same whether daryl's tomb holds a
         # character, an esper or an item
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         # the inscription names the reward: <reward> renders it at
         # display time; the centring still uses the real name's width.
@@ -73,9 +72,7 @@ class DarylTomb(Event):
             field.EntityAct(field_entity.PARTY0, True,
                 field_entity.Turn(direction.UP),
             ),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.Branch(0xa4334),
         ]
         space = Write(Bank.CA, src, "daryl tomb race reward")

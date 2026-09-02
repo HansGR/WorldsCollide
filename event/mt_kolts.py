@@ -44,8 +44,7 @@ class MtKolts(Event):
         # spliced in unchanged (they carry no id).  the esper/item scene
         # is the same script's other branch, so the event bytes match
         # whatever the check holds.
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         boss_pack_id = self.get_boss("Vargas")
 
@@ -150,9 +149,7 @@ class MtKolts(Event):
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
             field.FadeInScreen(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Return(),
         ]

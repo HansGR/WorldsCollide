@@ -180,12 +180,9 @@ class FloatingContinent(Event):
         # sprite (a baked magicite said "esper here"), then the map-load
         # repaint restores the kind's vanilla-wc look at runtime - the
         # reward character, or the magicite shard for an esper
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward1)
+        slot = self.race_slot(self.reward1)
 
-        self.ground_shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
-        self.ground_shadow_npc.palette = self.characters.get_palette(self.ground_shadow_npc.sprite)
-        self.race_repaint_npc_entrance(0x18a, self.ground_shadow_npc_id, slot, magicite = True)
+        self.race_decoy_npc(0x18a, self.ground_shadow_npc_id, slot, magicite = True)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -206,9 +203,7 @@ class FloatingContinent(Event):
 
             # the esper scene (ground_esper_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.DeleteEntity(self.ground_shadow_npc_id),
             field.Branch(0xad9ee),
         ]
@@ -224,8 +219,7 @@ class FloatingContinent(Event):
         # one wiring for every kind of reward3: the guest npc plays the
         # escape scene (the esper staging); a character reward repaints
         # it from the slot, other kinds paint the fixed decoy sprite
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward3)
+        slot = self.race_slot(self.reward3)
 
         guest_char_id = 0x0f
         random_sprite = self.characters.get_random_esper_item_sprite()
@@ -266,9 +260,7 @@ class FloatingContinent(Event):
             field.DeleteEntity(guest_char_id),
             field.RefreshEntities(),
             field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True, entrance_event = True),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
 
             "ESCAPE_DONE",
         ])

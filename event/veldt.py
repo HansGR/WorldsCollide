@@ -40,8 +40,7 @@ class Veldt(Event):
             # a decoy sprite baked in, and each grant site decodes the kind
             # and id from the masked reward table at runtime.  a character
             # reward swaps its real sprite in at runtime too
-            from obfuscation import rewards
-            self.race_slot = rewards.register_check(self.reward)
+            self.race_slot(self.reward)
             self.char = self.characters.CHARACTER_COUNT + 1
             import random
             self.sprite = random.choice([14, 15, 19, 20])
@@ -185,7 +184,7 @@ class Veldt(Event):
     def _race_decode_src(self, field):
         # asm loading one unmasked byte of the reward slot (0 kind, 1 id)
         from obfuscation.battle_reward import decode_src
-        return decode_src(self.args, self.race_slot, field)
+        return decode_src(self.args, self.race_slot(self.reward), field)
 
     def race_load_sprite_function16(self):
         # the race variant decodes the reward kind at runtime: a character
@@ -522,7 +521,7 @@ class Veldt(Event):
             # reward table at runtime (see obfuscation/battle_reward.py):
             # an esper shows the magicite wording, a character "Uwaoo~!!"
             from obfuscation import battle_reward
-            battle_reward.install(self.args, self.race_slot)
+            battle_reward.install(self.args, self.race_slot(self.reward))
 
             reward_dialog_id = 182
             gau_char_arrives_dialog_id = reward_dialog_id

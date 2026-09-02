@@ -36,20 +36,10 @@ class Whelk(Event):
         # one script and one npc record for every kind (see figaro castle
         # wob).  every kind gets the guard sprite the esper/item path
         # uses; a character reward repaints it from the entrance event
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         guard_npc_id = self.add_guard_npc()
-
-        src = [
-            field.BranchIfRewardKindNot(slot, "character", "NPC_DONE"),
-            field.UpdateRewardNpc(guard_npc_id, slot),
-            "NPC_DONE",
-            # continue with whatever entrance_event_mod configured
-            field.Branch(0xc9ef2),
-        ]
-        space = Write(Bank.CA, src, "whelk race entrance")
-        self.maps.set_entrance_event(0x02b, space.start_address - EVENT_CODE_START)
+        self.race_repaint_npc_entrance(0x02b, guard_npc_id, slot)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -65,9 +55,7 @@ class Whelk(Event):
             "ESPER_ITEM",
             field.FadeInScreen(),
             field.WaitForFade(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Return(),
         ]

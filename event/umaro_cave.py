@@ -44,8 +44,7 @@ class UmaroCave(Event):
         # reward is granted after the battle either way.  the scene
         # animates the umaro npcs by npc id, so after the entrance
         # repaint the whole vanilla scene works for any character
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         # both npc records keep vanilla umaro's sprite - constant
         # whatever the check holds, so nothing to read out of the rom,

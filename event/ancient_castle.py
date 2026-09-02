@@ -39,8 +39,7 @@ class AncientCastle(Event):
         # record stays vanilla (the queen); a character reward reshapes
         # it at map load - sprite only, since the gray statue palette is
         # scene state that the awakening recolors
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         statue_npc_id = 0x11
         self.race_repaint_npc_entrance(0x198, statue_npc_id, slot,

@@ -45,8 +45,7 @@ class EbotsRock(Event):
         # recruit and the dinner-guest npc go through the slot); the
         # esper/item route is fully relocated, so the two never fight
         # over the same vanilla bytes
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         # dinner guest npc: decoy in the record, repainted in-scene
         # before the bedroom scene creates it (and at map load, for
@@ -65,9 +64,7 @@ class EbotsRock(Event):
             # relocated): receive, then straight back to thamasa
             "ESPER_ITEM",
             field.Call(0xb7410),            # unfade screen, wait
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.SetEventBit(event_bit.DEFEATED_HIDON),
             field.FinishCheck(),
             Read(0xb73e1, 0xb73f0),         # event bits after hidon

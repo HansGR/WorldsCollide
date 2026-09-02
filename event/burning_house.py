@@ -56,8 +56,7 @@ class BurningHouse(Event):
         # wob).  the rescuer npc only appears during the scene, so its
         # record stays a decoy sprite and the scene repaints it before
         # creating it
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         shadow_npc_id = 0x1d
         shadow_npc = self.maps.get_npc(0x15f, shadow_npc_id)
@@ -94,9 +93,7 @@ class BurningHouse(Event):
 
             # the esper/item scene (esper_item_mod's script, slot-driven)
             "ESPER_ITEM",
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FadeOutScreen(4),
             field.Branch(0xbea3f),      # scene tail before waking up
         ]

@@ -73,8 +73,7 @@ class DoomGaze(Event):
         # too.  the grant and dialog are already kind-blind (AddEsper/
         # AddItem and the receive dialogs compile to the same slot-driven
         # commands in race builds)
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         src = [
             Read(0xa009d, 0xa009e),         # create the magicite npc

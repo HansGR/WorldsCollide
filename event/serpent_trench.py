@@ -34,8 +34,7 @@ class SerpentTrench(Event):
         # npc that plays the washed-ashore character only appears during
         # this scene, so its record stays vanilla for every kind and the
         # scene repaints it right before showing it
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         gerad_npc_id = 0x15
 
@@ -96,9 +95,7 @@ class SerpentTrench(Event):
             field.FadeInScreen(speed = 2),
             field.WaitForFade(),
 
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
 
             field.SetEventBit(event_bit.GOT_SERPENT_TRENCH_REWARD),
             field.FinishCheck(),

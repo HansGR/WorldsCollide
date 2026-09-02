@@ -53,8 +53,7 @@ class LeteRiver(Event):
         # show, two action-queue opcodes) plus the recruit - all replaced
         # by their slot-driven twins, with the vanilla action bytes
         # spliced in unchanged
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -78,9 +77,7 @@ class LeteRiver(Event):
             "ESPER_ITEM",
             field.RefreshEntities(),
             field.FadeInScreen(8),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.Branch(0xb0916),
         ]
         space = Write(Bank.CB, src, "lete river race reward")

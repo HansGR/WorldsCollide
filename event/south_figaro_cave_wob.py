@@ -37,8 +37,7 @@ class SouthFigaroCaveWOB(Event):
         # one script for every kind (see figaro castle wob); the joining
         # character's create/show/action commands are the slot-driven
         # twins, so no id byte lands in the script
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.tunnel_armor_function([
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
@@ -68,9 +67,7 @@ class SouthFigaroCaveWOB(Event):
             "ESPER_ITEM",
             field.FadeInScreen(),
             field.WaitForFade(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
 
             "REWARD_DONE",
         ])

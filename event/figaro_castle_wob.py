@@ -54,8 +54,7 @@ class FigaroCastleWOB(Event):
         # actually a character, the entrance event repaints the npc
         # before fade-in, so the player still scouts it by walking up,
         # exactly as in a normal build.
-        from obfuscation import rewards
-        slot = rewards.register_check(self.reward)
+        slot = self.race_slot(self.reward)
 
         self.edgar_npc.sprite = self.characters.get_random_esper_item_sprite()
         self.edgar_npc.palette = self.characters.get_palette(self.edgar_npc.sprite)
@@ -95,9 +94,7 @@ class FigaroCastleWOB(Event):
             field.WaitForFade(),
             field.HideEntity(self.edgar_npc_id),
             field.FadeInScreen(),
-            field.AddCheckReward(slot),
-            field.PlaySoundEffect(141),
-            field.receive_reward_dialog(slot),
+            field.ReceiveCheckReward(slot),
             field.FinishCheck(),
             field.Return(),
         ]
