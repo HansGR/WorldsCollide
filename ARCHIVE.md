@@ -2226,7 +2226,11 @@ entrance.  Non-race builds are byte-identical to before the feature.
 - *Entrance-event flag*: a scripted `LoadMap` with flags bit `$80` clear
   skips the entrance event, so entrance repaints never run (same root
   cause as this branch's "Floating Continent Save-Room Return").  Repaint
-  inline after such loads.
+  inline after such loads.  Bit twice in playtest: Narshe Moogle
+  Defense (chase/collapsed loads) and Narshe Battle (CC/C673, flags
+  `$40`, the reload that Kefka's arrival plays on; the second reload at
+  CC/C850 has `$C0` and repaints, which is why the sprite "became"
+  the character when the battle event started).
 - *Re-emit fades*: reserving over vanilla bytes that fade the screen back
   in (post-battle `96 5C`) leaves the screen black.
 - *No kind-conditional slot registration*: `AddItem`/`AddEsper`/receive
