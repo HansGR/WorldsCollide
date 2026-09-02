@@ -64,7 +64,21 @@ dialog of each kind in-emulator.
 `$9E` cannot be folded the same way: it must be **two** bytes to
 replace vanilla `$80 xx` / `$86 xx` in place, and neither operand space
 has a free bit (items use all 255 ids).  `$EC` stays as the umbrella.
-Net: 3 → 2 opcodes, leaving `$ED`, `$EE`, `$FC`, `$FF` free for others.
+Net: 3 → 2 opcodes.
+
+**Which two bytes — a collision found in review.**  "Unused by vanilla,
+WC dev and the fork" was checked against the wrong branch: on this
+branch `$9E` is also `SetYNPCGraphics` (`instruction/field/y_npc/`), so
+`-race` with `-ymascot`/`-ycreature` fails the build with an opcode-table
+space conflict today (loudly, thanks to `_set_opcode_address`'s
+`Reserve`); and on `door_rando_ruin_rewrite`, the branch this feature
+merges into, `$EC`/`$ED` are the ruination branch-recruit hooks.  Of the
+21 vanilla-unused opcodes only **`$E6`, `$EE`, `$FC`, `$FF`** are free on
+both branches.  So the opcode work is: fold the dialog into `$4B`
+(frees `$EE`), then move the grant and the umbrella onto two of that
+set — e.g. `$E6` grant, `$FC` umbrella — and update the verifier's
+"not installed" list accordingly.  Lands with the other ROM-changing
+items.
 
 ### 1.2 Move the handlers out of bank C0
 
