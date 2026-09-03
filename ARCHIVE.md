@@ -2246,6 +2246,16 @@ entrance.  Non-race builds are byte-identical to before the feature.
   scripted repaint).
 - *Re-emit fades*: reserving over vanilla bytes that fade the screen back
   in (post-battle `96 5C`) leaves the screen black.
+- *Guest character objects leak into the lineup*: `$3D` on a character
+  object (`$00-$0F`) sets that character's `$1850+id` availability byte
+  (observed `$C0` for the FC escape guest `$0F`).  WC's
+  `REFRESH_CHARACTERS_AND_SELECT_PARTY` deletes and re-creates only the
+  fourteen real characters, so a guest left alive shows in the party
+  select as a nameless Shock-wielding copy of whatever sprite it was
+  last painted with, until some later select deletes it.  Always
+  `DeleteEntity(guest)` + refresh before the select (the FC esper arm
+  did; the race character arm did not - fixed 2026-09).  Quick repro:
+  a debug-room npc that creates `$0F`, refreshes and calls the select.
 - *No kind-conditional slot registration*: `AddItem`/`AddEsper`/receive
   dialogs register a reward slot when constructed; one kind-conditional
   build path shifted every later slot between seeds (Lone Wolf's moogle
