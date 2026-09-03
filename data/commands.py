@@ -7,6 +7,27 @@ class Commands:
     def __init__(self, characters):
         self.characters = characters
 
+    def mod_moogle_commands(self, command_list):
+        from data.characters import Characters
+
+        # Give the Moogles for Moogle Defense randomized commands
+        # Copy the list minus any exclusions
+        possible_moogle_commands = command_list.copy()
+        # randomize commands for Moogles during Moogle Defense from the non-excluded set
+        # Remove Morph to ensure only 1 character gets Morph
+        # Remove Rage to avoid any issues with Randomized Atma weapon
+        # Remove X-Magic as they won't have any Magic
+        # Remove Blitz, SwdTech, Dance, and Lore because they won't have abilities within unless a party member does
+        moogle_exclusions = [name_id["Morph"], name_id["Rage"], name_id["X Magic"], name_id["Blitz"], name_id["SwdTech"], name_id["Lore"], name_id["Dance"]]
+        for exclude in moogle_exclusions:
+            try:
+                possible_moogle_commands.remove(exclude)
+            except ValueError:
+                pass
+        if len(possible_moogle_commands) > 0:
+            for index in range(Characters.FIRST_MOOGLE, Characters.LAST_MOOGLE + 1):
+                self.characters[index].commands[1] = random.choice(possible_moogle_commands)
+
     def mod_commands(self):
         command_set = set(name_id[name] for name in RANDOM_POSSIBLE_COMMANDS)
         command_list = list(command_set)
@@ -27,23 +48,7 @@ class Commands:
                 pass
 
         from data.characters import Characters
-        # Give the Moogles for Moogle Defense randomized commands
-        # Copy the list minus any exclusions
-        possible_moogle_commands = command_list.copy()
-        # randomize commands for Moogles during Moogle Defense from the non-excluded set
-        # Remove Morph to ensure only 1 character gets Morph
-        # Remove Rage to avoid any issues with Randomized Atma weapon
-        # Remove X-Magic as they won't have any Magic
-        # Remove Blitz, SwdTech, Dance, and Lore because they won't have abilities within unless a party member does
-        moogle_exclusions = [morph_id, name_id["Rage"], name_id["X Magic"], name_id["Blitz"], name_id["SwdTech"], name_id["Lore"], name_id["Dance"]]
-        for exclude in moogle_exclusions:
-            try:
-                possible_moogle_commands.remove(exclude)
-            except ValueError:
-                pass
-        if len(possible_moogle_commands) > 0:
-            for index in range(Characters.FIRST_MOOGLE, Characters.LAST_MOOGLE + 1):
-                self.characters[index].commands[1] = random.choice(possible_moogle_commands)
+        self.mod_moogle_commands(command_list)
 
         # if suplex a train condition exists, guarantee blitz
         import objectives
@@ -87,6 +92,279 @@ class Commands:
         self.characters[Characters.GAU].commands[0] = args.character_commands[-2] # rage
         self.characters[Characters.GAU].commands[1] = args.character_commands[-1] # leap
 
+    def full_random_characters(self):
+        # the characters the -com flag controls: terra through mog, plus gau
+        from data.characters import Characters
+        return list(range(Characters.GAU + 1))
+
+    def random_command_list(self):
+        # commands available to random selection, minus the -rec exclusions
+        command_list = [name_id[name] for name in RANDOM_POSSIBLE_COMMANDS]
+        for exclude_command in args.random_exclude_commands:
+            try:
+                command_list.remove(exclude_command)
+            except ValueError:
+                pass
+        return command_list
+
+    def random_skills(self, characters, skill_counts, available, taken = None):
+        # fill each character's skill slots independently, commands may repeat between
+        # characters. `taken` maps a character to commands it already holds outside
+        # this fill (the -com pr rolled commands), which must not be dealt again
+        morph_id = name_id["Morph"]
+        taken = taken or {}
+
+        skills = {character : [] for character in characters}
+        for character in characters:
+            for _ in range(skill_counts[character]):
+                # never give a character the same command twice
+                candidates = [command for command in available
+                              if command not in skills[character]
+                              and command not in taken.get(character, ())]
+                if not candidates:
+                    break
+
+                command = random.choice(candidates)
+                skills[character].append(command)
+                if command == morph_id:
+                    available.remove(morph_id) # only one character gets morph
+
+        return skills
+
+    def draft_skills(self, characters, skill_counts, available, taken = None):
+        # snake draft the skill slots so commands are unique for as long as they last,
+        # refilling the available commands whenever they run out. `taken` as in
+        # random_skills: commands a character already holds and must not draft again
+        morph_id = name_id["Morph"]
+        taken = taken or {}
+
+        draft_order = list(characters)
+        random.shuffle(draft_order)
+
+        skills = {character : [] for character in characters}
+        pool = list(available)
+        for round_index in range(max(skill_counts.values(), default = 0)):
+            round_order = [character for character in draft_order if skill_counts[character] > round_index]
+            if round_index % 2:
+                round_order.reverse() # snake back the other way every other round
+
+            for character in round_order:
+                # never give a character the same command twice
+                held = set(skills[character]) | set(taken.get(character, ()))
+                candidates = [command for command in pool if command not in held]
+                if not candidates:
+                    # the pool ran out, or all that is left of it is already on this character.
+                    # refill around whatever is left instead of replacing it, so a command which
+                    # could not be handed out this turn is still waiting to be drafted later
+                    pool.extend(available)
+                    candidates = [command for command in pool if command not in held]
+                    if not candidates:
+                        continue
+
+                command = random.choice(candidates)
+                pool.remove(command)
+                skills[character].append(command)
+                if command == morph_id:
+                    # only one character gets morph. dropping it from the available commands is
+                    # enough to keep it out of the pool for good: a refill only happens once every
+                    # pooled command is already on the drafting character, so morph can never be
+                    # waiting in the pool at the moment a refill would add a second copy of it
+                    available.remove(morph_id)
+
+        return skills
+
+    def guarantee_blitz(self, characters, skills):
+        # if suplex a train condition exists, guarantee blitz
+        import objectives
+        blitz_id = name_id["Blitz"]
+
+        if not objectives.suplex_train_condition_exists:
+            return
+        if any(blitz_id in skills[character] for character in characters):
+            return
+
+        # replace a random skill slot with blitz (even if blitz is in the excluded commands)
+        possible_characters = [character for character in characters if skills[character]]
+        if not possible_characters:
+            return
+
+        character = random.choice(possible_characters)
+        skills[character][random.randrange(len(skills[character]))] = blitz_id
+
+    def roll_probability_commands(self, character, capacity, held):
+        # roll one character's slots from the declared (command, percent) list
+        # (-compr/-compru, plus -comfr/-comfru folded in). more commands can be
+        # declared than the character has free slots, so: group the declarations
+        # by likelihood, and starting with the most likely group roll each
+        # command in a random order, stopping as soon as `capacity` slots are
+        # claimed. a rolled 97 (None) claims a slot and leaves it empty; a
+        # rolled command the character already holds explicitly claims nothing.
+        from data.characters import Characters
+        fight_id = name_id["Fight"]
+
+        by_percent = {}
+        for command, percent in args.command_probabilities:
+            by_percent.setdefault(percent, []).append(command)
+
+        rolled = []
+        for percent in sorted(by_percent, reverse = True):
+            group = list(by_percent[percent])
+            random.shuffle(group)
+            for command in group:
+                if len(rolled) == capacity:
+                    return rolled
+                # gau has no fight command in vanilla, and that is part of what
+                # makes him unique -- a declared fight probability never applies
+                # to him (his slot backfills instead)
+                if command == fight_id and character == Characters.GAU:
+                    continue
+                if random.randrange(100) < percent:
+                    if command not in held:
+                        rolled.append(command)
+        return rolled
+
+    def mod_probability_random_commands(self):
+        # composed command assignment (-com / -comfr(u) / -compr(u)):
+        # 1. explicit -com picks claim their slots (97 holds a slot empty;
+        #    99/98 mark slots for random/unique backfill)
+        # 2. the declared probabilities roll into the remaining capacity
+        # 3. backfill: 98-marked slots draft unique, 99-marked slots fill
+        #    randomly, and any still-unfilled slots use the family default
+        #    (unique for -comfru/-compru, random otherwise)
+        from data.characters import Characters
+        fight_id = name_id["Fight"]
+        magic_id = name_id["Magic"]
+        item_id = name_id["Item"]
+        none_id = name_id["None"]
+        morph_id = name_id["Morph"]
+
+        available = self.random_command_list()
+        self.mod_moogle_commands(available)
+
+        characters = self.full_random_characters()
+
+        # step 1: explicit traditional picks and slot marks
+        explicit = {character : [] for character in characters}
+        random_fill = {character : 0 for character in characters}
+        unique_fill = {character : 0 for character in characters}
+        empty_slots = {character : 0 for character in characters}
+        if args.character_commands:
+            # same explicit-command rules as mod_commands: the random pool plus
+            # fight anywhere, morph only in terra's slot, leap only in gau's
+            leap_id = name_id["Leap"]
+            allowed = set(name_id[name] for name in RANDOM_POSSIBLE_COMMANDS) | {fight_id}
+            character_picks = {character : [args.character_commands[character]]
+                               for character in characters if character != Characters.GAU}
+            character_picks[Characters.GAU] = [args.character_commands[-2], args.character_commands[-1]]
+            for character, picks in character_picks.items():
+                for command in picks:
+                    if command == RANDOM_COMMAND:
+                        random_fill[character] += 1
+                    elif command == RANDOM_UNIQUE_COMMAND:
+                        unique_fill[character] += 1
+                    elif command == NONE_COMMAND:
+                        empty_slots[character] += 1
+                    elif (command in allowed
+                          or (command == morph_id and character == 0)
+                          or (command == leap_id and character == Characters.GAU)):
+                        explicit[character].append(command)
+                    else:
+                        raise ValueError(f"Invalid character command {command}")
+
+        # a morph handed out explicitly or by its probability roll must stay out
+        # of the backfill pool: the "only one character gets morph" pool rule
+        # (and the draft refill's morph invariant) cannot deal a second copy
+        morph_placed = (any(morph_id in commands for commands in explicit.values())
+                        or any(command == morph_id for command, _ in args.command_probabilities))
+        if morph_placed:
+            try:
+                available.remove(morph_id)
+            except ValueError:
+                pass
+
+        # step 2: probability rolls into the remaining capacity
+        rolled = {}
+        capacity = {}
+        for character in characters:
+            capacity[character] = (COMMAND_SLOT_COUNT - len(explicit[character])
+                                   - empty_slots[character]
+                                   - random_fill[character] - unique_fill[character])
+            rolled[character] = self.roll_probability_commands(
+                character, capacity[character], set(explicit[character]))
+
+        # step 2.5: at most one character may hold morph.  the rolls are
+        # independent per character, so several can win the same declared
+        # morph probability, but the morph-gauge ASM only supports a single
+        # holder (data/characters_asm.update_morph_character: "this assumes
+        # only 1 character has morph") -- extra copies would be broken
+        # commands.  every character's chance to ROLL morph is untouched:
+        # one winner is chosen at random and the losers' slots return to
+        # capacity for ordinary backfill.  an explicit -com morph outranks
+        # every rolled one.
+        morph_winners = [character for character in characters
+                         if morph_id in rolled[character]]
+        if any(morph_id in commands for commands in explicit.values()):
+            keep = None
+        elif morph_winners:
+            keep = random.choice(morph_winners)
+        else:
+            keep = None
+        for character in morph_winners:
+            if character != keep:
+                rolled[character].remove(morph_id)
+
+        # step 3: backfill -- leftover capacity joins the family-default style
+        for character in characters:
+            leftover = capacity[character] - len(rolled[character])
+            if args.commands_unique_backfill:
+                unique_fill[character] += leftover
+            else:
+                random_fill[character] += leftover
+
+        taken = {character : explicit[character]
+                 + [command for command in rolled[character] if command != NONE_COMMAND]
+                 for character in characters}
+        drafted = self.draft_skills(characters, unique_fill, available, taken)
+        taken = {character : taken[character] + drafted[character] for character in characters}
+        randomed = self.random_skills(characters, random_fill, available, taken)
+
+        skills = {character : drafted[character] + randomed[character] for character in characters}
+        self.guarantee_blitz(characters, skills)
+
+        # apply the commands in menu order: fight -> skills -> magic -> item,
+        # with explicit picks ahead of rolled skills ahead of backfilled ones
+        # and empty slots at the end
+        for character in characters:
+            common = [command for command in rolled[character]
+                      if command in (fight_id, magic_id, item_id)]
+            explicit_skills = [command for command in explicit[character] if command != fight_id]
+            rolled_skills = [command for command in rolled[character]
+                             if command not in (fight_id, magic_id, item_id, NONE_COMMAND)]
+            commands = []
+            if fight_id in common or fight_id in explicit[character]:
+                commands.append(fight_id)
+            commands.extend(explicit_skills)
+            commands.extend(rolled_skills)
+            commands.extend(skills[character])
+            if magic_id in common:
+                commands.append(magic_id)
+            if item_id in common:
+                commands.append(item_id)
+            commands.extend([none_id] * (COMMAND_SLOT_COUNT - len(commands)))
+
+            self.characters[character].commands = commands
+
+    def shuffle_full_random_commands(self):
+        # commands are already random, so shuffle whole command sets between characters
+        # instead of single slots to keep each character's menu order intact
+        characters = self.full_random_characters()
+
+        command_sets = [self.characters[character].commands for character in characters]
+        random.shuffle(command_sets)
+
+        for index, character in enumerate(characters):
+            self.characters[character].commands = command_sets[index]
+
     def shuffle_commands(self):
         from data.characters import Characters
 
@@ -105,17 +383,33 @@ class Commands:
         import data.characters_asm as characters_asm
         from data.characters import Characters
 
-        if args.commands:
+        if args.commands_probability_mode:
+            self.mod_probability_random_commands()
+        elif args.commands:
             self.mod_commands()
         if args.shuffle_commands:
-            self.shuffle_commands()
+            if args.commands_probability_mode:
+                self.shuffle_full_random_commands()
+            else:
+                self.shuffle_commands()
 
-        if args.commands or args.shuffle_commands:
+        if args.commands or args.commands_probability_mode or args.shuffle_commands:
             characters_asm.update_morph_character(self.characters[ : Characters.CHARACTER_COUNT])
 
     def log(self):
         from log import section, format_option
         from data.characters import Characters
+
+        if args.commands_probability_mode:
+            # every slot can be randomized, so log each character's full command menu
+            lcolumn = []
+            for character in self.full_random_characters():
+                commands = [id_name[command] for command in self.characters[character].commands
+                            if command != name_id["None"]]
+                lcolumn.append(format_option(Characters.DEFAULT_NAME[character].capitalize(), ", ".join(commands)))
+
+            section("Commands", lcolumn, [])
+            return
 
         lcolumn = []
         for index, option in enumerate(COMMAND_OPTIONS[ : -2]):

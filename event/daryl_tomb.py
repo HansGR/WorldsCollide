@@ -15,7 +15,9 @@ class DarylTomb(Event):
         self.staircase_mod()
         self.dullahan_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -24,6 +26,62 @@ class DarylTomb(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one inscription wording for every kind, driven
+        # off the masked reward slot at runtime - the event bytes and the
+        # dialog data are the same whether daryl's tomb holds a
+        # character, an esper or an item
+        slot = self.race_slot(self.reward)
+
+        # the inscription names the reward: <reward> renders it at
+        # display time; the centring still uses the real name's width.
+        # (the dialog runs long before the grant, so it decodes the
+        # name itself.)
+        if self.reward.type == RewardType.CHARACTER:
+            real_name = self.characters.get_name(self.reward.id)
+        elif self.reward.type == RewardType.ESPER:
+            real_name = self.espers.get_name(self.reward.id).upper()
+        else:
+            real_name = self.items.get_name(self.reward.id).upper()
+        num_spaces = 15 - len(real_name) # try to center dialog
+
+        daryl_sleeps_here_dialog_id = 2461 # previously 2464
+        self.dialogs.set_text(daryl_sleeps_here_dialog_id,
+                              f"<line><{' ' * num_spaces}><reward> SLEEPS HERE<end>")
+        space = Reserve(0xa42f9, 0xa42fb, "daryl tomb daryl sleeps here dialog", field.NOP())
+        space.write(
+            field.reward_slot_dialog(slot, daryl_sleeps_here_dialog_id,
+                                     inside_text_box = False),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.Branch(0xa4334),      # on to the finish-check code
+
+            # the esper/item scene (esper/item_mod's script, slot-driven;
+            # the FadeInScreen is vanilla's own unfade at 0xa4328, now
+            # inside the reserve)
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.Turn(direction.UP),
+            ),
+            field.ReceiveCheckReward(slot),
+            field.Branch(0xa4334),
+        ]
+        space = Write(Bank.CA, src, "daryl tomb race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xa4328, 0xa4333, "daryl tomb open staircase entrance", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def entrance_mod(self):
         if self.args.character_gating:
@@ -72,16 +130,33 @@ class DarylTomb(Event):
             field.InvokeBattle(boss_pack_id),
         )
 
-    def daryl_sleeps_here_mod(self, new_name):
+    def daryl_sleeps_here_mod(self, new_name, reward = None):
+        # the inscription names the reward, so race builds render it at
+        # display time instead of storing it: `new_name` is then a control
+        # code, but the centring still uses the real name's width.  the
+        # dialog runs long before the grant, so it decodes the name itself
+        # (`reward` is (kind, value); characters are not obfuscated)
+        display_name = new_name
+        if reward is not None and self.args.race:
+            kind, value = reward
+            display_name = (self.espers.dialog_name(value) if kind == "esper"
+                            else self.items.dialog_name(value))
         num_spaces = 15 - len(new_name) # try to center dialog
 
         daryl_sleeps_here_dialog_id = 2461 # previously 2464
-        self.dialogs.set_text(daryl_sleeps_here_dialog_id, f"<line><{' ' * num_spaces}>{new_name} SLEEPS HERE<end>")
+        self.dialogs.set_text(daryl_sleeps_here_dialog_id, f"<line><{' ' * num_spaces}>{display_name} SLEEPS HERE<end>")
 
         space = Reserve(0xa42f9, 0xa42fb, "daryl tomb daryl sleeps here dialog", field.NOP())
-        space.write(
-            field.Dialog(daryl_sleeps_here_dialog_id, inside_text_box = False),
-        )
+        if reward is None:
+            space.write(
+                field.Dialog(daryl_sleeps_here_dialog_id, inside_text_box = False),
+            )
+        else:
+            kind, value = reward
+            space.write(
+                field.reward_dialog(kind, value, daryl_sleeps_here_dialog_id,
+                                    inside_text_box = False),
+            )
 
     def character_mod(self, character):
         self.daryl_sleeps_here_mod(self.characters.get_name(character))
@@ -102,7 +177,8 @@ class DarylTomb(Event):
         return space
 
     def esper_mod(self, esper):
-        self.daryl_sleeps_here_mod(self.espers.get_name(esper).upper())
+        self.daryl_sleeps_here_mod(self.espers.get_name(esper).upper(),
+                                   reward = ("esper", esper))
 
         space = self.esper_item_mod()
         space.write(
@@ -111,7 +187,8 @@ class DarylTomb(Event):
         )
 
     def item_mod(self, item):
-        self.daryl_sleeps_here_mod(self.items.get_name(item).upper())
+        self.daryl_sleeps_here_mod(self.items.get_name(item).upper(),
+                                   reward = ("item", item))
 
         space = self.esper_item_mod()
         space.write(

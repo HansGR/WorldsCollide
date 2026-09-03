@@ -102,13 +102,32 @@ class NarsheWOR(Event):
             field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), LOCKED),
         ])
 
-    def weapon_shop_mod(self, dialog_first_choice_text, reward_instructions):
+    def weapon_shop_mod(self, dialog_first_choice_text, reward_instructions,
+                        first_reward = None):
         space = Reserve(0xc0b24, 0xc0b26, "narshe wor i wanted to give you this", field.NOP())
 
-        import data.text
-        # item names stored as TEXT2, dialogs are TEXT1
-        item_name = data.text.convert(self.items.get_name(self.item), data.text.TEXT1)
+        # this choice names two rewards at once: the one on offer here
+        # (first_reward, esper or item) and the weapon.  race builds render
+        # both at display time, through <reward> and <reward2>, so neither
+        # name is stored in the rom - and the wording is the same for an
+        # esper or an item reward, so the text does not reveal the kind
+        item_name = self.items.dialog_name(self.item, second = True)
         self.dialogs.set_text(1519, dialog_first_choice_text + "<line><choice> Make it “" + item_name + "”<end>")
+
+        if first_reward is not None:
+            kind, value = first_reward
+            space = Reserve(0xc0b37, 0xc0b39, "narshe wor reward choice dialog")
+            space.write(
+                field.reward_dialog(kind, value, 1519, second_item = self.item),
+            )
+
+            if self.args.race:
+                # the display npc record stays vanilla for every kind (a
+                # baked chest said "item here" in the rom); an item
+                # repaints it to the chest at map load
+                from obfuscation import rewards
+                slot = rewards.register(kind, value)
+                self.race_repaint_npc_entrance(0x18, 0x11, slot, chest = True)
 
         # if esper or first item chosen, set event bit to know second item should be given by guard
         space = Reserve(0xc0b42, 0xc0b44, "narshe wor ragnarok esper right", field.NOP())
@@ -189,11 +208,19 @@ class NarsheWOR(Event):
         guard_npc.set_event_address(guard_event)
 
     def weapon_shop_esper_mod(self, esper):
-        dialog_text = "This stone gives off an eerie aura!<line><choice> Leave it the stone “" + self.espers.get_name(esper) + "”"
+        # race builds use the same wording as the item variant below, so the
+        # text itself does not say whether this check holds an esper or an
+        # item; other builds keep the original line
+        if self.args.race:
+            dialog_text = ("This gives off an eerie aura!<line><choice> Leave it “"
+                           + self.espers.dialog_name(esper) + "”")
+        else:
+            dialog_text = ("This stone gives off an eerie aura!<line><choice> Leave it the stone “"
+                           + self.espers.get_name(esper) + "”")
 
         self.weapon_shop_mod(dialog_text, [
             field.AddEsper(esper, sound_effect = False),
-        ])
+        ], first_reward = ("esper", esper))
 
         self.esper_room_mod([
             field.AddEsper(esper),
@@ -201,20 +228,22 @@ class NarsheWOR(Event):
         ])
 
     def weapon_shop_item_mod(self, item):
-        magicite_npc_id = 0x11
-        magicite_npc = self.maps.get_npc(0x18, magicite_npc_id)
-        magicite_npc.sprite = 106
-        magicite_npc.palette = 6
-        magicite_npc.split_sprite = 1
-        magicite_npc.direction = direction.DOWN
+        if not self.args.race:
+            # race builds keep the vanilla record and select the look at
+            # runtime instead (weapon_shop_mod's repaint)
+            magicite_npc_id = 0x11
+            magicite_npc = self.maps.get_npc(0x18, magicite_npc_id)
+            magicite_npc.sprite = 106
+            magicite_npc.palette = 6
+            magicite_npc.split_sprite = 1
+            magicite_npc.direction = direction.DOWN
 
-        import data.text
-        item_name = data.text.convert(self.items.get_name(item), data.text.TEXT1) # item names are stored as TEXT2, dialogs are TEXT1
-        dialog_text = "This gives off an eerie aura!<line><choice> Leave it “" + item_name + "”"
+        dialog_text = ("This gives off an eerie aura!<line><choice> Leave it “"
+                       + self.items.dialog_name(item) + "”")
 
         self.weapon_shop_mod(dialog_text, [
             field.AddItem(item, sound_effect = False),
-        ])
+        ], first_reward = ("item", item))
 
         self.esper_room_mod([
             field.AddItem(item),

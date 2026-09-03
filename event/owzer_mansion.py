@@ -31,7 +31,9 @@ class OwzerMansion(Event):
         space = Reserve(0xb4dea, 0xb4ded, "owzer mansion turn party left at bookshelf", field.NOP())
         space = Reserve(0xb4dee, 0xb4df4, "owzer mansion turn relm npc right", field.NOP())
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -40,6 +42,71 @@ class OwzerMansion(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob)
+        slot = self.race_slot(self.reward)
+
+        self.race_decoy_npc(0x0d0, self.relm_npc_id, slot)
+
+        # both two-byte StartSong sites ride with the volume-fade command
+        # after them, so a call fits: a character reward starts their
+        # theme at runtime (as character_music_mod bakes it), esper/item
+        # keep vanilla's song
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "VANILLA_SONG"),
+            field.PlayRewardTheme(slot),
+            field.Branch("SONG_DONE"),
+            "VANILLA_SONG",
+            Read(0xb4d1f, 0xb4d20),     # vanilla song
+            "SONG_DONE",
+            Read(0xb4d21, 0xb4d22),     # song volume fade
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "owzer mansion race theme")
+        theme_script = space.start_address
+        for site in (0xb4d1f, 0xb4cc6):
+            space = Reserve(site, site + 3, "owzer mansion play song", field.NOP())
+            space.write(
+                field.Call(theme_script),
+            )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            # characters receive at the recruit site below
+            field.Branch(0xb4de8),
+
+            # the esper/item grant (esper/item_mod's script, slot-driven;
+            # no sound effect, as the originals)
+            "ESPER_ITEM",
+            Read(0xb4de1, 0xb4de2),
+            field.AddCheckReward(slot),
+            field.receive_reward_dialog(slot),
+            field.Branch(0xb4de8),
+        ]
+        space = Write(Bank.CA, src, "owzer mansion race grant")
+        grant_script = space.start_address
+
+        space = Reserve(0xb4de1, 0xb4de7, "owzer mansion get esper/item", field.NOP())
+        space.write(
+            field.Branch(grant_script),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NO_RECRUIT"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            "NO_RECRUIT",
+            field.Branch(0xb4e1d),
+        ]
+        space = Write(Bank.CA, src, "owzer mansion race recruit")
+        recruit_script = space.start_address
+
+        space = Reserve(0xb4dfd, 0xb4e1c, "owzer mansion add relm", field.NOP())
+        space.write(
+            field.Branch(recruit_script),
+        )
 
     def flash_mod(self):
         space = Reserve(0xb4d10, 0xb4d11, "owzer mansion flash", field.FlashScreen(field.Flash.NONE))

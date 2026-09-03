@@ -25,6 +25,13 @@ class Data:
         self.args = args
         self.dialogs = dialogs
 
+        if args.race:
+            # start this build's race state clean (the reward collection
+            # events register into before Data.write lays down the table,
+            # and the other once-per-build singletons)
+            import obfuscation
+            obfuscation.reset_build()
+
         self.spells = spells.Spells(rom, args)
         self.spells.mod()
 
@@ -113,3 +120,15 @@ class Data:
         self.shops.write()
         self.coliseum.write()
         self.title_graphics.write()
+
+        if self.args.race:
+            # L3: lay the collected reward table into the claim, fill the
+            # character palette table (palettes can be flag-customized, so
+            # it waits for the final Characters state), then
+            # L2: mask every relocated table (incl. the reward table) in one
+            # pass.  the reward table must be written before masking.
+            from obfuscation import rewards, mask
+            from instruction.field import race
+            rewards.write_tables(self.rom, self.args)
+            race.fill_character_palettes(self.characters.get_palette)
+            mask.apply_all(self.args, self.rom)

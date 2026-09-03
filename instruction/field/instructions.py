@@ -128,15 +128,36 @@ class _AddItem(_Instruction):
     def __str__(self):
         return super().__str__(f"'{self.item_name}'")
 
-def AddItem(item, sound_effect = True):
-    AddItem = type("AddItem", (_AddItem,), {})
-    if sound_effect:
-        return AddItem(item), PlaySoundEffect(141)
+def _resolve_item_id(item):
+    if isinstance(item, str):
+        from data.item_names import name_id
+        return name_id[item]
+    return item
+
+def _add_check_reward(kind, value):
+    # race builds: the script carries only an opaque slot in the masked
+    # reward table, which says both which kind and which one
+    # (see obfuscation/rewards.py)
+    from obfuscation import rewards
+    import instruction.field.race as race
+    return race.AddCheckReward(rewards.register(kind, value))
+
+def AddItem(item, sound_effect = True, spoiler = True):
+    """spoiler=False for items the player is simply given at game start:
+    they are in the inventory before the first check, so hiding them buys
+    nothing and they would crowd the one-byte reward slot space."""
+    import args
+    if args.race and spoiler:
+        instruction = _add_check_reward("item", _resolve_item_id(item))
     else:
-        return AddItem(item)
+        AddItem = type("AddItem", (_AddItem,), {})
+        instruction = AddItem(item)
+    if sound_effect:
+        return instruction, PlaySoundEffect(141)
+    return instruction
 
 class _AddItems(_Instruction):
-    def __init__(self, item, count):
+    def __init__(self, item, count, spoiler = True):
         if isinstance(item, str):
             from data.item_names import name_id
             self.item = name_id[item]
@@ -145,7 +166,19 @@ class _AddItems(_Instruction):
             from data.item_names import id_name
             self.item = item
             self.item_name = id_name[item]
-        if count == 1:
+        import args
+        if args.race and spoiler:
+            # hide the item behind a reward slot, inside the same
+            # 0xB0/0xB1 repeat wrapper (see obfuscation/rewards.py)
+            from obfuscation import rewards
+            import instruction.field.race as race
+            index = rewards.register("item", self.item)
+            opcode = race.add_check_reward_opcode()
+            if count == 1:
+                super().__init__(opcode, index)
+            else:
+                super().__init__(0xB0, count, opcode, index, 0xB1)
+        elif count == 1:
             super().__init__(0x80, self.item)
         else:
             super().__init__(0xB0, count, 0x80, self.item, 0xB1)
@@ -153,12 +186,12 @@ class _AddItems(_Instruction):
     def __str__(self):
         return super().__str__(f"'{self.item_name}'")
 
-def AddItems(item, count, sound_effect = True):
+def AddItems(item, count, sound_effect = True, spoiler = True):
     AddItems = type("AddItems", (_AddItems,), {})
     if sound_effect:
-        return AddItems(item, count), PlaySoundEffect(141)
+        return AddItems(item, count, spoiler), PlaySoundEffect(141)
     else:
-        return AddItems(item, count)
+        return AddItems(item, count, spoiler)
 
 class AddGP(_Instruction):
     MAX = 2 ** 16 - 1 # 2 bytes max value
@@ -188,11 +221,16 @@ class _AddEsper(_Instruction):
         return super().__str__(self.esper_id)
 
 def AddEsper(esper_id, sound_effect = True):
-    AddEsper = type("AddEsper", (_AddEsper,), {})
-    if sound_effect:
-        return AddEsper(esper_id), PlaySoundEffect(141)
+    import args
+    if args.race:
+        # the same command items use, so nothing static says "esper here"
+        instruction = _add_check_reward("esper", esper_id)
     else:
-        return AddEsper(esper_id)
+        AddEsper = type("AddEsper", (_AddEsper,), {})
+        instruction = AddEsper(esper_id)
+    if sound_effect:
+        return instruction, PlaySoundEffect(141)
+    return instruction
 
 class RemoveEsper(_Instruction):
     def __init__(self, esper_id):
@@ -247,8 +285,40 @@ class RemoveAllEquipment(_Instruction):
     def __str__(self):
         return super().__str__(self.character)
 
+class RewardDialogId(int):
+    """A receive dialog id that also carries the opaque slot of the reward
+    it names, and the id of the wording used for the other kind.
+
+    Race builds hand this back from Items.get_receive_dialog and
+    Espers.get_receive_esper_dialog so Dialog() below can emit the reward
+    dialog command instead: the script then names nothing and does not
+    even reveal whether the reward is an item or an esper, because the
+    same command and operand shape serve both.  It is an int so every
+    non-race path (and any code that just wants the id) is unaffected.
+    """
+    def __new__(cls, dialog_id, slot, item_dialog, esper_dialog):
+        instance = super().__new__(cls, dialog_id)
+        instance.slot = slot
+        instance.item_dialog = item_dialog
+        instance.esper_dialog = esper_dialog
+        return instance
+
 class Dialog(_Instruction):
     def __init__(self, dialog_id, wait_for_input = True, inside_text_box = True, top_of_screen = True):
+        if isinstance(dialog_id, RewardDialogId) and wait_for_input \
+                and inside_text_box and top_of_screen:
+            # race builds: emit the reward dialog command, which decodes the
+            # reward from the masked table, picks the wording matching its
+            # kind and lets <reward> render the name at runtime - so the
+            # script names nothing and hides the kind too.  (only the plain
+            # flags are handled; every receive dialog uses them.)
+            import instruction.field.race as race
+            self.dialog_id = int(dialog_id)
+            reward = race.RewardDialog(dialog_id.slot, dialog_id.item_dialog,
+                                       dialog_id.esper_dialog)
+            super().__init__(reward.opcode, *reward.args)
+            return
+
         self.dialog_id = dialog_id
 
         if wait_for_input:

@@ -22,17 +22,92 @@ class GauFatherHouse(Event):
         self.merchant_npc = self.maps.get_npc(0x073, self.merchant_npc_id)
 
         self.merchant_mod()
-        self.entrance_event_mod()
+        if self.args.race:
+            self.race_reward_mod()
+        else:
+            self.entrance_event_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
-            self.character_mod(self.reward.id)
-        elif self.reward.type == RewardType.ESPER:
-            self.esper_mod(self.reward.id)
-        elif self.reward.type == RewardType.ITEM:
-            self.item_mod(self.reward.id)
+            if self.reward.type == RewardType.CHARACTER:
+                self.character_mod(self.reward.id)
+            elif self.reward.type == RewardType.ESPER:
+                self.esper_mod(self.reward.id)
+            elif self.reward.type == RewardType.ITEM:
+                self.item_mod(self.reward.id)
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  the porch npc gets the esper/item decoy sprite; the
+        # entrance event repaints it and plays the character's theme when
+        # the reward is a character, and shadow's theme otherwise (what
+        # every non-character build plays there)
+        slot = self.race_slot(self.reward)
+
+        self.shadow_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.shadow_npc.palette = self.characters.get_palette(self.shadow_npc.sprite)
+
+        NO_SHADOW = 0xb0b7b
+        src = [
+            field.BranchIfEventBitClear(npc_bit.SHADOW_GAU_FATHER_HOUSE, "NO_SHADOW"),
+        ]
+        if self.args.character_gating:
+            src += [
+                field.BranchIfEventBitClear(event_bit.character_recruited(self.character_gate()), "NO_SHADOW"),
+            ]
+        src += [
+            field.BranchIfRewardKindNot(slot, "character", "VANILLA_SONG"),
+            field.UpdateRewardNpc(self.shadow_npc_id, slot),
+            field.PlayRewardTheme(slot),
+            field.Branch(0xb0b7a),
+
+            "VANILLA_SONG",
+            field.StartSong(get_character_theme(self.characters.SHADOW)),
+            field.Branch(0xb0b7a),
+
+            "NO_SHADOW",
+            field.Branch(NO_SHADOW),
+        ]
+        space = Write(Bank.CB, src, "gau father house race entrance")
+        entrance_block = space.start_address
+
+        space = Reserve(0xb0b6b, 0xb0b79, "gau father house shadow theme conditions", field.NOP())
+        space.write(
+            field.Branch(entrance_block),
+        )
+
+        # use first time speaking to merchant space (as entrance_event_mod)
+        space = Reserve(0xb0b7d, 0xb0ba0, "gau father house merchant first dialog", field.NOP())
+        space.write(
+            field.HideEntity(self.shadow_npc_id),
+            field.HideEntity(self.interceptor_npc_id),
+            field.Return(),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            Read(0xb0aee, 0xb0af9),         # scene tail the recruit keeps
+            field.Branch(0xb0afa),
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.Branch(0xb0afa),
+        ]
+        space = Write(Bank.CB, src, "gau father house race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xb0a5f, 0xb0af9, "gau father house wob reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def merchant_mod(self):
         # first time speak with merchant he has extra dialog, always skip that

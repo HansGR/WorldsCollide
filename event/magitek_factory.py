@@ -47,7 +47,9 @@ class MagitekFactory(Event):
             self.fixed_battles_mod()
         self.number128_battle_mod()
 
-        if self.reward3.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward3_mod()
+        elif self.reward3.type == RewardType.CHARACTER:
             self.character_mod(self.reward3.id)
         elif self.reward3.type == RewardType.ESPER:
             self.esper_mod(self.reward3.id)
@@ -297,6 +299,41 @@ class MagitekFactory(Event):
         space = Reserve(0xc80ad, 0xc80b0, "magitek factory check game over after mine cart ride", field.NOP())
         space.write(
             field.Call(field.ORIGINAL_CHECK_GAME_OVER),
+        )
+
+    def race_reward3_mod(self):
+        # one script and one npc record for every kind of reward3
+        # (character or esper); rewards 1 and 2 are esper/item and
+        # already compile identically per kind through the unified
+        # commands
+        slot = self.race_slot(self.reward3)
+
+        self.race_decoy_npc(0x0f0, self.setzer_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            Read(0xc81c5, 0xc81d9),     # party splits
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(0xc8303),
+
+            # the esper scene (esper_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.Branch(0xc8303),
+        ]
+        space = Write(Bank.CC, src, "magitek factory race reward3")
+        reward_script = space.start_address
+
+        space = Reserve(0xc819b, 0xc8302, "magitek factory reward3", field.NOP())
+        space.write(
+            field.Branch(reward_script),
         )
 
     def character_mod(self, character):

@@ -218,13 +218,19 @@ class BuyMenu:
         $F1 = current menu slot (0-7)
         X = shop data offset (shop_index + menu_slot + 1) [unused in compact mode]
         """
+        from obfuscation import relocate
+
+        # race builds relocate and mask the shop table; this fragment
+        # reads (and decodes) wherever it really is
+        read_shop_item = relocate.read_asm(args, "shop_data")
+
         src = [
             # Check if compact mode is active
             asm.LDA(self.COMPACT_FLAG_DP, asm.DIR),  # $25
             asm.BNE("USE_COMPACT"),
 
             # Normal mode: load from ROM as usual
-            asm.LDA(0xc47ac0, asm.LNG_X),     # Load item from ROM
+            *read_shop_item,                  # Load item from ROM
             asm.RTL(),
 
             # Compact mode: read from pre-built compact buffer

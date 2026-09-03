@@ -36,7 +36,9 @@ class LeteRiver(Event):
         self.remove_raft_mod()
         self.exit_river_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -44,6 +46,86 @@ class LeteRiver(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind.  the vanilla scene names the joining
+        # character in six raw operand bytes (vehicle, hide, create,
+        # show, two action-queue opcodes) plus the recruit - all replaced
+        # by their slot-driven twins, with the vanilla action bytes
+        # spliced in unchanged
+        slot = self.race_slot(self.reward)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene: vanilla 0xb08f8-0xb0915 slot-driven
+            field.SetRewardVehicle(slot, field.Vehicle.NONE),
+            field.HideRewardEntity(slot),
+            field.UpdatePartyLeader(),
+            field.AddCheckReward(slot),         # replaces remove+delete
+            field.RefreshEntities(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.CreateRewardEntity(slot),
+            field.ShowRewardEntity(slot),
+            field.RefreshEntities(),
+            field.RewardEntityActRaw(slot, 0x87),
+            Read(0xb090d, 0xb0913),             # in-water bobbing
+            Read(0xb0914, 0xb0915),             # unfade
+            field.Branch(0xb0916),              # common: finish-check call
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.RefreshEntities(),
+            field.FadeInScreen(8),
+            field.ReceiveCheckReward(slot),
+            field.Branch(0xb0916),
+        ]
+        space = Write(Bank.CB, src, "lete river race reward")
+        reward_script = space.start_address
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # character: heal, character floats away, party follows
+            Read(0xb091b, 0xb091f),             # heal party call
+            field.RewardEntityActRaw(slot, 0x09),
+            Read(0xb0922, 0xb092a),             # floats away
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.Pause(2),
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.Move(direction.UP, 3),
+                field_entity.MoveDiagonal(direction.UP, 2, direction.RIGHT, 1),
+                field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1),
+                field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1),
+                field_entity.SetSpeed(field_entity.Speed.FAST),
+                field_entity.Move(direction.UP, 8),
+            ),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+
+            field.Call(self.remove_raft),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Call(self.exit_river),
+            field.Return(),
+
+            # esper/item: party floats off without the extra passenger
+            "ESPER_ITEM",
+            Read(0xb092b, 0xb093c),             # party floats away, fade
+            field.Call(self.remove_raft),
+            field.Call(self.exit_river),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "lete river race departure")
+        departure_script = space.start_address
+
+        space = Reserve(0xb08f8, 0xb0915, "lete river reward scene", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
+        space = Reserve(0xb091b, 0xb094d, "lete river departure", field.NOP())
+        space.write(
+            field.Branch(departure_script),
+        )
 
     def add_gating_condition(self):
         src = [

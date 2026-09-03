@@ -15,7 +15,9 @@ class SerpentTrench(Event):
         self.find_diving_helmet_mod()
         self.add_move_airship()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -26,6 +28,100 @@ class SerpentTrench(Event):
             self.fixed_battles_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind (see figaro castle wob).  the gerad
+        # npc that plays the washed-ashore character only appears during
+        # this scene, so its record stays vanilla for every kind and the
+        # scene repaints it right before showing it
+        slot = self.race_slot(self.reward)
+
+        gerad_npc_id = 0x15
+
+        src = [
+            field.BranchIfEventBitSet(event_bit.GOT_SERPENT_TRENCH_REWARD,
+                                      "ALREADY_DONE"),
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.SetEventBit(npc_bit.GERAD_NIKEAH_BOAT),
+            field.Call(self.move_airship_to_nikeah),
+            field.SetRewardSprite(gerad_npc_id, slot),
+            field.SetRewardPalette(gerad_npc_id, slot),
+            field.CreateEntity(gerad_npc_id),
+            field.EntityAct(gerad_npc_id, True,
+                field_entity.SetPosition(24, 11),
+                field_entity.AnimateKnockedOut(),
+                field_entity.SetSpriteLayer(0),
+            ),
+
+            field.HideEntity(field_entity.PARTY0),
+            field.ShowEntity(gerad_npc_id),
+
+            field.FadeInScreen(speed = 2),
+            field.WaitForFade(),
+            field.Pause(2),
+            field.Pause(1),
+            field.FadeOutScreen(speed = 2),
+            field.WaitForFade(),
+
+            field.ClearEventBit(npc_bit.GERAD_NIKEAH_BOAT),
+            field.HideEntity(gerad_npc_id),
+            field.DeleteEntity(gerad_npc_id),
+            field.ShowEntity(field_entity.PARTY0),
+
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.AnimateKnockedOut(),
+                field_entity.SetSpriteLayer(0),
+            ),
+
+            field.FadeInScreen(),
+            field.WaitForFade(),
+
+            field.SetEventBit(event_bit.GOT_SERPENT_TRENCH_REWARD),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.Call(self.move_airship_to_nikeah),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.AnimateKnockedOut(),
+                field_entity.SetSpriteLayer(0),
+            ),
+            field.FadeInScreen(speed = 2),
+            field.WaitForFade(),
+
+            field.ReceiveCheckReward(slot),
+
+            field.SetEventBit(event_bit.GOT_SERPENT_TRENCH_REWARD),
+            field.FinishCheck(),
+            field.Return(),
+
+            # repeat arrivals: just play the landing
+            "ALREADY_DONE",
+            field.Call(self.move_airship_to_nikeah),
+            field.EntityAct(field_entity.PARTY0, True,
+                field_entity.AnimateKnockedOut(),
+                field_entity.SetSpriteLayer(0),
+            ),
+            field.FadeInScreen(speed = 2),
+            field.WaitForFade(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "serpent trench race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xa8c03, 0xa8c04, "serpent trench pause before showing screen", field.NOP())
+
+        space = Reserve(0xa8c0b, 0xa8c14, "serpent trench knocked out animation", field.NOP())
+        space.write(
+            field.Call(reward_script),
+            field.Return(),
+        )
 
     def fixed_battles_mod(self):
         # Serpents Trench has 3 fixed encounters: 
