@@ -248,7 +248,14 @@ class FloatingContinent(Event):
         self.escape_mod(guest_char_id, [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
 
-            # the character arrival (escape_character_mod's script)
+            # the character arrival (escape_character_mod's script).  the
+            # guest character object played the scene; delete it first,
+            # as the esper arm does - creating a character object enables
+            # that character, the party select's refresh only deletes the
+            # fourteen real ones, and the guest (no name, shock) would
+            # otherwise sit in the lineup wearing the reward's sprite
+            field.DeleteEntity(guest_char_id),
+            field.RefreshEntities(),
             field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = False),
             field.AddCheckReward(slot),
             field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),

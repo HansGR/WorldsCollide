@@ -641,6 +641,17 @@ that Tier 1 never needed to exist:
   it now branch to a block that repaints npc 0x12 (with a refresh)
   while the screen is dark (caught in playtest; confirmed by dumping
   the object's sprite byte at $0867+$29*n+$12 across the scene).
+  A different hazard at the Floating Continent escape: the race build
+  stages the scene with the guest character object `$0F` for every
+  kind, and creating a character object marks that character available
+  (`$1850+id` = `$C0`).  The party select's refresh only deletes and
+  re-creates the fourteen real characters, so the character arm - which
+  did not delete the guest as the esper arm does - showed a nameless,
+  Shock-wielding second copy of the reward in the lineup until a later
+  select removed it.  The character arm now deletes the guest and
+  refreshes before the load and the select (caught in playtest;
+  reproduced with a debug-room npc that creates `$0F` and calls the
+  select).
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text

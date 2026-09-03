@@ -273,6 +273,13 @@ future features fail the build loudly instead of silently overwriting.
   of reward slots.
 - Scripts that reserve over vanilla bytes must re-emit the fades those
   bytes performed (battles end faded out).
+- A scene that stages the reward with a *guest character object*
+  (Floating Continent's escape uses object `$0F`) must delete that
+  object before any party select: creating a character object marks
+  that character available (`$1850+id`), the party select's refresh
+  only re-derives the fourteen real characters, and the guest would
+  sit in the lineup nameless, with Shock, wearing the reward's sprite
+  (caught in playtest).
 
 **Developer recipe: converting a check.**  Every converted event has
 the same shape; follow it and the verifier's cross-seed checks do the
