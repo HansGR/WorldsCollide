@@ -633,7 +633,14 @@ that Tier 1 never needed to exist:
   return does run the entrance event (the post-battle npc already
   showed the character).  Note the diagnosis trap: a debug-room warp
   with `entrance_event=True` cannot reproduce this class of bug -
-  warp the way the game enters the room (caught in playtest).
+  warp the way the game enters the room (caught in playtest).  And
+  Imperial Camp: the battle map 0x077 has no exits into it either; the
+  scene enters it by the "Cyan rushes in" load (CB/134C, flags `$40`),
+  so the npc rushed in as the decoy and became the character only
+  after the next battle return.  The load and the fade-in that follows
+  it now branch to a block that repaints npc 0x12 (with a refresh)
+  while the screen is dark (caught in playtest; confirmed by dumping
+  the object's sprite byte at $0867+$29*n+$12 across the scene).
 
 **Veldt battle side (implemented)**: battle event scripts have no
 conditionals, so race builds bake ONE battle dialog (182) whose text

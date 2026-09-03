@@ -49,6 +49,30 @@ class ImperialCamp(Event):
         self.cyan_battles_mod(random_sprite, self.characters.get_palette(random_sprite))
         self.race_repaint_npc_entrance(0x077, 0x12, slot)
 
+        # the battle map 0x077 has no exits into it; the scene enters it
+        # by a scripted load with the entrance-event flag off (B/134C,
+        # flags $40), so the entrance repaint above does not run before
+        # the npc rushes in.  repaint it right after that load, while the
+        # screen is still dark (the entrance repaint stays for the battle
+        # returns, which do run the entrance event)
+        cyan_npc_id = 0x12
+        src = [
+            Read(0xb134c, 0xb1351),         # load map 0x077
+            field.BranchIfRewardKindNot(slot, "character", "FADE_IN"),
+            field.SetRewardSprite(cyan_npc_id, slot),
+            field.SetRewardPalette(cyan_npc_id, slot),
+            field.RefreshEntities(),
+            "FADE_IN",
+            Read(0xb1352, 0xb1353),         # fade in
+            field.Branch(0xb1354),
+        ]
+        space = Write(Bank.CB, src, "imperial camp race repaint npc after battle map load")
+        repaint = space.start_address
+        space = Reserve(0xb134c, 0xb1353, "imperial camp load battle map, fade in", field.NOP())
+        space.write(
+            field.Branch(repaint),
+        )
+
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
 
