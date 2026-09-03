@@ -65,6 +65,27 @@ class EsperMountain(Event):
         self.race_repaint_npc_entrance(0x174, self.outside2_relm_npc_id, slot)
         self.race_repaint_npc_entrance(0x173, self.statue_room_relm_npc_id, slot)
 
+        # the three crack falls land back in the entrance map with the
+        # entrance-event flag off (CB/EEAC, CB/EEDB, CB/EF09), which
+        # re-derives the following-relm npc from its record: repaint a
+        # character reward after each landing, in the block that also
+        # plays the landing (found by tools/race_entrance_audit.py)
+        src = [
+            field.Call(0xb6a9f),            # the vanilla landing call
+            field.BranchIfRewardKindNot(slot, "character", "AFTER_REPAINT"),
+            field.SetRewardSprite(self.entrance_relm_npc_id, slot),
+            field.SetRewardPalette(self.entrance_relm_npc_id, slot),
+            "AFTER_REPAINT",
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "esper mountain race repaint relm after crack landing")
+        landing = space.start_address
+        for call_at in (0xbeeb9, 0xbeee7, 0xbef16):
+            space = Reserve(call_at, call_at + 3, "esper mountain crack landing call")
+            space.write(
+                field.Call(landing),
+            )
+
         src = [
             field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
 

@@ -76,6 +76,26 @@ class MoblizWOR(Event):
         self.race_repaint_npc_entrance(0x09e, self.terra_outside_npc_id, slot)
         self.race_repaint_npc_entrance(0x096, self.terra_with_katarin_npc_id, slot)
 
+        # the phunbaba scene reloads the outside map with the entrance-event
+        # flag off (CC/4C24) and then creates the outside npc from its
+        # record, so the entrance repaint above is lost for that scene:
+        # repaint a character reward right after the reload (found by
+        # tools/race_entrance_audit.py)
+        src = [
+            Read(0xc4c24, 0xc4c29),         # reload the outside map
+            field.BranchIfRewardKindNot(slot, "character", "AFTER_REPAINT"),
+            field.SetRewardSprite(self.terra_outside_npc_id, slot),
+            field.SetRewardPalette(self.terra_outside_npc_id, slot),
+            "AFTER_REPAINT",
+            field.Branch(0xc4c2a),
+        ]
+        space = Write(Bank.CC, src, "mobliz wor race repaint outside npc after phunbaba reload")
+        phunbaba_reload = space.start_address
+        space = Reserve(0xc4c24, 0xc4c29, "mobliz wor phunbaba scene reload outside map", field.NOP())
+        space.write(
+            field.Branch(phunbaba_reload),
+        )
+
         self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_TAKE_AWAY, "You're not gonna take <reward> away, are you?<end>")
         self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_CRY, "I'm not gonna cry.<line>If I do, <reward>'ll feel sad…<end>")
 

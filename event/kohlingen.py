@@ -113,6 +113,20 @@ class Kohlingen(Event):
     def inn_sleep_mod(self):
         src = [
             Read(0xc69e8, 0xc69ed), # copy load kohlingen inn map
+        ]
+        if self.args.race:
+            # that load reloads the inn map (where the check npc sits) with
+            # the entrance-event flag off, so the race entrance repaint
+            # does not run: repaint a character reward here, before the
+            # fade-in (found by tools/race_entrance_audit.py)
+            slot = self.race_slot(self.reward)
+            src += [
+                field.BranchIfRewardKindNot(slot, "character", "AFTER_REPAINT"),
+                field.SetRewardSprite(self.shadow_npc_id, slot),
+                field.SetRewardPalette(self.shadow_npc_id, slot),
+                "AFTER_REPAINT",
+            ]
+        src += [
             field.HideEntity(self.interceptor_npc_id),
         ]
         if self.args.character_gating:

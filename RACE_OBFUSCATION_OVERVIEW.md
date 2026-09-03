@@ -260,12 +260,18 @@ future features fail the build loudly instead of silently overwriting.
   never ran before the attack scene — the cave npc is repainted
   between the scene's create and show — and Imperial Camp, whose
   battle map is only entered by the "Cyan rushes in" load (CB/134C,
-  flags `$40`) — repainted right after that load.  Battle returns do
-  run the entrance event, which is why these npcs "became" the
-  character after the next battle.  To find such loads, scan the
-  event banks for `6A/6B` with the target map id and check bit `$80`
-  of the flags byte, and check the map's exit tables: a room with no
-  exits into it is entered by script only.
+  flags `$40`) — repainted right after that load.  Battle returns and
+  game loads do run the entrance event (both checked in the emulator),
+  which is why these npcs "became" the character after the next
+  battle.  `tools/race_entrance_audit.py` now finds this class
+  statically: it builds a seed, lists every map that carries an
+  entrance repaint, and reports every scripted load into it without
+  the entrance flag plus whether any exit leads there at all.  Its
+  first run found three more (Mobliz's Phunbaba reload, Kohlingen's
+  inn-sleep reload, Esper Mountain's crack landings), all repainted
+  inline now; the loads it lists as reviewed are unreachable in open
+  world or hit the npc while hidden.  Run it after converting a check;
+  it exits non-zero on anything it does not know.
 - Never register a reward slot inside a kind- or seed-conditional
   build path: every later check's slot number shifts between seeds
   (and the conditional script shape itself leaks the kind).  The

@@ -641,6 +641,23 @@ that Tier 1 never needed to exist:
   it now branch to a block that repaints npc 0x12 (with a refresh)
   while the screen is dark (caught in playtest; confirmed by dumping
   the object's sprite byte at $0867+$29*n+$12 across the scene).
+  After the fourth playtest hit, `tools/race_entrance_audit.py` was
+  written to find the class statically (maps with entrance repaints x
+  scripted loads without the entrance flag x exits into the map).  Its
+  first run over 39 repaint maps listed 19 candidate loads; three were
+  real and are repainted inline now - Mobliz WOR's Phunbaba reload
+  (CC/4C24, the outside npc is created from its record right after),
+  Kohlingen's inn-sleep reload (WC's own copy of the vanilla load,
+  with the check npc in the room) and Esper Mountain's three crack
+  landings (CB/EEAC, CB/EEDB, CB/EF09, back into the entrance map
+  while the following-relm npc is visible) - and the rest were
+  reviewed as unreachable in open world (vanilla opening and
+  post-battle continuations, the Kefka-burns-Figaro scene, South
+  Figaro's guard tiles) or as hitting the npc while its bit is clear
+  (Doma's dream loads, Moogle Defense's victory reload, the statue
+  room after Ultros).  Both game loads and battle returns run the
+  entrance event (checked in the emulator by saving and reloading on
+  the Narshe battlefield), so they need nothing.
   A different hazard at the Floating Continent escape: the race build
   stages the scene with the guest character object `$0F` for every
   kind, and creating a character object marks that character available
