@@ -2236,7 +2236,15 @@ entrance.  Non-race builds are byte-identical to before the feature.
   entered only by the "Cyan rushes in" load at CB/134C, flags `$40`).
   Object RAM: the sprite index of object n is at `$0867 + $29*n + $12`
   (and `+$19/+$1A` change with the palette) - dumping that byte across
-  a scene shows exactly when a repaint lands.  Finding them: scan the event banks
+  a scene shows exactly when a repaint lands.  Game loads DO run the
+  entrance event (saved at the snowfield save point, reset the core
+  with `lib.retro_reset()`, reloaded: the repainted npc was right), as
+  do battle returns.  `tools/race_entrance_audit.py` on the race branch
+  does the scan below for every repaint map and found three more sites
+  (Mobliz Phunbaba reload, Kohlingen inn sleep, Esper Mountain crack
+  landings); an unconditional `field.Branch` is 6 bytes (`C0` + an
+  always-clear bit + address), a `Call` 4 - size reserves accordingly.
+  Finding them: scan the event banks
   (file 0x0A0000-0x0EFFFF) for `6A/6B <map lo> <byte2 & 3 == map hi>`
   and read the flags byte; a map with no exits in the short/long exit
   tables is script-entered only.  Diagnosis trap: a debug-room warp
