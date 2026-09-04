@@ -378,6 +378,14 @@ require_event_bit = {
     1524: {0x17e: True, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: False, 0x507: True, 0x509: False},
     # Phantom Train, Car 3
     1514: {0x17e: False, event_bit.PHANTOM_TRAIN_CAR_3: True, 0x506: False, 0x507: False, 0x509: True},
+    # Phantom Train, Car 1 / Car 2 trapdoor landings (pits 3065/3066, keyed
+    # by their traps as every pit entry here is): the car interiors share one
+    # map and the exit tiles read these bits to know which car they are in,
+    # so a randomized one-way landing in a car must set them exactly as
+    # arriving by its doors does (vanilla's trapdoor scripts set them inline,
+    # but a realized transition keeps only the load)
+    2065: {0x17e: False, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: True, 0x507: False, 0x509: False},
+    2066: {0x17e: True, event_bit.PHANTOM_TRAIN_CAR_3: False, 0x506: False, 0x507: True, 0x509: False},
 
     # Phantom Train, Car 6
     1533: {0x17e: False, 0x506: True, 0x507: False},  # Phantom Train Car 6 Right Exit

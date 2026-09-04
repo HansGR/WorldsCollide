@@ -2273,6 +2273,47 @@ entrance.  Non-race builds are byte-identical to before the feature.
 
 ---
 
+## Phantom Train Car Bits on One-Way Landings (2026-09)
+
+**Symptom** (hub seed `mgw54jqqi32s`, `-ruin hard`): the planner's route to
+the Falcon went Veldt Cave boss trap -> pit 3066 (Car 2 interior) -> "Car 2
+Right Exit" (1524) -> Esper Mountain pit room; in-game the right exit put the
+player in Thamasa (1516's partner, Car 1's right exit).
+
+**Mechanism.** Cars 1/2/3 interiors are ONE map (0x91) with the exit tiles
+at the same coordinates ((1,7)/(30,7)); the tile's vanilla dispatch reads
+`$180` (car 3) then `$17E` (car 2), else car 1, and jumps to the
+car-specific script (1514/1523/1515... at their own addresses). Entering a
+car by door sets the bits through `require_event_bit` (keyed by the interior
+exit ids 1515/1516, 1523/1524, 1514). A randomized one-way landing in a car
+reuses the vanilla trapdoor script's LoadMap only (`Writing: 2075 --> 2066`
+keeps `6b 91 ...` and the continuation call, not the `d2 7e db 06 da 07 ...`
+prefix), so the bits stayed whatever they were - clear - and the exits acted
+as Car 1's. With no other way into Car 2 in that seed, the branch's terminus
+was unreachable by the intended route.
+
+**Fix.** `require_event_bit` entries for the two landings. Note the key:
+`Transition` builds a pit entrance as `EventExit(entr_id - 1000)`, so pit
+entries are keyed by their TRAP id (2065 car 1, 2066 car 2), like the Lete
+River entries 2035/2037 - a `3066:` key is silently ignored (found out the
+hard way). Golden manifest re-recorded (transition bytes changed in every
+door-rando config).
+
+**Workaround on an existing ROM**: set `$17E` first by entering any Car 7
+interior tile (all of 1539-1543 set it and never clear it) - in that seed
+Car 2's left outside door led into the Car 7 cabin - then take the one-way.
+Verified in-emulator on the player's ROM: direct -> Thamasa, detour -> Esper
+Mountain; fixed ROM direct -> Esper Mountain.
+
+**Also learned.** `-debug_dest` (and any non-graphics flag) is part of the
+RNG seed (`args.seed_rng_flags`), so a route query rebuilds a DIFFERENT
+map; `-debug` alone is safe and prints the branch terminus routes in the
+spoiler. To identify an uploaded ROM's seed/flags, rebuild candidates and
+compare the exit tables (0x1fbb00-0x1fda00, 0x2df480-0x2dfe00) and the
+title hash; the school doors are (93,45)/(99,45)/(108,45) on map 104, and
+the exit-table rows are rewritten, so read them by owner map + position, not
+by atlas index.
+
 ## Harness Recipes from the Race Project (2026-09)
 
 Additions to "Headless Playtest Harness Patterns" that came out of the
