@@ -55,6 +55,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertEqual(value_after(argv, "-stesp", 2), ["3", "3"])
         self.assertEqual(value_after(argv, "-si"), ["233.6.6"])
         self.assertEqual(value_after(argv, "-sws"), ["10"])
+        self.assertEqual(value_after(argv, "-sfd"), ["3"])
         self.assertEqual(value_after(argv, "-sj"), ["12"])
         self.assertIn("-rrt", argv)
         self.assertEqual(value_after(argv, "-oc"), ["58.1.1.10.3.3"])

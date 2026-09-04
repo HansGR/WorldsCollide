@@ -184,6 +184,7 @@ RUIN_EASY_EXTRAS = {
         '-stesp', '3', '3',             # three starting espers (little power to find on a small map)
         '-si', '233.6.6',               # six Potions (item 233)
         '-sws', '10',                   # ten Warp Stones
+        '-sfd', '3',                    # three Fenix Downs
         '-sj', '12',                    # twelve starting junk items
         '-rrt',                         # a shop town on every branch
         # High Tier Item rewards at 3, 6 and 9 checks completed
