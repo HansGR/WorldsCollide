@@ -59,11 +59,15 @@ def parse(parser):
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
     doors.add_argument("-ruin", "--ruination-mode", nargs="?", const="default", default=None,
-                       choices=["default", "hard", "custom"],
+                       choices=["default", "hard", "easy", "custom"],
                        help="Rogue-like mode with randomized dungeon and no airship. "
                             "Automatically sets recommended flags. '-ruin hard' additionally adds "
                             "permadeath, 3 starting Fenix Downs, lite ironmog saves, and removes "
-                            "Life 3/Warp/Antdot/Remedy from learnable sources "
+                            "Life 3/Warp/Antdot/Remedy from learnable sources. "
+                            "'-ruin easy' is open world on a smaller map (6 characters + 6 espers) "
+                            "with 3 starting espers, level 12, 12000 gp, standard sell prices, "
+                            "6 Potions, 10 Warp Stones, 12 junk items, no monsters-in-a-box and "
+                            "High Tier Item rewards at 3, 6 and 9 checks "
                             "('-ruin custom' skips defaults entirely, "
                             "'-no <flags>' disables specific defaults)")
 
@@ -197,9 +201,9 @@ def flags(args):
     if args.ruination_mode is not None:
         # -ruin supercedes all.  The mode value must round-trip so that
         # re-running a logged flag string re-expands the same defaults
-        # (a bare '-ruin' must not re-expand as hard).
+        # (a bare '-ruin' must not re-expand as hard or easy).
         flags += " -ruin"
-        if args.ruination_mode in ("custom", "hard"):
+        if args.ruination_mode in ("custom", "hard", "easy"):
             flags += " " + args.ruination_mode
 
         if args.ruin_dream_maze:

@@ -95,7 +95,8 @@ for group in MUTUALLY_EXCLUSIVE_GROUPS:
 # Default flags for -ruin mode, organized by category.
 # This is the shared base: a bare '-ruin' expands to exactly this set, while
 # '-ruin hard' (the roguelike difficulty) additionally injects
-# RUIN_HARD_EXTRAS below.
+# RUIN_HARD_EXTRAS below, and '-ruin easy' (the relaxed difficulty) first
+# swaps the values in RUIN_EASY_OVERRIDES and then injects RUIN_EASY_EXTRAS.
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
     'objectives': [
@@ -165,6 +166,34 @@ RUIN_HARD_EXTRAS = {
     'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'mid'],
 }
 
+# '-ruin easy' (the relaxed difficulty): the base flagset with these values
+# swapped - a base flag listed here is replaced by the tokens given (an empty
+# list drops it) - and RUIN_EASY_EXTRAS injected after it.  The base already
+# carries '-ir stronger'.  Both are subject to '-no <flag>' removal and to the
+# mutually exclusive groups like every other default.
+RUIN_EASY_OVERRIDES = {
+    '-cg': ['-open'],                   # open world, no character gating
+    '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers
+    '-stl': ['-stl', '12'],             # starting level, to match the starting-esper scaling
+    '-gp': ['-gp', '12000'],            # double starting gp
+    '-ssf4': [],                        # standard 1/2 sell prices instead of 1/4
+    '-chrm': ['-chrm', '0', '0'],       # no random monsters-in-a-box
+}
+RUIN_EASY_EXTRAS = {
+    'easy': [
+        '-stesp', '3', '3',             # three starting espers (little power to find on a small map)
+        '-si', '233.6.6',               # six Potions (item 233)
+        '-sws', '10',                   # ten Warp Stones
+        '-sj', '12',                    # twelve starting junk items
+        # High Tier Item rewards at 3, 6 and 9 checks completed
+        '-oc', '58.1.1.10.3.3',
+        '-od', '58.1.1.10.6.6',
+        '-oe', '58.1.1.10.9.9',
+    ],
+}
+RUIN_MODE_EXTRAS = {**RUIN_HARD_EXTRAS, **RUIN_EASY_EXTRAS}
+RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES}
+
 # Flags that have arguments (used for proper flag removal).
 #
 # Multi-token default values are fine -- list each token as its own entry
@@ -176,6 +205,7 @@ RUIN_HARD_EXTRAS = {
 # has no quoting, so a spaced value would re-parse as two tokens.
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
+    '-stl': 1, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
     '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comfr': 1, '-comfru': 1,
     '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
@@ -196,6 +226,30 @@ def get_all_default_flags():
     for category in RUIN_DEFAULT_FLAGS.values():
         flags.extend(category)
     return flags
+
+def mode_categories(mode):
+    """
+    The (category, flags) list a '-ruin <mode>' expands to, before '-no' and
+    mutually-exclusive suppression: the base categories with the mode's
+    overrides applied, then the mode's extras.  mode is None for a bare -ruin.
+    """
+    overrides = RUIN_MODE_OVERRIDES.get(mode, {})
+    categories = []
+    for category, flags in RUIN_DEFAULT_FLAGS.items():
+        result = []
+        i = 0
+        while i < len(flags):
+            flag = flags[i]
+            num_args = FLAGS_WITH_ARGS.get(flag, 0)
+            if flag in overrides:
+                result.extend(overrides[flag])
+            else:
+                result.extend(flags[i:i + num_args + 1])
+            i += num_args + 1
+        categories.append((category, result))
+    if mode in RUIN_MODE_EXTRAS:
+        categories.append((mode, list(RUIN_MODE_EXTRAS[mode])))
+    return categories
 
 def find_flag_indices(argv, flag):
     """
@@ -283,6 +337,8 @@ def preprocess_ruin_flag(argv=None):
     If -ruin is present:
     - If followed by 'custom', don't inject defaults
     - If followed by 'hard', inject the base defaults plus RUIN_HARD_EXTRAS
+    - If followed by 'easy', inject the base defaults with RUIN_EASY_OVERRIDES
+      applied, plus RUIN_EASY_EXTRAS
     - Otherwise (default), inject the base default flags only
     - Process -no flags to remove specific defaults
     - If user specifies starting character flags, remove default starting chars
@@ -307,16 +363,16 @@ def preprocess_ruin_flag(argv=None):
     # Mark that we've preprocessed
     _preprocessing_done = True
 
-    # Check for a mode value ('custom'/'hard') following -ruin
+    # Check for a mode value ('custom'/'hard'/'easy') following -ruin
     next_arg = argv[ruin_index + 1] if ruin_index + 1 < len(argv) else None
 
     if next_arg == 'custom':
         # Don't inject defaults, but keep 'custom' for the argument parser
         return argv
 
-    hard_mode = (next_arg == 'hard')
-    # Keep the 'hard' token adjacent to -ruin: inject after it
-    insert_index = ruin_index + 2 if hard_mode else ruin_index + 1
+    mode = next_arg if next_arg in RUIN_MODE_EXTRAS else None
+    # Keep the mode token adjacent to -ruin: inject after it
+    insert_index = ruin_index + 2 if mode else ruin_index + 1
 
     # Collect flags to disable via -no and remove -no from argv FIRST
     # Handle multiple -no groups: e.g. "-no flag1 -no flag2" or "-no flag1 flag2"
@@ -343,9 +399,7 @@ def preprocess_ruin_flag(argv=None):
     exclusive_suppressed = get_user_exclusive_flags(argv, ruin_index)
 
     # Build list of default flags to inject (excluding disabled and conflicting ones)
-    categories = list(RUIN_DEFAULT_FLAGS.items())
-    if hard_mode:
-        categories += list(RUIN_HARD_EXTRAS.items())
+    categories = mode_categories(mode)
 
     defaults_to_inject = []
     for category, flags in categories:
@@ -371,7 +425,7 @@ def preprocess_ruin_flag(argv=None):
                 num_args = FLAGS_WITH_ARGS.get(flag, 0)
                 i += num_args + 1
 
-    # Insert defaults right after -ruin (and its 'hard' value, if present)
+    # Insert defaults right after -ruin (and its mode value, if present)
     for i, flag in enumerate(defaults_to_inject):
         argv.insert(insert_index + i, flag)
 
