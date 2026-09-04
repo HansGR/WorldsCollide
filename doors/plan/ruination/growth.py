@@ -66,13 +66,15 @@ class RuinConfig:
 
     def __init__(self, party, char_range=(3, 3), esper_range=(0, 0),
                  open_world=False, maze=None, blitz_characters=(),
-                 espers_available=27, kefka_tower=False):
+                 espers_available=27, kefka_tower=False, require_towns=False):
         self.party = list(party)
         self.char_range = char_range
         self.esper_range = esper_range
         self.open_world = open_world
         self.maze = maze
         self.kefka_tower = kefka_tower
+        # -rrt: finalize wires a shop town into every branch
+        self.require_towns = require_towns
         self.blitz_characters = list(blitz_characters)
         self.espers_available = espers_available
         # Per-plan room spec replacements (e.g. the -maze iso composite
@@ -83,6 +85,7 @@ class RuinConfig:
         self.room_sets = copy.deepcopy(RUIN_ROOM_SETS)
         self.warp_rooms = set(RC.WARP_ROOMS)
         self.town_rooms = set(RC.TOWN_ROOMS)
+        self.shop_town_rooms = set(RC.SHOP_TOWN_ROOMS)
         self.forced_same_branch = copy.deepcopy(RC.forced_same_branch)
         self.reward_owners = dict(RC.REWARD_OWNERS)
         self.area_shops = {k: list(v) for k, v in RC.AREA_SHOPS.items()}

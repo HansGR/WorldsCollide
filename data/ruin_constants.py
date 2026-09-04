@@ -228,6 +228,13 @@ TOWN_ROOMS = {
     'RET02-ruin',  # Returners Hideout (also a warp point)
 }
 
+# The towns with shops, for -rrt (a guaranteed shop town on every branch):
+# TOWN_ROOMS without the Returners Hideout (items only).  Narshe and Mobliz
+# have no shops and Gau's father's house only items, so none of them count.
+# All but Tzen enter and leave by door (two doors, so wiring one in costs the
+# branch nothing); Tzen is a single-door dead end.
+SHOP_TOWN_ROOMS = TOWN_ROOMS - {'RET02-ruin'}
+
 # Build area-level reward locking:
 # For each character-owned area, map rewards to the set of characters that provide access.
 # A reward is area-locked if none of its area-owning characters are in the keychain.

@@ -72,6 +72,7 @@ def plan_ruination(args, rng, characters):
             open_world=bool(getattr(args, 'open_world', False)),
             maze=getattr(args, 'ruin_dream_maze', None),
             kefka_tower=bool(getattr(args, 'ruin_kefka_tower', False)),
+            require_towns=bool(getattr(args, 'ruination_require_towns', False)),
             blitz_characters=blitz,
             # The esper pool is untouched at planning time (ruination is its
             # first consumer), so the full pool size is the truth here.

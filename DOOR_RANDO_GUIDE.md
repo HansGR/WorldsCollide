@@ -87,7 +87,12 @@ destination and partner.  Utilities for reading these data are included in `atla
   - `growth.py` grows branches to find reward rooms, banking character-locked checks 
     until they become available; 
   - `finalize.py` closes each branch following a six-step procedure and runs the 
-    'no-softlock' verifier using a breadth-first search (BFS);
+    'no-softlock' verifier using a breadth-first search (BFS). Two rescues run 
+    ahead of the steps: orphan warp rooms are wired in until the branch holds two, 
+    and with `-rrt` (`RuinConfig.require_towns`) a shop town (`SHOP_TOWN_ROOMS`) is 
+    wired by door into the hub region -- an unplaced member town first, else one 
+    pulled from the unused towns -- with a second chance once step 4 has hub doors 
+    and a `RuinPlanError` (re-roll) if a branch closes without one;
   - `RuinConfig` holds per-plan copies of every table (`-maze` / `-open` adjustments 
     applied at construction) in case retries are required.
 

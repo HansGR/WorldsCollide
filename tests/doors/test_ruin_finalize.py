@@ -8,6 +8,8 @@ assembly, softlock verifier) on the real room pool and checks closure:
 - no element appears twice in the model's connections
 - the KT entry traps (2077-79) are wired to pits 3077-79
 - growth-claimed check rooms are all inside their branch's hub component
+- with require_towns (-rrt, every other seed), every branch has a shop town
+  reachable from its hub
 
 Run: python3 tests/doors/test_ruin_finalize.py [n_seeds]
 """
@@ -30,15 +32,27 @@ PARTIES = [
 ]
 
 
-def run_one(seed, party, maze=None, kt=False, open_world=False):
+def run_one(seed, party, maze=None, kt=False, open_world=False, require_towns=False):
     rng = random.Random(seed)
     cfg = RuinConfig(party, char_range=(2, 6), esper_range=(1, 4),
                      maze=maze, blitz_characters=['SABIN'], kefka_tower=kt,
-                     open_world=open_world)
+                     open_world=open_world, require_towns=require_towns)
     planner = RuinPlanner(cfg, rng)
     planner.grow()
     full_map = finalize_plan(planner)
     return planner, full_map
+
+
+def check_towns(p):
+    """-rrt: every branch's hub region holds a shop town, reachable from
+    the hub (hub cluster or downstream of it)."""
+    w = p.world
+    towns = p.config.shop_town_rooms
+    for i, branch in enumerate(p.branches):
+        hub = branch.hub_cluster()
+        reachable = {hub} | set(w.downstream(hub))
+        assert any(w.cluster_of_room(r) in reachable
+                   for r in branch.rooms if r in towns), f'branch {i} has no shop town'
 
 
 def check_closure(p, full_map):
@@ -78,10 +92,13 @@ def main(n=40):
         maze = [None, 'sep', 'iso'][i % 3]
         kt = (i % 4 == 1)
         open_world = (i % 5 == 3)
+        require_towns = (i % 2 == 1)
         try:
             p, full_map = run_one(f'fin{i}', party, maze=maze, kt=kt,
-                                  open_world=open_world)
+                                  open_world=open_world, require_towns=require_towns)
             check_closure(p, full_map)
+            if require_towns:
+                check_towns(p)
             ok += 1
         except RuinPlanError as e:
             fail += 1

@@ -199,16 +199,21 @@ def _connect(planner, branch, exit_id, target):
 # ---------------------------------------------------------------------------
 # Warp-room rescue
 
-def _classify_warp_rooms(branch):
-    """(connected, unconnected) warp CLUSTER representatives, reported
-    by a member room id."""
+def _classify_member_rooms(branch, room_set, reachable_only=False):
+    """(connected, unconnected) CLUSTER representatives of the branch's
+    member rooms in room_set, reported by a member room id; connected
+    means the cluster is in the hub region (with reachable_only, in the
+    hub cluster or downstream of it - upstream clusters only fall INTO
+    the hub and cannot be reached from it)."""
     w = branch.world
     hub, upstream, downstream = _region(branch)
-    region = {hub} | set(upstream) | set(downstream)
+    region = {hub} | set(downstream)
+    if not reachable_only:
+        region |= set(upstream)
     connected, unconnected = [], []
     seen = set()
     for rid in branch.rooms:
-        if rid not in branch.warp_rooms:
+        if rid not in room_set:
             continue
         c = w.cluster_of_room(rid)
         if c in seen:
@@ -216,6 +221,12 @@ def _classify_warp_rooms(branch):
         seen.add(c)
         (connected if c in region else unconnected).append(rid)
     return connected, unconnected
+
+
+def _classify_warp_rooms(branch):
+    """(connected, unconnected) warp CLUSTER representatives, reported
+    by a member room id."""
+    return _classify_member_rooms(branch, branch.warp_rooms)
 
 
 def _connect_orphan_warp(planner, branch, unconnected_warps):
@@ -250,6 +261,175 @@ def _connect_orphan_warp(planner, branch, unconnected_warps):
                 _trim_dead_ends(branch)
                 return True
     return False
+
+
+# ---------------------------------------------------------------------------
+# Town rescue (-rrt: a shop town on every branch)
+
+def _area_of_room(cfg, rid):
+    for area, rooms in cfg.room_sets.items():
+        if rid in rooms:
+            return area
+    return None
+
+
+def _town_is_neutral(planner, rid):
+    """Two free doors: wiring the town in gives back the door it takes."""
+    w = planner.world
+    if rid in w._index:
+        return len(_elements(w, w.cluster_of_room(rid), DOOR)) >= 2
+    data = room_data.get(rid)
+    return data is not None and len([d for d in data[0] if d not in w.protected]) >= 2
+
+
+def _available_town_rooms(planner):
+    """Shop-town rooms no branch holds yet: (rid, area), door-neutral towns
+    first, then the single-room town areas (taking one costs nothing
+    else) before the entry rooms of the multi-room town areas."""
+    cfg = planner.config
+    w = planner.world
+    out = []
+    for rid in sorted(cfg.shop_town_rooms):
+        if rid in w._index:
+            continue
+        area = _area_of_room(cfg, rid)
+        size = len(cfg.room_sets.get(area, ())) if area is not None else 1
+        out.append((0 if _town_is_neutral(planner, rid) else 1,
+                    0 if size == 1 else 1, rid, area))
+    out.sort()
+    return [(rid, area) for _, _, rid, area in out]
+
+
+def _pull_town(planner, branch, reserve_areas):
+    """Add one unused shop-town room to the branch (its shops become
+    accessible; a single-room area is marked used like a distributed one).
+    Returns the room id, or None when every shop town is taken."""
+    cfg = planner.config
+    for rid, area in _available_town_rooms(planner):
+        planner._add_room_to_branch(branch, rid)
+        if area is not None:
+            if area not in planner.AreasUsed and len(cfg.room_sets[area]) == 1:
+                planner._assign_area(area, planner.branches.index(branch))
+            else:
+                for shop_id in cfg.area_shops.get(area, []):
+                    if shop_id not in planner.accessible_shops:
+                        planner.accessible_shops.append(shop_id)
+        if reserve_areas is not None:
+            for _area, area_rooms in reserve_areas:
+                if rid in area_rooms:
+                    area_rooms.remove(rid)
+        return rid
+    return None
+
+
+def _town_door_order(branch, towns):
+    """Door-neutral towns (two doors: one in, one out) before single-door
+    ones, which are dead ends and cost the branch a hub door."""
+    w = branch.world
+    return sorted(towns, key=lambda rid: (
+        -len(_raw(w, w.cluster_of_room(rid), DOOR)), rid))
+
+
+def _connect_town(planner, branch, town_id, targets):
+    """Wire the town into one of the target clusters (hub first): by door,
+    or - for the towns with a pit (Nikeah, Vector, Thamasa) - by a target
+    trap falling into it, which makes the town downstream and its doors
+    the region's."""
+    w = planner.world
+    rng = planner.rng
+    tc = w.cluster_of_room(town_id)
+    town_doors = _elements(w, tc, DOOR)
+    town_pits = _elements(w, tc, PIT)
+    if town_doors:
+        for target in targets:
+            if target == tc:
+                continue
+            t_doors = _elements(w, target, DOOR)
+            if t_doors:
+                _connect(planner, branch, rng.choice(t_doors), rng.choice(town_doors))
+                _trim_dead_ends(branch)
+                return True
+    if town_pits:
+        for target in targets:
+            if target == tc:
+                continue
+            t_traps = _elements(w, target, TRAP)
+            if t_traps:
+                _connect(planner, branch, rng.choice(t_traps), rng.choice(town_pits))
+                _trim_dead_ends(branch)
+                return True
+    return False
+
+
+def _member_towns_to_wire(planner, branch, reserve_areas):
+    """The branch's unconnected shop towns, door-neutral first; [] when a
+    town is already wired in.  Pulls an unused town when the branch holds
+    none, and also when every town it holds is a single-door dead end but
+    a door-neutral one is still unclaimed (a dead end costs a hub door
+    the closer may not be able to spare)."""
+    cfg = planner.config
+    connected, unconnected = _classify_member_rooms(
+        branch, cfg.shop_town_rooms, reachable_only=True)
+    if connected:
+        return []
+    if not any(_town_is_neutral(planner, t) for t in unconnected):
+        available = _available_town_rooms(planner)
+        if available and (not unconnected or _town_is_neutral(planner, available[0][0])):
+            pulled = _pull_town(planner, branch, reserve_areas)
+            if pulled is not None:
+                unconnected.append(pulled)
+    if not unconnected:
+        raise RuinPlanError(
+            f'require towns: no shop town left for branch '
+            f'{planner.branches.index(branch)}')
+    return _town_door_order(branch, unconnected)
+
+
+def _ensure_town(planner, branch, reserve_areas):
+    """-rrt: if no shop town is wired into the hub region yet, wire a member
+    town (pulling one first when the branch holds none).  Returns True
+    when a connection was made (the closer restarts), False when the
+    region offered no door to attach it to this time round.  A two-door
+    town is door-neutral (it gives back the door it takes); a single-door
+    town costs the region a door, so it waits while the terminus is still
+    separate and only one door is left for it."""
+    towns = _member_towns_to_wire(planner, branch, reserve_areas)
+    if not towns:
+        return False
+    w = planner.world
+    hub, _, downstream = _region(branch)
+    targets = [hub] + list(downstream)
+    region_doors = sum(len(_elements(w, c, DOOR)) for c in targets)
+    for town in towns:
+        neutral = len(_elements(w, w.cluster_of_room(town), DOOR)) >= 2
+        if not neutral and _terminus_separate(branch) and region_doors < 2:
+            continue
+        if _connect_town(planner, branch, town, targets):
+            return True
+    return False
+
+
+def _wire_town_to_door(planner, branch, remaining_doors, reserve_areas):
+    """-rrt, last chance: hand one spare hub door to a member town (the
+    step-6 treatment dead-end warps get).  True when a town took it."""
+    towns = _member_towns_to_wire(planner, branch, reserve_areas)
+    if not towns:
+        return False
+    w = planner.world
+    for town in towns:
+        town_doors = _elements(w, w.cluster_of_room(town), DOOR)
+        if town_doors:
+            _connect(planner, branch, remaining_doors.pop(),
+                     planner.rng.choice(town_doors))
+            _trim_dead_ends(branch)
+            return True
+    return False
+
+
+def _has_town(planner, branch):
+    connected, _ = _classify_member_rooms(
+        branch, planner.config.shop_town_rooms, reachable_only=True)
+    return bool(connected)
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +533,11 @@ def finalize_branch(planner, branch, reserve_areas=None):
         connected_warps, unconnected_warps = _classify_warp_rooms(branch)
         if (region_size > 3 and len(connected_warps) < 2 and unconnected_warps):
             if _connect_orphan_warp(planner, branch, unconnected_warps):
+                continue
+
+        # Town rescue (-rrt): a shop town wired into every branch.
+        if planner.config.require_towns:
+            if _ensure_town(planner, branch, reserve_areas):
                 continue
 
         # (1) While region traps outnumber pits, feed a pit-surplus room.
@@ -606,6 +791,15 @@ def finalize_branch(planner, branch, reserve_areas=None):
         hub, upstream, downstream = _region(branch)
         remaining_doors = _elements(w, hub, DOOR)
         rng.shuffle(remaining_doors)
+
+        # Town rescue, second chance (-rrt): the region had no door for the
+        # town earlier, but the hub has doors now - spend one on the town
+        # while leaving the terminus its door.
+        if (planner.config.require_towns and not _has_town(planner, branch)
+                and len(remaining_doors) >= (2 if _terminus_separate(branch) else 1)):
+            if _ensure_town(planner, branch, reserve_areas):
+                continue
+
         if _terminus_separate(branch) and remaining_doors:
             this_exit = remaining_doors.pop()
             if branch.terminus in branch.dead_ends:
@@ -658,6 +852,13 @@ def finalize_branch(planner, branch, reserve_areas=None):
                             break
                 if not found:
                     raise RuinPlanError('finalize step 5b: cannot resolve orphan door')
+
+        # Town rescue, last chance (-rrt): a spare hub door goes to the town
+        # before the dead ends get theirs.
+        if (planner.config.require_towns and remaining_doors
+                and not _has_town(planner, branch)):
+            if _wire_town_to_door(planner, branch, remaining_doors, reserve_areas):
+                continue
 
         # (6.0) Dead-end orphan warps get wired against remaining doors.
         connected_warps, unconnected_warps = _classify_warp_rooms(branch)
@@ -726,6 +927,11 @@ def finalize_branch(planner, branch, reserve_areas=None):
 
     if reserve_areas is not None:
         _honor_forced(planner, branch, reserve_areas)
+
+    if planner.config.require_towns and not _has_town(planner, branch):
+        raise RuinPlanError(
+            f'require towns: branch {planner.branches.index(branch)} closed '
+            f'without a shop town')
 
 
 # ---------------------------------------------------------------------------

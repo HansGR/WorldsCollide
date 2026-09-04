@@ -83,6 +83,11 @@ def parse(parser):
                             "(each entry to a 4-ton-switch-room ending) with internal "
                             "connections shuffled, while preserving switch/boss constraints")
 
+    doors.add_argument("-rrt", "--ruination-require-towns", action="store_true",
+                       help="Ruination mode: guarantee a town with shops on every branch "
+                            "(South Figaro, Kohlingen, Albrook, Jidoor, Thamasa, Nikeah, "
+                            "Maranda, Vector or Tzen), wired in when the branch is closed")
+
     doors.add_argument("-rce", "--required-characters-espers", type=str, default=None,
                        help="Ruination mode: number of characters and espers required to be obtainable, "
                             "as 'CC.EE' exact counts or 'cc.cc.ee.ee' min/max ranges "
@@ -211,6 +216,9 @@ def flags(args):
 
         if getattr(args, "ruin_kefka_tower", False):
             flags += " -rkt"
+
+        if getattr(args, "ruination_require_towns", False):
+            flags += " -rrt"
 
         if args.required_characters_espers is not None:
             flags += f" -rce {args.required_characters_espers}"
