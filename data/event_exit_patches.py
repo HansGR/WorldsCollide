@@ -353,6 +353,11 @@ require_event_bit = {
     2035: {0x4FC: False},   # Cave #1
     2037: {0x4FD: False},   # Cave #2
 
+    # Owzer's Basement: the floating-chest drop (trap 2019, pit 3019) marks
+    # the basement as brightened; its entrance event (CB/4629) reads the bit,
+    # so a randomized trap landing there must set it as the vanilla drop did
+    2019: {event_bit.BRIGHTEN_OWZER_BASEMENT: True},
+
     # Daryl's Tomb: move turtles to the appropriate side
     1512: {event_bit.DARYL_TOMB_TURTLE1_MOVED: True},
     782: {event_bit.DARYL_TOMB_TURTLE1_MOVED: False},

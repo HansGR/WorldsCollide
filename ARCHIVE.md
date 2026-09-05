@@ -2305,6 +2305,20 @@ Car 2's left outside door led into the Car 7 cabin - then take the one-way.
 Verified in-emulator on the player's ROM: direct -> Thamasa, detour -> Esper
 Mountain; fixed ROM direct -> Esper Mountain.
 
+**The class, audited.** `tools/oneway_bit_audit.py` decompiles the exit
+half of every trap and event-tile door script and lists its event-bit
+writes against `require_event_bit` coverage. 22 scripts write bits there;
+after this review 11 remain uncovered and are judged fine: music-only
+(`TEMP_SONG_OVERRIDE` etc.: Umaro jump, Cid's elevator, Daryl quick exit,
+Serpent Trench jump), source-side or map-local (Zone Eater tract menu bit,
+multipurpose-map bits, Lete raft clears re-applied by the cave entries), or
+handled by WC's own event code (burning house avoids `$507`, minecart NPC
+bits, Wrexsoul landing NPC bits, dream locomotive's multipurpose clears -
+deliberately left). One more was fixed with the train: the Owzer
+floating-chest drop (trap 2019) sets `BRIGHTEN_OWZER_BASEMENT`, read by the
+basement entrance event (CB/4629), so pit 3019 now sets it on any arrival.
+Run the audit after touching an exit script or the table.
+
 **Also learned.** `-debug_dest` (and any non-graphics flag) is part of the
 RNG seed (`args.seed_rng_flags`), so a route query rebuilds a DIFFERENT
 map; `-debug` alone is safe and prints the branch terminus routes in the
