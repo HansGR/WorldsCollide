@@ -777,7 +777,7 @@ FERRY_PORTS = {
         'dest_map':       0x14c, 'dest_spawn': (28, 7),  'dest_dir': direction.LEFT,
         'wor_dock':       (141, 210),
         'sailor_map':     0x14c, 'sailor_npc_id': 0x22,
-        'sailor_npc_bit': 0x565, 'sailor_sprite': 54,
+        'sailor_npc_bit': 0x565, 'sailor_sprite': 54, 'sailor_palette': 1,
     },
 }
 
@@ -952,14 +952,6 @@ def _ferry_install_disabled(rom, dialogs):
 
 def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
     """For each pair of mapped ports, build a trip subroutine and dispatch event."""
-    # Promote the Albrook NPC if Albrook is on the network. Sprite is set here;
-    # the visibility bit is flipped via init_event_bits in event/albrook_wob.py
-    # (see Events.ruination_mod ordering — fix_ferry_connections runs before the
-    # init_event_bits loop, so the bit-flip cannot live here).
-    if 'Albrook' in mapped:
-        port = FERRY_PORTS['Albrook']
-        maps.get_npc(port['sailor_map'], port['sailor_npc_id']).sprite = port['sailor_sprite']
-
     # Pre-boss flavor dialog: pick one mapped port as TOWN1 (the "we sent out a
     # ship..." sailor); the other(s) get the alternative lines naming TOWN1.
     # When all three ports are mapped, the two non-TOWN1 sailors get distinct
@@ -1046,6 +1038,18 @@ def fix_ferry_connections(rom, dialogs, maps, ruin_map, args, boss_pack_id=None)
     """
     actual_areas_used = ruin_map.compute_actual_areas_used()
     mapped = [p for p in FERRY_PORTS if p in actual_areas_used]
+
+    # The Albrook NPC is a generic General Leo record that init_event_bits
+    # (event/albrook_wob.py) makes visible whenever Albrook is on the map, so
+    # give it the sailor's look on that same condition - before the
+    # enabled/disabled split, or a lone mapped port leaves Leo standing on
+    # the dock with the disabled message.  Sprite 54 wears palette 1
+    # everywhere in vanilla; the record's palette 0 is Leo's.
+    if 'Albrook' in actual_areas_used:
+        port = FERRY_PORTS['Albrook']
+        npc = maps.get_npc(port['sailor_map'], port['sailor_npc_id'])
+        npc.sprite = port['sailor_sprite']
+        npc.palette = port['sailor_palette']
 
     if args.debug:
         print(f"Ferry: mapped ports = {mapped}")

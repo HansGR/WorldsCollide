@@ -2328,6 +2328,25 @@ title hash; the school doors are (93,45)/(99,45)/(108,45) on map 104, and
 the exit-table rows are rewritten, so read them by owner map + position, not
 by atlas index.
 
+## Albrook Dock Sailor Showed General Leo (2026-09)
+
+**Symptom.** Some ruination seeds had a General Leo sprite on the Albrook
+dock as the NPC who starts the custom boat event (aesthetic only).
+
+**Mechanism.** The dock NPC (map 0x14C, NPC 0x22) is a vanilla General Leo
+record (sprite 16, palette 0) whose visibility bit `$565` is set by
+`event/albrook_wob.py init_event_bits` whenever `'Albrook' in
+args.ruination_areas_used`. The sprite promotion to the sailor (54) lived in
+`_ferry_install_enabled`, which only runs with two or more mapped ports, so
+a lone mapped Albrook (e.g. `mgw54jqqi32s -ruin hard`) left Leo standing
+there with the "disabled" message. The palette was never set either, and
+sprite 54 wears palette 1 in every vanilla NPC record.
+
+**Fix.** `fix_ferry_connections` now sets sprite and palette
+(`FERRY_PORTS['Albrook']['sailor_palette']`) on the same condition as the
+visibility bit, before the enabled/disabled split. Golden `ruinsep`
+re-recorded (one byte: the record's palette bits).
+
 ## Harness Recipes from the Race Project (2026-09)
 
 Additions to "Headless Playtest Harness Patterns" that came out of the
