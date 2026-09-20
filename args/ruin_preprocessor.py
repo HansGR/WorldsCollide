@@ -174,7 +174,7 @@ RUIN_HARD_EXTRAS = {
 RUIN_EASY_OVERRIDES = {
     '-cg': ['-open'],                   # open world, no character gating
     '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers
-    '-stl': ['-stl', '12'],             # starting level, to match the starting-esper scaling
+    '-stl': ['-stl', '17'],             # starting level, to match the starting-esper scaling
     '-gp': ['-gp', '12000'],            # double starting gp
     '-ssf4': [],                        # standard 1/2 sell prices instead of 1/4
     '-chrm': ['-chrm', '0', '0'],       # no random monsters-in-a-box
