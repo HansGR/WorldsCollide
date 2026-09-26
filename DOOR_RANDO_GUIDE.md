@@ -69,11 +69,21 @@ destination and partner.  Utilities for reading these data are included in `atla
   - Find exits from the active cluster + its downstream; 
   - try connections to random legal entrances;
   - prune failures (`plan/prune.py`) and rollback on failure;
-  - continue until fully connected or walk budget exceeded.
-- **`plan/prune.py`** checks five Rules (A-F) that determine an invalid 
+  - continue until fully connected or walk budget exceeded;
+  - the budget (attempts x budget_limit) is spent in short randomized
+    restarts of `restart_budget` (2,000) connections: a successful walk needs
+    about one connection per element, and one that has not finished by then
+    is almost always thrashing below an early mistake (-drx: 60-200 s and
+    occasional failures before, ~15-35 s after).
+- **`plan/prune.py`** checks Rules A-F, which determine an invalid 
   mapping on the basis of number of remaining doors, traps, and pits; number of 
   remaining conversion rooms ('door-in-trap-out' [Dito] vs 'pit-in-door-out' [Pido]); 
-  and key accessibility.
+  and key accessibility; and Rules G/H, the reachability invariant: every
+  cluster must stay reachable from a home cluster (H) and able to get back
+  to one (G). Home = rooms touching the outside world ('root'/'branch', per
+  `walk.home_rooms`), else the start. G/H also run once on the finished map,
+  so the walk never returns a region that is unreachable or inescapable
+  (the counting rules cannot see a fully consumed cluster).
 - **`plan/modes.py`**: the method `plan_for_args(args, rng, characters)` is the
   dispatcher for every mode. Pools are imported from `data/room_sets.py` and 
   processed to implement mode-specific mutations by `plan_mode()` (or the

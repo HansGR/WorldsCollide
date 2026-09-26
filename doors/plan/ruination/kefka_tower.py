@@ -161,7 +161,7 @@ def randomize_kefka_tower(rng):
         try:
             world = run(specs, KT_FORCED, rng=rng, start_rule='most_exits',
                         budget_limit=KT_LANE_BUDGET, attempts=1,
-                        keys=tuple(KT_KEYS))
+                        keys=tuple(KT_KEYS), home_rule=None)
         except (WalkFailed, WalkBudgetExhausted):
             return None
         dp = [list(m) for m in world.door_pairs

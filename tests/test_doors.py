@@ -27,6 +27,7 @@ SCRIPTS = [
     ('test_ruin_growth.py', ['10']),
     ('test_ruin_finalize.py', ['10']),
     ('test_keyless_verifier.py', []),
+    ('test_home_reachability.py', []),
 ]
 
 

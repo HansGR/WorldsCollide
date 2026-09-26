@@ -1,4 +1,4 @@
-"""Feasibility pruning for the walk: Rules A-F.
+"""Feasibility pruning for the walk: Rules A-H.
 
 Each cluster of the world model is classified by what can flow through it
 (door-in/door-out, door-in/trap-out, pit-in/door-out, pit-in/trap-out),
@@ -10,18 +10,95 @@ completed. The rules operate on the always-DAG cluster graph:
   B/C: one-way imbalance (a DiTo with no PiDo, or vice versa)
   D: door in/out count imbalance
   F: a dead-end cluster whose only exit is locked by a key inside itself
-(Rule E is computed but deliberately not enforced.)
+  G: a cluster that can no longer get home (home region out of entrances,
+     or a region closed with no exit)
+  H: a cluster that can no longer be reached from home (mirror of G)
+(Rule E is computed but deliberately not enforced.) A-F are counting
+rules and cannot see a fully consumed cluster; G/H enforce reachability
+(every cluster reachable from home AND able to get back) as necessary
+conditions during the walk, and exactly on the finished map, so the walk
+never returns a layout with a region that is unreachable or inescapable.
 """
 
-from doors.model import DOOR
+from doors.model import DOOR, TRAP, PIT
 
 
 class PruneReject(Exception):
     """The current partial network cannot be completed."""
 
 
+def check_home_reachable(world, final=False):
+    """Rules G and H: every cluster must end up reachable from a home
+    cluster (H) and able to get back to one (G). Home = rooms that touch
+    the outside world, or the start cluster when a pool has none.
+
+    H mirrors G below: R = home + downstream; a cluster outside R can only
+    be reached through a new edge LEAVING R, so while any is outside R,
+    R keeps an exit (H2) and each outside cluster (+ its upstream) keeps
+    an entrance (H1). With final=True (everything consumed) any cluster
+    outside R or E fails outright - the walk's own acceptance check.
+
+    E = home clusters + everything upstream of them (they can already get
+    home).  A cluster outside E can only join E through a new edge that
+    lands IN E, consuming an entrance there, and only by leaving through an
+    exit of its own region.  So, while any cluster is outside E:
+      G1  each outside cluster (+ its downstream) keeps an exit;
+      G2  E keeps an entrance.
+    Both are necessary conditions (locked elements counted, since a key
+    may still release them)."""
+    homes = getattr(world, 'home_rooms', None)
+    if not homes:
+        return
+    home_c = {world.cluster_of_room(r) for r in homes if r in world._index}
+    inert = getattr(world, 'inert_rooms', ())
+    clusters = [c for c in world.clusters()
+                if not all(world.room_ids[h] in inert
+                           for h in world.cluster_rooms(c))]
+    # H (mirror of G, for reachability FROM home): R = home + downstream.
+    R = set(home_c)
+    for c in home_c:
+        R.update(world.downstream(c))
+    unreached = [c for c in clusters if c not in R]
+    if unreached:
+        if final:
+            raise PruneReject('invalid network: H (finished with clusters unreachable from home)')
+        ex = sum(len(world.cluster_elements(c, DOOR, include_locked=True))
+                 + len(world.cluster_elements(c, TRAP, include_locked=True))
+                 for c in R)
+        if ex == 0:
+            raise PruneReject('invalid network: H2 (home region has no exit left)')
+        for c in unreached:
+            region = [c] + world.upstream(c)
+            ent = sum(len(world.cluster_elements(x, DOOR, include_locked=True))
+                      + len(world.cluster_elements(x, PIT, include_locked=True))
+                      for x in region)
+            if ent == 0:
+                raise PruneReject('invalid network: H1 (sealed from home)')
+    E = set(home_c)
+    for c in home_c:
+        E.update(world.upstream(c))
+    outside = [c for c in clusters if c not in E]
+    if not outside:
+        return
+    if final:
+        raise PruneReject('invalid network: G (finished with clusters that cannot get home)')
+    ent = sum(len(world.cluster_elements(c, DOOR, include_locked=True))
+              + len(world.cluster_elements(c, PIT, include_locked=True))
+              for c in E)
+    if ent == 0:
+        raise PruneReject('invalid network: G2 (home region has no entrance left)')
+    for c in outside:
+        region = [c] + world.downstream(c)
+        ex = sum(len(world.cluster_elements(x, DOOR, include_locked=True))
+                 + len(world.cluster_elements(x, TRAP, include_locked=True))
+                 for x in region)
+        if ex == 0:
+            raise PruneReject('invalid network: G1 (closed pocket)')
+
+
 def check_invalid(world):
-    """Raise PruneReject if the world fails Rules A/B/C/D/F."""
+    """Raise PruneReject if the world fails Rules A/B/C/D/F/G/H."""
+    check_home_reachable(world)
     clusters = world.clusters()
     counts = {c: world.counts(c) for c in clusters}  # unprotected, incl locked
 

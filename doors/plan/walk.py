@@ -2,9 +2,11 @@
 
 Grow from an active cluster, offer its and its downstream clusters' exits
 in random order, try random legal entrances for each, prune with Rules
-A-F, and backtrack by journal rollback (no copies). A deterministic
+A-H, and backtrack by journal rollback (no copies). A deterministic
 attempted-connection budget bounds pathological searches identically on
-every machine (no timeouts).
+every machine (no timeouts); it is spent in short randomized restarts,
+because a walk that has not finished quickly is almost always stuck below
+an early mistake that chronological backtracking will not reach.
 
 Two sampling-character decisions worth knowing:
 - the cluster graph is kept DAG-clean at all times (closing a one-way
@@ -17,7 +19,7 @@ Two sampling-character decisions worth knowing:
 import random
 
 from doors.model import DOOR, TRAP, PIT
-from doors.plan.prune import check_invalid, PruneReject
+from doors.plan.prune import check_invalid, check_home_reachable, PruneReject
 
 
 class WalkBudgetExhausted(Exception):
@@ -149,6 +151,7 @@ def walk(world, active, rng, budget):
     """Recursive worker: returns on success, raises on failure.
     `budget` is a shared [remaining] list (p7 semantics)."""
     if world.total_unmatched() == 0:
+        check_home_reachable(world, final=True)
         return
     check_invalid(world)
 
@@ -238,13 +241,51 @@ def _trail(world, c1, active):
     return [c1]
 
 
+def home_rooms(specs, world, active, home_rule):
+    """Rooms that count as 'home' for Rules G/H (doors/plan/prune.py).
+
+    home_rule 'roots': rooms touching the outside world - 'root' rooms plus
+    'branch' exits into neighbouring areas; 'start': 'root' rooms only
+    (-drdc, whose 'branch' rooms are dead ends); either falls back to the
+    start cluster's rooms when the pool has none. None disables G/H (KT
+    lanes, which have their own joint verifier)."""
+    if home_rule is None:
+        return []
+    tags = ('root', 'branch') if home_rule == 'roots' else ('root',)
+    homes = [r for r in specs if any(t in str(r) for t in tags)]
+    if homes:
+        return homes
+    return [world.room_ids[h] for h in world.cluster_rooms(active)]
+
+
+def inert_rooms(specs):
+    """Rooms with no elements at all, live or locked (e.g. map shuffle's
+    Zone Eater room once its ids are dropped under door rando). Nothing can
+    ever connect them, so they are placeholders, not part of the map;
+    Rules G/H ignore them."""
+    out = set()
+    for rid, s in specs.items():
+        if s['doors'] or s['traps'] or s['pits']:
+            continue
+        if any(not isinstance(i, str)
+               for items in s.get('locks', {}).values() for i in items):
+            continue
+        out.add(rid)
+    return out
+
+
 def run(specs, forcing, seed=None, rng=None, start_room=None,
-        start_rule='roots', budget_limit=5000, attempts=5, keys=()):
+        start_rule='roots', budget_limit=5000, attempts=5, keys=(),
+        home_rule='roots', restart_budget=2000):
     """Full pool run: build model, force, attach dead ends, walk with
     start re-rolls. Returns the solved WorldModel. Pass `rng` to share one
     stream across pools (a whole mode), or `seed` for a standalone run.
     `keys` are applied before forcing (KT lanes pre-unlock the gated
     platforms so the walk can rely on the crossings for connectivity).
+
+    home_rule: which rooms count as home for Rules G/H (see home_rooms).
+    restart_budget: connections per try; tries share the total budget
+    attempts x budget_limit. attempts=1 means one full-budget try.
 
     start_rule:
       'roots'      random root room, else any room (-dre and friends)
@@ -256,7 +297,21 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
     if rng is None:
         rng = random.Random(seed)
     last = None
-    for _ in range(attempts):
+    # Restarts share one total budget (attempts x budget_limit), spent in
+    # short tries of `restart_budget` connections. A successful walk needs
+    # little more than one connection per element (e.g. ~180 for -drx);
+    # a walk that has not finished by then is almost always thrashing
+    # below an early mistake that chronological backtracking will not
+    # reach, so a fresh randomized start is far cheaper (heavy-tailed
+    # search). Short tries also give the dead-end pre-pass, which is not
+    # backtracked, many cheap redraws. Single-shot callers (KT lanes,
+    # attempts=1) keep one full-budget try and redraw their own inputs.
+    per_try = budget_limit if attempts == 1 else (restart_budget or budget_limit)
+    max_tries = 1 if attempts == 1 else 1000     # safety cap; budget binds first
+    remaining = budget_limit * attempts
+    tries = 0
+    while remaining > 0 and tries < max_tries:
+        tries += 1
         world = WorldModel(specs)
         world.forcing = forcing
         for k in keys:
@@ -283,9 +338,14 @@ def run(specs, forcing, seed=None, rng=None, start_room=None,
             starts = roots or list(specs)
         if starts is not None:
             active = world.cluster_of_room(rng.choice(starts))
+        world.home_rooms = home_rooms(specs, world, active, home_rule)
+        world.inert_rooms = inert_rooms(specs)
+        budget = [min(per_try, remaining)]
+        start = budget[0]
         try:
-            walk(world, active, rng, [budget_limit])
+            walk(world, active, rng, budget)
             return world
         except (WalkFailed, WalkBudgetExhausted, PruneReject) as e:
             last = e
-    raise WalkFailed(f'pool unsolved after {attempts} attempts') from last
+        remaining -= max(1, start - max(budget[0], 0))
+    raise WalkFailed(f'pool unsolved after {tries} attempts') from last

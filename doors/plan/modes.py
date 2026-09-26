@@ -242,11 +242,11 @@ def plan_mode(flags, rng, budget_limit=5000):
     dr_active = False
 
     def add(name, pool, shared=None, start_rule='roots', budget=None,
-            drop=()):
+            drop=(), home_rule='roots'):
         specs = load_pool(pool, shared=shared, drop=drop)
         forcing = pool_forcing(specs)
         segments.append([name, specs, forcing, start_rule,
-                         budget or budget_limit])
+                         budget or budget_limit, home_rule])
         return segments[-1]
 
     drop = IGNORE_DOORS if map_shuffle else ()
@@ -261,7 +261,7 @@ def plan_mode(flags, rng, budget_limit=5000):
         dr_active = True
         shared_view = split_shared_view()
         add('DungeonCrawl', ROOM_SETS['DungeonCrawl'], shared=shared_view,
-            start_rule='biggest')
+            start_rule='biggest', home_rule='start')
         map_shuffle = False                                  # -drdc overrides
     elif g('door_randomize_all'):                            # -dra
         dr_active = True
@@ -312,10 +312,10 @@ def plan_mode(flags, rng, budget_limit=5000):
             strip += [link_wob, link_wor]
 
     door_pairs, oneways, worlds, gates = [], [], {}, {}
-    for name, specs, forcing, start_rule, budget in segments:
+    for name, specs, forcing, start_rule, budget, home_rule in segments:
         gates.update(gates_from_specs(specs))
         world = run(specs, forcing, rng=rng, start_rule=start_rule,
-                    budget_limit=budget)
+                    budget_limit=budget, home_rule=home_rule)
         worlds[name] = world
         door_pairs.extend(world.door_pairs)
         oneways.extend(world.oneways)

@@ -2363,6 +2363,66 @@ sprite 54 wears palette 1 in every vanilla NPC record.
 visibility bit, before the enabled/disabled split. Golden `ruinsep`
 re-recorded (one byte: the record's palette bits).
 
+## Walk Reachability Rules G/H + Short Restarts (2026-09)
+
+Found while writing the map-construction retrospective: the door walk
+(`doors/plan/walk.py`, every non-ruination mode) guaranteed consumption and
+a DAG-clean cluster graph, but **never that the player can get out**. Rules
+A-F are counting rules; a fully consumed cluster contributes nothing to
+them, and `walk()` returned the moment everything was matched, before any
+check. The structural validator checks consumption only.
+
+**Serpent Trench (`plan_dre(seed=1001)`).** Forced currents: 01a->01b,
+01b->01c, Nikeah->start. The walk sent start->01a->01b->Nikeah->start,
+consuming the home loop's last pit while 01c (forced from 01b) and the caves
+were still downstream, then closed 01c->03c->03a/03b->02->01c into a sealed
+loop. Cave map 0x0AF has only the 529/530 exits, so no unmodelled escape.
+Over 200 `-dre` seeds a model-level check flagged 164 pool layouts (Zozo WoR
+108, Zozo 27, Serpent Trench 15, Cyan's Dream 6, Phantom Train 5, Magitek
+Factory 2, Owzer 1). The Zozo ones escape in game through the clock passage
+the pools leave out (2061/2063); the others were not playtested.
+
+**Rules G/H (`plan/prune.py check_home_reachable`).** Home = rooms touching
+the outside world (`walk.home_rooms`: 'root' + 'branch' rooms; -drdc 'root'
+only; else the start cluster; KT lanes disabled). E = home + upstream (can
+get home); R = home + downstream (reachable). While a cluster is outside E:
+E keeps an entrance (G2) and the cluster + downstream keeps an exit (G1).
+Mirror for R (H1/H2). Locked elements count. Both are necessary conditions,
+so pruning is sound; with `final=True` any cluster outside E or R fails the
+finished map. Rooms with no elements at all (`walk.inert_rooms`) are
+ignored: under `-dre -maps` the map-shuffle transform drops Zone Eater's
+ids (IGNORE_MAPS), leaving `MAPr-ZON` empty, and H would otherwise call
+every state "sealed from home" (caught by the `dremaps` golden build). This is the walk-level form of ruination's "never consume the
+hub region's last entrance".
+
+**`-drx` failures and slowness.** Seed 1013 (planner seed, `plan_drx`)
+failed after 5 x 50,000 connections (319 s); 6 of 14 seeds took 60-213 s.
+Every failed attempt reached 1-3 unmatched elements at depth ~150, then
+burned the budget backtracking the last ~12 levels. Closest state of the
+first attempt: the start region had no elements left while four clusters
+were cut off - one held Daryl's Tomb key `dt3` and forced pit 3060, whose
+only feeder is the `dt3`-locked trap 2060 in a cluster reachable only from
+the first (a circular key dependency). The mistake sat 10+ levels up, where
+chronological backtracking never gets. A successful attempt needs ~180
+connections, so the fix is **short restarts**: `run()` spends the same total
+budget (attempts x budget_limit) in tries of `restart_budget=2000`
+(attempts=1 callers - KT lanes - keep one full try). -drx: 14-34 s, 0/20
+failures. Restarts also cure Zozo WoR, whose dead-end pre-pass (not
+backtracked) is infeasible 64% of the time: with G/H and 5 fixed attempts it
+failed 10% of plans; with restarts 0/400.
+
+**Tried and dropped: Rule R**, an optimistic-completion reachability check
+with a key fixpoint (catches the `dt3` cycle directly). Sound, but it made
+each walk step ~1.6x slower on the 250-room pools, and short restarts alone
+already recover from what it catches.
+
+**Known limits.** Home detection is by room-name tags; an explicit per-pool
+home list would be sturdier (and could name scripted exits such as Cyan's
+room if wanted). The order-aware keychain verifier from ruination is not run
+for door-rando modes (a naive port flags vanilla-matched pairs; it needs the
+same exemptions). Every door-rando seed changed; goldens re-recorded.
+Tests: `tests/doors/test_home_reachability.py`.
+
 ## Harness Recipes from the Race Project (2026-09)
 
 Additions to "Headless Playtest Harness Patterns" that came out of the
