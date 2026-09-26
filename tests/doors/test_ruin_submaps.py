@@ -22,7 +22,7 @@ from doors.plan.ruination.dream_maze import (
     randomize_isolated_maze, MAZE_ROOMS, STOOGE_ROOMS, END_ROOM, ENTRY_PITS,
 )
 from doors.plan.ruination.kefka_tower import (
-    randomize_kefka_tower, KT_PLATFORM_IDS, KT_KEY_ROOM, KT_GATED,
+    randomize_kefka_tower, derive_tower_tables, KT_PLATFORM_IDS, KT_CROSSINGS,
 )
 
 
@@ -96,10 +96,39 @@ def test_kefka_tower():
                 for e in group:
                     room_of[e] = r
         touched = {room_of[e] for e in used if e in room_of}
-        touched.update(x for a, b, _ in KT_GATED for x in (a, b))
+        touched.update(x for a, b, _, _ in KT_CROSSINGS for x in (a, b))
         assert touched == set(KT), set(KT) - touched
     assert ok >= 2, f'KT randomization failed too often ({ok}/3)'
     print(f'PASS: KT lanes - {ok}/3 seeds verified, coverage + single-use')
+
+
+def test_kefka_tower_tables_derived():
+    """The crossings come from room_data: the real data gives the two
+    two-way gated crossings; a trap->pit pair would give a one-way one;
+    malformed data is refused instead of silently mis-modelled."""
+    crossings, forced, platforms, key_rooms, keys = derive_tower_tables()
+    assert crossings == [('KTA5a', 'KTA5b', ('KT1',), True),
+                         ('KTA8a', 'KTA8b', ('KT2',), True)], crossings
+    assert forced == {1565: [1566], 1567: [1568]}
+    assert platforms == {1565, 1566, 1567, 1568}
+    assert key_rooms == {'KTB8': ('KT1',), 'KTC10': ('KT2',)}
+    assert keys == ['KT1', 'KT2']
+
+    rooms = dict(room_data)
+    rooms['KTA5a'] = [[760], [], [], [], {'KT1': [2990]}, 1]
+    rooms['KTA5b'] = [[761], [], [], [], {'KT1': [3990]}, 1]
+    forcing = {2990: [3990], 1567: [1568]}
+    crossings = derive_tower_tables(rooms, forcing)[0]
+    assert crossings[0] == ('KTA5a', 'KTA5b', ('KT1',), False), crossings
+
+    for bad_forcing, why in (({1565: [1566]}, 'unpaired'),
+                             ({1565: [3990], 1567: [1568]}, 'foreign partner')):
+        try:
+            derive_tower_tables(room_data, bad_forcing)
+        except ValueError:
+            continue
+        raise AssertionError(f'{why} crossing data was accepted')
+    print('PASS: KT crossings derived from room_data (two-way, one-way, refusals)')
 
 
 def test_kefka_tower_no_fallbacks():
@@ -115,5 +144,6 @@ def test_kefka_tower_no_fallbacks():
 if __name__ == '__main__':
     test_dream_maze()
     test_kefka_tower()
+    test_kefka_tower_tables_derived()
     test_kefka_tower_no_fallbacks()
     print('\nAll sub-map tests passed.')

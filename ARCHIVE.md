@@ -1423,12 +1423,12 @@ KT's door graph is **deliberately sparse** — ~28 two-way door-edges across ~34
 
 ### The coupling (why lanes can't be solved independently of keys)
 
-Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced crossing** in *another* lane: `KTa5a↔KTa5b` (switch platform `1565↔1566`, needs `KT1`) and `KTa8a↔KTa8b` (broken stairs `1567↔1568`, needs `KT2`). Once unlocked, both crossings are walkable in either direction (confirmed in game by Hans, 2026-09). Constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_GATED` (the `(a, b, key)` crossings), `KT_KEY_ROOM` (`{'KTb8':'KT1','KTc10':'KT2'}`), `KT_FORCED` (`{1565:[1566], 1567:[1568]}`), `KT_PLATFORM_IDS`, `KT_MAX_SPLITS = 400`.
+Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced crossing** in *another* lane: `KTa5a↔KTa5b` (switch platform `1565↔1566`, needs `KT1`) and `KTa8a↔KTa8b` (broken stairs `1567↔1568`, needs `KT2`). Once unlocked, both crossings are walkable in either direction (confirmed in game by Hans, 2026-09). Hand-set design constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_MAX_SPLITS = 400`. Everything about the crossings is **derived from room data** by `derive_tower_tables()` (2026-09): `KT_CROSSINGS` (`(a, b, keys, two_way)`: the locked elements of tower rooms joined by a forced connection; two-way when the pair is door-range, one-way when trap->pit, decided by the walk's own `WorldModel._element_kind`), `KT_FORCED`, `KT_PLATFORM_IDS`, `KT_KEY_ROOM` (tower rooms' key slots) and `KT_KEYS`. Malformed data (an unpaired locked element, a forced partner outside the tower locks, a door paired with a pit, a key no room grants) raises `ValueError`. To change a crossing, edit `data/rooms.py` / `forced_connections` - never a table in `kefka_tower.py`.
 
 ### Three-phase design (propose → verify, in a retry loop, up to `KT_MAX_SPLITS`)
 
-1. **`split_lanes()` — partition + cheap *necessary* filter.** Randomly assigns every KT room to one of three lanes (one entry + one ending each; the two `KT_GATED` pairs kept atomic so a crossing never spans lanes). Rejects (`None`) any partition where a lane has unequal traps≠pits, an odd door count, or >2 of the 4 bosses. Fast pre-filter only — *not* sufficient.
-2. **`connect_lane(lane)` — drive the walk (optimistic).** `Network(list(lane))` → **`apply_key('KT1'); apply_key('KT2')`** (see gotcha 2) → `ForceConnections(KT_FORCED)` → `attach_dead_ends()` → `active` = room with the most exits → `connect_network()`. Catches the walk's failure-raise and returns `None` (→ re-roll). **Strips `KT_PLATFORM_IDS` from the returned map** (gotcha 2). The walk is deliberately optimistic — it treats both platforms as open and ignores key timing.
+1. **`split_lanes()` — partition + cheap *necessary* filter.** Randomly assigns every KT room to one of three lanes (one entry + one ending each; the two `KT_CROSSINGS` pairs kept atomic so a crossing never spans lanes). Rejects (`None`) any partition where a lane has unequal traps≠pits, an odd door count, or >2 of the 4 bosses. Fast pre-filter only — *not* sufficient.
+2. **`connect_lane(lane)` — drive the walk (optimistic).** `Network(list(lane))` → **apply every key in `KT_KEYS`** (`KT1`, `KT2`; see gotcha 2) → `ForceConnections(KT_FORCED)` → `attach_dead_ends()` → `active` = room with the most exits → `connect_network()`. Catches the walk's failure-raise and returns `None` (→ re-roll). **Strips `KT_PLATFORM_IDS` from the returned map** (gotcha 2). The walk is deliberately optimistic — it treats both platforms as open and ignores key timing.
 3. **`verify()` — the ground truth (honest), via a joint state-space.** The three lanes are physically disjoint; their *only* coupling is the **global, monotonic keychain** (pressing `KTb8`/`KTc10` sets `KT1`/`KT2`, opening a gated crossing that may be in a different lane). The player drives all three parties asynchronously and switches between them freely, so verify models the true dynamics as a search over joint states **`(roomA, roomB, roomC, keychain)`**:
    - a move steps **one** party along a door (two-way), a trap (one-way), or a gated crossing (two-way, only if its key is already held);
    - a party standing on a switch room may add that key to the shared keychain (permanent — it never shrinks).
@@ -1458,7 +1458,9 @@ door pair, but `verify()` still modelled it as one-way `a -> b`, so every
 layout that used a crossing backwards was rejected. Vanilla fallbacks went
 from 0/200 (legacy, 2026-06-09) to 16/200 (legacy, just before cutover) and
 18/200 (v2, through 2026-09); bisected on the legacy engine to `9bd584c`.
-Fix: `verify()` adds the reverse gated edge (two-way once its key is held).
+Fix: `verify()` adds the reverse gated edge (two-way once its key is held),
+and a follow-up commit derives every crossing table from room data so the
+walk and `verify()` read one definition.
 Result 0/200 fallbacks and the 200-seed sweep drops from 191 s to 28 s;
 `tests/doors/test_ruin_submaps.py` now asserts 0/20 fallbacks. Lesson: a
 data edit that changes an element's KIND (trap vs door) changes the
