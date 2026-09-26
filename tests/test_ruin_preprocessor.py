@@ -44,7 +44,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertIn("-open", argv)
         self.assertNotIn("-cg", argv)
         self.assertEqual(value_after(argv, "-rce"), ["6.6"])
-        self.assertEqual(value_after(argv, "-stl"), ["12"])
+        self.assertEqual(value_after(argv, "-stl"), ["17"])
         self.assertEqual(value_after(argv, "-gp"), ["12000"])
         self.assertNotIn("-ssf4", argv)
         self.assertEqual(value_after(argv, "-chrm", 2), ["0", "0"])
