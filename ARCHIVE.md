@@ -1423,14 +1423,14 @@ KT's door graph is **deliberately sparse** — ~28 two-way door-edges across ~34
 
 ### The coupling (why lanes can't be solved independently of keys)
 
-Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced one-way crossing** in *another* lane: `KTa5a→KTa5b` (platform `1565→1566`, needs `KT1`) and `KTa8a→KTa8b` (`1567→1568`, needs `KT2`). Constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_GATED` (the `(a, b, key)` crossings), `KT_KEY_ROOM` (`{'KTb8':'KT1','KTc10':'KT2'}`), `KT_FORCED` (`{1565:[1566], 1567:[1568]}`), `KT_PLATFORM_IDS`, `KT_MAX_SPLITS = 400`.
+Two switches couple the lanes: pressing `KTb8` sets key `KT1`, pressing `KTc10` sets key `KT2`. Each key unlocks a **forced crossing** in *another* lane: `KTa5a↔KTa5b` (switch platform `1565↔1566`, needs `KT1`) and `KTa8a↔KTa8b` (broken stairs `1567↔1568`, needs `KT2`). Once unlocked, both crossings are walkable in either direction (confirmed in game by Hans, 2026-09). Constants: `KT_ENTRIES`, `KT_FINALS`, `KT_BOSSES`, `KT_GATED` (the `(a, b, key)` crossings), `KT_KEY_ROOM` (`{'KTb8':'KT1','KTc10':'KT2'}`), `KT_FORCED` (`{1565:[1566], 1567:[1568]}`), `KT_PLATFORM_IDS`, `KT_MAX_SPLITS = 400`.
 
 ### Three-phase design (propose → verify, in a retry loop, up to `KT_MAX_SPLITS`)
 
 1. **`split_lanes()` — partition + cheap *necessary* filter.** Randomly assigns every KT room to one of three lanes (one entry + one ending each; the two `KT_GATED` pairs kept atomic so a crossing never spans lanes). Rejects (`None`) any partition where a lane has unequal traps≠pits, an odd door count, or >2 of the 4 bosses. Fast pre-filter only — *not* sufficient.
 2. **`connect_lane(lane)` — drive the walk (optimistic).** `Network(list(lane))` → **`apply_key('KT1'); apply_key('KT2')`** (see gotcha 2) → `ForceConnections(KT_FORCED)` → `attach_dead_ends()` → `active` = room with the most exits → `connect_network()`. Catches the walk's failure-raise and returns `None` (→ re-roll). **Strips `KT_PLATFORM_IDS` from the returned map** (gotcha 2). The walk is deliberately optimistic — it treats both platforms as open and ignores key timing.
 3. **`verify()` — the ground truth (honest), via a joint state-space.** The three lanes are physically disjoint; their *only* coupling is the **global, monotonic keychain** (pressing `KTb8`/`KTc10` sets `KT1`/`KT2`, opening a gated crossing that may be in a different lane). The player drives all three parties asynchronously and switches between them freely, so verify models the true dynamics as a search over joint states **`(roomA, roomB, roomC, keychain)`**:
-   - a move steps **one** party along a door (two-way), a trap (one-way), or a gated crossing (one-way, only if its key is already held);
+   - a move steps **one** party along a door (two-way), a trap (one-way), or a gated crossing (two-way, only if its key is already held);
    - a party standing on a switch room may add that key to the shared keychain (permanent — it never shrinks).
 
    Forward-BFS the reachable joint states from the three entries, then accept iff **(a)** every room is occupied by its lane's party in some reachable state (no orphans — all bosses/switches reachable) **and (b)** from EVERY reachable state the players can still herd all three parties onto their endings (reverse-BFS the all-at-endings goal over the forward edges; require it covers the forward set). The state space is tiny (product of lane sizes × 4 keychains ≈ a few thousand; verify ≈ 10 ms).
@@ -1449,6 +1449,20 @@ The soundness argument is the **optimistic-generator / pessimistic-verifier spli
 ### Validation
 
 Integrated method across 40 seeds (joint-verifier): **0 fallbacks, 0 invalid-or-softlockable layouts** (checked by an independently-written joint dead-state detector — all rooms reachable AND 0 dead states), median 0.60s (p90 2.71s, max 3.64s). Full `-ruin -rkt` ROM compiles (several seeds): every KT room reachable, every door/trap/pit used exactly once, no self-loops, no platform-id leakage into written exits.
+
+**Regression and fix (2026-09): walk and verify must agree on the crossings.**
+Commit `9bd584c` (2026-07-08) moved the platform ids from the trap range
+(2182-2185) into the door range (1565-1568), because the crossings behave as
+doors. From then on the lane walk treated each crossing as a two-way forced
+door pair, but `verify()` still modelled it as one-way `a -> b`, so every
+layout that used a crossing backwards was rejected. Vanilla fallbacks went
+from 0/200 (legacy, 2026-06-09) to 16/200 (legacy, just before cutover) and
+18/200 (v2, through 2026-09); bisected on the legacy engine to `9bd584c`.
+Fix: `verify()` adds the reverse gated edge (two-way once its key is held).
+Result 0/200 fallbacks and the 200-seed sweep drops from 191 s to 28 s;
+`tests/doors/test_ruin_submaps.py` now asserts 0/20 fallbacks. Lesson: a
+data edit that changes an element's KIND (trap vs door) changes the
+planner's semantics; any separate verifier must change with it.
 
 **Open caveat:** several KT "rooms" share one physical SNES map (e.g. `KTa5a`/`KTa5b`/`KTb8` on `0x124`; many outdoor rooms on `0x14E`). The model is purely logical (room graph); whether parties can *physically* walk between lane regions on a shared map is map geometry the randomizer doesn't capture — worth a playtest on a generated ROM.
 

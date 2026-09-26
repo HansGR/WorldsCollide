@@ -102,7 +102,18 @@ def test_kefka_tower():
     print(f'PASS: KT lanes - {ok}/3 seeds verified, coverage + single-use')
 
 
+def test_kefka_tower_no_fallbacks():
+    """The lane walk and verify() must agree on the gated crossings (both
+    two-way once unlocked); a mismatch shows up as vanilla fallbacks
+    (18/200 before 2026-09 with verify one-way, 0/200 after)."""
+    fallbacks = [s for s in range(20)
+                 if randomize_kefka_tower(random.Random(s)) is None]
+    assert not fallbacks, f'KT fell back to vanilla for seeds {fallbacks}'
+    print('PASS: KT lanes - 0/20 vanilla fallbacks')
+
+
 if __name__ == '__main__':
     test_dream_maze()
     test_kefka_tower()
+    test_kefka_tower_no_fallbacks()
     print('\nAll sub-map tests passed.')

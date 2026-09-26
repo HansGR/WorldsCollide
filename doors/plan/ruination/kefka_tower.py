@@ -26,8 +26,13 @@ from doors.plan.walk import run, WalkFailed, WalkBudgetExhausted
 KT_ENTRIES = ['KTA1', 'KTB1', 'KTC1']
 KT_FINALS = ['KTA-final', 'KTB-final', 'KTC-final']
 KT_BOSSES = ['KTB4', 'KTB10', 'KTC7', 'KTC12']
-# Rooms joined by a key-gated forced crossing share a lane; the crossing
-# is a one-way edge a -> b, gated by the named switch key.
+# Rooms joined by a key-gated forced crossing share a lane. Once its switch
+# key is held, the crossing (switch platform, broken stairs) is walkable in
+# BOTH directions - the walk sees it as a forced door pair (1565<->1566,
+# 1567<->1568), and verify() must model it the same way. When the two
+# disagreed (walk two-way, verify one-way a -> b), verify rejected every
+# layout that used the crossing backwards and ~9% of rolls fell back to
+# vanilla KT.
 KT_GATED = [('KTA5a', 'KTA5b', 'KT1'), ('KTA8a', 'KTA8b', 'KT2')]
 KT_FORCED = {1565: [1566], 1567: [1568]}
 KT_PLATFORM_IDS = {1565, 1566, 1567, 1568}
@@ -102,8 +107,9 @@ def randomize_kefka_tower(rng):
             adj[room_of[d2]].append((room_of[d1], None))
         for t, p in trap_pits:
             adj[room_of[t]].append((room_of[p], None))
-        for a, b, k in KT_GATED:
+        for a, b, k in KT_GATED:                  # two-way once unlocked
             adj[a].append((b, KEY_BIT[k]))
+            adj[b].append((a, KEY_BIT[k]))
         grant = {room: KEY_BIT[key] for room, key in KT_KEY_ROOM.items()}
 
         entry = tuple(KT_ENTRIES)
