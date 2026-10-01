@@ -41,12 +41,16 @@ class DomaWOR(Event):
         self.doma_mod()
         self.wrexsoul_battle_mod()
 
-        if self.reward1.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_cyan_reward_mod()
+        elif self.reward1.type == RewardType.CHARACTER:
             self.cyan_character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
             self.cyan_esper_mod(self.reward1.id)
         self.finish_dream_awaken_mod()
 
+        if self.args.race:
+            self.race_throne_look_mod()
         if self.reward2.type == RewardType.ESPER:
             self.throne_esper_mod(self.reward2.id)
         elif self.reward2.type == RewardType.ITEM:
@@ -229,6 +233,55 @@ class DomaWOR(Event):
             field.Branch(space.end_address + 1), # skip nops
         )
 
+    def race_cyan_reward_mod(self):
+        # one script and one look for every kind of reward1 (character or
+        # esper): all seven dream npcs get the decoy sprite, repainted at
+        # map load for a character reward.  (rewards 2 and 3 are
+        # esper/item and already compile identically per kind through the
+        # unified grant and dialog commands.)
+        slot = self.race_slot(self.reward1)
+
+        self.random_cyan_npc_mod()
+        self.race_repaint_npc_entrance(0x08f, self.cyan_phantom_train_npc_id, slot)
+        self.race_repaint_npc_entrance(0x140, self.cyan_mines_npc_id, slot)
+        self.race_repaint_npc_entrance(0x13f, self.cyan_outside_mines_npc_id, slot)
+        self.race_repaint_npc_entrance(0x07d, self.cyan_fishing_npc_id, slot)
+        self.race_repaint_npc_entrance(0x07d, self.cyan_training_npc_id, slot)
+        self.race_repaint_npc_entrance(0x07e, self.cyan_bedroom_npc_id, slot)
+        self.race_repaint_npc_entrance(0x07e, self.cyan_throne_room_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.HideRewardEntity(slot),
+            field.UpdatePartyLeader(),
+            "NOT_CHARACTER",
+            field.Branch(0xb9830),
+        ]
+        space = Write(Bank.CB, src, "doma wor race recruit")
+        recruit_script = space.start_address
+
+        space = Reserve(0xb9818, 0xb982f, "doma wor split up party after wrexsoul battle", field.NOP())
+        space.write(
+            field.Branch(recruit_script),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
+            field.Branch(0xb99d5),
+            "NOT_CHARACTER",
+            field.ReceiveCheckReward(slot),
+            field.Branch(0xb99d5),
+        ]
+        space = Write(Bank.CB, src, "doma wor race sword reward")
+        sword_script = space.start_address
+
+        space = Reserve(0xb99b4, 0xb99d4, "doma wor cyan touches sword", field.NOP())
+        space.write(
+            field.Branch(sword_script),
+        )
+
     def random_cyan_npc_mod(self):
         sprite = self.characters.get_random_esper_item_sprite()
         palette = self.characters.get_palette(sprite)
@@ -281,6 +334,15 @@ class DomaWOR(Event):
 
         space = Reserve(0xb9a6f, 0xb9a6f, "doma wor learn all swdtechs", field.NOP())
 
+    def race_throne_look_mod(self):
+        # the two throne-room magicite npc records stay vanilla for
+        # every kind (a baked chest said "item here" in the rom); an
+        # item repaints them to the chest at map load.  the grant and
+        # dialog are already kind-blind in race builds
+        slot = self.race_slot(self.reward2)
+        for npc_id in (0x17, 0x18):
+            self.race_repaint_npc_entrance(0x07b, npc_id, slot, chest = True)
+
     def throne_esper_item_mod(self, reward_instructions):
         src = [
             reward_instructions,
@@ -305,20 +367,16 @@ class DomaWOR(Event):
         ])
 
     def throne_item_mod(self, item):
-        # the magicite is represented by 2 npcs for some reason
-        magicite_throne_room_npc_id = 0x17
-        magicite_throne_room_npc = self.maps.get_npc(0x7b, magicite_throne_room_npc_id)
-        magicite_throne_room_npc.sprite = 106
-        magicite_throne_room_npc.palette = 6
-        magicite_throne_room_npc.split_sprite = 1
-        magicite_throne_room_npc.direction = direction.DOWN
-
-        magicite_throne_room_npc_id = 0x18
-        magicite_throne_room_npc = self.maps.get_npc(0x7b, magicite_throne_room_npc_id)
-        magicite_throne_room_npc.sprite = 106
-        magicite_throne_room_npc.palette = 6
-        magicite_throne_room_npc.split_sprite = 1
-        magicite_throne_room_npc.direction = direction.DOWN
+        if not self.args.race:
+            # race builds keep the vanilla records and select the look at
+            # runtime instead (race_throne_look_mod)
+            # the magicite is represented by 2 npcs for some reason
+            for magicite_throne_room_npc_id in (0x17, 0x18):
+                magicite_throne_room_npc = self.maps.get_npc(0x7b, magicite_throne_room_npc_id)
+                magicite_throne_room_npc.sprite = 106
+                magicite_throne_room_npc.palette = 6
+                magicite_throne_room_npc.split_sprite = 1
+                magicite_throne_room_npc.direction = direction.DOWN
 
         self.throne_esper_item_mod([
             field.AddItem(item),

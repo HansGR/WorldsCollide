@@ -22,6 +22,13 @@ text_value = {
               '<GP>'                : 0x19,
               '<item>'              : 0x1a,
               '<skill>'             : 0x1b,
+              # 0x1c/0x1d are unused by vanilla (control codes run 0x00-0x1f,
+              # text starts at 0x20).  race builds install handlers that render
+              # the name of a check reward - item or esper alike - from the
+              # masked reward table; see instruction/field/race.py
+              # name_codes().  Non-race builds never emit them.
+              '<reward>'            : 0x1c,
+              '<reward2>'           : 0x1d,
               '!'                   : 0x5e,
               '?'                   : 0x5f,
               '/'                   : 0x60,

@@ -190,6 +190,14 @@ class Characters():
     def get_default_name(self, character):
         return self.DEFAULT_NAME[character]
 
+    def dialog_name(self, character, second = False):
+        """Name to put in dialog text: the runtime-rendered <reward>
+        control code in race builds (the character's placement must not
+        be readable out of the dialog data), the real name otherwise."""
+        if self.args.race:
+            return "<reward2>" if second else "<reward>"
+        return self.get_name(character)
+
     def get_sprite(self, character):
         return self.character_sprites.character_sprites[character].id
 

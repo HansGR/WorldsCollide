@@ -17,6 +17,10 @@ class Chests():
 
         self.chest_data = DataArrays(self.rom, self.PTRS_START, self.PTRS_END, self.rom.SHORT_PTR_SIZE, self.DATA_START, self.DATA_END, self.DATA_SIZE)
 
+        # a decoy instance only generates plausible data for race builds:
+        # it must not write code patches or asm data tables
+        self.decoy = False
+
         self.all_chests = []
         self.map_chests = []
         for map_index in range(len(self.chest_data)):
@@ -183,7 +187,8 @@ class Chests():
                 self.item_contents.append(self.item_tier_s_distribution[random_s_index][0])
             item_bits.append(chest.bit.to_bytes(2, "little"))
 
-        chests_asm.scale_items(item_bits, self.item_contents)
+        if not self.decoy:
+            chests_asm.scale_items(item_bits, self.item_contents)
 
         gold_bits = []
         self.gold_contents = []
@@ -192,7 +197,8 @@ class Chests():
             self.gold_contents.append(random.randint(1, max_value))
             gold_bits.append(chest.bit.to_bytes(2, "little"))
 
-        chests_asm.scale_gold(gold_bits, self.gold_contents)
+        if not self.decoy:
+            chests_asm.scale_gold(gold_bits, self.gold_contents)
 
     def chest_random_monsters(self, enemy_percent, boss_percent):
         from data.enemy_battle_groups import event_battle_groups_to_avoid, boss_event_battle_groups, event_battle_group_name, dragon_event_battle_groups, name_event_battle_group
@@ -318,9 +324,37 @@ class Chests():
         # update duplicates last after other chest mods finished
         self.update_duplicates()
 
+    def _race_relocate(self):
+        # race builds: move the real tables into the obfuscation claim,
+        # point the game's readers at them, and leave a decoy with the
+        # same format and distribution at the vanilla addresses.
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        # the decoy re-runs the real randomization on a scratch instance
+        # seeded from the decoy stream.  construct it before the real
+        # tables move: it reads the still-vanilla rom bytes
+        scratch = Chests(self.rom, self.args, self.items)
+        scratch.decoy = True
+        obfuscation.run_with_decoy_rng(self.args, "chests", scratch.mod)
+        for map_index in range(len(scratch.chest_data)):
+            for map_chest_index in range(len(scratch.chest_data[map_index])):
+                scratch.chest_data[map_index][map_chest_index] = \
+                    scratch.map_chests[map_index][map_chest_index].data()
+        scratch.chest_data.write()   # decoy lands at the vanilla addresses
+
+        self.chest_data.relocate(layout["chest_ptrs"], layout["chest_data"])
+        relocate.patch_chest_readers(layout)
+
     def write(self):
         if self.args.spoiler_log:
             self.log()
+
+        if self.args.race:
+            self._race_relocate()
 
         for map_index in range(len(self.chest_data)):
             for map_chest_index in range(len(self.chest_data[map_index])):

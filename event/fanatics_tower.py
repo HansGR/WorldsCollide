@@ -15,12 +15,19 @@ class FanaticsTower(Event):
         self.strago_npc_id = 0x13
         self.strago_npc = self.maps.get_npc(0x16a, self.strago_npc_id)
 
+        if self.args.race:
+            # registered up front: relm_event_mod's race theme call needs
+            # the slot before race_reward_mod runs
+            self.race_slot(self.reward1)
+
         self.gau_magic_mod()
         self.relm_event_mod()
         self.tower_top_mod()
         self.magimaster_battle_mod()
 
-        if self.reward1.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward1.type == RewardType.CHARACTER:
             self.character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
             self.esper_mod(self.reward1.id)
@@ -115,7 +122,26 @@ class FanaticsTower(Event):
         space = Reserve(0xc528b, 0xc528f, "fanatics tower don't change party for relm", field.NOP())
         space = Reserve(0xc52aa, 0xc52cc, "fanatics tower relm runs up stairs you old fool", field.NOP())
         space = Reserve(0xc5303, 0xc5307, "fanatics tower relm looks up after strago jumps", field.NOP())
-        space = Reserve(0xc5316, 0xc5326, "fanatics tower relm and strago face each other", field.NOP())
+        if self.args.race:
+            # the two-byte StartSong site (0xc5327) rides into this nop
+            # sea so a call fits: a character reward starts their theme
+            # at runtime (as character_music_mod bakes it), esper/item
+            # keep vanilla's song
+            src = [
+                field.BranchIfRewardKindNot(self.race_slot(self.reward1), "character", "VANILLA_SONG"),
+                field.PlayRewardTheme(self.race_slot(self.reward1)),
+                field.Return(),
+                "VANILLA_SONG",
+                Read(0xc5327, 0xc5328),     # vanilla song
+                field.Return(),
+            ]
+            theme_space = Write(Bank.CC, src, "fanatics tower race theme")
+            space = Reserve(0xc5316, 0xc5328, "fanatics tower relm and strago face each other", field.NOP())
+            space.write(
+                field.Call(theme_space.start_address),
+            )
+        else:
+            space = Reserve(0xc5316, 0xc5326, "fanatics tower relm and strago face each other", field.NOP())
         space = Reserve(0xc5329, 0xc5350, "fanatics tower various relm animations", field.NOP())
         space = Reserve(0xc5356, 0xc5389, "fanatics tower more relm animations and foul mouthed", field.NOP())
         space = Reserve(0xc5392, 0xc5395, "fanatics tower turn relm left", field.NOP())
@@ -149,6 +175,38 @@ class FanaticsTower(Event):
         space.write([
             field.StartSong(get_character_theme(character)),
         ])
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  the scene song is handled by relm_event_mod's race
+        # theme call
+        slot = self.race_slot(self.reward1)
+
+        self.race_decoy_npc(0x16a, self.strago_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            Read(0xc5409, 0xc540c),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(0xc542b),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            field.FadeOutScreen(4),
+            field.WaitForFade(),
+            field.Branch(0xc542b),
+        ]
+        space = Write(Bank.CC, src, "fanatics tower race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xc5409, 0xc542a, "fanatics tower reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def character_mod(self, character):
         self.character_music_mod(character)

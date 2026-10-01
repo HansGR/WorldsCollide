@@ -391,10 +391,10 @@ class Enemies():
         for enemy in self.enemies:
             enemy.no_scan = 0
 
-    def mod(self, maps):
-        if self.args.boss_normalize_distort_stats:
-            self.boss_normalize_distort_stats()
-
+    def mod_loot(self):
+        # the complete steal/drop pipeline, kept separate from mod():
+        # race builds re-run exactly this on a scratch instance to
+        # generate the decoy loot table (see _race_relocate)
         if self.args.shuffle_steals:
             self.shuffle_steals_random()
         if self.args.shuffle_drops:
@@ -402,6 +402,12 @@ class Enemies():
 
         if self.args.permadeath:
             self.remove_fenix_downs()
+
+    def mod(self, maps):
+        if self.args.boss_normalize_distort_stats:
+            self.boss_normalize_distort_stats()
+
+        self.mod_loot()
 
         self.apply_scaling()
 
@@ -529,6 +535,32 @@ class Enemies():
         for enemy in self.enemies:
             enemy.print()
 
+    def _race_relocate(self):
+        # race builds: move the real steal/drop table into the
+        # obfuscation claim, point the C2 battle readers at it, and
+        # leave a decoy with the same format and distribution at the
+        # vanilla address.  the rest of the enemy data stays in place.
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        # the decoy re-runs the real loot pipeline on a scratch
+        # instance seeded from the decoy stream.  construct it before
+        # the real table moves: it reads the still-vanilla rom bytes
+        def make_decoy():
+            scratch = Enemies(self.rom, self.args, self.items)
+            scratch.mod_loot()
+            return scratch
+        scratch = obfuscation.run_with_decoy_rng(self.args, "enemy_items", make_decoy)
+        for enemy_index in range(len(scratch.enemies)):
+            scratch.enemy_item_data[enemy_index] = scratch.enemies[enemy_index].item_data()
+        scratch.enemy_item_data.write()   # decoy lands at the vanilla address
+
+        self.enemy_item_data.relocate(layout["enemy_items"])
+        relocate.patch_enemy_item_readers(layout)
+
     def write(self):
         if self.args.steveify:
             for enemy in self.enemies:
@@ -536,6 +568,9 @@ class Enemies():
                     enemy.name = self.args.steveify
                 if enemy.special_name:
                     enemy.special_name = self.args.steveify
+
+        if self.args.race:
+            self._race_relocate()
 
         for enemy_index in range(len(self.enemies)):
             self.enemy_data[enemy_index] = self.enemies[enemy_index].data()

@@ -10,6 +10,10 @@ class Coliseum():
         self.enemies = enemies
         self.items = items
 
+        # where write() puts the match table; race builds move it into
+        # the obfuscation claim (read() always reads the vanilla table)
+        self.data_start = self.DATA_START_ADDR
+
         self.read()
 
     def read(self):
@@ -125,11 +129,39 @@ class Coliseum():
         rows.append("* = Hidden Reward")
         return rows
 
+    def _race_relocate(self):
+        # race builds: move the real match table into the obfuscation
+        # claim, point the C3 menu readers at it, and leave a decoy
+        # with the same format and distribution at the vanilla address.
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        # the decoy re-runs the real randomization on a scratch
+        # instance seeded from the decoy stream; its read() sees the
+        # still-vanilla rom bytes
+        def make_decoy():
+            scratch = Coliseum(self.rom, self.args, self.enemies, self.items)
+            scratch.mod()
+            return scratch
+        scratch = obfuscation.run_with_decoy_rng(self.args, "coliseum", make_decoy)
+        for match_index, match in enumerate(scratch.matches):
+            self.rom.set_bytes(self.DATA_START_ADDR + match_index * Match.DATA_SIZE,
+                               match.data())   # decoy lands at the vanilla address
+
+        self.data_start = layout["coliseum"]
+        relocate.patch_coliseum_readers(layout)
+
     def write(self):
         if self.args.spoiler_log:
             self.log()
 
+        if self.args.race:
+            self._race_relocate()
+
         for match_index, match in enumerate(self.matches):
             match_data = match.data()
-            match_data_start = self.DATA_START_ADDR + match_index * Match.DATA_SIZE
+            match_data_start = self.data_start + match_index * Match.DATA_SIZE
             self.rom.set_bytes(match_data_start, match_data)

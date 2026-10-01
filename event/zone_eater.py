@@ -17,7 +17,9 @@ class ZoneEater(Event):
         if self.args.character_gating:
             self.add_gating_condition()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -25,6 +27,62 @@ class ZoneEater(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  the npc record gets the random decoy sprite the item
+        # path uses; the map-load repaint then restores the kind's
+        # vanilla-wc look at runtime (the reward character, or the
+        # magicite shard for an esper), and the esper arm replays
+        # esper_mod's magicite-drop animation
+        slot = self.race_slot(self.reward)
+
+        self.gogo_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.gogo_npc.palette = self.characters.get_palette(self.gogo_npc.sprite)
+
+        self.race_repaint_npc_entrance(0x116, self.gogo_npc_id, slot, magicite = True)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+
+            field.DeleteEntity(self.gogo_npc_id),
+            field.ClearEventBit(npc_bit.GOGO_ZONE_EATER),
+            field.SetEventBit(event_bit.RECRUITED_GOGO_WOR),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the magicite drops off the ledge, as esper_mod animates it
+            "NOT_CHARACTER",
+            field.BranchIfRewardKindNot(slot, "esper", "ESPER_ITEM"),
+            field.DisableEntityCollision(self.gogo_npc_id),
+            field.EntityAct(self.gogo_npc_id, True,
+                field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                field_entity.Move(direction.DOWN, 1),
+                field_entity.Hide(),
+            ),
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+
+            field.DeleteEntity(self.gogo_npc_id),
+            field.ClearEventBit(npc_bit.GOGO_ZONE_EATER),
+            field.SetEventBit(event_bit.RECRUITED_GOGO_WOR),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "zone eater race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xb81ce, 0xb81ff, "zone eater recruit gogo", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def add_gating_condition(self):
         chest_bridge_npc_id = 0x11

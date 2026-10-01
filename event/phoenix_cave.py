@@ -21,7 +21,9 @@ class PhoenixCave(Event):
         self.landing_mod()
         self.end_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -29,6 +31,67 @@ class PhoenixCave(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind.  the chest scene
+        # keeps each kind's non-race visuals by branching at runtime:
+        # the chest-open plays for esper/item (character_mod removes it),
+        # and the magicite chime + the magicite npc (entity 0x11, a
+        # static record identical in every build) show only for an esper
+        slot = self.race_slot(self.reward)
+
+        self.race_decoy_npc(0x139, self.locke_npc_id, slot)
+
+        src = [
+            field.BranchIfRewardKind(slot, "character", "SKIP_CHEST"),
+            Read(0xc2b76, 0xc2b7e),         # locke opens the phoenix chest
+            field.BranchIfRewardKindNot(slot, "esper", "SKIP_CHEST"),
+            Read(0xc2b7f, 0xc2b81),         # magicite chime, pause
+            "SKIP_CHEST",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "phoenix cave race chest open")
+        chest_open = space.start_address
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "esper", "SKIP_SHOW"),
+            Read(0xc2b99, 0xc2b9d),         # show the magicite npc, chime, pause
+            "SKIP_SHOW",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "phoenix cave race show magicite")
+        show_magicite = space.start_address
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "esper", "SKIP_HIDE"),
+            Read(0xc2ba1, 0xc2ba4),         # pause, hide the magicite npc
+            "SKIP_HIDE",
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "phoenix cave race hide magicite")
+        hide_magicite = space.start_address
+
+        space = Reserve(0xc2b76, 0xc2b81, "phoenix cave race chest open", field.NOP())
+        space.write(
+            field.Call(chest_open),
+        )
+        space = Reserve(0xc2b99, 0xc2b9d, "phoenix cave race show magicite", field.NOP())
+        space.write(
+            field.Call(show_magicite),
+        )
+        space = Reserve(0xc2ba1, 0xc2ba4, "phoenix cave race hide magicite", field.NOP())
+        space.write(
+            field.Call(hide_magicite),
+        )
+
+        self.reward_mod([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            field.AddCheckReward(slot),
+            field.Branch("REWARD_DONE"),
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            "REWARD_DONE",
+        ])
 
     def landing_mod(self):
         self.need_more_characters_dialog = 2978

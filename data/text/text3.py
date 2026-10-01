@@ -636,6 +636,11 @@ text_value = {
               '<item>'              : 0x1201,
               '<skill>'             : 0x1202,
               '<command>'           : 0x1203,
+
+              # race builds only: substitutions rendered from the masked
+              # reward table at runtime (see obfuscation/veldt_battle.py)
+              '<battle reward>'     : 0x1204,
+              '<battle reward2>'    : 0x1205,
              }
 for ascii_val in range(ord('A'), ord('Z') + 1):
     text_value[chr(ascii_val)] = ascii_val + 0x3f

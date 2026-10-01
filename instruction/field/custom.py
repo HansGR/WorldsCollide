@@ -6,9 +6,15 @@ import args
 from enum import IntEnum
 
 def _set_opcode_address(opcode, address):
+    # Claiming a field opcode reserves its slot in the event command
+    # pointer table, so two features claiming the same opcode fail the
+    # build with a space conflict rather than silently overwriting one
+    # another.  (The description is interpolated so that error names the
+    # opcode - it used to be a plain string printing "{opcode}".)
     FIRST_OPCODE = 0x35
     opcode_table_address = 0x098c4 + (opcode - FIRST_OPCODE) * 2
-    space = Reserve(opcode_table_address, opcode_table_address + 1, "field opcode table, {opcode} {hex(address)}")
+    space = Reserve(opcode_table_address, opcode_table_address + 1,
+                    f"field opcode table, {hex(opcode)} -> {hex(address)}")
     space.write(
         (address & 0xffff).to_bytes(2, "little"),
     )

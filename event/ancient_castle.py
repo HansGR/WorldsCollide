@@ -22,7 +22,9 @@ class AncientCastle(Event):
     def mod(self):
         self.dialog_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -31,6 +33,70 @@ class AncientCastle(Event):
         self.finish_check_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind.  the statue
+        # record stays vanilla (the queen); a character reward reshapes
+        # it at map load - sprite only, since the gray statue palette is
+        # scene state that the awakening recolors
+        slot = self.race_slot(self.reward)
+
+        statue_npc_id = 0x11
+        self.race_repaint_npc_entrance(0x198, statue_npc_id, slot,
+                                       palette = False)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.SetRewardPalette(statue_npc_id, slot),
+            field.EntityAct(statue_npc_id, True,
+                field_entity.AnimateKneeling(),
+                field_entity.Pause(20),
+                field_entity.AnimateStandingHeadDown(),
+                field_entity.Pause(16),
+                field_entity.AnimateStandingFront(),
+                field_entity.Pause(8),
+
+                # blink eyes
+                field_entity.AnimateCloseEyes(),
+                field_entity.Pause(1),
+                field_entity.Turn(direction.DOWN),
+                field_entity.Pause(1),
+                field_entity.AnimateCloseEyes(),
+                field_entity.Pause(1),
+                field_entity.Turn(direction.DOWN),
+                field_entity.Pause(1),
+            ),
+
+            field.FadeOutScreen(4),
+            field.WaitForFade(),
+
+            field.ClearEventBit(npc_bit.MARIA_STATUE_ANCIENT_CASTLE),
+            field.HideEntity(statue_npc_id),
+            field.DeleteEntity(statue_npc_id),
+
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.Branch(0xc1f85),      # finish-check call
+
+            # the esper/item scene (esper/item_mod's script, slot-driven;
+            # dialog first, then the silent grant, as the originals)
+            "ESPER_ITEM",
+            field.receive_reward_dialog(slot),
+            field.AddCheckReward(slot),
+            field.Branch(0xc1f85),
+        ]
+        space = Write(Bank.CC, src, "ancient castle race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xc1f76, 0xc1f84, "ancient castle display receive raiden dialog and take odin", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def dialog_mod(self):
         space = Reserve(0xc1f5c, 0xc1f5f, "ancient castle even the queen was turned to stone", field.NOP())

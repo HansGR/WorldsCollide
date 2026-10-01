@@ -43,7 +43,9 @@ class EsperMountain(Event):
         self.ultros_battle_mod()
         self.esper_event_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -51,6 +53,65 @@ class EsperMountain(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one look for every kind: all four relm npcs get
+        # the decoy sprite, repainted at map load for a character reward
+        slot = self.race_slot(self.reward)
+
+        self.relm_npc_mod()
+        self.race_repaint_npc_entrance(0x177, self.entrance_relm_npc_id, slot)
+        self.race_repaint_npc_entrance(0x175, self.outside1_relm_npc_id, slot)
+        self.race_repaint_npc_entrance(0x174, self.outside2_relm_npc_id, slot)
+        self.race_repaint_npc_entrance(0x173, self.statue_room_relm_npc_id, slot)
+
+        # the three crack falls land back in the entrance map with the
+        # entrance-event flag off (CB/EEAC, CB/EEDB, CB/EF09), which
+        # re-derives the following-relm npc from its record: repaint a
+        # character reward after each landing, in the block that also
+        # plays the landing (found by tools/race_entrance_audit.py)
+        src = [
+            field.Call(0xb6a9f),            # the vanilla landing call
+            field.BranchIfRewardKindNot(slot, "character", "AFTER_REPAINT"),
+            field.SetRewardSprite(self.entrance_relm_npc_id, slot),
+            field.SetRewardPalette(self.entrance_relm_npc_id, slot),
+            "AFTER_REPAINT",
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "esper mountain race repaint relm after crack landing")
+        landing = space.start_address
+        for call_at in (0xbeeb9, 0xbeee7, 0xbef16):
+            space = Reserve(call_at, call_at + 3, "esper mountain crack landing call")
+            space.write(
+                field.Call(landing),
+            )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.SetEventBit(event_bit.DEFEATED_ULTROS_ESPER_MOUNTAIN),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.SetEventBit(event_bit.DEFEATED_ULTROS_ESPER_MOUNTAIN),
+            field.FadeInScreen(),
+            field.ReceiveCheckReward(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "esper mountain race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xbf0d9, 0xbf167, "esper mountain finish ultros scene", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def entrance_event_mod(self):
         src = [
