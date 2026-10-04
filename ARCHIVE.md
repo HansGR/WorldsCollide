@@ -2428,7 +2428,7 @@ Tests: `tests/doors/test_home_reachability.py`.
 Each KT terminus already locked itself after one party used it
 (`SEALED_GATE_TERMINUS_USED` 0x14A, `AIRSHIP_TERMINUS_USED` 0x14B,
 `ESPER_MTN_TERMINUS_USED` 0x14C). These events only tell a returning party
-so, with one shared dialog "This path is closed to us. / Have to find another way…"
+so, with one shared dialog "This path is closed. / Gotta find another way…"
 (`data/ruin_constants.py` `TERMINUS_USED_TEXT`, allocated once through
 `dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY, ...)` - a new
 allocate-once-per-key wrapper around `allocate_dialog`).
