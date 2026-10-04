@@ -1,5 +1,12 @@
 from event.event import *
 
+# "Terminus already used" tile on map 0x187: the bottom step of the stairs up to
+# the gate. The approach widens to 13 tiles between the entrance (8,21) and the
+# stairs, but the stairs (x=8, y=10-13) are one tile wide, so this single tile
+# is the only way up. Camera pan from here to centre on the gate (rows 5-7).
+SEALED_GATE_USED_TILE = (8, 13)
+SEALED_GATE_USED_PAN = 6
+
 SET_PARTY_LAYER2 = 0xb3980
 SET_PARTY_LAYER0 = 0xb3995
 
@@ -499,6 +506,37 @@ class SealedGate(Event):
         new_event.y = 9
         new_event.event_address = space.start_address - EVENT_CODE_START
         self.maps.add_event(map_id, new_event)
+
+        # (2b) Terminus already used by another party: a tile at the foot of the
+        # stairs pans the camera up to the closed gate, strikes lightning, says
+        # so, pans back and steps the party down one square, so they can't walk
+        # up to the gate. Fires every time it is stepped on.
+        from data.ruin_constants import TERMINUS_USED_DIALOG_KEY, TERMINUS_USED_TEXT
+        terminus_used_dialog = self.dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY,
+                                                                   TERMINUS_USED_TEXT)
+        pan = SEALED_GATE_USED_PAN
+        src = [
+            field.ReturnIfEventBitClear(event_bit.SEALED_GATE_TERMINUS_USED),
+            field.HoldScreen(),
+            field.EntityAct(field_entity.CAMERA, True,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.UP, pan)),
+            field.Call(self.lightning_strike),
+            field.Pause(0.5),
+            field.Dialog(terminus_used_dialog),
+            field.EntityAct(field_entity.CAMERA, True,
+                            field_entity.Move(direction.DOWN, pan)),
+            field.FreeScreen(),
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, 1)),
+            field.Return()
+        ]
+        space = Write(Bank.CB, src, "Sealed Gate terminus already used")
+        used_event = MapEvent()
+        used_event.x, used_event.y = SEALED_GATE_USED_TILE
+        used_event.event_address = space.start_address - EVENT_CODE_START
+        self.maps.add_event(map_id, used_event)
 
         # (3) Set Sealed Gate map song to "wind" 0x39
         sealed_gate_properties = self.maps.properties[map_id]

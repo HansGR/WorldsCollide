@@ -120,6 +120,7 @@ class Dialogs():
         # See data/dialog_id.py FREE_RANGE (the vanilla Maduin/Madonna esper-world
         # conversation, which never plays in WC).
         self.free_dialogs = list(FREE_RANGE)
+        self.shared_dialogs = {}
 
     def allocate_dialog(self, text):
         """Claim the next unused dialog slot from the free pool, set its text,
@@ -136,6 +137,14 @@ class Dialogs():
         dialog_id = self.free_dialogs.pop(0)
         self.set_text(dialog_id, text)
         return dialog_id
+
+    def allocate_shared_dialog(self, key, text):
+        """allocate_dialog() once per key: every caller passing the same key
+        gets the same dialog ID (the first caller's text is kept), so events
+        in different modules can share one message without coordinating."""
+        if key not in self.shared_dialogs:
+            self.shared_dialogs[key] = self.allocate_dialog(text)
+        return self.shared_dialogs[key]
 
     def set_text(self, id, text):
         self.dialogs[id].text = text

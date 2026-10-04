@@ -444,11 +444,27 @@ class EsperMountain(Event):
         #esper_terminus_properties.song = 33
         #esper_terminus_properties.enable_random_encounters = 0
 
-        # Create an event tile at entry point (x,y) = (16,9) to play "esper world" song
+        # Create an event tile at entry point (x,y) = (16,9) to play "esper world" song.
+        # If another party already used this terminus, pan the camera down toward the
+        # (now empty) warp point and say so - once per map entry (multipurpose bit).
+        from data.ruin_constants import TERMINUS_USED_DIALOG_KEY, TERMINUS_USED_TEXT
+        terminus_used_dialog = self.dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY,
+                                                                   TERMINUS_USED_TEXT)
+        pan = 4     # tiles
         src = [
             field.ReturnIfEventBitSet(event_bit.multipurpose_map(1)),
             field.SetEventBit(event_bit.multipurpose_map(1)),
             field.StartSong(33),
+            field.ReturnIfEventBitClear(event_bit.ESPER_MTN_TERMINUS_USED),
+            field.HoldScreen(),
+            field.EntityAct(field_entity.CAMERA, True,
+                            field_entity.SetSpeed(field_entity.Speed.NORMAL),
+                            field_entity.Move(direction.DOWN, pan)),
+            field.Pause(0.5),
+            field.Dialog(terminus_used_dialog),
+            field.EntityAct(field_entity.CAMERA, True,
+                            field_entity.Move(direction.UP, pan)),
+            field.FreeScreen(),
             field.Return()
         ]
         space = Write(Bank.CC, src, "Change Music Esper Mtn Terminus")

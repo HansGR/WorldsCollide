@@ -2423,6 +2423,37 @@ for door-rando modes (a naive port flags vanilla-matched pairs; it needs the
 same exemptions). Every door-rando seed changed; goldens re-recorded.
 Tests: `tests/doors/test_home_reachability.py`.
 
+## Terminus Already-Used Events (2026-10)
+
+Each KT terminus already locked itself after one party used it
+(`SEALED_GATE_TERMINUS_USED` 0x14A, `AIRSHIP_TERMINUS_USED` 0x14B,
+`ESPER_MTN_TERMINUS_USED` 0x14C). These events only tell a returning party
+so, with one shared dialog "Have to find another way…"
+(`data/ruin_constants.py` `TERMINUS_USED_TEXT`, allocated once through
+`dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY, ...)` - a new
+allocate-once-per-key wrapper around `allocate_dialog`).
+
+| Terminus | Where | Behaviour |
+|---|---|---|
+| Esper Sanctuary (map 0x177) | the existing entrance music tile (16, 9) | after the song: hold screen, camera down 4 toward the (gone) warp point at (17, 20), dialog, camera back. Once per entry: the tile already sets `multipurpose_map(1)` (cleared on map load). |
+| Sealed Gate (map 0x187) | new tile at the foot of the stairs (8, 13) | hold screen, camera up 6 (centres the gate, rows 5-7), lightning (`self.lightning_strike`), dialog, camera back, party steps down to (8, 14). Fires every time. |
+| Falcon (map 0x12d) | the existing bottom door tile (7, 25) | if used: dialog once per visit (`multipurpose_map(1)`; nothing else on this map uses it in ruination), else the usual load of the Falcon. |
+
+**Why (8, 13) and not "four tiles above the entrance".** The approach widens
+from the 1-wide entrance corridor (x=8, y=20-21) to a 13-tile landing
+(row 17 is x=3..15, rows 15-16 x=1..15) before narrowing to the 1-wide
+stairs (x=8, y=10-13). A single tile on the landing can be walked around;
+the stairs are the only choke point. Measured by flood-filling real steps in
+the emulator (teleporting with `set_party_xy` onto arbitrary tiles bypasses
+collision and reports every tile walkable).
+
+**Harness notes.** On the Daryl's Tomb staircase the last step is diagonal:
+LEFT from (8, 24) lands on the door tile (7, 25). After `load_state`, start
+a move with a short tap (`run(2); hold(btn, frames=4); run(24)`); a long
+hold right after a restore can be dropped. Setting `SEALED_GATE_OPENED` by
+hand skips the opening cutscene, which can leave gate sprites missing in
+screenshots - not a bug in the event.
+
 ## Harness Recipes from the Race Project (2026-09)
 
 Additions to "Headless Playtest Harness Patterns" that came out of the
