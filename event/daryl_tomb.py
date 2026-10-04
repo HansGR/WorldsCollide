@@ -268,8 +268,8 @@ class DarylTomb(Event):
         terminus_used_dialog = self.dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY,
                                                                    TERMINUS_USED_TEXT)
         src = [
-            # If terminus was used, airship has departed - block access and say so
-            # (once per visit to the stairs: multipurpose bits clear on map load)
+            # If terminus was used, airship has departed - block access, say so and
+            # step the party back up the stairs (so it repeats on every approach)
             field.BranchIfEventBitSet(event_bit.AIRSHIP_TERMINUS_USED, "TERMINUS_USED"),
             field.FadeOutScreen(),
             field.LoadMap(map_id=0x00b, direction=direction.LEFT, default_music=False, x=23, y=8, fade_in=True,
@@ -279,9 +279,10 @@ class DarylTomb(Event):
             field.Return(),
 
             "TERMINUS_USED",
-            field.ReturnIfEventBitSet(event_bit.multipurpose_map(1)),
-            field.SetEventBit(event_bit.multipurpose_map(1)),
             field.Dialog(terminus_used_dialog),
+            # the last stair step is diagonal: back up and right, to (8, 24)
+            field.EntityAct(field_entity.PARTY0, True,
+                            field_entity.MoveDiagonal(direction.UP, 1, direction.RIGHT, 1)),
             field.Return()
         ]
         space = Write(Bank.CA, src, 'Daryls Tomb Staircase Bottom Exit tile')

@@ -310,7 +310,7 @@ RUIN_TERMINI = ['HUB52-ruin', 'HUB53-ruin', 'HUB54-ruin']  # list of terminal ro
 # Sanctuary entrance, Sealed Gate approach, Falcon stairs). One shared dialog:
 # allocate it with dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY, ...).
 TERMINUS_USED_DIALOG_KEY = 'ruin_terminus_used'
-TERMINUS_USED_TEXT = "Have to find another way…<end>"
+TERMINUS_USED_TEXT = "This path is closed to us.<line>Have to find another way…<end>"
 
 # Player-facing names for the terminus rooms (used by the spoiler log).
 TERMINUS_NAMES = {

@@ -450,7 +450,7 @@ class EsperMountain(Event):
         from data.ruin_constants import TERMINUS_USED_DIALOG_KEY, TERMINUS_USED_TEXT
         terminus_used_dialog = self.dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY,
                                                                    TERMINUS_USED_TEXT)
-        pan = 4     # tiles
+        pan = 8     # tiles: brings the warp point's spot (17, 20) into view
         src = [
             field.ReturnIfEventBitSet(event_bit.multipurpose_map(1)),
             field.SetEventBit(event_bit.multipurpose_map(1)),

@@ -2428,16 +2428,16 @@ Tests: `tests/doors/test_home_reachability.py`.
 Each KT terminus already locked itself after one party used it
 (`SEALED_GATE_TERMINUS_USED` 0x14A, `AIRSHIP_TERMINUS_USED` 0x14B,
 `ESPER_MTN_TERMINUS_USED` 0x14C). These events only tell a returning party
-so, with one shared dialog "Have to find another way…"
+so, with one shared dialog "This path is closed to us. / Have to find another way…"
 (`data/ruin_constants.py` `TERMINUS_USED_TEXT`, allocated once through
 `dialogs.allocate_shared_dialog(TERMINUS_USED_DIALOG_KEY, ...)` - a new
 allocate-once-per-key wrapper around `allocate_dialog`).
 
 | Terminus | Where | Behaviour |
 |---|---|---|
-| Esper Sanctuary (map 0x177) | the existing entrance music tile (16, 9) | after the song: hold screen, camera down 4 toward the (gone) warp point at (17, 20), dialog, camera back. Once per entry: the tile already sets `multipurpose_map(1)` (cleared on map load). |
+| Esper Sanctuary (map 0x177) | the existing entrance music tile (16, 9) | after the song: hold screen, camera down 8 to show where the (gone) warp point stood at (17, 20), dialog, camera back. Once per entry: the tile already sets `multipurpose_map(1)` (cleared on map load). |
 | Sealed Gate (map 0x187) | new tile at the foot of the stairs (8, 13) | hold screen, camera up 6 (centres the gate, rows 5-7), lightning (`self.lightning_strike`), dialog, camera back, party steps down to (8, 14). Fires every time. |
-| Falcon (map 0x12d) | the existing bottom door tile (7, 25) | if used: dialog once per visit (`multipurpose_map(1)`; nothing else on this map uses it in ruination), else the usual load of the Falcon. |
+| Falcon (map 0x12d) | the existing bottom door tile (7, 25) | if used: dialog, then the party steps diagonally back up the stairs to (8, 24) (`MoveDiagonal(UP, 1, RIGHT, 1)`), so it repeats on every approach; else the usual load of the Falcon. |
 
 **Why (8, 13) and not "four tiles above the entrance".** The approach widens
 from the 1-wide entrance corridor (x=8, y=20-21) to a 13-tile landing
