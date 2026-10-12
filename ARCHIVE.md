@@ -2643,8 +2643,13 @@ largest one step can cost is 65535 × 8 = 524,280 (≈ total for level 58).
 ### `-lc` (branch `feature/level-cap`; merged into `door_rando_ruin_rewrite` 2026-10-12 for playtesting, not yet upstream)
 
 `-lc LEVEL` = hard cap: every step from LEVEL on is 65535. `-lc MEAN WIDTH` =
-soft cap (all values whole numbers; MEAN and WIDTH 1-99, LEVEL 2-98): `step(L) = min(65535, round(default(L) × (1 + exp((L - MEAN) /
-WIDTH))))`, never below default, doubling from MEAN to MEAN+1. Code:
+soft cap (all values whole numbers; MEAN and WIDTH 1-99, LEVEL 2-98):
+`step(L) = min(65535, round(default(L) × (1 + 10^((L - MEAN) / WIDTH))))`,
+never below default, doubling from MEAN to MEAN+1; every WIDTH levels past
+MEAN multiply the extra cost by 10. Base 10 replaced e after playtesting
+(2026-10-12): width 1 in base e (×2, ×3.7, ×8.4, ×21...) turned on too
+slowly; base 10 gives ×2, ×11, ×101, then the maximum. It is the old curve
+with WIDTH / ln 10. Code:
 `data/level_cap.py` (pure, ROM-free; tested in `tests/test_level_cap.py`),
 applied by `Characters.mod_level_cap`, flag in `args/xpmpgp.py`, spoiler
 section "Level Cap: Total Exp (Default)". The flags menu ("Exp, MP, GP")
