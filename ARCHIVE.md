@@ -2640,14 +2640,18 @@ battle experience and caps it at **15,000,000** (constant at `C2/6276`). Level
 99 needs 2,637,112; the last step (98→99) is a hand-set 11111 × 8 = 88,888. The
 largest one step can cost is 65535 × 8 = 524,280 (≈ total for level 58).
 
-### `-lc` (branch `feature/level-cap`, `89862a6`, not yet upstream)
+### `-lc` (branch `feature/level-cap`; merged into `door_rando_ruin_rewrite` 2026-10-12 for playtesting, not yet upstream)
 
 `-lc LEVEL` = hard cap: every step from LEVEL on is 65535. `-lc MEAN WIDTH` =
-soft cap: `step(L) = min(65535, round(default(L) × (1 + exp((L - MEAN) /
+soft cap (all values whole numbers; MEAN and WIDTH 1-99, LEVEL 2-98): `step(L) = min(65535, round(default(L) × (1 + exp((L - MEAN) /
 WIDTH))))`, never below default, doubling from MEAN to MEAN+1. Code:
 `data/level_cap.py` (pure, ROM-free; tested in `tests/test_level_cap.py`),
 applied by `Characters.mod_level_cap`, flag in `args/xpmpgp.py`, spoiler
-section "Level Cap: Total Exp (Default)".
+section "Level Cap: Total Exp (Default)". The flags menu ("Exp, MP, GP")
+always has a Level Cap row: the level for a hard cap, "Soft M/W", or "None".
+That row lengthens the menu text and shifts later free-space allocations, so
+adding it changed every golden ROM (re-recorded; verified byte-identical to
+the pre-merge tree plus only that row).
 
 **Two hazards it handles.** (1) Past the 15,000,000 battle cap no level can be
 reached, so "hard" is real only from there: hard 30 → a character can still
