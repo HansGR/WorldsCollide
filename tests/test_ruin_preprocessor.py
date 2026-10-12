@@ -78,6 +78,14 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertNotIn("-open", argv)
         self.assertEqual(argv.count("-cg"), 1)
 
+    def test_user_stlr_replaces_injected_stl(self):
+        # -stl and -stlr are mutually exclusive: a user -stlr must drop the
+        # injected starting level (6, or 17 on easy), not clash with it
+        for mode in ([], ["easy"], ["hard"]):
+            argv = expand(["wc.py", "-ruin", *mode, "-stlr", "3", "99"])
+            self.assertNotIn("-stl", argv)
+            self.assertEqual(value_after(argv, "-stlr", 2), ["3", "99"])
+
     def test_custom_injects_nothing(self):
         argv = expand(["wc.py", "-ruin", "custom", "-cg"])
         self.assertEqual(argv, ["wc.py", "-ruin", "custom", "-cg"])

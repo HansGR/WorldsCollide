@@ -437,8 +437,9 @@ def scenario_phoenix_entry(vanilla, workdir):
     door. This exercises the ruination Phoenix entry event (where the
     collision fix lives) end to end for one party."""
     # Seed choice: the ruination map must place Phoenix Cave on a routable
-    # branch; not every seed does (1002 doesn't with the current defaults).
-    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", seed=1005)
+    # branch; not every seed does. 1005 stopped doing so when the walk gained
+    # Rules G/H (2026-09); of 1006-1021 only 1006, 1007 and 1011 route there.
+    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", seed=1006)
     spoiler = rom[:-4] + ".txt"
     hops = route.route_from_start(spoiler, "Phoenix cave")
     assert hops, "could not compute a route to Phoenix Cave from the spoiler"
@@ -472,7 +473,7 @@ def scenario_phoenix_two_party_collision(vanilla, workdir):
     rather than deadlocking."""
     PHX = 0x13e
     # Same seed constraint as scenario_phoenix_entry.
-    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", seed=1005)
+    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", seed=1006)
     spoiler = rom[:-4] + ".txt"
     hops = route.route_from_start(spoiler, "Phoenix cave")
     assert hops, "could not compute a route to Phoenix Cave from the spoiler"

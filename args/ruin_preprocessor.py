@@ -16,6 +16,8 @@ _preprocessing_done = False
 MUTUALLY_EXCLUSIVE_GROUPS = [
     # settings.py - mode
     {'-open', '-cg'},
+    # characters.py - starting level: a user -stlr replaces the injected -stl
+    {'-stl', '-stlr'},
     # scaling.py - level scaling
     {'-lsa', '-lsh', '-lsce', '-lsced', '-lsc', '-lsbd', '-lst'},
     # scaling.py - hp/mp scaling
@@ -207,7 +209,7 @@ RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES}
 # has no quoting, so a spaced value would re-parse as two tokens.
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
-    '-stl': 1, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
+    '-stl': 1, '-stlr': 2, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
     '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comfr': 1, '-comfru': 1,
     '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
