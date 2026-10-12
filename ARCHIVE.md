@@ -13,9 +13,13 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [FF6 Text Encoding Types](#ff6-text-encoding-types)
 - [Battle MP Zeroing & MP-Drain Criticals (2026-08)](#battle-mp-zeroing--mp-drain-criticals-2026-08)
 - [Battle Command-Menu Cursor Engine & the All-Invalid Hardlock (2026-08)](#battle-command-menu-cursor-engine--the-all-invalid-hardlock-2026-08)
+- [Experience Table & Level Cap (`-lc`) (2026-10)](#experience-table--level-cap--lc-2026-10) (table encoding, the three readers, 15M cap, 24-bit wrap)
 
 ### Ruination Mode — Architecture
-- [Ruination Mode (`-ruin`) — Detailed Architecture](#ruination-mode--ruin-detailed-architecture)
+- [Ruination Mode (`-ruin`) — Detailed Architecture](#ruination-mode--ruin---detailed-architecture)
+- [Narshe Battle Exclusion + Ruination Boss Budget (2026-07)](#narshe-battle-exclusion--ruination-boss-budget-2026-07)
+- [Ruination Esper-Capacity Corner (High Esper Counts) (2026-07)](#ruination-esper-capacity-corner-high-esper-counts-2026-07)
+- [Post-Rewrite Structural Review + Commentary Sweep (2026-07)](#post-rewrite-structural-review--commentary-sweep-2026-07)
 
 ### Ruination Mode — Mapping Algorithm
 - [Mapping Algorithm Analysis](#ruination-mode---mapping-algorithm-analysis)
@@ -23,10 +27,12 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [finalize_map Debug Patterns (2026-02-09)](#ruination-mode---finalize_map-debug-patterns-2026-02-09)
 - [Keyless One-Way Softlock — Walk Rule + Keychain-Lattice Verifier (2026-08)](#keyless-one-way-softlock--walk-rule--keychain-lattice-verifier-2026-08)
 - [Branch Area Detection for Narshe Clues (2026-04)](#branch-area-detection-for-narshe-clues-2026-04)
+- [Walk Reachability Rules G/H + Short Restarts (2026-09)](#walk-reachability-rules-gh--short-restarts-2026-09)
 
 ### Ruination Mode — Party Formation
 - [Party Formation & Away-Party System (2026-02)](#ruination-mode---party-formation--away-party-system-2026-02)
 - [SET_PARTY_INTERACTION_POINTERS shared subroutine (2026-04)](#set_party_interaction_pointers-shared-subroutine-2026-04)
+- [Y-Party-Switch Disable Shared Subroutines (2026-06)](#y-party-switch-disable-shared-subroutines-2026-06)
 
 ### Ruination Mode — Event Patterns
 - [Conditional Area Checks](#ruination-mode---conditional-area-checks)
@@ -36,6 +42,7 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Dialog ID Reservations (2026-05)](#ruination-mode--dialog-id-reservations-2026-05)
 - [Floating Continent Tube-Maze Randomizer (2026-06)](#floating-continent-tube-maze-randomizer-2026-06)
 - [Kefka's Tower Lane Randomizer (`-rkt`) (2026-06)](#kefkas-tower-lane-randomizer--rkt-2026-06)
+- [Terminus Already-Used Events (2026-10)](#terminus-already-used-events-2026-10)
 
 ### Door Randomizer
 - [Event Exit Info — Detailed Data Structures](#event-exit-info---detailed-data-structures)
@@ -47,6 +54,9 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [No Free Heals (`-nfh` / `--no-free-heals`)](#no-free-heals--nfh----no-free-heals)
 - [DISABLE_B_DASH Event Bit (2026-08)](#disable_b_dash-event-bit-2026-08)
 - [Out-of-Battle Magic Submenu by Spell Knowledge (2026-08, SHELVED)](#out-of-battle-magic-submenu-by-spell-knowledge-2026-08-shelved)
+- [Starting Level Random (`-stlr`) (2026-10)](#starting-level-random--stlr-2026-10)
+- [Command Probability Modes (`-compr`/`-compru`) — Rolls, Unique Pool, Calculator (2026-10)](#command-probability-modes--compr-compru--rolls-unique-pool-calculator-2026-10)
+- [Experience Table & Level Cap (`-lc`) (2026-10)](#experience-table--level-cap--lc-2026-10)
 
 ### Custom Opcodes
 - [Custom Opcodes Reference](#custom-opcodes-reference) (consolidated table)
@@ -57,6 +67,8 @@ Sections are grouped by theme. The file is append-only, so on-disk order doesn't
 - [Persistent Raft Graphic After Re-riding the Magitek Minecart (2026-06)](#persistent-raft-graphic-after-re-riding-the-magitek-minecart-2026-06)
 - [Floating Continent Save-Room Return — LoadMap Entrance-Event Flag (2026-08)](#floating-continent-save-room-return--loadmap-entrance-event-flag-2026-08)
 - [Mt Zozo Arrival Hardlock (2026-08)](#mt-zozo-arrival-hardlock-2026-08-quick-post-mortem)
+- [Phantom Train Car Bits on One-Way Landings (2026-09)](#phantom-train-car-bits-on-one-way-landings-2026-09)
+- [Albrook Dock Sailor Showed General Leo (2026-09)](#albrook-dock-sailor-showed-general-leo-2026-09)
 
 ### Conventions
 - [Debug Output Routing (`-debug` vs `-debug-verbose`) (2026-04)](#debug-output-routing--debug-vs--debug-verbose-2026-04)
@@ -2500,3 +2512,145 @@ race playtests (all with `tools/playtest`, `Harness`, `navigate`).
   `9E slot` the grant, `EC 0A slot` the theme.
 - **Lineup screen**: `A, A, B, B` (second A opens Status; B backs out;
   second B confirms when a group already exists).
+
+## Starting Level Random (`-stlr`) (2026-10)
+
+`-stlr MIN MAX` (`--start-level-random`): each character starts at its own
+random level in MIN..MAX (3-99), mutually exclusive with `-stl`. Merged
+upstream as ff6wc/dev `b4cff32` (PR #172), branch
+`feature/starting-level-random`. Requested as `-slr`, which clashed with
+`--start-lores-random`.
+
+**Vanilla mechanism.** `C0/9F78` sets a joining character's level to the
+average of the *available* characters' levels (`$1EDE` bits), or to a constant
+when nobody is available (`C0/9FC5 LDA #$03`; `-stl` patches the immediate at
+`0x09fc6`). `-sal` raises recruits to the roster average (the new recruit is not
+part of the average), and is meant to override `-stl`/`-stlr` for characters
+recruited in the field.
+
+**Patch** (`data/characters_asm.set_random_starting_levels`): `Reserve
+0x09fc3-0x09fc7` becomes RTS / NOP / JMP to a lookup in free C0 space:
+`TDC; LDA $EB; CMP #16; BCS default; TAX; LDA table,X; RTS` with a 16-byte
+per-character table. The rolled levels are listed in a "Starting Levels"
+spoiler section. Uses only C0 free space and no event bits, so it composes
+with door rando and ruination.
+
+## Command Probability Modes (`-compr`/`-compru`) — Rolls, Unique Pool, Calculator (2026-10)
+
+Prompted by a player report that Shock showed up far more than its 10% in a
+flagset with `-com 98989898989898989898989898 -compr ...`.
+
+### How a character is rolled (`data/commands.py`)
+
+1. `-com` explicit picks claim their slots first; 97 holds a slot empty;
+   98/99 *reserve* slots for unique/random backfill **before any roll**.
+2. `roll_probability_commands`: declarations (`-compr` plus `-comfr` folded
+   in) are grouped by percent, highest first, shuffled within a group; each is
+   rolled **at most once per character**, stopping when the free slots are
+   full. Gau never rolls Fight, so with Fight/Magic/Item at 100% he has two
+   skill slots and everyone else one (13 skill slots per seed).
+3. Leftovers backfill from the pool: 21 randomizable skills minus `-rec`,
+   minus Morph once declared or placed (only one character may hold Morph).
+
+**The report explained:** the `-com 98` marks took every skill slot before
+the rolls, so the 25%/10% declarations never applied; every pool command came
+from the unique draft and landed in 13/19 ≈ 68% of seeds. **A roll percent is a
+per-character chance, not a seed frequency**: a tier is only reached when
+every higher tier missed, and a seed has 12 characters, so per-seed odds
+compound. Players think in seed frequencies; see the parked tiered-mode idea
+below.
+
+### Unique means unique across the seed (PR #173, ff6wc/dev `283d9ef`)
+
+Before the fix `-compru`/`-comfru` only kept the backfill draft unique among
+its own slots: rolls were independent (a 100% skill went to all twelve) and the
+draft restarted from the full pool. Now one `UniquePool` per seed counts every
+skill dealt (explicit, rolled, random fill, draft) and only offers a character
+the **least-dealt** legal skills it does not hold, so no skill repeats while
+another has been dealt fewer times. In the unique modes the rolls use it too
+(a dealt skill is skipped without a roll), characters roll in random order,
+and 99 random fills run before the 98/unique draft (matching legacy `-com`).
+Counting replaced the old draft refill, which could strand a skill the drafting
+character already held (Runic dealt once while ten skills had three).
+Consequence: with 13 slots every seed has 13 distinct skills, so seed
+frequencies sum to 13. The player's tuned flag
+(`100.100.100.12.10.10...` with Shock 2) gives common 61% / rare 26% / Shock 11%
+under `-compr`, but 76% / 53% / 33% under the new `-compru`.
+
+**Suplex A Train** (review follow-up, same PR): `guarantee_blitz` now runs
+*before* backfill and sees explicit and rolled skills; if nobody holds Blitz
+it is dealt into one open backfill slot (counted by the pool), else, with no
+backfill slot left, a rolled skill (never explicit or Morph) gives way. It
+previously overwrote a backfilled slot even when Blitz was already rolled or
+picked, giving two holders. Tests: `tests/test_commands.py`
+`test_suplex_train_blitz` (objective switched on).
+
+### Measuring without a ROM
+
+`mod_probability_random_commands` runs on stand-in characters: set
+`sys.argv`, `import args`, stub `sys.modules["objectives"]` with
+`suplex_train_condition_exists`, give `Commands` a list of 0x20 objects with
+`.commands = [0, 0, 0, 0]`. 20,000 seeds take ~12 s and match 1000 real ROM
+builds. This is the ground truth for any command-distribution question (the
+same pattern as the invariant scripts in `tests/test_commands.py`).
+
+### The calculator (`compr_calculator.xlsx`, delivered to Hans, not in the repo)
+
+- **Flag Builder**: one row per command (percent, `-rec` x), outputs per
+  non-Gau character and per seed for `-compr` and `-compru`, plus ready flag
+  strings. `-compr` model: each command's keep chance = p × P(fewer than 4
+  earlier successes), Poisson-binomial over higher tiers via elementary
+  symmetric sums plus the within-tier shuffle; backfill counted as Poisson.
+  `-compru` model ("Model Unique" sheet): 12 mean-field turns (regular 11/12,
+  Gau 1/12), each scaling a skill's percent by its chance of still being unused,
+  then the draft over unused skills. Accuracy: `-compr` within ~1.5 points of
+  builds, `-compru` within ~3 points of the real code.
+- **Calculator** tab: tier-based `-compr` only.
+
+### Parked idea: tiered command mode (not implemented)
+
+Seed-level targets instead of per-character percents: tiers Required /
+Common 60 / Rare 25 / Very Rare 10 / Ultra Rare 5 / Removed (`-rec`), one flag
+per tier listing ids. Back end: flip one coin per skill at its seed
+percentage (redraw if more skills than slots, with a startup calibration so the
+redraw doesn't bias), give each chosen skill one slot, fill leftovers with
+tier-weighted duplicates (or uniquely from Common), shuffle onto characters.
+Fight/Magic/Item tiers would act per character.
+
+## Experience Table & Level Cap (`-lc`) (2026-10)
+
+### The table (vanilla)
+
+`ED/8220-ED/82E3`: 98 little-endian words; entry *i* = experience from level
+*i*+1 to *i*+2, **divided by 8**. No totals are stored: every reader sums the
+entries in 24 bits and shifts left 3 times.
+
+| Reader | What it does |
+|---|---|
+| `C0/A235` (called from `C0/9F70`, `C0/A158`) | set a character's experience (`$1611-$1613`) to the total for their level (`$1608,Y`); used by `-stl`/`-stlr`/`-sal` |
+| `C3/60CA` | menu: total for the next level (32-bit shift) |
+| `C2/606D` | battle level-up: `ADC $ED821E,X` from level×2 down, compare with experience, `JSR C2/60C2` to gain a level, loop (multiple level-ups per battle), stop at 99 |
+
+Level-up gains: HP `E6/F49E + new level` (table starts at `E6/F4A0`), MP
+`E6/F500 + new level` (starts `E6/F502`: 4, 4, 5, 5, 6...). `C2/6235` adds
+battle experience and caps it at **15,000,000** (constant at `C2/6276`). Level
+99 needs 2,637,112; the last step (98→99) is a hand-set 11111 × 8 = 88,888. The
+largest one step can cost is 65535 × 8 = 524,280 (≈ total for level 58).
+
+### `-lc` (branch `feature/level-cap`, `89862a6`, not yet upstream)
+
+`-lc LEVEL` = hard cap: every step from LEVEL on is 65535. `-lc MEAN WIDTH` =
+soft cap: `step(L) = min(65535, round(default(L) × (1 + exp((L - MEAN) /
+WIDTH))))`, never below default, doubling from MEAN to MEAN+1. Code:
+`data/level_cap.py` (pure, ROM-free; tested in `tests/test_level_cap.py`),
+applied by `Characters.mod_level_cap`, flag in `args/xpmpgp.py`, spoiler
+section "Level Cap: Total Exp (Default)".
+
+**Two hazards it handles.** (1) Past the 15,000,000 battle cap no level can be
+reached, so "hard" is real only from there: hard 30 → a character can still
+grind to 58 (each level 524,280 experience). (2) The 24-bit sum wraps once the
+summed entries reach 2^21 (~16.8M experience); a character *placed* there by
+`-stl`/`-stlr`/`-sal` would get garbage experience and level straight to 99 in
+the next battle. `guard_wrap` sets every step past the 15M point to 1
+(unreachable anyway), keeping the sum below the wrap for every cap. Rounding
+note: rounding *up* turned 4 × 1.0004 into 5 (+25% at level 1); use nearest.
