@@ -2643,7 +2643,7 @@ largest one step can cost is 65535 × 8 = 524,280 (≈ total for level 58).
 ### `-lc` (branch `feature/level-cap`; merged into `door_rando_ruin_rewrite` 2026-10-12 for playtesting, not yet upstream)
 
 `-lc LEVEL` = hard cap: every step from LEVEL on is 65535. `-lc MEAN WIDTH` =
-soft cap (all values whole numbers; MEAN and WIDTH 1-99, LEVEL 2-98):
+soft cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one decimal place):
 `step(L) = min(65535, round(default(L) × (1 + 10^((L - MEAN) / WIDTH))))`,
 never below default, doubling from MEAN to MEAN+1; every WIDTH levels past
 MEAN multiply the extra cost by 10. Base 10 replaced e after playtesting
@@ -2653,7 +2653,8 @@ with WIDTH / ln 10. Code:
 `data/level_cap.py` (pure, ROM-free; tested in `tests/test_level_cap.py`),
 applied by `Characters.mod_level_cap`, flag in `args/xpmpgp.py`, spoiler
 section "Level Cap: Total Exp (Default)". The flags menu ("Exp, MP, GP")
-always has a Level Cap row: the level for a hard cap, "Soft M/W", or "None".
+always has a Level Cap row: the level for a hard cap, "Soft M/W", or "None"
+(longest "Soft 99/98.5", 23 of the row's 26 characters).
 That row lengthens the menu text and shifts later free-space allocations, so
 adding it changed every golden ROM (re-recorded; verified byte-identical to
 the pre-merge tree plus only that row).
