@@ -36,6 +36,15 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertIn("-pd", argv)
         self.assertEqual(value_after(argv, "-sfd"), ["3"])
         self.assertIn("-cg", argv)
+        # a hard level cap at 43: one value, and the flag after it is intact
+        at = argv.index("-lc")
+        self.assertEqual(argv[at + 1], "43")
+        self.assertTrue(argv[at + 2].startswith("-"), argv[at + 2])
+        self.assertEqual(argv.count("-lc"), 1)
+        # '-no lc' still removes it cleanly
+        argv = expand(["wc.py", "-ruin", "hard", "-no", "lc"])
+        self.assertNotIn("-lc", argv)
+        self.assertEqual(argv[argv.index("-gpm") + 2], "-lsced")
 
     def test_easy_overrides_and_extras(self):
         argv = expand(["wc.py", "-ruin", "easy"])
@@ -56,6 +65,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertEqual(value_after(argv, "-ir"), ["premium"])
         self.assertNotIn("-ssf4", argv)
         self.assertEqual(value_after(argv, "-chrm", 2), ["2", "0"])
+        self.assertNotIn("-lc", argv)                    # no level cap
         # kept from the base
         self.assertEqual(value_after(argv, "-xgced"), ["2"])
         self.assertEqual(value_after(argv, "-sto"), ["1"])

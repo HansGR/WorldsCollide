@@ -96,9 +96,10 @@ for group in MUTUALLY_EXCLUSIVE_GROUPS:
 
 # Default flags for -ruin mode, organized by category.
 # This is the shared base: a bare '-ruin' expands to exactly this set, while
-# '-ruin hard' (the roguelike difficulty) additionally injects
-# RUIN_HARD_EXTRAS below, and '-ruin easy' (the relaxed difficulty) first
-# swaps the values in RUIN_EASY_OVERRIDES and then injects RUIN_EASY_EXTRAS.
+# '-ruin hard' (the roguelike difficulty) swaps the values in
+# RUIN_HARD_OVERRIDES and injects RUIN_HARD_EXTRAS below, and '-ruin easy'
+# (the relaxed difficulty) swaps the values in RUIN_EASY_OVERRIDES and then
+# injects RUIN_EASY_EXTRAS.
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
     'objectives': [
@@ -130,6 +131,7 @@ RUIN_DEFAULT_FLAGS = {
 
     # Battle flags
     'battle': [
+        # soft level cap at 43 (width 5); easy drops it and hard makes it a hard cap
         '-xpm', '8', '-mpm', '5', '-gpm', '0', '-lc', '43', '5', '-lsced', '2', '-hmced', '2',
         '-xgced', '2', '-ase', '2', '-msl', '40', '-sed', '-bbs',
         '-drloc', 'shuffle', '-stloc', 'mix', '-be', '-bnu', '-res',
@@ -171,6 +173,9 @@ RUIN_DEFAULT_FLAGS = {
 RUIN_HARD_EXTRAS = {
     'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'mid'],
 }
+RUIN_HARD_OVERRIDES = {
+    '-lc': ['-lc', '43'],               # hard level cap at 43 (base: soft cap 43, width 5)
+}
 
 # '-ruin easy' (the relaxed difficulty): a tutorial for ruination maps - the
 # standard flow and mechanics (character gating, the same starting level) made
@@ -191,6 +196,7 @@ RUIN_EASY_OVERRIDES = {
     '-ir': ['-ir', 'premium'],          # only the most valuable item rewards
     '-ssf4': [],                        # standard 1/2 sell prices instead of 1/4
     '-chrm': ['-chrm', '2', '0'],       # rare monsters-in-a-box (base 7%)
+    '-lc': [],                          # no level cap
 }
 RUIN_EASY_EXTRAS = {
     'easy': [
@@ -206,7 +212,7 @@ RUIN_EASY_EXTRAS = {
     ],
 }
 RUIN_MODE_EXTRAS = {**RUIN_HARD_EXTRAS, **RUIN_EASY_EXTRAS}
-RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES}
+RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES, 'hard': RUIN_HARD_OVERRIDES}
 
 # Flags that have arguments (used for proper flag removal).
 #
@@ -231,6 +237,19 @@ FLAGS_WITH_ARGS = {
     '-cor': 1, '-crr': 1, '-crvr': 2, '-ame': 1, '-move': 1,
 }
 
+def value_count(flags, i):
+    """
+    The number of value tokens after the flag at flags[i]: its FLAGS_WITH_ARGS
+    count, cut short at the next flag token, so a flag can be given fewer values
+    than its most (hard's one-value '-lc 43' against the base '-lc 43 5').
+    """
+    count = 0
+    for token in flags[i + 1:i + 1 + FLAGS_WITH_ARGS.get(flags[i], 0)]:
+        if token.startswith('-'):
+            break
+        count += 1
+    return count
+
 # Starting character related flags that should be removed together
 STARTING_CHAR_FLAGS = ['-sc1', '-sc2', '-sc3', '-sc4']
 
@@ -254,7 +273,7 @@ def mode_categories(mode):
         i = 0
         while i < len(flags):
             flag = flags[i]
-            num_args = FLAGS_WITH_ARGS.get(flag, 0)
+            num_args = value_count(flags, i)
             if flag in overrides:
                 result.extend(overrides[flag])
             else:
@@ -350,7 +369,8 @@ def preprocess_ruin_flag(argv=None):
 
     If -ruin is present:
     - If followed by 'custom', don't inject defaults
-    - If followed by 'hard', inject the base defaults plus RUIN_HARD_EXTRAS
+    - If followed by 'hard', inject the base defaults with RUIN_HARD_OVERRIDES
+      applied, plus RUIN_HARD_EXTRAS
     - If followed by 'easy', inject the base defaults with RUIN_EASY_OVERRIDES
       applied, plus RUIN_EASY_EXTRAS
     - Otherwise (default), inject the base default flags only
@@ -430,18 +450,13 @@ def preprocess_ruin_flag(argv=None):
         while i < len(flags):
             flag = flags[i]
             if flag not in flags_to_disable and flag not in exclusive_suppressed:
-                # Add the flag
-                defaults_to_inject.append(flag)
-                # Add its arguments if any
-                num_args = FLAGS_WITH_ARGS.get(flag, 0)
-                for j in range(num_args):
-                    if i + 1 + j < len(flags):
-                        defaults_to_inject.append(flags[i + 1 + j])
+                # Add the flag and its values
+                num_args = value_count(flags, i)
+                defaults_to_inject.extend(flags[i:i + num_args + 1])
                 i += num_args + 1
             else:
-                # Skip this flag and its arguments
-                num_args = FLAGS_WITH_ARGS.get(flag, 0)
-                i += num_args + 1
+                # Skip this flag and its values
+                i += value_count(flags, i) + 1
 
     # Insert defaults right after -ruin (and its mode value, if present)
     for i, flag in enumerate(defaults_to_inject):

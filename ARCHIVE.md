@@ -2603,11 +2603,24 @@ same pattern as the invariant scripts in `tests/test_commands.py`).
   non-Gau character and per seed for `-compr` and `-compru`, plus ready flag
   strings. `-compr` model: each command's keep chance = p × P(fewer than 4
   earlier successes), Poisson-binomial over higher tiers via elementary
-  symmetric sums plus the within-tier shuffle; backfill counted as Poisson.
-  `-compru` model ("Model Unique" sheet): 12 mean-field turns (regular 11/12,
-  Gau 1/12), each scaling a skill's percent by its chance of still being unused,
-  then the draft over unused skills. Accuracy: `-compr` within ~1.5 points of
-  builds, `-compru` within ~3 points of the real code.
+  symmetric sums plus the within-tier shuffle. Backfill (rebuilt 2026-10-13):
+  a character with b open slots after rolling r pool skills deals a given pool
+  skill with chance b/(pool - r), multiplied out over the 12 characters.
+  `-compru` model (rebuilt 2026-10-13; "Model Unique" plus hidden MU sheets):
+  12 turns, Gau at a uniform position. Per turn, each tier's chance of K
+  skills still unrolled (MU Counts) gives the availability; one character
+  rolls tier by tier (MU Rolls), with a tier's surplus successes resolved by a
+  random subset (hypergeometric, MU Const). The seed's rolled-skill total R
+  comes from the tiers' own counts, since a skill is rolled at most once; the
+  characters' joint (MU Joint) supplies only how F/M/I varies with R. The draft
+  is then exact given (F, R): D = 48 - F - R open slots, U = pool - R unrolled
+  skills (+1 if a declared Morph is among the R), each drafted with chance
+  min(1, D/U). Accuracy on 104 random flag sets against the real code:
+  typically 0.5 points, 9 in 10 within 1.3, worst 2.8 (in-a-seed, tier
+  averaged). `-compr` on 48 sets: typically 0.5, worst 1.8. The previous
+  mean-field version was off by up to 35 points on sparse declarations.
+  Python twins: `compr_model_u4e.py` and `compr_twin.py` (variant `new2`) in
+  the session scratchpad.
 - **Calculator** tab: tier-based `-compr` only.
 
 ### Ruination default (2026-10)
@@ -2620,6 +2633,12 @@ tier's percent sets how many slots are left for the unique draft, and so how
 often the lower-tier Possess (and roll-only Morph) appear. Measured with the
 real code (20,000 seeds): 12/11 gives Possess 67% vs 80%; 24/12 gives 40% vs
 81% (Morph 73%).
+
+Level cap by mode: standard `-ruin` injects a soft cap `-lc 43 5`, `-ruin hard`
+a hard cap `-lc 43` (`RUIN_HARD_OVERRIDES`), and `-ruin easy` none
+(`RUIN_EASY_OVERRIDES` drops it). The injector reads a flag's values up to the
+next flag token (`value_count`), so an override may give fewer values than the
+`FLAGS_WITH_ARGS` maximum.
 
 **Changing any -ruin default reshuffles every seed** (`seed.py`:
 `random.seed(seed + flags)`), maps included: re-record the golden ruination
