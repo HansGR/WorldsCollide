@@ -2642,8 +2642,18 @@ largest one step can cost is 65535 × 8 = 524,280 (≈ total for level 58).
 
 ### `-lc` (branch `feature/level-cap`; merged into `door_rando_ruin_rewrite` 2026-10-12 for playtesting, not yet upstream)
 
-`-lc LEVEL` = hard cap: every step from LEVEL on is 65535. `-lc MEAN WIDTH` =
-soft cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one decimal place):
+`-lc LEVEL` = hard cap: battle's experience cap at `C2/6276` (vanilla
+15,000,000, read only by `C2/6235`, which clamps the total after every award,
+Exp. Egg included) is set to the total for LEVEL, so LEVEL is reachable and
+LEVEL+1 never is; the experience table stays vanilla. Verified in the emulator
+(2026-10-13, `-lc 10`): party at L9 with 2,926 went to L10 with exactly 2,976
+after one battle and did not move after a second. A character placed above
+the cap keeps their level and never levels again. (The first version filled
+the table with 65535 from LEVEL on, which grinding could still pass, up to
+L58 for a cap of 30.) The status screen's "to next level" stays positive at
+the cap (cosmetic). `-lc MEAN WIDTH` = soft cap, table only, vanilla battle
+cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one
+decimal place):
 `step(L) = min(65535, round(default(L) × (1 + 10^((L - MEAN) / WIDTH))))`,
 never below default, doubling from MEAN to MEAN+1; every WIDTH levels past
 MEAN multiply the extra cost by 10. Base 10 replaced e after playtesting
@@ -2652,16 +2662,15 @@ slowly; base 10 gives ×2, ×11, ×101, then the maximum. It is the old curve
 with WIDTH / ln 10. Code:
 `data/level_cap.py` (pure, ROM-free; tested in `tests/test_level_cap.py`),
 applied by `Characters.mod_level_cap`, flag in `args/xpmpgp.py`, spoiler
-section "Level Cap: Total Exp (Default)". The flags menu ("Exp, MP, GP")
+section "Level Cap: Total Exp (Default)" (with the experience cap). The flags menu ("Exp, MP, GP")
 always has a Level Cap row: the level for a hard cap, "Soft M/W", or "None"
 (longest "Soft 99/98.5", 23 of the row's 26 characters).
 That row lengthens the menu text and shifts later free-space allocations, so
 adding it changed every golden ROM (re-recorded; verified byte-identical to
 the pre-merge tree plus only that row).
 
-**Two hazards it handles.** (1) Past the 15,000,000 battle cap no level can be
-reached, so "hard" is real only from there: hard 30 → a character can still
-grind to 58 (each level 524,280 experience). (2) The 24-bit sum wraps once the
+**Two hazards the soft cap handles.** (1) Past the 15,000,000 battle cap no
+level can be reached. (2) The 24-bit sum wraps once the
 summed entries reach 2^21 (~16.8M experience); a character *placed* there by
 `-stl`/`-stlr`/`-sal` would get garbage experience and level straight to 99 in
 the next battle. `guard_wrap` sets every step past the 15M point to 1
