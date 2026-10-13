@@ -2658,7 +2658,10 @@ highest level reachable under the 15,000,000 battle cap is below 99, the same
 status-menu patch is applied at that level (`level_cap.highest_level`), so
 the screen shows 0 there instead of freezing on an unreachable remainder
 (104,720 at L73 for `-lc 40 5`; emulator-checked: L73 at 15M shows 0, L72 at
-14M shows 580,440, a placed L75 shows 0). Soft cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one
+14,156,160 shows 424,280, a placed L75 shows 0). Harness note: when poking
+level/experience into WRAM for a menu check, keep the experience at or above
+the level's own total; below it the menu shows a "for level up" larger than any
+one step (an unreachable state, not a bug). Soft cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one
 decimal place):
 `step(L) = min(65535, round(default(L) × (1 + 10^((L - MEAN) / WIDTH))))`,
 never below default, doubling from MEAN to MEAN+1; every WIDTH levels past
