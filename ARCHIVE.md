@@ -2650,8 +2650,10 @@ LEVEL+1 never is; the experience table stays vanilla. Verified in the emulator
 after one battle and did not move after a second. A character placed above
 the cap keeps their level and never levels again. (The first version filled
 the table with 65535 from LEVEL on, which grinding could still pass, up to
-L58 for a cap of 30.) The status screen's "to next level" stays positive at
-the cap (cosmetic). `-lc MEAN WIDTH` = soft cap, table only, vanilla battle
+L58 for a cap of 30.) The status screen shows 0 "for level up" at or above
+the cap: vanilla's level-99 check (`C3/60A6 CMP #$63 / BEQ`, in `C3/60A0`,
+whose only caller is the status screen) becomes `CMP #LEVEL / BCS`
+(`set_menu_level_cap`); checked in the emulator at, below and above the cap. `-lc MEAN WIDTH` = soft cap, table only, vanilla battle
 cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one
 decimal place):
 `step(L) = min(65535, round(default(L) × (1 + 10^((L - MEAN) / WIDTH))))`,
