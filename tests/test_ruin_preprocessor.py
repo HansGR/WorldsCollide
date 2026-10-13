@@ -95,6 +95,33 @@ class TestRuinPreprocessor(unittest.TestCase):
         for flag in ("-sc2", "-sc3", "-sc4"):
             self.assertNotIn(flag, argv)
 
+    def test_required_characters_take_the_last_default_slots(self):
+        # -rc drops trailing default '-scN random' slots, one per required
+        # character, from the slots the mode actually injects
+        for mode, left in (([], ["-sc1", "-sc2"]), (["easy"], ["-sc1", "-sc2", "-sc3"])):
+            argv = expand(["wc.py", "-ruin", *mode, "-rc", "terra"])
+            self.assertEqual([a for a in argv if a in ("-sc1", "-sc2", "-sc3", "-sc4")], left)
+
+    def test_standard_commands_and_level_cap(self):
+        argv = expand(["wc.py", "-ruin"])
+        ids, percents = value_after(argv, "-compru", 2)
+        ids, percents = ids.split("."), percents.split(".")
+        self.assertEqual(len(ids), len(percents))
+        self.assertEqual(percents[:3], ["90", "90", "90"])
+        # every skill declared at 24%, Possess (28) at 12%
+        skills = dict(zip(ids[3:], percents[3:]))
+        self.assertEqual(len(skills), 21)
+        self.assertEqual(skills.pop("28"), "12")
+        self.assertEqual(set(skills.values()), {"24"})
+        # declared skills cannot also be excluded, and -com would reserve the slots
+        self.assertNotIn("-rec", argv)
+        self.assertNotIn("-com", argv)
+        self.assertEqual(value_after(argv, "-lc", 2), ["43", "5"])
+        # '-no lc' removes the cap with both of its values
+        argv = expand(["wc.py", "-ruin", "-no", "lc"])
+        self.assertNotIn("-lc", argv)
+        self.assertEqual(argv[argv.index("-gpm") + 2], "-lsced")
+
     def test_user_stlr_replaces_injected_stl(self):
         # -stl and -stlr are mutually exclusive: a user -stlr must drop the
         # injected starting level (6), not clash with it

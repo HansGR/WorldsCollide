@@ -120,13 +120,17 @@ RUIN_DEFAULT_FLAGS = {
     'commands': [
         '-fst', '-brl', '-slr', '3', '5', '-lmprp', '75', '125', '-lel',
         '-srr', '25', '35', '-rnl', '-rnc', '-sdr', '1', '2', '-das', '-dda',
-        '-dns', '-sch', '-scis', '-com', '98989898989898989898989898',
-        '-rec', '28.27'
+        '-dns', '-sch', '-scis',
+        # seed-wide unique skills: Fight/Magic/Item 90%, every skill 24% except
+        # Possess at 12%, which puts it in about half as many seeds (~40% vs ~81%;
+        # measured on the real code). Every skill is declared, so no -rec
+        '-compru', '00.02.01.10.06.14.19.24.26.22.12.29.03.28.16.11.27.13.15.05.07.08.09.23',
+        '90.90.90.24.24.24.24.24.24.24.24.24.24.12.24.24.24.24.24.24.24.24.24.24',
     ],
 
     # Battle flags
     'battle': [
-        '-xpm', '8', '-mpm', '5', '-gpm', '0', '-lsced', '2', '-hmced', '2',
+        '-xpm', '8', '-mpm', '5', '-gpm', '0', '-lc', '43', '5', '-lsced', '2', '-hmced', '2',
         '-xgced', '2', '-ase', '2', '-msl', '40', '-sed', '-bbs',
         '-drloc', 'shuffle', '-stloc', 'mix', '-be', '-bnu', '-res',
         '-fer', '0', '-escr', '100', '-dgne', '-wnz', '-mmnu', '-cmd'
@@ -216,7 +220,7 @@ RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES}
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-stl': 1, '-stlr': 2, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
-    '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
+    '-gpm': 1, '-lc': 2, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comfr': 1, '-comfru': 1,
     '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
@@ -398,18 +402,22 @@ def preprocess_ruin_flag(argv=None):
     # Check if user specified any starting character flags
     user_specified_chars = check_user_specified_starting_chars(argv, ruin_index)
 
+    # Build list of default flags to inject (excluding disabled and conflicting ones)
+    categories = mode_categories(mode)
+
     # -rc required characters consume default starting-party slots (drop the
-    # trailing '-scN random' defaults, one per required character)
+    # trailing '-scN random' defaults the mode injects, one per required
+    # character: -sc3 on a three-character start, -sc4 on easy's four)
     required_char_count = count_required_characters(argv, ruin_index)
     if required_char_count and not user_specified_chars:
-        for flag in STARTING_CHAR_FLAGS[len(STARTING_CHAR_FLAGS) - min(required_char_count, len(STARTING_CHAR_FLAGS)):]:
+        party_tokens = [token for category, flags in categories if category == 'starting_chars'
+                        for token in flags]
+        default_slots = [flag for flag in STARTING_CHAR_FLAGS if flag in party_tokens]
+        for flag in default_slots[len(default_slots) - min(required_char_count, len(default_slots)):]:
             flags_to_disable.add(flag)
 
     # Find default flags that conflict with user-specified mutually exclusive flags
     exclusive_suppressed = get_user_exclusive_flags(argv, ruin_index)
-
-    # Build list of default flags to inject (excluding disabled and conflicting ones)
-    categories = mode_categories(mode)
 
     defaults_to_inject = []
     for category, flags in categories:
