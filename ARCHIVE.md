@@ -2653,8 +2653,12 @@ the table with 65535 from LEVEL on, which grinding could still pass, up to
 L58 for a cap of 30.) The status screen shows 0 "for level up" at or above
 the cap: vanilla's level-99 check (`C3/60A6 CMP #$63 / BEQ`, in `C3/60A0`,
 whose only caller is the status screen) becomes `CMP #LEVEL / BCS`
-(`set_menu_level_cap`); checked in the emulator at, below and above the cap. `-lc MEAN WIDTH` = soft cap, table only, vanilla battle
-cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one
+(`set_menu_level_cap`); checked in the emulator at, below and above the cap. `-lc MEAN WIDTH` = soft cap, table plus vanilla battle cap; when the
+highest level reachable under the 15,000,000 battle cap is below 99, the same
+status-menu patch is applied at that level (`level_cap.highest_level`), so
+the screen shows 0 there instead of freezing on an unreachable remainder
+(104,720 at L73 for `-lc 40 5`; emulator-checked: L73 at 15M shows 0, L72 at
+14M shows 580,440, a placed L75 shows 0). Soft cap (LEVEL 2-98 and MEAN 1-99 whole numbers; WIDTH 0.1-99 with at most one
 decimal place):
 `step(L) = min(65535, round(default(L) × (1 + 10^((L - MEAN) / WIDTH))))`,
 never below default, doubling from MEAN to MEAN+1; every WIDTH levels past
