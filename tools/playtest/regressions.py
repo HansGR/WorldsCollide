@@ -40,6 +40,19 @@ def build(vanilla, out, flags, seed=1002):
     return out
 
 
+def build_routable(vanilla, out, flags, target, first_seed=1002, tries=40):
+    """Build the first seed from `first_seed` on whose spoiler routes from the
+    start to `target`; return (rom, hops). A fixed seed stops routing whenever
+    the -ruin defaults change: the global rng is seeded with seed + flag string,
+    so any new default reshuffles every seed's map."""
+    for seed in range(first_seed, first_seed + tries):
+        rom = build(vanilla, out, flags, seed=seed)
+        hops = route.route_from_start(rom[:-4] + ".txt", target)
+        if hops:
+            return rom, hops
+    raise AssertionError(f"no seed in {first_seed}-{first_seed + tries - 1} routes to {target!r}")
+
+
 def at_objective_start(rom):
     """Boot a seed to the point its start objectives have fired."""
     h = Harness(rom)
@@ -193,10 +206,7 @@ def scenario_lite_save_markers(vanilla, workdir):
     import ctypes as C
     from core import RETRO_MEMORY_SAVE_RAM
 
-    rom = build(vanilla, os.path.join(workdir, "lite.smc"), "-ruin -nosaves lite")
-    spoiler = rom[:-4] + ".txt"
-    hops = route.route_from_start(spoiler, "cave")
-    assert hops, "no routable cave in this seed"
+    rom, hops = build_routable(vanilla, os.path.join(workdir, "lite.smc"), "-ruin -nosaves lite", "cave")
 
     h = Harness(rom)
     h.boot_to_game_start()
@@ -437,12 +447,8 @@ def scenario_phoenix_entry(vanilla, workdir):
     door. This exercises the ruination Phoenix entry event (where the
     collision fix lives) end to end for one party."""
     # Seed choice: the ruination map must place Phoenix Cave on a routable
-    # branch; not every seed does. 1005 stopped doing so when the walk gained
-    # Rules G/H (2026-09); of 1006-1021 only 1006, 1007 and 1011 route there.
-    rom = build(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", seed=1006)
-    spoiler = rom[:-4] + ".txt"
-    hops = route.route_from_start(spoiler, "Phoenix cave")
-    assert hops, "could not compute a route to Phoenix Cave from the spoiler"
+    # branch; not every seed does (about 1 in 5), so search for one.
+    rom, hops = build_routable(vanilla, os.path.join(workdir, "phx.smc"), "-ruin", "Phoenix cave")
 
     h = Harness(rom)
     h.boot_to_game_start()
@@ -473,10 +479,7 @@ def scenario_phoenix_two_party_collision(vanilla, workdir):
     rather than deadlocking."""
     PHX = 0x13e
     # Same seed constraint as scenario_phoenix_entry.
-    rom = build(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", seed=1006)
-    spoiler = rom[:-4] + ".txt"
-    hops = route.route_from_start(spoiler, "Phoenix cave")
-    assert hops, "could not compute a route to Phoenix Cave from the spoiler"
+    rom, hops = build_routable(vanilla, os.path.join(workdir, "phx2.smc"), "-ruin", "Phoenix cave")
     school_hops = hops[1:]   # already in the school after the reform
 
     h = Harness(rom)

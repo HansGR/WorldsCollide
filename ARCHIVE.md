@@ -2610,6 +2610,23 @@ same pattern as the invariant scripts in `tests/test_commands.py`).
   builds, `-compru` within ~3 points of the real code.
 - **Calculator** tab: tier-based `-compr` only.
 
+### Ruination default (2026-10)
+
+`-ruin` (and easy/hard) injects `-compru` with Fight/Magic/Item 90%, every
+skill 24% and Possess 12% (no `-com`, no `-rec`: a declared skill cannot be
+excluded). Under seed-wide uniqueness the regular skills sit near 81% of seeds
+whatever their percent (about 16-17 skill slots for 21 skills); the main
+tier's percent sets how many slots are left for the unique draft, and so how
+often the lower-tier Possess (and roll-only Morph) appear. Measured with the
+real code (20,000 seeds): 12/11 gives Possess 67% vs 80%; 24/12 gives 40% vs
+81% (Morph 73%).
+
+**Changing any -ruin default reshuffles every seed** (`seed.py`:
+`random.seed(seed + flags)`), maps included: re-record the golden ruination
+configs, and expect fixed-seed regression scenarios to lose their routes. The
+Phoenix and lite-save scenarios now search for a routable seed
+(`build_routable` in `tools/playtest/regressions.py`).
+
 ### Parked idea: tiered command mode (not implemented)
 
 Seed-level targets instead of per-character percents: tiers Required /
