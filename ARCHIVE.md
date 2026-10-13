@@ -2533,8 +2533,8 @@ recruited in the field.
 `TDC; LDA $EB; CMP #16; BCS default; TAX; LDA table,X; RTS` with a 16-byte
 per-character table. The rolled levels are listed in a "Starting Levels"
 spoiler section. Uses only C0 free space and no event bits, so it composes
-with door rando and ruination. Ruination injects `-stl 6` (`-stl 17` on
-easy), so `args/ruin_preprocessor.py` groups `{'-stl', '-stlr'}`: a user
+with door rando and ruination. Ruination injects `-stl 6` (easy too, since
+the 2026-10 easy rework), so `args/ruin_preprocessor.py` groups `{'-stl', '-stlr'}`: a user
 `-stlr` replaces the injected `-stl` instead of failing argparse's mutual
 exclusion (merged into this branch 2026-10-12).
 

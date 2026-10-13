@@ -64,10 +64,12 @@ def parse(parser):
                             "Automatically sets recommended flags. '-ruin hard' additionally adds "
                             "permadeath, 3 starting Fenix Downs, lite ironmog saves, and removes "
                             "Life 3/Warp/Antdot/Remedy from learnable sources. "
-                            "'-ruin easy' is open world on a smaller map (6 characters + 6 espers) "
-                            "with 3 starting espers, level 17, 12000 gp, standard sell prices, "
-                            "6 Potions, 10 Warp Stones, 3 Fenix Downs, 12 junk items, a shop town on every branch, no monsters-in-a-box and "
-                            "High Tier Item rewards at 3, 6 and 9 checks "
+                            "'-ruin easy' is a gentler tutorial for ruination maps: a smaller map "
+                            "(6 characters + 6 espers), 4 starting characters, enemy level and hp/mp scaling "
+                            "1.5, espers that always teach 5 spells and give a level-up bonus, premium item "
+                            "rewards, 12000 gp, standard sell prices, 6 Potions, 10 Warp Stones, 3 Fenix Downs, "
+                            "12 junk items, a shop town on every branch, rare monsters-in-a-box and "
+                            "High Tier Item rewards at 2, 4 and 6 espers "
                             "('-ruin custom' skips defaults entirely, "
                             "'-no <flags>' disables specific defaults)")
 

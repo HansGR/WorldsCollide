@@ -168,31 +168,37 @@ RUIN_HARD_EXTRAS = {
     'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'mid'],
 }
 
-# '-ruin easy' (the relaxed difficulty): the base flagset with these values
+# '-ruin easy' (the relaxed difficulty): a tutorial for ruination maps - the
+# standard flow and mechanics (character gating, the same starting level) made
+# softer, rather than a separate fast mode.  The base flagset with these values
 # swapped - a base flag listed here is replaced by the tokens given (an empty
-# list drops it) - and RUIN_EASY_EXTRAS injected after it.  The base already
-# carries '-ir stronger'.  Both are subject to '-no <flag>' removal and to the
-# mutually exclusive groups like every other default.
+# list drops it) - and RUIN_EASY_EXTRAS injected after it.  Both are subject to
+# '-no <flag>' removal and to the mutually exclusive groups like every other
+# default.  (Reworked 2026-10 from playtesting: no longer -open, no starting
+# espers, -stl back to the base 6.)
 RUIN_EASY_OVERRIDES = {
-    '-cg': ['-open'],                   # open world, no character gating
     '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers
-    '-stl': ['-stl', '17'],             # starting level, to match the starting-esper scaling
+    '-sc3': ['-sc3', 'random', '-sc4', 'random'],  # four starting characters: early offense
+    '-lsced': ['-lsced', '1.5'],        # gentler enemy level scaling (base 2)
+    '-hmced': ['-hmced', '1.5'],        # gentler enemy hp/mp scaling (base 2); exp/gp stays 2
+    '-esr': ['-esr', '5', '5'],         # every esper teaches five spells
+    '-ebr': ['-ebr', '100'],            # every esper gives a level-up bonus
     '-gp': ['-gp', '12000'],            # double starting gp
+    '-ir': ['-ir', 'premium'],          # only the most valuable item rewards
     '-ssf4': [],                        # standard 1/2 sell prices instead of 1/4
-    '-chrm': ['-chrm', '0', '0'],       # no random monsters-in-a-box
+    '-chrm': ['-chrm', '2', '0'],       # rare monsters-in-a-box (base 7%)
 }
 RUIN_EASY_EXTRAS = {
     'easy': [
-        '-stesp', '3', '3',             # three starting espers (little power to find on a small map)
         '-si', '233.6.6',               # six Potions (item 233)
         '-sws', '10',                   # ten Warp Stones
         '-sfd', '3',                    # three Fenix Downs
         '-sj', '12',                    # twelve starting junk items
         '-rrt',                         # a shop town on every branch
-        # High Tier Item rewards at 3, 6 and 9 checks completed
-        '-oc', '58.1.1.10.3.3',
-        '-od', '58.1.1.10.6.6',
-        '-oe', '58.1.1.10.9.9',
+        # High Tier Item rewards at 2, 4 and 6 espers obtained
+        '-oc', '58.1.1.4.2.2',
+        '-od', '58.1.1.4.4.4',
+        '-oe', '58.1.1.4.6.6',
     ],
 }
 RUIN_MODE_EXTRAS = {**RUIN_HARD_EXTRAS, **RUIN_EASY_EXTRAS}
@@ -210,7 +216,7 @@ RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES}
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-stl': 1, '-stlr': 2, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
-    '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-csrp': 2,
+    '-gpm': 1, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comfr': 1, '-comfru': 1,
     '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
@@ -222,7 +228,7 @@ FLAGS_WITH_ARGS = {
 }
 
 # Starting character related flags that should be removed together
-STARTING_CHAR_FLAGS = ['-sc1', '-sc2', '-sc3']
+STARTING_CHAR_FLAGS = ['-sc1', '-sc2', '-sc3', '-sc4']
 
 def get_all_default_flags():
     """Returns a flat list of all default flags for -ruin mode."""
@@ -290,7 +296,7 @@ def remove_flag_from_list(argv, flag):
 def check_user_specified_starting_chars(argv, ruin_index):
     """
     Check if user specified any starting character flags after -ruin.
-    Returns True if any -sc1, -sc2, or -sc3 are found after the ruin index.
+    Returns True if any -sc1..-sc4 is found after the ruin index.
     """
     for flag in STARTING_CHAR_FLAGS:
         for i in range(ruin_index + 1, len(argv)):
