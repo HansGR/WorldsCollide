@@ -843,13 +843,23 @@ def finalize_branch(planner, branch, reserve_areas=None):
                         found = True
                         break
                 if not found:
+                    # any member cluster will do, the hub's own included: its
+                    # doors are the remaining doors themselves, so never pair
+                    # the door being spent with itself, and a remaining door
+                    # chosen as the target is spent too (two hub doors
+                    # paired, as in step 5)
+                    this_exit = remaining_doors.pop()
                     for nc in member_classes(branch):
-                        n_doors = _elements(w, nc, DOOR)
+                        n_doors = [d for d in _elements(w, nc, DOOR) if d != this_exit]
                         if n_doors:
-                            _connect(planner, branch, remaining_doors.pop(),
-                                     rng.choice(n_doors))
+                            this_conn = rng.choice(n_doors)
+                            if this_conn in remaining_doors:
+                                remaining_doors.remove(this_conn)
+                            _connect(planner, branch, this_exit, this_conn)
                             found = True
                             break
+                    if not found:
+                        remaining_doors.append(this_exit)
                 if not found:
                     raise RuinPlanError('finalize step 5b: cannot resolve orphan door')
 
