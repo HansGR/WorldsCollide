@@ -66,7 +66,8 @@ class RuinConfig:
 
     def __init__(self, party, char_range=(3, 3), esper_range=(0, 0),
                  open_world=False, maze=None, blitz_characters=(),
-                 espers_available=27, kefka_tower=False, require_towns=False):
+                 espers_available=27, kefka_tower=False, require_towns=False,
+                 auction_max_espers=2):
         self.party = list(party)
         self.char_range = char_range
         self.esper_range = esper_range
@@ -94,6 +95,16 @@ class RuinConfig:
         self.room_reward = {rid: {name: possible_flags(types)
                                   for name, types in rewards.items()}
                             for rid, rewards in RC.ROOM_REWARD.items()}
+        # the Auction House event offers an esper only in as many slots as
+        # -ame allows (AuctionHouse.init_rewards: "Auction House_1" is the
+        # 20,000 GP slot, "Auction House_2" the 10,000 GP one)
+        auction = self.room_reward.get('JIDr01-dc', {})
+        if auction_max_espers < 2 and 'Auction House_2' in auction:
+            auction['Auction House_2'] = ITEM
+        if auction_max_espers < 1 and 'Auction House_1' in auction:
+            auction['Auction House_1'] = ITEM
+        # expensive checks: an esper there is a bonus, never a required one
+        self.bonus_esper_checks = set(RC.BONUS_ESPER_CHECKS)
         if open_world:
             self.character_locked_rewards = {}
             self.rewards_locked_by_character = {}
@@ -292,11 +303,11 @@ class RuinPlanner:
             chars = espers = checks = 0
             for area in area_names:
                 for rid in cfg.room_sets.get(area, ()):
-                    for flags in cfg.room_reward.get(rid, {}).values():
+                    for name, flags in cfg.room_reward.get(rid, {}).items():
                         checks += 1
                         if flags & CHARACTER:
                             chars += 1
-                        if flags & ESPER:
+                        if flags & ESPER and name not in cfg.bonus_esper_checks:
                             espers += 1
             return chars, espers, checks
 
@@ -355,7 +366,7 @@ class RuinPlanner:
         flags = self.config.check_flags(reward_name)
         if flags & CHARACTER:
             self.RewardsAvailable[0] += 1
-        if flags & ESPER:
+        if flags & ESPER and reward_name not in self.config.bonus_esper_checks:
             self.RewardsAvailable[1] += 1
         return True
 
@@ -712,7 +723,10 @@ class RuinPlanner:
                     if 2085 not in self.world._owner:
                         self.world.add_element('MAPr-EBO', TRAP, 2085)
             elif kind is ESPER:
-                self.RewardsObtained[1] += 1
+                # a bonus esper (an expensive check) uses up the pool but
+                # does not count toward the required espers
+                if reward_name not in cfg.bonus_esper_checks:
+                    self.RewardsObtained[1] += 1
                 self.espers_left -= 1
                 self.assignments[reward_name] = ('ESPER', None)
             else:
@@ -720,7 +734,7 @@ class RuinPlanner:
 
             if flags & CHARACTER:
                 self.RewardsAvailable[0] -= 1
-            if flags & ESPER:
+            if flags & ESPER and reward_name not in cfg.bonus_esper_checks:
                 self.RewardsAvailable[1] -= 1
 
             self.reward_log.append({

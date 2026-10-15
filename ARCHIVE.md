@@ -2634,6 +2634,26 @@ often the lower-tier Possess (and roll-only Morph) appear. Measured with the
 real code (20,000 seeds): 12/11 gives Possess 67% vs 80%; 24/12 gives 40% vs
 81% (Morph 73%).
 
+Expensive checks (2026-10-15): Tzen's thief and both Auction House slots are
+`BONUS_ESPER_CHECKS` (`data/ruin_constants.py`). They stay mapped and can hold
+an esper or item, but the planner never counts an esper there toward the
+required espers (`RewardsObtained[1]`), the available-esper count, or the
+pre-plan's esper slots. Before this, 25% of standard seeds (28% hard, 16% easy)
+met their required espers only through them. The planner also honours `-ame`
+now: at `-ame 1` (the ruination default) the 10,000 GP slot ("Auction House_2")
+is item-only, as in the event; it used to get an esper anyway.
+
+Dead checks (accessible checks that could hold a character or esper but hold an
+item), measured in-process on 400 standard / 200 easy / 200 hard seeds: about
+2.2% of accessible checks in standard and hard (0.3 per seed, 74% of seeds have
+none) and 4.7% in easy (0.5 per seed). The planner itself never places an item
+where a character or esper fits; every dead check is a check the growth loop
+never claimed, filled by the safety backfill in `Events.ruination_mod`.
+
+Open: seed 10352 with plain `-ruin` crashes in finalize (`_connect` ->
+`WorldModel.connect_door`: `ValueError: 1162 is not in list`), about 1 seed in
+400; the ValueError is not a RuinPlanError, so the plan retry does not catch it.
+
 Level cap by mode: standard `-ruin` injects a soft cap `-lc 43 5`, `-ruin hard`
 a hard cap `-lc 43` (`RUIN_HARD_OVERRIDES`), and `-ruin easy` none
 (`RUIN_EASY_OVERRIDES` drops it). The injector reads a flag's values up to the

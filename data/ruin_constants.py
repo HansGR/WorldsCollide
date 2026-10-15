@@ -118,6 +118,13 @@ ROOM_REWARD = {
 
 }
 
+# Checks that cost a fortune in GP: Tzen's thief (a random price up to the
+# GP limit) and the Auction House (bids of 10,000 / 20,000+). Players rarely
+# afford them, so the planner never counts an esper there toward the required
+# espers (nor as an esper slot when sizing the plan); they stay on the map and
+# can still hold a bonus esper or item.
+BONUS_ESPER_CHECKS = {'Tzen', 'Auction House_1', 'Auction House_2'}
+
 # HOW to deal with cross-branch transport?
 #(1) don't allow it.  Force certain areas to be in the same branch:
 forced_same_branch = {

@@ -3,6 +3,7 @@
 Runs the growth orchestrator on the REAL room pool across many seeds
 and checks the plan invariants:
 - requested characters/espers are all placed, kinds match check flags
+- an esper at an expensive check (Tzen, Auction House) never counts as required
 - a granted character's in-game lock was already on the keychain
 - no element is used twice across door pairs + oneways
 - every granted character's areas are mapped; forced_same_branch respected
@@ -43,7 +44,9 @@ def check_invariants(p):
     w = p.world
     # Reward counts satisfied.
     chars_granted = [v[1] for v in p.assignments.values() if v[0] == 'CHARACTER']
-    espers_granted = [1 for v in p.assignments.values() if v[0] == 'ESPER']
+    # bonus espers (expensive checks) are extras, not part of the requirement
+    espers_granted = [1 for name, v in p.assignments.items()
+                      if v[0] == 'ESPER' and name not in p.config.bonus_esper_checks]
     assert len(chars_granted) == len(p.planned_characters), \
         (chars_granted, p.planned_characters)
     assert sorted(chars_granted) == sorted(p.planned_characters)
@@ -86,7 +89,19 @@ def check_invariants(p):
     assert set(chars_granted) <= p.keychain
 
 
+def check_auction_max_espers():
+    # the planner offers auction espers only where the event allows them (-ame)
+    # (20,000 GP slot, 10,000 GP slot) can hold an esper
+    for ame, expect in ((2, (True, True)), (1, (True, False)), (0, (False, False))):
+        cfg = RuinConfig(['TERRA', 'LOCKE', 'EDGAR'], auction_max_espers=ame)
+        flags = (cfg.check_flags('Auction House_1'), cfg.check_flags('Auction House_2'))
+        assert tuple(bool(f & ESPER) for f in flags) == expect, (ame, flags)
+        assert all(f & ITEM for f in flags), (ame, flags)
+    print('PASS: auction esper slots follow -ame')
+
+
 def main(n=40):
+    check_auction_max_espers()
     ok = fail = 0
     failures = []
     for i in range(n):
