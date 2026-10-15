@@ -67,7 +67,7 @@ class RuinConfig:
     def __init__(self, party, char_range=(3, 3), esper_range=(0, 0),
                  open_world=False, maze=None, blitz_characters=(),
                  espers_available=27, kefka_tower=False, require_towns=False,
-                 auction_max_espers=2):
+                 auction_max_espers=2, dead_check_chance=0.0):
         self.party = list(party)
         self.char_range = char_range
         self.esper_range = esper_range
@@ -105,6 +105,8 @@ class RuinConfig:
             auction['Auction House_1'] = ITEM
         # expensive checks: an esper there is a bonus, never a required one
         self.bonus_esper_checks = set(RC.BONUS_ESPER_CHECKS)
+        # -rdcc: chance a claimed character/esper-capable check is an item
+        self.dead_check_chance = dead_check_chance
         if open_world:
             self.character_locked_rewards = {}
             self.rewards_locked_by_character = {}
@@ -321,8 +323,31 @@ class RuinPlanner:
                     _, e2, c2 = slots_in([area])
                     esper_slots += e2
                     checks += c2
+        # the checks that can meet a requirement (-rdcc's item rolls must leave
+        # enough of them for every character and esper still to place)
+        self.usable_checks = set()
+        self.in_game = set(cfg.party) | set(planned)
+        for area in planned_areas:
+            self._add_usable_checks(area)
         dead = checks - len(planned) - self.Requested[1]
         return planned, remaining, max(0, dead)
+
+    def _add_usable_checks(self, area):
+        """Record an area's checks that could meet a requirement: able to
+        hold a character or esper, not a bonus check, and reachable with the
+        game's characters (party + planned)."""
+        cfg = self.config
+        for rid in cfg.room_sets.get(area, ()):
+            for name, flags in cfg.room_reward.get(rid, {}).items():
+                if not flags & (CHARACTER | ESPER) or name in cfg.bonus_esper_checks:
+                    continue
+                locker = cfg.rewards_locked_by_character.get(name)
+                if locker is not None and locker not in self.in_game:
+                    continue
+                owners = cfg.reward_owners.get(name)
+                if owners is not None and not owners & self.in_game:
+                    continue
+                self.usable_checks.add(name)
 
     # ------------------------------------------------------------------
     # Membership plumbing
@@ -596,6 +621,30 @@ class RuinPlanner:
         out.sort(key=lambda x: (x[2], x[3]), reverse=True)
         return [(a, r) for a, r, _, _ in out]
 
+    def _add_reserve_checks(self):
+        """Out of checks with requirements still unmet (dead checks used up
+        the mapped ones, -rdcc): pull reserve areas onto the hub-capable branch
+        that has found the fewest rewards until it has a check to claim.
+        Returns whether any branch now has one."""
+        viable = [i for i in range(3) if self.branches[i].has_a_hub()]
+        if not viable:
+            return False
+        branch_id = min(viable, key=lambda i: self.branch_rewards_found[i])
+        while not self.branch_checks[branch_id]:
+            if not self.get_reserve_area_rooms():
+                return False
+            self._unstick_with_reserve(branch_id)
+        return True
+
+    def _dead_check_affordable(self, reward_name, chars_left):
+        """Can this check be an item and still leave an unclaimed usable
+        check for every character and esper still to place?"""
+        if reward_name not in self.usable_checks:
+            return True                  # costs none of the usable checks
+        unclaimed = len(self.usable_checks - set(self.assignments) - {reward_name})
+        espers_left = max(0, self.Requested[1] - self.RewardsObtained[1])
+        return unclaimed >= chars_left + espers_left
+
     def _unstick_with_reserve(self, branch_id):
         """No-viable-branches rescue: pull the best reserve (or EXTRA)
         area onto the branch and reset its active room to the hub."""
@@ -605,6 +654,7 @@ class RuinPlanner:
         if reserve_areas:
             new_area, new_rooms = reserve_areas[0]
             self.AreasUsed[new_area] = branch_id
+            self._add_usable_checks(new_area)
             for rid in new_rooms:
                 if rid not in existing:
                     self._add_room_to_branch(branch, rid)
@@ -653,7 +703,7 @@ class RuinPlanner:
                 rewards.append((name, flags))
         return rewards
 
-    def _choose_kind(self, flags, force_character=False):
+    def _choose_kind(self, flags, force_character=False, reward_name=None):
         """Choose a reward kind for a claimed check: shuffled type
         order, first available wins, item as fallback. Returns (kind,
         character_name or None) and consumes the pools.
@@ -670,6 +720,16 @@ class RuinPlanner:
         chars_left = [c for c in self.planned_characters if c not in assigned]
         if force_character:
             return CHARACTER, rng.choice(chars_left)
+        # -rdcc: a check that could hold an item and a character or esper is
+        # sometimes made a dead check (no draw at all at 0, so -rdcc 0 is the
+        # plain kind choice)
+        # Only while the game keeps enough checks for every character and
+        # esper still to place, so the map can always finish.
+        p_dead = self.config.dead_check_chance
+        if (p_dead > 0 and flags & ITEM and flags & (CHARACTER | ESPER)
+                and self._dead_check_affordable(reward_name, len(chars_left))
+                and rng.random() < p_dead):
+            return ITEM, None
         all_types = list(RewardType)
         rng.shuffle(all_types)
         item_possible = False
@@ -694,7 +754,8 @@ class RuinPlanner:
             remaining_chars = len(self.planned_characters) - self.RewardsObtained[0]
             force_char = (remaining_chars >= 1 and self.RewardsAvailable[0] == 1
                           and bool(flags & CHARACTER))
-            kind, char_name = self._choose_kind(flags, force_character=force_char)
+            kind, char_name = self._choose_kind(flags, force_character=force_char,
+                                                reward_name=reward_name)
 
             if kind is CHARACTER:
                 # A new recruit unlocks things everywhere: their key opens
@@ -799,6 +860,8 @@ class RuinPlanner:
                 # Everything with checks is stuck: feed the first such branch
                 # an unused reserve area and give it another chance.
                 checkable = [i for i in range(3) if self.branch_checks[i]]
+                if not checkable and cfg.dead_check_chance > 0 and self._add_reserve_checks():
+                    continue
                 if not checkable:
                     raise RuinPlanError(
                         f'No branches have remaining checks '

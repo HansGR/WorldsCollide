@@ -31,10 +31,11 @@ PARTIES = [
 ]
 
 
-def run_one(seed, party, maze=None, open_world=False):
+def run_one(seed, party, maze=None, open_world=False, dead_check_chance=0.0):
     rng = random.Random(seed)
     cfg = RuinConfig(party, char_range=(2, 6), esper_range=(1, 4),
-                     maze=maze, open_world=open_world, blitz_characters=['SABIN'])
+                     maze=maze, open_world=open_world, blitz_characters=['SABIN'],
+                     dead_check_chance=dead_check_chance)
     planner = RuinPlanner(cfg, rng)
     planner.grow()
     return planner
@@ -100,8 +101,25 @@ def check_auction_max_espers():
     print('PASS: auction esper slots follow -ame')
 
 
+def check_dead_checks(n=10):
+    # -rdcc 100: every character/esper-capable check is an item while the game
+    # keeps enough usable checks; the requirements are still all met
+    dead_total = 0
+    for i in range(n):
+        try:
+            p = run_one(f'dead{i}', PARTIES[i % len(PARTIES)], maze='iso', dead_check_chance=1.0)
+        except RuinPlanError:
+            continue
+        check_invariants(p)
+        dead_total += sum(1 for name, (kind, _) in p.assignments.items()
+                          if kind == 'ITEM' and p.config.check_flags(name) & (CHARACTER | ESPER))
+    assert dead_total > 0, 'no dead checks at -rdcc 100'
+    print(f'PASS: dead checks at -rdcc 100 ({dead_total} over {n} plans), requirements met')
+
+
 def main(n=40):
     check_auction_max_espers()
+    check_dead_checks()
     ok = fail = 0
     failures = []
     for i in range(n):

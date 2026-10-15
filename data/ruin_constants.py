@@ -69,13 +69,14 @@ ROOM_REWARD = {
     
     # SHADOW
     'MAPb-GFH': {"Gau Father House": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Gau's Dad's House
-    'MAPb-FLO': {"Floating Continent_1": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM],   # Floating Continent 1
+    # reward types match the event's slots (FloatingContinent.init_rewards)
+    'MAPb-FLO': {"Floating Continent_1": [RewardType.CHARACTER, RewardType.ESPER],   # Floating Continent 1
                     "Floating Continent_2": [RewardType.ESPER, RewardType.ITEM],   # Floating Continent 2
-                    "Floating Continent_3": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Floating Continent 3
+                    "Floating Continent_3": [RewardType.CHARACTER, RewardType.ESPER]},   # Floating Continent 3
     'COV08-ruin': {"Veldt Cave WOR": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Cave on the Veldt
     
     # GAU
-    'wor-veldt': {"Veldt": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Veldt (WOR theme)
+    'wor-veldt': {"Veldt": [RewardType.CHARACTER, RewardType.ESPER]},  # Veldt (WOR theme); the event has no item reward
     'NIKr52-ruin': {"Serpent Trench": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},  # Serpent Trench, seeds logical separation from Nikeah.
     
     # SETZER
@@ -124,6 +125,18 @@ ROOM_REWARD = {
 # espers (nor as an esper slot when sizing the plan); they stay on the map and
 # can still hold a bonus esper or item.
 BONUS_ESPER_CHECKS = {'Tzen', 'Auction House_1', 'Auction House_2'}
+
+# Reward slots in vanilla WC (-cg): every event reward, the starting party's
+# characters not included (13 characters + 27 espers + 22 items in a -cg build).
+# The standard dead-check chance is the share of these that end up items:
+# 1 - (14 - starting characters + 27 - starting espers) / VANILLA_REWARD_SLOTS
+VANILLA_REWARD_SLOTS = 62
+ALL_ESPER_COUNT = 27
+
+
+def standard_dead_check_chance(starting_characters, starting_espers=0):
+    usable = len(ALL_CHARACTERS) - starting_characters + ALL_ESPER_COUNT - starting_espers
+    return min(1.0, max(0.0, 1 - usable / VANILLA_REWARD_SLOTS))
 
 # HOW to deal with cross-branch transport?
 #(1) don't allow it.  Force certain areas to be in the same branch:

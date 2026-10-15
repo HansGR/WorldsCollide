@@ -2650,9 +2650,43 @@ none) and 4.7% in easy (0.5 per seed). The planner itself never places an item
 where a character or esper fits; every dead check is a check the growth loop
 never claimed, filled by the safety backfill in `Events.ruination_mod`.
 
-Open: seed 10352 with plain `-ruin` crashes in finalize (`_connect` ->
-`WorldModel.connect_door`: `ValueError: 1162 is not in list`), about 1 seed in
-400; the ValueError is not a RuinPlanError, so the plan retry does not catch it.
+Fixed: seed 10352 with plain `-ruin` crashed in finalize (`ValueError: 1162 is
+not in list`, about 1 seed in 400). Step 5b's last-resort orphan-door pass looks
+for a target door in every member cluster, the hub's own included, whose doors
+are the `remaining_doors` being spent: it paired South Figaro WoR's door 1162
+with itself. It now never picks the door being spent, and a remaining door
+chosen as the target is spent too (two hub doors paired, as in step 5). The
+2000-plan `tools/ruin_stress.py sweep` then completes every plan.
+
+### Dead checks: `-rdcc` (2026-10-15)
+
+`-rdcc PERCENT` (`--ruination-dead-check-chance`): when the planner claims a
+check that can hold an item and a character or esper, it is made an item with
+this chance. Default: vanilla WC's item share,
+`1 - (14 - starting characters + 27 - starting espers) / 62`
+(`data/ruin_constants.standard_dead_check_chance`; 62 = reward slots in a
+vanilla `-cg` build: 13 characters + 27 espers + 22 items; starting espers are
+rolled after planning, so the midpoint of `-stesp` stands in). That is 38.7%
+with three starting characters, 40.3% with four. `-rdcc 0` draws nothing and is
+the previous planner exactly (identical plans on 300 fixed RNG streams).
+
+An item roll happens only while the game keeps enough checks for every
+character and esper still to place (`_dead_check_affordable`): the unclaimed
+"usable" checks - in the plan's areas, able to hold a character or esper, not
+a bonus check, reachable with the game's characters - must still cover the
+characters left plus the espers still required. Reserve areas pulled in later
+add their usable checks. If the map still runs out of checks
+(`_add_reserve_checks`, active only above 0), a reserve area is pulled onto the
+branch with the fewest rewards. Measured (full builds, 400 standard / 200 easy
+/ 200 hard): every seed builds; 18.3 accessible checks per standard seed
+(14.4 at `-rdcc 0`), 5.2 dead (28% of accessible checks); easy 14.8 and 4.9;
+`-rdcc 22.7` (vanilla's item share among slots that could hold a character or
+esper) gives 16.4 and 3.0. Plans need 1.6 attempts on average (1.4 at 0).
+
+The dead rolls exposed planner reward types the events don't have: Floating
+Continent 1/3 and the Veldt are character/esper slots in their events but were
+listed with ITEM. Fixed in `ROOM_REWARD`; `tests/test_ruin_dead_checks.py`
+compares every planner type with its event slot when `ff3.smc` is present.
 
 Level cap by mode: standard `-ruin` injects a soft cap `-lc 43 5`, `-ruin hard`
 a hard cap `-lc 43` (`RUIN_HARD_OVERRIDES`), and `-ruin easy` none

@@ -90,6 +90,14 @@ def parse(parser):
                             "(South Figaro, Kohlingen, Albrook, Jidoor, Thamasa, Nikeah, "
                             "Maranda, Vector or Tzen), wired in when the branch is closed")
 
+    doors.add_argument("-rdcc", "--ruination-dead-check-chance", type=float, default=None,
+                       metavar="PERCENT",
+                       help="Ruination mode: chance that a check able to hold a character or esper "
+                            "holds an item instead (a dead check). Default: the vanilla WC rate, "
+                            "1 - (14 - starting characters + 27 - starting espers) / 62 reward slots "
+                            "(about 39%% with three starting characters). 0 never makes a dead check "
+                            "on purpose")
+
     doors.add_argument("-rce", "--required-characters-espers", type=str, default=None,
                        help="Ruination mode: number of characters and espers required to be obtainable, "
                             "as 'CC.EE' exact counts or 'cc.cc.ee.ee' min/max ranges "
@@ -173,6 +181,10 @@ def process(args):
     args.ruin_characters_required = char_range
     args.ruin_espers_required = esper_range
 
+    _rdcc = args.ruination_dead_check_chance
+    if _rdcc is not None and not 0 <= _rdcc <= 100:
+        args.parser.error(f"-rdcc: dead check chance {_rdcc:g} must be a percent from 0 to 100")
+
     if args.door_randomize_dungeon_crawl:
         # Override: dungeon crawl is incompatible with map shuffle and takes precedence
         args.map_shuffle_separate = False
@@ -224,6 +236,9 @@ def flags(args):
 
         if args.required_characters_espers is not None:
             flags += f" -rce {args.required_characters_espers}"
+
+        if args.ruination_dead_check_chance is not None:
+            flags += f" -rdcc {args.ruination_dead_check_chance:g}"
 
         if args.debug_route_destination:
             flags += " -debug_dest " + " ".join(args.debug_route_destination)
@@ -339,6 +354,8 @@ def options(args):
         opts += [
             ("Ruination Mode", mode_desc),
             (" available c/e", f"{_range_desc(*cr)}/{_range_desc(*er)}"),
+            (" dead checks", "Standard" if args.ruination_dead_check_chance is None
+                             else f"{args.ruination_dead_check_chance:g}%"),
         ]
 
     elif args.door_randomize_all:
