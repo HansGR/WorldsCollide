@@ -103,8 +103,9 @@ for group in MUTUALLY_EXCLUSIVE_GROUPS:
 RUIN_DEFAULT_FLAGS = {
     'settings': ['-cg'],
     'objectives': [
-                   # KT unlock requirements come from -rce (not an objective;
-                   # KT-unlock objectives are unused in ruination mode)
+                   # map size comes from -rce: characters, and espers + item
+                   # rewards (not an objective; KT-unlock objectives are
+                   # unused in ruination mode)
                    '-rce', '6.9',
                    '-oa', '59.3.3.11.29.11.30.11.31.10.12.12',
                    '-ob', '30.8.8.3.3.11.6.11.7.11.8.10.12.12',
@@ -186,7 +187,7 @@ RUIN_HARD_OVERRIDES = {
 # default.  (Reworked 2026-10 from playtesting: no longer -open, no starting
 # espers, -stl back to the base 6.)
 RUIN_EASY_OVERRIDES = {
-    '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers
+    '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers/items
     '-sc3': ['-sc3', 'random', '-sc4', 'random'],  # four starting characters: early offense
     '-lsced': ['-lsced', '1.5'],        # gentler enemy level scaling (base 2)
     '-hmced': ['-hmced', '1.5'],        # gentler enemy hp/mp scaling (base 2); exp/gp stays 2

@@ -163,24 +163,38 @@ def route_from_start(spoiler_path, target_substring):
     return [ESPER_GATE_TILE] + [door for _, door, _ in hops] + [target_door]
 
 
-def step_door(h, door_id, timeout=160):
-    """Teleport to a door/tile by id and step onto it, trying each facing.
-    Handles both atlas exits and event tiles acting as doors. Returns the
-    new map id, or None if no facing produced a transition."""
+def door_tiles(door_id):
+    """Every tile of a door: one for a short exit or event tile, `size`
+    tiles along a long exit (some of which can be walls - e.g. the first
+    tile of Snow Battlefield's north exit 1149)."""
     pos = door_position(door_id)
     if pos is None:
-        return None
+        return []
     _, x, y = pos
+    rec = atlas.exit_record(door_id) or {}
+    if rec.get('kind') != 'long':
+        return [(x, y)]
+    if rec.get('direction') == 'vertical':
+        return [(x, y + i) for i in range(rec['size'])]
+    return [(x + i, y) for i in range(rec['size'])]
+
+
+def step_door(h, door_id, timeout=160):
+    """Teleport to a door/tile by id and step onto it, trying each tile of
+    the door and each facing. Handles both atlas exits and event tiles
+    acting as doors. Returns the new map id, or None if nothing produced a
+    transition."""
     start_map = h.map_id
-    for facing in _FACINGS:
-        snap = h.save_state()
-        try:
-            nm = navigate.step_through(h, x, y, facing, timeout=timeout)
-            if nm != start_map:
-                return nm
-        except TimeoutError:
-            pass
-        h.load_state(snap)
+    for x, y in door_tiles(door_id):
+        for facing in _FACINGS:
+            snap = h.save_state()
+            try:
+                nm = navigate.step_through(h, x, y, facing, timeout=timeout)
+                if nm != start_map:
+                    return nm
+            except TimeoutError:
+                pass
+            h.load_state(snap)
     return None
 
 

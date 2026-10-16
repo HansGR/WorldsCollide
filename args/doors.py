@@ -100,9 +100,9 @@ def parse(parser):
                             "these item rolls off")
 
     doors.add_argument("-rce", "--required-characters-espers", type=str, default=None,
-                       help="Ruination mode: number of characters and espers required to be obtainable, "
-                            "as 'CC.EE' exact counts or 'cc.cc.ee.ee' min/max ranges "
-                            "(default 6.9, minimum 3.0)")
+                       help="Ruination mode: number of characters, and of espers plus item rewards, "
+                            "required to be obtainable (sets the map size), as 'CC.EE' exact counts or "
+                            "'cc.cc.ee.ee' min/max ranges (default 6.9, minimum 3.0)")
 
     # Map shuffle
     doors.add_argument("-maps", "--map-shuffle-separate", action="store_true",

@@ -334,7 +334,7 @@ class RuinMap:
         log_lines.append(f"Starting Party: {', '.join(self.PARTY)}")
         log_lines.append(f"Planned characters: {', '.join(self.planned_characters)}")
         log_lines.append(f"Requested: {planner.Requested[0]} characters, "
-                         f"{planner.Requested[1]} espers")
+                         f"{planner.Requested[1]} espers/items")
         log_lines.append("")
 
         log_lines.append("Character Rewards:")

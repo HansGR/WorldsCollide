@@ -2684,7 +2684,8 @@ An item roll happens only while the game keeps enough checks for every
 character and esper still to place (`_item_reward_affordable`): the unclaimed
 "usable" checks - in the plan's areas, able to hold a character or esper, not
 a bonus check, reachable with the game's characters - must still cover the
-characters left plus the espers still required. Reserve areas pulled in later
+characters left plus the espers still required (since 2026-10-16, espers or
+items, the rolled item itself counting as one). Reserve areas pulled in later
 add their usable checks. If the map still runs out of checks
 (`_add_reserve_checks`, active only above 0), a reserve area is pulled onto the
 branch with the fewest rewards. Measured at the default (full builds, 400
@@ -2693,6 +2694,27 @@ standard seed (14.4 at `-rirc 0`), 3.7 of them items where a character or esper
 could have been (25% of item-capable checks);
 easy 13.6 and 3.4; hard 17.1 and 3.6. At the first default (38.7%) a standard
 seed had 18.3 and 5.2.
+
+**Items count toward `-rce`'s second number (2026-10-16).** `-rce C.E` asks
+for C characters and E espers *or item rewards*: a non-bonus check the planner
+claims as an item counts like an esper (`process_rewards`), the pre-plan's
+slot count takes every non-bonus check (`slots_in`), and the affordability
+rule counts the item being rolled (`second_left = E - obtained - 1`). Bonus
+checks (Tzen, Auction House) count for neither. Before, item rolls made the
+map grow to find E espers anyway. Planner-only measurement (150 plans,
+`-rce 6.9`, three-character start, rooms / non-bonus checks per plan):
+
+| `-rirc` | before | after |
+|---|---|---|
+| 0 | 141 / 12.3 | 141 / 12.3 (identical) |
+| 27.3 (default) | 163 / 15.5 | 147 / 12.6 |
+| 50 | 180 / 17.8 | 154 / 13.1 |
+| 100 | 193 / 18.7 | 188 / 15.6 |
+
+At very high chances maps still grow: once E is met, items keep rolling on
+character-capable checks and delay the remaining characters (at 100%: 11.8
+items + 0.8 espers for E = 9). Not changed; a possible rule is no item rolls
+once E is met while characters are still owed.
 
 The item rolls exposed planner reward types the events don't have: Floating
 Continent 1/3 and the Veldt are character/esper slots in their events but were

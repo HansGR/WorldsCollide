@@ -302,6 +302,8 @@ class RuinPlanner:
         planned_areas.update(cfg.character_areas.get('ALL', []))
 
         def slots_in(area_names):
+            # an esper or an item meets -rce's second number, so every check
+            # but a bonus one is a slot for it
             chars = espers = checks = 0
             for area in area_names:
                 for rid in cfg.room_sets.get(area, ()):
@@ -309,7 +311,7 @@ class RuinPlanner:
                         checks += 1
                         if flags & CHARACTER:
                             chars += 1
-                        if flags & ESPER and name not in cfg.bonus_esper_checks:
+                        if flags & (ESPER | ITEM) and name not in cfg.bonus_esper_checks:
                             espers += 1
             return chars, espers, checks
 
@@ -642,8 +644,9 @@ class RuinPlanner:
         if reward_name not in self.usable_checks:
             return True                  # costs none of the usable checks
         unclaimed = len(self.usable_checks - set(self.assignments) - {reward_name})
-        espers_left = max(0, self.Requested[1] - self.RewardsObtained[1])
-        return unclaimed >= chars_left + espers_left
+        # the item itself meets one of -rce's second number (espers + items)
+        second_left = max(0, self.Requested[1] - self.RewardsObtained[1] - 1)
+        return unclaimed >= chars_left + second_left
 
     def _unstick_with_reserve(self, branch_id):
         """No-viable-branches rescue: pull the best reserve (or EXTRA)
@@ -784,13 +787,16 @@ class RuinPlanner:
                     if 2085 not in self.world._owner:
                         self.world.add_element('MAPr-EBO', TRAP, 2085)
             elif kind is ESPER:
-                # a bonus esper (an expensive check) uses up the pool but
-                # does not count toward the required espers
+                # espers and items both count toward -rce's second number; a
+                # bonus esper (an expensive check) uses up the pool but does
+                # not count
                 if reward_name not in cfg.bonus_esper_checks:
                     self.RewardsObtained[1] += 1
                 self.espers_left -= 1
                 self.assignments[reward_name] = ('ESPER', None)
             else:
+                if reward_name not in cfg.bonus_esper_checks:
+                    self.RewardsObtained[1] += 1
                 self.assignments[reward_name] = ('ITEM', None)
 
             if flags & CHARACTER:
@@ -836,7 +842,7 @@ class RuinPlanner:
 
     def grow(self):
         """The main growth loop: grow branches until the planned
-        characters and requested espers are all placed."""
+        characters and the requested espers + items are all placed."""
         cfg = self.config
         rng = self.rng
         max_retries = 3
@@ -930,7 +936,7 @@ class RuinPlanner:
         if self.RewardsObtained[0] < len(self.planned_characters):
             raise RuinPlanError('insufficient characters after main loop')
         if self.RewardsObtained[1] < self.Requested[1]:
-            raise RuinPlanError('insufficient espers after main loop')
+            raise RuinPlanError('insufficient espers/items after main loop')
 
         # ALL areas (Coliseum etc.): shuffled, spread across shuffled branches.
         all_areas = list(cfg.character_areas.get('ALL', []))

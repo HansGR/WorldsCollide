@@ -45,9 +45,10 @@ def check_invariants(p):
     w = p.world
     # Reward counts satisfied.
     chars_granted = [v[1] for v in p.assignments.values() if v[0] == 'CHARACTER']
-    # bonus espers (expensive checks) are extras, not part of the requirement
+    # espers and items both meet the second requirement; bonus checks
+    # (expensive checks) are extras, not part of it
     espers_granted = [1 for name, v in p.assignments.items()
-                      if v[0] == 'ESPER' and name not in p.config.bonus_esper_checks]
+                      if v[0] in ('ESPER', 'ITEM') and name not in p.config.bonus_esper_checks]
     assert len(chars_granted) == len(p.planned_characters), \
         (chars_granted, p.planned_characters)
     assert sorted(chars_granted) == sorted(p.planned_characters)
