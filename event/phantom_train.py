@@ -501,32 +501,36 @@ class PhantomTrain(Event):
             space = Reserve(0xbb9fb, 0xbb9fe, "phantom train sound and delay before fight", field.NOP())
 
         src = []
-        if self.reward.type == RewardType.CHARACTER:
-            src += [
-                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.RecruitAndSelectParty(self.reward.id),
-                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
-                field.FadeInScreen(),
-                field.FinishCheck(),
-            ]
-        elif self.reward.type == RewardType.ESPER:
-            src += [
-                field.FadeInScreen(),
-                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.AddEsper(self.reward.id),
-                field.Dialog(self.espers.get_receive_esper_dialog(self.reward.id)),
-                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
-                field.FinishCheck(),
-            ]
-        elif self.reward.type == RewardType.ITEM:
-            src += [
-                field.FadeInScreen(),
-                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
-                field.AddItem(self.reward.id),
-                field.Dialog(self.items.get_receive_dialog(self.reward.id)),
-                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
-                field.FinishCheck(),
-            ]
+        if not self.args.ruination_mode:
+            # classic WC: beating the boss also gives the Phantom Train reward if the caboose
+            # hasn't. In ruination the planner places it in the caboose only; the smokestack
+            # boss gives its own item instead (below)
+            if self.reward.type == RewardType.CHARACTER:
+                src += [
+                    field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                    field.RecruitAndSelectParty(self.reward.id),
+                    field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                    field.FadeInScreen(),
+                    field.FinishCheck(),
+                ]
+            elif self.reward.type == RewardType.ESPER:
+                src += [
+                    field.FadeInScreen(),
+                    field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                    field.AddEsper(self.reward.id),
+                    field.Dialog(self.espers.get_receive_esper_dialog(self.reward.id)),
+                    field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                    field.FinishCheck(),
+                ]
+            elif self.reward.type == RewardType.ITEM:
+                src += [
+                    field.FadeInScreen(),
+                    field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                    field.AddItem(self.reward.id),
+                    field.Dialog(self.items.get_receive_dialog(self.reward.id)),
+                    field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                    field.FinishCheck(),
+                ]
 
         src += [
             "AFTER_REWARD",
@@ -534,8 +538,8 @@ class PhantomTrain(Event):
         if self.args.ruination_mode:
             # the smokestack boss's own item, on the first win only (a repeat fight, e.g. to
             # suplex the train, branches straight to the world map exit instead of here; the
-            # bit check keeps it to one item regardless). The screen may still be dark if the
-            # reward above was skipped, so fade in first.
+            # bit check keeps it to one item regardless). The screen is still dark after the
+            # battle, so fade in first.
             item = self.smokestack_reward.id
             src += [
                 field.BranchIfEventBitSet(event_bit.DEFEATED_PHANTOM_TRAIN, "AFTER_SMOKESTACK_ITEM"),

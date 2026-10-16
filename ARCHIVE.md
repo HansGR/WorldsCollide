@@ -2739,14 +2739,15 @@ that guard them are often optional:
 - **Phantom Train smokestack boss** (added 2026-10-16). `PhantomTrain.init_rewards`
   adds an ITEM slot, `smokestack_reward`, in ruination. The first smokestack
   win runs the "ensure reward" script (`phantom_train_mod`, reached from
-  CB/BA06): the main reward if the caboose hasn't given it yet (as in classic
-  WC, so the smokestack still gives the main reward when fought first), then,
-  if `DEFEATED_PHANTOM_TRAIN` is still clear, `FadeInScreen` + `WaitForFade`,
-  the item, its dialog and `FinishCheck`, then the existing exit. Repeat
+  CB/BA06). In classic WC that gives the Phantom Train reward if the caboose
+  hasn't; in ruination it never does (the reward is the caboose's alone, where
+  the planner puts it). Instead, if `DEFEATED_PHANTOM_TRAIN` is still clear:
+  `FadeInScreen` + `WaitForFade`, the item, its dialog and `FinishCheck`, then
+  the existing exit. Repeat
   fights (for the Suplex A Train objective) take the `door_rando_mod` branch
   at the smokestack, which fights the vanilla GhostTrain pack and goes
   straight to the exit, so the item comes once. Checked by the compiled
-  bytes (bit 0x192 skip, bit 0x03B skip, `96 5C 80 xx`, dialog, FinishCheck);
+  bytes (bit 0x03B skip, `96 5C 80 xx`, dialog, FinishCheck, no main reward);
   play-test seed `-s 76 -ruin -debug -debug_dest PHT02-ruin PHT08 PHT12`
   (Sabin starts; all three rooms off the school's middle door). Note the
   smokestack event also needs map bits 0x1B0/0x1B4 (set in the locomotive)
