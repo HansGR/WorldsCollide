@@ -124,16 +124,17 @@ RUIN_DEFAULT_FLAGS = {
         '-srr', '25', '35', '-rnl', '-rnc', '-sdr', '1', '2', '-das', '-dda',
         '-dns', '-sch', '-scis',
         # seed-wide unique skills: Fight/Magic/Item 90%, every skill 24% except
-        # Possess at 12%, which puts it in about half as many seeds (~40% vs ~81%;
-        # measured on the real code). Every skill is declared, so no -rec
+        # Possess and Shock at 12%, which puts each in about half as many seeds
+        # (~41-42% vs ~83%; measured on the real code). Every skill is
+        # declared, so no -rec
         '-compru', '00.02.01.10.06.14.19.24.26.22.12.29.03.28.16.11.27.13.15.05.07.08.09.23',
-        '90.90.90.24.24.24.24.24.24.24.24.24.24.12.24.24.24.24.24.24.24.24.24.24',
+        '90.90.90.24.24.24.24.24.24.24.24.24.24.12.24.24.12.24.24.24.24.24.24.24',
     ],
 
     # Battle flags
     'battle': [
-        # soft level cap at 43 (width 5); easy drops it and hard makes it a hard cap
-        '-xpm', '8', '-mpm', '5', '-gpm', '0', '-lc', '43', '5', '-lsced', '2', '-hmced', '2',
+        # soft level cap at 48 (width 10); easy drops it and hard makes it a hard cap
+        '-xpm', '8', '-mpm', '5', '-gpm', '0', '-lc', '48', '10', '-lsced', '2', '-hmced', '2',
         '-xgced', '2', '-ase', '2', '-msl', '40', '-sed', '-bbs',
         '-drloc', 'shuffle', '-stloc', 'mix', '-be', '-bnu', '-res',
         '-fer', '0', '-escr', '100', '-dgne', '-wnz', '-mmnu', '-cmd'
@@ -175,7 +176,7 @@ RUIN_HARD_EXTRAS = {
     'hard': ['-pd', '-sfd', '3', '-rls', '53,42,50,51', '-nosaves', 'mid'],
 }
 RUIN_HARD_OVERRIDES = {
-    '-lc': ['-lc', '43'],               # hard level cap at 43 (base: soft cap 43, width 5)
+    '-lc': ['-lc', '48'],               # hard level cap at 48 (base: soft cap 48, width 10)
 }
 
 # '-ruin easy' (the relaxed difficulty): a tutorial for ruination maps - the
@@ -241,7 +242,7 @@ def value_count(flags, i):
     """
     The number of value tokens after the flag at flags[i]: its FLAGS_WITH_ARGS
     count, cut short at the next flag token, so a flag can be given fewer values
-    than its most (hard's one-value '-lc 43' against the base '-lc 43 5').
+    than its most (hard's one-value '-lc 48' against the base '-lc 48 10').
     """
     count = 0
     for token in flags[i + 1:i + 1 + FLAGS_WITH_ARGS.get(flags[i], 0)]:

@@ -45,9 +45,9 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertIn("-pd", argv)
         self.assertEqual(value_after(argv, "-sfd"), ["3"])
         self.assertIn("-cg", argv)
-        # a hard level cap at 43: one value, and the flag after it is intact
+        # a hard level cap at 48: one value, and the flag after it is intact
         at = argv.index("-lc")
-        self.assertEqual(argv[at + 1], "43")
+        self.assertEqual(argv[at + 1], "48")
         self.assertTrue(argv[at + 2].startswith("-"), argv[at + 2])
         self.assertEqual(argv.count("-lc"), 1)
         # '-no lc' still removes it cleanly
@@ -127,15 +127,16 @@ class TestRuinPreprocessor(unittest.TestCase):
         ids, percents = ids.split("."), percents.split(".")
         self.assertEqual(len(ids), len(percents))
         self.assertEqual(percents[:3], ["90", "90", "90"])
-        # every skill declared at 24%, Possess (28) at 12%
+        # every skill declared at 24%, Possess (28) and Shock (27) at 12%
         skills = dict(zip(ids[3:], percents[3:]))
         self.assertEqual(len(skills), 21)
         self.assertEqual(skills.pop("28"), "12")
+        self.assertEqual(skills.pop("27"), "12")
         self.assertEqual(set(skills.values()), {"24"})
         # declared skills cannot also be excluded, and -com would reserve the slots
         self.assertNotIn("-rec", argv)
         self.assertNotIn("-com", argv)
-        self.assertEqual(value_after(argv, "-lc", 2), ["43", "5"])
+        self.assertEqual(value_after(argv, "-lc", 2), ["48", "10"])
         # '-no lc' removes the cap with both of its values
         argv = expand(["wc.py", "-ruin", "-no", "lc"])
         self.assertNotIn("-lc", argv)

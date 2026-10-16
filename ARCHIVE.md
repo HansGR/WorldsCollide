@@ -2632,7 +2632,9 @@ whatever their percent (about 16-17 skill slots for 21 skills); the main
 tier's percent sets how many slots are left for the unique draft, and so how
 often the lower-tier Possess (and roll-only Morph) appear. Measured with the
 real code (20,000 seeds): 12/11 gives Possess 67% vs 80%; 24/12 gives 40% vs
-81% (Morph 73%).
+81% (Morph 73%). Since 2026-10-16 Shock shares Possess's 12% tier (players
+asked for both at half the seeds of the rest): Possess 41.1%, Shock 42.0%,
+others 82.7% (0.50x / 0.51x; Morph 75.7%).
 
 Expensive checks (2026-10-15): Tzen's thief and both Auction House slots are
 `BONUS_ESPER_CHECKS` (`data/ruin_constants.py`). They stay mapped and can hold
@@ -2721,9 +2723,11 @@ Continent 1/3 and the Veldt are character/esper slots in their events but were
 listed with ITEM. Fixed in `ROOM_REWARD`; `tests/test_ruin_item_rewards.py`
 compares every planner type with its event slot when `ff3.smc` is present.
 
-Level cap by mode: standard `-ruin` injects a soft cap `-lc 43 5`, `-ruin hard`
-a hard cap `-lc 43` (`RUIN_HARD_OVERRIDES`), and `-ruin easy` none
-(`RUIN_EASY_OVERRIDES` drops it). The injector reads a flag's values up to the
+Level cap by mode: standard `-ruin` injects a soft cap `-lc 48 10`, `-ruin hard`
+a hard cap `-lc 48` (`RUIN_HARD_OVERRIDES`), and `-ruin easy` none
+(`RUIN_EASY_OVERRIDES` drops it). Until 2026-10-16 these were `-lc 43 5` /
+`-lc 43`; players found the 43 soft cap too sharp and too early for late-game
+strategies. The injector reads a flag's values up to the
 next flag token (`value_count`), so an override may give fewer values than the
 `FLAGS_WITH_ARGS` maximum.
 
