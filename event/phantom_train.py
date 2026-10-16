@@ -18,6 +18,9 @@ class PhantomTrain(Event):
 
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
+        if self.args.ruination_mode:
+            # ruination: the first win at the smokestack also gives an item
+            self.smokestack_reward = self.add_reward(RewardType.ITEM)
 
     def init_event_bits(self, space):
         space.write(
@@ -67,6 +70,8 @@ class PhantomTrain(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+        if self.args.ruination_mode:
+            self.log_reward(self.smokestack_reward, suffix = " (smokestack boss)")
 
     def add_gating_condition(self):
         # use deleted auto walk to forest spring event
@@ -525,6 +530,23 @@ class PhantomTrain(Event):
 
         src += [
             "AFTER_REWARD",
+        ]
+        if self.args.ruination_mode:
+            # the smokestack boss's own item, on the first win only (a repeat fight, e.g. to
+            # suplex the train, branches straight to the world map exit instead of here; the
+            # bit check keeps it to one item regardless). The screen may still be dark if the
+            # reward above was skipped, so fade in first.
+            item = self.smokestack_reward.id
+            src += [
+                field.BranchIfEventBitSet(event_bit.DEFEATED_PHANTOM_TRAIN, "AFTER_SMOKESTACK_ITEM"),
+                field.FadeInScreen(),
+                field.WaitForFade(),
+                field.AddItem(item),
+                field.Dialog(self.items.get_receive_dialog(item)),
+                field.FinishCheck(),
+                "AFTER_SMOKESTACK_ITEM",
+            ]
+        src += [
             field.SetEventBit(event_bit.DEFEATED_PHANTOM_TRAIN),
             field.SetEventBit(npc_bit.GHOST_SHOP_PHANTOM_FOREST),
             field.ClearEventBit(npc_bit.PHANTOM_TRAIN_SAVE_POINT),

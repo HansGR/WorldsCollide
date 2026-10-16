@@ -2725,13 +2725,10 @@ that guard them are often optional:
   tile is free: down to (30,14), right up the top flight to (34,11), up to
   (34,10), left to (33,10), and up into the 14F door (619).
 
-  The 10F door (614) is different. Entered from its side, the party lands on a
-  ledge, (30..35,22) plus (31,23), whose only exit is 614 itself; stepping up
-  off the ledge is the door tile. The ledge can be reached from above (from
-  615, the stairs lead down onto it), but not the other way round. This holds
-  both with the hub wired to 614 and with the vanilla pairing (stairwell 636 to
-  614, `-maptest ZOZb19 ZOZb08`). `ZOZb08` lists 614, 615 and 619 as one room,
-  so a branch that enters by 614 cannot reach 615 or 619. Not changed here.
+  The 10F door (614) also connects: a staircase climbs from its ledge to 12F
+  and Dadaluma, so `ZOZb08` is one room as defined (confirmed in play; an
+  emulator walk on 2026-10-16 missed the staircase and wrongly called the
+  ledge a dead end).
 - **Sealed Gate terminus boss** (map 0x187, room `HUB52-ruin`). The gate's
   reward slot, formerly character/esper/item, is item-only in ruination. Its
   ruination script was never installed, but the backfill could still put a
@@ -2739,10 +2736,26 @@ that guard them are often optional:
   given after the post-battle `FadeInScreen` + `WaitForFade`, before the party
   turns to the gate and it opens.
 
-Neither slot is in the planner (`ROOM_REWARD`). Both are filled by the
+- **Phantom Train smokestack boss** (added 2026-10-16). `PhantomTrain.init_rewards`
+  adds an ITEM slot, `smokestack_reward`, in ruination. The first smokestack
+  win runs the "ensure reward" script (`phantom_train_mod`, reached from
+  CB/BA06): the main reward if the caboose hasn't given it yet (as in classic
+  WC, so the smokestack still gives the main reward when fought first), then,
+  if `DEFEATED_PHANTOM_TRAIN` is still clear, `FadeInScreen` + `WaitForFade`,
+  the item, its dialog and `FinishCheck`, then the existing exit. Repeat
+  fights (for the Suplex A Train objective) take the `door_rando_mod` branch
+  at the smokestack, which fights the vanilla GhostTrain pack and goes
+  straight to the exit, so the item comes once. Checked by the compiled
+  bytes (bit 0x192 skip, bit 0x03B skip, `96 5C 80 xx`, dialog, FinishCheck);
+  play-test seed `-s 76 -ruin -debug -debug_dest PHT02-ruin PHT08 PHT12`
+  (Sabin starts; all three rooms off the school's middle door). Note the
+  smokestack event also needs map bits 0x1B0/0x1B4 (set in the locomotive)
+  besides the `pt2` switches and Sabin.
+
+None of these slots is in the planner (`ROOM_REWARD`). Both are filled by the
 `Events.ruination_mod` backfill and stay out of the `-rirc` math, like every
-item-only slot. The spoiler lists them as "Item (Dadaluma)" and
-"Item (terminus boss)". In the emulator, the item arrives 45 frames after the
+item-only slot. The spoiler lists them as "Item (Dadaluma)",
+"Item (terminus boss)" and "Item (smokestack boss)". In the emulator, the item arrives 45 frames after the
 battle, with the map on screen, and at the gate the opening animation plays
 once the dialog closes. The regression scenario `ruin_boss_items` walks both
 for real on one seed, `-ruin -maptest ZOZb08@615/619 HUB52-ruin` (the
