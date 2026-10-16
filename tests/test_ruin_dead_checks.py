@@ -15,10 +15,12 @@ def parse_flags(*flags):
 
 class TestDeadCheckChance(unittest.TestCase):
     def test_standard_rate(self):
-        # vanilla WC's item share: 1 - (14 - start chars + 27 - start espers) / 62
-        self.assertAlmostEqual(RC.standard_dead_check_chance(3), 1 - 38 / 62)
-        self.assertAlmostEqual(RC.standard_dead_check_chance(4), 1 - 37 / 62)
-        self.assertAlmostEqual(RC.standard_dead_check_chance(3, 2), 1 - 36 / 62)
+        # vanilla WC's item share on mixed slots (item-only slots left out):
+        # (50 - (14 - start chars + 27 - start espers)) / 44
+        self.assertAlmostEqual(RC.standard_dead_check_chance(1), 10 / 44)    # vanilla's own start
+        self.assertAlmostEqual(RC.standard_dead_check_chance(3), 12 / 44)
+        self.assertAlmostEqual(RC.standard_dead_check_chance(4), 13 / 44)
+        self.assertAlmostEqual(RC.standard_dead_check_chance(3, 2), 14 / 44)
         self.assertEqual(RC.standard_dead_check_chance(14, 27), 1.0)
 
     def test_flag(self):

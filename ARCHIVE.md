@@ -2662,13 +2662,18 @@ chosen as the target is spent too (two hub doors paired, as in step 5). The
 
 `-rdcc PERCENT` (`--ruination-dead-check-chance`): when the planner claims a
 check that can hold an item and a character or esper, it is made an item with
-this chance. Default: vanilla WC's item share,
-`1 - (14 - starting characters + 27 - starting espers) / 62`
-(`data/ruin_constants.standard_dead_check_chance`; 62 = reward slots in a
-vanilla `-cg` build: 13 characters + 27 espers + 22 items; starting espers are
-rolled after planning, so the midpoint of `-stesp` stands in). That is 38.7%
-with three starting characters, 40.3% with four. `-rdcc 0` draws nothing and is
-the previous planner exactly (identical plans on 300 fixed RNG streams).
+this chance. Default: vanilla WC's item share on the slots that can be dead,
+`(50 - (14 - starting characters + 27 - starting espers)) / 44`
+(`data/ruin_constants.standard_dead_check_chance`). A vanilla `-cg` build has 62
+reward slots: 33 character/esper/item, 11 esper/item, 6 character/esper and 12
+item-only. Item-only slots can never be dead, so they stay out (2026-10-16; the
+first version divided by all 62). The characters and espers fill the 50
+character/esper-capable slots, the 6 character/esper-only ones always take one,
+and the leftover items land on the 44 mixed slots. Starting espers are rolled
+after planning, so the midpoint of `-stesp` stands in. The default is 22.7% for
+vanilla's one-character start, 27.3% with three starting characters, 29.5% with
+four. `-rdcc 0` draws nothing and is the previous planner exactly (identical
+plans on 300 fixed RNG streams).
 
 An item roll happens only while the game keeps enough checks for every
 character and esper still to place (`_dead_check_affordable`): the unclaimed
@@ -2677,11 +2682,11 @@ a bonus check, reachable with the game's characters - must still cover the
 characters left plus the espers still required. Reserve areas pulled in later
 add their usable checks. If the map still runs out of checks
 (`_add_reserve_checks`, active only above 0), a reserve area is pulled onto the
-branch with the fewest rewards. Measured (full builds, 400 standard / 200 easy
-/ 200 hard): every seed builds; 18.3 accessible checks per standard seed
-(14.4 at `-rdcc 0`), 5.2 dead (28% of accessible checks); easy 14.8 and 4.9;
-`-rdcc 22.7` (vanilla's item share among slots that could hold a character or
-esper) gives 16.4 and 3.0. Plans need 1.6 attempts on average (1.4 at 0).
+branch with the fewest rewards. Measured at the default (full builds, 400
+standard / 200 easy / 200 hard): every seed builds; 17.0 accessible checks per
+standard seed (14.4 at `-rdcc 0`) with 3.7 dead (25% of item-capable checks);
+easy 13.6 and 3.4; hard 17.1 and 3.6. At the first default (38.7%) a standard
+seed had 18.3 and 5.2.
 
 The dead rolls exposed planner reward types the events don't have: Floating
 Continent 1/3 and the Veldt are character/esper slots in their events but were

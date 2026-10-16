@@ -126,17 +126,21 @@ ROOM_REWARD = {
 # can still hold a bonus esper or item.
 BONUS_ESPER_CHECKS = {'Tzen', 'Auction House_1', 'Auction House_2'}
 
-# Reward slots in vanilla WC (-cg): every event reward, the starting party's
-# characters not included (13 characters + 27 espers + 22 items in a -cg build).
-# The standard dead-check chance is the share of these that end up items:
-# 1 - (14 - starting characters + 27 - starting espers) / VANILLA_REWARD_SLOTS
-VANILLA_REWARD_SLOTS = 62
+# Vanilla WC (-cg) reward slots, the starting party's characters not included:
+# 62 slots = 33 character/esper/item + 11 esper/item + 6 character/esper +
+# 12 item-only. Item-only slots can never be dead checks, so they stay out of
+# the standard rate. The characters and espers fill the 50 character/esper-capable
+# slots; the 6 character/esper-only ones always take one, so the items left over
+# land on the 44 mixed slots. The standard dead-check chance is that share:
+# (50 - (14 - starting characters + 27 - starting espers)) / 44
+VANILLA_CHAR_ESPER_SLOTS = 50
+VANILLA_MIXED_SLOTS = 44         # of those, the ones that can also hold an item
 ALL_ESPER_COUNT = 27
 
 
 def standard_dead_check_chance(starting_characters, starting_espers=0):
     usable = len(ALL_CHARACTERS) - starting_characters + ALL_ESPER_COUNT - starting_espers
-    return min(1.0, max(0.0, 1 - usable / VANILLA_REWARD_SLOTS))
+    return min(1.0, max(0.0, (VANILLA_CHAR_ESPER_SLOTS - usable) / VANILLA_MIXED_SLOTS))
 
 # HOW to deal with cross-branch transport?
 #(1) don't allow it.  Force certain areas to be in the same branch:

@@ -94,9 +94,10 @@ def parse(parser):
                        metavar="PERCENT",
                        help="Ruination mode: chance that a check able to hold a character or esper "
                             "holds an item instead (a dead check). Default: the vanilla WC rate, "
-                            "1 - (14 - starting characters + 27 - starting espers) / 62 reward slots "
-                            "(about 39%% with three starting characters). 0 never makes a dead check "
-                            "on purpose")
+                            "(50 - (14 - starting characters + 27 - starting espers)) / 44: of vanilla's 50 "
+                            "character/esper-capable reward slots, the share of the 44 that can also hold "
+                            "an item left with items (about 27%% with three starting characters). 0 never "
+                            "makes a dead check on purpose")
 
     doors.add_argument("-rce", "--required-characters-espers", type=str, default=None,
                        help="Ruination mode: number of characters and espers required to be obtainable, "
