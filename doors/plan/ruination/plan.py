@@ -63,15 +63,15 @@ def plan_ruination(args, rng, characters):
     # One draw off the shared stream keys the whole retry sequence, so the
     # planning window stays contiguous and deterministic per seed.
     base = rng.random()
-    # -rdcc: chance a character/esper-capable check is made an item. Default:
+    # -rirc: chance a character/esper-capable check is made an item. Default:
     # vanilla WC's item share for this start (the starting espers are rolled
     # after planning, so their expected count stands in)
-    if getattr(args, 'ruination_dead_check_chance', None) is None:
+    if getattr(args, 'ruination_item_reward_chance', None) is None:
         expected_espers = (getattr(args, 'starting_espers_min', 0)
                            + getattr(args, 'starting_espers_max', 0)) / 2
-        dead_check_chance = RC.standard_dead_check_chance(len(party_names), expected_espers)
+        item_reward_chance = RC.standard_item_reward_chance(len(party_names), expected_espers)
     else:
-        dead_check_chance = args.ruination_dead_check_chance / 100
+        item_reward_chance = args.ruination_item_reward_chance / 100
 
     last_error = None
     for attempt in range(MAX_ATTEMPTS):
@@ -86,7 +86,7 @@ def plan_ruination(args, rng, characters):
             require_towns=bool(getattr(args, 'ruination_require_towns', False)),
             auction_max_espers=(0 if getattr(args, 'no_free_characters_espers', False)
                                 else getattr(args, 'auction_max_espers', 2)),
-            dead_check_chance=dead_check_chance,
+            item_reward_chance=item_reward_chance,
             blitz_characters=blitz,
             # The esper pool is untouched at planning time (ruination is its
             # first consumer), so the full pool size is the truth here.

@@ -13,25 +13,25 @@ def parse_flags(*flags):
     return subprocess.run([sys.executable, os.path.join("args", "arguments.py"), "-i", "rom.smc", *flags],
                           cwd = REPO_ROOT, capture_output = True, text = True, timeout = 60)
 
-class TestDeadCheckChance(unittest.TestCase):
+class TestItemRewardChance(unittest.TestCase):
     def test_standard_rate(self):
         # vanilla WC's item share on mixed slots (item-only slots left out):
         # (50 - (14 - start chars + 27 - start espers)) / 44
-        self.assertAlmostEqual(RC.standard_dead_check_chance(1), 10 / 44)    # vanilla's own start
-        self.assertAlmostEqual(RC.standard_dead_check_chance(3), 12 / 44)
-        self.assertAlmostEqual(RC.standard_dead_check_chance(4), 13 / 44)
-        self.assertAlmostEqual(RC.standard_dead_check_chance(3, 2), 14 / 44)
-        self.assertEqual(RC.standard_dead_check_chance(14, 27), 1.0)
+        self.assertAlmostEqual(RC.standard_item_reward_chance(1), 10 / 44)    # vanilla's own start
+        self.assertAlmostEqual(RC.standard_item_reward_chance(3), 12 / 44)
+        self.assertAlmostEqual(RC.standard_item_reward_chance(4), 13 / 44)
+        self.assertAlmostEqual(RC.standard_item_reward_chance(3, 2), 14 / 44)
+        self.assertEqual(RC.standard_item_reward_chance(14, 27), 1.0)
 
     def test_flag(self):
-        for value, written in (("0", "-rdcc 0"), ("25", "-rdcc 25"), ("12.5", "-rdcc 12.5")):
-            result = parse_flags("-ruin", "custom", "-rdcc", value)
+        for value, written in (("0", "-rirc 0"), ("25", "-rirc 25"), ("12.5", "-rirc 12.5")):
+            result = parse_flags("-ruin", "custom", "-rirc", value)
             self.assertEqual(result.returncode, 0, msg = result.stderr)
             self.assertIn(written, result.stdout)
         result = parse_flags("-ruin", "custom")
-        self.assertNotIn("-rdcc", result.stdout)
+        self.assertNotIn("-rirc", result.stdout)
         for bad in ("-1", "101"):
-            result = parse_flags("-ruin", "custom", "-rdcc", bad)
+            result = parse_flags("-ruin", "custom", "-rirc", bad)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("must be a percent from 0 to 100", result.stderr)
 
