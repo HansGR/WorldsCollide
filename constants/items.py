@@ -355,6 +355,31 @@ premium_items = [
     "Exp. Egg",
 ]
 
+# ruination check rewards (-ir ruin)
+ruin_items = [
+    "ValiantKnife",
+    "Illumina",
+    "Ragnarok",
+    "Atma Weapon",
+    "Fixed Dice",
+    "Flame Shld",
+    "Ice Shld",
+    "Thunder Shld",
+    "Force Shld",
+    "Aegis Shld",
+    "Cat Hood",
+    "Minerva",
+    "Snow Muffler",
+    "Force Armor",
+    "BehemothSuit",
+    "Genji Glove",
+    "Offering",
+    "Dragon Horn",
+    "Economizer",
+    "Hero Ring",
+    "Megalixir",
+]
+
 junk_weapons = [
     "Dirk",
     "MithrilKnife",
