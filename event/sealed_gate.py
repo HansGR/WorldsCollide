@@ -18,7 +18,8 @@ class SealedGate(Event):
         return self.characters.TERRA
 
     def init_rewards(self):
-        if self.args.no_free_characters_espers:
+        # ruination: the gate is a branch terminus whose boss gives an item
+        if self.args.no_free_characters_espers or self.args.ruination_mode:
             self.reward = self.add_reward(RewardType.ITEM)
         else:
             self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
@@ -47,8 +48,9 @@ class SealedGate(Event):
         self.lightning_strike = 0xb3890
 
         if self.args.ruination_mode:
-            # We will use this as an entry point to KT.  Don't set up the reward.
+            # We will use this as an entry point to KT; its boss gives an item.
             self.ruination_mod()
+            self.log_reward(self.reward, suffix = " (terminus boss)")
         else:
             if self.reward.type == RewardType.CHARACTER:
                 self.character_mod(self.reward.id)
@@ -351,6 +353,12 @@ class SealedGate(Event):
             # Play wind song and fade in
             field.StartSongAtVolume(0x39, 0x96),
             field.FadeInScreen(),
+            field.WaitForFade(),
+
+            # Item reward for the boss, before the gate opens
+            field.AddItem(self.reward.id),
+            field.Dialog(self.items.get_receive_dialog(self.reward.id)),
+            field.FinishCheck(),
 
             # Party turns up toward the gate
             field.EntityAct(field_entity.PARTY0, False,

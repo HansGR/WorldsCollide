@@ -2705,6 +2705,34 @@ a hard cap `-lc 43` (`RUIN_HARD_OVERRIDES`), and `-ruin easy` none
 next flag token (`value_count`), so an override may give fewer values than the
 `FLAGS_WITH_ARGS` maximum.
 
+### Ruination boss item rewards (2026-10-16)
+
+Two item-only rewards exist only in ruination. On a shuffled map, the bosses
+that guard them are often optional:
+
+- **Dadaluma** (Zozo, map 0xdd, object 0x1d at (30,14); talk from (31,14)).
+  `Zozo.init_rewards` adds a second, ITEM slot, `dadaluma_reward`. After his
+  battle, CA/96B5 now calls a routine that runs the original
+  `42 1D B9 4B D7 4A 96` (hide him, update his bits, fade the map in), then
+  `AddItem`, the item's "Received" dialog and `FinishCheck`. His show bit, NPC
+  bit 0x34a, is already set at game start, so he is there without any setup.
+- **Sealed Gate terminus boss** (map 0x187, room `HUB52-ruin`). The gate's
+  reward slot, formerly character/esper/item, is item-only in ruination. Its
+  ruination script was never installed, but the backfill could still put a
+  spare character or esper in it, where nobody could reach them. The reward is
+  given after the post-battle `FadeInScreen` + `WaitForFade`, before the party
+  turns to the gate and it opens.
+
+Neither slot is in the planner (`ROOM_REWARD`). Both are filled by the
+`Events.ruination_mod` backfill and stay out of the `-rirc` math, like every
+item-only slot. The spoiler lists them as "Item (Dadaluma)" and
+"Item (terminus boss)". In the emulator, the item arrives 45 frames after the
+battle, with the map on screen, and at the gate the opening animation plays
+once the dialog closes. The regression scenario is `ruin_boss_items`. The
+extra slots add RNG draws, so every ruination seed's rewards reshuffled, but
+the maps did not: the ruination goldens were re-recorded and the non-ruination
+ones are unchanged.
+
 **Changing any -ruin default reshuffles every seed** (`seed.py`:
 `random.seed(seed + flags)`), maps included: re-record the golden ruination
 configs, and expect fixed-seed regression scenarios to lose their routes. The

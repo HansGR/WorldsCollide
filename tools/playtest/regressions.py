@@ -528,6 +528,78 @@ def scenario_phoenix_two_party_collision(vanilla, workdir):
             f"at {h.party_xy} (no soft-lock)")
 
 
+def scenario_ruin_boss_items(vanilla, workdir):
+    """Ruination's item-only boss rewards: beating Dadaluma (Zozo) and the
+    Sealed Gate terminus boss each hands over the spoiler's item, with its
+    "Received" dialog as soon as the map is back on screen (at the gate,
+    before the gate-opening animation, which waits on the dialog).
+
+    -maptest wires branch 0's hub door straight into each room; the party is
+    placed beside the boss, the battle is won with monsters pinned at 1 HP,
+    and the item must arrive within a few seconds of the battle ending."""
+    import re
+    from data.rooms import room_data
+    from constants.items import name_id
+
+    def reward_item(spoiler, suffix):
+        for line in open(spoiler):
+            m = re.search(r'([A-Za-z][\w\'\- .]*?) \(' + re.escape(suffix) + r'\)', line)
+            if m:
+                name = re.split(r', |  +', m.group(1))[-1].strip()
+                return name, name_id[name]
+        raise AssertionError(f"no ({suffix}) reward in the spoiler")
+
+    def count(h, item):
+        for i in range(256):
+            if h.core.wram[0x1869 + i] == item:
+                return h.core.wram[0x1969 + i]
+        return 0
+
+    def in_battle(h):
+        return h.core.wram[0x3ed8] != 0xff
+
+    def win_battle(h, timeout):
+        h.run_until(in_battle, timeout=3000, step=10)
+        for _ in range(0, timeout, 20):
+            if not in_battle(h):
+                return True
+            for s in range(4, 10):
+                if h.core.read_u16(0x3bf4 + 2*s) not in (0, 0xffff):
+                    h.core.write_u16(0x3bf4 + 2*s, 1)
+            for s in range(4):
+                h.core.write_u16(0x3bf4 + 2*s, h.core.read_u16(0x3c1c + 2*s))
+            h.press('A', hold=4, wait=16)
+        return False
+
+    def fight(room, map_id, suffix, xy, face, battle_timeout):
+        rom = build(vanilla, os.path.join(workdir, f"boss_{map_id:x}.smc"), f"-ruin -maptest {room}")
+        name, item = reward_item(rom[:-4] + ".txt", suffix)
+        h = Harness(rom)
+        h.boot_to_game_start()
+        navigate.wait_for_control(h)
+        route.step_door(h, route.ESPER_GATE_TILE)
+        navigate.wait_for_control(h)
+        route.step_door(h, room_data['HUB50-ruin'][0][0])
+        navigate.wait_for_control(h)
+        assert h.map_id == map_id, f"not on map {map_id:#x}: {h.map_id:#x}"
+        have = count(h, item)
+        h.set_party_xy(*xy)
+        h.run(4)
+        h.core.write_u16(0x1f6e, 0)      # no random encounter first
+        h.hold(face, frames=4 if suffix == "Dadaluma" else 20)
+        h.run(4)
+        if suffix == "Dadaluma":
+            h.press('A', hold=4, wait=20)
+        assert win_battle(h, battle_timeout), f"{suffix} battle did not end"
+        h.run_until(lambda hh: count(hh, item) > have, timeout=300, step=5)
+        assert h.map_id == map_id, f"left map {map_id:#x} before the reward"
+        return name
+
+    zozo = fight("ZOZb08", 0xdd, "Dadaluma", (31, 14), 'LEFT', 20000)
+    gate = fight("HUB52-ruin", 0x187, "terminus boss", (8, 21), 'UP', 40000)
+    return f"Dadaluma gave {zozo}; Sealed Gate boss gave {gate}, each right after the map faded in"
+
+
 SCENARIOS = [
     scenario_maxhp_objective,
     scenario_full_heal_objective,
@@ -539,6 +611,7 @@ SCENARIOS = [
     scenario_lite_save_markers,
     scenario_mid_save_quit,
     scenario_unequip_all_away,
+    scenario_ruin_boss_items,
 ]
 
 

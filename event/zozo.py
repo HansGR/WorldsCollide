@@ -9,6 +9,9 @@ class Zozo(Event):
 
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
+        if self.args.ruination_mode:
+            # ruination: beating Dadaluma (often optional on a shuffled map) gives an item
+            self.dadaluma_reward = self.add_reward(RewardType.ITEM)
 
     def init_event_bits(self, space):
         space.write(
@@ -46,6 +49,10 @@ class Zozo(Event):
 
         self.log_reward(self.reward)
 
+        if self.args.ruination_mode:
+            self.dadaluma_item_mod(self.dadaluma_reward.id)
+            self.log_reward(self.dadaluma_reward, suffix = " (Dadaluma)")
+
         self.set_clock_mod()
 
         if self.args.ruination_mode:
@@ -77,6 +84,26 @@ class Zozo(Event):
         space = Reserve(0xa96ae, 0xa96b4, "zozo invoke battle dadaluma", field.NOP())
         space.write(
             field.InvokeBattle(boss_pack_id),
+        )
+
+    def dadaluma_item_mod(self, item):
+        # after the battle the original script hides Dadaluma, updates his bits and fades
+        # the map back in (ca/96b5-ca/96bb), then returns: receive the item once the map is
+        # back on screen
+        src = [
+            Read(0xa96b5, 0xa96bb),
+            field.AddItem(item),
+            field.Dialog(self.items.get_receive_dialog(item)),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "zozo dadaluma item reward")
+        receive_item = space.start_address
+
+        space = Reserve(0xa96b5, 0xa96bc, "zozo after dadaluma battle", field.NOP())
+        space.write(
+            field.Call(receive_item),
+            field.Return(),
         )
 
     def character_mod(self, character):
