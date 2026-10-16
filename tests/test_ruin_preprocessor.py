@@ -30,6 +30,15 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertNotIn("-stesp", argv)
         self.assertEqual(argv[argv.index("-ruin") + 1], "-cg")
 
+    def test_esper_and_item_reward_defaults(self):
+        # standard and hard share the base values; easy overrides the esper ones
+        for mode in ([], ["hard"]):
+            argv = expand(["wc.py", "-ruin"] + mode)
+            self.assertEqual(value_after(argv, "-esr", 2), ["3", "5"])
+            self.assertEqual(value_after(argv, "-ebr"), ["88"])
+            self.assertEqual(value_after(argv, "-ir"), ["ruin"])
+            self.assertEqual(argv.count("-ir"), 1)
+
     def test_hard_adds_extras_after_the_mode_token(self):
         argv = expand(["wc.py", "-ruin", "hard"])
         self.assertEqual(argv[argv.index("-ruin") + 1], "hard")
@@ -62,7 +71,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertEqual(value_after(argv, "-esr", 2), ["5", "5"])
         self.assertEqual(value_after(argv, "-ebr"), ["100"])
         self.assertEqual(value_after(argv, "-gp"), ["12000"])
-        self.assertEqual(value_after(argv, "-ir"), ["premium"])
+        self.assertEqual(value_after(argv, "-ir"), ["ruin"])        # the base ruin preset
         self.assertNotIn("-ssf4", argv)
         self.assertEqual(value_after(argv, "-chrm", 2), ["2", "0"])
         self.assertNotIn("-lc", argv)                    # no level cap

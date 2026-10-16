@@ -16,9 +16,9 @@ class TestItemRewardPresets(unittest.TestCase):
                     self.assertIn(name, name_id)
 
     def test_ruin_preset(self):
-        self.assertEqual(len(ruin_items), 21)
+        self.assertEqual(len(ruin_items), 23)
         self.assertEqual(len(set(ruin_items)), len(ruin_items))
-        for name in ("Hero Ring", "Megalixir", "Economizer", "Aegis Shld"):
+        for name in ("Hero Ring", "Megalixir", "Economizer", "Aegis Shld", "Red Cap", "Red Jacket"):
             self.assertIn(name, ruin_items)
 
 if __name__ == "__main__":

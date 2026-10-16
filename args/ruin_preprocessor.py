@@ -141,7 +141,7 @@ RUIN_DEFAULT_FLAGS = {
 
     # Magic flags
     'magic': [
-        '-esr', '2', '5', '-elrt', '-ebr', '82', '-emprp', '75', '125',
+        '-esr', '3', '5', '-elrt', '-ebr', '88', '-emprp', '75', '125',
         '-nm1', 'random', '-rnl1', '-rns1', '-nm2', 'random', '-rnl2',
         '-rns2', '-nmmi', '-mmprp', '75', '125', '-emi'
     ],
@@ -149,7 +149,7 @@ RUIN_DEFAULT_FLAGS = {
     # Item flags
     'items': [
         '-gp', '6000', '-smc', '3', '-sto', '1', '-ieor', '33', '-ieror', '33',
-        '-ir', 'stronger', '-csb', '10', '18', '-mca', '-stra', '-saw',
+        '-ir', 'ruin', '-csb', '10', '18', '-mca', '-stra', '-saw',
         '-sisr', '20', '-sprp', '75', '125', '-sdm', '4', '-npi', '-sebr', '-sli', '-ssf4',
         '-snsb', '-snee', '-snil', '-ccsr', '20', '-chrm', '7', '0', '-cms', '-nee'
     ],
@@ -194,7 +194,6 @@ RUIN_EASY_OVERRIDES = {
     '-esr': ['-esr', '5', '5'],         # every esper teaches five spells
     '-ebr': ['-ebr', '100'],            # every esper gives a level-up bonus
     '-gp': ['-gp', '12000'],            # double starting gp
-    '-ir': ['-ir', 'premium'],          # only the most valuable item rewards
     '-ssf4': [],                        # standard 1/2 sell prices instead of 1/4
     '-chrm': ['-chrm', '2', '0'],       # rare monsters-in-a-box (base 7%)
     '-lc': [],                          # no level cap
