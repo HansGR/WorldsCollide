@@ -370,7 +370,6 @@ ruin_items = [
     "Red Cap",
     "Cat Hood",
     "Minerva",
-    "Red Jacket",
     "Snow Muffler",
     "Force Armor",
     "BehemothSuit",

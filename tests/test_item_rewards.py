@@ -16,10 +16,11 @@ class TestItemRewardPresets(unittest.TestCase):
                     self.assertIn(name, name_id)
 
     def test_ruin_preset(self):
-        self.assertEqual(len(ruin_items), 23)
+        self.assertEqual(len(ruin_items), 22)
         self.assertEqual(len(set(ruin_items)), len(ruin_items))
-        for name in ("Hero Ring", "Megalixir", "Economizer", "Aegis Shld", "Red Cap", "Red Jacket"):
+        for name in ("Hero Ring", "Megalixir", "Economizer", "Aegis Shld", "Red Cap"):
             self.assertIn(name, ruin_items)
+        self.assertNotIn("Red Jacket", ruin_items)   # dropped: too many defensive items
 
 if __name__ == "__main__":
     unittest.main()
