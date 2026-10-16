@@ -122,19 +122,20 @@ def plan_ruination(args, rng, characters):
 
 def _apply_maptest(full_map, maptest_rooms):
     """TESTING ONLY (-maptest): rewire the first branch's hub door straight
-    into the listed rooms, chained in order via each room's first two doors.
-    The original partner of the hub door is left dangling and no rules or
+    into the listed rooms, chained in order: each room is entered by its
+    first door (or ROOM@IN) and leads on by its first other door (or
+    ROOM@.../OUT) to the next room's entry. The original partner of the hub door is left dangling and no rules or
     verifiers re-run -- the resulting seed is likely uncompletable and
     exists purely to reach a room's events without routing a full seed."""
     from data.rooms import room_data
+    from doors.plan.ruination.maptest import maptest_doors
     hub_door = room_data['HUB50-ruin'][0][0]        # branch 0's hub door
     pairs = full_map[0]
+    last = len(maptest_rooms) - 1
+    rooms = [maptest_doors(spec, chained = i < last) for i, spec in enumerate(maptest_rooms)]
 
-    def doors_of(rid):
-        return [d for d in room_data[rid][0] if isinstance(d, int)]
-
-    # point the hub door at the first room's first door
-    target = doors_of(maptest_rooms[0])[0]
+    # point the hub door at the first room's entry door
+    target = rooms[0][1]
     pairs[:] = [p for p in pairs if target not in p]
     for p in pairs:
         if p[0] == hub_door:
@@ -146,8 +147,8 @@ def _apply_maptest(full_map, maptest_rooms):
     else:
         pairs.append([hub_door, target])
 
-    # chain any further rooms: room[i] second door <-> room[i+1] first door
-    for a, b in zip(maptest_rooms, maptest_rooms[1:]):
-        d_out, d_in = doors_of(a)[1], doors_of(b)[0]
+    # chain any further rooms: room[i]'s exit door <-> room[i+1]'s entry door
+    for a, b in zip(rooms, rooms[1:]):
+        d_out, d_in = a[2], b[1]
         pairs[:] = [p for p in pairs if d_out not in p and d_in not in p]
         pairs.append([d_out, d_in])

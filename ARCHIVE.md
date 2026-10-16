@@ -2710,12 +2710,28 @@ next flag token (`value_count`), so an override may give fewer values than the
 Two item-only rewards exist only in ruination. On a shuffled map, the bosses
 that guard them are often optional:
 
-- **Dadaluma** (Zozo, map 0xdd, object 0x1d at (30,14); talk from (31,14)).
+- **Dadaluma** (Zozo, map 0xdd, object 0x1d at (30,14)).
   `Zozo.init_rewards` adds a second, ITEM slot, `dadaluma_reward`. After his
   battle, CA/96B5 now calls a routine that runs the original
-  `42 1D B9 4B D7 4A 96` (hide him, update his bits, fade the map in), then
-  `AddItem`, the item's "Received" dialog and `FinishCheck`. His show bit, NPC
-  bit 0x34a, is already set at game start, so he is there without any setup.
+  `42 1D B9 4B D7 4A 96` (hide him, update his bits, start the fade-in), then
+  `WaitForFade`, `AddItem`, the item's "Received" dialog and `FinishCheck`.
+  Without the wait, the dialog box opened while the screen was still dark. His
+  show bit, NPC bit 0x34a, is already set at game start, so he is there
+  without any setup.
+
+  Walking route from the 12F door (615; the party lands at (35,16)): left to
+  (30,16), down to (30,17), right up the flight to (34,14), up to (34,13),
+  left along the walkway to (30,13), then face down and talk. Afterwards his
+  tile is free: down to (30,14), right up the top flight to (34,11), up to
+  (34,10), left to (33,10), and up into the 14F door (619).
+
+  The 10F door (614) is different. Entered from its side, the party lands on a
+  ledge, (30..35,22) plus (31,23), whose only exit is 614 itself; stepping up
+  off the ledge is the door tile. The ledge can be reached from above (from
+  615, the stairs lead down onto it), but not the other way round. This holds
+  both with the hub wired to 614 and with the vanilla pairing (stairwell 636 to
+  614, `-maptest ZOZb19 ZOZb08`). `ZOZb08` lists 614, 615 and 619 as one room,
+  so a branch that enters by 614 cannot reach 615 or 619. Not changed here.
 - **Sealed Gate terminus boss** (map 0x187, room `HUB52-ruin`). The gate's
   reward slot, formerly character/esper/item, is item-only in ruination. Its
   ruination script was never installed, but the backfill could still put a
@@ -2728,7 +2744,10 @@ Neither slot is in the planner (`ROOM_REWARD`). Both are filled by the
 item-only slot. The spoiler lists them as "Item (Dadaluma)" and
 "Item (terminus boss)". In the emulator, the item arrives 45 frames after the
 battle, with the map on screen, and at the gate the opening animation plays
-once the dialog closes. The regression scenario is `ruin_boss_items`. The
+once the dialog closes. The regression scenario `ruin_boss_items` walks both
+for real on one seed, `-ruin -maptest ZOZb08@615/619 HUB52-ruin` (the
+`ROOM@IN/OUT` syntax, `doors/plan/ruination/maptest.py`, picks the door each
+`-maptest` room is entered by and the door it chains onward by). The
 extra slots add RNG draws, so every ruination seed's rewards reshuffled, but
 the maps did not: the ruination goldens were re-recorded and the non-ruination
 ones are unchanged.

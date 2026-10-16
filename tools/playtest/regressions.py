@@ -531,17 +531,22 @@ def scenario_phoenix_two_party_collision(vanilla, workdir):
 def scenario_ruin_boss_items(vanilla, workdir):
     """Ruination's item-only boss rewards: beating Dadaluma (Zozo) and the
     Sealed Gate terminus boss each hands over the spoiler's item, with its
-    "Received" dialog as soon as the map is back on screen (at the gate,
-    before the gate-opening animation, which waits on the dialog).
+    "Received" dialog once the map is back on screen (at the gate, before the
+    gate-opening animation, which waits on the dialog).
 
-    -maptest wires branch 0's hub door straight into each room; the party is
-    placed beside the boss, the battle is won with monsters pinned at 1 HP,
-    and the item must arrive within a few seconds of the battle ending."""
+    One seed, walked for real: `-maptest ZOZb08@615/619 HUB52-ruin` sends
+    the hub door to Zozo's 12F landing (door 615) and wires the 14F door (619)
+    to the Sealed Gate. Walk the outside stairs to Dadaluma, win (monsters
+    pinned at 1 HP), take the item, climb past his spot to 619, walk up to
+    the gate's event tile, win, take the item."""
     import re
-    from data.rooms import room_data
     from constants.items import name_id
 
-    def reward_item(spoiler, suffix):
+    rom = build(vanilla, os.path.join(workdir, "boss_items.smc"),
+                "-ruin -maptest ZOZb08@615/619 HUB52-ruin")
+    spoiler = rom[:-4] + ".txt"
+
+    def reward_item(suffix):
         for line in open(spoiler):
             m = re.search(r'([A-Za-z][\w\'\- .]*?) \(' + re.escape(suffix) + r'\)', line)
             if m:
@@ -549,16 +554,16 @@ def scenario_ruin_boss_items(vanilla, workdir):
                 return name, name_id[name]
         raise AssertionError(f"no ({suffix}) reward in the spoiler")
 
-    def count(h, item):
+    def count(item):
         for i in range(256):
             if h.core.wram[0x1869 + i] == item:
                 return h.core.wram[0x1969 + i]
         return 0
 
-    def in_battle(h):
-        return h.core.wram[0x3ed8] != 0xff
+    def in_battle(hh):
+        return hh.core.wram[0x3ed8] != 0xff
 
-    def win_battle(h, timeout):
+    def win_battle(timeout):
         h.run_until(in_battle, timeout=3000, step=10)
         for _ in range(0, timeout, 20):
             if not in_battle(h):
@@ -571,33 +576,75 @@ def scenario_ruin_boss_items(vanilla, workdir):
             h.press('A', hold=4, wait=16)
         return False
 
-    def fight(room, map_id, suffix, xy, face, battle_timeout):
-        rom = build(vanilla, os.path.join(workdir, f"boss_{map_id:x}.smc"), f"-ruin -maptest {room}")
-        name, item = reward_item(rom[:-4] + ".txt", suffix)
-        h = Harness(rom)
-        h.boot_to_game_start()
-        navigate.wait_for_control(h)
-        route.step_door(h, route.ESPER_GATE_TILE)
-        navigate.wait_for_control(h)
-        route.step_door(h, room_data['HUB50-ruin'][0][0])
-        navigate.wait_for_control(h)
-        assert h.map_id == map_id, f"not on map {map_id:#x}: {h.map_id:#x}"
-        have = count(h, item)
-        h.set_party_xy(*xy)
-        h.run(4)
-        h.core.write_u16(0x1f6e, 0)      # no random encounter first
-        h.hold(face, frames=4 if suffix == "Dadaluma" else 20)
-        h.run(4)
-        if suffix == "Dadaluma":
-            h.press('A', hold=4, wait=20)
-        assert win_battle(h, battle_timeout), f"{suffix} battle did not end"
-        h.run_until(lambda hh: count(hh, item) > have, timeout=300, step=5)
-        assert h.map_id == map_id, f"left map {map_id:#x} before the reward"
+    def step_to(button, target, limit=60):
+        # one tile at a time (the party dashes), random encounters held off
+        for _ in range(limit):
+            if h.party_xy == target:
+                return
+            h.core.write_u16(0x1f6e, 0)
+            h.hold(button, frames=1)
+            h.run(12)
+        raise AssertionError(f"{button} never reached {target}: at {h.party_xy}")
+
+    def take_reward(item, name):
+        have = count(item)
+        h.run_until(lambda hh: count(item) > have, timeout=600, step=5)
+        for _ in range(3):
+            h.press('A', hold=4, wait=30)       # close the dialog
         return name
 
-    zozo = fight("ZOZb08", 0xdd, "Dadaluma", (31, 14), 'LEFT', 20000)
-    gate = fight("HUB52-ruin", 0x187, "terminus boss", (8, 21), 'UP', 40000)
-    return f"Dadaluma gave {zozo}; Sealed Gate boss gave {gate}, each right after the map faded in"
+    zozo_name, zozo_item = reward_item("Dadaluma")
+    gate_name, gate_item = reward_item("terminus boss")
+
+    h = Harness(rom)
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    route.step_door(h, route.ESPER_GATE_TILE)
+    navigate.wait_for_control(h)
+    route.step_door(h, room_data_hub_door())
+    navigate.wait_for_control(h)
+    assert (h.map_id, h.party_xy) == (0xdd, (35, 16)), \
+        f"not on Zozo's 12F landing: map {h.map_id:#x} at {h.party_xy}"
+
+    # 12F landing -> left end, down a step, up the flight, up, along to above Dadaluma
+    for button, target in (('LEFT', (30, 16)), ('DOWN', (30, 17)), ('RIGHT', (34, 14)),
+                           ('UP', (34, 13)), ('LEFT', (30, 13))):
+        step_to(button, target)
+    h.core.write_u16(0x1f6e, 0)
+    h.hold('DOWN', frames=8)                      # face him (30,14); he blocks the step
+    h.run(4)
+    assert h.party_xy == (30, 13), f"walked past Dadaluma's spot: {h.party_xy}"
+    h.press('A', hold=4, wait=20)
+    assert win_battle(20000), "Dadaluma battle did not end"
+    take_reward(zozo_item, zozo_name)
+    assert h.map_id == 0xdd, f"left Zozo before the reward: {h.map_id:#x}"
+
+    # his spot is free now: down onto it, up the top flight, along to the 14F door
+    for button, target in (('DOWN', (30, 14)), ('RIGHT', (34, 11)), ('UP', (34, 10)),
+                           ('LEFT', (33, 10))):
+        step_to(button, target)
+    for _ in range(30):
+        h.hold('UP', frames=4)
+        if h.map_id != 0xdd:
+            break
+    navigate.wait_for_control(h)
+    assert h.map_id == 0x187, f"door 619 did not lead to the Sealed Gate: {h.map_id:#x}"
+
+    for _ in range(100):                          # up the path to the event tile
+        h.core.write_u16(0x1f6e, 0)
+        h.hold('UP', frames=4)
+        if in_battle(h):
+            break
+    assert win_battle(40000), "Sealed Gate battle did not end"
+    take_reward(gate_item, gate_name)
+    assert h.map_id == 0x187, f"left the Sealed Gate before the reward: {h.map_id:#x}"
+    return (f"walked Zozo 12F -> Dadaluma ({zozo_name}) -> 14F door -> Sealed Gate "
+            f"boss ({gate_name}); each item right after the map faded back in")
+
+
+def room_data_hub_door():
+    from data.rooms import room_data
+    return room_data['HUB50-ruin'][0][0]          # branch 0's hub door (-maptest target)
 
 
 SCENARIOS = [

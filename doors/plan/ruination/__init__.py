@@ -18,6 +18,7 @@ character recruited on one branch opens locks on every branch). Modules:
                   character-gated-softlock verifier
 - kefka_tower.py  -rkt lane randomizer (joint three-party verification)
 - dream_maze.py   -maze iso internals (rejection-sampled solvable maze)
+- maptest.py      -maptest ROOM[@IN][/OUT] entry parsing (testing only)
 
 The plan is bound to ROM Reward objects in event/ruination_bind.py.
 """

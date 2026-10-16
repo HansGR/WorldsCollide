@@ -92,6 +92,7 @@ class Zozo(Event):
         # back on screen
         src = [
             Read(0xa96b5, 0xa96bb),
+            field.WaitForFade(),
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
             field.FinishCheck(),

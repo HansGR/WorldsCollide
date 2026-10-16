@@ -116,6 +116,8 @@ def parse(parser):
     doors.add_argument("-maptest", "--maptest-rooms", nargs='+', type=str, default=None,
                        help="TESTING ONLY: rewire the first ruination branch door straight into the "
                             "listed room(s), chained in order (each room but the last needs two doors). "
+                            "ROOM@IN/OUT picks the door entered and the door chained onward (either may "
+                            "be left out; default: the room's first and second doors). "
                             "The seed is likely uncompletable -- it exists to test event mechanics in "
                             "rooms without routing a full seed. (use with -ruin)")
 
@@ -141,16 +143,11 @@ def process(args):
     if args.maptest_rooms:
         if args.ruination_mode is None:
             raise ValueError("-maptest requires -ruin")
-        from data.rooms import room_data
-        for rid in args.maptest_rooms:
-            data = room_data.get(rid)
-            if data is None:
-                raise ValueError(f"-maptest: unknown room id {rid!r}")
         # every room but the last needs a second door to chain onward
-        for rid in args.maptest_rooms[:-1]:
-            if len([d for d in room_data[rid][0] if isinstance(d, int)]) < 2:
-                raise ValueError(f"-maptest: {rid!r} has fewer than two doors "
-                                 "and cannot chain to the next room")
+        from doors.plan.ruination.maptest import maptest_doors
+        last = len(args.maptest_rooms) - 1
+        for i, spec in enumerate(args.maptest_rooms):
+            maptest_doors(spec, chained = i < last)
 
     # -rce: characters/espers required to unlock Kefka's Tower (ruination map
     # generation). 'CC.EE' exact or 'cc.cc.ee.ee' min/max ranges; the planner
