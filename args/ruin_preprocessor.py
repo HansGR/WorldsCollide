@@ -107,6 +107,9 @@ RUIN_DEFAULT_FLAGS = {
                    # rewards (not an objective; KT-unlock objectives are
                    # unused in ruination mode)
                    '-rce', '6.9',
+                   # item rewards on character/esper checks only as a rare
+                   # surprise (1%); the boss item-only rewards supply items
+                   '-rirc', '1',
                    '-oa', '59.3.3.11.29.11.30.11.31.10.12.12',
                    '-ob', '30.8.8.3.3.11.6.11.7.11.8.10.12.12',
                    # silent start bonuses: +100 max HP for all, full heal
@@ -227,7 +230,7 @@ RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES, 'hard': RUIN_HARD_OVERRIDES}
 FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-stl': 1, '-stlr': 2, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
-    '-gpm': 1, '-lc': 2, '-oa': 1, '-rce': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
+    '-gpm': 1, '-lc': 2, '-oa': 1, '-rce': 1, '-rirc': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comfr': 1, '-comfru': 1,
     '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,

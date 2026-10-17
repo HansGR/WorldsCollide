@@ -38,6 +38,16 @@ class TestRuinPreprocessor(unittest.TestCase):
             self.assertEqual(value_after(argv, "-ebr"), ["88"])
             self.assertEqual(value_after(argv, "-ir"), ["ruin"])
             self.assertEqual(argv.count("-ir"), 1)
+        # every flagset: item rewards on character/esper checks at 1%
+        for mode in ([], ["hard"], ["easy"]):
+            argv = expand(["wc.py", "-ruin"] + mode)
+            self.assertEqual(value_after(argv, "-rirc"), ["1"])
+            self.assertEqual(argv.count("-rirc"), 1)
+        # '-no rirc' falls back to the vanilla-rate formula; a user value comes
+        # after the injected default, so argparse's last value wins
+        self.assertNotIn("-rirc", expand(["wc.py", "-ruin", "-no", "rirc"]))
+        argv = expand(["wc.py", "-ruin", "-rirc", "25"])
+        self.assertEqual(argv[len(argv) - 1 - argv[::-1].index("-rirc") + 1], "25")
 
     def test_hard_adds_extras_after_the_mode_token(self):
         argv = expand(["wc.py", "-ruin", "hard"])

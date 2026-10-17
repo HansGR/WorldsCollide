@@ -93,7 +93,7 @@ def parse(parser):
     doors.add_argument("-rirc", "--ruination-item-reward-chance", type=float, default=None,
                        metavar="PERCENT",
                        help="Ruination mode: chance that a check able to hold a character or esper "
-                            "holds an item reward instead. Default: the vanilla WC rate, "
+                            "holds an item reward instead (the -ruin flagsets set 1). Without the flag: the vanilla WC rate, "
                             "(50 - (14 - starting characters + 27 - starting espers)) / 44: of vanilla's 50 "
                             "character/esper-capable reward slots, the share of the 44 that can also hold "
                             "an item left with items (about 27%% with three starting characters). 0 turns "

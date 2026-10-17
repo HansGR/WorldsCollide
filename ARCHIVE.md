@@ -2666,6 +2666,13 @@ Named `-rdcc` (`--ruination-dead-check-chance`) for its first day; renamed
 2026-10-16, since "dead check" only means something when collecting characters
 and espers for a Kefka's Tower unlock.
 
+**Flagset default 1% (2026-10-17).** Playtests felt worse without getting all
+the espers, so every `-ruin` flagset (standard, hard, easy) now injects
+`-rirc 1`: an item on a character/esper check is a rare surprise, and items
+come from the ruination-only boss rewards (Dadaluma, Sealed Gate, Phantom
+Train smokestack) instead. The formula below remains the default when the
+flag is absent (`-ruin custom`, `-no rirc`); a user `-rirc` overrides.
+
 `-rirc PERCENT` (`--ruination-item-reward-chance`): when the planner claims a
 check that can hold an item and a character or esper, it is made an item with
 this chance. Default: vanilla WC's item share on the slots that can hold a
