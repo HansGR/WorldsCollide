@@ -39,6 +39,12 @@ class Espers():
         self.name_data = DataArray(self.rom, self.NAMES_START, self.NAMES_END, self.NAME_SIZE)
         self.ability_data = DataArray(self.rom, self.ABILITY_DATA_START, self.ABILITY_DATA_END, AbilityData.DATA_SIZE)
 
+        # a decoy instance only generates plausible data for race builds:
+        # it must not write code patches or touch dialogs
+        self.decoy = False
+        # set by receive_dialogs_mod on the real instance in race builds
+        self.race_receive_dialog = None
+
         self.espers = []
         for esper_index in range(len(self.name_data)):
             esper = Esper(esper_index, self.spells_bonus_data[esper_index], self.name_data[esper_index], self.ability_data[esper_index])
@@ -70,6 +76,19 @@ class Espers():
 
         # remove phunbaba part of received fenrir dialog
         dialogs.set_text(self.receive_dialogs[self.FENRIR],     '<line>     Received the Magicite<line>              “Fenrir.”<end>')
+
+        # race builds: a single shared magicite dialog used by every esper
+        # check.  it names no esper in the rom - the <esper> control code
+        # renders the granted esper's name at runtime (see
+        # instruction/field/race.py esper_name_code), so the text box looks
+        # exactly like vanilla's.
+        self.race_receive_dialog = None
+        if self.args.race:
+            self.race_receive_dialog = self.receive_dialogs[self.SHOAT]
+            dialogs.set_text(self.race_receive_dialog,
+                             '<line>     Received the Magicite<line>              “<reward>.”<end>')
+            from obfuscation import rewards
+            rewards.set_wording("esper", self.race_receive_dialog)
 
     def shuffle_spells(self):
         # to prevent duplicates, get list of spells and sort it by their frequency
@@ -290,7 +309,8 @@ class Espers():
             for esper in self.espers:
                 esper.name = self.args.steveify
 
-        self.receive_dialogs_mod(dialogs)
+        if not self.decoy:
+            self.receive_dialogs_mod(dialogs)
 
         if self.args.esper_spells_shuffle or self.args.esper_spells_shuffle_random_rates:
             self.shuffle_spells()
@@ -328,21 +348,52 @@ class Espers():
             self.equipable_random()
         elif self.args.esper_equipable_balanced_random:
             self.equipable_balanced_random()
-        espers_asm.equipable_mod(self)
+        if not self.decoy:
+            espers_asm.equipable_mod(self)
 
-        if self.args.esper_mastered_icon:
+        if self.args.esper_mastered_icon and not self.decoy:
             espers_asm.mastered_mod(self)
 
         if self.args.permadeath:
             self.phoenix_life3()
 
-        if self.args.esper_multi_summon:
+        if self.args.esper_multi_summon and not self.decoy:
             self.multi_summon()
 
+
+    def _race_relocate(self):
+        # race builds: move the real spell/rate/bonus table into the
+        # obfuscation claim, point the C2/C3 readers at it, and leave a
+        # decoy with the same format and distribution at the vanilla
+        # address.  names/abilities stay in place (not spoilers).
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        # the decoy re-runs the real randomization on a scratch instance.
+        # construction is inside the decoy stream too: __init__ can draw
+        # starting espers from the global rng
+        def make_decoy():
+            scratch = Espers(self.rom, self.args, self.spells, self.characters)
+            scratch.decoy = True
+            scratch.mod(None)
+            return scratch
+        scratch = obfuscation.run_with_decoy_rng(self.args, "espers", make_decoy)
+        for esper_index in range(len(scratch.espers)):
+            scratch.spells_bonus_data[esper_index] = scratch.espers[esper_index].spells_bonus_data()
+        scratch.spells_bonus_data.write()   # decoy lands at the vanilla address
+
+        self.spells_bonus_data.relocate(layout["esper_data"])
+        relocate.patch_esper_readers(layout)
 
     def write(self):
         if self.args.spoiler_log:
             self.log()
+
+        if self.args.race:
+            self._race_relocate()
 
         for esper_index in range(len(self.espers)):
             self.spells_bonus_data[esper_index] = self.espers[esper_index].spells_bonus_data()
@@ -364,7 +415,31 @@ class Espers():
         self.available_espers.remove(rand_esper)
         return rand_esper
 
+    def dialog_name(self, esper):
+        """The esper's name for use inside dialog text.
+
+        Race builds return the <esper> control code instead, so the rom
+        text names nothing and the real name is rendered at display time
+        from $0583.  The caller must make sure $0583 holds this esper -
+        either the grant ran first, or it emits field.name_esper(esper).
+        """
+        if self.args.race:
+            return "<reward>"
+        return self.get_name(esper)
+
     def get_receive_esper_dialog(self, esper):
+        # race builds: every esper check shares one dialog whose text names
+        # no esper; the id it grants travels as an opaque index into the
+        # masked esper-reward table, and <esper> renders the real name at
+        # runtime.  the index is registered here (not reused from the grant)
+        # so the dialog works whether the event shows it before or after
+        # granting - both orders occur in the event scripts.
+        if self.args.race:
+            from obfuscation import rewards
+            from instruction.field.instructions import RewardDialogId
+            item_wording, esper_wording = rewards.wordings()
+            return RewardDialogId(esper_wording, rewards.register("esper", esper),
+                                  item_wording, esper_wording)
         return self.receive_dialogs[esper]
 
     def get_name(self, esper):

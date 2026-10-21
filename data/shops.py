@@ -20,6 +20,10 @@ class Shops():
 
         self.shop_data = DataArray(self.rom, self.DATA_START, self.DATA_END, self.DATA_SIZE)
 
+        # a decoy instance only generates plausible data for race builds:
+        # it must not write code patches or claim sram tracking bytes
+        self.decoy = False
+
         self.shops = []
         self.all_shops = [] # includes inaccesible shops (used for writing out data)
         self.type_shops = {Shop.WEAPON : [], Shop.ARMOR : [], Shop.ITEM : [], Shop.RELIC : [], Shop.VENDOR : []}
@@ -452,6 +456,11 @@ class Shops():
         # this function will not allow the buy menu to be selected if the shop type is empty
         from memory.space import Bank, Reserve, Write
         import instruction.asm as asm
+        from obfuscation import relocate
+
+        # race builds relocate and mask the shop table; this fragment
+        # reads (and decodes) wherever it really is
+        read_shop_item = relocate.read_asm(self.args, "shop_data")
 
         if self.args.shop_limited_inventory:
             # Write the compact_init subroutine first (builds compacted item list
@@ -464,7 +473,7 @@ class Shops():
                 # Check if first ROM item is empty (catches genuinely empty shops)
                 asm.LDX(0x67, asm.DIR),         # x = shop index
                 asm.INX(),                      # skip shop flags byte
-                asm.LDA(0xc47ac0, asm.LNG_X),   # load first item byte
+                *read_shop_item,                # load first item byte
                 asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
                 asm.BNE("OPEN_BUY_MENU"),       # branch if not
                 asm.JSR(0xb66f, asm.ABS),       # buzzer
@@ -488,7 +497,7 @@ class Shops():
             src = [
                 asm.LDX(0x67, asm.DIR),         # x = shop index
                 asm.INX(),                      # skip shop flags byte
-                asm.LDA(0xc47ac0, asm.LNG_X),   # load first item byte
+                *read_shop_item,                # load first item byte
                 asm.CMP(0xff, asm.IMM8),        # is first item slot empty?
                 asm.BNE("OPEN_BUY_MENU"),       # branch if not
                 asm.JSR(0xb66f, asm.ABS),       # buzzer
@@ -549,6 +558,11 @@ class Shops():
         Entry: 8-bit A, 16-bit X/Y (standard menu state).
         """
         import instruction.asm as asm
+        from obfuscation import relocate
+
+        # race builds relocate and mask the shop table; this fragment
+        # reads (and decodes) wherever it really is
+        read_shop_item = relocate.read_asm(self.args, "shop_data")
 
         return [
             # Save caller's registers
@@ -606,7 +620,7 @@ class Shops():
             asm.INC(),                                   # A += 1 (skip flags byte)
             asm.TAX(),                                   # X = ROM data offset
             asm.SEP(0x20),                               # 8-bit A
-            asm.LDA(0xc47ac0, asm.LNG_X),               # load item from ROM
+            *read_shop_item,                            # load item from ROM
             asm.PLX(),                                   # restore write_pos
 
             # Check if empty in ROM
@@ -649,7 +663,8 @@ class Shops():
         ]
 
     def mod(self):
-        self.disable_buy_if_empty()
+        if not self.decoy:
+            self.disable_buy_if_empty()
 
         if self.args.shop_inventory_shuffle_random:
             self.shuffle_random()
@@ -662,7 +677,7 @@ class Shops():
         self.remove_excluded_items()
 
         # Compute pack sizes after inventory is finalized
-        if self.args.shop_limited_inventory:
+        if self.args.shop_limited_inventory and not self.decoy:
             self.compute_pack_sizes()
             all_shop_ids = [shop.id for shop in self.shops]
             self.enable_limited_shops(all_shop_ids)
@@ -695,9 +710,37 @@ class Shops():
 
         section_entries("Shops", lentries, rentries)
 
+    def _race_relocate(self):
+        # race builds: move the real shop table into the obfuscation
+        # claim, point the menu's readers at it, and leave a decoy with
+        # the same format and distribution at the vanilla address.
+        # (see RACE_OBFUSCATION_PLAN.md)
+        import obfuscation
+        from obfuscation import claim, relocate
+
+        layout = claim.layout(self.args)
+
+        scratch = Shops(self.rom, self.args, self.items)
+        scratch.decoy = True
+        obfuscation.run_with_decoy_rng(self.args, "shops", scratch.mod)
+        for shop_index in range(len(scratch.all_shops)):
+            scratch.shop_data[shop_index] = scratch.all_shops[shop_index].data()
+        scratch.shop_data.write()   # decoy lands at the vanilla address
+
+        self.shop_data.relocate(layout["shop_data"])
+
+        # limited inventory replaces the C3/B9AF item load (menus/buy.py
+        # hook_load_item) with a JSL to code that already reads the
+        # effective address, so that vanilla site no longer exists
+        skip = {0x3b9b0} if self.args.shop_limited_inventory else ()
+        relocate.patch_shop_readers(layout, skip)
+
     def write(self):
         if self.args.spoiler_log:
             self.log()
+
+        if self.args.race:
+            self._race_relocate()
 
         for shop_index in range(len(self.all_shops)):
             self.shop_data[shop_index] = self.all_shops[shop_index].data()

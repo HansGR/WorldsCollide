@@ -35,7 +35,9 @@ class PhantomTrain(Event):
         if self.args.character_gating:
             self.add_gating_condition()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -43,6 +45,60 @@ class PhantomTrain(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one wiring for every kind: the esper/item structure (receive at
+        # the caboose ghost), with the recruit happening right there for
+        # a character reward.  the ghost npc record stays the vanilla
+        # ghost; the last-car entrance repaints it for a character
+        slot = self.race_slot(self.reward)
+
+        ghost_npc_id = 0x10
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.HideEntity(ghost_npc_id),
+            field.RefreshEntities(),
+            field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            field.HideEntity(ghost_npc_id),
+            field.RefreshEntities(),
+            field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CB, src, "phantom train caboose race receive reward")
+        receive_reward = space.start_address
+
+        space = Reserve(0xbaafe, 0xbab08, "phantom train caboose reward", field.NOP())
+        space.write(
+            field.Call(receive_reward),
+            field.Return(),
+        )
+
+        space = Reserve(0xbaca0, 0xbacec, "phantom train last car entrance", field.NOP())
+        inside_last_car_entrance_event = space.next_address
+        space.write(
+            field.BranchIfRewardKindNot(slot, "character", "NO_REPAINT"),
+            field.SetRewardSprite(ghost_npc_id, slot),
+            field.SetRewardPalette(ghost_npc_id, slot),
+            "NO_REPAINT",
+            field.ReturnIfEventBitClear(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+            field.HideEntity(ghost_npc_id),
+            field.RefreshEntities(),
+            field.Return(),
+        )
+        self.maps.set_entrance_event(0x98, inside_last_car_entrance_event - EVENT_CODE_START)
 
     def add_gating_condition(self):
         # use deleted auto walk to forest spring event
@@ -406,7 +462,27 @@ class PhantomTrain(Event):
         space = Reserve(0xbb9fb, 0xbb9fe, "phantom train sound and delay before fight", field.NOP())
 
         src = []
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            # both scenes carried, picked at runtime
+            slot = self.race_slot(self.reward)
+            src += [
+                field.BranchIfRewardKindNot(slot, "character", "RACE_ESPER_ITEM"),
+                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                field.AddCheckReward(slot),
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                field.FadeInScreen(),
+                field.FinishCheck(),
+                field.Branch("AFTER_REWARD"),
+
+                "RACE_ESPER_ITEM",
+                field.FadeInScreen(),
+                field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
+                field.ReceiveCheckReward(slot),
+                field.SetEventBit(event_bit.GOT_PHANTOM_TRAIN_REWARD),
+                field.FinishCheck(),
+            ]
+        elif self.reward.type == RewardType.CHARACTER:
             src += [
                 field.BranchIfEventBitSet(event_bit.GOT_PHANTOM_TRAIN_REWARD, "AFTER_REWARD"),
                 field.RecruitAndSelectParty(self.reward.id),

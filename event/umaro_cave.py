@@ -26,7 +26,9 @@ class UmaroCave(Event):
 
         self.umaro_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -34,6 +36,169 @@ class UmaroCave(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind, with the carving
+        # wording, glint and magicite animation selected at runtime so
+        # each kind shows exactly what its non-race build bakes; the
+        # reward is granted after the battle either way.  the scene
+        # animates the umaro npcs by npc id, so after the entrance
+        # repaint the whole vanilla scene works for any character
+        slot = self.race_slot(self.reward)
+
+        # both npc records keep vanilla umaro's sprite - constant
+        # whatever the check holds, so nothing to read out of the rom,
+        # and exactly what non-race esper/item builds show (the yeti
+        # attacks you regardless of the reward).  a character reward
+        # repaints them at map load (for the cave npc that covers the
+        # battle return; the attack scene itself is repainted below)
+        self.race_repaint_npc_entrance(0x11b, self.umaro_cave_npc_id, slot)
+        self.race_repaint_npc_entrance(0x015, self.umaro_wob_npc_id, slot)
+
+        # each kind keeps its non-race carving: the vanilla magicite
+        # wording, glint and rising-magicite animation for an esper, the
+        # item wording for an item, the neutral wording for a character.
+        # the spare wordings ride in dialogs whose own commands every
+        # build removes (1524, "what's with this carving") or leaves
+        # unused in race (1526, the baked receive text)
+        item_carving_dialog = 1524
+        character_carving_dialog = 1526
+        self.dialogs.set_text(item_carving_dialog, "Remove the item from the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+        self.dialogs.set_text(character_carving_dialog, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "esper", "NOT_ESPER"),
+            Read(0xcd6f8, 0xcd6fd),         # chime, the magicite glints
+            field.Branch(0xcd6fe),          # the vanilla magicite wording + choice
+            "NOT_ESPER",
+            field.BranchIfRewardKindNot(slot, "item", "NOT_ITEM"),
+            field.Dialog(item_carving_dialog),
+            field.Branch(0xcd701),          # the yes/no branch
+            "NOT_ITEM",
+            field.Dialog(character_carving_dialog),
+            field.Branch(0xcd701),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race carving")
+        carving = space.start_address
+        space = Reserve(0xcd6f8, 0xcd6fd, "narshe wor umaro carving magicite flash", field.NOP())
+        space.write(
+            field.Branch(carving),
+        )
+
+        # the yes path: an esper replays the rising-magicite animation
+        # (entity 0x12, a static record identical in every build), and
+        # esper/item show the receive dialog before the battle exactly
+        # as their non-race builds do - the grant itself stays after the
+        # battle, as it always was
+        src = [
+            field.BranchIfRewardKind(slot, "character", "YES_DONE"),
+            field.BranchIfRewardKindNot(slot, "esper", "SKIP_ANIMATION"),
+            Read(0xcd709, 0xcd72e),         # the magicite rises from the eye
+            "SKIP_ANIMATION",
+            Read(0xcd72f, 0xcd730),         # got-it sound
+            field.receive_reward_dialog(slot),
+            Read(0xcd734, 0xcd736),         # pause, rumble
+            "YES_DONE",
+            field.Branch(0xcd737),          # the cave shakes, umaro attacks
+        ]
+        space = Write(Bank.CC, src, "umaro cave race carving yes path")
+        yes_path = space.start_address
+        space = Reserve(0xcd709, 0xcd736, "narshe wor get esper from bone carving", field.NOP())
+        space.write(
+            field.Branch(yes_path),
+        )
+
+        # the carving room is only ever entered by the fall from map 0x119
+        # (CC/D989, a scripted load with the entrance-event flag off), so
+        # the entrance repaint above never runs before the attack scene
+        # and the cave npc stomped down as vanilla umaro.  repaint it
+        # between the scene's create (CC/D75B) and show instead.  the
+        # battle return does run the entrance event, which is why the
+        # post-battle scene already showed the character
+        src = [
+            Read(0xcd75b, 0xcd75c),         # create the cave npc
+            field.BranchIfRewardKindNot(slot, "character", "SHOW"),
+            field.SetRewardSprite(self.umaro_cave_npc_id, slot),
+            field.SetRewardPalette(self.umaro_cave_npc_id, slot),
+            "SHOW",
+            Read(0xcd75d, 0xcd765),         # position it, show it, refresh
+            field.Branch(0xcd766),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race attack scene npc look")
+        attack_look = space.start_address
+        space = Reserve(0xcd75b, 0xcd765, "narshe wor umaro attack create/show npc", field.NOP())
+        space.write(
+            field.Branch(attack_look),
+        )
+
+        # umaro's wob appearance plays only for a character reward
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "HIDE_WOB"),
+            Read(0xc3871, 0xc388d),
+            field.Branch(0xc388e),
+            "HIDE_WOB",
+            field.HideEntity(self.umaro_wob_npc_id),
+            field.Branch(0xc388e),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race wob appearance")
+        wob_appearance = space.start_address
+        space = Reserve(0xc3871, 0xc388d, "narshe wob umaro appearance", field.NOP())
+        space.write(
+            field.Branch(wob_appearance),
+        )
+
+        # after the battle: esper/item receive and finish here; a
+        # character continues into the vanilla umaro scene
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+            Read(0xcd77e, 0xcd78e),         # umaro gets back up
+            field.Branch(0xcd791),          # the vanilla umaro scene
+
+            "ESPER_ITEM",
+            field.HideEntity(self.umaro_cave_npc_id),
+            field.SetEventBit(event_bit.RECRUITED_UMARO_WOR),
+            field.ClearEventBit(npc_bit.UMARO_NARSHE_WOR),
+            # the battle ends with the screen faded out; vanilla restores
+            # it right after (CC/D789), which the character arm splices in
+            # via its Read - restore it here too
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            # granted silently: the receive dialog already showed at the
+            # carving, as in non-race esper/item builds
+            field.AddCheckReward(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "umaro cave race post battle")
+        post_battle = space.start_address
+        space = Reserve(0xcd77e, 0xcd790, "narshe wor umaro post battle", field.NOP())
+        space.write(
+            field.Branch(post_battle),
+        )
+
+        # the character path through the vanilla scene (only reached for
+        # a character reward): drop the mog requirements and naming, then
+        # recruit from the slot
+        space = Reserve(0xcd794, 0xcd799, "narshe wor recruit umaro do not require mog", field.NOP())
+        space = Reserve(0xcd79a, 0xcd7a8, "narshe wor add umaro to party", field.NOP())
+        space = Reserve(0xcd7b2, 0xcd7b6, "narshe wor umaro do not change party for mog", field.NOP())
+        space = Reserve(0xcd7d8, 0xcd7db, "narshe wor i'm your boss, kupo!", field.NOP())
+        space = Reserve(0xcd7f5, 0xcd843, "narshe wor name umaro", field.NOP())
+        space.write(
+            field.Branch(space.end_address + 1), # skip nops
+        )
+        space = Reserve(0xcd870, 0xcd884, "narshe wor add umaro", field.NOP())
+        space.write(
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(space.end_address + 1), # skip nops
+        )
+        space = Reserve(0xcd88d, 0xcd894, "narshe wor umaro finish check", field.NOP())
+        space.write(
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+        )
 
     def add_gating_condition(self):
         CLIFF_MOVE_BACK = 0xc37f8

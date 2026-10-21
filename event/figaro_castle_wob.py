@@ -24,6 +24,13 @@ class FigaroCastleWOB(Event):
         self.edgar_npc_id = 0x10
         self.edgar_npc = self.maps.get_npc(0x03a, self.edgar_npc_id)
 
+        if self.args.race:
+            self.guard_mod()
+            self.race_reward_mod()
+            self.shop_mod()
+            self.log_reward(self.reward)
+            return
+
         if self.args.character_gating:
             self.add_gating_condition()
 
@@ -37,6 +44,55 @@ class FigaroCastleWOB(Event):
         self.shop_mod()
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # race builds write ONE script and one npc record for every kind
+        # and pick the scene at runtime from the masked reward table, so
+        # neither the event bytes nor the npc data say what this check
+        # holds - not even its kind.  the npc gets the same random
+        # build-time sprite an esper/item reward gets; if the reward is
+        # actually a character, the entrance event repaints the npc
+        # before fade-in, so the player still scouts it by walking up,
+        # exactly as in a normal build.
+        slot = self.race_slot(self.reward)
+
+        # the gate (if any) goes on first so the repaint chains ahead of
+        # it: repaint, then hide edgar if the gate character is missing -
+        # the same order the other builds see
+        if self.args.character_gating:
+            self.add_gating_condition()
+        self.race_decoy_npc(0x03a, self.edgar_npc_id, slot)
+
+        src = [
+            field.SetEventBit(event_bit.NAMED_EDGAR),
+            field.ClearEventBit(npc_bit.EDGAR_FIGARO_CASTLE_THRONE),
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.HideEntity(self.edgar_npc_id),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.Return(),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.HideEntity(self.edgar_npc_id),
+            field.FadeInScreen(),
+            field.ReceiveCheckReward(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "figaro castle wob race reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xa6623, 0xa6628, "figaro castle wob call recruit character")
+        space.write(
+            field.Branch(reward_script),
+        )
 
     def add_gating_condition(self):
         # add entrance event to hide edgar npc if gate character not found

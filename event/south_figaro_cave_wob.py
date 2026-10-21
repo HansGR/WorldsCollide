@@ -22,7 +22,9 @@ class SouthFigaroCaveWOB(Event):
         self.tunnel_armor_battle_mod()
         self.entrance_exit_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -30,6 +32,45 @@ class SouthFigaroCaveWOB(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script for every kind (see figaro castle wob); the joining
+        # character's create/show/action commands are the slot-driven
+        # twins, so no id byte lands in the script
+        slot = self.race_slot(self.reward)
+
+        self.tunnel_armor_function([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.CreateRewardEntity(slot),
+            field.RewardEntityAct(slot, True,
+                field_entity.SetPosition(47, 34),
+                field_entity.SetSpeed(field_entity.Speed.SLOW),
+            ),
+            field.ShowRewardEntity(slot),
+            field.FadeInScreen(),
+            field.RewardEntityAct(slot, True,
+                field_entity.Move(direction.DOWN, 2),
+                field_entity.Pause(8),
+                field_entity.AnimateStandingHeadDown(),
+                field_entity.Pause(8),
+                field_entity.AnimateStandingFront(),
+                field_entity.Pause(4),
+            ),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.Branch("REWARD_DONE"),
+
+            # the esper/item scene (esper/item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.WaitForFade(),
+            field.ReceiveCheckReward(slot),
+
+            "REWARD_DONE",
+        ])
 
     def cleanup_mod(self):
         # south figaro cave maps 0x48 and 0x49 are never used

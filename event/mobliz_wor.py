@@ -46,7 +46,9 @@ class MoblizWOR(Event):
         if self.args.shuffle_random_phunbaba3:
             self.phunbaba3_battle_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -54,6 +56,127 @@ class MoblizWOR(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script, one npc look and one children's wording for every
+        # kind: the four terra npcs get the decoy sprite (repainted at
+        # map load for a character), and the children's lines render the
+        # reward's name - character, esper or item - through <reward> at
+        # display time.  a character pre-joins the party for the
+        # phunbaba battle exactly as character_mod does, slot-driven:
+        # the grant recruits first (which also runs -sal level
+        # averaging, as every recruit does), then the party-size-guarded
+        # join and restores use the reward-entity commands
+        slot = self.race_slot(self.reward)
+
+        random_sprite = self.characters.get_random_esper_item_sprite()
+        self.terra_npc_mod(random_sprite, self.characters.get_palette(random_sprite))
+        self.race_repaint_npc_entrance(0x09a, self.terra_fireplace_npc_id, slot)
+        self.race_repaint_npc_entrance(0x09a, self.terra_in_bed_npc_id, slot)
+        self.race_repaint_npc_entrance(0x09e, self.terra_outside_npc_id, slot)
+        self.race_repaint_npc_entrance(0x096, self.terra_with_katarin_npc_id, slot)
+
+        # the phunbaba scene reloads the outside map with the entrance-event
+        # flag off (CC/4C24) and then creates the outside npc from its
+        # record, so the entrance repaint above is lost for that scene:
+        # repaint a character reward right after the reload (found by
+        # tools/race_entrance_audit.py)
+        src = [
+            Read(0xc4c24, 0xc4c29),         # reload the outside map
+            field.BranchIfRewardKindNot(slot, "character", "AFTER_REPAINT"),
+            field.SetRewardSprite(self.terra_outside_npc_id, slot),
+            field.SetRewardPalette(self.terra_outside_npc_id, slot),
+            "AFTER_REPAINT",
+            field.Branch(0xc4c2a),
+        ]
+        space = Write(Bank.CC, src, "mobliz wor race repaint outside npc after phunbaba reload")
+        phunbaba_reload = space.start_address
+        space = Reserve(0xc4c24, 0xc4c29, "mobliz wor phunbaba scene reload outside map", field.NOP())
+        space.write(
+            field.Branch(phunbaba_reload),
+        )
+
+        self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_TAKE_AWAY, "You're not gonna take <reward> away, are you?<end>")
+        self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_CRY, "I'm not gonna cry.<line>If I do, <reward>'ll feel sad…<end>")
+
+        space = Reserve(0xc4549, 0xc454b, "mobliz wor you're not gonna take terra away")
+        space.write(field.reward_slot_dialog(slot, dialog_id.MOBLIZ_CHILD_TAKE_AWAY))
+        space = Reserve(0xc506a, 0xc506c, "mobliz I'm not gonna cry")
+        space.write(field.reward_slot_dialog(slot, dialog_id.MOBLIZ_CHILD_CRY))
+
+        boss_pack_id = self.get_boss("Phunbaba 4")
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "BATTLE"),
+
+            # a character joins before the battle (character_mod's
+            # pre-join, slot-driven).  recruiting first costs nothing
+            # visible and lets the shared recruit routine handle -sal
+            # level averaging; the join itself still only happens if
+            # bababreath left room, as in every other build
+            field.AddCheckReward(slot),
+            field.BranchIfPartySize(4, "BATTLE"),
+            field.CreateRewardEntity(slot),
+            field.AddRewardToParty(slot, 1),
+            field.RefreshEntities(),
+        ]
+        if self.args.start_average_level:
+            # the recruit above already averaged their level; refill like
+            # character_mod so they do not enter the fight hurt by it
+            src += [
+                field.RestoreRewardHp(slot, 0x7f),
+                field.RestoreRewardMp(slot, 0x7f),
+            ]
+        src += [
+            "BATTLE",
+            field.InvokeBattle(boss_pack_id),
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven;
+            # already granted above)
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.Branch(0xc502a),      # finish event, skip scene
+
+            "ESPER_ITEM",
+        ]
+        if not self.args.shuffle_random_phunbaba3:
+            src += [
+                field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            ]
+        src += [
+            field.FadeOutSong(0),
+            field.Branch(0xc502a),      # finish event, skip scene
+        ]
+        space = Write(Bank.CC, src, "mobliz wor race battle and reward")
+        battle_script = space.start_address
+
+        space = Reserve(0xc4cca, 0xc4cec, "mobliz wor phunbaba 4 battle", field.NOP())
+        space.write(
+            field.Branch(battle_script),
+        )
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            field.FadeInScreen(),
+            field.FinishCheck(),
+            field.FreeScreen(),
+            field.Return(),
+
+            "ESPER_ITEM",
+            field.FadeInScreen(),
+            field.FreeScreen(),
+            field.ReceiveCheckReward(slot),
+            field.FinishCheck(),
+            field.Return(),
+        ]
+        space = Write(Bank.CC, src, "mobliz wor race finish")
+        finish_script = space.start_address
+
+        space = Reserve(0xc503f, 0xc5059, "mobliz wor finish scene", field.NOP())
+        space.write(
+            field.Branch(finish_script),
+        )
 
     def add_gating_condition(self):
         # katarin is always pregnant, change the condition
@@ -154,18 +277,30 @@ class MoblizWOR(Event):
             field.Return(),
         )
 
-    def esper_item_mod(self, esper_item_name, esper_item_instructions):
+    def esper_item_mod(self, esper_item_name, esper_item_instructions, reward = None):
         random_sprite = self.characters.get_random_esper_item_sprite()
         self.terra_npc_mod(random_sprite, self.characters.get_palette(random_sprite))
 
         # change children's dialog to replace terra's name with the esper/item name for fun
         # espers/items do not have a single byte dedicated to their name so need to use other, longer dialogs
+        # these name the reward, so race builds render it at display time
+        # (both run before the grant, so each dialog decodes it itself)
+        kind, value = reward if reward is not None else (None, None)
+        if reward is not None and self.args.race:
+            esper_item_name = (self.espers.dialog_name(value) if kind == "esper"
+                               else self.items.dialog_name(value))
         self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_TAKE_AWAY, "You're not gonna take " + esper_item_name + " away, are you?<end>")
         self.dialogs.set_text(dialog_id.MOBLIZ_CHILD_CRY, "I'm not gonna cry.<line>If I do, " + esper_item_name + "'ll feel sad…<end>")
+
+        def child_dialog(dialog):
+            if reward is None:
+                return field.Dialog(dialog)
+            return field.reward_dialog(kind, value, dialog)
+
         space = Reserve(0xc4549, 0xc454b, "mobliz wor you're not gonna take terra away")
-        space.write(field.Dialog(dialog_id.MOBLIZ_CHILD_TAKE_AWAY))
+        space.write(child_dialog(dialog_id.MOBLIZ_CHILD_TAKE_AWAY))
         space = Reserve(0xc506a, 0xc506c, "mobliz I'm not gonna cry")
-        space.write(field.Dialog(dialog_id.MOBLIZ_CHILD_CRY))
+        space.write(child_dialog(dialog_id.MOBLIZ_CHILD_CRY))
 
         boss_pack_id = self.get_boss("Phunbaba 4")
 
@@ -197,10 +332,10 @@ class MoblizWOR(Event):
         self.esper_item_mod(self.espers.get_name(esper), [
             field.AddEsper(esper),
             field.Dialog(self.espers.get_receive_esper_dialog(esper)),
-        ])
+        ], reward = ("esper", esper))
 
     def item_mod(self, item):
         self.esper_item_mod(self.items.get_name(item), [
             field.AddItem(item),
             field.Dialog(self.items.get_receive_dialog(item)),
-        ])
+        ], reward = ("item", item))
