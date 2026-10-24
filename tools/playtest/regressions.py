@@ -655,7 +655,7 @@ def scenario_ruin_ferry_boss_item(vanilla, workdir):
     """Ruination's ferry sea boss gives the Ferry Boss event's item:
     the first voyage's battle is followed, still on the battle's field map, by
     the item and its dialog on a black screen; the voyage then reaches the other
-    port. A second voyage has no battle and no item.
+    port with the party visible. A second voyage has no battle and no item.
 
     The ferry runs only when two ports are on the map, so search for a seed
     (-maptest SFIb30 puts the hub door on South Figaro's dock) whose debug
@@ -741,6 +741,10 @@ def scenario_ruin_ferry_boss_item(vanilla, workdir):
     assert fought, "the first voyage had no sea battle"
     assert got == 1, f"sea boss item {name} not received once: {got}"
     assert h.event_bit(eb.FINISHED_NARSHE_BATTLE), "sea boss not marked defeated"
+    # the reward hides the party on the battle map; it must arrive visible
+    # (party leader object, byte 0 bit 7)
+    leader = h.core.wram[0x867 + h.core.read_u16(0x803)]
+    assert leader & 0x80, f"party arrived invisible (leader object byte {leader:#04x})"
     there = h.map_id
 
     # back again from the destination: no battle, no second item

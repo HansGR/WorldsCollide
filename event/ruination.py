@@ -953,7 +953,8 @@ def _ferry_build_boss_reward(item, item_dialog):
     the battle: still on the battle's field map (0x009), where a dialog can
     show - the world map can't display one. The map's background is black
     there, so with its NPCs (a character lineup in WC) and the party hidden,
-    the "Received" dialog shows on a black screen before the voyage resumes."""
+    the "Received" dialog shows on a black screen before the voyage resumes;
+    the party is shown again once the screen is dark."""
     code = [field.HideEntity(npc_id) for npc_id in range(0x10, 0x30)]
     code += [
         field.HideEntity(field_entity.PARTY0),
@@ -964,6 +965,9 @@ def _ferry_build_boss_reward(item, item_dialog):
         field.FinishCheck(),
         field.FadeOutScreen(),
         field.WaitForFade(),
+        # the party's hidden flag would otherwise survive the voyage: it arrives
+        # invisible until the menu redraws it
+        field.ShowEntity(field_entity.PARTY0),
         field.Return(),
     ]
     return Write(Bank.CA, code, "ruin ferry sea boss reward").start_address
