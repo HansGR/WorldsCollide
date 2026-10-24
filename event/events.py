@@ -359,9 +359,9 @@ class Events():
 
         # Wire up SF / Nikeah / Albrook ferry network based on which ports are mapped
         # Reuse Kefka @ Narshe boss for the possible sea boss attack; beating it gives
-        # the (item-only, never mapped) Narshe Battle reward
+        # the Ferry Boss event's item (its own slot, not Narshe Battle's)
         sea_boss_id = self.enemies.get_event_boss("Kefka (Narshe)")
-        sea_boss_item = name_event["Narshe Battle"].reward.id
+        sea_boss_item = name_event["Ferry Boss"].reward.id
         fix_ferry_connections(self.rom, self.dialogs, self.maps, ruin_map, self.args, sea_boss_id,
                               sea_boss_item, self.items)
 

@@ -2787,11 +2787,13 @@ that guard them are often optional:
   besides the `pt2` switches and Sabin.
 
 - **Ferry sea boss** (added 2026-10-24). Ruination moves the Narshe Battle
-  boss (Kefka at Narshe) to the ferry, and the Narshe Battle room is never on
-  the map, so its reward slot was a C|E|I backfill nobody could reach (it
-  could strand a spare character or esper). `NarsheBattle.init_rewards` makes
-  it ITEM-only in ruination, and `Events.ruination_mod` passes its item to
-  `fix_ferry_connections`. The first voyage's battle runs on field map 0x009
+  boss (Kefka at Narshe) to the ferry. The reward is its own ruination-only
+  event, `event/ferry_boss.py` (`FerryBoss`, "Ferry Boss", one ITEM slot),
+  so the Narshe Battle check keeps its own C|E|I slot in case it ever joins
+  the ruination map (for now it is still a never-mapped backfill).
+  `Events.ruination_mod` passes the Ferry Boss item to
+  `fix_ferry_connections`. (The first version, the same day, made the Narshe
+  Battle slot item-only instead.) The first voyage's battle runs on field map 0x009
   (the world map can't show dialogs); right after it, the shared routine
   `_ferry_build_boss_reward` hides NPC slots 0x10-0x2F (WC puts a character
   lineup on that map; `-debug` adds more) and the party, fades in on the map's
@@ -2805,8 +2807,8 @@ that guard them are often optional:
 None of these slots is in the planner (`ROOM_REWARD`). Both are filled by the
 `Events.ruination_mod` backfill and stay out of the `-rirc` math, like every
 item-only slot. The spoiler lists them as "Item (Dadaluma)",
-"Item (terminus boss)", "Item (smokestack boss)" and "Item (ferry boss)"
-(under Narshe Battle). In the emulator, the item arrives 45 frames after the
+"Item (terminus boss)", "Item (smokestack boss)", and a "Ferry Boss" event
+line for the sea boss. In the emulator, the item arrives 45 frames after the
 battle, with the map on screen, and at the gate the opening animation plays
 once the dialog closes. The regression scenario `ruin_boss_items` walks both
 for real on one seed, `-ruin -maptest ZOZb08@615/619 HUB52-ruin` (the

@@ -563,16 +563,29 @@ def scenario_ruin_boss_items(vanilla, workdir):
     def in_battle(hh):
         return hh.core.wram[0x3ed8] != 0xff
 
-    def win_battle(timeout):
+    def fight_for(item, timeout):
+        """win the battle that is starting and keep going until the item
+        arrives: the battle byte $3ED8 can read 'no battle' mid-fight (Marshal,
+        Doom Gaze), so the item itself is the signal. Monsters are pinned at
+        1 HP and the party at max, with A mashed; random commands can leave
+        that unable to land a hit (a character whose top command is not Fight),
+        so after a while the survivors are marked KO ($3EE4 bit 7) directly.
+        Returns False if the item never comes."""
+        have = count(item)
         h.run_until(in_battle, timeout=3000, step=10)
-        for _ in range(0, timeout, 20):
-            if not in_battle(h):
+        for t in range(0, timeout, 20):
+            if count(item) > have:
+                for _ in range(3):
+                    h.press('A', hold=4, wait=30)   # close the dialog
                 return True
-            for s in range(4, 10):
-                if h.core.read_u16(0x3bf4 + 2*s) not in (0, 0xffff):
-                    h.core.write_u16(0x3bf4 + 2*s, 1)
-            for s in range(4):
-                h.core.write_u16(0x3bf4 + 2*s, h.core.read_u16(0x3c1c + 2*s))
+            if in_battle(h):
+                for s in range(4, 10):
+                    if h.core.read_u16(0x3bf4 + 2*s) not in (0, 0xffff):
+                        h.core.write_u16(0x3bf4 + 2*s, 1)
+                        if t >= 600:
+                            h.core.wram[0x3ee4 + 2*s] |= 0x80
+                for s in range(4):
+                    h.core.write_u16(0x3bf4 + 2*s, h.core.read_u16(0x3c1c + 2*s))
             h.press('A', hold=4, wait=16)
         return False
 
@@ -585,13 +598,6 @@ def scenario_ruin_boss_items(vanilla, workdir):
             h.hold(button, frames=1)
             h.run(12)
         raise AssertionError(f"{button} never reached {target}: at {h.party_xy}")
-
-    def take_reward(item, name):
-        have = count(item)
-        h.run_until(lambda hh: count(item) > have, timeout=600, step=5)
-        for _ in range(3):
-            h.press('A', hold=4, wait=30)       # close the dialog
-        return name
 
     zozo_name, zozo_item = reward_item("Dadaluma")
     gate_name, gate_item = reward_item("terminus boss")
@@ -615,8 +621,7 @@ def scenario_ruin_boss_items(vanilla, workdir):
     h.run(4)
     assert h.party_xy == (30, 13), f"walked past Dadaluma's spot: {h.party_xy}"
     h.press('A', hold=4, wait=20)
-    assert win_battle(20000), "Dadaluma battle did not end"
-    take_reward(zozo_item, zozo_name)
+    assert fight_for(zozo_item, 20000), f"Dadaluma's item {zozo_name} never arrived"
     assert h.map_id == 0xdd, f"left Zozo before the reward: {h.map_id:#x}"
 
     # his spot is free now: down onto it, up the top flight, along to the 14F door
@@ -635,8 +640,7 @@ def scenario_ruin_boss_items(vanilla, workdir):
         h.hold('UP', frames=4)
         if in_battle(h):
             break
-    assert win_battle(40000), "Sealed Gate battle did not end"
-    take_reward(gate_item, gate_name)
+    assert fight_for(gate_item, 40000), f"the Sealed Gate boss's item {gate_name} never arrived"
     assert h.map_id == 0x187, f"left the Sealed Gate before the reward: {h.map_id:#x}"
     return (f"walked Zozo 12F -> Dadaluma ({zozo_name}) -> 14F door -> Sealed Gate "
             f"boss ({gate_name}); each item right after the map faded back in")
@@ -648,7 +652,7 @@ def room_data_hub_door():
 
 
 def scenario_ruin_ferry_boss_item(vanilla, workdir):
-    """Ruination's ferry sea boss gives the (item-only) Narshe Battle reward:
+    """Ruination's ferry sea boss gives the Ferry Boss event's item:
     the first voyage's battle is followed, still on the battle's field map, by
     the item and its dialog on a black screen; the voyage then reaches the other
     port. A second voyage has no battle and no item.
@@ -673,13 +677,12 @@ def scenario_ruin_ferry_boss_item(vanilla, workdir):
             break
     assert rom, "no seed in 1-40 runs the ferry from South Figaro"
     for line in open(rom[:-4] + ".txt"):
-        m = re.search(r"([A-Za-z][\w'\- .]*?) \(ferry boss\)", line)
-        if m:
-            name = re.split(r", |  +", m.group(1))[-1].strip()
+        if line.startswith("Ferry Boss "):
+            name = line[len("Ferry Boss"):].strip()
             item = name_id[name]
             break
     else:
-        raise AssertionError("no (ferry boss) reward in the spoiler")
+        raise AssertionError("no Ferry Boss reward in the spoiler")
 
     def count():
         for i in range(256):
@@ -701,13 +704,17 @@ def scenario_ruin_ferry_boss_item(vanilla, workdir):
         h.press('A', hold=4, wait=40)
         fought = False
         start = h.map_id
+        battle_frames = 0
         for _ in range(4000):
             if h.map_id == 0x009:
                 fought = True
                 if h.core.wram[0x3ed8] != 0xff:   # in battle: monsters at 1 HP, mash
+                    battle_frames += 20
                     for s in range(4, 10):
                         if h.core.read_u16(0x3bf4 + 2*s) not in (0, 0xffff):
                             h.core.write_u16(0x3bf4 + 2*s, 1)
+                            if battle_frames >= 600:  # random commands may not land a hit
+                                h.core.wram[0x3ee4 + 2*s] |= 0x80
                     for s in range(4):
                         h.core.write_u16(0x3bf4 + 2*s, h.core.read_u16(0x3c1c + 2*s))
                 h.press('A', hold=4, wait=16)
