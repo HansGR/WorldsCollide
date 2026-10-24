@@ -647,6 +647,108 @@ def room_data_hub_door():
     return room_data['HUB50-ruin'][0][0]          # branch 0's hub door (-maptest target)
 
 
+def scenario_ruin_ferry_boss_item(vanilla, workdir):
+    """Ruination's ferry sea boss gives the (item-only) Narshe Battle reward:
+    the first voyage's battle is followed, still on the battle's field map, by
+    the item and its dialog on a black screen; the voyage then reaches the other
+    port. A second voyage has no battle and no item.
+
+    The ferry runs only when two ports are on the map, so search for a seed
+    (-maptest SFIb30 puts the hub door on South Figaro's dock) whose debug
+    output reports South Figaro plus another port."""
+    import re
+    from constants.items import name_id
+    import data.event_bit as eb
+
+    rom = None
+    for seed in range(1, 41):
+        out = os.path.join(workdir, "ferry.smc")
+        cmd = [sys.executable, os.path.join(ROOT, "wc.py"), "-i", vanilla, "-o", out, "-sl",
+               "-s", str(seed), "-ruin", "-debug", "-maptest", "SFIb30"]
+        log = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True).stdout
+        m = re.search(r"Ferry: mapped ports = \[(.*)\]", log)
+        ports = re.findall(r"'(\w+)'", m.group(1)) if m else []
+        if "SouthFigaro" in ports and len(ports) >= 2:
+            rom = out
+            break
+    assert rom, "no seed in 1-40 runs the ferry from South Figaro"
+    for line in open(rom[:-4] + ".txt"):
+        m = re.search(r"([A-Za-z][\w'\- .]*?) \(ferry boss\)", line)
+        if m:
+            name = re.split(r", |  +", m.group(1))[-1].strip()
+            item = name_id[name]
+            break
+    else:
+        raise AssertionError("no (ferry boss) reward in the spoiler")
+
+    def count():
+        for i in range(256):
+            if h.core.wram[0x1869 + i] == item:
+                return h.core.wram[0x1969 + i]
+        return 0
+
+    def sail(first):
+        """talk to the South Figaro or destination sailor, take the first destination;
+        returns (went through the battle map, item count after)"""
+        h.press('A', hold=4, wait=60)             # talk
+        if first:                                 # the pre-boss flavor line: finish, close
+            h.run(60)
+            h.press('A', hold=4, wait=20)
+            h.run(30)
+            h.press('A', hold=4, wait=20)
+        h.run(120)                                # the prompt; an extra A here would pick "stay"
+        h.press('DOWN', hold=4, wait=20)
+        h.press('A', hold=4, wait=40)
+        fought = False
+        start = h.map_id
+        for _ in range(4000):
+            if h.map_id == 0x009:
+                fought = True
+                if h.core.wram[0x3ed8] != 0xff:   # in battle: monsters at 1 HP, mash
+                    for s in range(4, 10):
+                        if h.core.read_u16(0x3bf4 + 2*s) not in (0, 0xffff):
+                            h.core.write_u16(0x3bf4 + 2*s, 1)
+                    for s in range(4):
+                        h.core.write_u16(0x3bf4 + 2*s, h.core.read_u16(0x3c1c + 2*s))
+                h.press('A', hold=4, wait=16)
+            else:
+                h.run(20)
+            if h.map_id not in (start, 0x001, 0x009):
+                break
+        navigate.wait_for_control(h)
+        return fought, count()
+
+    h = Harness(rom)
+    h.boot_to_game_start()
+    navigate.wait_for_control(h)
+    route.step_door(h, route.ESPER_GATE_TILE)
+    navigate.wait_for_control(h)
+    route.step_door(h, room_data_hub_door())
+    navigate.wait_for_control(h)
+    assert h.map_id == 0x5b, f"not on South Figaro's dock: {h.map_id:#x}"
+    h.set_party_xy(14, 10)                        # below the sailor (14,9)
+    h.run(4)
+    h.hold('UP', frames=4)
+    h.run(4)
+    fought, got = sail(first=True)
+    assert fought, "the first voyage had no sea battle"
+    assert got == 1, f"sea boss item {name} not received once: {got}"
+    assert h.event_bit(eb.FINISHED_NARSHE_BATTLE), "sea boss not marked defeated"
+    there = h.map_id
+
+    # back again from the destination: no battle, no second item
+    sailor = {0xbb: (17, 16), 0x14c: (13, 14)}[there]
+    h.set_party_xy(*sailor)
+    h.run(4)
+    h.hold('UP' if there == 0xbb else 'LEFT', frames=4)
+    h.run(4)
+    fought, got = sail(first=False)
+    assert not fought, "the second voyage fought the sea boss again"
+    assert got == 1, f"the second voyage changed the item count: {got}"
+    return (f"seed {seed}: first voyage fought the sea boss and gave {name}; "
+            f"the return voyage had no battle and no item")
+
+
 SCENARIOS = [
     scenario_maxhp_objective,
     scenario_full_heal_objective,
@@ -659,6 +761,7 @@ SCENARIOS = [
     scenario_mid_save_quit,
     scenario_unequip_all_away,
     scenario_ruin_boss_items,
+    scenario_ruin_ferry_boss_item,
 ]
 
 

@@ -835,7 +835,7 @@ def _ferry_build_prompt(src_port, destinations):
     )
 
 
-def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
+def _ferry_build_trip(src_port, dst_port, boss_pack_id=None, boss_reward=None):
     """Allocate a Bank.CA subroutine that runs the boat-trip animation."""
     src = FERRY_PORTS[src_port]
     dst = FERRY_PORTS[dst_port]
@@ -902,6 +902,13 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
                               fade_in=False),
             field.InvokeBattleType(pack=boss_pack_id, battle_type=field.BattleType.FRONT, background=0x0d),
             field.SetEventBit(event_bit.FINISHED_NARSHE_BATTLE),
+        ]
+        if boss_reward is not None:
+            # the sea boss's item (once: the battle is skipped after FINISHED_NARSHE_BATTLE)
+            code += [
+                field.Call(boss_reward),
+            ]
+        code += [
             field.StartSong(0x3a),  # "Tide"
             field.LoadMap(map_id=0x001, x=elbow[0], y=elbow[1], direction=ANIMATION_XY[src_port][2],
                           default_music=False, entrance_event=False, airship=False, fade_in=True),
@@ -941,6 +948,27 @@ def _ferry_build_trip(src_port, dst_port, boss_pack_id=None):
     return Write(Bank.CA, code, f"ruin ferry {src_port}->{dst_port}").start_address
 
 
+def _ferry_build_boss_reward(item, item_dialog):
+    """Allocate the sea boss's reward routine, called by every trip right after
+    the battle: still on the battle's field map (0x009), where a dialog can
+    show - the world map can't display one. The map's background is black
+    there, so with its NPCs (a character lineup in WC) and the party hidden,
+    the "Received" dialog shows on a black screen before the voyage resumes."""
+    code = [field.HideEntity(npc_id) for npc_id in range(0x10, 0x30)]
+    code += [
+        field.HideEntity(field_entity.PARTY0),
+        field.FadeInScreen(),
+        field.WaitForFade(),
+        field.AddItem(item),
+        field.Dialog(item_dialog),
+        field.FinishCheck(),
+        field.FadeOutScreen(),
+        field.WaitForFade(),
+        field.Return(),
+    ]
+    return Write(Bank.CA, code, "ruin ferry sea boss reward").start_address
+
+
 def _ferry_install_disabled(rom, dialogs):
     """Disable every port's NPC: each shows the disabled message and returns."""
     for port_name in FERRY_PORTS:
@@ -950,7 +978,7 @@ def _ferry_install_disabled(rom, dialogs):
                       _ferry_disabled_patch(dialog_id))
 
 
-def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
+def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None, boss_reward=None):
     """For each pair of mapped ports, build a trip subroutine and dispatch event."""
     # Pre-boss flavor dialog: pick one mapped port as TOWN1 (the "we sent out a
     # ship..." sailor); the other(s) get the alternative lines naming TOWN1.
@@ -978,7 +1006,7 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
         for dst in mapped:
             if src == dst:
                 continue
-            trips[(src, dst)] = _ferry_build_trip(src, dst, boss_pack_id)
+            trips[(src, dst)] = _ferry_build_trip(src, dst, boss_pack_id, boss_reward)
 
     # For each port, build a dispatch event (DialogBranch with stay + 1 or 2 boats)
     # and patch the NPC's event slot with a Branch into it.
@@ -1021,7 +1049,8 @@ def _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id=None):
             print(f"Ferry: trip {src}->{dst} at {addr:#x}")
 
 
-def fix_ferry_connections(rom, dialogs, maps, ruin_map, args, boss_pack_id=None):
+def fix_ferry_connections(rom, dialogs, maps, ruin_map, args, boss_pack_id=None,
+                          boss_item=None, items=None):
     """Wire up the SF / Nikeah / Albrook ferry network for ruination mode.
 
     If 0 or 1 of the three ports has any reachable rooms on the map, every
@@ -1060,4 +1089,7 @@ def fix_ferry_connections(rom, dialogs, maps, ruin_map, args, boss_pack_id=None)
             print("Ferry: <2 ports mapped - all sailors disabled")
         return
 
-    _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id)
+    boss_reward = None
+    if boss_item is not None and items is not None:
+        boss_reward = _ferry_build_boss_reward(boss_item, items.get_receive_dialog(boss_item))
+    _ferry_install_enabled(rom, dialogs, maps, mapped, args, boss_pack_id, boss_reward)

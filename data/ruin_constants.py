@@ -110,8 +110,9 @@ ROOM_REWARD = {
     # check backfilled by events.py. Intentional (HansGR): the WoB Snowfield
     # would mirror the WoR Snowfield (warp point + dragon), and its boss is
     # transposed to the Ferry Boss. Inclusion guidelines: ARCHIVE.md
-    # "Narshe Battle Exclusion + Ruination Boss Budget".
-    'UPNb03': {"Narshe Battle": [RewardType.CHARACTER, RewardType.ESPER, RewardType.ITEM]},   # Kefka @ Narshe
+    # "Narshe Battle Exclusion + Ruination Boss Budget". Its slot is item-only in
+    # ruination: the item is the ferry sea boss's reward (NarsheBattle.init_rewards).
+    'UPNb03': {"Narshe Battle": [RewardType.ITEM]},   # Kefka @ Narshe
     #'UPNr04a': {"Tritoch": [RewardType.ESPER, RewardType.ITEM]},   # Tritoch
     #'MAPr-TZE': {"Tzen": [RewardType.ESPER, RewardType.ITEM]},   # Tzen thief (WOR).  WoB is 'MAPb-TZE'
     'JIDr01-dc': {"Auction House_1": [RewardType.ESPER, RewardType.ITEM],

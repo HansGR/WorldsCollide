@@ -12,7 +12,12 @@ class NarsheBattle(Event):
         return 2
 
     def init_rewards(self):
-        self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
+        if self.args.ruination_mode:
+            # ruination: the battlefield is never on the map and its boss is the ferry's
+            # sea boss (Events.ruination_mod), which gives this slot's item
+            self.reward = self.add_reward(RewardType.ITEM)
+        else:
+            self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
 
     def init_event_bits(self, space):
         space.write(
@@ -42,7 +47,7 @@ class NarsheBattle(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
-        self.log_reward(self.reward)
+        self.log_reward(self.reward, suffix = " (ferry boss)" if self.args.ruination_mode else "")
 
     def snowfield_save_point_mod(self):
         space = Reserve(0xcc591, 0xcc5fe, "narshe wob kefka battlefield save point character reset", field.NOP())
