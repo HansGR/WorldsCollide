@@ -96,9 +96,9 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertEqual(value_after(argv, "-sj"), ["12"])
         self.assertIn("-rrt", argv)
         # High Tier Item rewards at 2, 4 and 6 espers obtained
-        self.assertEqual(value_after(argv, "-oc"), ["58.1.1.4.2.2"])
-        self.assertEqual(value_after(argv, "-od"), ["58.1.1.4.4.4"])
-        self.assertEqual(value_after(argv, "-oe"), ["58.1.1.4.6.6"])
+        self.assertEqual(value_after(argv, "-oc"), ["58.1.1.4.3.3"])
+        self.assertEqual(value_after(argv, "-od"), ["58.1.1.4.6.6"])
+        self.assertNotIn("-oe", argv)                    # two high tier item objectives
         # not hard
         self.assertNotIn("-pd", argv)
         # every flag appears once

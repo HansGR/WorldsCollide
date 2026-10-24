@@ -209,10 +209,9 @@ RUIN_EASY_EXTRAS = {
         '-sfd', '3',                    # three Fenix Downs
         '-sj', '12',                    # twelve starting junk items
         '-rrt',                         # a shop town on every branch
-        # High Tier Item rewards at 2, 4 and 6 espers obtained
-        '-oc', '58.1.1.4.2.2',
-        '-od', '58.1.1.4.4.4',
-        '-oe', '58.1.1.4.6.6',
+        # High Tier Item rewards at 3 and 6 espers obtained
+        '-oc', '58.1.1.4.3.3',
+        '-od', '58.1.1.4.6.6',
     ],
 }
 RUIN_MODE_EXTRAS = {**RUIN_HARD_EXTRAS, **RUIN_EASY_EXTRAS}
