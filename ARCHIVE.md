@@ -2899,3 +2899,144 @@ summed entries reach 2^21 (~16.8M experience); a character *placed* there by
 the next battle. `guard_wrap` sets every step past the 15M point to 1
 (unreachable anyway), keeping the sum below the wrap for every cap. Rounding
 note: rounding *up* turned 4 × 1.0004 into 5 (+25% at level 1); use nearest.
+
+## Ruination Treasure Chests & `-rrtc` (2026-10-25)
+
+### The chest table
+
+`tools/ruin_chest_rooms.py VANILLA.smc [--write]` puts each vanilla chest
+(MIAB included) in the ruination room(s) it can be opened from.
+`--write` regenerates two files:
+
+- `claude_reference/ruination_chests.csv`: one row per chest, with id,
+  `area_chests` area, map, map name, x/y, type, rooms, and `how`, which is
+  `flood`, `reviewed` or `kt`.
+- `data/ruin_chests.py`: `ROOM_CHESTS`, the chest count per room;
+  `KT_CHESTS`, Kefka's Tower's 16 chests, which are tallied apart because
+  its lanes are not branch rooms; and `CHEST_GATES`.
+
+`tests/test_ruin_treasure.py` checks the data file still matches the
+generator.
+
+Method: a flood fill over each map's BG1 layout and tile properties.
+
+- **Decoding.** The tile-property set is **planar**: 256 first bytes, then
+  256 second bytes.
+- **Movement** follows C0/4E3D:
+  - The second byte holds the exits the current tile allows: up 08,
+    right 01, down 04, left 02.
+  - A destination whose first byte has `&7 == 7` is a wall.
+  - Z-levels are bits 0–1; bit 2 marks a bridge.
+  - First-byte bits 6 and 7 mark up-right and up-left stairs. On stairs,
+    horizontal steps go diagonal and **ignore the exit bits**.
+- **Doors** are often wall tiles. Each room floods from its door tiles'
+  neighbours, and an exit is taken from any tile next to it.
+- **Room boundaries.** Exits that ruination does not shuffle carry the fill
+  to their arrival point. Shuffled doors **and locked exits** stop it (the
+  lock bug had leaked MTZ04 into ZOZr04).
+
+What the fill cannot see was settled by Hans's review (`REVIEWED_*` in the
+tool): event-driven areas (Magitek Factory, Zone Eater, Fanatic's Tower, the
+Imperial Base basement, Phoenix Cave, Floating Continent), NPC-blocked splits
+(the Phantom Train cars, Umaro's cave), replicas, unused maps, and WoB/WoR
+copies.
+
+- **South Figaro: 23.** 8 outside (WoR map 0x4a, ids 35–42) and 15 inside.
+  The WoB outside chests 43–50 sit on the same tiles on 0x4b. The fill leaks
+  onto 0x4b through the shared interiors, so they are excluded.
+- **Thamasa: 6.** 5 outside and 1 in Strago's house. The outside five are
+  the pre-Leo map 0x157's chests, which `data/chests.py` `copy_thamasa_chests`
+  copies onto WoR 0x158 (they don't show in a map editor). `CHEST_COPIES`
+  places them there.
+- **Albrook: 6.** Outside: 203 (WoR) and 208 (docks). Inside: 204–207.
+- **Tzen: 8**, all in the collapsing house. `CHEST_GATES` counts them only
+  when the Collapsing House check can be done (SABIN in the game).
+
+Totals: 227 room chests plus 16 in Kefka's Tower.
+
+Per seed (census of 100 seeds per mode, verifier reachability, Kefka's Tower
+excluded):
+
+| Mode | Mean | Sd | p10 | Median | p90 | Range |
+|---|---|---|---|---|---|---|
+| Easy | 67 | 19 | 43 | 67 | 95 | 30–117 |
+| Standard | 75 | 19 | 55 | 75 | 101 | 38–135 |
+| Hard | 76 | 18 | 55 | 77 | 105 | 41–123 |
+
+- About 3 per seed are MIAB.
+- The census script (`ht_census.py`, scratchpad only) builds the seed
+  in-process and takes reachable rooms from the softlock-verifier graph, keyed
+  with the party plus the planned characters. About a third of branch member
+  rooms are never wired in.
+- High-tier (`-ir ruin`) items before Kefka's Tower, from the same census:
+  easy 6.4, standard 4.4, hard 4.4, plus 3 in Kefka's Tower. The Opera House
+  needs Celes, so a Dirt Drgn there is Celes-gated; the census ignores this,
+  which hardly moves the means.
+
+### `-rrtc MIN` (`--ruination-require-treasure-count`)
+
+Default 0 (off). With 0, nothing draws differently and the goldens are
+unchanged. It is not in any `-ruin` flagset. The code is in
+`doors/plan/ruination/finalize.py`, section "Treasure rescue".
+
+**Target.** Branches close in order. Branch i of n aims for a cumulative
+share, `ceil(MIN*(i+1)/n)`, minus what the earlier branches already hold.
+"Holds" means the rooms in the hub cluster plus downstream clusters,
+counted with `_room_chests`, which applies the gates.
+
+**Treasure rooms** (`_treasure_shape`) must have:
+
+- 1 or 2 doors;
+- no traps, pits, keys or locks;
+- not be a terminus;
+- no forced or protected exits;
+- no unclaimed check that can't hold an esper or item.
+
+**Where they come from.** The branch's own unwired rooms come first, then
+rooms of unused reserve areas. Pulled rooms go through `_take_room`, which
+is now shared with `_pull_town` and registers the area's shops.
+
+**Unclaimed checks** in a treasure room go into `dead_check_restrictions` as
+ESPER|ITEM, the same treatment Ebot's Rock gets, so the backfill never puts
+an unplanned character there. `RuinMap.restore_restricted_types()` puts the
+slots' original `possible_types` back after the safety pass. Without that,
+`Events.validate` (the count of char/esper-only slots) fails. Ebot's Rock
+had the same latent bug.
+
+**The algorithm:**
+
+1. **Before step 5.** While the hub has more doors than dead ends (step 5
+   would pair the spare doors together) and the branch is short, single-door
+   treasure rooms are added as dead ends. Each one saves a door from being
+   paired.
+2. **Just before step 6** (doors ≤ dead ends). While the branch is short,
+   either:
+   - add a single-door room with more chests than the poorest dead end step 6
+     would pick (it displaces that one), or
+   - wire a two-door room in line. It is door-neutral: its other door
+     replaces the spent one.
+3. **Step 6** sorts the dead ends terminus first, then richest first. The
+   sort comes after the usual shuffle, so ties stay random.
+4. **The pick** is weighted by chest count.
+5. **`finalize_plan`** raises `RuinPlanError` if the total is short, and
+   `plan.py` re-rolls (up to 10 attempts).
+
+Measured (grow+finalize, 60 seeds, std-like config):
+
+| MIN | Plans OK | Mean | Median | Mean attempts |
+|---|---|---|---|---|
+| 0 | 60/60 | 73 | 67 | 1.2 |
+| 80 | 60/60 | 98 | 93 | 1.5 |
+| 100 | 60/60 | 110 | 106 | 1.8 |
+| 120 | 59/60 | 125 | 121 | 2.2 |
+| 140 | 53/60 | 142 | 140 | 3.4 |
+
+- An independent verifier census of `-ruin -rrtc 110` builds found 110–126
+  chests, against 37–93 for the same seeds without the flag.
+- Allowing esper/item check rooms (South Figaro's 23, Phoenix Cave's 9,
+  Tzen's 8, Fanatic's Tower's 6) is what made 120 work. Without them,
+  candidates ran out (49/60 plans at 120).
+- Possible refinements:
+  - three-or-more-door rooms as in-line candidates;
+  - a per-branch floor rather than a cumulative one;
+  - counting only chests the walk passes (a dead end is a detour).

@@ -342,6 +342,7 @@ class Events():
         self.choose_char_esper_possible_rewards(reward_slots)
         reward_slots = [slot for slot in reward_slots if slot.id is None]
         self.choose_item_possible_rewards(reward_slots)
+        ruin_map.restore_restricted_types()
 
         if self.args.debug:
             print('REWARD STATE FINAL:')

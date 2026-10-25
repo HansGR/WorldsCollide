@@ -20,6 +20,7 @@ here.
 """
 
 from data.rooms import room_data
+from data.ruin_chests import ROOM_CHESTS, CHEST_GATES
 from doors.model import DOOR, TRAP, PIT
 from doors.plan.modes import reattach_shared_exits
 from doors.plan.ruination.extend import _elements, _count, member_classes
@@ -300,24 +301,29 @@ def _available_town_rooms(planner):
     return [(rid, area) for _, _, rid, area in out]
 
 
-def _pull_town(planner, branch, reserve_areas):
-    """Add one unused shop-town room to the branch (its shops become
-    accessible; a single-room area is marked used like a distributed one).
-    Returns the room id, or None when every shop town is taken."""
+def _take_room(planner, branch, rid, area, reserve_areas):
+    """Add a room no branch holds to this one (its area's shops become
+    accessible; a single-room area is marked used like a distributed one)."""
     cfg = planner.config
+    planner._add_room_to_branch(branch, rid)
+    if area is not None:
+        if area not in planner.AreasUsed and len(cfg.room_sets[area]) == 1:
+            planner._assign_area(area, planner.branches.index(branch))
+        else:
+            for shop_id in cfg.area_shops.get(area, []):
+                if shop_id not in planner.accessible_shops:
+                    planner.accessible_shops.append(shop_id)
+    if reserve_areas is not None:
+        for _area, area_rooms in reserve_areas:
+            if rid in area_rooms:
+                area_rooms.remove(rid)
+
+
+def _pull_town(planner, branch, reserve_areas):
+    """Add one unused shop-town room to the branch. Returns the room id, or
+    None when every shop town is taken."""
     for rid, area in _available_town_rooms(planner):
-        planner._add_room_to_branch(branch, rid)
-        if area is not None:
-            if area not in planner.AreasUsed and len(cfg.room_sets[area]) == 1:
-                planner._assign_area(area, planner.branches.index(branch))
-            else:
-                for shop_id in cfg.area_shops.get(area, []):
-                    if shop_id not in planner.accessible_shops:
-                        planner.accessible_shops.append(shop_id)
-        if reserve_areas is not None:
-            for _area, area_rooms in reserve_areas:
-                if rid in area_rooms:
-                    area_rooms.remove(rid)
+        _take_room(planner, branch, rid, area, reserve_areas)
         return rid
     return None
 
@@ -430,6 +436,176 @@ def _has_town(planner, branch):
     connected, _ = _classify_member_rooms(
         branch, planner.config.shop_town_rooms, reachable_only=True)
     return bool(connected)
+
+
+# ---------------------------------------------------------------------------
+# Treasure rescue (-rrtc: a minimum chest count over the wired-in rooms)
+#
+# Chest counts per room come from data/ruin_chests.py (tools/ruin_chest_rooms.py).
+# Each branch closes against a cumulative share of MIN (branch i of n: the
+# plan so far should hold MIN * (i + 1) / n). Before step 5 pairs off spare
+# hub doors, single-door treasure rooms are added as dead ends instead (each
+# one keeps a door from being paired); just before step 6, a single-door
+# treasure room may displace the poorest dead end step 6 would pick, and a
+# two-door treasure room may be wired in line (it gives back the door it
+# takes). The branch's own unwired rooms are tried before rooms of unused
+# areas; a room with an unclaimed check qualifies when the check can hold
+# an esper or item (it is held to those). Step 6 then picks dead ends
+# richest first. finalize_plan re-rolls a plan that still falls short.
+
+def _room_chests(planner, rid):
+    """A room's chests; a gated room's (CHEST_GATES: Tzen's collapsing house)
+    only when its check can be done with the characters this game has."""
+    check = CHEST_GATES.get(rid)
+    if check is not None:
+        cfg = planner.config
+        in_game = set(cfg.party) | set(planner.planned_characters)
+        locker = cfg.rewards_locked_by_character.get(check)
+        owners = cfg.reward_owners.get(check)
+        if ((locker is not None and locker not in in_game)
+                or (owners is not None and not owners & in_game)):
+            return 0
+    return ROOM_CHESTS.get(rid, 0)
+
+
+def _chests(planner, rids):
+    return sum(_room_chests(planner, r) for r in rids)
+
+
+def _region_rooms(branch):
+    """Room ids wired into the hub region (hub + downstream)."""
+    w = branch.world
+    hub, _, downstream = _region(branch)
+    return [w.room_ids[h] for c in [hub] + list(downstream) for h in w.cluster_rooms(c)]
+
+
+def _plan_chests(planner, upto):
+    """Chests wired into the hubs of the first `upto` branches."""
+    return sum(_chests(planner, _region_rooms(b)) for b in planner.branches[:upto])
+
+
+def _treasure_target(planner, branch):
+    """Chests this branch should add: its cumulative share of MIN less what
+    the branches closed before it hold."""
+    cfg = planner.config
+    i = planner.branches.index(branch)
+    n = len(planner.branches)
+    share = -(-cfg.require_treasure_count * (i + 1) // n)
+    return share - _plan_chests(planner, i)
+
+
+_TREASURE_CHECK_TYPES = RewardType.ESPER | RewardType.ITEM
+
+
+def _treasure_shape(planner, rid):
+    """Free doors of a room fit for treasure rescue (1 or 2), else 0: no
+    traps, pits, locks or keys, not a terminus or a forced/protected exit,
+    every unclaimed check able to hold an esper or item, and chests to give."""
+    cfg = planner.config
+    w = planner.world
+    if (rid not in room_data or not _room_chests(planner, rid)
+            or rid in cfg.termini or rid == 'LET05'):
+        return 0
+    for name, flags in cfg.room_reward.get(rid, {}).items():
+        if name not in planner.assignments and not flags & _TREASURE_CHECK_TYPES:
+            return 0
+    spec = cfg.spec_for(rid)
+    if spec['traps'] or spec['pits'] or spec['keys'] or spec['locks']:
+        return 0
+    doors = list(spec['doors'])
+    if any(d in w.protected or d in cfg.forcing for d in doors):
+        return 0
+    return len(doors) if len(doors) in (1, 2) else 0
+
+
+def _treasure_candidates(planner, branch, reserve_areas, n_doors, floor=0):
+    """(rid, area) treasure rooms with n_doors free doors and more than
+    `floor` chests: the branch's own unwired rooms (area None) when it has
+    any, else rooms of unused areas no branch holds."""
+    w = planner.world
+    own = [(rid, None) for rid in sorted(branch.rooms, key=str)
+           if rid not in branch.dead_ends and _room_chests(planner, rid) > floor
+           and _singleton(w, rid)
+           and not w.downstream(w.cluster_of_room(rid))
+           and not w.upstream(w.cluster_of_room(rid))
+           and _treasure_shape(planner, rid) == n_doors
+           and len(_elements(w, w.cluster_of_room(rid), DOOR)) == n_doors]
+    if own or reserve_areas is None:
+        return own
+    return [(rid, area) for area, rooms in reserve_areas for rid in rooms
+            if rid not in w._index and _room_chests(planner, rid) > floor
+            and _treasure_shape(planner, rid) == n_doors]
+
+
+def _pick_treasure(planner, branch, candidates, reserve_areas):
+    """Take one candidate (weighted by its chests) into the branch; a
+    single-door one joins its dead ends. Its unclaimed checks are held to
+    esper/item (as Ebot's Rock's is in step 6), so the backfill can't put
+    a character where the plan never routed one."""
+    rid, area = planner.rng.choices(
+        candidates, weights=[_room_chests(planner, r) for r, _ in candidates])[0]
+    if rid not in planner.world._index:
+        _take_room(planner, branch, rid, area, reserve_areas)
+    for name in planner.config.room_reward.get(rid, {}):
+        if name not in planner.assignments:
+            planner.dead_check_restrictions[name] = (
+                planner.dead_check_restrictions.get(name, _TREASURE_CHECK_TYPES)
+                & _TREASURE_CHECK_TYPES)
+    if _is_dead_end_now(branch, rid) and rid not in branch.dead_ends:
+        branch.dead_ends.append(rid)
+    return rid
+
+
+def _dead_end_priority(planner, branch):
+    """Step-6 order with -rrtc: the terminus, then the richest (pop() order)."""
+    return lambda rid: (rid == branch.terminus, _room_chests(planner, rid))
+
+
+def _treasure_projection(planner, branch, n_doors):
+    """Chests in the hub region plus the dead ends step 6 would pick."""
+    picked = (sorted(branch.dead_ends, key=_dead_end_priority(planner, branch))[-n_doors:]
+              if n_doors else [])
+    return _chests(planner, _region_rooms(branch)) + _chests(planner, picked)
+
+
+def _treasure_dead_ends(planner, branch, remaining_doors, reserve_areas):
+    """Before step 5: while spare hub doors would be paired off and the
+    branch is short, add single-door treasure rooms as dead ends."""
+    target = _treasure_target(planner, branch)
+    while (len(remaining_doors) > len(branch.dead_ends)
+           and _treasure_projection(planner, branch, len(branch.dead_ends)) < target):
+        candidates = _treasure_candidates(planner, branch, reserve_areas, 1)
+        if not candidates:
+            return
+        _pick_treasure(planner, branch, candidates, reserve_areas)
+
+
+def _treasure_swaps(planner, branch, remaining_doors, reserve_areas):
+    """Just before step 6 (doors <= dead ends): while the branch is short,
+    add a single-door treasure room that outranks the poorest dead end step
+    6 would pick, or wire a two-door treasure room in line with a spare hub
+    door (its other door takes the spent one's place)."""
+    w = planner.world
+    target = _treasure_target(planner, branch)
+    while remaining_doors and _treasure_projection(planner, branch, len(remaining_doors)) < target:
+        picked = sorted(branch.dead_ends, key=_dead_end_priority(planner, branch))[-len(remaining_doors):]
+        floor = min((_room_chests(planner, r) for r in picked
+                     if r != branch.terminus), default=0)
+        if len(picked) < len(remaining_doors):
+            floor = 0
+        candidates = _treasure_candidates(planner, branch, reserve_areas, 1, floor)
+        if candidates:
+            _pick_treasure(planner, branch, candidates, reserve_areas)
+            continue
+        candidates = _treasure_candidates(planner, branch, reserve_areas, 2)
+        if not candidates:
+            return
+        rid = _pick_treasure(planner, branch, candidates, reserve_areas)
+        room_doors = _elements(w, w.cluster_of_room(rid), DOOR)
+        planner.rng.shuffle(room_doors)
+        _connect(planner, branch, remaining_doors.pop(), room_doors.pop())
+        remaining_doors.extend(room_doors)
+        _trim_dead_ends(branch)
 
 
 # ---------------------------------------------------------------------------
@@ -814,6 +990,8 @@ def finalize_branch(planner, branch, reserve_areas=None):
 
         # (5) Pair excess hub doors until doors <= dead ends.
         _trim_dead_ends(branch)
+        if planner.config.require_treasure_count:
+            _treasure_dead_ends(planner, branch, remaining_doors, reserve_areas)
         while (len(remaining_doors) > len(branch.dead_ends)
                and len(remaining_doors) >= 2):
             _connect(planner, branch, remaining_doors.pop(), remaining_doors.pop())
@@ -883,6 +1061,10 @@ def finalize_branch(planner, branch, reserve_areas=None):
                 branch.dead_ends.remove(warp_id)
             connected_warps, unconnected_warps = _classify_warp_rooms(branch)
 
+        # Treasure rescue (-rrtc): richer dead ends, or a room in line.
+        if planner.config.require_treasure_count and remaining_doors:
+            _treasure_swaps(planner, branch, remaining_doors, reserve_areas)
+
         # (6) Remaining doors to dead ends, key-bearing first.
         if remaining_doors:
             if len(remaining_doors) > len(branch.dead_ends):
@@ -894,6 +1076,8 @@ def finalize_branch(planner, branch, reserve_areas=None):
             known_doors = set(remaining_doors) | set(initial_doors)
 
             rng.shuffle(branch.dead_ends)
+            if planner.config.require_treasure_count:
+                branch.dead_ends.sort(key=_dead_end_priority(planner, branch))
             selected = [branch.dead_ends.pop() for _ in range(len(remaining_doors))]
             with_keys = [d for d in selected if w.keys[w._index[d]]]
             without_keys = [d for d in selected if not w.keys[w._index[d]]]
@@ -969,6 +1153,13 @@ def finalize_plan(planner):
         if w.cluster_of_room(branch.terminus) != hub:
             raise RuinPlanError(
                 f'branch {i} terminus {branch.terminus!r} not merged into hub')
+
+    # -rrtc: the wired-in rooms must hold MIN chests (else re-roll).
+    need = planner.config.require_treasure_count
+    if need and _plan_chests(planner, len(planner.branches)) < need:
+        raise RuinPlanError(
+            f'require treasure count: {_plan_chests(planner, len(planner.branches))} '
+            f'chests wired in, {need} required')
 
     pairs = [list(m) for m in w.door_pairs]
     oneways = [list(m) for m in w.oneways]

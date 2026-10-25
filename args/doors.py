@@ -90,6 +90,15 @@ def parse(parser):
                             "(South Figaro, Kohlingen, Albrook, Jidoor, Thamasa, Nikeah, "
                             "Maranda, Vector or Tzen), wired in when the branch is closed")
 
+    doors.add_argument("-rrtc", "--ruination-require-treasure-count", type=int, default=0,
+                       metavar="MIN",
+                       help="Ruination mode: guarantee at least MIN treasure chests (Monster-in-a-Box "
+                            "included, Kefka's Tower not counted) in rooms the branches wire in. When a "
+                            "branch is closed, chest-bearing rooms are preferred as dead ends, and more "
+                            "are attached (from the branch's own rooms, then unused areas) until the "
+                            "branch's share is met; a plan that falls short is re-rolled. Typical seeds "
+                            "hold about 70-80; a MIN much above 120 may not generate. Default 0 (off)")
+
     doors.add_argument("-rirc", "--ruination-item-reward-chance", type=float, default=None,
                        metavar="PERCENT",
                        help="Ruination mode: chance that a check able to hold a character or esper "
@@ -183,6 +192,12 @@ def process(args):
     if _rirc is not None and not 0 <= _rirc <= 100:
         args.parser.error(f"-rirc: item reward chance {_rirc:g} must be a percent from 0 to 100")
 
+    from data.ruin_chests import ROOM_CHESTS
+    _rrtc = args.ruination_require_treasure_count
+    if not 0 <= _rrtc <= sum(ROOM_CHESTS.values()):
+        args.parser.error(f"-rrtc: {_rrtc} must be from 0 to {sum(ROOM_CHESTS.values())} "
+                          f"(the chests outside Kefka's Tower)")
+
     if args.door_randomize_dungeon_crawl:
         # Override: dungeon crawl is incompatible with map shuffle and takes precedence
         args.map_shuffle_separate = False
@@ -231,6 +246,9 @@ def flags(args):
 
         if getattr(args, "ruination_require_towns", False):
             flags += " -rrt"
+
+        if getattr(args, "ruination_require_treasure_count", 0):
+            flags += f" -rrtc {args.ruination_require_treasure_count}"
 
         if args.required_characters_espers is not None:
             flags += f" -rce {args.required_characters_espers}"
@@ -355,6 +373,8 @@ def options(args):
             (" item rewards", "Standard" if args.ruination_item_reward_chance is None
                              else f"{args.ruination_item_reward_chance:g}%"),
         ]
+        if args.ruination_require_treasure_count:
+            opts += [(" min chests", args.ruination_require_treasure_count)]
 
     elif args.door_randomize_all:
         opts += [

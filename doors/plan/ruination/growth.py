@@ -67,7 +67,8 @@ class RuinConfig:
     def __init__(self, party, char_range=(3, 3), esper_range=(0, 0),
                  open_world=False, maze=None, blitz_characters=(),
                  espers_available=27, kefka_tower=False, require_towns=False,
-                 auction_max_espers=2, item_reward_chance=0.0):
+                 auction_max_espers=2, item_reward_chance=0.0,
+                 require_treasure_count=0):
         self.party = list(party)
         self.char_range = char_range
         self.esper_range = esper_range
@@ -76,6 +77,8 @@ class RuinConfig:
         self.kefka_tower = kefka_tower
         # -rrt: finalize wires a shop town into every branch
         self.require_towns = require_towns
+        # -rrtc: finalize keeps the wired-in rooms' chest total at this or more
+        self.require_treasure_count = require_treasure_count
         self.blitz_characters = list(blitz_characters)
         self.espers_available = espers_available
         # Per-plan room spec replacements (e.g. the -maze iso composite

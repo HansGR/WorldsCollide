@@ -87,6 +87,7 @@ def plan_ruination(args, rng, characters):
             auction_max_espers=(0 if getattr(args, 'no_free_characters_espers', False)
                                 else getattr(args, 'auction_max_espers', 2)),
             item_reward_chance=item_reward_chance,
+            require_treasure_count=int(getattr(args, 'ruination_require_treasure_count', 0) or 0),
             blitz_characters=blitz,
             # The esper pool is untouched at planning time (ruination is its
             # first consumer), so the full pool size is the truth here.

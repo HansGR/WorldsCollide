@@ -66,6 +66,7 @@ class RuinMap:
         self.accessible_shops = list(planner.accessible_shops)
         self.verbose = verbose
         self._name_to_slot = {}   # stashed by bind() for the spoiler log
+        self._restricted = []     # (slot, original possible_types), set by bind()
 
     # ------------------------------------------------------------------
     # Realization: abstract plan -> ROM Reward slots / pools / paths
@@ -96,11 +97,21 @@ class RuinMap:
             entry['slot_id'] = slot.id     # for the spoiler log
         # Ebot's Rock reaching finalize as a dead end restricts its (unclaimed)
         # reward to esper/item so the events.ruination_mod safety pass can't
-        # backfill a character into a leaking Thamasa.
+        # backfill a character into a leaking Thamasa; -rrtc treasure rooms
+        # hold their unclaimed checks to esper/item the same way. The original
+        # types come back after the safety pass (restore_restricted_types).
+        self._restricted = []
         for name, flags in planner.dead_check_restrictions.items():
             slot = name_to_slot.get(name)
             if slot is not None and slot.id is None:
+                self._restricted.append((slot, slot.possible_types))
                 slot.possible_types &= flags
+
+    def restore_restricted_types(self):
+        """Give the restricted slots their original possible types back once
+        they are filled (Events.validate counts the char/esper-only slots)."""
+        for slot, types in self._restricted:
+            slot.possible_types = types
 
     # ------------------------------------------------------------------
     # Downstream-consumer surface

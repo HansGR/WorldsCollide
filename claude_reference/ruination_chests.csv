@@ -1,0 +1,269 @@
+chest_id,area,map,map_name,x,y,type,rooms,how
+1,Narshe Inside WOB,0x1e,Narshe-Elder's House,55,30,item,NARr01-ruin,reviewed
+2,Narshe Inside WOB,0x1e,Narshe-Elder's House,77,9,empty,NARr01-ruin,reviewed
+3,Narshe Inside WOB,0x1e,Narshe-Elder's House,78,8,item,NARr01-ruin,reviewed
+4,Narshe Inside WOB,0x1e,Narshe-Elder's House,79,8,item,NARr01-ruin,reviewed
+5,Narshe Inside WOB,0x1e,Narshe-Elder's House,80,8,item,NARr01-ruin,reviewed
+6,Narshe Inside WOB,0x1e,Narshe-Elder's House,78,10,item,NARr01-ruin,reviewed
+7,Narshe Inside WOB,0x1e,Narshe-Elder's House,79,10,item,NARr01-ruin,reviewed
+8,Narshe Inside WOB,0x1e,Narshe-Elder's House,80,12,gold,NARr01-ruin,reviewed
+9,Narshe Inside WOB,0x1e,Narshe-Elder's House,105,14,item,NARr01-ruin,reviewed
+10,Narshe Mines WOR,0x26,Moogle's Cave,65,28,item,NARr20,reviewed
+11,Narshe Mines WOR,0x26,Moogle's Cave,52,33,item,NARr20,reviewed
+12,Narshe Mines WOR,0x2c,Underneath Narshe (doesn't work),98,53,item,NARr18,reviewed
+13,Narshe Mines WOR,0x2c,Underneath Narshe (doesn't work),121,45,item,NARr18,reviewed
+14,Narshe Mines WOB,0x32,Underneath Narshe,65,28,item,(unreachable),reviewed
+15,Narshe Mines WOB,0x32,Underneath Narshe,52,33,item,(unreachable),reviewed
+16,Narshe Mines WOB,0x34,,98,53,item,(unreachable),reviewed
+17,Figaro Castle,0x3b,"""",43,12,item,FIGr04-ruin,flood
+18,Figaro Castle,0x3b,"""",44,12,item,FIGr04-ruin,flood
+19,Figaro Castle,0x3b,"""",11,12,item,FIGr04-ruin,flood
+20,Figaro Castle,0x3b,"""",120,11,item,FIGr04-ruin,flood
+21,Figaro Castle Basement,0x3f,,80,14,item,FIGr04-ruin,flood
+22,Figaro Castle Basement,0x3f,,82,14,item,FIGr04-ruin,flood
+23,Figaro Castle Basement,0x3f,,86,14,item,FIGr04-ruin,flood
+24,Figaro Castle Basement,0x3f,,88,14,item,FIGr04-ruin,flood
+25,Figaro Castle Basement,0x41,,68,10,item,FIGr04-ruin,flood
+26,Figaro Castle Basement,0x42,,3,53,item,FIGr04-ruin,flood
+27,South Figaro Cave WOR,0x44,Cave to South Figaro (World of Ruin),3,18,item,(unreachable),reviewed
+28,South Figaro Cave WOR,0x44,Cave to South Figaro (World of Ruin),33,23,item,(unreachable),reviewed
+29,South Figaro Cave WOB,0x45,Cave to South Figaro (World of Balance),3,18,item,SFCb06,flood
+30,South Figaro Cave WOB,0x45,Cave to South Figaro (World of Balance),33,23,item,SFCb06,flood
+31,South Figaro Cave WOB,0x46,,52,14,item,SFCb08,flood
+35,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),22,18,item,MAPr-SFI,reviewed
+36,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),32,16,item,MAPr-SFI,flood
+37,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),15,45,item,MAPr-SFI,flood
+38,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),15,47,item,MAPr-SFI,flood
+39,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),6,31,item,MAPr-SFI,flood
+40,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),14,28,item,MAPr-SFI,flood
+41,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),2,43,item,MAPr-SFI,flood
+42,South Figaro Outside WOR,0x4a,South Figaro (World of Ruin),11,23,item,MAPr-SFI,flood
+43,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),22,18,item,(unreachable),reviewed
+44,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),32,16,item,(unreachable),reviewed
+45,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),15,45,item,(unreachable),reviewed
+46,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),15,47,item,(unreachable),reviewed
+47,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),6,31,item,(unreachable),reviewed
+48,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),14,28,item,(unreachable),reviewed
+49,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),2,43,item,(unreachable),reviewed
+50,South Figaro Outside WOB,0x4b,South Figaro (World of Balance),11,23,item,(unreachable),reviewed
+51,South Figaro Inside/Basement,0x54,"South Figaro-Duncan's House, basement",7,52,gold,MAPr-SFI,flood
+52,South Figaro Inside/Basement,0x54,"South Figaro-Duncan's House, basement",21,56,gold,MAPr-SFI,flood
+53,South Figaro Inside/Basement,0x54,"South Figaro-Duncan's House, basement",12,55,gold,MAPr-SFI,flood
+54,South Figaro Inside/Basement,0x54,"South Figaro-Duncan's House, basement",22,55,empty,MAPr-SFI,flood
+55,South Figaro Inside/Basement,0x56,South Figaro-Duncan's House,15,10,item,MAPr-SFI,flood
+56,South Figaro Inside/Basement,0x56,South Figaro-Duncan's House,7,31,item,MAPr-SFI,flood
+57,South Figaro Inside/Basement,0x57,,32,42,item,MAPr-SFI,flood
+58,South Figaro Inside/Basement,0x57,,33,56,item,MAPr-SFI,flood
+59,South Figaro Inside/Basement,0x57,,47,33,item,MAPr-SFI,flood
+60,South Figaro Inside/Basement,0x57,,48,33,item,MAPr-SFI,flood
+61,South Figaro Inside/Basement,0x59,,110,49,item,MAPr-SFI,flood
+62,South Figaro Inside/Basement,0x59,,101,39,item,MAPr-SFI,flood
+63,South Figaro Inside/Basement,0x59,,101,43,item,MAPr-SFI,flood
+64,South Figaro Inside/Basement,0x59,,92,53,item,MAPr-SFI,flood
+65,South Figaro Inside/Basement,0x59,,120,53,item,MAPr-SFI,flood
+66,South Figaro Cave WOR,0x5a,,52,14,item,(unreachable),reviewed
+67,Duncan's House WOB,0x5e,Nikeah (?)-Some rooms (as well as Cid's house on the Solitary Island),74,27,item,(unreachable),reviewed
+68,Mt. Kolts,0x60,Mt. Kolts,27,14,item,MTK05,reviewed
+69,Mt. Kolts,0x60,Mt. Kolts,28,27,item,MTK03,reviewed
+70,Mt. Kolts,0x61,Mt. Kolts with Fog,27,14,item,(unreachable),reviewed
+71,Mt. Kolts,0x61,Mt. Kolts with Fog,28,27,item,(unreachable),reviewed
+72,Mt. Kolts,0x64,Mt. Kolts-Inner caves,30,33,item,MTK13,flood
+73,Mt. Kolts,0x64,Mt. Kolts-Inner caves,8,52,item,MTK12,flood
+74,Narshe School,0x69,Classroom-Advanced Battle Tactics,54,28,item,(unreachable),reviewed
+75,Narshe School,0x6a,Classroom-Battle Tactics,54,28,item,(unreachable),reviewed
+76,Narshe School,0x6b,Classroom-Environmental Science,54,28,MIAB,(unreachable),reviewed
+77,Narshe School,0x6b,Classroom-Environmental Science,61,28,item,(unreachable),reviewed
+78,Returner's Hideout,0x6d,Returners' Hideout,26,21,item,RET02-ruin,flood
+79,Returner's Hideout,0x6e,,28,49,item,RET02-ruin,flood
+80,Returner's Hideout,0x6e,,42,9,item,RET02-ruin,flood
+81,Returner's Hideout,0x6e,,43,9,item,RET02-ruin,flood
+82,Returner's Hideout,0x6e,,43,11,item,RET02-ruin,flood
+83,Returner's Hideout,0x6e,,43,13,item,RET02-ruin,flood
+84,Returner's Hideout,0x6e,,45,13,item,RET02-ruin,flood
+85,Returner's Hideout,0x6e,,55,48,item,RET02-ruin,flood
+86,Returner's Hideout,0x6e,,60,19,item,RET02-ruin,flood
+87,Imperial Camp,0x75,Imperial Camp,45,5,item,IMP01-dc,flood
+88,Imperial Camp,0x75,Imperial Camp,15,8,item,IMP01-dc,flood
+89,Imperial Camp,0x75,Imperial Camp,19,18,item,IMP01-dc,flood
+90,Imperial Camp,0x75,Imperial Camp,17,18,MIAB,IMP01-dc,flood
+91,Doma,0x7b,Doma Castle-inner rooms,52,47,item,DOMr02-ruin,flood
+92,Doma,0x7b,Doma Castle-inner rooms,55,5,item,DOMr02-ruin,flood
+93,Doma,0x7b,Doma Castle-inner rooms,28,49,item,DOMr02-ruin,flood
+94,Doma,0x7b,Doma Castle-inner rooms,31,50,item,DOMr02-ruin,flood
+95,Doma,0x7b,Doma Castle-inner rooms,33,34,item,(unreachable),reviewed
+96,Doma,0x7b,Doma Castle-inner rooms,56,47,item,DOMr02-ruin,flood
+104,Cyan's Dream Phantom Train,0x90,"Phantom Train--Switch car, from Cyan's dream",25,5,item,CDA04,reviewed
+105,Cyan's Dream Phantom Train,0x90,"Phantom Train--Switch car, from Cyan's dream",14,5,item,CDA04,flood
+106,Phantom Train,0x92,Phantom Train--Engine room,20,7,item,PHT09,flood
+107,Phantom Train,0x93,Phantom Train--Dining car,5,5,item,PHT10a,reviewed
+108,Mobliz Bookshelf Room WOR,0x96,,34,49,item,(unreachable),reviewed
+109,Phantom Train,0x99,Phantom Train--Save point,20,7,item,PHT07a,reviewed
+110,Phantom Train,0x99,Phantom Train--Save point,21,7,item,PHT07a,reviewed
+111,Phantom Train,0x99,Phantom Train--Save point,25,24,item,PHT07b,reviewed
+112,Phantom Train,0x99,Phantom Train--Save point,24,24,item,PHT07b,reviewed
+113,Phantom Train,0x99,Phantom Train--Save point,23,24,item,PHT07b,reviewed
+114,Phantom Train,0x99,Phantom Train--Save point,22,24,MIAB,PHT07b,reviewed
+115,Mobliz Outside WOR,0x9e,Mobliz--World of Ruin,9,17,item,MAPr-MOB,flood
+116,Mobliz Inside,0xa3,Mobliz--Armor Shop,51,12,item,MAPr-MOB,flood
+117,Nikeah,0xab,,57,37,item,NIKr01-ruin,flood
+118,Serpent Trench,0xaf,Serpent Trench--Caves,52,11,item,SER02,reviewed
+119,Serpent Trench,0xaf,Serpent Trench--Caves,8,13,item,SER03a,flood
+120,Mt. Zozo,0xb1,"Mt. Zozo--Outside, cliff with treasure chest",9,7,item,MTZ02,flood
+121,Mt. Zozo,0xb3,Mt. Zozo--First inner chamber,19,30,item,MTZ04,reviewed
+122,Mt. Zozo,0xb3,Mt. Zozo--First inner chamber,11,21,item,MTZ04,reviewed
+123,Mt. Zozo,0xb3,Mt. Zozo--First inner chamber,13,16,item,MTZ04,reviewed
+124,Mt. Zozo,0xb3,Mt. Zozo--First inner chamber,3,51,item,MTZ04,reviewed
+125,Mt. Zozo,0xb4,,42,54,empty,MTZ06,flood
+126,Coliseum Owner's House WOB,0xba,,115,34,item,(unreachable),reviewed
+127,Kohlingen,0xc3,,37,53,item,MAPr-KOH,flood
+128,Kohlingen,0xc5,,42,10,item,MAPr-KOH,flood
+129,Owzer's Basement,0xcf,"Jidoor--Owzer's House (dimmed, enemies)",92,58,item,OWZr03,flood
+130,Owzer's Basement,0xcf,"Jidoor--Owzer's House (dimmed, enemies)",90,47,item,OWZr04,flood
+131,Owzer's Mansion,0xd1,Jidoor--Owzer's House,125,11,item,JIDr01-dc,flood
+132,Zozo,0xe1,Zozo--Buildings,111,52,item,ZOZr16,flood
+133,Zozo,0xe1,Zozo--Buildings,66,50,item,ZOZr17,flood
+134,Zozo,0xe1,Zozo--Buildings,83,53,item,ZOZr13,flood
+135,Zozo,0xe1,Zozo--Buildings,11,59,item,ZOZb18,flood
+136,Zozo,0xe1,Zozo--Buildings,35,11,item,ZOZb20,flood
+137,Zozo,0xe1,Zozo--Buildings,104,9,item,ZOZb12,flood
+138,Zozo,0xe1,Zozo--Buildings,105,9,item,ZOZb12,flood
+139,Zozo,0xe2,"""",72,26,item,ZOZb21,flood
+140,Zozo,0xe2,"""",92,27,item,ZOZb21,flood
+146,Magitek Factory,0x106,Magitek Factory--Inside,3,25,item,MTF02,reviewed
+147,Magitek Factory,0x106,Magitek Factory--Inside,17,27,item,MTF02,reviewed
+148,Magitek Factory,0x106,Magitek Factory--Inside,7,44,item,MTF02,reviewed
+149,Magitek Factory,0x106,Magitek Factory--Inside,25,52,item,MTF02,reviewed
+150,Magitek Factory,0x106,Magitek Factory--Inside,14,53,item,MTF01,reviewed
+151,Magitek Factory,0x106,Magitek Factory--Inside,25,44,item,MTF02,reviewed
+152,Magitek Factory,0x107,"Magitek Factory--Inside, 2nd",5,31,item,MTF03,reviewed
+153,Magitek Factory,0x107,"Magitek Factory--Inside, 2nd",14,55,item,MTF03,reviewed
+154,Magitek Factory,0x107,"Magitek Factory--Inside, 2nd",55,34,item,MTF03,reviewed
+155,Magitek Factory,0x107,"Magitek Factory--Inside, 2nd",60,33,item,MTF03,reviewed
+156,Magitek Factory,0x107,"Magitek Factory--Inside, 2nd",42,46,item,MTF03,reviewed
+157,Magitek Factory,0x107,"Magitek Factory--Inside, 2nd",32,57,item,MTF03,reviewed
+158,Magitek Factory,0x10f,,8,37,item,MTF07,flood
+159,Zone Eater,0x114,The place Zone Eater sucks you into,25,31,item,ZON02,reviewed
+160,Zone Eater,0x114,The place Zone Eater sucks you into,40,13,item,ZON03,reviewed
+161,Zone Eater,0x114,The place Zone Eater sucks you into,35,16,item,ZON03,reviewed
+162,Zone Eater,0x114,The place Zone Eater sucks you into,42,32,item,ZON02,reviewed
+163,Zone Eater,0x114,The place Zone Eater sucks you into,43,32,item,ZON02,reviewed
+164,Zone Eater,0x118,,1,45,item,ZON06,reviewed
+165,Zone Eater,0x118,,46,47,item,ZON04b,reviewed
+166,Zone Eater,0x118,,41,43,item,ZON04b,reviewed
+167,Zone Eater,0x118,,27,44,item,ZON04b,reviewed
+168,Umaro's Cave,0x119,Umaro's Lair,41,58,item,UMA02,flood
+169,Umaro's Cave,0x11a,,14,25,item,UMA04b,reviewed
+170,Umaro's Cave,0x11a,,13,34,MIAB,UMA04a,reviewed
+171,Maranda,0x11c,Maranda--World of Balance,28,20,item,MAPr-MAR,flood
+172,Maranda,0x11c,Maranda--World of Balance,2,26,item,MAPr-MAR,flood
+173,Kefka's Tower,0x124,,89,12,item,KT,kt
+174,Kefka's Tower,0x128,"""",38,12,item,KT,kt
+175,Kefka's Tower,0x128,"""",49,12,item,KT,kt
+176,Daryl's Tomb,0x12b,Daryll's Tomb--Basement 2,43,42,item,DAR08,flood
+177,Daryl's Tomb,0x12b,Daryll's Tomb--Basement 2,9,59,item,DAR06,flood
+178,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,43,60,item,DAR11,flood
+179,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,55,58,item,DAR11,flood
+180,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,124,9,item,DAR16,flood
+181,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,120,9,MIAB,DAR16,flood
+182,Kefka's Tower,0x130,,33,35,item,KT,kt
+183,Tzen Collapsing House,0x137,,123,43,item,MAPr-TZE,flood
+184,Tzen Collapsing House,0x137,,104,43,item,MAPr-TZE,flood
+185,Tzen Collapsing House,0x137,,102,49,MIAB,MAPr-TZE,flood
+186,Tzen Collapsing House,0x137,,112,49,item,MAPr-TZE,flood
+187,Tzen Collapsing House,0x137,,103,58,item,MAPr-TZE,flood
+188,Tzen Collapsing House,0x137,,125,12,item,MAPr-TZE,flood
+189,Tzen Collapsing House,0x137,,111,12,MIAB,MAPr-TZE,flood
+190,Tzen Collapsing House,0x137,,118,26,item,MAPr-TZE,flood
+191,Phoenix Cave,0x139,Phoenix Cave--Small Lava Room,13,20,item,MAPr-PHO,reviewed
+192,Phoenix Cave,0x139,Phoenix Cave--Small Lava Room,18,13,empty,MAPr-PHO,reviewed
+193,Phoenix Cave,0x139,Phoenix Cave--Small Lava Room,51,37,empty,MAPr-PHO,reviewed
+194,Phoenix Cave,0x139,Phoenix Cave--Small Lava Room,32,42,empty,MAPr-PHO,reviewed
+195,Phoenix Cave,0x139,Phoenix Cave--Small Lava Room,34,20,empty,MAPr-PHO,reviewed
+196,Phoenix Cave,0x13b,Phoenix Cave--Top Level,24,43,item,MAPr-PHO,reviewed
+197,Phoenix Cave,0x13b,Phoenix Cave--Top Level,50,36,empty,MAPr-PHO,reviewed
+198,Phoenix Cave,0x13b,Phoenix Cave--Top Level,20,40,item,MAPr-PHO,reviewed
+199,Phoenix Cave,0x13b,Phoenix Cave--Top Level,55,53,item,MAPr-PHO,reviewed
+200,Cyan's Dream Phantom Train,0x141,Switch car from Cyan's dream,24,9,item,CDA07,flood
+201,Cyan's Dream Phantom Train,0x141,Switch car from Cyan's dream,16,8,item,CDA07,flood
+202,Albrook Outside,0x143,Albrook--World of Balance,56,13,item,(unreachable),reviewed
+203,Albrook Outside WOR,0x144,Albrook--World of Ruin,56,13,item,MAPr-ALB,reviewed
+204,Albrook Inside,0x146,Albrook--Weapon Shop,11,49,item,MAPr-ALB,flood
+205,Albrook Inside,0x147,Albrook--Armor Shop,94,20,empty,MAPr-ALB,flood
+206,Albrook Inside,0x147,Albrook--Armor Shop,95,20,empty,MAPr-ALB,flood
+207,Albrook Inside,0x14a,Albrook--Cafe,35,7,item,MAPr-ALB,flood
+208,Albrook Dock,0x14c,Albrook--Docks,23,2,item,MAPr-ALB,flood
+209,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,14,item,KT,kt
+210,Kefka's Tower,0x14e,Kefka's Domain--Main Area,11,39,item,KT,kt
+211,Kefka's Tower,0x14e,Kefka's Domain--Main Area,5,51,item,KT,kt
+212,Kefka's Tower,0x14e,Kefka's Domain--Main Area,37,45,item,KT,kt
+213,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,41,item,KT,kt
+214,Kefka's Tower,0x14e,Kefka's Domain--Main Area,47,40,item,KT,kt
+215,Kefka's Tower,0x14e,Kefka's Domain--Main Area,48,48,item,KT,kt
+216,Kefka's Tower,0x14e,Kefka's Domain--Main Area,29,29,item,KT,kt
+217,Kefka's Tower,0x152,,5,39,item,KT,kt
+218,Kefka's Tower,0x152,,58,27,item,KT,kt
+219,Thamasa Outside,0x158,Thamasa--World of Ruin,13,8,item,THAr01-ruin,flood
+220,Thamasa Outside,0x158,Thamasa--World of Ruin,35,12,item,THAr01-ruin,flood
+221,Thamasa Outside,0x158,Thamasa--World of Ruin,43,30,item,THAr01-ruin,flood
+222,Thamasa Outside,0x158,Thamasa--World of Ruin,31,37,item,THAr01-ruin,flood
+223,Thamasa Outside,0x158,Thamasa--World of Ruin,14,18,item,THAr01-ruin,flood
+224,Thamasa Strago's House,0x15d,,56,16,item,THAr01-ruin,flood
+225,Thamasa Burning House,0x15f,Thamasa--Burning House,4,52,item,BUR06,flood
+226,Thamasa Burning House,0x15f,Thamasa--Burning House,45,7,item,BUR07,flood
+227,Veldt Cave WOR,0x161,Cave in the Veldt,18,20,item,COV03,flood
+228,Veldt Cave WOR,0x161,Cave in the Veldt,6,8,MIAB,COV03,flood
+229,Veldt Cave WOR,0x161,Cave in the Veldt,42,26,item,COV06,flood
+230,Fanatic's Tower,0x16d,Fanatics Tower--Treasure Room,7,6,item,MAPr-FAN,reviewed
+231,Fanatic's Tower,0x16e,"Fanatics Tower--Treasure Room, on roof",7,7,item,MAPr-FAN,reviewed
+232,Fanatic's Tower,0x16f,Fanatics Tower--Treasure Room,7,6,item,MAPr-FAN,reviewed
+233,Fanatic's Tower,0x170,"Fanatics Tower--Treasure Room, White Dragon",7,6,item,MAPr-FAN,reviewed
+234,Fanatic's Tower,0x171,Fanatics Tower--Treasure Room,7,6,item,MAPr-FAN,reviewed
+235,Fanatic's Tower,0x172,Fanatics Tower--Treasure Room,7,6,item,MAPr-FAN,reviewed
+236,Esper Mountain,0x174,,41,34,item,ESM03,flood
+237,Esper Mountain,0x175,"Cave near Thamasa, outside cliffs, left",14,9,item,ESM06,flood
+238,Esper Mountain,0x176,"Cave near Thamasa, outside cliffs, right",18,9,item,ESM07,flood
+239,Esper Mountain,0x177,"Cave near Thamasa, Esper room",46,27,item,ESM08,flood
+240,Imperial Base,0x17a,Rooms in Vector and Imperial Base,50,42,item,SEA03,reviewed
+241,Imperial Base,0x17a,Rooms in Vector and Imperial Base,51,42,item,SEA03,reviewed
+242,Imperial Base,0x17a,Rooms in Vector and Imperial Base,49,44,gold,SEA03,reviewed
+243,Imperial Base,0x17a,Rooms in Vector and Imperial Base,51,44,item,SEA03,reviewed
+244,Imperial Base,0x17a,Rooms in Vector and Imperial Base,54,44,item,SEA03,reviewed
+245,Imperial Base,0x17a,Rooms in Vector and Imperial Base,56,44,gold,SEA03,reviewed
+246,Imperial Base,0x17a,Rooms in Vector and Imperial Base,52,45,item,SEA03,reviewed
+247,Imperial Base,0x17a,Rooms in Vector and Imperial Base,51,46,item,SEA03,reviewed
+248,Imperial Base,0x17a,Rooms in Vector and Imperial Base,53,46,gold,SEA03,reviewed
+249,Imperial Base,0x17a,Rooms in Vector and Imperial Base,49,47,item,SEA03,reviewed
+250,Imperial Base,0x17a,Rooms in Vector and Imperial Base,50,47,item,SEA03,reviewed
+251,Imperial Base,0x17a,Rooms in Vector and Imperial Base,55,42,item,SEA03,reviewed
+252,Imperial Base,0x17a,Rooms in Vector and Imperial Base,56,49,item,SEA03,reviewed
+253,Cave To Sealed Gate,0x17e,Cave to the Sealed Gate,36,39,item,SEA04,reviewed
+254,Cave To Sealed Gate,0x17f,Cave to the Sealed Gate--Basement 1,48,56,item,SEA05,reviewed
+255,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),29,23,item,SEA08,reviewed
+256,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),47,11,item,SEA08,reviewed
+257,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),88,23,item,SEA09,reviewed
+258,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),113,6,item,SEA07,reviewed
+259,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),71,30,item,SEA09,reviewed
+260,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),88,53,item,SEA10,reviewed
+261,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),89,51,item,SEA10,reviewed
+262,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),91,49,item,SEA10,reviewed
+263,Cave To Sealed Gate,0x180,Cave to the Sealed Gate--Basement 1 (Lava colored),92,49,item,SEA10,reviewed
+264,Cave To Sealed Gate,0x181,Cave to the Sealed Gate--Small Lava Room with moving bridges,3,8,item,SEA11,reviewed
+265,Cave To Sealed Gate,0x181,Cave to the Sealed Gate--Small Lava Room with moving bridges,14,4,item,SEA11,reviewed
+266,Cave To Sealed Gate,0x182,Cave to the Sealed Gate--Basement 4,77,52,item,SEA12,reviewed
+267,Floating Continent,0x189,"Floating Island--being destroyed, Naughtys attack",103,12,item,MAPb-FLO,reviewed
+268,Floating Continent,0x18a,Floating Island,35,8,item,MAPb-FLO,reviewed
+269,Floating Continent,0x18a,Floating Island,98,31,item,MAPb-FLO,reviewed
+270,Floating Continent,0x18a,Floating Island,48,15,MIAB,MAPb-FLO,reviewed
+271,Ancient Cave,0x191,Caves to the Ancient Castle,55,21,item,ANC01,flood
+272,Ancient Cave,0x191,Caves to the Ancient Castle,45,21,item,ANC01,flood
+273,Ancient Cave,0x191,Caves to the Ancient Castle,58,43,MIAB,ANC02,flood
+274,Ancient Cave,0x191,Caves to the Ancient Castle,49,46,item,ANC02,flood
+275,Ancient Cave,0x191,Caves to the Ancient Castle,18,28,item,ANC03,flood
+276,Ancient Cave,0x191,Caves to the Ancient Castle,8,20,item,ANC03,flood
+277,Ancient Cave,0x196,Ancient Castle--Basement 1,53,23,item,ANC08,flood
+278,Ancient Cave,0x196,Ancient Castle--Basement 1,55,23,item,ANC08,flood
+279,Ancient Cave,0x196,Ancient Castle--Basement 1,10,17,MIAB,ANC05,flood
+280,Ancient Cave,0x196,Ancient Castle--Basement 1,59,6,item,ANC06,flood
+281,Ancient Cave,0x198,Ancient Castle--Basement 1,34,43,item,ANC12,flood
+282,Kefka's Tower,0x19a,Kefka's Domain,10,17,item,KT,kt
+283,Kefka's Tower,0x19a,Kefka's Domain,7,42,item,KT,kt
