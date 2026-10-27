@@ -301,7 +301,20 @@ def options(args):
 def menu(args):
     # the per-command chances (-compr/-compru) go to a sub-menu, one line here
     entries = [entry for entry in options(args) if not entry[2].startswith("command_probability_")]
+    # one row per exclusion without the "None" padding (the log keeps six rows),
+    # or a single "None" row when nothing is excluded
+    entries = [entry for entry in entries if not entry[2].startswith("random_exclude_command")]
+    for i, command in enumerate(args.random_exclude_commands, start = 1):
+        entries.append(("Random Exclude", id_name[command], f"random_exclude_command{i}"))
+    if not args.random_exclude_commands:
+        entries.append(("Random Exclude", "None", "random_exclude_command1"))
     if args.commands_probability_mode:
+        # the blank row only separates a per-character command list (-com) from the rest;
+        # shuffle (-scc) only moves whole command sets between characters, so it shows when on
+        if args.commands is None:
+            entries = [entry for entry in entries if entry[0] != ""]
+        if not args.shuffle_commands:
+            entries = [entry for entry in entries if entry[2] != "shuffle_commands"]
         from menus.flags_command_chances import FlagsCommandChances
         chances = [("None" if command == NONE_COMMAND else id_name[command], percent)
                    for command, percent in args.command_probabilities]

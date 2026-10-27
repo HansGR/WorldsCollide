@@ -3110,6 +3110,20 @@ Verified in the emulator:
 - In-game Track menu: Objectives, Checks, Progress and Flags.
 - B from a submenu returns to the top of Flags, as before.
 
+**Commands section trimmed (2026-10-27, menu only; the log keeps every
+row).**
+
+- Random Exclude shows one row per actual exclusion, and a single "None"
+  row when there are none (it used to pad to six).
+- In the probability modes, the blank row before Shuffle Commands is
+  dropped unless a per-character `-com` list is shown above it.
+- Shuffle Commands appears only when `-scc` is on. There, `-scc`
+  (`shuffle_full_random_commands`) only swaps whole command sets between
+  characters. The rolls are already per character, and in unique mode the
+  roll order is shuffled, so `-scc` only matters for commands pinned with
+  `-com`.
+- Ruin menus now read: Random Mode / Chances 24 … / Random Exclude None.
+
 Goldens were re-recorded: ROM bytes only, logs identical. Measure C3 use
 with a wrapper on `memory.space.Allocate`; `Space.heaps[Bank.C3].available`
 is a property.
