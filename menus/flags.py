@@ -48,11 +48,12 @@ class Flags(scroll_area.ScrollArea):
 
     def fit_lines(self):
         # the menu holds at most MAX_LINES lines (more wrap the 8-bit count and draw nothing)
-        # drop the blank lines between groups (titles stay blue), then cut the end if still too long
-        if len(self.lines) <= scroll_area.MAX_LINES:
-            return
+        # drop just enough blank lines between groups, bottom first (titles stay blue),
+        # then cut the end if still too long
         separators = [index for index, line in enumerate(self.lines) if line.text == ""]
         for index in reversed(separators):
+            if len(self.lines) <= scroll_area.MAX_LINES:
+                return
             del self.lines[index]
             if index in self.submenus:
                 del self.submenus[index]

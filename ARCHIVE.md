@@ -3068,11 +3068,12 @@ per-command `-compru` chance lines and the ruination entries.
 
 - `MAX_LINES = 255`. `ScrollArea` now asserts it at build time, so an
   overflow fails the build instead of shipping a blank menu.
-- `Flags.fit_lines()` only acts when the menu is over the limit. It first
-  drops the blank separators between groups (group titles stay blue), which
-  saves about 30 lines and is enough for every current flagset. If the menu
-  is still too long, it cuts the end and adds a "(more in the log)" line.
-  Submenu line indices are shifted to match.
+- `Flags.fit_lines()` only acts when the menu is over the limit. It drops
+  just enough of the blank separators between groups, starting from the
+  bottom (group titles stay blue). Easy loses one, the blank line before
+  Doors, and lands at exactly 255; there are about 30 to spare. If the menu
+  is still too long with every separator gone, it cuts the end and adds a
+  "(more in the log)" line. Submenu line indices are shifted to match.
 - Test: `tests/test_flags_menu.py`.
 - Verified in the emulator: the old easy ROM shows an empty Flags page; the
   fixed one scrolls from Settings to the last Doors line.

@@ -34,8 +34,12 @@ def menu(groups, size):
 
 short = menu(10, 9)                      # 109 lines: untouched
 assert len(short.lines) == 109 and "" in [line.text for line in short.lines]
-easy = menu(30, 7)                       # 269 lines: separators dropped
-assert len(easy.lines) == 240 and "" not in [line.text for line in easy.lines]
+easy = menu(30, 7)                       # 269 lines: the bottom 14 separators dropped
+texts = [line.text for line in easy.lines]
+assert len(easy.lines) == scroll_area.MAX_LINES
+blanks = [index for index, text in enumerate(texts) if text == ""]
+assert len(blanks) == 29 - 14
+assert "" not in texts[blanks[-1] + 1:] and texts[blanks[-1] + 1] == "Group 15"
 for line, submenu in easy.submenus.items():
     assert easy.lines[line].text == "  " + submenu[4:] + ".1", (line, submenu)
 huge = menu(20, 20)                      # 400 even without separators: cut
