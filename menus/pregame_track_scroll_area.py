@@ -115,7 +115,7 @@ class ScrollArea:
             asm.BRA("UPDATE_SCROLLBAR"),
 
             "CREATE_SCROLLBAR",
-            asm.JSR(0x091f, asm.ABS),           # create scrollbar, x = scrollbar index
+            c3.eggers_jump(0x091f),             # create scrollbar, x = scrollbar index
             asm.LDA(visible_scrollbar, asm.IMM8),
             asm.TSB(0x46, asm.DIR),             # show scrollbar
 
@@ -131,7 +131,7 @@ class ScrollArea:
             asm.A8(),
 
             "CURRENT_TYPE_SHOWING",
-            asm.JSR(0x7d1c, asm.ABS),           # load navigation data
+            c3.eggers_jump(0x7d1c),             # load navigation data
 
             # cursor position (reset/memory)
             asm.LDA(0x1d4e, asm.ABS),           # load game config
@@ -141,12 +141,21 @@ class ScrollArea:
             asm.JSL(self.remember_cursor + START_ADDRESS_SNES),
 
             "UPDATE_CURSOR",
-            asm.JSR(0x7d25, asm.ABS),           # update cursor
+            c3.eggers_jump(0x7d25),             # update cursor
 
-            asm.JSR(draw, asm.ABS),             # draw scroll area
+            c3.eggers_jump(draw),               # draw scroll area
+            asm.RTL(),
+        ]
+        # the body lives in F0 (C3 calls through eggers jumps): bank C3 is nearly full and
+        # every scroll area has one, only the stub below costs C3 space
+        space = Write(Bank.F0, src, "pregame track scroll area invoke")
+        invoke_body = space.start_address
+
+        src = [
+            asm.JSL(invoke_body + START_ADDRESS_SNES),
             asm.RTS(),
         ]
-        space = Write(Bank.C3, src, "pregame track scroll area invoke")
+        space = Write(Bank.C3, src, "pregame track scroll area invoke stub")
         self.invoke = space.start_address
 
     def set_line_color_mod(self):

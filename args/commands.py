@@ -299,7 +299,15 @@ def options(args):
     return result
 
 def menu(args):
-    return (name(), options(args))
+    # the per-command chances (-compr/-compru) go to a sub-menu, one line here
+    entries = [entry for entry in options(args) if not entry[2].startswith("command_probability_")]
+    if args.commands_probability_mode:
+        from menus.flags_command_chances import FlagsCommandChances
+        chances = [("None" if command == NONE_COMMAND else id_name[command], percent)
+                   for command, percent in args.command_probabilities]
+        index = [entry[2] for entry in entries].index("commands_probability_mode") + 1
+        entries.insert(index, ("Chances", FlagsCommandChances(chances), "command_probabilities"))
+    return (name(), entries)
 
 def log(args):
     from log import format_option

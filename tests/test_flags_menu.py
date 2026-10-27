@@ -46,6 +46,11 @@ huge = menu(20, 20)                      # 400 even without separators: cut
 assert len(huge.lines) == scroll_area.MAX_LINES
 assert huge.lines[-1].text.strip() == "(more in the log)"
 assert all(line < len(huge.lines) - 1 for line in huge.submenus)
+# -compr/-compru chances: their own sub-menu, two columns per line
+from menus.flags_command_chances import FlagsCommandChances
+chances = FlagsCommandChances._format_menu([("Fight", 90), ("MagiTek", 100), ("Shock", 12)])
+assert chances == ["Fight    90% MagiTek 100% ", "Shock    12%" + " " * 14], chances
+assert all(len(line) <= scroll_area.WIDTH for line in chances)
 sys.__stdout__.write("ok\\n")
 """
 

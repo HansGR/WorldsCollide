@@ -3078,5 +3078,38 @@ per-command `-compru` chance lines and the ruination entries.
 - Verified in the emulator: the old easy ROM shows an empty Flags page; the
   fixed one scrolls from Settings to the last Doors line.
 
-**If more room is ever needed,** the 24 command-chance lines could go two to
-a row.
+**Follow-up (same day): command chances moved to a submenu.** The 24
+per-command `-compr`/`-compru` lines are now one Flags line, "Chances 24 …".
+It opens `menus/flags_command_chances.py` (`FlagsCommandChances`, menu
+number 18), laid out in two columns like the Item Rewards submenu. The
+spoiler log still lists every chance (`args/commands.options` is
+unchanged; only `menu()` swaps the lines out).
+
+Flags line counts for seed 5:
+
+| Mode | Lines |
+|---|---|
+| Standard | 229 |
+| Hard | 230 |
+| Easy | 233 |
+
+All three keep every separator. `fit_lines` stays as the safety net.
+
+**Bank C3 was the real constraint.** A new scroll area costs C3 code, and
+C3 had 96 bytes free with the new submenu on `-ruin hard`; `-rc` (the
+Require Characters submenu) then failed with `RomSpaceError` in
+`menus/buy.py`. Each scroll area's invoke routine (91 bytes, seven of
+them) now lives in F0. It calls the C3 routines through
+`c3.eggers_jump`, and leaves a 5-byte `JSL; RTS` stub in C3. That brings
+C3 free to 698 bytes on `-ruin hard`.
+
+Verified in the emulator:
+
+- Pregame: Objectives, Flags, and the Chances, Item Rewards, Remove Spells
+  and Require Chars submenus.
+- In-game Track menu: Objectives, Checks, Progress and Flags.
+- B from a submenu returns to the top of Flags, as before.
+
+Goldens were re-recorded: ROM bytes only, logs identical. Measure C3 use
+with a wrapper on `memory.space.Allocate`; `Space.heaps[Bank.C3].available`
+is a property.
