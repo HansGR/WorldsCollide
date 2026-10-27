@@ -10,6 +10,7 @@ WIDTH = 26  # max characters per row
 HEIGHT = 10 # rows visible on screen
 
 ROWS = 10   # scrollable rows (same as height)
+MAX_LINES = 255 # line indices and the line count are 8-bit (draw_line_mod's CMP): 256 lines wrap to 0 and draw blank
 COLS = 1    # scrollable cols
 
 SCROLLBAR_INITIAL_Y = 0x58
@@ -72,8 +73,8 @@ class ScrollArea:
         space = Write(Bank.F0, line_color_addresses, "pregame track scroll area line colors table")
         self.line_colors_table = space.start_address
 
+        assert len(self.lines) <= MAX_LINES, f"{type(self).__name__}: {len(self.lines)} lines, at most {MAX_LINES} fit"
         self.number_excess_lines = max(len(self.lines) - HEIGHT, 0)
-        assert self.number_excess_lines <= 256
         if self.number_excess_lines > 0:
             # this seems to match scrollable area and rows well enough
             self.scrollbar_speed = int(27000 * self.number_excess_lines ** -1.0)

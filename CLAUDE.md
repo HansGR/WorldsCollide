@@ -171,6 +171,8 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 - **Local character gating** (door rando) — Three mechanisms: `entrance_door_patch` (callable taking `args`), in-event gating, `-ruin` room variants with lock dicts. See ARCHIVE.md "Local Character Gating".
   - **Gotcha:** `entrance_door_patch` source must NOT terminate with `field.Return()` — see ARCHIVE.md "entrance_door_patch must fall through".
 
+- **In-game scroll menus (`menus/pregame_track_scroll_area.py`) hold at most `MAX_LINES` = 255 lines** (8-bit line count: 256 drew a blank Flags menu on `-ruin easy`). `ScrollArea` asserts it; `Flags.fit_lines()` drops group separators, then truncates, when the flags overflow. New flags add Flags-menu lines: standard/hard ruin sit near 252 with separators, about 222 without. ARCHIVE.md "In-game Flags menu blank".
+
 ### Conventions
 - **log/verbose.py** `vprint()` — debug output helper. `-debug` → stdout, `-debug-verbose`/`-dv` → spoiler-log temp file, neither → no-op. **Don't** wrap `vprint(...)` in `if self.verbose:`.
 - **Race builds** — `feature/race-obfuscation` (not merged) adds `-race`: spoiler tables relocated + masked + decoyed, check rewards slot-indirected. Its docs live on that branch (`RACE_OBFUSCATION_OVERVIEW.md` first). Field opcodes `$E6`/`$FC` (chosen as free on both branches; the reward dialog rides vanilla `$4B` with operand bit 13), handlers in bank F0 behind 20 bytes of C0. See ARCHIVE.md "Race ROM Obfuscation".

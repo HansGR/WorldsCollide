@@ -3040,3 +3040,42 @@ Measured (grow+finalize, 60 seeds, std-like config):
   - three-or-more-door rooms as in-line candidates;
   - a per-branch floor rather than a cumulative one;
   - counting only chests the walk passes (a dead end is a detour).
+
+## In-game Flags menu blank on `-ruin easy` (2026-10-27)
+
+**Symptom.** `-ruin easy` seeds showed an empty Flags page in the pregame
+menu. Standard and hard seeds were fine.
+
+**Cause.** The Flags menu (`menus/flags.py`) is one scroll area with a line
+per option, a title per group and a blank line between groups. The scroll
+area code (`menus/pregame_track_scroll_area.py`) works in 8-bit line
+indices. The draw routine compares the line index against `len(self.lines)`
+as an 8-bit immediate, so at 256 lines the compare value is 0 and every line
+draws blank.
+
+Line counts for seed 5:
+
+| Mode | Lines |
+|---|---|
+| Standard | 252 |
+| Hard | 253 |
+| Easy | 256 |
+
+Easy has extra flags (starting items, `-rrt`, ...) on top of the 24
+per-command `-compru` chance lines and the ruination entries.
+
+**Fix.**
+
+- `MAX_LINES = 255`. `ScrollArea` now asserts it at build time, so an
+  overflow fails the build instead of shipping a blank menu.
+- `Flags.fit_lines()` only acts when the menu is over the limit. It first
+  drops the blank separators between groups (group titles stay blue), which
+  saves about 30 lines and is enough for every current flagset. If the menu
+  is still too long, it cuts the end and adds a "(more in the log)" line.
+  Submenu line indices are shifted to match.
+- Test: `tests/test_flags_menu.py`.
+- Verified in the emulator: the old easy ROM shows an empty Flags page; the
+  fixed one scrolls from Settings to the last Doors line.
+
+**If more room is ever needed,** the 24 command-chance lines could go two to
+a row.
