@@ -44,7 +44,7 @@ class TestRuinPreprocessor(unittest.TestCase):
             self.assertEqual(value_after(argv, "-rirc"), ["1"])
             self.assertEqual(argv.count("-rirc"), 1)
         # every flagset: at least 55 treasure chests on the map
-        for mode in ([], ["hard"], ["easy"]):
+        for mode in ([], ["hard"], ["easy"], ["fast"]):
             argv = expand(["wc.py", "-ruin"] + mode)
             self.assertEqual(value_after(argv, "-rrtc"), ["55"])
             self.assertEqual(argv.count("-rrtc"), 1)
@@ -101,7 +101,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertEqual(value_after(argv, "-sfd"), ["3"])
         self.assertEqual(value_after(argv, "-sj"), ["12"])
         self.assertIn("-rrt", argv)
-        # High Tier Item rewards at 2, 4 and 6 espers obtained
+        # High Tier Item rewards at 3 and 6 espers obtained
         self.assertEqual(value_after(argv, "-oc"), ["58.1.1.4.3.3"])
         self.assertEqual(value_after(argv, "-od"), ["58.1.1.4.6.6"])
         self.assertNotIn("-oe", argv)                    # two high tier item objectives
@@ -110,6 +110,33 @@ class TestRuinPreprocessor(unittest.TestCase):
         # every flag appears once
         flags = [a for a in argv if a.startswith("-")]
         self.assertEqual(len(flags), len(set(flags)), flags)
+
+    def test_fast_is_standard_with_easy_map_size(self):
+        argv = expand(["wc.py", "-ruin", "fast"])
+        self.assertEqual(argv[argv.index("-ruin") + 1], "fast")
+        # from easy: map size, party, espers, no cap, towns, the two objectives
+        self.assertEqual(value_after(argv, "-rce"), ["6.6"])
+        self.assertEqual(value_after(argv, "-sc4"), ["random"])
+        self.assertEqual(value_after(argv, "-esr", 2), ["5", "5"])
+        self.assertEqual(value_after(argv, "-ebr"), ["100"])
+        self.assertNotIn("-lc", argv)
+        self.assertIn("-rrt", argv)
+        self.assertEqual(value_after(argv, "-oc"), ["58.1.1.4.3.3"])
+        self.assertEqual(value_after(argv, "-od"), ["58.1.1.4.6.6"])
+        self.assertEqual(value_after(argv, "-sws"), ["3"])   # its own: three Warp Stones
+        # everything else is standard
+        standard = expand(["wc.py", "-ruin"])
+        for flag, count in (("-lsced", 1), ("-hmced", 1), ("-gp", 1), ("-chrm", 2), ("-ir", 1),
+                            ("-rrtc", 1), ("-rirc", 1), ("-stl", 1), ("-compru", 2)):
+            self.assertEqual(value_after(argv, flag, count), value_after(standard, flag, count), flag)
+        self.assertIn("-ssf4", argv)
+        self.assertIn("-cg", argv)
+        for flag in ("-si", "-sfd", "-sj", "-pd", "-oe"):
+            self.assertNotIn(flag, argv)
+        flags = [a for a in argv if a.startswith("-")]
+        self.assertEqual(len(flags), len(set(flags)), flags)
+        self.assertEqual(sorted(set(flags) - set(standard)),
+                         ["-oc", "-od", "-rrt", "-sc4", "-sws"])
 
     def test_easy_honors_no_and_exclusive_groups(self):
         argv = expand(["wc.py", "-ruin", "easy", "-no", "rrt", "chrm"])
@@ -133,7 +160,8 @@ class TestRuinPreprocessor(unittest.TestCase):
     def test_required_characters_take_the_last_default_slots(self):
         # -rc drops trailing default '-scN random' slots, one per required
         # character, from the slots the mode actually injects
-        for mode, left in (([], ["-sc1", "-sc2"]), (["easy"], ["-sc1", "-sc2", "-sc3"])):
+        for mode, left in (([], ["-sc1", "-sc2"]), (["easy"], ["-sc1", "-sc2", "-sc3"]),
+                           (["fast"], ["-sc1", "-sc2", "-sc3"])):
             argv = expand(["wc.py", "-ruin", *mode, "-rc", "terra"])
             self.assertEqual([a for a in argv if a in ("-sc1", "-sc2", "-sc3", "-sc4")], left)
 

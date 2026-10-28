@@ -3143,3 +3143,42 @@ row).**
 Goldens were re-recorded: ROM bytes only, logs identical. Measure C3 use
 with a wrapper on `memory.space.Allocate`; `Space.heaps[Bank.C3].available`
 is a property.
+
+## `-ruin fast` preset (2026-10-28)
+
+Hans's spec: standard, plus these pieces of easy.
+
+| Flag | Fast | Standard |
+|---|---|---|
+| `-rce` | `6.6` (6 characters + 6 espers/items) | `6.9` |
+| `-oc` / `-od` | `58.1.1.4.3.3` / `58.1.1.4.6.6`: High Tier Item at 3 and 6 espers found | none |
+| Starting party | four (`-sc4 random`) | three |
+| `-esr` | `5 5` | `3 5` |
+| `-ebr` | `100` | `88` |
+| `-lc` | none (no level cap) | `48 10` |
+| `-rrt` | on: a shop town on every branch | off |
+| `-sws` | `3` Warp Stones; fast's own (easy gives 10) | none |
+
+Everything else is standard: enemy scaling 2/2/2, 6000 gp, 1/4 sell
+prices, `-chrm 7 0`, no potions, fenix downs or junk, `-rrtc 55`, `-rirc 1`.
+
+Implementation:
+
+- `RUIN_FAST_OVERRIDES` and `RUIN_FAST_EXTRAS` in `args/ruin_preprocessor.py`.
+- `fast` added to the `-ruin` choices and to the flag-string modes in
+  `args/doors.py`, so a logged string re-expands as fast.
+- Tests: `test_fast_is_standard_with_easy_map_size`, which checks that the
+  only flags added beyond standard are `-oc -od -rrt -sc4 -sws`.
+- Golden config `ruinfast` (`-ruin fast -s 1002`).
+- The `-ruin` help's stale easy objective text ("2, 4 and 6") now reads
+  "3 and 6".
+
+Checks:
+
+- Eight seeds built, with 3 plan re-rolls in total.
+- Flags menu: 224 lines.
+- Emulator: four party members and three Warp Stones at the start, from a
+  build without `-debug` (`-debug` adds 99 Warp Stones and 3 Dried Meat).
+
+Like easy, the 6-espers objective relies on the map's six esper/item
+checks; a 1% `-rirc` item roll there leaves it to bonus or auction espers.

@@ -34,6 +34,7 @@ CONFIGS = {
     'ruinopen':  '-ruin -open -s 1004',
     'ruinsep':   '-ruin -maze sep -s 1005',
     'ruinhard':  '-ruin hard -s 1002',
+    'ruinfast':  '-ruin fast -s 1002',
     'drdc1':     '-drdc -s 12345',
     'drdc2':     '-drdc -s 1006',
     'dre1':      '-dre -s 999',

@@ -217,8 +217,31 @@ RUIN_EASY_EXTRAS = {
         '-od', '58.1.1.4.6.6',
     ],
 }
-RUIN_MODE_EXTRAS = {**RUIN_HARD_EXTRAS, **RUIN_EASY_EXTRAS}
-RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES, 'hard': RUIN_HARD_OVERRIDES}
+
+# '-ruin fast' (2026-10-28): the standard flagset on easy's smaller map, with
+# easy's two High Tier Item objectives and a few of its comforts (four
+# starting characters, easy's esper spells/bonuses, no level cap, a shop town
+# on every branch) plus three Warp Stones.  Enemy scaling, gp, sell prices,
+# monster-in-a-box odds and the other starting items stay standard.
+RUIN_FAST_OVERRIDES = {
+    '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers/items
+    '-sc3': ['-sc3', 'random', '-sc4', 'random'],  # four starting characters
+    '-esr': ['-esr', '5', '5'],         # every esper teaches five spells
+    '-ebr': ['-ebr', '100'],            # every esper gives a level-up bonus
+    '-lc': [],                          # no level cap
+}
+RUIN_FAST_EXTRAS = {
+    'fast': [
+        '-sws', '3',                    # three Warp Stones
+        '-rrt',                         # a shop town on every branch
+        # High Tier Item rewards at 3 and 6 espers obtained
+        '-oc', '58.1.1.4.3.3',
+        '-od', '58.1.1.4.6.6',
+    ],
+}
+RUIN_MODE_EXTRAS = {**RUIN_HARD_EXTRAS, **RUIN_EASY_EXTRAS, **RUIN_FAST_EXTRAS}
+RUIN_MODE_OVERRIDES = {'easy': RUIN_EASY_OVERRIDES, 'hard': RUIN_HARD_OVERRIDES,
+                       'fast': RUIN_FAST_OVERRIDES}
 
 # Flags that have arguments (used for proper flag removal).
 #
@@ -379,6 +402,7 @@ def preprocess_ruin_flag(argv=None):
       applied, plus RUIN_HARD_EXTRAS
     - If followed by 'easy', inject the base defaults with RUIN_EASY_OVERRIDES
       applied, plus RUIN_EASY_EXTRAS
+    - If followed by 'fast', likewise with RUIN_FAST_OVERRIDES / RUIN_FAST_EXTRAS
     - Otherwise (default), inject the base default flags only
     - Process -no flags to remove specific defaults
     - If user specifies starting character flags, remove default starting chars
@@ -403,7 +427,7 @@ def preprocess_ruin_flag(argv=None):
     # Mark that we've preprocessed
     _preprocessing_done = True
 
-    # Check for a mode value ('custom'/'hard'/'easy') following -ruin
+    # Check for a mode value ('custom'/'hard'/'easy'/'fast') following -ruin
     next_arg = argv[ruin_index + 1] if ruin_index + 1 < len(argv) else None
 
     if next_arg == 'custom':

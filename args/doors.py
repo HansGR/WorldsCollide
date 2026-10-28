@@ -59,7 +59,7 @@ def parse(parser):
     doors.add_argument("-dre", "--door-randomize-each", action = "store_true",
                          help = "Randomize doors in each currently-implemented area")
     doors.add_argument("-ruin", "--ruination-mode", nargs="?", const="default", default=None,
-                       choices=["default", "hard", "easy", "custom"],
+                       choices=["default", "hard", "easy", "fast", "custom"],
                        help="Rogue-like mode with randomized dungeon and no airship. "
                             "Automatically sets recommended flags. '-ruin hard' additionally adds "
                             "permadeath, 3 starting Fenix Downs, lite ironmog saves, and removes "
@@ -69,7 +69,10 @@ def parse(parser):
                             "1.5, espers that always teach 5 spells and give a level-up bonus, premium item "
                             "rewards, 12000 gp, standard sell prices, 6 Potions, 10 Warp Stones, 3 Fenix Downs, "
                             "12 junk items, a shop town on every branch, rare monsters-in-a-box and "
-                            "High Tier Item rewards at 2, 4 and 6 espers "
+                            "High Tier Item rewards at 3 and 6 espers. "
+                            "'-ruin fast' is standard on easy's smaller map (6 characters + 6 espers) "
+                            "with its High Tier Item rewards, 4 starting characters, easy's esper spells and "
+                            "bonuses, no level cap, a shop town on every branch and 3 Warp Stones "
                             "('-ruin custom' skips defaults entirely, "
                             "'-no <flags>' disables specific defaults)")
 
@@ -236,7 +239,7 @@ def flags(args):
         # re-running a logged flag string re-expands the same defaults
         # (a bare '-ruin' must not re-expand as hard or easy).
         flags += " -ruin"
-        if args.ruination_mode in ("custom", "hard", "easy"):
+        if args.ruination_mode in ("custom", "hard", "easy", "fast"):
             flags += " " + args.ruination_mode
 
         if args.ruin_dream_maze:
