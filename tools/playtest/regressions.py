@@ -310,8 +310,7 @@ def scenario_unequip_all_away(vanilla, workdir):
     Reform two parties, walk party 1 out of the hub, Y-switch to party 2,
     plant an esper + weapon + relic on one character of each party, use the
     ghost's third option, and assert both records are cleared to $FF."""
-    rom = build(vanilla, os.path.join(workdir, "unq.smc"), "-ruin")
-    spoiler = rom[:-4] + ".txt"
+    rom, hops = build_routable(vanilla, os.path.join(workdir, "unq.smc"), "-ruin", "cave")
 
     h = Harness(rom)
     h.boot_to_game_start()
@@ -330,8 +329,6 @@ def scenario_unequip_all_away(vanilla, workdir):
     assert p1 and p2, f"two parties not formed: {parties}"
 
     # party 1 leaves the hub through the school's branch door
-    hops = route.route_from_start(spoiler, "cave")
-    assert hops, "no routable branch in this seed"
     route.step_door(h, hops[1])
     navigate.wait_for_control(h)
     assert h.map_id != reform.SCHOOL_MAP, "party1 did not leave the school"

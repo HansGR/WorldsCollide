@@ -43,6 +43,12 @@ class TestRuinPreprocessor(unittest.TestCase):
             argv = expand(["wc.py", "-ruin"] + mode)
             self.assertEqual(value_after(argv, "-rirc"), ["1"])
             self.assertEqual(argv.count("-rirc"), 1)
+        # every flagset: at least 55 treasure chests on the map
+        for mode in ([], ["hard"], ["easy"]):
+            argv = expand(["wc.py", "-ruin"] + mode)
+            self.assertEqual(value_after(argv, "-rrtc"), ["55"])
+            self.assertEqual(argv.count("-rrtc"), 1)
+        self.assertNotIn("-rrtc", expand(["wc.py", "-ruin", "-no", "rrtc"]))
         # '-no rirc' falls back to the vanilla-rate formula; a user value comes
         # after the injected default, so argparse's last value wins
         self.assertNotIn("-rirc", expand(["wc.py", "-ruin", "-no", "rirc"]))

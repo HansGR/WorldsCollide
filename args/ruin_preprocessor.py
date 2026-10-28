@@ -110,6 +110,9 @@ RUIN_DEFAULT_FLAGS = {
                    # item rewards on character/esper checks only as a rare
                    # surprise (1%); the boss item-only rewards supply items
                    '-rirc', '1',
+                   # at least 55 treasure chests (MIAB included, Kefka's Tower
+                   # not counted) in the rooms the map wires in
+                   '-rrtc', '55',
                    '-oa', '59.3.3.11.29.11.30.11.31.10.12.12',
                    '-ob', '30.8.8.3.3.11.6.11.7.11.8.10.12.12',
                    # silent start bonuses: +100 max HP for all, full heal

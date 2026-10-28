@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import doors.atlas as atlas
 from data.event_exit_data import event_exit_info
 from tools.playtest import navigate
+import data.direction as direction
 
 # Facings to try when stepping into a door (down, up, right, left)
 _FACINGS = [2, 0, 1, 3]
@@ -185,12 +186,15 @@ def step_door(h, door_id, timeout=160):
     acting as doors. Returns the new map id, or None if nothing produced a
     transition."""
     start_map = h.map_id
+    # straight approaches first, then horizontal steps off diagonal stairs
+    approaches = [(facing, 0) for facing in _FACINGS] + [
+        (facing, rise) for facing in (direction.LEFT, direction.RIGHT) for rise in (-1, 1)]
     for x, y in door_tiles(door_id):
-        for facing in _FACINGS:
+        for facing, rise in approaches:
             snap = h.save_state()
             try:
-                nm = navigate.step_through(h, x, y, facing, timeout=timeout)
-                if nm != start_map:
+                nm = navigate.step_through(h, x, y, facing, timeout=timeout, rise=rise)
+                if nm != start_map or navigate.jumped(h, x, y):
                     return nm
             except TimeoutError:
                 pass

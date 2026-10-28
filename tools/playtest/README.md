@@ -160,7 +160,10 @@ Reach an arbitrary map by walking a seed's realized connectivity:
   edges; traps/pits stay one-way).
 - `bfs` / `reachable_from` — shortest hop list, and reverse closure (used
   to pick which branch a target sits in).
-- `step_door(h, door_id)` — teleport to a door by id and step through it.
+- `step_door(h, door_id)` — teleport to a door by id and step through it
+  (each tile, each facing, then horizontal steps from a row above/below for
+  doors at the foot of diagonal stairs, e.g. Owzer's painting room 581; a
+  landing on the same map counts once the party jumps away).
 - `execute_route(h, hops)` — drive a whole hop list.
 
 Validated by `route_test.py`: offline BFS routes to Phoenix Cave's

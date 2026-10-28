@@ -67,24 +67,35 @@ def doors_on_map(map_id, max_id=1281):
     return out
 
 
-def step_through(h, x, y, facing, approach=1, timeout=240):
+def step_through(h, x, y, facing, approach=1, timeout=240, rise=0):
     """Teleport beside the door tile (x, y) and walk into it.
 
     Places the party `approach` tiles away on the `facing` side, then
-    holds `facing` until the map id changes. Returns the new map id.
-    Raises TimeoutError if no transition occurs.
+    holds `facing` until the map id changes -- or, for an exit that lands on
+    the same map (Owzer's painting-room stairs, 581), until the party jumps
+    away from the door. Returns the map id after the transition.
+    Raises TimeoutError if no transition occurs. `rise` shifts the start a
+    row up (-1) or down (+1): a door at the foot of diagonal stairs is
+    reached by a horizontal step from the stair tile beside it, one row off.
     """
     dx, dy = _STEP[facing]
-    h.set_party_xy(x - dx * approach, y - dy * approach)
+    h.set_party_xy(x - dx * approach, y - dy * approach + rise)
     h.run(4)
     start_map = h.map_id
     button = _BUTTON[facing]
     for _ in range(0, timeout, 8):
         h.hold(button, frames=8)
-        if h.map_id != start_map:
+        if h.map_id != start_map or jumped(h, x, y):
             h.run(30)   # let the landing settle (camera, fade-in)
             return h.map_id
     raise TimeoutError(f"no transition stepping into ({x},{y}) facing {facing}")
+
+
+def jumped(h, x, y, distance=4):
+    """True once the party stands well away from tile (x, y): a same-map exit
+    moved it (walking into a door can't carry it that far)."""
+    px, py = h.party_xy
+    return abs(px - x) + abs(py - y) > distance
 
 
 def walk(h, button, tiles, frames_per_tile=16):

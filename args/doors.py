@@ -97,7 +97,8 @@ def parse(parser):
                             "branch is closed, chest-bearing rooms are preferred as dead ends, and more "
                             "are attached (from the branch's own rooms, then unused areas) until the "
                             "branch's share is met; a plan that falls short is re-rolled. Typical seeds "
-                            "hold about 70-80; a MIN much above 120 may not generate. Default 0 (off)")
+                            "hold about 70-80; a MIN much above 120 may not generate. The -ruin flagsets set 55; "
+                            "without them the default is 0 (off)")
 
     doors.add_argument("-rirc", "--ruination-item-reward-chance", type=float, default=None,
                        metavar="PERCENT",

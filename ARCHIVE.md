@@ -3036,6 +3036,22 @@ Measured (grow+finalize, 60 seeds, std-like config):
 - Allowing esper/item check rooms (South Figaro's 23, Phoenix Cave's 9,
   Tzen's 8, Fanatic's Tower's 6) is what made 120 work. Without them,
   candidates ran out (49/60 plans at 120).
+- **Default since 2026-10-28:** every `-ruin` flagset injects `-rrtc 55`
+  (`RUIN_DEFAULT_FLAGS`, after `-rirc`; `-no rrtc` removes it). About a
+  tenth of plain plans fall below 55 (p10 is 43–55 by mode), so the cost
+  is small. Over 60 plans each: 1.25 attempts per plan at -rce 6.9 and
+  1.38 at 6.6, against 1.22 without it; every plan built; means 86 and 78
+  chests.
+  - The flag-string change reshuffled every ruin seed; the six ruin goldens
+    were re-recorded.
+  - Two emulator scenarios lost their routes. `unequip_all_away` now uses
+    `build_routable`.
+  - `lite_save_markers`' new seed routes through Owzer's painting room,
+    whose exit 581 sits at the foot of diagonal stairs.
+    `tools/playtest/route.step_door` now also tries horizontal steps from
+    one row above or below (`navigate.step_through(..., rise=±1)`).
+    `navigate.jumped` counts a landing on the same map as a transition
+    (581 itself leads to map 207 in the atlas).
 - Possible refinements:
   - three-or-more-door rooms as in-line candidates;
   - a per-branch floor rather than a cumulative one;
