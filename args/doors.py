@@ -72,7 +72,7 @@ def parse(parser):
                             "High Tier Item rewards at 3 and 6 espers. "
                             "'-ruin fast' is standard on easy's smaller map (6 characters + 6 espers) "
                             "with its High Tier Item rewards, 4 starting characters, easy's esper spells and "
-                            "bonuses, no level cap, a shop town on every branch and 3 Warp Stones "
+                            "bonuses, no level cap, a shop town on every branch, 12 junk items and 10x experience "
                             "('-ruin custom' skips defaults entirely, "
                             "'-no <flags>' disables specific defaults)")
 

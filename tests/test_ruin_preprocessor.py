@@ -123,7 +123,8 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertIn("-rrt", argv)
         self.assertEqual(value_after(argv, "-oc"), ["58.1.1.4.3.3"])
         self.assertEqual(value_after(argv, "-od"), ["58.1.1.4.6.6"])
-        self.assertEqual(value_after(argv, "-sws"), ["3"])   # its own: three Warp Stones
+        self.assertEqual(value_after(argv, "-sj"), ["12"])
+        self.assertEqual(value_after(argv, "-xpm"), ["10"])  # its own: 10x experience (base 8)
         # everything else is standard
         standard = expand(["wc.py", "-ruin"])
         for flag, count in (("-lsced", 1), ("-hmced", 1), ("-gp", 1), ("-chrm", 2), ("-ir", 1),
@@ -131,12 +132,12 @@ class TestRuinPreprocessor(unittest.TestCase):
             self.assertEqual(value_after(argv, flag, count), value_after(standard, flag, count), flag)
         self.assertIn("-ssf4", argv)
         self.assertIn("-cg", argv)
-        for flag in ("-si", "-sfd", "-sj", "-pd", "-oe"):
+        for flag in ("-si", "-sfd", "-sws", "-pd", "-oe"):
             self.assertNotIn(flag, argv)
         flags = [a for a in argv if a.startswith("-")]
         self.assertEqual(len(flags), len(set(flags)), flags)
         self.assertEqual(sorted(set(flags) - set(standard)),
-                         ["-oc", "-od", "-rrt", "-sc4", "-sws"])
+                         ["-oc", "-od", "-rrt", "-sc4", "-sj"])
 
     def test_easy_honors_no_and_exclusive_groups(self):
         argv = expand(["wc.py", "-ruin", "easy", "-no", "rrt", "chrm"])
