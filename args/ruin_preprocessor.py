@@ -221,9 +221,10 @@ RUIN_EASY_EXTRAS = {
 # '-ruin fast' (2026-10-28): the standard flagset on easy's smaller map, with
 # easy's two High Tier Item objectives and a few of its comforts (four
 # starting characters, easy's esper spells/bonuses, no level cap, a shop town
-# on every branch, the twelve starting junk items) and 10x experience.  Enemy
-# scaling, gp, sell prices, monster-in-a-box odds and the other starting
-# items stay standard.
+# on every branch, the twelve starting junk items), 10x experience and
+# steeper enemy scaling (2.5 per character/esper/dragon for levels, hp/mp
+# and exp/gp: the smaller map has fewer of each).  Gp, sell prices,
+# monster-in-a-box odds and the other starting items stay standard.
 RUIN_FAST_OVERRIDES = {
     '-rce': ['-rce', '6.6'],            # smaller map: 6 characters + 6 espers/items
     '-sc3': ['-sc3', 'random', '-sc4', 'random'],  # four starting characters
@@ -231,6 +232,9 @@ RUIN_FAST_OVERRIDES = {
     '-ebr': ['-ebr', '100'],            # every esper gives a level-up bonus
     '-lc': [],                          # no level cap
     '-xpm': ['-xpm', '10'],             # 10x experience (base 8)
+    '-lsced': ['-lsced', '2.5'],        # enemy level scaling (base 2)
+    '-hmced': ['-hmced', '2.5'],        # enemy hp/mp scaling (base 2)
+    '-xgced': ['-xgced', '2.5'],        # enemy exp/gp scaling (base 2)
 }
 RUIN_FAST_EXTRAS = {
     'fast': [

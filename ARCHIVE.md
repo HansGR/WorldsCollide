@@ -3159,11 +3159,13 @@ Hans's spec: standard, plus these pieces of easy.
 | `-rrt` | on: a shop town on every branch | off |
 | `-sj` | `12` junk items (easy's) | none |
 | `-xpm` | `10`; fast's own | `8` |
+| `-lsced` / `-hmced` / `-xgced` | `2.5` each; fast's own | `2` each |
 
-Everything else is standard: enemy scaling 2/2/2, 6000 gp, 1/4 sell
+Everything else is standard: 6000 gp, 1/4 sell
 prices, `-chrm 7 0`, no potions, fenix downs or Warp Stones, `-rrtc 55`,
 `-rirc 1`. Revised the same day: the first version had `-sws 3` and no
-junk, with standard's `-xpm 8`.
+junk, with standard's `-xpm 8`; enemy scaling went to 2.5 (from 2) on
+2026-10-29.
 
 Implementation:
 

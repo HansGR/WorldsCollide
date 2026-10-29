@@ -125,9 +125,11 @@ class TestRuinPreprocessor(unittest.TestCase):
         self.assertEqual(value_after(argv, "-od"), ["58.1.1.4.6.6"])
         self.assertEqual(value_after(argv, "-sj"), ["12"])
         self.assertEqual(value_after(argv, "-xpm"), ["10"])  # its own: 10x experience (base 8)
+        for flag in ("-lsced", "-hmced", "-xgced"):          # steeper scaling (base 2)
+            self.assertEqual(value_after(argv, flag), ["2.5"], flag)
         # everything else is standard
         standard = expand(["wc.py", "-ruin"])
-        for flag, count in (("-lsced", 1), ("-hmced", 1), ("-gp", 1), ("-chrm", 2), ("-ir", 1),
+        for flag, count in (("-gp", 1), ("-chrm", 2), ("-ir", 1),
                             ("-rrtc", 1), ("-rirc", 1), ("-stl", 1), ("-compru", 2)):
             self.assertEqual(value_after(argv, flag, count), value_after(standard, flag, count), flag)
         self.assertIn("-ssf4", argv)
