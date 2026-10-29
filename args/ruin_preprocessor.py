@@ -79,13 +79,13 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     # misc.py - y npc
     {'-ymascot', '-ycreature', '-yimperial', '-ymain', '-yreflect',
      '-ystone', '-yvxz', '-ysketch', '-yrandom', '-yremove'},
-    # commands.py - random-excluded commands: any user exclusion (new -rec or a
-    # legacy -recN wrapper) replaces the default exclusion list
-    {'-rec', '-rec1', '-rec2', '-rec3', '-rec4', '-rec5', '-rec6'},
+    # commands.py - skill weights: a user -comw (or a legacy -recN exclusion, a
+    # weight of 0) replaces the default weights
+    {'-comw', '-rec1', '-rec2', '-rec3', '-rec4', '-rec5', '-rec6'},
     # commands.py - command flags: a user command flag of any family replaces
-    # the default -com (the families compose, but the injected default should
+    # the default -comru (the families compose, but the injected default should
     # not silently combine with an explicit user choice)
-    {'-com', '-comfr', '-comfru', '-compr', '-compru'},
+    {'-com', '-comr', '-comru'},
 ]
 
 # Build a lookup: flag -> set of all flags in its exclusive group
@@ -129,12 +129,11 @@ RUIN_DEFAULT_FLAGS = {
         '-fst', '-brl', '-slr', '3', '5', '-lmprp', '75', '125', '-lel',
         '-srr', '25', '35', '-rnl', '-rnc', '-sdr', '1', '2', '-das', '-dda',
         '-dns', '-sch', '-scis',
-        # seed-wide unique skills: Fight/Magic/Item 90%, every skill 24% except
-        # Possess and Shock at 12%, which puts each in about half as many seeds
-        # (~41-42% vs ~83%; measured on the real code). Every skill is
-        # declared, so no -rec
-        '-compru', '00.02.01.10.06.14.19.24.26.22.12.29.03.28.16.11.27.13.15.05.07.08.09.23',
-        '90.90.90.24.24.24.24.24.24.24.24.24.24.12.24.24.12.24.24.24.24.24.24.24',
+        # seed-wide unique skills: Fight/Magic/Item 90% per character, Shock and
+        # Possess at half weight, so in half as many seeds as the other skills
+        # (~41% vs ~82%)
+        '-comru', '90',
+        '-comw', 'shock.possess:0.5',
     ],
 
     # Battle flags
@@ -262,8 +261,8 @@ FLAGS_WITH_ARGS = {
     '-ob': 1, '-oc': 1, '-od': 1, '-oe': 1, '-rls': 1, '-sfd': 1, '-nosaves': 1,
     '-stl': 1, '-stlr': 2, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
     '-gpm': 1, '-lc': 2, '-oa': 1, '-rce': 1, '-rirc': 1, '-rrtc': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
-    '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comfr': 1, '-comfru': 1,
-    '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
+    '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comr': 1, '-comru': 1,
+    '-comw': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
     '-msl': 1, '-drloc': 1, '-stloc': 1, '-fer': 1, '-escr': 1,
     '-esr': 2, '-ebr': 1, '-emprp': 2, '-nm1': 1, '-nm2': 1, '-mmprp': 2,

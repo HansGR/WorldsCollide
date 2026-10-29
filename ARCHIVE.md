@@ -2538,7 +2538,7 @@ the 2026-10 easy rework), so `args/ruin_preprocessor.py` groups `{'-stl', '-stlr
 `-stlr` replaces the injected `-stl` instead of failing argparse's mutual
 exclusion (merged into this branch 2026-10-12).
 
-## Command Probability Modes (`-compr`/`-compru`) — Rolls, Unique Pool, Calculator (2026-10)
+## Command Probability Modes (`-compr`/`-compru`) — Rolls, Unique Pool, Calculator (2026-10; superseded 2026-10-29, see "Command Randomization Overhaul")
 
 Prompted by a player report that Shock showed up far more than its 10% in a
 flagset with `-com 98989898989898989898989898 -compr ...`.
@@ -3188,3 +3188,109 @@ Checks:
 
 Like easy, the 6-espers objective relies on the map's six esper/item
 checks; a 1% `-rirc` item roll there leaves it to bonus or auction espers.
+
+## Command Randomization Overhaul: `-comr`/`-comru`/`-comw` (2026-10-29)
+
+Branch `feature/command-randomization-utility-update` (off `ff6wc/dev`
+92c5c32, meant as the upstream PR that replaces `-compr`/`-compru`/
+`-comfr`/`-comfru`/`-rec`, which were only on `dev`). Cherry-picked onto
+`door_rando_ruin_rewrite`. `main` was fast-forwarded to `ff6wc/dev` first.
+
+### Why the percent tiers were unintuitive (measured on the real code)
+
+1. **Higher tiers took the slots first.** Each character rolled the highest
+   tier first, so a skill set 1% above the rest won its slot by ordering.
+   With Jump 26, Lore 25 and the rest at 24, Jump and Lore appeared in 98% of
+   seeds against 81% for the others.
+2. **The unique backfill floored every skill.** Unrolled slots were drafted
+   from the least-dealt skills, so a 1% skill still landed in about 45% of
+   seeds. Doubling every percent (52.51.50.25) put Jump and Lore at 100% and
+   Shock at 16%.
+3. **Fight/Magic/Item were in the same tier list.** Skills at 90% shared their
+   tier, and every skill appeared in every seed.
+4. **Shared mode (`-compr`) was worse.** Per character, 24/12 gave Shock 0.5%
+   against 7.3% for the others.
+
+### The constraint
+
+With F/M/I at 90%, a seed has about 16.5 skill slots for 21 skills (13 at
+100%). Under `-comru` the seed frequencies sum to about 16.5, and the slot
+count swings with the F/M/I rolls. A seed with more slots than the heavy
+skills can fill uniquely has to give the rest to lighter skills. Hans
+accepted that distortion as the price of `u`.
+
+### Design
+
+- **`-comr F.M.I` / `-comru F.M.I`** randomize every slot. One percent covers
+  all three. Gau never gets Fight.
+- **`-comw GROUP:WEIGHT,...`**
+  - Groups use names or ids joined by `.` (names ignore case and punctuation).
+  - Unlisted skills weigh 1.
+  - Tier names: `common` 1, `uncommon` 0.5, `rare` 0.25, `veryrare` 0.1,
+    `legendary` 0.03, `never` 0.
+  - `always[:W]` (Hans: default W 1) guarantees one holder, through the Blitz
+    guarantee's slot logic (`deal_always`), and others draw at W.
+  - `none` sets the empty-slot weight (replaces `-compr 97`).
+  - Canonical output: always first, then heaviest; skills in id order.
+- **`-comr` draw:** per-character `weighted_choice` among the skills it lacks.
+  Morph has one holder.
+- **`-comru` draw:** `unique_skills` takes the least-dealt legal skills first.
+  Each round's skills are chosen together by `share_sample` (systematic
+  sampling, inclusion `min(1, c*w)`) and matched to slots so no character
+  gets a skill it holds (`place_skills`, augmenting paths). Drawing one at a
+  time, "each pick 0.1x as likely", is less faithful because the commons run
+  out mid-draw:
+
+  | Setting | One at a time | Share draw |
+  |---|---|---|
+  | weight 0.5, F/M/I 90% | 0.72x | 0.51x |
+  | weight 0.5, F/M/I 100% | 0.62x | 0.50x |
+  | four skills at 0.1, F/M/I 100% | 0.16x | 0.10x |
+
+- **Order of dealing:** explicit `-com` picks, then always, then repeat draws
+  (99 slots and `-comr`), then unique draws (98 slots and `-comru`). A 98
+  never repeats a 99's pick.
+- **`-com` alone:** equal weights draw through `random.choice` exactly as
+  before. Uneven weights use `weighted_choice` for 99 slots and `share_sample`
+  for 98 slots.
+  - Verified: `main` and feature builds of `-s 7` with no command flags,
+    `-com 99…` and `-com 98… -scc` have identical spoilers except the flags
+    summary rows. The ROM differs only through the menu text.
+- **Retired flags** keep hidden argparse stubs that error with the new form.
+  `-rec1`–`-rec6` (in `main`) become weight 0; using one together with a
+  `-comw` weight on the same skill is an error.
+- **Menu:** Random Mode (Unique/Repeats), Fight/Magic/Item, Shuffle Commands
+  (hidden under `-comr`/`-comru` unless on), and a Skill Weights submenu
+  (`FlagsCommandWeights`, menu number 18). The log lists every weight.
+- **C3 on `dev`:** 996 bytes free with all four submenus (1200 before). The
+  ruin branch also has the F0 invoke move.
+- **Tests:** `tests/test_commands.py`, rewritten. A fake-character harness
+  checks:
+  - invariants: unique, repeat, composed with `-com`, cycling;
+  - ratios within tolerance;
+  - doubling every weight gives identical seeds;
+  - the empty-slot rate and the Suplex Blitz guarantee.
+- **`tools/command_odds.py`:** prints seed and character frequencies for any
+  flags.
+- **Ruin defaults:** `-comru 90 -comw shock.possess:0.5` gives 82.5% / 42%,
+  as the tiers did. Morph now behaves like any skill (about 81%; it was 75%
+  when roll-only).
+  - Exclusivity groups: `{-com, -comr, -comru}` and `{-comw, -rec1..6}`.
+  - A user `-comw` comes after the injected one and argparse's last value
+    wins.
+
+### Harness fixes found by the reshuffled seeds
+
+- **Random encounters** (Narshe WoR) stalled `step_through`.
+  `navigate.step_through` now sets `$1EB9` bit 5 (encounters disabled) for
+  the walk and restores it afterwards; `in_battle` (`$3ED8 != $FF`) and
+  `clear_battle` remain as a fallback.
+- **A teleport onto a door's step tile** (Narshe WoR school door 144) left
+  the party unable to walk in. `step_door` now also tries straight walks from
+  two tiles out.
+- **The same-map jump check** measured from the door. A teleport off the map
+  edge (South Figaro's long edge exits) looked like a jump; it now measures
+  from where the party started, and off-map approaches are skipped.
+- **`unequip_all_away`:** a 2-frame RIGHT tap right after the Y party switch
+  could be dropped. It now holds RIGHT for 8 frames (the ghost blocks the
+  step).

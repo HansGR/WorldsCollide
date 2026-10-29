@@ -130,7 +130,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         # everything else is standard
         standard = expand(["wc.py", "-ruin"])
         for flag, count in (("-gp", 1), ("-chrm", 2), ("-ir", 1),
-                            ("-rrtc", 1), ("-rirc", 1), ("-stl", 1), ("-compru", 2)):
+                            ("-rrtc", 1), ("-rirc", 1), ("-stl", 1), ("-comru", 1), ("-comw", 1)):
             self.assertEqual(value_after(argv, flag, count), value_after(standard, flag, count), flag)
         self.assertIn("-ssf4", argv)
         self.assertIn("-cg", argv)
@@ -170,19 +170,19 @@ class TestRuinPreprocessor(unittest.TestCase):
 
     def test_standard_commands_and_level_cap(self):
         argv = expand(["wc.py", "-ruin"])
-        ids, percents = value_after(argv, "-compru", 2)
-        ids, percents = ids.split("."), percents.split(".")
-        self.assertEqual(len(ids), len(percents))
-        self.assertEqual(percents[:3], ["90", "90", "90"])
-        # every skill declared at 24%, Possess (28) and Shock (27) at 12%
-        skills = dict(zip(ids[3:], percents[3:]))
-        self.assertEqual(len(skills), 21)
-        self.assertEqual(skills.pop("28"), "12")
-        self.assertEqual(skills.pop("27"), "12")
-        self.assertEqual(set(skills.values()), {"24"})
-        # declared skills cannot also be excluded, and -com would reserve the slots
-        self.assertNotIn("-rec", argv)
+        # seed-wide unique skills, Fight/Magic/Item at 90%, Shock and Possess at half weight
+        self.assertEqual(value_after(argv, "-comru"), ["90"])
+        self.assertEqual(value_after(argv, "-comw"), ["shock.possess:0.5"])
         self.assertNotIn("-com", argv)
+        # a user -comw or legacy exclusion replaces the default weights; a user
+        # command family replaces -comru
+        # (a user -comw comes after the injected one, so argparse's last value wins)
+        argv2 = expand(["wc.py", "-ruin", "-comw", "jump:2"])
+        self.assertEqual(argv2[len(argv2) - 1 - argv2[::-1].index("-comw") + 1], "jump:2")
+        argv2 = expand(["wc.py", "-ruin", "-rec1", "28"])
+        self.assertNotIn("-comw", argv2)
+        argv2 = expand(["wc.py", "-ruin", "-comr", "50"])
+        self.assertNotIn("-comru", argv2)
         self.assertEqual(value_after(argv, "-lc", 2), ["48", "10"])
         # '-no lc' removes the cap with both of its values
         argv = expand(["wc.py", "-ruin", "-no", "lc"])
