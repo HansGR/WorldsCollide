@@ -341,6 +341,10 @@ def options(args):
 def menu(args):
     # the per-skill weights go to a sub-menu, one line here
     entries = [entry for entry in options(args) if not entry[2].startswith("command_weight_")]
+    # -scc only swaps whole command sets between characters under -comr/-comru, whose
+    # rolls are already per character: the menu shows it only when it is on (the log keeps it)
+    if args.commands_probability_mode and not args.shuffle_commands:
+        entries = [entry for entry in entries if entry[2] != "shuffle_commands"]
     rows = weight_rows(args)
     if rows:
         from menus.flags_command_weights import FlagsCommandWeights
