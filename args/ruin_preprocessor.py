@@ -130,10 +130,9 @@ RUIN_DEFAULT_FLAGS = {
         '-srr', '25', '35', '-rnl', '-rnc', '-sdr', '1', '2', '-das', '-dda',
         '-dns', '-sch', '-scis',
         # seed-wide unique skills: Fight/Magic/Item 90% per character, Shock and
-        # Possess at half weight, so in half as many seeds as the other skills
-        # (~41% vs ~82%)
+        # Possess at the rare tier (weight 0.25)
         '-comru', '90',
-        '-comw', 'shock.possess:0.5',
+        '-comw', 'shock.possess:rare',
     ],
 
     # Battle flags

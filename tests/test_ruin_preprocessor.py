@@ -170,9 +170,9 @@ class TestRuinPreprocessor(unittest.TestCase):
 
     def test_standard_commands_and_level_cap(self):
         argv = expand(["wc.py", "-ruin"])
-        # seed-wide unique skills, Fight/Magic/Item at 90%, Shock and Possess at half weight
+        # seed-wide unique skills, Fight/Magic/Item at 90%, Shock and Possess rare
         self.assertEqual(value_after(argv, "-comru"), ["90"])
-        self.assertEqual(value_after(argv, "-comw"), ["shock.possess:0.5"])
+        self.assertEqual(value_after(argv, "-comw"), ["shock.possess:rare"])
         self.assertNotIn("-com", argv)
         # a user -comw or legacy exclusion replaces the default weights; a user
         # command family replaces -comru

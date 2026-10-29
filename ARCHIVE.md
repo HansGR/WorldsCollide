@@ -3273,7 +3273,9 @@ accepted that distortion as the price of `u`.
 - **`tools/command_odds.py`:** prints seed and character frequencies for any
   flags.
 - **Ruin defaults:** `-comru 90 -comw shock.possess:0.5` gives 82.5% / 42%,
-  as the tiers did. Morph now behaves like any skill (about 81%; it was 75%
+  as the tiers did. Same day, Hans moved Shock/Possess to `rare` (0.25,
+  logged as `:0.25`): 23% of seeds against 84.5% for other skills (0.28x;
+  the commons saturate slightly). Morph now behaves like any skill (about 81%; it was 75%
   when roll-only).
   - Exclusivity groups: `{-com, -comr, -comru}` and `{-comw, -rec1..6}`.
   - A user `-comw` comes after the injected one and argparse's last value
