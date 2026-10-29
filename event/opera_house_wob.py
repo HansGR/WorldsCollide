@@ -43,6 +43,11 @@ class OperaHouseWOB(Event):
         self.celes_after_maria_npc.palette = self.characters.get_palette(self.characters.CELES)
         self.celes_after_maria_npc.unknown1 = 0 # this was set to 1 and prevented animating character
 
+        if self.args.race:
+            # registered up front: after_battle_mod's race theme call
+            # needs the slot before race_reward_mod runs
+            self.race_slot(self.reward)
+
         self.begin_performance_mod()
         self.performance_mod()
         self.end_performance_mod()
@@ -57,7 +62,9 @@ class OperaHouseWOB(Event):
         if not self.args.fixed_encounters_original:
             self.fixed_battles_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
             self.character_music_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
@@ -68,6 +75,38 @@ class OperaHouseWOB(Event):
             self.character_music_mod(SETZER)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one script and one npc record for every kind (see figaro castle
+        # wob).  the scene song is handled by after_battle_mod's race
+        # theme call
+        slot = self.race_slot(self.reward)
+
+        self.race_decoy_npc(0x0e9, self.setzer_npc_id, slot)
+
+        self.reward_mod([
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (character_mod's script, slot-driven)
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.StartSong(53),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+            field.Branch("REWARD_DONE"),
+
+            # the esper/item scene (esper_item_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+            field.ShowEntity(field_entity.PARTY0),
+            field.StartSong(53),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True),
+            field.ReceiveCheckReward(slot),
+
+            "REWARD_DONE",
+        ])
 
     def begin_performance_mod(self):
         space = Reserve(0xaf18b, 0xaf1a1, "opera house changing room entrance event", field.NOP())
@@ -308,10 +347,32 @@ class OperaHouseWOB(Event):
         space = Reserve(0xac171, 0xac26f, "opera house move setzer entrance instructions")
         space.copy_from(0xac16e, 0xac26c)
 
-        space = Reserve(0xac16c, 0xac16e, "opera house hide party leader", field.NOP())
-        space.write(
-            field.HideEntity(field_entity.PARTY0),
-        )
+        if self.args.race:
+            # the two-byte song site (0xac16f, written by
+            # character_music_mod in other builds) rides into this
+            # reserve so a call fits: a character reward starts their
+            # theme at runtime, esper/item keep setzer's theme as the
+            # non-character builds do
+            from music.song_utils import get_character_theme
+            src = [
+                field.HideEntity(field_entity.PARTY0),
+                field.BranchIfRewardKindNot(self.race_slot(self.reward), "character", "VANILLA_SONG"),
+                field.PlayRewardTheme(self.race_slot(self.reward)),
+                field.Return(),
+                "VANILLA_SONG",
+                field.StartSong(get_character_theme(SETZER)),
+                field.Return(),
+            ]
+            theme_space = Write(Bank.CB, src, "opera house race theme")
+            space = Reserve(0xac16c, 0xac170, "opera house hide party leader and play song", field.NOP())
+            space.write(
+                field.Call(theme_space.start_address),
+            )
+        else:
+            space = Reserve(0xac16c, 0xac16e, "opera house hide party leader", field.NOP())
+            space.write(
+                field.HideEntity(field_entity.PARTY0),
+            )
 
         space = Reserve(0xac277, 0xac277, "opera house assign palette to celes on stage")
         space.write(self.characters.get_palette(self.characters.CELES))

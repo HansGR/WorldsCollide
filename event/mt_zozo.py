@@ -33,7 +33,9 @@ class MtZozo(Event):
         self.mod_rust_rid_salesman()
         self.chest_mod()
 
-        if self.reward.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_reward_mod()
+        elif self.reward.type == RewardType.CHARACTER:
             self.character_mod(self.reward.id)
         elif self.reward.type == RewardType.ESPER:
             self.esper_mod(self.reward.id)
@@ -41,6 +43,93 @@ class MtZozo(Event):
             self.item_mod(self.reward.id)
 
         self.log_reward(self.reward)
+
+    def race_reward_mod(self):
+        # one wiring for every kind: the esper/item structure (the cliff
+        # npc IS the check; interact to receive), with the recruit
+        # happening right there for a character reward.  the cliff npc
+        # record is a decoy repainted at map load to its kind's
+        # vanilla-wc look (reward character / magicite / chest); the
+        # room npc, the room scene and the letter signature - all
+        # character tells - are gone for every kind
+        slot = self.race_slot(self.reward)
+
+        self.cliff_cyan_npc.sprite = self.characters.get_random_esper_item_sprite()
+        self.cliff_cyan_npc.palette = self.characters.get_palette(self.cliff_cyan_npc.sprite)
+        self.cliff_cyan_npc.direction = direction.DOWN
+
+        # this npc shares an event bit with outside one
+        self.maps.remove_npc(0x0b4, self.room_cyan_npc_id)
+
+        space = Reserve(0xc3fec, 0xc3ff5, "mt zozo skip moving cyan npc up", field.NOP())
+        space = Reserve(0xc401a, 0xc401e, "mt zozo mountain view dialog", field.NOP())
+
+        # change which event bit is checked for whether to play cliff bird scene
+        space = Reserve(0xc3fa8, 0xc3fa8, "mt zozo found cyan check")
+        space.write(event_bit.FOUND_CYAN_MT_ZOZO)
+
+        space = Reserve(0xc4029, 0xc42ba, "mt zozo found cyan event", field.NOP())
+        space.write(
+            field.SetEventBit(event_bit.FOUND_CYAN_MT_ZOZO),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.EntityAct(self.cliff_cyan_npc_id, True,
+                field_entity.Turn(direction.DOWN),
+            ),
+            field.EntityAct(field_entity.CAMERA, True,
+                field_entity.Move(direction.DOWN, 3),
+            ),
+            field.FreeScreen(),
+            field.Return(),
+        )
+
+        # reward taken, finish event
+        add_reward_function = space.next_address
+        space.write(
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            field.HideEntity(self.cliff_cyan_npc_id),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.Branch("FINISH"),
+
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            field.HideEntity(self.cliff_cyan_npc_id),
+
+            "FINISH",
+            field.SetEventBit(event_bit.FINISHED_MT_ZOZO),
+            field.ClearEventBit(npc_bit.CYAN_MT_ZOZO_CLIFF),
+            field.FinishCheck(),
+            field.Return(),
+        )
+        self.cliff_cyan_npc.set_event_address(add_reward_function)
+
+        # when we enter cliff: repaint the npc to its kind's vanilla-wc
+        # look (reward character / magicite shard / item chest), and if
+        # already saw bird scene, hide the bird
+        cliff_entrance_event = space.next_address
+        space.write(
+            field.BranchIfRewardKindNot(slot, "character", "NOT_CHARACTER"),
+            field.SetRewardSprite(self.cliff_cyan_npc_id, slot),
+            field.SetRewardPalette(self.cliff_cyan_npc_id, slot),
+            field.Branch("NO_REPAINT"),
+            "NOT_CHARACTER",
+            field.BranchIfRewardKindNot(slot, "esper", "NOT_ESPER"),
+            *self.race_magicite_look_src(self.cliff_cyan_npc_id),
+            field.Branch("NO_REPAINT"),
+            "NOT_ESPER",
+            field.BranchIfRewardKindNot(slot, "item", "NO_REPAINT"),
+            *self.race_chest_look_src(self.cliff_cyan_npc_id),
+            "NO_REPAINT",
+            field.ReturnIfEventBitClear(event_bit.FOUND_CYAN_MT_ZOZO),
+            field.HideEntity(self.cliff_bird_npc_id),
+            field.Return(),
+        )
+        self.maps.set_entrance_event(0x0b5, cliff_entrance_event - EVENT_CODE_START)
+
+        # remove the signature on the letter to lola on the table
+        self.letter_mod()
 
     def entrance_event_mod(self):
         drunk_npc_id = 0x18

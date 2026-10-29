@@ -31,7 +31,9 @@ class FloatingContinent(Event):
         self.ground_shadow_npc = self.maps.get_npc(0x18a, self.ground_shadow_npc_id)
 
         self.ground_reward_position_mod()
-        if self.reward1.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_ground_reward_mod()
+        elif self.reward1.type == RewardType.CHARACTER:
             self.ground_character_mod(self.reward1.id)
         elif self.reward1.type == RewardType.ESPER:
             self.ground_esper_mod(self.reward1.id)
@@ -50,7 +52,9 @@ class FloatingContinent(Event):
         self.timer_mod()
         self.nerapa_battle_mod()
 
-        if self.reward3.type == RewardType.CHARACTER:
+        if self.args.race:
+            self.race_escape_reward_mod()
+        elif self.reward3.type == RewardType.CHARACTER:
             self.escape_character_mod(self.reward3.id)
         elif self.reward3.type == RewardType.ESPER:
             self.escape_esper_mod(self.reward3.id)
@@ -169,6 +173,104 @@ class FloatingContinent(Event):
         self.ground_shadow_npc.y = 13
 
         space = Reserve(0xad9a7, 0xad9aa, "floating continent move party above shadow", field.NOP())
+
+    def race_ground_reward_mod(self):
+        # one script and one npc record for every kind of reward1
+        # (character or esper): the ground npc record gets the decoy
+        # sprite (a baked magicite said "esper here"), then the map-load
+        # repaint restores the kind's vanilla-wc look at runtime - the
+        # reward character, or the magicite shard for an esper
+        slot = self.race_slot(self.reward1)
+
+        self.race_decoy_npc(0x18a, self.ground_shadow_npc_id, slot, magicite = True)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character scene (ground_character_mod's script,
+            # slot-driven, including its npc-deletion workarounds)
+            Read(0xad9b1, 0xad9b4),
+            Read(0xad9b8, 0xad9bf),
+            field.AddCheckReward(slot),
+            field.DeleteEntity(0x10),
+            field.DeleteEntity(0x11),
+            field.DeleteEntity(0x12),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.LoadMap(0x18a, direction.RIGHT, default_music = False, x = 10, y = 13, fade_in = False, entrance_event = True),
+            field.DeleteEntity(self.ground_shadow_npc_id),
+            field.FadeInScreen(),
+            field.Branch(0xad9ee),
+
+            # the esper scene (ground_esper_mod's script, slot-driven)
+            "ESPER_ITEM",
+            field.ReceiveCheckReward(slot),
+            field.DeleteEntity(self.ground_shadow_npc_id),
+            field.Branch(0xad9ee),
+        ]
+        space = Write(Bank.CA, src, "floating continent race ground reward")
+        reward_script = space.start_address
+
+        space = Reserve(0xad9b1, 0xad9ed, "floating continent ground reward", field.NOP())
+        space.write(
+            field.Branch(reward_script),
+        )
+
+    def race_escape_reward_mod(self):
+        # one wiring for every kind of reward3: the guest npc plays the
+        # escape scene (the esper staging); a character reward repaints
+        # it from the slot, other kinds paint the fixed decoy sprite
+        slot = self.race_slot(self.reward3)
+
+        guest_char_id = 0x0f
+        random_sprite = self.characters.get_random_esper_item_sprite()
+        random_sprite_palette = self.characters.get_palette(random_sprite)
+
+        src = [
+            field.BranchIfRewardKindNot(slot, "character", "DECOY"),
+            field.SetRewardSprite(guest_char_id, slot),
+            field.SetRewardPalette(guest_char_id, slot),
+            field.RefreshEntities(),
+            field.Branch(0xa57b3),
+            "DECOY",
+            field.SetSprite(guest_char_id, random_sprite),
+            field.SetPalette(guest_char_id, random_sprite_palette),
+            field.RefreshEntities(),
+            field.Branch(0xa57b3),
+        ]
+        space = Write(Bank.CA, src, "floating continent race escape paint")
+        paint_script = space.start_address
+
+        space = Reserve(0xa579d, 0xa57b2, "floating continent wait dialogs", field.NOP())
+        space.write(
+            field.Branch(paint_script),
+        )
+
+        self.escape_mod(guest_char_id, [
+            field.BranchIfRewardKindNot(slot, "character", "ESPER_ITEM"),
+
+            # the character arrival (escape_character_mod's script).  the
+            # guest character object played the scene; delete it first,
+            # as the esper arm does - creating a character object enables
+            # that character, the party select's refresh only deletes the
+            # fourteen real ones, and the guest (no name, shock) would
+            # otherwise sit in the lineup wearing the reward's sprite
+            field.DeleteEntity(guest_char_id),
+            field.RefreshEntities(),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = False),
+            field.AddCheckReward(slot),
+            field.Call(field.REFRESH_CHARACTERS_AND_SELECT_PARTY),
+            field.FadeInScreen(),
+            field.Branch("ESCAPE_DONE"),
+
+            # the esper arrival (escape_esper_mod's script)
+            "ESPER_ITEM",
+            field.DeleteEntity(guest_char_id),
+            field.RefreshEntities(),
+            field.LoadMap(0x06, direction.DOWN, default_music = True, x = 16, y = 6, fade_in = True, entrance_event = True),
+            field.ReceiveCheckReward(slot),
+
+            "ESCAPE_DONE",
+        ])
 
     def ground_character_mod(self, character):
         self.ground_shadow_npc.sprite = character

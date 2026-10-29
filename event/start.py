@@ -206,7 +206,7 @@ class Start(Event):
 
         for junk_id in start_junk:
             src += [
-                field.AddItem(id_name[junk_id], sound_effect = False)
+                field.AddItem(id_name[junk_id], sound_effect = False, spoiler = False)
             ]
 
         for item in self.args.start_items_list:
@@ -215,17 +215,17 @@ class Start(Event):
                 continue
 
             src += [
-                field.AddItems(item.id, item_count, sound_effect = False),
+                field.AddItems(item.id, item_count, sound_effect = False, spoiler = False),
             ]
 
         if self.args.debug:
             src += [
-                field.AddItem("Dried Meat", sound_effect = False),
-                field.AddItem("Dried Meat", sound_effect = False),
-                field.AddItem("Dried Meat", sound_effect = False),
-                field.AddItem("Warp Stone", sound_effect = False),
-                field.AddItem("Warp Stone", sound_effect = False),
-                field.AddItem("Warp Stone", sound_effect = False),
+                field.AddItem("Dried Meat", sound_effect = False, spoiler = False),
+                field.AddItem("Dried Meat", sound_effect = False, spoiler = False),
+                field.AddItem("Dried Meat", sound_effect = False, spoiler = False),
+                field.AddItem("Warp Stone", sound_effect = False, spoiler = False),
+                field.AddItem("Warp Stone", sound_effect = False, spoiler = False),
+                field.AddItem("Warp Stone", sound_effect = False, spoiler = False),
             ]
         src += [
             field.Return(),

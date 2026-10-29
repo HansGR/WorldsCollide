@@ -320,6 +320,18 @@ class Items():
         for item_id in self.GOOD:
             self.add_receive_dialog(item_id)
 
+        # race builds: one shared dialog that names the item at runtime via
+        # the <item> code, so no per-item "Received X!" text sits in the rom
+        # next to a check (see obfuscation/rewards.py).  the AddCheckItem
+        # opcode leaves the granted id at direct-page $1A, which <item> reads.
+        self.race_receive_dialog = None
+        if self.args.race:
+            self.race_receive_dialog = self.available_dialogs.pop()
+            self.dialogs.set_text(self.race_receive_dialog,
+                                  '<line><     >Received “<reward>”!<end>')
+            from obfuscation import rewards
+            rewards.set_wording("item", self.race_receive_dialog)
+
         self.moogle_starting_equipment()
 
     def write(self):
@@ -401,7 +413,33 @@ class Items():
     def get_good_random(self):
         return random.choice(self.GOOD)
 
+    def dialog_name(self, item, second = False):
+        """The item's name for use inside dialog text.
+
+        Race builds return a control code instead, so the rom text names
+        nothing and the real name is rendered at display time: <item>
+        from $0583, or <item2> from $0584 for the second reward named by
+        the same dialog.  The caller is responsible for those bytes
+        holding this item - either the grant ran first, or the dialog is
+        shown by field.reward_dialog(), which decodes them itself.
+        """
+        if self.args.race:
+            return "<reward2>" if second else "<reward>"
+        import data.text
+        # item names are stored as TEXT2, dialogs are TEXT1
+        return data.text.convert(self.get_name(item), data.text.TEXT1)
+
     def get_receive_dialog(self, item):
+        # race builds: every item check shares one dialog whose text names
+        # nothing, and the id travels with the reward's opaque slot so the
+        # command is indistinguishable from an esper's (see
+        # instruction/field/instructions.py RewardDialogId)
+        if self.race_receive_dialog is not None:
+            from obfuscation import rewards
+            from instruction.field.instructions import RewardDialogId
+            item_wording, esper_wording = rewards.wordings()
+            return RewardDialogId(item_wording, rewards.register("item", item),
+                                  item_wording, esper_wording)
         return self.receive_dialogs[item]
 
     def add_receive_dialog(self, item_id):
