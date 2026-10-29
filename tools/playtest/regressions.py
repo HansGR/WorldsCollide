@@ -350,7 +350,9 @@ def scenario_unequip_all_away(vanilla, workdir):
         h.core.wram[base + 0x23] = 0x70
     h.set_party_xy(*reform.GHOST_TALK_XY)
     h.run(6)
-    h.hold('RIGHT', frames=2)
+    # face the ghost: right after the party switch a 2-frame tap can be dropped,
+    # and the ghost blocks the step, so a longer hold only turns the leader
+    h.hold('RIGHT', frames=8)
     h.press('A', hold=6, wait=90)
     reform.choose(h, 2)          # "Unequip all members."
     h.run(300)

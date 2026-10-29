@@ -185,17 +185,18 @@ def step_door(h, door_id, timeout=160):
     the door and each facing. Handles both atlas exits and event tiles
     acting as doors. Returns the new map id, or None if nothing produced a
     transition."""
-    start_map = h.map_id
-    # straight approaches first, then horizontal steps off diagonal stairs
-    approaches = [(facing, 0) for facing in _FACINGS] + [
-        (facing, rise) for facing in (direction.LEFT, direction.RIGHT) for rise in (-1, 1)]
+    # straight approaches first, then horizontal steps off diagonal stairs, then
+    # straight walks from two tiles out (a teleport onto a door's step tile can
+    # leave the party unable to walk into it, e.g. Narshe WoR's school door 144)
+    approaches = ([(facing, 0, 1) for facing in _FACINGS]
+                  + [(facing, rise, 1) for facing in (direction.LEFT, direction.RIGHT) for rise in (-1, 1)]
+                  + [(facing, 0, 2) for facing in _FACINGS])
     for x, y in door_tiles(door_id):
-        for facing, rise in approaches:
+        for facing, rise, approach in approaches:
             snap = h.save_state()
             try:
-                nm = navigate.step_through(h, x, y, facing, timeout=timeout, rise=rise)
-                if nm != start_map or navigate.jumped(h, x, y):
-                    return nm
+                nm = navigate.step_through(h, x, y, facing, approach=approach, timeout=timeout, rise=rise)
+                return nm           # a map change, or a landing on the same map
             except TimeoutError:
                 pass
             h.load_state(snap)
