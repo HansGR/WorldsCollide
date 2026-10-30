@@ -51,6 +51,8 @@ from menus.flags_command_weights import FlagsCommandWeights
 rows = FlagsCommandWeights._format_menu([("Possess", "0.5"), ("Jump", "Always 0.5")])
 assert rows == ["  Possess            0.5", "  Jump        Always 0.5"], rows
 assert all(len(line) <= scroll_area.WIDTH for line in rows)
+headers = [FlagsCommandWeights([("Dance", "1")], other).lines[1].text.strip() for other in (None, 0.0, 0.25)]
+assert headers == ["Others weigh 1:", "Others weigh 0:", "Others weigh 0.25:"], headers
 sys.__stdout__.write("ok\\n")
 """
 
