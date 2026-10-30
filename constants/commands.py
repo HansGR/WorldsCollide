@@ -63,6 +63,8 @@ WEIGHT_TIERS = {
 ALWAYS = "always"
 # -comw group for every skill no other entry names ('dance:1,other:0')
 OTHER = "other"
+# -comw group of N skills drawn per seed from the unnamed ones ('random3:1,other:0')
+RANDOM_GROUP = "random"
 
 # every character has four command slots in their initialization data ($ed7ca2 - $ed7ca5)
 COMMAND_SLOT_COUNT = 4

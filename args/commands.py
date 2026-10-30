@@ -1,6 +1,6 @@
 from constants.commands import (COMMAND_OPTIONS, COMMON_COMMANDS, RETIRED_COM_MODES,
                                 RANDOM_POSSIBLE_COMMANDS, RANDOM_COMMAND, RANDOM_UNIQUE_COMMAND, NONE_COMMAND,
-                                RANDOM_EXCLUDE_COMMANDS, WEIGHT_TIERS, ALWAYS, OTHER, id_name, name_id)
+                                RANDOM_EXCLUDE_COMMANDS, WEIGHT_TIERS, ALWAYS, OTHER, RANDOM_GROUP, id_name, name_id)
 
 def name():
     return "Commands"
@@ -46,7 +46,9 @@ def parse(parser):
                                  "number >= 0, or " + ", ".join(f"{tier} ({weight:g})" for tier, weight in WEIGHT_TIERS.items())
                                  + ", always[:WEIGHT] (at least one character gets it; others draw it at "
                                  "WEIGHT, default 1). 'none' weighs an empty slot (default 0); 'other' "
-                                 "weighs every skill no other entry names (e.g. 'dance:1,other:0')")
+                                 "weighs every skill no other entry names (e.g. 'dance:1,other:0'); "
+                                 "'randomN' weighs N skills drawn each seed from the unnamed ones "
+                                 "(e.g. 'random3:1,other:0': everyone shares 3 random skills)")
     commands.add_argument("-scc", "--shuffle-commands", action = "store_true", help = "Shuffle selected/randomized commands")
     # legacy single-command exclusions, kept for backward compatibility: each value is a
     # weight of 0 (and the canonical flag string re-emits them in -comw)
@@ -174,6 +176,19 @@ def _parse_weight(args, text):
         args.parser.error(f"-comw: weight '{value}' must be a number >= 0")
     return weight, always
 
+def _random_count(args, group):
+    # 'random' / 'randomN' -> N (None: not a random group)
+    import re
+    match = re.fullmatch(RANDOM_GROUP + r"(\d*)", skill_key(group))
+    if not match:
+        if any(re.fullmatch(RANDOM_GROUP + r"\d*", skill_key(text)) for text in group.split(".")):
+            args.parser.error(f"-comw: '{group}': random must be a group of its own (e.g. random3:1,other:0)")
+        return None
+    count = int(match.group(1) or 1)
+    if count < 1:
+        args.parser.error(f"-comw: '{group}' must draw at least one skill")
+    return count
+
 def _process_command_weights(args):
     # skill weights (default 1), the always skills, and the empty-slot weight
     weights = {name_id[name] : 1.0 for name in RANDOM_POSSIBLE_COMMANDS}
@@ -197,6 +212,7 @@ def _process_command_weights(args):
             seen[command] = f"-rec{index}"
 
     other_weight = None
+    random_groups = {}
     if args.command_weights:
         for entry in args.command_weights.split(","):
             group, _, weight_text = entry.partition(":")
@@ -212,6 +228,10 @@ def _process_command_weights(args):
                     args.parser.error("-comw: other cannot be always")
                 other_weight = weight
                 continue
+            count = _random_count(args, group)
+            if count is not None:
+                random_groups[(is_always, weight)] = random_groups.get((is_always, weight), 0) + count
+                continue
             for skill_text in group.split("."):
                 command = _parse_skill(args, skill_text)
                 if command in seen:
@@ -226,20 +246,76 @@ def _process_command_weights(args):
                     always.append(command)
 
     skills = [command for command in weights if command != NONE_COMMAND]
-    # other: every skill not named above (nor excluded by -recN), wherever it is listed
+    # other: every skill not named above (nor excluded by -recN), wherever it is listed;
+    # random groups draw from the same unnamed skills (resolve_random_weights), other
+    # keeps what they leave
+    pool = [command for command in skills if command not in seen]
     if other_weight is not None:
-        for command in skills:
-            if command not in seen:
-                weights[command] = other_weight
+        for command in pool:
+            weights[command] = other_weight
+    # canonical order: always first, then heaviest
+    random_groups = [(count, weight, is_always) for (is_always, weight), count
+                     in sorted(random_groups.items(), key = lambda item: (not item[0][0], -item[0][1]))]
+    drawn = sum(count for count, _, _ in random_groups)
+    if drawn > len(pool):
+        args.parser.error(f"-comw: random groups draw {drawn} skills but only {len(pool)} are not named")
 
-    if not [command for command in skills if weights[command] > 0 or command in always]:
+    left = len(pool) - drawn
+    if not ([command for command in seen if command != NONE_COMMAND and (weights[command] > 0 or command in always)]
+            or [group for group in random_groups if group[1] > 0 or group[2]]
+            or (left and (other_weight is None or other_weight > 0))):
         args.parser.error("-comw: cannot give every randomly-selectable command a weight of 0")
 
+    args.command_named = set(seen)
+    args.command_other = other_weight
+    args.command_random_groups = random_groups
+    args.command_random_pool = pool
+    args.command_random_picks = []
+    args.command_weights_base = dict(weights)
+    args.command_always_base = list(always)
+    _set_weights(args, weights, always)
+
+def _set_weights(args, weights, always):
+    skills = [command for command in weights if command != NONE_COMMAND]
     args.command_weights_map = weights
     args.command_always = always
     # commands random draws may never deal (weight 0, not always): the old exclusion list
     args.random_exclude_commands = [command for command in skills
                                     if weights[command] == 0 and command not in always]
+
+def resolve_random_weights(args):
+    # draw the -comw random groups now that the rng is seeded (args/arguments.py; the
+    # draws come from the seed, the flag string keeps 'randomN'). No groups, no rng use
+    if getattr(args, "commands_legacy", False) or not args.command_random_groups:
+        return
+    import random
+    morph_id = name_id["Morph"]
+    for _ in range(1000):
+        weights, always = dict(args.command_weights_base), list(args.command_always_base)
+        pool, picks = list(args.command_random_pool), []
+        for count, weight, is_always in args.command_random_groups:
+            drawn = random.sample(pool, count)
+            pool = [command for command in pool if command not in drawn]
+            for command in drawn:
+                weights[command] = weight
+                if is_always:
+                    always.append(command)
+            picks.append(sorted(drawn))
+        # morph goes to one character only: a draw that leaves it the only skill that can
+        # be dealt (random:1,other:0 or random20:0 picking it) would empty every other
+        # character's skill slots, so it is drawn again (naming morph keeps that on purpose)
+        dealable = [command for command in weights
+                    if command != NONE_COMMAND and (weights[command] > 0 or command in always)]
+        if dealable != [morph_id] or morph_id in args.command_named:
+            break
+    _set_weights(args, weights, always)
+    args.command_random_picks = picks
+    _set_blitz_possible(args)
+
+def _weight_value(weight, always):
+    if always:
+        return ALWAYS if weight == 1 else f"{ALWAYS}:{weight:g}"
+    return f"{weight:g}"
 
 def _listed(args, command, other):
     # does -comw name this command, when `other` (None: no other) weighs the rest?
@@ -261,11 +337,7 @@ def _weights_form(args, other):
     entries = []
     for (always, weight), members in sorted(groups.items(), key = lambda item: (not item[0][0], -item[0][1])):
         names = ".".join(name for _, name in sorted(members))
-        if always:
-            value = ALWAYS if weight == 1 else f"{ALWAYS}:{weight:g}"
-        else:
-            value = f"{weight:g}"
-        entries.append(f"{names}:{value}")
+        entries.append(f"{names}:{_weight_value(weight, always)}")
     if other is not None:
         entries.append(f"{OTHER}:{other:g}")
     return ",".join(entries)
@@ -277,8 +349,28 @@ def other_weight(args):
     candidates = [None] + sorted({args.command_weights_map[command] for command in skills}, reverse = True)
     return min(candidates, key = lambda other: len(_weights_form(args, other)))
 
+def _random_form(args):
+    # -comw text with random groups: every named skill stays listed (naming one keeps it out
+    # of the draws), then the groups, then other (its default of 1 drops out)
+    weights, always = args.command_weights_base, args.command_always_base
+    groups = {}
+    for command, weight in weights.items():
+        if command in args.command_named or (command == NONE_COMMAND and weight != 0):
+            name = "none" if command == NONE_COMMAND else skill_key(id_name[command])
+            groups.setdefault((command in always, weight), []).append((command, name))
+    entries = []
+    for (is_always, weight), members in sorted(groups.items(), key = lambda item: (not item[0][0], -item[0][1])):
+        entries.append(f"{'.'.join(name for _, name in sorted(members))}:{_weight_value(weight, is_always)}")
+    for count, weight, is_always in args.command_random_groups:
+        entries.append(f"{RANDOM_GROUP}{count if count > 1 else ''}:{_weight_value(weight, is_always)}")
+    if args.command_other is not None and args.command_other != 1:
+        entries.append(f"{OTHER}:{args.command_other:g}")
+    return ",".join(entries)
+
 def weights_value(args):
     # canonical -comw, so equivalent weights print (and seed) the same
+    if args.command_random_groups:
+        return _random_form(args)
     return _weights_form(args, other_weight(args))
 
 def _legacy_mode(args):
@@ -343,8 +435,11 @@ def process(args):
     else:
         args.commands_random_value = None
 
+    _set_blitz_possible(args)
+
+def _set_blitz_possible(args):
     # can a blitz command exist in this configuration? (needed before objectives
-    # roll a possible Suplex A Train condition)
+    # roll a possible Suplex A Train condition; random groups settle it once drawn)
     blitz_id = name_id["Blitz"]
     blitz_drawable = args.command_weights_map[blitz_id] > 0 or blitz_id in args.command_always
     blitz_explicit = "Blitz" in args.command_strings
@@ -423,6 +518,11 @@ def options(args):
     other = other_weight(args)
     if other is not None:
         result.append(("Other Weight", weight_text(other), "command_weight_other"))
+    # the log names each random group's draw (the rows above already show the result)
+    for (count, weight, always), picks in zip(args.command_random_groups, args.command_random_picks):
+        label = f"{RANDOM_GROUP}{count if count > 1 else ''}:{_weight_value(weight, always)}"
+        result.append((f"Drawn for {label}", ", ".join(id_name[command] for command in picks),
+                       f"command_weight_random_{label}"))
 
     return result
 
