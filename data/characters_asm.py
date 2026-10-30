@@ -72,17 +72,6 @@ def set_random_starting_levels(levels, default_level):
         asm.JMP(lookup, asm.ABS),
     )
 
-def update_morph_character(characters):
-    from constants.commands import id_name
-
-    # NOTE: this assumes only 1 character has morph
-    for character in characters:
-        for command in character.commands:
-            if id_name[command] == "Morph":
-                space = Reserve(0x25e33, 0x25e33, "character who charges up morph gauge by gaining magic points")
-                space.write(character.id)
-                return
-
 def show_original_names():
     import data.text as text
     from data.characters import Characters

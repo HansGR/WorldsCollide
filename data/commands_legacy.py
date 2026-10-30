@@ -369,10 +369,9 @@ class LegacyCommands:
 
         # step 2.5: at most one character may hold morph.  outside the unique
         # modes the rolls are independent per character, so several can win
-        # the same declared morph probability, but the morph-gauge ASM only supports a single
-        # holder (data/characters_asm.update_morph_character: "this assumes
-        # only 1 character has morph") -- extra copies would be broken
-        # commands.  every character's chance to ROLL morph is untouched:
+        # the same declared morph probability, but the morph-gauge ASM only supported a single
+        # holder before battle/morph.py (kept so old presets assign as they always did).
+        # every character's chance to ROLL morph is untouched:
         # one winner is chosen at random and the losers' slots return to
         # capacity for ordinary backfill.  an explicit -com morph outranks
         # every rolled one.
@@ -474,9 +473,8 @@ class LegacyCommands:
         self.characters[Characters.GAU].commands[0] = commands[-1] # rage
 
     def mod(self):
-        import data.characters_asm as characters_asm
-        from data.characters import Characters
-
+        # its one-morph-holder rules stay (old presets keep their exact assignment), but the
+        # holder patch is gone: battle/morph.py charges the supply for every morph holder
         if args.commands_probability_mode:
             self.mod_probability_random_commands()
         elif args.commands:
@@ -486,9 +484,6 @@ class LegacyCommands:
                 self.shuffle_full_random_commands()
             else:
                 self.shuffle_commands()
-
-        if args.commands or args.commands_probability_mode or args.shuffle_commands:
-            characters_asm.update_morph_character(self.characters[ : Characters.CHARACTER_COUNT])
 
     def log(self):
         from log import section, format_option
