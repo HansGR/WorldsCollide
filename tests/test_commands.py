@@ -185,6 +185,30 @@ class TestCommandsFlag(unittest.TestCase):
         # -comw also applies to -com's random slots on its own
         self.assert_accepted("-com", "99" * 13, "-comw", "slot:0", expected = "-comw slot:0")
 
+    def test_weights_other(self):
+        # other weighs every skill no entry names, wherever it is listed; the canonical
+        # form is the shortest, so the long list and its other form print (and seed) the same
+        from constants.commands import RANDOM_POSSIBLE_COMMANDS
+        everything_but_dance = ".".join(name for name in RANDOM_POSSIBLE_COMMANDS if name != "Dance")
+        for weights in ("dance:1,other:0", "other:never,dance:common", everything_but_dance + ":0"):
+            self.assert_accepted("-comru", "75", "-comw", weights, expected = "-comw dance:1,other:0")
+        self.assert_accepted("-comr", "90", "-comw", "jump:always,blitz:5,other:rare",
+                             expected = "-comw jump:always,blitz:5,other:0.25")
+        # a few off-default skills stay a plain list; other:1 is the default
+        self.assert_accepted("-comr", "90", "-comw", "shock.possess:rare,other:1",
+                             expected = "-comw shock.possess:0.25")
+        self.assertNotIn("other", self.assert_accepted("-comr", "90", "-comw", "shock.possess:rare"))
+        # -recN exclusions are named too
+        self.assert_accepted("-rec1", "28", "-comw", "jump:1,other:2", expected = "-comw jump:1,possess:0,other:2")
+        # ... but not the empty slot
+        self.assert_accepted("-comr", "90", "-comw", "other:0.5,none:0.5", expected = "-comw none:0.5,other:0.5")
+
+    def test_weights_other_rejected(self):
+        self.assert_rejected("-comw", "other.jump:0", expected = "must be a group of its own")
+        self.assert_rejected("-comw", "other:0,other:1", expected = "other is given a weight twice")
+        self.assert_rejected("-comw", "other:always", expected = "other cannot be always")
+        self.assert_rejected("-comw", "other:0", expected = "cannot give every")
+
     def test_weights_rejected(self):
         self.assert_rejected("-comw", "jump", expected = "must be GROUP:WEIGHT")
         self.assert_rejected("-comw", "jump:abc", expected = "is not a weight")

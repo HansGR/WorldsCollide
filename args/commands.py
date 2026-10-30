@@ -1,6 +1,6 @@
 from constants.commands import (COMMAND_OPTIONS, COMMON_COMMANDS, RETIRED_COM_MODES, RETIRED_COMMAND_FLAGS,
                                 RANDOM_POSSIBLE_COMMANDS, RANDOM_COMMAND, RANDOM_UNIQUE_COMMAND, NONE_COMMAND,
-                                RANDOM_EXCLUDE_COMMANDS, WEIGHT_TIERS, ALWAYS, id_name, name_id)
+                                RANDOM_EXCLUDE_COMMANDS, WEIGHT_TIERS, ALWAYS, OTHER, id_name, name_id)
 
 def name():
     return "Commands"
@@ -45,7 +45,8 @@ def parse(parser):
                                  "weigh 1; a skill of weight 0.5 is drawn half as often. Weights: any "
                                  "number >= 0, or " + ", ".join(f"{tier} ({weight:g})" for tier, weight in WEIGHT_TIERS.items())
                                  + ", always[:WEIGHT] (at least one character gets it; others draw it at "
-                                 "WEIGHT, default 1). 'none' weighs an empty slot (default 0)")
+                                 "WEIGHT, default 1). 'none' weighs an empty slot (default 0); 'other' "
+                                 "weighs every skill no other entry names (e.g. 'dance:1,other:0')")
     commands.add_argument("-scc", "--shuffle-commands", action = "store_true", help = "Shuffle selected/randomized commands")
     # legacy single-command exclusions, kept for backward compatibility: each value is a
     # weight of 0 (and the canonical flag string re-emits them in -comw)
@@ -173,12 +174,22 @@ def _process_command_weights(args):
             weights[command] = 0.0
             seen[command] = f"-rec{index}"
 
+    other_weight = None
     if args.command_weights:
         for entry in args.command_weights.split(","):
             group, _, weight_text = entry.partition(":")
             if not group or not weight_text:
                 args.parser.error(f"-comw: '{entry}' must be GROUP:WEIGHT (e.g. shock.possess:0.5)")
             weight, is_always = _parse_weight(args, weight_text)
+            if OTHER in [skill_key(skill_text) for skill_text in group.split(".")]:
+                if skill_key(group) != OTHER:
+                    args.parser.error(f"-comw: '{group}': other must be a group of its own (e.g. dance:1,other:0)")
+                if other_weight is not None:
+                    args.parser.error("-comw: other is given a weight twice")
+                if is_always:
+                    args.parser.error("-comw: other cannot be always")
+                other_weight = weight
+                continue
             for skill_text in group.split("."):
                 command = _parse_skill(args, skill_text)
                 if command in seen:
@@ -193,6 +204,12 @@ def _process_command_weights(args):
                     always.append(command)
 
     skills = [command for command in weights if command != NONE_COMMAND]
+    # other: every skill not named above (nor excluded by -recN), wherever it is listed
+    if other_weight is not None:
+        for command in skills:
+            if command not in seen:
+                weights[command] = other_weight
+
     if not [command for command in skills if weights[command] > 0 or command in always]:
         args.parser.error("-comw: cannot give every randomly-selectable command a weight of 0")
 
@@ -202,16 +219,23 @@ def _process_command_weights(args):
     args.random_exclude_commands = [command for command in skills
                                     if weights[command] == 0 and command not in always]
 
-def weights_value(args):
-    # canonical -comw: groups by (always, weight), skills in id order, names compacted
+def _listed(args, command, other):
+    # does -comw name this command, when `other` (None: no other) weighs the rest?
+    weight = args.command_weights_map[command]
+    if command in args.command_always:
+        return True
+    if command == NONE_COMMAND:
+        return weight != 0
+    return weight != (1.0 if other is None else other)
+
+def _weights_form(args, other):
+    # -comw text: groups by (always, weight), skills in id order, names compacted, other last
     groups = {}
     for command, weight in args.command_weights_map.items():
-        always = command in args.command_always
-        default = 0.0 if command == NONE_COMMAND else 1.0
-        if weight == default and not always:
+        if not _listed(args, command, other):
             continue
         name = "none" if command == NONE_COMMAND else skill_key(id_name[command])
-        groups.setdefault((always, weight), []).append((command, name))
+        groups.setdefault((command in args.command_always, weight), []).append((command, name))
     entries = []
     for (always, weight), members in sorted(groups.items(), key = lambda item: (not item[0][0], -item[0][1])):
         names = ".".join(name for _, name in sorted(members))
@@ -220,7 +244,20 @@ def weights_value(args):
         else:
             value = f"{weight:g}"
         entries.append(f"{names}:{value}")
+    if other is not None:
+        entries.append(f"{OTHER}:{other:g}")
     return ",".join(entries)
+
+def other_weight(args):
+    # the weight canonical -comw gives `other`: whichever form is shortest (None: no other)
+    skills = [command for command in args.command_weights_map
+              if command != NONE_COMMAND and command not in args.command_always]
+    candidates = [None] + sorted({args.command_weights_map[command] for command in skills}, reverse = True)
+    return min(candidates, key = lambda other: len(_weights_form(args, other)))
+
+def weights_value(args):
+    # canonical -comw, so equivalent weights print (and seed) the same
+    return _weights_form(args, other_weight(args))
 
 def process(args):
     for flag in RETIRED_COMMAND_FLAGS:
@@ -294,23 +331,22 @@ def flags(args):
     return flags
 
 def weight_rows(args):
-    # (skill name, weight text) for every skill off the default weight
+    # (skill name, weight text) for every skill -comw names (the rest weigh other_weight)
     rows = []
+    other = other_weight(args)
     for command, weight in args.command_weights_map.items():
         always = command in args.command_always
-        default = 0.0 if command == NONE_COMMAND else 1.0
-        if weight == default and not always:
+        if not _listed(args, command, other):
             continue
         name = "None" if command == NONE_COMMAND else id_name[command]
-        if always:
-            text = "Always" if weight == 1 else f"Always {weight:g}"
-        elif weight == 0:
-            text = "Never"
-        else:
-            text = f"{weight:g}"
-        rows.append((name, text))
+        rows.append((name, weight_text(weight, always)))
     rows.sort(key = lambda row: row[0])
     return rows
+
+def weight_text(weight, always = False):
+    if always:
+        return "Always" if weight == 1 else f"Always {weight:g}"
+    return "Never" if weight == 0 else f"{weight:g}"
 
 def options(args):
     result = []
@@ -335,6 +371,9 @@ def options(args):
         result.append(("Skill Weights", "Even", "command_weights"))
     for name, text in rows:
         result.append((f"{name} Weight", text, f"command_weight_{name}"))
+    other = other_weight(args)
+    if other is not None:
+        result.append(("Other Weight", weight_text(other), "command_weight_other"))
 
     return result
 
@@ -348,7 +387,7 @@ def menu(args):
     rows = weight_rows(args)
     if rows:
         from menus.flags_command_weights import FlagsCommandWeights
-        entries.append(("Skill Weights", FlagsCommandWeights(rows), "command_weights"))
+        entries.append(("Skill Weights", FlagsCommandWeights(rows, other_weight(args)), "command_weights"))
     return (name(), entries)
 
 def log(args):

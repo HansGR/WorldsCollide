@@ -58,6 +58,8 @@ WEIGHT_TIERS = {
     "never": 0.0,
 }
 ALWAYS = "always"
+# -comw group for every skill no other entry names ('dance:1,other:0')
+OTHER = "other"
 
 # every character has four command slots in their initialization data ($ed7ca2 - $ed7ca5)
 COMMAND_SLOT_COUNT = 4
