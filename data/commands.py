@@ -68,11 +68,10 @@ class Commands:
         # Copy the list minus any exclusions
         possible_moogle_commands = command_list.copy()
         # randomize commands for Moogles during Moogle Defense from the non-excluded set
-        # Remove Morph to ensure only 1 character gets Morph
         # Remove Rage to avoid any issues with Randomized Atma weapon
         # Remove X-Magic as they won't have any Magic
         # Remove Blitz, SwdTech, Dance, and Lore because they won't have abilities within unless a party member does
-        moogle_exclusions = [name_id["Morph"], name_id["Rage"], name_id["X Magic"], name_id["Blitz"], name_id["SwdTech"], name_id["Lore"], name_id["Dance"]]
+        moogle_exclusions = [name_id["Rage"], name_id["X Magic"], name_id["Blitz"], name_id["SwdTech"], name_id["Lore"], name_id["Dance"]]
         for exclude in moogle_exclusions:
             try:
                 possible_moogle_commands.remove(exclude)
@@ -88,12 +87,6 @@ class Commands:
         command_list = list(command_set)
 
         allowed_commands = command_set | set([name_id["Fight"], RANDOM_COMMAND, RANDOM_UNIQUE_COMMAND, NONE_COMMAND])
-
-        # if morph was explicitly selected remove from available command list
-        morph_id = name_id["Morph"]
-        for command in args.character_commands:
-            if command == morph_id:
-                command_list.remove(morph_id)
 
         # skills of weight 0 (-comw NAME:0, legacy -recN) are never drawn
         for exclude_command in args.random_exclude_commands:
@@ -133,8 +126,6 @@ class Commands:
                 continue
             args.character_commands[random.choice(possible_indices)] = command
             command_set.discard(command)
-            if command == morph_id and morph_id in command_list:
-                command_list.remove(morph_id)
 
         # -comw none: a random slot is left empty with the empty slot's share of the weight
         for index, command in enumerate(args.character_commands):
@@ -142,12 +133,10 @@ class Commands:
                 args.character_commands[index] = NONE_COMMAND
 
         for index, command in enumerate(args.character_commands):
-            if command not in allowed_commands and (index != 0 or command != name_id["Morph"]) and (index != 12 or command != name_id["Leap"]):
+            if command not in allowed_commands and (index != 12 or command != name_id["Leap"]):
                 raise ValueError(f"Invalid character command {command}")
             elif command == RANDOM_COMMAND:
                 args.character_commands[index] = weighted_choice(command_list, weights)
-                if args.character_commands[index] == morph_id:
-                    command_list.remove(morph_id) # only one character gets morph
             elif command == NONE_COMMAND:
                 args.character_commands[index] = name_id["None"]
 
@@ -227,17 +216,15 @@ class Commands:
 
     def repeat_skills(self, characters, slot_counts, legal, held, dealt):
         # -comr slots and -com 99 slots: each draws a skill by weight among the legal
-        # skills its character lacks. skills may repeat between characters (morph once)
+        # skills its character lacks. skills may repeat between characters
         weights = args.command_weights_map
-        morph_id = name_id["Morph"]
         skills = {character : [] for character in characters}
         for character in characters:
             for _ in range(slot_counts[character]):
                 if self.empty_slot(legal):
                     continue
                 candidates = [command for command in legal
-                              if command not in held[character] and command not in skills[character]
-                              and not (command == morph_id and dealt[morph_id])]
+                              if command not in held[character] and command not in skills[character]]
                 if not candidates:
                     break
                 command = weighted_choice(candidates, weights)
@@ -275,15 +262,13 @@ class Commands:
         # go first (so none repeats until every one is used), each round's skills chosen
         # together by weight share
         weights = args.command_weights_map
-        morph_id = name_id["Morph"]
         skills = {character : [] for character in characters}
         slots = [character for character in characters for _ in range(slot_counts[character])]
         slots = [character for character in slots if not self.empty_slot(legal)]
         random.shuffle(slots)
         while slots:
             usable = [command for command in legal
-                      if not (command == morph_id and dealt[morph_id])
-                      and any(command not in held[character] and command not in skills[character]
+                      if any(command not in held[character] and command not in skills[character]
                               for character in slots)]
             if not usable:
                 break
@@ -314,7 +299,6 @@ class Commands:
         magic_id = name_id["Magic"]
         item_id = name_id["Item"]
         none_id = name_id["None"]
-        morph_id = name_id["Morph"]
 
         legal = self.random_command_list()
         self.mod_moogle_commands(list(legal))
@@ -328,7 +312,7 @@ class Commands:
         empty_slots = {character : 0 for character in characters}
         if args.character_commands:
             # same explicit-command rules as mod_commands: the random pool plus
-            # fight anywhere, morph only in terra's slot, leap only in gau's
+            # fight anywhere, leap only in gau's
             leap_id = name_id["Leap"]
             allowed = set(name_id[name] for name in RANDOM_POSSIBLE_COMMANDS) | {fight_id}
             character_picks = {character : [args.character_commands[character]]
@@ -342,14 +326,12 @@ class Commands:
                         unique_fill[character] += 1
                     elif command == NONE_COMMAND:
                         empty_slots[character] += 1
-                    elif (command in allowed
-                          or (command == morph_id and character == 0)
-                          or (command == leap_id and character == Characters.GAU)):
+                    elif command in allowed or (command == leap_id and character == Characters.GAU):
                         explicit[character].append(command)
                     else:
                         raise ValueError(f"Invalid character command {command}")
 
-        # every skill handed out counts toward uniqueness (and morph's one holder)
+        # every skill handed out counts toward uniqueness
         dealt = Counter()
         for character in characters:
             dealt.update(explicit[character])

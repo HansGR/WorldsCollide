@@ -3328,3 +3328,88 @@ still retires them.
   The `args` package copies every parsed attribute onto itself, so the
   `args.commands_legacy = True` flag shadowed the submodule. The module is
   now `args/legacy_commands.py`.
+
+### `other` and `randomN` weight groups (2026-10-30)
+
+- **`other:W`** weighs every skill no other `-comw` entry names (or `-recN`
+  excludes), wherever it is listed; never the empty slot; not `always`; a group
+  of its own. The canonical `-comw` is the shortest of the plain and `other`
+  forms, so the long list and `dance:1,other:0` print and seed the same.
+- **`randomN:W`** (`random` = `random1`) gives weight W to N skills drawn per
+  seed from the unnamed ones. Draws happen after the rng is seeded
+  (`args/arguments.py`, beside the `-rc` resolve; no rng use without groups), so
+  the flag string keeps `randomN` and the seed decides the picks. Groups draw
+  disjointly; `other` weighs what they leave; named skills stay listed in the
+  canonical form (naming one keeps it out of the draws). The Flags menu and log
+  show the resulting weights, and the log names each group's draw.
+  - `random:1,other:0` with `-comru 75.0.100`: everyone has the same random skill.
+  - `random3:1,other:0`: everyone draws from the same three.
+  - Until the Morph change below, a draw that left Morph as the only dealable
+    skill was redrawn (Morph had one holder).
+
+## Morph for any number of characters (2026-10-30)
+
+Upstream branch `feature/morph-multiple-characters` (from `main` = `ff6wc/dev`
+`92c5c32`; commits `4307f45` battle, `39e4ba4` commands), cherry-picked here.
+
+**Why Morph had one holder.** Vanilla keeps one timer and one morphed entity:
+`$3EE2` (morphed entity, `$FF` none), gauge `$3F30-31` (counts down from
+`$FFFF`), drain `$3F32` (from the supply at morph start), supply `$1CF6`
+(save data). Morph starting (C2/0B01) returns if `$3EE2` holds anyone, the
+battle loop (C2/1141) ticks only `X == $3EE2`, and morph ending (C2/0AE7)
+clears `$3EE2` and the gauge whoever ends it. A second user got Morph with no
+timer, and the first revert stopped the other's timer: unlimited Morph. After
+battle (C2/5E2F) one character id (Terra; `update_morph_character` patched in
+the holder) added the battle's magic points to the supply.
+
+**`battle/morph.py`.** `$3EE2` now means "timer running"; who is morphed is
+each character's status bit (`$3EF9,X` bit 3). Hooks:
+- C2/1143: every morphed party member drains the shared gauge each tick (two
+  morphed use the supply twice as fast);
+- C2/122C: the gauge running out queues Revert for every morphed member;
+- C2/0AE8 (+ NOPs at C2/0AFA): a revert stops the timer and keeps the unused
+  supply share only when nobody else is still morphed;
+- C2/2461: the battle-start/phase flag marks every morphed character;
+- C2/5E2F: after battle, every living party member with Morph among its four
+  commands (`$1616-$1619` + `$3010,Y`) adds 2 x the battle's magic points (the
+  `-mpm` divide at C2/5E3F still applies to each).
+Morph starting is unchanged: the first starts the timer, later ones join it.
+
+**When the supply grows.** The add needs only the Magic Points battle bit
+(`$1DD1` bit 3, set from game start by `event/start.py`), the holder alive at
+the end, and a formation with magic points; it does not need a Magic command or
+anyone learning. The "Got N Magic Points" message (C2/5E77) shows when `$F0`
+has that bit: set by a learner (C2/6068, characters with an esper equipped) or
+by a holder's add (C2/5E3A).
+
+**Verified** in the snes9x harness (scratch scripts: a battle started by
+injecting an event script `4D 01 3F FE` at `$E5-$E7`): two morphed drain 2x;
+one reverting early keeps the other on the running timer; the timeout reverts
+everyone and empties the supply; the last manual revert keeps 116/200; one
+holder matches unpatched `main` exactly (9.9/frame, 6048 frames); supply after a
+3-MP battle from 10: 16 (one holder), 22 (two), 22 (two, `-mpm 2`).
+
+**Commands on this branch.** The new system (`data/commands.py`) no longer
+special-cases Morph (explicit picks, 99 draws, `repeat_skills`,
+`unique_skills`, Moogle Defense), and `resolve_random_weights` dropped the
+Morph-only redraw. The legacy engine (`data/commands_legacy.py`) keeps its
+one-holder rules so old presets assign exactly as before; only its call to
+the deleted holder patch is gone. Every ROM changes (the battle patch), and
+seeds that deal Morph roll differently after the command draws, so all
+goldens were re-recorded.
+
+**Merging with PR #178** (`feature/command-randomization-utility-update`), in
+whichever order they land upstream:
+- `data/commands.py`: #178 rewrites the file the Morph PR edits. Resolve by
+  taking #178's file and removing its Morph special cases, as done here:
+  `mod_moogle_commands` exclusion, `mod_commands` (explicit-morph removal,
+  `always` removal, `index != 0` clause, 99-draw removal), `repeat_skills` and
+  `unique_skills` (`dealt[morph_id]` filters), and the explicit "morph only in
+  terra's slot" clause in `mod_probability_random_commands`.
+- `data/commands.py` `mod()`: drop #178's `characters_asm.update_morph_character`
+  call (the function is gone).
+- `args/commands.py` `resolve_random_weights`: drop the Morph-only redraw.
+- `tests/test_commands.py`: #178's suite replaces dev's (where the Morph PR
+  rewrote four tests); apply this branch's edits instead (no Morph-once
+  assertion in `BASIC_CHECKS`, `random:1` may pick all 21, strict unique
+  cycling, `test_morph_for_everyone`).

@@ -70,14 +70,14 @@ def harness(flags, check, finish = "", seeds = 300, suplex = False, seed = 1):
     return (script.replace("FLAGS", repr(flags)).replace("SEEDS", str(seeds))
             .replace("SUPLEX", str(suplex)).replace("SEED", str(seed)))
 
-# every menu: four slots, no command twice, Gau never Fight, Morph on one character at most
+# every menu: four slots, no command twice, Gau never Fight (any number may hold Morph:
+# battle/morph.py shares its timer)
 BASIC_CHECKS = """
 for index, menu in enumerate(menus):
     real = [x for x in menu if x != NONE]
     assert len(real) == len(set(real)), f"command twice: {menu}"
     if index == GAU and args.commands_probability_mode:
         assert FIGHT not in menu, f"gau got fight: {menu}"
-assert sum(name_id["Morph"] in menu for menu in menus) <= 1, f"morph twice: {menus}"
 """
 
 # no skill repeats while another legal skill is unused
@@ -257,7 +257,7 @@ class TestCommandsFlag(unittest.TestCase):
 
     def test_random_one_skill_for_everyone(self):
         # random:1,other:0: every character's skill is the seed's one pick, which varies
-        # by seed and is never morph (one character only: everyone else would be empty)
+        # by seed (any of the 21, morph included)
         check = BASIC_CHECKS + """
 skills = {x for menu in menus for x in menu if x in SKILLS}
 assert skills == set(args.command_random_picks[0]), (skills, args.command_random_picks)
@@ -265,19 +265,18 @@ assert all(set(menu) & skills for menu in menus), menus
 state.update(skills)
 """
         finish = """
-assert name_id["Morph"] not in state, state
-assert len(state) == 20, state
+assert len(state) == 21, state
 """
         self.assert_script(harness(["-comru", "75.0.100", "-comw", "random:1,other:0"], check, finish, seeds = 600))
         # random20:0 leaves one skill the same way
         check = """
 dealable = [s for s in SKILLS if args.command_weights_map[s] > 0]
-assert len(dealable) == 1 and dealable != [name_id["Morph"]], dealable
+assert len(dealable) == 1, dealable
 """
         self.assert_script(harness(["-comru", "75", "-comw", "random20:0"], check, seeds = 600))
 
     def test_random_pool_may_hold_morph(self):
-        # random2:1,other:0: morph can be one of the two (the other fills the rest)
+        # random2:1,other:0: morph can be one of the two
         check = BASIC_CHECKS + """
 picks = set(args.command_random_picks[0])
 assert len(picks) == 2 and {x for menu in menus for x in menu if x in SKILLS} <= picks, (picks, menus)
@@ -285,6 +284,14 @@ state.update(picks)
 """
         self.assert_script(harness(["-comru", "75", "-comw", "random2:1,other:0"], check,
                                    'assert state[name_id["Morph"]] > 0, state', seeds = 600))
+
+    def test_morph_for_everyone(self):
+        # any number of characters can hold morph (battle/morph.py shares one timer)
+        check = BASIC_CHECKS + """
+assert all(name_id["Morph"] in menu for menu in menus), menus
+"""
+        self.assert_script(harness(["-comr", "0", "-comw", "morph:1,other:0"], check, seeds = 50))
+        self.assert_script(harness(["-com", "03" * 12 + "17"], check, seeds = 50))   # gau: morph, leap
 
     def test_random_draws_follow_the_seed(self):
         # the seed decides the picks: same seed, same picks; the flag string never changes
@@ -346,10 +353,10 @@ assert not set(drafted) & set(early), f"98 repeated an earlier pick: {skills}"
         self.assert_script(harness(["-com", "05999898989898989898989898", "-comru", "100"], check))
 
     def test_unique_cycles_when_slots_exceed_skills(self):
-        # 48 skill slots from 20 skills: every skill dealt before any is dealt a third time
+        # 48 skill slots from 20 skills (morph too): every skill dealt before any is dealt a third time
         check = """
 skills = collections.Counter(x for menu in menus for x in menu if x in SKILLS)
-assert max(skills.values()) - min(skills.values()) <= 1 or name_id["Morph"] in skills, skills
+assert max(skills.values()) - min(skills.values()) <= 1, skills
 assert all(NONE not in menu for menu in menus[:11]), menus
 """
         self.assert_script(harness(["-comru", "0", "-comw", "possess:0"], check))
