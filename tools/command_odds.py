@@ -45,6 +45,10 @@ def main():
         args.character_commands[:] = picks
         stand_ins = [StandIn() for _ in range(0x20)]
         commands = Commands(stand_ins)
+        if getattr(args, "commands_legacy", False):
+            # pre-overhaul flags (presets): the old assignment code
+            from data.commands_legacy import LegacyCommands
+            commands = LegacyCommands(stand_ins)
         if args.commands_probability_mode:
             commands.mod_probability_random_commands()
             menus = [stand_ins[index].commands for index in commands.full_random_characters()]
