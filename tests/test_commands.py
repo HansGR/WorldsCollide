@@ -46,6 +46,7 @@ PICKS = list(args.character_commands)   # mod_commands rewrites the list in plac
 
 def build():
     args.character_commands[:] = PICKS
+    args.group_modules["commands"].resolve_random_weights(args)    # each seed draws its own
     chars = [FakeChar() for _ in range(0x20)]
     c = Commands(chars)
     if args.commands_probability_mode:
@@ -222,6 +223,26 @@ class TestCommandsFlag(unittest.TestCase):
         everything = ".".join(f"{name_id[name]:02}" for name in RANDOM_POSSIBLE_COMMANDS)
         self.assert_rejected("-comw", everything + ":0", expected = "cannot give every")
 
+    def test_weights_random(self):
+        # randomN: N skills drawn per seed from the unnamed ones; the flag keeps the group,
+        # named skills stay listed (naming one keeps it out of the draws), other:1 drops out
+        self.assert_accepted("-comru", "75", "-comw", "random:1,other:0", expected = "-comw random:1,other:0")
+        self.assert_accepted("-comru", "75", "-comw", "Random-3:1,other:0", expected = "-comw random3:1,other:0")
+        self.assert_accepted("-comr", "90", "-comw", "random:1,random2:1,other:0", expected = "-comw random3:1,other:0")
+        self.assert_accepted("-comr", "90", "-comw", "other:0,random2:rare,random:always,jump:1",
+                             expected = "-comw jump:1,random:always,random2:0.25,other:0")
+        self.assert_accepted("-comr", "90", "-comw", "random20:0", expected = "-comw random20:0")
+        self.assert_accepted("-comr", "90", "-comw", "random:0,other:1", expected = "-comw random:0")
+        self.assert_accepted("-rec1", "28", "-comw", "random:2", expected = "-comw possess:0,random:2")
+
+    def test_weights_random_rejected(self):
+        self.assert_rejected("-comw", "random.jump:0", expected = "random must be a group of its own")
+        self.assert_rejected("-comw", "random0:1", expected = "must draw at least one skill")
+        self.assert_rejected("-comw", "random22:0", expected = "draw 22 skills but only 21")
+        self.assert_rejected("-comw", "jump:1,random21:0", expected = "draw 21 skills but only 20")
+        self.assert_rejected("-comw", "random21:0", expected = "cannot give every")
+        self.assert_rejected("-comw", "random:0,other:0", expected = "cannot give every")
+
     def test_legacy_exclusions(self):
         # main's -recN flags still parse, as weight 0
         self.assert_accepted("-rec1", "28", "-rec2", "27", expected = "-comw shock.possess:0")
@@ -229,6 +250,57 @@ class TestCommandsFlag(unittest.TestCase):
         self.assert_rejected("-rec1", "28", "-comw", "possess:2", expected = "also excluded by -rec1")
 
     # --- generation --------------------------------------------------------
+
+    def test_random_one_skill_for_everyone(self):
+        # random:1,other:0: every character's skill is the seed's one pick, which varies
+        # by seed and is never morph (one character only: everyone else would be empty)
+        check = BASIC_CHECKS + """
+skills = {x for menu in menus for x in menu if x in SKILLS}
+assert skills == set(args.command_random_picks[0]), (skills, args.command_random_picks)
+assert all(set(menu) & skills for menu in menus), menus
+state.update(skills)
+"""
+        finish = """
+assert name_id["Morph"] not in state, state
+assert len(state) == 20, state
+"""
+        self.assert_script(harness(["-comru", "75.0.100", "-comw", "random:1,other:0"], check, finish, seeds = 600))
+        # random20:0 leaves one skill the same way
+        check = """
+dealable = [s for s in SKILLS if args.command_weights_map[s] > 0]
+assert len(dealable) == 1 and dealable != [name_id["Morph"]], dealable
+"""
+        self.assert_script(harness(["-comru", "75", "-comw", "random20:0"], check, seeds = 600))
+
+    def test_random_pool_may_hold_morph(self):
+        # random2:1,other:0: morph can be one of the two (the other fills the rest)
+        check = BASIC_CHECKS + """
+picks = set(args.command_random_picks[0])
+assert len(picks) == 2 and {x for menu in menus for x in menu if x in SKILLS} <= picks, (picks, menus)
+state.update(picks)
+"""
+        self.assert_script(harness(["-comru", "75", "-comw", "random2:1,other:0"], check,
+                                   'assert state[name_id["Morph"]] > 0, state', seeds = 600))
+
+    def test_random_draws_follow_the_seed(self):
+        # the seed decides the picks: same seed, same picks; the flag string never changes
+        script = """
+import sys, io, contextlib
+sys.argv = ["wc.py", "-i", "rom.smc", "-s", sys.argv[1], "-comru", "75", "-comw", "random3:1,other:0"]
+with contextlib.redirect_stdout(io.StringIO()):
+    import args
+from constants.commands import name_id
+assert "-comw random3:1,other:0" in args.flags, args.flags
+assert args.blitz_command_possible == (name_id["Blitz"] in args.command_random_picks[0])
+print("picks", args.command_random_picks)
+"""
+        def picks(seed):
+            result = subprocess.run([sys.executable, "-c", script, seed], cwd = REPO_ROOT,
+                                    capture_output = True, text = True, timeout = 60)
+            self.assertEqual(result.returncode, 0, msg = result.stderr[-3000:])
+            return result.stdout.strip().splitlines()[-1]
+        self.assertEqual(picks("alpha"), picks("alpha"))
+        self.assertGreater(len({picks(seed) for seed in ("alpha", "beta", "gamma", "delta")}), 1)
 
     def test_unique_invariants(self):
         for flags in (["-comru", "90"], ["-comru", "0", "-comw", "possess:0"],

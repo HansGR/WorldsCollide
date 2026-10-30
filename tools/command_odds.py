@@ -43,6 +43,7 @@ def main():
     characters = 0
     for _ in range(seeds):
         args.character_commands[:] = picks
+        args.group_modules["commands"].resolve_random_weights(args)
         stand_ins = [StandIn() for _ in range(0x20)]
         commands = Commands(stand_ins)
         if args.commands_probability_mode:
