@@ -158,13 +158,15 @@ class TestCommandsFlag(unittest.TestCase):
         self.assert_rejected("-comr", "10.50.101", expected = "must be between 0 and 100")
         self.assert_rejected("-comru", "10.50.abc", expected = "not a valid percent chance")
 
-    def test_retired_flags_rejected(self):
-        # the dev-only flags these replace point at the new form
-        self.assert_rejected("-comfr", "10.50.90", expected = "use -comr")
-        self.assert_rejected("-comfru", "10.50.90", expected = "use -comru")
-        self.assert_rejected("-compr", "0.28", "50.100", expected = "-compr has been replaced")
-        self.assert_rejected("-compru", "28", "100", expected = "-compru has been replaced")
-        self.assert_rejected("-rec", "28.27", expected = "use -comw NAME:0")
+    def test_legacy_flags_still_parse(self):
+        # this branch keeps the pre-overhaul flags for presets (args/legacy_commands.py):
+        # same canonical strings as before, and they can't be mixed with the new flags
+        self.assert_accepted("-comfr", "10.50.90", expected = "-comfr 10.50.90")
+        self.assert_accepted("-compr", "0.28", "50.100", expected = "-compr 00.28 50.100")
+        self.assert_accepted("-compru", "28", "100", "-comfru", "50.50.50", expected = "-compru 28 100")
+        self.assert_accepted("-com", "99" * 13, "-rec", "28.27", expected = "-rec 28.27")
+        self.assert_rejected("-compru", "28", "100", "-comw", "jump:2", expected = "cannot be combined")
+        self.assert_rejected("-comfr", "10.50.90", "-comru", "90", expected = "cannot be combined")
         self.assert_rejected("-com", "fr", "10.50.90", expected = "has been replaced")
 
     # --- -comw -------------------------------------------------------------
@@ -199,9 +201,11 @@ class TestCommandsFlag(unittest.TestCase):
         self.assert_rejected("-comw", everything + ":0", expected = "cannot give every")
 
     def test_legacy_exclusions(self):
-        # main's -recN flags still parse, as weight 0
-        self.assert_accepted("-rec1", "28", "-rec2", "27", expected = "-comw shock.possess:0")
+        # exclusions alone keep their old -rec form (legacy mode); with the new flags
+        # they are weight 0
+        self.assert_accepted("-rec1", "28", "-rec2", "27", expected = "-rec 28.27")
         self.assert_accepted("-rec3", "10", "-comw", "jump:2", expected = "-comw jump:2,blitz:0")
+        self.assert_accepted("-comru", "90", "-rec", "28", expected = "-comw possess:0")
         self.assert_rejected("-rec1", "28", "-comw", "possess:2", expected = "also excluded by -rec1")
 
     # --- generation --------------------------------------------------------

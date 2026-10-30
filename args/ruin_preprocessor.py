@@ -79,14 +79,19 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     # misc.py - y npc
     {'-ymascot', '-ycreature', '-yimperial', '-ymain', '-yreflect',
      '-ystone', '-yvxz', '-ysketch', '-yrandom', '-yremove'},
-    # commands.py - skill weights: a user -comw (or a legacy -recN exclusion, a
+    # commands.py - skill weights: a user -comw (or an exclusion, -rec/-recN: a
     # weight of 0) replaces the default weights
-    {'-comw', '-rec1', '-rec2', '-rec3', '-rec4', '-rec5', '-rec6'},
+    {'-comw', '-rec', '-rec1', '-rec2', '-rec3', '-rec4', '-rec5', '-rec6'},
     # commands.py - command flags: a user command flag of any family replaces
     # the default -comru (the families compose, but the injected default should
-    # not silently combine with an explicit user choice)
-    {'-com', '-comr', '-comru'},
+    # not silently combine with an explicit user choice). The legacy percent
+    # flags (presets) also drop the default -comw, which they cannot be mixed with
+    {'-com', '-comr', '-comru', '-comfr', '-comfru', '-compr', '-compru'},
 ]
+
+# Defaults a user flag suppresses beyond its own group: the legacy percent flags
+# (kept for presets) cannot be combined with -comw, so they drop the default weights
+EXTRA_SUPPRESSED = {flag : {'-comw'} for flag in ('-comfr', '-comfru', '-compr', '-compru')}
 
 # Build a lookup: flag -> set of all flags in its exclusive group
 _FLAG_TO_GROUP = {}
@@ -261,7 +266,7 @@ FLAGS_WITH_ARGS = {
     '-stl': 1, '-stlr': 2, '-stesp': 2, '-si': 1, '-sws': 1, '-sj': 1,
     '-gpm': 1, '-lc': 2, '-oa': 1, '-rce': 1, '-rirc': 1, '-rrtc': 1, '-sc1': 1, '-sc2': 1, '-sc3': 1, '-sc4': 1, '-csrp': 2,
     '-slr': 2, '-lmprp': 2, '-srr': 2, '-sdr': 2, '-com': 1, '-comr': 1, '-comru': 1,
-    '-comw': 1, '-rec1': 1, '-rec2': 1,
+    '-comw': 1, '-comfr': 1, '-comfru': 1, '-compr': 2, '-compru': 2, '-rec': 1, '-rec1': 1, '-rec2': 1,
     '-xpm': 1, '-mpm': 1, '-lsced': 1, '-hmced': 1, '-xgced': 1, '-ase': 1,
     '-msl': 1, '-drloc': 1, '-stloc': 1, '-fer': 1, '-escr': 1,
     '-esr': 2, '-ebr': 1, '-emprp': 2, '-nm1': 1, '-nm2': 1, '-mmprp': 2,
@@ -386,6 +391,7 @@ def get_user_exclusive_flags(argv, ruin_index):
     user_args = set(arg for arg in argv[ruin_index + 1:] if arg.startswith('-'))
 
     for user_flag in user_args:
+        flags_to_suppress |= EXTRA_SUPPRESSED.get(user_flag, set())
         group = _FLAG_TO_GROUP.get(user_flag)
         if group is None:
             continue

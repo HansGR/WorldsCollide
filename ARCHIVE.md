@@ -3296,3 +3296,35 @@ accepted that distortion as the price of `u`.
 - **`unequip_all_away`:** a 2-frame RIGHT tap right after the Y party switch
   could be dropped. It now holds RIGHT for 8 frames (the ghost blocks the
   step).
+
+### Old flags kept for presets (ruin branch only, 2026-10-30)
+
+Hans asked that `-compr`, `-compru`, `-comfr` and `-comfru` keep working on
+`door_rando_ruin_rewrite`, because some presets use them. The PR branch
+still retires them.
+
+- **Legacy mode.** `args/commands.py` `_legacy_mode` turns on when a seed has
+  only old flags (the percent families, `-rec`, `-recN`) and none of
+  `-comr`/`-comru`/`-comw`. It then runs the pre-overhaul code verbatim:
+  - `args/legacy_commands.py`: parsing, canonical flags, options, menu;
+  - `data/commands_legacy.py` `LegacyCommands`: the tier rolls, `UniquePool`
+    and backfill;
+  - `menus/flags_command_chances.py`: menu number 18, shared with Weights,
+    since a seed only ever uses one of them.
+- **Errors and new mode.** Mixing old percent flags with new flags is an
+  error. `-rec` alongside new flags is weight 0.
+- **`-ruin` interplay.** The old percent flags also suppress the injected
+  `-comw` (`EXTRA_SUPPRESSED` in the ruin preprocessor), and `-rec` joined
+  the `-comw` exclusivity group.
+- **Verified.** Six old presets built at `c6019a2` (pre-overhaul) and now give
+  byte-identical ROMs:
+  - `-ruin -compru <the old ruin lists>`;
+  - `-ruin hard -comfru 90.90.90 -rec 28.27`;
+  - `-com 99… -rec1 28 -rec2 27`;
+  - `-comfr … -rec 16 -scc`;
+  - `-compr …`;
+  - `-com 05999898… -compru 28.27 50.25 -comfru 100.100.100`.
+- **Pitfall.** The first version named the module `args/commands_legacy.py`.
+  The `args` package copies every parsed attribute onto itself, so the
+  `args.commands_legacy = True` flag shadowed the submodule. The module is
+  now `args/legacy_commands.py`.

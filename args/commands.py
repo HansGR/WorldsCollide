@@ -1,4 +1,4 @@
-from constants.commands import (COMMAND_OPTIONS, COMMON_COMMANDS, RETIRED_COM_MODES, RETIRED_COMMAND_FLAGS,
+from constants.commands import (COMMAND_OPTIONS, COMMON_COMMANDS, RETIRED_COM_MODES,
                                 RANDOM_POSSIBLE_COMMANDS, RANDOM_COMMAND, RANDOM_UNIQUE_COMMAND, NONE_COMMAND,
                                 RANDOM_EXCLUDE_COMMANDS, WEIGHT_TIERS, ALWAYS, id_name, name_id)
 
@@ -53,10 +53,24 @@ def parse(parser):
         commands.add_argument(f"-rec{index}", f"--random-exclude-command{index}", type = int,
                               choices = RANDOM_EXCLUDE_COMMANDS, metavar = "VALUE", default = NONE_COMMAND,
                               help = "Exclude selected command from random possibilities (legacy: use -comw NAME:0)")
-    # retired flags (dev only, replaced by -comr/-comru/-comw): recognized to point at the new form
-    for flag, nargs in RETIRED_COMMAND_FLAGS.items():
-        commands.add_argument(flag, dest = f"retired_{flag[1:]}", nargs = nargs, default = None,
-                              help = argparse.SUPPRESS)
+    # the pre-overhaul flags, kept on this branch for presets that use them: a seed with
+    # only these (and/or -rec/-recN exclusions) runs args/legacy_commands.py and
+    # data/commands_legacy.py exactly as before; they cannot be mixed with -comr/-comru/-comw
+    commands.add_argument("-comfr", "--commands-fr", type = str, default = None, metavar = "F.M.I",
+                          help = "Legacy (presets): Fight/Magic/Item percent chances, unfilled slots "
+                                 "backfilled randomly, respecting -rec. Use -comr instead")
+    commands.add_argument("-comfru", "--commands-fru", type = str, default = None, metavar = "F.M.I",
+                          help = "Legacy (presets): like -comfr with unique skills. Use -comru instead")
+    commands.add_argument("-compr", "--commands-pr", type = str, nargs = 2, default = None,
+                          metavar = ("IDS", "PERCENTS"),
+                          help = "Legacy (presets): dot-separated command ids and percent chances, rolled "
+                                 "highest percent first, then backfilled. Use -comr/-comru with -comw instead")
+    commands.add_argument("-compru", "--commands-pru", type = str, nargs = 2, default = None,
+                          metavar = ("IDS", "PERCENTS"),
+                          help = "Legacy (presets): like -compr with unique skills. Use -comru with -comw instead")
+    commands.add_argument("-rec", "--random-exclude-command-ids", type = str, default = None, metavar = "VALUE",
+                          help = "Exclude commands from random possibilities, as dot-separated command ids "
+                                 "(e.g. '-rec 05.07.10'); the same as -comw NAME:0")
 
 def _process_character_commands(args, tokens):
     # one explicitly selected (or random/none) command id per character slot
@@ -166,7 +180,15 @@ def _process_command_weights(args):
     always = []
     seen = {}
 
-    # legacy -recN exclusions are weight 0
+    # -rec (dot-separated ids) and the legacy -recN exclusions are weight 0
+    if args.random_exclude_command_ids is not None:
+        for part in args.random_exclude_command_ids.split("."):
+            command = int(part) if part.isdigit() else -1
+            if command not in RANDOM_EXCLUDE_COMMANDS:
+                args.parser.error(f"random-exclude-command-ids: '{part}' is not an excludable command id")
+            if command != NONE_COMMAND:
+                weights[command] = 0.0
+                seen[command] = "-rec"
     for index in range(1, 7):
         command = getattr(args, f"random_exclude_command{index}")
         if command != NONE_COMMAND:
@@ -222,13 +244,34 @@ def weights_value(args):
         entries.append(f"{names}:{value}")
     return ",".join(entries)
 
+def _legacy_mode(args):
+    # only pre-overhaul flags (the percent families, -rec, -recN), none of the new ones
+    old_families = [flag for flag, value in (("-comfr", args.commands_fr), ("-comfru", args.commands_fru),
+                                             ("-compr", args.commands_pr), ("-compru", args.commands_pru))
+                    if value is not None]
+    new_flags = [flag for flag, value in (("-comr", args.commands_random), ("-comru", args.commands_random_unique),
+                                          ("-comw", args.command_weights)) if value is not None]
+    if old_families and new_flags:
+        args.parser.error(f"commands: {', '.join(old_families)} (legacy) cannot be combined with "
+                          f"{', '.join(new_flags)}; use -comr/-comru with -comw")
+    exclusions = (args.random_exclude_command_ids is not None
+                  or any(getattr(args, f"random_exclude_command{index}") != NONE_COMMAND for index in range(1, 7)))
+    return bool(old_families or exclusions) and not new_flags
+
 def process(args):
-    for flag in RETIRED_COMMAND_FLAGS:
-        if getattr(args, f"retired_{flag[1:]}") is not None:
-            replacement = {"-comfr": "-comr", "-comfru": "-comru", "-compr": "-comr/-comru with -comw",
-                           "-compru": "-comru with -comw", "-rec": "-comw NAME:0"}[flag]
-            args.parser.error(f"commands: {flag} has been replaced; use {replacement} "
-                              "(e.g. -comru 90 -comw shock.possess:0.5,slot:0)")
+    args.commands_legacy = _legacy_mode(args)
+    if args.commands_legacy:
+        import args.legacy_commands as legacy
+        legacy.process(args)
+        # the new-mode attributes, for the code that reads them
+        args.command_weights_map = {name_id[name] : 1.0 for name in RANDOM_POSSIBLE_COMMANDS}
+        for command in args.random_exclude_commands:
+            args.command_weights_map[command] = 0.0
+        args.command_weights_map[NONE_COMMAND] = 0.0
+        args.command_always = []
+        args.command_basics = []
+        args.commands_random_value = None
+        return
 
     args.character_commands = []
     args.command_strings = []
@@ -277,6 +320,9 @@ def process(args):
         args.blitz_command_possible = True
 
 def flags(args):
+    if args.commands_legacy:
+        import args.legacy_commands as legacy
+        return legacy.flags(args)
     flags = ""
 
     if args.commands:
@@ -313,6 +359,9 @@ def weight_rows(args):
     return rows
 
 def options(args):
+    if args.commands_legacy:
+        import args.legacy_commands as legacy
+        return legacy.options(args)
     result = []
     if args.commands is None and not args.commands_probability_mode:
         for option in COMMAND_OPTIONS:
@@ -339,6 +388,9 @@ def options(args):
     return result
 
 def menu(args):
+    if args.commands_legacy:
+        import args.legacy_commands as legacy
+        return legacy.menu(args)
     # the per-skill weights go to a sub-menu, one line here
     entries = [entry for entry in options(args) if not entry[2].startswith("command_weight_")]
     # -scc only swaps whole command sets between characters under -comr/-comru, whose

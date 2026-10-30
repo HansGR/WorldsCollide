@@ -438,6 +438,12 @@ class Commands:
         import data.characters_asm as characters_asm
         from data.characters import Characters
 
+        if args.commands_legacy:
+            # pre-overhaul flags (presets): the old assignment, unchanged
+            from data.commands_legacy import LegacyCommands
+            LegacyCommands(self.characters).mod()
+            return
+
         if args.commands_probability_mode:
             self.mod_probability_random_commands()
         elif args.commands:

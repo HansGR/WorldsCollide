@@ -44,9 +44,12 @@ NONE_COMMAND = 97   # none command id is 3 digits in base 10 (255), use a custom
 # print a migration error pointing at -comr/-comru/-comw
 RETIRED_COM_MODES = ["fr", "fru", "pr", "pru"]
 
-# retired flags (replaced by -comr/-comru/-comw) and their value counts, recognized
-# only to print a migration error
-RETIRED_COMMAND_FLAGS = {"-comfr": None, "-comfru": None, "-compr": 2, "-compru": 2, "-rec": None}
+# command ids a probability can be declared for by the legacy -compr/-compru (kept on
+# this branch for presets, args/legacy_commands.py): every real menu command the
+# randomizer hands out, plus None (declared as 97, same as -com strings)
+PROBABILITY_EXCLUDED_NAMES = ["Revert", "Leap", "Mimic", "Row", "Def", "Summon", "Empty", "Empty?", "None"]
+PROBABILITY_COMMAND_IDS = [command_id for command_id, command_name in id_name.items()
+                           if command_name not in PROBABILITY_EXCLUDED_NAMES]
 
 # -comw: named weights (relative to a standard skill's 1), and the guarantee keyword
 WEIGHT_TIERS = {
