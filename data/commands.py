@@ -435,9 +435,6 @@ class Commands:
         self.characters[Characters.GAU].commands[0] = commands[-1] # rage
 
     def mod(self):
-        import data.characters_asm as characters_asm
-        from data.characters import Characters
-
         if args.commands_probability_mode:
             self.mod_probability_random_commands()
         elif args.commands:
@@ -447,9 +444,6 @@ class Commands:
                 self.shuffle_full_random_commands()
             else:
                 self.shuffle_commands()
-
-        if args.commands or args.commands_probability_mode or args.shuffle_commands:
-            characters_asm.update_morph_character(self.characters[ : Characters.CHARACTER_COUNT])
 
     def log(self):
         from log import section, format_option
