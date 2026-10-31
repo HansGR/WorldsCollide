@@ -3349,8 +3349,11 @@ still retires them.
 
 ## Morph for any number of characters (2026-10-30)
 
-Upstream branch `feature/morph-multiple-characters` (from `main` = `ff6wc/dev`
-`92c5c32`; commits `4307f45` battle, `39e4ba4` commands), cherry-picked here.
+Upstream branch `feature/morph-multiple-characters`, cherry-picked here. Since
+2026-10-31 it sits on top of PR #178's branch (`04add1e`), so its PR (to follow
+#178) carries only `bd78d94` (battle) and `b286eca` (commands, reconciled with
+#178's code). The first version, on `dev`, is kept locally as
+`backup/morph-on-dev` (`4307f45`, `39e4ba4`).
 
 **Why Morph had one holder.** Vanilla keeps one timer and one morphed entity:
 `$3EE2` (morphed entity, `$FF` none), gauge `$3F30-31` (counts down from
@@ -3398,8 +3401,11 @@ the deleted holder patch is gone. Every ROM changes (the battle patch), and
 seeds that deal Morph roll differently after the command draws, so all
 goldens were re-recorded.
 
-**Merging with PR #178** (`feature/command-randomization-utility-update`), in
-whichever order they land upstream:
+**Merging with PR #178** (`feature/command-randomization-utility-update`): done
+on the Morph branch (2026-10-31) by rebasing it onto #178. If #178 is
+squash-merged upstream, `git rebase --onto <dev after the merge> 04add1e
+feature/morph-multiple-characters` moves the two Morph commits over. What the
+reconciliation changed:
 - `data/commands.py`: #178 rewrites the file the Morph PR edits. Resolve by
   taking #178's file and removing its Morph special cases, as done here:
   `mod_moogle_commands` exclusion, `mod_commands` (explicit-morph removal,
