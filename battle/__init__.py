@@ -9,6 +9,7 @@ import battle.command_menu_guard
 import battle.end_checks
 import battle.magitek_upgrade
 import battle.morph
+import battle.possess
 from battle.animations import Animations
 
 __all__ = ["Battle"]

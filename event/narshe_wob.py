@@ -333,12 +333,50 @@ class NarsheWOB(Event):
         space = Write(Bank.CA, sync_in_wor_src, "Sync PARTY_N_IN_WOR from IN_WOR (reform)")
         sync_in_wor_addr = space.start_address
 
+        # How many characters can be picked right now: the available bits ($1ede-$1edf),
+        # exactly the characters CREATE_AVAILABLE_CHARACTERS puts in the select screen.
+        # CHARACTERS_AVAILABLE counts recruited characters (objectives, Kefka's Tower):
+        # it also counts away and possessed ones, and offering more parties than can be
+        # filled softlocks the select screen.
+        scratch = event_word.address(event_word.SCRATCH)
+        count_available_src = [
+            asm.PHP(),
+            asm.SEP(0x20),
+            asm.REP(0x10),
+            asm.STZ(scratch, asm.ABS),
+            asm.STZ(scratch + 1, asm.ABS),
+            asm.LDA(event_bit.address(event_bit.character_available(0)), asm.ABS),
+            asm.LDY(0x0008, asm.IMM16),
+            "LOW",
+            asm.ASL(),
+            asm.BCC("LOW_NEXT"),
+            asm.INC(scratch, asm.ABS),
+            "LOW_NEXT",
+            asm.DEY(),
+            asm.BNE("LOW"),
+            asm.LDA(event_bit.address(event_bit.character_available(8)), asm.ABS),
+            asm.AND((1 << (CHARACTER_COUNT - 8)) - 1, asm.IMM8),
+            asm.LDY(0x0008, asm.IMM16),
+            "HIGH",
+            asm.ASL(),
+            asm.BCC("HIGH_NEXT"),
+            asm.INC(scratch, asm.ABS),
+            "HIGH_NEXT",
+            asm.DEY(),
+            asm.BNE("HIGH"),
+            asm.PLP(),
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, count_available_src, "count characters available to party select (reform school)")
+        count_available_addr = space.start_address_snes
+
         reform_src = [
             "START_OVER",
             field.DialogBranch(reform_id, dest1="REFORM", dest2=0xc359d, dest3=unequip_all_addr, dest4=field.RETURN),
 
-            # === Determine max new parties (3 - away_count) capped by CHARACTERS_AVAILABLE ===
+            # === Determine max new parties (3 - away_count) capped by the characters available ===
             "REFORM",
+            field.LongCall(count_available_addr),    # SCRATCH = characters that can be picked
             # Check away parties to determine free slot count
             field.BranchIfEventBitSet(event_bit.PARTY_1_AWAY, "CHECK_P1_AWAY"),
             field.BranchIfEventBitSet(event_bit.PARTY_2_AWAY, "CHECK_P2_AWAY_NO_P1"),
@@ -355,15 +393,15 @@ class NarsheWOB(Event):
             # fallthrough: only P2 away
 
             "MAX_2_NEW",  # exactly 1 away -> at most 2 new parties
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "1_PARTY"),
+            field.BranchIfEventWordLess(event_word.SCRATCH, 2, "1_PARTY"),
             field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),
 
             "MAX_1_NEW",  # 2 parties away -> force 1 new party
             field.Branch("1_PARTY"),
 
             "MAX_3_NEW",  # 0 away -> up to 3 new parties (original logic)
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 2, "1_PARTY"),
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 3, "MAX_3_NOT_ENOUGH_FOR_3"),
+            field.BranchIfEventWordLess(event_word.SCRATCH, 2, "1_PARTY"),
+            field.BranchIfEventWordLess(event_word.SCRATCH, 3, "MAX_3_NOT_ENOUGH_FOR_3"),
             field.DialogBranch(reform_id_3, dest1="1_PARTY", dest2="2_PARTIES", dest3="3_PARTIES", dest4=field.RETURN),
             "MAX_3_NOT_ENOUGH_FOR_3",
             field.DialogBranch(reform_id_2, dest1="1_PARTY", dest2="2_PARTIES", dest3=field.RETURN),

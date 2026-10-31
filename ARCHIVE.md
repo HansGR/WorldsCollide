@@ -3419,3 +3419,51 @@ reconciliation changed:
   rewrote four tests); apply this branch's edits instead (no Morph-once
   assertion in `BASIC_CHECKS`, `random:1` may pick all 21, strict unique
   cycling, `test_morph_for_everyone`).
+
+## Possess is single use in ruination (2026-10-31)
+
+**Report.** Relm, Umaro and Mog went out a branch door; Mog possessed. Back at the
+school, the ghost's Reform Parties did not list Mog, yet offered three parties, and
+the three-party select could not be finished with two characters: a softlock.
+
+**Vanilla Possess.** Command `$1C` (C2/17E5) sets special effect `$A0` (C2/3B98):
+attacker and target both get Wound (`$3DD4` bit 7) and Hide (`$3DE9` bit 5), and the
+attacker is flagged in `$3A88`. The target dies even if immune to death (Whelk's Head,
+immunity `$FF`, died). At battle end (C2/494C) a `$3A88` party member goes through
+C2/47E3, which zeroes its `$1850` party byte; status and HP are written back as for
+any KO (HP 0, Wound), with no `-pd` dependence. The available (`$1EDE`) and recruited
+(`$1EDC`) bits are untouched, so in standard mode the character can be picked again on
+the airship (and revived normally unless `-pd`).
+
+**Why ruination lost it.** `MarkActivePartyAway` (branch door) clears
+`character_available` for the active party's members and `RestoreActivePartyAvailable`
+(back at the school) sets it again, both finding members by their `$1850` party bits.
+A possessor's party byte is zeroed mid-trip, so its bit was never restored; the select
+screen lists only characters CA/C90B creates (available bit set) with `$1850` bit 6
+(C3/7645). The party-count dialog read `CHARACTERS_AVAILABLE`, which counts recruited
+characters (never decremented), so it offered a third party. A possession from a party
+that was not away left the character available instead: the outcome depended on the
+route. The count bug also exists without Possess (a party away holding most
+characters).
+
+**Fix (Hans chose "single use": the possessor is gone for good).**
+- `battle/possess.py` (ruination only): C2/4954 calls a wrapper that runs C2/47E3 and,
+  for a character id below 14 that is wounded and hidden, clears its available bit.
+  `$3A88` is also set by BabaBreath (special effect `$66`, C2/3966), which blows a living
+  character away, and the same C2/47E3 call removes the dead Phantom Train ghosts
+  (`$10`/`$11`); neither is both wounded and hidden with an id below 14, so both keep
+  vanilla behaviour. Recruited and `CHARACTERS_AVAILABLE` stay: objectives ("character
+  X recruited", "N characters"), character gates (Mobliz, Kohlingen, Fanatics' Tower) and
+  Kefka's Tower's "3 allies" read them.
+- `event/narshe_wob.py`: at REFORM an F0 routine (`LongCall`) counts the available bits
+  (characters 0-13) into `SCRATCH`; the "How many parties?" branches use it.
+- The risk is accepted by design: possessing too many characters can leave too few for
+  the three-party finish.
+
+**Verified** (snes9x, scratch scripts; event scripts placed in a copy of the rom at
+CA/0490 because a battle overwrites free bank `$7F` memory, and ending in a jump to the
+idle address CA/0000 because a return with an empty event stack pops garbage):
+away party + Mog possesses + return: Mog unavailable, still recruited, Terra and Locke
+available, `CHARACTERS_AVAILABLE` 3, reform count 2 (dialog offers 1 or 2 parties); the
+same without the away trip; standard mode keeps the possessor available. Ruin goldens
+re-recorded (rom only; spoilers unchanged).
