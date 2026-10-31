@@ -267,25 +267,16 @@ def resolve_random_weights(args):
     if getattr(args, "commands_legacy", False) or not args.command_random_groups:
         return
     import random
-    morph_id = name_id["Morph"]
-    for _ in range(1000):
-        weights, always = dict(args.command_weights_base), list(args.command_always_base)
-        pool, picks = list(args.command_random_pool), []
-        for count, weight, is_always in args.command_random_groups:
-            drawn = random.sample(pool, count)
-            pool = [command for command in pool if command not in drawn]
-            for command in drawn:
-                weights[command] = weight
-                if is_always:
-                    always.append(command)
-            picks.append(sorted(drawn))
-        # morph goes to one character only: a draw that leaves it the only skill that can
-        # be dealt (random:1,other:0 or random20:0 picking it) would empty every other
-        # character's skill slots, so it is drawn again (naming morph keeps that on purpose)
-        dealable = [command for command in weights
-                    if command != NONE_COMMAND and (weights[command] > 0 or command in always)]
-        if dealable != [morph_id] or morph_id in args.command_named:
-            break
+    weights, always = dict(args.command_weights_base), list(args.command_always_base)
+    pool, picks = list(args.command_random_pool), []
+    for count, weight, is_always in args.command_random_groups:
+        drawn = random.sample(pool, count)
+        pool = [command for command in pool if command not in drawn]
+        for command in drawn:
+            weights[command] = weight
+            if is_always:
+                always.append(command)
+        picks.append(sorted(drawn))
     _set_weights(args, weights, always)
     args.command_random_picks = picks
     _set_blitz_possible(args)
