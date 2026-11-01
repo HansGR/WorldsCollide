@@ -62,7 +62,9 @@ def _process_shock_recoil(args):
     args.shock_recoil_256 = round(fraction * 256)
     if args.shock_recoil_256 == 0:
         args.parser.error(f"-shr: {args.shock_recoil} is smaller than 1/256")
-    args.shock_recoil = str(fraction)       # canonical: reduced, '1' for a whole
+    # canonical: the fraction the game uses (N/256, reduced; '1' for the whole), so inputs
+    # that round to the same N print -- and seed -- the same
+    args.shock_recoil = str(Fraction(args.shock_recoil_256, 256))
 
 def process(args):
     _process_shock_recoil(args)

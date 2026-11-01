@@ -30,6 +30,11 @@ class TestShockRecoilFlag(unittest.TestCase):
         self.assert_flag(["-shr", "3/16"], "-shr 3/16")
         self.assert_flag(["-shr", "0.25"], "-shr 1/4")
         self.assert_flag(["-shr", "1"], "-shr 1")
+        # the printed fraction is the one the game uses: the nearest 256th
+        self.assert_flag(["-shr", "0.1111"], "-shr 7/64")
+        self.assert_flag(["-shr", "1/9"], "-shr 7/64")
+        self.assert_flag(["-shr", "0.11"], "-shr 7/64")
+        self.assert_flag(["-shr", "1/3"], "-shr 85/256")
         self.assert_flag(["-shr", "-pd"], "-shr")           # a following flag is not a fraction
 
     def test_rejected(self):
