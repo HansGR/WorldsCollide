@@ -3517,3 +3517,14 @@ print (and seed) `-shr 7/64`. The routine computes max HP x N / 256 with `c2.mul
 keeps y; max HP <= 9999 cannot overflow), or takes max HP itself for 256; minimum 1.
 Emulator, max HP 2000: 1/8 -> 250, 3/16 -> 375, 1/4 -> 500, 1 -> KO. Tests:
 `tests/test_shock_recoil.py` (parsing, canonical form, rejections).
+
+## Ruination flagsets: Shock recoil on, no Shock/Possess weighting (2026-11-01)
+
+Hans: with Shock recoil and single-use Possess, both can be as likely as any other
+skill. Every ruination flagset drops `-comw shock.possess:rare` (so `-comru 90` with
+all weights 1) and gains Shock recoil: standard and fast `-shr 1/4`, easy `-shr 1/8`
+(prints as bare `-shr`), hard `-shr 3/8` (`RUIN_EASY_OVERRIDES` / `RUIN_HARD_OVERRIDES`,
+`FLAGS_WITH_ARGS['-shr'] = 1`). A user `-shr X` follows the injected one and wins;
+`-no shr` removes it; `-no comw` (in the challenge spreadsheet strings) is now a no-op.
+`EXTRA_SUPPRESSED` stays (legacy percent flags would still drop any default `-comw`).
+Ruin goldens re-recorded (rom + spoiler: the flag string and the command draws change).

@@ -130,7 +130,7 @@ class TestRuinPreprocessor(unittest.TestCase):
         # everything else is standard
         standard = expand(["wc.py", "-ruin"])
         for flag, count in (("-gp", 1), ("-chrm", 2), ("-ir", 1),
-                            ("-rrtc", 1), ("-rirc", 1), ("-stl", 1), ("-comru", 1), ("-comw", 1)):
+                            ("-rrtc", 1), ("-rirc", 1), ("-stl", 1), ("-comru", 1), ("-shr", 1)):
             self.assertEqual(value_after(argv, flag, count), value_after(standard, flag, count), flag)
         self.assertIn("-ssf4", argv)
         self.assertIn("-cg", argv)
@@ -168,19 +168,27 @@ class TestRuinPreprocessor(unittest.TestCase):
             argv = expand(["wc.py", "-ruin", *mode, "-rc", "terra"])
             self.assertEqual([a for a in argv if a in ("-sc1", "-sc2", "-sc3", "-sc4")], left)
 
+    def test_shock_recoil(self):
+        # Shock costs its user 1/4 of max HP (easy 1/8, hard 3/8, fast as standard)
+        for mode, fraction in (([], "1/4"), (["easy"], "1/8"), (["hard"], "3/8"), (["fast"], "1/4")):
+            argv = expand(["wc.py", "-ruin", *mode])
+            self.assertEqual(value_after(argv, "-shr"), [fraction], msg = mode)
+        self.assertNotIn("-shr", expand(["wc.py", "-ruin", "-no", "shr"]))
+        self.assertNotIn("-shr", expand(["wc.py", "-ruin", "custom"]))
+        # a user -shr comes after the injected one, so argparse's last value wins
+        argv = expand(["wc.py", "-ruin", "hard", "-shr", "3/16"])
+        self.assertEqual(argv[len(argv) - 1 - argv[::-1].index("-shr") + 1], "3/16")
+
     def test_standard_commands_and_level_cap(self):
         argv = expand(["wc.py", "-ruin"])
-        # seed-wide unique skills, Fight/Magic/Item at 90%, Shock and Possess rare
+        # seed-wide unique skills, Fight/Magic/Item at 90%, every skill equally likely
         self.assertEqual(value_after(argv, "-comru"), ["90"])
-        self.assertEqual(value_after(argv, "-comw"), ["shock.possess:rare"])
+        self.assertNotIn("-comw", argv)
         self.assertNotIn("-com", argv)
-        # a user -comw or legacy exclusion replaces the default weights; a user
-        # command family replaces -comru
-        # (a user -comw comes after the injected one, so argparse's last value wins)
+        # a user -comw sets weights (there are no default weights); a user command
+        # family replaces -comru
         argv2 = expand(["wc.py", "-ruin", "-comw", "jump:2"])
-        self.assertEqual(argv2[len(argv2) - 1 - argv2[::-1].index("-comw") + 1], "jump:2")
-        argv2 = expand(["wc.py", "-ruin", "-rec1", "28"])
-        self.assertNotIn("-comw", argv2)
+        self.assertEqual(value_after(argv2, "-comw"), ["jump:2"])
         argv2 = expand(["wc.py", "-ruin", "-comr", "50"])
         self.assertNotIn("-comru", argv2)
         self.assertEqual(value_after(argv, "-lc", 2), ["48", "10"])

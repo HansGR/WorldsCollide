@@ -79,18 +79,18 @@ MUTUALLY_EXCLUSIVE_GROUPS = [
     # misc.py - y npc
     {'-ymascot', '-ycreature', '-yimperial', '-ymain', '-yreflect',
      '-ystone', '-yvxz', '-ysketch', '-yrandom', '-yremove'},
-    # commands.py - skill weights: a user -comw (or an exclusion, -rec/-recN: a
-    # weight of 0) replaces the default weights
+    # commands.py - skill weights: -comw and the exclusions (-rec/-recN: a weight
+    # of 0) set the same weights (no flagset injects any since 2026-11-01)
     {'-comw', '-rec', '-rec1', '-rec2', '-rec3', '-rec4', '-rec5', '-rec6'},
     # commands.py - command flags: a user command flag of any family replaces
     # the default -comru (the families compose, but the injected default should
-    # not silently combine with an explicit user choice). The legacy percent
-    # flags (presets) also drop the default -comw, which they cannot be mixed with
+    # not silently combine with an explicit user choice)
     {'-com', '-comr', '-comru', '-comfr', '-comfru', '-compr', '-compru'},
 ]
 
 # Defaults a user flag suppresses beyond its own group: the legacy percent flags
-# (kept for presets) cannot be combined with -comw, so they drop the default weights
+# (kept for presets) cannot be combined with -comw, so they would drop any default
+# weights (none are injected since 2026-11-01)
 EXTRA_SUPPRESSED = {flag : {'-comw'} for flag in ('-comfr', '-comfru', '-compr', '-compru')}
 
 # Build a lookup: flag -> set of all flags in its exclusive group
@@ -134,10 +134,12 @@ RUIN_DEFAULT_FLAGS = {
         '-fst', '-brl', '-slr', '3', '5', '-lmprp', '75', '125', '-lel',
         '-srr', '25', '35', '-rnl', '-rnc', '-sdr', '1', '2', '-das', '-dda',
         '-dns', '-sch', '-scis',
-        # seed-wide unique skills: Fight/Magic/Item 90% per character, Shock and
-        # Possess at the rare tier (weight 0.25)
+        # seed-wide unique skills: Fight/Magic/Item 90% per character, every skill
+        # equally likely (since 2026-11-01 Shock costs its user HP and Possess is
+        # single use, so neither needs a lower weight)
         '-comru', '90',
-        '-comw', 'shock.possess:rare',
+        # Shock hurts its user: 1/4 of max HP (easy 1/8, hard 3/8)
+        '-shr', '1/4',
     ],
 
     # Battle flags
@@ -186,6 +188,7 @@ RUIN_HARD_EXTRAS = {
 }
 RUIN_HARD_OVERRIDES = {
     '-lc': ['-lc', '48'],               # hard level cap at 48 (base: soft cap 48, width 10)
+    '-shr': ['-shr', '3/8'],            # Shock costs 3/8 of max HP (base 1/4)
 }
 
 # '-ruin easy' (the relaxed difficulty): a tutorial for ruination maps - the
@@ -207,6 +210,7 @@ RUIN_EASY_OVERRIDES = {
     '-ssf4': [],                        # standard 1/2 sell prices instead of 1/4
     '-chrm': ['-chrm', '2', '0'],       # rare monsters-in-a-box (base 7%)
     '-lc': [],                          # no level cap
+    '-shr': ['-shr', '1/8'],            # Shock costs 1/8 of max HP (base 1/4)
 }
 RUIN_EASY_EXTRAS = {
     'easy': [
@@ -272,7 +276,7 @@ FLAGS_WITH_ARGS = {
     '-esr': 2, '-ebr': 1, '-emprp': 2, '-nm1': 1, '-nm2': 1, '-mmprp': 2,
     '-gp': 1, '-smc': 1, '-sto': 1, '-ieor': 1, '-ieror': 1, '-ir': 1,
     '-csb': 2, '-sisr': 1, '-sprp': 2, '-sdm': 1, '-ccsr': 1, '-chrm': 2,
-    '-cor': 1, '-crr': 1, '-crvr': 2, '-ame': 1, '-move': 1,
+    '-cor': 1, '-crr': 1, '-crvr': 2, '-ame': 1, '-move': 1, '-shr': 1,
 }
 
 def value_count(flags, i):
