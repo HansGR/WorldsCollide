@@ -24,6 +24,8 @@ EXTRA_FLAGS = [
     "-open",
     "-nfh -cg",
     "-nfh -sli -cg",
+    "-psu -cg",
+    "-psu -eu -rc random random random random -cg",
 ]
 
 # builds the real parser, then prints its on/off flags instead of parsing sys.argv

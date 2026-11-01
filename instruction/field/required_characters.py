@@ -9,6 +9,17 @@
 # This module lives in instruction.field (rather than the event package) so that the shared
 # select-party subroutines in functions.py can pre-place required characters without a circular
 # import.
+#
+# Possess single use (-psu) takes priority: a required character who possessed is no longer
+# available and must not be placed (it would be put into a party without being created). With
+# -psu the placement is decided at run time from the available bits:
+#   - one party: each required character is placed only if available
+#   - two parties: the "every available character is required" split puts an available required
+#     character into party 2
+#   - three parties (Kefka's Tower): the n-th *available* required character goes where the n-th
+#     required character would, so the parties a required character fills are filled first
+# The party-size gates (instruction/field/available_characters.py) guarantee enough available
+# characters for the two and three party selects, so no party is left empty with nobody movable.
 
 import args
 import instruction.field.instructions as field
@@ -23,13 +34,38 @@ _KT_SKIP_PARTIES   = [2, 3, 1, 2]   # entering at the switches ("skip")
 
 _two_party_placement_address = None
 
+def _available_placement(characters, parties, label):
+    """-psu: instructions placing the available characters (in order) into parties: the n-th
+    available one goes into parties[n]. A branch per (character index, placed count) state; label
+    makes the labels unique within the write."""
+    def state(index, placed):
+        return f"{label}_{index}_{placed}"
+
+    src = []
+    for index, character in enumerate(characters):
+        for placed in range(index + 1):
+            src += [
+                state(index, placed),
+                field.BranchIfEventBitClear(event_bit.character_available(character), state(index + 1, placed)),
+                field.AddCharacterToParty(character, parties[placed]),
+                field.Branch(state(index + 1, placed + 1)),
+            ]
+    src += [state(len(characters), placed) for placed in range(len(characters) + 1)]
+    return src
+
 def one_party_placement():
     """Instructions placing every required character into the single active party."""
+    if args.possess_single_use:
+        return _available_placement(args.required_character_ids, [1] * len(args.required_character_ids),
+                                    "RC_ONE_PARTY")
     return [field.AddCharacterToParty(character, 1) for character in args.required_character_ids]
 
 def three_party_placement(skip):
     """Instructions distributing the required characters across the three Kefka Tower parties."""
     parties = _KT_SKIP_PARTIES if skip else _KT_NORMAL_PARTIES
+    if args.possess_single_use:
+        return _available_placement(args.required_character_ids, parties,
+                                    "RC_KT_SKIP" if skip else "RC_KT_NORMAL")
     return [field.AddCharacterToParty(character, parties[index])
             for index, character in enumerate(args.required_character_ids)]
 
@@ -58,16 +94,27 @@ def two_party_placement():
         src += [field.BranchIfEventBitSet(event_bit.character_available(character), "ALL_REQUIRED_PARTY1")]
 
     # otherwise every available character is required: split them so party 2 is not empty
-    for character in required[:-1]:
-        src += [field.AddCharacterToParty(character, 1)]
+    if args.possess_single_use:
+        # the last available required character goes into party 2 (walk the list backwards: the
+        # first one found goes into party 2, the rest into party 1)
+        src += _available_placement(list(reversed(required)), [2] + [1] * (len(required) - 1),
+                                    "RC_SPLIT")
+    else:
+        for character in required[:-1]:
+            src += [field.AddCharacterToParty(character, 1)]
+        src += [
+            field.AddCharacterToParty(required[-1], 2),
+        ]
     src += [
-        field.AddCharacterToParty(required[-1], 2),
         field.Return(),
 
         "ALL_REQUIRED_PARTY1",
     ]
-    for character in required:
-        src += [field.AddCharacterToParty(character, 1)]
+    if args.possess_single_use:
+        src += _available_placement(required, [1] * len(required), "RC_TOGETHER")
+    else:
+        for character in required:
+            src += [field.AddCharacterToParty(character, 1)]
     src += [field.Return()]
 
     space = Write(Bank.CA, src, "require characters: pre-place for two-party select")

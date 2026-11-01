@@ -26,6 +26,9 @@ def parse(parser):
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
     challenges.add_argument("-nosaves", "--no-saves", action = "store_true",
                             help = "Ironmog Mode: You cannot save (but save points still work for Tents/Sleeping Bags)")
+    challenges.add_argument("-psu", "--possess-single-use", action = "store_true",
+                            help = "A character who uses Possess is gone for good: they can no longer be chosen for any party. "
+                                   "Takes priority over required characters (-rc)")
 
     from data.characters import Characters
     require_character_options = [name.lower() for name in Characters.DEFAULT_NAME]
@@ -108,6 +111,8 @@ def flags(args):
         flags += f" -rls {args.remove_learnable_spells}"
     if args.no_saves:
         flags += " -nosaves"
+    if args.possess_single_use:
+        flags += " -psu"
 
     if args.require_characters:
         flags += " -rc " + " ".join(args.require_characters)
@@ -132,6 +137,7 @@ def options(args):
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
         ("No Saves", args.no_saves, "no_saves"),
+        ("Possess Single Use", args.possess_single_use, "possess_single_use"),
         ("Require Characters", args.require_characters, "require_characters"),
     ]
 

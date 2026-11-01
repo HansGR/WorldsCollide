@@ -130,10 +130,15 @@ class PhantomTrain(Event):
             field.Return(),
         )
 
+        # -psu: a possessor is recruited but no longer available, keep its ghost hidden too
+        if self.args.possess_single_use:
+            character_obtained = event_bit.character_recruited(character)
+        else:
+            character_obtained = event_bit.character_available(character)
         space = Reserve(0xbaccf, 0xbacec, "phantom train hide character if recruited", field.NOP())
         inside_last_car_entrance_event = space.next_address
         space.write(
-            field.ReturnIfEventBitClear(event_bit.character_available(character)),
+            field.ReturnIfEventBitClear(character_obtained),
             field.HideEntity(ghost_npc_id),
             field.Return(),
         )

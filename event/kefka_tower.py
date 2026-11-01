@@ -1,6 +1,7 @@
 from event.event import *
 import args
 import instruction.field.required_characters as required_characters
+import instruction.field.available_characters as available_characters
 
 class KefkaTower(Event):
     def name(self):
@@ -169,8 +170,11 @@ class KefkaTower(Event):
         space = Reserve(0xa01a2, 0xa02d5, "kefka tower first landing scene", field.NOP())
         space.add_label("STATUE_LANDING", self.statue_landing)
         space.add_label("ENTRANCE_LANDING", space.end_address + 1)
+        # three parties: refuse to land without three characters to fill them
+        count_characters, characters_word = available_characters.party_size_word()
         space.write(
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, 3, "NEED_MORE_ALLIES"),
+            count_characters,
+            field.BranchIfEventWordLess(characters_word, 3, "NEED_MORE_ALLIES"),
             field.BranchIfEventBitSet(event_bit.UNLOCKED_KT_SKIP, "LANDING_MENU"),
 
             field.Pause(2), # NOTE: load-bearing pause, without a pause or dialog before party select the game

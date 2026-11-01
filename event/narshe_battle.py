@@ -1,4 +1,5 @@
 from event.event import *
+import instruction.field.available_characters as available_characters
 
 class NarsheBattle(Event):
     def name(self):
@@ -74,9 +75,12 @@ class NarsheBattle(Event):
         lose_condition_dialog = 886
         self.dialogs.set_text(lose_condition_dialog, "We're history if they reach me!<line>Good luck!<end>") # remove Banon's name
 
+        # two parties: refuse to start without two characters to fill them
+        count_characters, characters_word = available_characters.party_size_word()
         space = Reserve(0xcc605, 0xcc62a, "narshe wob battle banon npc event", field.NOP())
         space.write(
-            field.BranchIfEventWordGreater(event_word.CHARACTERS_AVAILABLE, 1, "PREPARED_DIALOG"),
+            count_characters,
+            field.BranchIfEventWordGreater(characters_word, 1, "PREPARED_DIALOG"),
 
             field.Dialog(need_more_chars_dialog),
             field.Return(),

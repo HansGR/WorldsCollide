@@ -209,7 +209,20 @@ def _recruit_character_mod():
     import data.event_word as event_word
     characters_available_address = event_word.address(event_word.CHARACTERS_AVAILABLE)
 
-    space = Allocate(Bank.C0, 43, "c0 recruit_character")
+    space = Allocate(Bank.C0, 59 if args.possess_single_use else 43, "c0 recruit_character")
+    if args.possess_single_use:
+        # -psu: a character who possessed is recruited but no longer available; recruiting it
+        # again would bring it back (and count it twice), so ignore a recruited character
+        space.write(
+            asm.TDC(),
+            asm.LDA(0xeb, asm.DIR),                 # a = character argument
+            asm.JSR(0xbaed, asm.ABS),               # x = a mod 8 (bit), y = a // 8 (byte)
+            asm.LDA(0x1edc, asm.ABS_Y),             # a = character recruited byte
+            asm.AND(power_of_two_table, asm.LNG_X), # & character recruited bit
+            asm.BEQ("NOT_RECRUITED"),
+            asm.RTL(),                              # already recruited: nothing to do
+            "NOT_RECRUITED",
+        )
     if args.start_average_level:
         # set level to average before recruiting character so new character not included in average
         space.write(

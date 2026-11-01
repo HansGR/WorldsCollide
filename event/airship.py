@@ -23,6 +23,8 @@ class Airship(Event):
 
         if self.args.no_free_heals:
             self.no_free_heals_mod()
+        if self.args.possess_single_use:
+            self.possess_single_use_mod()
 
     def controls_mod(self):
         fly_wor_fc_cancel_dialog = 1315
@@ -291,16 +293,22 @@ class Airship(Event):
             field.Branch(change_party_unequip_dialog),
         )
 
+        # -psu: a possessor is recruited but no longer available, unequip it too
+        if self.args.possess_single_use:
+            branch_if_not_obtained = field.BranchIfCharacterNotRecruited
+        else:
+            branch_if_not_obtained = field.BranchIfCharacterUnavailable
+
         if self.args.equipable_umaro:
             # make unequip those not in party apply to umaro
             src = [
                 "UNEQUIP_GOGO",
-                field.BranchIfCharacterUnavailable(self.characters.GOGO, "UNEQUIP_UMARO"),
+                branch_if_not_obtained(self.characters.GOGO, "UNEQUIP_UMARO"),
                 field.BranchIfCharacterInParty(self.characters.GOGO, "UNEQUIP_UMARO"),
                 field.RemoveAllEquipment(self.characters.GOGO),
 
                 "UNEQUIP_UMARO",
-                field.BranchIfCharacterUnavailable(self.characters.UMARO, field.RETURN),
+                branch_if_not_obtained(self.characters.UMARO, field.RETURN),
                 field.BranchIfCharacterInParty(self.characters.UMARO, field.RETURN),
                 field.RemoveAllEquipment(self.characters.UMARO),
                 field.Return(),
@@ -316,11 +324,11 @@ class Airship(Event):
             # make unequip all apply to umaro
             src = [
                 "UNEQUIP_GOGO",
-                field.BranchIfCharacterUnavailable(self.characters.GOGO, "UNEQUIP_UMARO"),
+                branch_if_not_obtained(self.characters.GOGO, "UNEQUIP_UMARO"),
                 field.RemoveAllEquipment(self.characters.GOGO),
 
                 "UNEQUIP_UMARO",
-                field.BranchIfCharacterUnavailable(self.characters.UMARO, field.RETURN),
+                branch_if_not_obtained(self.characters.UMARO, field.RETURN),
                 field.RemoveAllEquipment(self.characters.UMARO),
                 field.Return(),
             ]
@@ -331,6 +339,25 @@ class Airship(Event):
             space.write(
                 field.Call(unequip_all_gogo_umaro),
             )
+
+    # each character's "Load CaseWord with available characters" (e1) in the vanilla unequip
+    # options: unequip all (cc/3525-cc/3591) and unequip those not in party (cc/35a4-cc/3664)
+    UNEQUIP_ALL_LOAD_AVAILABLE = [0xc3525 + 9 * index for index in range(13)]
+    UNEQUIP_NOT_IN_PARTY_LOAD_AVAILABLE = [0xc35a4 + 16 * index for index in range(13)]
+
+    def possess_single_use_mod(self):
+        # -psu: a possessor is recruited but no longer available. the unequip options only strip
+        # available characters, which would leave a possessor's equipment out of reach for good,
+        # so strip recruited characters instead. without leap (never used in wc) that is the same
+        # set plus the possessors
+        addresses = self.UNEQUIP_ALL_LOAD_AVAILABLE + self.UNEQUIP_NOT_IN_PARTY_LOAD_AVAILABLE
+        if self.args.equipable_umaro:
+            # gogo's checks are replaced by unequip_party_members_npc_mod (and use recruited)
+            addresses.remove(0xc3591)
+            addresses.remove(0xc3664)
+        for address in addresses:
+            space = Reserve(address, address, "airship unequip: load recruited characters (possess single use)")
+            space.write(field.LoadRecruitedCharacters())
 
     def inside_blackjack(self):
         # blackjack inside (map 0x007) entrance event, do not load the setzer npc from coin toss scene

@@ -8,6 +8,7 @@ import battle.keep_battle_mp
 import battle.command_menu_guard
 import battle.end_checks
 import battle.magitek_upgrade
+import battle.possess
 from battle.animations import Animations
 
 __all__ = ["Battle"]

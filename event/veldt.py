@@ -27,6 +27,24 @@ class Veldt(Event):
                 field.SetProperties(self.char, self.char),
             )
 
+    def branch_if_leapt(self, not_leapt, leapt):
+        # leap_char is leapt if recruited but not available
+        # -psu: recruited but not available is how a possessor looks; a possessor must not come back
+        #       (and with -psu a leap is single use too: leap_char never returns)
+        if self.args.possess_single_use:
+            return []
+        return [
+            branch_if_char_not_recruited(self.leap_char, not_leapt),
+            branch_if_char_not_available(self.leap_char, leapt),
+        ]
+
+    def branch_if_char_obtained(self, dest):
+        # the veldt character reward has been obtained
+        # -psu: a possessor is recruited but not available, it must not be offered again
+        if self.args.possess_single_use:
+            return branch_if_char_recruited(self.char, dest)
+        return branch_if_char_available(self.char, dest)
+
     def mod(self):
         self.leap_char = self.characters.get_characters_with_command("Leap")
         if not self.leap_char:
@@ -68,7 +86,14 @@ class Veldt(Event):
         src = [
             asm.LDA(char_available_event_bit(self.leap_char), asm.IMM8),
             asm.TRB(char_available_event_byte(self.leap_char), asm.ABS),    # clear leap_char available bit
-            asm.DEC(characters_available_address, asm.ABS),                 # decrement available chars count
+        ]
+        if not self.args.possess_single_use:
+            # -psu: CHARACTERS_AVAILABLE counts recruited characters, the party-size gates count
+            # available ones (instruction/field/available_characters.py)
+            src += [
+                asm.DEC(characters_available_address, asm.ABS),             # decrement available chars count
+            ]
+        src += [
             asm.RTS(),
         ]
         space = Write(Bank.C2, src, "veldt set gau unavailable after leap")
@@ -92,13 +117,12 @@ class Veldt(Event):
             asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
             asm.BNE("LOAD_CHAR"),
 
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
+            self.branch_if_leapt("CHECK_CHAR_RECRUITED", "LOAD_CHAR"),
             "CHECK_CHAR_RECRUITED",
         )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
-                branch_if_char_available(self.char, "LOAD_CHAR"),
+                self.branch_if_char_obtained("LOAD_CHAR"),
             )
         else:
             space.write(
@@ -125,13 +149,12 @@ class Veldt(Event):
             asm.CPX(self.gau_returns_ai_data_offset, asm.IMM16),    # gau returning event?
             asm.BNE("LOAD_CHAR"),
 
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "LOAD_CHAR"),
+            self.branch_if_leapt("CHECK_CHAR_RECRUITED", "LOAD_CHAR"),
             "CHECK_CHAR_RECRUITED",
         )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
-                branch_if_char_available(self.char, "LOAD_CHAR"),
+                self.branch_if_char_obtained("LOAD_CHAR"),
             )
         else:
             space.write(
@@ -172,13 +195,12 @@ class Veldt(Event):
         space = Allocate(Bank.C2, 42, "veldt check if gau can return function", asm.NOP())
         return_check_function = space.next_address
         space.write(
-            branch_if_char_not_recruited(self.leap_char, "CHECK_CHAR_RECRUITED"),
-            branch_if_char_not_available(self.leap_char, "CHECK_ENEMY/CHAR_SLOTS"),
+            self.branch_if_leapt("CHECK_CHAR_RECRUITED", "CHECK_ENEMY/CHAR_SLOTS"),
             "CHECK_CHAR_RECRUITED",
         )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
-                branch_if_char_available(self.char, "CLEAR_GAU/CHAR_CAN_RETURN"),
+                self.branch_if_char_obtained("CLEAR_GAU/CHAR_CAN_RETURN"),
             )
         else:
             space.write(
@@ -226,21 +248,23 @@ class Veldt(Event):
             space.write(
                 branch_if_char_not_recruited(self.character_gate(), "SKIP_GAU_EVENT"),
             )
+        if not self.args.possess_single_use:    # -psu: leap_char never returns (see branch_if_leapt)
+            space.write(
+                branch_if_char_not_recruited(self.leap_char, "CHAR_RECRUITED_CHECK"),
+                branch_if_char_available(self.leap_char, "CHAR_RECRUITED_CHECK"),
+
+                asm.LDX(0x3000 + self.leap_char, asm.ABS),  # x = leap character's slot
+                asm.LDA(0x02, asm.IMM8),
+                asm.TSB(0x3ebd, asm.ABS),       # set gau already recruited bit (so dried meat is not required)
+                asm.LDA(0x3018, asm.ABS_X),     # a = leap character's mask (1, 2, 4, or 8)
+                asm.BRA("QUEUE_GAU_EVENT"),
+            )
         space.write(
-            branch_if_char_not_recruited(self.leap_char, "CHAR_RECRUITED_CHECK"),
-            branch_if_char_available(self.leap_char, "CHAR_RECRUITED_CHECK"),
-
-            asm.LDX(0x3000 + self.leap_char, asm.ABS),  # x = leap character's slot
-            asm.LDA(0x02, asm.IMM8),
-            asm.TSB(0x3ebd, asm.ABS),       # set gau already recruited bit (so dried meat is not required)
-            asm.LDA(0x3018, asm.ABS_X),     # a = leap character's mask (1, 2, 4, or 8)
-            asm.BRA("QUEUE_GAU_EVENT"),
-
             "CHAR_RECRUITED_CHECK",
         )
         if self.reward.type == RewardType.CHARACTER:
             space.write(
-                branch_if_char_available(self.char, "SKIP_GAU_EVENT"),
+                self.branch_if_char_obtained("SKIP_GAU_EVENT"),
             )
         else:
             space.write(
@@ -271,8 +295,7 @@ class Veldt(Event):
         space = Allocate(Bank.C2, 56, "veldt recruit gau/char function", asm.NOP())
         recruit_function = space.next_address
         space.write(
-            branch_if_char_not_recruited(self.leap_char, "RECRUIT_CHAR"),
-            branch_if_char_not_available(self.leap_char, "RECRUIT_GAU"),
+            self.branch_if_leapt("RECRUIT_CHAR", "RECRUIT_GAU"),
 
             "RECRUIT_CHAR",
         )

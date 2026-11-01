@@ -1,5 +1,6 @@
 from event.event import *
 import instruction.field.required_characters as required_characters
+import instruction.field.available_characters as available_characters
 
 class PhoenixCave(Event):
     def name(self):
@@ -77,9 +78,12 @@ class PhoenixCave(Event):
         space = Write(Bank.CA, src, "phoenix cave character requirements cancel")
         character_requirements_cancel_landing = space.start_address
 
+        # two parties: refuse to land without enough characters to fill them
+        count_characters, characters_word = available_characters.party_size_word()
         space = Reserve(0xa0405, 0xa0428, "phoenix cave landing checks", field.NOP())
         space.write(
-            field.BranchIfEventWordLess(event_word.CHARACTERS_AVAILABLE, self.characters_required(), character_requirements_cancel_landing),
+            count_characters,
+            field.BranchIfEventWordLess(characters_word, self.characters_required(), character_requirements_cancel_landing),
             field.Branch(enter_phoenix_cave),
         )
 
