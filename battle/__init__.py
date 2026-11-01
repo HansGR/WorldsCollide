@@ -10,6 +10,7 @@ import battle.end_checks
 import battle.magitek_upgrade
 import battle.morph
 import battle.possess
+import battle.shock_recoil
 from battle.animations import Animations
 
 __all__ = ["Battle"]

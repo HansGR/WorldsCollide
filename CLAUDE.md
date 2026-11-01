@@ -156,6 +156,7 @@ See DOOR_RANDO_GUIDE.md; `doors/__init__.py` has the layer map, doors/HISTORY.md
 
 ### Feature flags
 - **event/free_heals.py** — `-nfh` cross-event sweepers, orchestrated by `Events.no_free_heals_mod()`: `modify_inn_costs` (×3 paid + convert free Returners/Figaro), `modify_free_bed_heals` (50% pincer ambush + per-character `BedHealCharacter`), `modify_recovery_springs` (9 randomised outcomes). Per-event `-nfh` patches stay in their own files. See ARCHIVE.md "No Free Heals" for the full table.
+- **battle/shock_recoil.py** — `-shr` (Challenges; off by default, since 2026-11-01): Shock also damages its user for max HP / 8 in the same animation (can be fatal). Shock (attack `$82`) gets the unused special effect `$14`, whose once-per-attack routine (table C2/42E1, attacker in y) writes the caster's `$33d0` damage slot; the post-attack pass (C2/62EF) shows and applies it like any damage. ARCHIVE.md "Shock recoil".
 - **menus/buy.py** + **data/shops.py** — `-sli` limited-inventory shops (pack-based purchasing). See ARCHIVE.md "Limited Inventory Shops".
 
 ### Battle

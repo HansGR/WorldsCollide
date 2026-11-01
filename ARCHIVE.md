@@ -3467,3 +3467,43 @@ away party + Mog possesses + return: Mog unavailable, still recruited, Terra and
 available, `CHARACTERS_AVAILABLE` 3, reform count 2 (dialog offers 1 or 2 parties); the
 same without the away trip; standard mode keeps the possessor available. Ruin goldens
 re-recorded (rom only; spoilers unchanged).
+
+## Shock recoil (`-shr`, 2026-11-01)
+
+Hans wanted Shock to cost its user 1/8 of max HP **in the same animation**, with no
+extra action or title card, and able to kill. Flag `-shr` (Challenges group, off by
+default; likely ruination-only later).
+
+**How FF6 attacks work** (what made this a data + 20-byte change). An attack is a
+14-byte record (C4/6AC0 + 14 x id: targets, element, flags x3, MP, power, flags,
+accuracy, special effect, 4 status bytes) read by one shared routine (C2/317B). Shock
+(command `$1B`, C2/171A) only sets the attack id `$82` and the animation type, loads the
+record (C2/19C1), sets targets (C2/2951) and jumps there. The shared routine runs:
+1. once per attack: base damage, then the attack's special effect from table C2/42E1
+   (dispatched at C2/33A6 -> C2/3E7D, attacker in y);
+2. per target: hit check (C2/220D), per-target effect (table C2/3DCD via C2/387E),
+   damage roll (C2/0B83) into `$33D0,target` (16-bit, `$FFFF` = none; healing in
+   `$33E4`);
+3. the animation shows a number for every entity with a value; C2/62EF then applies
+   every entity's value to HP (C2/12F5, KO included) and C2/6389 resets them all.
+Drain already uses this: it records the attacker's healing in the same attack.
+
+**Patch** (`battle/shock_recoil.py`): Shock's effect byte (`$FF`) becomes `$14`, an
+effect that is a bare RTS in both tables and used by no attack (also `$46-$48`,
+`$4E`, `$4F`). Its once-per-attack entry points at a routine that, for a party caster
+(an enemy's Shock does not recoil), sets `$33D0,caster = max(1, max hp / 8)`. The
+caster is not a target, so no damage roll touches the slot (a muddled caster targeting
+itself would add the two); it skips the damage formula (exactly 1/8: no defense,
+variance, Shell, Morph). No WC module rewrites attack `$82` (Spells covers `$00-$35`,
+Magitek starts at `$83`; Rages only writes its own tables).
+
+**Verified** (snes9x; battle started by an event script written into a copy of the
+rom): 63 max HP -> 56 after one Shock, also when that Shock ends the battle; at 1 HP
+the recoil KOs the caster; with max HP set to 2000 the screen shows 250 over Terra
+together with the Guard's 415, no second title card. Without `-shr` nothing changes
+except the new "Shock Recoil" options line, so every golden was re-recorded
+(menu/spoiler text only).
+
+Rejected first plan: queuing a "Recoil" action after Shock (as Retort/Interceptor do
+via C2/4EB2) -- a separate action and title card, and dropped when Shock ends the
+battle.

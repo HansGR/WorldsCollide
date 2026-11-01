@@ -22,6 +22,9 @@ def parse(parser):
                             help = "Remove character/esper rewards from: Auction House, Collapsing House, Figaro Castle Throne, Gau's Father's House, Kohlingen Inn, Narshe Weapon Shop, Sealed Gate, South Figaro Basement")
     challenges.add_argument("-pd", "--permadeath", action = "store_true",
                             help = "Life spells cannot be learned. Fenix Downs unavailable (except from starting items). Buckets/inns/tents/events do not revive characters. Phoenix casts Life 3 on party instead of Life")
+    challenges.add_argument("-shr", "--shock-recoil", action = "store_true",
+                            help = "Shock also damages its user for 1/8 of their max HP (can be fatal), shown in "
+                                   "the same animation")
     challenges.add_argument("-rls", "--remove-learnable-spells", type = str,
                             help = "Remove spells from learnable sources: Items, Espers, Natural Magic, and Objectives")
     challenges.add_argument("-nosaves", "--no-saves", nargs = '?', const = 'full', default = None,
@@ -109,6 +112,8 @@ def flags(args):
         flags += " -nfce"
     if args.permadeath:
         flags += " -pd"
+    if args.shock_recoil:
+        flags += " -shr"
     if args.remove_learnable_spells:
         flags += f" -rls {args.remove_learnable_spells}"
     if args.no_saves == 'full':
@@ -138,6 +143,7 @@ def options(args):
         ("No Free Paladin Shields", args.no_free_paladin_shields, "no_free_paladin_shields"),
         ("No Free Characters/Espers", args.no_free_characters_espers, "no_free_characters_espers"),
         ("Permadeath", args.permadeath, "permadeath"),
+        ("Shock Recoil", args.shock_recoil, "shock_recoil"),
         ("Ultima", ultima, "ultima"),
         ("Remove Learnable Spells", args.remove_learnable_spell_ids, "remove_learnable_spell_ids"),
         ("No Saves", args.no_saves or False, "no_saves"),
