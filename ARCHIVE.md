@@ -3507,3 +3507,12 @@ except the new "Shock Recoil" options line, so every golden was re-recorded
 Rejected first plan: queuing a "Recoil" action after Shock (as Retort/Interceptor do
 via C2/4EB2) -- a separate action and title card, and dropped when Shock ends the
 battle.
+
+**Configurable fraction (same day).** `-shr [FRACTION]`: plain `-shr` is 1/8 (and
+prints bare, so earlier flag strings are unchanged); `-shr 3/16`, `-shr 0.25`,
+`-shr 1` (the whole max HP) are reduced to a canonical fraction and stored as
+`args.shock_recoil_256` (round(fraction x 256), 1..256; 0 < fraction <= 1, below 1/256
+rejected). The routine computes max HP x N / 256 with `c2.multiply_a_e8` (C2/47B7,
+keeps y; max HP <= 9999 cannot overflow), or takes max HP itself for 256; minimum 1.
+Emulator, max HP 2000: 1/8 -> 250, 3/16 -> 375, 1/4 -> 500, 1 -> KO. Tests:
+`tests/test_shock_recoil.py` (parsing, canonical form, rejections).
