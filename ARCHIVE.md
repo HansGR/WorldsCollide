@@ -3528,3 +3528,27 @@ all weights 1) and gains Shock recoil: standard and fast `-shr 1/4`, easy `-shr 
 `-no shr` removes it; `-no comw` (in the challenge spreadsheet strings) is now a no-op.
 `EXTRA_SUPPRESSED` stays (legacy percent flags would still drop any default `-comw`).
 Ruin goldens re-recorded (rom + spoiler: the flag string and the command draws change).
+
+## Fanatic's Tower battle menus (2026-11-06)
+
+Hans: with randomized commands, characters without a Magic command could cast in the
+tower. Vanilla rewrites every battle menu in the tower when it is built (C2/5340, the
+same pass converts magitek armor menus; `$3EBB` bit 0 = tower battle, loaded from the
+battle bits at `$1DD0`): Fight -> Magic, Magic -> blank, everything but Item/Mimic ->
+blank (Gau's Rage counts as Fight). WC used to NOP the Magic blank (`gau_magic_mod`), so
+every non-Item slot became Magic -- three Magic entries for a Fight/Steal/Blitz/Item menu.
+
+Now (`event/fanatics_tower.py` `battle_commands_mod`, also on `fix/fanatics-tower-commands`
+for upstream): C2/534E skips the tower rewrite (magitek is unchanged), and the per-turn
+menu check C2/527D grays every command but Magic, X Magic, Item and Mimic in the tower
+(hook at C2/52C6, the same carry -> bit 7 of the slot's second byte that Mute uses for
+Magic). Uncontrollable characters (C2/0420: muddle, charm, berserk) pick from the four
+menu command ids plus Fight and ignore the gray bit, so their candidate copies
+(`$F6/$F8/$FA/$FC`) are filtered the same way (they keep vanilla's Magic, Item or Fight).
+Bank C2 is nearly full (the first version overflowed `ruinfast`): C2 holds only a 16-byte
+stub; the checks are in F0 (`JSL`). A menu with nothing usable needs the probability
+command modes, which install `battle/command_menu_guard.py`: checked with nobody holding
+Fight/Magic/Item, the battle keeps running. Emulator checks: Locke (Fight Steal Blitz
+Item) shows only Item usable; Terra casts; outside the tower menus are unchanged; muddled
+characters use only Fight/Item/Magic in the tower. Spoilers unchanged, ROM goldens
+re-recorded.
