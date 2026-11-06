@@ -15,7 +15,7 @@ class FanaticsTower(Event):
         self.strago_npc_id = 0x13
         self.strago_npc = self.maps.get_npc(0x16a, self.strago_npc_id)
 
-        self.gau_magic_mod()
+        self.battle_commands_mod()
         self.relm_event_mod()
         self.tower_top_mod()
         self.magimaster_battle_mod()
@@ -33,10 +33,103 @@ class FanaticsTower(Event):
         self.log_reward(self.reward1)
         self.log_reward(self.reward2)
 
-    def gau_magic_mod(self):
-        # normally only the Fight command replaces magic, causing Gau to only have Item.
-        # NOP the logic that blanks out everything except Magic + Item
-        Reserve(0x2538c, 0x2538d, "fanatics tower magic cmd", field.NOP())
+    def battle_commands_mod(self):
+        # vanilla rewrites each character's battle menu when it is built (C2/5340, shared with
+        # magitek armor): Fight becomes Magic, Magic itself is blanked, everything but Item/Mimic
+        # is blanked (and Gau's Rage counts as Fight). with randomized commands that hands Magic
+        # to characters who have no Magic command, and blanks the Magic of those who do.
+        # instead, keep every menu as it is and gray out every command but Magic/X Magic/Item/
+        # Mimic, the way Mute grays Magic: a character without Magic cannot cast in the tower.
+        # (a menu with nothing usable is only possible with the probability command modes, which
+        # install battle/command_menu_guard.py so the cursor does not hang)
+        # bank C2 is nearly full, so only small stubs go there; the checks live in F0
+        from constants.commands import name_id
+        from memory.space import START_ADDRESS_SNES
+        fanatics_tower = 0x3ebb     # bit 0 is set for battles in the tower
+        tower_commands = [name_id["Magic"], name_id["X Magic"], name_id["Item"], name_id["Mimic"]]
+
+        # C2/534E: not in magitek armor; vanilla goes on to the tower conversion if $3ebb bit 0
+        space = Reserve(0x2534e, 0x25353, "fanatics tower: do not rewrite battle menu commands", asm.NOP())
+        space.add_label("MENU_DONE", 0x2539d)
+        space.write(
+            asm.BRA("MENU_DONE"),
+        )
+
+        # carry set if a (a command) cannot be used here: in the tower and not a tower command
+        src = [
+            asm.PHA(),
+            asm.LDA(fanatics_tower, asm.ABS),
+            asm.LSR(),
+            asm.PLA(),
+            asm.BCC("RETURN"),                  # not in the tower (carry clear)
+        ]
+        for command in tower_commands:
+            src += [
+                asm.CMP(command, asm.IMM8),
+                asm.BEQ("ALLOWED"),
+            ]
+        src += [
+            asm.SEC(),
+            asm.RTL(),
+            "ALLOWED",
+            asm.CLC(),
+            "RETURN",
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, src, "fanatics tower: is command unusable")
+        unusable = space.start_address_snes
+
+        # C2/527D grays a menu slot when its carry ends up set (ROR into bit 7 of the slot's
+        # second byte): C2/52C6 LDX #$0007 starts the per-command checks (Mute grays Magic, ...)
+        src = [
+            asm.JSL(unusable),
+            asm.BCS("GRAY"),
+            asm.LDX(0x0007, asm.IMM16),         # vanilla (x is 16 bit here)
+            asm.RTS(),
+
+            "GRAY",
+            asm.PLA(),                          # drop the return address (a is 8 bit)
+            asm.PLA(),
+            asm.SEC(),                          # gray
+            asm.JMP(0x52db, asm.ABS),
+        ]
+        space = Write(Bank.C2, src, "fanatics tower: gray out commands other than magic/item")
+        gray_check = space.start_address
+
+        space = Reserve(0x252c6, 0x252c8, "fanatics tower: gray out commands other than magic/item")
+        space.write(
+            asm.JSR(gray_check, asm.ABS),
+        )
+
+        # C2/0420 picks a command for an uncontrollable character (muddle, charm, berserk) from its
+        # four menu commands (copied to $f6/$f8/$fa/$fc) plus Fight ($fe); it ignores the gray bit,
+        # so drop the commands that cannot be used in the tower from those copies (vanilla: Magic,
+        # Item or Fight). x and y are 8 bit; x is the character
+        src = [
+            asm.LDA(0x05, asm.IMM8),            # vanilla: number of candidate commands
+            asm.STA(0xf5, asm.DIR),
+            asm.PHX(),
+            asm.LDX(0x06, asm.IMM8),
+            "LOOP",
+            asm.LDA(0xf6, asm.DIR_X),
+            asm.JSL(unusable),
+            asm.BCC("NEXT"),
+            asm.LDA(0xff, asm.IMM8),            # no command: the chooser skips (and uncounts) it
+            asm.STA(0xf6, asm.DIR_X),
+            "NEXT",
+            asm.DEX(),
+            asm.DEX(),
+            asm.BPL("LOOP"),
+            asm.PLX(),
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, src, "fanatics tower: uncontrollable characters use magic/item")
+        chooser_filter = space.start_address_snes
+
+        space = Reserve(0x20440, 0x20443, "fanatics tower: uncontrollable characters use magic/item")
+        space.write(
+            asm.JSL(chooser_filter),
+        )
 
     def relm_event_mod(self):
         # normally there are 4 event tiles surrounding player when they enter map and if player steps on one
