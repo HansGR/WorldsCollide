@@ -213,7 +213,6 @@ class Events():
 
             # build list of which slots are available and how many iterations those slots have already had
             unlocked_slots = []
-            unlocked_slot_iterations = []
             for slot in character_slots:
                 slot_empty = slot.id is None
 
@@ -230,12 +229,21 @@ class Events():
 
                 enough_chars_available = len(characters_available) >= slot.event.characters_required()
                 if slot_empty and gate_char_available and enough_chars_available:
-                    if slot in slot_iterations:
-                        slot_iterations[slot] += 1
-                    else:
-                        slot_iterations[slot] = 0
                     unlocked_slots.append(slot)
-                    unlocked_slot_iterations.append(slot_iterations[slot])
+            # a check that needs a battle command (fanatic's tower: someone who can cast; veldt:
+            # someone with item) only gets a character once a character the player can have
+            # before it has that command, unless that would leave nowhere to put the next one
+            allowed_slots = [slot for slot in unlocked_slots
+                             if slot.event.character_slot_allowed(characters_available)]
+            if allowed_slots:
+                unlocked_slots = allowed_slots
+            unlocked_slot_iterations = []
+            for slot in unlocked_slots:
+                if slot in slot_iterations:
+                    slot_iterations[slot] += 1
+                else:
+                    slot_iterations[slot] = 0
+                unlocked_slot_iterations.append(slot_iterations[slot])
 
             # pick slot for the next character weighted by number of iterations each slot has been available
             if not unlocked_slots:
@@ -282,6 +290,54 @@ class Events():
 
         # choose the rest of the rewards, items given to events after all characters/events assigned
         self.choose_item_possible_rewards(reward_slots)
+
+        self.command_gated_character_swaps(events)
+
+    def command_gated_character_swaps(self, events):
+        # open world: a character at a check that needs a battle command (fanatic's tower:
+        # someone who can cast; veldt: someone with item) needs another character in the game
+        # with that command. if no other one has it, swap that character with one at another
+        # check so both checks can be completed
+        import random
+        character_slots = [reward for event in events for reward in event.rewards
+                           if reward.type == RewardType.CHARACTER and reward.id is not None]
+        in_game = [slot.id for slot in character_slots]
+
+        def allowed(slot):
+            others = [character for character in in_game if character != slot.id]
+            return slot.event.character_slot_allowed(others)
+
+        reward_slots = [reward for event in events for reward in event.rewards
+                        if reward.id is not None and reward.event.name() != "Start"]
+        for slot in character_slots:
+            if allowed(slot):
+                continue
+            # the starting party stays as chosen
+            candidates = [other for other in character_slots
+                          if other is not slot and other.event.name() != "Start"]
+            random.shuffle(candidates)
+            for other in candidates:
+                slot.id, other.id = other.id, slot.id
+                if allowed(slot) and allowed(other):
+                    break
+                slot.id, other.id = other.id, slot.id
+            else:
+                # nobody else in the game has the command: move the character to a check
+                # holding something else that could hold a character, and give this check
+                # that reward instead
+                candidates = [other for other in reward_slots
+                              if other.type != RewardType.CHARACTER
+                              and other.possible_types & RewardType.CHARACTER
+                              and slot.possible_types & other.type]
+                random.shuffle(candidates)
+                for other in candidates:
+                    slot.id, other.id = other.id, slot.id
+                    slot.type, other.type = other.type, slot.type
+                    if other.event.character_slot_allowed(
+                            [character for character in in_game if character != other.id]):
+                        break
+                    slot.id, other.id = other.id, slot.id
+                    slot.type, other.type = other.type, slot.type
 
     def ruination_mod(self, events, name_event):
         reward_slots = self.init_reward_slots(events)

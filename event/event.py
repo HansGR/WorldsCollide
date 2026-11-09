@@ -51,6 +51,20 @@ class Event():
     def characters_required(self):
         return 1
 
+    def character_slot_allowed(self, characters_available):
+        # can the player complete this check with these characters (the ones they can have
+        # before it)? an event whose check needs a battle command overrides this
+        return True
+
+    def characters_with_commands(self, *command_names):
+        # playable characters with any of these battle commands
+        from constants.entities import CHARACTER_COUNT
+        result = set()
+        for command_name in command_names:
+            result.update(character for character in self.characters.get_characters_with_command(command_name)
+                          if character < CHARACTER_COUNT)
+        return result
+
     def add_reward(self, possible_types):
         new_reward = Reward(self, possible_types)
         self.rewards.append(new_reward)

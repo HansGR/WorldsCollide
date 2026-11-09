@@ -17,6 +17,13 @@ class Veldt(Event):
     def character_gate(self):
         return self.characters.GAU
 
+    def character_slot_allowed(self, characters_available):
+        # the reward appears after a veldt battle and must be fed Dried Meat with the Item
+        # command. In the legacy command modes everyone keeps Item; only the probability
+        # modes can drop it
+        item_users = self.characters_with_commands("Item")
+        return any(character in item_users for character in characters_available)
+
     def init_rewards(self):
         self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER)
 

@@ -7,6 +7,15 @@ class FanaticsTower(Event):
     def character_gate(self):
         return self.characters.STRAGO
 
+    def character_slot_allowed(self, characters_available):
+        # tower battles allow little more than Magic/Item: someone must be able to cast, or
+        # have Umaro, who fights without a menu. (Gogo picks his commands from those of
+        # recruited characters, so he never adds a command nobody has.) In the legacy
+        # command modes everyone keeps Magic; only the probability modes can drop it
+        casters = self.characters_with_commands("Magic", "X Magic")
+        return any(character in casters for character in characters_available) \
+            or self.characters.UMARO in characters_available
+
     def init_rewards(self):
         self.reward1 = self.add_reward(RewardType.CHARACTER | RewardType.ESPER)
         self.reward2 = self.add_reward(RewardType.ITEM)
