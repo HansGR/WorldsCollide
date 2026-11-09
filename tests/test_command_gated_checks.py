@@ -75,8 +75,11 @@ print("done")
 @unittest.skipUnless(os.path.isfile(ROM_PATH), "needs ff3.smc at the repository root")
 class TestCommandGatedChecks(unittest.TestCase):
     def roll(self, seed, *flags):
+        # the seed's log goes next to the output; keep it out of the repository
+        import tempfile
+        output = os.path.join(tempfile.mkdtemp(), "seed.smc")
         result = subprocess.run(
-            [sys.executable, "-c", SCRIPT, ROM_PATH, "-s", seed, *flags],
+            [sys.executable, "-c", SCRIPT, ROM_PATH, "-o", output, "-s", seed, *flags],
             cwd = REPO_ROOT,
             capture_output = True,
             text = True,

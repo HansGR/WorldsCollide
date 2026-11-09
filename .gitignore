@@ -14,3 +14,6 @@ wip/
 # generated test artifacts (seed logs, manifests)
 tests/*.txt
 tests/*.json
+
+# seed logs written next to the input rom (e.g. ff3_wc_<seed>.txt)
+/*_wc_*.txt
