@@ -3552,3 +3552,42 @@ Fight/Magic/Item, the battle keeps running. Emulator checks: Locke (Fight Steal 
 Item) shows only Item usable; Terra casts; outside the tower menus are unchanged; muddled
 characters use only Fight/Item/Magic in the tower. Spoilers unchanged, ROM goldens
 re-recorded.
+
+## Command-gated areas: Fanatic's Tower and the Veldt (2026-11-09)
+
+Hans: with randomized commands a ruination seed could be uncompletable at two checks.
+- **Fanatic's Tower**: battles there only allow Magic/X Magic/Item/Mimic (see "Fanatic's
+  Tower battle menus"). A lone Strago start without Magic or Item, with the next character
+  at the tower, was stuck; so was a map whose trapdoor key was the tower's character.
+- **Veldt**: the check's reward appears after a Veldt battle and must be fed Dried Meat with
+  the Item command (Dried Meat itself is already guaranteed by the non-Veldt-gated shop
+  binding). Hans chose to keep the Dried Meat requirement (not waive it in battle).
+
+Fix (planner, `doors/plan/ruination/growth.py`): `RC.AREA_REQUIREMENTS` maps an area to a
+rule over a set of characters. An area that becomes due (its character's
+`CHARACTER_AREAS` entry, or `CONDITIONAL_AREAS`) but whose rule fails goes onto
+`pending_areas`; `_release_areas` re-checks them after every recruit **and every esper**
+and maps those now completable (`method='shortest'`, like a recruit's areas). Rules:
+- Fanatic's Tower: `can_cast_in_battle(recruited)` -- a Magic/X Magic user who learns
+  natural magic, or any Magic/X Magic user once an esper exists to learn from (one found,
+  or `-stesp` min >= 1) -- or Umaro (fights without a menu). Gogo needs no special case:
+  his commands come from recruited characters.
+- Veldt: an Item user recruited.
+"Recruited" includes characters away on another branch: Hans, they can walk or warp back.
+The spell rule is a floor, not a guarantee (healing/status magic only, or an element the
+boss resists, still count) -- Hans: good enough.
+Inputs come from `plan.py` (commands and natural-magic learners are settled in
+`Characters.mod`, before `Maps.mod` plans doors; the command lists include guest ids past
+13, filtered out). A planner built without them (`magic_characters`/`item_characters`
+None, e.g. the existing growth tests) skips the rules entirely.
+Also: `_pre_plan` counts a gated area's checks only if the party + planned characters
+can complete it (an esper "can" be found when any are requested), and the reserve-area
+rescue (`get_reserve_area_rooms`) skips gated areas not yet completable -- otherwise their
+checks would open the moment their character is recruited, bypassing the rule.
+Tests: `tests/doors/test_ruin_growth.py` `check_area_requirements` replays each plan's
+reward log and asserts every tower/Veldt check was claimed with its rule already met
+(fails with the rule disabled). Goldens: ruin1, ruinsep, ruinfast changed (in each the
+tower waited for the first esper: Magic users without natural magic); the other 14 match.
+A 24-seed sweep over all four flagsets built every seed (2 delayed an area).
+Standard WC has the same issue only in the probability command modes; its fix is upstream
+(`Event.character_slot_allowed`, -cg unlock order + open-world check).

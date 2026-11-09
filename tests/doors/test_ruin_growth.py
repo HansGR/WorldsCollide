@@ -8,6 +8,8 @@ and checks the plan invariants:
 - no element is used twice across door pairs + oneways
 - every granted character's areas are mapped; forced_same_branch respected
 - branch membership is disjoint
+- command-gated areas (RC.AREA_REQUIREMENTS: Fanatic's Tower needs someone who
+  can cast, the Veldt someone with Item) are only claimed once completable
 
 Run: python3 tests/doors/test_ruin_growth.py [n_seeds]
 """
@@ -31,11 +33,11 @@ PARTIES = [
 ]
 
 
-def run_one(seed, party, maze=None, open_world=False, item_reward_chance=0.0):
+def run_one(seed, party, maze=None, open_world=False, item_reward_chance=0.0, **commands):
     rng = random.Random(seed)
     cfg = RuinConfig(party, char_range=(2, 6), esper_range=(1, 4),
                      maze=maze, open_world=open_world, blitz_characters=['SABIN'],
-                     item_reward_chance=item_reward_chance)
+                     item_reward_chance=item_reward_chance, **commands)
     planner = RuinPlanner(cfg, rng)
     planner.grow()
     return planner
@@ -118,9 +120,56 @@ def check_item_rewards(n=10):
     print(f'PASS: item rewards at -rirc 100 ({item_total} over {n} plans), requirements met')
 
 
+def check_area_requirements(n=40):
+    # few casters/item users: a command-gated area's checks are only claimed once the
+    # characters recruited (and espers found) before them can complete it
+    from data import ruin_constants as RC
+    commands = [
+        # strago starts but cannot cast (no spell source until an esper is found)
+        dict(magic_characters=['STRAGO', 'TERRA'], natural_magic_characters=['CELES'],
+             item_characters=['CELES', 'EDGAR']),
+        # only terra (natural magic) can cast; nobody starts with item
+        dict(magic_characters=['TERRA'], natural_magic_characters=['TERRA'],
+             item_characters=['SETZER']),
+        # nobody can cast and umaro stays out of the game: the tower is never mapped
+        dict(magic_characters=[], item_characters=['GAU']),
+    ]
+    parties = [['STRAGO', 'GAU', 'CYAN'], ['STRAGO', 'SABIN', 'SHADOW'], ['GAU', 'STRAGO', 'RELM']]
+    gated_claims = ok = 0
+    for i in range(n):
+        cmds = commands[i % len(commands)]
+        try:
+            p = run_one(f'req{i}', parties[i % len(parties)], **cmds)
+        except RuinPlanError:
+            continue
+        ok += 1
+        gated_rooms = {area: set(p.config.room_sets.get(area, ()))
+                       for area in RC.AREA_REQUIREMENTS}
+        recruited, espers = set(p.config.party), 0
+        saved = p.espers_found
+        for entry in p.reward_log:
+            room = entry['reward_room']
+            for area, rule in RC.AREA_REQUIREMENTS.items():
+                if room in gated_rooms[area]:
+                    p.espers_found = espers
+                    assert rule(p, recruited), (i, area, entry, sorted(recruited), espers)
+                    gated_claims += 1
+            if entry['kind'] is CHARACTER:
+                recruited.add(entry['character'])
+            elif entry['kind'] is ESPER:
+                espers += 1
+        p.espers_found = saved
+        if not cmds['magic_characters'] and 'UMARO' not in p.in_game:
+            assert 'FanaticsTower' not in p.AreasUsed, i
+    assert ok >= n * 0.8, f'too many failures: {n - ok}/{n}'
+    assert gated_claims > 0, 'no command-gated check was ever claimed'
+    print(f'PASS: command-gated areas claimed only once completable ({gated_claims} claims over {ok} plans)')
+
+
 def main(n=40):
     check_auction_max_espers()
     check_item_rewards()
+    check_area_requirements()
     ok = fail = 0
     failures = []
     for i in range(n):

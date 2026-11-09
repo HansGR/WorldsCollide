@@ -200,6 +200,29 @@ CONDITIONAL_AREAS = {
     ),
 }
 
+# Areas whose checks can only be completed with a battle command someone in the
+# game must have. An area that is due (its character was recruited) waits until
+# its rule holds, re-checked after every reward, so the player can always finish it
+# once it is on the map:
+# - Fanatic's Tower: battle menus there only allow Magic/X Magic/Item/Mimic, so
+#   someone must be able to cast: a Magic (or X Magic) user with a spell source --
+#   natural magic of their own, or an esper (found, or a starting one) to learn
+#   from. Umaro, who fights without a menu, can clear it alone.
+# - Veldt: the check's reward appears after a Veldt battle and must be fed Dried
+#   Meat with the Item command.
+# (Gogo picks his commands from those of recruited characters, so he never adds
+# a command nobody else has.)
+# Called as rule(planner, characters, planning) with the characters to judge by
+# (recruited ones while growing, the party plus planned ones when estimating
+# capacity).
+# planning is True for the pre-plan estimate (an esper may still be found).
+AREA_REQUIREMENTS = {
+    'FanaticsTower': lambda rm, chars, planning=False: (
+        rm.can_cast_in_battle(chars, planning) or 'UMARO' in chars),
+    'Veldt': lambda rm, chars, planning=False: any(
+        c in rm.config.item_characters for c in chars),
+}
+
 # All playable characters that can be obtained as rewards
 ALL_CHARACTERS = ['TERRA', 'LOCKE', 'EDGAR', 'SABIN', 'CELES', 'CYAN', 'SHADOW',
                   'GAU', 'SETZER', 'STRAGO', 'RELM', 'MOG', 'GOGO', 'UMARO']

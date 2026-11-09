@@ -59,6 +59,18 @@ def plan_ruination(args, rng, characters):
     party_names = [characters.DEFAULT_NAME[c] for c in party_ids]
     blitz = [characters.DEFAULT_NAME[c]
              for c in characters.get_characters_with_command("Blitz")]
+    # RC.AREA_REQUIREMENTS (Fanatic's Tower: someone who can cast; Veldt: someone
+    # with Item). Commands and natural magic are settled before door planning
+    # (Characters.mod runs before Maps.mod)
+    # (the command lists include the guest characters, past the playable ones)
+    names = lambda ids: [characters.DEFAULT_NAME[c] for c in ids
+                         if c < len(characters.DEFAULT_NAME)]
+    magic = names(set(characters.get_characters_with_command("Magic"))
+                  | set(characters.get_characters_with_command("X Magic")))
+    item = names(characters.get_characters_with_command("Item"))
+    learners = [characters.natural_magic.learner1, characters.natural_magic.learner2]
+    natural_magic = names(c for c in learners if c is not None)
+    starting_espers = bool(getattr(args, 'starting_espers_min', 0))
 
     # One draw off the shared stream keys the whole retry sequence, so the
     # planning window stays contiguous and deterministic per seed.
@@ -89,6 +101,10 @@ def plan_ruination(args, rng, characters):
             item_reward_chance=item_reward_chance,
             require_treasure_count=int(getattr(args, 'ruination_require_treasure_count', 0) or 0),
             blitz_characters=blitz,
+            magic_characters=magic,
+            item_characters=item,
+            natural_magic_characters=natural_magic,
+            starting_espers=starting_espers,
             # The esper pool is untouched at planning time (ruination is its
             # first consumer), so the full pool size is the truth here.
         )

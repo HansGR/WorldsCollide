@@ -68,7 +68,9 @@ class RuinConfig:
                  open_world=False, maze=None, blitz_characters=(),
                  espers_available=27, kefka_tower=False, require_towns=False,
                  auction_max_espers=2, item_reward_chance=0.0,
-                 require_treasure_count=0):
+                 require_treasure_count=0, magic_characters=None,
+                 item_characters=None, natural_magic_characters=(),
+                 starting_espers=False):
         self.party = list(party)
         self.char_range = char_range
         self.esper_range = esper_range
@@ -80,6 +82,15 @@ class RuinConfig:
         # -rrtc: finalize keeps the wired-in rooms' chest total at this or more
         self.require_treasure_count = require_treasure_count
         self.blitz_characters = list(blitz_characters)
+        # RC.AREA_REQUIREMENTS: who has Magic/X Magic and Item, who learns natural
+        # magic, and whether the game starts with an esper. A planner built without
+        # the commands (magic_characters/item_characters None, e.g. in tests) does
+        # not apply the requirements.
+        self.area_requirements = magic_characters is not None or item_characters is not None
+        self.magic_characters = set(magic_characters or ())
+        self.item_characters = set(item_characters or ())
+        self.natural_magic_characters = set(natural_magic_characters)
+        self.starting_espers = starting_espers
         self.espers_available = espers_available
         # Per-plan room spec replacements (e.g. the -maze iso composite
         # room's rolled entry pit).
@@ -210,6 +221,11 @@ class RuinPlanner:
         self.stuck_branches = {}
         self.accessible_shops = []
         self.assignments = {}        # reward name -> (kind, char_name or None)
+        # RC.AREA_REQUIREMENTS: characters recruited so far (the party included),
+        # espers found so far, and due areas waiting for their requirement
+        self.recruited = set(config.party)
+        self.espers_found = 0
+        self.pending_areas = set()
         self.reward_log = []         # acquisition order, for spoilers/parity
         self.espers_left = config.espers_available
         # Checks never claimed during growth may be restricted at finalize
@@ -275,11 +291,52 @@ class RuinPlanner:
             initial_areas.update(config.character_areas.get(ch, []))
         if self.include_duncan_house and self.duncan_house_character in config.party:
             initial_areas.add('DuncanHouse')
-        self.distribute_areas(initial_areas)
+        self.distribute_areas(self._release_areas(initial_areas))
 
         # Apply the starting keychain everywhere (sorted for determinism).
         for k in sorted(self.keychain):
             self.apply_key(k)
+
+    # ------------------------------------------------------------------
+    # Command-gated areas (RC.AREA_REQUIREMENTS)
+
+    def can_cast_in_battle(self, characters, planning=False):
+        """Someone among characters can cast spells in battle: a Magic/X Magic
+        user who learns natural magic, or any Magic/X Magic user once there is
+        an esper to learn from (a starting esper or one found; when planning,
+        one that may still be found). It does not judge which spells: healing
+        or status magic, or an element the boss resists, still counts."""
+        cfg = self.config
+        casters = set(characters) & cfg.magic_characters
+        if not casters:
+            return False
+        if casters & cfg.natural_magic_characters or cfg.starting_espers:
+            return True
+        if planning:
+            return self.Requested[1] > 0 and cfg.espers_available > 0
+        return self.espers_found > 0
+
+    def _area_ready(self, area, characters, planning=False):
+        """The area's checks can be completed with these characters."""
+        if not self.config.area_requirements:
+            return True
+        rule = RC.AREA_REQUIREMENTS.get(area)
+        return rule is None or rule(self, characters, planning)
+
+    def _release_areas(self, due_areas=()):
+        """The due areas (plus any still waiting) that can be mapped now; the
+        rest wait in self.pending_areas until a later reward makes them
+        completable."""
+        ready = []
+        for area in sorted(set(due_areas) | self.pending_areas, key=str):
+            if area in self.AreasUsed:
+                self.pending_areas.discard(area)
+            elif self._area_ready(area, self.recruited):
+                self.pending_areas.discard(area)
+                ready.append(area)
+            else:
+                self.pending_areas.add(area)
+        return ready
 
     # ------------------------------------------------------------------
     # Pre-planning
@@ -299,10 +356,15 @@ class RuinPlanner:
         planned = obtainable[:needed]
         remaining = obtainable[needed:]
 
-        planned_areas = set()
+        # areas due from the party and planned characters; one with a command
+        # requirement (RC.AREA_REQUIREMENTS) only counts once they can complete it
+        due_areas = set()
         for ch in list(cfg.party) + planned:
-            planned_areas.update(cfg.character_areas.get(ch, []))
-        planned_areas.update(cfg.character_areas.get('ALL', []))
+            due_areas.update(cfg.character_areas.get(ch, []))
+        due_areas.update(cfg.character_areas.get('ALL', []))
+        game = set(cfg.party) | set(planned)
+        planned_areas = {area for area in due_areas
+                         if self._area_ready(area, game, planning=True)}
 
         def slots_in(area_names):
             # an esper or an item meets -rce's second number, so every check
@@ -322,8 +384,11 @@ class RuinPlanner:
         while esper_slots < self.Requested[1] + len(planned) and remaining:
             new_char = remaining.pop(0)
             planned.append(new_char)
-            for area in cfg.character_areas.get(new_char, []):
-                if area not in planned_areas and area in cfg.room_sets:
+            game.add(new_char)
+            due_areas.update(cfg.character_areas.get(new_char, []))
+            # the new character's areas, and any waiting area they make completable
+            for area in sorted(due_areas - planned_areas, key=str):
+                if area in cfg.room_sets and self._area_ready(area, game, planning=True):
                     planned_areas.add(area)
                     _, e2, c2 = slots_in([area])
                     esper_slots += e2
@@ -614,6 +679,10 @@ class RuinPlanner:
                     continue
                 if area in seen:
                     continue
+                # a command-gated area waits for its requirement here too: its
+                # checks would open as soon as their character is recruited
+                if not self._area_ready(area, self.recruited):
+                    continue
                 seen.add(area)
                 rooms = list(cfg.room_sets[area])
                 out.append((area, rooms, hub_potential(rooms), len(rooms)))
@@ -783,7 +852,8 @@ class RuinPlanner:
                         continue
                     if cond(self, char_name):
                         new_areas.append(area)
-                self.distribute_areas(new_areas, method='shortest')
+                self.recruited.add(char_name)
+                self.distribute_areas(self._release_areas(new_areas), method='shortest')
                 # Ebot's Rock character reward: the party is diverted to
                 # Thamasa - inject the forced one-way exit.
                 if reward_name in cfg.room_reward.get('MAPr-EBO', {}):
@@ -797,6 +867,12 @@ class RuinPlanner:
                     self.RewardsObtained[1] += 1
                 self.espers_left -= 1
                 self.assignments[reward_name] = ('ESPER', None)
+                # an esper to learn from can make a waiting area completable
+                self.espers_found += 1
+                if self.pending_areas:
+                    released = self._release_areas()
+                    if released:
+                        self.distribute_areas(released, method='shortest')
             else:
                 if reward_name not in cfg.bonus_esper_checks:
                     self.RewardsObtained[1] += 1
