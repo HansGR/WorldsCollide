@@ -3591,3 +3591,42 @@ tower waited for the first esper: Magic users without natural magic); the other 
 A 24-seed sweep over all four flagsets built every seed (2 delayed an area).
 Standard WC has the same issue only in the probability command modes; its fix is upstream
 (`Event.character_slot_allowed`, -cg unlock order + open-world check).
+
+## Chests per seed: the groundwork for treasure guarantees (2026-11-10)
+
+Hans wants to be able to reason about the items a ruination seed offers (guarantee an
+item somewhere, a GP threshold by sale price, minimum armor/weapons/healing, exclusions,
+repeat limits). Nothing of that is built yet; this is the groundwork.
+
+- **Per-room chest ids.** `tools/ruin_chest_rooms.py --write` now also emits
+  `ROOM_CHEST_IDS` (room -> chest ids; `ROOM_CHESTS` is derived from it, unchanged for
+  `-rrtc`), `UNREACHABLE_CHEST_IDS` (unused maps, WoB copies, replicas) and the tower
+  below. A chest id indexes `data/chests.py` `all_chests`, so a seed's contents are
+  `data.maps.chests.all_chests[id]` after `Chests.mod` (gold = contents x 100 GP; MIAB
+  contents = monster pack). Thamasa's copies (`copy_thamasa_chests`) are listed under
+  the source ids, which carry the contents the copies get.
+- **Kefka's Tower per room.** The tower rooms (`tower_rooms()`) join the flood; its 16
+  chests go to the tower room that reaches them (`KT_ROOM_CHEST_IDS`, how `kt`). 174/175
+  also appear as 284/285 on the Inferno map 0x19a (`data/chests.py` duplicates: same
+  contents and bit); no room reaches those tiles, so they stay in KTC3. The non-tower
+  rows are unchanged. Chest 216 (0x14e, 29,29) is reached by no room's fill; nearest is
+  KTA8b (6 tiles below): `KT_PENDING_CHEST_IDS` until Hans places it.
+- **Per seed** (`doors/plan/ruination/chests.py`, pure planning code):
+  - `reachable_rooms`: per branch, BFS from the hub over the final plan's pairs and
+    one-ways, locked exits open when their keys are held; keychain = starting party +
+    every character the plan grants + the named keys of reached rooms (fixpoint across
+    branches). `room_chest_ids` applies `CHEST_GATES` (Tzen's collapsing house). On test
+    plans the total equals finalize's `_plan_chests` (the `-rrtc` count).
+  - `kefka_tower_lanes`: per entrance (A/B/C), the rooms reached on its own and those
+    reached once the switches open `KT_CROSSINGS`. With `-rkt` from the plan's tower
+    connections; otherwise the vanilla tower, rebuilt from `exit_data` (traps 208N ->
+    pits 308N, KTB6's 1108 -> 7108): vanilla lane A needs both switches (A5b-A8b), B and
+    C none.
+  - `seed_chests(plan)` combines them. `tools/ruin_seed_chests.py -i ROM <flags> -s SEED
+    [--json OUT]` builds the seed in-process (no ROM written) and prints each branch's
+    and lane's chests with contents and totals (pass -sl if the seed had it: it shifts
+    the RNG).
+- Tests (`tests/test_ruin_treasure.py`): tables consistent (one room per chest, 16 tower
+  chests, nothing unreachable listed), the vanilla lanes, and on planned seeds every
+  reported chest belongs to its room, every tower chest is in a lane, and branch totals
+  never exceed the `-rrtc` count.

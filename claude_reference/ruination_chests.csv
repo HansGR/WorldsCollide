@@ -156,16 +156,16 @@ chest_id,area,map,map_name,x,y,type,rooms,how
 170,Umaro's Cave,0x11a,,13,34,MIAB,UMA04a,reviewed
 171,Maranda,0x11c,Maranda--World of Balance,28,20,item,MAPr-MAR,flood
 172,Maranda,0x11c,Maranda--World of Balance,2,26,item,MAPr-MAR,flood
-173,Kefka's Tower,0x124,,89,12,item,KT,kt
-174,Kefka's Tower,0x128,"""",38,12,item,KT,kt
-175,Kefka's Tower,0x128,"""",49,12,item,KT,kt
+173,Kefka's Tower,0x124,,89,12,item,KTB8,kt
+174,Kefka's Tower,0x128,"""",38,12,item,KTC3,kt
+175,Kefka's Tower,0x128,"""",49,12,item,KTC3,kt
 176,Daryl's Tomb,0x12b,Daryll's Tomb--Basement 2,43,42,item,DAR08,flood
 177,Daryl's Tomb,0x12b,Daryll's Tomb--Basement 2,9,59,item,DAR06,flood
 178,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,43,60,item,DAR11,flood
 179,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,55,58,item,DAR11,flood
 180,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,124,9,item,DAR16,flood
 181,Daryl's Tomb,0x12c,Daryll's Tomb--Basement 3,120,9,MIAB,DAR16,flood
-182,Kefka's Tower,0x130,,33,35,item,KT,kt
+182,Kefka's Tower,0x130,,33,35,item,KTA3,kt
 183,Tzen Collapsing House,0x137,,123,43,item,MAPr-TZE,flood
 184,Tzen Collapsing House,0x137,,104,43,item,MAPr-TZE,flood
 185,Tzen Collapsing House,0x137,,102,49,MIAB,MAPr-TZE,flood
@@ -192,16 +192,16 @@ chest_id,area,map,map_name,x,y,type,rooms,how
 206,Albrook Inside,0x147,Albrook--Armor Shop,95,20,empty,MAPr-ALB,flood
 207,Albrook Inside,0x14a,Albrook--Cafe,35,7,item,MAPr-ALB,flood
 208,Albrook Dock,0x14c,Albrook--Docks,23,2,item,MAPr-ALB,flood
-209,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,14,item,KT,kt
-210,Kefka's Tower,0x14e,Kefka's Domain--Main Area,11,39,item,KT,kt
-211,Kefka's Tower,0x14e,Kefka's Domain--Main Area,5,51,item,KT,kt
-212,Kefka's Tower,0x14e,Kefka's Domain--Main Area,37,45,item,KT,kt
-213,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,41,item,KT,kt
-214,Kefka's Tower,0x14e,Kefka's Domain--Main Area,47,40,item,KT,kt
-215,Kefka's Tower,0x14e,Kefka's Domain--Main Area,48,48,item,KT,kt
-216,Kefka's Tower,0x14e,Kefka's Domain--Main Area,29,29,item,KT,kt
-217,Kefka's Tower,0x152,,5,39,item,KT,kt
-218,Kefka's Tower,0x152,,58,27,item,KT,kt
+209,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,14,item,KTA1,kt
+210,Kefka's Tower,0x14e,Kefka's Domain--Main Area,11,39,item,KTB7,kt
+211,Kefka's Tower,0x14e,Kefka's Domain--Main Area,5,51,item,KTB7,kt
+212,Kefka's Tower,0x14e,Kefka's Domain--Main Area,37,45,item,KTC10,kt
+213,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,41,item,KTA8b,kt
+214,Kefka's Tower,0x14e,Kefka's Domain--Main Area,47,40,item,KTC1,kt
+215,Kefka's Tower,0x14e,Kefka's Domain--Main Area,48,48,item,KTC10,kt
+216,Kefka's Tower,0x14e,Kefka's Domain--Main Area,29,29,item,(unreachable),kt-unassigned
+217,Kefka's Tower,0x152,,5,39,item,KTB2,kt
+218,Kefka's Tower,0x152,,58,27,item,KTB3,kt
 219,Thamasa Outside,0x158,Thamasa--World of Ruin,13,8,item,THAr01-ruin,flood
 220,Thamasa Outside,0x158,Thamasa--World of Ruin,35,12,item,THAr01-ruin,flood
 221,Thamasa Outside,0x158,Thamasa--World of Ruin,43,30,item,THAr01-ruin,flood
@@ -265,5 +265,5 @@ chest_id,area,map,map_name,x,y,type,rooms,how
 279,Ancient Cave,0x196,Ancient Castle--Basement 1,10,17,MIAB,ANC05,flood
 280,Ancient Cave,0x196,Ancient Castle--Basement 1,59,6,item,ANC06,flood
 281,Ancient Cave,0x198,Ancient Castle--Basement 1,34,43,item,ANC12,flood
-282,Kefka's Tower,0x19a,Kefka's Domain,10,17,item,KT,kt
-283,Kefka's Tower,0x19a,Kefka's Domain,7,42,item,KT,kt
+282,Kefka's Tower,0x19a,Kefka's Domain,10,17,item,KTC5,kt
+283,Kefka's Tower,0x19a,Kefka's Domain,7,42,item,KTC5,kt
