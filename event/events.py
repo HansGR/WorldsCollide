@@ -411,6 +411,11 @@ class Events():
             log_lines = ruin_map.generate_spoiler_log(self.characters, self.espers, self.items)
             section("Ruination Rewards", log_lines, [])
 
+            # every chest the seed makes available, by contents and quantity
+            from doors.plan.ruination.chests import spoiler_columns
+            lcolumn, rcolumn = spoiler_columns(self.maps.doors.plan, self.maps.chests.all_chests)
+            section("Ruination Chests", lcolumn, rcolumn)
+
         # Disable in-town chocobo stables for ruination mode
         disable_chocobo_stables(self.rom, self.dialogs, self.args)
 

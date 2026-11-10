@@ -3633,3 +3633,9 @@ repeat limits). Nothing of that is built yet; this is the groundwork.
   chests, nothing unreachable listed), the vanilla lanes, and on planned seeds every
   reported chest belongs to its room, every tower chest is in a lane, and branch totals
   never exceed the `-rrtc` count.
+- **Spoiler log** (Hans, 2026-11-10): ruination seeds with `-sl` get a "Ruination Chests"
+  section after "Ruination Rewards" (`chests.spoiler_columns`, called from
+  `Events.ruination_mod`): left, every chest reachable before Kefka's Tower; right, the
+  whole tower (lanes, after-switch rooms and the meme chest). Each lists items by
+  quantity (most first, then by name), then GP (total and gold chests), Monster-in-a-Box
+  and empty chests. Only the seven ruination golden spoilers changed; no ROM did.

@@ -209,3 +209,48 @@ def seed_chests(plan):
             'kefka_tower_after_switches': after_switches,
             'kefka_tower_back': back,
             'pending': list(RCH.KT_PENDING_CHEST_IDS)}
+
+
+def contents_tally(chest_ids, all_chests):
+    """(Counter item id -> quantity, gold GP, gold chests, MIAB chests, empty chests)
+    for these chest ids, with the seed's contents (data.chests all_chests)."""
+    import collections
+    from data.chest import Chest
+    items = collections.Counter()
+    gp = gold = miab = empty = 0
+    for chest_id in sorted(set(chest_ids)):
+        chest = all_chests[chest_id]
+        if chest.type == Chest.ITEM:
+            items[chest.contents] += 1
+        elif chest.type == Chest.GOLD:
+            gold += 1
+            gp += chest.contents * 100
+        elif chest.type == Chest.MONSTER:
+            miab += 1
+        elif chest.type == Chest.EMPTY:
+            empty += 1
+    return items, gp, gold, miab, empty
+
+
+def spoiler_columns(plan, all_chests):
+    """The spoiler log's "Ruination Chests" section: the contents of every chest the
+    seed makes available, by quantity -- before Kefka's Tower (left) and in it (right)."""
+    from data.item_names import id_name
+    found = seed_chests(plan)
+    before = [c for rooms in found['branches'].values() for ids in rooms.values() for c in ids]
+    tower = [c for part in ('kefka_tower', 'kefka_tower_after_switches')
+             for rooms in found[part].values() for ids in rooms.values() for c in ids]
+    tower += [c for ids in found['kefka_tower_back'].values() for c in ids]
+
+    def column(title, chest_ids):
+        items, gp, gold, miab, empty = contents_tally(chest_ids, all_chests)
+        plural = lambda n: f"{n} chest" + ("" if n == 1 else "s")
+        lines = [f"{title} ({plural(len(set(chest_ids)))})"]
+        for item_id, count in sorted(items.items(), key=lambda entry: (-entry[1], id_name[entry[0]])):
+            lines.append(f"    {id_name[item_id]:<16} {count}")
+        lines.append(f"    {'GP':<16} {gp} ({plural(gold)})")
+        lines.append(f"    {'Monster-in-a-Box':<16} {miab}")
+        lines.append(f"    {'Empty':<16} {empty}")
+        return lines
+
+    return column("Before Kefka's Tower", before), column("Kefka's Tower", tower)
