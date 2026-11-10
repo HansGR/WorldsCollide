@@ -129,7 +129,9 @@ class TestChestTables(unittest.TestCase):
                 for part in ("kefka_tower", "kefka_tower_after_switches"):
                     for rooms in found[part].values():
                         tower.update(c for ids in rooms.values() for c in ids)
+                tower.update(c for ids in found["kefka_tower_back"].values() for c in ids)
                 self.assertEqual(tower, {c for ids in KT_ROOM_CHEST_IDS.values() for c in ids})
+                self.assertEqual(found["kefka_tower_back"], {"KT-back": [216]})     # the meme chest
 
 if __name__ == "__main__":
     unittest.main()

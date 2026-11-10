@@ -199,7 +199,7 @@ chest_id,area,map,map_name,x,y,type,rooms,how
 213,Kefka's Tower,0x14e,Kefka's Domain--Main Area,23,41,item,KTA8b,kt
 214,Kefka's Tower,0x14e,Kefka's Domain--Main Area,47,40,item,KTC1,kt
 215,Kefka's Tower,0x14e,Kefka's Domain--Main Area,48,48,item,KTC10,kt
-216,Kefka's Tower,0x14e,Kefka's Domain--Main Area,29,29,item,(unreachable),kt-unassigned
+216,Kefka's Tower,0x14e,Kefka's Domain--Main Area,29,29,item,KT-back,kt-reviewed
 217,Kefka's Tower,0x152,,5,39,item,KTB2,kt
 218,Kefka's Tower,0x152,,58,27,item,KTB3,kt
 219,Thamasa Outside,0x158,Thamasa--World of Ruin,13,8,item,THAr01-ruin,flood

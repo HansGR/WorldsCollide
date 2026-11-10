@@ -26,6 +26,11 @@ from data import ruin_chests as RCH
 from doors.plan.ruination.kefka_tower import tower_rooms, KT_ENTRIES
 
 
+# the tower's back half, past the three lanes' meeting point (not randomized, not a
+# room_data room): reached by every party at the end
+KT_BACK_ROOMS = {'KT-back'}
+
+
 def _spec_groups(rid, overrides):
     """[(elements, keys needed or None)] for a room: doors/traps/pits are open,
     each lock group needs its keys."""
@@ -183,6 +188,8 @@ def seed_chests(plan):
         'kefka_tower': {lane: {room: [chest ids]}},
         'kefka_tower_after_switches': {lane: {room: [chest ids]}} (rooms that lane
             reaches only once another lane's switch opens a crossing),
+        'kefka_tower_back': {room: [chest ids]} (past the lanes' meeting point,
+            not randomized: the "meme chest", 216),
         'pending': [tower chest ids not yet placed in a room]}
     for a ruination DoorPlan (doors.plan.artifact.DoorPlan)."""
     planner = plan.ruination.planner
@@ -192,6 +199,7 @@ def seed_chests(plan):
         branches[bid] = {r: ids for r in sorted(rooms, key=str)
                          if (ids := room_chest_ids(planner, r))}
     tower, after_switches = {}, {}
+    back = {r: list(ids) for r, ids in RCH.KT_ROOM_CHEST_IDS.items() if r in KT_BACK_ROOMS}
     for lane, (own, crossed) in kefka_tower_lanes(planner, pairs, oneways).items():
         tower[lane] = {r: list(RCH.KT_ROOM_CHEST_IDS[r]) for r in sorted(own)
                        if r in RCH.KT_ROOM_CHEST_IDS}
@@ -199,4 +207,5 @@ def seed_chests(plan):
                                 if r in RCH.KT_ROOM_CHEST_IDS}
     return {'branches': branches, 'kefka_tower': tower,
             'kefka_tower_after_switches': after_switches,
+            'kefka_tower_back': back,
             'pending': list(RCH.KT_PENDING_CHEST_IDS)}

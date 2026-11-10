@@ -3609,8 +3609,11 @@ repeat limits). Nothing of that is built yet; this is the groundwork.
   chests go to the tower room that reaches them (`KT_ROOM_CHEST_IDS`, how `kt`). 174/175
   also appear as 284/285 on the Inferno map 0x19a (`data/chests.py` duplicates: same
   contents and bit); no room reaches those tiles, so they stay in KTC3. The non-tower
-  rows are unchanged. Chest 216 (0x14e, 29,29) is reached by no room's fill; nearest is
-  KTA8b (6 tiles below): `KT_PENDING_CHEST_IDS` until Hans places it.
+  rows are unchanged. Chest 216 (0x14e, 29,29) is reached by no room's fill. Hans: it is
+  in the tower's back half, past the lanes' meeting point (same room as the doors at
+  27,22 and 30,11), which is not randomized; the only chest there and the last opened in
+  the game, the "meme chest". It is `KT-back` (`KT_REVIEWED_IDS` in the tool; reported
+  as `kefka_tower_back`). `KT_PENDING_CHEST_IDS` is now empty.
 - **Per seed** (`doors/plan/ruination/chests.py`, pure planning code):
   - `reachable_rooms`: per branch, BFS from the hub over the final plan's pairs and
     one-ways, locked exits open when their keys are held; keychain = starting party +

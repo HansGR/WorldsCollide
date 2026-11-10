@@ -51,6 +51,11 @@ KT_CHESTS = set(range(173, 176)) | {182} | set(range(209, 219)) | {282, 283}
 # Kefka's Tower chests WC duplicates on a second map (data/chests.py duplicates:
 # same contents and opened bit): either copy opens it
 KT_DUPLICATES = {174: 284, 175: 285}
+# Kefka's Tower chests the fill cannot place (HansGR, 2026-11-10): 216 (0x14e, 29,29)
+# is in the tower's back half, past the three lanes' meeting point (with the doors at
+# 27,22 and 30,11), which is not randomized. The only chest there and the last one
+# opened in the game: the "meme chest"
+KT_REVIEWED_IDS = {216: ['KT-back']}
 TYPE = {0x08: 'empty', 0x20: 'MIAB', 0x40: 'item', 0x80: 'gold'}
 
 # chest id -> rooms ([] = never reachable in ruination)
@@ -297,6 +302,9 @@ def assign(rom):
     for c in chests:
         if c['area'] is None and c['id'] != 203:
             continue                            # area_chests leaves it out: unreachable/duplicate
+        if c['id'] in KT_REVIEWED_IDS:
+            out.append((c, KT_REVIEWED_IDS[c['id']], 'kt-reviewed'))
+            continue
         if c['id'] in KT_CHESTS:
             # the tower's own rooms (its lanes are not branch rooms)
             tiles = [c] + [x for x in chests if x['id'] == KT_DUPLICATES.get(c['id'])]
@@ -368,7 +376,9 @@ def main():
         f.write('# room -> chest count (-rrtc)\n')
         f.write('ROOM_CHESTS = {rid: len(ids) for rid, ids in ROOM_CHEST_IDS.items()}\n\n')
         f.write('# Kefka\'s Tower: room -> chest ids (its lanes are not branch rooms). 174/175 also\n'
-                '# show on the Inferno map as 284/285 (same chest: data/chests.py duplicates)\n')
+                '# show on the Inferno map as 284/285 (same chest: data/chests.py duplicates).\n'
+                '# KT-back is the back half past the lanes\' meeting point (not randomized): its\n'
+                '# one chest, 216, is the "meme chest", the last one opened in the game\n')
         f.write('KT_ROOM_CHEST_IDS = {\n')
         for rid in sorted(kt_room_ids):
             f.write(f'    {rid!r}: {sorted(kt_room_ids[rid])},\n')

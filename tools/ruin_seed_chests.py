@@ -51,6 +51,8 @@ def main():
 
     found = seed_chests(plan)
     report = {'branches': {}, 'kefka_tower': {}, 'kefka_tower_after_switches': {},
+              'kefka_tower_back': {'back': {room: [describe(c) for c in ids]
+                                            for room, ids in found['kefka_tower_back'].items()}},
               'pending': found['pending']}
     for group, key in (('branches', 'branches'), ('kefka_tower', 'kefka_tower'),
                        ('kefka_tower_after_switches', 'kefka_tower_after_switches')):
@@ -67,7 +69,8 @@ def main():
                 f"{sum(1 for e in entries if e['type'] == 'Empty')} empty")
 
     for group, title in (('branches', 'Branch'), ('kefka_tower', "Kefka's Tower lane"),
-                         ('kefka_tower_after_switches', "Kefka's Tower, after the switches, lane")):
+                         ('kefka_tower_after_switches', "Kefka's Tower, after the switches, lane"),
+                         ('kefka_tower_back', "Kefka's Tower")):
         for part, rooms in report[group].items():
             print(f"{title} {part}: {summary(rooms)}")
             for room, entries in rooms.items():

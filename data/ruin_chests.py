@@ -96,8 +96,11 @@ ROOM_CHEST_IDS = {
 ROOM_CHESTS = {rid: len(ids) for rid, ids in ROOM_CHEST_IDS.items()}
 
 # Kefka's Tower: room -> chest ids (its lanes are not branch rooms). 174/175 also
-# show on the Inferno map as 284/285 (same chest: data/chests.py duplicates)
+# show on the Inferno map as 284/285 (same chest: data/chests.py duplicates).
+# KT-back is the back half past the lanes' meeting point (not randomized): its
+# one chest, 216, is the "meme chest", the last one opened in the game
 KT_ROOM_CHEST_IDS = {
+    'KT-back': [216],
     'KTA1': [209],
     'KTA3': [182],
     'KTA8b': [213],
@@ -111,7 +114,7 @@ KT_ROOM_CHEST_IDS = {
     'KTC5': [282, 283],
 }
 # tower chests no room's fill reaches, still to be placed by review
-KT_PENDING_CHEST_IDS = [216]
+KT_PENDING_CHEST_IDS = []
 KT_CHESTS = 16          # all of Kefka's Tower
 
 # chests ruination never offers (unused maps, WoB copies, replicas)
