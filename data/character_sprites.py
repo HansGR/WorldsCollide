@@ -82,7 +82,7 @@ class CharacterSprites:
                     self.portrait_sprites[character].data = portrait_data
 
     def mod(self):
-        if self.args.character_sprites:
+        if self.args.character_sprites or self.args.kefka_is_umaro:
             self.mod_character_sprites()
 
         if self.args.character_portraits:

@@ -17,7 +17,10 @@ class _LoadEnemyLevel:
         add_dragon_levels = self._add_objective_levels_mod("Add Dragon Levels", FormationFlag.DRAGON, asm.BNE)
         add_final_levels = self._add_objective_levels_mod("Add Final Levels", FormationFlag.FINAL, asm.BNE)
 
+        ultimaro_levels = self._ultimaro_levels_mod()
+
         src = [
+            asm.PHX(),              # the enemy's data offset
             Read(0x22d1e, 0x22d24), # unscaled enemy level
         ]
         if args.level_scaling:
@@ -31,6 +34,9 @@ class _LoadEnemyLevel:
             asm.JSL(START_ADDRESS_SNES + add_dragon_levels),
             asm.JSL(START_ADDRESS_SNES + add_final_levels),
 
+            asm.PLX(),
+            asm.JSL(START_ADDRESS_SNES + ultimaro_levels),
+
             asm.RTS(),
         ]
         space = Write(Bank.C2, src, "load enemy level")
@@ -40,6 +46,34 @@ class _LoadEnemyLevel:
         space.write(
             asm.JSR(load_enemy_level, asm.ABS),
         )
+
+    def _ultimaro_levels_mod(self):
+        # UMAROS COLLIDE: the giant umaro at the end of the final battle is 10 levels higher than
+        # final kefka would be, after scaling and objectives
+        # input: x = offset of the enemy's data, y = the enemy's slot. 8 bit a, 16 bit x/y
+        from data.bosses import name_enemy
+        ENEMY_DATA_SIZE = 32
+        LEVELS, MAX_LEVEL = 10, 99
+
+        src = [
+            asm.CPX(name_enemy["Kefka (Final)"] * ENEMY_DATA_SIZE, asm.IMM16),
+            asm.BNE("RETURN"),
+
+            asm.LDA(enemy_level_address, asm.ABS_Y),
+            asm.CLC(),
+            asm.ADC(LEVELS, asm.IMM8),
+            asm.CMP(MAX_LEVEL + 1, asm.IMM8),
+            asm.BLT("STORE"),
+            asm.LDA(MAX_LEVEL, asm.IMM8),
+
+            "STORE",
+            asm.STA(enemy_level_address, asm.ABS_Y),
+
+            "RETURN",
+            asm.RTL(),
+        ]
+        space = Write(Bank.F0, src, "umaros collide: ultimaro levels")
+        return space.start_address
 
     def _add_objective_levels_mod(self, result_name, formation_flag, branch_instr):
         # Note: branch instruction is inverted to avoid trying to branch > 127 bytes.

@@ -110,7 +110,7 @@ class CharacterPalettes:
         if self.args.character_palettes or self.args.character_sprite_palettes:
             self.mod_palette_colors()
 
-        if self.args.character_sprite_palettes:
+        if self.args.character_sprite_palettes or self.args.kefka_is_umaro:
             self.mod_character_palettes()
 
         if self.args.character_portraits:

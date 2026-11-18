@@ -1,6 +1,7 @@
 from data.character_sprites import PORTRAIT_CHARACTERS, SPRITE_CHARACTERS, DEFAULT_CHARACTER_PORTRAITS, DEFAULT_CHARACTER_SPRITES
 from data.character_palettes import SPRITE_PALETTE_COUNT, DEFAULT_CHARACTER_PALETTES, DEFAULT_CHARACTER_SPRITE_PALETTES
 from data.characters import Characters
+from constants.entities import KEFKA, UMARO
 
 def parse(parser):
     graphics = parser.add_argument_group("Graphics")
@@ -102,6 +103,10 @@ def process(args):
         for portrait_id in DEFAULT_CHARACTER_PORTRAITS:
             args.portraits.append(portraits.id_portrait[portrait_id])
 
+    # UMAROS COLLIDE: kefka looks like umaro, unless the sprites are chosen with the sprite flag
+    args.kefka_is_umaro = not args.character_sprites
+    kefka, umaro = SPRITE_CHARACTERS.index(KEFKA), SPRITE_CHARACTERS.index(UMARO)
+
     args.sprites = []
     if args.character_sprites:
         args.sprite_ids = [int(sprite_id) for sprite_id in args.character_sprites.split('.')]
@@ -113,15 +118,22 @@ def process(args):
             args.sprites.append(sprites.id_sprite[sprite_id])
             args.sprite_files.append(sprites.get_path(sprite_id))
     else:
-        for sprite_id in DEFAULT_CHARACTER_SPRITES:
+        args.sprite_ids = list(SPRITE_CHARACTERS)   # everybody's own sprite
+        args.sprite_ids[kefka] = args.sprite_ids[umaro]
+
+        args.sprite_files = []
+        for sprite_id in args.sprite_ids:
             args.sprites.append(sprites.id_sprite[sprite_id])
+            args.sprite_files.append(sprites.get_path(sprite_id))
 
     if args.character_sprite_palettes:
         args.sprite_palettes = [int(index) for index in args.character_sprite_palettes.split('.')]
         if len(SPRITE_CHARACTERS) != len(args.sprite_palettes):
             raise ValueError(f"Invalid number of sprite palette arguments ({len(args.sprite_palettes)} should be {len(SPRITE_CHARACTERS)})")
     else:
-        args.sprite_palettes = DEFAULT_CHARACTER_SPRITE_PALETTES
+        args.sprite_palettes = list(DEFAULT_CHARACTER_SPRITE_PALETTES)
+        if args.kefka_is_umaro:
+            args.sprite_palettes[kefka] = args.sprite_palettes[umaro]
 
 
 
