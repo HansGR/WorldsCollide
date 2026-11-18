@@ -82,6 +82,16 @@ class Data:
         self.title_graphics = title_graphics.TitleGraphics(rom, args)
         self.title_graphics.mod()
 
+    def umaros_collide_ability_names(self):
+        # UMAROS COLLIDE: the giant umaro at the end of the final battle has his own attacks
+        import data.text as text
+        from data.spell_names import name_id
+        ABILITY_NAMES_START, FIRST_ABILITY, NAME_SIZE = 0x26f7b9, 81, 10
+        for ability, name in (("HyperDrive", "Yeti Blast"), ("Goner", "U'ghaaaa")):
+            name_bytes = text.get_bytes(name, text.TEXT2)
+            name_bytes += [0xff] * (NAME_SIZE - len(name_bytes))
+            self.rom.set_bytes(ABILITY_NAMES_START + (name_id[ability] - FIRST_ABILITY) * NAME_SIZE, name_bytes)
+
     def write(self):
         if self.args.steveify:
             import data.text as text
@@ -92,6 +102,9 @@ class Data:
             for i in range(175):
                 ability_name_bytes.extend(name_bytes)
             self.rom.set_bytes(0x26f7b9, ability_name_bytes)
+
+        else:
+            self.umaros_collide_ability_names()
 
         self.dialogs.write()
         self.characters.write()

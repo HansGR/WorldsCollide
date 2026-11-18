@@ -232,7 +232,13 @@ class KefkaTower(Event):
         )
 
         space = Reserve(0xa08be, 0xa08c0, "kefka tower this is sickening", field.NOP())
+
+        # UMAROS COLLIDE: kefka is not the final boss. instead of his next trick (and the final
+        # battle) he knocks everybody off the tower, into umaro's den
         space = Reserve(0xa08da, 0xa08df, "kefka tower now for my next trick", field.NOP())
+        space.write(
+            field.Branch(self.umaros_collide_mod()),
+        )
 
         space = Reserve(0xa0952, 0xa0e23, "kefka tower wor attack and pillar scenes", field.NOP())
         space.write(
@@ -272,6 +278,85 @@ class KefkaTower(Event):
         space.write(
             field.Branch(space.end_address + 1), # skip nops
         )
+
+    def umaros_collide_mod(self):
+        # UMAROS COLLIDE: where kefka would start the final battle, every character present is
+        # hit and thrown off the top of the screen. then, on a black screen: the tower is reset
+        # (as when leaving it: switches, doors, y party switching), parties 2 and 3 are dissolved
+        # and party 1 falls into umaro's den, as if through the trapdoor from his cave.
+        # the airship waits outside narshe. the carving in the den starts the final battle
+        # (event/umaro_cave.py)
+        KEFKA_TOWER_RESET = 0xc0f7d             # vanilla: reset the tower's state when leaving it
+        FALL_INTO_DEN = 0xcd9a6                 # vanilla: land in umaro's den after the trapdoor
+        NARSHE_X, NARSHE_Y = 115, 34            # world of ruin map tile below narshe
+
+        dialog = 3009   # vanilla: "now, for my next trick, i will make you all... disappear!"
+        self.dialogs.set_text(dialog, "KEFKA: All this way to fight ME?<line>"
+                                      "The REAL boss lives in a cave<line>up in Narshe! Now, shoo!<end>")
+
+        src = [
+            field.Dialog(dialog, top_of_screen = False),
+
+            field.PlaySoundEffect(245),
+            field.FlashScreen(field.Flash.WHITE),
+            field.LoadCreatedCharacters(),
+        ]
+        for character in range(self.characters.CHARACTER_COUNT):
+            src += [
+                field.BranchIfEventBitClear(event_bit.multipurpose(character), f"NOT_PRESENT_{character}"),
+                field.EntityAct(character, False,
+                    field_entity.SetSpriteLayer(2),
+                    field_entity.AnimateAttacked(),
+                    field_entity.DisableWalkingAnimation(),
+                    field_entity.SetSpeed(field_entity.Speed.FASTEST),
+                    field_entity.Move(direction.UP, 8),
+                    field_entity.Move(direction.UP, 8),
+                    field_entity.Hide(),
+                ),
+                f"NOT_PRESENT_{character}",
+            ]
+        src += [
+            field.Pause(2),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.DeleteRotatingPyramids(),
+
+            field.Call(KEFKA_TOWER_RESET),
+            field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
+        ]
+        for party in (2, 3):
+            src += [
+                field.SetParty(party),
+                field.LoadPartyMembers(),
+            ]
+            for character in range(self.characters.CHARACTER_COUNT):
+                src += [
+                    field.BranchIfEventBitClear(event_bit.multipurpose(character), f"NOT_IN_PARTY_{party}_{character}"),
+                    field.RemoveCharacterFromParties(character),
+                    f"NOT_IN_PARTY_{party}_{character}",
+                ]
+        src += [
+            field.SetParty(1),
+            field.Call(field.DELETE_CHARACTERS_NOT_IN_ANY_PARTY),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+
+            field.SetEventBit(event_bit.KNOCKED_INTO_UMAROS_DEN),
+
+            # park the airship outside narshe (as event/nikeah.py does), then fall into the den
+            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.LoadMap(0x01, direction.DOWN, default_music = False,
+                          x = NARSHE_X, y = NARSHE_Y + 2, fade_in = False, airship = True),
+            vehicle.SetPosition(NARSHE_X, NARSHE_Y + 2),
+            vehicle.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            vehicle.LoadMap(0x11b, direction.DOWN, default_music = True,
+                            x = 58, y = 21, fade_in = False),
+            field.SetParentMap(0x01, direction.DOWN, NARSHE_X, NARSHE_Y),
+            field.Call(FALL_INTO_DEN),
+            field.Return(),
+        ]
+        space = Write(Bank.CA, src, "umaros collide: kefka knocks the parties into umaro's den")
+        return space.start_address
 
     def atma_battle_mod(self):
         boss_pack_id = self.get_boss("Atma")

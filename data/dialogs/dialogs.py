@@ -292,7 +292,7 @@ class Dialogs():
             self.set_text(313, "Check this room for a hidden treasure passage!<end>")
             self.set_text(474, "Cherub Downs and Gaia Gear help with Dirt Drgn's Earth attacks.<end>")
             self.set_text(476, "Use Sleep to put Dirt Drgn to bed.<end>")
-            self.set_text(599, "Welcome to Worlds Collide! NPCs throughout this world will now give you useful tips instead of vanilla dialog.<page>By the way, default settings allow every character to equip a Moogle Charm.<end>")
+            self.set_text(599, "Welcome to Worlds Collide! NPCs throughout this world will now give you useful tips instead of vanilla dialog.<page>By the way, default settings allow every character to equip a Yeti Charm.<end>")
             self.set_text(600, "Some monsters will freeze your characters. Use Fire to restore them to back to normal.<end>")
             self.set_text(601, "Phantom Forest and South Figaro Cave have healing springs that work like this pot.<end>")
             self.set_text(602, "This is a Save Point.<page>You may use Sleeping Bags and Tents here. If you can, use Sleeping Bags to save time.<end>")

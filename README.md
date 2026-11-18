@@ -4,6 +4,16 @@ Worlds Collide is an open worlds randomizer for Final Fantasy VI (originally Fin
 You start with the airship and can travel freely between the World of Balance and the World of Ruin.  
 Complete objectives while searching the worlds for characters, espers, and items until you are ready to challenge Kefka.
 
+## UMAROS COLLIDE
+
+This branch is a spinoff of Worlds Collide made for an event. Every seed rolled from it has these changes:
+
+- The frozen esper (Tritoch) fight in the World of Ruin Narshe is always Umaro: level 99, with the HP and MP of a level 99 enemy and twice his usual speed. With shuffled or original bosses, the boss he replaces takes his place.
+- Kefka is not the final boss. At the top of his tower he knocks every party off the screen instead of fighting: the tower is reset, y party switching is turned off, and party 1 lands in Umaro's Den (as if through the trapdoor in Umaro's Cave). The airship waits outside Narshe.
+- In the den, the bone carving asks "Touch the eye of the carving?". Yes brings Umaro stomping in, then the final battle's lineup with every available character, then the final battle.
+- The last tier of the final battle is UMARO, twice the size of his usual sprite. Havoc Wing is Yeti Punch, HyperDrive is Yeti Blast, and Goner is U'ghaaaa.
+- The Moogle Charm is the Yeti Charm: no random encounters, and its wearer is always berserk.
+
 ## Links
 
 ###### Start playing: [ff6worldscollide.com](https://www.ff6worldscollide.com)

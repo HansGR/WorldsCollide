@@ -33,7 +33,107 @@ class UmaroCave(Event):
         elif self.reward.type == RewardType.ITEM:
             self.item_mod(self.reward.id)
 
+        self.umaros_collide_mod()
+
         self.log_reward(self.reward)
+
+    def umaros_collide_mod(self):
+        # UMAROS COLLIDE: once kefka has knocked the party into the den (event/kefka_tower.py),
+        # the carving starts the final battle: "touch the eye of the carving?", umaro stomps
+        # in as he does before his own fight, then every available character joins the final
+        # lineup in kefka's lair and the final battle begins (kefka tower's lineup and battle)
+        CARVING_EVENT = 0xcd6eb                 # if the check is done return, else the carving scene
+        CARVING_SCENE = 0xcd6f1
+        UMARO_ENTRANCE_START, UMARO_ENTRANCE_END = 0xcd737, 0xcd776  # party startled, umaro stomps in
+        KEFKA_LAIR = 0x164                      # the map the final lineup and battle start from
+        SHOW_CASEWORD_CHARACTERS = 0xac9f3
+        FINAL_LINEUP = 0xa0e46                  # kefka tower: final lineup, final battle, ending
+        GOT_CARVING_REWARD = 0x27a
+
+        touch_dialog = 1524 # vanilla: "what's with this carving? ..." (removed above)
+        self.dialogs.set_text(touch_dialog, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
+        roar_dialog = 1527  # vanilla: "ooh..." umaro without mog in the party (removed in every reward mod)
+        self.dialogs.set_text(roar_dialog, "UMARO: U'ghaaaa!!<end>")
+
+        src = [
+            field.BranchIfEventBitSet(event_bit.KNOCKED_INTO_UMAROS_DEN, "FINAL_BATTLE"),
+            field.ReturnIfEventBitSet(GOT_CARVING_REWARD),
+            field.Branch(CARVING_SCENE),
+
+            "FINAL_BATTLE",
+            field.DialogBranch(touch_dialog, dest1 = "TOUCH", dest2 = field.RETURN),
+
+            "TOUCH",
+            # the one who stomps in is umaro himself, whoever the cave's reward was
+            field.SetSprite(self.umaro_cave_npc_id, self.characters.UMARO),
+            field.SetPalette(self.umaro_cave_npc_id, self.characters.get_palette(self.characters.UMARO)),
+            field.Pause(0.5),
+            field.PlaySoundEffect(187),
+            Read(UMARO_ENTRANCE_START, UMARO_ENTRANCE_END),
+            field.Dialog(roar_dialog),
+            field.FadeOutScreen(),
+            field.WaitForFade(),
+            field.HideEntity(self.umaro_cave_npc_id),
+
+            # the final lineup lists the characters who are in a party: put every available
+            # character into one (the lineup holds 12; umaro and gogo first so they are never
+            # the ones left out)
+            field.Call(field.REMOVE_ALL_CHARACTERS_FROM_ALL_PARTIES),
+            field.Call(field.DELETE_ALL_CHARACTERS),
+            field.Call(field.CREATE_AVAILABLE_CHARACTERS),
+            field.RefreshEntities(),
+            field.SetEventWord(event_word.SCRATCH, 0),
+        ]
+        characters = [self.characters.UMARO, self.characters.GOGO]
+        characters += [character for character in range(self.characters.CHARACTER_COUNT) if character not in characters]
+        for character in characters:
+            src += [
+                field.BranchIfEventBitClear(event_bit.character_available(character), f"NEXT_{character}"),
+                field.BranchIfEventWordLess(event_word.SCRATCH, 4, f"PARTY_1_{character}"),
+                field.BranchIfEventWordLess(event_word.SCRATCH, 8, f"PARTY_2_{character}"),
+                field.BranchIfEventWordLess(event_word.SCRATCH, 12, f"PARTY_3_{character}"),
+                field.Branch(f"NEXT_{character}"),
+
+                f"PARTY_1_{character}",
+                field.AddCharacterToParty(character, 1),
+                field.Branch(f"PLACED_{character}"),
+                f"PARTY_2_{character}",
+                field.AddCharacterToParty(character, 2),
+                field.Branch(f"PLACED_{character}"),
+                f"PARTY_3_{character}",
+                field.AddCharacterToParty(character, 3),
+                f"PLACED_{character}",
+                field.IncrementEventWord(event_word.SCRATCH),
+                f"NEXT_{character}",
+            ]
+        src += [
+            field.SetParty(1),
+            field.RefreshEntities(),
+            field.UpdatePartyLeader(),
+
+            # what kefka tower does before the lineup (0xa0e24-0xa0e45), with the screen held as
+            # it is there (the camera moves before the battle) and faded back in
+            field.SetEventBit(0x39e),                # npc bits
+            field.ClearEventBit(0x3f5),
+            field.LoadMap(KEFKA_LAIR, direction.DOWN, default_music = False, x = 15, y = 17),
+            field.HoldScreen(),
+            field.LoadAvailableCharacters(),
+            field.Call(SHOW_CASEWORD_CHARACTERS),
+            field.SetPartyMap(1, KEFKA_LAIR),
+            field.SetPartyMap(2, KEFKA_LAIR),
+            field.SetPartyMap(3, KEFKA_LAIR),
+            field.RefreshEntities(),
+            field.FadeInScreen(),
+            field.WaitForFade(),                # (the lineup menu hangs if opened mid-fade)
+            field.Branch(FINAL_LINEUP),
+        ]
+        space = Write(Bank.CC, src, "umaros collide: carving starts the final battle")
+        carving = space.start_address
+
+        space = Reserve(CARVING_EVENT, CARVING_SCENE - 1, "umaro cave carving event", field.NOP())
+        space.write(
+            field.Branch(carving),
+        )
 
     def add_gating_condition(self):
         CLIFF_MOVE_BACK = 0xc37f8

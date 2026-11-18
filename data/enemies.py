@@ -147,6 +147,23 @@ class Enemies():
             elif boss_name in hp2x:
                 enemy.hp *= 2
 
+    def umaros_collide_mod(self):
+        # UMAROS COLLIDE: umaro (the boss) is always level 99, with the hp/mp level scaling gives a
+        # level 99 enemy (stat / level * 99, as battle/scaling.py does) and twice his vanilla speed.
+        # his formation skips the in-battle scaling (battle/formation_flags.py), so these stand
+        # whatever the scaling flags are
+        MAX_LEVEL = 99
+        umaro = self.enemies[self.get_enemy("Umaro")]
+        umaro.hp = min((umaro.hp // umaro.level) * MAX_LEVEL, 2 ** 16 - 1)
+        umaro.mp = min((umaro.mp // umaro.level) * MAX_LEVEL, 2 ** 16 - 1)
+        umaro.level = MAX_LEVEL
+        umaro.speed = min(umaro.original_speed * 2, 2 ** 8 - 1)
+
+        # the last tier of the final battle is a giant umaro (battle/umaros_collide.py has his sprite)
+        final_kefka = self.enemies[bosses.name_enemy["Kefka (Final)"]]
+        final_kefka.name = "UMARO"
+        final_kefka.special_name = "Yeti Punch"     # was Havoc Wing
+
     def boss_experience(self):
         from data.bosses_custom_exp import custom_exp
         for enemy_id, exp in custom_exp.items():
@@ -420,6 +437,8 @@ class Enemies():
             self.chupon_encounters(maps)
         elif not self.args.random_encounters_original:
             self.randomize_encounters(maps)
+
+        self.umaros_collide_mod()
 
         self.formations.mod()
         self.packs.mod()

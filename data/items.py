@@ -315,12 +315,23 @@ class Items():
         self.available_dialogs.append(1823)
         self.available_dialogs.extend(list(range(1825, 1830)))
 
+        self.umaros_collide_mod()
+
         # generate receive item dialogs for good items
         self.receive_dialogs = {}
         for item_id in self.GOOD:
             self.add_receive_dialog(item_id)
 
         self.moogle_starting_equipment()
+
+    def umaros_collide_mod(self):
+        # UMAROS COLLIDE: the moogle charm is the yeti charm, whoever wears it is always berserk
+        BERSERK = 0x10                              # status 2 while equipped
+        yeti_charm = self.items[name_id["Moogle Charm"]]
+        if not self.args.steveify:
+            yeti_charm.name = "Yeti Charm"
+        yeti_charm.desc = "No\0encounters,\0but\0berserk<end>"
+        yeti_charm.relic_equip_cond_byte |= BERSERK
 
     def write(self):
         for item in self.items:

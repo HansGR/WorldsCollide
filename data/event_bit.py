@@ -220,6 +220,7 @@ DISABLE_MENU_ACCESS = 0x1c2
 TEMP_SONG_OVERRIDE = 0x1cc
 CONTINUE_MUSIC_DURING_BATTLE = 0x2bc
 ENABLE_Y_PARTY_SWITCHING = 0x1ce
+KNOCKED_INTO_UMAROS_DEN = 0x0ef # custom, UMAROS COLLIDE: kefka sent the party to umaro's den, the carving starts the final battle
 ALWAYS_CLEAR = 0x176 # this event_bit is always clear, used for branching
 
 from constants.objectives import MAX_OBJECTIVES

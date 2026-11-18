@@ -396,6 +396,22 @@ class EnemyPacks():
                     this_formation = self.formations.get_random_normal()
                     pack.formations = [this_formation, this_formation]
 
+    def umaros_collide_mod(self):
+        # UMAROS COLLIDE: the fight at the frozen esper (Tritoch) in narshe wor is always umaro
+        # shuffled/original bosses: whoever was there trades places with umaro, so every boss is
+        # still somewhere. random bosses: umaro simply takes the spot
+        tritoch, umaro = self.get_id("Tritoch"), self.get_id("Umaro")
+        at_tritoch = self.event_boss_replacements.get(tritoch, tritoch)
+        if at_tritoch == umaro:
+            return
+        if not self.args.boss_battles_random:
+            umaro_spots = [spot for spot, boss in self.event_boss_replacements.items() if boss == umaro]
+            if not umaro_spots and umaro not in self.event_boss_replacements:
+                umaro_spots = [umaro]   # original bosses: umaro is in his cave
+            for spot in umaro_spots:
+                self.event_boss_replacements[spot] = at_tritoch
+        self.event_boss_replacements[tritoch] = umaro
+
     def mod(self):
         self.event_boss_replacements = {
             self.DOOM_GAZE: self.DOOM_GAZE,
@@ -406,6 +422,8 @@ class EnemyPacks():
             self.shuffle_event_bosses()
         elif self.args.boss_battles_random:
             self.randomize_event_bosses()
+
+        self.umaros_collide_mod()
 
         self._handle_original_shuffle_dragons()
         self._handle_original_shuffle_statues()

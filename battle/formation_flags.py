@@ -70,7 +70,16 @@ class _FormationFlags:
         ]
 
     def _check_skip_scaling(self):
-        src = []
+        # UMAROS COLLIDE: umaro's formation is never scaled, he is always level 99
+        # (data/enemies.py umaros_collide_mod)
+        from data.bosses import name_formation
+        src = [
+            asm.A16(),
+            asm.LDA(formation_address, asm.ABS),
+            asm.CMP(name_formation["Umaro"], asm.IMM16),
+            asm.A8(),                               # (keeps the zero flag)
+            asm.BEQ("SET_SKIP_SCALING"),
+        ]
         if not args.scale_eight_dragons:
             src += [
                 asm.LDA(FormationFlag.DRAGON, asm.IMM8),
