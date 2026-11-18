@@ -8,7 +8,9 @@ class UmaroCave(Event):
         return self.characters.UMARO
 
     def init_rewards(self):
-        self.reward = self.add_reward(RewardType.CHARACTER | RewardType.ESPER | RewardType.ITEM)
+        # UMAROS COLLIDE: an item only. after kefka the carving starts the final battle instead of
+        # giving its reward, which must not be something a route to kefka depends on
+        self.reward = self.add_reward(RewardType.ITEM)
 
     def mod(self):
         space = Reserve(0xcd6f5, 0xcd6f7, "umaro cave what's with this carving", field.NOP())

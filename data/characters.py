@@ -66,6 +66,9 @@ class Characters():
     def set_unavailable(self, character):
         self.available_characters.remove(character)
 
+    def set_available(self, character):
+        self.available_characters.append(character)
+
     def get_random_available(self, exclude = None):
         if exclude is None:
             exclude = []

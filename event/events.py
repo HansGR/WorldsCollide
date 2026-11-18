@@ -109,15 +109,18 @@ class Events():
         # note: this includes start, which can get up to 4 characters
         self.choose_single_possible_type_rewards(reward_slots)
 
-        # find characters that were assigned to start
-        characters_available = [reward.id for reward in name_event["Start"].rewards]
-
         # find all the rewards that can be a character
         character_slots = []
         for event in events:
             for reward in event.rewards:
                 if reward.possible_types & RewardType.CHARACTER:
                     character_slots.append(reward)
+
+        dead_ends = self.gate_dead_ends(character_slots)
+        self.start_dead_end_mod(name_event["Start"], character_slots, dead_ends)
+
+        # find characters that were assigned to start
+        characters_available = [reward.id for reward in name_event["Start"].rewards]
 
         iteration = 0
         slot_iterations = {} # keep track of how many iterations each slot has been available
@@ -145,7 +148,11 @@ class Events():
                                    "but no unfilled character slots are currently unlocked")
             slot_index = weighted_reward_choice(unlocked_slot_iterations, iteration)
             slot = unlocked_slots[slot_index]
-            slot.id = self.characters.get_random_available()
+            exclude = []
+            if len(unlocked_slots) == 1 and self.characters.get_available_count() > 1:
+                # the last unlocked slot: the character found there has to unlock another one
+                exclude = dead_ends
+            slot.id = self.characters.get_random_available(exclude = exclude)
             slot.type = RewardType.CHARACTER
             characters_available.append(slot.id)
             self.characters.set_character_path(slot.id, slot.event.character_gate())
@@ -163,6 +170,32 @@ class Events():
         # assign rest of rewards where item is possible
         self.choose_item_possible_rewards(reward_slots)
         return
+
+    def gate_dead_ends(self, character_slots):
+        # UMAROS COLLIDE: the reward behind umaro's gate is an item (event/umaro_cave.py), so finding
+        # him unlocks no check which can have a character: the characters this is true of.
+        # they must not be the ones the rest of the characters wait behind
+        gates = set(slot.event.character_gate() for slot in character_slots)
+        return [character for character in range(self.characters.CHARACTER_COUNT) if character not in gates]
+
+    def start_dead_end_mod(self, start, character_slots, dead_ends):
+        # the starting party must unlock a check which can have a character: if it does not, trade a
+        # randomly chosen starting character who unlocks none for one who does
+        party = [reward.id for reward in start.rewards]
+        for slot in character_slots:
+            gate = slot.event.character_gate()
+            if slot.id is None and (gate is None or gate in party) and len(party) >= slot.event.characters_required():
+                return
+        if not self.characters.get_available_count():
+            return
+
+        for reward, start_char in zip(start.rewards, self.args.start_chars):
+            if reward.id in dead_ends and start_char.startswith("random"):
+                self.characters.set_available(reward.id)
+                reward.id = self.characters.get_random_available(exclude = dead_ends)
+                return
+        names = ", ".join(self.characters.get_name(character) for character in party)
+        raise RuntimeError(f"character gating: the starting party ({names}) unlocks no check with a character")
 
     def open_world_mod(self, events):
         import random

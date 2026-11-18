@@ -294,6 +294,10 @@ class KefkaTower(Event):
         self.dialogs.set_text(dialog, "KEFKA: All this way to fight ME?<line>"
                                       "The REAL boss lives in a cave<line>up in Narshe! Now, shoo!<end>")
 
+        # in the final battle (the last tier is a giant umaro, battle/umaros_collide.py)
+        goner_dialog = 140  # vanilla: "the end comes...beyond chaos."
+        self.dialogs.set_single_line_battle_text(goner_dialog, "Yeti used a Green Cherry!<wait 60 frames><end>")
+
         src = [
             field.Dialog(dialog, top_of_screen = False),
 
