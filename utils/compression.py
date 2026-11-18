@@ -68,8 +68,11 @@ def compress(data):
             control_bit = 1
             group = []
 
-    result.append(control_byte)
-    result.extend(group)
+    if group:
+        # never a control byte without data after it: the game's decompressors only look for the end
+        # of the data after reading a value, so they would read past the end and never stop
+        result.append(control_byte)
+        result.extend(group)
 
     size = len(result) + 2
     if size > MAX_COMPRESS_SIZE:
