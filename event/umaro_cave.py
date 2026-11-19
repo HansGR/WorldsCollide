@@ -51,7 +51,7 @@ class UmaroCave(Event):
         UMARO_ENTRANCE_START, UMARO_ENTRANCE_END = 0xcd737, 0xcd776  # party startled, umaro stomps in
         KEFKA_LAIR = 0x164                      # the map the final lineup and battle start from
         SHOW_CASEWORD_CHARACTERS = 0xac9f3
-        FINAL_LINEUP = 0xa0e46                  # kefka tower: final lineup, final battle, ending
+        AFTER_FINAL_LINEUP = 0xa0e47            # kefka tower: after its final lineup: final battle, ending
 
         touch_dialog = 1524 # vanilla: "what's with this carving? ..." (removed above)
         self.dialogs.set_text(touch_dialog, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
@@ -108,8 +108,11 @@ class UmaroCave(Event):
 
             # what kefka tower does before the lineup (0xa0e24-0xa0e45), with the screen held as
             # it is there (the camera moves before the battle)
+            # the den's music goes on through the lineup: without the override, loading kefka's
+            # lair starts its song (the fanatics' tower's), and so does the lineup closing
             field.SetEventBit(0x39e),                # npc bits
             field.ClearEventBit(0x3f5),
+            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.LoadMap(KEFKA_LAIR, direction.DOWN, default_music = False, x = 15, y = 17),
             field.HoldScreen(),
             field.LoadAvailableCharacters(),
@@ -120,7 +123,9 @@ class UmaroCave(Event):
             field.RefreshEntities(),
             # the screen stays black: the lineup menu comes up straight from the den
             # (it must not be opened in the middle of a fade, the game hangs when it closes)
-            field.Branch(FINAL_LINEUP),
+            field.InvokeFinalLineup(),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
+            field.Branch(AFTER_FINAL_LINEUP),
         ]
         space = Write(Bank.CC, src, "umaros collide: carving starts the final battle")
         carving = space.start_address
