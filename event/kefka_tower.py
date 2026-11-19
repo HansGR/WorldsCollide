@@ -296,17 +296,11 @@ class KefkaTower(Event):
         FALL_INTO_DEN = 0xcd9a6                 # vanilla: land in umaro's den after the trapdoor
         NARSHE_X, NARSHE_Y = 115, 34            # world of ruin map tile below narshe
 
-        dialog = 3009   # vanilla: "now, for my next trick, i will make you all... disappear!"
-        self.dialogs.set_text(dialog, "KEFKA: All this way to fight ME?<line>"
-                                      "The REAL boss lives in a cave<line>up in Narshe! Now, shoo!<end>")
-
         # in the final battle (the last tier is a giant umaro, battle/umaros_collide.py)
         goner_dialog = 140  # vanilla: "the end comes...beyond chaos."
         self.dialogs.set_single_line_battle_text(goner_dialog, "Yeti used a Green Cherry!<wait 60 frames><end>")
 
         src = [
-            field.Dialog(dialog, top_of_screen = False),
-
             field.PlaySoundEffect(245),
             field.FlashScreen(field.Flash.WHITE),
             field.LoadCreatedCharacters(),
@@ -314,6 +308,7 @@ class KefkaTower(Event):
         for character in range(self.characters.CHARACTER_COUNT):
             src += [
                 field.BranchIfEventBitClear(event_bit.multipurpose(character), f"NOT_PRESENT_{character}"),
+                field.DisableEntityCollision(character),    # they fly through kefka and each other
                 field.EntityAct(character, False,
                     field_entity.SetSpriteLayer(2),
                     field_entity.AnimateAttacked(),
@@ -330,6 +325,12 @@ class KefkaTower(Event):
             field.FadeOutScreen(),
             field.WaitForFade(),
             field.DeleteRotatingPyramids(),
+        ]
+        for character in range(self.characters.CHARACTER_COUNT):
+            src += [
+                field.EnableEntityCollision(character),
+            ]
+        src += [
 
             field.Call(KEFKA_TOWER_RESET),
             field.ClearEventBit(event_bit.ENABLE_Y_PARTY_SWITCHING),
