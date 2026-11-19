@@ -14,6 +14,7 @@ This branch is a spinoff of Worlds Collide made for an event. Every seed rolled 
 - The last tier of the final battle is Ultimaro: Umaro at twice the size of his usual sprite, 5 levels higher and a tenth faster than final Kefka would be. He fights with ice where Kefka had fire and bolt (Storm, Surge, Ice 3), and sometimes jumps as Umaro does, landing 2 to 4 times as if he wore a Dragon Horn. Havoc Wing is Yeti Punch, HyperDrive is Yeti Blast, and Goner is U'ghaaaa ("Yeti used a Green Cherry!").
 - The Moogle Charm is the Yeti Charm: no random encounters, and its wearer is always berserk.
 - Kefka looks like Umaro wherever he appears on a map. Choosing sprites with `-cspr` chooses Kefka's too.
+- The start menu reads "FFVI Umaros Collide" and plays Umaro's theme.
 - The title screen reads UMAROS COLLIDE (`graphics/tools/umaros_collide_title.py` makes it from the Worlds Collide title).
 
 ## Links

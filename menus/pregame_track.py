@@ -144,7 +144,7 @@ class PreGameTrack:
 
         version_string = "v" + version.__version__.split(' ')[0] # remove substrings such as ' (dev)'
         text_positions = [
-            ("FFVI Worlds Collide", 0x78cd),
+            ("FFVI Umaros Collide", 0x78cd),    # UMAROS COLLIDE (was "FFVI Worlds Collide")
             (f"{version_string}", 0x7905 - len(version_string) * 2),
         ]
 

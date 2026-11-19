@@ -1,6 +1,8 @@
 from memory.space import START_ADDRESS_SNES, Bank, Write, Reserve, Allocate, Read
 import instruction.asm as asm
 import instruction.c3 as c3
+from music.song_utils import get_character_theme
+from constants.entities import UMARO
 
 class PreGameMenu:
     MENU_NUMBER = 9
@@ -230,7 +232,10 @@ class PreGameMenu:
         space = Reserve(0x3017c, 0x301b1, "load pregame menu if no saves else invoke load menu")
         space.add_label("FIELD_MENU_MAIN_LOOP", 0x301ba)
         space.write(
-            Read(0x30181, 0x30193),         # play song: the prelude
+            # play song (vanilla: the prelude). UMAROS COLLIDE: umaro's theme
+            asm.LDA(get_character_theme(UMARO), asm.IMM8),
+            asm.STA(0x1301, asm.ABS),
+            Read(0x30186, 0x30193),
 
             asm.JSR(0x7023, asm.ABS),       # test save file validity
             asm.BCC("INVOKE_PREGAME_MENU"), # branch if no valid saves
