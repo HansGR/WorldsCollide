@@ -1,6 +1,7 @@
 from memory.space import Bank, Reserve, Write, Read
 import instruction.asm as asm
 import graphics.monster_sprite as monster_sprite
+import graphics.green_cherry as green_cherry
 
 # UMAROS COLLIDE: the last tier of the final battle is a giant umaro
 #
@@ -28,6 +29,7 @@ class _UmarosCollide:
         self.jump_mod(name_enemy["Kefka (Final)"])
         self.jump_animation_mod()
         self.special_attack_mod(name_enemy["Umaro"], name_enemy["Kefka (Final)"])
+        self.green_cherry_mod()
 
     def spec_address(self, enemy):
         return GRAPHICS_SPECS + enemy * GRAPHICS_SPEC_SIZE
@@ -80,6 +82,85 @@ class _UmarosCollide:
         space.write(
             Read(SPECIAL_ATTACK_GRAPHICS + umaro, SPECIAL_ATTACK_GRAPHICS + umaro),
         )
+
+    def green_cherry_mod(self):
+        # before goner (u'ghaaaa, after "Yeti used a Green Cherry!") final kefka's laughing head
+        # appears in front of him and fades away: battle animation 399. it becomes the green cherry
+        #
+        # an attack animation (D0/7FB2, 14 bytes) names an animation for each of 3 layers and their
+        # palettes (D2/6000, 8 colors each). a layer's animation (D4/D000, 6 bytes) has its number
+        # of frames, its tile layout, its first frame and its size. a tile layout is a part of
+        # D2/0000: rows of 16 8x8 tiles, 2 bytes each (the tile in the 3bpp graphics at D3/0000,
+        # bit 14: flipped left to right, bit 15: upside down), starting 0x40 bytes later with each
+        # layout. a frame (D4/DF3C has their pointers, they are in bank D1) lists 16x16 tiles of
+        # the layout: where it goes (x, y: a nibble each) and which one (8 to a row, bit 6: flipped
+        # left to right)
+        #
+        # the head is 4 16x16 tiles, flipped. their 14 8x8 tiles (2 are the empty tile) are used by
+        # nothing else, and neither is that part of the layout
+        ATTACK_ANIMATIONS, ATTACK_ANIMATION_SIZE = 0x107fb2, 14
+        LAYER_ANIMATIONS, LAYER_ANIMATION_SIZE = 0x14d000, 6
+        FRAME_POINTERS, FRAMES = 0x14df3c, 0x110000
+        TILE_LAYOUTS, TILE_LAYOUT_STEP = 0x120000, 0x40
+        GRAPHICS = 0x130000
+        PALETTES, PALETTE_SIZE = 0x126000, 16
+
+        LAUGHING_HEAD = 399
+        BG1_LAYER = 1
+        EMPTY_TILE = 0x0015
+        LAYOUT_ROW_TILES = 16               # 8x8 tiles in a row of a tile layout
+        FLIPPED = 0x40
+        HEAD_FRAME = [0x73, 0x11 | FLIPPED, 0x83, 0x10 | FLIPPED, 0x74, 0x19 | FLIPPED, 0x84, 0x18 | FLIPPED]
+        CHERRY_PALETTE = 0xfe               # after the game's palettes, where nothing is
+
+        def word(address):
+            return int.from_bytes(bytes(Read(address, address + 1)), "little")
+
+        attack_animation = ATTACK_ANIMATIONS + LAUGHING_HEAD * ATTACK_ANIMATION_SIZE
+        layer_animation = LAYER_ANIMATIONS + word(attack_animation + BG1_LAYER * 2) * LAYER_ANIMATION_SIZE
+        frames, tile_layout = Read(layer_animation, layer_animation + 1)
+        tile_layout = TILE_LAYOUTS + ((frames & 0x40) << 2 | tile_layout) * TILE_LAYOUT_STEP
+
+        frame = word(layer_animation + 2)
+        frame_start, frame_end = word(FRAME_POINTERS + frame * 2), word(FRAME_POINTERS + frame * 2 + 2)
+        assert frames & 0x3f == 1 and Read(FRAMES + frame_start, FRAMES + frame_end - 1) == HEAD_FRAME
+
+        # the 8x8 tiles of the frame's 16x16 tiles 0x10, 0x11, 0x18 and 0x19: 4 rows of 4
+        TILES = green_cherry.SIZE // monster_sprite.TILE_PIXELS
+        first_row, first_column = 2 * (0x10 // 8), 2 * (0x10 % 8)
+        layout_rows = [tile_layout + ((first_row + row) * LAYOUT_ROW_TILES + first_column) * 2 for row in range(TILES)]
+        own_tiles = [word(layout_row + column * 2) for layout_row in layout_rows for column in range(TILES)]
+        own_tiles = [tile for tile in own_tiles if tile != EMPTY_TILE]
+
+        # the frame flips its tiles, and an animation is flipped again when a monster is the
+        # attacker: the cherry is seen as it is stored
+        pixels = green_cherry.pixels()
+        for row, layout_row in enumerate(layout_rows):
+            layout = []
+            for column in range(TILES):
+                tile = [pixels[row * monster_sprite.TILE_PIXELS + y][column * monster_sprite.TILE_PIXELS:][:monster_sprite.TILE_PIXELS]
+                        for y in range(monster_sprite.TILE_PIXELS)]
+                if not any(map(any, tile)):
+                    layout += EMPTY_TILE.to_bytes(2, "little")
+                    continue
+
+                own_tile = own_tiles.pop(0)     # (the cherry has no more tiles than the head had)
+                layout += own_tile.to_bytes(2, "little")
+
+                tile_address = GRAPHICS + own_tile * monster_sprite.TILE_SIZE_3BPP
+                space = Reserve(tile_address, tile_address + monster_sprite.TILE_SIZE_3BPP - 1, "green cherry graphics")
+                space.write(monster_sprite.tile_data(tile, three_bpp = True))
+
+            space = Reserve(layout_row, layout_row + len(layout) - 1, "green cherry tile layout")
+            space.write(layout)
+
+        palette_address = PALETTES + CHERRY_PALETTE * PALETTE_SIZE
+        space = Reserve(palette_address, palette_address + PALETTE_SIZE - 1, "green cherry palette")
+        space.write([color.to_bytes(2, "little") for color in green_cherry.palette()])
+
+        BG1_PALETTE = attack_animation + 6 + BG1_LAYER
+        space = Reserve(BG1_PALETTE, BG1_PALETTE, "laughing head palette")
+        space.write(CHERRY_PALETTE)
 
     def jump_mod(self, kefka):
         # when the giant umaro jumps (data/enemy_scripts.py ultimaro_mod) he lands 2 to 4 times, as

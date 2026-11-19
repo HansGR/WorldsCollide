@@ -26,6 +26,29 @@ class TestMonsterSprite(unittest.TestCase):
         self.assertEqual(pixels[3][7], 0b101)
         self.assertEqual(sum(map(sum, pixels)), 0b101)
 
+    def test_three_bpp_tile_round_trip(self):
+        rng = random.Random(3)
+        pixels = [[rng.randrange(8) for _ in range(8)] for _ in range(8)]
+        data = monster_sprite.tile_data(pixels, three_bpp = True)
+        self.assertEqual(len(data), monster_sprite.TILE_SIZE_3BPP)
+        self.assertEqual(monster_sprite.tile_pixels(data, three_bpp = True), pixels)
+
+    def test_green_cherry(self):
+        import graphics.green_cherry as green_cherry
+        pixels = green_cherry.pixels()
+        self.assertEqual(len(pixels), green_cherry.SIZE)
+        self.assertTrue(all(len(row) == green_cherry.SIZE for row in pixels))
+        self.assertTrue(all(0 <= pixel <= len(green_cherry.PALETTE) for row in pixels for pixel in row))
+
+        palette = green_cherry.palette()
+        self.assertEqual(len(palette), 8)
+        self.assertTrue(all(0 <= color < 0x8000 for color in palette))
+
+        # the animation it replaces has 14 tiles of its own
+        tiles = sum(any(pixels[row + y][column + x] for y in range(8) for x in range(8))
+                    for row in range(0, green_cherry.SIZE, 8) for column in range(0, green_cherry.SIZE, 8))
+        self.assertLessEqual(tiles, 14)
+
     def test_sprite_round_trip(self):
         rng = random.Random(2)
         size = monster_sprite.SMALL_MOLD_TILES * monster_sprite.TILE_PIXELS

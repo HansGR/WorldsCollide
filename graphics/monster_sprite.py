@@ -28,12 +28,13 @@ def tile_pixels(data, three_bpp = False):
                        for x in range(TILE_PIXELS)])
     return pixels
 
-def tile_data(pixels):
-    # 4bpp graphics of one tile
-    data = [0] * TILE_SIZE_4BPP
+def tile_data(pixels, three_bpp = False):
+    # graphics of one tile
+    data = [0] * (TILE_SIZE_3BPP if three_bpp else TILE_SIZE_4BPP)
     for y in range(TILE_PIXELS):
+        offsets = (2 * y, 2 * y + 1, 16 + y) if three_bpp else (2 * y, 2 * y + 1, 16 + 2 * y, 17 + 2 * y)
         for x in range(TILE_PIXELS):
-            for plane, offset in enumerate((2 * y, 2 * y + 1, 16 + 2 * y, 17 + 2 * y)):
+            for plane, offset in enumerate(offsets):
                 data[offset] |= ((pixels[y][x] >> plane) & 1) << (7 - x)
     return data
 
