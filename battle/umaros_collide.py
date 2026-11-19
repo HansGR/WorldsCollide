@@ -25,6 +25,7 @@ class _UmarosCollide:
     def __init__(self):
         from data.bosses import name_enemy
         self.giant_umaro_mod(name_enemy["Umaro"], name_enemy["Kefka (Final)"])
+        self.jump_mod(name_enemy["Kefka (Final)"])
 
     def spec_address(self, enemy):
         return GRAPHICS_SPECS + enemy * GRAPHICS_SPEC_SIZE
@@ -67,6 +68,45 @@ class _UmarosCollide:
         mold_address = LARGE_MOLDS + kefka_mold * len(mold)
         space = Reserve(mold_address, mold_address + len(mold) - 1, "final kefka mold")
         space.write(mold)
+
+    def jump_mod(self, kefka):
+        # when the giant umaro jumps (data/enemy_scripts.py ultimaro_mod) he lands 2 to 4 times, as
+        # with a dragon horn: where the jump command looks for the jumper's dragon horn ("jump
+        # continuously", bit 7 of its relic effects), he has one
+        # x = the jumper (8 and up are the enemies). 8 bit a, x and y
+        JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END = 0x21820, 0x21822
+
+        relic_effects = 0x3c44
+        enemy_ids = 0x33a8
+        first_enemy = 8
+
+        src = [
+            Read(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END),
+            asm.BMI("RETURN"),                      # branch if the jumper has a dragon horn
+
+            asm.CPX(first_enemy, asm.IMM8),
+            asm.BLT("NO_DRAGON_HORN"),
+            asm.A16(),
+            asm.LDA(enemy_ids, asm.ABS_X),
+            asm.CMP(kefka, asm.IMM16),
+            asm.A8(),                               # (keeps the zero flag)
+            asm.BNE("NO_DRAGON_HORN"),
+            asm.LDA(0x80, asm.IMM8),
+            asm.RTS(),
+
+            "NO_DRAGON_HORN",
+            asm.LDA(relic_effects, asm.ABS_X),
+
+            "RETURN",
+            asm.RTS(),
+        ]
+        space = Write(Bank.C2, src, "umaros collide: giant umaro jumps as with a dragon horn")
+        jumper_relic_effects = space.start_address
+
+        space = Reserve(JUMPER_RELIC_EFFECTS_START, JUMPER_RELIC_EFFECTS_END, "jump: load jumper's relic effects", asm.NOP())
+        space.write(
+            asm.JSR(jumper_relic_effects, asm.ABS),
+        )
 
     def graphics_loader_mod(self, giant_umaro_graphics):
         # where the loader adds the start of the monster graphics to the offset in $64-$66
