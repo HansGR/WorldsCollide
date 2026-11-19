@@ -126,9 +126,9 @@ class _UmarosCollide:
         # the game's own animation hops back after every landing
         #
         # the damage of a landing shows when its animation has ended, and outside of an animation
-        # monsters are drawn over the characters and the damage. so the bounce is quick and leaves
-        # nothing to wait for: the damage shows a third of a second after the landing, sooner than
-        # after the game's hop back
+        # monsters are drawn over the characters and the damage. so the jumper goes up at the speed
+        # it took off with and nothing is left to wait for after that: the damage shows as soon as
+        # it is gone
         #
         # the landing of a monster's jump is animation script 0x84 (D1/EAD8 has the scripts'
         # pointers, they are in bank D0). it is copied here with the bounce added after the fall
@@ -141,7 +141,7 @@ class _UmarosCollide:
         fall = landing[:FALL_END - LANDING_START + 1]
         hop_back = landing[FALL_END - LANDING_START + 1:]
 
-        DOWN_8_PIXELS, UP_16_PIXELS, DOWN_32_PIXELS = 0x27, 0xcf, 0x3f
+        DOWN_8_PIXELS, UP_8_PIXELS, DOWN_32_PIXELS = 0x27, 0xc7, 0x3f
         assert fall[-6:] == [0x89, 0x13, 0x86, DOWN_8_PIXELS, 0x0f, 0x8a]   # 20 times: move, wait a frame
         assert hop_back == [0xd1, 0x00, 0x0f, 0xe3, 0x08, 0x03, 0xff]
 
@@ -150,8 +150,8 @@ class _UmarosCollide:
             0x80, 0x7d, len(hop_back),      # skip the hop back if another landing is coming
             hop_back,
 
-            0x89, 0x09,                     # 10 times:
-                0x86, UP_16_PIXELS,
+            0x89, 0x13,                     # 20 times, the way it came:
+                0x86, UP_8_PIXELS,
                 0x0f,                       # wait a frame
             0x8a,
             0xe1, 0x80,                     # hide the monster
