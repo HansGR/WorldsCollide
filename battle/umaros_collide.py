@@ -26,6 +26,7 @@ class _UmarosCollide:
         from data.bosses import name_enemy
         self.giant_umaro_mod(name_enemy["Umaro"], name_enemy["Kefka (Final)"])
         self.jump_mod(name_enemy["Kefka (Final)"])
+        self.special_attack_mod(name_enemy["Umaro"], name_enemy["Kefka (Final)"])
 
     def spec_address(self, enemy):
         return GRAPHICS_SPECS + enemy * GRAPHICS_SPEC_SIZE
@@ -68,6 +69,16 @@ class _UmarosCollide:
         mold_address = LARGE_MOLDS + kefka_mold * len(mold)
         space = Reserve(mold_address, mold_address + len(mold) - 1, "final kefka mold")
         space.write(mold)
+
+    def special_attack_mod(self, umaro, kefka):
+        # the giant umaro's special attack (yeti punch: final kefka's havoc wing, and still that
+        # attack in every other way) looks and sounds like umaro's (tackle)
+        SPECIAL_ATTACK_GRAPHICS = 0xf37c0       # a byte for each enemy
+
+        space = Reserve(SPECIAL_ATTACK_GRAPHICS + kefka, SPECIAL_ATTACK_GRAPHICS + kefka, "final kefka special attack graphic")
+        space.write(
+            Read(SPECIAL_ATTACK_GRAPHICS + umaro, SPECIAL_ATTACK_GRAPHICS + umaro),
+        )
 
     def jump_mod(self, kefka):
         # when the giant umaro jumps (data/enemy_scripts.py ultimaro_mod) he lands 2 to 4 times, as
