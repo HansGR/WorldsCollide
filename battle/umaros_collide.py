@@ -122,38 +122,45 @@ class _UmarosCollide:
 
     def jump_animation_mod(self):
         # a jumper with more landings to come (only the dragon horn does that) bounces: down onto
-        # the target and straight back up, and home only after the last landing. the game's own
-        # animation hops home after every landing, and the jumper is hidden only when the next one
-        # starts
+        # the target and straight back up, and it returns to its place only after the last landing.
+        # the game's own animation hops back after every landing
+        #
+        # the damage of a landing shows when its animation has ended, and outside of an animation
+        # monsters are drawn over the characters and the damage. so the bounce is quick and leaves
+        # nothing to wait for: the damage shows a third of a second after the landing, sooner than
+        # after the game's hop back
         #
         # the landing of a monster's jump is animation script 0x84 (D1/EAD8 has the scripts'
         # pointers, they are in bank D0). it is copied here with the bounce added after the fall
         LANDING_SCRIPT = 0x84
         SCRIPT_POINTERS = 0x11ead8
         LANDING_START, LANDING_END = 0x10682d, 0x106855
-        FALL_END = 0x10684e                 # the fall's last byte; what follows is the hop home and the end
+        FALL_END = 0x10684e                 # the fall's last byte; what follows is the hop back and the end
 
         landing = Read(LANDING_START, LANDING_END)
         fall = landing[:FALL_END - LANDING_START + 1]
-        hop_home = landing[FALL_END - LANDING_START + 1:]
+        hop_back = landing[FALL_END - LANDING_START + 1:]
 
-        FALL_STEPS = 0x13                   # the fall's loop count: 20 steps of 8 pixels
-        UP_8_PIXELS = 0xc7
-        assert fall[-6:] == [0x89, FALL_STEPS, 0x86, 0x27, 0x0f, 0x8a]   # loop: move down 8 pixels, wait a frame
-        assert hop_home == [0xd1, 0x00, 0x0f, 0xe3, 0x08, 0x03, 0xff]
+        DOWN_8_PIXELS, UP_16_PIXELS, DOWN_32_PIXELS = 0x27, 0xcf, 0x3f
+        assert fall[-6:] == [0x89, 0x13, 0x86, DOWN_8_PIXELS, 0x0f, 0x8a]   # 20 times: move, wait a frame
+        assert hop_back == [0xd1, 0x00, 0x0f, 0xe3, 0x08, 0x03, 0xff]
 
         src = [
             fall,
-            0x80, 0x7d, len(hop_home),      # skip the hop home if another landing is coming
-            hop_home,
+            0x80, 0x7d, len(hop_back),      # skip the hop back if another landing is coming
+            hop_back,
 
-            0x89, FALL_STEPS,               # the way the fall came, backwards
-                0x86, UP_8_PIXELS,
-                0x0f,
+            0x89, 0x09,                     # 10 times:
+                0x86, UP_16_PIXELS,
+                0x0f,                       # wait a frame
             0x8a,
-            0xe1, 0x80,                     # hide the jumper
-            hop_home,                       # home, unseen, where the next landing starts from
+            0xe1, 0x80,                     # hide the monster
+            [0x86, DOWN_32_PIXELS] * 5,     # the script is back where the fall ended
+            0xd1, 0x00,                     # (as before the hop back)
+            0xe3, 0xff, 0x00,               # the hop back, all of it at once: the monster is in its place
+            0xff,
         ]
+        src = [value for values in src for value in (values if isinstance(values, list) else [values])]
         space = Write(Bank.D0, src, "umaros collide: monster jump landing animation")
         landing_script = space.start_address
 
