@@ -55,8 +55,6 @@ class UmaroCave(Event):
 
         touch_dialog = 1524 # vanilla: "what's with this carving? ..." (removed above)
         self.dialogs.set_text(touch_dialog, "Touch the eye of the carving?<line><choice> Yes<line><choice> No<end>")
-        roar_dialog = 1527  # vanilla: "ooh..." umaro without mog in the party (removed in every reward mod)
-        self.dialogs.set_text(roar_dialog, "UMARO: U'ghaaaa!!<end>")
 
         src = [
             field.DialogBranch(touch_dialog, dest1 = "TOUCH", dest2 = field.RETURN),
@@ -68,7 +66,6 @@ class UmaroCave(Event):
             field.Pause(0.5),
             field.PlaySoundEffect(187),
             Read(UMARO_ENTRANCE_START, UMARO_ENTRANCE_END),
-            field.Dialog(roar_dialog),
             field.FadeOutScreen(),
             field.WaitForFade(),
             field.HideEntity(self.umaro_cave_npc_id),
@@ -110,7 +107,7 @@ class UmaroCave(Event):
             field.UpdatePartyLeader(),
 
             # what kefka tower does before the lineup (0xa0e24-0xa0e45), with the screen held as
-            # it is there (the camera moves before the battle) and faded back in
+            # it is there (the camera moves before the battle)
             field.SetEventBit(0x39e),                # npc bits
             field.ClearEventBit(0x3f5),
             field.LoadMap(KEFKA_LAIR, direction.DOWN, default_music = False, x = 15, y = 17),
@@ -121,8 +118,8 @@ class UmaroCave(Event):
             field.SetPartyMap(2, KEFKA_LAIR),
             field.SetPartyMap(3, KEFKA_LAIR),
             field.RefreshEntities(),
-            field.FadeInScreen(),
-            field.WaitForFade(),                # (the lineup menu hangs if opened mid-fade)
+            # the screen stays black: the lineup menu comes up straight from the den
+            # (it must not be opened in the middle of a fade, the game hangs when it closes)
             field.Branch(FINAL_LINEUP),
         ]
         space = Write(Bank.CC, src, "umaros collide: carving starts the final battle")
