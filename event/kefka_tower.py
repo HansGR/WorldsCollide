@@ -260,7 +260,13 @@ class KefkaTower(Event):
             ),
             field.DeleteRotatingPyramids(),
             field.ResetScreenColors(),
+
+            # UMAROS COLLIDE: the map is loaded again after the battle, which would start its song
+            # (the fanatics' tower's) for a moment before the ending's. with the override it is
+            # the song from before the battle: silence
+            field.SetEventBit(event_bit.TEMP_SONG_OVERRIDE),
             field.InvokeBattle(0x165, background = 0x33, battle_sound = False),
+            field.ClearEventBit(event_bit.TEMP_SONG_OVERRIDE),
         )
 
         # make every character available after battle so can see all the scenes
