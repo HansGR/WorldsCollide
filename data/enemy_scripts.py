@@ -263,6 +263,27 @@ class EnemyScripts():
         chupon_script = self.scripts[chupon_id]
         chupon_script.insert(0, ai_instr.SetTarget(0x43)) # Target: Allies
 
+    def ultimaro_mod(self):
+        # UMAROS COLLIDE: the giant umaro at the end of the final battle runs final kefka's script.
+        # he has ice for kefka's fire and bolt, and jumps as umaro does
+        from data.spell_names import name_id
+        from data.enemy_script_custom_commands import JUMP
+
+        special, train, revenger, nothing = (name_id[name] for name in ["Special", "Train", "Revenger", "Nothing"])
+        script = self.get_script("Kefka (Final)")
+
+        # above 53% hp, every other turn
+        script.replace(ai_instr.RandomAttack(name_id["Fire 3"], train, special),
+                       ai_instr.RandomAttack(name_id["Storm"], train, special))
+        script.replace(ai_instr.RandomAttack(name_id["Bolt 3"], nothing, special),
+                       ai_instr.RandomAttack(name_id["Surge"], nothing, special))
+
+        # at 53% hp and below, the turns after goner
+        script.replace(ai_instr.RandomAttack(special, train, revenger),
+                       ai_instr.RandomAttack(special, name_id["Ice 3"], revenger))
+        script.replace(ai_instr.RandomAttack(train, special, revenger),
+                       ai_instr.RandomAttack(train, special, JUMP))
+
     def mod(self):
         # first free up some space for other mods
         self.cleanup_mod()
@@ -306,6 +327,8 @@ class EnemyScripts():
 
         if self.args.random_encounters_chupon:
             self.chupon_sneeze_all()
+
+        self.ultimaro_mod()
 
         if self.args.ability_scaling:
             self.enemy_script_abilities.scale_abilities_mod()
